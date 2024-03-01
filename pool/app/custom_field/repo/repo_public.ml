@@ -220,10 +220,10 @@ module Sql = struct
         FROM pool_custom_fields
         LEFT JOIN pool_custom_field_answers
           ON pool_custom_field_answers.custom_field_uuid = pool_custom_fields.uuid
-        WHERE 
+        WHERE
           pool_custom_fields.uuid in ( %s )
           AND pool_custom_field_answers.entity_uuid in ( %s )
-        ORDER BY 
+        ORDER BY
           pool_custom_fields.position
       |sql}
       (CCString.concat ", " sql_select_columns)
@@ -296,7 +296,7 @@ module Sql = struct
     in
     Repo_entity.Public.to_ungrouped_entities is_admin options field_list
     |> CCList.head_opt
-    |> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
+    |> CCOption.to_result Pool_message.(Error.NotFound Field.CustomField)
     |> Lwt_result.lift
   ;;
 

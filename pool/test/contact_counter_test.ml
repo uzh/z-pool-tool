@@ -1,6 +1,7 @@
 open Test_utils
 open Cqrs_command
 open Utils.Lwt_result.Infix
+open Pool_message
 
 let database_label = Data.database_label
 let get_exn = get_or_failwith
@@ -536,7 +537,6 @@ module UpdateAssignments = struct
 
   let to_urlencoded ?external_data_id ~no_show ~participated () =
     let open Pool_common in
-    let open Message in
     let bool_to_string = Model.Boolean.stringify in
     let base =
       [ Field.(show NoShow), [ bool_to_string no_show ]

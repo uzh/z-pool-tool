@@ -9,7 +9,7 @@ end
 module Title = struct
   include Pool_common.Model.String
 
-  let field = Pool_common.Message.Field.Title
+  let field = Pool_message.Field.title
   let schema () = schema field ()
 end
 
@@ -41,7 +41,7 @@ type value =
 [@@deriving show { with_path = false }, eq, variants]
 
 let single_value_of_yojson (yojson : Yojson.Safe.t) =
-  let error = Pool_common.Message.(Invalid Field.Value) in
+  let error = Pool_message.(Error.Invalid Field.Value) in
   let open CCResult in
   match yojson with
   | `Assoc [ (key, value) ] ->
@@ -64,13 +64,13 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
 
 let value_of_yojson yojson =
   let open CCResult in
-  let error = Pool_common.Message.(Invalid Field.Value) in
+  let error = Pool_message.(Error.Invalid Field.Value) in
   match yojson with
   | `Null -> Ok NoValue
   | `Assoc _ -> single_value_of_yojson yojson >|= single
   | `List values ->
     (match values with
-     | [] -> Error Pool_common.Message.FilterListValueMustNotBeEmpty
+     | [] -> Error Pool_message.Error.FilterListValueMustNotBeEmpty
      | values ->
        values |> CCList.map single_value_of_yojson |> CCList.all_ok >|= lst)
   | _ -> Error error
@@ -160,7 +160,7 @@ module Key = struct
     | CustomField id -> id |> find_in_keys
   ;;
 
-  let of_yojson : Yojson.Safe.t -> (t, Pool_common.Message.error) result =
+  let of_yojson : Yojson.Safe.t -> (t, Pool_message.Error.t) result =
     fun yojson ->
     match read_hardcoded yojson with
     | Some h -> Ok (Hardcoded h)
@@ -169,7 +169,7 @@ module Key = struct
          existing custom field *)
       (match yojson with
        | `String id -> Ok (CustomField (id |> Custom_field.Id.of_string))
-       | _ -> Error Pool_common.Message.(Invalid Field.Key))
+       | _ -> Error Pool_message.(Error.Invalid Field.Key))
   ;;
 
   let to_yojson (m : t) =
@@ -208,7 +208,7 @@ module Key = struct
     | NumParticipations -> Ok "pool_contacts.num_participations"
     | NumShowUps -> Ok "pool_contacts.num_show_ups"
     | Assignment | Invitation | Participation | Tag ->
-      Error Pool_common.Message.(QueryNotCompatible (Field.Key, Field.Value))
+      Error Pool_message.(Error.QueryNotCompatible (Field.Key, Field.Value))
   ;;
 
   let type_of_hardcoded m : input_type =
@@ -244,7 +244,7 @@ module Key = struct
 
   let validate_value (key_list : human list) (key : t) value =
     let error =
-      Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
+      Pool_message.(Error.QueryNotCompatible (Field.Value, Field.Key))
     in
     let open CCResult in
     let validate_single_value input_type value =
@@ -291,7 +291,7 @@ module Key = struct
               then Some field
               else None)
           key_list
-        |> CCOption.to_result Pool_common.Message.(Invalid Field.Key)
+        |> CCOption.to_result Pool_message.(Error.Invalid Field.Key)
       in
       custom_field |> type_of_custom_field |> validate value
   ;;
@@ -518,7 +518,7 @@ module Operator = struct
     (match yojson with
      | `String str -> find_operator str encode_operators
      | _ -> None)
-    |> CCOption.to_result Pool_common.Message.(Invalid Field.Operator)
+    |> CCOption.to_result Pool_message.(Error.Invalid Field.Operator)
   ;;
 
   let yojson_of_t : t -> Yojson.Safe.t = CCFun.(show %> fun str -> `String str)
@@ -557,7 +557,7 @@ module Operator = struct
   ;;
 
   let validate (key : Key.t) operator =
-    let msg = Pool_common.Message.(QueryNotCompatible Field.(Operator, Key)) in
+    let msg = Pool_message.(Error.QueryNotCompatible Field.(Operator, Key)) in
     match key with
     | Key.Hardcoded key ->
       key
@@ -591,7 +591,7 @@ module Predicate = struct
   let create key operator value : t = { key; operator; value }
   let create_human ?key ?operator ?value () : human = { key; operator; value }
 
-  let validate : t -> Key.human list -> (t, Pool_common.Message.error) result =
+  let validate : t -> Key.human list -> (t, Pool_message.Error.t) result =
     fun ({ key; operator; value } as m) key_list ->
     let open CCResult in
     let* () = Key.validate_value key_list key value in
@@ -600,10 +600,9 @@ module Predicate = struct
   ;;
 
   let t_of_yojson (yojson : Yojson.Safe.t) =
-    let open Pool_common in
     let open Helper in
     let to_result field =
-      CCOption.value ~default:(Error (Message.Invalid field))
+      CCOption.value ~default:(Error (Pool_message.Error.Invalid field))
     in
     match yojson with
     | `Assoc assoc ->
@@ -613,23 +612,25 @@ module Predicate = struct
         |> CCList.assoc_opt ~eq:CCString.equal json_key
         |> CCOption.map of_yojson
       in
-      let* key = go key_string Key.of_yojson |> to_result Message.Field.Key in
+      let* key =
+        go key_string Key.of_yojson |> to_result Pool_message.Field.Key
+      in
       let* operator =
         go operator_string Operator.of_yojson
-        |> to_result Message.Field.Operator
+        |> to_result Pool_message.Field.Operator
       in
       let* value =
         go value_string value_of_yojson
         |> fun opt ->
         let open Operator in
-        let error = Error Message.(Invalid Field.Value) in
+        let error = Error Pool_message.(Error.Invalid Field.Value) in
         match operator with
         | Existence _ -> opt |> CCOption.value ~default:(Ok NoValue)
         | Equality _ | String _ | Size _ | List _ ->
           CCOption.value ~default:error opt
       in
       Ok (create key operator value)
-    | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
+    | _ -> Error Pool_message.(Error.Invalid Field.Predicate)
   ;;
 
   let yojson_of_t ({ key; operator; value } : t) =
@@ -660,11 +661,11 @@ let rec yojson_of_query f : Yojson.Safe.t =
 ;;
 
 let rec query_of_yojson json =
-  let error = Pool_common.Message.(Invalid Field.Query) in
+  let error = Pool_message.(Error.Invalid Field.Query) in
   let open CCResult.Infix in
   let not_empty l =
     match l with
-    | [] -> Error Pool_common.Message.FilterAndOrMustNotBeEmpty
+    | [] -> Error Pool_message.Error.FilterAndOrMustNotBeEmpty
     | _ -> Ok l
   in
   let to_query_list json =
@@ -718,7 +719,7 @@ let rec validate_query key_list (template_list : t list) =
   | Pred p -> Predicate.validate p key_list >|= pred
   | Template filter_id ->
     CCList.find_opt (fun f -> Pool_common.Id.equal f.id filter_id) template_list
-    |> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+    |> CCOption.to_result Pool_message.(Error.NotFound Field.Filter)
     >|= CCFun.const (template filter_id)
 ;;
 
@@ -738,7 +739,7 @@ type base_condition =
   | MatcherReset of Pool_common.Id.t * Ptime.t
 [@@deriving eq, show]
 
-open Pool_common.Message
+open Pool_message
 
 let column_title = (Field.Title, "pool_filter.title") |> Query.Column.create
 

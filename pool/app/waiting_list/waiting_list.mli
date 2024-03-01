@@ -14,7 +14,7 @@ module AdminComment : sig
 
   val schema
     :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 type t =
@@ -68,7 +68,7 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val user_is_enlisted
   :  Pool_database.Label.t
@@ -99,7 +99,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

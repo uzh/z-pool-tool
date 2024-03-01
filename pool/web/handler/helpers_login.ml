@@ -1,5 +1,5 @@
+open Pool_message
 module Label = Pool_database.Label
-module Message = Pool_common.Message
 module EmailAddress = Pool_user.EmailAddress
 
 let src = Logs.Src.create "login helper"
@@ -64,12 +64,11 @@ let block_until counter =
 
 let login_params urlencoded =
   let open Utils.Lwt_result.Infix in
-  let open Message in
   let* params =
     Field.[ Email; Password ]
     |> CCList.map Field.show
     |> Http_utils.urlencoded_to_params urlencoded
-    |> CCOption.to_result LoginProvideDetails
+    |> CCOption.to_result Error.LoginProvideDetails
     |> Lwt_result.lift
   in
   let* email =
@@ -113,7 +112,7 @@ let login req urlencoded database_label =
       |> CCOption.map BlockedUntil.value
       |> function
       | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked)
-        -> Lwt_result.fail (Message.AccountTemporarilySuspended blocked)
+        -> Lwt_result.fail (Error.AccountTemporarilySuspended blocked)
       | None | _ -> handler ()
     in
     let handle_result = function
@@ -130,7 +129,7 @@ let login req urlencoded database_label =
         let%lwt { blocked_until; _ } = counter |> increment in
         let%lwt () = notify_user database_label tags email blocked_until in
         suspension_error
-          (fun () -> err |> Message.handle_sihl_login_error |> Lwt_result.fail)
+          (fun () -> err |> handle_sihl_login_error |> Lwt_result.fail)
           blocked_until
     in
     let login () =

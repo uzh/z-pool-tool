@@ -1,16 +1,14 @@
-module PoolError = Pool_common.Message
-
 module Url = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.DatabaseUrl
+  let field = Pool_message.Field.DatabaseUrl
   let schema () = schema field ()
 end
 
 module Label = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.DatabaseLabel
+  let field = Pool_message.Field.DatabaseLabel
   let schema () = schema field ()
   let of_string m = m
 end
@@ -68,6 +66,6 @@ let of_ctx_exn =
   let open CCFun in
   let open Pool_common in
   of_ctx_opt
-  %> CCOption.to_result Message.(Undefined Field.DatabaseLabel)
+  %> CCOption.to_result Pool_message.(Error.Undefined Field.DatabaseLabel)
   %> Utils.get_or_failwith
 ;;

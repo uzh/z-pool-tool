@@ -1,9 +1,9 @@
 open CCFun
 open Tyxml.Html
 open Component.Input
+open Pool_message
 module Icon = Component.Icon
-module Message = Pool_common.Message
-module Field = Message.Field
+module Field = Pool_message.Field
 module SmtpAuth = Email.SmtpAuth
 
 let base_path = function
@@ -19,7 +19,7 @@ let list Pool_context.{ language; _ } location smtp_auth_list query =
       Component.Input.link_as_button
         ~style:`Success
         ~icon:Icon.Add
-        ~control:(language, Pool_common.Message.(Add (Some Field.Smtp)))
+        ~control:(language, Control.Add (Some Field.Smtp))
         (Format.asprintf "%s/new" (base_path location))
     in
     [ `column SmtpAuth.column_label
@@ -107,7 +107,7 @@ let show
   let submit
     ?submit_type
     ?(has_icon = Icon.Save)
-    ?(control = Message.(Update None))
+    ?(control = Control.Update None)
     ()
     =
     div
@@ -207,7 +207,7 @@ let show
           ; submit
               ~submit_type:`Error
               ~has_icon:Icon.Trash
-              ~control:(Message.Delete (Some Field.Password))
+              ~control:(Control.Delete (Some Field.Password))
               ()
           ]
       ]
@@ -226,8 +226,8 @@ let show
               ~flash_fetcher
               language
               `Email
-              Message.Field.EmailAddress
-          ; submit ~control:Message.Validate ()
+              Field.EmailAddress
+          ; submit ~control:Control.Validate ()
           ]
       ]
   in
@@ -259,7 +259,7 @@ let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
           ~has_icon:Icon.Save
           ~classnames:[ "push" ]
           language
-          Message.(Create None)
+          (Control.Create None)
           ()
       ]
   in

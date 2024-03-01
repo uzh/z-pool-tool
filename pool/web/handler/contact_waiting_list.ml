@@ -7,7 +7,7 @@ let create_layout = Contact_general.create_layout
 let handle req action =
   let open Utils.Lwt_result.Infix in
   let experiment_id =
-    let open Pool_common.Message.Field in
+    let open Pool_message.Field in
     HttpUtils.find_id Experiment.Id.of_string Experiment req
   in
   let redirect_path =
@@ -44,7 +44,7 @@ let handle req action =
         in
         let open CCResult.Infix in
         waiting_list
-        |> CCOption.to_result Pool_common.Message.(NotFound Field.WaitingList)
+        |> CCOption.to_result Pool_message.(Error.NotFound Field.WaitingList)
         >>= Destroy.handle ~tags
         |> Lwt_result.lift
     in
@@ -53,7 +53,7 @@ let handle req action =
         Lwt_list.map_s (Pool_event.handle_event ~tags database_label) events
       in
       let success_message =
-        let open Pool_common.Message in
+        let open Pool_message.Success in
         match action with
         | `Create -> AddedToWaitingList
         | `Destroy -> RemovedFromWaitingList

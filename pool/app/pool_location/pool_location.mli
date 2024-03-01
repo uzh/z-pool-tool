@@ -44,7 +44,7 @@ module Address : sig
       -> string
       -> string
       -> string
-      -> (t, Pool_common.Message.error) result
+      -> (t, Pool_message.Error.t) result
 
     val command
       :  Institution.t option
@@ -57,7 +57,7 @@ module Address : sig
 
     val schema
       :  unit
-      -> ( Pool_common.Message.error
+      -> ( Pool_message.Error.t
            , Institution.t option
              -> Room.t option
              -> Building.t option
@@ -94,11 +94,11 @@ module Mapping : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val create : string -> (t, Pool_common.Message.error) result
+    val create : string -> (t, Pool_message.Error.t) result
 
     val schema
       :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   type file =
@@ -182,7 +182,7 @@ module Description : sig
   val create
     :  Pool_common.Language.t list
     -> (Pool_common.Language.t * string) list
-    -> (t, Pool_common.Message.error) Result.t
+    -> (t, Pool_message.Error.t) Result.t
 
   val value : t -> (Pool_common.Language.t * string) list
 end
@@ -204,7 +204,7 @@ module Status : sig
 
   val schema
     :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
 
   val all : t list
 end
@@ -233,7 +233,7 @@ val create
   -> string option
   -> Status.t
   -> Mapping.file list
-  -> (t, Pool_common.Message.error) result
+  -> (t, Pool_message.Error.t) result
 
 val contact_file_path : Id.t -> Mapping.file -> string
 val admin_file_path : Id.t -> Mapping.file -> string
@@ -284,7 +284,7 @@ end
 val find
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_all : Pool_database.Label.t -> t list Lwt.t
 val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
@@ -292,7 +292,7 @@ val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
 val find_location_file
   :  Pool_database.Label.t
   -> Pool_common.Repo.Id.t
-  -> (Mapping.file, Entity.Message.error) result Lwt.t
+  -> (Mapping.file, Pool_message.Error.t) result Lwt.t
 
 val search
   :  ?conditions:string
@@ -328,31 +328,31 @@ module Statistics : sig
   module ExperimentCount : sig
     include Pool_common.Model.IntegerSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
   end
 
   module AssignmentCount : sig
     include Pool_common.Model.IntegerSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
   end
 
   module ShowUpCount : sig
     include Pool_common.Model.IntegerSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
   end
 
   module NoShowCount : sig
     include Pool_common.Model.IntegerSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
   end
 
   module ParticipationCount : sig
     include Pool_common.Model.IntegerSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
   end
 
   type t
@@ -371,7 +371,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -384,7 +384,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> Mapping.file
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

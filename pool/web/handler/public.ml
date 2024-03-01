@@ -1,3 +1,4 @@
+open Pool_message
 module Message = Http_utils.Message
 module Login = Public_login
 module Import = Public_import
@@ -49,7 +50,7 @@ let index_css req =
       |> Lwt_result.lift
       >== fun { tenant; _ } ->
       tenant.Pool_tenant.styles
-      |> CCOption.to_result Common.Message.(NotFound Field.Styles)
+      |> CCOption.to_result (Error.NotFound Field.Styles)
     in
     let* file =
       Http_utils.File.get_storage_file
@@ -111,14 +112,15 @@ let denied req =
   let open Utils.Lwt_result.Infix in
   let open Common in
   match req |> Pool_context.find with
-  | Error (_ : Message.error) -> Utils.failwith Message.(NotFound Field.Context)
+  | Error (_ : Pool_message.Error.t) ->
+    Utils.failwith (Error.NotFound Field.Context)
   | Ok ({ Pool_context.database_label; language; _ } as context) ->
     let tenant = Pool_context.Tenant.find req in
     let html =
       Page.Utils.error_page_terminatory
         ~lang:language
-        Message.AccessDenied
-        Message.AccessDeniedMessage
+        Error.AccessDenied
+        Error.AccessDeniedMessage
         ()
     in
     (match Pool_context.is_from_root context, tenant with
@@ -141,9 +143,7 @@ let asset req =
     Utils.Lwt_result.map_error (fun err -> err, "/not-found")
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let asset_id =
-      Sihl.Web.Router.param req Common.Message.Field.(Id |> show)
-    in
+    let asset_id = Sihl.Web.Router.param req Field.(Id |> show) in
     let* file = Http_utils.File.get_storage_file ~tags Database.root asset_id in
     let%lwt content = Service.Storage.download_data_base64 file in
     let mime = file.file.mime in
@@ -160,7 +160,7 @@ let asset req =
       m
         ~tags:(Pool_context.Logger.Tags.req req)
         "A user experienced an error: %s"
-        (Message.Message.show_error err));
+        (Error.show err));
     Http_utils.redirect_to path
 ;;
 
@@ -169,7 +169,7 @@ let error req =
   let error_page (title, note) =
     Page.Utils.error_page_terminatory ?lang:query_lang title note ()
   in
-  (Common.Message.TerminatoryRootErrorTitle, Common.Message.TerminatoryRootError)
+  Error.(TerminatoryRootErrorTitle, TerminatoryRootError)
   |> error_page
   |> Layout.Error.create
   |> Sihl.Web.Response.of_html

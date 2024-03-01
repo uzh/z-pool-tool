@@ -63,7 +63,7 @@ let base_schema =
 
 let base_decode data =
   Conformist.decode_and_validate base_schema data
-  |> CCResult.map_err Pool_common.Message.to_conformist_error
+  |> CCResult.map_err Pool_message.to_conformist_error
 ;;
 
 module Create : sig
@@ -78,7 +78,7 @@ module Create : sig
     -> (Pool_common.Language.t * string) list
     -> (string * string) list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -141,7 +141,7 @@ module Update : sig
     -> (Pool_common.Language.t * string) list
     -> (string * string) list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -176,7 +176,7 @@ end = struct
            (Custom_field.field_type custom_field)
          || CCOption.is_none Custom_field.(published_at custom_field)
       then Ok ()
-      else Error Pool_common.Message.CustomFieldTypeChangeNotAllowed
+      else Error Pool_message.Error.CustomFieldTypeChangeNotAllowed
     in
     let* t =
       Custom_field.create
@@ -240,7 +240,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     match Custom_field.published_at m with
     | None -> Ok [ Custom_field.Deleted m |> Pool_event.custom_field ]
-    | Some _ -> Error Pool_common.Message.(AlreadyPublished Field.CustomField)
+    | Some _ -> Error Pool_message.(Error.AlreadyPublished Field.CustomField)
   ;;
 
   let effects = Custom_field.Guard.Access.delete

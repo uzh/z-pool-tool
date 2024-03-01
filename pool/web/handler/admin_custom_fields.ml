@@ -1,19 +1,17 @@
+open Pool_message
 module HttpUtils = Http_utils
-module Message = Pool_common.Message
+module Message = Pool_message
 module Url = Page.Admin.CustomFields.Url
 
 let src = Logs.Src.create "handler.admin.custom_fields"
 let create_layout req = General.create_tenant_layout req
-
-let boolean_fields =
-  Custom_field.boolean_fields |> CCList.map Message.Field.show
-;;
+let boolean_fields = Custom_field.boolean_fields |> CCList.map Field.show
 
 let model_from_router req =
   let open Custom_field in
   let open CCResult in
-  HttpUtils.find_field_router_param_opt req Message.Field.Model
-  |> CCOption.to_result Message.(NotFound Field.Model)
+  HttpUtils.find_field_router_param_opt req Field.Model
+  |> CCOption.to_result Message.(Error.NotFound Field.Model)
   >>= Model.create
 ;;
 
@@ -28,7 +26,7 @@ let get_model fnc req =
 ;;
 
 let find_assocs_in_urlencoded urlencoded field encoder =
-  let field = Message.Field.show field in
+  let field = Field.show field in
   CCList.filter_map
     (fun (key, values) ->
       let group, id = CCString.take_drop (CCString.length field) key in
@@ -101,7 +99,7 @@ let new_form req = get_model form req
 
 let edit req =
   let id =
-    HttpUtils.get_field_router_param req Message.Field.CustomField
+    HttpUtils.get_field_router_param req Field.CustomField
     |> Custom_field.Id.of_string
   in
   get_model (form ~id) req
@@ -118,12 +116,12 @@ let write ?id req model =
     let open Pool_common in
     let encode_lang t = t |> Language.create |> CCResult.to_opt in
     let go field = find_assocs_in_urlencoded urlencoded field in
-    ( go Message.Field.Name encode_lang
-    , go Message.Field.Hint encode_lang
-    , go Message.Field.Validation CCOption.pure )
+    ( go Field.Name encode_lang
+    , go Field.Hint encode_lang
+    , go Field.Validation CCOption.pure )
   in
   let error_path, success =
-    let open Pool_common.Message in
+    let open Success in
     match id with
     | None -> Url.Field.new_path model, Updated Field.CustomField
     | Some id -> Url.Field.edit_path (model, id), Created Field.CustomField
@@ -181,7 +179,7 @@ let create req = get_model write req
 
 let update req =
   let id =
-    HttpUtils.get_field_router_param req Message.Field.CustomField
+    HttpUtils.get_field_router_param req Field.CustomField
     |> Custom_field.Id.of_string
   in
   get_model (write ~id) req
@@ -190,7 +188,7 @@ let update req =
 let toggle_action action req =
   let open Utils.Lwt_result.Infix in
   let id =
-    HttpUtils.get_field_router_param req Message.Field.CustomField
+    HttpUtils.get_field_router_param req Field.CustomField
     |> Custom_field.Id.of_string
   in
   let result { Pool_context.database_label; _ } =
@@ -209,8 +207,8 @@ let toggle_action action req =
     in
     let success =
       match action with
-      | `Publish -> Message.(Published Field.CustomField)
-      | `Delete -> Message.(Deleted Field.CustomField)
+      | `Publish -> Success.Published Field.CustomField
+      | `Delete -> Success.Deleted Field.CustomField
     in
     let handle events =
       let%lwt () =
@@ -232,7 +230,7 @@ let sort_options req =
   let handler req model =
     let open Utils.Lwt_result.Infix in
     let custom_field_id =
-      HttpUtils.get_field_router_param req Message.Field.CustomField
+      HttpUtils.get_field_router_param req Field.CustomField
       |> Custom_field.Id.of_string
     in
     let redirect_path = Url.Field.edit_path (model, custom_field_id) in
@@ -243,7 +241,7 @@ let sort_options req =
       let* custom_field = custom_field_id |> Custom_field.find database_label in
       let%lwt ids =
         Sihl.Web.Request.urlencoded_list
-          Message.Field.(CustomFieldOption |> array_key)
+          Field.(CustomFieldOption |> array_key)
           req
       in
       let%lwt options =
@@ -269,8 +267,7 @@ let sort_options req =
         in
         Http_utils.redirect_to_with_actions
           redirect_path
-          [ HttpUtils.Message.set
-              ~success:[ Message.(Updated Field.CustomField) ]
+          [ HttpUtils.Message.set ~success:[ Success.Updated Field.CustomField ]
           ]
       in
       events |>> handle
@@ -294,9 +291,7 @@ let sort_fields req ?group () =
       let open Custom_field in
       let tags = Pool_context.Logger.Tags.req req in
       let%lwt ids =
-        Sihl.Web.Request.urlencoded_list
-          Message.Field.(CustomField |> array_key)
-          req
+        Sihl.Web.Request.urlencoded_list Field.(CustomField |> array_key) req
       in
       let%lwt fields =
         match group with
@@ -322,7 +317,7 @@ let sort_fields req ?group () =
         Http_utils.redirect_to_with_actions
           redirect_path
           [ HttpUtils.Message.set
-              ~success:[ Message.(Updated Field.CustomFieldGroup) ]
+              ~success:[ Success.Updated Field.CustomFieldGroup ]
           ]
       in
       events |>> handle
@@ -343,7 +338,6 @@ end = struct
   include Helpers.Access
   module CustomFieldCommand = Cqrs_command.Custom_field_command
   module Guardian = Middleware.Guardian
-  module Field = Pool_common.Message.Field
 
   let custom_field_effects =
     Guardian.id_effects Custom_field.Id.of_string Field.CustomField

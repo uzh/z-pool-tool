@@ -52,7 +52,7 @@ let map_or ~tags ~default fcn =
   let open Common in
   function
   | Error err ->
-    let (_ : Message.error) = Utils.with_log_error ~src ~tags err in
+    let (_ : Pool_message.Error.t) = Utils.with_log_error ~src ~tags err in
     default
   | Ok value -> fcn value
 ;;
@@ -113,7 +113,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       let open Common in
       Service.User.set_user_password admin.user (User.Password.to_sihl password)
       |> CCResult.map (Service.User.update ~ctx)
-      |> Utils.with_log_result_error ~src ~tags Message.nothandled
+      |> Utils.with_log_result_error ~src ~tags Pool_message.Error.nothandled
     in
     Repo.update
       pool
@@ -137,7 +137,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         ~new_password
         ~new_password_confirmation
         (user admin)
-      ||> Utils.with_log_result_error ~src ~tags Message.nothandled
+      ||> Utils.with_log_result_error ~src ~tags Pool_message.Error.nothandled
     in
     Lwt.return_unit
   | PromotedContact contact_id ->
@@ -147,7 +147,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         (Guard.Uuid.target_of Id.value contact_id)
     in
     target
-    >|- Common.Message.nothandled
+    >|- Pool_message.Error.nothandled
     >|> map_or ~tags ~default:Lwt.return_unit (fun { Guard.Target.uuid; _ } ->
       let%lwt () = Repo.promote_contact pool contact_id in
       let%lwt () = Guard.Persistence.Target.promote ~ctx uuid `Admin in

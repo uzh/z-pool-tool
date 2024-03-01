@@ -1,5 +1,4 @@
 open Ppx_yojson_conv_lib.Yojson_conv
-module PoolError = Pool_common.Message
 
 module PasswordConfirmed = struct
   type t = string [@@deriving eq]
@@ -12,7 +11,7 @@ module PasswordConfirmed = struct
     m |> show |> Format.fprintf formatter "%s"
   ;;
 
-  let schema ?(field = PoolError.Field.PasswordConfirmation) () =
+  let schema ?(field = Pool_message.Field.PasswordConfirmation) () =
     Pool_common.Utils.schema_decoder (fun m -> Ok (create m)) show field
   ;;
 end
@@ -29,7 +28,7 @@ module Password = struct
 
     let validate_min_length num p =
       if CCString.length p < num
-      then Error (PoolError.PasswordPolicyMinLength num)
+      then Error (Pool_message.Error.PasswordPolicyMinLength num)
       else Ok p
     ;;
 
@@ -44,12 +43,14 @@ module Password = struct
 
     let validate_capital_letter =
       let validate c = CCChar.to_int c >= 65 && CCChar.to_int c <= 90 in
-      validate_characters validate PoolError.PasswordPolicyCapitalLetter
+      validate_characters
+        validate
+        Pool_message.Error.PasswordPolicyCapitalLetter
     ;;
 
     let validate_number =
       let validate c = CCChar.to_int c >= 48 && CCChar.to_int c <= 57 in
-      validate_characters validate PoolError.PasswordPolicyNumber
+      validate_characters validate Pool_message.Error.PasswordPolicyNumber
     ;;
 
     let validate_special_char chars p =
@@ -57,7 +58,7 @@ module Password = struct
       |> CCList.fold_left (fun is_ok c -> is_ok || CCString.contains p c) false
       |> function
       | true -> Ok p
-      | false -> Error (PoolError.PasswordPolicySpecialChar chars)
+      | false -> Error (Pool_message.Error.PasswordPolicySpecialChar chars)
     ;;
 
     let default_special_char_set =
@@ -118,24 +119,24 @@ module Password = struct
 
   let create_unvalidated p = Ok p
 
-  let schema ?(field = PoolError.Field.Password) create () =
+  let schema ?(field = Pool_message.Field.Password) create () =
     Pool_common.Utils.schema_decoder create show field
   ;;
 
   let validate_current_password
-    ?(field = PoolError.Field.CurrentPassword)
+    ?(field = Pool_message.Field.CurrentPassword)
     user
     password
     =
     if Sihl_user.matches_password (password |> to_sihl) user
     then Ok ()
-    else Error PoolError.(Invalid field)
+    else Error Pool_message.Error.(Invalid field)
   ;;
 
   let validate_password_confirmation new_password password_confirmation =
     if equal new_password (PasswordConfirmed.to_sihl password_confirmation)
     then Ok ()
-    else Error PoolError.PasswordConfirmationDoesNotMatch
+    else Error Pool_message.Error.PasswordConfirmationDoesNotMatch
   ;;
 end
 
@@ -151,7 +152,7 @@ module EmailAddress = struct
     let open Mrmime in
     match Mailbox.of_string email with
     | Ok _ -> Ok email
-    | Error _ -> Error PoolError.(Invalid Field.EmailAddress)
+    | Error _ -> Error Pool_message.(Error.Invalid Field.EmailAddress)
   ;;
 
   let strip_email_suffix email =
@@ -169,7 +170,7 @@ module EmailAddress = struct
     | Some allowed_email_suffixes ->
       (match strip_email_suffix email with
        (* TODO check whether this is really the case *)
-       | None -> Error PoolError.EmailMalformed
+       | None -> Error Pool_message.Error.EmailMalformed
        | Some suffix ->
          let open CCResult in
          let* suffix = suffix |> Settings.EmailSuffix.create in
@@ -180,7 +181,7 @@ module EmailAddress = struct
          then Ok ()
          else
            Error
-             PoolError.(
+             Pool_message.Error.(
                InvalidEmailSuffix
                  (allowed_email_suffixes
                   |> CCList.map Settings.EmailSuffix.value)))
@@ -192,7 +193,7 @@ module EmailAddress = struct
   let of_string m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder create show PoolError.Field.Email
+    Pool_common.Utils.schema_decoder create show Pool_message.Field.Email
   ;;
 end
 
@@ -208,7 +209,7 @@ module CellPhone = struct
     in
     if Re.execp regex str
     then Ok str
-    else Error Pool_common.Message.(Invalid Field.CellPhone)
+    else Error Pool_message.(Error.Invalid Field.CellPhone)
   ;;
 
   let create = CCFun.(remove_whitespaces %> validate)
@@ -216,7 +217,10 @@ module CellPhone = struct
   let value m = m
 
   let schema_test_cell_phone () =
-    Pool_common.Utils.schema_decoder create show PoolError.Field.TestPhoneNumber
+    Pool_common.Utils.schema_decoder
+      create
+      show
+      Pool_message.Field.TestPhoneNumber
   ;;
 end
 
@@ -236,7 +240,7 @@ end
 module Firstname = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.Firstname
+  let field = Pool_message.Field.Firstname
   let schema () = schema field ()
   let of_string m = m
 end
@@ -244,7 +248,7 @@ end
 module Lastname = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.Lastname
+  let field = Pool_message.Field.Lastname
   let schema () = schema field ()
   let of_string m = m
 end
@@ -252,7 +256,7 @@ end
 module Paused = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema PoolError.Field.Paused
+  let schema = schema Pool_message.Field.Paused
 end
 
 module Disabled = struct
@@ -283,7 +287,7 @@ end
 module ImportPending = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema PoolError.Field.ImportPending
+  let schema = schema Pool_message.Field.ImportPending
 end
 
 let user_firstname { Sihl_user.id; given_name; _ } =
@@ -314,7 +318,7 @@ let user_lastname_firstname user =
 
 let user_email_address user = user.Sihl_user.email |> EmailAddress.of_string
 
-open Pool_common.Message
+open Pool_message
 
 let column_email = (Field.Email, "user_users.email") |> Query.Column.create
 
@@ -345,7 +349,6 @@ let searchable_and_sortable_by =
 ;;
 
 let searchable_by =
-  let open Pool_common.Message in
   ( Field.Name
   , "CONCAT_WS(' ', user_users.name, user_users.given_name, user_users.name)" )
   :: searchable_and_sortable_by
@@ -353,7 +356,6 @@ let searchable_by =
 ;;
 
 let sortable_by =
-  let open Pool_common.Message in
   column_name
   :: (searchable_and_sortable_by
       @ [ Field.CreatedAt, "pool_contacts.created_at" ]

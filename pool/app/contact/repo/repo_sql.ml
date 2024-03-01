@@ -70,7 +70,7 @@ let find pool id =
     (Database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
 
 let find_admin_comment_request =
@@ -108,7 +108,7 @@ let find_by_email pool email =
     (Database.Label.value pool)
     find_by_email_request
     (Pool_user.EmailAddress.value email)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
 
 let find_confirmed_request =
@@ -128,7 +128,7 @@ let find_confirmed pool email =
     (Database.Label.value pool)
     find_confirmed_request
     (Pool_user.EmailAddress.value email)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
 
 let find_multiple_request ids =
@@ -518,7 +518,7 @@ let find_cell_phone_verification_by_contact_and_code pool contact code =
     (Pool_database.Label.value pool)
     find_cell_phone_verification_by_contact_and_code_request
     (Entity.(id contact |> Id.value), Pool_common.VerificationCode.value code)
-  ||> CCOption.to_result Pool_common.Message.(Invalid Field.Token)
+  ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
 ;;
 
 let find_full_cell_phone_verification_by_contact_request =
@@ -541,7 +541,7 @@ let find_full_cell_phone_verification_by_contact pool contact =
     (Pool_database.Label.value pool)
     find_full_cell_phone_verification_by_contact_request
     Entity.(id contact |> Id.value)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Token)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Token)
 ;;
 
 let delete_unverified_cell_phone_requeset =

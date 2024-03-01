@@ -2,7 +2,6 @@ open Tyxml.Html
 open Component.Input
 open Pool_common.I18n
 module HttpUtils = Http_utils
-module Message = Pool_common.Message
 
 let txt_to_string lang m = txt (Pool_common.Utils.text_to_string lang m)
 
@@ -28,7 +27,7 @@ let import_confirmation
         ; input_element
             language
             `Hidden
-            Message.Field.Token
+            Pool_message.Field.Token
             ~value:(User_import.Token.value token)
         ; input_element
             ~hints:
@@ -37,12 +36,12 @@ let import_confirmation
             ~required:true
             language
             `Password
-            Message.Field.Password
+            Pool_message.Field.Password
         ; input_element
             ~required:true
             language
             `Password
-            Message.Field.PasswordConfirmation
+            Pool_message.Field.PasswordConfirmation
         ; Component.Partials.terms_and_conditions_checkbox
             language
             terms_and_conditions
@@ -51,7 +50,7 @@ let import_confirmation
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(Save (Some Field.password))
+                Pool_message.(Control.Save (Some Field.password))
                 ()
             ]
         ]

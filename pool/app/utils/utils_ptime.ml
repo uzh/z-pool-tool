@@ -112,8 +112,6 @@ module Rfc3339 = struct
   let unwrap s = CCString.(s |> replace ~sub:char ~by:"")
 end
 
-let rfc3339_quote = "\""
-
 let yojson_of_ptime_span m =
   m
   |> Ptime.Span.to_int_s

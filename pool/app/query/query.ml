@@ -12,7 +12,7 @@ let from_request
   let find field =
     CCList.assoc_opt
       ~eq:CCString.equal
-      (Pool_common.Message.Field.show field)
+      (Pool_message.Field.show field)
       query_params
     >>= CCList.head_opt
     >>= function
@@ -51,8 +51,8 @@ let from_request
     find Query.field >|= Query.of_string >|= fun query -> create query columns
   in
   let sort =
+    let open Pool_message in
     let open Pool_common in
-    let open Message in
     let order =
       try find Field.SortOrder >|= Sort.SortOrder.read with
       | Yojson.Json_error exn ->

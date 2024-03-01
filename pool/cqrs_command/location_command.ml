@@ -1,5 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
-module Message = Pool_common.Message
+module Message = Pool_message
 module BaseGuard = Guard
 open Pool_location
 
@@ -26,7 +26,7 @@ module Create : sig
   val decode
     :  Description.t option
     -> Conformist.input
-    -> (t, Message.error) result
+    -> (t, Pool_message.Error.t) result
 end = struct
   type base =
     { name : Name.t
@@ -80,7 +80,7 @@ end = struct
     @@ let* base = Conformist.decode_and_validate schema data in
        let* address =
          match
-           CCList.assoc ~eq:( = ) Message.Field.(Virtual |> show) data
+           CCList.assoc ~eq:( = ) Pool_message.Field.(Virtual |> show) data
            |> CCList.hd
            |> CCString.equal "true"
          with
@@ -115,7 +115,7 @@ module Update : sig
   val decode
     :  Description.t option
     -> Conformist.input
-    -> (update, Message.error) result
+    -> (update, Pool_message.Error.t) result
 
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
@@ -152,7 +152,7 @@ end = struct
     @@ let* base = Conformist.decode_and_validate schema data in
        let* address_new =
          match
-           CCList.assoc ~eq:( = ) Message.Field.(Virtual |> show) data
+           CCList.assoc ~eq:( = ) Pool_message.Field.(Virtual |> show) data
            |> CCList.hd
            |> CCString.equal "true"
          with
@@ -182,7 +182,7 @@ module AddFile : sig
     -> t
     -> (Pool_event.t list, 'a) result
 
-  val decode : Conformist.input -> (t, Message.error) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
   open Mapping
@@ -201,7 +201,7 @@ end = struct
               Utils.schema_decoder
                 CCFun.(Id.of_string %> CCResult.return)
                 Id.value
-                Message.Field.FileMapping)
+                Pool_message.Field.FileMapping)
           ]
         command)
   ;;
@@ -241,7 +241,7 @@ end
 module DeleteFile : sig
   include Common.CommandSig with type t = Mapping.Id.t
 
-  val decode : Conformist.input -> (t, Message.error) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Id.t -> Mapping.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   open Mapping

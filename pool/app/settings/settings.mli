@@ -4,9 +4,9 @@ type command =
   }
 
 val update_duration_schema
-  :  (Pool_common.Message.error, int) Pool_common.Utils.PoolConformist.Field.t
-  -> Pool_common.Message.Field.t
-  -> ( Pool_common.Message.error
+  :  (Pool_message.Error.t, int) Pool_common.Utils.PoolConformist.Field.t
+  -> Pool_message.Field.t
+  -> ( Pool_message.Error.t
        , int -> Pool_common.Model.TimeUnit.t -> command
        , command )
        Pool_common.Utils.PoolConformist.t
@@ -42,7 +42,7 @@ module TermsAndConditions : sig
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
-  val create : string -> string -> (t, Pool_common.Message.error) result
+  val create : string -> string -> (t, Pool_message.Error.t) result
   val value : t -> Pool_common.Language.t * Terms.t
 end
 
@@ -50,13 +50,13 @@ module UserImportReminder : sig
   module FirstReminderAfter : sig
     include Pool_common.Model.DurationSig
 
-    val validate : t -> (t, Pool_common.Message.error) result
+    val validate : t -> (t, Pool_message.Error.t) result
   end
 
   module SecondReminderAfter : sig
     include Pool_common.Model.DurationSig
 
-    val validate : t -> (t, Pool_common.Message.error) result
+    val validate : t -> (t, Pool_message.Error.t) result
   end
 end
 
@@ -81,7 +81,7 @@ val action_of_param
        | `UserImportFirstReminderAfter
        | `UserImportSecondReminderAfter
        ]
-       , Pool_common.Message.error )
+       , Pool_message.Error.t )
        result
 
 val stringify_action
@@ -166,7 +166,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> Pool_common.Id.t
-      -> (Guard.Target.t, Pool_common.Message.error) result Lwt.t
+      -> (Guard.Target.t, Pool_message.Error.t) result Lwt.t
 
     type t
 

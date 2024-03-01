@@ -1,4 +1,4 @@
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 module KeyFigure = struct
   include Pool_common.Model.Integer

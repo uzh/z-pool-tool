@@ -3,49 +3,24 @@ module Data = struct
 end
 
 (* Testable *)
-let event = Alcotest.testable Pool_event.pp Pool_event.equal
+let event = Pool_event.(Alcotest.testable pp equal)
+let partial_update = Custom_field.PartialUpdate.(Alcotest.testable pp equal)
+let language = Pool_common.Language.(Alcotest.testable pp equal)
+let message_template = Message_template.(Alcotest.testable pp equal)
+let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
+let database_label = Pool_database.Label.(Alcotest.testable pp equal)
+let error = Pool_message.Error.(Alcotest.testable pp equal)
+let contact = Contact.(Alcotest.testable pp equal)
+let password = Pool_user.Password.(Alcotest.testable pp equal)
+let phone_nr = Pool_user.CellPhone.(Alcotest.testable pp equal)
 
-let partial_update =
-  Alcotest.testable
-    Custom_field.PartialUpdate.pp
-    Custom_field.PartialUpdate.equal
+let message_history_crate =
+  Queue.History.(Alcotest.testable pp_create equal_create)
 ;;
-
-let language =
-  Alcotest.testable Pool_common.Language.pp Pool_common.Language.equal
-;;
-
-let message_template =
-  Alcotest.testable Message_template.pp Message_template.equal
-;;
-
-let tenant_smtp_auth = Alcotest.testable Email.SmtpAuth.pp Email.SmtpAuth.equal
-
-let database_label =
-  Alcotest.testable Pool_database.Label.pp Pool_database.Label.equal
-;;
-
-let error =
-  Alcotest.testable Pool_common.Message.pp_error Pool_common.Message.equal_error
-;;
-
-let contact = Alcotest.testable Contact.pp Contact.equal
-let smtp_auth = Alcotest.testable Email.SmtpAuth.pp Email.SmtpAuth.equal
 
 let check_result ?(msg = "succeeds") =
   let open Alcotest in
   check (result (list event) error) msg
-;;
-
-let password = Alcotest.testable Pool_user.Password.pp Pool_user.Password.equal
-
-let phone_nr =
-  Alcotest.testable Pool_user.CellPhone.pp Pool_user.CellPhone.equal
-;;
-
-let message_history_crate =
-  let open Queue.History in
-  Alcotest.testable pp_create equal_create
 ;;
 
 (* Helper functions *)

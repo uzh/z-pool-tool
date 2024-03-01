@@ -1,4 +1,3 @@
-module PoolError = Pool_common.Message
 module Id = Pool_common.Id
 
 let print = Utils.ppx_printer
@@ -6,21 +5,21 @@ let print = Utils.ppx_printer
 module Label = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.SmtpLabel
+  let field = Pool_message.Field.SmtpLabel
   let schema () = schema field ()
 end
 
 module Server = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.SmtpServer
+  let field = Pool_message.Field.SmtpServer
   let schema () = schema field ()
 end
 
 module Port = struct
   include Pool_common.Model.Integer
 
-  let field = PoolError.Field.SmtpPort
+  let field = Pool_message.Field.SmtpPort
   let create port = Ok port
   let schema = schema field create
 end
@@ -28,21 +27,21 @@ end
 module Username = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.SmtpUsername
+  let field = Pool_message.Field.SmtpUsername
   let schema () = schema field ()
 end
 
 module Password = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.SmtpPassword
+  let field = Pool_message.Field.SmtpPassword
   let schema () = schema field ()
   let show _ = "<opaque>"
 end
 
 module Mechanism = struct
   module Core = struct
-    let field = Pool_common.Message.Field.SmtpMechanism
+    let field = Pool_message.Field.SmtpMechanism
 
     (* Open NTLM protocol issue: https://github.com/mirage/colombe/issues/63 *)
     type t =
@@ -62,7 +61,7 @@ end
 
 module Protocol = struct
   module Core = struct
-    let field = Pool_common.Message.Field.SmtpProtocol
+    let field = Pool_message.Field.SmtpProtocol
 
     type t =
       | STARTTLS [@name "STARTTLS"] [@printer print "STARTTLS"]
@@ -78,7 +77,7 @@ module Default = struct
   include Pool_common.Model.Boolean
 
   let init = false
-  let schema = schema Pool_common.Message.Field.DefaultSmtpServer
+  let schema = schema Pool_message.Field.DefaultSmtpServer
 end
 
 type t =
@@ -142,7 +141,7 @@ module Write = struct
   ;;
 end
 
-open Pool_common.Message
+open Pool_message
 
 let column_label = (Field.Label, "pool_smtp.label") |> Query.Column.create
 

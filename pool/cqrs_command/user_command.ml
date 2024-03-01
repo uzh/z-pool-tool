@@ -14,7 +14,7 @@ module UpdateEmail : sig
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> user
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
 end = struct
@@ -53,7 +53,7 @@ module VerifyEmail : sig
     :  ?tags:Logs.Tag.set
     -> user
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
 end = struct

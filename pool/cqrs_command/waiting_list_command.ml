@@ -9,7 +9,7 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> Email.job
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -30,7 +30,7 @@ end = struct
         [ Waiting_list.Created command |> Pool_event.waiting_list
         ; Email.Sent confimration_email |> Pool_event.email
         ]
-    else Error Pool_common.Message.NotEligible
+    else Error Pool_message.Error.NotEligible
   ;;
 
   let effects = Waiting_list.Guard.Access.create
@@ -43,12 +43,9 @@ module Update : sig
     :  ?tags:Logs.Tag.set
     -> Waiting_list.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Waiting_list.update
@@ -71,7 +68,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Waiting_list.Guard.Access.update
@@ -83,7 +80,7 @@ module Destroy : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct

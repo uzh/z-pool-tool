@@ -1,6 +1,5 @@
+open Pool_message
 module Contact_command = Cqrs_command.Contact_command
-module Message = Pool_common.Message
-module Field = Message.Field
 module Language = Pool_common.Language
 
 let check_result expected generated =
@@ -138,9 +137,8 @@ let sign_up_not_allowed_suffix () =
   in
   let expected =
     Error
-      Message.(
-        InvalidEmailSuffix
-          (allowed_email_suffixes |> CCList.map Settings.EmailSuffix.value))
+      (Error.InvalidEmailSuffix
+         (allowed_email_suffixes |> CCList.map Settings.EmailSuffix.value))
   in
   check_result expected events
 ;;
@@ -219,7 +217,7 @@ let delete_unverified () =
 let delete_verified () =
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let events = Contact_command.DeleteUnverified.handle contact in
-  let expected = Error Message.EmailDeleteAlreadyVerified in
+  let expected = Error Error.EmailDeleteAlreadyVerified in
   check_result expected events
 ;;
 
@@ -286,24 +284,24 @@ let validate_password_policy password expected =
 ;;
 
 let password_min_length () =
-  validate_password_policy "Pass9!" (Error (Message.PasswordPolicyMinLength 8))
+  validate_password_policy "Pass9!" (Error (Error.PasswordPolicyMinLength 8))
 ;;
 
 let password_capital_letter () =
   validate_password_policy
     "password9!"
-    (Error Message.PasswordPolicyCapitalLetter)
+    (Error Error.PasswordPolicyCapitalLetter)
 ;;
 
 let password_number () =
-  validate_password_policy "Password?" (Error Message.PasswordPolicyNumber)
+  validate_password_policy "Password?" (Error Error.PasswordPolicyNumber)
 ;;
 
 let password_special_char () =
   validate_password_policy
     "Password9"
     (Error
-       (Message.PasswordPolicySpecialChar
+       (Error.PasswordPolicySpecialChar
           Pool_user.Password.Policy.default_special_char_set))
 ;;
 
@@ -360,7 +358,7 @@ let update_password_wrong_current_password () =
       |> Pool_common.Utils.get_or_failwith
       |> handle contact confirmation_mail)
   in
-  let expected = Error Message.(Invalid Field.CurrentPassword) in
+  let expected = Error (Error.Invalid Field.CurrentPassword) in
   check_result expected events
 ;;
 
@@ -382,9 +380,7 @@ let update_password_wrong_policy () =
       >>= handle contact confirmation_mail)
   in
   let expected =
-    Error
-      (Message.Conformist
-         [ Field.NewPassword, Message.PasswordPolicyMinLength 8 ])
+    Error Error.(Conformist [ Field.NewPassword, PasswordPolicyMinLength 8 ])
   in
   check_result expected events
 ;;
@@ -407,7 +403,7 @@ let update_password_wrong_confirmation () =
       |> Pool_common.Utils.get_or_failwith
       |> handle contact confirmation_mail)
   in
-  let expected = Error Pool_common.Message.PasswordConfirmationDoesNotMatch in
+  let expected = Error Error.PasswordConfirmationDoesNotMatch in
   check_result expected events
 ;;
 
@@ -463,9 +459,8 @@ let request_email_validation_wrong_suffix () =
   in
   let expected =
     Error
-      Message.(
-        InvalidEmailSuffix
-          (allowed_email_suffixes |> CCList.map Settings.EmailSuffix.value))
+      (Error.InvalidEmailSuffix
+         (allowed_email_suffixes |> CCList.map Settings.EmailSuffix.value))
   in
   check_result expected events
 ;;

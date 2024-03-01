@@ -10,7 +10,7 @@ let delete database_label template_id redirect =
         redirect_to_with_actions
           redirect
           [ Message.set
-              ~success:[ Pool_common.Message.(Deleted Field.MessageTemplate) ]
+              ~success:[ Pool_message.(Success.Deleted Field.MessageTemplate) ]
           ])
   >|- fun err -> err, redirect
 ;;

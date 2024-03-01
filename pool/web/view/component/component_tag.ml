@@ -73,7 +73,7 @@ let add_tags_form
               ~add_empty:true
               ~option_formatter:Tags.(fun tag -> Title.value tag.title)
               language
-              Pool_common.Message.Field.Tag
+              Pool_message.Field.tag
               Tags.(fun tag -> Id.value tag.id)
               available
               None
@@ -83,7 +83,7 @@ let add_tags_form
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Pool_common.Message.(Add (Some Field.Tag))
+                  Pool_message.(Control.Add (Some Field.Tag))
                   ()
               ]
           ]

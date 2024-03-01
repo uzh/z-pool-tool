@@ -150,7 +150,7 @@ let events_of_mailings =
     | Ok m -> Some m
     | Error err ->
       let open Pool_common in
-      let (_ : Message.error) = Utils.with_log_error ~tags err in
+      let (_ : Pool_message.Error.t) = Utils.with_log_error ~tags err in
       None
   in
   Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
@@ -231,7 +231,7 @@ let create_invitation_events interval pools =
                  in
                  let validate = function
                    | true -> Ok status
-                   | false -> Error Pool_common.Message.SessionFullyBooked
+                   | false -> Error Pool_message.Error.SessionFullyBooked
                  in
                  mailing
                  |> find_experiment

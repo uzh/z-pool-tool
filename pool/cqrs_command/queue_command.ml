@@ -1,5 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
-module Message = Pool_common.Message
+module Message = Pool_message
 open CCResult.Infix
 
 let src = Logs.Src.create "queue.cqrs"
@@ -46,7 +46,7 @@ let update_text_message_job
 let parse_instance_job { Sihl_queue.name; input; _ } =
   let open Queue.JobName in
   (try Ok (name |> read) with
-   | _ -> Error Message.(Invalid Field.Input))
+   | _ -> Error Message.(Error.Invalid Field.Input))
   >>= function
   | SendEmail -> Email.parse_job_json input >|= fun job -> `EmailJob job
   | SendTextMessage ->
@@ -70,7 +70,7 @@ module Resend : sig
     :  ?contact:Contact.t
     -> ?experiment:Experiment.t
     -> t
-    -> (Pool_event.t list, Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Sihl_queue.instance
 

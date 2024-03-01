@@ -1,6 +1,6 @@
 open Tyxml.Html
 open Pool_common
-module Field = Message.Field
+module Field = Pool_message.Field
 
 type incomplete_sessions = Session.t list * Query.t
 type upcoming_sessions = Session.t list * Query.t

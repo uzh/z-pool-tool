@@ -4,7 +4,7 @@ let create_layout req = General.create_tenant_layout req
 let statistics_from_request req database_label =
   let open CCOption.Infix in
   let period =
-    Sihl.Web.Request.query Pool_common.Message.Field.(show Period) req
+    Sihl.Web.Request.query Pool_message.Field.(show Period) req
     >>= Statistics.read_period
   in
   let%lwt statistics = Statistics.create ?period database_label () in

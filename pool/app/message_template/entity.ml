@@ -1,4 +1,4 @@
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 module Id = struct
   include Pool_common.Id
@@ -54,7 +54,7 @@ module Label = struct
 
   let of_string str =
     try Ok (read str) with
-    | _ -> Error Pool_common.Message.(Invalid Field.Label)
+    | _ -> Error Pool_message.(Error.Invalid Field.Label)
   ;;
 
   let to_human m =
@@ -66,9 +66,7 @@ module Label = struct
   let prefixed_human_url m =
     m
     |> human_url
-    |> Format.asprintf
-         "%s/%s"
-         Pool_common.Message.Field.(human_url MessageTemplate)
+    |> Format.asprintf "%s/%s" Pool_message.Field.(human_url MessageTemplate)
   ;;
 
   let customizable_by_experiment =
@@ -111,7 +109,7 @@ end
 module FallbackToEmail = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Pool_common.Message.Field.FallbackToEmail
+  let schema = schema Pool_message.Field.FallbackToEmail
 end
 
 type t =

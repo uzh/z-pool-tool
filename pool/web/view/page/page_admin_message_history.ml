@@ -2,7 +2,7 @@ open Containers
 open CCFun
 open Tyxml.Html
 open Pool_common
-module Field = Message.Field
+module Field = Pool_message.Field
 
 let path = Contact.id %> Id.value %> Format.asprintf "/admin/contacts/%s"
 

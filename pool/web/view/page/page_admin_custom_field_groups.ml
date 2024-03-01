@@ -1,7 +1,7 @@
 open Tyxml.Html
 open Component.Input
+open Pool_message
 module Partials = Component.Partials
-module Message = Pool_common.Message
 module Url = Page_admin_custom_fields.Url
 
 let form
@@ -26,7 +26,7 @@ let form
       custom_field_group
   in
   let name_inputs =
-    input_by_lang ~required:true Message.Field.Name (fun lang (g, _) ->
+    input_by_lang ~required:true Field.Name (fun lang (g, _) ->
       let open CCOption in
       g.Group.name
       |> Name.find_opt lang
@@ -42,7 +42,7 @@ let form
         [ h2
             ~a:[ a_class [ "heading-2" ] ]
             [ txt
-                (Message.Field.CustomField
+                (Field.CustomField
                  |> Pool_common.Utils.field_to_string language
                  |> CCString.capitalize_ascii)
             ]
@@ -50,7 +50,7 @@ let form
             Pool_common.
               [ Utils.hint_to_string
                   language
-                  I18n.(CustomFieldSort Message.Field.CustomFields)
+                  I18n.(CustomFieldSort Field.CustomFields)
                 |> txt
               ]
         ; form
@@ -81,7 +81,7 @@ let form
                         [ input
                             ~a:
                               [ a_input_type `Hidden
-                              ; a_name Message.Field.(CustomField |> array_key)
+                              ; a_name Field.(CustomField |> array_key)
                               ; a_value (field |> id |> Id.value)
                               ]
                             ()
@@ -96,7 +96,7 @@ let form
                 [ submit_element
                     ~classnames:[ "push" ]
                     language
-                    Message.UpdateOrder
+                    Control.UpdateOrder
                     ~submit_type:`Primary
                     ()
                 ]
@@ -119,7 +119,7 @@ let form
                 ~a:[ a_class [ "heading-4" ] ]
                 [ txt
                     Pool_common.(
-                      Message.Field.Name
+                      Field.Name
                       |> Utils.field_to_string language
                       |> CCString.capitalize_ascii)
                 ]
@@ -130,7 +130,7 @@ let form
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(
+                Control.(
                   let field = Some Field.CustomFieldGroup in
                   match custom_field_group with
                   | None -> Create field
@@ -152,10 +152,7 @@ let detail
   =
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ Partials.form_title
-        language
-        Message.Field.CustomFieldGroup
-        custom_field_group
+    [ Partials.form_title language Field.CustomFieldGroup custom_field_group
     ; Page_admin_custom_fields.model_subtitle language current_model
     ; form ?custom_field_group current_model context sys_langauges flash_fetcher
     ]

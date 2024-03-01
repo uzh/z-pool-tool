@@ -45,9 +45,10 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
                   ~a:[ a_class [ "gap-sm" ] ]
                   [ a
                       ~a:[ a_href (Link.value link); a_target "_blank" ]
-                      [ txt
-                          Pool_common.(
-                            Utils.control_to_string language Message.More)
+                      [ Pool_common.Utils.control_to_string
+                          language
+                          Pool_message.Control.More
+                        |> txt
                       ]
                   ])
             ]

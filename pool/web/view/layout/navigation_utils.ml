@@ -28,7 +28,7 @@ let filter_items ?validate ?actor ?(guardian = []) items =
                  Persistence.PermissionOnTarget.validate_set
                    ~any_id:true
                    guardian
-                   Pool_common.Message.authorization
+                   Pool_message.Error.authorization
                    validation_set
                    actor
                in
@@ -140,7 +140,7 @@ let create_main
 ;;
 
 let i18n_links languages active_language mobile =
-  let open Pool_common.Message in
+  let open Pool_message in
   let link_classes = [ "nav-link" ] in
   let nav_class =
     if mobile

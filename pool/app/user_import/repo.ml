@@ -90,9 +90,7 @@ module RepoEntity = struct
         , SecondReminderAfter.value second_reminder )
     in
     let decode _ =
-      failwith
-        Pool_common.(
-          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
     in
     Caqti_type.(custom ~encode ~decode (t2 ptime_span ptime_span))
   ;;
@@ -126,9 +124,7 @@ module RepoEntity = struct
             , (m.notified_at, (m.reminder_count, m.last_reminded_at)) ) )
       in
       let decode _ =
-        failwith
-          Pool_common.(
-            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+        Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
       in
       Caqti_type.(
         custom
@@ -192,7 +188,7 @@ let find_pending_by_token pool token =
     (Pool_database.Label.value pool)
     find_pending_by_token_request
     (Token.value token)
-  ||> CCOption.to_result Pool_common.Message.(Invalid Field.Token)
+  ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
 ;;
 
 let find_pending_by_user_id_opt_request =

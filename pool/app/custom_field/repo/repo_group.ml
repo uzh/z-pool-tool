@@ -35,7 +35,7 @@ let find pool id =
     (Pool_database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomFieldGroup)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.CustomFieldGroup)
 ;;
 
 let find_by_model_request =

@@ -64,7 +64,7 @@ let find label id =
   let open Utils.Lwt_result.Infix in
   print_endline "";
   Utils.Database.find_opt (Pool_database.Label.value label) find_request id
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Queue)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Queue)
 ;;
 
 let find_by ?query pool =
@@ -109,5 +109,5 @@ let count_workable label =
     (Pool_database.Label.value label)
     count_workable_request
     ()
-  ||> CCOption.to_result Pool_common.Message.NoValue
+  ||> CCOption.to_result Pool_message.Error.NoValue
 ;;

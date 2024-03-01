@@ -1,5 +1,5 @@
 module TemplateCommand = Cqrs_command.Message_template_command
-module Field = Pool_common.Message.Field
+open Pool_message
 
 module Data = struct
   let urlencoded =
@@ -60,7 +60,7 @@ let create () =
 
 let create_with_unavailable_language () =
   let available_languages = Pool_common.Language.[ En ] in
-  let expected = Error Pool_common.Message.(Invalid Field.Language) in
+  let expected = Error (Error.Invalid Field.Language) in
   test_create available_languages expected
 ;;
 
@@ -78,9 +78,7 @@ let delete_without_entity () =
   let id = Id.create () in
   let template = Data.create id in
   let events = TemplateCommand.Delete.handle template in
-  let expected =
-    Error Pool_common.Message.(CannotBeDeleted Field.MessageTemplate)
-  in
+  let expected = Error (Error.CannotBeDeleted Field.MessageTemplate) in
   Test_utils.check_result expected events
 ;;
 

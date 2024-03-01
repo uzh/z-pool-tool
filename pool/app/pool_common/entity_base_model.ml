@@ -132,7 +132,7 @@ module Integer = struct
     let decode str =
       let open CCResult in
       CCInt.of_string str
-      |> CCOption.to_result Pool_message.(Error.NotANumber str)
+      |> CCOption.to_result Pool_message.Error.(NotANumber str)
       >>= create
     in
     Pool_common_utils.schema_decoder decode CCInt.to_string field
@@ -309,7 +309,7 @@ module SelectorType (Core : SelectorCoreTypeSig) = struct
     try Ok (read m) with
     | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (exn, yojson) ->
       Pool_common_utils.handle_ppx_yojson_err (exn, yojson)
-    | _ -> Error Pool_message.(Error.Invalid field)
+    | _ -> Error Pool_message.Error.(Invalid field)
   ;;
 
   let all : t list =
@@ -357,7 +357,7 @@ module TimeUnit = struct
 
   let of_string str =
     try Ok (read str) with
-    | _ -> Error Pool_message.(Error.Invalid Core.field)
+    | _ -> Error Pool_message.Error.(Invalid Core.field)
   ;;
 
   let named_field name = Pool_message.Field.TimeUnitOf name

@@ -189,9 +189,9 @@ module Make (Config : ConfigSig) = struct
   let map_fetched ?ctx (fcn : 'a -> ('b, 'e) Lwt_result.t)
     : ('b, 'e) Lwt_result.t
     =
+    let open Caqti_error in
     match fetch_pool ?ctx () with
-    | Error (`Load_failed err) -> Lwt.return_error (`Load_failed err)
-    | Error (`Load_rejected err) -> Lwt.return_error (`Load_rejected err)
+    | Error (#load as resp) -> Lwt.return_error resp
     | Ok pool ->
       print_pool_usage pool;
       fcn pool

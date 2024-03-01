@@ -79,7 +79,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Assignment)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Assignment)
   ;;
 
   let find_closed_request =
@@ -88,7 +88,7 @@ module Sql = struct
     {sql|
      WHERE
       pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
-    AND 
+    AND
       pool_sessions.closed_at IS NOT NULL
     |sql}
     |> find_request_sql ~additional_joins
@@ -101,14 +101,14 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_closed_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Assignment)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Assignment)
   ;;
 
   let find_by_session_request ?where_condition () =
     let open Caqti_request.Infix in
     let id_fragment =
       {sql|
-        WHERE 
+        WHERE
           pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))
         AND
           pool_assignments.marked_as_deleted = 0
@@ -196,7 +196,7 @@ module Sql = struct
   let find_by_contact_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE 
+      WHERE
         pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         pool_assignments.marked_as_deleted = 0
@@ -359,7 +359,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_session_id_request
       id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
   let insert_request =
@@ -505,7 +505,7 @@ module Sql = struct
     contact_uuid
     =
     if CCList.is_empty exclude_assignments
-    then Lwt_result.fail Pool_common.Message.InvalidRequest
+    then Lwt_result.fail Pool_message.Error.InvalidRequest
     else
       let open Caqti_request.Infix in
       let open Dynparam in

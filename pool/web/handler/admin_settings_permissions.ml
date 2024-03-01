@@ -2,7 +2,7 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.admin.settings_role_permission"
 let active_navigation = "/admin/settings/role-permission"
@@ -42,7 +42,7 @@ let delete req =
       >== fun rule ->
       let read = Yojson.Safe.from_string %> Guard.RolePermission.of_yojson in
       CCResult.map_err
-        Pool_common.Message.authorization
+        Pool_message.Error.authorization
         (try read rule with
          | _ -> Error "Undefined Yojson for rule.")
     in
@@ -56,11 +56,11 @@ let delete req =
         in
         Http_utils.redirect_to_with_actions
           active_navigation
-          [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Rule) ] ]
+          [ Message.set ~success:[ Pool_message.(Success.Deleted Field.Rule) ] ]
       | Error _ ->
         Http_utils.redirect_to_with_actions
           active_navigation
-          [ Message.set ~error:[ Pool_common.Message.(NotFound Field.Rule) ] ]
+          [ Message.set ~error:[ Pool_message.(Error.NotFound Field.Rule) ] ]
     in
     rule >== events >|> handle |> Lwt_result.ok
   in

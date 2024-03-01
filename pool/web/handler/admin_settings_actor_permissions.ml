@@ -1,8 +1,8 @@
 open CCFun.Infix
 open Utils.Lwt_result.Infix
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.settings_actor_permissions"
 let active_navigation = "/admin/settings/actor-permission"
@@ -38,7 +38,7 @@ let delete req =
       >== fun permission ->
       let read = Yojson.Safe.from_string %> Guard.ActorPermission.of_yojson in
       CCResult.map_err
-        Pool_common.Message.authorization
+        Error.authorization
         (try read permission with
          | _ -> Error "Undefined Yojson for actor permission.")
     in
@@ -52,15 +52,11 @@ let delete req =
         in
         Http_utils.redirect_to_with_actions
           active_navigation
-          [ Message.set
-              ~success:[ Pool_common.Message.(Deleted Field.Permission) ]
-          ]
+          [ Message.set ~success:[ Success.Deleted Field.Permission ] ]
       | Error _ ->
         Http_utils.redirect_to_with_actions
           active_navigation
-          [ Message.set
-              ~error:[ Pool_common.Message.(NotFound Field.Permission) ]
-          ]
+          [ Message.set ~error:[ Error.NotFound Field.Permission ] ]
     in
     permission >== events >|> handle |> Lwt_result.ok
   in
@@ -102,7 +98,7 @@ let handle_toggle_target req =
           let permission = Guard.Permission.of_string_res permission in
           let model =
             Role.Target.of_string_res model
-            |> CCResult.map_err Message.authorization
+            |> CCResult.map_err Error.authorization
           in
           CCResult.both permission model)
     >|+ fun (permission, model) ->
@@ -128,7 +124,7 @@ let create req =
       HttpUtils.htmx_urlencoded_list Field.(ValueOf Admin |> array_key) req
       ||> CCList.map
             (Guard.Uuid.Actor.of_string
-             %> CCOption.to_result Pool_common.Message.(Decode Field.Id))
+             %> CCOption.to_result (Error.Decode Field.Id))
       ||> CCResult.flatten_l
     in
     let%lwt actors =
@@ -143,14 +139,13 @@ let create req =
     let* model =
       find Field.Model
       |> lift
-      >== Role.Target.of_string_res
-          %> CCResult.map_err Pool_common.Message.authorization
+      >== Role.Target.of_string_res %> CCResult.map_err Error.authorization
     in
     let* targets =
       HttpUtils.htmx_urlencoded_list Field.(Value |> array_key) req
       ||> CCList.map
             (Guard.Uuid.Target.of_string
-             %> CCOption.to_result Pool_common.Message.(Decode Field.Id))
+             %> CCOption.to_result (Error.Decode Field.Id))
       ||> CCResult.flatten_l
     in
     let expand_targets =
@@ -167,7 +162,7 @@ let create req =
       | _, model ->
         Logs.err (fun m ->
           m "Admin handler: Missing role %s" ([%show: Role.Target.t] model));
-        Lwt.return_error Pool_common.Message.(NotFound Field.Role)
+        Lwt.return_error (Error.NotFound Field.Role)
         ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id
     in
     let events =
@@ -193,7 +188,7 @@ let create req =
     Lwt_result.ok
       (Http_utils.redirect_to_with_actions
          active_navigation
-         [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ])
+         [ Message.set ~success:[ Success.Created Field.Role ] ])
   in
   result |> HttpUtils.extract_happy_path req
 ;;

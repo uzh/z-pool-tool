@@ -41,7 +41,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_request
       (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Filter)
   ;;
 
   let joins_experiment =
@@ -74,7 +74,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_template_request
       (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Filter)
   ;;
 
   let find_all_templates_request =
@@ -297,7 +297,7 @@ module Sql = struct
     let create_request ids =
       Format.asprintf
         {sql|
-        CREATE TEMPORARY TABLE tmp_assignments 
+        CREATE TEMPORARY TABLE tmp_assignments
         (INDEX contact_index (contact_uuid),
          INDEX experiment_index (experiment_uuid)
         )

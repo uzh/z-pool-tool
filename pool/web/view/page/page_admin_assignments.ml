@@ -1,17 +1,16 @@
-open CCFun.Infix
+open CCFun
 open Tyxml.Html
 open Component.Input
-module Field = Pool_common.Message.Field
+open Pool_message
 module Status = Component.UserStatus.Contact
 
 let assignment_specific_path ?suffix experiment_id session_id assignment_id =
-  let open Pool_common in
   let base =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s/%s/%s"
       (experiment_id |> Experiment.Id.value)
       Session.(session_id |> Id.value)
-      Message.Field.(human_url Assignments)
+      Field.(human_url Assignments)
       Assignment.(assignment_id |> Id.value)
   in
   suffix |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
@@ -50,7 +49,7 @@ module Partials = struct
 
   let empty language =
     Pool_common.(
-      Utils.text_to_string language (I18n.EmtpyList Message.Field.Assignments))
+      Utils.text_to_string language (I18n.EmtpyList Field.Assignments))
     |> txt
   ;;
 
@@ -127,7 +126,7 @@ module Partials = struct
 
   module ReminderModal = struct
     let modal_id id = Format.asprintf "reminder-%s" (Assignment.Id.value id)
-    let control = Pool_common.Message.(Send (Some Field.Reminder))
+    let control = Control.Send (Some Field.Reminder)
     let title language = Pool_common.(Utils.control_to_string language control)
 
     let modal
@@ -186,7 +185,7 @@ module Partials = struct
               ; Component.Input.message_channel_select
                   language
                   available_channels
-              ; submit_element language Pool_common.Message.(Send None) ()
+              ; submit_element language Control.(Send None) ()
               ]
           ]
       in
@@ -332,7 +331,7 @@ module Partials = struct
                   ]
               ; submit_element
                   language
-                  (Pool_common.Message.Save None)
+                  (Control.Save None)
                   ~submit_type:`Primary
                   ()
               ; csrf_element csrf ()
@@ -342,8 +341,7 @@ module Partials = struct
     Component.Modal.create
       ~active:true
       language
-      (fun lang ->
-        Pool_common.(Utils.control_to_string lang Message.ChangeSession))
+      (flip Pool_common.Utils.control_to_string Control.ChangeSession)
       (swap_session_modal_id session)
       html
   ;;
@@ -450,7 +448,7 @@ module Partials = struct
           if(smsHint) {
             smsEls.push(smsHint)
           }
-          
+
           const emailEls = [emailTextEl, plainTextEl];
 
           const toggleVisibility = () => {
@@ -500,7 +498,7 @@ module Partials = struct
         ; hidden_inputs
         ; div
             ~a:[ a_class [ "flexrow"; "justify-end" ] ]
-            [ submit_element language Message.(Send None) () ]
+            [ submit_element language Control.(Send None) () ]
         ; script Unsafe.(data scripts)
         ]
     in
@@ -508,7 +506,7 @@ module Partials = struct
       ~active:true
       language
       (fun lang ->
-        Utils.control_to_string lang Message.(Send (Some Field.Message)))
+        Utils.control_to_string lang Control.(Send (Some Field.Message)))
       direct_message_modal_id
       html
   ;;
@@ -682,7 +680,7 @@ let data_table
     link_as_button
       action
       ~is_text:true
-      ~control:(language, Pool_common.Message.(Edit None))
+      ~control:(language, Control.Edit None)
       ~icon:Component.Icon.CreateOutline
   in
   let profile_link { Assignment.contact; _ } =
@@ -692,7 +690,7 @@ let data_table
     link_as_button
       action
       ~is_text:true
-      ~control:(language, Pool_common.Message.OpenProfile)
+      ~control:(language, Control.OpenProfile)
       ~icon:Component.Icon.PersonOutline
   in
   let external_data_ids { Assignment.contact; _ } =
@@ -727,7 +725,7 @@ let data_table
             (Format.asprintf "#%s" (swap_session_modal_id session))
         ]
       ~is_text:true
-      ~control:(language, Pool_common.Message.ChangeSession)
+      ~control:(language, Control.ChangeSession)
       ~icon:Component.Icon.SwapHorizonal
   in
   let direct_message_toggle assignment =
@@ -750,7 +748,7 @@ let data_table
           ; hx_target ("#" ^ direct_message_modal_id)
           ]
       ~is_text:true
-      ~control:(language, Pool_common.Message.(Send (Some Field.Message)))
+      ~control:(language, Control.(Send (Some Field.Message)))
       ~icon:Component.Icon.MailOutline
   in
   let cancel =
@@ -761,7 +759,7 @@ let data_table
         if session.Session.has_follow_ups
         then CancelAssignmentWithFollowUps
         else CancelAssignment)
-      (Message.Cancel None)
+      Control.(Cancel None)
       Component.Icon.Close
   in
   let mark_as_deleted =
@@ -772,7 +770,7 @@ let data_table
         if session.Session.has_follow_ups
         then MarkAssignmentWithFollowUpsAsDeleted
         else MarkAssignmentAsDeleted)
-      Message.MarkAsDeleted
+      Control.MarkAsDeleted
       Component.Icon.TrashOutline
   in
   let has_custom_fields = CCList.is_empty custom_fields |> not in
@@ -903,7 +901,7 @@ let edit
       [ h3
           [ txt
               Pool_common.(
-                Utils.field_to_string language Message.Field.Session
+                Utils.field_to_string language Field.Session
                 |> CCString.capitalize_ascii)
           ]
       ; p [ session |> Session.start_end_with_duration_human |> txt ]
@@ -947,7 +945,7 @@ let edit
                   ; submit_element
                       language
                       ~classnames:[ "align-self-end" ]
-                      Pool_common.Message.(Save None)
+                      (Control.Save None)
                       ()
                   ]
               ]

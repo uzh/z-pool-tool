@@ -20,9 +20,9 @@ module Create : sig
     -> Pool_common.Id.t
     -> Pool_common.Language.t list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (t, Pool_common.Message.error) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
 end = struct
   type t =
     { language : Pool_common.Language.t
@@ -63,7 +63,7 @@ end = struct
     let* (_ : Pool_common.Language.t) =
       available_languages
       |> CCList.find_opt (Pool_common.Language.equal language)
-      |> CCOption.to_result Pool_common.Message.(Invalid Field.Language)
+      |> CCOption.to_result Pool_message.(Error.Invalid Field.Language)
     in
     let template =
       Message_template.
@@ -82,7 +82,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Message_template.Guard.Access.create
@@ -95,11 +95,11 @@ module Update : sig
     :  ?tags:Logs.Tag.set
     -> Message_template.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode
     :  Conformist.input
-    -> (Message_template.update, Pool_common.Message.error) result
+    -> (Message_template.update, Pool_message.Error.t) result
 
   val effects : Message_template.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -131,7 +131,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Message_template.Guard.Access.update
@@ -143,7 +143,7 @@ module Delete : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Message_template.t
 
@@ -151,7 +151,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     let open Message_template in
     match template.entity_uuid with
-    | None -> Error Pool_common.Message.(CannotBeDeleted Field.MessageTemplate)
+    | None -> Error Pool_message.(Error.CannotBeDeleted Field.MessageTemplate)
     | Some _ -> Ok [ template |> deleted |> Pool_event.message_template ]
   ;;
 end

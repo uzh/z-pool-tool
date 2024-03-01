@@ -162,7 +162,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_request
       (Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
   let find_full_request =
@@ -177,7 +177,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_full_request
       (Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
   let find_by_label_request =
@@ -194,7 +194,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_by_label_request
       (Database.Label.value label)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
   let find_all_request =
@@ -241,7 +241,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_database_by_label_request
       (Database.Label.value label)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Database)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Database)
   ;;
 
   let insert_request =
@@ -385,7 +385,7 @@ let find_gtx_api_key_by_label pool database_label =
     (Pool_database.Label.value pool)
     find_gtx_api_key_by_label_request
     (Pool_database.Label.value database_label)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.GtxApiKey)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.GtxApiKey)
 ;;
 
 module Url = struct

@@ -1,7 +1,7 @@
 open Utils.Lwt_result.Infix
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.contacts.tags"
 let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
@@ -26,13 +26,13 @@ let handle_tag action req =
            |> decode
            |> Lwt_result.lift
            >== handle ~tags contact
-           >|+ CCPair.make Pool_common.Message.TagAssigned
+           >|+ CCPair.make Success.TagAssigned
          | `Remove ->
            let open Cqrs_command.Tags_command.RemoveTagFromContact in
            HttpUtils.find_id Tags.Id.of_string Field.Tag req
            |> Tags.find database_label
            >== handle contact
-           >|+ CCPair.make Pool_common.Message.TagRemoved
+           >|+ CCPair.make Success.TagRemoved
        in
        let handle =
          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)

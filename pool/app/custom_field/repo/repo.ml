@@ -143,7 +143,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_request
       (id |> Entity.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.CustomField)
     |>> to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 

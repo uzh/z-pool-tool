@@ -131,7 +131,7 @@ let intercept_prepare ({ Entity.email; _ } as job) =
     Ok Entity.{ job with email }
   | false, None ->
     Error
-      (Pool_common.Message.EmailInterceptionError
+      (Pool_message.Error.EmailInterceptionError
          "Sending email intercepted! As no redirect email is specified it/they \
           wont be sent. Please define environment variable 'TEST_EMAIL'.")
 ;;
@@ -346,7 +346,7 @@ let test_smtp_config database_label config test_email_address =
     Letters.send ~config ~sender ~recipients ~message
   in
   Lwt_result.catch send_mail
-  >|- fun exn -> Pool_common.Message.SmtpException (Printexc.to_string exn)
+  >|- fun exn -> Pool_message.Error.SmtpException (Printexc.to_string exn)
 ;;
 
 let send ?smtp_auth_id database_label =

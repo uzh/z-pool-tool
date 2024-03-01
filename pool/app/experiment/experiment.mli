@@ -46,7 +46,7 @@ module AllowUninvitedSignup : sig
 
   val schema
     :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module ExternalDataRequired : sig
@@ -145,7 +145,7 @@ val create
   -> AllowUninvitedSignup.t
   -> ExternalDataRequired.t
   -> ShowExternalDataIdLinks.t
-  -> (t, Pool_common.Message.error) result
+  -> (t, Pool_message.Error.t) result
 
 type create =
   { title : Title.t
@@ -237,12 +237,12 @@ val created : t -> event
 val updated : t -> event
 val resetinvitations : t -> event
 val deleted : Pool_common.Id.t -> event
-val boolean_fields : Pool_common.Message.Field.t list
+val boolean_fields : Pool_message.Field.t list
 
 val find
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_all
   :  ?query:Query.t
@@ -260,23 +260,23 @@ val find_public
   :  Pool_database.Label.t
   -> Id.t
   -> Contact.t
-  -> (Public.t, Pool_common.Message.error) result Lwt.t
+  -> (Public.t, Pool_message.Error.t) result Lwt.t
 
 val find_full_by_contact
   :  Pool_database.Label.t
   -> Id.t
   -> Contact.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_of_session
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_of_mailing
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_all_public_by_contact
   :  Pool_database.Label.t
@@ -358,7 +358,7 @@ val show_external_data_id_links_value : t -> bool
 val smtp_auth
   :  Pool_database.Label.t
   -> t
-  -> (Email.SmtpAuth.t option, Pool_common.Message.error) Lwt_result.t
+  -> (Email.SmtpAuth.t option, Pool_message.Error.t) Lwt_result.t
 
 val find_contact_person : Pool_database.Label.t -> t -> Admin.t option Lwt.t
 
@@ -396,7 +396,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -434,13 +434,13 @@ module Statistics : sig
     val create
       :  Pool_database.Label.t
       -> t
-      -> (statistics, Pool_common.Message.error) Lwt_result.t
+      -> (statistics, Pool_message.Error.t) Lwt_result.t
   end
 
   module RegistrationPossible : sig
     include Pool_common.Model.BooleanSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
     val hint : Pool_common.I18n.hint
   end
 
@@ -451,32 +451,32 @@ module Statistics : sig
       | Scheduled
 
     val show : t -> string
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
     val hint : Pool_common.I18n.hint
   end
 
   module SessionCount : sig
     include Pool_common.Model.IntegerSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
   end
 
   module ShowUpCount : sig
     include Pool_common.Model.IntegerSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
   end
 
   module NoShowCount : sig
     include Pool_common.Model.IntegerSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
   end
 
   module ParticipationCount : sig
     include Pool_common.Model.IntegerSig
 
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
   end
 
   type statistics =
@@ -500,7 +500,7 @@ module Statistics : sig
   val create
     :  Pool_database.Label.t
     -> t
-    -> (statistics, Pool_common.Message.error) Lwt_result.t
+    -> (statistics, Pool_message.Error.t) Lwt_result.t
 end
 
 val column_title : Query.Column.t

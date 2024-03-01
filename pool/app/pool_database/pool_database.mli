@@ -17,18 +17,14 @@ val root : Label.t
 val is_root : Label.t -> bool
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
-val create : Label.t -> Url.t -> (t, Pool_common.Message.error) result
+val create : Label.t -> Url.t -> (t, Pool_message.Error.t) result
 val add_pool : t -> unit
 val drop_pool : Label.t -> unit Lwt.t
 val read_pool : t -> Label.t
 val to_ctx : Label.t -> (string * string) list
 val of_ctx_opt : (string * string) list -> Label.t option
 val of_ctx_exn : (string * string) list -> Label.t
-
-val test_and_create
-  :  Url.t
-  -> Label.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 module Repo : sig
   module Url : sig

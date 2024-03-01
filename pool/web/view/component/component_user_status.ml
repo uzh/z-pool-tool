@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Tyxml.Html
 (* TODO: Add EmailBouncing *)
 
@@ -18,10 +19,10 @@ let status_to_icon =
 
 let status_legend_text language =
   let open Pool_common in
-  let field_to_string m =
-    m |> Utils.field_to_string language |> CCString.capitalize_ascii
+  let field_to_string =
+    Utils.field_to_string language %> CCString.capitalize_ascii
   in
-  let open Message.Field in
+  let open Pool_message.Field in
   function
   | EmailUnverified -> field_to_string EmailAddressUnverified
   | Inactive -> field_to_string Inactive

@@ -16,7 +16,7 @@ let update_on_session_closing
   let open Assignment in
   match NoShow.value no_show, Participated.value participated with
   | true, true ->
-    Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
+    Error Pool_message.(Error.MutuallyExclusive Field.(Participated, NoShow))
   | true, false -> Ok (update_num_no_shows ~step:1 contact)
   | false, (true | false) ->
     contact

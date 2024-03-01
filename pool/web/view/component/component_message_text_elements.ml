@@ -296,7 +296,7 @@ let message_template_help
       (create_sihl_user ())
   | EmailVerification ->
     let validation_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      [ Pool_message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
     in
     EmailVerification.email_params layout validation_url (create_contact ())
@@ -316,7 +316,7 @@ let message_template_help
   | PasswordChange -> PasswordChange.email_params layout (create_sihl_user ())
   | PasswordReset ->
     let reset_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      [ Pool_message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/reset-password/"
     in
     PasswordReset.email_params layout reset_url (create_sihl_user ())
@@ -379,7 +379,7 @@ let message_template_help
       (create_contact ())
   | SignUpVerification ->
     let verification_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      [ Pool_message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
     in
     let contact = create_contact () in
@@ -390,7 +390,7 @@ let message_template_help
       (Contact.lastname contact)
   | UserImport ->
     let confirmation_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      [ Pool_message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params
            tenant.Pool_tenant.url
            "/import-confirmation"

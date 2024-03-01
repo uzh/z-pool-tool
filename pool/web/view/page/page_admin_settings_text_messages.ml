@@ -29,7 +29,7 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
               ~submit_type:`Error
               ~has_icon:Icon.TrashOutline
               language
-              Message.(Delete (Some Field.GtxApiKey))
+              Pool_message.(Control.Delete (Some Field.GtxApiKey))
               ()
           ]
       , notification I18n.GtxKeyStored `Success )
@@ -60,7 +60,10 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
                 ~flash_fetcher
                 ~required:true
                 ~hints:[ I18n.TestPhoneNumber ]
-            ; submit_element language Message.(Update (Some Field.GtxApiKey)) ()
+            ; submit_element
+                language
+                Pool_message.(Control.Update (Some Field.GtxApiKey))
+                ()
             ]
         ; delete_form
         ]

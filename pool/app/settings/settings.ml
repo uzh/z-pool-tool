@@ -10,7 +10,7 @@ let[@warning "-4"] find_languages pool =
   | Value.TenantLanguages value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(Message.(Retrieve Field.Language) |> Utils.failwith)
+    Pool_message.(Error.Retrieve Field.Language) |> Pool_common.Utils.failwith
 ;;
 
 let[@warning "-4"] find_email_suffixes pool =
@@ -21,7 +21,8 @@ let[@warning "-4"] find_email_suffixes pool =
   | Value.TenantEmailSuffixes value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(Message.(Retrieve Field.EmailSuffix) |> Utils.failwith)
+    Pool_message.(Error.Retrieve Field.EmailSuffix)
+    |> Pool_common.Utils.failwith
 ;;
 
 let[@warning "-4"] find_contact_email pool =
@@ -32,7 +33,8 @@ let[@warning "-4"] find_contact_email pool =
   | Value.TenantContactEmail value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(Message.(Retrieve Field.ContactEmail) |> Utils.failwith)
+    Pool_message.(Error.Retrieve Field.ContactEmail)
+    |> Pool_common.Utils.failwith
 ;;
 
 let[@warning "-4"] find_inactive_user_disable_after pool =
@@ -43,9 +45,8 @@ let[@warning "-4"] find_inactive_user_disable_after pool =
   | Value.InactiveUserDisableAfter value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(
-      Error Message.(Retrieve Field.InactiveUserDisableAfter)
-      |> Utils.get_or_failwith)
+    Pool_message.(Error.Retrieve Field.InactiveUserDisableAfter)
+    |> Pool_common.Utils.failwith
 ;;
 
 let[@warning "-4"] find_inactive_user_warning pool =
@@ -56,7 +57,8 @@ let[@warning "-4"] find_inactive_user_warning pool =
   | Value.InactiveUserWarning value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(Message.(Retrieve Field.InactiveUserWarning) |> Utils.failwith)
+    Pool_message.(Error.Retrieve Field.InactiveUserWarning)
+    |> Pool_common.Utils.failwith
 ;;
 
 let[@warning "-4"] find_trigger_profile_update_after pool =
@@ -67,8 +69,8 @@ let[@warning "-4"] find_trigger_profile_update_after pool =
   | Value.TriggerProfileUpdateAfter value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(
-      Message.(Retrieve Field.TriggerProfileUpdateAfter) |> Utils.failwith)
+    Pool_message.(Error.Retrieve Field.TriggerProfileUpdateAfter)
+    |> Pool_common.Utils.failwith
 ;;
 
 let[@warning "-4"] find_default_reminder_lead_time pool =
@@ -79,7 +81,7 @@ let[@warning "-4"] find_default_reminder_lead_time pool =
   | Value.DefaultReminderLeadTime value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(Message.(Retrieve Field.LeadTime) |> Utils.failwith)
+    Pool_message.(Error.Retrieve Field.LeadTime) |> Pool_common.Utils.failwith
 ;;
 
 let[@warning "-4"] find_default_text_msg_reminder_lead_time pool =
@@ -90,7 +92,8 @@ let[@warning "-4"] find_default_text_msg_reminder_lead_time pool =
   | Value.DefaultTextMsgReminderLeadTime value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(Message.(Retrieve Field.TextMessageLeadTime) |> Utils.failwith)
+    Pool_message.(Error.Retrieve Field.TextMessageLeadTime)
+    |> Pool_common.Utils.failwith
 ;;
 
 let[@warning "-4"] find_user_import_first_reminder_after pool =
@@ -101,7 +104,8 @@ let[@warning "-4"] find_user_import_first_reminder_after pool =
   | Value.UserImportFirstReminder value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(Message.(Retrieve Field.FirstReminder) |> Utils.failwith)
+    Pool_message.(Error.Retrieve Field.FirstReminder)
+    |> Pool_common.Utils.failwith
 ;;
 
 let[@warning "-4"] find_user_import_second_reminder_after pool =
@@ -112,13 +116,14 @@ let[@warning "-4"] find_user_import_second_reminder_after pool =
   | Value.UserImportSecondReminder value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(Message.(Retrieve Field.SecondReminder) |> Utils.failwith)
+    Pool_message.(Error.Retrieve Field.SecondReminder)
+    |> Pool_common.Utils.failwith
 ;;
 
 let default_language_of_list languages =
   languages
   |> CCList.head_opt
-  |> CCOption.to_result Pool_common.Message.(NotFound Field.DefaultLanguage)
+  |> CCOption.to_result Pool_message.(Error.NotFound Field.DefaultLanguage)
   |> Pool_common.Utils.get_or_failwith
 ;;
 

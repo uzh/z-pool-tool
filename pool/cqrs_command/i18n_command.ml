@@ -11,12 +11,9 @@ module Update : sig
     :  ?tags:Logs.Tag.set
     -> I18n.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = I18n.Content.t
@@ -49,7 +46,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = I18n.Guard.Access.update

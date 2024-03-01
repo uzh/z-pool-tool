@@ -183,7 +183,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
   let find_multiple_request ids =
@@ -412,7 +412,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_public_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
   let find_public_by_assignment_request =
@@ -433,7 +433,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_public_by_assignment_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
   let find_public_upcoming_by_contact_request =
@@ -478,7 +478,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_by_assignment_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
   let find_all_public_for_experiment_request =
@@ -543,7 +543,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_experiment_id_and_title_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
   let find_public_experiment_request =
@@ -561,7 +561,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_public_experiment_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let find_sessions_to_remind_request channel =
@@ -967,14 +967,14 @@ let find_open_with_follow_ups pool session_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_open_with_follow_ups pool session_id
   ||> function
-  | [] -> Error Pool_common.Message.(NotFound Field.Session)
+  | [] -> Error Pool_message.(Error.NotFound Field.Session)
   | sessions -> Ok sessions
 ;;
 
 let find_open pool session_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_open pool session_id
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
 ;;
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title

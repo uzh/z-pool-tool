@@ -30,7 +30,7 @@ let context () =
       | None ->
         let%lwt lang =
           Http_utils.user_from_session tenant_db req
-          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
+          ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
           >>= fun user ->
           Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
           >|+ fun p -> p.Contact.language
@@ -55,7 +55,7 @@ let context () =
     let message =
       CCOption.bind
         (Sihl.Web.Flash.find_alert req)
-        Pool_common.Message.Collection.of_string
+        Pool_message.Collection.of_string
     in
     let find_user pool =
       Http_utils.user_from_session pool req

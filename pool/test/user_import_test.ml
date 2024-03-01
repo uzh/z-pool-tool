@@ -1,4 +1,4 @@
-open Pool_common.Message
+open Pool_message
 
 module Data = struct
   let token = "123123"
@@ -45,7 +45,7 @@ let confirm_without_matching_password () =
     let open Cqrs_command.User_import_command.ConfirmImport in
     urlencoded |> decode >>= handle (user_import, contact)
   in
-  let expected = Error PasswordConfirmationDoesNotMatch in
+  let expected = Error Error.PasswordConfirmationDoesNotMatch in
   Test_utils.check_result expected result
 ;;
 

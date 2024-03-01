@@ -58,7 +58,13 @@ let list Pool_context.{ language; csrf; guardian; _ } rules query =
        then
          div
            ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-           [ button_form "remove" Message.delete `Error I18n.RemoveRule rule ]
+           [ button_form
+               "remove"
+               Pool_message.Control.delete
+               `Error
+               I18n.RemoveRule
+               rule
+           ]
        else txt "")
     ]
     |> CCList.map (CCList.return %> td)

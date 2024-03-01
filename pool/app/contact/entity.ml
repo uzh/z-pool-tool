@@ -64,7 +64,7 @@ end
 module AdminComment = struct
   include Pool_common.Model.String
 
-  let field = Pool_common.Message.Field.AdminComment
+  let field = Pool_message.Field.AdminComment
   let schema () = schema field ()
   let of_string m = m
 end
@@ -202,18 +202,17 @@ end
 let profile_completion_cookie = "profile_completion"
 
 let column_cell_phone =
-  (Pool_common.Message.Field.CellPhone, "pool_contacts.cell_phone")
+  (Pool_message.Field.CellPhone, "pool_contacts.cell_phone")
   |> Query.Column.create
 ;;
 
 let column_hide_paused =
-  Query.Column.create
-    (Pool_common.Message.Field.HidePaused, "pool_contacts.paused = 0")
+  Query.Column.create (Pool_message.Field.HidePaused, "pool_contacts.paused = 0")
 ;;
 
 let column_hide_unverified =
   Query.Column.create
-    ( Pool_common.Message.Field.HideUnverified
+    ( Pool_message.Field.HideUnverified
     , "pool_contacts.email_verified IS NOT NULL" )
 ;;
 

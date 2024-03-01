@@ -108,7 +108,7 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
          Lwt.return_some ()
        | Error err ->
          let open Pool_common in
-         let (_ : Message.error) =
+         let (_ : Pool_message.Error.t) =
            Utils.with_log_error
              ~src
              ~tags:(Pool_database.Logger.Tags.create pool)

@@ -1,12 +1,12 @@
+open Pool_message
 module HttpUtils = Http_utils
-module Message = Pool_common.Message
 module Url = Page.Admin.CustomFields.Url
 
 let src = Logs.Src.create "handler.admin.custom_field_groups"
 let create_layout req = General.create_tenant_layout req
 
 let get_group_id req =
-  HttpUtils.get_field_router_param req Message.Field.CustomFieldGroup
+  HttpUtils.get_field_router_param req Field.CustomFieldGroup
   |> Custom_field.Group.Id.of_string
 ;;
 
@@ -60,7 +60,7 @@ let write ?id req model =
     let open Pool_common in
     let encode_lang t = t |> Language.create |> CCResult.to_opt in
     let go = Admin_custom_fields.find_assocs_in_urlencoded urlencoded in
-    go Message.Field.Name encode_lang
+    go Field.Name encode_lang
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
@@ -86,7 +86,7 @@ let write ?id req model =
         Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
       in
       let success =
-        let open Message in
+        let open Success in
         if CCOption.is_some id
         then Updated Field.CustomFieldGroup
         else Created Field.CustomFieldGroup
@@ -127,7 +127,7 @@ let delete req =
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpUtils.Message.set
-            ~success:[ Message.(Deleted Field.CustomFieldGroup) ]
+            ~success:[ Success.Deleted Field.CustomFieldGroup ]
         ]
       |> Lwt_result.ok
     in
@@ -146,7 +146,7 @@ let sort req =
       let tags = Pool_context.Logger.Tags.req req in
       let%lwt ids =
         Sihl.Web.Request.urlencoded_list
-          Message.Field.(CustomFieldGroup |> array_key)
+          Field.(CustomFieldGroup |> array_key)
           req
       in
       let%lwt groups =
@@ -172,7 +172,7 @@ let sort req =
         Http_utils.redirect_to_with_actions
           redirect_path
           [ HttpUtils.Message.set
-              ~success:[ Message.(Updated Field.CustomFieldGroup) ]
+              ~success:[ Success.Updated Field.CustomFieldGroup ]
           ]
       in
       events |>> handle
@@ -195,7 +195,6 @@ module Access : sig
 end = struct
   include Helpers.Access
   module Command = Cqrs_command.Custom_field_group_command
-  module Field = Pool_common.Message.Field
   module Guardian = Middleware.Guardian
 
   let custom_field_group_effects =

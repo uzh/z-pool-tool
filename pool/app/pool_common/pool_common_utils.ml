@@ -9,7 +9,7 @@ module Time = Utils_time
 module Error = struct
   open Pool_message.Error
 
-  type error = t [@@deriving eq, show, yojson]
+  type error = t [@@deriving show, yojson]
 
   let invalid_bool = ConformistModuleErrorType
   let invalid_float = ConformistModuleErrorType

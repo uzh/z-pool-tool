@@ -24,24 +24,42 @@ end
 let raise_caqti_error ?tags =
   let open Caqti_error in
   function
+  | Ok resp -> resp
   | Error `Unsupported ->
     Logs.err ~src (fun m -> m ?tags "Caqti error unsupported");
     failwith "Caqti error unsupported"
-  | (Error #t | Ok _) as x ->
-    (match x with
-     | Ok res -> res
-     | Error err ->
-       Logs.err ~src (fun m -> m ?tags "%s" @@ show err);
-       failwith (show err))
+  | Error (#t as err) -> raise (Exn err)
 ;;
 
 module Make (Database : Database_pools_sig.Sig) = struct
   let to_ctx label = [ "pool", label ]
-  let collect label = Database.collect ~ctx:(to_ctx label)
-  let exec label = Database.exec ~ctx:(to_ctx label)
-  let find label = Database.find ~ctx:(to_ctx label)
-  let find_opt label = Database.find_opt ~ctx:(to_ctx label)
-  let transaction label = Database.transaction ~ctx:(to_ctx label)
+  let create_tag label = Logger.Tags.create label
+
+  let collect label request =
+    Database.collect ~ctx:(to_ctx label) request
+    %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
+  ;;
+
+  let exec label request =
+    Database.exec ~ctx:(to_ctx label) request
+    %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
+  ;;
+
+  let find label request =
+    Database.find ~ctx:(to_ctx label) request
+    %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
+  ;;
+
+  let find_opt label request =
+    Database.find_opt ~ctx:(to_ctx label) request
+    %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
+  ;;
+
+  let transaction label =
+    Database.transaction ~ctx:(to_ctx label)
+    %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
+  ;;
+
   let transaction_exn label = Database.transaction_exn ~ctx:(to_ctx label)
 
   let find_as_transaction database_label ?(setup = []) ?(cleanup = []) fnc =
@@ -138,24 +156,22 @@ module Make (Database : Database_pools_sig.Sig) = struct
 
   let clean_requests database_label =
     let open Caqti_request.Infix in
-    let open Lwt_result.Syntax in
     let tags = Logger.Tags.create database_label in
     let truncate_table table =
       Logs.debug ~src (fun m -> m ~tags "Truncate table '%s'" table);
       CCFormat.asprintf "TRUNCATE TABLE %s" table |> Caqti_type.(unit ->. unit)
     in
-    let* truncate_reqs =
+    let%lwt truncate_reqs =
       ()
       |> collect database_label truncate_table_names_request
-      |> Lwt_result.map (CCList.map truncate_table)
+      |> Lwt.map (CCList.map truncate_table)
     in
     let manual_cleanups = [ message_templates_cleanup_requeset ] in
-    Lwt.return_ok (truncate_reqs @ manual_cleanups)
+    Lwt.return (truncate_reqs @ manual_cleanups)
   ;;
 
   let clean_all database_label =
-    let open Lwt_result.Syntax in
-    let* clean_reqs = clean_requests database_label in
+    let%lwt clean_reqs = clean_requests database_label in
     with_disabled_fk_check database_label (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Lwt_list.map_s (fun request -> Connection.exec request ()) clean_reqs

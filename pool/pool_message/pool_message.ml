@@ -46,29 +46,27 @@ module Collection = struct
   let to_string t = yojson_of_t t |> Yojson.Safe.to_string
 end
 
-module Utils = struct
-  let field_message prefix field suffix =
-    Format.asprintf "%s %s %s" prefix field suffix
-    |> CCString.trim
-    |> CCString.capitalize_ascii
-  ;;
+let field_message prefix field suffix =
+  Format.asprintf "%s %s %s" prefix field suffix
+  |> CCString.trim
+  |> CCString.capitalize_ascii
+;;
 
-  let handle_sihl_login_error = function
-    | `Incorrect_password | `Does_not_exist -> Error.Invalid Field.Password
-  ;;
+let handle_sihl_login_error = function
+  | `Incorrect_password | `Does_not_exist -> Error.Invalid Field.Password
+;;
 
-  let to_conformist_error error_list =
-    CCList.map (fun (name, _, msg) -> name |> Field.read, msg) error_list
-    |> Error.conformist
-  ;;
+let to_conformist_error error_list =
+  CCList.map (fun (name, _, msg) -> name |> Field.read, msg) error_list
+  |> Error.conformist
+;;
 
-  let add_field_query_params url params =
-    let open CCList in
-    let open Uri in
-    map (CCPair.map_fst Field.show) params
-    |> add_query_params' (of_string url)
-    |> fun uri ->
-    with_query uri (query uri |> rev |> uniq ~eq:Utils.equal_key |> rev)
-    |> to_string
-  ;;
-end
+let add_field_query_params url params =
+  let open CCList in
+  let open Uri in
+  map (CCPair.map_fst Field.show) params
+  |> add_query_params' (of_string url)
+  |> fun uri ->
+  with_query uri (query uri |> rev |> uniq ~eq:Utils.equal_key |> rev)
+  |> to_string
+;;

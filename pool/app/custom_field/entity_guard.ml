@@ -14,7 +14,7 @@ module Target = struct
           `CustomField
           (field |> Entity.id |> Uuid.target_of Entity.Id.value))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -30,7 +30,7 @@ module Group = struct
             `CustomField
             (id |> Uuid.target_of Entity.Group.Id.value))
         t
-      >|- Pool_common.Message.authorization
+      >|- Pool_message.Error.authorization
     ;;
   end
 end

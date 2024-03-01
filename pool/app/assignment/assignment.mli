@@ -7,14 +7,14 @@ end
 module NoShow : sig
   include Pool_common.Model.BooleanSig
 
-  val field : Pool_common.Message.Field.t
+  val field : Pool_message.Field.t
   val init : t
 end
 
 module Participated : sig
   include Pool_common.Model.BooleanSig
 
-  val field : Pool_common.Message.Field.t
+  val field : Pool_message.Field.t
   val init : t
 end
 
@@ -37,7 +37,7 @@ end
 module ExternalDataId : sig
   include Pool_common.Model.StringSig
 
-  val field : Pool_common.Message.Field.t
+  val field : Pool_message.Field.t
 end
 
 type t =
@@ -82,19 +82,11 @@ module ExternalDataIdentifier : sig
     }
 end
 
-val is_deletable : t -> (unit, Pool_common.Message.error) result
-val is_cancellable : t -> (unit, Pool_common.Message.error) result
-val attendance_settable : t -> (unit, Pool_common.Message.error) result
-
-val session_changeable
-  :  Session.t
-  -> t
-  -> (unit, Pool_common.Message.error) result
-
-val reminder_sendable
-  :  Session.t
-  -> t
-  -> (unit, Pool_common.Message.error) result
+val is_deletable : t -> (unit, Pool_message.Error.t) result
+val is_cancellable : t -> (unit, Pool_message.Error.t) result
+val attendance_settable : t -> (unit, Pool_message.Error.t) result
+val session_changeable : Session.t -> t -> (unit, Pool_message.Error.t) result
+val reminder_sendable : Session.t -> t -> (unit, Pool_message.Error.t) result
 
 module Public : sig
   type t =
@@ -110,13 +102,9 @@ module IncrementParticipationCount : sig
   val create : bool -> t
 end
 
-val validate
-  :  Experiment.t
-  -> t
-  -> (unit, Pool_common.Message.error list) result
-
+val validate : Experiment.t -> t -> (unit, Pool_message.Error.t list) result
 val set_close_default_values : t -> t * NoShow.t * Participated.t
-val boolean_fields : Pool_common.Message.Field.t list
+val boolean_fields : Pool_message.Field.t list
 
 type session_counters =
   { total : int
@@ -132,12 +120,12 @@ val counters_of_session
 val find
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_closed
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_upcoming_public_by_experiment_and_contact_opt
   :  Pool_database.Label.t
@@ -206,7 +194,7 @@ val contact_participation_in_other_assignments
   -> exclude_assignments:t list
   -> Experiment.Id.t
   -> Contact.Id.t
-  -> (bool, Pool_common.Message.error) Lwt_result.t
+  -> (bool, Pool_message.Error.t) Lwt_result.t
 
 val find_external_data_identifiers_by_contact
   :  Pool_database.Label.t
@@ -245,7 +233,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

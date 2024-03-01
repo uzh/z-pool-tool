@@ -25,7 +25,7 @@ type event =
   | Created of t
   | Updated of t
   | ResetInvitations of t
-  | Deleted of Common.Id.t
+  | Deleted of Pool_common.Id.t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =

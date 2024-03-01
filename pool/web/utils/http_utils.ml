@@ -16,7 +16,7 @@ type json_response =
 
 let find_intended_opt req =
   let open Uri in
-  let key = Pool_common.Message.Field.(location |> show) in
+  let key = Pool_message.Field.(location |> show) in
   let remove_key = CCList.filter (fun (a, _) -> CCString.equal key a |> not) in
   req
   |> Sihl.Web.Request.query key
@@ -30,7 +30,7 @@ let find_intended_opt req =
 
 let intended_to_url url intended =
   let open Uri in
-  let key = Pool_common.Message.Field.(location |> show) in
+  let key = Pool_message.Field.(location |> show) in
   let equal_path a b = CCString.equal (path a) (path b) in
   let intended =
     let open CCOption in
@@ -68,7 +68,7 @@ let user_from_session db_pool req : Sihl_user.t option Lwt.t =
 ;;
 
 let get_field_router_param req field =
-  Sihl.Web.Router.param req Pool_common.Message.Field.(field |> show)
+  Sihl.Web.Router.param req Pool_message.Field.(field |> show)
 ;;
 
 let find_field_router_param_opt req field =
@@ -78,7 +78,7 @@ let find_field_router_param_opt req field =
 
 let find_query_lang req =
   let open CCOption.Infix in
-  Sihl.Web.Request.query Pool_common.Message.Field.(Language |> show) req
+  Sihl.Web.Request.query Pool_message.Field.(Language |> show) req
   >>= CCString.uppercase_ascii
       %> Pool_common.Language.create
       %> CCOption.of_result
@@ -86,21 +86,19 @@ let find_query_lang req =
 
 let find_query_param req field decode =
   let open CCResult.Infix in
-  let open Pool_common in
-  Sihl.Web.Request.query (Message.Field.show field) req
-  |> CCOption.to_result Message.(NotFound field)
+  Sihl.Web.Request.query (Pool_message.Field.show field) req
+  |> CCOption.to_result Pool_message.Error.(NotFound field)
   >>= decode
 ;;
 
 let path_with_language lang path =
+  let open Pool_common in
+  let open Pool_message in
   lang
   |> CCOption.map (fun lang ->
-    let open Pool_common in
-    Message.add_field_query_params
+    add_field_query_params
       path
-      [ ( Message.Field.Language
-        , lang |> Language.show |> CCString.lowercase_ascii )
-      ])
+      [ Field.Language, lang |> Language.show |> CCString.lowercase_ascii ])
   |> CCOption.value ~default:path
 ;;
 
@@ -144,7 +142,7 @@ let extract_happy_path_generic ?(src = src) ?enable_cache req result msgf =
         [ msgf error_msg ])
   | Error err ->
     Logs.warn ~src (fun m ->
-      m ~tags "Context not found: %s" (Message.Message.show_error err));
+      m ~tags "Context not found: %s" (Pool_message.Error.show err));
     redirect_to "/error"
 ;;
 
@@ -178,7 +176,7 @@ let extract_happy_path_with_actions ?(src = src) ?enable_cache req result =
            error_actions))
   | Error err ->
     Logs.err ~src (fun m ->
-      m ~tags "Context not found: %s" (Message.Message.show_error err));
+      m ~tags "Context not found: %s" (Pool_message.Error.show err));
     redirect_to "/error"
 ;;
 
@@ -205,20 +203,20 @@ let find_in_urlencoded_base_opt
 ;;
 
 let find_in_urlencoded_list_opt field =
-  let open Pool_common.Message in
+  let open Pool_message in
   find_in_urlencoded_base_opt Field.(array_key field)
   %> CCOption.value ~default:[]
 ;;
 
 let find_in_urlencoded_opt field =
-  let open Pool_common.Message in
+  let open Pool_message in
   find_in_urlencoded_base_opt Field.(show field)
   %> flip CCOption.bind CCList.head_opt
 ;;
 
 let find_in_urlencoded ?error field =
-  let open Pool_common.Message in
-  let err = CCOption.value ~default:(NotFound field) error in
+  let open Pool_message in
+  let err = CCOption.value ~default:(Error.NotFound field) error in
   find_in_urlencoded_opt field %> CCOption.to_result err
 ;;
 
@@ -238,7 +236,7 @@ let validate_email_existance pool email =
   Service.User.find_by_email_opt ~ctx:(Pool_database.to_ctx pool) email
   ||> function
   | None -> Ok ()
-  | Some _ -> Error Pool_common.Message.EmailAlreadyInUse
+  | Some _ -> Error Pool_message.Error.EmailAlreadyInUse
 ;;
 
 let handle_boolean_values update urlencoded values =
@@ -288,9 +286,7 @@ let remove_empty_values_multiplart urlencoded =
 ;;
 
 let multipart_to_urlencoded ingnore_fields lst =
-  let ingnore_fields =
-    CCList.map Pool_common.Message.Field.show ingnore_fields
-  in
+  let ingnore_fields = CCList.map Pool_message.Field.show ingnore_fields in
   CCList.filter_map
     (fun (key, value) ->
       if CCList.mem key ingnore_fields then None else Some (key, [ value ]))
@@ -319,11 +315,11 @@ let invalid_session_redirect
   =
   redirect_to_with_actions
     (path_with_language query_lang (login_path req))
-    [ Message.set ~error:[ Pool_common.Message.SessionInvalid ] ]
+    [ Message.set ~error:[ Pool_message.Error.SessionInvalid ] ]
 ;;
 
 let find_id encode field req =
-  Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
+  Sihl.Web.Router.param req @@ Pool_message.Field.show field |> encode
 ;;
 
 let id_in_url req field =
@@ -417,12 +413,12 @@ module Htmx = struct
           -> Pool_context.t
           -> 'page Tyxml_html.elt
           -> ( [> Html_types.html ] Tyxml_html.elt
-               , Pool_common.Message.error )
+               , Pool_message.Error.t )
                Lwt_result.t)
     -> Rock.Request.t
     -> (Pool_context.t
         -> Query.t
-        -> ('page Tyxml_html.elt, Pool_common.Message.error) Lwt_result.t)
+        -> ('page Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
     -> Rock.Response.t Lwt.t
     =
     fun ?active_navigation ~error_path ~query:(module Q) ~create_layout req run ->
@@ -477,7 +473,7 @@ module Htmx = struct
     Logs.err ~src (fun m ->
       m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));
     Logs.err ~src (fun m ->
-      m ~tags "Context not found: %s" (Message.Message.show_error err));
+      m ~tags "Context not found: %s" (Pool_message.Error.show err));
     htmx_redirect "/error" ()
   ;;
 
@@ -551,7 +547,7 @@ module Json = struct
       Logs.err ~src (fun m ->
         m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));
       Logs.err ~src (fun m ->
-        m ~tags "Context not found: %s" (Message.Message.show_error err));
+        m ~tags "Context not found: %s" (Pool_message.Error.show err));
       return_error Pool_common.Language.En err
   ;;
 end

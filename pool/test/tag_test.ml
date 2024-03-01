@@ -1,7 +1,7 @@
 open Utils.Lwt_result.Infix
 module Command = Cqrs_command.Tags_command
 module Conformist = Pool_common.Utils.PoolConformist
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module Model = Test_utils.Model
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
@@ -203,7 +203,7 @@ let try_assign_experiment_tag_to_contact _ () =
       check
         (result (list Test_utils.event) Test_utils.error)
         "invalid error"
-        (Error Pool_common.Message.(Invalid Field.Tag))
+        (Error Pool_message.(Error.Invalid Field.Tag))
         events)
   in
   Lwt.return_unit
@@ -217,7 +217,7 @@ let assign_auto_tag_to_experiment () =
   let tag = Data.Tag.create_with_description () in
   let events =
     let open Cqrs_command.Tags_command.AssignParticipationTagToEntity in
-    Pool_common.Message.[ Field.(show Tag), [ Tags.(Id.value tag.id) ] ]
+    Pool_message.[ Field.(show Tag), [ Tags.(Id.value tag.id) ] ]
     |> decode
     >>= handle (ParticipationTags.Experiment experiment_id)
   in

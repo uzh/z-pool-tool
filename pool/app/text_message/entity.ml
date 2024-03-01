@@ -27,7 +27,7 @@ type job =
 
 let parse_job_json str =
   try Ok (str |> Yojson.Safe.from_string |> job_of_yojson) with
-  | _ -> Error Pool_common.Message.(Invalid Field.Input)
+  | _ -> Error Pool_message.(Error.Invalid Field.Input)
 ;;
 
 let job_message_history { message_history; _ } = message_history

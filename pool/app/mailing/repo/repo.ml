@@ -32,8 +32,8 @@ module Sql = struct
 
   let count_column =
     {sql|
-      (SELECT COUNT(invitation_uuid) 
-      FROM pool_mailing_invitations 
+      (SELECT COUNT(invitation_uuid)
+      FROM pool_mailing_invitations
       WHERE mailing_uuid =  pool_mailing.uuid) as invitation_count
     |sql}
   ;;
@@ -51,7 +51,7 @@ module Sql = struct
   let find pool id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Mailing)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Mailing)
   ;;
 
   let select_with_count = find_request_sql ~additional_cols:[ count_column ]
@@ -73,7 +73,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_with_detail_request
       id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Mailing)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Mailing)
   ;;
 
   let find_by_experiment_request =
@@ -181,7 +181,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_experiment_id_request
       id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let insert_request =

@@ -87,8 +87,9 @@ module Tenant = struct
   let setup ?run_functions () =
     match%lwt Pool_tenant.find_databases () with
     | [] ->
-      let open Pool_common in
-      failwith (Message.NoTenantsRegistered |> Utils.error_to_string Language.En)
+      failwith
+        (Pool_message.Error.NoTenantsRegistered
+         |> Pool_common.(Utils.error_to_string Language.En))
     | tenants -> Lwt_list.map_s (setup_tenant ?run_functions) tenants
   ;;
 end

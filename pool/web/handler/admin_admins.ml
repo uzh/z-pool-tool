@@ -1,8 +1,8 @@
 open CCFun
 open Utils.Lwt_result.Infix
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.admins"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
@@ -77,7 +77,6 @@ let new_form req =
 ;;
 
 let create_admin req =
-  let open Pool_common.Message in
   let redirect_path = Format.asprintf "/admin/admins" in
   let result { Pool_context.database_label; _ } =
     Lwt_result.map_error (fun err ->
@@ -87,7 +86,7 @@ let create_admin req =
     let id = Admin.Id.create () in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
-      ||> CCOption.to_result EmailAddressMissingAdmin
+      ||> CCOption.to_result Error.EmailAddressMissingAdmin
       >>= HttpUtils.validate_email_existance database_label
     in
     let events =
@@ -101,7 +100,7 @@ let create_admin req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         (Format.asprintf "%s/%s" redirect_path (Admin.Id.value id))
-        [ Message.set ~success:[ Created Field.Admin ] ]
+        [ Message.set ~success:[ Success.Created Field.Admin ] ]
     in
     () |> validate_user >> events >>= handle |>> return_to_overview
   in
@@ -113,8 +112,7 @@ let handle_toggle_role req =
     let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.find_in_urlencoded Field.Role
-    >== Role.Role.of_string_res
-        %> CCResult.map_err Pool_common.Message.authorization
+    >== Role.Role.of_string_res %> CCResult.map_err Error.authorization
     >|+ fun key ->
     Component.Role.Search.value_form Pool_common.Language.En ~key admin_id ()
     |> HttpUtils.Htmx.html_to_plain_text_response
@@ -137,7 +135,7 @@ let search_role_entities req =
       |> flip bind (fun role ->
         try Role.Role.of_string role |> return with
         | _ -> None)
-      |> to_result Pool_common.Message.(NotFound Field.Role)
+      |> to_result (Error.NotFound Field.Role)
       |> Lwt_result.lift
     in
     let entities_to_exclude encode_id =
@@ -177,7 +175,7 @@ let search_role_entities req =
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_location Component.Search.Location.query_results
-    | _ -> Lwt_result.fail Pool_common.Message.(Invalid Field.Role)
+    | _ -> Lwt_result.fail (Error.Invalid Field.Role)
   in
   result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
@@ -198,14 +196,13 @@ let grant_role req =
     let* role =
       HttpUtils.find_in_urlencoded Field.Role urlencoded
       |> lift
-      >== Role.Role.of_string_res
-          %> CCResult.map_err Pool_common.Message.authorization
+      >== Role.Role.of_string_res %> CCResult.map_err Error.authorization
     in
     let* role_target =
       HttpUtils.htmx_urlencoded_list Field.(Target |> array_key) req
       ||> CCList.map
             (Guard.Uuid.Target.of_string
-             %> CCOption.to_result Pool_common.Message.(Decode Field.Id))
+             %> CCOption.to_result (Error.Decode Field.Id))
       ||> CCResult.flatten_l
     in
     let expand_targets =
@@ -231,7 +228,7 @@ let grant_role req =
         | role ->
           Logs.err (fun m ->
             m "Admin handler: Missing role %s" ([%show: Role.Role.t] role));
-          Lwt.return_error Pool_common.Message.(NotFound Field.Role)
+          Lwt.return_error (Error.NotFound Field.Role)
           ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id)
     in
     let events roles =
@@ -246,7 +243,7 @@ let grant_role req =
     Lwt_result.ok
       (Http_utils.redirect_to_with_actions
          redirect_path
-         [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ])
+         [ Message.set ~success:[ Success.Created Field.Role ] ])
   in
   result |> extract_happy_path req
 ;;
@@ -267,8 +264,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
        let role =
          let open CCResult in
          HttpUtils.find_in_urlencoded Field.Role urlencoded
-         >>= Role.Role.of_string_res
-             %> CCResult.map_err Pool_common.Message.authorization
+         >>= Role.Role.of_string_res %> CCResult.map_err Error.authorization
        in
        let uuid =
          HttpUtils.find_in_urlencoded_opt Field.Target urlencoded
@@ -287,7 +283,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
        Http_utils.redirect_to_with_actions
          ~skip_externalize:true
          edit_route
-         [ Message.set ~success:[ Pool_common.Message.RoleUnassigned ] ]
+         [ Message.set ~success:[ Success.RoleUnassigned ] ]
      in
      role >>= events |>> handle)
     >|- fun err -> err, edit_route

@@ -4,9 +4,9 @@ module Column : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val field : t -> Pool_common.Message.Field.t
-  val create : Pool_common.Message.Field.t * string -> t
-  val create_list : (Pool_common.Message.Field.t * string) list -> t list
+  val field : t -> Pool_message.Field.t
+  val create : Pool_message.Field.t * string -> t
+  val create_list : (Pool_message.Field.t * string) list -> t list
 end
 
 module Pagination : sig
@@ -26,7 +26,7 @@ module Pagination : sig
     ; page_count : PageCount.t
     }
 
-  val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
+  val to_query_parts : t -> (Pool_message.Field.t * string) list
 end
 
 module Search : sig
@@ -38,7 +38,7 @@ module Search : sig
     }
 
   val query_string : t -> string
-  val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
+  val to_query_parts : t -> (Pool_message.Field.t * string) list
 end
 
 module Sort : sig
@@ -52,14 +52,14 @@ module Sort : sig
     val show : t -> string
     val to_human : Pool_common.Language.t -> t -> string
     val read : string -> t
-    val create : string -> (t, Pool_common.Message.error) result
+    val create : string -> (t, Pool_message.Error.t) result
     val all : t list
     val default : t
     val flip : t -> t
 
     val schema
       :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   type t =
@@ -67,7 +67,7 @@ module Sort : sig
     ; order : SortOrder.t
     }
 
-  val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
+  val to_query_parts : t -> (Pool_message.Field.t * string) list
 end
 
 module Filter : sig
@@ -137,7 +137,7 @@ type t =
 val show : t -> string
 
 val to_uri_query
-  :  ?additional_params:(Pool_common.Message.Field.t * string) list
+  :  ?additional_params:(Pool_message.Field.t * string) list
   -> t
   -> (string * string list) list
 

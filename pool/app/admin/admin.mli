@@ -69,12 +69,12 @@ val user_is_admin : Pool_database.Label.t -> Sihl_user.t -> bool Lwt.t
 val find
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_by_email
   :  Pool_database.Label.t
   -> Pool_user.EmailAddress.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_by
   :  ?query:Query.t
@@ -120,7 +120,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -133,7 +133,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

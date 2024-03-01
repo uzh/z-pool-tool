@@ -96,9 +96,7 @@ module Write = struct
       Ok (value, key)
     in
     let decode _ =
-      failwith
-        Pool_common.(
-          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
     in
     Caqti_type.(custom ~encode ~decode (t2 string string))
   ;;

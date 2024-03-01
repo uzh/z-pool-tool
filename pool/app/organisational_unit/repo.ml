@@ -47,7 +47,7 @@ let find_request =
 let find pool id =
   let open Lwt.Infix in
   Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.OrganisationalUnit)
+  >|= CCOption.to_result Pool_message.(Error.NotFound Field.OrganisationalUnit)
 ;;
 
 let find_all_request =

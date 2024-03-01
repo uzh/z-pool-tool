@@ -17,8 +17,8 @@ let note page_title info =
 let error_page_not_found language () =
   let open Pool_common in
   note
-    (Message.(NotFound Field.Page) |> Utils.error_to_string language)
-    (Message.PageNotFoundMessage |> Utils.to_string language)
+    (Pool_message.(Error.NotFound Field.Page) |> Utils.error_to_string language)
+    (Pool_message.PageNotFoundMessage |> Utils.to_string language)
 ;;
 
 let error_page_terminatory ?(lang = Pool_common.Language.En) title info () =

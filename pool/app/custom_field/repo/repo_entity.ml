@@ -1,7 +1,6 @@
 open CCFun
 open Entity
 open Ppx_yojson_conv_lib.Yojson_conv
-module Common = Pool_common
 module Answer = Repo_entity_answer
 
 let encode_yojson of_t t = t |> of_t |> Yojson.Safe.to_string |> CCResult.return
@@ -11,7 +10,8 @@ let decode_yojson t_of_yojson field t =
   try Ok (read t) with
   | _ ->
     Error
-      Pool_common.(Utils.error_to_string Language.En Message.(Invalid field))
+      (Pool_message.(Error.Invalid field)
+       |> Pool_common.Utils.error_to_string Language.En)
 ;;
 
 type multi_select_answer = SelectOption.Id.t list [@@deriving yojson]
@@ -23,7 +23,7 @@ module Name = struct
 
   let t =
     let encode = encode_yojson yojson_of_t in
-    let decode = decode_yojson t_of_yojson Pool_common.Message.Field.Name in
+    let decode = decode_yojson t_of_yojson Pool_message.Field.Name in
     Caqti_type.(custom ~encode ~decode string)
   ;;
 end
@@ -33,7 +33,7 @@ module Hint = struct
 
   let t =
     let encode = encode_yojson yojson_of_t in
-    let decode = decode_yojson t_of_yojson Pool_common.Message.Field.Hint in
+    let decode = decode_yojson t_of_yojson Pool_message.Field.Hint in
     Caqti_type.(custom ~encode ~decode string)
   ;;
 end
@@ -48,7 +48,7 @@ module Validation = struct
 
   let t =
     let encode = encode_yojson CCFun.id in
-    let decode = decode_yojson CCFun.id Pool_common.Message.Field.Validation in
+    let decode = decode_yojson CCFun.id Pool_message.Field.Validation in
     Caqti_type.(custom ~encode ~decode string)
   ;;
 end
@@ -184,9 +184,7 @@ module Option = struct
     let t =
       let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
       let decode _ =
-        failwith
-          Pool_common.(
-            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+        Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
       in
       Caqti_type.(
         custom
@@ -200,9 +198,7 @@ module Option = struct
     let t =
       let encode m = Ok (m.SelectOption.id, m.name) in
       let decode _ =
-        failwith
-          Pool_common.(
-            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+        Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
       in
       Caqti_type.(custom ~encode ~decode (t2 Pool_common.Repo.Id.t Name.t))
     ;;
@@ -254,16 +250,14 @@ module Write = struct
                         ) ) ) ) ) ) ) ) )
     in
     let decode _ =
-      failwith
-        Pool_common.(
-          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
     in
     Caqti_type.(
       custom
         ~encode
         ~decode
         (t2
-           Common.Repo.Id.t
+           Pool_common.Repo.Id.t
            (t2
               Model.t
               (t2
@@ -279,7 +273,7 @@ module Write = struct
                              (t2
                                 Disabled.t
                                 (t2
-                                   (option Common.Repo.Id.t)
+                                   (option Pool_common.Repo.Id.t)
                                    (t2
                                       (option AdminHint.t)
                                       (t2
@@ -586,8 +580,7 @@ module Public = struct
 
   let t =
     let encode _ =
-      failwith
-        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
     in
     let decode
       ( id
@@ -630,7 +623,7 @@ module Public = struct
         ~encode
         ~decode
         (t2
-           Common.Repo.Id.t
+           Pool_common.Repo.Id.t
            (t2
               Name.t
               (t2
@@ -642,7 +635,7 @@ module Public = struct
                        (t2
                           Required.t
                           (t2
-                             (option Common.Repo.Id.t)
+                             (option Pool_common.Repo.Id.t)
                              (t2
                                 AdminOverride.t
                                 (t2
@@ -650,18 +643,20 @@ module Public = struct
                                    (t2
                                       PromptOnRegistration.t
                                       (t2
-                                         (option Common.Repo.Id.t)
+                                         (option Pool_common.Repo.Id.t)
                                          (t2
-                                            (option Common.Repo.Id.t)
+                                            (option Pool_common.Repo.Id.t)
                                             (t2
                                                (option Caqti_type.string)
                                                (t2
                                                   (option Caqti_type.string)
                                                   (t2
                                                      (option
-                                                        Common.Repo.Version.t)
+                                                        Pool_common.Repo.Version
+                                                        .t)
                                                      (option
-                                                        Common.Repo.Version.t)))))))))))))))))
+                                                        Pool_common.Repo.Version
+                                                        .t)))))))))))))))))
   ;;
 end
 
@@ -687,8 +682,7 @@ type repo =
 
 let t =
   let encode _ =
-    failwith
-      Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+    Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
   in
   let decode
     ( id
@@ -736,7 +730,7 @@ let t =
       ~encode
       ~decode
       (t2
-         Common.Repo.Id.t
+         Pool_common.Repo.Id.t
          (t2
             Model.t
             (t2
@@ -752,7 +746,7 @@ let t =
                            (t2
                               Disabled.t
                               (t2
-                                 (option Common.Repo.Id.t)
+                                 (option Pool_common.Repo.Id.t)
                                  (t2
                                     (option AdminHint.t)
                                     (t2

@@ -25,12 +25,9 @@ module SignUp : sig
     -> Email.job
     -> Pool_common.Language.t option
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Guard.ValidationSet.t
 end = struct
   type t =
@@ -99,7 +96,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Contact.Guard.Access.create
@@ -111,7 +108,7 @@ module UpdateSignInCount : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Contact.t
 
@@ -127,7 +124,7 @@ module DeleteUnverified : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Contact.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -137,7 +134,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) contact =
     Logs.info ~src (fun m -> m "Handle command DeleteUnverified" ~tags);
     if contact.Contact.email_verified |> CCOption.is_some
-    then Error Pool_common.Message.EmailDeleteAlreadyVerified
+    then Error Pool_message.Error.EmailDeleteAlreadyVerified
     else Ok [ Contact.UnverifiedDeleted contact |> Pool_event.contact ]
   ;;
 
@@ -154,7 +151,7 @@ module Update : sig
     -> Pool_context.user
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -180,7 +177,7 @@ module ClearAnswer : sig
     :  ?tags:Logs.Tag.set
     -> Custom_field.Public.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -211,12 +208,9 @@ module UpdatePassword : sig
     -> Contact.t
     -> Email.job
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
@@ -230,7 +224,7 @@ end = struct
   ;;
 
   let schema =
-    let open Pool_common.Message.Field in
+    let open Pool_message.Field in
     Conformist.(
       make
         Field.
@@ -269,7 +263,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 end
 
@@ -285,7 +279,7 @@ module RequestEmailValidation : sig
     -> Email.job
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -320,7 +314,7 @@ module UpdateEmail : sig
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -348,7 +342,7 @@ module AcceptTermsAndConditions : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Contact.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -373,7 +367,7 @@ module SendProfileUpdateTrigger : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -400,7 +394,7 @@ module SendRegistrationAttemptNotifitacion : sig
     :  ?tags:Logs.Tag.set
     -> t
     -> Email.job
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -427,7 +421,7 @@ module AddCellPhone : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -450,7 +444,7 @@ module VerifyCellPhone : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -470,7 +464,7 @@ module ResetCellPhoneVerification : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -492,7 +486,7 @@ module TogglePaused : sig
     :  ?tags:Logs.Tag.set
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct

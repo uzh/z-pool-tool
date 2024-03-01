@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component.Input
+open Pool_message.Control
 
 let role_assignment
   ?hint
@@ -30,10 +31,9 @@ let role_assignment
   in
   let form action admin =
     let show, url, control, style =
-      let open Pool_common in
       match action with
-      | `Assign -> can_assign, assign, Message.(Assign None), `Success
-      | `Unassign -> can_unassign, unassign, Message.(Unassign None), `Error
+      | `Assign -> can_assign, assign, Assign None, `Success
+      | `Unassign -> can_unassign, unassign, Unassign None, `Error
     in
     let button =
       if show

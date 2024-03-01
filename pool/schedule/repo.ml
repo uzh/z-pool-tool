@@ -37,8 +37,7 @@ let t =
     Ok (m.label, (time, (span, (m.status, m.last_run))))
   in
   let decode _ =
-    failwith
-      Pool_common.(Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+    Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
   in
   Caqti_type.(
     custom
@@ -63,10 +62,9 @@ let public =
       | Some time, None -> At time |> return
       | None, Some span -> Every span |> return
       | _ ->
-        let open Pool_common in
         Error
-          (Message.(Decode Field.ScheduledTime)
-           |> Utils.error_to_string Language.En)
+          (Pool_message.(Error.Decode Field.ScheduledTime)
+           |> Pool_common.(Utils.error_to_string Language.En))
     in
     Ok { label; scheduled_time; status; last_run }
   in

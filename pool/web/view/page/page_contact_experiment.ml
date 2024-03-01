@@ -4,7 +4,7 @@ open Component.Input
 module PageSession = Page_contact_sessions
 module Assignment = Page_contact_assignment
 module HttpUtils = Http_utils
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let experiment_public_description =
   let open Experiment in
@@ -86,7 +86,10 @@ let index
                    query_language
                    (Format.asprintf "/experiments/%s" (Experiment.Id.value id)))
             ]
-          [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
+          [ Pool_message.Control.More
+            |> Pool_common.Utils.control_to_string language
+            |> txt
+          ]
       ]
   in
   let experiment_title exp =
@@ -209,8 +212,8 @@ let show
   let hint_to_string = Utils.hint_to_string language in
   let form_control, submit_class =
     match user_is_enlisted with
-    | true -> Message.RemoveFromWaitingList, "error"
-    | false -> Message.AddToWaitingList, "primary"
+    | true -> Pool_message.Control.RemoveFromWaitingList, "error"
+    | false -> Pool_message.Control.AddToWaitingList, "primary"
   in
   let session_list sessions =
     div

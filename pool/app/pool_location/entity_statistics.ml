@@ -1,7 +1,7 @@
 let printer = Utils.ppx_printer
 
 open Pool_common
-module Field = Message.Field
+module Field = Pool_message.Field
 
 module ExperimentCount = struct
   include Model.Integer

@@ -8,7 +8,7 @@ let user_from_session db_pool req : Sihl_user.t option Lwt.t =
 let admin_from_session db_pool req =
   let open Utils.Lwt_result.Infix in
   user_from_session db_pool req
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
   >>= fun user ->
   user.Sihl.Contract.User.id |> Admin.Id.of_string |> Admin.find db_pool
 ;;

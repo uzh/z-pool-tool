@@ -1,12 +1,12 @@
 open CCFun
 open Tyxml.Html
 open Component
+open Pool_message
+open Control
 
 let ou_path ?suffix ?id () =
   let base_path =
-    Format.asprintf
-      "/admin/%s"
-      Pool_common.Message.Field.(human_url OrganisationalUnit)
+    Format.asprintf "/admin/%s" Field.(human_url OrganisationalUnit)
   in
   let default =
     match id with
@@ -22,9 +22,8 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
   let open Pool_common in
   let action, control =
     match organisational_unit with
-    | None -> ou_path (), Message.(Create (Some Field.OrganisationalUnit))
-    | Some ou ->
-      ou_path ~id:ou.id (), Message.(Update (Some Field.OrganisationalUnit))
+    | None -> ou_path (), Create (Some Field.OrganisationalUnit)
+    | Some ou -> ou_path ~id:ou.id (), Update (Some Field.OrganisationalUnit)
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -40,7 +39,7 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
                |> CCOption.map (fun { name; _ } -> Name.value name))
             language
             `Text
-            Pool_common.Message.Field.Name
+            Field.Name
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ Input.submit_element ~classnames:[ "push" ] language control () ]
@@ -49,7 +48,6 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
 ;;
 
 let list { Pool_context.language; _ } organizations query =
-  let open Pool_common in
   let open Component in
   let url = Uri.of_string (ou_path ()) in
   let data_table =
@@ -64,7 +62,7 @@ let list { Pool_context.language; _ } organizations query =
       Input.link_as_button
         ~style:`Success
         ~icon:Icon.Add
-        ~control:(language, Message.(Add (Some Field.OrganisationalUnit)))
+        ~control:(language, Add (Some Field.OrganisationalUnit))
         (ou_path ~suffix:"create" ())
     in
     [ `column Organisational_unit.column_name; `custom create_btn ]

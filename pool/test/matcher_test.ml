@@ -1,6 +1,6 @@
 open CCFun
 module InvitationCommand = Cqrs_command.Invitation_command
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module Model = Test_utils.Model
 
 let get_or_failwith = Test_utils.get_or_failwith
@@ -175,7 +175,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
         |> Invitation.find_by_contact_and_experiment_opt
              database_label
              experiment.Experiment.id
-        ||> CCOption.to_result Pool_common.(Message.NotFound Field.Invitation)
+        ||> CCOption.to_result (Pool_message.Error.NotFound Field.Invitation)
         ||> get_or_failwith)
       contacts
   in

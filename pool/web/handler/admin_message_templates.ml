@@ -1,6 +1,6 @@
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.message_templates"
 let create_layout req = General.create_tenant_layout req
@@ -11,7 +11,7 @@ let id req field encode =
 
 let template_label req =
   let open Message_template.Label in
-  HttpUtils.find_id read_from_url Pool_common.Message.Field.Label req
+  HttpUtils.find_id read_from_url Field.Label req
   |> fun label -> CCList.find (equal label) customizable_by_experiment
 ;;
 
@@ -64,10 +64,9 @@ let write action req =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let redirect, success =
-    let open Pool_common in
     match action with
-    | Create (_, _, redirect) -> redirect, Message.Created Field.MessageTemplate
-    | Update (_, redirect) -> redirect, Message.Updated Field.MessageTemplate
+    | Create (_, _, redirect) -> redirect, Success.Created Field.MessageTemplate
+    | Update (_, redirect) -> redirect, Success.Updated Field.MessageTemplate
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
@@ -156,8 +155,7 @@ let default_templates_from_request req ?languages database_label params =
     entities
     |> CCList.find_map (fun (key, entity_fnc) ->
       find_param key |> CCOption.map entity_fnc)
-    |> CCOption.value
-         ~default:(Lwt_result.fail Pool_common.Message.(NotFound Field.Context))
+    |> CCOption.value ~default:(Lwt_result.fail (Error.NotFound Field.Context))
   in
   let%lwt templates =
     Message_template.find_entity_defaults_by_label
@@ -233,7 +231,7 @@ let reset_to_default_htmx req =
     let* template =
       message_templates
       |> CCList.head_opt
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.MessageTemplate)
+      |> CCOption.to_result (Error.NotFound Field.MessageTemplate)
       |> Lwt_result.lift
     in
     let text_messages_disabled =

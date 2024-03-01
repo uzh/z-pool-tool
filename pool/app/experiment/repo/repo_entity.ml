@@ -375,8 +375,7 @@ module DirectEnrollment = struct
 
   let t =
     let encode _ =
-      failwith
-        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
     in
     let decode
       ( id

@@ -1,4 +1,3 @@
-module PoolError = Pool_common.Message
 open Sexplib.Conv
 
 (* TODO: Service.User.t for Admin and Root are placeholders and should be
@@ -26,7 +25,7 @@ type t =
   { query_language : Pool_common.Language.t option
   ; language : Pool_common.Language.t
   ; database_label : Pool_database.Label.t
-  ; message : PoolError.Collection.t option
+  ; message : Pool_message.Collection.t option
   ; csrf : string
   ; user : user
   ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
@@ -41,7 +40,7 @@ let create
 
 let find_context key req =
   Opium.Context.find key req.Opium.Request.env
-  |> CCOption.to_result Pool_common.Message.PoolContextNotFound
+  |> CCOption.to_result Pool_message.Error.PoolContextNotFound
 ;;
 
 let set_context key req context =
@@ -66,7 +65,7 @@ let set = set_context key
 let find_contact { user; _ } =
   match user with
   | Contact c -> Ok c
-  | Admin _ | Guest -> Error PoolError.(NotFound Field.User)
+  | Admin _ | Guest -> Error Pool_message.(Error.NotFound Field.User)
 ;;
 
 let user_of_sihl_user database_label user =

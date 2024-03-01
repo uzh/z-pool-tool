@@ -15,7 +15,7 @@ module AdminComment = struct
       Utils.schema_decoder
         (fun m -> Ok (m |> create))
         value
-        Message.Field.AdminComment)
+        Pool_message.Field.AdminComment)
   ;;
 end
 
@@ -40,7 +40,7 @@ let create ?(id = Pool_common.Id.create ()) contact experiment admin_comment =
 ;;
 
 let column_signed_up_at =
-  Pool_common.Message.(Field.SignedUpAt, "pool_waiting_list.created_at")
+  Pool_message.(Field.SignedUpAt, "pool_waiting_list.created_at")
   |> Query.Column.create
 ;;
 

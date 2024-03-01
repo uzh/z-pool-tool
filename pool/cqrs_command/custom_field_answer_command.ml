@@ -8,7 +8,7 @@ module UpdateMultiple : sig
     -> Pool_context.user
     -> Pool_common.Id.t
     -> t
-    -> (Pool_event.t, Pool_common.Message.error) result
+    -> (Pool_event.t, Pool_message.Error.t) result
 
   val effects : unit -> Guard.ValidationSet.t
 end = struct

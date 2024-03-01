@@ -19,7 +19,7 @@ type job =
   ; resent : Pool_common.Id.t option
   }
 
-val parse_job_json : string -> (job, Pool_common.Message.error) result
+val parse_job_json : string -> (job, Pool_message.Error.t) result
 val yojson_of_job : job -> Yojson.Safe.t
 val job_message_history : job -> Queue.History.create option
 val create_job : ?message_history:Queue.History.create -> t -> job
@@ -38,7 +38,7 @@ module Service : sig
     -> Pool_tenant.GtxApiKey.t
     -> Pool_user.CellPhone.t
     -> Pool_tenant.Title.t
-    -> (Pool_tenant.GtxApiKey.t, Pool_common.Message.error) result Lwt.t
+    -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) result Lwt.t
 
   module Job : sig
     val send : job Sihl_queue.job

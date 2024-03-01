@@ -333,7 +333,7 @@ module Resend = struct
   let resend_pending () =
     let email_job = email_queue_job ~status:Sihl_queue.Pending () in
     let events = Command.Resend.handle email_job in
-    let expected = Error Pool_common.Message.JobPending in
+    let expected = Error Pool_message.Error.JobPending in
     Alcotest.(
       check
         (result (list Test_utils.event) Test_utils.error)

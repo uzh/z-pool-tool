@@ -7,7 +7,7 @@ end
 module NoShow = struct
   include Pool_common.Model.Boolean
 
-  let field = Pool_common.Message.Field.NoShow
+  let field = Pool_message.Field.NoShow
   let init = false
   let schema = schema field
 end
@@ -15,7 +15,7 @@ end
 module Participated = struct
   include Pool_common.Model.Boolean
 
-  let field = Pool_common.Message.Field.Participated
+  let field = Pool_message.Field.Participated
   let init = false
   let schema = schema field
 end
@@ -32,20 +32,20 @@ module CanceledAt = struct
   include Pool_common.Model.Ptime
 
   let create m = Ok m
-  let schema = schema Pool_common.Message.Field.CanceledAt create
+  let schema = schema Pool_message.Field.CanceledAt create
 end
 
 module MarkedAsDeleted = struct
   include Pool_common.Model.Boolean
 
   let init = false
-  let schema = schema Pool_common.Message.Field.MarkedAsDeleted
+  let schema = schema Pool_message.Field.MarkedAsDeleted
 end
 
 module ExternalDataId = struct
   include Pool_common.Model.String
 
-  let field = Pool_common.Message.Field.ExternalDataId
+  let field = Pool_message.Field.ExternalDataId
   let schema () = schema field ()
 end
 
@@ -105,13 +105,13 @@ end
 let is_not_deleted { marked_as_deleted; _ } =
   if not marked_as_deleted
   then Ok ()
-  else Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
+  else Error Pool_message.(Error.IsMarkedAsDeleted Field.Assignment)
 ;;
 
 let is_not_canceled { canceled_at; _ } =
   if CCOption.is_none canceled_at
   then Ok ()
-  else Error Pool_common.Message.AssignmentIsCanceled
+  else Error Pool_message.Error.AssignmentIsCanceled
 ;;
 
 let is_not_canceled_nor_deleted m =
@@ -166,13 +166,13 @@ end
 
 let validate experiment { no_show; participated; external_data_id; _ } =
   let value = CCOption.value ~default:false in
-  let open Pool_common.Message in
+  let open Pool_message in
   [ ( Experiment.external_data_required_value experiment
       && CCOption.is_none external_data_id
       && value participated
-    , FieldRequired Field.ExternalDataId )
+    , Error.FieldRequired Field.ExternalDataId )
   ; ( value no_show && value participated
-    , MutuallyExclusive (Field.NoShow, Field.Participated) )
+    , Error.MutuallyExclusive (Field.NoShow, Field.Participated) )
   ]
   |> CCList.filter_map (fun (condition, error) ->
     if condition then Some error else None)
@@ -190,9 +190,9 @@ let set_close_default_values ({ no_show; participated; _ } as m) =
   , participated )
 ;;
 
-let boolean_fields = Pool_common.Message.Field.[ NoShow; Participated ]
+let boolean_fields = Pool_message.Field.[ NoShow; Participated ]
 
-open Pool_common.Message
+open Pool_message
 
 let column_canceled_at =
   (Field.CanceledAt, "pool_assignments.canceled_at") |> Query.Column.create

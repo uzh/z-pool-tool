@@ -20,7 +20,7 @@ let toggle_paused
     redirect_to_with_actions
       redirect_path
       [ Message.set
-          ~success:[ Pool_common.Message.(PausedToggled (Paused.value paused)) ]
+          ~success:[ Pool_message.Success.PausedToggled (Paused.value paused) ]
       ]
   in
   events

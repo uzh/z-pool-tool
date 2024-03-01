@@ -10,14 +10,14 @@ module UpdateLanguages : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Pool_common.Language.t list
 
   let handle ?(tags = Logs.Tag.empty) command =
     Logs.info ~src (fun m -> m "Handle command UpdateLanguage" ~tags);
     match CCList.length command > 0 with
-    | false -> Error Pool_common.Message.(NoOptionSelected Field.Language)
+    | false -> Error Pool_message.(Error.NoOptionSelected Field.Language)
     | true -> Ok [ Settings.LanguagesUpdated command |> Pool_event.settings ]
   ;;
 
@@ -31,11 +31,9 @@ module CreateEmailSuffix : sig
     :  ?tags:Logs.Tag.set
     -> Settings.EmailSuffix.t list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = Settings.EmailSuffix.t
 
@@ -53,7 +51,7 @@ end = struct
 
   let decode =
     Conformist.decode_and_validate schema
-    %> CCResult.map_err Pool_common.Message.to_conformist_error
+    %> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Settings.Guard.Access.update
@@ -89,11 +87,9 @@ module DeleteEmailSuffix : sig
     :  ?tags:Logs.Tag.set
     -> Settings.EmailSuffix.t list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = Settings.EmailSuffix.t
 
@@ -115,7 +111,7 @@ end = struct
 
   let decode =
     Conformist.decode_and_validate schema
-    %> CCResult.map_err Pool_common.Message.to_conformist_error
+    %> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Settings.Guard.Access.update
@@ -124,9 +120,7 @@ end
 module UpdateContactEmail : sig
   include Common.CommandSig with type t = Settings.ContactEmail.t
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = Settings.ContactEmail.t
 
@@ -143,7 +137,7 @@ end = struct
 
   let decode =
     Conformist.decode_and_validate schema
-    %> CCResult.map_err Pool_common.Message.to_conformist_error
+    %> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Settings.Guard.Access.update
@@ -153,9 +147,7 @@ module InactiveUser = struct
   module DisableAfter : sig
     include Common.CommandSig with type t = command
 
-    val decode
-      :  (string * string list) list
-      -> (t, Pool_common.Message.error) result
+    val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   end = struct
     open InactiveUser.DisableAfter
 
@@ -174,7 +166,7 @@ module InactiveUser = struct
     let decode =
       Conformist.decode_and_validate
         (update_duration_schema (integer_schema ()) name)
-      %> CCResult.map_err Pool_common.Message.to_conformist_error
+      %> CCResult.map_err Pool_message.to_conformist_error
     ;;
 
     let effects = Settings.Guard.Access.update
@@ -183,9 +175,7 @@ module InactiveUser = struct
   module Warning : sig
     include Common.CommandSig with type t = command
 
-    val decode
-      :  (string * string list) list
-      -> (t, Pool_common.Message.error) result
+    val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   end = struct
     open InactiveUser.Warning
 
@@ -204,7 +194,7 @@ module InactiveUser = struct
     let decode =
       Conformist.decode_and_validate
         (update_duration_schema (integer_schema ()) name)
-      %> CCResult.map_err Pool_common.Message.to_conformist_error
+      %> CCResult.map_err Pool_message.to_conformist_error
     ;;
 
     let effects = Settings.Guard.Access.update
@@ -214,9 +204,7 @@ end
 module UpdateTriggerProfileUpdateAfter : sig
   include Common.CommandSig with type t = command
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   open TriggerProfileUpdateAfter
 
@@ -236,7 +224,7 @@ end = struct
   let decode =
     Conformist.decode_and_validate
       (update_duration_schema (integer_schema ()) name)
-    %> CCResult.map_err Pool_common.Message.to_conformist_error
+    %> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Settings.Guard.Access.update
@@ -245,9 +233,7 @@ end
 module UpdateDefaultEmailLeadTime : sig
   include Common.CommandSig with type t = command
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   open Pool_common.Reminder.EmailLeadTime
 
@@ -267,7 +253,7 @@ end = struct
   let decode =
     Conformist.decode_and_validate
       (update_duration_schema (integer_schema ()) name)
-    %> CCResult.map_err Pool_common.Message.to_conformist_error
+    %> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Settings.Guard.Access.update
@@ -276,9 +262,7 @@ end
 module UpdateDefaultTextMessageLeadTime : sig
   include Common.CommandSig with type t = command
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   open Pool_common.Reminder.TextMessageLeadTime
 
@@ -298,7 +282,7 @@ end = struct
   let decode =
     Conformist.decode_and_validate
       (update_duration_schema (integer_schema ()) name)
-    %> CCResult.map_err Pool_common.Message.to_conformist_error
+    %> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Settings.Guard.Access.update
@@ -317,7 +301,7 @@ module UpdateGtxApiKey : sig
     :  ?tags:Logs.Tag.set
     -> Pool_tenant.Write.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Pool_tenant.GtxApiKey.t
 
@@ -334,7 +318,7 @@ end = struct
     in
     Conformist.decode_and_validate schema urlencoded
     |> Lwt_result.lift
-    >|- Pool_common.Message.to_conformist_error
+    >|- Pool_message.to_conformist_error
     >>= fun (api_key, phone_nr) ->
     Text_message.Service.test_api_key ~tags api_key phone_nr title
   ;;
@@ -356,7 +340,7 @@ module RemoveGtxApiKey : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Pool_tenant.Write.t
 
@@ -372,9 +356,7 @@ module UserImportReminder = struct
   module UpdateFirstReminder : sig
     include Common.CommandSig with type t = command
 
-    val decode
-      :  (string * string list) list
-      -> (t, Pool_common.Message.error) result
+    val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   end = struct
     open UserImportReminder.FirstReminderAfter
 
@@ -393,7 +375,7 @@ module UserImportReminder = struct
     let decode =
       Conformist.decode_and_validate
         (update_duration_schema (integer_schema ()) name)
-      %> CCResult.map_err Pool_common.Message.to_conformist_error
+      %> CCResult.map_err Pool_message.to_conformist_error
     ;;
 
     let effects = Settings.Guard.Access.update
@@ -402,9 +384,7 @@ module UserImportReminder = struct
   module UpdateSecondReminder : sig
     include Common.CommandSig with type t = command
 
-    val decode
-      :  (string * string list) list
-      -> (t, Pool_common.Message.error) result
+    val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   end = struct
     open UserImportReminder.SecondReminderAfter
 
@@ -423,7 +403,7 @@ module UserImportReminder = struct
     let decode =
       Conformist.decode_and_validate
         (update_duration_schema (integer_schema ()) name)
-      %> CCResult.map_err Pool_common.Message.to_conformist_error
+      %> CCResult.map_err Pool_message.to_conformist_error
     ;;
 
     let effects = Settings.Guard.Access.update

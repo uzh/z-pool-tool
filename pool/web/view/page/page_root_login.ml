@@ -1,6 +1,6 @@
 open Tyxml.Html
 open Component.Input
-module Message = Pool_common.Message
+open Pool_message
 
 let login ?intended Pool_context.{ language; csrf; _ } =
   let input_element = input_element language in
@@ -17,8 +17,8 @@ let login ?intended Pool_context.{ language; csrf; _ } =
         ; form
             ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]
             [ csrf_element csrf ()
-            ; input_element `Text Message.Field.Email
-            ; input_element `Password Message.Field.Password
+            ; input_element `Text Field.Email
+            ; input_element `Password Field.Password
             ; div
                 ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
                 [ div
@@ -38,7 +38,7 @@ let login ?intended Pool_context.{ language; csrf; _ } =
                 ; submit_element
                     ~classnames:[ "push" ]
                     language
-                    Message.Login
+                    Control.Login
                     ()
                 ]
             ]
@@ -58,13 +58,13 @@ let request_reset_password Pool_context.{ language; csrf; _ } =
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element `Text Message.Field.Email
+        ; input_element `Text Field.Email
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.SendResetLink
+                Control.SendResetLink
                 ()
             ]
         ]
@@ -82,15 +82,15 @@ let reset_password token Pool_context.{ language; csrf; _ } =
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element language `Hidden ~value:token Message.Field.Token
-        ; input_element language `Password Message.Field.Password
-        ; input_element language `Password Message.Field.PasswordConfirmation
+        ; input_element language `Hidden ~value:token Field.Token
+        ; input_element language `Password Field.Password
+        ; input_element language `Password Field.PasswordConfirmation
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(Save (Some Field.password))
+                (Control.Save (Some Field.password))
                 ()
             ]
         ]

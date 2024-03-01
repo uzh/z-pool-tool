@@ -35,9 +35,9 @@ let debug_log ?tags auth effects =
 ;;
 
 let access_denied database_label =
-  let open Pool_common.Message in
+  let open Pool_message.Error in
   fun err ->
-    let (_ : error) =
+    let (_ : t) =
       Pool_common.Utils.with_log_error
         ~src
         ~tags:(Pool_database.Logger.Tags.create database_label)
@@ -48,7 +48,7 @@ let access_denied database_label =
 
 let validate_access_request_fcn fcn ?any_id effects req =
   let open Utils.Lwt_result.Infix in
-  let open Pool_common.Message in
+  let open Pool_message.Error in
   let* ({ Pool_context.user; database_label; _ } as context) =
     req |> Pool_context.find |> Lwt_result.lift
   in
@@ -87,7 +87,7 @@ let validate_access_request_dependent_lwt ?any_id effects req =
   @@
   match user with
   | Pool_context.Guest | Pool_context.Contact _ ->
-    Lwt.return_error Pool_common.Message.AccessDenied
+    Lwt.return_error Pool_message.Error.AccessDenied
   | Pool_context.Admin admin ->
     let ctx = Pool_database.to_ctx database_label in
     let* auth = Admin.Guard.Actor.to_authorizable ~ctx admin in
@@ -99,15 +99,16 @@ let validate_access_request_dependent_lwt ?any_id effects req =
 
 let validate_admin_entity_base validate =
   let filter handler req =
+    let open Pool_common in
+    let open Pool_message in
     match%lwt validate req with
     | Ok _ -> handler req
     | Error err ->
-      let open Pool_common in
-      let (_ : Message.error) = Utils.with_log_error ~level:Logs.Info err in
+      let (_ : Error.t) = Utils.with_log_error ~level:Logs.Info err in
       let open Http_utils.Htmx in
       (match is_hx_request req with
        | true ->
-         error_notification Language.En Pool_common.Message.AccessDenied
+         error_notification Language.En Error.AccessDenied
          |> html_to_plain_text_response
          |> Lwt.return
        | false ->

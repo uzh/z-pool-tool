@@ -75,12 +75,12 @@ let hx_attributes
   if disabled
   then [ a_disabled () ]
   else (
-    let name = Pool_common.Message.Field.(field |> show) in
+    let name = Pool_message.Field.(field |> show) in
     base_hx_attributes name version ?action ?additional_attributes ())
 ;;
 
 let hx_multi_attributes field version ?action ?(additional_attributes = []) () =
-  let name = Pool_common.Message.Field.(field |> array_key) in
+  let name = Pool_message.Field.(field |> array_key) in
   let additional_attributes =
     additional_attributes @ multi_select_htmx_attributes
   in
@@ -105,8 +105,8 @@ type 'a value =
 
 type 'a t =
   { version : Version.t
-  ; field : Pool_common.Message.Field.t
-  ; label : Pool_common.Message.Field.t option
+  ; field : Pool_message.Field.t
+  ; label : Pool_message.Field.t option
   ; value : 'a value
   ; help : Pool_common.I18n.hint list option
   ; htmx_attributes : (string * string) list option
@@ -337,7 +337,8 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
     let open Custom_field in
     let open CCFun in
     let prefix =
-      Pool_common.(Utils.field_to_string lang Message.Field.OverriddenValue)
+      Pool_common.(
+        Utils.field_to_string lang Pool_message.Field.OverriddenValue)
       |> CCString.capitalize_ascii
       |> txt
     in
@@ -471,7 +472,7 @@ let partial_update_to_htmx
       language
       ()
   in
-  let open Pool_common.Message in
+  let open Pool_message in
   match partial_update with
   | Firstname (v, firstname) ->
     create_entity

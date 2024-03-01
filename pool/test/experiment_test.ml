@@ -1,4 +1,5 @@
 open CCFun
+open Pool_message
 module ExperimentCommand = Cqrs_command.Experiment_command
 module Model = Test_utils.Model
 
@@ -6,12 +7,10 @@ let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
 
 let experiment_boolean_fields =
-  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
+  Experiment.boolean_fields |> CCList.map Field.show
 ;;
 
-let boolean_fields =
-  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
-;;
+let boolean_fields = Experiment.boolean_fields |> CCList.map Field.show
 
 module Data = struct
   let organisational_unit = Test_utils.Model.create_organisational_unit ()
@@ -38,21 +37,19 @@ module Data = struct
   let experiment_type = Pool_common.ExperimentType.(show Lab)
 
   let urlencoded =
-    Pool_common.Message.
-      [ Field.(show Title), [ title ]
-      ; Field.(show PublicTitle), [ public_title ]
-      ; Field.(show InternalDescription), [ internal_description ]
-      ; Field.(show PublicDescription), [ public_description ]
-      ; Field.(show Language), [ Pool_common.Language.show language ]
-      ; Field.(show CostCenter), [ cost_center ]
-      ; ( Field.(show DirectRegistrationDisabled)
-        , [ direct_registration_disabled ] )
-      ; Field.(show RegistrationDisabled), [ registration_disabled ]
-      ; Field.(show AllowUninvitedSignup), [ allow_uninvited_signup ]
-      ; Field.(show ExternalDataRequired), [ external_data_required ]
-      ; Field.(show ShowExteralDataIdLinks), [ show_external_data_id_links ]
-      ; Field.(show ExperimentType), [ experiment_type ]
-      ]
+    [ Field.(show Title), [ title ]
+    ; Field.(show PublicTitle), [ public_title ]
+    ; Field.(show InternalDescription), [ internal_description ]
+    ; Field.(show PublicDescription), [ public_description ]
+    ; Field.(show Language), [ Pool_common.Language.show language ]
+    ; Field.(show CostCenter), [ cost_center ]
+    ; Field.(show DirectRegistrationDisabled), [ direct_registration_disabled ]
+    ; Field.(show RegistrationDisabled), [ registration_disabled ]
+    ; Field.(show AllowUninvitedSignup), [ allow_uninvited_signup ]
+    ; Field.(show ExternalDataRequired), [ external_data_required ]
+    ; Field.(show ShowExteralDataIdLinks), [ show_external_data_id_links ]
+    ; Field.(show ExperimentType), [ experiment_type ]
+    ]
   ;;
 
   module Filter = struct
@@ -149,7 +146,7 @@ let create () =
 let create_without_title () =
   let events =
     let open CCResult.Infix in
-    Pool_common.Message.Field.
+    Field.
       [ Title |> show, [ "" ]
       ; PublicTitle |> show, [ "public_title" ]
       ; InternalDescription |> show, [ Data.internal_description ]
@@ -158,9 +155,7 @@ let create_without_title () =
     |> ExperimentCommand.Create.decode
     >>= ExperimentCommand.Create.handle
   in
-  let expected =
-    Error Pool_common.Message.(Conformist [ Field.Title, NoValue ])
-  in
+  let expected = Error Error.(Conformist [ Field.Title, NoValue ]) in
   Test_utils.check_result expected events
 ;;
 
@@ -242,7 +237,7 @@ let delete_with_sessions () =
         ; templates = []
         })
   in
-  let expected = Error Pool_common.Message.ExperimentSessionCountNotZero in
+  let expected = Error Error.ExperimentSessionCountNotZero in
   Test_utils.check_result expected events
 ;;
 

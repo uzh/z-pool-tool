@@ -9,8 +9,7 @@ end
 
 let t =
   let encode _ =
-    failwith
-      Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+    Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
   in
   let decode
     (id, (contact, (experiment, (admin_comment, (created_at, updated_at)))))
@@ -58,9 +57,7 @@ module Write = struct
       Ok (m.id, (m.contact_id, (m.experiment_id, m.admin_comment)))
     in
     let decode _ =
-      failwith
-        Pool_common.(
-          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
     in
     Caqti_type.(
       custom

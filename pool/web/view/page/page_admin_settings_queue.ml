@@ -1,7 +1,7 @@
 open Tyxml.Html
 open Component
 module HttpUtils = Http_utils
-module Message = Pool_common.Message
+module Message = Pool_message
 
 let formatted_date_time = Pool_common.Utils.Time.formatted_date_time
 let base_path = "/admin/settings/queue"
@@ -14,8 +14,8 @@ let data_table_head language =
   in
   let name = `column column_job_name in
   let status = `column column_job_status in
-  let input = `custom (field_to_string Message.Field.Input) in
-  let last_error = `custom (field_to_string Message.Field.LastError) in
+  let input = `custom (field_to_string Pool_message.Field.Input) in
+  let last_error = `custom (field_to_string Pool_message.Field.LastError) in
   let last_error_at = `column column_last_error_at in
   let next_run = `column column_next_run in
   function
@@ -194,7 +194,7 @@ let resend_form Pool_context.{ csrf; language; _ } job =
     [ Input.csrf_element csrf ()
     ; Input.submit_element
         language
-        Message.(Resend (Some Field.Message))
+        Message.(Control.Resend (Some Field.Message))
         ~classnames:[ "small" ]
         ~has_icon:Icon.RefreshOutline
         ()

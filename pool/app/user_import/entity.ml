@@ -1,4 +1,4 @@
-open Pool_common.Message
+open Pool_message
 
 module Token = struct
   include Pool_common.Model.String
@@ -26,7 +26,7 @@ module ReminderCount = struct
 
   let init = 0
   let field = Field.ReminderCount
-  let create count = if count >= 0 then Ok count else Error NegativeAmount
+  let create count = if count >= 0 then Ok count else Error Error.NegativeAmount
   let schema = schema field create
   let increment m = m + 1
 end

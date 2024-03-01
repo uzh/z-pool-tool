@@ -67,3 +67,5 @@ val show : t -> string
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
 val sexp_of_t : t -> Sexplib0.Sexp.t
+val delete : Field.t option -> t
+val stop : Field.t option -> t

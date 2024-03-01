@@ -22,5 +22,5 @@ let test_and_create url label =
   match connection with
   | Ok () -> create label url |> Lwt_result.lift
   | Error (_ : Caqti_error.load_or_connect) ->
-    Lwt_result.fail Pool_common.Message.(Invalid Field.DatabaseUrl)
+    Lwt_result.fail Pool_message.(Error.Invalid Field.DatabaseUrl)
 ;;

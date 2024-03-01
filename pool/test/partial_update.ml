@@ -1,5 +1,4 @@
-module Message = Pool_common.Message
-module Field = Message.Field
+open Pool_message
 module Language = Pool_common.Language
 
 let database_label = Test_utils.Data.database_label
@@ -30,7 +29,7 @@ let update_with_old_version _ () =
       Contact.
         { contact with language_version = 1 |> Pool_common.Version.of_int }
     in
-    let field = Message.Field.Language in
+    let field = Field.Language in
     let%lwt partial_update =
       let version = 0 |> Pool_common.Version.of_int in
       Custom_field.validate_partial_update
@@ -38,7 +37,7 @@ let update_with_old_version _ () =
         None
         (field, version, [ Pool_common.Language.show language ])
     in
-    let expected = Error Message.(MeantimeUpdate field) in
+    let expected = Error (Error.MeantimeUpdate field) in
     Alcotest.(
       check
         (result Test_utils.partial_update Test_utils.error)
@@ -137,7 +136,7 @@ let update_custom_field_with_invalid_answer _ () =
   let validation = [ "text_length_max", "10" ] in
   let custom_field = Custom_field_test.Data.custom_text_field ~validation () in
   let value = "this value is longer than 10" in
-  let expected = Error Message.(TextLengthMax 10) in
+  let expected = Error (Error.TextLengthMax 10) in
   partial_update_exec ~custom_field ~value expected ()
 ;;
 
@@ -148,7 +147,7 @@ let update_admin_input_only_field_as_user _ () =
       ~admin_input_only:(AdminInputOnly.create true)
       ()
   in
-  let expected = Error Message.NotEligible in
+  let expected = Error Error.NotEligible in
   partial_update_exec ~is_admin:false ~custom_field expected ()
 ;;
 
@@ -159,7 +158,7 @@ let update_non_override_field_as_admin _ () =
       ~admin_override:(AdminOverride.create false)
       ()
   in
-  let expected = Error Message.NotEligible in
+  let expected = Error Error.NotEligible in
   partial_update_exec ~is_admin:true ~custom_field expected ()
 ;;
 
@@ -185,6 +184,6 @@ let set_value_of_required_field_to_null _ () =
   let required = Custom_field.Required.create true in
   let custom_field = Custom_field_test.Data.custom_text_field ~required () in
   let value = "" in
-  let expected = Error Message.(NoValue) in
+  let expected = Error Error.NoValue in
   partial_update_exec ~custom_field ~value expected ()
 ;;

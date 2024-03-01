@@ -10,7 +10,7 @@ module Target = struct
           `MessageTemplate
           (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

@@ -239,7 +239,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_request
       (id |> Entity.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let find_of_session =
@@ -259,7 +259,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_of_session
       (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let find_of_mailing =
@@ -277,7 +277,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_of_mailing
       (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let session_count_request =

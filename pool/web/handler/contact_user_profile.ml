@@ -1,8 +1,8 @@
+open Pool_message
 module Command = Cqrs_command.Contact_command
 module HttpUtils = Http_utils
 module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
-module PoolField = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.contact.user_profile"
 let create_layout = Contact_general.create_layout
@@ -69,7 +69,6 @@ let contact_information = show `ContactInformation
 let update = Helpers.PartialUpdate.update
 
 let update_email req =
-  let open Pool_common.Message in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result
     ({ Pool_context.database_label; query_language; language; user; _ } as
@@ -98,7 +97,7 @@ let update_email req =
          let equal = Pool_user.EmailAddress.equal new_email in
          (fun is_equal ->
            if is_equal
-           then Lwt_result.fail EmailIdenticalToCurrent
+           then Lwt_result.fail Error.EmailIdenticalToCurrent
            else Lwt_result.return ())
          @@
          match user with
@@ -168,7 +167,7 @@ let update_email req =
        HttpUtils.(
          redirect_to_with_actions
            (path_with_language query_language "/user/login-information")
-           [ Message.set ~success:[ EmailUpdateConfirmationMessage ] ])
+           [ Message.set ~success:[ Success.EmailUpdateConfirmationMessage ] ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
@@ -202,7 +201,7 @@ let update_password req =
        HttpUtils.(
          redirect_to_with_actions
            (path_with_language query_language "/user/login-information")
-           [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ])
+           [ Message.set ~success:[ Success.PasswordChanged ] ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
@@ -222,14 +221,14 @@ let update_cell_phone req =
          let find field =
            HttpUtils.find_in_urlencoded field urlencoded |> Lwt_result.lift
          in
-         let* cell_phone = find PoolField.CellPhone in
-         let* area_code = find PoolField.AreaCode in
+         let* cell_phone = find Field.CellPhone in
+         let* area_code = find Field.AreaCode in
          area_code
          |> CCInt.of_string
          |> (fun code ->
               CCOption.bind code Utils.PhoneCodes.find_code
               |> function
-              | None -> Error Pool_common.Message.(Invalid Field.AreaCode)
+              | None -> Error (Error.Invalid Field.AreaCode)
               | Some (code, _) ->
                 Format.asprintf "+%i%s" code cell_phone
                 |> Pool_user.CellPhone.create)
@@ -257,7 +256,7 @@ let update_cell_phone req =
        HttpUtils.(
          redirect_to_with_actions
            (path_with_language query_language contact_info_path)
-           [ Message.set ~success:[ Pool_common.Message.CellPhoneTokenSent ] ])
+           [ Message.set ~success:[ Success.CellPhoneTokenSent ] ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
@@ -273,7 +272,7 @@ let verify_cell_phone req =
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* token =
          let open CCResult.Infix in
-         HttpUtils.find_in_urlencoded PoolField.Token urlencoded
+         HttpUtils.find_in_urlencoded Field.Token urlencoded
          >|= Pool_common.VerificationCode.of_string
          |> Lwt_result.lift
        in
@@ -291,7 +290,7 @@ let verify_cell_phone req =
        HttpUtils.(
          redirect_to_with_actions
            (path_with_language query_language contact_info_path)
-           [ Message.set ~success:[ Pool_common.Message.CellPhoneVerified ] ])
+           [ Message.set ~success:[ Success.CellPhoneVerified ] ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
@@ -346,9 +345,7 @@ let resend_token req =
        HttpUtils.(
          redirect_to_with_actions
            (path_with_language query_language contact_info_path)
-           [ Message.set
-               ~success:[ Pool_common.Message.VerificationMessageResent ]
-           ])
+           [ Message.set ~success:[ Success.VerificationMessageResent ] ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
@@ -428,9 +425,7 @@ let completion_post req =
         Http_utils.(
           redirect_to_with_actions
             "/experiments"
-            [ Message.set
-                ~success:[ Pool_common.Message.(Updated Field.Profile) ]
-            ])
+            [ Message.set ~success:[ Success.Updated Field.Profile ] ])
         ||> Sihl.Web.Session.set_value
               ~key:Contact.profile_completion_cookie
               ""
@@ -439,8 +434,7 @@ let completion_post req =
         Http_utils.(
           redirect_to_with_actions
             "/user/completion"
-            [ Message.set ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
-            ])
+            [ Message.set ~error:[ Error.RequiredFieldsMissing ] ])
     in
     events |>> handle
   in

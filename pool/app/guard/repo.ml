@@ -195,7 +195,7 @@ module Actor = struct
     in
     if CCList.mem ~eq role possible_assigns
     then Lwt.return_ok role
-    else Lwt.return_error Pool_common.Message.PermissionDeniedGrantRole
+    else Lwt.return_error Pool_message.Error.PermissionDeniedGrantRole
   ;;
 end
 
@@ -285,7 +285,7 @@ let validate
     validate
       ~ctx:(Pool_database.to_ctx label)
       ~any_id
-      Pool_common.Message.authorization
+      Pool_message.Error.authorization
       set
       actor
   in

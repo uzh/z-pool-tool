@@ -34,15 +34,13 @@ let system_event_from_job ?id job =
 module Create : sig
   type t = create
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Pool_database.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -119,7 +117,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Pool_tenant.Guard.Access.create
@@ -142,12 +140,9 @@ module EditDetails : sig
     :  ?tags:Logs.Tag.set
     -> Pool_tenant.Write.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
@@ -237,7 +232,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Pool_tenant.Guard.Access.update
@@ -261,7 +256,7 @@ let database_schema =
 
 let decode_database data =
   Conformist.decode_and_validate database_schema data
-  |> CCResult.map_err Pool_common.Message.to_conformist_error
+  |> CCResult.map_err Pool_message.to_conformist_error
 ;;
 
 module UpdateDatabase : sig
@@ -272,11 +267,11 @@ module UpdateDatabase : sig
     -> ?system_event_id:System_event.Id.t
     -> Pool_tenant.Write.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode
     :  (string * string list) list
-    -> (database_command, Pool_common.Message.error) result
+    -> (database_command, Pool_message.Error.t) result
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -305,7 +300,7 @@ module UpdateGtxApiKey : sig
     :  ?tags:Logs.Tag.set
     -> Pool_tenant.Write.t
     -> Pool_tenant.GtxApiKey.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -324,7 +319,7 @@ module DestroyLogo : sig
     :  ?tags:Logs.Tag.set
     -> Pool_tenant.t
     -> Pool_common.Id.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -342,7 +337,7 @@ module Destroy : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct

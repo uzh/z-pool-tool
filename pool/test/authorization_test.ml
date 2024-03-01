@@ -48,9 +48,9 @@ let guest_cannot_update_language _ () =
   let%lwt actual = update_language_as Guard.guest_authorizable in
   Alcotest.(check (result unit Test_utils.error))
     "Guest cannot update a contact."
-    (Error (Pool_common.Message.authorization "Failure"))
+    (Error (Pool_message.Error.authorization "Failure"))
     (CCResult.map_err
-       (fun _ -> Pool_common.Message.authorization "Failure")
+       (fun _ -> Pool_message.Error.authorization "Failure")
        actual)
   |> Lwt.return
 ;;
@@ -60,7 +60,7 @@ let operator_works _ () =
   let%lwt actual =
     let open Utils.Lwt_result.Infix in
     let open Guard in
-    let to_error = Pool_common.Message.authorization in
+    let to_error = Pool_message.Error.authorization in
     let target =
       "chris@gmail.com"
       |> Contact_test.contact_info

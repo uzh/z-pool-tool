@@ -53,7 +53,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_request
       (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.WaitingList)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.WaitingList)
   ;;
 
   let user_is_enlisted_request =
@@ -137,7 +137,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_experiment_id_request
       id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let insert_request =

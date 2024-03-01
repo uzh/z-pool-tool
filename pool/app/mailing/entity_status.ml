@@ -1,10 +1,10 @@
 module ToHandle = struct
   include Pool_common.Model.Integer
 
-  let field = Pool_common.Message.Field.ToHandle
+  let field = Pool_message.Field.ToHandle
 
   let create m =
-    if m > 0 then Ok m else Error Pool_common.Message.(Invalid field)
+    if m > 0 then Ok m else Error Pool_message.(Error.Invalid field)
   ;;
 
   let schema = schema field create
@@ -13,7 +13,7 @@ end
 module LastRun = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Pool_common.Message.Field.LastRun
+  let schema = schema Pool_message.Field.LastRun
 end
 
 type status =

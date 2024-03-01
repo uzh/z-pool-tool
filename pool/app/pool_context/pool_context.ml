@@ -8,7 +8,7 @@ let user_is_admin = function
 ;;
 
 let get_admin_user = function
-  | Guest | Contact _ -> Error Pool_common.Message.(NotFound Field.Admin)
+  | Guest | Contact _ -> Error Pool_message.(Error.NotFound Field.Admin)
   | Admin admin -> Ok admin
 ;;
 
@@ -32,14 +32,14 @@ module Utils = struct
 
   let find_authorizable ?admin_only database_label =
     let open CCFun in
-    let open Pool_common.Message in
+    let open Pool_message in
     let field =
       if CCOption.value ~default:false admin_only
       then Field.Admin
       else Field.User
     in
     find_authorizable_opt ?admin_only database_label
-    %> Lwt.map (CCOption.to_result (NotFound field))
+    %> Lwt.map (CCOption.to_result (Error.NotFound field))
   ;;
 end
 

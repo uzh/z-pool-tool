@@ -16,7 +16,7 @@ let answer_and_validate_multiple
          |> Http_utils.htmx_urlencoded_list
               (field
                |> Public.to_common_field language
-               |> Pool_common.Message.Field.array_key)
+               |> Pool_message.Field.array_key)
        | Public.Boolean _
        | Public.Date _
        | Public.Number _

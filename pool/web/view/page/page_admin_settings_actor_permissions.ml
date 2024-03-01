@@ -23,7 +23,7 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
     Input.link_as_button
       ~style:`Success
       ~icon:Component.Icon.Add
-      ~control:(language, Message.(Add (Some Field.Permission)))
+      ~control:(language, Pool_message.(Control.Add (Some Field.Permission)))
       (actor_permission_path ~suffix:"new" ())
   in
   let cols =
@@ -100,7 +100,7 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
            ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
            [ button_form
                "remove"
-               Message.delete
+               Pool_message.Control.delete
                `Error
                I18n.RemovePermission
                actor_permission
@@ -143,7 +143,7 @@ let create ?hint Pool_context.{ language; _ } children =
       [ txt
           (Utils.control_to_string
              language
-             Message.(Create (Some Field.Permission)))
+             Pool_message.(Control.Create (Some Field.Permission)))
       ]
   ]
   @ read_hint hint

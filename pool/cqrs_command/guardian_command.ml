@@ -18,7 +18,7 @@ module CreateRolePermission : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Guard.RolePermission.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Guard.RolePermission.t
 
@@ -36,7 +36,7 @@ module DeleteRolePermission : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Guard.RolePermission.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Guard.RolePermission.t
 
@@ -102,7 +102,7 @@ module CreateActorPermission : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Guard.ActorPermission.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Guard.ActorPermission.t
 
@@ -120,7 +120,7 @@ module DeleteActorPermission : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Guard.ActorPermission.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Guard.ActorPermission.t
 

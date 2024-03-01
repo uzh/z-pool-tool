@@ -1,5 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
-module Message = Pool_common.Message
+module Message = Pool_message
 module BaseGuard = Guard
 open Mailing
 
@@ -51,16 +51,16 @@ module Create : sig
     -> ?id:Id.t
     -> Experiment.t
     -> t
-    -> (Pool_event.t list, Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (create, Message.error) result
+  val decode : Conformist.input -> (create, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = create
 
   let decode data =
     Conformist.decode_and_validate defalt_schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let handle
@@ -89,16 +89,16 @@ module Update : sig
     :  ?tags:Logs.Tag.set
     -> Mailing.t
     -> t
-    -> (Pool_event.t list, Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (create, Message.error) result
+  val decode : Conformist.input -> (create, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Mailing.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = create
 
   let decode data =
     Conformist.decode_and_validate defalt_schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let handle
@@ -115,7 +115,7 @@ end = struct
     let update = { start_at; end_at; limit; distribution } in
     match Ptime_clock.now () < Mailing.StartAt.value start_at with
     | true -> Ok [ Mailing.Updated (update, mailing) |> Pool_event.mailing ]
-    | false -> Error Pool_common.Message.AlreadyStarted
+    | false -> Error Pool_message.Error.AlreadyStarted
   ;;
 
   let effects = Mailing.Guard.Access.update
@@ -131,7 +131,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) (mailing : t) =
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     if StartAt.value mailing.start_at < Ptime_clock.now ()
-    then Error Message.AlreadyInPast
+    then Error Pool_message.Error.AlreadyInPast
     else Ok [ Deleted mailing |> Pool_event.mailing ]
   ;;
 
@@ -150,7 +150,7 @@ end = struct
     let now = Ptime_clock.now () in
     if StartAt.value mailing.start_at < now && now < EndAt.value mailing.end_at
     then Ok [ Mailing.Stopped mailing |> Pool_event.mailing ]
-    else Error Message.NotInTimeRange
+    else Error Pool_message.Error.NotInTimeRange
   ;;
 
   let effects = Mailing.Guard.Access.update
@@ -167,8 +167,8 @@ module Overlaps : sig
     ; distribution : Distribution.t option
     }
 
-  val handle : t -> (Mailing.t, Message.error) result
-  val decode : Conformist.input -> (t, Message.error) result
+  val handle : t -> (Mailing.t, Pool_message.Error.t) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t =
@@ -210,7 +210,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let handle ({ id; start_at; end_at; limit; distribution } : t) =

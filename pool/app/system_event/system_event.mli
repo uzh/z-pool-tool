@@ -15,7 +15,7 @@ module Job : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val read : string -> t
-  val of_string : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> (t, Pool_message.Error.t) result
   val to_string : t -> string
 end
 

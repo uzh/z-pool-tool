@@ -162,7 +162,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
         contact.user
         (User.Password.to_sihl password)
       |> CCResult.map (Service.User.update ~ctx:(Pool_database.to_ctx pool))
-      |> Utils.with_log_result_error ~src ?tags Message.nothandled
+      |> Utils.with_log_result_error ~src ?tags Pool_message.Error.nothandled
     in
     Repo.update
       pool

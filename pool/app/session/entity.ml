@@ -7,14 +7,14 @@ end
 module InternalDescription = struct
   include Pool_common.Model.String
 
-  let field = Pool_common.Message.Field.InternalDescription
+  let field = Pool_message.Field.InternalDescription
   let schema () = schema field ()
 end
 
 module PublicDescription = struct
   include Pool_common.Model.String
 
-  let field = Pool_common.Message.Field.PublicDescription
+  let field = Pool_message.Field.PublicDescription
   let schema () = schema field ()
 end
 
@@ -27,7 +27,7 @@ module ParticipantAmount = struct
   let value m = m
 
   let create amount =
-    if amount < 0 then Error Pool_common.Message.(NegativeAmount) else Ok amount
+    if amount < 0 then Error Pool_message.(Error.NegativeAmount) else Ok amount
   ;;
 
   let compare = CCInt.compare
@@ -36,7 +36,7 @@ module ParticipantAmount = struct
     let decode str =
       let open CCResult in
       CCInt.of_string str
-      |> CCOption.to_result Pool_common.Message.(NotANumber str)
+      |> CCOption.to_result Pool_message.(Error.NotANumber str)
       >>= create
     in
     Pool_common.(Utils.schema_decoder decode CCInt.to_string field)
@@ -55,8 +55,10 @@ module Start = struct
       let open CCResult in
       Pool_common.(Utils.Time.parse_time str >|= create)
     in
-    Pool_common.(
-      Utils.schema_decoder decode Ptime.to_rfc3339 Message.Field.Start)
+    Pool_common.Utils.schema_decoder
+      decode
+      Ptime.to_rfc3339
+      Pool_message.Field.Start
   ;;
 end
 
@@ -66,7 +68,7 @@ module End = struct
   let create start duration =
     duration
     |> Ptime.add_span start
-    |> CCOption.to_result Pool_common.Message.(Invalid Field.Duration)
+    |> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
   ;;
 
   let value m = m
@@ -74,7 +76,7 @@ end
 
 module Duration = struct
   module DurationCore = struct
-    let name = Pool_common.Message.Field.Duration
+    let name = Pool_message.Field.Duration
   end
 
   include Pool_common.Model.Duration (DurationCore)
@@ -89,7 +91,7 @@ module AssignmentCount = struct
 
   let create m =
     if m < 0
-    then Error Pool_common.Message.(Invalid Field.AssignmentCount)
+    then Error Pool_message.(Error.Invalid Field.AssignmentCount)
     else Ok m
   ;;
 end
@@ -100,9 +102,7 @@ module NoShowCount = struct
   let value m = m
 
   let create m =
-    if m < 0
-    then Error Pool_common.Message.(Invalid Field.NoShowCount)
-    else Ok m
+    if m < 0 then Error Pool_message.(Error.Invalid Field.NoShowCount) else Ok m
   ;;
 end
 
@@ -113,7 +113,7 @@ module ParticipantCount = struct
 
   let create m =
     if m < 0
-    then Error Pool_common.Message.(Invalid Field.ParticipantCount)
+    then Error Pool_message.(Error.Invalid Field.ParticipantCount)
     else Ok m
   ;;
 end
@@ -121,10 +121,10 @@ end
 module CancellationReason = struct
   include Pool_common.Model.String
 
-  let field = Pool_common.Message.Field.Reason
+  let field = Pool_message.Field.Reason
 
   let validate m =
-    if CCString.is_empty m then Error Pool_common.Message.NoValue else Ok m
+    if CCString.is_empty m then Error Pool_message.Error.NoValue else Ok m
   ;;
 
   let schema = schema ?validation:(Some validate) field
@@ -134,7 +134,7 @@ module CanceledAt = struct
   include Pool_common.Model.Ptime
 
   let create m = Ok m
-  let schema = schema Pool_common.Message.Field.CanceledAt create
+  let schema = schema Pool_message.Field.CanceledAt create
 end
 
 type t =
@@ -219,10 +219,10 @@ let create
 ;;
 
 let is_canceled_error canceled_at =
-  let open Pool_common.Message in
+  let open Pool_message in
   canceled_at
   |> Pool_common.Utils.Time.formatted_date_time
-  |> sessionalreadycanceled
+  |> Error.sessionalreadycanceled
   |> CCResult.fail
 ;;
 
@@ -232,7 +232,7 @@ let is_fully_booked (m : t) =
 
 let is_fully_booked_res (m : t) =
   is_fully_booked m
-  |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
+  |> Utils.bool_to_result_not Pool_message.Error.SessionFullyBooked
 ;;
 
 let available_spots m =
@@ -318,7 +318,7 @@ module Public = struct
          (session |> get_session_end |> Start.value)
          ~than:Ptime_clock.(now ())
     then Ok ()
-    else Error Pool_common.Message.SessionInPast
+    else Error Pool_message.Error.SessionInPast
   ;;
 
   let not_canceled (session : t) =
@@ -333,7 +333,7 @@ module Public = struct
 
   let is_fully_booked_res (m : t) =
     is_fully_booked m
-    |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
+    |> Utils.bool_to_result_not Pool_message.Error.SessionFullyBooked
   ;;
 
   let assignment_creatable session =
@@ -504,17 +504,17 @@ let email_text language start duration location =
   in
   let start =
     format
-      Pool_common.Message.Field.Start
+      Pool_message.Field.Start
       (Start.value start |> Pool_common.Utils.Time.formatted_date_time)
   in
   let duration =
     format
-      Pool_common.Message.Field.Duration
+      Pool_message.Field.Duration
       (Duration.value duration |> Pool_common.Utils.Time.formatted_timespan)
   in
   let location =
     format
-      Pool_common.Message.Field.Location
+      Pool_message.Field.Location
       (Pool_location.to_string language location)
   in
   CCString.concat "\n" [ start; duration; location ]
@@ -547,13 +547,13 @@ let not_canceled session =
 ;;
 
 let not_closed session =
-  let open Pool_common.Message in
+  let open Pool_message in
   match session.closed_at with
   | None -> Ok ()
   | Some closed_at ->
     closed_at
     |> Pool_common.Utils.Time.formatted_date_time
-    |> sessionalreadyclosed
+    |> Error.sessionalreadyclosed
     |> CCResult.fail
 ;;
 
@@ -562,7 +562,7 @@ let not_past session =
        (session |> get_session_end |> Start.value)
        ~than:Ptime_clock.(now ())
   then Ok ()
-  else Error Pool_common.Message.SessionInPast
+  else Error Pool_message.Error.SessionInPast
 ;;
 
 (* Cancellable if before session ends *)
@@ -579,8 +579,8 @@ let is_deletable session =
   let* () = not_canceled session in
   let* () = not_closed session in
   match session.has_follow_ups, has_assignments session with
-  | true, _ -> Error Pool_common.Message.SessionHasFollowUps
-  | _, true -> Error Pool_common.Message.SessionHasAssignments
+  | true, _ -> Error Pool_message.Error.SessionHasFollowUps
+  | _, true -> Error Pool_message.Error.SessionHasAssignments
   | false, false -> Ok ()
 ;;
 
@@ -612,7 +612,7 @@ let assignment_creatable session =
 
 let reminder_resendable = not_closed_or_canceled
 
-open Pool_common.Message
+open Pool_message
 
 let column_date = (Field.Date, "pool_sessions.start") |> Query.Column.create
 

@@ -31,7 +31,7 @@ module Label : sig
   val yojson_of_t : t -> Yojson.Safe.t
   val read : string -> t
   val read_from_url : string -> t
-  val of_string : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> (t, Pool_message.Error.t) result
   val to_human : t -> string
   val human_url : t -> string
   val prefixed_human_url : t -> string
@@ -110,7 +110,7 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val find
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_default_by_label_and_language
   :  Pool_database.Label.t
@@ -174,7 +174,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -194,7 +194,7 @@ end
 val create_public_url_with_params
   :  Pool_tenant.Url.t
   -> string
-  -> (Pool_common.Message.Field.t * string) list
+  -> (Pool_message.Field.t * string) list
   -> string
 
 type email_layout =
@@ -213,7 +213,7 @@ module AccountSuspensionNotification : sig
   val create
     :  Pool_tenant.t
     -> Sihl_user.t
-    -> (Email.job, Pool_common.Message.error) result Lwt.t
+    -> (Email.job, Pool_message.Error.t) result Lwt.t
 end
 
 module AssignmentCancellation : sig
@@ -286,7 +286,7 @@ module ContactEmailChangeAttempt : sig
   val create
     :  Pool_tenant.t
     -> Sihl_user.t
-    -> (Email.job, Pool_common.Message.error) Lwt_result.t
+    -> (Email.job, Pool_message.Error.t) Lwt_result.t
 end
 
 module ContactRegistrationAttempt : sig
@@ -333,7 +333,7 @@ module ExperimentInvitation : sig
   val prepare
     :  Pool_tenant.t
     -> Experiment.t
-    -> (Contact.t -> (Email.job, Pool_common.Message.error) result) Lwt.t
+    -> (Contact.t -> (Email.job, Pool_message.Error.t) result) Lwt.t
 end
 
 module ManualSessionMessage : sig
@@ -382,7 +382,7 @@ module PasswordReset : sig
     -> Pool_common.Language.t
     -> layout
     -> Sihl_user.t
-    -> (Email.job, Pool_common.Message.error) result Lwt.t
+    -> (Email.job, Pool_message.Error.t) result Lwt.t
 end
 
 module PhoneVerification : sig
@@ -395,7 +395,7 @@ module PhoneVerification : sig
     -> Contact.t
     -> Pool_user.CellPhone.t
     -> Pool_common.VerificationCode.t
-    -> (Text_message.job, Pool_common.Message.error) result Lwt.t
+    -> (Text_message.job, Pool_message.Error.t) result Lwt.t
 end
 
 module ProfileUpdateTrigger : sig
@@ -408,7 +408,7 @@ module ProfileUpdateTrigger : sig
   val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
-    -> (Contact.t -> (Email.job, Pool_common.Message.error) result) Lwt.t
+    -> (Contact.t -> (Email.job, Pool_message.Error.t) result) Lwt.t
 end
 
 module SessionCancellation : sig
@@ -431,7 +431,7 @@ module SessionCancellation : sig
     -> Session.t list
     -> (Session.CancellationReason.t
         -> Contact.t
-        -> (Email.job, Pool_common.Message.error) result)
+        -> (Email.job, Pool_message.Error.t) result)
          Lwt.t
 
   val prepare_text_message
@@ -444,7 +444,7 @@ module SessionCancellation : sig
     -> (Session.CancellationReason.t
         -> Contact.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.job, Pool_common.Message.error) result)
+        -> (Text_message.job, Pool_message.Error.t) result)
          Lwt.t
 end
 
@@ -472,7 +472,7 @@ module SessionReminder : sig
     -> Pool_common.Language.t list
     -> Experiment.t
     -> Session.t
-    -> (Assignment.t -> (Email.job, Pool_common.Message.error) result) Lwt.t
+    -> (Assignment.t -> (Email.job, Pool_message.Error.t) result) Lwt.t
 
   val prepare_text_messages
     :  Pool_database.Label.t
@@ -482,7 +482,7 @@ module SessionReminder : sig
     -> Session.t
     -> (Assignment.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.job, Pool_common.Message.error) result)
+        -> (Text_message.job, Pool_message.Error.t) result)
          Lwt.t
 end
 
@@ -507,7 +507,7 @@ module SessionReschedule : sig
     -> (Contact.t
         -> Session.Start.t
         -> Session.Duration.t
-        -> (Email.job, Pool_common.Message.error) result)
+        -> (Email.job, Pool_message.Error.t) result)
          Lwt.t
 end
 
@@ -556,7 +556,7 @@ module WaitingListConfirmation : sig
     :  Pool_tenant.t
     -> Contact.t
     -> Experiment.Public.t
-    -> (Email.job, Pool_common.Message.error) result Lwt.t
+    -> (Email.job, Pool_message.Error.t) result Lwt.t
 end
 
 val sms_text_to_email : SmsText.t -> EmailText.t * PlainText.t

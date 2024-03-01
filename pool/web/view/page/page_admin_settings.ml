@@ -1,6 +1,6 @@
 open Tyxml.Html
 open Component.Input
-module Message = Pool_common.Message
+module Message = Pool_message
 module Queue = Page_admin_settings_queue
 module ActorPermission = Page_admin_settings_actor_permissions
 module RolePermission = Page_admin_settings_permissions
@@ -28,7 +28,7 @@ let show
     Sihl.Web.externalize_path
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
-  let submit ?(control = Message.(Update None)) () =
+  let submit ?(control = Message.(Control.Update None)) () =
     div
       ~a:[ a_class [ "flexrow" ] ]
       [ submit_element ~classnames:[ "push" ] language control () ]
@@ -89,7 +89,7 @@ let show
                 Pool_common.(
                   Utils.control_to_string
                     language
-                    Message.(Add (Some Field.EmailSuffix)))
+                    Message.(Control.Add (Some Field.EmailSuffix)))
             ]
         ; form
             ~a:(form_attrs `CreateEmailSuffix)
@@ -99,9 +99,9 @@ let show
                 [ input_element
                     language
                     `Text
-                    Message.Field.EmailSuffix
+                    Pool_message.Field.EmailSuffix
                     ~required:true
-                ; submit ~control:Message.(Add None) ()
+                ; submit ~control:Message.(Control.Add None) ()
                 ]
             ]
         ]
@@ -148,7 +148,7 @@ let show
                  ~a:
                    [ a_value (Settings.EmailSuffix.value suffix)
                    ; a_input_type `Text
-                   ; a_name (Message.Field.show Field.EmailSuffix)
+                   ; a_name (Pool_message.Field.show Field.EmailSuffix)
                    ; a_required ()
                    ]
                  ()))
@@ -157,7 +157,7 @@ let show
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(Update None)
+                Message.(Control.Update None)
                 ()
             ]
         ]
@@ -194,10 +194,10 @@ let show
           ; input_element
               language
               `Text
-              Message.Field.ContactEmail
+              Pool_message.Field.ContactEmail
               ~value:(contact_email |> Settings.ContactEmail.value)
               ~required:true
-          ; submit ~control:Message.(Add None) ()
+          ; submit ~control:Message.(Control.Add None) ()
           ]
       ]
   in
@@ -213,7 +213,7 @@ let show
               ; timespan_picker
                   ~required:true
                   language
-                  Message.Field.InactiveUserDisableAfter
+                  Pool_message.Field.InactiveUserDisableAfter
                   ~value:(inactive_user_disable_after |> DisableAfter.value)
               ; submit ()
               ]
@@ -223,7 +223,7 @@ let show
               ; timespan_picker
                   ~required:true
                   language
-                  Message.Field.InactiveUserWarning
+                  Pool_message.Field.InactiveUserWarning
                   ~value:(inactive_user_warning |> Warning.value)
               ; submit ()
               ]
@@ -238,7 +238,7 @@ let show
           [ Pool_common.(
               Utils.field_to_string
                 language
-                Message.Field.TriggerProfileUpdateAfter)
+                Pool_message.Field.TriggerProfileUpdateAfter)
             |> CCString.capitalize_ascii
             |> txt
           ]
@@ -250,7 +250,7 @@ let show
               ; timespan_picker
                   ~required:true
                   language
-                  Message.Field.TriggerProfileUpdateAfter
+                  Pool_message.Field.TriggerProfileUpdateAfter
                   ~value:(trigger_profile_update_after |> value)
               ; submit ()
               ]
@@ -275,7 +275,7 @@ let show
       let input_el =
         lead_time_form
           `UpdateTextMsgDefaultLeadTime
-          Message.Field.TextMessageLeadTime
+          Pool_message.Field.TextMessageLeadTime
           default_text_msg_reminder_lead_time
           Pool_common.Reminder.TextMessageLeadTime.value
       in
@@ -304,7 +304,7 @@ let show
           ~a:[ a_class [ "stack" ] ]
           [ lead_time_form
               `UpdateDefaultLeadTime
-              Message.Field.EmailLeadTime
+              Pool_message.Field.EmailLeadTime
               default_reminder_lead_time
               Pool_common.Reminder.EmailLeadTime.value
           ; text_message_lead_time
@@ -335,7 +335,7 @@ let show
               ~a:(form_attrs `UserImportFirstReminderAfter)
               [ csrf_element csrf ()
               ; timespan_picker
-                  Message.Field.FirstReminder
+                  Pool_message.Field.FirstReminder
                   (user_import_first_reminder |> FirstReminderAfter.value)
               ; submit ()
               ]
@@ -343,7 +343,7 @@ let show
               ~a:(form_attrs `UserImportSecondReminderAfter)
               [ csrf_element csrf ()
               ; timespan_picker
-                  Message.Field.SecondReminder
+                  Pool_message.Field.SecondReminder
                   (user_import_second_reminder |> SecondReminderAfter.value)
               ; submit ()
               ]

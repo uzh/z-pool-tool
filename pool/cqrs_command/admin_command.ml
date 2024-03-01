@@ -19,11 +19,9 @@ module CreateAdmin : sig
     -> ?id:Admin.Id.t
     -> ?roles:(Role.Role.t * Guard.Uuid.Target.t option) list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -76,7 +74,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Admin.Guard.Access.create
@@ -96,12 +94,9 @@ module UpdatePassword : sig
     -> ?notification:Email.job
     -> Admin.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Admin.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
@@ -115,7 +110,7 @@ end = struct
   ;;
 
   let schema =
-    let open Pool_common.Message.Field in
+    let open Pool_message.Field in
     Conformist.(
       make
         Field.
@@ -156,7 +151,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 end
 
@@ -169,11 +164,9 @@ module Update : sig
     :  ?tags:Logs.Tag.set
     -> Admin.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = Admin.update
 
@@ -191,7 +184,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Admin.Guard.Access.create
@@ -203,7 +196,7 @@ module UpdateSignInCount : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Admin.t
 
@@ -221,11 +214,9 @@ module PromoteContact : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = Pool_common.Id.t
 
@@ -241,7 +232,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects =

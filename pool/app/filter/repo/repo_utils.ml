@@ -1,7 +1,7 @@
 open CCFun.Infix
 module Dynparam = Utils.Database.Dynparam
-module Message = Pool_common.Message
-module Field = Message.Field
+module Message = Pool_message
+module Field = Pool_message.Field
 open Entity
 
 let where_prefix str = Format.asprintf "WHERE %s" str
@@ -79,7 +79,7 @@ let add_value_to_params operator value dyn =
   in
   let add c v = Dynparam.add c v dyn in
   match operator with
-  | Existence _ -> Error Message.(Invalid Field.Predicate)
+  | Existence _ -> Error Message.(Error.Invalid Field.Predicate)
   | Equality _ | List _ | String _ | Size _ ->
     Ok
       (match value with
@@ -151,7 +151,7 @@ let add_uuid_param dyn ids =
       >>= fun (dyn, params) ->
       match id with
       | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
-        Error Message.(QueryNotCompatible (Field.Value, Field.Key))
+        Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key))
       | Str id ->
         add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
         >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
@@ -178,7 +178,7 @@ let add_list_condition subquery dyn ids =
      | ContainsSome ->
        Ok (dyn, Format.asprintf "EXISTS (%s)" (subquery ~count:false)))
   | Equality _ | String _ | Size _ | Existence _ ->
-    Error Message.(Invalid Field.Operator)
+    Error Message.(Error.Invalid Field.Operator)
 ;;
 
 (* The subquery returns any contacts that has been an assignment to an
@@ -301,7 +301,7 @@ let predicate_to_sql
     (match operator with
      | Existence operator -> add_existence_condition key operator dyn
      | Equality _ | String _ | Size _ | List _ ->
-       Error Message.(QueryNotCompatible (Field.Value, Field.Key)))
+       Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key)))
   | Single value ->
     let add_value = add_single_value key operator in
     (match key with
@@ -327,7 +327,7 @@ let predicate_to_sql
         | NumNoShows
         | NumParticipations
         | NumShowUps ->
-          Error Message.(QueryNotCompatible (Field.Value, Field.Key)))
+          Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key)))
      | CustomField id ->
        let* dyn, subqueries =
          CCList.fold_left
@@ -360,14 +360,14 @@ let predicate_to_sql
            | ContainsNone -> build_query "AND"
            | ContainsSome -> build_query "OR")
         | Equality _ | String _ | Size _ | Existence _ ->
-          Error Message.(Invalid Field.Operator)))
+          Error Message.(Error.Invalid Field.Operator)))
 ;;
 
 let filter_to_sql template_list dyn query =
   let open Entity in
   let open CCResult in
   let rec query_sql (dyn, sql) query
-    : (Dynparam.t * string, Message.error) result
+    : (Dynparam.t * string, Pool_message.Error.t) result
     =
     let of_list (dyn, sql) queries operator =
       let query =
@@ -397,7 +397,7 @@ let filter_to_sql template_list dyn query =
     | Template id ->
       template_list
       |> CCList.find_opt (fun template -> Pool_common.Id.equal template.id id)
-      |> CCOption.to_result Message.(NotFound Field.Template)
+      |> CCOption.to_result Message.(Error.NotFound Field.Template)
       >>= fun filter -> query_sql (dyn, sql) filter.query
     | Pred predicate -> predicate_to_sql (dyn, sql) predicate
   in

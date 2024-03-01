@@ -1,7 +1,7 @@
 module Mapping = Entity_file_mapping
 module Conformist = Pool_common.Utils.PoolConformist
-module Message = Pool_common.Message
-module Field = Message.Field
+module Message = Pool_message
+module Field = Pool_message.Field
 module Address = Entity_address
 
 module Id = struct
@@ -30,7 +30,7 @@ module Description = struct
   let field_name langauge =
     Format.asprintf
       "%s[%s]"
-      Message.Field.(show field)
+      Pool_message.Field.(show field)
       (Pool_common.Language.show langauge)
   ;;
 
@@ -44,12 +44,12 @@ module Description = struct
       sys_languages
     |> function
     | [] -> Ok descriptions
-    | _ -> Error Message.(AllLanguagesRequired field)
+    | _ -> Error Message.(Error.AllLanguagesRequired field)
   ;;
 
   let read yojson =
     try Ok (yojson |> Yojson.Safe.from_string |> t_of_yojson) with
-    | _ -> Error Pool_common.Message.(Invalid field)
+    | _ -> Error Pool_message.(Error.Invalid field)
   ;;
 
   let value m = m
@@ -66,7 +66,7 @@ module Status = struct
   let print = Utils.ppx_printer
 
   module Core = struct
-    let field = Pool_common.Message.Field.Status
+    let field = Pool_message.Field.Status
 
     type t =
       | Active [@name "active"] [@printer print "active"]

@@ -39,7 +39,7 @@ val register
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (Sihl_queue.instance, Pool_common.Message.error) Lwt_result.t
+  -> (Sihl_queue.instance, Pool_message.Error.t) Lwt_result.t
 
 val find_by
   :  ?query:Query.t
@@ -48,13 +48,13 @@ val find_by
 
 val count_workable
   :  Pool_database.Label.t
-  -> (int, Pool_common.Message.error) Lwt_result.t
+  -> (int, Pool_message.Error.t) Lwt_result.t
 
 val is_pending : Sihl_queue.instance -> bool
 
 val resendable
   :  Sihl_queue.instance
-  -> (Sihl_queue.instance, Pool_common.Message.error) Result.t
+  -> (Sihl_queue.instance, Pool_message.Error.t) Result.t
 
 val column_job_name : Query.Column.t
 val column_job_status : Query.Column.t

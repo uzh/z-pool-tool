@@ -1,7 +1,6 @@
 open CCFun
 open Containers
 open Tyxml.Html
-open Pool_common
 
 let list { Pool_context.language; _ } filter_list query =
   let url = Uri.of_string "/admin/filter" in
@@ -18,7 +17,7 @@ let list { Pool_context.language; _ } filter_list query =
         ~style:`Success
         ~icon:Component.Icon.Add
         ~classnames:[ "small" ]
-        ~control:(language, Message.(Add (Some Field.Filter)))
+        ~control:(language, Pool_message.(Control.Add (Some Field.Filter)))
         "/admin/filter/new"
     in
     [ `column Filter.column_title; `custom create_filter ]
@@ -51,9 +50,9 @@ let index ({ Pool_context.language; _ } as context) filter_list query =
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            (Pool_common.(Utils.field_to_string language Message.Field.Filter)
-             |> CCString.capitalize_ascii)
+        [ Pool_common.Utils.field_to_string language Pool_message.Field.Filter
+          |> CCString.capitalize_ascii
+          |> txt
         ]
     ; hint
     ; div ~a:[ a_class [ "gap" ] ] [ list context filter_list query ]
@@ -69,10 +68,7 @@ let edit
   =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ Component.Partials.form_title
-        language
-        Pool_common.Message.Field.Filter
-        filter
+    [ Component.Partials.form_title language Pool_message.Field.Filter filter
     ; Component.Filter.(
         filter_form
           csrf

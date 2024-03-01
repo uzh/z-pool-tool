@@ -8,7 +8,7 @@ let schema =
 
 let decode data =
   Conformist.decode_and_validate schema data
-  |> CCResult.map_err Pool_common.Message.to_conformist_error
+  |> CCResult.map_err Pool_message.to_conformist_error
 ;;
 
 module Create : sig
@@ -18,7 +18,7 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> ?id:Organisational_unit.Id.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -40,7 +40,7 @@ module Update : sig
     :  ?tags:Logs.Tag.set
     -> Organisational_unit.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Organisational_unit.Id.t -> Guard.ValidationSet.t
 end = struct

@@ -7,7 +7,6 @@ module Input = Component.Input
 module Icon = Component.Icon
 module Modal = Component.Modal
 module Status = Component.UserStatus.Contact
-module Message = Pool_common.Message
 
 let path =
   Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
@@ -26,7 +25,7 @@ let enroll_contact_path ?suffix contact_id =
   Format.asprintf
     "/admin/contacts/%s/%s"
     (Contact.Id.value contact_id)
-    Message.Field.(Experiments |> human_url)
+    Pool_message.Field.(Experiments |> human_url)
   |> (fun base ->
        match suffix with
        | None -> base
@@ -54,7 +53,7 @@ let personal_detail
   contact
   =
   let open Contact in
-  let open Pool_common.Message in
+  let open Pool_message in
   let field_to_string =
     CCFun.(
       Pool_common.Utils.field_to_string language %> CCString.capitalize_ascii)
@@ -96,7 +95,7 @@ let personal_detail
       in
       ungrouped @ grouped)
   in
-  Pool_common.Message.(
+  Pool_message.(
     [ field_to_string Field.Name, fullname contact |> txt
     ; ( field_to_string Field.Email
       , email_address contact |> Pool_user.EmailAddress.value |> txt )
@@ -164,7 +163,7 @@ let assign_contact_experiment_modal
         |> function
         | Ok () ->
           ( txt ""
-          , [ a_name Message.Field.(show Session)
+          , [ a_name Pool_message.Field.(show Session)
             ; a_value Session.(Id.value session.id)
             ; a_required ()
             ] )
@@ -190,7 +189,9 @@ let assign_contact_experiment_modal
   in
   let form =
     div
-      [ h4 [ txt Message.Field.(show Sessions |> CCString.capitalize_ascii) ]
+      [ h4
+          [ txt Pool_message.Field.(show Sessions |> CCString.capitalize_ascii)
+          ]
       ; form
           ~a:
             [ a_method `Post
@@ -203,7 +204,7 @@ let assign_contact_experiment_modal
           Input.
             [ csrf_element csrf ()
             ; session_select
-            ; submit_element language Message.Enroll ()
+            ; submit_element language Pool_message.Control.Enroll ()
             ]
       ]
   in
@@ -277,14 +278,20 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
     Component.Table.(
       table_legend
         Pool_common.Utils.
-          [ ( error_to_string language Message.ContactDoesNotMatchFilter
+          [ ( error_to_string
+                language
+                Pool_message.Error.ContactDoesNotMatchFilter
             , legend_color_item "bg-red-lighter" )
           ])
   in
   let form =
     match Contact.is_inactive contact with
     | true ->
-      p [ txt Utils.(error_to_string language Message.ContactIsInactive) ]
+      p
+        [ txt
+            Utils.(
+              error_to_string language Pool_message.Error.ContactIsInactive)
+        ]
     | false ->
       div
         [ div
@@ -446,7 +453,7 @@ let experiment_history_modal
   let title (_ : Language.t) = Experiment.(Title.value experiment.title) in
   let html =
     let thead =
-      Message.Field.[ Start; NoShow; Participant ]
+      Pool_message.Field.[ Start; NoShow; Participant ]
       |> CCList.map CCFun.(Utils.field_to_string_capitalized language %> txt)
     in
     let to_icon value =
@@ -495,7 +502,7 @@ let detail
       |> Input.link_as_button
            ~icon:Icon.Create
            ~classnames:[ "small" ]
-           ~control:Pool_common.(language, Message.(Edit (Some Field.Contact)))
+           ~control:(language, Pool_message.(Control.Edit (Some Field.Contact)))
     in
     let messages =
       let path =
@@ -555,7 +562,7 @@ let tag_form
       (Format.asprintf
          "%s/%s/assign"
          (contact |> path)
-         Pool_common.Message.Field.(Tag |> human_url))
+         Pool_message.Field.(Tag |> human_url))
   in
   Component.Tag.add_tags_form ?existing context available action
 ;;
@@ -583,7 +590,7 @@ let promote_form csrf language query_language contact =
               ~submit_type:`Success
               ~classnames:[ "nobr" ]
               language
-              Message.PromoteContact
+              Pool_message.Control.PromoteContact
               ()
           ]
       ; div
@@ -612,7 +619,7 @@ let edit
         Format.asprintf
           "%s/%s/%s/remove"
           base_action
-          Pool_common.Message.Field.(Tag |> human_url)
+          Pool_message.Field.(Tag |> human_url)
           Tags.(Id.value tag.id)
       in
       div
@@ -667,9 +674,9 @@ let edit
                             "/admin/contacts/%s"
                             (contact |> Contact.id |> Pool_common.Id.value)))
                   ]
-                [ txt
-                    Pool_common.(
-                      Message.Back |> Utils.control_to_string language)
+                [ Pool_message.Control.Back
+                  |> Pool_common.Utils.control_to_string language
+                  |> txt
                 ]
             ]
         ]

@@ -1,6 +1,6 @@
 open CCFun
 open Tyxml.Html
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let signup
   terms
@@ -62,7 +62,7 @@ let signup
                [ submit_element
                    ~classnames:[ "push" ]
                    language
-                   Message.SignUp
+                   Pool_message.Control.SignUp
                    ()
                ]
            ])

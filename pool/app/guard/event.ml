@@ -47,8 +47,10 @@ let handle_event database_label : event -> unit Lwt.t =
   | RolePermissionDeleted permission ->
     let%lwt (_ : (unit, string) result) =
       Repo.RolePermission.delete ~ctx permission
-      ||> Pool_common.(
-            Utils.with_log_result_error ~src ~tags Message.authorization)
+      ||> Pool_common.Utils.with_log_result_error
+            ~src
+            ~tags
+            Pool_message.Error.authorization
     in
     Lwt.return_unit
   | ActorPermissionSaved permissions ->
@@ -60,8 +62,10 @@ let handle_event database_label : event -> unit Lwt.t =
   | ActorPermissionDeleted permission ->
     let%lwt (_ : (unit, string) result) =
       Repo.ActorPermission.delete ~ctx permission
-      ||> Pool_common.(
-            Utils.with_log_result_error ~src ~tags Message.authorization)
+      ||> Pool_common.Utils.with_log_result_error
+            ~src
+            ~tags
+            Pool_message.Error.authorization
     in
     Lwt.return_unit
 ;;

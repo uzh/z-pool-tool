@@ -3,7 +3,7 @@ val find_contacts_by_mailing
   -> Mailing.t
   -> int
   -> ( Experiment.t * Contact.t list * Filter.base_condition
-       , Pool_common.Message.error )
+       , Pool_message.Error.t )
        Lwt_result.t
 
 val sort_contacts : Contact.t list -> Contact.t list

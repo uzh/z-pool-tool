@@ -27,7 +27,7 @@ let update_schema =
 
 let decode_update data =
   Conformist.decode_and_validate update_schema data
-  |> CCResult.map_err Pool_common.Message.to_conformist_error
+  |> CCResult.map_err Pool_message.to_conformist_error
 ;;
 
 let assignment_effect action uuid =
@@ -77,7 +77,7 @@ module Create : sig
     -> t
     -> (Assignment.t -> Email.job)
     -> bool
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -97,7 +97,7 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
-    let open Pool_common.Message in
+    let open Pool_message.Error in
     let all_sessions = session :: follow_up_sessions in
     let* () =
       if Contact.is_inactive contact then Error ContactIsInactive else Ok ()
@@ -140,14 +140,14 @@ module Cancel : sig
     :  ?tags:Logs.Tag.set
     -> Email.job
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Assignment.t list * Session.t
 
   let handle ?(tags = Logs.Tag.empty) notification_email (assignments, session)
-    : (Pool_event.t list, Pool_common.Message.error) result
+    : (Pool_event.t list, Pool_message.Error.t) result
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
@@ -193,7 +193,7 @@ module CreateFromWaitingList : sig
     :  ?tags:Logs.Tag.set
     -> t
     -> (Assignment.t -> Email.job)
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -213,7 +213,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command CreateFromWaitingList" ~tags);
     let open CCResult in
     if already_enrolled
-    then Error Pool_common.Message.(AlreadySignedUpForExperiment)
+    then Error Pool_message.Error.AlreadySignedUpForExperiment
     else (
       let contact = waiting_list.Waiting_list.contact in
       let* creation_events =
@@ -256,7 +256,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (contact, assignments, decrement_participation_count)
-    : (Pool_event.t list, Pool_common.Message.error) result
+    : (Pool_event.t list, Pool_message.Error.t) result
     =
     let open Assignment in
     let open CCResult in
@@ -291,11 +291,9 @@ module Update : sig
     -> Assignment.t
     -> bool
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = update
 
@@ -344,7 +342,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate update_schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 end
 
@@ -358,10 +356,7 @@ module UpdateHtmx : sig
   type t = update_htmx
 
   val handle : ?tags:Logs.Tag.set -> Assignment.t -> t -> Assignment.t
-
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = update_htmx
 
@@ -387,7 +382,7 @@ end = struct
   ;;
 
   let decode data =
-    let open Pool_common.Message in
+    let open Pool_message in
     let open Assignment in
     let decode_bool decode str =
       str |> Utils.Bool.of_string |> decode |> CCResult.return
@@ -410,7 +405,7 @@ end = struct
         >|= decoder)
       fields
     |> function
-    | None -> Error Pool_common.Message.InvalidHtmxRequest
+    | None -> Error Error.InvalidHtmxRequest
     | Some res -> res
   ;;
 end
@@ -420,10 +415,10 @@ module SendReminder : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> (Assignment.t -> (Email.job, Pool_common.Message.error) result)
+    -> (Assignment.t -> (Email.job, Pool_message.Error.t) result)
        * (Assignment.t
           -> Pool_user.CellPhone.t
-          -> (Text_message.job, Pool_common.Message.error) result)
+          -> (Text_message.job, Pool_message.Error.t) result)
     -> Session.t
     -> Assignment.t
     -> t
@@ -455,7 +450,7 @@ end = struct
       | Email -> assignment |> create_email >|= Email.sent >|= Pool_event.email
       | TextMessage ->
         (match contact.Contact.cell_phone with
-         | None -> Error Pool_common.Message.(Missing Field.CellPhone)
+         | None -> Error Pool_message.(Error.Missing Field.CellPhone)
          | Some cell_phone ->
            create_text_message assignment cell_phone
            >|= Text_message.sent
@@ -474,7 +469,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects exp_id = Session.Guard.Access.update exp_id
@@ -494,7 +489,7 @@ let session_schema () =
   Pool_common.Utils.schema_decoder
     CCFun.(Id.of_string %> CCResult.return)
     Id.value
-    Pool_common.Message.Field.Session
+    Pool_message.Field.Session
 ;;
 
 module SwapSession : sig
@@ -505,11 +500,11 @@ module SwapSession : sig
     -> new_session:Session.t
     -> Assignment.t
     -> Email.job option
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode
     :  (string * string list) list
-    -> (session_swap, Pool_common.Message.error) result
+    -> (session_swap, Pool_message.Error.t) result
 end = struct
   let handle
     ?(tags = Logs.Tag.empty)
@@ -518,7 +513,7 @@ end = struct
     ~new_session
     assignment
     notification_email
-    : (Pool_event.t list, Pool_common.Message.error) result
+    : (Pool_event.t list, Pool_message.Error.t) result
     =
     let open Assignment in
     let open CCResult in
@@ -572,6 +567,6 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 end

@@ -48,7 +48,8 @@ module GtxApiKey = struct
     Common.Repo.make_caqti_type
       Caqti_type.string
       (decrypt_from_string
-       %> CCResult.map_err (fun _ -> Common.Message.(Decode Field.GtxApiKey)))
+       %> CCResult.map_err (fun _ ->
+         Pool_message.(Error.Decode Field.GtxApiKey)))
       encrypt_to_string
   ;;
 end

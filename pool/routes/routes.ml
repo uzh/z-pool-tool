@@ -1,6 +1,6 @@
 module CustomMiddleware = Middleware
 open Sihl.Web
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let session_expiration = `Max_age (60 * 60 * 4 |> CCInt64.of_int)
 

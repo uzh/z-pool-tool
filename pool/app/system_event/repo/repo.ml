@@ -35,7 +35,7 @@ module Sql = struct
   let find pool id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt (Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.SystemEvent)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.SystemEvent)
   ;;
 
   let insert_request =

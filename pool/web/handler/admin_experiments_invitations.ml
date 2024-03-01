@@ -1,6 +1,6 @@
+open Pool_message
 module HttpUtils = Http_utils
 module HttpMessage = HttpUtils.Message
-module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.experiments_invitations"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
@@ -114,7 +114,7 @@ let create req =
       ||> CCList.map Id.of_string
       ||> fun list ->
       if CCList.is_empty list
-      then Error Message.(NoOptionSelected Field.Contact)
+      then Error (Error.NoOptionSelected Field.Contact)
       else Ok list
     in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -138,7 +138,7 @@ let create req =
       | false ->
         find_missing contacts
         |> CCList.map Id.value
-        |> fun ids -> Error Message.(NotFoundList (Field.Contacts, ids))
+        |> fun ids -> Error (Error.NotFoundList (Field.Contacts, ids))
     in
     let%lwt invited_contacts =
       Invitation.find_multiple_by_experiment_and_contacts
@@ -167,7 +167,7 @@ let create req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ HttpMessage.set ~success:[ Message.(SentList Field.Invitations) ] ]
+        [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
     in
     events |> Lwt_result.lift |>> handle
   in
@@ -205,9 +205,7 @@ let resend req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ HttpMessage.set
-            ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
-        ]
+        [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
     in
     events |>> handle
   in
@@ -235,7 +233,7 @@ let reset req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ HttpMessage.set ~success:[ Pool_common.Message.ResetInvitations ] ]
+        [ HttpMessage.set ~success:[ Success.ResetInvitations ] ]
     in
     events |>> handle
   in

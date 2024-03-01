@@ -10,7 +10,7 @@ module Model : sig
     | Contact
     | Experiment
 
-  val field : Pool_common.Message.Field.t
+  val field : Pool_message.Field.t
   val min : int
   val max : int
   val to_enum : t -> int
@@ -57,7 +57,7 @@ val create
   -> ?description:Description.t
   -> Title.t
   -> Model.t
-  -> (t, Pool_common.Message.error) result
+  -> (t, Pool_message.Error.t) result
 
 module ParticipationTags : sig
   type entity =
@@ -89,7 +89,7 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val find
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_multiple
   :  Pool_database.Label.t
@@ -141,14 +141,14 @@ val already_exists
 val insert
   :  Pool_database.Label.t
   -> t
-  -> (unit, Pool_common.Message.error) result Lwt.t
+  -> (unit, Pool_message.Error.t) result Lwt.t
 
 val update : Pool_database.Label.t -> t -> unit Lwt.t
 
 val insert_tagged
   :  Pool_database.Label.t
   -> Tagged.t
-  -> (unit, Pool_common.Message.error) result Lwt.t
+  -> (unit, Pool_message.Error.t) result Lwt.t
 
 val delete_tagged : Pool_database.Label.t -> Tagged.t -> unit Lwt.t
 
@@ -157,7 +157,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

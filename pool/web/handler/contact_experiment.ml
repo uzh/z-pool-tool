@@ -47,7 +47,7 @@ let show req =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let id =
-      let open Pool_common.Message.Field in
+      let open Pool_message.Field in
       HttpUtils.find_id Experiment.Id.of_string Experiment req
     in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in

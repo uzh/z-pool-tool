@@ -100,7 +100,7 @@ module Sql = struct
   let find pool id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Location)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Location)
   ;;
 
   let find_all_request =

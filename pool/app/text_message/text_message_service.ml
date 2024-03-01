@@ -137,7 +137,7 @@ let intercept_prepare database_label ({ message; _ } as job) =
     |> Lwt.return_ok
   | false, None ->
     Lwt.return_error
-      (Pool_common.Message.TextMessageInterceptionError
+      (Pool_message.Error.TextMessageInterceptionError
          "Sending text message intercepted! As no redirect email is specified \
           it/they wont be sent. Please define environment variable \
           'TEXT_MESSAGE_INTERCEPT_ADDRESS'.")
@@ -218,7 +218,7 @@ let test_api_key ~tags api_key cell_phone tenant_title =
            (response_to_string resp)
        in
        Logs.err ~src (fun m -> m ~tags "%s" error);
-       Lwt.return_error Pool_common.Message.(Invalid Field.GtxApiKey)
+       Lwt.return_error Pool_message.(Error.Invalid Field.GtxApiKey)
      | true ->
        Logs.info ~src (fun m ->
          m
@@ -229,10 +229,10 @@ let test_api_key ~tags api_key cell_phone tenant_title =
            body_string);
        Lwt.return_ok api_key)
   | false ->
-    let (_ : Pool_common.Message.error) =
+    let (_ : Pool_message.Error.t) =
       Pool_common.Utils.with_log_error
         ~level:Logs.Warning
-        (Pool_common.Message.TextMessageInterceptionError
+        (Pool_message.Error.TextMessageInterceptionError
            "Verifying API Key: Skip validation due to non production \
             environment!")
     in

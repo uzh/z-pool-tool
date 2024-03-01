@@ -1,11 +1,10 @@
 module Common = Pool_common
-module PoolError = Common.Message
 
 let print = Utils.ppx_printer
 
 module Key = struct
   module Core = struct
-    let field = Pool_common.Message.Field.Key
+    let field = Pool_message.Field.Key
 
     type t =
       | ActorPermissionCreateHint [@name "actor_permission_create_hint"]
@@ -49,7 +48,7 @@ end
 module Content = struct
   include Pool_common.Model.String
 
-  let field = Common.Message.Field.Translation
+  let field = Pool_message.Field.Translation
   let schema () = schema field ()
 end
 

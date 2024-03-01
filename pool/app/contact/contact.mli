@@ -94,7 +94,7 @@ val compare : t -> t -> int
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_admin_comment
   :  Pool_database.Label.t
@@ -109,12 +109,12 @@ val find_multiple
 val find_by_email
   :  Pool_database.Label.t
   -> Pool_user.EmailAddress.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_by_user
   :  Pool_database.Label.t
   -> Sihl_user.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_all
   :  ?query:Query.t
@@ -142,13 +142,12 @@ val find_cell_phone_verification_by_contact_and_code
   :  Pool_database.Label.t
   -> t
   -> Pool_common.VerificationCode.t
-  -> (Pool_user.UnverifiedCellPhone.t, Pool_common.Message.error) result Lwt.t
+  -> (Pool_user.UnverifiedCellPhone.t, Pool_message.Error.t) result Lwt.t
 
 val find_full_cell_phone_verification_by_contact
   :  Pool_database.Label.t
   -> t
-  -> (Pool_user.UnverifiedCellPhone.full, Pool_common.Message.error) result
-       Lwt.t
+  -> (Pool_user.UnverifiedCellPhone.full, Pool_message.Error.t) result Lwt.t
 
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
@@ -258,7 +257,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -270,7 +269,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

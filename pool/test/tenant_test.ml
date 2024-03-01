@@ -1,3 +1,4 @@
+open Pool_message
 module Tenant_command = Cqrs_command.Tenant_command
 module Pool_tenant_command = Cqrs_command.Pool_tenant_command
 module Admin_command = Cqrs_command.Admin_command
@@ -47,7 +48,6 @@ module Data = struct
   let lastname = "Ötzi"
 
   let urlencoded =
-    let open Common.Message in
     [ Field.Title, [ title ]
     ; Field.Description, [ description ]
     ; Field.Url, [ url ]
@@ -77,7 +77,6 @@ module Data = struct
     let protocol = SmtpAuth.Protocol.(STARTTLS, STARTTLS |> show)
 
     let urlencoded ?(default = true) () =
-      let open Common.Message in
       [ Field.SmtpLabel, [ database_label ]
       ; Field.SmtpServer, [ server ]
       ; Field.SmtpPort, [ port |> CCInt.to_string ]
@@ -462,7 +461,7 @@ let[@warning "-4"] update_tenant_details () =
       let open Pool_tenant_command.EditDetails in
       Data.urlencoded
       |> HttpUtils.format_request_boolean_values
-           [ Common.Message.Field.(TenantDisabledFlag |> show) ]
+           Field.[ TenantDisabledFlag |> show ]
       |> decode
       >>= handle tenant
     in
@@ -517,7 +516,7 @@ let update_tenant_database () =
     let events =
       let open Pool_tenant_command in
       let database =
-        Common.Message.Field.
+        Field.
           [ DatabaseUrl |> show, [ database_url ]
           ; DatabaseLabel |> show, [ database_label ]
           ]

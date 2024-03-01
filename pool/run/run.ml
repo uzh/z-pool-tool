@@ -75,7 +75,7 @@ let () =
     |> before_start (fun () ->
       (Lwt.async_exception_hook
        := fun exn ->
-            Pool_common.Message.NotHandled (Printexc.to_string exn)
+            Pool_message.Error.NotHandled (Printexc.to_string exn)
             |> Pool_common.Utils.with_log_error ~src
             |> ignore);
       Lwt.return @@ Logger.create_logs_dir ())

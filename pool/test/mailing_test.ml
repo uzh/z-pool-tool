@@ -1,6 +1,6 @@
 module MailingCommand = Cqrs_command.Mailing_command
 module Conformist = Pool_common.Utils.PoolConformist
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module Model = Test_utils.Model
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
@@ -167,7 +167,7 @@ let create_end_before_start () =
     |> get_or_failwith
     |> handle ~id:Data.Mailing.id experiment
   in
-  let expected = Error Pool_common.Message.EndBeforeStart in
+  let expected = Error Pool_message.Error.EndBeforeStart in
   Test_utils.check_result expected events
 ;;
 

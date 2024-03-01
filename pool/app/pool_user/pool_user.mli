@@ -8,9 +8,9 @@ module PasswordConfirmed : sig
   val to_sihl : t -> string
 
   val schema
-    :  ?field:Pool_common.Message.Field.t
+    :  ?field:Pool_message.Field.t
     -> unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Password : sig
@@ -33,25 +33,25 @@ module Password : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val to_sihl : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
-  val create_unvalidated : string -> (t, Pool_common.Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
+  val create_unvalidated : string -> (t, Pool_message.Error.t) result
 
   val schema
-    :  ?field:Pool_common.Message.Field.t
-    -> (string -> (t, Pool_common.Message.error) result)
+    :  ?field:Pool_message.Field.t
+    -> (string -> (t, Pool_message.Error.t) result)
     -> unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
 
   val validate_current_password
-    :  ?field:Pool_common.Message.Field.t
+    :  ?field:Pool_message.Field.t
     -> Sihl_user.t
     -> t
-    -> (unit, Pool_common.Message.error) result
+    -> (unit, Pool_message.Error.t) result
 
   val validate_password_confirmation
     :  t
     -> PasswordConfirmed.t
-    -> (unit, Pool_common.Message.error) result
+    -> (unit, Pool_message.Error.t) result
 end
 
 module Firstname : sig
@@ -108,7 +108,7 @@ end
 module CellPhone : sig
   type t
 
-  val create : string -> (t, Pool_common.Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val of_string : string -> t
   val value : t -> string
   val equal : t -> t -> bool
@@ -119,7 +119,7 @@ module CellPhone : sig
 
   val schema_test_cell_phone
     :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module ImportPending : sig
@@ -147,20 +147,20 @@ module EmailAddress : sig
   val show : t -> string
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val validate_characters : t -> (t, Pool_common.Message.error) result
+  val validate_characters : t -> (t, Pool_message.Error.t) result
 
   val validate
     :  Settings.EmailSuffix.t list option
     -> t
-    -> (unit, Pool_common.Message.error) result
+    -> (unit, Pool_message.Error.t) result
 
   val value : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val of_string : string -> t
 
   val schema
     :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module EmailVerified : sig
@@ -267,7 +267,7 @@ module FailedLoginAttempt : sig
     val show : t -> string
     val pp : Format.formatter -> t -> unit
     val value : t -> Ptime.t
-    val create : Ptime.t -> (t, Pool_common.Message.error) result
+    val create : Ptime.t -> (t, Pool_message.Error.t) result
   end
 
   type t =

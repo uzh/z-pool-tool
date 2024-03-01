@@ -22,10 +22,10 @@ end = struct
 end
 
 let terms_and_conditions_accepted urlencoded =
-  let open Pool_common.Message in
+  let open Pool_message in
   CCList.assoc ~eq:( = ) Field.(show TermsAccepted) urlencoded
   |> CCList.hd
   |> CCString.equal "true"
-  |> Utils.Bool.to_result TermsAndConditionsNotAccepted
+  |> Utils.Bool.to_result Error.TermsAndConditionsNotAccepted
   |> Lwt_result.lift
 ;;

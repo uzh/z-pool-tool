@@ -14,7 +14,7 @@ module Actor = struct
        %> (fun { Sihl_user.id; _ } -> id |> Uuid.Actor.of_string_exn)
        %> Actor.create `Admin)
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -28,7 +28,7 @@ module Target = struct
        %> (fun { Sihl_user.id; _ } -> id |> Uuid.Target.of_string_exn)
        %> Target.create `Admin)
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

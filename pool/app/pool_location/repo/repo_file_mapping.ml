@@ -103,7 +103,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_request
       mapping_id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.FileMapping)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.FileMapping)
   ;;
 
   let find_by_location_request =
@@ -157,7 +157,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_location_id_request
       id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Location)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Location)
   ;;
 
   let insert_request =

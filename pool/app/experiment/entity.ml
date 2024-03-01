@@ -4,19 +4,17 @@ module Id = struct
   let to_common m = m
 end
 
-module Common = Pool_common
-
 module Title = struct
   include Pool_common.Model.String
 
-  let field = Common.Message.Field.Title
+  let field = Pool_message.Field.Title
   let schema () = schema field ()
 end
 
 module PublicTitle = struct
   include Pool_common.Model.String
 
-  let field = Common.Message.Field.PublicTitle
+  let field = Pool_message.Field.PublicTitle
   let schema () = schema field ()
   let placeholder = "###"
 end
@@ -24,59 +22,59 @@ end
 module InternalDescription = struct
   include Pool_common.Model.String
 
-  let field = Common.Message.Field.InternalDescription
+  let field = Pool_message.Field.InternalDescription
   let schema () = schema field ()
 end
 
 module PublicDescription = struct
   include Pool_common.Model.String
 
-  let field = Common.Message.Field.PublicDescription
+  let field = Pool_message.Field.PublicDescription
   let schema () = schema field ()
 end
 
 module CostCenter = struct
   include Pool_common.Model.String
 
-  let field = Common.Message.Field.CostCenter
+  let field = Pool_message.Field.CostCenter
   let schema () = schema field ()
 end
 
 module DirectRegistrationDisabled = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Common.Message.Field.DirectRegistrationDisabled
+  let schema = schema Pool_message.Field.DirectRegistrationDisabled
 end
 
 module RegistrationDisabled = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Common.Message.Field.RegistrationDisabled
+  let schema = schema Pool_message.Field.RegistrationDisabled
 end
 
 module AllowUninvitedSignup = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Common.Message.Field.AllowUninvitedSignup
+  let schema = schema Pool_message.Field.AllowUninvitedSignup
 end
 
 module ExternalDataRequired = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Common.Message.Field.ExternalDataRequired
+  let schema = schema Pool_message.Field.ExternalDataRequired
 end
 
 module ShowExternalDataIdLinks = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Common.Message.Field.ShowExteralDataIdLinks
+  let schema = schema Pool_message.Field.ShowExteralDataIdLinks
 end
 
 module InvitationResetAt = struct
   include Pool_common.Model.Ptime
 
   let create m = Ok m
-  let schema = schema Common.Message.Field.InvitationResetAt create
+  let schema = schema Pool_message.Field.InvitationResetAt create
   let of_ptime m = m
 end
 
@@ -275,7 +273,7 @@ let show_external_data_id_links_value (m : t) =
 ;;
 
 let boolean_fields =
-  Pool_common.Message.Field.
+  Pool_message.Field.
     [ DirectRegistrationDisabled
     ; RegistrationDisabled
     ; AllowUninvitedSignup
@@ -284,7 +282,7 @@ let boolean_fields =
     ]
 ;;
 
-open Pool_common.Message
+open Pool_message
 
 let column_title =
   (Field.Title, "pool_experiments.title") |> Query.Column.create

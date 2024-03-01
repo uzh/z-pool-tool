@@ -12,7 +12,7 @@ module Label = struct
   let print = Utils.ppx_printer
 
   module Core = struct
-    let field = Pool_common.Message.Field.Label
+    let field = Pool_message.Field.Label
 
     type t =
       | Direction [@name "direction"] [@printer print "direction"]

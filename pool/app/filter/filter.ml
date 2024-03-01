@@ -88,7 +88,7 @@ let toggle_predicate_type (filter : Human.t) predicate_type =
   | "not" -> Ok (Not (Pred (find_predicate filter)))
   | "pred" -> Ok (Pred (find_predicate filter) : t)
   | "template" -> Ok (Template None)
-  | _ -> Error Pool_common.Message.(Invalid Field.Filter)
+  | _ -> Error Pool_message.(Error.Invalid Field.Filter)
 ;;
 
 let all_in_query_fcn fcn { query; _ } =

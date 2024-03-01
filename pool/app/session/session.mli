@@ -16,11 +16,11 @@ module ParticipantAmount : sig
   include Pool_common.Model.BaseSig
 
   val value : t -> int
-  val create : int -> (t, Pool_common.Message.error) result
+  val create : int -> (t, Pool_message.Error.t) result
 
   val schema
-    :  Pool_common.Message.Field.t
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    :  Pool_message.Field.t
+    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Start : sig
@@ -64,7 +64,7 @@ module AssignmentCount : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val value : t -> int
-  val create : int -> (t, Pool_common.Message.error) result
+  val create : int -> (t, Pool_message.Error.t) result
 end
 
 module NoShowCount : sig
@@ -73,7 +73,7 @@ module NoShowCount : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val value : t -> int
-  val create : int -> (t, Pool_common.Message.error) result
+  val create : int -> (t, Pool_message.Error.t) result
 end
 
 module ParticipantCount : sig
@@ -82,7 +82,7 @@ module ParticipantCount : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val value : t -> int
-  val create : int -> (t, Pool_common.Message.error) result
+  val create : int -> (t, Pool_message.Error.t) result
 end
 
 module CancellationReason : sig
@@ -182,7 +182,7 @@ module Public : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val is_fully_booked : t -> bool
-  val assignment_creatable : t -> (unit, Pool_common.Message.error) result
+  val assignment_creatable : t -> (unit, Pool_message.Error.t) result
   val group_and_sort : t list -> (t * t list) list
   val get_session_end : t -> Ptime.t
   val start_end_with_duration_human : t -> string
@@ -243,28 +243,24 @@ module Calendar : sig
 end
 
 val group_and_sort : t list -> (t * t list) list
-val is_cancellable : t -> (unit, Pool_common.Message.error) result
-val is_closable : t -> (unit, Pool_common.Message.error) result
-val is_cancelable : t -> (unit, Pool_common.Message.error) result
-val is_deletable : t -> (unit, Pool_common.Message.error) result
-val assignments_cancelable : t -> (unit, Pool_common.Message.error) result
-
-val assignments_session_changeable
-  :  t
-  -> (unit, Pool_common.Message.error) result
-
-val assignment_creatable : t -> (unit, Pool_common.Message.error) result
+val is_cancellable : t -> (unit, Pool_message.Error.t) result
+val is_closable : t -> (unit, Pool_message.Error.t) result
+val is_cancelable : t -> (unit, Pool_message.Error.t) result
+val is_deletable : t -> (unit, Pool_message.Error.t) result
+val assignments_cancelable : t -> (unit, Pool_message.Error.t) result
+val assignments_session_changeable : t -> (unit, Pool_message.Error.t) result
+val assignment_creatable : t -> (unit, Pool_message.Error.t) result
 
 val can_be_assigned_to_existing_assignment
   :  t
-  -> (unit, Pool_common.Message.error) result
+  -> (unit, Pool_message.Error.t) result
 
-val reminder_resendable : t -> (unit, Pool_common.Message.error) result
+val reminder_resendable : t -> (unit, Pool_message.Error.t) result
 
 val find
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_multiple : Pool_database.Label.t -> Id.t list -> t list Lwt.t
 
@@ -277,12 +273,12 @@ val find_contact_is_assigned_by_experiment
 val find_public
   :  Pool_database.Label.t
   -> Id.t
-  -> (Public.t, Pool_common.Message.error) Lwt_result.t
+  -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
 val find_all_public_by_location
   :  Pool_database.Label.t
   -> Pool_location.Id.t
-  -> (Public.t list, Pool_common.Message.error) Lwt_result.t
+  -> (Public.t list, Pool_message.Error.t) Lwt_result.t
 
 val find_all_for_experiment
   :  Pool_database.Label.t
@@ -298,7 +294,7 @@ val find_all_public_for_experiment
   :  Pool_database.Label.t
   -> Contact.t
   -> Experiment.Id.t
-  -> (Public.t list, Pool_common.Message.error) Lwt_result.t
+  -> (Public.t list, Pool_message.Error.t) Lwt_result.t
 
 val find_all_ids_of_contact_id
   :  Pool_database.Label.t
@@ -308,41 +304,41 @@ val find_all_ids_of_contact_id
 val find_public_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (Public.t, Pool_common.Message.error) Lwt_result.t
+  -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
 val find_upcoming_public_by_contact
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> ( (Experiment.Public.t * Public.t * Public.t list) list
-       , Pool_common.Message.error )
+       , Pool_message.Error.t )
        result
        Lwt.t
 
 val find_by_assignment
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+  -> Id.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_experiment_id_and_title
   :  Pool_database.Label.t
   -> Id.t
-  -> (Experiment.Id.t * string, Pool_common.Message.error) Lwt_result.t
+  -> (Experiment.Id.t * string, Pool_message.Error.t) Lwt_result.t
 
 val find_sessions_to_remind
   :  Pool_tenant.t
-  -> (t list * t list, Pool_common.Message.error) Lwt_result.t
+  -> (t list * t list, Pool_message.Error.t) Lwt_result.t
 
 val find_follow_ups : Pool_database.Label.t -> Id.t -> t list Lwt.t
 
 val find_open_with_follow_ups
   :  Pool_database.Label.t
   -> Id.t
-  -> (t list, Pool_common.Message.error) Lwt_result.t
+  -> (t list, Pool_message.Error.t) Lwt_result.t
 
 val find_open
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_for_calendar_by_location
   :  Pool_location.Id.t
@@ -432,7 +428,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

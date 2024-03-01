@@ -2,7 +2,7 @@ open Tyxml.Html
 open Component
 open Input
 open CCFun.Infix
-module Message = Pool_common.Message
+open Pool_message
 
 let session_title (s : Session.t) =
   Pool_common.I18n.SessionDetailTitle (s.Session.start |> Session.Start.value)
@@ -16,8 +16,7 @@ let follow_up_icon language =
     [ abbr
         ~a:
           [ a_title
-              Pool_common.(
-                Utils.field_to_string language Message.Field.FollowUpSession)
+              (Pool_common.Utils.field_to_string language Field.FollowUpSession)
           ]
         [ txt "(F)" ]
     ]
@@ -98,7 +97,7 @@ module Partials = struct
     |> link_as_button
          ~is_text:true
          ~icon:Icon.Eye
-         ~control:(language, Message.SessionDetails)
+         ~control:(language, Control.SessionDetails)
   ;;
 
   let delete_form
@@ -127,7 +126,7 @@ module Partials = struct
             ~has_icon:Icon.Trash
             ~is_text:true
             language
-            Message.(Delete None)
+            Control.(Delete None)
             ~submit_type:`Error
             ()
         ]
@@ -136,7 +135,7 @@ module Partials = struct
         ~has_icon:Icon.Trash
         ~is_text:true
         language
-        Message.(Delete None)
+        Control.(Delete None)
         ~submit_type:`Disabled
         ()
   ;;
@@ -151,7 +150,7 @@ module Partials = struct
       |> link_as_button
            ~icon:Icon.Create
            ~is_text:true
-           ~control:(language, Message.Close (Some Field.Session))
+           ~control:(language, Control.Close (Some Field.Session))
       |> CCOption.return
     else None
   ;;
@@ -190,11 +189,7 @@ module Partials = struct
         [ p [ I18n.SessionIndent |> Utils.text_to_string language |> txt ]
         ; a
             ~a:
-              [ a_href
-                  (Format.asprintf
-                     "?%s=true"
-                     Message.Field.(show Chronological))
-              ]
+              [ a_href (Format.asprintf "?%s=true" Field.(show Chronological)) ]
             [ to_string I18n.SwitchChronological ]
         ]
   ;;
@@ -207,7 +202,7 @@ let location_select language options selected () =
     ~option_formatter:(fun (l : t) -> l.name |> Name.value)
     ~required:true
     language
-    Message.Field.Location
+    Field.Location
     (fun (l : t) -> l.id |> Id.value)
     options
     selected
@@ -272,16 +267,16 @@ let session_form
         (Experiment.Id.value experiment.Experiment.id)
     in
     match session, follow_up_to with
-    | None, None -> base, Message.(Create (Some Field.Session))
+    | None, None -> base, Control.(Create (Some Field.Session))
     | None, Some follow_up_to ->
       ( Format.asprintf
           "%s/%s/follow-up"
           base
           Session.(follow_up_to.id |> Id.value)
-      , Message.(Create (Some Field.FollowUpSession)) )
+      , Control.(Create (Some Field.FollowUpSession)) )
     | Some session, _ ->
       ( Format.asprintf "%s/%s" base Session.(session.id |> Id.value)
-      , Message.(Update (Some Field.Session)) )
+      , Control.(Update (Some Field.Session)) )
   in
   let lead_time_group field get_value encode default_value warning =
     let warning =
@@ -330,7 +325,7 @@ let session_form
            in
            date_time_picker_element
              language
-             Message.Field.Start
+             Field.Start
              ?min_value:
                (follow_up_to
                 |> CCOption.map
@@ -343,7 +338,7 @@ let session_form
         ; timespan_picker
             language
             ~required:true
-            Message.Field.Duration
+            Field.Duration
             ?value:
               (CCOption.map
                  (fun (s : t) -> s.duration |> Duration.value)
@@ -353,7 +348,7 @@ let session_form
         ; reschedule_hint ()
         ; textarea_element
             language
-            Message.Field.InternalDescription
+            Field.InternalDescription
             ~value:
               (value (fun s ->
                  s.internal_description
@@ -361,7 +356,7 @@ let session_form
             ~flash_fetcher
         ; textarea_element
             language
-            Message.Field.PublicDescription
+            Field.PublicDescription
             ~value:
               (value (fun s ->
                  s.public_description
@@ -375,21 +370,21 @@ let session_form
         ; input_element
             language
             `Number
-            Message.Field.MaxParticipants
+            Field.MaxParticipants
             ~required:true
             ~value:(amount (fun s -> s.max_participants))
             ~flash_fetcher
         ; input_element
             language
             `Number
-            Message.Field.MinParticipants
+            Field.MinParticipants
             ~required:true
             ~value:(amount (fun s -> s.min_participants))
             ~flash_fetcher
         ; input_element
             language
             `Number
-            Message.Field.Overbook
+            Field.Overbook
             ~required:true
             ~value:(amount (fun s -> s.overbook))
             ~flash_fetcher
@@ -402,14 +397,14 @@ let session_form
         ; div
             ~a:[ a_class [ "grid-col-2" ] ]
             [ lead_time_group
-                Message.Field.EmailLeadTime
+                Field.EmailLeadTime
                 (fun (s : t) -> s.email_reminder_lead_time)
                 Reminder.EmailLeadTime.value
                 (experiment.Experiment.email_session_reminder_lead_time
                  |> CCOption.value ~default:default_email_reminder_lead_time)
                 None
             ; lead_time_group
-                Message.Field.TextMessageLeadTime
+                Field.TextMessageLeadTime
                 (fun (s : t) -> s.text_message_reminder_lead_time)
                 Reminder.TextMessageLeadTime.value
                 (experiment.Experiment.text_message_session_reminder_lead_time
@@ -482,7 +477,7 @@ let reschedule_session
           ~a:[ a_class [ "grid-col-2" ] ]
           [ date_time_picker_element
               language
-              Message.Field.Start
+              Field.Start
               ~required:true
               ~flash_fetcher
               ~value:(session.start |> Start.value)
@@ -490,7 +485,7 @@ let reschedule_session
           ; timespan_picker
               language
               ~required:true
-              Message.Field.Duration
+              Field.Duration
               ~value:(session.duration |> Duration.value)
               ~flash_fetcher
           ]
@@ -499,7 +494,7 @@ let reschedule_session
           [ submit_element
               ~classnames:[ "push" ]
               language
-              Message.(Reschedule (Some Field.Session))
+              Control.(Reschedule (Some Field.Session))
               ()
           ]
       ]
@@ -507,7 +502,7 @@ let reschedule_session
   |> Layout.Experiment.(
        create
          context
-         (Control Message.(Reschedule (Some Field.Session)))
+         (Control Control.(Reschedule (Some Field.Session)))
          experiment)
 ;;
 
@@ -528,7 +523,7 @@ let data_table
     let url = session_index_path |> Uri.of_string in
     let additional_url_params =
       match chronological with
-      | true -> Some [ Message.Field.Chronological, "true" ]
+      | true -> Some [ Field.Chronological, "true" ]
       | false -> None
     in
     Component.DataTable.create_meta
@@ -544,7 +539,7 @@ let data_table
         ~style:`Success
         ~icon:Icon.Add
         ~classnames:[ "small"; "nobr" ]
-        ~control:(language, Message.(Add (Some Field.Session)))
+        ~control:(language, Control.(Add (Some Field.Session)))
         (Format.asprintf "%s/create" session_index_path)
     in
     [ `column column_date
@@ -681,7 +676,7 @@ let new_form
     ~flash_fetcher
   |> CCList.return
   |> Layout.Experiment.(
-       create context (Control Message.(Create (Some Field.Session))) experiment)
+       create context (Control Control.(Create (Some Field.Session))) experiment)
 ;;
 
 let duplicate_form ?parent_session language session followups form_id =
@@ -751,7 +746,7 @@ let duplicate_form ?parent_session language session followups form_id =
       ; html
       ]
   in
-  let main = div [ input session ] |> wrap Message.Field.MainSession in
+  let main = div [ input session ] |> wrap Field.MainSession in
   let followups =
     if CCList.is_empty followups
     then div [ txt "" ]
@@ -759,7 +754,7 @@ let duplicate_form ?parent_session language session followups form_id =
       followups
       |> CCList.map (input ~min_input_el:session)
       |> div ~a:[ a_class [ "stack" ] ]
-      |> wrap Message.Field.FollowUpSession
+      |> wrap Field.FollowUpSession
   in
   div
     ~a:
@@ -857,7 +852,7 @@ let duplicate
           Pool_common.(
             Utils.control_to_string
               language
-              (Message.Create (Some Field.Sessions)))
+              (Control.Create (Some Field.Sessions)))
       ]
   in
   let form =
@@ -879,7 +874,7 @@ let duplicate
   |> Layout.Experiment.(
        create
          context
-         (Control Message.(Duplicate (Some Field.Session)))
+         (Control Control.(Duplicate (Some Field.Session)))
          experiment)
 ;;
 
@@ -956,7 +951,7 @@ let detail
               [ csrf_element csrf ()
               ; selector
                   language
-                  Message.Field.MessageChannel
+                  Field.MessageChannel
                   MessageChannel.show
                   MessageChannel.(filtered_channels text_messages_enabled)
                   None
@@ -965,7 +960,7 @@ let detail
                     |> CCString.replace ~sub:"_" ~by:" "
                     |> CCString.capitalize_ascii)
                   ()
-              ; submit_element language Message.(Resend None) ()
+              ; submit_element language Control.(Resend None) ()
               ]
           ]
       in
@@ -983,7 +978,6 @@ let detail
   in
   let session_overview =
     let table =
-      let open Message in
       let parent =
         CCOption.map
           (fun follow_up_to ->
@@ -997,7 +991,7 @@ let detail
                          (Id.value follow_up_to)
                        |> Sihl.Web.externalize_path)
                   ]
-                [ Message.Show
+                [ Control.Show
                   |> Utils.control_to_string language
                   |> CCString.capitalize_ascii
                   |> txt
@@ -1056,13 +1050,13 @@ let detail
           Format.asprintf "%s/%s/duplicate" base (Id.value session.id)
         in
         link_as_button
-          ~control:(language, Message.Duplicate (Some Field.Session))
+          ~control:(language, Control.Duplicate (Some Field.Session))
           ~classnames:[ "small" ]
           link
       in
       let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] in
       let right =
-        Message.
+        Control.
           [ ( CCOption.is_none session.follow_up_to
             , "follow-up"
             , Create (Some Field.FollowUpSession) )
@@ -1072,7 +1066,7 @@ let detail
         |> wrap
       in
       let left =
-        Message.
+        Control.
           [ ( ( session.assignment_count |> AssignmentCount.value > 0
                 && CCOption.is_none session.closed_at
               , "reschedule"
@@ -1183,7 +1177,7 @@ let detail
     in
     let message_modal_scripts =
       Format.asprintf
-        {js| 
+        {js|
         const sessionId = "%s";
         document.addEventListener("DOMContentLoaded", (e) => {
           window['pool-tool'].initAssignmentListMessaging(sessionId);
@@ -1217,13 +1211,13 @@ let detail
           ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
           [ header_btn
               Icon.MailOutline
-              Message.(Send (Some Field.Message))
+              Control.(Send (Some Field.Message))
               [ a_user_data "direct-message" "select" ]
           ; header_btn
               ~hidden:true
               ~style:"success"
               Icon.Checkmark
-              Message.(Send (Some Field.Message))
+              Control.(Send (Some Field.Message))
               Htmx.
                 [ a_user_data "direct-message" "submit"
                 ; hx_post submit_send_messages_action
@@ -1236,7 +1230,7 @@ let detail
               ~hidden:true
               ~style:"error"
               Icon.Close
-              Message.(Cancel None)
+              Control.(Cancel None)
               [ a_user_data "direct-message" "cancel" ]
           ]
       else txt ""
@@ -1262,7 +1256,7 @@ let detail
               [ direct_messaging_buttons
               ; header_btn
                   Icon.PrintOutline
-                  Message.(Print (Some Field.Assignments))
+                  Control.(Print (Some Field.Assignments))
                   [ a_user_data "print" "assignments" ]
               ]
           ]
@@ -1278,7 +1272,7 @@ let detail
     link_as_button
       ~icon:Icon.Create
       ~classnames:[ "small" ]
-      ~control:(language, Message.(Edit (Some Field.Session)))
+      ~control:(language, Control.(Edit (Some Field.Session)))
       (Format.asprintf "%s/edit" session_path)
   in
   div
@@ -1360,9 +1354,7 @@ let edit
   in
   let tags_html =
     let tags_action =
-      Format.asprintf
-        "%s/%s"
-        (session_path Message.Field.(human_url ParticipationTag))
+      Format.asprintf "%s/%s" (session_path Field.(human_url ParticipationTag))
     in
     let remove_action (tag : Tags.t) =
       Format.asprintf "%s/%s" Tags.(tag.id |> Id.value) "remove" |> tags_action
@@ -1405,7 +1397,7 @@ let edit
   div ~a:[ a_class [ "stack-lg" ] ] [ form; tags_html ]
   |> CCList.return
   |> Layout.Experiment.(
-       create context (Control Message.(Edit (Some Field.Session))) experiment)
+       create context (Control Control.(Edit (Some Field.Session))) experiment)
 ;;
 
 let follow_up
@@ -1445,7 +1437,7 @@ let follow_up
   |> Layout.Experiment.(
        create
          context
-         (Control Message.(Create (Some Field.FollowUpSession)))
+         (Control Control.(Create (Some Field.FollowUpSession)))
          experiment)
 ;;
 
@@ -1506,13 +1498,13 @@ let close_assignment_htmx_form
       ; hx_trigger "change"
       ; hx_swap "outerHTML"
       ; hx_target (Format.asprintf "[data-assignment=\"%s\"]" (Id.value id))
-      ; hx_params (Message.Field.show field)
+      ; hx_params (Field.show field)
       ]
   in
   let checkbox_element field value =
     let checked = if value then [ a_checked () ] else [] in
     let classnames =
-      if CCList.mem ~eq:Pool_common.Message.Field.equal field updated_fields
+      if CCList.mem ~eq:Field.equal field updated_fields
       then [ a_class [ "is-valid" ] ]
       else []
     in
@@ -1546,16 +1538,12 @@ let close_assignment_htmx_form
       in
       let field = Field.ExternalDataId in
       let classnames =
-        let open Pool_common.Message in
         if CCList.mem
-             ~eq:equal_error
-             (FieldRequired Field.ExternalDataId)
+             ~eq:Error.equal
+             (Error.FieldRequired Field.ExternalDataId)
              (errors |> CCOption.value ~default:[])
         then [ a_class [ "is-invalid" ] ]
-        else if CCList.mem
-                  ~eq:Pool_common.Message.Field.equal
-                  field
-                  updated_fields
+        else if CCList.mem ~eq:Field.equal field updated_fields
         then [ a_class [ "is-valid" ] ]
         else []
       in
@@ -1595,11 +1583,9 @@ let close_assignment_htmx_form
         ; div
             ~a:[ a_class [ "session-close-checkboxes" ] ]
             [ checkbox_element
-                Message.Field.Participated
+                Field.Participated
                 (default_bool Participated.value participated)
-            ; checkbox_element
-                Message.Field.NoShow
-                (default_bool NoShow.value no_show)
+            ; checkbox_element Field.NoShow (default_bool NoShow.value no_show)
             ]
         ]
     ; errors
@@ -1644,10 +1630,8 @@ let close_assignments_table
           ~a:[ a_class [ "flexrow"; "w-4" ] ]
           [ div
               ~a:[ a_class [ "session-close-checkboxes" ] ]
-              [ div
-                  ~a:(attributes Message.Field.Participated)
-                  [ strong [ txt "P" ] ]
-              ; div ~a:(attributes Message.Field.NoShow) [ strong [ txt "NS" ] ]
+              [ div ~a:(attributes Field.Participated) [ strong [ txt "P" ] ]
+              ; div ~a:(attributes Field.NoShow) [ strong [ txt "NS" ] ]
               ]
           ]
       in
@@ -1716,7 +1700,7 @@ let close
   counters
   =
   let open Pool_common in
-  let control = Message.(Close (Some Field.Session)) in
+  let control = Control.(Close (Some Field.Session)) in
   let session_path = session_path experiment.Experiment.id session.Session.id in
   let tags_html =
     let participation_tags_list =
@@ -1782,7 +1766,7 @@ let close
       ; h4
           ~a:[ a_class [ "heading-4" ] ]
           [ txt
-              (Utils.field_to_string language Message.Field.Participants
+              (Utils.field_to_string language Field.Participants
                |> CCString.capitalize_ascii)
           ]
       ; Page_admin_assignments.Partials.table_legend ~hide_deleted:true language
@@ -1848,21 +1832,21 @@ let cancel
                ~flash_fetcher
                ~required:true
                language
-               Message.Field.Reason
+               Field.Reason
            ; notify_via_selection language
            ; div
                ~a:[ a_class [ "flexrow" ] ]
                [ submit_element
                    ~classnames:[ "push" ]
                    language
-                   Message.(Cancel (Some Field.Session))
+                   Control.(Cancel (Some Field.Session))
                    ()
                ]
            ]
        ])
   |> CCList.return
   |> Layout.Experiment.(
-       create context (Control Message.(Cancel (Some Field.Session))) experiment)
+       create context (Control Control.(Cancel (Some Field.Session))) experiment)
 ;;
 
 let message_template_form
@@ -1886,8 +1870,8 @@ let message_template_form
   in
   let control =
     match form_context with
-    | `Create _ -> Message.(Create None)
-    | `Update _ -> Message.(Edit None)
+    | `Create _ -> Control.(Create None)
+    | `Update _ -> Control.(Edit None)
   in
   let action =
     let path =

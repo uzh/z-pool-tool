@@ -1,7 +1,7 @@
 open Utils.Lwt_result.Infix
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 module File = HttpUtils.File
 module Update = Root_tenant_update
 module Database = Pool_database
@@ -45,7 +45,7 @@ let create req =
       let* files =
         HttpUtils.File.upload_files
           Database.root
-          (CCList.map Pool_common.Message.Field.show Pool_tenant.file_fields)
+          (CCList.map Field.show Pool_tenant.file_fields)
           req
       in
       let* (decoded : create) =
@@ -61,7 +61,7 @@ let create req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path
-        [ Message.set ~success:[ Pool_common.Message.(Created Field.Tenant) ] ]
+        [ Message.set ~success:[ Success.Created Field.Tenant ] ]
     in
     () |> events |>> handle |>> return_to_overview
   in
@@ -74,7 +74,7 @@ let manage_operators req =
     Utils.Lwt_result.map_error (fun err -> err, tenants_path)
     @@
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      HttpUtils.get_field_router_param req Field.tenant
       |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
@@ -111,7 +111,7 @@ let create_operator req =
     in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
-      ||> CCOption.to_result Pool_common.Message.EmailAddressMissingAdmin
+      ||> CCOption.to_result Error.EmailAddressMissingAdmin
       >>= HttpUtils.validate_email_existance tenant_db
     in
     let events =
@@ -129,7 +129,7 @@ let create_operator req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.Created Field.Operator ] ]
+        [ Message.set ~success:[ Success.Created Field.Operator ] ]
     in
     validate_user () >> events >>= handle |>> return_to_overview
   in
@@ -141,7 +141,7 @@ let tenant_detail req =
     Utils.Lwt_result.map_error (fun err -> err, tenants_path)
     @@
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      HttpUtils.get_field_router_param req Field.tenant
       |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in

@@ -29,7 +29,7 @@ let unverified_t =
       let open Pool_common in
       Utils.error_to_string
         Language.En
-        Message.(Decode Field.EmailAddressUnverified))
+        Pool_message.(Error.Decode Field.EmailAddressUnverified))
     @@
     let token = token |> Token.create in
     Ok (Unverified { address; user; token; created_at; updated_at })
@@ -57,7 +57,7 @@ let verified_t =
       let open Pool_common in
       Utils.error_to_string
         Language.En
-        Message.(Decode Field.EmailAddressVerified))
+        Pool_message.(Error.Decode Field.EmailAddressVerified))
     @@
     let verified_at = verified_at |> VerifiedAt.create in
     Ok (Verified { address; user; verified_at; created_at; updated_at })

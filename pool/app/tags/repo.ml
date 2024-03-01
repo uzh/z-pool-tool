@@ -77,7 +77,7 @@ module Sql = struct
 
   let find pool id =
     Utils.Database.find_opt (Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tag)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tag)
   ;;
 
   let find_multiple_request ids =
@@ -297,7 +297,7 @@ module Sql = struct
     try
       Utils.Database.exec (Label.value pool) insert_request tag |> Lwt_result.ok
     with
-    | _ -> Lwt.return_error Pool_common.Message.(Invalid Field.Tag)
+    | _ -> Lwt.return_error Pool_message.(Error.Invalid Field.Tag)
   ;;
 
   let update_request =
@@ -348,7 +348,7 @@ module Sql = struct
         Utils.Database.exec (Label.value pool) insert_request tagging
         |> Lwt_result.ok
       with
-      | _ -> Lwt.return_error Pool_common.Message.(Invalid Field.Tagging)
+      | _ -> Lwt.return_error Pool_message.(Error.Invalid Field.Tagging)
     ;;
 
     let delete_request =

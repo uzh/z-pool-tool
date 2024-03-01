@@ -51,21 +51,19 @@ let update_schema =
 module Create : sig
   include Common.CommandSig with type t = create
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 
   val smtp_of_command
     :  ?id:SmtpAuth.Id.t
     -> t
-    -> (SmtpAuth.Write.t, Pool_common.Message.error) Result.t
+    -> (SmtpAuth.Write.t, Pool_message.Error.t) Result.t
 
   val handle
     :  ?event_id:System_event.Id.t
     -> ?tags:Logs.Tag.set
     -> SmtpAuth.t option
     -> SmtpAuth.Write.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = create
 
@@ -125,7 +123,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Email.Guard.Access.Smtp.create
@@ -140,12 +138,9 @@ module Update : sig
     -> SmtpAuth.t option
     -> SmtpAuth.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : SmtpAuth.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = update
@@ -187,7 +182,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate update_schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Email.Guard.Access.Smtp.update
@@ -200,12 +195,9 @@ module UpdatePassword : sig
     :  ?tags:Logs.Tag.set
     -> SmtpAuth.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : SmtpAuth.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = SmtpAuth.Password.t option
@@ -226,7 +218,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Email.Guard.Access.Smtp.update
@@ -239,7 +231,7 @@ module Delete : sig
     :  ?tags:Logs.Tag.set
     -> ?clear_id:System_event.Id.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : SmtpAuth.Id.t -> Guard.ValidationSet.t
 end = struct

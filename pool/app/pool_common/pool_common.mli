@@ -1,4 +1,3 @@
-module Message = Pool_message
 module I18n = Entity_i18n
 
 module Model : sig
@@ -45,7 +44,7 @@ module Language : sig
 
   val all : t list
   val all_codes : string list
-  val field_of_t : t -> Message.Field.t
+  val field_of_t : t -> Pool_message.Field.t
 end
 
 module Version : sig
@@ -153,7 +152,7 @@ module SortOrder : sig
   val create : string -> (t, Pool_message.Error.t) result
   val read : string -> t
   val flip : t -> t
-  val to_query_parts : t -> (Message.Field.t * string) list
+  val to_query_parts : t -> (Pool_message.Field.t * string) list
 
   val schema
     :  unit
@@ -361,23 +360,23 @@ module Utils : sig
     -> ?default:'b
     -> (string -> ('b, Pool_message.Error.t) result)
     -> ('b -> string)
-    -> Message.Field.t
+    -> Pool_message.Field.t
     -> (Pool_message.Error.t, 'b) PoolConformist.Field.t
 
   val schema_list_decoder
     :  (string list -> ('a, Pool_message.Error.t) result)
     -> ('a -> string list)
-    -> Message.Field.t
+    -> Pool_message.Field.t
     -> ('b, 'a) PoolConformist.Field.t
 
-  val to_string : Language.t -> Message.t -> string
-  val info_to_string : Language.t -> Message.Info.t -> string
-  val success_to_string : Language.t -> Message.Success.t -> string
-  val warning_to_string : Language.t -> Message.Warning.t -> string
+  val to_string : Language.t -> Pool_message.t -> string
+  val info_to_string : Language.t -> Pool_message.Info.t -> string
+  val success_to_string : Language.t -> Pool_message.Success.t -> string
+  val warning_to_string : Language.t -> Pool_message.Warning.t -> string
   val error_to_string : Language.t -> Pool_message.Error.t -> string
-  val field_to_string : Language.t -> Message.Field.t -> string
-  val field_to_string_capitalized : Language.t -> Message.Field.t -> string
-  val control_to_string : Language.t -> Message.Control.t -> string
+  val field_to_string : Language.t -> Pool_message.Field.t -> string
+  val field_to_string_capitalized : Language.t -> Pool_message.Field.t -> string
+  val control_to_string : Language.t -> Pool_message.Control.t -> string
   val confirmable_to_string : Language.t -> I18n.confirmable -> string
   val text_to_string : Language.t -> Entity_i18n.t -> string
   val nav_link_to_string : Language.t -> Entity_i18n.nav_link -> string
@@ -388,22 +387,22 @@ module Utils : sig
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.Info.t
-    -> Message.Info.t
+    -> Pool_message.Info.t
+    -> Pool_message.Info.t
 
   val with_log_success
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.Success.t
-    -> Message.Success.t
+    -> Pool_message.Success.t
+    -> Pool_message.Success.t
 
   val with_log_warning
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.Warning.t
-    -> Message.Warning.t
+    -> Pool_message.Warning.t
+    -> Pool_message.Warning.t
 
   val with_log_error
     :  ?src:Logs.Src.t

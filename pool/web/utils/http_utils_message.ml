@@ -1,29 +1,28 @@
 open CCFun
-module Message = Pool_common.Message
+module Message = Pool_message
 module Utils = Pool_common.Utils
 
 let get_error message lang =
-  message.Pool_common.Message.Collection.error
+  message.Pool_message.Collection.error
   |> CCList.map (Utils.error_to_string lang)
 ;;
 
 let get_warning message lang =
-  message.Pool_common.Message.Collection.warning
+  message.Pool_message.Collection.warning
   |> CCList.map (Utils.warning_to_string lang)
 ;;
 
 let get_success message lang =
-  message.Pool_common.Message.Collection.success
+  message.Pool_message.Collection.success
   |> CCList.map (Utils.success_to_string lang)
 ;;
 
 let get_info message lang =
-  message.Pool_common.Message.Collection.info
-  |> CCList.map (Utils.info_to_string lang)
+  message.Pool_message.Collection.info |> CCList.map (Utils.info_to_string lang)
 ;;
 
 let set ?(error = []) ?(warning = []) ?(success = []) ?(info = []) res =
-  let open Pool_common.Message.Collection in
+  let open Pool_message.Collection in
   let message =
     empty
     |> set_error error

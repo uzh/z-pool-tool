@@ -94,7 +94,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
   let find_by_experiment ?query pool id =
@@ -167,7 +167,7 @@ module Sql = struct
       find_experiment_id_of_invitation_request
       (invitation.Entity.id |> Pool_common.Id.value)
     ||> CCOption.map Experiment.Id.of_string
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
   let resend_request =

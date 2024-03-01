@@ -1,6 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.admin.contacts"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
@@ -224,7 +224,7 @@ let promote req =
     |>> fun () ->
     HttpUtils.redirect_to_with_actions
       (Format.asprintf "/admin/admins/%s" (Pool_common.Id.value contact_id))
-      [ Message.set ~success:[ Pool_common.Message.ContactPromoted ] ]
+      [ Message.set ~success:[ Pool_message.Success.ContactPromoted ] ]
   in
   result |> HttpUtils.Htmx.extract_happy_path ~src req
 ;;
@@ -421,7 +421,7 @@ let enroll_contact_post req =
       in
       HttpUtils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.AssignmentCreated ] ]
+        [ Message.set ~success:[ Pool_message.Success.AssignmentCreated ] ]
     in
     events |>> handle
   in

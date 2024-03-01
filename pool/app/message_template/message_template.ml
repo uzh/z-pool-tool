@@ -15,7 +15,7 @@ let find_default_by_label_and_language pool language label =
         Pool_common.(
           Utils.error_to_string
             Language.En
-            Message.(NotFound Field.MessageTemplate))
+            Pool_message.(Error.NotFound Field.MessageTemplate))
 ;;
 
 let find_default_by_label = Repo.find_default_by_label
@@ -606,9 +606,9 @@ module EmailVerification = struct
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let validation_url =
       Pool_common.
-        [ ( Message.Field.Language
+        [ ( Pool_message.Field.Language
           , language |> Language.show |> CCString.lowercase_ascii )
-        ; Message.Field.Token, Email.Token.value token
+        ; Pool_message.Field.Token, Email.Token.value token
         ]
       |> create_public_url_with_params url "/email-verified"
     in
@@ -825,12 +825,12 @@ module PasswordReset = struct
           m
             ~tags:(Pool_database.Logger.Tags.create pool)
             "Reset token not found");
-        Error Message.PasswordResetFailMessage
+        Error Pool_message.Error.PasswordResetFailMessage
       | Some token -> Ok token
     in
     let layout = create_layout layout in
     let reset_url =
-      Message.
+      Pool_message.
         [ Field.Token, reset_token
         ; Field.Language, language |> Language.show |> CCString.lowercase_ascii
         ]
@@ -1250,9 +1250,9 @@ module SignUpVerification = struct
     let%lwt sender = default_sender_of_pool pool in
     let verification_url =
       Pool_common.
-        [ ( Message.Field.Language
+        [ ( Pool_message.Field.Language
           , language |> Language.show |> CCString.lowercase_ascii )
-        ; Message.Field.Token, Email.Token.value token
+        ; Pool_message.Field.Token, Email.Token.value token
         ]
       |> create_public_url_with_params url "/email-verified"
     in
@@ -1315,9 +1315,9 @@ module UserImport = struct
     let language = language default_language user in
     let confirmation_url =
       Pool_common.
-        [ ( Message.Field.Language
+        [ ( Pool_message.Field.Language
           , language |> Language.show |> CCString.lowercase_ascii )
-        ; Message.Field.Token, token
+        ; Pool_message.Field.Token, token
         ]
       |> create_public_url_with_params url "/import-confirmation"
     in

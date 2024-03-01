@@ -30,7 +30,7 @@ let update_password req =
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        redirect_to_with_actions
          active_navigation
-         [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]
+         [ Message.set ~success:[ Pool_message.Success.PasswordChanged ] ]
        |> Lwt_result.ok
   in
   result |> extract_happy_path_with_actions ~src req

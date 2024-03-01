@@ -1,5 +1,5 @@
 module HttpUtils = Http_utils
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.contact.location"
 let create_layout = Contact_general.create_layout

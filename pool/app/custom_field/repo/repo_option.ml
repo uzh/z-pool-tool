@@ -91,7 +91,7 @@ let find pool id =
     (Pool_database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomFieldOption)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.CustomFieldOption)
   >|+ Repo_entity.Option.to_entity
 ;;
 

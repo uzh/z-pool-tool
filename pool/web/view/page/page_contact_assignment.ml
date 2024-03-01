@@ -34,7 +34,7 @@ let detail session follow_ups experiment Pool_context.{ language; csrf; _ } =
                    [ submit_element
                        ~classnames:[ "push" ]
                        language
-                       Message.Register
+                       Pool_message.Control.Register
                        ~submit_type:`Primary
                        ()
                    ]

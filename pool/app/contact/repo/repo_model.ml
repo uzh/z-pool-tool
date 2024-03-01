@@ -199,8 +199,7 @@ let contact =
                                     ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode _ =
-    failwith
-      Pool_common.(Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+    Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
   in
   let open Pool_user.Repo in
   let open Pool_common.Repo in
@@ -287,9 +286,7 @@ module Write = struct
                             ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ =
-      failwith
-        Pool_common.(
-          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
     in
     let open Pool_user.Repo in
     let open Pool_common.Repo in

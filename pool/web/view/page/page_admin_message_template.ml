@@ -1,6 +1,6 @@
 open Tyxml.Html
 open Component.Input
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 type entity =
   | Experiment of Experiment.Id.t
@@ -74,7 +74,7 @@ let table
                   ~has_icon:Icon.TrashOutline
                   ~submit_type:`Error
                   language
-                  Pool_common.Message.(Delete None)
+                  Pool_message.(Control.Delete None)
                   ()
               ]
           in
@@ -141,7 +141,8 @@ let template_inputs
           match form_context with
           | `Create _ -> []
           | `Update { id; _ } ->
-            [ Message.Field.(show MessageTemplate), Message_template.Id.value id
+            [ ( Pool_message.Field.(show MessageTemplate)
+              , Message_template.Id.value id )
             ]
         in
         let language_vals =
@@ -172,7 +173,10 @@ let template_inputs
               ; a_class [ "btn"; "small"; "primary"; "has-icon"; "push" ]
               ]
             [ Icon.(to_html RefreshOutline)
-            ; txt (Utils.control_to_string language Message.LoadDefaultTemplate)
+            ; Utils.control_to_string
+                language
+                Pool_message.Control.LoadDefaultTemplate
+              |> txt
             ]
         ]
   in
@@ -227,7 +231,10 @@ let template_inputs
                 [ a_class [ "flexrow"; "flex-gap-sm"; "pointer" ]
                 ; a_user_data "toggle-reset-plaintext" Field.(show EmailText)
                 ]
-              [ txt (Utils.control_to_string language Message.ResetPlainText)
+              [ Utils.control_to_string
+                  language
+                  Pool_message.Control.ResetPlainText
+                |> txt
               ; Component.Icon.(to_html RefreshOutline)
               ]
           ]
@@ -306,7 +313,7 @@ let template_form
   let open Message_template in
   let externalize = Http_utils.externalize_path_with_lang query_language in
   let submit, template =
-    let open Pool_common.Message in
+    let open Pool_message.Control in
     let field = Field.MessageTemplate |> CCOption.pure in
     match form_context with
     | `Create t -> Create field, t

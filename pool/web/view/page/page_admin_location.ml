@@ -2,7 +2,7 @@ open CCFun
 open Containers
 open Tyxml.Html
 open Component.Input
-module Message = Pool_common.Message
+module Message = Pool_message
 
 let base_path = "/admin/locations"
 
@@ -50,7 +50,7 @@ let make_statistics ?year year_range language location_id t =
         [ selector
             ~attributes:htmx
             language
-            Message.Field.Year
+            Pool_message.Field.Year
             CCInt.to_string
             year_range
             year
@@ -91,7 +91,7 @@ let list Pool_context.{ language; _ } location_list query =
         ~style:`Success
         ~icon:Component.Icon.Add
         ~classnames:[ "small"; "nobr" ]
-        ~control:(language, Pool_common.Message.(Add (Some Field.Location)))
+        ~control:(language, Pool_message.(Control.Add (Some Field.Location)))
         (Format.asprintf "%s/create" base_path)
     in
     [ `column Pool_location.column_name
@@ -154,11 +154,11 @@ let file_form
   let action = location_specific_path ~suffix:"files" location.id in
   let label_select =
     let open Mapping.Label in
-    selector language Message.Field.Label show labels None ()
+    selector language Pool_message.Field.Label show labels None ()
   in
   let language_select =
     let open Pool_common.Language in
-    selector language Message.Field.Language show languages None ()
+    selector language Pool_message.Field.Language show languages None ()
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "narrow"; "stack" ] ]
@@ -184,13 +184,13 @@ let file_form
             language
             ~allow_multiple:false
             ~required:true
-            Message.Field.FileMapping
+            Pool_message.Field.FileMapping
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(Add (Some Field.File))
+                Message.(Control.Add (Some Field.File))
                 ~submit_type:`Primary
                 ()
             ]
@@ -225,7 +225,7 @@ let form
     | Some { status; _ } ->
       selector
         language
-        Message.Field.Status
+        Pool_message.Field.Status
         Status.show
         states
         (Some status)
@@ -253,7 +253,7 @@ let form
       ~a:
         ([ a_id "toggle-address"
          ; a_input_type `Checkbox
-         ; a_name Message.Field.(Virtual |> show)
+         ; a_name Pool_message.Field.(Virtual |> show)
          ]
          @ checked)
       ()
@@ -288,7 +288,7 @@ let form
       [ h3
           [ txt
               Pool_common.(
-                Utils.field_to_string language Message.Field.description
+                Utils.field_to_string language Pool_message.Field.description
                 |> CCString.capitalize_ascii)
           ]
       ; div ~a:[ a_class [ "grid-col-2" ] ] textareas
@@ -313,14 +313,14 @@ let form
              [ input_element
                  language
                  `Text
-                 Message.Field.Name
+                 Pool_message.Field.Name
                  ~value:(value (fun m -> m.name) Name.value)
                  ~flash_fetcher
                  ~required:true
              ; input_element
                  language
                  `Text
-                 Message.Field.Link
+                 Pool_message.Field.Link
                  ~value:(value_opt (fun m -> m.link) Link.value)
                  ~flash_fetcher
              ; description_html
@@ -331,7 +331,7 @@ let form
                [ h4
                    ~a:[ a_class [ "heading-4" ] ]
                    [ txt
-                       (Message.Field.Location
+                       (Pool_message.Field.Location
                         |> Pool_common.Utils.field_to_string language
                         |> CCString.capitalize_ascii)
                    ]
@@ -341,7 +341,7 @@ let form
                    ; label
                        ~a:[ a_label_for "toggle-address" ]
                        [ txt
-                           Message.Field.(
+                           Pool_message.Field.(
                              Virtual |> show |> CCString.capitalize_ascii)
                        ]
                    ; div
@@ -352,7 +352,7 @@ let form
                        [ input_element
                            language
                            `Text
-                           Message.Field.Institution
+                           Pool_message.Field.Institution
                            ~flash_fetcher
                            ~value:
                              (address_value
@@ -367,7 +367,7 @@ let form
                            [ input_element
                                language
                                `Text
-                               Message.Field.Room
+                               Pool_message.Field.Room
                                ~flash_fetcher
                                ~value:
                                  (address_value
@@ -377,7 +377,7 @@ let form
                            ; input_element
                                language
                                `Text
-                               Message.Field.Building
+                               Pool_message.Field.Building
                                ~flash_fetcher
                                ~value:
                                  (address_value
@@ -391,7 +391,7 @@ let form
                        ; input_element
                            language
                            `Text
-                           Message.Field.Street
+                           Pool_message.Field.Street
                            ~required:true
                            ~flash_fetcher
                            ~value:
@@ -403,7 +403,7 @@ let form
                            [ input_element
                                language
                                `Text
-                               Message.Field.Zip
+                               Pool_message.Field.Zip
                                ~required:true
                                ~flash_fetcher
                                ~value:
@@ -413,7 +413,7 @@ let form
                            ; input_element
                                language
                                `Text
-                               Message.Field.City
+                               Pool_message.Field.City
                                ~required:true
                                ~flash_fetcher
                                ~value:
@@ -429,7 +429,7 @@ let form
                [ submit_element
                    ~classnames:[ "push" ]
                    language
-                   Message.(
+                   Message.Control.(
                      let field = Some Field.location in
                      match location with
                      | None -> Create field
@@ -476,7 +476,10 @@ module FileList = struct
           |> a_href
         ]
       Message.
-        [ Add (Some Field.File) |> Utils.control_to_string language |> txt ]
+        [ Control.Add (Some Field.File)
+          |> Utils.control_to_string language
+          |> txt
+        ]
   ;;
 
   let add_file_btn language id =
@@ -484,12 +487,12 @@ module FileList = struct
       ~style:`Success
       ~icon:Icon.Create
       ~classnames:[ "small" ]
-      ~control:(language, Message.(Add (Some Field.File)))
+      ~control:(language, Message.(Control.Add (Some Field.File)))
       (location_specific_path ~suffix:"files/create" id)
   ;;
 
   let thead language location_id =
-    (Pool_common.Message.Field.[ Label; Language ]
+    (Pool_message.Field.[ Label; Language ]
      |> Component.Table.fields_to_txt language)
     @ [ add_file_btn language location_id ]
   ;;
@@ -518,7 +521,7 @@ module FileList = struct
         [ csrf_element csrf ()
         ; submit_element
             page_language
-            Message.(Delete (Some Field.File))
+            Message.(Control.Delete (Some Field.File))
             ~submit_type:`Error
             ()
         ]
@@ -606,7 +609,7 @@ let detail
   =
   let open Pool_location in
   let location_details =
-    let open Pool_common.Message in
+    let open Pool_message in
     [ Field.Name, location.name |> Name.value |> txt
     ; Field.Description, descriptions_all_languages location
     ; ( Field.Location
@@ -625,7 +628,7 @@ let detail
     link_as_button
       ~icon:Icon.Create
       ~classnames:[ "small" ]
-      ~control:(language, Pool_common.Message.(Edit (Some Field.Location)))
+      ~control:(language, Pool_message.(Control.Edit (Some Field.Location)))
       (location_specific_path ~suffix:"edit" location.Pool_location.id)
   in
   let public_page_link =
@@ -641,7 +644,7 @@ let detail
             ]
           [ txt
               Pool_common.(
-                Utils.control_to_string language Message.PublicPage
+                Utils.control_to_string language Message.Control.PublicPage
                 |> CCString.capitalize_ascii)
           ]
       ]

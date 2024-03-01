@@ -1,5 +1,5 @@
 open Utils.Lwt_result.Infix
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Command = Cqrs_command.Queue_command
@@ -67,7 +67,7 @@ let resend req =
     in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Pool_common.Message.(Resent Field.Message) ] ]
+      [ Message.set ~success:[ Pool_message.(Success.Resent Field.Message) ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req

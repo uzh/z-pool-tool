@@ -1,9 +1,8 @@
 module Ptime = Utils.Ptime
-
-let field_message = Pool_message.Utils.field_message
+open Pool_message
 
 let rec field_to_string =
-  let open Pool_message.Field in
+  let open Field in
   let combine one two =
     CCString.concat ": " [ field_to_string one; field_to_string two ]
   in
@@ -300,14 +299,14 @@ let rec field_to_string =
   | Zip -> "zip code"
 ;;
 
-let info_to_string : Pool_message.Info.t -> string =
-  let open Pool_message.Info in
+let info_to_string =
+  let open Info in
   function
   | Info s -> s
 ;;
 
-let success_to_string : Pool_message.Success.t -> string =
-  let open Pool_message.Success in
+let success_to_string =
+  let open Success in
   function
   | AddedToWaitingList -> "You were added to the waiting list."
   | AssignmentCreated -> "You have been signed up successfully."
@@ -380,14 +379,13 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | VerificationMessageResent -> "The verification message has been resent."
 ;;
 
-let warning_to_string : Pool_message.Warning.t -> string =
-  let open Pool_message.Warning in
+let warning_to_string =
+  let open Warning in
   function
   | Warning string -> string
 ;;
 
 let rec error_to_string =
-  let open Pool_message in
   let open Error in
   function
   | AccountTemporarilySuspended ptime ->
@@ -629,7 +627,6 @@ let format_submit submit field =
 ;;
 
 let control_to_string =
-  let open Pool_message in
   let open Control in
   function
   | Accept field -> format_submit "accept" field
@@ -640,7 +637,7 @@ let control_to_string =
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
-  | ChangeSession -> format_submit "change" (Some Pool_message.Field.Session)
+  | ChangeSession -> format_submit "change" (Some Field.Session)
   | Choose field -> format_submit "choose" field
   | Close field -> format_submit "close" field
   | Create field -> format_submit "create" field
@@ -699,9 +696,7 @@ let control_to_string =
   | Verify field -> format_submit "verify" field
 ;;
 
-let to_string =
-  let open Pool_message in
-  function
+let to_string = function
   | Message string -> string
   | PageNotFoundMessage -> "The requested page could not be found."
 ;;

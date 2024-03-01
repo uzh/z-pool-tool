@@ -64,7 +64,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       (find_request RepoEntity.t)
       id
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
+    >|= CCOption.to_result Pool_message.(Error.NotFound Field.Admin)
   ;;
 
   let find_by_email_request caqti_type =
@@ -82,7 +82,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       (find_by_email_request RepoEntity.t)
       email
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
+    >|= CCOption.to_result Pool_message.(Error.NotFound Field.Admin)
   ;;
 
   let find_all_request =

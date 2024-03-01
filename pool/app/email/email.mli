@@ -62,17 +62,17 @@ val create : Pool_user.EmailAddress.t -> Sihl_user.t -> Token.t -> unverified t
 val find_unverified_by_user
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (unverified t, Pool_common.Message.error) result Lwt.t
+  -> (unverified t, Pool_message.Error.t) result Lwt.t
 
 val find_verified_by_user
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (verified t, Pool_common.Message.error) result Lwt.t
+  -> (verified t, Pool_message.Error.t) result Lwt.t
 
 val find_unverified_by_address
   :  Pool_database.Label.t
   -> Pool_user.EmailAddress.t
-  -> (unverified t, Pool_common.Message.error) result Lwt.t
+  -> (unverified t, Pool_message.Error.t) result Lwt.t
 
 val delete_unverified_by_user
   :  Pool_database.Label.t
@@ -114,7 +114,7 @@ module SmtpAuth : sig
 
     val schema
       :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module Protocol : sig
@@ -133,7 +133,7 @@ module SmtpAuth : sig
 
     val schema
       :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module Default : sig
@@ -189,24 +189,24 @@ module SmtpAuth : sig
       -> Mechanism.t
       -> Protocol.t
       -> Default.t
-      -> (t, Pool_common.Message.error) result
+      -> (t, Pool_message.Error.t) result
   end
 
   val find
     :  Pool_database.Label.t
     -> Id.t
-    -> (t, Pool_common.Message.error) Lwt_result.t
+    -> (t, Pool_message.Error.t) Lwt_result.t
 
   val find_by_label : Pool_database.Label.t -> Label.t -> t option Lwt.t
 
   val find_full
     :  Pool_database.Label.t
     -> Id.t
-    -> (Write.t, Pool_common.Message.error) Lwt_result.t
+    -> (Write.t, Pool_message.Error.t) Lwt_result.t
 
   val find_default
     :  Pool_database.Label.t
-    -> (t, Pool_common.Message.error) Lwt_result.t
+    -> (t, Pool_message.Error.t) Lwt_result.t
 
   val find_default_opt : Pool_database.Label.t -> t option Lwt.t
   val find_all : Pool_database.Label.t -> t list Lwt.t
@@ -230,7 +230,7 @@ type job =
   ; resent : Pool_common.Id.t option
   }
 
-val parse_job_json : string -> (job, Pool_common.Message.error) result
+val parse_job_json : string -> (job, Pool_message.Error.t) result
 val yojson_of_job : job -> Yojson.Safe.t
 val job_message_history : job -> Queue.History.create option
 
@@ -275,7 +275,7 @@ module Service : sig
     :  Pool_database.Label.t
     -> Pool_user.EmailAddress.t Lwt.t
 
-  val intercept_prepare : job -> (job, Pool_common.Message.error) result
+  val intercept_prepare : job -> (job, Pool_message.Error.t) result
   val dispatch : Pool_database.Label.t -> job -> unit Lwt.t
   val dispatch_all : Pool_database.Label.t -> job list -> unit Lwt.t
   val lifecycle : Sihl.Container.lifecycle
@@ -285,7 +285,7 @@ module Service : sig
     :  Pool_database.Label.t
     -> SmtpAuth.Write.t
     -> Pool_user.EmailAddress.t
-    -> (unit, Pool_common.Message.error) Lwt_result.t
+    -> (unit, Pool_message.Error.t) Lwt_result.t
 end
 
 module Guard : sig

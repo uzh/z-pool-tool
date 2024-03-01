@@ -1,7 +1,7 @@
 module Conformist = Pool_common.Utils.PoolConformist
 module Utils = Pool_common.Utils
-module Message = Pool_common.Message
-module Field = Message.Field
+module Message = Pool_message
+module Field = Pool_message.Field
 
 module Mail = struct
   module Room = struct
@@ -48,7 +48,7 @@ module Mail = struct
           |> whole_string
           |> compile)
       in
-      if Re.execp regex zip then Ok zip else Error Message.(Invalid field)
+      if Re.execp regex zip then Ok zip else Error Message.(Error.Invalid field)
     ;;
 
     let schema = schema ~validation:create field

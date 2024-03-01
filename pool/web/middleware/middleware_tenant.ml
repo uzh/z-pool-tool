@@ -7,7 +7,7 @@ let tenant_of_request req =
   let* host =
     req
     |> Sihl.Web.Request.header "host"
-    |> CCOption.to_result Pool_common.Message.(NotFound Field.Host)
+    |> CCOption.to_result Pool_message.(Error.NotFound Field.Host)
     |> Lwt_result.lift
   in
   let%lwt selections = Pool_tenant.Selection.find_all () in
@@ -16,7 +16,7 @@ let tenant_of_request req =
     host
     (selections
      |> CCList.map (fun sel -> Pool_tenant.Selection.(url sel, label sel)))
-  |> CCOption.to_result Pool_common.Message.SessionTenantNotFound
+  |> CCOption.to_result Pool_message.Error.SessionTenantNotFound
   |> Lwt_result.lift
   >>= Pool_tenant.find_by_label
 ;;
@@ -34,7 +34,7 @@ let valid_tenant () =
          ||> Pool_context.Tenant.set req
          >|> handler
        | Error err ->
-         let (_ : Pool_common.Message.error) =
+         let (_ : Pool_message.Error.t) =
            Pool_common.Utils.with_log_error
              ~src
              ~tags:(Pool_context.Logger.Tags.req req)

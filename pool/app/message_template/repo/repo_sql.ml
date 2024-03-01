@@ -171,7 +171,7 @@ let find_by_label_and_language_to_send pool ?entity_uuids label language =
   let where =
     {sql|
     WHERE
-    pool_message_templates.label = $1 
+    pool_message_templates.label = $1
     AND
     pool_message_templates.language = $2
   |sql}
@@ -273,7 +273,7 @@ let find pool id =
     (Pool_database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.MessageTemplate)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.MessageTemplate)
 ;;
 
 let insert_default_if_not_exists pool t =

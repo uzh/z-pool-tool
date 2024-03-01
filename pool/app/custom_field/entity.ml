@@ -1,5 +1,4 @@
 open Ppx_yojson_conv_lib.Yojson_conv
-module Message = Pool_common.Message
 module Language = Pool_common.Language
 module Answer = Entity_answer
 module User = Pool_user
@@ -16,7 +15,7 @@ end
 
 module Model = struct
   module Core = struct
-    let field = Message.Field.Model
+    let field = Pool_message.Field.Model
 
     type t = Contact [@name "contact"] [@printer printer "contact"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
@@ -44,7 +43,7 @@ module Name = struct
       sys_languages
     |> function
     | [] -> Ok names
-    | _ -> Error Message.(AllLanguagesRequired Field.Name)
+    | _ -> Error Pool_message.(Error.AllLanguagesRequired Field.Name)
   ;;
 end
 
@@ -61,7 +60,7 @@ end
 
 module FieldType = struct
   module Core = struct
-    let field = Message.Field.FieldType
+    let field = Pool_message.Field.FieldType
 
     type t =
       | Boolean [@name "boolean"] [@printer printer "boolean"]
@@ -84,58 +83,58 @@ end
 module Required = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Message.Field.Required
+  let schema = schema Pool_message.Field.Required
 end
 
 module Disabled = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Message.Field.Disabled
+  let schema = schema Pool_message.Field.Disabled
 end
 
 module PublishedAt = struct
   include Pool_common.Model.Ptime
 
   let create m = Ok m
-  let schema = schema Pool_common.Message.Field.PublishedAt create
+  let schema = schema Pool_message.Field.PublishedAt create
 end
 
 module AdminHint = struct
   include Pool_common.Model.String
 
-  let field = Message.Field.AdminHint
+  let field = Pool_message.Field.AdminHint
   let schema () = schema field ()
 end
 
 module AdminOverride = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Message.Field.Override
+  let schema = schema Pool_message.Field.Override
 end
 
 module AdminViewOnly = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Message.Field.AdminViewOnly
+  let schema = schema Pool_message.Field.AdminViewOnly
 end
 
 module AdminInputOnly = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Message.Field.AdminInputOnly
+  let schema = schema Pool_message.Field.AdminInputOnly
 end
 
 module PromptOnRegistration = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Message.Field.PromptOnRegistration
+  let schema = schema Pool_message.Field.PromptOnRegistration
 end
 
 module Validation = struct
   type raw = (string * string) list [@@deriving show, eq, yojson]
 
   type 'a t =
-    (('a -> ('a, Message.error) result) * raw
+    (('a -> ('a, Pool_message.Error.t) result) * raw
     [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
   [@@deriving show, eq]
 
@@ -172,13 +171,13 @@ module Validation = struct
     let check_min_length rule_value value =
       if CCString.length value >= rule_value
       then Ok value
-      else Error (Message.TextLengthMin rule_value)
+      else Error (Pool_message.Error.TextLengthMin rule_value)
     ;;
 
     let check_max_length rule_value value =
       if CCString.length value <= rule_value
       then Ok value
-      else Error (Message.TextLengthMax rule_value)
+      else Error (Pool_message.Error.TextLengthMax rule_value)
     ;;
 
     let schema data =
@@ -232,13 +231,13 @@ module Validation = struct
     let check_min rule_value value =
       if value >= rule_value
       then Ok value
-      else Error (Message.NumberMin rule_value)
+      else Error (Pool_message.Error.NumberMin rule_value)
     ;;
 
     let check_max rule_value value =
       if value <= rule_value
       then Ok value
-      else Error (Message.NumberMax rule_value)
+      else Error (Pool_message.Error.NumberMax rule_value)
     ;;
 
     let schema data =
@@ -292,13 +291,13 @@ module Validation = struct
     let check_options_min_count rule_value options =
       if CCList.length options >= rule_value
       then Ok options
-      else Error (Message.SelectedOptionsCountMin rule_value)
+      else Error (Pool_message.Error.SelectedOptionsCountMin rule_value)
     ;;
 
     let check_options_max_count rule_value options =
       if CCList.length options <= rule_value
       then Ok options
-      else Error (Message.SelectedOptionsCountMax rule_value)
+      else Error (Pool_message.Error.SelectedOptionsCountMax rule_value)
     ;;
 
     let schema data =
@@ -380,7 +379,7 @@ module SelectOption = struct
 
   let name lang (t : t) =
     Name.find_opt lang t.name
-    |> CCOption.to_result Message.(NotFound Field.Name)
+    |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
     |> Pool_common.Utils.get_or_failwith
   ;;
 
@@ -390,7 +389,7 @@ module SelectOption = struct
 
   let to_common_field language m =
     let name = name language m in
-    Message.(Field.CustomHtmx (name, m.id |> Id.value))
+    Pool_message.(Field.CustomHtmx (name, m.id |> Id.value))
   ;;
 
   module Public = struct
@@ -404,7 +403,7 @@ module SelectOption = struct
 
     let name lang (t : t) =
       Name.find_opt lang t.name
-      |> CCOption.to_result Message.(NotFound Field.Name)
+      |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
       |> Pool_common.Utils.get_or_failwith
     ;;
 
@@ -412,7 +411,7 @@ module SelectOption = struct
 
     let to_common_field language m =
       let name = name language m in
-      Message.(Field.CustomHtmx (name, m.id |> Id.value))
+      Pool_message.Field.CustomHtmx (name, m.id |> Id.value)
     ;;
   end
 end
@@ -477,7 +476,7 @@ module Public = struct
     | Select ({ name; _ }, _, _)
     | Text ({ name; _ }, _) ->
       Name.find_opt lang name
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+      |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
       |> Pool_common.Utils.get_or_failwith
   ;;
 
@@ -574,7 +573,7 @@ module Public = struct
   let to_common_field language m =
     let id = id m in
     let name = name_value language m in
-    Message.(Field.CustomHtmx (name, id |> Id.value))
+    Pool_message.Field.CustomHtmx (name, id |> Id.value)
   ;;
 
   let to_common_hint language m =
@@ -608,7 +607,7 @@ module Group = struct
   module Id = struct
     include Pool_common.Id
 
-    let schema = schema ~field:Message.Field.CustomFieldGroup
+    let schema = schema ~field:Pool_message.Field.CustomFieldGroup
   end
 
   type t =
@@ -622,7 +621,7 @@ module Group = struct
 
   let name lang (t : t) =
     Name.find_opt lang t.name
-    |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+    |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
     |> Pool_common.Utils.get_or_failwith
   ;;
 
@@ -636,7 +635,7 @@ module Group = struct
 
     let name lang (t : t) =
       Name.find_opt lang t.name
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+      |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
       |> Pool_common.Utils.get_or_failwith
     ;;
   end
@@ -853,7 +852,7 @@ let name_value lang (t : t) =
   t
   |> name
   |> Name.find_opt lang
-  |> CCOption.to_result Message.(NotFound Field.Name)
+  |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
   |> Pool_common.Utils.get_or_failwith
 ;;
 
@@ -1014,7 +1013,7 @@ let validation_to_yojson = function
 ;;
 
 let boolean_fields =
-  Message.Field.
+  Pool_message.Field.
     [ Required
     ; Disabled
     ; Override
@@ -1027,7 +1026,7 @@ let boolean_fields =
 let has_options = function
   | MultiSelect (_, options) | Select (_, options) ->
     if CCList.is_empty options
-    then Error Pool_common.Message.CustomFieldNoOptions
+    then Error Pool_message.Error.CustomFieldNoOptions
     else Ok ()
   | Boolean _ | Date _ | Number _ | Text _ -> Ok ()
 ;;
@@ -1069,7 +1068,7 @@ let group_fields groups fields =
 ;;
 
 module PartialUpdate = struct
-  module PoolField = Pool_common.Message.Field
+  module PoolField = Pool_message.Field
   module Conformist = Pool_common.Utils.PoolConformist
 
   type t =

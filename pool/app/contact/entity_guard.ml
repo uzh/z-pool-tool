@@ -14,7 +14,7 @@ module Target = struct
           (user |> Entity.id |> Uuid.target_of Pool_common.Id.value))
       t
     >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -24,7 +24,7 @@ module Actor = struct
   let decorate ?ctx encode id =
     Persistence.Actor.decorate ?ctx (encode %> Actor.create `Contact) id
     >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 
   let to_authorizable ?ctx =

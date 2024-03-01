@@ -2,7 +2,7 @@ open Entity
 module RepoEntity = Repo_entity
 module User = Pool_user
 
-let not_found = Pool_common.Message.(NotFound Field.Smtp)
+let not_found = Pool_message.(Error.NotFound Field.Smtp)
 
 let find_request_sql : type a. a carrier -> string -> string =
   fun carrier where_fragment ->
@@ -96,7 +96,7 @@ let find_by_user pool carrier user_id =
     (Pool_database.Label.value pool)
     (find_by_user_request carrier)
     (Pool_common.Id.value user_id)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Email)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Email)
 ;;
 
 let find_by_address pool carrier address =
@@ -105,7 +105,7 @@ let find_by_address pool carrier address =
     (Database.Label.value pool)
     (find_by_address_request carrier)
     (address |> User.EmailAddress.value)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Email)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Email)
 ;;
 
 let insert_request =

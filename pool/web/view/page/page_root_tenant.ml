@@ -1,21 +1,20 @@
 open Tyxml.Html
 open Component.Input
+open Pool_message
 module Table = Component.Table
 module File = Pool_common.File
 module Id = Pool_tenant.Id
-module Message = Pool_common.Message
 
 let database_fields tenant language flash_fetcher =
   let open Pool_common.I18n in
   let fields =
-    Message.
-      [ Field.DatabaseUrl, "", TenantDatabaseUrl
-      ; ( Field.DatabaseLabel
-        , tenant
-          |> CCOption.map_or ~default:"" (fun t ->
-            t.Pool_tenant.database_label |> Pool_database.Label.value)
-        , TenantDatabaseLabel )
-      ]
+    [ Field.DatabaseUrl, "", TenantDatabaseUrl
+    ; ( Field.DatabaseLabel
+      , tenant
+        |> CCOption.map_or ~default:"" (fun t ->
+          t.Pool_tenant.database_label |> Pool_database.Label.value)
+      , TenantDatabaseLabel )
+    ]
   in
   fields
   |> CCList.map (fun (field, value, help) ->
@@ -42,13 +41,13 @@ let tenant_form
     match tenant with
     | Some tenant ->
       ( Format.asprintf "/root/tenants/%s/update-detail" (Id.value tenant.id)
-      , Message.(Update (Some Field.Tenant)) )
-    | None -> "/root/tenants/create", Message.(Create (Some Field.Tenant))
+      , Control.(Update (Some Field.Tenant)) )
+    | None -> "/root/tenants/create", Control.(Create (Some Field.Tenant))
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") tenant in
   let language_select =
     let open Pool_common.Language in
-    selector language Message.Field.Language show all None ()
+    selector language Field.Language show all None ()
   in
   let file_uploads =
     [ ( Field.Styles
@@ -120,10 +119,7 @@ let tenant_form
 
 let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
   let build_tenant_rows tenant_list =
-    let thead =
-      Pool_common.Message.
-        [ Field.Tenant |> Table.field_to_txt language; txt "" ]
-    in
+    let thead = [ Field.Tenant |> Table.field_to_txt language; txt "" ] in
     let open Pool_tenant in
     let body =
       CCList.map
@@ -135,7 +131,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
                     (Sihl.Web.externalize_path
                        (Format.asprintf "/root/tenants/%s" (Id.value tenant.id)))
                 ]
-              [ txt Pool_common.(Utils.control_to_string language Message.More)
+              [ txt Pool_common.(Utils.control_to_string language Control.More)
               ]
           ])
         tenant_list
@@ -157,7 +153,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
                 [ Pool_common.(
                     Utils.control_to_string
                       language
-                      Message.(Create (Some Field.Tenant)))
+                      Control.(Create (Some Field.Tenant)))
                   |> txt
                 ]
             ; tenant_form context flash_fetcher
@@ -182,7 +178,7 @@ let manage_operators
               Pool_common.(
                 Utils.control_to_string
                   language
-                  Message.(Create (Some Field.Operator)))
+                  Control.(Create (Some Field.Operator)))
           ]
       ; form
           ~a:
@@ -198,7 +194,7 @@ let manage_operators
             :: CCList.map
                  (fun (field, input) ->
                    input_element ~required:true language input field)
-                 Message.Field.
+                 Field.
                    [ Email, `Email
                    ; Password, `Password
                    ; Firstname, `Text
@@ -215,15 +211,16 @@ let manage_operators
                                      "/root/tenants/%s"
                                      (Id.value id)))
                            ]
-                         [ txt
-                             Pool_common.(
-                               Utils.control_to_string language Message.back)
+                         [ Pool_common.Utils.control_to_string
+                             language
+                             Control.Back
+                           |> txt
                          ]
                      ]
                  ; submit_element
                      ~classnames:[ "push" ]
                      language
-                     Message.(Create (Some Field.operator))
+                     Control.(Create (Some Field.operator))
                      ()
                  ]
              ])
@@ -233,10 +230,9 @@ let manage_operators
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            Pool_common.(
-              Utils.field_to_string language Message.Field.Operators
-              |> CCString.capitalize_ascii)
+        [ Pool_common.Utils.field_to_string language Field.Operators
+          |> CCString.capitalize_ascii
+          |> txt
         ]
     ; div ~a:[ a_class [ "stack-lg" ] ] [ operator_list; create_operator_form ]
     ]
@@ -287,7 +283,7 @@ let detail
                  [ csrf_element csrf ()
                  ; submit_element
                      language
-                     Message.(Delete (Some Field.file))
+                     Control.(Delete (Some Field.file))
                      ~submit_type:`Error
                      ()
                  ]
@@ -297,9 +293,9 @@ let detail
   let delete_file_forms =
     div
       [ delete_img_form (tenant.logos |> Pool_tenant.Logos.value)
-        |> tenant_detail_sub_form language Message.Field.TenantLogos
+        |> tenant_detail_sub_form language Field.TenantLogos
       ; delete_img_form (tenant.partner_logo |> Pool_tenant.PartnerLogos.value)
-        |> tenant_detail_sub_form language Message.Field.PartnerLogos
+        |> tenant_detail_sub_form language Field.PartnerLogos
       ]
   in
   let database_form =
@@ -322,11 +318,11 @@ let detail
              [ submit_element
                  ~classnames:[ "push" ]
                  language
-                 Message.(Update None)
+                 Control.(Update None)
                  ()
              ]
          ])
-    |> tenant_detail_sub_form language Message.Field.Database
+    |> tenant_detail_sub_form language Field.Database
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
@@ -342,9 +338,7 @@ let detail
                         "/root/tenants/%s/operator"
                         (tenant.id |> Id.value)))
               ]
-            [ txt
-                (control_to_string Pool_common.Message.(Manage Field.Operators))
-            ]
+            [ txt (control_to_string (Control.Manage Field.Operators)) ]
         ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
@@ -354,7 +348,7 @@ let detail
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
-                [ txt (control_to_string Pool_common.Message.back) ]
+                [ txt (control_to_string Control.Back) ]
             ]
         ]
     ]

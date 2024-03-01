@@ -1,5 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
-module Message = Pool_common.Message
+module Message = Pool_message
 
 let src = Logs.Src.create "tags.cqrs"
 
@@ -13,7 +13,7 @@ let default_command title description model = { title; description; model }
 
 let assignment_schema =
   let open Conformist in
-  make Field.[ Tags.Id.schema ~field:Message.Field.Tag () ] CCFun.id
+  make Field.[ Tags.Id.schema ~field:Pool_message.Field.Tag () ] CCFun.id
 ;;
 
 let default_schema =
@@ -30,19 +30,19 @@ let default_schema =
 let validate expected { Tags.id; model; _ } =
   if Tags.Model.(equal expected model)
   then Ok id
-  else Error Message.(Invalid Field.Tag)
+  else Error Message.(Error.Invalid Field.Tag)
 ;;
 
 module Create : sig
   include Common.CommandSig with type t = decoded
 
-  val decode : (string * string list) list -> (t, Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 
   val handle
     :  ?id:Tags.Id.t
     -> ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = decoded
 
@@ -64,13 +64,13 @@ end
 module Update : sig
   include Common.CommandSig with type t = decoded
 
-  val decode : (string * string list) list -> (t, Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Tags.t
     -> t
-    -> (Pool_event.t list, Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Tags.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -85,7 +85,7 @@ end = struct
       in
       Logs.info ~src (fun m -> m "Handle command edit" ~tags);
       Ok [ Updated tag |> Pool_event.tags ])
-    else Error Pool_common.Message.(Invalid Field.Model)
+    else Error Pool_message.(Error.Invalid Field.Model)
   ;;
 
   let decode data =
@@ -106,7 +106,7 @@ module AssignTagToContact : sig
     -> (Pool_event.t list, Conformist.error_msg) result
 
   val validate : Tags.t -> (t, Conformist.error_msg) result
-  val decode : (string * string list) list -> (t, Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Tags.Id.t
@@ -163,7 +163,7 @@ module AssignTagToExperiment : sig
     -> (Pool_event.t list, Conformist.error_msg) result
 
   val validate : Tags.t -> (t, Conformist.error_msg) result
-  val decode : (string * string list) list -> (t, Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Tags.Id.t
@@ -218,7 +218,7 @@ module AssignParticipationTagToEntity : sig
     -> (Pool_event.t list, Conformist.error_msg) result
 
   val validate : Tags.t -> (t, Conformist.error_msg) result
-  val decode : (string * string list) list -> (t, Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Tags.Id.t

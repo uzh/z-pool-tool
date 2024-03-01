@@ -1,5 +1,4 @@
 include Entity
-module Message = Pool_message
 module I18n = Entity_i18n
 module Repo = Repo
 

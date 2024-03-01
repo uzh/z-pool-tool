@@ -1,14 +1,14 @@
 module Label = struct
   include Pool_common.Model.String
 
-  let field = Pool_common.Message.Field.Label
+  let field = Pool_message.Field.Label
   let schema = schema ?validation:None field
 end
 
 module ScheduledTime = struct
   include Pool_common.Model.Ptime
 
-  let field = Pool_common.Message.Field.ScheduledTime
+  let field = Pool_message.Field.ScheduledTime
   let create m = Ok m
   let schema = schema field create
 end
@@ -19,24 +19,24 @@ module ScheduledTimeSpan = struct
   let create m =
     if Ptime.Span.abs m |> Ptime.Span.equal m
     then Ok m
-    else Error Pool_common.Message.NegativeAmount
+    else Error Pool_message.Error.NegativeAmount
   ;;
 
-  let field = Pool_common.Message.Field.ScheduledTimeSpan
+  let field = Pool_message.Field.ScheduledTimeSpan
   let schema = schema field create
 end
 
 module LastRunAt = struct
   include Pool_common.Model.Ptime
 
-  let field = Pool_common.Message.Field.LastRunAt
+  let field = Pool_message.Field.LastRunAt
   let create m = Ok m
   let schema = schema field create
 end
 
 module Status = struct
   module Core = struct
-    let field = Pool_common.Message.Field.Status
+    let field = Pool_message.Field.Status
     let go m fmt _ = Format.pp_print_string fmt m
 
     type t =
@@ -106,7 +106,7 @@ let is_ok ({ scheduled_time; status; last_run; _ } : public) =
   is_fine status || did_run ()
 ;;
 
-open Pool_common.Message
+open Pool_message
 
 let column_label = (Field.Label, "pool_schedules.label") |> Query.Column.create
 

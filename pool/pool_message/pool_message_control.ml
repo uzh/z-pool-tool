@@ -65,3 +65,6 @@ type t =
   | Verify of Field.t option
 [@@deriving eq, show, yojson, sexp_of]
 (* NOTE: removed variants because "Show" overwrites "show" function *)
+
+let delete m = Delete m
+let stop m = Stop m

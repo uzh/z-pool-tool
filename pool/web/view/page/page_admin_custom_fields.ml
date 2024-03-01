@@ -1,9 +1,9 @@
 open Tyxml.Html
 open Component.Input
+open Pool_message
 module Icon = Component.Icon
 module Table = Component.Table
 module Partials = Component.Partials
-module Message = Pool_common.Message
 
 module Url = struct
   open Custom_field
@@ -63,9 +63,8 @@ let model_subtitle language model =
         [ txt
             (Format.asprintf
                "%s: "
-               Pool_common.(
-                 Utils.field_to_string language Message.Field.Model
-                 |> CCString.capitalize_ascii))
+               (Pool_common.Utils.field_to_string language Field.Model
+                |> CCString.capitalize_ascii))
         ]
     ; txt (Custom_field.Model.show model |> CCString.capitalize_ascii)
     ]
@@ -127,8 +126,7 @@ let input_by_lang
   CCList.map
     (fun lang ->
       let required =
-        required
-        && CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages
+        required && CCList.mem ~eq:Language.equal lang tenant_languages
       in
       let label_text =
         lang
@@ -137,15 +135,12 @@ let input_by_lang
         |> CCString.capitalize_ascii
       in
       let id =
-        Format.asprintf "%s-%s" (Message.Field.show field) (Language.show lang)
+        Format.asprintf "%s-%s" (Field.show field) (Language.show lang)
       in
       let value =
         let open CCOption in
         flash_fetcher
-          (Format.asprintf
-             "%s[%s]"
-             (Message.Field.show field)
-             (Language.show lang))
+          (Format.asprintf "%s[%s]" (Field.show field) (Language.show lang))
         <+> (elm >|= value_fnc lang)
         |> value ~default:""
       in
@@ -154,10 +149,7 @@ let input_by_lang
           [ a_input_type `Text
           ; a_id id
           ; a_name
-              (Format.asprintf
-                 "%s[%s]"
-                 (Message.Field.show field)
-                 (Language.show lang))
+              (Format.asprintf "%s[%s]" (Field.show field) (Language.show lang))
           ; a_value value
           ]
         in
@@ -176,7 +168,7 @@ let input_by_lang
             ]
         ; input_element
         ])
-    Pool_common.Language.all
+    Language.all
 ;;
 
 let field_form
@@ -228,12 +220,12 @@ let field_form
     input_by_lang ?required language tenant_languages flash_fetcher custom_field
   in
   let name_inputs =
-    input_by_lang ~required:true Message.Field.Name (fun lang f ->
+    input_by_lang ~required:true Field.Name (fun lang f ->
       let open CCOption in
       f |> name |> Name.find_opt lang >|= Name.value_name |> value ~default:"")
   in
   let hint_inputs =
-    input_by_lang Message.Field.Hint (fun lang f ->
+    input_by_lang Field.Hint (fun lang f ->
       let open CCOption in
       f |> hint |> Hint.find_opt lang >|= Hint.value_hint |> value ~default:"")
   in
@@ -243,7 +235,7 @@ let field_form
     in
     let rule_input field_type name input_type value disabled =
       let prefixed_name =
-        Format.asprintf "%s[%s]" Message.Field.(show Validation) name
+        Format.asprintf "%s[%s]" Field.(show Validation) name
       in
       let wrapper_class = [ "form-group"; "horizontal"; "flex-gap" ] in
       let input_attributes =
@@ -325,21 +317,19 @@ let field_form
            if CCList.is_empty options
            then
              [ p
-                 Pool_common.
-                   [ Utils.text_to_string
-                       language
-                       (I18n.NoEntries Message.Field.CustomFieldOptions)
-                     |> txt
-                   ]
+                 [ Utils.text_to_string
+                     language
+                     (I18n.NoEntries Field.CustomFieldOptions)
+                   |> txt
+                 ]
              ]
            else
              [ p
-                 Pool_common.
-                   [ Utils.hint_to_string
-                       language
-                       I18n.(CustomFieldSort Message.Field.CustomFieldOptions)
-                     |> HttpUtils.add_line_breaks
-                   ]
+                 [ Utils.hint_to_string
+                     language
+                     I18n.(CustomFieldSort Field.CustomFieldOptions)
+                   |> HttpUtils.add_line_breaks
+                 ]
              ; form
                  ~a:
                    [ a_method `Post
@@ -359,10 +349,9 @@ let field_form
                                  (if CCOption.is_some
                                        option.SelectOption.published_at
                                   then
-                                    Pool_common.(
-                                      Utils.field_to_string
-                                        language
-                                        Message.Field.PublishedAt)
+                                    Utils.field_to_string
+                                      language
+                                      Field.PublishedAt
                                   else "")
                              ]
                          ; td
@@ -370,8 +359,7 @@ let field_form
                                  ~a:
                                    [ a_input_type `Hidden
                                    ; a_name
-                                       Message.Field.(
-                                         CustomFieldOption |> array_key)
+                                       Field.(CustomFieldOption |> array_key)
                                    ; a_value SelectOption.(Id.value option.id)
                                    ]
                                  ()
@@ -392,7 +380,7 @@ let field_form
                         [ submit_element
                             ~classnames:[ "push" ]
                             language
-                            Message.UpdateOrder
+                            Control.UpdateOrder
                             ~submit_type:`Primary
                             ()
                         ]
@@ -414,8 +402,8 @@ let field_form
                    [ h2
                        ~a:[ a_class [ "heading-2" ] ]
                        [ txt
-                           (Message.Field.CustomFieldOption
-                            |> Pool_common.Utils.field_to_string language
+                           (Field.CustomFieldOption
+                            |> Utils.field_to_string language
                             |> CCString.capitalize_ascii)
                        ]
                    ]
@@ -425,7 +413,7 @@ let field_form
                        ~icon:Icon.Create
                        ~classnames:[ "small" ]
                        ~control:
-                         (language, Message.(Add (Some Field.CustomFieldOption)))
+                         (language, Control.(Add (Some Field.CustomFieldOption)))
                        (Url.Option.new_path (model m, id m))
                    ]
                ]
@@ -435,10 +423,9 @@ let field_form
                   language
                   `Warning
                   [ txt
-                      Pool_common.(
-                        Utils.hint_to_string
-                          language
-                          I18n.CustomFieldOptionsCompleteness)
+                      (Utils.hint_to_string
+                         language
+                         I18n.CustomFieldOptionsCompleteness)
                   ]
                 :: list)
            ]
@@ -450,7 +437,7 @@ let field_form
       let field_type = Custom_field.field_type field in
       selector
         language
-        Message.Field.FieldType
+        Field.FieldType
         FieldType.show
         [ field_type ]
         (Some field_type)
@@ -460,7 +447,7 @@ let field_form
     | Some _ | None ->
       selector
         language
-        Message.Field.FieldType
+        Field.FieldType
         FieldType.show
         FieldType.all
         field_type_opt
@@ -513,7 +500,7 @@ let field_form
           ; Group.(
               selector
                 language
-                Message.Field.CustomFieldGroup
+                Field.CustomFieldGroup
                 Group.(fun (g : t) -> g.id |> Id.value)
                 groups
                 Custom_field.(
@@ -530,10 +517,9 @@ let field_form
               [ h4
                   ~a:[ a_class [ "heading-3" ] ]
                   [ txt
-                      Pool_common.(
-                        Message.Field.Name
-                        |> Utils.field_to_string language
-                        |> CCString.capitalize_ascii)
+                      (Field.Name
+                       |> Utils.field_to_string language
+                       |> CCString.capitalize_ascii)
                   ]
               ; div ~a:[ a_class [ "stack" ] ] name_inputs
               ]
@@ -541,7 +527,7 @@ let field_form
               [ h4
                   ~a:[ a_class [ "heading-3" ] ]
                   [ txt
-                      (Message.Field.Hint
+                      (Field.Hint
                        |> Utils.field_to_string language
                        |> CCString.capitalize_ascii)
                   ]
@@ -559,21 +545,21 @@ let field_form
           [ h4
               ~a:[ a_class [ "heading-3" ] ]
               [ txt
-                  (Message.Field.Admin
+                  (Field.Admin
                    |> Utils.field_to_string language
                    |> CCString.capitalize_ascii)
               ]
           ; input_element
               language
               `Text
-              Message.Field.AdminHint
+              Field.AdminHint
               ~orientation:`Horizontal
               ~value:
                 (value
                    (admin_hint %> CCOption.map_or ~default:"" AdminHint.value))
               ~flash_fetcher
           ; checkbox_element
-              Message.Field.Override
+              Field.Override
               ~hints:[ I18n.CustomFieldAdminOverride ]
               ?append_html:
                 (if custom_field
@@ -590,15 +576,15 @@ let field_form
                       ~default:false
                       (admin_view_only %> AdminViewOnly.value))
               ~hints:[ I18n.CustomFieldAdminInputOnly ]
-              Message.Field.AdminInputOnly
+              Field.AdminInputOnly
               (admin_input_only %> AdminInputOnly.value)
           ; checkbox_element
               ~hints:[ I18n.CustomFieldAdminViewOnly ]
-              Message.Field.AdminViewOnly
+              Field.AdminViewOnly
               (admin_view_only %> AdminViewOnly.value)
           ; checkbox_element
               ~hints:[ I18n.CustomFieldPromptOnRegistration ]
-              Message.Field.PromptOnRegistration
+              Field.PromptOnRegistration
               (prompt_on_registration %> PromptOnRegistration.value)
           ]
       ; div
@@ -608,9 +594,9 @@ let field_form
                 (custom_field
                  |> CCOption.map_or ~default:false (fun f ->
                    f |> admin_input_only |> AdminInputOnly.value))
-              Message.Field.Required
+              Field.Required
               (required %> Required.value)
-          ; checkbox_element Message.Field.Disabled (disabled %> Disabled.value)
+          ; checkbox_element Field.Disabled (disabled %> Disabled.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ div
@@ -618,7 +604,7 @@ let field_form
                   [ reset_form_button language
                   ; submit_element
                       language
-                      Message.(
+                      Control.(
                         let field = Some Field.CustomField in
                         match custom_field with
                         | None -> Create field
@@ -653,10 +639,10 @@ let field_form
                 }
               })
          |js}
-           Message.Field.(show AdminViewOnly)
-           Message.Field.(show AdminInputOnly)
-           Message.Field.(show Required)
-           Message.Field.(show FieldType)
+           Field.(show AdminViewOnly)
+           Field.(show AdminInputOnly)
+           Field.(show Required)
+           Field.(show FieldType)
          |> fun js -> script (Unsafe.data js))
       ]
   ; select_options_html
@@ -676,9 +662,7 @@ let field_buttons language csrf current_model field =
       match disabled_reason with
       | None -> []
       | Some err ->
-        [ a_disabled ()
-        ; a_title Pool_common.Utils.(error_to_string language err)
-        ]
+        [ a_disabled (); a_title Utils.(error_to_string language err) ]
     in
     form
       ~a:
@@ -699,7 +683,7 @@ let field_buttons language csrf current_model field =
      | Some published_at ->
        div
          [ txt
-             (Utils.field_to_string language Message.Field.PublishedAt
+             (Utils.field_to_string language Field.PublishedAt
               |> CCString.capitalize_ascii)
          ; txt ": "
          ; txt
@@ -718,13 +702,13 @@ let field_buttons language csrf current_model field =
          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
          [ make_form
              (action field "delete")
-             Message.(Delete (Some Field.CustomField))
+             Control.(Delete (Some Field.CustomField))
              `Error
              I18n.DeleteCustomField
          ; make_form
              ?disabled_reason:disable_publish
              (action field "publish")
-             Message.(Publish (Some Field.CustomField))
+             Control.(Publish (Some Field.CustomField))
              `Success
              I18n.PublishCustomField
          ])
@@ -741,7 +725,7 @@ let detail
   let button_form = field_buttons language csrf current_model custom_field in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ Partials.form_title language Message.Field.CustomField custom_field
+    [ Partials.form_title language Field.CustomField custom_field
     ; div
         ~a:
           [ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ]
@@ -761,14 +745,15 @@ let detail
 
 let index field_list group_list current_model Pool_context.{ language; csrf; _ }
   =
+  let open Pool_common in
   let grouped, ungrouped = Custom_field.group_fields group_list field_list in
   let thead =
-    (Message.Field.[ Title; CustomFieldGroup; PublishedAt ]
+    (Field.[ Title; CustomFieldGroup; PublishedAt ]
      |> Table.fields_to_txt language)
     @ [ link_as_button
           ~style:`Success
           ~icon:Icon.Add
-          ~control:(language, Message.(Add (Some Field.CustomField)))
+          ~control:(language, Control.(Add (Some Field.CustomField)))
           (Url.Field.new_path current_model)
       ]
   in
@@ -777,7 +762,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
     field |> name |> Name.find_opt_or language "-"
   in
   let hint =
-    let open Pool_common.I18n in
+    let open I18n in
     let open Custom_field.Model in
     match current_model with
     | Contact -> CustomFieldContactModel
@@ -793,8 +778,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
            |> published_at
            |> CCOption.map_or
                 ~default:""
-                CCFun.(
-                  PublishedAt.value %> Pool_common.Utils.Time.formatted_date))
+                CCFun.(PublishedAt.value %> Utils.Time.formatted_date))
       ; Url.Field.edit_path (model field, id field) |> edit_link
       ]
     in
@@ -808,21 +792,17 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
       if CCList.is_empty ungrouped
       then
         [ p
-            Pool_common.
-              [ Utils.text_to_string
-                  language
-                  (I18n.NoEntries Message.Field.CustomFields)
-                |> txt
-              ]
+            [ Utils.text_to_string language (I18n.NoEntries Field.CustomFields)
+              |> txt
+            ]
         ]
       else
         [ p
-            Pool_common.
-              [ Utils.hint_to_string
-                  language
-                  I18n.(CustomFieldSort Message.Field.CustomFields)
-                |> HttpUtils.add_line_breaks
-              ]
+            [ Utils.hint_to_string
+                language
+                I18n.(CustomFieldSort Field.CustomFields)
+              |> HttpUtils.add_line_breaks
+            ]
         ; form
             ~a:
               [ a_class [ "stack" ]
@@ -841,7 +821,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                     ; input
                         ~a:
                           [ a_input_type `Hidden
-                          ; a_name Message.Field.(CustomField |> array_key)
+                          ; a_name Field.(CustomField |> array_key)
                           ; a_value Custom_field.(field |> id |> Id.value)
                           ]
                         ()
@@ -853,7 +833,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                 [ submit_element
                     ~classnames:[ "push"; "small" ]
                     language
-                    Message.UpdateOrder
+                    Control.UpdateOrder
                     ~submit_type:`Primary
                     ()
                 ]
@@ -863,10 +843,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
     div
       (h3
          ~a:[ a_class [ "heading-3" ] ]
-         [ txt
-             Pool_common.(
-               Utils.text_to_string language I18n.SortUngroupedFields)
-         ]
+         [ txt (Utils.text_to_string language I18n.SortUngroupedFields) ]
        :: sort_form)
   in
   let groups_html =
@@ -874,21 +851,19 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
       if CCList.is_empty group_list
       then
         [ p
-            Pool_common.
-              [ Utils.text_to_string
-                  language
-                  (I18n.NoEntries Message.Field.CustomFieldGroups)
-                |> txt
-              ]
+            [ Utils.text_to_string
+                language
+                (I18n.NoEntries Field.CustomFieldGroups)
+              |> txt
+            ]
         ]
       else
         [ p
-            Pool_common.
-              [ Utils.hint_to_string
-                  language
-                  (I18n.CustomFieldSort Message.Field.CustomFieldGroups)
-                |> txt
-              ]
+            [ Utils.hint_to_string
+                language
+                (I18n.CustomFieldSort Field.CustomFieldGroups)
+              |> txt
+            ]
         ; form
             ~a:
               [ a_method `Post
@@ -916,8 +891,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                         [ input
                             ~a:
                               [ a_input_type `Hidden
-                              ; a_name
-                                  Message.Field.(CustomFieldGroup |> array_key)
+                              ; a_name Field.(CustomFieldGroup |> array_key)
                               ; a_value Group.(Id.value group.id)
                               ]
                             ()
@@ -932,7 +906,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                 [ submit_element
                     ~classnames:[ "push"; "small" ]
                     language
-                    Message.UpdateOrder
+                    Control.UpdateOrder
                     ~submit_type:`Primary
                     ()
                 ; csrf_element csrf ()
@@ -947,22 +921,21 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
            [ h2
                ~a:[ a_class [ "heading-3" ] ]
                [ txt
-                   (Message.Field.CustomFieldGroup
-                    |> Pool_common.Utils.field_to_string language
+                   (Field.CustomFieldGroup
+                    |> Utils.field_to_string language
                     |> CCString.capitalize_ascii)
                ]
            ; link_as_button
                ~style:`Success
                ~icon:Icon.Add
                ~classnames:[ "small" ]
-               ~control:(language, Message.(Add (Some Field.CustomFieldGroup)))
+               ~control:(language, Control.(Add (Some Field.CustomFieldGroup)))
                (Url.Group.new_path current_model)
            ]
        ; p
-           Pool_common.
-             [ Utils.hint_to_string language I18n.CustomFieldGroups
-               |> HttpUtils.add_line_breaks
-             ]
+           [ Utils.hint_to_string language I18n.CustomFieldGroups
+             |> HttpUtils.add_line_breaks
+           ]
        ]
        @ list)
   in

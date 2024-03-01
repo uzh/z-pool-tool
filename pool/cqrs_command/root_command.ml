@@ -16,12 +16,9 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Guard.ValidationSet.t
 end = struct
   type t =
@@ -67,7 +64,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects =
@@ -84,7 +81,7 @@ module ToggleStatus : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Admin.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Admin.t
 

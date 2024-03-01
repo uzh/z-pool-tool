@@ -1,5 +1,5 @@
 open Utils.Lwt_result.Infix
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Command = Cqrs_command.Settings_command
@@ -45,7 +45,7 @@ let update req =
       Http_utils.redirect_to_with_actions
         base_path
         [ HttpUtils.Message.set
-            ~success:[ Pool_common.Message.(Updated Field.GtxApiKey) ]
+            ~success:[ Pool_message.(Success.Updated Field.GtxApiKey) ]
         ]
     in
     events |>> handle
@@ -72,7 +72,7 @@ let delete req =
     Http_utils.redirect_to_with_actions
       base_path
       [ HttpUtils.Message.set
-          ~success:[ Pool_common.Message.(Deleted Field.GtxApiKey) ]
+          ~success:[ Pool_message.(Success.Deleted Field.GtxApiKey) ]
       ]
   in
   result |> HttpUtils.extract_happy_path ~src req

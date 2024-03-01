@@ -59,7 +59,7 @@ module Key : sig
 
   val hardcoded_to_single_value_sql
     :  hardcoded
-    -> (string, Pool_common.Message.error) result
+    -> (string, Pool_message.Error.t) result
 
   val equal_human : human -> human -> bool
   val show_human : human -> string
@@ -169,7 +169,7 @@ module Human : sig
   val of_yojson
     :  Key.human list
     -> Yojson.Safe.t
-    -> (t, Pool_common.Message.error) result
+    -> (t, Pool_message.Error.t) result
 
   val all_query_experiments : t -> Pool_common.Id.t list
   val all_query_tags : t -> Tags.Id.t list
@@ -180,21 +180,21 @@ val show : t -> string
 val pp : Format.formatter -> t -> unit
 val create : ?id:Pool_common.Id.t -> Title.t option -> query -> t
 val yojson_of_query : query -> Yojson.Safe.t
-val query_of_yojson : Yojson.Safe.t -> (query, Pool_common.Message.error) result
-val query_of_string : string -> (query, Pool_common.Message.error) result
+val query_of_yojson : Yojson.Safe.t -> (query, Pool_message.Error.t) result
+val query_of_string : string -> (query, Pool_message.Error.t) result
 
 val validate_query
   :  Key.human list
   -> t list
   -> query
-  -> (query, Pool_common.Message.error) result
+  -> (query, Pool_message.Error.t) result
 
 val contains_template : query -> bool
 
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_all_templates : Pool_database.Label.t -> unit -> t list Lwt.t
 
@@ -206,7 +206,7 @@ val find_templates_by
 val find_template
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_multiple_templates
   :  Pool_database.Label.t
@@ -237,11 +237,7 @@ module UtilsF : sig
   val equal_filter_label : filter_label -> filter_label -> bool
   val show_filter_label : filter_label -> string
   val to_label : filter_label -> string
-
-  val label_of_string
-    :  string
-    -> (filter_label, Pool_common.Message.error) result
-
+  val label_of_string : string -> (filter_label, Pool_message.Error.t) result
   val all_filter_labels : filter_label list
   val default_filter_label : filter_label
 end
@@ -257,7 +253,7 @@ val all_keys : Pool_database.Label.t -> Key.human list Lwt.t
 val key_of_string
   :  Pool_database.Label.t
   -> string
-  -> (Key.human, Pool_common.Message.error) Lwt_result.t
+  -> (Key.human, Pool_message.Error.t) Lwt_result.t
 
 val t_to_human : Key.human list -> t list -> query -> Human.t
 val find_templates_of_query : Pool_database.Label.t -> query -> t list Lwt.t
@@ -265,7 +261,7 @@ val find_templates_of_query : Pool_database.Label.t -> query -> t list Lwt.t
 val toggle_predicate_type
   :  Human.t
   -> string
-  -> (Human.t, Pool_common.Message.error) result
+  -> (Human.t, Pool_message.Error.t) result
 
 val all_query_experiments : t -> Pool_common.Id.t list
 val all_query_tags : t -> Tags.Id.t list
@@ -281,14 +277,14 @@ val find_filtered_contacts
   -> ?limit:int
   -> base_condition
   -> t option
-  -> (Contact.t list, Pool_common.Message.error) Lwt_result.t
+  -> (Contact.t list, Pool_message.Error.t) Lwt_result.t
 
 val count_filtered_contacts
   :  ?include_invited:bool
   -> Pool_database.Label.t
   -> base_condition
   -> query option
-  -> (int, Pool_common.Message.error) Lwt_result.t
+  -> (int, Pool_message.Error.t) Lwt_result.t
 
 val contact_matches_filter
   :  ?default:bool
@@ -302,7 +298,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

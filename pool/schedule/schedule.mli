@@ -10,7 +10,7 @@ module Status : sig
     | Running
     | Stopped
 
-  val create : string -> (t, Pool_common.Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val init : t
   val all : t list
   val schema : unit -> ('a, t) Pool_common.Utils.PoolConformist.Field.t
