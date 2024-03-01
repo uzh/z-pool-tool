@@ -1,7 +1,9 @@
-open Entity_message
+module Ptime = Utils.Ptime
+
+let field_message = Pool_message.Utils.field_message
 
 let rec field_to_string =
-  let open Field in
+  let open Pool_message.Field in
   let combine one two =
     CCString.concat ": " [ field_to_string one; field_to_string two ]
   in
@@ -298,11 +300,15 @@ let rec field_to_string =
   | Zip -> "zip code"
 ;;
 
-let info_to_string : info -> string = function
+let info_to_string : Pool_message.Info.t -> string =
+  let open Pool_message.Info in
+  function
   | Info s -> s
 ;;
 
-let success_to_string : success -> string = function
+let success_to_string : Pool_message.Success.t -> string =
+  let open Pool_message.Success in
+  function
   | AddedToWaitingList -> "You were added to the waiting list."
   | AssignmentCreated -> "You have been signed up successfully."
   | Canceled field ->
@@ -374,14 +380,19 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | VerificationMessageResent -> "The verification message has been resent."
 ;;
 
-let warning_to_string : warning -> string = function
+let warning_to_string : Pool_message.Warning.t -> string =
+  let open Pool_message.Warning in
+  function
   | Warning string -> string
 ;;
 
-let rec error_to_string = function
+let rec error_to_string =
+  let open Pool_message in
+  let open Error in
+  function
   | AccountTemporarilySuspended ptime ->
     ptime
-    |> Utils.Ptime.formatted_date_time
+    |> Ptime.formatted_date_time
     |> Format.asprintf
          "Too many failed login attempts. This email address is blocked until \
           %s"
@@ -617,7 +628,10 @@ let format_submit submit field =
   field_message "" submit (field_opt_message field)
 ;;
 
-let control_to_string = function
+let control_to_string =
+  let open Pool_message in
+  let open Control in
+  function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
@@ -626,7 +640,7 @@ let control_to_string = function
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
-  | ChangeSession -> format_submit "change" (Some Entity_message_field.Session)
+  | ChangeSession -> format_submit "change" (Some Pool_message.Field.Session)
   | Choose field -> format_submit "choose" field
   | Close field -> format_submit "close" field
   | Create field -> format_submit "create" field
@@ -685,7 +699,9 @@ let control_to_string = function
   | Verify field -> format_submit "verify" field
 ;;
 
-let to_string = function
+let to_string =
+  let open Pool_message in
+  function
   | Message string -> string
   | PageNotFoundMessage -> "The requested page could not be found."
 ;;

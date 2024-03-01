@@ -1,7 +1,6 @@
 open CCFun
 open Sexplib.Conv
 open Ppx_yojson_conv_lib.Yojson_conv
-module PoolError = Entity_message
 
 module Model = struct
   include Entity_base_model
@@ -20,7 +19,7 @@ module Id = struct
   let of_common m = m
   let compare = CCString.compare
 
-  let schema ?(field = PoolError.Field.Id) () =
+  let schema ?(field = Pool_message.Field.Id) () =
     Pool_common_utils.schema_decoder (of_string %> CCResult.return) value field
   ;;
 
@@ -44,7 +43,7 @@ end
 
 module Language = struct
   module Core = struct
-    let field = PoolError.Field.Language
+    let field = Pool_message.Field.Language
 
     type t =
       | En [@name "EN"] [@printer print "EN"]
@@ -62,7 +61,7 @@ module Language = struct
   let all_codes = all |> CCList.map show
 
   let field_of_t =
-    let open Entity_message.Field in
+    let open Pool_message.Field in
     function
     | En -> LanguageEn
     | De -> LanguageDe
@@ -98,7 +97,7 @@ module File = struct
 
     let create m =
       if CCString.is_empty m
-      then Error PoolError.(Invalid Field.Filename)
+      then Error Pool_message.(Error.Invalid Field.Filename)
       else Ok m
     ;;
 
@@ -110,7 +109,9 @@ module File = struct
 
     let create m =
       let open CCInt.Infix in
-      if m >= CCInt.zero then Ok m else Error PoolError.(Invalid Field.Filesize)
+      if m >= CCInt.zero
+      then Ok m
+      else Error Pool_message.(Error.Invalid Field.Filesize)
     ;;
 
     let value m = m
@@ -137,7 +138,7 @@ module File = struct
       | "image/png" -> Ok Png
       | "image/svg+xml" -> Ok Svg
       | "image/webp" -> Ok Webp
-      | _ -> Error PoolError.(Invalid Field.FileMimeType)
+      | _ -> Error Pool_message.(Error.Invalid Field.FileMimeType)
     ;;
 
     let to_string = function
@@ -161,7 +162,7 @@ module File = struct
       | ".png" -> Ok Png
       | ".svg" -> Ok Svg
       | ".webp" -> Ok Webp
-      | _ -> Error PoolError.(Invalid Field.FileMimeType)
+      | _ -> Error Pool_message.(Error.Invalid Field.FileMimeType)
     ;;
   end
 
@@ -183,7 +184,7 @@ end
 
 module SortOrder = struct
   module Core = struct
-    let field = Entity_message.Field.SortOrder
+    let field = Pool_message.Field.SortOrder
 
     type t =
       | Ascending [@name "ASC"] [@printer print "ASC"]
@@ -206,7 +207,7 @@ end
 
 module MessageChannel = struct
   module Core = struct
-    let field = PoolError.Field.MessageChannel
+    let field = Pool_message.Field.MessageChannel
 
     type t =
       | Email [@name "email"] [@printer print "email"]
@@ -226,7 +227,7 @@ end
 module Reminder = struct
   module EmailLeadTime = struct
     module TimeDurationCore = struct
-      let name = Entity_message_field.EmailLeadTime
+      let name = Pool_message.Field.EmailLeadTime
     end
 
     include Model.Duration (TimeDurationCore)
@@ -234,7 +235,7 @@ module Reminder = struct
 
   module TextMessageLeadTime = struct
     module TimeDurationCore = struct
-      let name = Entity_message_field.TextMessageLeadTime
+      let name = Pool_message.Field.TextMessageLeadTime
     end
 
     include Model.Duration (TimeDurationCore)
@@ -248,11 +249,30 @@ module Reminder = struct
     let value m = m
     let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
   end
+
+  module Channel = struct
+    module Core = struct
+      let field = Pool_message.Field.MessageChannel
+
+      type t =
+        | Email [@name "email"] [@printer print "email"]
+        | TextMessage [@name "text_message"] [@printer print "text_message"]
+      [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+    end
+
+    include Entity_base_model.SelectorType (Core)
+    include Core
+
+    let filtered_channels = function
+      | true -> all
+      | false -> CCList.remove ~eq:equal ~key:TextMessage all
+    ;;
+  end
 end
 
 module ExperimentType = struct
   module Core = struct
-    let field = PoolError.Field.ExperimentType
+    let field = Pool_message.Field.ExperimentType
 
     type t =
       | Lab [@name "lab"] [@printer print "lab"]
@@ -285,7 +305,7 @@ end
 
 module NotifyVia = struct
   module Core = struct
-    let field = PoolError.Field.NotifyVia
+    let field = Pool_message.Field.NotifyVia
 
     type t =
       | Email [@name "email"] [@printer print "email"]
@@ -297,7 +317,7 @@ module NotifyVia = struct
   include Core
 
   let to_human language m =
-    let open Entity_message in
+    let open Pool_message in
     let show field =
       CCString.capitalize_ascii
       @@
@@ -320,5 +340,5 @@ module NotifyContact = struct
   include Entity_base_model.Boolean
 
   let init = false
-  let schema = schema Entity_message_field.NotifyContact
+  let schema = schema Pool_message.Field.NotifyContact
 end

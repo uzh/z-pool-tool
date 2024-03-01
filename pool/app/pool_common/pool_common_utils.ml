@@ -7,16 +7,18 @@ let debug = Logs.Debug
 module Time = Utils_time
 
 module Error = struct
-  type error = Entity_message.error [@@deriving eq, show, yojson]
+  open Pool_message.Error
 
-  let invalid_bool = Entity_message.(ConformistModuleErrorType)
-  let invalid_float = Entity_message.(ConformistModuleErrorType)
-  let invalid_int = Entity_message.(ConformistModuleErrorType)
-  let invalid_string = Entity_message.(ConformistModuleErrorType)
-  let invalid_date = Entity_message.(ConformistModuleErrorType)
-  let invalid_datetime = Entity_message.(ConformistModuleErrorType)
-  let no_value = Entity_message.(NoValue)
-  let of_string _ = Entity_message.(ConformistModuleErrorType)
+  type error = t [@@deriving eq, show, yojson]
+
+  let invalid_bool = ConformistModuleErrorType
+  let invalid_float = ConformistModuleErrorType
+  let invalid_int = ConformistModuleErrorType
+  let invalid_string = ConformistModuleErrorType
+  let invalid_date = ConformistModuleErrorType
+  let invalid_datetime = ConformistModuleErrorType
+  let no_value = NoValue
+  let of_string _ = ConformistModuleErrorType
 end
 
 module PoolConformist = struct
@@ -79,12 +81,12 @@ let handle_ppx_yojson_err (exn, yojson) =
       (Printexc.to_string exn)
       ([%show: Yojson.Safe.t] yojson)
   in
-  Error Entity_message.(NotHandled msg)
+  Error Pool_message.Error.(NotHandled msg)
 ;;
 
 let handle_json_parse_err str =
   let msg = Format.asprintf "Json parse error: %s" str in
-  Error Entity_message.(InvalidJson msg)
+  Error Pool_message.Error.(InvalidJson msg)
 ;;
 
 let with_log_info ?(src = src) ?(tags = Logs.Tag.empty) ?(level = info) info =
@@ -122,14 +124,15 @@ let with_log_error ?(src = src) ?(tags = Logs.Tag.empty) ?(level = error) err =
 
 let with_log_result_error ?src ?tags fcn =
   CCResult.map_err (fun err ->
-    let (_ : Entity_message.error) = err |> fcn |> with_log_error ?src ?tags in
+    let (_ : Pool_message.Error.t) = err |> fcn |> with_log_error ?src ?tags in
     err)
 ;;
 
 let decoder ?tags create_fcn field = function
   | x :: _ -> create_fcn x
   | [] ->
-    Error (Entity_message.Undefined field |> with_log_error ?tags ~level:info)
+    Error
+      (Pool_message.Error.Undefined field |> with_log_error ?tags ~level:info)
 ;;
 
 let schema_decoder ?tags ?default create_fcn encode_fnc field =
@@ -137,12 +140,9 @@ let schema_decoder ?tags ?default create_fcn encode_fnc field =
     ?default
     (decoder ?tags create_fcn field)
     CCFun.(encode_fnc %> CCList.pure)
-    Entity_message.Field.(field |> show)
+    Pool_message.Field.(field |> show)
 ;;
 
 let schema_list_decoder create_fcn encode_fnc field =
-  PoolConformist.custom
-    create_fcn
-    encode_fnc
-    Entity_message.Field.(field |> show)
+  PoolConformist.custom create_fcn encode_fnc Pool_message.Field.(field |> show)
 ;;

@@ -1,4 +1,4 @@
-module Message = Entity_message
+module Message = Pool_message
 module I18n = Entity_i18n
 
 module Model : sig
@@ -34,14 +34,14 @@ module Language : sig
   val show : t -> string
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val create : string -> (t, Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val compare : t -> t -> int
 
   val schema
     :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 
   val all : t list
   val all_codes : string list
@@ -90,14 +90,14 @@ module File : sig
   module Name : sig
     type t
 
-    val create : string -> (t, Message.error) result
+    val create : string -> (t, Pool_message.Error.t) result
     val value : t -> string
   end
 
   module Size : sig
     type t
 
-    val create : int -> (t, Message.error) result
+    val create : int -> (t, Pool_message.Error.t) result
     val value : t -> int
   end
 
@@ -115,9 +115,9 @@ module File : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_string : string -> (t, Message.error) result
+    val of_string : string -> (t, Pool_message.Error.t) result
     val to_string : t -> string
-    val of_filename : string -> (t, Message.error) result
+    val of_filename : string -> (t, Pool_message.Error.t) result
   end
 
   type t =
@@ -150,14 +150,14 @@ module SortOrder : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val all : t list
-  val create : string -> (t, Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val read : string -> t
   val flip : t -> t
   val to_query_parts : t -> (Message.Field.t * string) list
 
   val schema
     :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 
   val default : t
 end
@@ -169,13 +169,13 @@ module MessageChannel : sig
 
   val schema
     :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
   val read : string -> t
-  val create : string -> (t, Message.error) Result.t
+  val create : string -> (t, Pool_message.Error.t) Result.t
   val all : t list
   val filtered_channels : bool -> t list
 end
@@ -208,7 +208,7 @@ module ExperimentType : sig
 
   val schema
     :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 
   val pp : Format.formatter -> t -> unit
   val show : t -> string
@@ -235,13 +235,13 @@ module NotifyVia : sig
 
   val schema
     :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
   val read : string -> t
-  val create : string -> (t, Message.error) Result.t
+  val create : string -> (t, Pool_message.Error.t) Result.t
   val all : t list
   val to_human : Language.t -> t -> string
   val checked_by_default : t -> bool
@@ -254,7 +254,7 @@ end
 module Repo : sig
   val make_caqti_type
     :  'a Caqti_type.t
-    -> ('a -> ('b, Message.error) result)
+    -> ('a -> ('b, Pool_message.Error.t) result)
     -> ('b -> 'a)
     -> 'b Caqti_type.t
 
@@ -347,34 +347,37 @@ module Utils : sig
     val formatted_time : ?with_seconds:bool -> Ptime.t -> string
     val formatted_timespan : Ptime.span -> string
     val timespan_to_minutes : Ptime.span -> string
-    val parse_time : string -> (Ptime.t, Message.error) result
-    val parse_time_span : string -> (Ptime.Span.t, Message.error) result
+    val parse_time : string -> (Ptime.t, Pool_message.Error.t) result
+    val parse_time_span : string -> (Ptime.Span.t, Pool_message.Error.t) result
     val print_time_span : Ptime.Span.t -> string
-    val parse_date_from_calendar : string -> (Ptime.t, Message.error) result
+
+    val parse_date_from_calendar
+      :  string
+      -> (Ptime.t, Pool_message.Error.t) result
   end
 
   val schema_decoder
     :  ?tags:Logs.Tag.set
     -> ?default:'b
-    -> (string -> ('b, Message.error) result)
+    -> (string -> ('b, Pool_message.Error.t) result)
     -> ('b -> string)
     -> Message.Field.t
-    -> (Message.error, 'b) PoolConformist.Field.t
+    -> (Pool_message.Error.t, 'b) PoolConformist.Field.t
 
   val schema_list_decoder
-    :  (string list -> ('a, Message.error) result)
+    :  (string list -> ('a, Pool_message.Error.t) result)
     -> ('a -> string list)
     -> Message.Field.t
     -> ('b, 'a) PoolConformist.Field.t
 
   val to_string : Language.t -> Message.t -> string
-  val info_to_string : Language.t -> Message.info -> string
-  val success_to_string : Language.t -> Message.success -> string
-  val warning_to_string : Language.t -> Message.warning -> string
-  val error_to_string : Language.t -> Message.error -> string
+  val info_to_string : Language.t -> Message.Info.t -> string
+  val success_to_string : Language.t -> Message.Success.t -> string
+  val warning_to_string : Language.t -> Message.Warning.t -> string
+  val error_to_string : Language.t -> Pool_message.Error.t -> string
   val field_to_string : Language.t -> Message.Field.t -> string
   val field_to_string_capitalized : Language.t -> Message.Field.t -> string
-  val control_to_string : Language.t -> Message.control -> string
+  val control_to_string : Language.t -> Message.Control.t -> string
   val confirmable_to_string : Language.t -> I18n.confirmable -> string
   val text_to_string : Language.t -> Entity_i18n.t -> string
   val nav_link_to_string : Language.t -> Entity_i18n.nav_link -> string
@@ -385,43 +388,43 @@ module Utils : sig
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.info
-    -> Message.info
+    -> Message.Info.t
+    -> Message.Info.t
 
   val with_log_success
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.success
-    -> Message.success
+    -> Message.Success.t
+    -> Message.Success.t
 
   val with_log_warning
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.warning
-    -> Message.warning
+    -> Message.Warning.t
+    -> Message.Warning.t
 
   val with_log_error
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.error
-    -> Message.error
+    -> Pool_message.Error.t
+    -> Pool_message.Error.t
 
   val with_log_result_error
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
-    -> ('a -> Message.error)
+    -> ('a -> Pool_message.Error.t)
     -> ('b, 'a) result
     -> ('b, 'a) result
 
-  val get_or_failwith : ('a, Message.error) result -> 'a
-  val failwith : Message.error -> 'a
+  val get_or_failwith : ('a, Pool_message.Error.t) result -> 'a
+  val failwith : Pool_message.Error.t -> 'a
 
   val handle_ppx_yojson_err
     :  exn * Yojson.Safe.t
-    -> ('a, Entity_message.error) result
+    -> ('a, Pool_message.Error.t) result
 
-  val handle_json_parse_err : string -> ('a, Entity_message.error) result
+  val handle_json_parse_err : string -> ('a, Pool_message.Error.t) result
 end

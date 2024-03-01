@@ -240,7 +240,7 @@ module UtilsF : sig
 
   val label_of_string
     :  string
-    -> (filter_label, Pool_common__Entity_message.error) result
+    -> (filter_label, Pool_common.Message.error) result
 
   val all_filter_labels : filter_label list
   val default_filter_label : filter_label

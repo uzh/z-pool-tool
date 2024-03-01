@@ -28,7 +28,7 @@ let to_string = function
   | DashboardTitle -> "Dashboard"
   | DeletedAssignments -> "Deleted assignments"
   | Disabled ->
-    Locales_en.field_to_string Entity_message_field.Disabled
+    Locales_en.field_to_string Pool_message.Field.Disabled
     |> CCString.capitalize_ascii
   | DontHaveAnAccount -> "Don't have an account?"
   | EmailConfirmationNote ->
@@ -250,7 +250,7 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "This option excludes \"%s\"."
-      (Locales_en.field_to_string Entity_message.Field.Required
+      (Locales_en.field_to_string Pool_message.Field.Required
        |> CCString.capitalize_ascii)
   | CustomFieldAdminOverride ->
     "Allows administrators to override the answers specified by the contact. \
@@ -261,7 +261,7 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | CustomFieldAdminViewOnly ->
     Format.asprintf
       "This option implies \"%s\"."
-      (Locales_en.field_to_string Entity_message.Field.AdminInputOnly
+      (Locales_en.field_to_string Pool_message.Field.AdminInputOnly
        |> CCString.capitalize_ascii)
   | CustomFieldAnsweredOnRegistration ->
     "This field has already been answered by the contact during registration \
@@ -437,8 +437,8 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsWeeksHint -> "Nr. of weeks"
-  | NumberMax i -> error_to_string (Entity_message.NumberMax i)
-  | NumberMin i -> error_to_string (Entity_message.NumberMin i)
+  | NumberMax i -> error_to_string (Pool_message.Error.NumberMax i)
+  | NumberMin i -> error_to_string (Pool_message.Error.NumberMin i)
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
@@ -515,9 +515,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
       (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
   | SelectedDateIsPast -> "The selected date is in the past."
   | SelectedOptionsCountMax i ->
-    error_to_string (Entity_message.SelectedOptionsCountMax i)
+    error_to_string (Pool_message.Error.SelectedOptionsCountMax i)
   | SelectedOptionsCountMin i ->
-    error_to_string (Entity_message.SelectedOptionsCountMin i)
+    error_to_string (Pool_message.Error.SelectedOptionsCountMin i)
   | SessionCancellationMessageFollowUps ->
     "Associated follow-up sessions were canceled as well:"
   | SessionCancellationWithFollowups ->
@@ -530,9 +530,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
     Format.asprintf
       {|<strong>%s</strong> and <strong>%s</strong> are mutually exclusive.<br>
     If none of the two checkboxes is checked, it equals to 'show up but did not participate'|}
-      (Locales_en.field_to_string Entity_message_field.NoShow |> capitalize)
-      (Locales_en.field_to_string Entity_message_field.Participated
-       |> capitalize)
+      (Locales_en.field_to_string Pool_message.Field.NoShow |> capitalize)
+      (Locales_en.field_to_string Pool_message.Field.Participated |> capitalize)
   | SessionCloseLegendNoShow -> "the contact did not show up"
   | SessionCloseLegendParticipated ->
     "the contact participated in the experiment"
@@ -587,8 +586,8 @@ Only sessions with open spots can be selected.|}
   | TestPhoneNumber ->
     "Please provide a phone number where we can send a single test message to \
      verify the api key. The number must have the format +41791234567."
-  | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
-  | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
+  | TextLengthMax i -> error_to_string (Pool_message.Error.TextLengthMax i)
+  | TextLengthMin i -> error_to_string (Pool_message.Error.TextLengthMin i)
   | UserImportInterval ->
     {|<p>Define after how many days a reminder will be sent to contacts that have not confirmed the import yet.</p>
 <p><strong>The 'second reminder' setting defines how long after the first reminder the second reminder is sent.</strong></p>|}

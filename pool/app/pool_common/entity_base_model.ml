@@ -18,9 +18,9 @@ module type IdSig = sig
   val t_of_sexp : Sexplib0.Sexp.t -> t
 
   val schema
-    :  ?field:Entity_message.Field.t
+    :  ?field:Pool_message.Field.t
     -> unit
-    -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 
   val sql_select_fragment : field:string -> string
   val sql_value_fragment : string -> string
@@ -45,7 +45,7 @@ module Boolean = struct
   ;;
 
   let schema field ()
-    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    : (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
     =
     Pool_common_utils.schema_decoder
       (fun m ->
@@ -75,7 +75,7 @@ module type BooleanSig = sig
 
   val schema
     :  unit
-    -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module String = struct
@@ -88,11 +88,11 @@ module String = struct
   let of_string m = m
 
   let create str =
-    if CCString.is_empty str then Error Entity_message.NoValue else Ok str
+    if CCString.is_empty str then Error Pool_message.Error.NoValue else Ok str
   ;;
 
   let schema field ?validation ()
-    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    : (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
     =
     let create = CCOption.value ~default:create validation in
     Pool_common_utils.schema_decoder create value field
@@ -109,13 +109,13 @@ module type StringSig = sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val create : string -> (t, Entity_message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val value : t -> string
   val of_string : string -> t
 
   val schema
     :  unit
-    -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module Integer = struct
@@ -127,12 +127,12 @@ module Integer = struct
   let to_string t = Int.to_string t
 
   let schema field create ()
-    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    : (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
     =
     let decode str =
       let open CCResult in
       CCInt.of_string str
-      |> CCOption.to_result Entity_message.(NotANumber str)
+      |> CCOption.to_result Pool_message.(Error.NotANumber str)
       >>= create
     in
     Pool_common_utils.schema_decoder decode CCInt.to_string field
@@ -148,13 +148,13 @@ module type IntegerSig = sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val create : int -> (t, Entity_message.error) result
+  val create : int -> (t, Pool_message.Error.t) result
   val value : t -> int
   val compare : t -> t -> int
 
   val schema
     :  unit
-    -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module PtimeSpan = struct
@@ -172,7 +172,7 @@ module PtimeSpan = struct
   let compare = Ptime.Span.compare
 
   let schema field create ()
-    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    : (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
     =
     let open Pool_common_utils in
     let open CCResult in
@@ -200,7 +200,7 @@ module type PtimeSpanSig = sig
 
   val schema
     :  unit
-    -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module Ptime = struct
@@ -238,7 +238,7 @@ module Ptime = struct
   let pp_date formatter t = CCString.pp formatter (date_to_string t)
 
   let schema field create ()
-    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    : (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
     =
     let decode str =
       let open CCResult in
@@ -264,7 +264,7 @@ module type PtimeSig = sig
 
   val schema
     :  unit
-    -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module type BaseSig = sig
@@ -274,17 +274,17 @@ module type BaseSig = sig
   val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : string -> (t, Entity_message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
 
   val schema
     :  unit
-    -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module type SelectorCoreTypeSig = sig
   type t
 
-  val field : Entity_message.Field.t
+  val field : Pool_message.Field.t
   val min : int
   val max : int
   val to_enum : t -> int
@@ -309,7 +309,7 @@ module SelectorType (Core : SelectorCoreTypeSig) = struct
     try Ok (read m) with
     | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (exn, yojson) ->
       Pool_common_utils.handle_ppx_yojson_err (exn, yojson)
-    | _ -> Error Entity_message.(Invalid field)
+    | _ -> Error Pool_message.(Error.Invalid field)
   ;;
 
   let all : t list =
@@ -319,7 +319,7 @@ module SelectorType (Core : SelectorCoreTypeSig) = struct
     |> CCOption.get_exn_or
          (Format.asprintf
             "%s: Could not create list of all keys!"
-            ([%show: Entity_message.Field.t] field))
+            ([%show: Pool_message.Field.t] field))
   ;;
 
   let schema () = Pool_common_utils.schema_decoder create show field
@@ -329,7 +329,7 @@ module TimeUnit = struct
   let print = Utils.ppx_printer
 
   module Core = struct
-    let field = Entity_message_field.TimeUnit
+    let field = Pool_message.Field.TimeUnit
 
     type t =
       | Seconds [@name "seconds"] [@printer print "seconds"]
@@ -357,10 +357,10 @@ module TimeUnit = struct
 
   let of_string str =
     try Ok (read str) with
-    | _ -> Error Entity_message.(Invalid Core.field)
+    | _ -> Error Pool_message.(Error.Invalid Core.field)
   ;;
 
-  let named_field name = Entity_message_field.TimeUnitOf name
+  let named_field name = Pool_message.Field.TimeUnitOf name
 
   let named_schema name () =
     Pool_common_utils.schema_decoder of_string show (named_field name)
@@ -384,7 +384,7 @@ module TimeUnit = struct
 end
 
 module type DurationCore = sig
-  val name : Entity_message_field.t
+  val name : Pool_message.Field.t
 end
 
 module Duration (Core : DurationCore) = struct
@@ -400,13 +400,13 @@ module Duration (Core : DurationCore) = struct
   let create m =
     if PtimeSpan.(equal (abs m) m)
     then Ok m
-    else Error Entity_message.NegativeAmount
+    else Error Pool_message.Error.NegativeAmount
   ;;
 
   let of_int_s s =
     if s >= 0
     then Ok (s |> PtimeSpan.of_int_s)
-    else Error Entity_message.NegativeAmount
+    else Error Pool_message.Error.NegativeAmount
   ;;
 
   let of_int value unit = to_ptime_span value unit |> create
@@ -433,15 +433,15 @@ module type DurationSig = sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val value : t -> PtimeSpan.t
-  val create : PtimeSpan.t -> (t, Entity_message.error) result
-  val of_int_s : int -> (t, Entity_message.error) result
-  val of_int : int -> TimeUnit.t -> (t, Entity_message.error) result
+  val create : PtimeSpan.t -> (t, Pool_message.Error.t) result
+  val of_int_s : int -> (t, Pool_message.Error.t) result
+  val of_int : int -> TimeUnit.t -> (t, Pool_message.Error.t) result
   val to_int_s : t -> int option
 
   val of_int_opt
     :  int option
     -> TimeUnit.t option
-    -> (t option, Entity_message.error) result
+    -> (t option, Pool_message.Error.t) result
 
   val to_human : t -> string
   val to_ptime_span : int -> TimeUnit.t -> PtimeSpan.t
@@ -449,5 +449,5 @@ module type DurationSig = sig
 
   val integer_schema
     :  unit
-    -> (Entity_message.error, int) Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, int) Pool_common_utils.PoolConformist.Field.t
 end

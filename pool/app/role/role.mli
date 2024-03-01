@@ -12,7 +12,7 @@ module Role : sig
   val pp_input_type : Format.formatter -> input_type -> unit
   val show_input_type : input_type -> string
   val equal_input_type : input_type -> input_type -> bool
-  val type_of_key : t -> (input_type option, Pool_common.Message.error) result
+  val type_of_key : t -> (input_type option, Pool_message.Error.t) result
 end
 
 module Target : sig

@@ -1,4 +1,5 @@
 open CCFun.Infix
+include Ptime
 
 (* Formatting *)
 let decimal n =
@@ -140,3 +141,7 @@ let print_time_span span =
   (* This is only the case if span > 136 years (64bit system) *)
   |> CCOption.get_or ~default:"Session duration too long!"
 ;;
+
+let t_of_yojson = ptime_of_yojson
+let yojson_of_t = yojson_of_ptime
+let sexp_of_t = ptime_to_sexp

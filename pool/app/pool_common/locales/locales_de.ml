@@ -1,10 +1,12 @@
-open Entity_message
+module Ptime = Utils.Ptime
+
+let field_message = Pool_message.Utils.field_message
 
 let rec field_to_string =
   let combine one two =
     CCString.concat ": " [ field_to_string one; field_to_string two ]
   in
-  let open Field in
+  let open Pool_message.Field in
   function
   | Action -> "Aktion"
   | Actor -> "Akteur"
@@ -298,11 +300,15 @@ let rec field_to_string =
   | Zip -> "PLZ"
 ;;
 
-let info_to_string : info -> string = function
+let info_to_string : Pool_message.Info.t -> string =
+  let open Pool_message.Info in
+  function
   | Info s -> s
 ;;
 
-let success_to_string : success -> string = function
+let success_to_string : Pool_message.Success.t -> string =
+  let open Pool_message.Success in
+  function
   | AddedToWaitingList -> "Sie wurden der Warteliste hinzugefügt."
   | AssignmentCreated -> "Sie wurden erfolgreich angemeldet."
   | Canceled field ->
@@ -378,14 +384,19 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
     "Die Verifizierungsnachricht wurde erneut verschickt."
 ;;
 
-let warning_to_string : warning -> string = function
+let warning_to_string : Pool_message.Warning.t -> string =
+  let open Pool_message.Warning in
+  function
   | Warning string -> string
 ;;
 
-let rec error_to_string = function
+let rec error_to_string : Pool_message.Error.t -> string =
+  let open Pool_message in
+  let open Error in
+  function
   | AccountTemporarilySuspended ptime ->
     ptime
-    |> Utils.Ptime.formatted_date_time
+    |> Ptime.formatted_date_time
     |> Format.asprintf
          "Zu viele fehlgeschlagene Anmeldeversuche. Diese E-Mail-Adresse ist \
           gesperrt, bis %s"
@@ -656,7 +667,10 @@ let format_submit submit field =
   field_message (field_opt_message field) submit ""
 ;;
 
-let control_to_string = function
+let control_to_string =
+  let open Pool_message in
+  let open Control in
+  function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
@@ -665,7 +679,7 @@ let control_to_string = function
   | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
-  | ChangeSession -> format_submit "ändern" (Some Entity_message_field.Session)
+  | ChangeSession -> format_submit "ändern" (Some Pool_message.Field.Session)
   | Choose field -> format_submit "wählen" field
   | Close field -> format_submit "schliessen" field
   | Create field -> format_submit "erstellen" field
@@ -724,7 +738,9 @@ let control_to_string = function
   | Verify field -> format_submit "verifizieren" field
 ;;
 
-let to_string = function
+let to_string =
+  let open Pool_message in
+  function
   | Message string -> string
   | PageNotFoundMessage -> "Die Seite konnte nicht gefunden werden."
 ;;

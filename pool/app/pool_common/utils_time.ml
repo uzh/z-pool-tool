@@ -5,14 +5,14 @@ let parse_time str =
   let open CCResult in
   Ptime.of_rfc3339 str
   |> Ptime.rfc3339_error_to_msg
-  |> CCResult.map_err (fun (`Msg e) -> Entity_message.NotADatetime (str, e))
+  |> CCResult.map_err (fun (`Msg e) -> Pool_message.Error.NotADatetime (str, e))
   >|= fun (time, _, _) -> time
 ;;
 
 let parse_time_span str =
-  let error = Entity_message.(Invalid Field.Duration) in
+  let error = Pool_message.(Error.Invalid Field.Duration) in
   if CCString.is_empty str
-  then Error Entity_message.NoValue
+  then Error Pool_message.Error.NoValue
   else
     let open CCResult.Infix in
     str
@@ -23,7 +23,7 @@ let parse_time_span str =
 
 let parse_date str =
   let open CCOption in
-  let error = Entity_message.(Invalid Field.Date) in
+  let error = Pool_message.(Error.Invalid Field.Date) in
   let split_date_string date =
     date
     |> CCString.split_on_char '-'
@@ -44,5 +44,6 @@ let parse_date_from_calendar str =
   |> CCString.split ~by:"T"
   |> CCList.hd
   |> parse_date
-  >>= Ptime.of_date %> CCOption.to_result Entity_message.(Invalid Field.Date)
+  >>= Ptime.of_date
+      %> CCOption.to_result Pool_message.(Error.Invalid Field.Date)
 ;;
