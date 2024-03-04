@@ -231,3 +231,12 @@ module ExternalDataIdentifier = struct
                     (t2 Session.Repo.Start.t Session.Repo.Duration.t))))))
   ;;
 end
+
+let with_session =
+  let encode _ =
+    failwith
+      Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+  in
+  let decode = CCResult.return in
+  Caqti_type.(custom ~encode ~decode (t2 Session.Repo.t t))
+;;

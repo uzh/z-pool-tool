@@ -219,15 +219,6 @@ module Sql = struct
       , Pool_common.Id.value (Contact.id contact) )
   ;;
 
-  let with_session =
-    let encode _ =
-      failwith
-        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
-    in
-    let decode = CCResult.return in
-    Caqti_type.(custom ~encode ~decode (t2 Session.Repo.t RepoEntity.t))
-  ;;
-
   let find_by_contact_and_experiment_request =
     let open Caqti_request.Infix in
     let columns =
@@ -248,7 +239,7 @@ module Sql = struct
       columns
       joins
       where
-    |> Caqti_type.(t2 string string) ->* with_session
+    |> Caqti_type.(t2 string string) ->* RepoEntity.with_session
   ;;
 
   let find_by_contact_and_experiment pool experiment_id contact =
