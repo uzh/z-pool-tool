@@ -469,7 +469,9 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
   in
   let waiting_list = Model.create_waiting_list () in
   let waiting_list = { waiting_list with Waiting_list.experiment } in
+  let contact = waiting_list.Waiting_list.contact in
   let already_enrolled = false in
+  let assignment = Assignment.create contact in
   let confirmation_email = confirmation_email experiment in
   let events =
     let command =
@@ -478,7 +480,20 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
     in
     AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
   in
-  let expected = Error Pool_common.Message.(RegistrationDisabled) in
+  let expected =
+    let create_event =
+      let create =
+        Assignment.(
+          create waiting_list.Waiting_list.contact, session.Session.id)
+      in
+      Assignment.Created create |> Pool_event.assignment
+    in
+    Ok
+      [ Email.(Sent (confirmation_email assignment)) |> Pool_event.email
+      ; create_event
+      ; update_assignment_count_event ~step:1 contact
+      ]
+  in
   check_result expected events
 ;;
 

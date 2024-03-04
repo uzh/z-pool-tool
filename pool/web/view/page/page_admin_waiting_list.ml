@@ -261,51 +261,27 @@ let detail
       else
         session_list language chronological sessions
         |> fun content ->
-        match experiment |> Experiment.registration_disabled_value with
-        | true ->
-          div
-            [ content
-            ; div
-                ~a:[ a_class [ "gap" ] ]
-                [ div
-                    ~a:[ a_class [ "flexrow" ] ]
-                    [ submit_element
-                        language
-                        ~classnames:[ "disabled"; "push" ]
-                        (Message.Assign (Some Field.Contact))
-                        ()
-                    ]
-                ; p
-                    ~a:[ a_class [ "help" ] ]
-                    [ txt
-                        (Utils.error_to_string
-                           language
-                           Message.RegistrationDisabled)
-                    ]
-                ]
+        form
+          ~a:
+            [ a_method `Post
+            ; a_action
+                (Format.asprintf
+                   "/admin/experiments/%s/waiting-list/%s/assign"
+                   (experiment_id |> Experiment.Id.value)
+                   (id |> Waiting_list.Id.value)
+                 |> Sihl.Web.externalize_path)
             ]
-        | false ->
-          form
-            ~a:
-              [ a_method `Post
-              ; a_action
-                  (Format.asprintf
-                     "/admin/experiments/%s/waiting-list/%s/assign"
-                     (experiment_id |> Experiment.Id.value)
-                     (id |> Waiting_list.Id.value)
-                   |> Sihl.Web.externalize_path)
+          [ csrf_element csrf ()
+          ; content
+          ; div
+              ~a:[ a_class [ "gap"; "flexrow" ] ]
+              [ submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  (Message.Assign (Some Field.Contact))
+                  ()
               ]
-            [ csrf_element csrf ()
-            ; content
-            ; div
-                ~a:[ a_class [ "gap"; "flexrow" ] ]
-                [ submit_element
-                    ~classnames:[ "push" ]
-                    language
-                    (Message.Assign (Some Field.Contact))
-                    ()
-                ]
-            ]
+          ]
     in
     div
       [ h2
