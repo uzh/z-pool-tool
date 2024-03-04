@@ -181,7 +181,7 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
-  let find_by_experiment_and_contact_opt_request time =
+  let find_public_by_experiment_and_contact_opt_request time =
     let open Caqti_request.Infix in
     let query joins =
       {sql|
@@ -211,10 +211,50 @@ module Sql = struct
     | `All -> "" |> joins |> query
   ;;
 
-  let find_by_experiment_and_contact_opt time pool experiment_id contact =
+  let find_public_by_experiment_and_contact_opt time pool experiment_id contact =
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      (find_by_experiment_and_contact_opt_request time)
+      (find_public_by_experiment_and_contact_opt_request time)
+      ( Experiment.Id.value experiment_id
+      , Pool_common.Id.value (Contact.id contact) )
+  ;;
+
+  let with_session =
+    let encode _ =
+      failwith
+        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+    in
+    let decode = CCResult.return in
+    Caqti_type.(custom ~encode ~decode (t2 Session.Repo.t RepoEntity.t))
+  ;;
+
+  let find_by_contact_and_experiment_request =
+    let open Caqti_request.Infix in
+    let columns =
+      Session.Repo.sql_select_columns @ sql_select_columns
+      |> CCString.concat ", "
+    in
+    let joins = Format.asprintf "%s\n%s" Session.Repo.joins joins in
+    let where =
+      {sql|
+        pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_assignments.contact_uuid = UNHEX(REPLACE($2, '-', ''))
+        AND pool_sessions.canceled_at IS NULL
+        AND pool_assignments.marked_as_deleted = 0
+      |sql}
+    in
+    Format.asprintf
+      {sql| SELECT %s FROM pool_sessions %s WHERE %s GROUP BY pool_sessions.uuid |sql}
+      columns
+      joins
+      where
+    |> Caqti_type.(t2 string string) ->* with_session
+  ;;
+
+  let find_by_contact_and_experiment pool experiment_id contact =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_by_contact_and_experiment_request
       ( Experiment.Id.value experiment_id
       , Pool_common.Id.value (Contact.id contact) )
   ;;
@@ -495,7 +535,11 @@ let insert pool session_id model =
 ;;
 
 let update = Sql.update
-let find_by_experiment_and_contact_opt = Sql.find_by_experiment_and_contact_opt
+
+let find_public_by_experiment_and_contact_opt =
+  Sql.find_public_by_experiment_and_contact_opt
+;;
+
 let marked_as_deleted = Sql.marked_as_deleted
 
 let contact_participation_in_other_assignments =

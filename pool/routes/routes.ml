@@ -543,6 +543,10 @@ module Admin = struct
               "/messages"
               ~middlewares:[ Access.message_history ]
               message_history
+          ; get
+              (Format.asprintf "/contact-history/%s" (add_key Field.Contact))
+              ~middlewares:[]
+              Contacts.experiment_history
           ; choose ~scope:"/assistants" assistants
           ; choose ~scope:"/experimenter" experimenter
           ; choose ~scope:"/invitations" invitations
@@ -596,13 +600,13 @@ module Admin = struct
       ]
     in
     let contacts =
-      let open Handler.Admin.Contacts in
+      let open Contacts in
       let specific =
         let field_specific =
           [ post "/delete" ~middlewares:[ Access.delete_answer ] delete_answer ]
         in
         let tags =
-          let open Handler.Admin.Settings.Tags in
+          let open Settings.Tags in
           tag_routes_helper
             (Tags.assign_tag, Access.assign_tag_to_contact)
             (Tags.remove_tag, Access.remove_tag_from_contact)
@@ -618,6 +622,10 @@ module Admin = struct
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
+        ; get
+            "/past-experiments"
+            ~middlewares:[ Access.read ]
+            past_experiments_htmx
         ; get
             "/messages"
             ~middlewares:[ Access.message_history ]

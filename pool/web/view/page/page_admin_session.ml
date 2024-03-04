@@ -1179,11 +1179,6 @@ let detail
         const modal = e.detail.elt;
         window['pool-tool'].initRichTextEditor(modal);
 
-        modal.querySelector(".modal-close").addEventListener("click", (e) => {
-          modal.classList.remove("active");
-          modal.setAttribute("aria-hidden", "true");
-        })
-
         const checkbox = modal.querySelector(`[data-toggle]`);
         const target = document.getElementById(checkbox.dataset.toggle);
         checkbox.addEventListener("click", (e) => {

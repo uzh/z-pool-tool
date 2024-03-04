@@ -65,10 +65,11 @@ let show req =
       ||> CCResult.flatten_l
     in
     let* upcoming_sessions =
-      find_sessions Assignment.find_upcoming_by_experiment_and_contact_opt
+      find_sessions
+        Assignment.find_upcoming_public_by_experiment_and_contact_opt
     in
     let* past_sessions =
-      find_sessions Assignment.find_past_by_experiment_and_contact_opt
+      find_sessions Assignment.find_past_public_by_experiment_and_contact_opt
     in
     let%lwt user_is_on_waiting_list =
       Waiting_list.user_is_enlisted database_label contact id

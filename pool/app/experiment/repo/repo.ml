@@ -39,7 +39,12 @@ let joins =
   |sql}
 ;;
 
-let find_request_sql ?additional_joins ?(count = false) where_fragment =
+let find_request_sql
+  ?(distinct = false)
+  ?additional_joins
+  ?(count = false)
+  where_fragment
+  =
   let columns =
     if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
   in
@@ -48,7 +53,8 @@ let find_request_sql ?additional_joins ?(count = false) where_fragment =
     |> CCOption.map_or ~default:joins (Format.asprintf "%s\n%s" joins)
   in
   Format.asprintf
-    {sql|SELECT %s FROM pool_experiments %s %s|sql}
+    {sql|SELECT %s %s FROM pool_experiments %s %s|sql}
+    (if distinct then "DISTINCT" else "")
     columns
     joins
     where_fragment
@@ -170,7 +176,7 @@ module Sql = struct
     Query.collect_and_count
       pool
       query
-      ~select:(find_request_sql ?additional_joins:None)
+      ~select:(find_request_sql ~distinct:false ?additional_joins:None)
       ?where
       Repo_entity.t
   ;;
@@ -537,7 +543,7 @@ module Sql = struct
        |sql}
     in
     let where =
-      {sql| pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
+      {sql| pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
     in
     ( ( where
       , dyn |> Dynparam.add Caqti_type.string (Contact.Id.value contact_id) )
@@ -551,7 +557,7 @@ module Sql = struct
     Query.collect_and_count
       pool
       query
-      ~select:(find_request_sql ~additional_joins)
+      ~select:(find_request_sql ~distinct:true ~additional_joins)
       ~where
       Repo_entity.t
   ;;

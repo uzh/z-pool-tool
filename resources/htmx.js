@@ -15,5 +15,16 @@ export const initHTMX = () => {
         initSearch(e.detail.elt)
         initRichTextEditor(e.detail.elt)
         initNotification()
+
+        const modalClose = [...e.detail.elt.querySelectorAll(".modal-close")];
+        modalClose.forEach(btn => {
+            const modal = btn.closest(".modal");
+            if (modal) {
+                btn.addEventListener("click", () => {
+                    modal.classList.remove("active");
+                    modal.setAttribute("aria-hidden", "true");
+                })
+            }
+        })
     })
 }

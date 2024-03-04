@@ -135,23 +135,29 @@ val find_closed
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_upcoming_by_experiment_and_contact_opt
+val find_upcoming_public_by_experiment_and_contact_opt
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> Contact.t
   -> Public.t list Lwt.t
 
-val find_past_by_experiment_and_contact_opt
+val find_past_public_by_experiment_and_contact_opt
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> Contact.t
   -> Public.t list Lwt.t
 
-val find_all_by_experiment_and_contact_opt
+val find_all_public_by_experiment_and_contact_opt
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> Contact.t
   -> Public.t list Lwt.t
+
+val find_by_contact_and_experiment
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> Contact.t
+  -> (Session.t * t) list Lwt.t
 
 val find_by_session : Pool_database.Label.t -> Session.Id.t -> t list Lwt.t
 
