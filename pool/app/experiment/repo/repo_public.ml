@@ -165,10 +165,9 @@ let find_pending_waitinglists_by_contact pool contact =
 
 let find_past_experiments_by_contact pool contact =
   let open Caqti_request.Infix in
-  let (where, dyn), joins =
+  let (where, Dynparam.Pack (pt, pv)), joins =
     Repo.Sql.participated_experiments_by_content_where (Contact.id contact)
   in
-  let (Dynparam.Pack (pt, pv)) = dyn in
   let request =
     Format.asprintf "%s WHERE %s" joins where
     |> select_from_experiments_sql ~distinct:true
