@@ -5,18 +5,19 @@ module Guard = Entity_guard
 let find = Repo.find
 let find_closed = Repo.find_closed
 
-let find_upcoming_by_experiment_and_contact_opt =
-  Repo.find_by_experiment_and_contact_opt `Upcoming
+let find_upcoming_public_by_experiment_and_contact_opt =
+  Repo.find_public_by_experiment_and_contact_opt `Upcoming
 ;;
 
-let find_past_by_experiment_and_contact_opt =
-  Repo.find_by_experiment_and_contact_opt `Past
+let find_past_public_by_experiment_and_contact_opt =
+  Repo.find_public_by_experiment_and_contact_opt `Past
 ;;
 
-let find_all_by_experiment_and_contact_opt =
-  Repo.find_by_experiment_and_contact_opt `All
+let find_all_public_by_experiment_and_contact_opt =
+  Repo.find_public_by_experiment_and_contact_opt `All
 ;;
 
+let find_by_contact_and_experiment = Repo.Sql.find_by_contact_and_experiment
 let find_by_session = Repo.find_by_session
 let query_by_session = Repo.query_by_session
 let find_uncanceled_by_session = Repo.find_uncanceled_by_session

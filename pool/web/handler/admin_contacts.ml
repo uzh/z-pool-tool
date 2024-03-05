@@ -36,6 +36,59 @@ let index req =
   |> Lwt_result.return
 ;;
 
+let experiments_query_from_req req =
+  let open Experiment in
+  Query.from_request
+    ~sortable_by
+    ~default:default_query
+    ~searchable_by
+    ?filterable_by
+    req
+;;
+
+let experiment_history req =
+  let open Utils.Lwt_result.Infix in
+  let contact_id = contact_id req in
+  let experiment_id = experiment_id req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let* contact = Contact.find database_label contact_id in
+    let* experiment = Experiment.find database_label experiment_id in
+    let%lwt assignments =
+      Assignment.find_by_contact_and_experiment
+        database_label
+        experiment_id
+        contact
+    in
+    Page.Admin.Contact.experiment_history_modal context experiment assignments
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+;;
+
+let past_experiments_htmx req =
+  let open Utils.Lwt_result.Infix in
+  let contact_id = contact_id req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let* contact = Contact.find database_label contact_id in
+    let%lwt experiments, query =
+      let query = experiments_query_from_req req in
+      Experiment.query_past_experiments_by_contact ~query database_label contact
+    in
+    let open Page.Admin in
+    Experiments.list
+      (`Participated (contact, Contact.experiment_history_modal_id))
+      context
+      experiments
+      query
+    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Lwt.return_ok
+  in
+  result
+  |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+;;
+
 let detail_view action req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
@@ -66,6 +119,13 @@ let detail_view action req =
              user
              (Contact.id contact)
          in
+         let%lwt past_experiments =
+           let query = experiments_query_from_req req in
+           Experiment.query_past_experiments_by_contact
+             ~query
+             database_label
+             contact
+         in
          Page.Admin.Contact.detail
            ?admin_comment
            context
@@ -73,6 +133,7 @@ let detail_view action req =
            contact_tags
            external_data_ids
            custom_fields
+           past_experiments
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
        | `Edit ->

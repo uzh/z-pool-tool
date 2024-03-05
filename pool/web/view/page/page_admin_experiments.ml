@@ -207,11 +207,26 @@ let message_templates_html
     edit_path
 ;;
 
-let list Pool_context.{ language; _ } experiments query =
-  let url = Uri.of_string "/admin/experiments" in
+let list page Pool_context.{ language; _ } experiments query =
+  let url =
+    match page with
+    | `All -> Uri.of_string "/admin/experiments"
+    | `Participated (contact, _) ->
+      contact
+      |> Contact.id
+      |> Contact.Id.value
+      |> Format.asprintf "/admin/contacts/%s/past-experiments"
+      |> Uri.of_string
+  in
   let data_table =
+    let push_url =
+      match page with
+      | `All -> true
+      | `Participated _ -> false
+    in
     Component.DataTable.create_meta
       ?filter:Experiment.filterable_by
+      ~push_url
       ~search:Experiment.searchable_by
       url
       query
@@ -233,12 +248,39 @@ let list Pool_context.{ language; _ } experiments query =
   let th_class = [ "w-6"; "w-4"; "w-2" ] in
   let row (experiment : Experiment.t) =
     let open Experiment in
+    let detail_btn =
+      Format.asprintf "/admin/experiments/%s" (Id.value experiment.id)
+      |> Input.link_as_button ~icon:Icon.Eye
+    in
+    let session_modal_btn contact target_id =
+      let url =
+        Format.asprintf
+          "/admin/experiments/%s/contact-history/%s"
+          (Id.value experiment.id)
+          Contact.(contact |> id |> Id.value)
+        |> Sihl.Web.externalize_path
+      in
+      let attributes =
+        Htmx.
+          [ hx_get url
+          ; hx_swap "outerHTML"
+          ; hx_target ("#" ^ target_id)
+          ; a_class [ "primary" ]
+          ]
+      in
+      button ~a:attributes [ Icon.(to_html InformationOutline) ]
+    in
+    let buttons =
+      div ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ]
+      @@
+      match page with
+      | `All -> [ detail_btn ]
+      | `Participated (contact, target_id) ->
+        [ session_modal_btn contact target_id; detail_btn ]
+    in
     [ txt (Title.value experiment.title)
     ; txt (PublicTitle.value experiment.public_title)
-    ; Format.asprintf
-        "/admin/experiments/%s"
-        (Experiment.Id.value experiment.id)
-      |> Input.link_as_button ~icon:Icon.Eye
+    ; buttons
     ]
     |> CCList.map (CCList.return %> td)
     |> tr
@@ -254,12 +296,13 @@ let list Pool_context.{ language; _ } experiments query =
 
 let index (Pool_context.{ language; _ } as context) experiments query =
   let open Pool_common in
+  let experiment_list = list `All context experiments query in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
-    ; list context experiments query
+    ; experiment_list
     ]
 ;;
 

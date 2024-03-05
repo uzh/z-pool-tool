@@ -104,7 +104,7 @@ let to_string = function
   | Note -> "Note"
   | OurPartners -> "Our partners"
   | Past -> "Past"
-  | PastExperimentListPublicTitle -> "Experiments participated"
+  | ParticipatedExperiments -> "Experiments participated"
   | PastSessionsTitle -> "Your past sessions"
   | PoolStatistics -> "Pool statistics"
   | ProfileCompletionText ->

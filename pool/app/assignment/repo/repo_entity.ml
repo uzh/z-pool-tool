@@ -37,10 +37,7 @@ module ExternalDataId = struct
 end
 
 let t =
-  let encode _ =
-    failwith
-      Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
-  in
+  let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
   let decode
     ( id
     , ( contact
@@ -143,11 +140,7 @@ module Write = struct
                         , ( m.reminder_manually_last_sent_at
                           , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
     in
-    let decode _ =
-      failwith
-        Pool_common.(
-          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
-    in
+    let decode _ = Pool_common.(Utils.failwith Message.WriteOnlyModel) in
     Caqti_type.(
       custom
         ~encode
@@ -197,10 +190,7 @@ module ExternalDataIdentifier = struct
   open ExternalDataIdentifier
 
   let t =
-    let encode _ =
-      failwith
-        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
-    in
+    let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
     let decode
       ( external_data_id
       , ( experiment_id
@@ -231,3 +221,9 @@ module ExternalDataIdentifier = struct
                     (t2 Session.Repo.Start.t Session.Repo.Duration.t))))))
   ;;
 end
+
+let with_session =
+  let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
+  let decode = CCResult.return in
+  Caqti_type.(custom ~encode ~decode (t2 Session.Repo.t t))
+;;

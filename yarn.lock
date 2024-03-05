@@ -296,9 +296,9 @@
     lodash-es "^4.17.15"
 
 "@econ/frontend-framework@^3.4.1":
-  version "3.5.0"
-  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-3.5.0.tgz#7004ee78a67ba3a4b3d23bd755b09649efd7ceab"
-  integrity sha1-cATueKZ7o6Sz0jvXVbCWSe/Xzqs=
+  version "3.5.1"
+  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-3.5.1.tgz#d2c70327b7b284b34ced409182e14dc854443ed2"
+  integrity sha1-0scDJ7eyhLNM7UCRguFNyFREPtI=
   dependencies:
     flatpickr "^4.6.13"
 

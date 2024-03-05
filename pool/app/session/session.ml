@@ -62,7 +62,12 @@ let find_all_to_swap_by_experiment database_label experiment_id =
 ;;
 
 module Repo = struct
+  let sql_select_columns = Repo.sql_select_columns
+  let joins = Repo.joins
+
   module Id = Repo_entity.Id
   module Start = Repo_entity.Start
   module Duration = Repo_entity.Duration
+
+  let t = Repo_entity.t
 end

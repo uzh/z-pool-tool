@@ -356,6 +356,45 @@ let index ({ Pool_context.language; _ } as context) contacts query =
     ]
 ;;
 
+let experiment_history_modal_id = "past-experiment-modal"
+
+let experiment_history_modal
+  { Pool_context.language; _ }
+  (experiment : Experiment.t)
+  assignments
+  =
+  let open Pool_common in
+  let title (_ : Language.t) = Experiment.(Title.value experiment.title) in
+  let html =
+    let thead =
+      Message.Field.[ Start; NoShow; Participant ]
+      |> CCList.map CCFun.(Utils.field_to_string_capitalized language %> txt)
+    in
+    let to_icon value =
+      CCOption.map_or
+        ~default:(txt "")
+        CCFun.(value %> Component.Icon.bool_to_icon)
+    in
+    let rows =
+      let open Assignment in
+      assignments
+      |> CCList.map (fun (session, { no_show; participated; _ }) ->
+        let start = Session.start_end_with_duration_human session |> txt in
+        let start =
+          if CCOption.is_some session.Session.follow_up_to
+          then div ~a:[ a_class [ "inset"; "left" ] ] [ start ]
+          else start
+        in
+        [ start
+        ; to_icon NoShow.value no_show
+        ; to_icon Participated.value participated
+        ])
+    in
+    Component.Table.horizontal_table ~thead `Striped rows
+  in
+  Modal.create ~active:true language title experiment_history_modal_id html
+;;
+
 let detail
   ?admin_comment
   (Pool_context.{ language; user; _ } as context)
@@ -363,6 +402,7 @@ let detail
   tags
   external_data_ids
   custom_fields
+  past_experiments
   =
   let subtitle nav =
     h3
@@ -391,6 +431,27 @@ let detail
     in
     div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ messages; edit ]
   in
+  let past_experiments_html =
+    let experiments, query = past_experiments in
+    div
+      [ div
+          ~a:
+            [ a_id experiment_history_modal_id
+            ; a_class [ "modal"; "fullscreen-overlay" ]
+            ]
+          []
+      ; h3
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.ParticipatedExperiments)
+          ]
+      ; Page_admin_experiments.list
+          (`Participated (contact, experiment_history_modal_id))
+          context
+          experiments
+          query
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
@@ -404,6 +465,7 @@ let detail
     ; div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ assign_contact_form context contact ]
+    ; past_experiments_html
     ]
 ;;
 

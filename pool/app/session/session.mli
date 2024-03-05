@@ -320,7 +320,7 @@ val find_upcoming_public_by_contact
 
 val find_by_assignment
   :  Pool_database.Label.t
-  -> Id.t
+  -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_experiment_id_and_title
@@ -409,6 +409,9 @@ val default_query : Query.t
 val incomplete_default_query : Query.t
 
 module Repo : sig
+  val sql_select_columns : string list
+  val joins : string
+
   module Id : sig
     val t : Id.t Caqti_type.t
   end
@@ -420,6 +423,8 @@ module Repo : sig
   module Duration : sig
     val t : Duration.t Caqti_type.t
   end
+
+  val t : t Caqti_type.t
 end
 
 module Guard : sig

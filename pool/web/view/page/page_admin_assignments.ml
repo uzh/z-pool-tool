@@ -581,15 +581,9 @@ module Partials = struct
         Format.asprintf
           {js|
           %s
-
           document.addEventListener("htmx:afterSwap", (e) => {
             const modal = e.detail.elt;
             window['pool-tool'].initRichTextEditor(modal);
-
-            modal.querySelector(".modal-close").addEventListener("click", (e) => {
-              modal.classList.remove("active");
-              modal.setAttribute("aria-hidden", "true");
-            })
 
             const checkbox = modal.querySelector(`[data-toggle]`);
             const target = document.getElementById(checkbox.dataset.toggle);
