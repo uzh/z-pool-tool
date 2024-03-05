@@ -212,6 +212,22 @@ let show
           ]
       ]
   in
+  let validate_smtp_settings =
+    div
+      [ h2 [ txt "Validate" ]
+      ; form
+          ~a:(action_path "/validate" |> form_attrs)
+          [ csrf_element csrf ()
+          ; input_element
+              ~required:true
+              ~flash_fetcher
+              language
+              `Text
+              Message.Field.EmailAddress
+          ; div ~a:[ a_class [ "flexrow" ] ] [ submit () (* TODO: COntrol *) ]
+          ]
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Email Server Settings (SMTP)" ]
@@ -219,7 +235,9 @@ let show
         [ Pool_common.(Utils.hint_to_string language I18n.SmtpSettingsIntro)
           |> HttpUtils.add_line_breaks
         ]
-    ; div ~a:[ a_class [ "stack" ] ] [ smtp_details; smtp_password ]
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ smtp_details; smtp_password; validate_smtp_settings ]
     ]
 ;;
 

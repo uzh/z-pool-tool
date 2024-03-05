@@ -2,6 +2,8 @@ open Entity
 module RepoEntity = Repo_entity
 module User = Pool_user
 
+let not_found = Pool_common.Message.(NotFound Field.Smtp)
+
 let find_request_sql : type a. a carrier -> string -> string =
   fun carrier where_fragment ->
   let basic_select = {sql| SELECT |sql} in
@@ -210,7 +212,7 @@ module Smtp = struct
   let find pool id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt (Database.Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+    ||> CCOption.to_result not_found
   ;;
 
   let find_by_label_request =
@@ -237,7 +239,7 @@ module Smtp = struct
   let find_full pool id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt (Database.Label.value pool) find_full_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+    ||> CCOption.to_result not_found
   ;;
 
   let find_full_default_request =
@@ -253,7 +255,7 @@ module Smtp = struct
       (Database.Label.value pool)
       find_full_default_request
       ()
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+    ||> CCOption.to_result not_found
   ;;
 
   let find_full_by_label_request =
@@ -269,7 +271,7 @@ module Smtp = struct
       (Database.Label.value pool)
       find_full_by_label_request
       (Entity.SmtpAuth.Label.value label)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+    ||> CCOption.to_result not_found
   ;;
 
   let find_default_request =
@@ -288,9 +290,7 @@ module Smtp = struct
 
   let find_default pool =
     let open Utils.Lwt_result.Infix in
-    pool
-    |> find_default_opt
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+    pool |> find_default_opt ||> CCOption.to_result not_found
   ;;
 
   let find_all_request =

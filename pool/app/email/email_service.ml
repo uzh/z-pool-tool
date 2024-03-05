@@ -175,14 +175,17 @@ module Smtp = struct
     ; config : Letters.Config.t
     }
 
-  let prepare
-    database_label
-    ?smtp_auth_id
+  let email_from_smtp_auth
+    username
+    password
+    server
+    port
+    mechanism
+    protocol
+    default_sender_of_pool
     { Sihl.Contract.Email.sender; recipient; subject; text; html; cc; bcc }
     =
-    let open CCFun in
-    let open Utils.Lwt_result.Infix in
-    let open SmtpAuth in
+    let open CCFun.Infix in
     let recipients =
       CCList.concat
         [ [ Letters.To recipient ]
@@ -195,6 +198,48 @@ module Smtp = struct
       | Some html -> Letters.Html html
       | None -> Letters.Plain text
     in
+    let username = CCOption.(username >|= SmtpAuth.Username.value) in
+    let password = CCOption.(password >|= SmtpAuth.Password.value) in
+    let hostname = SmtpAuth.Server.value server in
+    let port = Some (SmtpAuth.Port.value port) in
+    let mechanism =
+      if SmtpAuth.Mechanism.(equal LOGIN) mechanism
+         && (CCOption.is_none username || CCOption.is_none password)
+      then
+        raise
+          (Sihl.Contract.Email.Exception
+             "SMTP auth mechanism cannot be set to LOGIN when no username or \
+              password is set.")
+      else SmtpAuth.Mechanism.to_sendmail mechanism
+    in
+    let with_starttls = SmtpAuth.Protocol.(equal STARTTLS) protocol in
+    let config =
+      Letters.Config.create
+        ~mechanism
+        ~username:(CCOption.get_or ~default:"" username)
+        ~password:(CCOption.get_or ~default:"" password)
+        ~hostname
+        ~with_starttls
+        ()
+      |> Letters.Config.set_port port
+    in
+    let reply_to = sender in
+    let%lwt sender =
+      let valid_email =
+        let open Pool_user.EmailAddress in
+        of_string %> validate_characters %> CCResult.is_ok
+      in
+      [ username; Some (Pool_user.EmailAddress.value default_sender_of_pool) ]
+      |> CCList.filter (CCOption.map_or ~default:false valid_email)
+      |> CCOption.choice
+      |> CCOption.get_or ~default:sender
+      |> Lwt.return
+    in
+    Lwt.return { sender; reply_to; recipients; subject; body; config }
+  ;;
+
+  let prepare database_label ?smtp_auth_id email =
+    let open Utils.Lwt_result.Infix in
     let%lwt config =
       let open Pool_common.Utils in
       let cached =
@@ -219,47 +264,60 @@ module Smtp = struct
         Lwt.return auth
       | Some auth -> Lwt.return auth
     in
-    let username = CCOption.(config.Write.username >|= Username.value) in
-    let password = CCOption.(config.Write.password >|= Password.value) in
-    let hostname = Server.value config.Write.server in
-    let port = Some (Port.value config.Write.port) in
-    let mechanism =
-      if Mechanism.(equal LOGIN) config.Write.mechanism
-         && (CCOption.is_none username || CCOption.is_none password)
-      then
-        raise
-          (Sihl.Contract.Email.Exception
-             "SMTP auth mechanism cannot be set to LOGIN when no username or \
-              password is set.")
-      else Mechanism.to_sendmail config.Write.mechanism
+    let%lwt default_sender_of_pool = default_sender_of_pool database_label in
+    let { SmtpAuth.Write.server
+        ; port
+        ; username
+        ; password
+        ; mechanism
+        ; protocol
+        ; _
+        }
+      =
+      config
     in
-    let with_starttls = Protocol.(equal STARTTLS) config.Write.protocol in
-    let config =
-      Letters.Config.create
-        ~mechanism
-        ~username:(CCOption.get_or ~default:"" username)
-        ~password:(CCOption.get_or ~default:"" password)
-        ~hostname
-        ~with_starttls
-        ()
-      |> Letters.Config.set_port port
+    email_from_smtp_auth
+      username
+      password
+      server
+      port
+      mechanism
+      protocol
+      default_sender_of_pool
+      email
+  ;;
+
+  let prepare_test_email database_label config test_email =
+    let%lwt default_sender_of_pool = default_sender_of_pool database_label in
+    let { SmtpAuth.Write.server
+        ; port
+        ; username
+        ; password
+        ; mechanism
+        ; protocol
+        ; _
+        }
+      =
+      config
     in
-    let reply_to = sender in
-    let%lwt sender =
-      let valid_email =
-        let open Pool_user.EmailAddress in
-        of_string %> validate_characters %> CCResult.is_ok
-      in
-      let%lwt default_sender_of_pool =
-        default_sender_of_pool database_label ||> Pool_user.EmailAddress.value
-      in
-      [ username; Some default_sender_of_pool ]
-      |> CCList.filter (CCOption.map_or ~default:false valid_email)
-      |> CCOption.choice
-      |> CCOption.get_or ~default:sender
-      |> Lwt.return
+    let test_email =
+      let sender = "todo@email.com" in
+      let recipient = test_email |> Pool_user.EmailAddress.value in
+      let subject = "Test email" in
+      let text = "This is a test" in
+      let html = Some text in
+      Sihl.Contract.Email.
+        { sender; recipient; subject; text; html; cc = []; bcc = [] }
     in
-    Lwt.return { sender; reply_to; recipients; subject; body; config }
+    email_from_smtp_auth
+      username
+      password
+      server
+      port
+      mechanism
+      protocol
+      default_sender_of_pool
+      test_email
   ;;
 
   let send ?smtp_auth_id database_label email =
@@ -279,6 +337,23 @@ module Smtp = struct
     | Error msg -> raise (Sihl.Contract.Email.Exception msg)
   ;;
 end
+
+let test_smtp_config database_label config test_email_address =
+  let open Utils.Lwt_result.Infix in
+  let open Smtp in
+  let%lwt { sender; reply_to; recipients; subject; body; config } =
+    prepare_test_email database_label config test_email_address
+  in
+  let send_mail () =
+    let message =
+      Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
+      |> CCResult.get_exn
+    in
+    Letters.send ~config ~sender ~recipients ~message
+  in
+  Lwt_result.catch send_mail
+  >|- fun exn -> Pool_common.Message.SmtpException (Printexc.to_string exn)
+;;
 
 let send ?smtp_auth_id database_label =
   intercept_send (Smtp.send ?smtp_auth_id database_label)

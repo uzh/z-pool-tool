@@ -14,6 +14,15 @@ let smtp_auth_id req =
   HttpUtils.find_id SmtpAuth.Id.of_string Smtp req
 ;;
 
+let settings_detail_path location req =
+  active_navigation location
+  |> fun base ->
+  match location with
+  | `Tenant ->
+    Format.asprintf "%s/%s" base (req |> smtp_auth_id |> SmtpAuth.Id.value)
+  | `Root -> base
+;;
+
 let index req =
   let location = `Tenant in
   let active_navigation = active_navigation location in
@@ -108,14 +117,7 @@ let create = create_post `Tenant
 
 let update_base location command success_message req =
   let tags = Pool_context.Logger.Tags.req req in
-  let redirect_path =
-    active_navigation location
-    |> fun base ->
-    match location with
-    | `Tenant ->
-      Format.asprintf "%s/%s" base (req |> smtp_auth_id |> SmtpAuth.Id.value)
-    | `Root -> base
-  in
+  let redirect_path = settings_detail_path location req in
   let result { Pool_context.database_label; _ } =
     Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -198,7 +200,49 @@ let delete_base location req =
 
 let delete = delete_base `Tenant
 
-module Access : module type of Helpers.Access = struct
+let validate location req =
+  let open Utils.Lwt_result.Infix in
+  let id = req |> smtp_auth_id in
+  let redirect_path = settings_detail_path location req in
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err ->
+      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@
+    let* email =
+      let field = Field.EmailAddress in
+      urlencoded
+      |> CCList.assoc_opt ~eq:( = ) Field.(show field)
+      |> CCFun.flip CCOption.bind CCList.head_opt
+      |> CCOption.to_result Pool_common.Message.(Missing field)
+      |> Lwt_result.lift
+      >== Pool_user.EmailAddress.create
+    in
+    let* smtp = SmtpAuth.find_full database_label id in
+    let redirect actions =
+      Http_utils.redirect_to_with_actions redirect_path actions
+      ||> CCResult.return
+    in
+    Email.Service.test_smtp_config database_label smtp email
+    >|> function
+    | Ok () ->
+      redirect
+        [ Message.set ~success:[ Pool_common.Message.Validated Field.Smtp ] ]
+    | Error err -> redirect [ Message.set ~error:[ err ] ]
+  in
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
+;;
+
+let validate_tenant = validate `Tenant
+
+module Access : sig
+  val index : Rock.Middleware.t
+  val create : Rock.Middleware.t
+  val read : Rock.Middleware.t
+  val update : Rock.Middleware.t
+  val delete : Rock.Middleware.t
+  val validate : Rock.Middleware.t
+end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
@@ -217,4 +261,6 @@ module Access : module type of Helpers.Access = struct
   let delete =
     Email.Guard.Access.Smtp.delete |> smtp_effects |> Guardian.validate_generic
   ;;
+
+  let validate = create
 end

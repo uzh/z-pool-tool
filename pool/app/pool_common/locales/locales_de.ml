@@ -366,6 +366,8 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
   | Updated field ->
     field_message "" (field_to_string field) "wurde erfolgreich upgedated."
+  | Validated field ->
+    field_message "" (field_to_string field) "wurde erfolgreich validiert."
   | VerificationMessageResent ->
     "Die Verifizierungsnachricht wurde erneut verschickt."
 ;;
@@ -610,6 +612,7 @@ let rec error_to_string = function
       "%s kleiner als %s"
       (field_to_string field1)
       (field_to_string field2)
+  | SmtpException exn -> exn
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
