@@ -342,7 +342,7 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | Resent field ->
     field_message "" (field_to_string field) "was successfully resent."
   | ResetInvitations ->
-    "Reset Invitations. In upcomming mailings, previous invitations will be \
+    "Reset Invitations. In upcoming mailings, previous invitations will be \
      considered to reinvite."
   | RoleAssigned -> "Role was assigned."
   | RoleUnassigned -> "Role was unassigned."

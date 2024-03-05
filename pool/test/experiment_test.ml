@@ -366,8 +366,8 @@ module AvailableExperiments = struct
         Id.equal (Public.id public) experiment.id)
       ||> CCOption.is_none
     in
-    let%lwt upcomming_session_found =
-      (* Expect the session to be listed among the upcomming sessions *)
+    let%lwt upcoming_session_found =
+      (* Expect the session to be listed among the upcoming sessions *)
       Session.find_upcoming_public_by_contact
         database_label
         (Contact.id contact)
@@ -376,7 +376,7 @@ module AvailableExperiments = struct
         Session.(Id.equal upcoming.Public.id session.id))
       ||> CCOption.is_some
     in
-    let res = experiment_not_available && upcomming_session_found in
+    let res = experiment_not_available && upcoming_session_found in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
   ;;
@@ -398,8 +398,8 @@ module AvailableExperiments = struct
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
-    let%lwt upcomming_session_found =
-      (* Expect the session to be listed among the upcomming sessions, but to be
+    let%lwt upcoming_session_found =
+      (* Expect the session to be listed among the upcoming sessions, but to be
          marked as canceled *)
       Session.find_upcoming_public_by_contact
         database_label
@@ -411,7 +411,7 @@ module AvailableExperiments = struct
           && CCOption.is_some upcoming.Public.canceled_at))
       ||> CCOption.is_some
     in
-    let res = experiment_available && upcomming_session_found in
+    let res = experiment_available && upcoming_session_found in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
   ;;
@@ -435,7 +435,7 @@ module AvailableExperiments = struct
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
-    let%lwt upcomming_session_not_found =
+    let%lwt upcoming_session_not_found =
       (* Expect the session not to be listed, as the assignments are marked as
          deleted *)
       Session.find_upcoming_public_by_contact
@@ -446,7 +446,7 @@ module AvailableExperiments = struct
         Session.(Id.equal upcoming.Public.id session.id))
       ||> CCOption.is_none
     in
-    let res = experiment_available && upcomming_session_not_found in
+    let res = experiment_available && upcoming_session_not_found in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
   ;;
