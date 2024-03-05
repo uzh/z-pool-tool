@@ -211,12 +211,7 @@ end = struct
     let open CCResult in
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
-    else
-      let* () =
-        waiting_list.Waiting_list.experiment
-        |> Experiment.registration_disabled_value
-        |> Utils.bool_to_result_not Pool_common.Message.(RegistrationDisabled)
-      in
+    else (
       let contact = waiting_list.Waiting_list.contact in
       let* creation_events =
         assignment_creation_and_confirmation_events
@@ -232,7 +227,7 @@ end = struct
         |> Contact.updated
         |> Pool_event.contact
       in
-      Ok (creation_events @ [ conter_events ])
+      Ok (creation_events @ [ conter_events ]))
   ;;
 
   let effects experiment_id waiting_list_id =

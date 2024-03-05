@@ -16,7 +16,7 @@ module Sql = struct
   let joins =
     Format.asprintf
       {sql|
-        LEFT JOIN pool_contacts
+        INNER JOIN pool_contacts
           ON pool_invitations.contact_uuid = pool_contacts.user_uuid
         %s
       |sql}

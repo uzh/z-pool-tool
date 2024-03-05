@@ -32,7 +32,7 @@ let sql_select_columns =
 
 let joins =
   {sql|
-    LEFT JOIN user_users
+    INNER JOIN user_users
       ON pool_contacts.user_uuid = user_users.uuid
   |sql}
 ;;
