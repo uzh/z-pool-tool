@@ -75,8 +75,11 @@ let index
         ; Partials.upcoming_sessions_list language upcoming_sessions
         ]
     in
-    let elements = [ session_list; calendar_html ] in
-    let html = if recruiter_layout then CCList.rev elements else elements in
+    let html =
+      if recruiter_layout
+      then [ calendar_html ]
+      else [ session_list; calendar_html ]
+    in
     div
       [ heading_2 I18n.UpcomingSessionsTitle
       ; div ~a:[ a_class [ "stack-lg" ] ] html
