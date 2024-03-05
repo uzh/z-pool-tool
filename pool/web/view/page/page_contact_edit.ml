@@ -353,6 +353,17 @@ let contact_information
   let hint_to_html =
     CCFun.(Utils.hint_to_string language %> fun hint -> div [ txt hint ])
   in
+  let email_hint =
+    let link = "/user/login-information" in
+    [ txt
+        Pool_common.(
+          Utils.hint_to_string language I18n.ContactInformationEmailHint)
+    ]
+    |> Notification.notification
+         language
+         ~link:(link, Pool_common.I18n.LoginInformation)
+         `Warning
+  in
   let form_title i18n =
     h2
       ~a:[ a_class [ "heading-3" ] ]
@@ -445,7 +456,7 @@ let contact_information
     | Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } ->
       verify_form cell_phone
   in
-  div [ div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
+  div [ email_hint; div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
   |> contact_profile_layout language Pool_common.I18n.ContactInformation
 ;;
 
