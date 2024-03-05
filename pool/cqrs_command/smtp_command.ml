@@ -55,12 +55,16 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val handle
+  val smtp_of_command
     :  ?id:SmtpAuth.Id.t
-    -> ?event_id:System_event.Id.t
+    -> t
+    -> (SmtpAuth.Write.t, Pool_common.Message.error) Result.t
+
+  val handle
+    :  ?event_id:System_event.Id.t
     -> ?tags:Logs.Tag.set
     -> SmtpAuth.t option
-    -> t
+    -> SmtpAuth.Write.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   type t = create
@@ -85,36 +89,38 @@ end = struct
         command)
   ;;
 
-  let handle
+  let smtp_of_command
     ?id
-    ?event_id
-    ?(tags = Logs.Tag.empty)
-    current_default
-    (command : t)
+    { label; server; port; username; password; mechanism; protocol; default }
     =
+    SmtpAuth.Write.create
+      ?id
+      label
+      server
+      port
+      username
+      password
+      mechanism
+      protocol
+      default
+  ;;
+
+  let handle ?event_id ?(tags = Logs.Tag.empty) current_default smtp_auth =
     let open CCResult in
+    let open SmtpAuth in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let is_default =
-      (match command.default |> SmtpAuth.Default.value, current_default with
+      (match smtp_auth.Write.default |> Default.value, current_default with
        | (false | true), None -> true
        | true, Some _ -> true
        | false, Some _ -> false)
-      |> SmtpAuth.Default.create
+      |> Default.create
     in
-    SmtpAuth.Write.create
-      ?id
-      command.label
-      command.server
-      command.port
-      command.username
-      command.password
-      command.mechanism
-      command.protocol
-      is_default
-    >|= fun smtp ->
-    [ Email.SmtpCreated smtp |> Pool_event.email
-    ; clear_cache_event ?id:event_id ()
-    ]
+    let smtp = Write.{ smtp_auth with default = is_default } in
+    Ok
+      [ Email.SmtpCreated smtp |> Pool_event.email
+      ; clear_cache_event ?id:event_id ()
+      ]
   ;;
 
   let decode data =

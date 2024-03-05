@@ -14,13 +14,6 @@ module Smtp = struct
   let find_by = Sql.Smtp.find_by
   let find_full = Sql.Smtp.find_full
   let find_full_default = Sql.Smtp.find_full_default
-
-  let find_full_by_label label =
-    Sql.Smtp.find_full_by_label
-      label
-      (label |> Database.Label.value |> Entity.SmtpAuth.Label.of_string)
-  ;;
-
   let find_default = Sql.Smtp.find_default
   let find_default_opt = Sql.Smtp.find_default_opt
   let find_all = Sql.Smtp.find_all

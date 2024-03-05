@@ -362,6 +362,8 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
     field_message "" (field_to_string field) "was successfully updated."
+  | Validated field ->
+    field_message "" (field_to_string field) "was successfully validated."
   | VerificationMessageResent -> "The verification message has been resent."
 ;;
 
@@ -577,6 +579,7 @@ let rec error_to_string = function
       "%s smaller than %s"
       (field_to_string field1)
       (field_to_string field2)
+  | SmtpException exn -> exn
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "An error occurred"
@@ -670,6 +673,7 @@ let control_to_string = function
   | Unassign field -> format_submit "unassign" field
   | Update field -> format_submit "update" field
   | UpdateOrder -> format_submit "update order" None
+  | Validate -> format_submit "validate" None
   | Verify field -> format_submit "verify" field
 ;;
 

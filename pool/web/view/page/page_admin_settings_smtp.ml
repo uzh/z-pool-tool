@@ -212,6 +212,25 @@ let show
           ]
       ]
   in
+  let validate_smtp_settings =
+    div
+      [ h2 [ txt Pool_common.(Utils.text_to_string language I18n.Validation) ]
+      ; p
+          [ txt Pool_common.(Utils.hint_to_string language I18n.SmtpValidation)
+          ]
+      ; form
+          ~a:(action_path "/validate" |> form_attrs)
+          [ csrf_element csrf ()
+          ; input_element
+              ~required:true
+              ~flash_fetcher
+              language
+              `Email
+              Message.Field.EmailAddress
+          ; submit ~control:Message.Validate ()
+          ]
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Email Server Settings (SMTP)" ]
@@ -219,7 +238,9 @@ let show
         [ Pool_common.(Utils.hint_to_string language I18n.SmtpSettingsIntro)
           |> HttpUtils.add_line_breaks
         ]
-    ; div ~a:[ a_class [ "stack" ] ] [ smtp_details; smtp_password ]
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ smtp_details; smtp_password; validate_smtp_settings ]
     ]
 ;;
 
@@ -281,6 +302,16 @@ let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
           ~hints:[ Pool_common.I18n.SmtpSettingsDefaultFlag ]
           language
           Field.DefaultSmtpServer
+      ; h3 [ txt Pool_common.(Utils.text_to_string language I18n.Validation) ]
+      ; p
+          [ txt Pool_common.(Utils.hint_to_string language I18n.SmtpValidation)
+          ]
+      ; input_element
+          ~flash_fetcher
+          ~required:true
+          language
+          `Email
+          Field.EmailAddress
       ; submit ()
       ]
   in

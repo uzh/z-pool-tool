@@ -772,6 +772,7 @@ module Admin = struct
           ; post "" ~middlewares:[ Access.update ] update
           ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; post "/password" ~middlewares:[ Access.update ] update_password
+          ; post "/validate" ~middlewares:[ Access.validate ] validate_tenant
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index
@@ -928,6 +929,7 @@ module Root = struct
             "/:smtp/password"
             ~middlewares:[ Access.update ]
             update_smtp_password
+        ; post "/:smtp/validate" ~middlewares:[ Access.validate ] validate
         ]
       in
       [ choose ~scope:"/smtp" smtp ]

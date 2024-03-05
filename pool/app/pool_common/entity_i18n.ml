@@ -261,6 +261,7 @@ type hint =
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
+  | SmtpValidation
   | SwapSessions
   | TagsIntro
   | TemplateTextElementsHint

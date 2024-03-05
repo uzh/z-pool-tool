@@ -118,6 +118,7 @@ type error =
   | SessionRegistrationViaParent
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)
+  | SmtpException of string
   | TerminatoryRootError
   | TerminatoryRootErrorTitle
   | TerminatoryTenantError
@@ -182,6 +183,7 @@ type success =
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t
+  | Validated of Field.t
   | VerificationMessageResent
 [@@deriving eq, show, yojson, variants, sexp_of]
 
@@ -262,6 +264,7 @@ type control =
   | Unassign of Field.t option
   | Update of Field.t option
   | UpdateOrder
+  | Validate
   | Verify of Field.t option
 [@@deriving eq, show, yojson, variants, sexp_of]
 

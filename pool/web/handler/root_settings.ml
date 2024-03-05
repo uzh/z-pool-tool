@@ -18,5 +18,6 @@ let update_smtp_password =
 ;;
 
 let delete_smtp = Admin_settings_smtp.delete_base `Root
+let validate = Admin_settings_smtp.validate `Root
 
 module Access = Admin_settings.Smtp.Access

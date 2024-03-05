@@ -199,9 +199,9 @@ module SmtpAuth : sig
 
   val find_by_label : Pool_database.Label.t -> Label.t -> t option Lwt.t
 
-  (* TODO: Can probably be removed *)
-  val find_full_by_label
+  val find_full
     :  Pool_database.Label.t
+    -> Id.t
     -> (Write.t, Pool_common.Message.error) Lwt_result.t
 
   val find_default
@@ -280,6 +280,12 @@ module Service : sig
   val dispatch_all : Pool_database.Label.t -> job list -> unit Lwt.t
   val lifecycle : Sihl.Container.lifecycle
   val register : unit -> Sihl.Container.Service.t
+
+  val test_smtp_config
+    :  Pool_database.Label.t
+    -> SmtpAuth.Write.t
+    -> Pool_user.EmailAddress.t
+    -> (unit, Pool_common.Message.error) Lwt_result.t
 end
 
 module Guard : sig
