@@ -552,6 +552,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
 
     Note: When using the mechanism "LOGIN" a username and password are required.
     |}
+  | SmtpValidation ->
+    "Please provide an email address to which a test message can be sent to \
+     validate the SMTP settings."
   | SwapSessions ->
     {|Changing the session will only change the session of this assignment. If follow-up assignments exists, they must be updated manually.
 

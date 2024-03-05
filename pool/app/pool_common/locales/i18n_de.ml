@@ -565,6 +565,9 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     {|Die folgende Konfiguration wird vom E-Mail Service verwendet.
 
     Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.|}
+  | SmtpValidation ->
+    "Please provide an email address to which a test message can be sent to \
+     validate the SMTP settings."
   | SwapSessions ->
     {|Das Ändern der Session wird nur diese Anmeldung anpassen. Wenn es Folgezuweisungen gibt, müssen diese manuell aktualisiert werden.
 

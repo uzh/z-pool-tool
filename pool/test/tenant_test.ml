@@ -240,7 +240,8 @@ let create_smtp_auth () =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Create in
     decode (Data.Smtp.urlencoded ())
-    >>= handle ~id:Data.Smtp.id ~event_id:sys_event_id None
+    >>= smtp_of_command ~id:Data.Smtp.id
+    >>= handle ~event_id:sys_event_id None
   in
   let expected =
     Ok
@@ -265,7 +266,8 @@ let create_smtp_force_defaut () =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Create in
     decode (Data.Smtp.urlencoded ~default:false ())
-    >>= handle ~id:Data.Smtp.id ~event_id:sys_event_id None
+    >>= smtp_of_command ~id:Data.Smtp.id
+    >>= handle ~event_id:sys_event_id None
   in
   let expected =
     let smtp =

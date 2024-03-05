@@ -710,6 +710,7 @@ let control_to_string = function
   | Unassign field -> format_submit "entfernen" field
   | Update field -> format_submit "aktualisieren" field
   | UpdateOrder -> "Reihenfolge anpassen"
+  | Validate -> "Validieren"
   | Verify field -> format_submit "verifizieren" field
 ;;
 

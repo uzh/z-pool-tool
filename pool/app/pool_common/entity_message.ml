@@ -263,6 +263,7 @@ type control =
   | Unassign of Field.t option
   | Update of Field.t option
   | UpdateOrder
+  | Validate
   | Verify of Field.t option
 [@@deriving eq, show, yojson, variants, sexp_of]
 

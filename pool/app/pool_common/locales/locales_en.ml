@@ -671,6 +671,7 @@ let control_to_string = function
   | Unassign field -> format_submit "unassign" field
   | Update field -> format_submit "update" field
   | UpdateOrder -> format_submit "update order" None
+  | Validate -> format_submit "validate" None
   | Verify field -> format_submit "verify" field
 ;;
 

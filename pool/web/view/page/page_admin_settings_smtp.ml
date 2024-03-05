@@ -214,7 +214,10 @@ let show
   in
   let validate_smtp_settings =
     div
-      [ h2 [ txt "Validate" ]
+      [ h2 [ txt Pool_common.(Utils.text_to_string language I18n.Validation) ]
+      ; p
+          [ txt Pool_common.(Utils.hint_to_string language I18n.SmtpValidation)
+          ]
       ; form
           ~a:(action_path "/validate" |> form_attrs)
           [ csrf_element csrf ()
@@ -222,9 +225,9 @@ let show
               ~required:true
               ~flash_fetcher
               language
-              `Text
+              `Email
               Message.Field.EmailAddress
-          ; div ~a:[ a_class [ "flexrow" ] ] [ submit () (* TODO: COntrol *) ]
+          ; submit ~control:Message.Validate ()
           ]
       ]
   in
@@ -299,6 +302,16 @@ let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
           ~hints:[ Pool_common.I18n.SmtpSettingsDefaultFlag ]
           language
           Field.DefaultSmtpServer
+      ; h3 [ txt Pool_common.(Utils.text_to_string language I18n.Validation) ]
+      ; p
+          [ txt Pool_common.(Utils.hint_to_string language I18n.SmtpValidation)
+          ]
+      ; input_element
+          ~flash_fetcher
+          ~required:true
+          language
+          `Email
+          Field.EmailAddress
       ; submit ()
       ]
   in
