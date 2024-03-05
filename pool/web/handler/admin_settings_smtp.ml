@@ -249,11 +249,8 @@ let validate location req =
 let validate_tenant = validate `Tenant
 
 module Access : sig
-  val index : Rock.Middleware.t
-  val create : Rock.Middleware.t
-  val read : Rock.Middleware.t
-  val update : Rock.Middleware.t
-  val delete : Rock.Middleware.t
+  include module type of Helpers.Access
+
   val validate : Rock.Middleware.t
 end = struct
   include Helpers.Access
