@@ -7,11 +7,11 @@ let src = Logs.Src.create "database.seed.user"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 type person =
-  { uid : string
+  { id : int
+  ; uid : string
   ; email : string
   ; first_name : string
   ; last_name : string
-  ; gender : string
   ; date_of_birth : string
   }
 [@@deriving show, yojson] [@@yojson.allow_extra_fields]
@@ -72,7 +72,15 @@ let create_rand_persons ?tags n_persons =
   else failwith "Could not find or decode any person data."
 ;;
 
-let create_persons db_label n_persons =
+let create_persons_from_file () =
+  let sep = if Sys.win32 then CCString.of_char '\\' else "/" in
+  Logs.info ~src (fun m -> m "Seed: load person data");
+  CCString.concat sep [ Sys.getcwd (); "pool"; "seed"; "seed_user_data.json" ]
+  |> Yojson.Safe.from_file
+  |> persons_of_yojson
+;;
+
+let create_persons_from_api db_label n_persons =
   let open CCList in
   let open Utils.Lwt_result.Infix in
   let tags = Pool_database.Logger.Tags.create db_label in
@@ -120,6 +128,16 @@ let create_persons db_label n_persons =
       take_drop n_persons acc |> fst |> Lwt.return)
   in
   persons_chunked []
+;;
+
+let create_persons db_label n_persons =
+  let%lwt persons =
+    try create_persons_from_file () |> Lwt.return with
+    | Sys_error _ -> create_persons_from_api db_label n_persons
+  in
+  if n_persons > CCList.length persons
+  then create_persons_from_api db_label n_persons
+  else Lwt.return persons
 ;;
 
 let admins db_label =
