@@ -50,6 +50,11 @@
     .fc-event-main {
         cursor: pointer;
     }
+
+    .fc-list-event-title {
+        display: flex;
+        justify-content: space-between;
+    }
 }
 
 // Week view
