@@ -140,9 +140,7 @@ module Write = struct
                         , ( m.reminder_manually_last_sent_at
                           , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
     in
-    let decode _ =
-      failwith Pool_common.(Utils.failwith Message.WriteOnlyModel)
-    in
+    let decode _ = Pool_common.(Utils.failwith Message.WriteOnlyModel) in
     Caqti_type.(
       custom
         ~encode
@@ -225,7 +223,7 @@ module ExternalDataIdentifier = struct
 end
 
 let with_session =
-  let encode _ = failwith Pool_common.(Utils.failwith Message.ReadOnlyModel) in
+  let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
   let decode = CCResult.return in
   Caqti_type.(custom ~encode ~decode (t2 Session.Repo.t t))
 ;;
