@@ -240,7 +240,15 @@ module Smtp = struct
 
   let prepare database_label ?smtp_auth_id email =
     let open Utils.Lwt_result.Infix in
-    let%lwt config =
+    let%lwt { SmtpAuth.Write.server
+            ; port
+            ; username
+            ; password
+            ; mechanism
+            ; protocol
+            ; _
+            }
+      =
       let open Pool_common.Utils in
       let cached =
         match smtp_auth_id with
@@ -265,17 +273,6 @@ module Smtp = struct
       | Some auth -> Lwt.return auth
     in
     let%lwt default_sender_of_pool = default_sender_of_pool database_label in
-    let { SmtpAuth.Write.server
-        ; port
-        ; username
-        ; password
-        ; mechanism
-        ; protocol
-        ; _
-        }
-      =
-      config
-    in
     email_from_smtp_auth
       username
       password
@@ -287,27 +284,24 @@ module Smtp = struct
       email
   ;;
 
-  let prepare_test_email database_label config test_email =
+  let prepare_test_email
+    database_label
+    { SmtpAuth.Write.server; port; username; password; mechanism; protocol; _ }
+    test_email
+    =
     let%lwt default_sender_of_pool = default_sender_of_pool database_label in
-    let { SmtpAuth.Write.server
-        ; port
-        ; username
-        ; password
-        ; mechanism
-        ; protocol
-        ; _
-        }
-      =
-      config
-    in
-    let test_email =
-      let sender = "todo@email.com" in
+    let%lwt test_email =
+      let%lwt sender =
+        Settings.(
+          find_contact_email database_label |> Lwt.map ContactEmail.value)
+      in
       let recipient = test_email |> Pool_user.EmailAddress.value in
       let subject = "Test email" in
       let text = "This is a test" in
       let html = Some text in
-      Sihl.Contract.Email.
-        { sender; recipient; subject; text; html; cc = []; bcc = [] }
+      Lwt.return
+        Sihl.Contract.Email.
+          { sender; recipient; subject; text; html; cc = []; bcc = [] }
     in
     email_from_smtp_auth
       username
