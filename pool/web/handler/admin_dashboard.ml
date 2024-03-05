@@ -44,12 +44,8 @@ let index req =
     let%lwt incomplete_sessions =
       Session.find_incomplete_by_admin ~query actor database_label
     in
-    let%lwt upcoming_sessions =
-      Session.find_upcoming_by_admin ~query actor database_label
-    in
     Page.Admin.Dashboard.index
       statistics
-      upcoming_sessions
       incomplete_sessions
       recruiter_layout
       context
@@ -59,33 +55,22 @@ let index req =
   result |> Http_utils.extract_happy_path ~src req
 ;;
 
-let htmx_session_helper table req =
+let incomplete_sessions req =
   let result { Pool_context.database_label; language; user; _ } =
     let open Utils.Lwt_result.Infix in
     let* actor = Pool_context.Utils.find_authorizable database_label user in
     let%lwt sessions =
       let query = sessions_query_from_req req in
       (fun fnc -> fnc ?query:(Some query) actor database_label)
-      @@
-      match table with
-      | `incomplete -> Session.find_incomplete_by_admin
-      | `upcoming -> Session.find_upcoming_by_admin
+        Session.find_incomplete_by_admin
     in
-    let html =
-      let open Page.Admin.Dashboard.Partials in
-      match table with
-      | `incomplete -> incomplete_sessions_list
-      | `upcoming -> upcoming_sessions_list
-    in
+    let html = Page.Admin.Dashboard.Partials.incomplete_sessions_list in
     html language sessions
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
   result |> Http_utils.Htmx.handle_error_message req
 ;;
-
-let incomplete_sessions = htmx_session_helper `incomplete
-let upcoming_sessions = htmx_session_helper `upcoming
 
 let statistics req =
   let result { Pool_context.database_label; language; _ } =
