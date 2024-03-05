@@ -34,6 +34,7 @@ type error =
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
   | ContactDoesNotMatchFilter
+  | ContactExperimentNotFound
   | ContactUnconfirmed
   | ContactSignupInvalidEmail
   | CustomFieldNoOptions

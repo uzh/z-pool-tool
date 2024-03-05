@@ -240,7 +240,7 @@ let find pool id contact =
     (Pool_database.Label.value pool)
     find_request
     Pool_common.Id.(Contact.id contact |> value, id |> value)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+  ||> CCOption.to_result Pool_common.Message.(ContactExperimentNotFound)
 ;;
 
 let find_full_by_contact_request =

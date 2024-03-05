@@ -432,6 +432,9 @@ let rec error_to_string = function
   | ConformistModuleErrorType -> failwith "Do not use"
   | ContactDoesNotMatchFilter ->
     "Der Kontakt erfüllt die im Filter bestimmten Kriterien nicht."
+  | ContactExperimentNotFound ->
+    "Derzeit gibt es keine freien Plätze für die Teilnahme an diesem \
+     Experiment."
   | ContactSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete E-Mail-Adresse verwenden."
   | ContactUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
