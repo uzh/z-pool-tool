@@ -876,6 +876,14 @@ module Sql = struct
     |> query_by_admin
   ;;
 
+  let find_upcoming_by_admin =
+    {sql|
+      (pool_sessions.start + INTERVAL duration SECOND) > NOW()
+      AND pool_sessions.closed_at IS NULL
+    |sql}
+    |> query_by_admin
+  ;;
+
   let find_for_calendar_by_user actor pool ~start_time ~end_time =
     let open Caqti_request.Infix in
     let%lwt guardian_conditions = find_by_user_params pool actor in

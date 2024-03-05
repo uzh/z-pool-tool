@@ -48,10 +48,15 @@ module Partials = struct
   let incomplete_sessions_list =
     session_overview ("incomplete-sessions-list", "incomplete-sessions")
   ;;
+
+  let upcoming_sessions_list =
+    session_overview ("upcoming-sessions-list", "upcoming-sessions")
+  ;;
 end
 
 let index
   statistics
+  upcoming_sessions
   incomplete_sessions
   recruiter_layout
   Pool_context.{ language; _ }
@@ -61,7 +66,22 @@ let index
       ~a:[ a_class [ "heading-2" ] ]
       [ txt (Utils.text_to_string language title) ]
   in
-  let calendar = Component.Calendar.(create User) in
+  let upcoming_sessions_html =
+    let calendar_html = Component.Calendar.(create User) in
+    let session_list =
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ Page_admin_session.Partials.table_legend ~hide_closed:true language
+        ; Partials.upcoming_sessions_list language upcoming_sessions
+        ]
+    in
+    let elements = [ session_list; calendar_html ] in
+    let html = if recruiter_layout then CCList.rev elements else elements in
+    div
+      [ heading_2 I18n.UpcomingSessionsTitle
+      ; div ~a:[ a_class [ "stack-lg" ] ] html
+      ]
+  in
   let recruiter_information =
     let statistics_html =
       statistics
@@ -83,7 +103,7 @@ let index
       ; div ~a:[ a_class [ "span-2" ] ] [ incomplete_sessions_html ]
       ]
   in
-  let elements = [ calendar; recruiter_information ] in
+  let elements = [ upcoming_sessions_html; recruiter_information ] in
   let html = if recruiter_layout then CCList.rev elements else elements in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
