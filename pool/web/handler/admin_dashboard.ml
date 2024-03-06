@@ -22,7 +22,7 @@ let index req =
     Utils.Lwt_result.map_error (fun err -> err, "/error")
     @@
     let* actor = Pool_context.Utils.find_authorizable database_label user in
-    let%lwt recruiter_layout =
+    let%lwt clean_layout =
       let open Guard in
       let open CCList in
       let recruiter_roles : Role.Role.t list = [ `Operator; `Recruiter ] in
@@ -44,15 +44,17 @@ let index req =
     let%lwt incomplete_sessions =
       Session.find_incomplete_by_admin ~query actor database_label
     in
-    let%lwt upcoming_sessions =
-      Session.find_upcoming_by_admin ~query actor database_label
+    let open Page.Admin.Dashboard in
+    let%lwt layout =
+      if clean_layout
+      then Clean incomplete_sessions |> Lwt.return
+      else (
+        let%lwt upcoming_sessions =
+          Session.find_upcoming_by_admin ~query actor database_label
+        in
+        Admin (incomplete_sessions, upcoming_sessions) |> Lwt.return)
     in
-    Page.Admin.Dashboard.index
-      statistics
-      upcoming_sessions
-      incomplete_sessions
-      recruiter_layout
-      context
+    index statistics layout context
     |> create_layout req ~active_navigation:"/admin/dashboard" context
     >|+ Sihl.Web.Response.of_html
   in
