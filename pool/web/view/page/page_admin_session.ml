@@ -1408,6 +1408,7 @@ let follow_up
 ;;
 
 let session_counters
+  ~swap_oob
   language
   { Assignment.total; num_no_shows; num_participations }
   =
@@ -1418,10 +1419,10 @@ let session_counters
   in
   div
     ~a:
-      [ a_class [ "flexrow"; "flex-gap"; "inset-sm" ]
-      ; a_id session_counter_id
-      ; a_user_data "hx-swap-oob" "true"
-      ]
+      ([ a_class [ "flexrow"; "flex-gap"; "inset-sm" ]
+       ; a_id session_counter_id
+       ]
+       @ if swap_oob then [ a_user_data "hx-swap-oob" "true" ] else [])
     [ div
         [ strong
             [ field_to_string Field.Total
@@ -1441,6 +1442,7 @@ let session_counters
 let close_assignment_htmx_form
   { Pool_context.language; csrf; _ }
   (experiment : Experiment.t)
+  ?(swap_counters_oob = false)
   ?(updated_fields = [])
   session
   ?counters
@@ -1562,13 +1564,119 @@ let close_assignment_htmx_form
             ]
         ]
     ; errors
-    ; counters |> CCOption.map_or ~default:(txt "") (session_counters language)
+    ; counters
+      |> CCOption.map_or
+           ~default:(txt "")
+           (session_counters ~swap_oob:swap_counters_oob language)
     ]
+;;
+
+let close_assignments_table
+  ({ Pool_context.language; user; _ } as context)
+  view_contact_name
+  experiment
+  session
+  assignments
+  counters
+  custom_fields
+  =
+  match assignments with
+  | [] ->
+    p
+      [ txt Pool_common.(Utils.text_to_string language I18n.AssignmentListEmpty)
+      ]
+  | assignments ->
+    let identity_width = "w-3" in
+    let custom_data_width = "w-5" in
+    let form_id = "session-close-table" in
+    let thead =
+      let form_header =
+        let action =
+          session_path experiment.Experiment.id session.Session.id
+          |> Format.asprintf "%s/toggle-assignments"
+          |> Sihl.Web.externalize_path
+        in
+        let attributes field =
+          Htmx.
+            [ a_class [ "pointer" ]
+            ; hx_post action
+            ; hx_target ("#" ^ form_id)
+            ; hx_swap "outerHTML"
+            ; hx_trigger "click"
+            ; make_hx_vals [ Field.show field, "true" ]
+            ]
+        in
+        div
+          ~a:[ a_class [ "flexrow"; "w-4" ] ]
+          [ div
+              ~a:[ a_class [ "session-close-checkboxes" ] ]
+              [ div
+                  ~a:(attributes Message.Field.Participated)
+                  [ strong [ txt "P" ] ]
+              ; div ~a:(attributes Message.Field.NoShow) [ strong [ txt "NS" ] ]
+              ]
+          ]
+      in
+      [ div ~a:[ a_class [ identity_width ] ] []
+      ; custom_fields
+        |> CCList.map (fun field ->
+          div [ txt (Custom_field.name_value language field) ])
+        |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
+      ]
+      @ [ form_header ]
+    in
+    CCList.map
+      (fun (({ Assignment.id; contact; _ } as assignment), updated_fields) ->
+        let custom_data = assignment.Assignment.custom_fields in
+        let custom_field_cells =
+          let open Custom_field in
+          custom_data
+          |> CCOption.map_or ~default:[] (fun custom_data ->
+            CCList.map
+              (fun field ->
+                CCList.find_opt
+                  (fun public -> public |> Public.id |> Id.equal (id field))
+                  custom_data
+                |> CCOption.map_or
+                     ~default:(div [ txt "" ])
+                     (Component.CustomField.answer_to_html
+                        ~add_data_label:true
+                        user
+                        language))
+              custom_fields)
+          |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
+        in
+        let identity =
+          Component.UserStatus.Contact.identity
+            view_contact_name
+            contact
+            (Assignment.Id.to_common id)
+        in
+        [ div ~a:[ a_class [ identity_width ] ] [ strong [ txt identity ] ]
+        ; custom_field_cells
+        ; close_assignment_htmx_form
+            ?updated_fields
+            context
+            experiment
+            session
+            assignment
+        ])
+      assignments
+    |> CCList.map (div ~a:[ a_class [ "inset-sm"; "flexrow" ] ])
+    |> fun rows ->
+    div
+      ~a:[ a_id form_id ]
+      [ div
+          ~a:[ a_class [ "flexrow"; "inset-sm"; "session-close-header" ] ]
+          thead
+      ; div ~a:[ a_class [ "striped" ] ] rows
+      ; session_counters ~swap_oob:false language counters
+      ]
 ;;
 
 let close
   ?(view_contact_name = false)
-  ({ Pool_context.language; csrf; user; _ } as context)
+  ({ Pool_context.language; csrf; _ } as context)
   experiment
   (session : Session.t)
   assignments
@@ -1606,89 +1714,16 @@ let close
       ; participation_tags_list
       ]
   in
+  let assignments = CCList.map (CCFun.flip CCPair.make None) assignments in
   let table =
-    match assignments with
-    | [] ->
-      p
-        [ txt
-            Pool_common.(Utils.text_to_string language I18n.AssignmentListEmpty)
-        ]
-    | assignments ->
-      let identity_width = "w-3" in
-      let custom_data_width = "w-5" in
-      let thead =
-        let form_header =
-          let attributes field =
-            [ a_class [ "pointer" ]
-            ; a_user_data "toggle-assignments" (Message.Field.show field)
-            ]
-          in
-          div
-            ~a:[ a_class [ "flexrow"; "w-4" ] ]
-            [ div
-                ~a:[ a_class [ "session-close-checkboxes" ] ]
-                [ div
-                    ~a:(attributes Message.Field.Participated)
-                    [ strong [ txt "P" ] ]
-                ; div
-                    ~a:(attributes Message.Field.NoShow)
-                    [ strong [ txt "NS" ] ]
-                ]
-            ]
-        in
-        [ div ~a:[ a_class [ identity_width ] ] []
-        ; custom_fields
-          |> CCList.map (fun field ->
-            div [ txt (Custom_field.name_value language field) ])
-          |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
-        ]
-        @ [ form_header ]
-      in
-      CCList.map
-        (fun ({ Assignment.id; contact; _ } as assignment) ->
-          let custom_data = assignment.Assignment.custom_fields in
-          let custom_field_cells =
-            let open Custom_field in
-            custom_data
-            |> CCOption.map_or ~default:[] (fun custom_data ->
-              CCList.map
-                (fun field ->
-                  CCList.find_opt
-                    (fun public -> public |> Public.id |> Id.equal (id field))
-                    custom_data
-                  |> CCOption.map_or
-                       ~default:(div [ txt "" ])
-                       (Component.CustomField.answer_to_html
-                          ~add_data_label:true
-                          user
-                          language))
-                custom_fields)
-            |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
-          in
-          let identity =
-            Component.UserStatus.Contact.identity
-              view_contact_name
-              contact
-              (Assignment.Id.to_common id)
-          in
-          [ div ~a:[ a_class [ identity_width ] ] [ strong [ txt identity ] ]
-          ; custom_field_cells
-          ; close_assignment_htmx_form context experiment session assignment
-          ])
-        assignments
-      |> CCList.map (div ~a:[ a_class [ "inset-sm"; "flexrow" ] ])
-      |> fun rows ->
-      let table =
-        div
-          ~a:[ a_class [ "session-close-table" ] ]
-          [ div
-              ~a:[ a_class [ "flexrow"; "inset-sm"; "session-close-header" ] ]
-              thead
-          ; div ~a:[ a_class [ "striped" ] ] rows
-          ; session_counters language counters
-          ]
-      in
-      div [ table ]
+    close_assignments_table
+      context
+      view_contact_name
+      experiment
+      session
+      assignments
+      counters
+      custom_fields
   in
   let submit_session_close =
     form

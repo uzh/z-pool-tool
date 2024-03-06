@@ -376,7 +376,7 @@ table.simple {
     }
 }
 
-.session-close-table .custom-data {
+#session-close-table .custom-data {
     display: flex;
     & > * {
         flex-basis: 100%;
@@ -389,7 +389,7 @@ table.simple {
         display: none;
     }
 
-    .session-close-table .striped {      
+    #session-close-table .striped {      
         & > * {
             flex-direction: column;
             & > * + * {
