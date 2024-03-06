@@ -2,6 +2,13 @@ open Tyxml.Html
 open Pool_common
 module Field = Message.Field
 
+type incomplete_sessions = Session.t list * Query.t
+type upcoming_sessions = Session.t list * Query.t
+
+type layout =
+  | Clean of incomplete_sessions
+  | Admin of incomplete_sessions * upcoming_sessions
+
 module Partials = struct
   let session_overview (target_id, url) language (sessions, query) =
     let open Session in
@@ -54,35 +61,13 @@ module Partials = struct
   ;;
 end
 
-let index
-  statistics
-  upcoming_sessions
-  incomplete_sessions
-  recruiter_layout
-  Pool_context.{ language; _ }
-  =
+let index statistics layout Pool_context.{ language; _ } =
   let heading_2 title =
     h2
       ~a:[ a_class [ "heading-2" ] ]
       [ txt (Utils.text_to_string language title) ]
   in
-  let upcoming_sessions_html =
-    let calendar_html = Component.Calendar.(create User) in
-    let session_list =
-      div
-        ~a:[ a_class [ "stack" ] ]
-        [ Page_admin_session.Partials.table_legend ~hide_closed:true language
-        ; Partials.upcoming_sessions_list language upcoming_sessions
-        ]
-    in
-    let elements = [ session_list; calendar_html ] in
-    let html = if recruiter_layout then CCList.rev elements else elements in
-    div
-      [ heading_2 I18n.UpcomingSessionsTitle
-      ; div ~a:[ a_class [ "stack-lg" ] ] html
-      ]
-  in
-  let recruiter_information =
+  let information_section incomplete_sessions =
     let statistics_html =
       statistics
       |> CCOption.map_or ~default:(txt "") (fun statistics ->
@@ -103,8 +88,34 @@ let index
       ; div ~a:[ a_class [ "span-2" ] ] [ incomplete_sessions_html ]
       ]
   in
-  let elements = [ upcoming_sessions_html; recruiter_information ] in
-  let html = if recruiter_layout then CCList.rev elements else elements in
+  let upcoming_section children =
+    div
+      [ heading_2 I18n.UpcomingSessionsTitle
+      ; div ~a:[ a_class [ "stack-lg" ] ] children
+      ]
+  in
+  let calendar_html = Component.Calendar.(create User) in
+  let html =
+    match layout with
+    | Clean incomplete_sessions ->
+      [ information_section incomplete_sessions
+      ; upcoming_section [ calendar_html ]
+      ]
+    | Admin (incomplete_sessions, upcoming_sessions) ->
+      let upcoming_sessions =
+        let sessions =
+          div
+            ~a:[ a_class [ "stack" ] ]
+            [ Page_admin_session.Partials.table_legend
+                ~hide_closed:true
+                language
+            ; Partials.upcoming_sessions_list language upcoming_sessions
+            ]
+        in
+        upcoming_section [ sessions; calendar_html ]
+      in
+      [ upcoming_sessions; information_section incomplete_sessions ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1

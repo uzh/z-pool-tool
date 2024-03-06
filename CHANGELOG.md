@@ -157,7 +157,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 
 - settings: show role permissions to recruiters and operators
-- upcomming session overview for contacts
+- upcoming session overview for contacts
 - do not notify uncanceled assignemtns when rescheduling
 - custom fields: group button naming
 - root middleware for login

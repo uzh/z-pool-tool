@@ -50,6 +50,14 @@
     .fc-event-main {
         cursor: pointer;
     }
+
+    .fc-list-event-title>*:last-child {
+        float: inline-end;
+    }
+
+    .fc-list-sticky .fc-list-day.fc-day-today>th {
+        background-color: var(--fc-today-bg-color);
+    }
 }
 
 // Week view
