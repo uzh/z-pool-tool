@@ -699,6 +699,86 @@ let send_reminder_invalid () =
   ()
 ;;
 
+module CloseSession = struct
+  open AssignmentCommand
+
+  let testable_update_htmx = Alcotest.testable pp_update_htmx equal_update_htmx
+  let testable_assignment = Alcotest.testable Assignment.pp Assignment.equal
+
+  let decode_invalid () =
+    let urlencoded = [] in
+    let res = UpdateHtmx.decode urlencoded in
+    let expected = Error Pool_common.Message.InvalidHtmxRequest in
+    Alcotest.(check (result testable_update_htmx error) "succeeds") res expected
+  ;;
+
+  let decode_data_id () =
+    let open UpdateHtmx in
+    let urlencoded = [ Field.(show ExternalDataId), [ "" ] ] in
+    let res = decode urlencoded in
+    let expected = Ok (ExternalDataId None) in
+    Alcotest.(check (result testable_update_htmx error) "succeeds") res expected;
+    let data_id = "data-id" in
+    let urlencoded = [ Field.(show ExternalDataId), [ data_id ] ] in
+    let res = decode urlencoded in
+    let expected =
+      Ok (ExternalDataId (Some (Assignment.ExternalDataId.of_string data_id)))
+    in
+    Alcotest.(check (result testable_update_htmx error) "succeeds") res expected
+  ;;
+
+  let decode_boolean_fields () =
+    let open UpdateHtmx in
+    let urlencoded = [ Field.(show NoShow), [ "true" ] ] in
+    let res = decode urlencoded in
+    let expected = Ok (NoShow (Assignment.NoShow.create true)) in
+    Alcotest.(check (result testable_update_htmx error) "succeeds") res expected;
+    let urlencoded = [ Field.(show Participated), [ "" ] ] in
+    let res = decode urlencoded in
+    let expected = Ok (Participated (Assignment.Participated.create false)) in
+    Alcotest.(check (result testable_update_htmx error) "succeeds") res expected
+  ;;
+
+  let handle_update () =
+    let open UpdateHtmx in
+    let open CCResult.Infix in
+    (* Participated assignment with toggle NoShow = true *)
+    let assignment = Model.create_assignment ~participated:true () in
+    let urlencoded = [ Field.(show NoShow), [ "true" ] ] in
+    let res = urlencoded |> decode >|= handle assignment in
+    let expected =
+      Ok
+        Assignment.
+          { assignment with
+            no_show = Some (NoShow.create true)
+          ; participated = Some (Participated.create false)
+          }
+    in
+    (* NoShow assignment with toggle Participated = true *)
+    Alcotest.(check (result testable_assignment error) "succeeds") res expected;
+    let assignment = Model.create_assignment ~no_show:true () in
+    let urlencoded = [ Field.(show Participated), [ "true" ] ] in
+    let res = urlencoded |> decode >|= handle assignment in
+    let expected =
+      Ok
+        Assignment.
+          { assignment with
+            no_show = Some (NoShow.create false)
+          ; participated = Some (Participated.create true)
+          }
+    in
+    Alcotest.(check (result testable_assignment error) "succeeds") res expected;
+    (* NoShow assignment with toggle NoShow = false *)
+    let assignment = Model.create_assignment ~no_show:true () in
+    let urlencoded = [ Field.(show NoShow), [ "false" ] ] in
+    let res = urlencoded |> decode >|= handle assignment in
+    let expected =
+      Ok Assignment.{ assignment with no_show = Some (NoShow.create false) }
+    in
+    Alcotest.(check (result testable_assignment error) "succeeds") res expected
+  ;;
+end
+
 module SwapSessionData = struct
   open Message_template
   open Pool_common
