@@ -7,12 +7,14 @@ end
 module NoShow : sig
   include Pool_common.Model.BooleanSig
 
+  val field : Pool_common.Message.Field.t
   val init : t
 end
 
 module Participated : sig
   include Pool_common.Model.BooleanSig
 
+  val field : Pool_common.Message.Field.t
   val init : t
 end
 
@@ -34,6 +36,8 @@ end
 
 module ExternalDataId : sig
   include Pool_common.Model.StringSig
+
+  val field : Pool_common.Message.Field.t
 end
 
 type t =

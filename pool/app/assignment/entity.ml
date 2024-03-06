@@ -7,15 +7,17 @@ end
 module NoShow = struct
   include Pool_common.Model.Boolean
 
+  let field = Pool_common.Message.Field.NoShow
   let init = false
-  let schema = schema Pool_common.Message.Field.NoShow
+  let schema = schema field
 end
 
 module Participated = struct
   include Pool_common.Model.Boolean
 
+  let field = Pool_common.Message.Field.Participated
   let init = false
-  let schema = schema Pool_common.Message.Field.Participated
+  let schema = schema field
 end
 
 module MatchesFilter = struct

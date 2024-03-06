@@ -348,6 +348,73 @@ end = struct
   ;;
 end
 
+type update_htmx =
+  | ExternalDataId of Assignment.ExternalDataId.t option
+  | Participated of Assignment.Participated.t
+  | NoShow of Assignment.NoShow.t
+[@@deriving show, eq, variants]
+
+module UpdateHtmx : sig
+  type t = update_htmx
+
+  val handle : ?tags:Logs.Tag.set -> Assignment.t -> t -> Assignment.t
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+end = struct
+  type t = update_htmx
+
+  let handle ?(tags = Logs.Tag.empty) (assignment : Assignment.t) =
+    let open Assignment in
+    Logs.info ~src (fun m -> m "Handle command UpdateHtmx" ~tags);
+    function
+    | ExternalDataId external_data_id -> { assignment with external_data_id }
+    | Participated participated ->
+      let no_show =
+        match Participated.value participated with
+        | true -> false |> NoShow.create |> CCOption.return
+        | false -> assignment.no_show
+      in
+      { assignment with participated = Some participated; no_show }
+    | NoShow no_show ->
+      let participated =
+        match NoShow.value no_show with
+        | true -> false |> Participated.create |> CCOption.return
+        | false -> assignment.participated
+      in
+      { assignment with participated; no_show = Some no_show }
+  ;;
+
+  let decode data =
+    let open Pool_common.Message in
+    let open Assignment in
+    let decode_bool decode str =
+      str |> Utils.Bool.of_string |> decode |> CCResult.return
+    in
+    let decode_data_id = function
+      | "" -> Ok None
+      | str -> str |> ExternalDataId.create |> CCResult.map CCOption.return
+    in
+    let fields =
+      [ Field.ExternalDataId, decode_data_id %> CCResult.map externaldataid
+      ; Field.Participated, decode_bool (Participated.create %> participated)
+      ; Field.NoShow, decode_bool (NoShow.create %> noshow)
+      ]
+    in
+    let open CCOption in
+    CCList.find_map
+      (fun (field, decoder) ->
+        CCList.assoc_opt ~eq:( = ) (Field.show field) data
+        >>= CCList.head_opt
+        >|= decoder)
+      fields
+    |> function
+    | None -> Error Pool_common.Message.InvalidHtmxRequest
+    | Some res -> res
+  ;;
+end
+
 module SendReminder : sig
   include Common.CommandSig with type t = Pool_common.Reminder.Channel.t
 

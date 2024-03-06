@@ -1455,6 +1455,19 @@ let close_assignment_htmx_form
     | Error err -> Some err
   in
   let session_path = session_path experiment.Experiment.id session.Session.id in
+  let action =
+    Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)
+    |> Sihl.Web.externalize_path
+  in
+  let hx_attribs field =
+    Htmx.
+      [ hx_post action
+      ; hx_trigger "change"
+      ; hx_swap "outerHTML"
+      ; hx_target (Format.asprintf "[data-assignment=\"%s\"]" (Id.value id))
+      ; hx_params (Message.Field.show field)
+      ]
+  in
   let checkbox_element field value =
     let checked = if value then [ a_checked () ] else [] in
     let classnames =
@@ -1470,16 +1483,13 @@ let close_assignment_htmx_form
               ~a:
                 ([ a_input_type `Checkbox; a_name (Field.show field) ]
                  @ checked
-                 @ classnames)
+                 @ classnames
+                 @ hx_attribs field)
               ()
           ]
       ]
   in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
-  let action =
-    Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)
-    |> Sihl.Web.externalize_path
-  in
   let external_data_field =
     match
       Experiment.(
@@ -1518,7 +1528,8 @@ let close_assignment_htmx_form
                ; a_placeholder
                    (field_to_string language field |> CCString.capitalize_ascii)
                ]
-               @ classnames)
+               @ classnames
+               @ hx_attribs field)
             ()
         ]
   in
@@ -1529,15 +1540,12 @@ let close_assignment_htmx_form
         error_to_string language err |> txt |> CCList.return |> li
       in
       CCList.map error_to_item errors
-      |> ul ~a:[ a_class [ "color-red"; "flexrow" ] ])
+      |> ul ~a:[ a_class [ "color-red"; "flexcolumn" ] ])
   in
   form
     ~a:
-      [ a_user_data "hx-post" action
-      ; a_user_data "hx-trigger" "change"
-      ; a_user_data "hx-swap" "outerHTML"
+      [ a_class [ "flexcolumn"; "stack-sm"; "w-4" ]
       ; a_user_data "assignment" (Id.value id)
-      ; a_class [ "flexcolumn"; "stack-sm"; "w-4" ]
       ]
     [ csrf_element csrf ()
     ; div
@@ -1610,11 +1618,22 @@ let close
       let custom_data_width = "w-5" in
       let thead =
         let form_header =
+          let attributes field =
+            [ a_class [ "pointer" ]
+            ; a_user_data "toggle-assignments" (Message.Field.show field)
+            ]
+          in
           div
             ~a:[ a_class [ "flexrow"; "w-4" ] ]
             [ div
                 ~a:[ a_class [ "session-close-checkboxes" ] ]
-                [ div [ strong [ txt "P" ] ]; div [ strong [ txt "NS" ] ] ]
+                [ div
+                    ~a:(attributes Message.Field.Participated)
+                    [ strong [ txt "P" ] ]
+                ; div
+                    ~a:(attributes Message.Field.NoShow)
+                    [ strong [ txt "NS" ] ]
+                ]
             ]
         in
         [ div ~a:[ a_class [ identity_width ] ] []
@@ -1669,37 +1688,7 @@ let close
           ; session_counters language counters
           ]
       in
-      let scripts =
-        Format.asprintf
-          {js|
-            const noShow = "%s";
-            const participated = "%s";
-
-            const forms = document.querySelectorAll("form[data-assignment]");
-
-            document.addEventListener('htmx:beforeRequest', (e) => {
-              const form = e.detail.target;
-              const trigger = e.detail.requestConfig.triggeringEvent.srcElement;
-              switch (trigger.name) {
-                case noShow:
-                  if(trigger.checked) {
-                    e.detail.requestConfig.parameters['participated'] = false
-                  }
-                  break;
-                case participated:
-                  if(trigger.checked) {
-                    e.detail.requestConfig.parameters[noShow] = false
-                  }
-                  break;
-                default:
-                  return;
-              }
-            });
-          |js}
-          Field.(show NoShow)
-          Field.(show Participated)
-      in
-      div [ table; script (Unsafe.data scripts) ]
+      div [ table ]
   in
   let submit_session_close =
     form
