@@ -151,6 +151,7 @@ type hint =
   | ContactEnrollmentDoesNotMatchFilter
   | ContactEnrollmentRegistrationDisabled
   | ContactEnterCellPhoneToken of string
+  | ContactInformationEmailHint
   | ContactLanguage
   | ContactNoCellPhone
   | ContactOnWaitingList

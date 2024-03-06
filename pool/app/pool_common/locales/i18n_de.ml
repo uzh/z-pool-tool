@@ -234,6 +234,8 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
       "Bitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s   \
        geschickt haben. Der Code ist eine Stunde lang gültig."
       cell_phone
+  | ContactInformationEmailHint ->
+    "Um Ihre E-Mail-Adresse anzupassen, folgen Sie bitte folgendem Link."
   | ContactLanguage ->
     "Bei einigen Experimenten wird in einer anderen Sprache kommuniziert, ohne \
      Rücksicht auf die Kontaktsprache."

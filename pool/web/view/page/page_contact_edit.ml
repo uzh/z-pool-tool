@@ -353,6 +353,19 @@ let contact_information
   let hint_to_html =
     CCFun.(Utils.hint_to_string language %> fun hint -> div [ txt hint ])
   in
+  let email_hint =
+    let link =
+      HttpUtils.path_with_language query_language "/user/login-information"
+    in
+    [ txt
+        Pool_common.(
+          Utils.hint_to_string language I18n.ContactInformationEmailHint)
+    ]
+    |> Notification.notification
+         language
+         ~link:(link, Pool_common.I18n.LoginInformation)
+         `Warning
+  in
   let form_title i18n =
     h2
       ~a:[ a_class [ "heading-3" ] ]
@@ -397,7 +410,7 @@ let contact_information
   in
   let form_as_link url i18n =
     form
-      ~a:[ a_method `Post; a_action (Sihl.Web.externalize_path url) ]
+      ~a:[ a_method `Post; a_action (externalize url) ]
       [ csrf_element csrf ()
       ; submit_element ~classnames:[ "as-link" ] language i18n ()
       ]
@@ -445,20 +458,21 @@ let contact_information
     | Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } ->
       verify_form cell_phone
   in
-  div [ div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
+  div [ email_hint; div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
   |> contact_profile_layout language Pool_common.I18n.ContactInformation
 ;;
 
 let pause_account Pool_context.{ language; query_language; csrf; _ } ?token () =
   let open Pool_common in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
   let action =
     match token with
-    | None -> "/user/update/pause" |> Sihl.Web.externalize_path
+    | None -> "/user/update/pause" |> externalize
     | Some token ->
       Message.add_field_query_params
         "/unsubscribe"
         [ Message.Field.Token, User_import.Token.value token ]
-      |> HttpUtils.externalize_path_with_lang query_language
+      |> externalize
   in
   let open Utils in
   div

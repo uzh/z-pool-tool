@@ -150,7 +150,7 @@ let sign_up_create req =
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        HttpUtils.(
          redirect_to_with_actions
-           (path_with_language query_language "/email-confirmation")
+           "/email-confirmation"
            [ Message.set
                ~success:[ Pool_common.Message.EmailConfirmationMessage ]
            ])

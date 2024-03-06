@@ -230,6 +230,8 @@ When inviting contacts, the filter will prefer the overriding value if both are 
       "Please enter the verification code we sent yout to %s. The code is \
        valid for one hour."
       cell_phone
+  | ContactInformationEmailHint ->
+    "To change your e-mail address, please follow this link."
   | ContactLanguage ->
     "Some experiments choose to communicate in a different language, \
      disregarding your contact language."
