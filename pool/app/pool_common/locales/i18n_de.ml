@@ -235,7 +235,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
        geschickt haben. Der Code ist eine Stunde lang gültig."
       cell_phone
   | ContactInformationEmailHint ->
-    "Um Ihre Email-Adresse anzupassen, folgen Sie bitte folgendem Link."
+    "Um Ihre E-Mail-Adresse anzupassen, folgen Sie bitte folgendem Link."
   | ContactLanguage ->
     "Bei einigen Experimenten wird in einer anderen Sprache kommuniziert, ohne \
      Rücksicht auf die Kontaktsprache."
