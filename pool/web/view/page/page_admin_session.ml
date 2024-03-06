@@ -1408,7 +1408,6 @@ let follow_up
 ;;
 
 let session_counters
-  ~swap_oob
   language
   { Assignment.total; num_no_shows; num_participations }
   =
@@ -1419,10 +1418,10 @@ let session_counters
   in
   div
     ~a:
-      ([ a_class [ "flexrow"; "flex-gap"; "inset-sm" ]
-       ; a_id session_counter_id
-       ]
-       @ if swap_oob then [ a_user_data "hx-swap-oob" "true" ] else [])
+      [ a_class [ "flexrow"; "flex-gap"; "inset-sm" ]
+      ; a_id session_counter_id
+      ; a_user_data "hx-swap-oob" "true"
+      ]
     [ div
         [ strong
             [ field_to_string Field.Total
@@ -1442,10 +1441,8 @@ let session_counters
 let close_assignment_htmx_form
   { Pool_context.language; csrf; _ }
   (experiment : Experiment.t)
-  ?(swap_counters_oob = false)
   ?(updated_fields = [])
   session
-  ?counters
   ({ Assignment.id; no_show; participated; external_data_id; _ } as assignment)
   =
   let open Assignment in
@@ -1564,10 +1561,6 @@ let close_assignment_htmx_form
             ]
         ]
     ; errors
-    ; counters
-      |> CCOption.map_or
-           ~default:(txt "")
-           (session_counters ~swap_oob:swap_counters_oob language)
     ]
 ;;
 
@@ -1577,7 +1570,6 @@ let close_assignments_table
   experiment
   session
   assignments
-  counters
   custom_fields
   =
   match assignments with
@@ -1670,7 +1662,6 @@ let close_assignments_table
           ~a:[ a_class [ "flexrow"; "inset-sm"; "session-close-header" ] ]
           thead
       ; div ~a:[ a_class [ "striped" ] ] rows
-      ; session_counters ~swap_oob:false language counters
       ]
 ;;
 
@@ -1716,14 +1707,16 @@ let close
   in
   let assignments = CCList.map (CCFun.flip CCPair.make None) assignments in
   let table =
-    close_assignments_table
-      context
-      view_contact_name
-      experiment
-      session
-      assignments
-      counters
-      custom_fields
+    div
+      [ close_assignments_table
+          context
+          view_contact_name
+          experiment
+          session
+          assignments
+          custom_fields
+      ; session_counters language counters
+      ]
   in
   let submit_session_close =
     form

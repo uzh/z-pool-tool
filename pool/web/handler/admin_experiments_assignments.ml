@@ -264,7 +264,7 @@ module Close = struct
   let update req =
     let tags = Pool_context.Logger.Tags.req req in
     let assignment_id = assignment_id req in
-    let result ({ Pool_context.database_label; _ } as context) =
+    let result ({ Pool_context.database_label; language; _ } as context) =
       let* experiment, session = router_params req database_label in
       let* assignment = find database_label assignment_id in
       let* updated = decode req >|+ UpdateHtmx.handle assignment in
@@ -278,15 +278,16 @@ module Close = struct
         counters_of_session database_label session.Session.id
       in
       let updated_fields = updated_fields assignment updated in
-      Page.Admin.Session.close_assignment_htmx_form
-        ~counters
-        ~updated_fields
-        ~swap_counters_oob:true
-        context
-        experiment
-        session
-        updated
-      |> HttpUtils.Htmx.html_to_plain_text_response
+      Page.Admin.Session.
+        [ close_assignment_htmx_form
+            ~updated_fields
+            context
+            experiment
+            session
+            updated
+        ; session_counters language counters
+        ]
+      |> HttpUtils.Htmx.multi_html_to_plain_text_response
       |> Lwt_result.return
     in
     result
@@ -295,7 +296,7 @@ module Close = struct
 
   let toggle req =
     let tags = Pool_context.Logger.Tags.req req in
-    let result ({ Pool_context.database_label; _ } as context) =
+    let result ({ Pool_context.database_label; language; _ } as context) =
       let* experiment, session = router_params req database_label in
       let* decoded =
         decode req
@@ -326,15 +327,17 @@ module Close = struct
         |> experiment_target_id
         |> Helpers.Guard.can_read_contact_name context
       in
-      Page.Admin.Session.close_assignments_table
-        context
-        view_contact_name
-        experiment
-        session
-        assignments
-        counters
-        custom_fields
-      |> HttpUtils.Htmx.html_to_plain_text_response
+      Page.Admin.Session.
+        [ close_assignments_table
+            context
+            view_contact_name
+            experiment
+            session
+            assignments
+            custom_fields
+        ; session_counters language counters
+        ]
+      |> HttpUtils.Htmx.multi_html_to_plain_text_response
       |> Lwt_result.return
     in
     result
