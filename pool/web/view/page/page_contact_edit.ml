@@ -354,7 +354,9 @@ let contact_information
     CCFun.(Utils.hint_to_string language %> fun hint -> div [ txt hint ])
   in
   let email_hint =
-    let link = "/user/login-information" in
+    let link =
+      HttpUtils.path_with_language query_language "/user/login-information"
+    in
     [ txt
         Pool_common.(
           Utils.hint_to_string language I18n.ContactInformationEmailHint)
@@ -408,7 +410,7 @@ let contact_information
   in
   let form_as_link url i18n =
     form
-      ~a:[ a_method `Post; a_action (Sihl.Web.externalize_path url) ]
+      ~a:[ a_method `Post; a_action (externalize url) ]
       [ csrf_element csrf ()
       ; submit_element ~classnames:[ "as-link" ] language i18n ()
       ]
@@ -462,14 +464,15 @@ let contact_information
 
 let pause_account Pool_context.{ language; query_language; csrf; _ } ?token () =
   let open Pool_common in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
   let action =
     match token with
-    | None -> "/user/update/pause" |> Sihl.Web.externalize_path
+    | None -> "/user/update/pause" |> externalize
     | Some token ->
       Message.add_field_query_params
         "/unsubscribe"
         [ Message.Field.Token, User_import.Token.value token ]
-      |> HttpUtils.externalize_path_with_lang query_language
+      |> externalize
   in
   let open Utils in
   div

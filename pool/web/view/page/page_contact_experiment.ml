@@ -28,7 +28,7 @@ let index
   waiting_list
   past_experiments
   custom_fields_ansered
-  Pool_context.{ language; _ }
+  Pool_context.{ language; query_language; _ }
   =
   let list_html ?empty_msg ?note title classnames list =
     div
@@ -82,7 +82,8 @@ let index
       [ a
           ~a:
             [ a_href
-                (Sihl.Web.externalize_path
+                (HttpUtils.externalize_path_with_lang
+                   query_language
                    (Format.asprintf "/experiments/%s" (Experiment.Id.value id)))
             ]
           [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
@@ -202,7 +203,7 @@ let show
   past_sessions
   user_is_enlisted
   contact
-  Pool_context.{ language; csrf; _ }
+  Pool_context.{ language; query_language; csrf; _ }
   =
   let open Pool_common in
   let hint_to_string = Utils.hint_to_string language in
@@ -236,7 +237,7 @@ let show
         Experiment.(experiment |> Public.id |> Id.value)
       |> (fun url ->
            if user_is_enlisted then Format.asprintf "%s/remove" url else url)
-      |> Sihl.Web.externalize_path
+      |> HttpUtils.externalize_path_with_lang query_language
     in
     let text_blocks =
       let base =
@@ -249,7 +250,11 @@ let show
         if CCOption.is_none contact.Contact.cell_phone
         then
           [ Component.Notification.notification
-              ~link:("/user/contact-information", I18n.PersonalDetails)
+              ~link:
+                ( HttpUtils.path_with_language
+                    query_language
+                    "/user/contact-information"
+                , I18n.PersonalDetails )
               language
               `Warning
               [ txt (hint_to_string I18n.WaitingListPhoneMissingContact) ]
