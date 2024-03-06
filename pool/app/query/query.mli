@@ -144,6 +144,15 @@ val to_uri_query
 val with_sort_order : Sort.SortOrder.t -> t -> t
 val with_sort_column : Column.t -> t -> t
 
+module Cache : sig
+  type key = Pool_common.Id.t * string
+
+  val show_key : key -> string
+  val find : key -> t option
+  val add : key -> t -> unit
+  val clear : key -> unit
+end
+
 val create
   :  ?filter:Filter.t
   -> ?pagination:Pagination.t
@@ -153,7 +162,8 @@ val create
   -> t
 
 val from_request
-  :  ?filterable_by:Filter.human
+  :  ?cached_key:Cache.key
+  -> ?filterable_by:Filter.human
   -> ?searchable_by:Column.t list
   -> ?sortable_by:Column.t list
   -> ?default:t

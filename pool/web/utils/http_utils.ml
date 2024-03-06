@@ -428,9 +428,15 @@ module Htmx = struct
     fun ?active_navigation ~error_path ~query:(module Q) ~create_layout req run ->
     let open Utils.Lwt_result.Infix in
     extract_happy_path ~src req
-    @@ fun context ->
+    @@ fun ({ Pool_context.user; _ } as context) ->
+    let cached_key =
+      (* TODO: Use something else then active naviation as key *)
+      let user_id = user |> Pool_context.get_user_id in
+      CCOption.( and* ) user_id active_navigation
+    in
     let query =
       Query.from_request
+        ?cached_key
         ?filterable_by:Q.filterable_by
         ~searchable_by:Q.searchable_by
         ~sortable_by:Q.sortable_by

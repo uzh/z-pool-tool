@@ -111,10 +111,9 @@ let index req =
     req
   @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
-  let find_actor =
+  let* actor =
     Pool_context.Utils.find_authorizable ~admin_only:true database_label user
   in
-  let* actor = find_actor in
   let%lwt experiments, query =
     Experiment.find_all
       ~query
