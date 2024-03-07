@@ -39,6 +39,15 @@ let joins =
   |sql}
 ;;
 
+let joins_tags =
+  {sql|
+    LEFT JOIN pool_tagging 
+      ON pool_tagging.model_uuid = pool_experiments.uuid
+	  LEFT JOIN pool_tags 
+      ON pool_tags.uuid = pool_tagging.tag_uuid
+  |sql}
+;;
+
 let find_request_sql
   ?(distinct = false)
   ?additional_joins
@@ -176,7 +185,7 @@ module Sql = struct
     Query.collect_and_count
       pool
       query
-      ~select:(find_request_sql ~distinct:false ?additional_joins:None)
+      ~select:(find_request_sql ~distinct:true ~additional_joins:joins_tags)
       ?where
       Repo_entity.t
   ;;
@@ -553,6 +562,9 @@ module Sql = struct
   let query_past_experiments_by_contact ?query pool contact =
     let where, additional_joins =
       participated_experiments_by_content_where (Contact.id contact)
+    in
+    let additional_joins =
+      Format.asprintf "%s\n%s" additional_joins joins_tags
     in
     Query.collect_and_count
       pool

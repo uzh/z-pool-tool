@@ -322,7 +322,7 @@ let experiment_type_filter =
 ;;
 
 let filterable_by = Some [ experiment_type_filter ]
-let searchable_by = [ column_title; column_public_title ]
+let searchable_by = [ column_title; column_public_title; Tags.column_title ]
 let sortable_by = column_created_at :: searchable_by
 
 let default_sort =
