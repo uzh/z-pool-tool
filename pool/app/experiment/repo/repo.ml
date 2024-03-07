@@ -55,7 +55,9 @@ let find_request_sql
   where_fragment
   =
   let columns =
-    if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+    if count
+    then "COUNT( DISTINCT pool_experiments.uuid )"
+    else sql_select_columns |> CCString.concat ", "
   in
   let joins =
     additional_joins
@@ -63,7 +65,7 @@ let find_request_sql
   in
   Format.asprintf
     {sql|SELECT %s %s FROM pool_experiments %s %s|sql}
-    (if distinct then "DISTINCT" else "")
+    (if distinct && not count then "DISTINCT" else "")
     columns
     joins
     where_fragment
