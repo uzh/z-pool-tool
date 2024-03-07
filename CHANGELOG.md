@@ -4,6 +4,29 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.6.2](https://github.com/uzh/pool/tree/0.6.2) - 2024-03-07
+
+### Added
+
+- participation history to contact detail pages
+- validation functionality for smtp settings
+
+### Fixed
+
+- vowel encoding issues in email subjects
+- exception notifier separately adding labels
+- ignore disabled contacts in statistics
+- testing: user seed
+- do not allow enrollment to waiting list when registration is disabled
+- allow assignment of contact from waiting list when registration is disabled by an admin
+- retain language when opening experiment detail page from contact dashboard
+
+### Changes
+
+- 'not found' error when contact accesses experiment without correct permissions
+- removed upcomming sessions list on dashboard for recruiters and operators
+- experiment search also includes tag titles
+
 ## [0.6.1](https://github.com/uzh/pool/tree/0.6.1) - 2024-02-27
 
 ### Added
@@ -96,6 +119,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - split experiment and session description in public and internal
 
 ### Fixed
+
 - waiting list displays enrolled contacts if assignment is marked as deleted
 
 ## [0.5.2](https://github.com/uzh/pool/tree/0.5.2) - 2023-12-21
