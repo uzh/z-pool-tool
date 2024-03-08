@@ -21,6 +21,7 @@ type t =
   | EmptyListGeneric
   | EmtpyList of Entity_message.Field.t
   | EnrollInExperiment
+  | ExperimentHistory
   | ExperimentListEmpty
   | ExperimentListPublicTitle
   | ExperimentListTitle
@@ -60,7 +61,6 @@ type t =
   | Note
   | OurPartners
   | Past
-  | ParticipatedExperiments
   | PastSessionsTitle
   | PoolStatistics
   | ProfileCompletionText

@@ -384,7 +384,7 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
     ; `empty
     ]
   in
-  let th_class = [ "w-6"; "w-4"; "w-2" ] in
+  let th_class = [ "w-7"; "w-5" ] in
   let row (experiment, pending) =
     let open Experiment in
     let detail_btn = Page_admin_experiments.Partials.detail_button experiment in
@@ -521,8 +521,7 @@ let detail
           []
       ; h3
           [ txt
-              Pool_common.(
-                Utils.text_to_string language I18n.ParticipatedExperiments)
+              Pool_common.(Utils.text_to_string language I18n.ExperimentHistory)
           ]
       ; experiment_history context contact experiments query
       ]

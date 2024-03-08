@@ -123,7 +123,7 @@ let index
     | past_experiments ->
       past_experiments
       |> CCList.map experiment_item
-      |> list_html ParticipatedExperiments [ "striped" ]
+      |> list_html ExperimentHistory [ "striped" ]
   in
   let session_html =
     let experiment_overview ((exp : Experiment.Public.t), parent, follow_ups) =
