@@ -74,27 +74,33 @@ let find_request_sql
 let participation_history_sql additional_joins ?(count = false) where_fragment =
   let is_pending_col =
     {sql| 
-      EXISTS ( 
-        SELECT 1
-        FROM pool_sessions 
-        WHERE 
-          pool_sessions.experiment_uuid = pool_experiments.uuid
+      EXISTS (
+        SELECT
+          1
+        FROM
+          pool_sessions
+          INNER JOIN pool_assignments a ON a.session_uuid = pool_sessions.uuid
+        WHERE
+          a.contact_uuid = pool_assignments.contact_uuid
+          AND a.canceled_at IS NULL
+          AND a.marked_as_deleted = 0
           AND pool_sessions.closed_at IS NULL
-        )
-      |sql}
+          AND pool_sessions.experiment_uuid = pool_experiments.uuid)
+    |sql}
   in
   let columns =
     if count
     then "COUNT( DISTINCT pool_experiments.uuid )"
     else sql_select_columns @ [ is_pending_col ] |> CCString.concat ", "
   in
+  let group_by = if count then "" else "GROUP BY pool_experiments.uuid" in
   let joins = Format.asprintf "%s\n%s\n%s" joins additional_joins joins_tags in
   Format.asprintf
-    {sql|SELECT %s %s FROM pool_experiments %s %s|sql}
-    (if count then "" else "DISTINCT")
+    {sql|SELECT %s FROM pool_experiments %s %s %s |sql}
     columns
     joins
     where_fragment
+    group_by
 ;;
 
 module Sql = struct
@@ -592,8 +598,9 @@ module Sql = struct
   ;;
 
   let query_participation_history_by_contact ?query pool contact =
+    let contact_id = Contact.id contact in
     let where, additional_joins =
-      participation_history_where ~exclude_past:false (Contact.id contact)
+      participation_history_where ~exclude_past:false contact_id
     in
     Query.collect_and_count
       pool
