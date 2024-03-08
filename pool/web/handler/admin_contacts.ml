@@ -74,14 +74,12 @@ let past_experiments_htmx req =
     let* contact = Contact.find database_label contact_id in
     let%lwt experiments, query =
       let query = experiments_query_from_req req in
-      Experiment.query_past_experiments_by_contact ~query database_label contact
+      Experiment.query_participation_history_by_contact
+        ~query
+        database_label
+        contact
     in
-    let open Page.Admin in
-    Experiments.list
-      (`Participated (contact, Contact.experiment_history_modal_id))
-      context
-      experiments
-      query
+    Page.Admin.Contact.experiment_history context contact experiments query
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
@@ -121,7 +119,7 @@ let detail_view action req =
          in
          let%lwt past_experiments =
            let query = experiments_query_from_req req in
-           Experiment.query_past_experiments_by_contact
+           Experiment.query_participation_history_by_contact
              ~query
              database_label
              contact

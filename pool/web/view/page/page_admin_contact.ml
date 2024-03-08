@@ -1,11 +1,13 @@
 open Containers
 open CCFun
 open Tyxml.Html
+module DataTable = Component.DataTable
 module Table = Component.Table
 module Input = Component.Input
 module Icon = Component.Icon
 module Modal = Component.Modal
 module Status = Component.UserStatus.Contact
+module Message = Pool_common.Message
 
 let path =
   Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
@@ -21,7 +23,6 @@ let contact_lastname_firstname access_contact_profiles contact =
 let enroll_contact_modal_id = "enroll-modal"
 
 let enroll_contact_path ?suffix contact_id =
-  let open Pool_common in
   Format.asprintf
     "/admin/contacts/%s/%s"
     (Contact.Id.value contact_id)
@@ -117,9 +118,7 @@ let personal_detail
       rows
     @ custom_field_rows
   in
-  table
-    ~a:[ a_class (Component.Table.table_classes `Striped ~align_top:true ()) ]
-    rows
+  table ~a:[ a_class (Table.table_classes `Striped ~align_top:true ()) ] rows
   |> fun html ->
   div
     [ h3
@@ -362,6 +361,82 @@ let index ({ Pool_context.language; _ } as context) contacts query =
 
 let experiment_history_modal_id = "past-experiment-modal"
 
+let experiment_history Pool_context.{ language; _ } contact experiments query =
+  let url =
+    contact
+    |> Contact.id
+    |> Contact.Id.value
+    |> Format.asprintf "/admin/contacts/%s/past-experiments"
+    |> Uri.of_string
+  in
+  let data_table =
+    DataTable.create_meta
+      ?filter:Experiment.filterable_by
+      ~push_url:false
+      ~search:Experiment.searchable_by
+      url
+      query
+      language
+  in
+  let cols =
+    [ `column Experiment.column_title
+    ; `column Experiment.column_public_title
+    ; `empty
+    ]
+  in
+  let th_class = [ "w-6"; "w-4"; "w-2" ] in
+  let row (experiment, pending) =
+    let open Experiment in
+    let detail_btn = Page_admin_experiments.Partials.detail_button experiment in
+    let session_modal_btn =
+      let url =
+        Format.asprintf
+          "/admin/experiments/%s/contact-history/%s"
+          (Id.value experiment.id)
+          Contact.(contact |> id |> Id.value)
+        |> Sihl.Web.externalize_path
+      in
+      let attributes =
+        Htmx.
+          [ hx_get url
+          ; hx_swap "outerHTML"
+          ; hx_target ("#" ^ experiment_history_modal_id)
+          ; a_class [ "primary" ]
+          ]
+      in
+      button ~a:attributes [ Icon.(to_html InformationOutline) ]
+    in
+    let buttons =
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ]
+        [ session_modal_btn; detail_btn ]
+    in
+    let title =
+      let text = txt (Title.value experiment.title) in
+      match pending with
+      | false -> text
+      | true ->
+        div
+          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+          [ span [ text ]
+          ; span
+              ~a:[ a_class [ "tag"; "primary"; "ghost"; "inline" ] ]
+              [ txt "pending" ]
+          ]
+    in
+    [ title; txt (PublicTitle.value experiment.public_title); buttons ]
+    |> CCList.map (CCList.return %> td)
+    |> tr
+  in
+  DataTable.make
+    ~target_id:"experiment-history"
+    ~th_class
+    ~cols
+    ~row
+    data_table
+    experiments
+;;
+
 let experiment_history_modal
   { Pool_context.language; _ }
   (experiment : Experiment.t)
@@ -449,11 +524,7 @@ let detail
               Pool_common.(
                 Utils.text_to_string language I18n.ParticipatedExperiments)
           ]
-      ; Page_admin_experiments.list
-          (`Participated (contact, experiment_history_modal_id))
-          context
-          experiments
-          query
+      ; experiment_history context contact experiments query
       ]
   in
   div
