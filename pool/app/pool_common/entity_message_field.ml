@@ -142,7 +142,7 @@ type t =
   | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
   [@printer go "inactive_user_disable_after"]
   | InactiveUserWarning [@name "inactive_user_warning"]
-  [@printer go "inactive_user_warning"]
+  | Inactive [@name "inactive"] [@printer go "inactive_user_warning"]
   | Input [@name "input"] [@printer go "input"]
   | Institution [@name "institution"] [@printer go "institution"]
   | InternalDescription [@name "internal_description"]

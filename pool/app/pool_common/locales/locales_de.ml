@@ -119,6 +119,7 @@ let rec field_to_string =
   | ImportPending -> "Import pendent"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
+  | Inactive -> "Inaktiv"
   | Input -> "Input"
   | Institution -> "Institution"
   | InternalDescription -> "Interne Beschreibung"
