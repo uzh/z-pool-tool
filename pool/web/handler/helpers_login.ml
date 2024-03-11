@@ -16,10 +16,7 @@ let notify_user database_label tags email =
   | None -> Lwt.return ()
   | Some (_ : Pool_user.FailedLoginAttempt.BlockedUntil.t) ->
     let notify () =
-      email
-      |> EmailAddress.value
-      |> Service.User.find_by_email_opt
-           ~ctx:(Pool_database.to_ctx database_label)
+      Pool_user.find_active_user_by_email_opt database_label email
       >|> function
       | None -> Lwt_result.return ()
       | Some user ->
@@ -138,10 +135,7 @@ let login req urlencoded database_label =
     in
     let login () =
       let create_session () =
-        Service.User.login
-          ~ctx:(Pool_database.to_ctx database_label)
-          (EmailAddress.value email)
-          ~password
+        Pool_user.create_session database_label email ~password
       in
       (match is_root with
        | true -> create_session ()

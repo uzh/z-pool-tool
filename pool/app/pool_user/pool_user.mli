@@ -231,6 +231,17 @@ val column_last_name : Query.Column.t
 val column_name : Query.Column.t
 val column_email : Query.Column.t
 
+val find_active_user_by_email_opt
+  :  Pool_database.Label.t
+  -> EmailAddress.t
+  -> Service.User.t option Lwt.t
+
+val create_session
+  :  Pool_database.Label.t
+  -> EmailAddress.t
+  -> password:string
+  -> (Service.User.t, [ `Does_not_exist | `Incorrect_password ]) Lwt_result.t
+
 module FailedLoginAttempt : sig
   module Id : sig
     include Pool_common.Model.IdSig

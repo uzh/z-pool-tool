@@ -71,9 +71,7 @@ let request_reset_password_post req =
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= (fun email ->
-          email
-          |> Pool_user.EmailAddress.value
-          |> Service.User.find_by_email_opt ~ctx
+          Pool_user.find_active_user_by_email_opt database_label email
           ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage)
     >>= PasswordReset.create database_label language Root
     >>= CCFun.(handle ~tags %> Lwt_result.lift)
