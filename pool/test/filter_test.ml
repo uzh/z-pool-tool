@@ -570,6 +570,30 @@ let filter_by_email _ () =
   test_filter true contact filter experiment
 ;;
 
+let filter_exclude_inactive _ () =
+  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
+  let%lwt contact = TestContacts.get_contact 9 in
+  let%lwt experiment = Repo.first_experiment () in
+  let filter =
+    let open Filter in
+    Pred
+      (Predicate.create
+         Key.(Hardcoded Name)
+         equal_operator
+         (Single (Str (Contact.lastname contact |> Pool_user.Lastname.value))))
+    |> create None
+  in
+  let%lwt () = save_filter filter experiment in
+  (* Expect contact to be included *)
+  let%lwt () = test_filter true contact filter experiment in
+  let%lwt (_ : Sihl_user.t) =
+    let open Service.User in
+    update ~ctx ~status:Inactive contact.Contact.user
+  in
+  (* Expect inactive contact to be excluded *)
+  test_filter false contact filter experiment
+;;
+
 let validate_filter_with_unknown_field _ () =
   let open Test_utils in
   let%lwt () =

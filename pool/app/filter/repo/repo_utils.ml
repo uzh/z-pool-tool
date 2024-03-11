@@ -17,6 +17,7 @@ let filtered_base_condition =
     {sql|
     user_users.admin = 0
     AND user_users.confirmed = 1
+    AND user_users.status != ?
     AND pool_contacts.paused = 0
     AND pool_contacts.disabled = 0
     AND pool_contacts.email_verified IS NOT NULL
@@ -401,22 +402,25 @@ let filter_to_sql template_list dyn query =
 
 let filtered_params ?group_by ?order_by use_case template_list filter =
   let open CCResult.Infix in
-  let id_param =
+  let base_dyn =
     let open Dynparam in
+    let dyn =
+      empty |> add Caqti_type.string Sihl_user.(status_to_string Inactive)
+    in
     match use_case with
-    | MatchesFilter -> empty
+    | MatchesFilter -> dyn
     | Matcher experiment_id ->
       let id = experiment_id |> Pool_common.Id.value in
-      empty |> add Caqti_type.string id
+      dyn |> add Caqti_type.string id
     | MatcherReset (experiment_id, allow_before) ->
       let id = experiment_id |> Pool_common.Id.value in
-      empty |> add Caqti_type.string id |> add Caqti_type.ptime allow_before
+      dyn |> add Caqti_type.string id |> add Caqti_type.ptime allow_before
   in
   let query =
     match filter with
-    | None -> Ok (id_param, filtered_base_condition use_case)
+    | None -> Ok (base_dyn, filtered_base_condition use_case)
     | Some filter ->
-      filter_to_sql template_list id_param filter
+      filter_to_sql template_list base_dyn filter
       >|= fun (dyn, sql) ->
       dyn, Format.asprintf "%s\n AND %s" (filtered_base_condition use_case) sql
   in
