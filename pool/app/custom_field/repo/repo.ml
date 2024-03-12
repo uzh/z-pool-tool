@@ -288,7 +288,8 @@ module Sql = struct
   ;;
 
   let table_view_column = function
-    | `SesionClose -> "show_on_session_close_screen"
+    | `SessionClose -> "show_on_session_close_screen"
+    | `SessionDetail -> "show_on_session_detail_screen"
   ;;
 
   let find_by_table_view_request table_view =

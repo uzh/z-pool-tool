@@ -28,6 +28,7 @@ let rec field_to_string =
   | Assistants -> "Assistenten"
   | AvailableLanguages -> "Verfügbare Sprachen"
   | Building -> "Gebäude"
+  | Canceled -> "Abgesagt"
   | CanceledAt -> "Abgesagt am"
   | CellPhone -> "Mobiltelefon"
   | Chronological -> "chronologisch"
@@ -91,6 +92,7 @@ let rec field_to_string =
       "Experimentspezifische Erinnerungs-SMS %s"
       (field_to_string LeadTime)
   | ExperimentType -> "Experimenttyp"
+  | ExternalDataIdAbbr -> "EDI"
   | ExternalDataId -> "Externer Daten Identifikator"
   | ExternalDataRequired -> "Externe Daten müssen angegeben werden"
   | Failed -> "Fehlgeschlagen"

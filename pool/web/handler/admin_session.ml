@@ -386,7 +386,7 @@ let show req =
   in
   let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
   let%lwt assignments =
-    Assignment.query_by_session ~query database_label session_id
+    Assignment.find_for_session_detail_screen ~query database_label session_id
   in
   match HttpUtils.Htmx.is_hx_request req with
   | false ->

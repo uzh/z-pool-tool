@@ -473,7 +473,7 @@ val find
 
 val find_by_table_view
   :  Pool_database.Label.t
-  -> [< `SesionClose ]
+  -> [< `SessionClose | `SessionDetail ]
   -> t list Lwt.t
 
 val find_all_by_contact
@@ -526,7 +526,7 @@ val find_public_by_contacts_and_view
   :  Pool_database.Label.t
   -> bool
   -> Contact.Id.t list
-  -> [< `SesionClose ]
+  -> [< `SessionClose | `SessionDetail ]
   -> Public.t list Lwt.t
 
 val find_option

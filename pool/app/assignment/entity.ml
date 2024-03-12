@@ -203,6 +203,11 @@ let column_external_data_id =
   |> Query.Column.create
 ;;
 
+let column_external_data_id_abbr =
+  (Field.ExternalDataIdAbbr, "pool_assignments.external_data_id")
+  |> Query.Column.create
+;;
+
 let column_no_show =
   (Field.NoShowAbr, "pool_assignments.no_show") |> Query.Column.create
 ;;
@@ -236,6 +241,7 @@ let sortable_by =
     ; column_no_show
     ; column_participated
     ; column_external_data_id
+    ; column_external_data_id_abbr
     ; Contact.column_cell_phone
     ]
 ;;

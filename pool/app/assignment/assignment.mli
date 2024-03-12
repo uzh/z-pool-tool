@@ -187,6 +187,12 @@ val find_for_session_close_screen
   -> Session.Id.t
   -> (t list * Custom_field.t list) Lwt.t
 
+val find_for_session_detail_screen
+  :  query:Query.t
+  -> Pool_database.Label.t
+  -> Session.Id.t
+  -> ((t list * Custom_field.t list) * Query.t) Lwt.t
+
 val find_deleted_by_session
   :  Pool_database.Label.t
   -> Session.Id.t
@@ -212,6 +218,7 @@ val column_canceled_at : Query.Column.t
 val column_no_show : Query.Column.t
 val column_participated : Query.Column.t
 val column_external_data_id : Query.Column.t
+val column_external_data_id_abbr : Query.Column.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
