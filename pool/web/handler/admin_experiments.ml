@@ -106,6 +106,7 @@ let index req =
   HttpUtils.Htmx.handler
     ~active_navigation:"/admin/experiments"
     ~error_path:"/admin/experiments"
+    ~query_cache_key:"experiment-index"
     ~create_layout
     ~query:(module Experiment)
     req
