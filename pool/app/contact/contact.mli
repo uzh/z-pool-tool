@@ -95,6 +95,7 @@ val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
 val lastname_firstname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
+val is_inactive : t -> bool
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val show : t -> string
 val compare : t -> t -> int

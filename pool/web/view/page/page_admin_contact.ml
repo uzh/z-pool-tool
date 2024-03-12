@@ -282,30 +282,34 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
             , legend_color_item "bg-red-lighter" )
           ])
   in
-  div
-    [ h3
-        [ txt
-            Pool_common.Utils.(text_to_string language I18n.EnrollInExperiment)
-        ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ legend
-        ; form
-            ~a:[ a_id form_identifier ]
-            [ Input.csrf_element csrf ()
-            ; Component.Search.Experiment.assign_contact_search
-                language
-                contact
-                ()
+  let form =
+    match Contact.is_inactive contact with
+    | true ->
+      p [ txt Utils.(error_to_string language Message.ContactIsInactive) ]
+    | false ->
+      div
+        [ div
+            ~a:[ a_class [ "stack" ] ]
+            [ legend
+            ; form
+                ~a:[ a_id form_identifier ]
+                [ Input.csrf_element csrf ()
+                ; Component.Search.Experiment.assign_contact_search
+                    language
+                    contact
+                    ()
+                ]
             ]
+        ; div
+            ~a:
+              [ a_id enroll_contact_modal_id
+              ; a_class [ "modal"; "fullscreen-overlay" ]
+              ]
+            []
         ]
-    ; div
-        ~a:
-          [ a_id enroll_contact_modal_id
-          ; a_class [ "modal"; "fullscreen-overlay" ]
-          ]
-        []
-    ]
+  in
+  div
+    [ h3 [ txt Utils.(text_to_string language I18n.EnrollInExperiment) ]; form ]
 ;;
 
 let list Pool_context.{ language; _ } contacts query =

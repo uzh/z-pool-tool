@@ -159,6 +159,7 @@ let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
 let lastname_firstname m = m.user |> User.user_lastname_firstname
 let email_address m = m.user.Sihl_user.email |> User.EmailAddress.of_string
+let is_inactive { user; _ } = Sihl_user.(equal_status user.status Inactive)
 
 let sexp_of_t t =
   t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s

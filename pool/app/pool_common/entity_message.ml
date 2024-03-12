@@ -35,6 +35,7 @@ type error =
   | ConformistModuleErrorType
   | ContactDoesNotMatchFilter
   | ContactExperimentNotFound
+  | ContactIsInactive
   | ContactUnconfirmed
   | ContactSignupInvalidEmail
   | CustomFieldNoOptions

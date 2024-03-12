@@ -97,9 +97,13 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
+    let open Pool_common.Message in
     let all_sessions = session :: follow_up_sessions in
+    let* () =
+      if Contact.is_inactive contact then Error ContactIsInactive else Ok ()
+    in
     if already_enrolled
-    then Error Pool_common.Message.(AlreadySignedUpForExperiment)
+    then Error AlreadySignedUpForExperiment
     else
       let* () =
         let open Experiment in
@@ -109,8 +113,7 @@ end = struct
           (experiment.direct_registration_disabled
            |> DirectRegistrationDisabled.value
            || experiment.registration_disabled |> RegistrationDisabled.value)
-          |> Utils.bool_to_result_not
-               Pool_common.Message.(DirectRegistrationIsDisabled)
+          |> Utils.bool_to_result_not DirectRegistrationIsDisabled
       in
       let* creation_events =
         assignment_creation_and_confirmation_events

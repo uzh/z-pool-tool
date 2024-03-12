@@ -439,6 +439,7 @@ let rec error_to_string = function
   | ContactExperimentNotFound ->
     "Derzeit gibt es keine freien Plätze für die Teilnahme an diesem \
      Experiment."
+  | ContactIsInactive -> "Dieser Kontakt ist inaktiv."
   | ContactSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete E-Mail-Adresse verwenden."
   | ContactUnconfirmed -> "Teilnehmer noch nicht verifiziert!"

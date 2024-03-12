@@ -126,6 +126,10 @@ let () =
             `Quick
             Assignment_test.create_with_experiment_smtp
         ; test_case
+            "create with inactive user"
+            `Quick
+            Assignment_test.create_inactive_user
+        ; test_case
             "mark assignment as canceled"
             `Quick
             Assignment_test.canceled
