@@ -230,6 +230,7 @@ val column_first_name : Query.Column.t
 val column_last_name : Query.Column.t
 val column_name : Query.Column.t
 val column_email : Query.Column.t
+val column_inactive : Query.Column.t
 
 val find_active_user_by_email_opt
   :  Pool_database.Label.t

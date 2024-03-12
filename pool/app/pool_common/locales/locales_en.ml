@@ -107,6 +107,7 @@ let rec field_to_string =
   | HideClosed -> "Hide closed"
   | HideMakedAsDeleted -> "Hide marked as deleted"
   | HidePaused -> "Hide paused"
+  | HideInactive -> "Hide inactive"
   | HidePast -> "Hide past"
   | HideUnverified -> "Hide unverified"
   | Hint -> "hint"

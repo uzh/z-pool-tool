@@ -331,6 +331,12 @@ let column_name =
   |> Query.Column.create
 ;;
 
+let column_inactive =
+  Query.Column.create
+    ( Field.HideInactive
+    , Format.asprintf "user_users.status != '%s'" Field.(show Inactive) )
+;;
+
 let searchable_and_sortable_by =
   [ Field.Email, "user_users.email"
   ; Field.Firstname, "user_users.given_name"

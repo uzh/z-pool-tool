@@ -109,6 +109,7 @@ let rec field_to_string =
   | HideClosed -> "Geschlossene ausblenden"
   | HideMakedAsDeleted -> "Als gelöscht markerte ausblenden"
   | HidePaused -> "Pausierte ausblenden"
+  | HideInactive -> "Inaktive ausblenden"
   | HidePast -> "Vergangene ausblenden"
   | HideUnverified -> "Unverifizierte ausblenden"
   | Hint -> "Hint"

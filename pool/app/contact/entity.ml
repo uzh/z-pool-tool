@@ -226,17 +226,21 @@ let column_hide_unverified =
 let filterable_by =
   Some
     Query.Filter.Condition.Human.
-      [ Checkbox column_hide_unverified; Checkbox column_hide_paused ]
+      [ Checkbox column_hide_unverified
+      ; Checkbox column_hide_paused
+      ; Checkbox User.column_inactive
+      ]
 ;;
 
 let default_filter =
   let open Query.Filter in
   [ Condition.(Checkbox (column_hide_unverified, true))
   ; Condition.(Checkbox (column_hide_paused, true))
+  ; Condition.(Checkbox (User.column_inactive, true))
   ]
 ;;
 
 let searchable_by = Pool_user.searchable_by
 let sortable_by = Pool_user.sortable_by
 let default_sort = Pool_user.default_sort
-let default_query = Pool_user.default_query
+let default_query = Query.create ~sort:default_sort ~filter:default_filter ()
