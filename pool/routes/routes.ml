@@ -713,7 +713,14 @@ module Admin = struct
       let settings =
         let open CustomFieldSettings in
         [ get "" ~middlewares:[ Access.index ] index
-        ; post "" ~middlewares:[ Access.update ] update
+        ; post
+            "session-close"
+            ~middlewares:[ Access.update ]
+            update_close_screen
+        ; post
+            "session-detail"
+            ~middlewares:[ Access.update ]
+            update_detail_screen
         ]
       in
       [ get "" ~middlewares:[ Access.index ] redirect

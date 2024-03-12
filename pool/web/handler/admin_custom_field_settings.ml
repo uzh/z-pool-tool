@@ -21,7 +21,7 @@ let index req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let update req =
+let update setting req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/custom-fields")
@@ -38,6 +38,7 @@ let update req =
       Cqrs_command.Custom_field_settings_command.UpdateVisibilitySettings.handle
         ~tags
         ~selected
+        setting
         contact_fields
         ()
       |> Lwt_result.lift
@@ -56,6 +57,9 @@ let update req =
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
+
+let update_close_screen = update `close
+let update_detail_screen = update `detail
 
 module Access : module type of Helpers.Access = struct
   module Command = Cqrs_command.Custom_field_settings_command

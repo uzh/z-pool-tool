@@ -226,7 +226,8 @@ module Write = struct
       ; admin_view_only = admin_view_only t
       ; admin_input_only = admin_input_only t
       ; prompt_on_registration = prompt_on_registration t
-      ; show_on_session_close_screen = show_on_session_close_page t
+      ; show_on_session_close_page = show_on_session_close_page t
+      ; show_on_session_detail_page = show_on_session_detail_page t
       }
   ;;
 
@@ -248,8 +249,9 @@ module Write = struct
                             , ( m.admin_view_only
                               , ( m.admin_input_only
                                 , ( m.prompt_on_registration
-                                  , m.show_on_session_close_screen ) ) ) ) ) )
-                      ) ) ) ) ) ) ) )
+                                  , ( m.show_on_session_close_page
+                                    , m.show_on_session_detail_page ) ) ) ) ) )
+                        ) ) ) ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -286,7 +288,9 @@ module Write = struct
                                             AdminViewOnly.t
                                             (t2
                                                AdminInputOnly.t
-                                               (t2 PromptOnRegistration.t bool)))))))))))))))
+                                               (t2
+                                                  PromptOnRegistration.t
+                                                  (t2 bool bool))))))))))))))))
   ;;
 end
 
@@ -678,6 +682,7 @@ type repo =
   ; prompt_on_registration : PromptOnRegistration.t
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
+  ; show_on_session_detail_page : bool
   }
 
 let t =
@@ -700,8 +705,10 @@ let t =
                         , ( admin_view_only
                           , ( admin_input_only
                             , ( prompt_on_registration
-                              , (published_at, show_on_session_close_page) ) )
-                          ) ) ) ) ) ) ) ) ) ) ) )
+                              , ( published_at
+                                , ( show_on_session_close_page
+                                  , show_on_session_detail_page ) ) ) ) ) ) ) )
+                  ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -721,6 +728,7 @@ let t =
       ; prompt_on_registration
       ; published_at
       ; show_on_session_close_page
+      ; show_on_session_detail_page
       }
   in
   Caqti_type.(
@@ -755,7 +763,9 @@ let t =
                                              AdminInputOnly.t
                                              (t2
                                                 PromptOnRegistration.t
-                                                (t2 (option PublishedAt.t) bool))))))))))))))))
+                                                (t2
+                                                   (option PublishedAt.t)
+                                                   (t2 bool bool)))))))))))))))))
 ;;
 
 let to_entity
@@ -776,6 +786,7 @@ let to_entity
   ; prompt_on_registration
   ; published_at
   ; show_on_session_close_page
+  ; show_on_session_detail_page
   }
   =
   let validation_schema schema =
@@ -799,6 +810,7 @@ let to_entity
       ; prompt_on_registration
       ; published_at
       ; show_on_session_close_page
+      ; show_on_session_detail_page
       }
   | FieldType.Date ->
     Date
@@ -817,6 +829,7 @@ let to_entity
       ; prompt_on_registration
       ; published_at
       ; show_on_session_close_page
+      ; show_on_session_detail_page
       }
   | FieldType.Number ->
     let validation = validation_schema Validation.Number.schema in
@@ -836,6 +849,7 @@ let to_entity
       ; prompt_on_registration
       ; published_at
       ; show_on_session_close_page
+      ; show_on_session_detail_page
       }
   | FieldType.Select ->
     let options =
@@ -860,6 +874,7 @@ let to_entity
         ; prompt_on_registration
         ; published_at
         ; show_on_session_close_page
+        ; show_on_session_detail_page
         }
       , options )
   | FieldType.MultiSelect ->
@@ -886,6 +901,7 @@ let to_entity
         ; prompt_on_registration
         ; published_at
         ; show_on_session_close_page
+        ; show_on_session_detail_page
         }
       , options )
   | FieldType.Text ->
@@ -906,5 +922,6 @@ let to_entity
       ; prompt_on_registration
       ; published_at
       ; show_on_session_close_page
+      ; show_on_session_detail_page
       }
 ;;

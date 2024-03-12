@@ -102,7 +102,7 @@ module Partials = struct
     CCList.map
       (fun field -> div [ txt (Custom_field.name_value language field) ])
       custom_fields
-    |> div ~a:[ a_class [ "custom-data" ] ]
+    |> div ~a:[ a_class [ "flexcolumn" ] ]
   ;;
 
   let custom_field_cells language user answers custom_fields =
@@ -121,7 +121,7 @@ module Partials = struct
                   user
                   language))
         custom_fields)
-    |> div ~a:[ a_class [ "custom-data" ] ]
+    |> div ~a:[ a_class [ "flexcolumn" ] ]
   ;;
 
   module ReminderModal = struct

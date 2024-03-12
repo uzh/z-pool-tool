@@ -69,7 +69,8 @@ module Sql = struct
         pool_custom_fields.admin_input_only,
         pool_custom_fields.prompt_on_registration,
         pool_custom_fields.published_at,
-        pool_custom_fields.show_on_session_close_screen
+        pool_custom_fields.show_on_session_close_screen,
+        pool_custom_fields.show_on_session_detail_screen
       FROM pool_custom_fields
       %s
       %s
@@ -164,6 +165,7 @@ module Sql = struct
         admin_input_only,
         prompt_on_registration,
         show_on_session_close_screen,
+        show_on_session_detail_screen,
         position
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
@@ -181,6 +183,7 @@ module Sql = struct
         $13,
         $14,
         $15,
+        $16,
         (SELECT
           COUNT(*)
           FROM pool_custom_fields AS f
@@ -219,7 +222,8 @@ module Sql = struct
         admin_view_only = $12,
         admin_input_only = $13,
         prompt_on_registration = $14,
-        show_on_session_close_screen = $15
+        show_on_session_close_screen = $15,
+        show_on_session_detail_screen = $16
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

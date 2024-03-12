@@ -355,6 +355,7 @@ type 'a custom_field =
   ; prompt_on_registration : PromptOnRegistration.t
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
+  ; show_on_session_detail_page : bool
   }
 
 type t =
@@ -406,6 +407,8 @@ val admin_input_only : t -> AdminInputOnly.t
 val prompt_on_registration : t -> PromptOnRegistration.t
 val show_on_session_close_page : t -> bool
 val set_show_on_session_close_page : bool -> t -> t
+val show_on_session_detail_page : t -> bool
+val set_show_on_session_detail_page : bool -> t -> t
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
 val validation_to_yojson : t -> Yojson.Safe.t
