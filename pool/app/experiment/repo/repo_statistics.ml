@@ -94,7 +94,7 @@ let session_count_request =
         pool_sessions
       WHERE
         experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-        AND canceled_at IS NOT NULL
+        AND canceled_at IS NULL
     |sql}
   |> Caqti_type.(Repo_entity.Id.t ->! int)
 ;;
@@ -126,8 +126,8 @@ let assignment_counts_request =
   let open Caqti_request.Infix in
   {sql|
       SELECT
-        COALESCE(SUM(pool_assignments.no_show), 0),
         COALESCE(SUM(pool_assignments.no_show = 0), 0),
+        COALESCE(SUM(pool_assignments.no_show), 0),
         COALESCE(SUM(pool_assignments.participated), 0)
       FROM
         pool_assignments
