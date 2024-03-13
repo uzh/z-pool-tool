@@ -1177,8 +1177,6 @@ let detail
           return
         }
         const modal = e.detail.elt;
-        window['pool-tool'].initRichTextEditor(modal);
-
         const checkbox = modal.querySelector(`[data-toggle]`);
         const target = document.getElementById(checkbox.dataset.toggle);
         checkbox.addEventListener("click", (e) => {

@@ -16,8 +16,3 @@ initFilterForm();
 initPrint();
 initRichTextEditor();
 initHtmxSearch();
-
-window['pool-tool'] = {
-    initRichTextEditor
-};
-

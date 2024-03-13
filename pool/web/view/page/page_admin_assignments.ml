@@ -583,7 +583,6 @@ module Partials = struct
           %s
           document.addEventListener("htmx:afterSwap", (e) => {
             const modal = e.detail.elt;
-            window['pool-tool'].initRichTextEditor(modal);
 
             const checkbox = modal.querySelector(`[data-toggle]`);
             const target = document.getElementById(checkbox.dataset.toggle);
