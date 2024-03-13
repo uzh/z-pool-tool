@@ -25,13 +25,7 @@ let follow_up_icon language =
 
 let key_figures_head = "Min / Max (Overbook)"
 let int_to_txt = CCInt.to_string %> txt
-
-let session_path experiment_id session_id =
-  Format.asprintf
-    "/admin/experiments/%s/sessions/%s"
-    Experiment.(Id.value experiment_id)
-    Session.(session_id |> Id.value)
-;;
+let session_path = HttpUtils.Url.Admin.session_path
 
 let some_session_is_followup sessions =
   sessions
@@ -1146,14 +1140,10 @@ let detail
   let assignments_html =
     let open Page_admin_assignments in
     let swap_session_modal_id = swap_session_modal_id session in
+    let direct_message_modal_id = direct_message_modal_id session in
     let legend = Partials.table_legend language in
-    let swap_session_modal =
-      div
-        ~a:
-          [ a_id swap_session_modal_id
-          ; a_class [ "fullscreen-overlay"; "modal" ]
-          ]
-        []
+    let modal id =
+      div ~a:[ a_id id; a_class [ "fullscreen-overlay"; "modal" ] ] []
     in
     let assignment_list =
       data_table
@@ -1221,7 +1211,8 @@ let detail
               ]
           ]
       ; legend
-      ; swap_session_modal
+      ; modal swap_session_modal_id
+      ; modal direct_message_modal_id
       ; assignment_list
       ; script (Unsafe.data swap_session_modal_js)
       ]

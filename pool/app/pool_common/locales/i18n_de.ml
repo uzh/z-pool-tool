@@ -399,6 +399,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
      SMS-Texteingabe ignorieren."
   | MessageTemplateExperimentInvitation ->
     "Diese Nachricht wird gesendet, um Kontakte zu Experimenten einzuladen."
+  | MessageTemplateManualSessionMessage ->
+    "Diese Vorlage dient als Vorlage für manuell versendete Nachrichten im \
+     Rahmen einer Session."
   | MessageTemplatePasswordChange ->
     "Diese Nachricht wird gesendet, um Benutzer zu benachrichtigen, dass das \
      Kontopasswort geändert wurde."

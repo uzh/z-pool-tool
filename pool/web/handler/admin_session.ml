@@ -952,6 +952,87 @@ let resend_reminders req =
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
+module DirectMessage = struct
+  let assignments_from_requeset req database_label session_id =
+    let open Utils.Lwt_result.Infix in
+    let open Assignment in
+    Sihl.Web.Request.urlencoded_list Field.(array_key Assignment) req
+    ||> CCList.map Id.of_string
+    >|> find_multiple_by_session database_label session_id
+    ||> function
+    | [] -> Error Pool_common.Message.(NoOptionSelected Field.Assignment)
+    | assignments -> Ok assignments
+  ;;
+
+  let modal_htmx req =
+    let session_id = session_id req in
+    let result ({ Pool_context.database_label; _ } as context) =
+      let open Utils.Lwt_result.Infix in
+      let* assignments =
+        assignments_from_requeset req database_label session_id
+      in
+      let* session = Session.find database_label session_id in
+      let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+      let%lwt message_template =
+        let language =
+          session.Session.experiment.Experiment.language
+          |> CCOption.value ~default:(CCList.hd system_languages)
+        in
+        Message_template.(
+          find_by_label_and_language_to_send
+            database_label
+            Label.ManualSessionMessage
+            language)
+      in
+      Page.Admin.Assignment.Partials.direct_message_modal
+        context
+        session
+        message_template
+        system_languages
+        assignments
+      |> HttpUtils.Htmx.html_to_plain_text_response
+      |> Lwt_result.return
+    in
+    result
+    |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  ;;
+
+  let send req =
+    let tags = Pool_context.Logger.Tags.req req in
+    let experiment_id = experiment_id req in
+    let session_id = session_id req in
+    let session_path = session_path experiment_id session_id in
+    let result { Pool_context.database_label; _ } =
+      Lwt_result.map_error (fun err -> err, session_path)
+      @@
+      let open Utils.Lwt_result.Infix in
+      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      let* assignments =
+        assignments_from_requeset req database_label session_id
+      in
+      let* session = Session.find database_label session_id in
+      let tenant = Pool_context.Tenant.get_tenant_exn req in
+      let%lwt make_job =
+        Message_template.ManualSessionMessage.prepare tenant session
+      in
+      let* events =
+        let open CCResult.Infix in
+        let open Cqrs_command.Session_command.SendDirectMessage in
+        urlencoded
+        |> decode
+        >>= handle ~tags make_job assignments
+        |> Lwt_result.lift
+      in
+      let%lwt () = Pool_event.handle_events ~tags database_label events in
+      HttpUtils.redirect_to_with_actions
+        session_path
+        [ Message.set ~success:[ Pool_common.Message.(Sent Field.Message) ] ]
+      |> Lwt_result.ok
+    in
+    result |> HttpUtils.extract_happy_path ~src req
+  ;;
+end
+
 module Api = struct
   let calendar_api ?actor req query =
     let result { Pool_context.database_label; guardian; _ } =

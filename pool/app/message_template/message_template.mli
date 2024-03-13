@@ -12,6 +12,7 @@ module Label : sig
     | ContactRegistrationAttempt
     | EmailVerification
     | ExperimentInvitation
+    | ManualSessionMessage
     | PasswordChange
     | PasswordReset
     | PhoneVerification
@@ -329,6 +330,21 @@ module ExperimentInvitation : sig
     :  Pool_tenant.t
     -> Experiment.t
     -> (Contact.t -> (Email.job, Pool_common.Message.error) result) Lwt.t
+end
+
+module ManualSessionMessage : sig
+  val email_params
+    :  Pool_common.Language.t
+    -> email_layout
+    -> Experiment.t
+    -> Session.t
+    -> Assignment.t
+    -> (string * string) list
+
+  val prepare
+    :  Pool_tenant.t
+    -> Session.t
+    -> (Assignment.t -> ManualMessage.t -> Email.job) Lwt.t
 end
 
 module PasswordChange : sig

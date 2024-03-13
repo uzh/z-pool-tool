@@ -27,6 +27,10 @@ let swap_session_modal_id session =
   Format.asprintf "swap-session-%s" Session.(Id.value session.Session.id)
 ;;
 
+let direct_message_modal_id session =
+  Format.asprintf "direct-message-%s" Session.(Id.value session.Session.id)
+;;
+
 type assignment_redirect =
   | Assignments
   | DeletedAssignments
@@ -341,6 +345,64 @@ module Partials = struct
       html
   ;;
 
+  let direct_message_modal
+    ({ Pool_context.language; csrf; _ } as context)
+    ?selected_language
+    session
+    message_template
+    languages
+    assignments
+    =
+    let experiment = session.Session.experiment in
+    let action =
+      let open Session in
+      HttpUtils.Url.Admin.session_path
+        ~suffix:"direct-message/send"
+        experiment.Experiment.id
+        session.id
+      |> Sihl.Web.externalize_path
+    in
+    let hidden_inputs =
+      CCList.map
+        (fun { Assignment.id; _ } ->
+          input
+            ~a:
+              [ a_input_type `Hidden
+              ; a_name Field.(array_key Assignment)
+              ; a_value (Assignment.Id.value id)
+              ]
+            ())
+        assignments
+      |> div ~a:[ a_class [ "hidden" ] ]
+    in
+    let html =
+      form
+        ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
+        [ Page_admin_message_template.template_inputs
+            context
+            true
+            (`Create message_template)
+            Message_template.Label.AssignmentSessionChange
+            ~languages
+            ?fixed_language:experiment.Experiment.language
+            ?selected_language
+        ; csrf_element csrf ()
+        ; hidden_inputs
+        ; div
+            ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+            [ submit_element language Pool_common.Message.(Send None) () ]
+        ]
+    in
+    Component.Modal.create
+      ~active:true
+      language
+      (fun lang ->
+        Pool_common.(
+          Utils.control_to_string lang Message.(Send (Some Field.Message))))
+      (direct_message_modal_id session)
+      html
+  ;;
+
   let overview_list
     ?(access_contact_profiles = false)
     ?(view_contact_name = false)
@@ -446,14 +508,9 @@ module Partials = struct
         ; txt Utils.(nav_link_to_string language I18n.ExternalDataIds)
         ]
     in
-    let session_change_toggle { Assignment.id; _ } =
+    let session_change_toggle assignment =
       let action =
-        assignment_specific_path
-          ~suffix:"swap-session"
-          experiment.Experiment.id
-          session.Session.id
-          id
-        |> Sihl.Web.externalize_path
+        action assignment "swap-session" |> Sihl.Web.externalize_path
       in
       link_as_button
         "#"
@@ -708,7 +765,6 @@ let data_table
     ; true, column_canceled_at, canceled_at
     ]
   in
-  let swap_session_modal_id = swap_session_modal_id session in
   let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
   let cancelable m =
     Session.assignments_cancelable session |> CCResult.is_ok
@@ -788,13 +844,10 @@ let data_table
       ; txt Utils.(nav_link_to_string language I18n.ExternalDataIds)
       ]
   in
-  let session_change_toggle { Assignment.id; _ } =
+  let session_change_toggle assignment =
     let action =
-      assignment_specific_path
-        ~suffix:"swap-session"
-        experiment.Experiment.id
-        session.Session.id
-        id
+      action assignment "swap-session"
+      |> Sihl.Web.externalize_path
       |> Sihl.Web.externalize_path
     in
     link_as_button
@@ -803,11 +856,36 @@ let data_table
         [ a_user_data "hx-trigger" "click"
         ; a_user_data "hx-get" action
         ; a_user_data "hx-swap" "outerHTML"
-        ; a_user_data "hx-target" (Format.asprintf "#%s" swap_session_modal_id)
+        ; a_user_data
+            "hx-target"
+            (Format.asprintf "#%s" (swap_session_modal_id session))
         ]
       ~is_text:true
       ~control:(language, Pool_common.Message.ChangeSession)
       ~icon:Component.Icon.SwapHorizonal
+  in
+  let direct_message_toggle assignment =
+    let action =
+      HttpUtils.Url.Admin.session_path
+        ~suffix:"direct-message"
+        experiment.Experiment.id
+        session.Session.id
+      |> Sihl.Web.externalize_path
+    in
+    link_as_button
+      "#"
+      ~attributes:
+        Htmx.
+          [ hx_trigger "click"
+          ; hx_post action
+          ; hx_swap "outerHTML"
+          ; make_hx_vals
+              [ Field.(array_key Assignment), Id.value assignment.id ]
+          ; hx_target (Format.asprintf "#%s" (direct_message_modal_id session))
+          ]
+      ~is_text:true
+      ~control:(language, Pool_common.Message.(Send (Some Field.Message)))
+      ~icon:Component.Icon.MailOutline
   in
   let cancel =
     button_form
@@ -873,6 +951,7 @@ let data_table
       ; ( Experiment.(show_external_data_id_links_value experiment)
         , external_data_ids )
       ; session_changeable assignment, session_change_toggle
+      ; true, direct_message_toggle
       ; cancelable assignment, cancel
       ; deletable assignment, mark_as_deleted
       ]

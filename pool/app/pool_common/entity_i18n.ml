@@ -207,6 +207,7 @@ type hint =
   | MessageTemplateContactRegistrationAttempt
   | MessageTemplateEmailVerification
   | MessageTemplateExperimentInvitation
+  | MessageTemplateManualSessionMessage
   | MessageTemplatePasswordChange
   | MessageTemplatePasswordReset
   | MessageTemplatePhoneVerification

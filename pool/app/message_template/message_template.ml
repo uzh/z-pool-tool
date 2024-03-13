@@ -709,6 +709,50 @@ module ExperimentInvitation = struct
   ;;
 end
 
+module ManualSessionMessage = struct
+  let label = Label.ManualSessionMessage
+
+  let message_history experiment session { Assignment.contact; _ } =
+    let entity_uuids =
+      [ experiment.Experiment.id |> Experiment.Id.to_common
+      ; session.Session.id |> Session.Id.to_common
+      ; contact |> Contact.id
+      ]
+    in
+    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
+  ;;
+
+  let base_params layout contact = contact.Contact.user |> global_params layout
+
+  let email_params language layout experiment session assignment =
+    base_params layout assignment.Assignment.contact
+    @ experiment_params layout experiment
+    @ session_params layout language session
+    @ assignment_params assignment
+  ;;
+
+  let prepare tenant session =
+    let pool = tenant.Pool_tenant.database_label in
+    let experiment = session.Session.experiment in
+    let layout = layout_from_tenant tenant in
+    let%lwt sender = sender_of_experiment pool experiment in
+    let smtp_auth_id = experiment.Experiment.smtp_auth_id in
+    Lwt.return
+    @@ fun assignment message ->
+    let params =
+      email_params
+        message.ManualMessage.language
+        layout
+        experiment
+        session
+        assignment
+    in
+    let email = prepare_manual_email message layout params sender in
+    let message_history = message_history experiment session assignment in
+    Email.create_job ?smtp_auth_id ~message_history email
+  ;;
+end
+
 module PasswordChange = struct
   let email_params = global_params
   let label = Label.PasswordChange

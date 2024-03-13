@@ -392,6 +392,9 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
      account email address. You can ignore the SMS text input."
   | MessageTemplateExperimentInvitation ->
     "This message is sent to invite contacts to experiments."
+  | MessageTemplateManualSessionMessage ->
+    "This template serves as a template for manually sent messages in the \
+     context of a session."
   | MessageTemplatePasswordChange ->
     "This message is sent to notify users that the account password has been \
      changed."

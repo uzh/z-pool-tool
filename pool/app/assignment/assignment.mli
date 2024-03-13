@@ -161,6 +161,12 @@ val find_by_contact_and_experiment
 
 val find_by_session : Pool_database.Label.t -> Session.Id.t -> t list Lwt.t
 
+val find_multiple_by_session
+  :  Pool_database.Label.t
+  -> Session.Id.t
+  -> Id.t list
+  -> t list Lwt.t
+
 val query_by_session
   :  ?query:Query.t
   -> Pool_database.Label.t

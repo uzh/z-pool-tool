@@ -826,3 +826,76 @@ end = struct
 
   let effects id = Session.Guard.Access.update id
 end
+
+type direct_message =
+  { language : Pool_common.Language.t
+  ; email_subject : Message_template.EmailSubject.t
+  ; email_text : Message_template.EmailText.t
+  ; plain_text : Message_template.PlainText.t
+  }
+
+module SendDirectMessage : sig
+  include Common.CommandSig with type t = direct_message
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> (Assignment.t -> Message_template.ManualMessage.t -> Email.job)
+    -> Assignment.t list
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = direct_message
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    make_job
+    assignments
+    { language; email_subject; email_text; plain_text }
+    =
+    Logs.info ~src (fun m -> m "Handle command SendDirectMessage" ~tags);
+    let open Message_template in
+    let make_template { Assignment.contact; _ } =
+      ManualMessage.
+        { recipient = Contact.email_address contact
+        ; language
+        ; email_subject
+        ; email_text
+        ; plain_text
+        }
+    in
+    assignments
+    |> CCList.map (fun assignment ->
+      assignment |> make_template |> make_job assignment)
+    |> Email.bulksent
+    |> Pool_event.email
+    |> CCList.return
+    |> CCResult.return
+  ;;
+
+  let command language email_subject email_text plain_text =
+    { language; email_subject; email_text; plain_text }
+  ;;
+
+  let schema =
+    let open Message_template in
+    Pool_common.Utils.PoolConformist.(
+      make
+        Field.
+          [ Pool_common.Language.schema ()
+          ; EmailSubject.schema ()
+          ; EmailText.schema ()
+          ; PlainText.schema ()
+          ]
+        command)
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects id = Session.Guard.Access.update id
+end
