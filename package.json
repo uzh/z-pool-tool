@@ -4,7 +4,7 @@
   "license": "GPL-2.0-or-later",
   "scripts": {
     "build": "export NODE_OPTIONS=--trace-warnings PUBLIC_URL=$PREFIX_PATH/assets/; parcel build resources/index.js resources/images/** --dist-dir public --public-url $PUBLIC_URL && parcel build resources/admin.js --dist-dir public --public-url $PUBLIC_URL",
-    "watch": "export NODE_OPTIONS=--trace-warnings; parcel watch resources/index.js --dist-dir public",
+    "watch": "export NODE_OPTIONS=--trace-warnings; parcel watch resources/index.js resources/admin.js --dist-dir public",
     "version": "yarn version-dune && yarn version-opam && yarn version-opam-lock && yarn version-pool",
     "version-dune": "sed \"s/^(version .*\\..*\\..*)/(version ${npm_package_version})/g\" ./dune-project > /tmp/dune-project && cat /tmp/dune-project > ./dune-project && git add ./dune-project",
     "version-opam": "sed \"s/^version: \".*\"/version: \\\"${npm_package_version}\\\"/g\" ./pool.opam > /tmp/pool.opam && cat /tmp/pool.opam > ./pool.opam && git add ./pool.opam",

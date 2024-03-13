@@ -916,7 +916,7 @@ let detail
       |> CCOption.pure
   in
   let resend_reminders_modal =
-    let open Pool_common.Reminder in
+    let open Pool_common in
     if Session.reminder_resendable session |> CCResult.is_ok |> not
     then txt ""
     else (
@@ -956,11 +956,11 @@ let detail
               ; selector
                   language
                   Message.Field.MessageChannel
-                  Channel.show
-                  Channel.(filtered_channels text_messages_enabled)
+                  MessageChannel.show
+                  MessageChannel.(filtered_channels text_messages_enabled)
                   None
                   ~option_formatter:(fun channel ->
-                    Channel.show channel
+                    MessageChannel.show channel
                     |> CCString.replace ~sub:"_" ~by:" "
                     |> CCString.capitalize_ascii)
                   ()
@@ -1181,6 +1181,32 @@ let detail
         swap_session_modal_id
         (Component.Modal.js_modal_add_spinner swap_session_modal_id)
     in
+    let message_modal_scripts =
+      {js| 
+        document.addEventListener("DOMContentLoaded", (e) => {
+          window['pool-tool'].initAssignmentListMessaging();
+        })
+      |js}
+    in
+    let header_btn ?(hidden = false) ?(style = "primary") icon control attrs =
+      let classnames =
+        [ "btn"; style; "has-icon"; "small" ]
+        @ if hidden then [ "hidden" ] else []
+      in
+      button
+        ~a:(a_class classnames :: attrs)
+        [ Icon.(to_html icon)
+        ; txt Pool_common.(Utils.control_to_string language control)
+        ]
+    in
+    let submit_send_messages_action =
+      let open Session in
+      HttpUtils.Url.Admin.session_path
+        ~suffix:"direct-message"
+        experiment.Experiment.id
+        session.id
+      |> Sihl.Web.externalize_path
+    in
     div
       ~a:[ a_class [ "stack" ] ]
       [ div
@@ -1197,17 +1223,40 @@ let detail
                   ~a:[ a_class [ "heading-2" ] ]
                   [ txt (Utils.nav_link_to_string language I18n.Assignments) ]
               ]
-          ; button
-              ~a:
-                [ a_class [ "btn"; "primary"; "has-icon"; "small" ]
-                ; a_user_data "print" "assignments"
-                ]
-              [ Icon.(to_html PrintOutline)
-              ; txt
-                  Pool_common.(
-                    Utils.control_to_string
-                      language
-                      Message.(Print (Some Field.Assignments)))
+          ; div
+              ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+              [ div
+                  ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+                  [ header_btn
+                      Icon.MailOutline
+                      Message.(Send (Some Field.Message))
+                      [ a_user_data "direct-message" "select" ]
+                  ; header_btn
+                      ~hidden:true
+                      ~style:"success"
+                      Icon.Checkmark
+                      Message.(Send (Some Field.Message))
+                      Htmx.
+                        [ a_user_data "direct-message" "submit"
+                        ; hx_post submit_send_messages_action
+                        ; hx_trigger "click"
+                        ; hx_swap "outerHTML"
+                        ; hx_target
+                            ("#"
+                             ^ Page_admin_assignments.direct_message_modal_id
+                                 session)
+                        ]
+                  ; header_btn
+                      ~hidden:true
+                      ~style:"error"
+                      Icon.Close
+                      Message.(Cancel None)
+                      [ a_user_data "direct-message" "cancel" ]
+                  ]
+              ; header_btn
+                  Icon.PrintOutline
+                  Message.(Print (Some Field.Assignments))
+                  [ a_user_data "print" "assignments" ]
               ]
           ]
       ; legend
@@ -1215,6 +1264,7 @@ let detail
       ; modal direct_message_modal_id
       ; assignment_list
       ; script (Unsafe.data swap_session_modal_js)
+      ; script (Unsafe.data message_modal_scripts)
       ]
   in
   let edit_button =

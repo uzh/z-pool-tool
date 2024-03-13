@@ -204,6 +204,25 @@ module SortOrder = struct
   let to_query_parts t = [ Core.field, show t ]
 end
 
+module MessageChannel = struct
+  module Core = struct
+    let field = PoolError.Field.MessageChannel
+
+    type t =
+      | Email [@name "email"] [@printer print "email"]
+      | TextMessage [@name "text_message"] [@printer print "text_message"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
+
+  include Entity_base_model.SelectorType (Core)
+  include Core
+
+  let filtered_channels = function
+    | true -> all
+    | false -> CCList.remove ~eq:equal ~key:TextMessage all
+  ;;
+end
+
 module Reminder = struct
   module EmailLeadTime = struct
     module TimeDurationCore = struct
@@ -228,25 +247,6 @@ module Reminder = struct
     let create_now () = Ptime_clock.now ()
     let value m = m
     let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
-  end
-
-  module Channel = struct
-    module Core = struct
-      let field = PoolError.Field.MessageChannel
-
-      type t =
-        | Email [@name "email"] [@printer print "email"]
-        | TextMessage [@name "text_message"] [@printer print "text_message"]
-      [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
-    end
-
-    include Entity_base_model.SelectorType (Core)
-    include Core
-
-    let filtered_channels = function
-      | true -> all
-      | false -> CCList.remove ~eq:equal ~key:TextMessage all
-    ;;
   end
 end
 

@@ -126,7 +126,7 @@ module Partials = struct
       { Assignment.id; contact; reminder_manually_last_sent_at; _ }
       text_messages_enabled
       =
-      let open Pool_common.Reminder in
+      let open Pool_common in
       let action =
         assignment_specific_path
           ~suffix:"remind"
@@ -136,7 +136,7 @@ module Partials = struct
         |> Sihl.Web.externalize_path
       in
       let available_channels =
-        Channel.filtered_channels
+        MessageChannel.filtered_channels
           (CCOption.is_some contact.Contact.cell_phone && text_messages_enabled)
       in
       let html =
@@ -172,17 +172,9 @@ module Partials = struct
           ; form
               ~a:[ a_method `Post; a_action action; a_class [ "stack" ] ]
               [ csrf_element csrf ()
-              ; selector
+              ; Component.Input.message_channel_select
                   language
-                  Field.MessageChannel
-                  Channel.show
                   available_channels
-                  None
-                  ~option_formatter:(fun channel ->
-                    Channel.show channel
-                    |> CCString.replace ~sub:"_" ~by:" "
-                    |> CCString.capitalize_ascii)
-                  ()
               ; submit_element language Pool_common.Message.(Send None) ()
               ]
           ]
@@ -362,23 +354,36 @@ module Partials = struct
         session.id
       |> Sihl.Web.externalize_path
     in
+    let text_message_enabled =
+      match assignments with
+      | `One { Assignment.contact; _ } ->
+        CCOption.is_some contact.Contact.cell_phone
+      | `Multiple _ -> true
+    in
+    let available_channels =
+      Pool_common.MessageChannel.filtered_channels text_message_enabled
+    in
     let hidden_inputs =
-      CCList.map
-        (fun { Assignment.id; _ } ->
-          input
-            ~a:
-              [ a_input_type `Hidden
-              ; a_name Field.(array_key Assignment)
-              ; a_value (Assignment.Id.value id)
-              ]
-            ())
-        assignments
+      assignments
+      |> (function
+            | `One assignment -> [ assignment ]
+            | `Multiple assignments -> assignments)
+      |> CCList.map (fun { Assignment.id; _ } ->
+        input
+          ~a:
+            [ a_input_type `Hidden
+            ; a_name Field.(array_key Assignment)
+            ; a_value (Assignment.Id.value id)
+            ]
+          ())
       |> div ~a:[ a_class [ "hidden" ] ]
     in
     let html =
       form
         ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
-        [ Page_admin_message_template.template_inputs
+        [ message_channel_select language available_channels
+        ; Page_admin_message_template.template_inputs
+            ~hide_text_message_input:(not text_message_enabled)
             context
             true
             (`Create message_template)
@@ -927,9 +932,10 @@ let data_table
   let th_class = [ "w-3"; "w-3"; "w-2"; "w-1"; "w-1"; "w-2" ] in
   let row (assignment : t) =
     let tr cells =
+      let assignment_id = a_user_data "id" (Id.value assignment.id) in
       match assignment.marked_as_deleted |> MarkedAsDeleted.value with
-      | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ] cells
-      | false -> tr cells
+      | true -> tr ~a:[ a_class [ "bg-red-lighter" ]; assignment_id ] cells
+      | false -> tr ~a:[ assignment_id ] cells
     in
     let left =
       conditional_left_columns

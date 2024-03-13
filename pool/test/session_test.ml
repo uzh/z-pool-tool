@@ -1368,7 +1368,7 @@ let resend_reminders_invalid () =
   let create_text_message _ cell_phone =
     Ok (Model.create_text_message_job cell_phone)
   in
-  let channel = Pool_common.Reminder.Channel.Email in
+  let channel = Pool_common.MessageChannel.Email in
   let session = Model.create_session () in
   let canceled_at = Ptime_clock.now () in
   let session1 = Session.{ session with canceled_at = Some canceled_at } in
@@ -1400,8 +1400,8 @@ let resend_reminders_invalid () =
 
 let resend_reminders_valid () =
   let open Cqrs_command.Session_command.ResendReminders in
+  let open Pool_common in
   let open Test_utils in
-  let open Pool_common.Reminder in
   let experiment = Model.create_experiment () in
   let session = Model.create_session () in
   let cell_phone = Pool_user.CellPhone.of_string "+41791234567" in
@@ -1420,7 +1420,7 @@ let resend_reminders_valid () =
   let handle channel =
     handle (create_email, create_text_message) session assignments channel
   in
-  let res1 = handle Channel.Email in
+  let res1 = handle MessageChannel.Email in
   let expected1 =
     let emails =
       assignments
@@ -1434,7 +1434,7 @@ let resend_reminders_valid () =
       ]
   in
   let () = check_result expected1 res1 in
-  let res2 = handle Channel.TextMessage in
+  let res2 = handle MessageChannel.TextMessage in
   let expected2 =
     Ok
       [ Email.BulkSent [ create_email () |> CCResult.get_exn ]

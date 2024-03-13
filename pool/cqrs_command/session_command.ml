@@ -751,7 +751,7 @@ end = struct
 end
 
 module ResendReminders : sig
-  include Common.CommandSig with type t = Pool_common.Reminder.Channel.t
+  include Common.CommandSig with type t = Pool_common.MessageChannel.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -767,10 +767,10 @@ module ResendReminders : sig
   val decode : Conformist.input -> (t, Conformist.error_msg) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Pool_common.Reminder.Channel.t
+  type t = Pool_common.MessageChannel.t
 
   let schema =
-    Conformist.(make Field.[ Pool_common.Reminder.Channel.schema () ] CCFun.id)
+    Conformist.(make Field.[ Pool_common.MessageChannel.schema () ] CCFun.id)
   ;;
 
   let handle
@@ -781,7 +781,7 @@ end = struct
     channel
     =
     Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
-    let open Pool_common.Reminder.Channel in
+    let open Pool_common.MessageChannel in
     let open CCResult.Infix in
     let* () = Session.reminder_resendable session in
     let* events =

@@ -961,7 +961,25 @@ module DirectMessage = struct
     >|> find_multiple_by_session database_label session_id
     ||> function
     | [] -> Error Pool_common.Message.(NoOptionSelected Field.Assignment)
-    | assignments -> Ok assignments
+    | [ assignment ] -> Ok (`One assignment)
+    | assignments -> Ok (`Multiple assignments)
+  ;;
+
+  (* 
+
+     let assignments_from_requeset req database_label session_id = let open
+     Utils.Lwt_result.Infix in let open Assignment in let error =
+     Pool_common.Message.(NoOptionSelected Field.Assignment) in let* ids =
+     Sihl.Web.Request.urlencoded Field.(array_key Assignment) req ||>
+     CCOption.to_result error in ids |> CCString.split ~by:"," |> CCList.map
+     Id.of_string |> find_multiple_by_session database_label session_id ||>
+     function | [] -> Error Pool_common.Message.(NoOptionSelected
+     Field.Assignment) | [ assignment ] -> Ok (`One assignment) | assignments ->
+     Ok (`Multiple assignments) ;; *)
+
+  let to_assignment_list = function
+    | `One assignment -> [ assignment ]
+    | `Multiple assignments -> assignments
   ;;
 
   let modal_htmx req =
@@ -1018,6 +1036,7 @@ module DirectMessage = struct
       let* events =
         let open CCResult.Infix in
         let open Cqrs_command.Session_command.SendDirectMessage in
+        let assignments = to_assignment_list assignments in
         urlencoded
         |> decode
         >>= handle ~tags make_job assignments

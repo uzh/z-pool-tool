@@ -1038,3 +1038,18 @@ let custom_field_to_static_input
       value
       ()
 ;;
+
+let message_channel_select language ?selected available_channels =
+  let open Pool_common in
+  selector
+    language
+    Field.MessageChannel
+    MessageChannel.show
+    available_channels
+    selected
+    ~option_formatter:(fun channel ->
+      MessageChannel.show channel
+      |> CCString.replace ~sub:"_" ~by:" "
+      |> CCString.capitalize_ascii)
+    ()
+;;
