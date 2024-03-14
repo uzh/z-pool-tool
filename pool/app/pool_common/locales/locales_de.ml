@@ -109,6 +109,7 @@ let rec field_to_string =
   | HideClosed -> "Geschlossene ausblenden"
   | HideMakedAsDeleted -> "Als gelöscht markerte ausblenden"
   | HidePaused -> "Pausierte ausblenden"
+  | HideInactive -> "Inaktive ausblenden"
   | HidePast -> "Vergangene ausblenden"
   | HideUnverified -> "Unverifizierte ausblenden"
   | Hint -> "Hint"
@@ -119,6 +120,7 @@ let rec field_to_string =
   | ImportPending -> "Import pendent"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
+  | Inactive -> "Inaktiv"
   | Input -> "Input"
   | Institution -> "Institution"
   | InternalDescription -> "Interne Beschreibung"
@@ -437,6 +439,7 @@ let rec error_to_string = function
   | ContactExperimentNotFound ->
     "Derzeit gibt es keine freien Plätze für die Teilnahme an diesem \
      Experiment."
+  | ContactIsInactive -> "Dieser Kontakt ist inaktiv."
   | ContactSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete E-Mail-Adresse verwenden."
   | ContactUnconfirmed -> "Teilnehmer noch nicht verifiziert!"

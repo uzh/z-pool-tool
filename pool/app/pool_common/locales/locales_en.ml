@@ -107,6 +107,7 @@ let rec field_to_string =
   | HideClosed -> "Hide closed"
   | HideMakedAsDeleted -> "Hide marked as deleted"
   | HidePaused -> "Hide paused"
+  | HideInactive -> "Hide inactive"
   | HidePast -> "Hide past"
   | HideUnverified -> "Hide unverified"
   | Hint -> "hint"
@@ -117,6 +118,7 @@ let rec field_to_string =
   | ImportPending -> "import pending"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
+  | Inactive -> "inactive"
   | Input -> "input"
   | Institution -> "institution"
   | InternalDescription -> "internal description"
@@ -426,6 +428,7 @@ let rec error_to_string = function
     "The contact does not meet the criteria specified in the filter."
   | ContactExperimentNotFound ->
     "Currently, there are no free spots to participate in this experiment."
+  | ContactIsInactive -> "This contact is inactive."
   | ContactSignupInvalidEmail ->
     "Please provide a valid and unused email address."
   | ContactUnconfirmed -> "Participant isn't confirmed!"

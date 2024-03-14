@@ -94,6 +94,25 @@ let create_with_experiment_smtp () =
   check_result expected events
 ;;
 
+let create_inactive_user () =
+  let { session; experiment; contact } = assignment_data () in
+  let contact =
+    let open Contact in
+    let user = Sihl_user.{ contact.user with status = Inactive } in
+    { contact with user }
+  in
+  let confirmation_email = confirmation_email experiment in
+  let events =
+    let command =
+      AssignmentCommand.Create.
+        { contact; session; follow_up_sessions = []; experiment }
+    in
+    AssignmentCommand.Create.handle command confirmation_email false
+  in
+  let expected = Error Pool_common.Message.ContactIsInactive in
+  check_result expected events
+;;
+
 let canceled () =
   let session = Model.create_session () in
   let assignment = Model.create_assignment () in

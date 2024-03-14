@@ -154,12 +154,10 @@ let request_reset_password_post req =
     let tags = Pool_context.Logger.Tags.req req in
     let open Utils.Lwt_result.Infix in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let ctx = Pool_database.to_ctx database_label in
     let* user =
       Sihl.Web.Request.to_urlencoded req
       ||> decode
-      >|+ Pool_user.EmailAddress.value
-      |>> Service.User.find_by_email_opt ~ctx
+      |>> Pool_user.find_active_user_by_email_opt database_label
     in
     let* () =
       match user with

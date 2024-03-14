@@ -3,6 +3,7 @@ open Tyxml.Html
 
 type status_icon =
   | EmailUnverified
+  | Inactive
   | Paused
   | Verified
 
@@ -10,6 +11,7 @@ let status_to_icon =
   let open Component_icon in
   function
   | EmailUnverified -> MailError
+  | Inactive -> TrashOutline
   | Paused -> NotificationsOffOutline
   | Verified -> CheckmarkCircleOutline
 ;;
@@ -19,10 +21,12 @@ let status_legend_text language =
   let field_to_string m =
     m |> Utils.field_to_string language |> CCString.capitalize_ascii
   in
+  let open Message.Field in
   function
-  | EmailUnverified -> field_to_string Message.Field.EmailAddressUnverified
-  | Paused -> field_to_string Message.Field.Paused
-  | Verified -> field_to_string Message.Field.Verified
+  | EmailUnverified -> field_to_string EmailAddressUnverified
+  | Inactive -> field_to_string Inactive
+  | Paused -> field_to_string Paused
+  | Verified -> field_to_string Verified
 ;;
 
 let make_table_legend ?(additional_items = []) language icons =
@@ -40,16 +44,17 @@ let wrap_icons text icons =
 ;;
 
 module Contact = struct
-  let has_status { Contact.paused; email_verified; verified; _ } =
+  let has_status { Contact.paused; email_verified; verified; user; _ } =
     let open Pool_user in
     function
     | EmailUnverified -> CCOption.is_none email_verified
+    | Inactive -> Service.User.(equal_status user.status Inactive)
     | Paused -> Paused.value paused
     | Verified -> CCOption.is_some verified
   ;;
 
   let email_status_icons = [ EmailUnverified ]
-  let contact_status_icons = [ Paused; Verified ]
+  let contact_status_icons = [ Inactive; Paused; Verified ]
   let all_status_icons = contact_status_icons @ email_status_icons
 
   let icons_by_context = function
@@ -104,8 +109,9 @@ end
 module Admin = struct
   let email_status_icons = [ EmailUnverified ]
 
-  let has_status { Admin.email_verified; _ } = function
+  let has_status { Admin.email_verified; user; _ } = function
     | EmailUnverified -> CCOption.is_none email_verified
+    | Inactive -> Service.User.(equal_status Inactive user.status)
     | Paused | Verified -> false
   ;;
 
