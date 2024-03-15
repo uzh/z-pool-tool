@@ -353,6 +353,7 @@ module ManualSessionMessage : sig
   val prepare_text_message
     :  Pool_tenant.t
     -> Session.t
+    -> Pool_common.Language.t
     -> Assignment.t
     -> SmsText.t
     -> Pool_user.CellPhone.t

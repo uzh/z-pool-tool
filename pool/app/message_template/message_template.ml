@@ -755,16 +755,20 @@ module ManualSessionMessage = struct
   let prepare_text_message
     (tenant : Pool_tenant.t)
     session
+    language
     assignment
     message
     cell_phone
     =
     let experiment = session.Session.experiment in
     let open Text_message in
+    let params =
+      let layout = layout_from_tenant tenant in
+      email_params language layout experiment session assignment
+    in
     let message_history = message_history experiment session assignment in
-    SmsText.value message
-    |> Content.of_string
-    |> create cell_phone tenant.Pool_tenant.title
+    let content = SmsText.value message in
+    render_and_create cell_phone tenant.Pool_tenant.title (content, params)
     |> create_job ~message_history
   ;;
 end

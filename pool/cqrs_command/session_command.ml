@@ -854,7 +854,8 @@ module SendDirectMessage : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> (Assignment.t -> Message_template.ManualMessage.t -> Email.job)
-    -> (Assignment.t
+    -> (Pool_common.Language.t
+        -> Assignment.t
         -> Message_template.SmsText.t
         -> Pool_user.CellPhone.t
         -> Text_message.job)
@@ -909,7 +910,7 @@ end = struct
             contact.Contact.cell_phone, FallbackToEmail.value fallback_to_email
           with
           | Some cell_phone, _ ->
-            `Left (make_sms_job assignment sms_text cell_phone)
+            `Left (make_sms_job language assignment sms_text cell_phone)
           | None, true ->
             let email_text, plain_text = sms_text_to_email sms_text in
             `Right

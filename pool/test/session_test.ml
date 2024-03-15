@@ -1863,7 +1863,7 @@ module DirectMessaging = struct
 
   let make_email_job _ _ = Model.create_email_job ()
 
-  let make_text_message_job _ _ cell_phone =
+  let make_text_message_job _ _ _ cell_phone =
     Model.create_text_message_job cell_phone
   ;;
 
