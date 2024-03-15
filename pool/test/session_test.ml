@@ -1844,3 +1844,119 @@ module Duplication = struct
     expect_error (Error Pool_common.Message.FollowUpIsEarlierThanMain) events
   ;;
 end
+
+module DirectMessaging = struct
+  open Cqrs_command.Session_command.SendDirectMessage
+  open Message_template
+
+  let language = Pool_common.Language.En
+  let sms_text = SmsText.of_string "content"
+  let email_text = EmailText.of_string "<p>content</p>"
+  let plain_text = PlainText.of_string "content"
+  let email_subject = EmailSubject.of_string "subject"
+  let contact = Contact.{ (Model.create_contact ()) with cell_phone = None }
+  let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
+
+  let contact_with_cellphone =
+    Contact.{ (Model.create_contact ()) with cell_phone = Some cell_phone }
+  ;;
+
+  let make_email_job _ _ = Model.create_email_job ()
+
+  let make_text_message_job _ _ cell_phone =
+    Model.create_text_message_job cell_phone
+  ;;
+
+  let decode_and_handle assignments channel data =
+    let open CCResult in
+    data
+    |> Http_utils.format_request_boolean_values
+         [ Pool_common.Message.Field.(show FallbackToEmail) ]
+    |> decode channel
+    >>= handle make_email_job make_text_message_job assignments
+  ;;
+
+  module UrlEncoded = struct
+    open Pool_common.Message
+
+    let language = Field.(show Language), [ Pool_common.Language.show language ]
+    let sms_text = Field.(show SmsText), [ SmsText.value sms_text ]
+    let email_text = Field.(show EmailText), [ EmailText.value email_text ]
+    let plain_text = Field.(show PlainText), [ PlainText.value plain_text ]
+    let fallback_to_email = Field.(show FallbackToEmail), [ "true" ]
+
+    let email_subject =
+      Field.(show EmailSubject), [ EmailSubject.value email_subject ]
+    ;;
+  end
+
+  let send_emails () =
+    let open CCResult in
+    let assignments =
+      [ Model.create_assignment ~contact ()
+      ; Model.create_assignment ~contact:contact_with_cellphone ()
+      ]
+    in
+    let channel = Pool_common.MessageChannel.Email in
+    let res =
+      UrlEncoded.[ language; email_subject; email_text; plain_text ]
+      |> decode_and_handle assignments channel
+    in
+    let expected =
+      Ok
+        [ assignments
+          |> CCList.map (CCFun.const (Model.create_email_job ()))
+          |> Email.bulksent
+          |> Pool_event.email
+        ]
+    in
+    check_result expected res
+  ;;
+
+  let send_text_message_with_fallback () =
+    let open CCResult in
+    let assignments =
+      [ Model.create_assignment ~contact ()
+      ; Model.create_assignment ~contact:contact_with_cellphone ()
+      ]
+    in
+    let channel = Pool_common.MessageChannel.TextMessage in
+    let res =
+      UrlEncoded.[ language; email_subject; sms_text; fallback_to_email ]
+      |> decode_and_handle assignments channel
+    in
+    let expected =
+      let text_msg =
+        Text_message.BulkSent [ Model.create_text_message_job cell_phone ]
+        |> Pool_event.text_message
+      in
+      let email_job =
+        [ Model.create_email_job () ] |> Email.bulksent |> Pool_event.email
+      in
+      Ok [ text_msg; email_job ]
+    in
+    check_result expected res
+  ;;
+
+  let send_text_message_without_fallback () =
+    let open CCResult in
+    let assignments =
+      [ Model.create_assignment ~contact ()
+      ; Model.create_assignment ~contact:contact_with_cellphone ()
+      ]
+    in
+    let channel = Pool_common.MessageChannel.TextMessage in
+    let res =
+      UrlEncoded.[ language; email_subject; sms_text ]
+      |> decode_and_handle assignments channel
+    in
+    let expected =
+      Ok
+        [ Text_message.BulkSent [ Model.create_text_message_job cell_phone ]
+          |> Pool_event.text_message
+        ; Email.BulkSent [] |> Pool_event.email
+        ]
+    in
+    check_result expected res
+  ;;
+end

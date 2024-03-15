@@ -965,17 +965,14 @@ module DirectMessage = struct
     | assignments -> Ok (`Multiple assignments)
   ;;
 
-  (* 
-
-     let assignments_from_requeset req database_label session_id = let open
-     Utils.Lwt_result.Infix in let open Assignment in let error =
-     Pool_common.Message.(NoOptionSelected Field.Assignment) in let* ids =
-     Sihl.Web.Request.urlencoded Field.(array_key Assignment) req ||>
-     CCOption.to_result error in ids |> CCString.split ~by:"," |> CCList.map
-     Id.of_string |> find_multiple_by_session database_label session_id ||>
-     function | [] -> Error Pool_common.Message.(NoOptionSelected
-     Field.Assignment) | [ assignment ] -> Ok (`One assignment) | assignments ->
-     Ok (`Multiple assignments) ;; *)
+  let message_channel urlencoded =
+    let open CCOption in
+    CCList.assoc_opt ~eq:( = ) Field.(show MessageChannel) urlencoded
+    >>= CCList.head_opt
+    |> function
+    | None -> Error Pool_common.Message.(Missing Field.MessageChannel)
+    | Some channel -> Pool_common.MessageChannel.create channel
+  ;;
 
   let to_assignment_list = function
     | `One assignment -> [ assignment ]
@@ -1024,22 +1021,27 @@ module DirectMessage = struct
       Lwt_result.map_error (fun err -> err, session_path)
       @@
       let open Utils.Lwt_result.Infix in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      let%lwt urlencoded =
+        Sihl.Web.Request.to_urlencoded req
+        ||> HttpUtils.format_request_boolean_values
+              Field.[ show FallbackToEmail ]
+      in
+      let* message_channel = message_channel urlencoded |> Lwt_result.lift in
       let* assignments =
         assignments_from_requeset req database_label session_id
       in
       let* session = Session.find database_label session_id in
       let tenant = Pool_context.Tenant.get_tenant_exn req in
-      let%lwt make_job =
-        Message_template.ManualSessionMessage.prepare tenant session
-      in
+      let open Message_template.ManualSessionMessage in
+      let%lwt make_email_job = prepare tenant session in
+      let make_sms_job = prepare_text_message tenant session in
       let* events =
         let open CCResult.Infix in
         let open Cqrs_command.Session_command.SendDirectMessage in
         let assignments = to_assignment_list assignments in
         urlencoded
-        |> decode
-        >>= handle ~tags make_job assignments
+        |> decode message_channel
+        >>= handle ~tags make_email_job make_sms_job assignments
         |> Lwt_result.lift
       in
       let%lwt () = Pool_event.handle_events ~tags database_label events in

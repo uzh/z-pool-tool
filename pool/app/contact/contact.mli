@@ -1,14 +1,5 @@
 module Id = Pool_common.Id
 
-module MessageChannel : sig
-  type t =
-    | Email
-    | SMS
-
-  val pp : Format.formatter -> t -> unit
-  val equal : t -> t -> bool
-end
-
 module NumberOfInvitations : sig
   type t
 

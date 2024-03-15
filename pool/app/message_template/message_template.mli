@@ -54,6 +54,10 @@ module SmsText : sig
   include Pool_common.Model.StringSig
 end
 
+module FallbackToEmail : sig
+  include Pool_common.Model.BooleanSig
+end
+
 type t =
   { id : Id.t
   ; label : Label.t
@@ -345,6 +349,14 @@ module ManualSessionMessage : sig
     :  Pool_tenant.t
     -> Session.t
     -> (Assignment.t -> ManualMessage.t -> Email.job) Lwt.t
+
+  val prepare_text_message
+    :  Pool_tenant.t
+    -> Session.t
+    -> Assignment.t
+    -> SmsText.t
+    -> Pool_user.CellPhone.t
+    -> Text_message.job
 end
 
 module PasswordChange : sig
@@ -545,6 +557,8 @@ module WaitingListConfirmation : sig
     -> Experiment.Public.t
     -> (Email.job, Pool_common.Message.error) result Lwt.t
 end
+
+val sms_text_to_email : SmsText.t -> EmailText.t * PlainText.t
 
 val experiment_message_language
   :  Pool_common.Language.t list

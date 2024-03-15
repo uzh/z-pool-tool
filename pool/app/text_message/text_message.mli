@@ -1,6 +1,7 @@
 module Content : sig
   type t
 
+  val of_string : string -> t
   val value : t -> string
 end
 

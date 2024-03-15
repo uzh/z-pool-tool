@@ -751,6 +751,22 @@ module ManualSessionMessage = struct
     let message_history = message_history experiment session assignment in
     Email.create_job ?smtp_auth_id ~message_history email
   ;;
+
+  let prepare_text_message
+    (tenant : Pool_tenant.t)
+    session
+    assignment
+    message
+    cell_phone
+    =
+    let experiment = session.Session.experiment in
+    let open Text_message in
+    let message_history = message_history experiment session assignment in
+    SmsText.value message
+    |> Content.of_string
+    |> create cell_phone tenant.Pool_tenant.title
+    |> create_job ~message_history
+  ;;
 end
 
 module PasswordChange = struct
@@ -1357,3 +1373,10 @@ module WaitingListConfirmation = struct
     Email.create_job ~message_history ?smtp_auth_id email |> Lwt_result.return
   ;;
 end
+
+let sms_text_to_email sms_text =
+  let sms_text = SmsText.value sms_text in
+  let plain_text = PlainText.of_string sms_text in
+  let email_text = EmailText.of_string plain_text in
+  email_text, plain_text
+;;

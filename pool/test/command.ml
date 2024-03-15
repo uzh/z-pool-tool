@@ -426,6 +426,15 @@ let () =
               "duplicate with followup starting before main "
               `Quick
               Duplication.followup_before_main
+          ; test_case "direct message: email" `Quick DirectMessaging.send_emails
+          ; test_case
+              "direct message: text message with fallback"
+              `Quick
+              DirectMessaging.send_text_message_with_fallback
+          ; test_case
+              "direct message: text message without fallback"
+              `Quick
+              DirectMessaging.send_text_message_without_fallback
           ] )
     ; ( "custom_field"
       , [ test_case "create custom field" `Quick Custom_field_test.create

@@ -175,6 +175,7 @@ module MessageChannel : sig
   val show : t -> string
   val equal : t -> t -> bool
   val read : string -> t
+  val create : string -> (t, Message.error) Result.t
   val all : t list
   val filtered_channels : bool -> t list
 end

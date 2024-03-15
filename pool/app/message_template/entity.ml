@@ -108,6 +108,12 @@ module SmsText = struct
   let schema () = schema field ()
 end
 
+module FallbackToEmail = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema Pool_common.Message.Field.FallbackToEmail
+end
+
 type t =
   { id : Id.t
   ; label : Label.t
