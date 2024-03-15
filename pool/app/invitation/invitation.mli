@@ -127,11 +127,16 @@ module Statistics : sig
 
   type t =
     { total_sent : int
+    ; total_match_filter : int
     ; sent_by_count : sent_by_count list
     }
 
   val equal : t -> t -> bool
   val show : t -> string
   val pp : Format.formatter -> t -> unit
-  val by_experiment : Pool_database.Label.t -> Experiment.Id.t -> t Lwt.t
+
+  val by_experiment
+    :  Pool_database.Label.t
+    -> Experiment.t
+    -> (t, Pool_common.Message.error) Lwt_result.t
 end

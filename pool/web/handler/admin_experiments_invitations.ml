@@ -92,8 +92,8 @@ let sent_invitations req =
   match HttpUtils.Htmx.is_hx_request req with
   | true -> Partials.list context experiment invitations |> Lwt_result.return
   | false ->
-    let%lwt statistics =
-      Invitation.Statistics.by_experiment database_label id
+    let* statistics =
+      Invitation.Statistics.by_experiment database_label experiment
     in
     sent_invitations context experiment invitations statistics |> Lwt_result.ok
 ;;

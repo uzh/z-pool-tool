@@ -284,7 +284,8 @@ val find_filtered_contacts
   -> (Contact.t list, Pool_common.Message.error) Lwt_result.t
 
 val count_filtered_contacts
-  :  Pool_database.Label.t
+  :  ?include_invited:bool
+  -> Pool_database.Label.t
   -> base_condition
   -> query option
   -> (int, Pool_common.Message.error) Lwt_result.t

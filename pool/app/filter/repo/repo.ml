@@ -533,7 +533,7 @@ module Sql = struct
       id
   ;;
 
-  let count_filtered_contacts pool use_case query =
+  let count_filtered_contacts ?include_invited pool use_case query =
     let open Utils.Lwt_result.Infix in
     let open Caqti_request.Infix in
     let open Dynparam in
@@ -542,7 +542,7 @@ module Sql = struct
       | None -> Lwt.return []
       | Some query -> find_templates_of_query pool query
     in
-    filtered_params use_case template_list query
+    filtered_params ?include_invited use_case template_list query
     |> Lwt_result.lift
     >>= fun (dyn, sql) ->
     let Pack (pt, pv), prepared_request =

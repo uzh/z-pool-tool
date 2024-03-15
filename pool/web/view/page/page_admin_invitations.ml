@@ -171,7 +171,10 @@ module Partials = struct
       ]
   ;;
 
-  let statistics language { Invitation.Statistics.total_sent; sent_by_count } =
+  let statistics
+    language
+    { Invitation.Statistics.total_sent; sent_by_count; total_match_filter }
+    =
     let open Pool_common in
     let to_string = CCInt.to_string in
     let field_to_string field =
@@ -203,9 +206,19 @@ module Partials = struct
               Pool_common.(
                 Utils.text_to_string language I18n.InvitationsStatisticsIntro)
           ]
+      ; p
+          [ txt
+              Pool_common.(
+                Format.asprintf
+                  "%s %i"
+                  (Utils.text_to_string language I18n.FilterNrOfContacts)
+                  total_match_filter)
+          ]
       ; (sent_by_count
          |> CCList.map (fun (key, value) ->
-           (to_string key, to_string value) |> to_row)
+           ( to_string key
+           , Format.asprintf "%s / %i" (to_string value) total_match_filter )
+           |> to_row)
          |> fun rows ->
          rows @ [ total ] |> table ~thead ~a:[ a_class [ "table"; "simple" ] ])
       ]
