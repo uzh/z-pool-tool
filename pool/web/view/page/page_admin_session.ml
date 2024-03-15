@@ -1140,7 +1140,6 @@ let detail
   let assignments_html =
     let open Page_admin_assignments in
     let swap_session_modal_id = swap_session_modal_id session in
-    let direct_message_modal_id = direct_message_modal_id session in
     let legend = Partials.table_legend language in
     let modal id =
       div ~a:[ a_id id; a_class [ "fullscreen-overlay"; "modal" ] ] []
@@ -1182,11 +1181,14 @@ let detail
         (Component.Modal.js_modal_add_spinner swap_session_modal_id)
     in
     let message_modal_scripts =
-      {js| 
+      Format.asprintf
+        {js| 
+        const sessionId = "%s";
         document.addEventListener("DOMContentLoaded", (e) => {
-          window['pool-tool'].initAssignmentListMessaging();
+          window['pool-tool'].initAssignmentListMessaging(sessionId);
         })
       |js}
+        (Session.Id.value session.id)
     in
     let header_btn ?(hidden = false) ?(style = "primary") icon control attrs =
       let classnames =
@@ -1243,8 +1245,7 @@ let detail
                         ; hx_swap "outerHTML"
                         ; hx_target
                             ("#"
-                             ^ Page_admin_assignments.direct_message_modal_id
-                                 session)
+                             ^ Page_admin_assignments.direct_message_modal_id)
                         ]
                   ; header_btn
                       ~hidden:true

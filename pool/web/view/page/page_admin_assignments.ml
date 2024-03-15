@@ -27,9 +27,7 @@ let swap_session_modal_id session =
   Format.asprintf "swap-session-%s" Session.(Id.value session.Session.id)
 ;;
 
-let direct_message_modal_id session =
-  Format.asprintf "direct-message-%s" Session.(Id.value session.Session.id)
-;;
+let direct_message_modal_id = Format.asprintf "direct-message-modal"
 
 type assignment_redirect =
   | Assignments
@@ -345,6 +343,7 @@ module Partials = struct
     languages
     assignments
     =
+    let open Pool_common in
     let experiment = session.Session.experiment in
     let action =
       let open Session in
@@ -358,10 +357,50 @@ module Partials = struct
       match assignments with
       | `One { Assignment.contact; _ } ->
         CCOption.is_some contact.Contact.cell_phone
-      | `Multiple _ -> true
+      | `Multiple (_ : Assignment.t list) -> true
     in
     let available_channels =
-      Pool_common.MessageChannel.filtered_channels text_message_enabled
+      MessageChannel.filtered_channels text_message_enabled
+    in
+    let text_messages_hint =
+      match text_message_enabled, assignments with
+      | false, _ | _, `One (_ : Assignment.t) -> txt ""
+      | true, `Multiple assignments ->
+        assignments
+        |> CCList.filter_map (fun { Assignment.contact; _ } ->
+          match contact.Contact.cell_phone with
+          | None -> Some contact
+          | Some (_ : Pool_user.CellPhone.t) -> None)
+        |> (function
+         | [] -> txt ""
+         | contacts ->
+           let hint =
+             contacts
+             |> CCList.map (fun contact ->
+               li [ Contact.fullname contact |> txt ])
+             |> ul
+             |> fun list ->
+             [ p
+                 [ txt
+                     (Utils.hint_to_string
+                        language
+                        I18n.ContactsWithoutCellPhone)
+                 ]
+             ; list
+             ]
+             |> Component.Notification.notification language `Error
+           in
+           let input =
+             checkbox_element
+               ~as_switch:true
+               ~orientation:`Vertical
+               ~value:true
+               language
+               Field.FallbackToEmail
+           in
+           div
+             ~a:[ a_user_data "text-message-hint" ""; a_class [ "stack" ] ]
+             [ hint; input ])
     in
     let hidden_inputs =
       assignments
@@ -378,10 +417,63 @@ module Partials = struct
           ())
       |> div ~a:[ a_class [ "hidden" ] ]
     in
+    let scripts =
+      Format.asprintf
+        {js|
+          const channel = "%s";
+          const sms = "%s";
+          const emailText = "%s";
+          const plainText = "%s";
+
+          const modal = document.getElementById("direct-message-modal");
+
+          const channelSelect = modal.querySelector(`[name="${channel}"]`)
+          const smsEl = modal.querySelector(`[name="${sms}"]`).closest(".form-group");
+          const smsHint = modal.querySelector("[data-text-message-hint]");
+          const emailTextEl = modal.querySelector(`[name="${emailText}"]`).closest(".form-group");
+          const plainTextEl = modal.querySelector(`[name="${plainText}"]`).closest(".form-group");
+
+          const smsEls = [smsEl];
+          if(smsHint) {
+            smsEls.push(smsHint)
+          }
+          
+          const emailEls = [emailTextEl, plainTextEl];
+
+          const toggleVisibility = () => {
+            if(channelSelect.value === "email") {
+              smsEls.forEach(el => {
+                el.classList.add("hidden");
+              })
+              emailEls.forEach(el => {
+                el.classList.remove("hidden");
+              })
+            } else {
+              emailEls.forEach(el => {
+                el.classList.add("hidden");
+              })
+              smsEls.forEach(el => {
+                el.classList.remove("hidden");
+              })
+            }
+          }
+
+          channelSelect.addEventListener("change", () => {
+            toggleVisibility()
+          });
+
+          toggleVisibility();
+        |js}
+        Field.(show MessageChannel)
+        Field.(show SmsText)
+        Field.(show EmailText)
+        Field.(show PlainText)
+    in
     let html =
       form
         ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
         [ message_channel_select language available_channels
+        ; text_messages_hint
         ; Page_admin_message_template.template_inputs
             ~hide_text_message_input:(not text_message_enabled)
             context
@@ -395,16 +487,16 @@ module Partials = struct
         ; hidden_inputs
         ; div
             ~a:[ a_class [ "flexrow"; "justify-end" ] ]
-            [ submit_element language Pool_common.Message.(Send None) () ]
+            [ submit_element language Message.(Send None) () ]
+        ; script Unsafe.(data scripts)
         ]
     in
     Component.Modal.create
       ~active:true
       language
       (fun lang ->
-        Pool_common.(
-          Utils.control_to_string lang Message.(Send (Some Field.Message))))
-      (direct_message_modal_id session)
+        Utils.control_to_string lang Message.(Send (Some Field.Message)))
+      direct_message_modal_id
       html
   ;;
 
@@ -886,7 +978,7 @@ let data_table
           ; hx_swap "outerHTML"
           ; make_hx_vals
               [ Field.(array_key Assignment), Id.value assignment.id ]
-          ; hx_target (Format.asprintf "#%s" (direct_message_modal_id session))
+          ; hx_target ("#" ^ direct_message_modal_id)
           ]
       ~is_text:true
       ~control:(language, Pool_common.Message.(Send (Some Field.Message)))

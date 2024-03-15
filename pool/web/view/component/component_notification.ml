@@ -7,7 +7,17 @@ let style_to_class = function
   | `Warning -> "warning"
 ;;
 
-let notification ?link language style html =
+let notification ?link ?(classnames = []) language style html =
+  let classnames =
+    [ "notification"
+    ; style_to_class style
+    ; "flexrow"
+    ; "wrap"
+    ; "flex-gap"
+    ; "justify-between"
+    ]
+    @ classnames
+  in
   let link =
     match link with
     | None -> txt ""
@@ -19,16 +29,5 @@ let notification ?link language style html =
             [ txt Pool_common.(Utils.nav_link_to_string language label) ]
         ]
   in
-  div
-    ~a:
-      [ a_class
-          [ "notification"
-          ; style_to_class style
-          ; "flexrow"
-          ; "wrap"
-          ; "flex-gap"
-          ; "justify-between"
-          ]
-      ]
-    [ div html; link ]
+  div ~a:[ a_class classnames ] [ div html; link ]
 ;;

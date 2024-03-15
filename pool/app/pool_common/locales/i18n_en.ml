@@ -244,6 +244,8 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "You can enter a different phone number now."
   | ContactProfileVisibleOverride ->
     "If you overwrite these values, the changes will be visible to the contact."
+  | ContactsWithoutCellPhone ->
+    "The following contacts do not have a cell phone saved:"
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "This option excludes \"%s\"."

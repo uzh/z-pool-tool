@@ -92,6 +92,9 @@ let rec field_to_string =
   | ExternalDataId -> "external data identifier"
   | ExternalDataRequired -> "external data is required"
   | Failed -> "failed"
+  | FallbackToEmail ->
+    "Do you wish to send the message as an email to contacts without a cell \
+     phone?"
   | FieldType -> "field type"
   | File -> "file"
   | FileMapping -> "file mapping"

@@ -158,6 +158,7 @@ type hint =
   | ContactOnWaitingList
   | ContactPhoneNumberVerificationWasReset
   | ContactProfileVisibleOverride
+  | ContactsWithoutCellPhone
   | CustomFieldAdminInputOnly
   | CustomFieldAdminOverride
   | CustomFieldAdminOverrideUpdate

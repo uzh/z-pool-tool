@@ -249,6 +249,8 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ContactProfileVisibleOverride ->
     "Wenn Sie diese Werte überschreiben werden die Änderungen dem Kontakt \
      angezeigt."
+  | ContactsWithoutCellPhone ->
+    "Die folgenden Kontakte haben keine Telefonnummer hinterlegt:"
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "Diese Option schliesst \"%s\" aus."
