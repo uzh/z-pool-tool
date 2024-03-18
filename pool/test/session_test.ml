@@ -1861,9 +1861,16 @@ module DirectMessaging = struct
     Contact.{ (Model.create_contact ()) with cell_phone = Some cell_phone }
   ;;
 
-  let make_email_job _ _ = Model.create_email_job ()
+  let make_email_job (_ : Assignment.t) (_ : Message_template.ManualMessage.t) =
+    Model.create_email_job ()
+  ;;
 
-  let make_text_message_job _ _ _ cell_phone =
+  let make_text_message_job
+    (_ : Pool_common.Language.t)
+    (_ : Assignment.t)
+    (_ : Message_template.SmsText.t)
+    cell_phone
+    =
     Model.create_text_message_job cell_phone
   ;;
 

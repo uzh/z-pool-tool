@@ -148,17 +148,15 @@ module Sql = struct
     function
     | [] -> Lwt.return []
     | ids ->
-      let dyn =
+      let (Dynparam.Pack (pt, pv)) =
         let open Dynparam in
         empty
         |> add Caqti_type.string (session_id |> Session.Id.value)
-        |> fun dyn ->
-        CCList.fold_left
-          (fun dyn id -> dyn |> add Caqti_type.string (id |> Entity.Id.value))
-          dyn
-          ids
+        |> CCFun.flip
+             (CCList.fold_left (fun dyn id ->
+                dyn |> add Caqti_type.string (id |> Entity.Id.value)))
+             ids
       in
-      let (Dynparam.Pack (pt, pv)) = dyn in
       let request = find_multiple_request ids |> pt ->* RepoEntity.t in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
