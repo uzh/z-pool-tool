@@ -173,7 +173,10 @@ module Partials = struct
 
   let statistics
     language
-    { Invitation.Statistics.total_sent; sent_by_count; total_match_filter }
+    { Experiment.Statistics.SentInvitations.total_sent
+    ; sent_by_count
+    ; total_match_filter
+    }
     =
     let open Pool_common in
     let to_string = CCInt.to_string in
@@ -196,12 +199,7 @@ module Partials = struct
       |> to_row ~classnames:[ "font-bold" ]
     in
     div
-      [ h3
-          [ txt
-              Pool_common.(
-                Utils.text_to_string language I18n.InvitationsStatistics)
-          ]
-      ; p
+      [ p
           [ txt
               Pool_common.(
                 Utils.text_to_string language I18n.InvitationsStatisticsIntro)
@@ -238,7 +236,13 @@ let sent_invitations
         ~a:[ a_class [ "grid-col-2" ] ]
         [ div
             ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
-            [ Partials.statistics language statistics ]
+            [ h3
+                [ txt
+                    Pool_common.(
+                      Utils.text_to_string language I18n.InvitationsStatistics)
+                ]
+            ; Partials.statistics language statistics
+            ]
         ]
     ; Partials.list context experiment invitations
     ]

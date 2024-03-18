@@ -119,9 +119,12 @@ module Statistics = struct
       [ RegistrationPossible.field, registration_possible_html
       ; SendingInvitations.field, sending_invitations_html
       ; SessionCount.(field, statistics |> session_count |> value |> int_to_txt)
-      ; SentInvitationCount.(
-          field, statistics |> sent_invitation_count |> value |> int_to_txt)
       ]
+    in
+    let invitations_statistics =
+      statistics
+      |> invitations
+      |> Page_admin_invitations.Partials.statistics language
     in
     let assignments_statistics =
       [ ShowUpCount.(field, statistics |> showup_count |> value |> int_to_txt)
@@ -137,6 +140,10 @@ module Statistics = struct
                 Utils.text_to_string language I18n.ExperimentStatistics)
           ]
       ; experiment_statistics |> to_table
+      ; h4
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Invitations)
+          ]
+      ; invitations_statistics
       ; h4
           [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments)
           ]

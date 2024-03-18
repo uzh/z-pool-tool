@@ -342,6 +342,7 @@ val query_past_experiments_by_contact
   -> Contact.t
   -> (t list * Query.t) Lwt.t
 
+val invitation_count : Pool_database.Label.t -> Id.t -> int Lwt.t
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
@@ -421,6 +422,21 @@ module Guard : sig
 end
 
 module Statistics : sig
+  module SentInvitations : sig
+    type sent_by_count = int * int
+
+    type statistics =
+      { total_sent : int
+      ; total_match_filter : int
+      ; sent_by_count : sent_by_count list
+      }
+
+    val create
+      :  Pool_database.Label.t
+      -> t
+      -> (statistics, Pool_common.Message.error) Lwt_result.t
+  end
+
   module RegistrationPossible : sig
     include Pool_common.Model.BooleanSig
 
@@ -445,12 +461,6 @@ module Statistics : sig
     val field : Pool_common.Message.Field.t
   end
 
-  module SentInvitationCount : sig
-    include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
-  end
-
   module ShowUpCount : sig
     include Pool_common.Model.IntegerSig
 
@@ -469,28 +479,28 @@ module Statistics : sig
     val field : Pool_common.Message.Field.t
   end
 
-  type t =
+  type statistics =
     { registration_possible : RegistrationPossible.t
     ; sending_invitations : SendingInvitations.t
     ; session_count : SessionCount.t
-    ; sent_invitation_count : SentInvitationCount.t
+    ; invitations : SentInvitations.statistics
     ; showup_count : ShowUpCount.t
     ; noshow_count : NoShowCount.t
     ; participation_count : ParticipationCount.t
     }
 
-  val registration_possible : t -> RegistrationPossible.t
-  val sending_invitations : t -> SendingInvitations.t
-  val session_count : t -> SessionCount.t
-  val sent_invitation_count : t -> SentInvitationCount.t
-  val showup_count : t -> ShowUpCount.t
-  val noshow_count : t -> NoShowCount.t
-  val participation_count : t -> ParticipationCount.t
+  val registration_possible : statistics -> RegistrationPossible.t
+  val sending_invitations : statistics -> SendingInvitations.t
+  val session_count : statistics -> SessionCount.t
+  val invitations : statistics -> SentInvitations.statistics
+  val showup_count : statistics -> ShowUpCount.t
+  val noshow_count : statistics -> NoShowCount.t
+  val participation_count : statistics -> ParticipationCount.t
 
   val create
     :  Pool_database.Label.t
-    -> Id.t
-    -> (t, Pool_common.Message.error) Lwt_result.t
+    -> t
+    -> (statistics, Pool_common.Message.error) Lwt_result.t
 end
 
 val column_title : Query.Column.t

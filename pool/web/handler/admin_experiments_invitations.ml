@@ -54,7 +54,7 @@ let index req =
             |> CCOption.map (fun { Filter.query; _ } -> query))
        in
        let%lwt invitation_count =
-         experiment |> id |> Invitation.count_by_experiment database_label
+         experiment |> id |> Experiment.invitation_count database_label
        in
        Page.Admin.Experiments.invitations
          experiment
@@ -93,7 +93,7 @@ let sent_invitations req =
   | true -> Partials.list context experiment invitations |> Lwt_result.return
   | false ->
     let* statistics =
-      Invitation.Statistics.by_experiment database_label experiment
+      Experiment.Statistics.SentInvitations.create database_label experiment
     in
     sent_invitations context experiment invitations statistics |> Lwt_result.ok
 ;;

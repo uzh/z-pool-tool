@@ -1,6 +1,17 @@
 module Field = Pool_common.Message.Field
 module Model = Pool_common.Model
 
+module SentInvitations = struct
+  type sent_by_count = int * int [@@deriving eq, show]
+
+  type statistics =
+    { total_sent : int
+    ; total_match_filter : int
+    ; sent_by_count : sent_by_count list
+    }
+  [@@deriving eq, show]
+end
+
 module RegistrationPossible = struct
   include Model.Boolean
 
@@ -39,14 +50,6 @@ module SessionCount = struct
   let schema = schema field create
 end
 
-module SentInvitationCount = struct
-  include Model.Integer
-
-  let field = Field.InvitationCount
-  let create = CCResult.return
-  let schema = schema field create
-end
-
 module ShowUpCount = struct
   include Model.Integer
 
@@ -71,11 +74,11 @@ module ParticipationCount = struct
   let schema = schema field create
 end
 
-type t =
+type statistics =
   { registration_possible : RegistrationPossible.t
   ; sending_invitations : SendingInvitations.t
   ; session_count : SessionCount.t
-  ; sent_invitation_count : SentInvitationCount.t
+  ; invitations : SentInvitations.statistics
   ; showup_count : ShowUpCount.t
   ; noshow_count : NoShowCount.t
   ; participation_count : ParticipationCount.t
