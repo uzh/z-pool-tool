@@ -91,6 +91,7 @@ module Statistics = struct
 
   type t =
     { total_sent : int
+    ; total_match_filter : int
     ; sent_by_count : sent_by_count list
     }
   [@@deriving eq, show]

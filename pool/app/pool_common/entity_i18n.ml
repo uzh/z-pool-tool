@@ -56,6 +56,7 @@ type t =
   | MailingNewTitle
   | MessageHistory of string
   | NoEntries of Entity_message.Field.t
+  | NoInvitationsSent
   | Note
   | OurPartners
   | Past

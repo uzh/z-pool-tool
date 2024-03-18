@@ -12,7 +12,7 @@ let coalesce_value =
   {sql| IF(pool_custom_fields.admin_override,COALESCE(admin_value,value),value) |sql}
 ;;
 
-let filtered_base_condition =
+let filtered_base_condition ?(include_invited = false) =
   let base =
     {sql|
     user_users.admin = 0
@@ -44,8 +44,12 @@ let filtered_base_condition =
   in
   (function
     | MatchesFilter -> [ base ]
-    | Matcher _ -> [ base; exclude_assigned; exclude_invited ]
-    | MatcherReset _ -> [ base; exclude_assigned; exclude_invited_after ])
+    | Matcher _ ->
+      [ base; exclude_assigned ]
+      @ if include_invited then [] else [ exclude_invited ]
+    | MatcherReset _ ->
+      [ base; exclude_assigned ]
+      @ if include_invited then [] else [ exclude_invited_after ])
   %> CCString.concat "\n"
 ;;
 
@@ -400,7 +404,14 @@ let filter_to_sql template_list dyn query =
   query_sql (dyn, "") query
 ;;
 
-let filtered_params ?group_by ?order_by use_case template_list filter =
+let filtered_params
+  ?include_invited
+  ?group_by
+  ?order_by
+  use_case
+  template_list
+  filter
+  =
   let open CCResult.Infix in
   let base_dyn =
     let open Dynparam in
@@ -417,12 +428,13 @@ let filtered_params ?group_by ?order_by use_case template_list filter =
       dyn |> add Caqti_type.string id |> add Caqti_type.ptime allow_before
   in
   let query =
+    let base_condition = filtered_base_condition ?include_invited use_case in
     match filter with
-    | None -> Ok (base_dyn, filtered_base_condition use_case)
+    | None -> Ok (base_dyn, base_condition)
     | Some filter ->
       filter_to_sql template_list base_dyn filter
       >|= fun (dyn, sql) ->
-      dyn, Format.asprintf "%s\n AND %s" (filtered_base_condition use_case) sql
+      dyn, Format.asprintf "%s\n AND %s" base_condition sql
   in
   query
   >|= fun (dyn, sql) ->

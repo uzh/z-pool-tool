@@ -1,6 +1,5 @@
 module RepoEntity = Repo_entity
 module Dynparam = Utils.Database.Dynparam
-module Statistics = Repo_statistics
 
 module Sql = struct
   let sql_select_columns =

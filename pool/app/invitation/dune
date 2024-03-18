@@ -1,6 +1,14 @@
 (library
  (name invitation)
- (libraries contact experiment mailing pool_common sihl sihl-email tenant)
+ (libraries
+  contact
+  experiment
+  filter
+  mailing
+  pool_common
+  sihl
+  sihl-email
+  tenant)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
 

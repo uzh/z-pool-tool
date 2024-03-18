@@ -102,6 +102,7 @@ let to_string = function
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | Note -> "Note"
+  | NoInvitationsSent -> "No invitations have been sent yet."
   | OurPartners -> "Our partners"
   | Past -> "Past"
   | ParticipatedExperiments -> "Experiments participated"
