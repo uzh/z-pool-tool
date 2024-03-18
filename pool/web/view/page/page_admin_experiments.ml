@@ -85,7 +85,7 @@ module Statistics = struct
         ]
     in
     let to_table =
-      Component.Table.vertical_table ~th_class:[ "w-8" ] `Simple language
+      Component.Table.vertical_table ~th_class:[ "w-7" ] `Simple language
     in
     let registration_possible_html =
       let open RegistrationPossible in

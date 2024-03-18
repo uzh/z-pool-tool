@@ -184,11 +184,14 @@ module Partials = struct
       Utils.field_to_string language field |> CCString.capitalize_ascii
     in
     let thead =
-      Message.Field.[ InvitationCount; ContactCount ]
-      |> CCList.map CCFun.(field_to_string %> txt %> CCList.return %> th)
-      |> tr
-      |> CCList.return
-      |> thead
+      let to_string = CCFun.(field_to_string %> txt) in
+      thead
+        Field.
+          [ tr
+              [ td ~a:[ a_class [ "w-7" ] ] [ to_string InvitationCount ]
+              ; td [ to_string InvitationCount ]
+              ]
+          ]
     in
     let to_row ?(classnames = []) (key, value) =
       let td = td ~a:[ a_class classnames ] in
@@ -197,6 +200,25 @@ module Partials = struct
     let total =
       (field_to_string Message.Field.Total, to_string total_sent)
       |> to_row ~classnames:[ "font-bold" ]
+    in
+    let table =
+      match sent_by_count with
+      | [] ->
+        p
+          [ strong
+              [ txt
+                  Pool_common.(
+                    Utils.text_to_string language I18n.NoInvitationsSent)
+              ]
+          ]
+      | sent_by_count ->
+        sent_by_count
+        |> CCList.map (fun (key, value) ->
+          ( to_string key
+          , Format.asprintf "%s / %i" (to_string value) total_match_filter )
+          |> to_row)
+        |> fun rows ->
+        rows @ [ total ] |> table ~thead ~a:[ a_class [ "table"; "simple" ] ]
     in
     div
       [ p
@@ -212,13 +234,7 @@ module Partials = struct
                   (Utils.text_to_string language I18n.FilterNrOfContacts)
                   total_match_filter)
           ]
-      ; (sent_by_count
-         |> CCList.map (fun (key, value) ->
-           ( to_string key
-           , Format.asprintf "%s / %i" (to_string value) total_match_filter )
-           |> to_row)
-         |> fun rows ->
-         rows @ [ total ] |> table ~thead ~a:[ a_class [ "table"; "simple" ] ])
+      ; table
       ]
   ;;
 end

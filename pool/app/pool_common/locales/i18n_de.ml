@@ -103,6 +103,7 @@ let to_string = function
     Format.asprintf
       "Es existiert noch keine %s."
       (Locales_de.field_to_string field)
+  | NoInvitationsSent -> "Es wurden noch keine Einladungen verschickt."
   | Note -> "Hinweis"
   | OurPartners -> "Unsere Partner"
   | Past -> "Vergangen"
