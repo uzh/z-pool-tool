@@ -120,115 +120,117 @@ let () =
             I18n_test.update_terms_and_conditions
         ] )
     ; ( "assignment"
-      , [ test_case "create assignment" `Quick Assignment_test.create
-        ; test_case
-            "create assignment with experiment smtp auth"
-            `Quick
-            Assignment_test.create_with_experiment_smtp
-        ; test_case
-            "create with inactive user"
-            `Quick
-            Assignment_test.create_inactive_user
-        ; test_case
-            "mark assignment as canceled"
-            `Quick
-            Assignment_test.canceled
-        ; test_case
-            "mark assignment as canceled with closed session"
-            `Quick
-            Assignment_test.canceled_with_closed_session
-        ; test_case
-            "set attendance on assignment"
-            `Quick
-            Assignment_test.set_attendance
-        ; test_case
-            "set invalid attendance on assignment"
-            `Quick
-            Assignment_test.set_invalid_attendance
-        ; test_case
-            "assignment validation"
-            `Quick
-            Assignment_test.assignment_validation
-        ; test_case
-            "set attendance missing data id"
-            `Quick
-            Assignment_test.set_attendance_missing_data_id
-        ; test_case
-            "set attendance with data id"
-            `Quick
-            Assignment_test.set_attendance_with_data_id
-        ; test_case
-            "assign to fully booked session"
-            `Quick
-            Assignment_test.assign_to_fully_booked_session
-        ; test_case
-            "assign to canceled session"
-            `Quick
-            Assignment_test.assign_to_canceled_session
-        ; test_case
-            "assign to session contact is already assigned"
-            `Quick
-            Assignment_test.assign_to_session_contact_is_already_assigned
-        ; test_case
-            "assign to experiment with direct registration disabled"
-            `Quick
-            Assignment_test
-            .assign_to_experiment_with_direct_registration_disabled
-        ; test_case
-            "assign to experiment with direct registration disabled as admin"
-            `Quick
-            Assignment_test
-            .assign_to_experiment_with_direct_registration_disabled_as_admin
-        ; test_case
-            "assign user from waiting list"
-            `Quick
-            Assignment_test.assign_contact_from_waiting_list
-        ; test_case
-            "assign contact from waiting list with follow-ups"
-            `Quick
-            Assignment_test.assign_contact_from_waiting_list_with_follow_ups
-        ; test_case
-            "assign contact from waiting list to disabled experiment"
-            `Quick
-            Assignment_test
-            .assign_contact_from_waiting_list_to_disabled_experiment
-        ; test_case
-            "assign to session with follow ups"
-            `Quick
-            Assignment_test.assign_to_session_with_follow_ups
-        ; test_case
-            "mark uncanceled as deleted"
-            `Quick
-            Assignment_test.mark_uncanceled_as_deleted
-        ; test_case
-            "mark canceled as deleted"
-            `Quick
-            Assignment_test.marked_canceled_as_deleted
-        ; test_case
-            "marked closed assignment with followup as deleted"
-            `Quick
-            Assignment_test.marked_closed_with_followups_as_deleted
-        ; test_case
-            "cancel deleted assignment"
-            `Quick
-            Assignment_test.cancel_deleted_assignment
-        ; test_case
-            "send reminder invalid"
-            `Quick
-            Assignment_test.send_reminder_invalid
-        ; test_case
-            "swap session without notification"
-            `Quick
-            Assignment_test.swap_session_without_notification
-        ; test_case
-            "swap session with notification"
-            `Quick
-            Assignment_test.swap_session_with_notification
-        ; test_case
-            "swap session to past session"
-            `Quick
-            Assignment_test.swap_session_to_past_session
-        ] )
+      , Assignment_test.
+          [ test_case "create assignment" `Quick create
+          ; test_case
+              "create assignment with experiment smtp auth"
+              `Quick
+              create_with_experiment_smtp
+          ; test_case "create with inactive user" `Quick create_inactive_user
+          ; test_case "mark assignment as canceled" `Quick canceled
+          ; test_case
+              "mark assignment as canceled with closed session"
+              `Quick
+              canceled_with_closed_session
+          ; test_case "set attendance on assignment" `Quick set_attendance
+          ; test_case
+              "set invalid attendance on assignment"
+              `Quick
+              set_invalid_attendance
+          ; test_case "assignment validation" `Quick assignment_validation
+          ; test_case
+              "set attendance missing data id"
+              `Quick
+              set_attendance_missing_data_id
+          ; test_case
+              "set attendance with data id"
+              `Quick
+              set_attendance_with_data_id
+          ; test_case
+              "assign to fully booked session"
+              `Quick
+              assign_to_fully_booked_session
+          ; test_case
+              "assign to canceled session"
+              `Quick
+              assign_to_canceled_session
+          ; test_case
+              "assign to session contact is already assigned"
+              `Quick
+              assign_to_session_contact_is_already_assigned
+          ; test_case
+              "assign to experiment with direct registration disabled"
+              `Quick
+              Assignment_test
+              .assign_to_experiment_with_direct_registration_disabled
+          ; test_case
+              "assign to experiment with direct registration disabled as admin"
+              `Quick
+              Assignment_test
+              .assign_to_experiment_with_direct_registration_disabled_as_admin
+          ; test_case
+              "assign user from waiting list"
+              `Quick
+              assign_contact_from_waiting_list
+          ; test_case
+              "assign contact from waiting list with follow-ups"
+              `Quick
+              assign_contact_from_waiting_list_with_follow_ups
+          ; test_case
+              "assign contact from waiting list to disabled experiment"
+              `Quick
+              Assignment_test
+              .assign_contact_from_waiting_list_to_disabled_experiment
+          ; test_case
+              "assign to session with follow ups"
+              `Quick
+              assign_to_session_with_follow_ups
+          ; test_case
+              "mark uncanceled as deleted"
+              `Quick
+              mark_uncanceled_as_deleted
+          ; test_case
+              "mark canceled as deleted"
+              `Quick
+              marked_canceled_as_deleted
+          ; test_case
+              "marked closed assignment with followup as deleted"
+              `Quick
+              marked_closed_with_followups_as_deleted
+          ; test_case
+              "cancel deleted assignment"
+              `Quick
+              cancel_deleted_assignment
+          ; test_case "send reminder invalid" `Quick send_reminder_invalid
+          ; test_case
+              "swap session without notification"
+              `Quick
+              swap_session_without_notification
+          ; test_case
+              "swap session with notification"
+              `Quick
+              swap_session_with_notification
+          ; test_case
+              "swap session to past session"
+              `Quick
+              swap_session_to_past_session
+          ; test_case
+              "close session: decode invalid"
+              `Quick
+              CloseSession.decode_invalid
+          ; test_case
+              "close session: decode data id"
+              `Quick
+              CloseSession.decode_data_id
+          ; test_case
+              "close session: decode booleans"
+              `Quick
+              CloseSession.decode_boolean_fields
+          ; test_case
+              "close session: handle update"
+              `Quick
+              CloseSession.handle_update
+          ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create
         ; test_case

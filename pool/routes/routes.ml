@@ -378,7 +378,7 @@ module Admin = struct
             let open Experiments.Assignment in
             let specific =
               [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
-              ; post "/close" ~middlewares:[ Session.Access.close ] close_htmx
+              ; post "/close" ~middlewares:[ Session.Access.close ] Close.update
               ; get "/edit" ~middlewares:[ Access.update ] edit
               ; post "" ~middlewares:[ Access.update ] update
               ; post "/remind" ~middlewares:[ Access.update ] remind
@@ -428,6 +428,10 @@ module Admin = struct
               "/resend-reminders"
               ~middlewares:[ Access.update ]
               resend_reminders
+          ; post
+              "/toggle-assignments"
+              ~middlewares:[ Session.Access.close ]
+              Experiments.Assignment.Close.toggle
           ; choose ~scope:(add_human_field Assignments) assignments
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ; choose ~scope:(ParticipationTag |> human_url) participation_tags

@@ -225,80 +225,125 @@ let mark_as_deleted req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let close_htmx req =
-  let tags = Pool_context.Logger.Tags.req req in
-  let experiment_id = experiment_id req in
-  let session_id = session_id req in
-  let assignment_id = assignment_id req in
-  let result ({ Pool_context.database_label; _ } as context) =
-    let open Cqrs_command.Assignment_command in
-    let open Utils.Lwt_result.Infix in
-    let boolean_fields = Assignment.boolean_fields |> CCList.map Field.show in
-    let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req
-      ||> HttpUtils.format_request_boolean_values boolean_fields
-      ||> HttpUtils.remove_empty_values
-    in
+module Close = struct
+  open Cqrs_command.Assignment_command
+  open Utils.Lwt_result.Infix
+
+  let experiment_target_id experiment_id =
+    [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
+  ;;
+
+  open Assignment
+
+  let router_params req database_label =
+    let experiment_id = experiment_id req in
+    let session_id = session_id req in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
-    let* assignment = Assignment.find database_label assignment_id in
-    let* updated_assignment, event, no_show, participated, external_data_id =
-      let open CCResult.Infix in
-      urlencoded
-      |> decode_update
-      >>= (fun { no_show; participated; external_data_id } ->
-            let assignment =
-              Assignment.
-                { assignment with
-                  no_show = Some no_show
-                ; participated = Some participated
-                ; external_data_id
-                }
-            in
-            let events =
-              Assignment.(Updated assignment) |> Pool_event.assignment
-            in
-            Ok (assignment, events, no_show, participated, external_data_id))
-      |> Lwt_result.lift
-    in
-    let%lwt () = Pool_event.handle_event ~tags database_label event in
-    let%lwt counters =
-      Assignment.counters_of_session database_label session_id
-    in
-    let updated_fields =
-      let open Assignment in
-      let fields =
-        if assignment.no_show
-           |> CCOption.map_or ~default:false NoShow.value
-           = NoShow.value no_show
-        then []
-        else [ Field.NoShow ]
+    Lwt_result.return (experiment, session)
+  ;;
+
+  let decode req =
+    let boolean_fields = Assignment.boolean_fields |> CCList.map Field.show in
+    req
+    |> Sihl.Web.Request.to_urlencoded
+    ||> HttpUtils.format_htmx_request_boolean_values boolean_fields
+    ||> UpdateHtmx.decode
+  ;;
+
+  let updated_fields (a1 : t) (a2 : t) =
+    let eq = CCOption.equal in
+    [ NoShow.(eq equal a1.no_show a2.no_show, field)
+    ; Participated.(eq equal a1.participated a2.participated, field)
+    ; ExternalDataId.(eq equal a1.external_data_id a2.external_data_id, field)
+    ]
+    |> CCList.filter_map (fun (equal, field) ->
+      if not equal then Some field else None)
+  ;;
+
+  let update req =
+    let tags = Pool_context.Logger.Tags.req req in
+    let assignment_id = assignment_id req in
+    let result ({ Pool_context.database_label; language; _ } as context) =
+      let* experiment, session = router_params req database_label in
+      let* assignment = find database_label assignment_id in
+      let* updated = decode req >|+ UpdateHtmx.handle assignment in
+      let%lwt () =
+        Pool_event.handle_event
+          ~tags
+          database_label
+          (Updated updated |> Pool_event.assignment)
       in
-      let fields =
-        if assignment.participated
-           |> CCOption.map_or ~default:false Participated.value
-           = Participated.value participated
-        then fields
-        else Field.Participated :: fields
+      let%lwt counters =
+        counters_of_session database_label session.Session.id
       in
-      match assignment.external_data_id, external_data_id with
-      | None, None -> fields
-      | Some id1, Some id2 when ExternalDataId.equal id1 id2 -> fields
-      | _ -> Field.ExternalDataId :: fields
+      let updated_fields = updated_fields assignment updated in
+      Page.Admin.Session.
+        [ close_assignment_htmx_form
+            ~updated_fields
+            context
+            experiment
+            session
+            updated
+        ; session_counters language counters
+        ]
+      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Lwt_result.return
     in
-    Page.Admin.Session.close_assignment_htmx_form
-      ~counters
-      ~updated_fields
-      context
-      experiment
-      session
-      updated_assignment
-    |> HttpUtils.Htmx.html_to_plain_text_response
-    |> Lwt_result.return
-  in
-  result
-  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
-;;
+    result
+    |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  ;;
+
+  let toggle req =
+    let tags = Pool_context.Logger.Tags.req req in
+    let result ({ Pool_context.database_label; language; _ } as context) =
+      let* experiment, session = router_params req database_label in
+      let* decoded =
+        decode req
+        >== fun decoded ->
+        match decoded with
+        | ExternalDataId _ -> Error Pool_common.Message.InvalidHtmxRequest
+        | Participated _ | NoShow _ -> Ok decoded
+      in
+      let%lwt assignments, custom_fields =
+        find_for_session_close_screen database_label session.Session.id
+      in
+      let events, assignments =
+        assignments
+        |> CCList.fold_left
+             (fun (events, assignments) original ->
+               let updated = UpdateHtmx.handle original decoded in
+               let updated_fields = updated_fields original updated in
+               ( events @ [ Updated updated |> Pool_event.assignment ]
+               , assignments @ [ updated, Some updated_fields ] ))
+             ([], [])
+      in
+      let%lwt () = Pool_event.handle_events ~tags database_label events in
+      let%lwt counters =
+        counters_of_session database_label session.Session.id
+      in
+      let view_contact_name =
+        experiment.Experiment.id
+        |> experiment_target_id
+        |> Helpers.Guard.can_read_contact_name context
+      in
+      Page.Admin.Session.
+        [ close_assignments_table
+            context
+            view_contact_name
+            experiment
+            session
+            assignments
+            custom_fields
+        ; session_counters language counters
+        ]
+      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Lwt_result.return
+    in
+    result
+    |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  ;;
+end
 
 let edit req =
   let open Utils.Lwt_result.Infix in
