@@ -23,17 +23,6 @@ module Access = struct
     one_of_tuple (action, `Assignment, Some (uuid |> target_of))
   ;;
 
-  let index id =
-    And
-      [ Or
-          [ one_of_tuple (Read, `Assignment, None)
-          ; one_of_tuple
-              (Read, `Assignment, Some (Uuid.target_of Experiment.Id.value id))
-          ]
-      ; Experiment.Guard.Access.read id
-      ]
-  ;;
-
   let create id =
     And
       [ Or
@@ -83,6 +72,4 @@ module Access = struct
       ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
-
-  let deleted = index
 end

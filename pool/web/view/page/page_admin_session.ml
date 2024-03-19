@@ -1151,7 +1151,6 @@ let detail
         ~send_direct_message
         ?view_contact_name
         ?view_contact_info
-        Session
         context
         experiment
         session
@@ -1303,23 +1302,19 @@ let detail
 let print
   ?view_contact_name
   ?view_contact_info
-  (Pool_context.{ language; _ } as context)
+  ({ Pool_context.language; _ } as context)
   experiment
-  (session : Session.t)
+  session
   assignments
   =
   let assignment_list =
-    Page_admin_assignments.(
-      Partials.overview_list
-        ?view_contact_name
-        ?view_contact_info
-        ~is_print:true
-        Session
-        context
-        experiment
-        session
-        assignments
-        false)
+    Page_admin_assignments.Partials.print_assignments_list
+      ?view_contact_name
+      ?view_contact_info
+      context
+      experiment
+      session
+      assignments
   in
   let title =
     Pool_common.(Utils.text_to_string language (session_title session))

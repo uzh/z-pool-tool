@@ -467,12 +467,6 @@ module Admin = struct
         ; choose ~scope:(WaitingList |> url_key) specific
         ]
       in
-      let assignments =
-        let open Experiments.Assignment in
-        [ get "" ~middlewares:[ Access.index ] index
-        ; get "deleted" ~middlewares:[ Access.deleted ] deleted
-        ]
-      in
       let mailings =
         let open Experiments.Mailings in
         let specific =
@@ -568,7 +562,6 @@ module Admin = struct
           ; choose ~scope:"/invitations" invitations
           ; choose ~scope:"/waiting-list" waiting_list
           ; choose ~scope:"/sessions" sessions
-          ; choose ~scope:"/assignments" assignments
           ; choose ~scope:"/mailings" mailings
           ; choose ~scope:"/filter" filter
           ; choose ~scope:(Tag |> human_url) tags

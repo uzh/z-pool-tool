@@ -4,12 +4,6 @@ open Component.Input
 module Field = Pool_common.Message.Field
 module Status = Component.UserStatus.Contact
 
-let assignments_path experiment_id =
-  Format.asprintf
-    "/admin/experiments/%s/assignments"
-    (experiment_id |> Experiment.Id.value)
-;;
-
 let assignment_specific_path ?suffix experiment_id session_id assignment_id =
   let open Pool_common in
   let base =
@@ -28,17 +22,6 @@ let swap_session_modal_id session =
 ;;
 
 let direct_message_modal_id = Format.asprintf "direct-message-modal"
-
-type assignment_redirect =
-  | Assignments
-  | DeletedAssignments
-  | Session
-[@@deriving show { with_path = false }, yojson]
-
-let read_assignment_redirect m =
-  try Some (Utils.Json.read_variant assignment_redirect_of_yojson m) with
-  | _ -> None
-;;
 
 module Partials = struct
   open Assignment
@@ -500,151 +483,18 @@ module Partials = struct
       html
   ;;
 
-  let overview_list
-    ?(access_contact_profiles = false)
+  let print_assignments_list
     ?(view_contact_name = false)
     ?(view_contact_info = false)
-    ?(allow_session_swap = false)
-    ?(is_print = false)
-    redirect
-    (Pool_context.{ language; csrf; _ } as context)
+    Pool_context.{ language; _ }
     experiment
     session
     assignments
-    text_messages_enabled
     =
-    let open Pool_common in
-    let default = txt "" in
     let assignemnts_table_id =
       Format.asprintf "assignments-%s" Session.(Id.value session.Session.id)
     in
     let swap_session_modal_id = swap_session_modal_id session in
-    let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
-    let cancelable m =
-      Session.assignments_cancelable session |> CCResult.is_ok
-      && Assignment.is_cancellable m |> CCResult.is_ok
-    in
-    let session_changeable m =
-      Assignment.session_changeable session m |> CCResult.is_ok
-      && allow_session_swap
-    in
-    let action { Assignment.id; _ } suffix =
-      assignment_specific_path
-        ~suffix
-        experiment.Experiment.id
-        session.Session.id
-        id
-    in
-    let create_reminder_modal assignment =
-      Assignment.reminder_sendable session assignment |> CCResult.is_ok
-    in
-    let button_form
-      ?(style = `Primary)
-      suffix
-      confirmable
-      control
-      icon
-      assignment
-      =
-      let hidden_redirect_input =
-        input_element
-          ~value:(show_assignment_redirect redirect)
-          language
-          `Hidden
-          Field.Redirect
-      in
-      form
-        ~a:
-          [ a_action (action assignment suffix |> Sihl.Web.externalize_path)
-          ; a_method `Post
-          ; a_user_data
-              "confirmable"
-              Pool_common.(Utils.confirmable_to_string language confirmable)
-          ]
-        [ csrf_element csrf ()
-        ; hidden_redirect_input
-        ; submit_element
-            ~is_text:true
-            ~submit_type:style
-            ~has_icon:icon
-            language
-            control
-            ()
-        ]
-    in
-    let edit m =
-      let action = action m "edit" in
-      link_as_button
-        action
-        ~is_text:true
-        ~control:(language, Pool_common.Message.(Edit None))
-        ~icon:Component.Icon.CreateOutline
-    in
-    let profile_link { Assignment.contact; _ } =
-      let action =
-        Format.asprintf "/admin/contacts/%s" Contact.(id contact |> Id.value)
-      in
-      link_as_button
-        action
-        ~is_text:true
-        ~control:(language, Pool_common.Message.OpenProfile)
-        ~icon:Component.Icon.PersonOutline
-    in
-    let external_data_ids { Assignment.contact; _ } =
-      a
-        ~a:
-          [ a_href
-              (Format.asprintf
-                 "%s/%s"
-                 (Page_admin_contact.path contact)
-                 Field.(human_url ExternalDataId)
-               |> Sihl.Web.externalize_path)
-          ; a_class [ "has-icon"; "primary"; "btn"; "is-text" ]
-          ]
-        [ Icon.(to_html ReorderThree)
-        ; txt Utils.(nav_link_to_string language I18n.ExternalDataIds)
-        ]
-    in
-    let session_change_toggle assignment =
-      let action =
-        action assignment "swap-session" |> Sihl.Web.externalize_path
-      in
-      link_as_button
-        "#"
-        ~attributes:
-          [ a_user_data "hx-trigger" "click"
-          ; a_user_data "hx-get" action
-          ; a_user_data "hx-swap" "outerHTML"
-          ; a_user_data
-              "hx-target"
-              (Format.asprintf "#%s" swap_session_modal_id)
-          ]
-        ~is_text:true
-        ~control:(language, Pool_common.Message.ChangeSession)
-        ~icon:Component.Icon.SwapHorizonal
-    in
-    let cancel =
-      button_form
-        ~style:`Error
-        "cancel"
-        I18n.(
-          if session.Session.has_follow_ups
-          then CancelAssignmentWithFollowUps
-          else CancelAssignment)
-        (Message.Cancel None)
-        Component.Icon.Close
-    in
-    let mark_as_deleted =
-      button_form
-        ~style:`Error
-        "mark-as-deleted"
-        I18n.(
-          if session.Session.has_follow_ups
-          then MarkAssignmentWithFollowUpsAsDeleted
-          else MarkAssignmentAsDeleted)
-        Message.MarkAsDeleted
-        Component.Icon.TrashOutline
-    in
     match CCList.is_empty assignments with
     | true -> p [ empty language ]
     | false ->
@@ -675,81 +525,24 @@ module Partials = struct
               external_data_field
         in
         let checkboxes = [ txt "P"; txt "NS" ] in
-        let right =
-          let base = [ Field.CanceledAt |> field_to_text ] in
-          if is_print then base else base @ [ default ]
-        in
+        let right = [ Field.CanceledAt |> field_to_text ] in
         left @ checkboxes @ right
       in
-      let rows, modals =
-        CCList.fold_left
-          (fun (rows, modals) (assignment : Assignment.t) ->
-            let base =
-              CCList.map snd contact_information
-              @ CCList.map snd external_data_field
-              @ [ assignment_participated; assignment_no_show; canceled_at ]
-              |> CCList.mapi (fun i fcn ->
-                let value = fcn assignment in
-                if CCInt.equal i 0
-                then
-                  div
-                    ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-                    (value
-                     :: Status.make_icons language assignment.contact `Name)
-                else value)
-            in
-            let buttons =
-              [ true, edit
-              ; access_contact_profiles, profile_link
-              ; create_reminder_modal assignment, ReminderModal.button context
-              ; ( Experiment.(show_external_data_id_links_value experiment)
-                , external_data_ids )
-              ; session_changeable assignment, session_change_toggle
-              ; cancelable assignment, cancel
-              ; deletable assignment, mark_as_deleted
-              ]
-              |> CCList.filter_map (fun (active, form) ->
-                if not active then None else Some (form assignment))
-              |> Component.ButtonGroup.dropdown
-              |> CCList.pure
-            in
-            let modals =
-              match create_reminder_modal assignment with
-              | true ->
-                modals
-                @ [ ReminderModal.modal
-                      context
-                      experiment.Experiment.id
-                      session
-                      assignment
-                      text_messages_enabled
-                  ]
-              | false -> modals
-            in
-            let columns = if is_print then base else base @ buttons in
-            rows @ [ columns ], modals)
-          ([], [])
+      let rows =
+        CCList.map
+          (fun (assignment : Assignment.t) ->
+            CCList.map snd contact_information
+            @ CCList.map snd external_data_field
+            @ [ assignment_participated; assignment_no_show; canceled_at ]
+            |> CCList.mapi (fun i fcn ->
+              let value = fcn assignment in
+              if CCInt.equal i 0
+              then
+                div
+                  ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+                  (value :: Status.make_icons language assignment.contact `Name)
+              else value))
           assignments
-      in
-      let js =
-        Format.asprintf
-          {js|
-          %s
-          document.addEventListener("htmx:afterSwap", (e) => {
-            const modal = e.detail.elt;
-
-            const checkbox = modal.querySelector(`[data-toggle]`);
-            const target = document.getElementById(checkbox.dataset.toggle);
-            checkbox.addEventListener("click", (e) => {
-              if(e.currentTarget.checked) {
-                target.classList.remove("hidden");
-              } else {
-                target.classList.add("hidden");
-              }
-            })
-          })
-          |js}
-          (Component.Modal.js_modal_add_spinner swap_session_modal_id)
       in
       div
         [ table_legend language
@@ -765,52 +558,7 @@ module Partials = struct
             ~id:assignemnts_table_id
             ~thead
             rows
-        ; div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals
-        ; (if allow_session_swap then script (Unsafe.data js) else txt "")
         ]
-  ;;
-
-  let grouped_overview_lists
-    ?access_contact_profiles
-    ?view_contact_name
-    ?view_contact_info
-    redirect
-    (Pool_context.{ language; _ } as context)
-    experiment
-    assignments
-    text_messages_enabled
-    =
-    CCList.map
-      (fun (session, assignments) ->
-        let attrs, to_title =
-          if CCOption.is_some session.Session.follow_up_to
-          then
-            ( [ a_class [ "inset"; "left" ] ]
-            , fun session ->
-                Format.asprintf
-                  "%s (%s)"
-                  (session |> Session.session_date_to_human)
-                  (Pool_common.Utils.field_to_string
-                     language
-                     Field.FollowUpSession) )
-          else [], Session.session_date_to_human
-        in
-        div
-          ~a:attrs
-          [ h3 ~a:[ a_class [ "heading-3" ] ] [ txt (session |> to_title) ]
-          ; overview_list
-              ?access_contact_profiles
-              ?view_contact_name
-              ?view_contact_info
-              redirect
-              context
-              experiment
-              session
-              assignments
-              text_messages_enabled
-          ])
-      assignments
-    |> div ~a:[ a_class [ "stack-lg" ] ]
   ;;
 end
 
@@ -820,7 +568,6 @@ let data_table
   ?(view_contact_name = false)
   ?(view_contact_info = false)
   ?(is_print = false)
-  redirect
   (Pool_context.{ language; csrf; _ } as context)
   experiment
   session
@@ -883,13 +630,6 @@ let data_table
   in
   let button_form ?(style = `Primary) suffix confirmable control icon assignment
     =
-    let hidden_redirect_input =
-      input_element
-        ~value:(show_assignment_redirect redirect)
-        language
-        `Hidden
-        Field.Redirect
-    in
     form
       ~a:
         [ a_action (action assignment suffix |> Sihl.Web.externalize_path)
@@ -899,7 +639,6 @@ let data_table
             Pool_common.(Utils.confirmable_to_string language confirmable)
         ]
       [ csrf_element csrf ()
-      ; hidden_redirect_input
       ; submit_element
           ~is_text:true
           ~submit_type:style
@@ -1091,89 +830,6 @@ let data_table
     ?prepend_html:modals
     data_table
     assignments
-;;
-
-let list
-  ?access_contact_profiles
-  ?view_contact_name
-  ?view_contact_info
-  ({ Experiment.id; _ } as experiment)
-  ({ Pool_context.language; _ } as context)
-  text_messages_enabled
-  assignments
-  =
-  [ div
-      [ p
-          [ a
-              ~a:
-                [ a_href
-                    (assignments_path id
-                     |> Format.asprintf "%s/deleted"
-                     |> Sihl.Web.externalize_path)
-                ]
-              [ txt
-                  Pool_common.(
-                    Utils.text_to_string language I18n.DeletedAssignments)
-              ]
-          ]
-      ; Partials.grouped_overview_lists
-          ?access_contact_profiles
-          ?view_contact_name
-          ?view_contact_info
-          Assignments
-          context
-          experiment
-          assignments
-          text_messages_enabled
-      ]
-  ]
-  |> Layout.Experiment.(
-       create
-         ~active_navigation:Pool_common.I18n.Assignments
-         ~hint:Pool_common.I18n.ExperimentAssignment
-         context
-         (NavLink Pool_common.I18n.Assignments)
-         experiment)
-;;
-
-let marked_as_deleted
-  ?access_contact_profiles
-  ?view_contact_name
-  ?view_contact_info
-  experiment
-  (Pool_context.{ language; _ } as context)
-  text_messages_enabled
-  assignments
-  =
-  let html =
-    let notification =
-      let open Pool_common in
-      [ I18n.AssignmentsMarkedAsClosed |> Utils.hint_to_string language |> txt ]
-      |> div
-      |> CCList.pure
-      |> Component.Notification.notification language `Warning
-    in
-    let list =
-      Partials.grouped_overview_lists
-        ?access_contact_profiles
-        ?view_contact_name
-        ?view_contact_info
-        DeletedAssignments
-        context
-        experiment
-        assignments
-        text_messages_enabled
-    in
-    div ~a:[ a_class [ "stack-lg" ] ] [ notification; list ] |> CCList.return
-  in
-  Layout.Experiment.(
-    create
-      ~active_navigation:Pool_common.I18n.Assignments
-      ~hint:Pool_common.I18n.ExperimentAssignment
-      context
-      (I18n Pool_common.I18n.DeletedAssignments)
-      experiment
-      html)
 ;;
 
 let edit
