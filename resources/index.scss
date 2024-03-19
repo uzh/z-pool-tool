@@ -303,35 +303,6 @@ button.as-link {
     }
 }
 
-// Remove once framework is released
-.tag {
-    &.ghost {
-        background-color: transparent;
-        border-color: currentColor;
-
-        &.primary {
-        color: $color-primary;
-        }
-
-        &.success {
-        color: $green;
-        }
-
-        &.error {
-        color: $red;
-        }
-
-        &.warning {
-        color: $yellow-dark;
-        color: $yellow-dark;
-        }
-    }
-
-    &.inline {
-        padding-top: 0;
-        padding-bottom: 0;
-    }
-}
 // Logo
 .app-title {
     font-weight: $font-weight-bold;
@@ -566,13 +537,6 @@ table.simple {
             }
         }
     }
-}
-
-// Text button (https://gitlab.uzh.ch/econ/it/framework/frontend/-/issues/62)
-.btn.is-text,
-.btn.is-text:hover {
-    border: 1px solid transparent;
-
 }
 
 // Display EMail Template rich text
