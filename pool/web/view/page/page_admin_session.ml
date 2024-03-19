@@ -885,6 +885,7 @@ let duplicate
 
 let detail
   ?access_contact_profiles
+  ?(send_direct_message = false)
   ?view_contact_name
   ?view_contact_info
   (Pool_context.{ language; csrf; _ } as context)
@@ -1147,6 +1148,7 @@ let detail
     let assignment_list =
       data_table
         ?access_contact_profiles
+        ~send_direct_message
         ?view_contact_name
         ?view_contact_info
         Session
@@ -1209,6 +1211,37 @@ let detail
         session.id
       |> Sihl.Web.externalize_path
     in
+    let direct_messaging_buttons =
+      if send_direct_message
+      then
+        div
+          ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+          [ header_btn
+              Icon.MailOutline
+              Message.(Send (Some Field.Message))
+              [ a_user_data "direct-message" "select" ]
+          ; header_btn
+              ~hidden:true
+              ~style:"success"
+              Icon.Checkmark
+              Message.(Send (Some Field.Message))
+              Htmx.
+                [ a_user_data "direct-message" "submit"
+                ; hx_post submit_send_messages_action
+                ; hx_trigger "click"
+                ; hx_swap "outerHTML"
+                ; hx_target
+                    ("#" ^ Page_admin_assignments.direct_message_modal_id)
+                ]
+          ; header_btn
+              ~hidden:true
+              ~style:"error"
+              Icon.Close
+              Message.(Cancel None)
+              [ a_user_data "direct-message" "cancel" ]
+          ]
+      else txt ""
+    in
     div
       ~a:[ a_class [ "stack" ] ]
       [ div
@@ -1227,33 +1260,7 @@ let detail
               ]
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-              [ div
-                  ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-                  [ header_btn
-                      Icon.MailOutline
-                      Message.(Send (Some Field.Message))
-                      [ a_user_data "direct-message" "select" ]
-                  ; header_btn
-                      ~hidden:true
-                      ~style:"success"
-                      Icon.Checkmark
-                      Message.(Send (Some Field.Message))
-                      Htmx.
-                        [ a_user_data "direct-message" "submit"
-                        ; hx_post submit_send_messages_action
-                        ; hx_trigger "click"
-                        ; hx_swap "outerHTML"
-                        ; hx_target
-                            ("#"
-                             ^ Page_admin_assignments.direct_message_modal_id)
-                        ]
-                  ; header_btn
-                      ~hidden:true
-                      ~style:"error"
-                      Icon.Close
-                      Message.(Cancel None)
-                      [ a_user_data "direct-message" "cancel" ]
-                  ]
+              [ direct_messaging_buttons
               ; header_btn
                   Icon.PrintOutline
                   Message.(Print (Some Field.Assignments))

@@ -295,5 +295,7 @@ module Guard : sig
       :  ?verify_on_ids:Guard.Uuid.Target.t list
       -> unit
       -> Guard.PermissionOnTarget.t list
+
+    val send_direct_message : Guard.ValidationSet.t
   end
 end

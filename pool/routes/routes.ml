@@ -406,9 +406,14 @@ module Admin = struct
               (remove_session_participation_tag, Access.update)
           in
           let direct_message =
-            (* TODO: Access *)
-            [ post "" ~middlewares:[ Access.update ] DirectMessage.modal_htmx
-            ; post "/send" ~middlewares:[ Access.update ] DirectMessage.send
+            [ post
+                ""
+                ~middlewares:[ Access.direct_message ]
+                DirectMessage.modal_htmx
+            ; post
+                "/send"
+                ~middlewares:[ Access.direct_message ]
+                DirectMessage.send
             ]
           in
           [ get "" ~middlewares:[ Access.read ] show

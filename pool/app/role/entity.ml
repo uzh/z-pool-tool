@@ -84,6 +84,7 @@ module Target = struct
     | `Assignment
     | `Contact
     | `ContactInfo
+    | `ContactDirectMessage
     | `ContactName
     | `CustomField
     | `CustomFieldGroup
@@ -129,6 +130,7 @@ module Target = struct
     | "assignment", [] -> Ok `Assignment
     | "contact", [] -> Ok `Contact
     | "contactinfo", [] -> Ok `ContactInfo
+    | "contactdirectmessage", [] -> Ok `ContactDirectMessage
     | "contactname", [] -> Ok `ContactName
     | "customfield", [] -> Ok `CustomField
     | "customfieldgroup", [] -> Ok `CustomFieldGroup
@@ -171,6 +173,7 @@ module Target = struct
     ; `Schedule
     ; `Assignment
     ; `Contact
+    ; `ContactDirectMessage
     ; `ContactInfo
     ; `ContactName
     ; `CustomField

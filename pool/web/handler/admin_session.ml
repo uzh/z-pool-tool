@@ -401,8 +401,12 @@ let show req =
         Message_template.Label.SessionReminder
     in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+    let%lwt send_direct_message =
+      Helpers.Guard.can_send_direct_message context
+    in
     Page.Admin.Session.detail
       ~access_contact_profiles
+      ~send_direct_message
       ~view_contact_name
       ~view_contact_info
       context
@@ -1155,6 +1159,7 @@ module Access : sig
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
   val close : Rock.Middleware.t
+  val direct_message : Rock.Middleware.t
 end = struct
   module SessionCommand = Cqrs_command.Session_command
   module Guardian = Middleware.Guardian
@@ -1226,5 +1231,9 @@ end = struct
     SessionCommand.Close.effects
     |> combined_effects
     |> Guardian.validate_generic
+  ;;
+
+  let direct_message =
+    Contact.Guard.Access.send_direct_message |> Guardian.validate_admin_entity
   ;;
 end

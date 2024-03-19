@@ -816,6 +816,7 @@ end
 
 let data_table
   ?(access_contact_profiles = false)
+  ?(send_direct_message = false)
   ?(view_contact_name = false)
   ?(view_contact_info = false)
   ?(is_print = false)
@@ -1049,7 +1050,7 @@ let data_table
       ; ( Experiment.(show_external_data_id_links_value experiment)
         , external_data_ids )
       ; session_changeable assignment, session_change_toggle
-      ; true, direct_message_toggle
+      ; send_direct_message, direct_message_toggle
       ; cancelable assignment, cancel
       ; deletable assignment, mark_as_deleted
       ]
