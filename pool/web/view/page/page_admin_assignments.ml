@@ -316,12 +316,12 @@ module Partials = struct
                       swap_session_template
                       flash_fetcher
                       text_messages_disabled
-                  ; submit_element
-                      language
-                      (Pool_common.Message.Save None)
-                      ~submit_type:`Primary
-                      ()
                   ]
+              ; submit_element
+                  language
+                  (Pool_common.Message.Save None)
+                  ~submit_type:`Primary
+                  ()
               ; csrf_element csrf ()
               ]
           ]
