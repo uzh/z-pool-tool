@@ -1626,9 +1626,7 @@ let close_assignments_table
           |> CCOption.map_or ~default:[] (fun custom_data ->
             CCList.map
               (fun field ->
-                CCList.find_opt
-                  (fun public -> public |> Public.id |> Id.equal (id field))
-                  custom_data
+                CCList.find_opt (Public.id %> Id.equal (id field)) custom_data
                 |> CCOption.map_or
                      ~default:(div [ txt "" ])
                      (Component.CustomField.answer_to_html
