@@ -4,6 +4,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.6.3](https://github.com/uzh/pool/tree/0.6.3) - 2024-03-19
+
+### Added
+
+- buttons to toggle all assignments on session close screen
+- functionality to directly one or more participants of a session
+
+###  Changed
+
+- include upcomming sessions in the participation list on the contact detail page
+- include statistics about sent intiviations in experiment statistics
+
+### Fixed
+
+- experiment statistics shows correct session count. participation count and no-show count
+
 ## [0.6.2](https://github.com/uzh/pool/tree/0.6.2) - 2024-03-07
 
 ### Added
