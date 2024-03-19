@@ -40,6 +40,7 @@ let to_string = function
       "Es sind keine %s vorhanden."
       (Locales_de.field_to_string field)
   | EnrollInExperiment -> "Zum Experiment anmelden"
+  | ExperimentHistory -> "Experimenthistorie"
   | ExperimentListEmpty ->
     "Aktuell gibt es keine Experimente, an denen Sie teilnehmen können."
   | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
@@ -107,7 +108,6 @@ let to_string = function
   | Note -> "Hinweis"
   | OurPartners -> "Unsere Partner"
   | Past -> "Vergangen"
-  | ParticipatedExperiments -> "Teilgenommene Experimente"
   | PastSessionsTitle -> "Ihre vergangenen Sessions"
   | PoolStatistics -> "Pool-Statistik"
   | ProfileCompletionText ->

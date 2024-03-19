@@ -124,7 +124,7 @@ let index req =
       database_label
   in
   let open Page.Admin.Experiments in
-  (if HttpUtils.Htmx.is_hx_request req then list `All else index)
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
     context
     experiments
     query

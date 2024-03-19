@@ -235,7 +235,7 @@ module Sql = struct
       |sql}
     in
     Format.asprintf
-      {sql| SELECT %s FROM pool_sessions %s WHERE %s GROUP BY pool_sessions.uuid |sql}
+      {sql| SELECT %s FROM pool_sessions %s WHERE %s GROUP BY pool_sessions.uuid ORDER BY pool_sessions.start ASC |sql}
       columns
       joins
       where

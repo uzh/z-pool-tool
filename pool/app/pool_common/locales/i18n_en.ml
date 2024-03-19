@@ -40,6 +40,7 @@ let to_string = function
       "Currently, there are no %s available."
       (Locales_en.field_to_string field)
   | EnrollInExperiment -> "Enroll in experiment"
+  | ExperimentHistory -> "Experiment history"
   | ExperimentListEmpty ->
     "Currently, there are no experiments you can participate in."
   | ExperimentListPublicTitle -> "Registering for experiment sessions"
@@ -105,7 +106,6 @@ let to_string = function
   | NoInvitationsSent -> "No invitations have been sent yet."
   | OurPartners -> "Our partners"
   | Past -> "Past"
-  | ParticipatedExperiments -> "Experiments participated"
   | PastSessionsTitle -> "Your past sessions"
   | PoolStatistics -> "Pool statistics"
   | ProfileCompletionText ->

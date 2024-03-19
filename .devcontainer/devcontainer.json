@@ -33,7 +33,7 @@
           "*.mli": "ocaml"
         },
         "ocaml.sandbox": {
-          "kind": "global",
+          "kind": "global"
         }
       },
       // Add the IDs of extensions you want installed when the container is created in the array below.
