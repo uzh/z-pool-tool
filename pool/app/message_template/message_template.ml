@@ -709,6 +709,70 @@ module ExperimentInvitation = struct
   ;;
 end
 
+module ManualSessionMessage = struct
+  let label = Label.ManualSessionMessage
+
+  let message_history experiment session { Assignment.contact; _ } =
+    let entity_uuids =
+      [ experiment.Experiment.id |> Experiment.Id.to_common
+      ; session.Session.id |> Session.Id.to_common
+      ; contact |> Contact.id
+      ]
+    in
+    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
+  ;;
+
+  let base_params layout contact = contact.Contact.user |> global_params layout
+
+  let email_params language layout experiment session assignment =
+    base_params layout assignment.Assignment.contact
+    @ experiment_params layout experiment
+    @ session_params layout language session
+    @ assignment_params assignment
+  ;;
+
+  let prepare tenant session =
+    let pool = tenant.Pool_tenant.database_label in
+    let experiment = session.Session.experiment in
+    let layout = layout_from_tenant tenant in
+    let%lwt sender = sender_of_experiment pool experiment in
+    let smtp_auth_id = experiment.Experiment.smtp_auth_id in
+    Lwt.return
+    @@ fun assignment message ->
+    let params =
+      email_params
+        message.ManualMessage.language
+        layout
+        experiment
+        session
+        assignment
+    in
+    let email = prepare_manual_email message layout params sender in
+    let message_history = message_history experiment session assignment in
+    Email.create_job ?smtp_auth_id ~message_history email
+  ;;
+
+  let prepare_text_message
+    (tenant : Pool_tenant.t)
+    session
+    language
+    assignment
+    message
+    cell_phone
+    =
+    let experiment = session.Session.experiment in
+    let open Text_message in
+    let params =
+      let layout = layout_from_tenant tenant in
+      email_params language layout experiment session assignment
+    in
+    let message_history = message_history experiment session assignment in
+    let content = SmsText.value message in
+    render_and_create cell_phone tenant.Pool_tenant.title (content, params)
+    |> create_job ~message_history
+  ;;
+end
+
 module PasswordChange = struct
   let email_params = global_params
   let label = Label.PasswordChange
@@ -1313,3 +1377,10 @@ module WaitingListConfirmation = struct
     Email.create_job ~message_history ?smtp_auth_id email |> Lwt_result.return
   ;;
 end
+
+let sms_text_to_email sms_text =
+  let sms_text = SmsText.value sms_text in
+  let plain_text = PlainText.of_string sms_text in
+  let email_text = EmailText.of_string plain_text in
+  email_text, plain_text
+;;

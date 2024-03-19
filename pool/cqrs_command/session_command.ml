@@ -751,7 +751,7 @@ end = struct
 end
 
 module ResendReminders : sig
-  include Common.CommandSig with type t = Pool_common.Reminder.Channel.t
+  include Common.CommandSig with type t = Pool_common.MessageChannel.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -767,10 +767,10 @@ module ResendReminders : sig
   val decode : Conformist.input -> (t, Conformist.error_msg) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Pool_common.Reminder.Channel.t
+  type t = Pool_common.MessageChannel.t
 
   let schema =
-    Conformist.(make Field.[ Pool_common.Reminder.Channel.schema () ] CCFun.id)
+    Conformist.(make Field.[ Pool_common.MessageChannel.schema () ] CCFun.id)
   ;;
 
   let handle
@@ -781,7 +781,7 @@ end = struct
     channel
     =
     Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
-    let open Pool_common.Reminder.Channel in
+    let open Pool_common.MessageChannel in
     let open CCResult.Infix in
     let* () = Session.reminder_resendable session in
     let* events =
@@ -822,6 +822,153 @@ end = struct
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects id = Session.Guard.Access.update id
+end
+
+type direct_message_email =
+  { language : Pool_common.Language.t
+  ; email_subject : Message_template.EmailSubject.t
+  ; email_text : Message_template.EmailText.t
+  ; plain_text : Message_template.PlainText.t
+  }
+[@@deriving eq, show]
+
+type direct_text_message =
+  { language : Pool_common.Language.t
+  ; sms_text : Message_template.SmsText.t
+  ; email_subject : Message_template.EmailSubject.t
+  ; fallback_to_email : Message_template.FallbackToEmail.t
+  }
+[@@deriving eq, show]
+
+type direct_message =
+  | Mail of direct_message_email
+  | Sms of direct_text_message
+[@@deriving eq, show, variants]
+
+module SendDirectMessage : sig
+  include Common.CommandSig with type t = direct_message
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> (Assignment.t -> Message_template.ManualMessage.t -> Email.job)
+    -> (Pool_common.Language.t
+        -> Assignment.t
+        -> Message_template.SmsText.t
+        -> Pool_user.CellPhone.t
+        -> Text_message.job)
+    -> Assignment.t list
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode
+    :  Pool_common.MessageChannel.t
+    -> Conformist.input
+    -> (t, Conformist.error_msg) result
+
+  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = direct_message
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    make_email_job
+    make_sms_job
+    assignments
+    command
+    =
+    Logs.info ~src (fun m -> m "Handle command SendDirectMessage" ~tags);
+    let open Message_template in
+    let make_email_job language email_text email_subject plain_text assignment =
+      ManualMessage.
+        { recipient = Contact.email_address assignment.Assignment.contact
+        ; language
+        ; email_subject
+        ; email_text
+        ; plain_text
+        }
+      |> make_email_job assignment
+    in
+    CCResult.return
+    @@
+    match command with
+    | Mail { language; email_subject; email_text; plain_text } ->
+      assignments
+      |> CCList.map
+           (make_email_job language email_text email_subject plain_text)
+      |> Email.bulksent
+      |> Pool_event.email
+      |> CCList.return
+    | Sms { language; sms_text; email_subject; fallback_to_email } ->
+      let sms_jobs, email_jobs =
+        let open Assignment in
+        assignments
+        |> CCList.partition_filter_map (fun ({ contact; _ } as assignment) ->
+          match
+            contact.Contact.cell_phone, FallbackToEmail.value fallback_to_email
+          with
+          | Some cell_phone, _ ->
+            `Left (make_sms_job language assignment sms_text cell_phone)
+          | None, true ->
+            let email_text, plain_text = sms_text_to_email sms_text in
+            `Right
+              (make_email_job
+                 language
+                 email_text
+                 email_subject
+                 plain_text
+                 assignment)
+          | None, false -> `Drop)
+      in
+      [ Text_message.BulkSent sms_jobs |> Pool_event.text_message
+      ; Email.BulkSent email_jobs |> Pool_event.email
+      ]
+  ;;
+
+  let email_command language email_subject email_text plain_text =
+    { language; email_subject; email_text; plain_text }
+  ;;
+
+  let email_schema =
+    let open Message_template in
+    Pool_common.Utils.PoolConformist.(
+      make
+        Field.
+          [ Pool_common.Language.schema ()
+          ; EmailSubject.schema ()
+          ; EmailText.schema ()
+          ; PlainText.schema ()
+          ]
+        email_command)
+  ;;
+
+  let sms_command language email_subject sms_text fallback_to_email =
+    { language; email_subject; sms_text; fallback_to_email }
+  ;;
+
+  let sms_schema =
+    let open Message_template in
+    Pool_common.Utils.PoolConformist.(
+      make
+        Field.
+          [ Pool_common.Language.schema ()
+          ; EmailSubject.schema ()
+          ; SmsText.schema ()
+          ; FallbackToEmail.schema ()
+          ]
+        sms_command)
+  ;;
+
+  let decode channel data =
+    let open Pool_common.MessageChannel in
+    let open CCResult.Infix in
+    CCResult.map_err Pool_common.Message.to_conformist_error
+    @@
+    match channel with
+    | Email -> Conformist.decode_and_validate email_schema data >|= mail
+    | TextMessage -> Conformist.decode_and_validate sms_schema data >|= sms
   ;;
 
   let effects id = Session.Guard.Access.update id

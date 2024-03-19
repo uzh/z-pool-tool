@@ -677,7 +677,7 @@ let send_reminder_invalid () =
   let create_tet_message _ cell_phone =
     Ok (Model.create_text_message_job cell_phone)
   in
-  let channel = Pool_common.Reminder.Channel.Email in
+  let channel = Pool_common.MessageChannel.Email in
   let assignment1 =
     Assignment.
       { assignment with marked_as_deleted = MarkedAsDeleted.(create true) }

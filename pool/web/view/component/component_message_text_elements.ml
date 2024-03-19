@@ -306,6 +306,13 @@ let message_template_help
       (create_experiment ())
       tenant.Pool_tenant.url
       (create_contact ())
+  | ManualSessionMessage ->
+    ManualSessionMessage.email_params
+      language
+      layout
+      (create_experiment ())
+      (create_session ())
+      (create_assignment ())
   | PasswordChange -> PasswordChange.email_params layout (create_sihl_user ())
   | PasswordReset ->
     let reset_url =

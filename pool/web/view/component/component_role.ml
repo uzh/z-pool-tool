@@ -33,6 +33,7 @@ let create_target_path ?uuid =
     | `Tag -> Some (build "settings/tags" uuid)
     | `Assignment
     | `ContactInfo
+    | `ContactDirectMessage
     | `ContactName
     | `I18n
     | `Invitation

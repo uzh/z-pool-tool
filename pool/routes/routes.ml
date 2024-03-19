@@ -405,6 +405,17 @@ module Admin = struct
               (assign_session_participation_tag, Access.update)
               (remove_session_participation_tag, Access.update)
           in
+          let direct_message =
+            [ post
+                ""
+                ~middlewares:[ Access.direct_message ]
+                DirectMessage.modal_htmx
+            ; post
+                "/send"
+                ~middlewares:[ Access.direct_message ]
+                DirectMessage.send
+            ]
+          in
           [ get "" ~middlewares:[ Access.read ] show
           ; post "" ~middlewares:[ Access.update ] update
           ; get "/edit" ~middlewares:[ Access.update ] edit
@@ -435,6 +446,7 @@ module Admin = struct
           ; choose ~scope:(add_human_field Assignments) assignments
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ; choose ~scope:(ParticipationTag |> human_url) participation_tags
+          ; choose ~scope:"direct-message" direct_message
           ]
         in
         [ get "" ~middlewares:[ Access.index ] list

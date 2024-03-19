@@ -24,6 +24,8 @@ module Label = struct
     [@printer print "email_verification"]
     | ExperimentInvitation [@name "experiment_invitation"]
     [@printer print "experiment_invitation"]
+    | ManualSessionMessage [@name "manual_session_message"]
+    [@printer print "manual_session_message"]
     | PasswordChange [@name "password_change"]
     [@printer print "password_change"]
     | PasswordReset [@name "password_reset"] [@printer print "password_reset"]
@@ -106,6 +108,12 @@ module SmsText = struct
   let schema () = schema field ()
 end
 
+module FallbackToEmail = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema Pool_common.Message.Field.FallbackToEmail
+end
+
 type t =
   { id : Id.t
   ; label : Label.t
@@ -155,6 +163,7 @@ let template_hint label =
   | ContactRegistrationAttempt -> MessageTemplateContactRegistrationAttempt
   | EmailVerification -> MessageTemplateEmailVerification
   | ExperimentInvitation -> MessageTemplateExperimentInvitation
+  | ManualSessionMessage -> MessageTemplateManualSessionMessage
   | PasswordChange -> MessageTemplatePasswordChange
   | PasswordReset -> MessageTemplatePasswordReset
   | PhoneVerification -> MessageTemplatePhoneVerification

@@ -249,6 +249,8 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ContactProfileVisibleOverride ->
     "Wenn Sie diese Werte überschreiben werden die Änderungen dem Kontakt \
      angezeigt."
+  | ContactsWithoutCellPhone ->
+    "Die folgenden Kontakte haben keine Telefonnummer hinterlegt:"
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "Diese Option schliesst \"%s\" aus."
@@ -399,6 +401,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
      SMS-Texteingabe ignorieren."
   | MessageTemplateExperimentInvitation ->
     "Diese Nachricht wird gesendet, um Kontakte zu Experimenten einzuladen."
+  | MessageTemplateManualSessionMessage ->
+    "Diese Vorlage dient als Vorlage für manuell versendete Nachrichten im \
+     Rahmen einer Session."
   | MessageTemplatePasswordChange ->
     "Diese Nachricht wird gesendet, um Benutzer zu benachrichtigen, dass das \
      Kontopasswort geändert wurde."

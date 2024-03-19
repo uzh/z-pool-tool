@@ -130,6 +130,37 @@ module Sql = struct
       (Session.Id.value id)
   ;;
 
+  let find_multiple_request ids =
+    Format.asprintf
+      {sql|
+        WHERE pool_assignments.session_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_assignments.uuid IN ( %s )
+      |sql}
+      (CCList.mapi
+         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2))
+         ids
+       |> CCString.concat ",")
+    |> find_request_sql
+  ;;
+
+  let find_multiple_by_session pool session_id =
+    let open Caqti_request.Infix in
+    function
+    | [] -> Lwt.return []
+    | ids ->
+      let (Dynparam.Pack (pt, pv)) =
+        let open Dynparam in
+        empty
+        |> add Caqti_type.string (session_id |> Session.Id.value)
+        |> CCFun.flip
+             (CCList.fold_left (fun dyn id ->
+                dyn |> add Caqti_type.string (id |> Entity.Id.value)))
+             ids
+      in
+      let request = find_multiple_request ids |> pt ->* RepoEntity.t in
+      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  ;;
+
   let query_by_session ?query pool id =
     let where =
       ( "pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))"

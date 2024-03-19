@@ -7,6 +7,7 @@ module Content = struct
     Sihl.Contract.Email_template.render params text None |> fst
   ;;
 
+  let of_string m = m
   let value m = m
 end
 

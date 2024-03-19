@@ -158,6 +158,7 @@ type hint =
   | ContactOnWaitingList
   | ContactPhoneNumberVerificationWasReset
   | ContactProfileVisibleOverride
+  | ContactsWithoutCellPhone
   | CustomFieldAdminInputOnly
   | CustomFieldAdminOverride
   | CustomFieldAdminOverrideUpdate
@@ -207,6 +208,7 @@ type hint =
   | MessageTemplateContactRegistrationAttempt
   | MessageTemplateEmailVerification
   | MessageTemplateExperimentInvitation
+  | MessageTemplateManualSessionMessage
   | MessageTemplatePasswordChange
   | MessageTemplatePasswordReset
   | MessageTemplatePhoneVerification

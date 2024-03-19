@@ -4,6 +4,7 @@ module File = Http_utils_file
 module Filter = Http_utils_filter
 module Message = Http_utils_message
 module StringMap = CCMap.Make (CCString)
+module Url = Http_utils_url
 
 let src = Logs.Src.create "http_utils"
 

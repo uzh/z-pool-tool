@@ -15,13 +15,6 @@ module Sihl_user = struct
   let compare a b = CCString.compare a.Sihl_user.email b.Sihl_user.email
 end
 
-module MessageChannel = struct
-  type t =
-    | Email
-    | SMS
-  [@@deriving eq, show]
-end
-
 module NumberOfInvitations = struct
   type t = int [@@deriving eq, ord, show]
 

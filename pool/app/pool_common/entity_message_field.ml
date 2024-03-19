@@ -114,6 +114,8 @@ type t =
   | ExternalDataRequired [@name "external_data_required"]
   [@printer go "external_data_required"]
   | Failed [@name "failed"] [@printer go "failed"]
+  | FallbackToEmail [@name "fallback_to_email"]
+  [@printer go "fallback_to_email"]
   | FieldType [@name "field_type"] [@printer go "field_type"]
   | File [@name "file"] [@printer go "file"]
   | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]

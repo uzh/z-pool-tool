@@ -47,7 +47,6 @@ export function initRichTextEditor(container = document) {
                         plainText.value = viewToPlainText(editor.editing.view.document.getRoot());
                     })
                 }
-
             })
             .catch(error => {
                 console.error(error);

@@ -68,4 +68,6 @@ module Access = struct
     ; create ~target_uuid index_permission `Contact
     ]
   ;;
+
+  let send_direct_message = one_of_tuple (Create, `ContactDirectMessage, None)
 end

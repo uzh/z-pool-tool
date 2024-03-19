@@ -416,7 +416,7 @@ end = struct
 end
 
 module SendReminder : sig
-  include Common.CommandSig with type t = Pool_common.Reminder.Channel.t
+  include Common.CommandSig with type t = Pool_common.MessageChannel.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -432,10 +432,10 @@ module SendReminder : sig
   val decode : Conformist.input -> (t, Conformist.error_msg) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Pool_common.Reminder.Channel.t
+  type t = Pool_common.MessageChannel.t
 
   let schema =
-    Conformist.(make Field.[ Pool_common.Reminder.Channel.schema () ] CCFun.id)
+    Conformist.(make Field.[ Pool_common.MessageChannel.schema () ] CCFun.id)
   ;;
 
   let handle
@@ -450,7 +450,7 @@ end = struct
     let open CCResult.Infix in
     let* () = Assignment.reminder_sendable session assignment in
     let* msg_event =
-      let open Channel in
+      let open Pool_common.MessageChannel in
       match channel with
       | Email -> assignment |> create_email >|= Email.sent >|= Pool_event.email
       | TextMessage ->

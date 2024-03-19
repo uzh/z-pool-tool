@@ -104,10 +104,17 @@ let validate_admin_entity_base validate =
     | Error err ->
       let open Pool_common in
       let (_ : Message.error) = Utils.with_log_error ~level:Logs.Info err in
-      (match Http_utils.is_req_from_root_host req with
-       | false -> "/denied"
-       | true -> "/root/denied")
-      |> Http_utils.redirect_to
+      let open Http_utils.Htmx in
+      (match is_hx_request req with
+       | true ->
+         error_notification Language.En Pool_common.Message.AccessDenied
+         |> html_to_plain_text_response
+         |> Lwt.return
+       | false ->
+         (match Http_utils.is_req_from_root_host req with
+          | false -> "/denied"
+          | true -> "/root/denied")
+         |> Http_utils.redirect_to)
   in
   Rock.Middleware.create ~name:"guardian.generic" ~filter
 ;;

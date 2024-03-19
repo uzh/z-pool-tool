@@ -1,14 +1,5 @@
 module Id = Pool_common.Id
 
-module MessageChannel : sig
-  type t =
-    | Email
-    | SMS
-
-  val pp : Format.formatter -> t -> unit
-  val equal : t -> t -> bool
-end
-
 module NumberOfInvitations : sig
   type t
 
@@ -304,5 +295,7 @@ module Guard : sig
       :  ?verify_on_ids:Guard.Uuid.Target.t list
       -> unit
       -> Guard.PermissionOnTarget.t list
+
+    val send_direct_message : Guard.ValidationSet.t
   end
 end

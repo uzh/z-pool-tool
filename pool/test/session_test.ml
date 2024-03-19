@@ -1368,7 +1368,7 @@ let resend_reminders_invalid () =
   let create_text_message _ cell_phone =
     Ok (Model.create_text_message_job cell_phone)
   in
-  let channel = Pool_common.Reminder.Channel.Email in
+  let channel = Pool_common.MessageChannel.Email in
   let session = Model.create_session () in
   let canceled_at = Ptime_clock.now () in
   let session1 = Session.{ session with canceled_at = Some canceled_at } in
@@ -1400,8 +1400,8 @@ let resend_reminders_invalid () =
 
 let resend_reminders_valid () =
   let open Cqrs_command.Session_command.ResendReminders in
+  let open Pool_common in
   let open Test_utils in
-  let open Pool_common.Reminder in
   let experiment = Model.create_experiment () in
   let session = Model.create_session () in
   let cell_phone = Pool_user.CellPhone.of_string "+41791234567" in
@@ -1420,7 +1420,7 @@ let resend_reminders_valid () =
   let handle channel =
     handle (create_email, create_text_message) session assignments channel
   in
-  let res1 = handle Channel.Email in
+  let res1 = handle MessageChannel.Email in
   let expected1 =
     let emails =
       assignments
@@ -1434,7 +1434,7 @@ let resend_reminders_valid () =
       ]
   in
   let () = check_result expected1 res1 in
-  let res2 = handle Channel.TextMessage in
+  let res2 = handle MessageChannel.TextMessage in
   let expected2 =
     Ok
       [ Email.BulkSent [ create_email () |> CCResult.get_exn ]
@@ -1842,5 +1842,128 @@ module Duplication = struct
       |> SessionC.Duplicate.handle session [ followup ]
     in
     expect_error (Error Pool_common.Message.FollowUpIsEarlierThanMain) events
+  ;;
+end
+
+module DirectMessaging = struct
+  open Cqrs_command.Session_command.SendDirectMessage
+  open Message_template
+
+  let language = Pool_common.Language.En
+  let sms_text = SmsText.of_string "content"
+  let email_text = EmailText.of_string "<p>content</p>"
+  let plain_text = PlainText.of_string "content"
+  let email_subject = EmailSubject.of_string "subject"
+  let contact = Contact.{ (Model.create_contact ()) with cell_phone = None }
+  let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
+
+  let contact_with_cellphone =
+    Contact.{ (Model.create_contact ()) with cell_phone = Some cell_phone }
+  ;;
+
+  let make_email_job (_ : Assignment.t) (_ : Message_template.ManualMessage.t) =
+    Model.create_email_job ()
+  ;;
+
+  let make_text_message_job
+    (_ : Pool_common.Language.t)
+    (_ : Assignment.t)
+    (_ : Message_template.SmsText.t)
+    cell_phone
+    =
+    Model.create_text_message_job cell_phone
+  ;;
+
+  let decode_and_handle assignments channel data =
+    let open CCResult in
+    data
+    |> Http_utils.format_request_boolean_values
+         [ Pool_common.Message.Field.(show FallbackToEmail) ]
+    |> decode channel
+    >>= handle make_email_job make_text_message_job assignments
+  ;;
+
+  module UrlEncoded = struct
+    open Pool_common.Message
+
+    let language = Field.(show Language), [ Pool_common.Language.show language ]
+    let sms_text = Field.(show SmsText), [ SmsText.value sms_text ]
+    let email_text = Field.(show EmailText), [ EmailText.value email_text ]
+    let plain_text = Field.(show PlainText), [ PlainText.value plain_text ]
+    let fallback_to_email = Field.(show FallbackToEmail), [ "true" ]
+
+    let email_subject =
+      Field.(show EmailSubject), [ EmailSubject.value email_subject ]
+    ;;
+  end
+
+  let send_emails () =
+    let open CCResult in
+    let assignments =
+      [ Model.create_assignment ~contact ()
+      ; Model.create_assignment ~contact:contact_with_cellphone ()
+      ]
+    in
+    let channel = Pool_common.MessageChannel.Email in
+    let res =
+      UrlEncoded.[ language; email_subject; email_text; plain_text ]
+      |> decode_and_handle assignments channel
+    in
+    let expected =
+      Ok
+        [ assignments
+          |> CCList.map (CCFun.const (Model.create_email_job ()))
+          |> Email.bulksent
+          |> Pool_event.email
+        ]
+    in
+    check_result expected res
+  ;;
+
+  let send_text_message_with_fallback () =
+    let open CCResult in
+    let assignments =
+      [ Model.create_assignment ~contact ()
+      ; Model.create_assignment ~contact:contact_with_cellphone ()
+      ]
+    in
+    let channel = Pool_common.MessageChannel.TextMessage in
+    let res =
+      UrlEncoded.[ language; email_subject; sms_text; fallback_to_email ]
+      |> decode_and_handle assignments channel
+    in
+    let expected =
+      let text_msg =
+        Text_message.BulkSent [ Model.create_text_message_job cell_phone ]
+        |> Pool_event.text_message
+      in
+      let email_job =
+        [ Model.create_email_job () ] |> Email.bulksent |> Pool_event.email
+      in
+      Ok [ text_msg; email_job ]
+    in
+    check_result expected res
+  ;;
+
+  let send_text_message_without_fallback () =
+    let open CCResult in
+    let assignments =
+      [ Model.create_assignment ~contact ()
+      ; Model.create_assignment ~contact:contact_with_cellphone ()
+      ]
+    in
+    let channel = Pool_common.MessageChannel.TextMessage in
+    let res =
+      UrlEncoded.[ language; email_subject; sms_text ]
+      |> decode_and_handle assignments channel
+    in
+    let expected =
+      Ok
+        [ Text_message.BulkSent [ Model.create_text_message_job cell_phone ]
+          |> Pool_event.text_message
+        ; Email.BulkSent [] |> Pool_event.email
+        ]
+    in
+    check_result expected res
   ;;
 end
