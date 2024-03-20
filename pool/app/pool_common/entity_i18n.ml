@@ -59,6 +59,7 @@ type t =
   | NoEntries of Entity_message.Field.t
   | NoInvitationsSent
   | Note
+  | NotMatchingFilter
   | OurPartners
   | Past
   | PastSessionsTitle

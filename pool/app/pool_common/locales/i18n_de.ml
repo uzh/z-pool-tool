@@ -106,6 +106,9 @@ let to_string = function
       (Locales_de.field_to_string field)
   | NoInvitationsSent -> "Es wurden noch keine Einladungen verschickt."
   | Note -> "Hinweis"
+  | NotMatchingFilter ->
+    "Der Kontakt erfüllt nicht die im Filter bestimmten Kriterien für dieses \
+     Experiment."
   | OurPartners -> "Unsere Partner"
   | Past -> "Vergangen"
   | PastSessionsTitle -> "Ihre vergangenen Sessions"

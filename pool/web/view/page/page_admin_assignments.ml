@@ -31,8 +31,8 @@ module Partials = struct
     let open Component.Table in
     let hint_to_string = Utils.hint_to_string language in
     let field_to_string = Utils.field_to_string language in
-    let deleted =
-      [ ( field_to_string Field.MarkedAsDeleted
+    let not_matching_filter =
+      [ ( Utils.text_to_string language I18n.NotMatchingFilter
         , legend_color_item "bg-red-lighter" )
       ]
     in
@@ -42,10 +42,9 @@ module Partials = struct
         ; hint_to_string SessionCloseLegendParticipated, legend_text_item "P"
         ; ( field_to_string Field.ExternalDataId
           , legend_text_item Field.(ExternalDataIdAbbr |> show) )
-        ; field_to_string Field.Canceled, legend_color_item "bg-orange-lighter"
         ]
     in
-    (if hide_deleted then base else base @ deleted) |> table_legend
+    (if hide_deleted then base else base @ not_matching_filter) |> table_legend
   ;;
 
   let empty language =
