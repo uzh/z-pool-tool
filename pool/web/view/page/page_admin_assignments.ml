@@ -126,17 +126,15 @@ module Partials = struct
 
   let status_label language { Assignment.canceled_at; marked_as_deleted; _ } =
     let open Pool_common in
-    [ Assignment.MarkedAsDeleted.value marked_as_deleted, Field.MarkedAsDeleted
-    ; CCOption.is_some canceled_at, Field.Canceled
+    [ ( Assignment.MarkedAsDeleted.value marked_as_deleted
+      , Utils.field_to_string_capitalized language Field.MarkedAsDeleted )
+    ; CCOption.is_some canceled_at, Utils.text_to_string language I18n.Canceled
     ]
-    |> CCList.filter_map (fun (condition, field) ->
+    |> CCList.filter_map (fun (condition, text) ->
       match condition with
       | false -> None
       | true ->
-        Some
-          (span
-             ~a:[ a_class [ "tag"; "inline"; "error" ] ]
-             [ Utils.field_to_string_capitalized language field |> txt ]))
+        Some (span ~a:[ a_class [ "tag"; "inline"; "error" ] ] [ txt text ]))
     |> span
   ;;
 

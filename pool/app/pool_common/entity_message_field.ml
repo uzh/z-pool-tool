@@ -39,7 +39,6 @@ type t =
   | AvailableLanguages [@name "available_languages"]
   [@printer go "available_languages"]
   | Building [@name "building"] [@printer go "building"]
-  | Canceled [@name "canceled"] [@printer go "canceled"]
   | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
   | CellPhone [@name "cell_phone"] [@printer go "cell_phone"]
   | Chronological [@name "chronological"] [@printer go "chronological"]

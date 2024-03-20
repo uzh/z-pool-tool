@@ -28,7 +28,6 @@ let rec field_to_string =
   | Assistants -> "Assistenten"
   | AvailableLanguages -> "Verfügbare Sprachen"
   | Building -> "Gebäude"
-  | Canceled -> "Abgesagt"
   | CanceledAt -> "Abgesagt am"
   | CellPhone -> "Mobiltelefon"
   | Chronological -> "chronologisch"
