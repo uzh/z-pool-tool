@@ -18,7 +18,8 @@ let find_all_public_by_experiment_and_contact_opt =
 ;;
 
 let find_by_contact_and_experiment = Repo.Sql.find_by_contact_and_experiment
-let find_by_session = Repo.find_by_session
+let find_not_deleted_by_session = Repo.find_not_deleted_by_session
+let find_all_by_session = Repo.find_all_by_session
 let find_multiple_by_session = Repo.Sql.find_multiple_by_session
 let query_by_session = Repo.query_by_session
 let find_uncanceled_by_session = Repo.find_uncanceled_by_session

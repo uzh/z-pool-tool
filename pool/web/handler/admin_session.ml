@@ -348,7 +348,7 @@ let session_page database_label req context session experiment =
     >|> create_layout
   | `Print ->
     let%lwt assignments =
-      Assignment.find_by_session database_label session.Session.id
+      Assignment.find_not_deleted_by_session database_label session.Session.id
     in
     Page.Admin.Session.print
       ~view_contact_name
@@ -1057,6 +1057,53 @@ module DirectMessage = struct
   ;;
 end
 
+let update_matches_filter req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s"
+      (Experiment.Id.value experiment_id)
+      (Session.Id.value session_id)
+  in
+  let result { Pool_context.database_label; _ } =
+    let tags = Pool_context.Logger.Tags.req req in
+    Utils.Lwt_result.map_error (fun err -> err, path)
+    @@
+    let* filter =
+      Experiment.find database_label experiment_id >|+ Experiment.filter
+    in
+    let* session = Session.find database_label session_id in
+    let%lwt assignments =
+      Assignment.find_all_by_session database_label session.Session.id
+    in
+    let* events =
+      assignments
+      |> Lwt_list.map_s (fun ({ Assignment.contact; _ } as assignment) ->
+        match filter with
+        | None -> Lwt.return (assignment, true)
+        | Some filter ->
+          Filter.contact_matches_filter
+            database_label
+            filter.Filter.query
+            contact
+          ||> CCPair.make assignment)
+      ||> Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Http_utils.Htmx.htmx_redirect
+      ~actions:
+        [ Message.set
+            ~success:[ Pool_common.Message.(Updated Field.Assignments) ]
+        ]
+      path
+      ()
+    |> Lwt_result.ok
+  in
+  result |> HttpUtils.Htmx.extract_happy_path ~src req
+;;
+
 module Api = struct
   let calendar_api ?actor req query =
     let result { Pool_context.database_label; guardian; _ } =
@@ -1159,6 +1206,7 @@ module Access : sig
   val cancel : Rock.Middleware.t
   val close : Rock.Middleware.t
   val direct_message : Rock.Middleware.t
+  val update_matches_filter : Rock.Middleware.t
 end = struct
   module SessionCommand = Cqrs_command.Session_command
   module Guardian = Middleware.Guardian
@@ -1235,4 +1283,6 @@ end = struct
   let direct_message =
     Contact.Guard.Access.send_direct_message |> Guardian.validate_admin_entity
   ;;
+
+  let update_matches_filter = direct_message (* TODO: access *)
 end

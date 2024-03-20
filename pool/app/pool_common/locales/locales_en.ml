@@ -680,6 +680,7 @@ let control_to_string = function
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field
   | Update field -> format_submit "update" field
+  | UpdateAssignmentsMatchFilter -> format_submit "rerun filter" None (* TODO *)
   | UpdateOrder -> format_submit "update order" None
   | Validate -> format_submit "validate" None
   | Verify field -> format_submit "verify" field

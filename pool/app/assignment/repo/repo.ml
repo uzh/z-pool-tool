@@ -30,6 +30,9 @@ let joins_session =
   {sql| INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid |sql}
 ;;
 
+let not_deleted_condition = "pool_assignments.marked_as_deleted = 0"
+let uncanceled_condition = "pool_assignments.canceled_at IS NULL"
+
 module Sql = struct
   let find_request_sql ?(additional_joins = []) ?(count = false) where_fragment =
     let columns =
@@ -104,29 +107,25 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Assignment)
   ;;
 
-  let find_by_session_request ?where_condition () =
+  let find_by_session_request ?(where_conditions = []) () =
     let open Caqti_request.Infix in
     let id_fragment =
       {sql|
-        WHERE 
           pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))
-        AND
-          pool_assignments.marked_as_deleted = 0
       |sql}
     in
-    where_condition
-    |> CCOption.map_or
-         ~default:id_fragment
-         (Format.asprintf "%s AND %s" id_fragment)
+    id_fragment :: where_conditions
+    |> CCString.concat " AND "
+    |> Format.asprintf "WHERE %s"
     |> find_request_sql
     |> Format.asprintf "%s\n ORDER BY user_users.name, user_users.given_name"
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
-  let find_by_session ?where_condition pool id =
+  let find_by_session ?where_conditions pool id =
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      (find_by_session_request ?where_condition ())
+      (find_by_session_request ?where_conditions ())
       (Session.Id.value id)
   ;;
 
@@ -534,13 +533,17 @@ end
 
 let find = Sql.find
 let find_closed = Sql.find_closed
-let uncanceled_condition = "pool_assignments.canceled_at IS NULL"
 
 let find_by_session filter pool id =
   match filter with
   | `All -> Sql.find_by_session pool id
+  | `NotDeleted ->
+    Sql.find_by_session ~where_conditions:[ not_deleted_condition ] pool id
   | `Uncanceled ->
-    Sql.find_by_session ~where_condition:uncanceled_condition pool id
+    Sql.find_by_session
+      ~where_conditions:[ not_deleted_condition; uncanceled_condition ]
+      pool
+      id
   | `Deleted -> Sql.find_deleted_by_session pool id
 ;;
 
@@ -570,7 +573,8 @@ let contact_participation_in_other_assignments =
 
 let find_uncanceled_by_session = find_by_session `Uncanceled
 let find_deleted_by_session = find_by_session `Deleted
-let find_by_session = find_by_session `All
+let find_all_by_session = find_by_session `All
+let find_not_deleted_by_session = find_by_session `NotDeleted
 let query_by_session = Sql.query_by_session
 
 let enrich_with_customfield_data table_view pool assignments =

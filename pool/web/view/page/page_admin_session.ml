@@ -1261,6 +1261,18 @@ let detail
               ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
               [ direct_messaging_buttons
               ; header_btn
+                  Icon.RefreshOutline
+                  Message.UpdateAssignmentsMatchFilter
+                  Htmx.
+                    [ hx_post
+                        (HttpUtils.Url.Admin.session_path
+                           ~suffix:"update-matches-filter"
+                           experiment_id
+                           session.id
+                         |> Sihl.Web.externalize_path)
+                    ; hx_swap "None"
+                    ]
+              ; header_btn
                   Icon.PrintOutline
                   Message.(Print (Some Field.Assignments))
                   [ a_user_data "print" "assignments" ]

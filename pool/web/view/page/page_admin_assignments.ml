@@ -125,6 +125,22 @@ module Partials = struct
     |> div ~a:[ a_class [ "flexcolumn" ] ]
   ;;
 
+  let status_label language { Assignment.canceled_at; marked_as_deleted; _ } =
+    let open Pool_common in
+    [ Assignment.MarkedAsDeleted.value marked_as_deleted, Field.MarkedAsDeleted
+    ; CCOption.is_some canceled_at, Field.Canceled
+    ]
+    |> CCList.filter_map (fun (condition, field) ->
+      match condition with
+      | false -> None
+      | true ->
+        Some
+          (span
+             ~a:[ a_class [ "tag"; "inline"; "error" ] ]
+             [ Utils.field_to_string_capitalized language field |> txt ]))
+    |> span
+  ;;
+
   module ReminderModal = struct
     let modal_id id = Format.asprintf "reminder-%s" (Assignment.Id.value id)
     let control = Pool_common.Message.(Send (Some Field.Reminder))
@@ -564,6 +580,7 @@ module Partials = struct
             CCList.map snd contact_information
             @ CCList.map snd external_data_field
             @ [ assignment_participated; assignment_no_show; canceled_at ]
+            (* TODO: Status Icons*)
             |> CCList.mapi (fun i fcn ->
               let value = fcn assignment in
               if CCInt.equal i 0
@@ -635,8 +652,11 @@ let data_table
   in
   let conditional_right_columns =
     [ ( Experiment.(external_data_required_value experiment)
-      , column_external_data_id_abbr
+      , `column column_external_data_id_abbr
       , assignment_external_data_id )
+    ; ( true
+      , `custom (txt (Utils.field_to_string_capitalized language Field.Status))
+      , status_label language )
     ]
   in
   let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
@@ -665,7 +685,7 @@ let data_table
         ; a_method `Post
         ; a_user_data
             "confirmable"
-            Pool_common.(Utils.confirmable_to_string language confirmable)
+            (Utils.confirmable_to_string language confirmable)
         ]
       [ csrf_element csrf ()
       ; submit_element
@@ -682,7 +702,7 @@ let data_table
     link_as_button
       action
       ~is_text:true
-      ~control:(language, Pool_common.Message.(Edit None))
+      ~control:(language, Message.(Edit None))
       ~icon:Component.Icon.CreateOutline
   in
   let profile_link { Assignment.contact; _ } =
@@ -692,7 +712,7 @@ let data_table
     link_as_button
       action
       ~is_text:true
-      ~control:(language, Pool_common.Message.OpenProfile)
+      ~control:(language, Message.OpenProfile)
       ~icon:Component.Icon.PersonOutline
   in
   let external_data_ids { Assignment.contact; _ } =
@@ -727,7 +747,7 @@ let data_table
             (Format.asprintf "#%s" (swap_session_modal_id session))
         ]
       ~is_text:true
-      ~control:(language, Pool_common.Message.ChangeSession)
+      ~control:(language, Message.ChangeSession)
       ~icon:Component.Icon.SwapHorizonal
   in
   let direct_message_toggle assignment =
@@ -750,7 +770,7 @@ let data_table
           ; hx_target ("#" ^ direct_message_modal_id)
           ]
       ~is_text:true
-      ~control:(language, Pool_common.Message.(Send (Some Field.Message)))
+      ~control:(language, Message.(Send (Some Field.Message)))
       ~icon:Component.Icon.MailOutline
   in
   let cancel =
@@ -792,7 +812,7 @@ let data_table
     let right =
       conditional_right_columns
       |> CCList.filter_map (fun (check, column, _) ->
-        if check then Some (`column column) else None)
+        if check then Some column else None)
     in
     let base = left @ center @ right in
     if is_print then base else base @ [ `empty ]
@@ -805,9 +825,12 @@ let data_table
   let row (assignment : t) =
     let tr cells =
       let assignment_id = a_user_data "id" (Id.value assignment.id) in
-      match assignment.marked_as_deleted |> MarkedAsDeleted.value with
-      | true -> tr ~a:[ a_class [ "bg-red-lighter" ]; assignment_id ] cells
-      | false -> tr ~a:[ assignment_id ] cells
+      let classname =
+        if assignment.matches_filter |> MatchesFilter.value |> not
+        then [ "bg-red-lighter" ]
+        else []
+      in
+      tr ~a:[ a_class classname; assignment_id ] cells
     in
     let custom_fields =
       Partials.custom_field_cells

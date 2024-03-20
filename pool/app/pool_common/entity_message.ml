@@ -264,6 +264,7 @@ type control =
   | ToggleAll
   | Unassign of Field.t option
   | Update of Field.t option
+  | UpdateAssignmentsMatchFilter
   | UpdateOrder
   | Validate
   | Verify of Field.t option

@@ -21,6 +21,9 @@ end
 module MatchesFilter : sig
   type t
 
+  val equal : t -> t -> bool
+  val value : t -> bool
+  val create : bool -> t
   val init : t
 end
 
@@ -163,7 +166,12 @@ val find_by_contact_and_experiment
   -> Contact.t
   -> (Session.t * t) list Lwt.t
 
-val find_by_session : Pool_database.Label.t -> Session.Id.t -> t list Lwt.t
+val find_not_deleted_by_session
+  :  Pool_database.Label.t
+  -> Session.Id.t
+  -> t list Lwt.t
+
+val find_all_by_session : Pool_database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val find_multiple_by_session
   :  Pool_database.Label.t
@@ -235,6 +243,7 @@ type event =
 val canceled : t -> event
 val created : t * Session.Id.t -> event
 val markedasdeleted : t -> event
+val updated : t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

@@ -971,7 +971,7 @@ let filter_by_experiment_participation _ () =
       |> handle_events
     in
     let%lwt assignment =
-      find_by_session database_label first_session.Session.id
+      find_not_deleted_by_session database_label first_session.Session.id
       ||> CCList.find (fun (assignment : t) ->
         Contact.equal assignment.contact contact)
     in
