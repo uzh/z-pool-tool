@@ -8,12 +8,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 
-- buttons to toggle all assignments on session close screen
-- functionality to directly one or more participants of a session
+- buttons to toggle all assignments on the session close screen
+- functionality to directly contact one or more participants of a session
 
 ###  Changed
 
-- include upcomming sessions in the participation list on the contact detail page
+- include upcoming sessions in the participation list on the contact detail page
 - include statistics about sent intiviations in experiment statistics
 
 ### Fixed

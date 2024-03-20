@@ -424,7 +424,6 @@ let show req =
         ~access_contact_profiles
         ~view_contact_name
         ~view_contact_info
-        Assignments
         context
         experiment
         session

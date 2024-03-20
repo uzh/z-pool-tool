@@ -1,83 +1,13 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
+module Url = HttpUtils.Url.Admin
 
 let src = Logs.Src.create "handler.admin.experiments_assignments"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
 let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
-
-let list ?(marked_as_deleted = false) req =
-  let open Utils.Lwt_result.Infix in
-  let id =
-    let open Pool_common.Message.Field in
-    HttpUtils.find_id Experiment.Id.of_string Experiment req
-  in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id)
-  in
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@
-    let access_contact_profiles =
-      Helpers.Guard.can_access_contact_profile context id
-    in
-    let experiment_target_id = Guard.Uuid.target_of Experiment.Id.value id in
-    let view_contact_name =
-      Helpers.Guard.can_read_contact_name context [ experiment_target_id ]
-    in
-    let view_contact_info =
-      Helpers.Guard.can_read_contact_info context [ experiment_target_id ]
-    in
-    let* experiment = Experiment.find database_label id in
-    let%lwt sessions =
-      Session.find_all_for_experiment database_label experiment.Experiment.id
-      ||> Session.group_and_sort
-      ||> CCList.flat_map (fun (session, follow_ups) -> session :: follow_ups)
-    in
-    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
-    let html =
-      match marked_as_deleted with
-      | false ->
-        Lwt_list.map_s
-          (fun session ->
-            let%lwt assignments =
-              Assignment.find_by_session database_label session.Session.id
-            in
-            Lwt.return (session, assignments))
-          sessions
-        >|> Page.Admin.Assignment.list
-              ~access_contact_profiles
-              ~view_contact_name
-              ~view_contact_info
-              experiment
-              context
-              text_messages_enabled
-      | true ->
-        Lwt_list.fold_left_s
-          (fun sessions session ->
-            Assignment.find_deleted_by_session database_label session.Session.id
-            ||> function
-            | [] -> sessions
-            | assignments -> sessions @ [ session, assignments ])
-          []
-          sessions
-        >|> Page.Admin.Assignment.marked_as_deleted
-              ~access_contact_profiles
-              ~view_contact_name
-              ~view_contact_info
-              experiment
-              context
-              text_messages_enabled
-    in
-    html >|> create_layout req context >|+ Sihl.Web.Response.of_html
-  in
-  result |> HttpUtils.extract_happy_path ~src req
-;;
-
-let index req = list req
-let deleted req = list ~marked_as_deleted:true req
 
 let ids_from_request req =
   let open Pool_common.Message.Field in
@@ -87,40 +17,10 @@ let ids_from_request req =
     , find_id Assignment.Id.of_string Assignment req ))
 ;;
 
-let ids_and_redirect_from_req req =
-  let open Pool_common in
-  let experiment_id, session_id, assignment_id = ids_from_request req in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let redirect =
-    let open Page.Admin.Assignment in
-    let open CCOption in
-    let experiment_path =
-      Format.asprintf
-        "/admin/experiments/%s"
-        (experiment_id |> Experiment.Id.value)
-    in
-    let to_path =
-      let path = Format.asprintf "%s/%s" experiment_path in
-      function
-      | Assignments -> path "assignments"
-      | DeletedAssignments -> path "assignments/deleted"
-      | Session ->
-        Format.asprintf "sessions/%s" (session_id |> Session.Id.value) |> path
-    in
-    CCList.assoc ~eq:CCString.equal Message.Field.(show Redirect) urlencoded
-    |> CCList.head_opt
-    >>= Page.Admin.Assignment.read_assignment_redirect
-    >|= to_path
-    |> value ~default:experiment_path
-  in
-  Lwt.return (experiment_id, session_id, assignment_id, redirect)
-;;
-
 let cancel req =
   let open Utils.Lwt_result.Infix in
-  let%lwt experiment_id, session_id, assignment_id, redirect_path =
-    ids_and_redirect_from_req req
-  in
+  let experiment_id, session_id, assignment_id = ids_from_request req in
+  let redirect_path = Url.session_path experiment_id session_id in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -181,9 +81,8 @@ let cancel req =
 
 let mark_as_deleted req =
   let open Utils.Lwt_result.Infix in
-  let%lwt experiment_id, _, assignment_id, redirect_path =
-    ids_and_redirect_from_req req
-  in
+  let experiment_id, session_id, assignment_id = ids_from_request req in
+  let redirect_path = Url.session_path experiment_id session_id in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -348,9 +247,7 @@ end
 let edit req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
-  let redirect_path =
-    Page.Admin.Session.session_path experiment_id session_id
-  in
+  let redirect_path = Url.session_path experiment_id session_id in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -642,16 +539,11 @@ module Access : sig
   include module type of Helpers.Access
 
   val cancel : Rock.Middleware.t
-  val deleted : Rock.Middleware.t
   val mark_as_deleted : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module AssignmentCommand = Cqrs_command.Assignment_command
   module Guardian = Middleware.Guardian
-
-  let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
-  ;;
 
   let combined_effects fcn req =
     let open HttpUtils in
@@ -660,21 +552,9 @@ end = struct
     fcn experiment_id assignment_id
   ;;
 
-  let index =
-    Assignment.Guard.Access.index
-    |> experiment_effects
-    |> Guardian.validate_generic ~any_id:true
-  ;;
-
   let delete =
     Assignment.Guard.Access.delete
     |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let deleted =
-    Assignment.Guard.Access.deleted
-    |> experiment_effects
     |> Guardian.validate_generic
   ;;
 
