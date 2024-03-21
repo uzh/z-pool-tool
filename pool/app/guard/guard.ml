@@ -188,8 +188,7 @@ let sql_where_fragment ?(field = "uuid") pool permission model actor =
   | false, [] -> Some "FALSE"
   | false, ids ->
     ids
-    |> CCList.map
-         (Uuid.Target.to_string %> Format.asprintf "guardianEncodeUuid('%s')")
+    |> CCList.map (Uuid.Target.to_string %> Pool_common.Id.sql_value_fragment)
     |> CCString.concat ", "
     |> Format.asprintf {sql| %s IN (%s) |sql} field
     |> CCOption.return
@@ -204,8 +203,7 @@ let sql_uuid_list_fragment pool permission model actor =
   | false, [] -> Some "(NULL)"
   | false, ids ->
     ids
-    |> CCList.map
-         (Uuid.Target.to_string %> Format.asprintf "guardianEncodeUuid('%s')")
+    |> CCList.map (Uuid.Target.to_string %> Pool_common.Id.sql_value_fragment)
     |> CCString.concat ", "
     |> Format.asprintf "(%s)"
     |> CCOption.return

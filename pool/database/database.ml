@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 let src = Logs.Src.create "database"
 
 type config =
@@ -62,19 +64,13 @@ module Root = struct
     |> add_pool
   ;;
 
-  let setup () =
-    let open Pool_database in
-    let () = add () in
-    Guard.Persistence.start ~ctx:(Label.of_string label |> to_ctx) ()
-  ;;
+  let setup = add %> Lwt.return
 end
 
 module Tenant = struct
   let label = "tenant"
 
   module Migration = Migration.Tenant
-
-  let setup_functions = [ Guard.Persistence.start ]
 
   let setup_tenant ?(run_functions = []) database =
     let open Pool_database in
@@ -88,15 +84,13 @@ module Tenant = struct
     Lwt.return database.label
   ;;
 
-  let setup_core ?run_functions () =
+  let setup ?run_functions () =
     match%lwt Pool_tenant.find_databases () with
     | [] ->
       let open Pool_common in
       failwith (Message.NoTenantsRegistered |> Utils.error_to_string Language.En)
     | tenants -> Lwt_list.map_s (setup_tenant ?run_functions) tenants
   ;;
-
-  let setup = setup_core ~run_functions:[ Guard.Persistence.start ]
 end
 
 type event = Migrated of Pool_database.t [@@deriving eq, show]
@@ -106,12 +100,9 @@ let handle_event _ : event -> unit Lwt.t = function
     let open Pool_database in
     Logs.info (fun m -> m "Migrating: %s" (Label.show database.label));
     add_pool database;
-    let%lwt () =
-      match is_root database.label with
-      | true -> Migration.Root.run ()
-      | false -> Migration.Tenant.run [ database.label ] ()
-    in
-    Guard.Persistence.start ~ctx:(to_ctx database.label) ()
+    (match is_root database.label with
+     | true -> Migration.Root.run ()
+     | false -> Migration.Tenant.run [ database.label ] ())
 ;;
 
 let start () =
@@ -125,14 +116,12 @@ let start () =
       ~migrations:(Root.Migration.steps ())
       ()
   in
-  let%lwt () = Guard.Persistence.start ~ctx () in
   let%lwt db_pools = Tenant.setup () in
   Lwt_list.iter_s
     (fun pool ->
       Logs.info ~src (fun m ->
         m ~tags "Start database %s" (Pool_database.Label.value pool));
       let ctx = Pool_database.to_ctx pool in
-      let%lwt () = Guard.Persistence.start ~ctx () in
       Service.Migration.check_migrations_status
         ~ctx
         ~migrations:(Tenant.Migration.steps ())

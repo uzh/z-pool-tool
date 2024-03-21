@@ -14,22 +14,23 @@ module ActorPermission = struct
   let std_filter_sql = {sql| actor_permissions.mark_as_deleted IS NULL |sql}
 
   let select_sql =
-    {sql|
-      guardianDecodeUuid(actor_permissions.actor_uuid),
-      actor_permissions.permission,
-      actor_permissions.target_model,
-      guardianDecodeUuid(actor_permissions.target_uuid),
-      COALESCE(
-          CONCAT(user.given_name, ' ', user.name, ' (', user.email, ')'),
-          guardianDecodeUuid(actor_permissions.actor_uuid)
-          ),
-      targets.model,
-      COALESCE(
-          exp.title,
-          CONCAT(session_exp.title, ': Session at ', DATE_FORMAT(sessions.start, '%d.%m.%Y %H:%i')),
-          locations.name
-          )
-    |sql}
+    [%string
+      {sql|
+        %{Pool_common.Id.sql_select_fragment ~field:"actor_permissions.actor_uuid"},
+        actor_permissions.permission,
+        actor_permissions.target_model,
+        %{Pool_common.Id.sql_select_fragment ~field:"actor_permissions.target_uuid"},
+        COALESCE(
+            CONCAT(user.given_name, ' ', user.name, ' (', user.email, ')'),
+            %{Pool_common.Id.sql_select_fragment ~field:"actor_permissions.actor_uuid"}
+            ),
+        targets.model,
+        COALESCE(
+            exp.title,
+            CONCAT(session_exp.title, ': Session at ', DATE_FORMAT(sessions.start, '%d.%m.%Y %H:%i')),
+            locations.name
+            )
+      |sql}]
   ;;
 
   let joins =
@@ -203,36 +204,37 @@ module ActorRole = struct
   open Caqti_request.Infix
 
   let find_by_actor_request =
-    {sql|
-      SELECT
-        guardianDecodeUuid(role_targets.actor_uuid),
-        role_targets.role,
-        guardianDecodeUuid(role_targets.target_uuid),
-        targets.model,
-        COALESCE(
-          exp.title,
-          CONCAT(session_exp.title, ': Session at ', DATE_FORMAT(sessions.start, '%d.%m.%Y %H:%i')),
-          locations.name
-          )
-      FROM guardian_actor_role_targets AS role_targets
-      JOIN guardian_targets AS targets
-        ON role_targets.target_uuid = targets.uuid
-      LEFT JOIN pool_experiments AS exp
-        ON role_targets.target_uuid = exp.uuid
-      LEFT JOIN pool_sessions AS sessions
-        ON role_targets.target_uuid = sessions.uuid
-      LEFT JOIN pool_experiments AS session_exp
-        ON sessions.experiment_uuid = session_exp.uuid
-      LEFT JOIN pool_locations AS locations
-        ON role_targets.target_uuid = locations.uuid
-      WHERE role_targets.actor_uuid = guardianEncodeUuid($1)
-        AND role_targets.mark_as_deleted IS NULL
-      UNION
-      SELECT guardianDecodeUuid(roles.actor_uuid), roles.role, NULL, NULL, NULL
-      FROM guardian_actor_roles AS roles
-      WHERE roles.actor_uuid = guardianEncodeUuid($1)
-        AND roles.mark_as_deleted IS NULL
-    |sql}
+    [%string
+      {sql|
+        SELECT
+          %{Pool_common.Id.sql_select_fragment ~field:"role_targets.actor_uuid"},
+          role_targets.role,
+          %{Pool_common.Id.sql_select_fragment ~field:"role_targets.target_uuid"},
+          targets.model,
+          COALESCE(
+            exp.title,
+            CONCAT(session_exp.title, ': Session at ', DATE_FORMAT(sessions.start, '%d.%m.%Y %H:%i')),
+            locations.name
+            )
+        FROM guardian_actor_role_targets AS role_targets
+        JOIN guardian_targets AS targets
+          ON role_targets.target_uuid = targets.uuid
+        LEFT JOIN pool_experiments AS exp
+          ON role_targets.target_uuid = exp.uuid
+        LEFT JOIN pool_sessions AS sessions
+          ON role_targets.target_uuid = sessions.uuid
+        LEFT JOIN pool_experiments AS session_exp
+          ON sessions.experiment_uuid = session_exp.uuid
+        LEFT JOIN pool_locations AS locations
+          ON role_targets.target_uuid = locations.uuid
+        WHERE role_targets.actor_uuid = %{Pool_common.Id.sql_value_fragment "$1"}
+          AND role_targets.mark_as_deleted IS NULL
+        UNION
+        SELECT %{Pool_common.Id.sql_select_fragment ~field:"roles.actor_uuid"}, roles.role, NULL, NULL, NULL
+        FROM guardian_actor_roles AS roles
+        WHERE roles.actor_uuid = %{Pool_common.Id.sql_value_fragment "$1"}
+          AND roles.mark_as_deleted IS NULL
+      |sql}]
     |> Entity.(
          Uuid.Actor.t
          ->* Caqti_type.(t3 ActorRole.t (option TargetModel.t) (option string)))
