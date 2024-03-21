@@ -194,6 +194,7 @@ type hint =
   | ExperimentStatisticsSendingInvitations
   | ExperimentWaitingList
   | ExternalDataRequired
+  | FilterTemplates
   | GtxKeyMissing
   | GtxKeyStored
   | I18nText of string

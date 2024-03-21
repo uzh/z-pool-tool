@@ -359,6 +359,9 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
+  | FilterTemplates ->
+    "Changes to one of these filters will affect all experiment filters that \
+     contain this template.."
   | GtxKeyMissing ->
     "No GTX Api key is stored, which is why no text messages are sent."
   | GtxKeyStored -> "A GTX Api key is stored. Text message service is running."

@@ -43,6 +43,10 @@ let list { Pool_context.language; _ } filter_list query =
 ;;
 
 let index ({ Pool_context.language; _ } as context) filter_list query =
+  let hint =
+    [ Pool_common.(Utils.hint_to_string language I18n.FilterTemplates) |> txt ]
+    |> Component.Notification.notification language `Warning
+  in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
@@ -51,7 +55,8 @@ let index ({ Pool_context.language; _ } as context) filter_list query =
             (Pool_common.(Utils.field_to_string language Message.Field.Filter)
              |> CCString.capitalize_ascii)
         ]
-    ; list context filter_list query
+    ; hint
+    ; div ~a:[ a_class [ "gap" ] ] [ list context filter_list query ]
     ]
 ;;
 
