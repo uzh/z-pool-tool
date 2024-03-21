@@ -251,11 +251,17 @@ val show_event : event -> string
 
 val update_matches_filter
   :  Pool_database.Label.t
-  -> Filter.t option
-  -> [< `Experiment of Experiment.t | `Session of Session.t | `Upcoming ]
-  -> (t, MatchesFilter.t) CCPair.t list Lwt.t
+  -> [< `Experiment of Experiment.t * Filter.t option
+     | `Session of Session.t * Filter.t option
+     | `Upcoming
+     ]
+  -> ((t * MatchesFilter.t) list, Pool_common.Message.error) Lwt_result.t
 
 val update_matches_filter_events : (t * MatchesFilter.t) list -> event list
+
+module Service : sig
+  val register : unit -> Sihl.Container.Service.t
+end
 
 module Guard : sig
   module Target : sig

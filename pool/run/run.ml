@@ -16,6 +16,7 @@ let worker_services =
   ; System_event.Service.register_worker ()
   ; User_import.Service.register ()
   ; Reminder.Service.register ()
+  ; Assignment.Service.register ()
   ]
 ;;
 

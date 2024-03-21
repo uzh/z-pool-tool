@@ -121,46 +121,39 @@ let write action req =
         let find_assignments filter =
           Assignment.update_matches_filter
             database_label
-            (Some filter)
-            (`Experiment exp)
+            (`Experiment (exp, Some filter))
         in
         let open Experiment_command in
         (match exp.Experiment.filter with
          | None ->
            let open CreateFilter in
            let* filter = create_filter key_list template_list query |> lift in
-           let%lwt assignments = find_assignments filter in
+           let* assignments = find_assignments filter in
            handle ~tags exp assignments filter |> lift
          | Some filter ->
            let open UpdateFilter in
            let* filter =
              create_filter key_list template_list filter query |> lift
            in
-           let%lwt assignments = find_assignments filter in
+           let* assignments = find_assignments filter in
            handle ~tags assignments filter |> lift)
       | Template filter ->
         let open Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
-        let find_assignments filter =
-          Assignment.update_matches_filter
-            database_label
-            (Some filter)
-            `Upcoming
-        in
+        let assignments = [] in
+        (*TODO: When updating a template, should I simply call the service? *)
         (match filter with
          | None ->
            let open Create in
            let* filter =
              create_filter key_list template_list query decoded |> lift
            in
-           let%lwt assignments = find_assignments filter in
            handle ~tags assignments filter |> lift
          | Some filter ->
            let open Update in
            let* filter =
              create_filter key_list template_list filter query decoded |> lift
            in
-           let%lwt assignments = find_assignments filter in
            handle ~tags assignments filter |> lift)
     in
     let handle events =

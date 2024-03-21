@@ -1076,8 +1076,10 @@ let update_matches_filter req =
     in
     let* session = Session.find database_label session_id in
     let* events =
-      Assignment.update_matches_filter database_label filter (`Session session)
-      ||> Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
+      Assignment.update_matches_filter
+        database_label
+        (`Session (session, filter))
+      >== Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.Htmx.htmx_redirect

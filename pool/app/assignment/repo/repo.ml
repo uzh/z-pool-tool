@@ -230,19 +230,58 @@ module Sql = struct
 
   let find_all_upcoming_request =
     let open Caqti_request.Infix in
-    {sql|
-      WHERE
-        pool_sessions.closed_at IS NULL
-    |sql}
+    let columns =
+      CCString.concat "," ("pool_sessions.experiment_uuid" :: sql_select_columns)
+    in
+    Format.asprintf
+      {sql|
+        SELECT
+        %s
+        FROM pool_assignments
+        %s
+        WHERE pool_sessions.closed_at IS NULL
+      |sql}
+      columns
+      joins_session
     |> find_request_sql ~additional_joins:[ joins_session ]
-    |> Caqti_type.unit ->* RepoEntity.t
+    |> Caqti_type.(unit ->* t2 Experiment.Repo.Entity.Id.t RepoEntity.t)
   ;;
 
   let find_all_upcoming pool =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_all_upcoming_request
-      ()
+    let open Utils.Lwt_result.Infix in
+    let%lwt data =
+      Utils.Database.collect
+        (Pool_database.Label.value pool)
+        find_all_upcoming_request
+        ()
+    in
+    let group data =
+      let open CCOption in
+      let open Hashtbl in
+      let tbl = create 20 in
+      data
+      |> CCList.iter (fun (experiment_id, assigment) ->
+        find_opt tbl experiment_id
+        >|= CCList.cons assigment
+        |> value ~default:[ assigment ]
+        |> replace tbl experiment_id)
+      |> CCFun.const
+           (fold
+              (fun experiment_id assignments acc ->
+                (experiment_id, assignments) :: acc)
+              tbl
+              [])
+    in
+    data
+    |> group
+    |> Lwt_list.fold_left_s
+         (fun acc (experiment_id, assignments) ->
+           match acc with
+           | Error err -> Lwt_result.fail err
+           | Ok acc ->
+             let* experiment = Experiment.find pool experiment_id in
+             Lwt_result.return (acc @ [ experiment, assignments ]))
+         (Ok [])
   ;;
 
   let find_public_by_experiment_and_contact_opt_request time =

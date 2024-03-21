@@ -77,11 +77,13 @@ let start () =
   let interval = Ptime.Span.of_int_s interval_s in
   let periodic_fcn () =
     Logs.debug ~src (fun m ->
-      m ~tags:Pool_database.(Logger.Tags.create root) "Run");
+      m
+        ~tags:Pool_database.(Logger.Tags.create root)
+        "Periodically updating assignments matches_filter");
     run_all ()
   in
   create
-    "import_notifications"
+    "assignment_matches_filter"
     (Every (interval |> ScheduledTimeSpan.of_span))
     periodic_fcn
   |> Schedule.add_and_start
