@@ -27,7 +27,7 @@ let handle_system_event ?identifier system_event =
   in
   let add_pool database_label =
     Pool_tenant.find_database_by_label database_label
-    |>> Database.Tenant.(setup_tenant ~run_functions:setup_functions)
+    |>> Database.Tenant.setup_tenant
   in
   let open Job in
   match system_event.job with

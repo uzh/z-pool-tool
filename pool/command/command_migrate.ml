@@ -11,7 +11,7 @@ let tenants =
     "Migrate tenant databases"
     (fun () ->
        let () = Database.Root.add () in
-       let%lwt db_pools = Database.Tenant.setup_core () in
+       let%lwt db_pools = Database.Tenant.setup () in
        let%lwt () = Database.Tenant.Migration.run db_pools () in
        Lwt.return_some ())
 ;;

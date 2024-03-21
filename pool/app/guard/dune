@@ -12,4 +12,4 @@
   sihl
   utils)
  (preprocess
-  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_string)))
