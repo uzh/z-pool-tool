@@ -219,7 +219,7 @@ module Sql = struct
     Query.collect_and_count
       pool
       query
-      ~select:(find_request_sql ~distinct:false ~additional_joins:joins_tags)
+      ~select:(find_request_sql ~distinct:true ~additional_joins:joins_tags)
       ?where
       Repo_entity.t
   ;;
