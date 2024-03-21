@@ -6,16 +6,12 @@ let handle_event : event -> unit Lwt.t = function
   | Created t -> Repo.insert Pool_database.root t
 ;;
 
-let handle_system_event ?identifier system_event =
+let handle_system_event ?worker system_event =
   let open Utils.Lwt_result.Infix in
   let open EventLog in
   let pool = Pool_database.root in
   let create_event_log ?message status =
-    create
-      ?message
-      system_event.id
-      (ServiceIdentifier.get ?identifier ())
-      status
+    create ?message system_event.id (ServiceIdentifier.get ?worker ()) status
     |> Repo.EventLog.insert pool
   in
   let success_log () = create_event_log Status.Successful in
@@ -31,6 +27,9 @@ let handle_system_event ?identifier system_event =
   in
   let open Job in
   match system_event.job with
+  | FilterTemplateUpdated pool ->
+    let%lwt () = Assignment.Service.update_upcoming_assignments pool in
+    success_log ()
   | GuardianCacheCleared ->
     let () = Guard.Persistence.Cache.clear () in
     success_log ()

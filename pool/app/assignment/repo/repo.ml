@@ -231,7 +231,11 @@ module Sql = struct
   let find_all_upcoming_request =
     let open Caqti_request.Infix in
     let columns =
-      CCString.concat "," ("pool_sessions.experiment_uuid" :: sql_select_columns)
+      CCString.concat
+        ","
+        (Pool_common.Id.sql_select_fragment
+           ~field:"pool_sessions.experiment_uuid"
+         :: sql_select_columns)
     in
     Format.asprintf
       {sql|
@@ -239,11 +243,12 @@ module Sql = struct
         %s
         FROM pool_assignments
         %s
+        %s
         WHERE pool_sessions.closed_at IS NULL
       |sql}
       columns
+      joins
       joins_session
-    |> find_request_sql ~additional_joins:[ joins_session ]
     |> Caqti_type.(unit ->* t2 Experiment.Repo.Entity.Id.t RepoEntity.t)
   ;;
 

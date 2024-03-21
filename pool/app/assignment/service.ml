@@ -38,7 +38,7 @@ let update_matches_filter_events =
     | false -> Some ({ assignment with matches_filter } |> Event.updated))
 ;;
 
-let run database_label =
+let update_upcoming_assignments database_label =
   let open Utils.Lwt_result.Infix in
   update_matches_filter database_label `Upcoming
   >|+ update_matches_filter_events
@@ -48,6 +48,7 @@ let run database_label =
 
 let start () =
   let open Schedule in
+  (* TODO: How to run every morning at 02:00 ?? *)
   let run_at =
     let open CCResult.Infix in
     let sec = 0. in
@@ -61,7 +62,8 @@ let start () =
       m ~tags:Pool_database.(Logger.Tags.create root) "Run");
     Lwt.bind
       (Pool_tenant.find_databases ())
-      (Lwt_list.iter_s (fun { Pool_database.label; _ } -> run label))
+      (Lwt_list.iter_s (fun { Pool_database.label; _ } ->
+         update_upcoming_assignments label))
   in
   create "import_notifications" (At run_at) periodic_fcn
   |> Schedule.add_and_start

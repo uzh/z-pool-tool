@@ -138,23 +138,21 @@ let write action req =
            let* assignments = find_assignments filter in
            handle ~tags assignments filter |> lift)
       | Template filter ->
-        let open Filter_command in
+        let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
-        let assignments = [] in
-        (*TODO: When updating a template, should I simply call the service? *)
         (match filter with
          | None ->
-           let open Create in
-           let* filter =
-             create_filter key_list template_list query decoded |> lift
-           in
-           handle ~tags assignments filter |> lift
+           Create.handle ~tags key_list template_list query decoded |> lift
          | Some filter ->
-           let open Update in
-           let* filter =
-             create_filter key_list template_list filter query decoded |> lift
-           in
-           handle ~tags assignments filter |> lift)
+           Update.handle
+             ~tags
+             database_label
+             key_list
+             template_list
+             filter
+             query
+             decoded
+           |> lift)
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events

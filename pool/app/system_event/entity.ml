@@ -6,6 +6,9 @@ end
 
 module Job = struct
   type t =
+    | FilterTemplateUpdated of Pool_database.Label.t
+    [@name "filtertemplateupdated"]
+    [@printer Utils.ppx_printer "filtertemplateupdated"]
     | GuardianCacheCleared [@name "guardiancachecleared"]
     [@printer Utils.ppx_printer "guardiancachecleared"]
     | I18nPageUpdated [@name "i18npageupdated"]
@@ -35,14 +38,16 @@ end
 type t =
   { id : Id.t
   ; job : Job.t
+  ; worker_only : bool
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
-let create ?(id = Id.create ()) job =
+let create ?(id = Id.create ()) ?(worker_only = false) job =
   { id
   ; job
+  ; worker_only
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }
@@ -55,11 +60,11 @@ module EventLog = struct
     let field = Pool_common.Message.Field.Host
     let schema () = schema field ()
 
-    let get ?identifier () =
+    let get ?(worker = false) () =
       let hostname = Unix.gethostname () in
-      match identifier with
-      | None -> hostname
-      | Some id -> Format.asprintf "%s-%s" hostname id
+      match worker with
+      | false -> hostname
+      | true -> Format.asprintf "%s-worker" hostname
     ;;
   end
 

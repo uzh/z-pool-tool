@@ -609,9 +609,19 @@ let validate_filter_with_unknown_field _ () =
          equal_operator
          (Single (Nr 1.2)))
   in
-  let res = Filter.validate_query key_list [] query >|= Filter.create None in
+  let filter = Filter.create None query in
+  let title = Filter.Title.of_string "Title" in
+  let events =
+    Cqrs_command.Filter_command.Update.handle
+      Data.database_label
+      key_list
+      []
+      filter
+      query
+      title
+  in
   let expected = Error Pool_common.Message.(Invalid Field.Key) in
-  Alcotest.(check (result filter error) "succeeds" res expected) |> Lwt.return
+  check_result expected events |> Lwt.return
 ;;
 
 let validate_filter_with_invalid_value _ () =
@@ -803,7 +813,6 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
 let create_filter_template_with_template _ () =
   let open Pool_common in
   let open CCResult in
-  let open Test_utils in
   let open Filter in
   let template_id = Pool_common.Id.create () in
   let template =
@@ -815,15 +824,16 @@ let create_filter_template_with_template _ () =
         }
     |> create ~id:template_id None
   in
-  let res =
-    let filter = Template template_id in
+  let filter = Template template_id in
+  let events =
     let open Cqrs_command.Filter_command in
     Message.Field.[ show Title, [ "Some title" ] ]
     |> default_decode
-    >>= Create.create_filter [] [ template ] filter
+    >>= Create.handle [] [ template ] filter
   in
   let expected = Error Message.FilterMustNotContainTemplate in
-  Alcotest.(check (result filter error) "succeeds" res expected) |> Lwt.return
+  Alcotest.(check (result (list event) error) "succeeds" expected events)
+  |> Lwt.return
 ;;
 
 let filter_with_admin_value _ () =

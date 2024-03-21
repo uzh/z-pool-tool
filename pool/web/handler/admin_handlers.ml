@@ -1,4 +1,5 @@
 module Admin = Admin_admins
+module Assignments = Admin_experiments_assignments
 module Contacts = Admin_contacts
 module CustomField = Admin_custom_fields
 module CustomFieldGroup = Admin_custom_field_groups

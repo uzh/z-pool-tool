@@ -375,7 +375,7 @@ module Admin = struct
             ]
           in
           let assignments =
-            let open Experiments.Assignment in
+            let open Assignments in
             let specific =
               [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
               ; post "/close" ~middlewares:[ Session.Access.close ] Close.update
@@ -441,7 +441,7 @@ module Admin = struct
           ; post
               "/toggle-assignments"
               ~middlewares:[ Session.Access.close ]
-              Experiments.Assignment.Close.toggle
+              Assignments.Close.toggle
           ; choose ~scope:(add_human_field Assignments) assignments
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ; choose ~scope:(ParticipationTag |> human_url) participation_tags

@@ -2,6 +2,7 @@ module Id : module type of Pool_common.Id
 
 module Job : sig
   type t =
+    | FilterTemplateUpdated of Pool_database.Label.t
     | GuardianCacheCleared
     | I18nPageUpdated
     | SmtpAccountUpdated
@@ -22,6 +23,7 @@ end
 type t =
   { id : Id.t
   ; job : Job.t
+  ; worker_only : bool
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -29,13 +31,13 @@ type t =
 val equal : t -> t -> Ppx_deriving_runtime.bool
 val pp : Ppx_deriving_runtime.Format.formatter -> t -> Ppx_deriving_runtime.unit
 val show : t -> Ppx_deriving_runtime.string
-val create : ?id:Id.t -> Job.t -> t
+val create : ?id:Id.t -> ?worker_only:bool -> Job.t -> t
 
 module EventLog : sig
   module ServiceIdentifier : sig
     include Pool_common.Model.StringSig
 
-    val get : ?identifier:string -> unit -> t
+    val get : ?worker:bool -> unit -> t
   end
 
   module Status : sig
@@ -64,12 +66,11 @@ val created : t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val find_pending : EventLog.ServiceIdentifier.t -> t list Lwt.t
 val handle_event : event -> unit Lwt.t
-val handle_system_event : ?identifier:string -> t -> unit Lwt.t
+val handle_system_event : ?worker:bool -> t -> unit Lwt.t
 
 module Service : sig
-  val run : ?identifier:string -> unit -> unit Lwt.t
-  val register : ?identifier:string -> unit -> Sihl.Container.Service.t
+  val run : ?worker:bool -> unit -> unit Lwt.t
+  val register : ?worker:bool -> unit -> Sihl.Container.Service.t
   val register_worker : unit -> Sihl.Container.Service.t
 end

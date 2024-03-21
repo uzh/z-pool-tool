@@ -260,6 +260,7 @@ val update_matches_filter
 val update_matches_filter_events : (t * MatchesFilter.t) list -> event list
 
 module Service : sig
+  val update_upcoming_assignments : Pool_database.Label.t -> unit Lwt.t
   val register : unit -> Sihl.Container.Service.t
 end
 
