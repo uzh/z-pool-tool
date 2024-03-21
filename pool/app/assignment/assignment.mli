@@ -249,6 +249,14 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 
+val update_matches_filter
+  :  Pool_database.Label.t
+  -> Filter.t option
+  -> [< `Experiment of Experiment.t | `Session of Session.t | `Upcoming ]
+  -> (t, MatchesFilter.t) CCPair.t list Lwt.t
+
+val update_matches_filter_events : (t * MatchesFilter.t) list -> event list
+
 module Guard : sig
   module Target : sig
     val to_authorizable

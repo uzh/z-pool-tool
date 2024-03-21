@@ -577,7 +577,9 @@ end = struct
 end
 
 module UpdateMatchesFilter : sig
-  include Common.CommandSig with type t = (Assignment.t * bool) list
+  include
+    Common.CommandSig
+    with type t = (Assignment.t * Assignment.MatchesFilter.t) list
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -586,21 +588,14 @@ module UpdateMatchesFilter : sig
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = (Assignment.t * bool) list
+  type t = (Assignment.t * Assignment.MatchesFilter.t) list
 
   let handle ?(tags = Logs.Tag.empty) assignments =
     Logs.info ~src (fun m -> m "Handle command UpdateMatchesFilter" ~tags);
     let open Assignment in
     assignments
-    |> CCList.filter_map (fun (assignment, matches_filter) ->
-      let matches_filter = MatchesFilter.create matches_filter in
-      match MatchesFilter.equal assignment.matches_filter matches_filter with
-      | true -> None
-      | false ->
-        Some
-          ({ assignment with matches_filter }
-           |> updated
-           |> Pool_event.assignment))
+    |> update_matches_filter_events
+    |> CCList.map Pool_event.assignment
     |> CCResult.return
   ;;
 

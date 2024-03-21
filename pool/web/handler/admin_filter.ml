@@ -100,6 +100,7 @@ let new_form = form false
 
 let write action req =
   let open Utils.Lwt_result.Infix in
+  let open Cqrs_command in
   let result { Pool_context.database_label; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -117,21 +118,50 @@ let write action req =
       let lift = Lwt_result.lift in
       match action with
       | Experiment exp ->
-        let open Cqrs_command.Experiment_command in
+        let find_assignments filter =
+          Assignment.update_matches_filter
+            database_label
+            (Some filter)
+            (`Experiment exp)
+        in
+        let open Experiment_command in
         (match exp.Experiment.filter with
          | None ->
-           CreateFilter.handle ~tags exp key_list template_list query |> lift
+           let open CreateFilter in
+           let* filter = create_filter key_list template_list query |> lift in
+           let%lwt assignments = find_assignments filter in
+           handle ~tags exp assignments filter |> lift
          | Some filter ->
-           UpdateFilter.handle ~tags key_list template_list filter query |> lift)
+           let open UpdateFilter in
+           let* filter =
+             create_filter key_list template_list filter query |> lift
+           in
+           let%lwt assignments = find_assignments filter in
+           handle ~tags assignments filter |> lift)
       | Template filter ->
-        let open Cqrs_command.Filter_command in
+        let open Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
+        let find_assignments filter =
+          Assignment.update_matches_filter
+            database_label
+            (Some filter)
+            `Upcoming
+        in
         (match filter with
          | None ->
-           Create.handle ~tags key_list template_list query decoded |> lift
+           let open Create in
+           let* filter =
+             create_filter key_list template_list query decoded |> lift
+           in
+           let%lwt assignments = find_assignments filter in
+           handle ~tags assignments filter |> lift
          | Some filter ->
-           Update.handle ~tags key_list template_list filter query decoded
-           |> lift)
+           let open Update in
+           let* filter =
+             create_filter key_list template_list filter query decoded |> lift
+           in
+           let%lwt assignments = find_assignments filter in
+           handle ~tags assignments filter |> lift)
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events

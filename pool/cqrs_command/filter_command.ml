@@ -27,53 +27,86 @@ let validate_query key_list template_list query =
 ;;
 
 module Create : sig
-  include Common.CommandSig with type t = Filter.Title.t
+  include Common.CommandSig with type t = Filter.t
+
+  val create_filter
+    :  ?id:Filter.Id.t
+    -> Filter.Key.human list
+    -> t list
+    -> Filter.query
+    -> Filter.Title.t
+    -> (t, Conformist.error_msg) result
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Filter.Key.human list
-    -> Filter.t list
-    -> Filter.query
+    -> (Assignment.t * Assignment.MatchesFilter.t) list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
-  type t = Filter.Title.t
+  type t = Filter.t
 
-  let handle ?(tags = Logs.Tag.empty) key_list template_list query title =
-    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+  let create_filter
+    ?(id = Filter.Id.create ())
+    key_list
+    template_list
+    query
+    title
+    =
     let open CCResult in
     let* query = validate_query key_list template_list query in
-    Ok
-      [ Filter.Created (Filter.create (Some title) query) |> Pool_event.filter ]
+    Filter.create ~id (Some title) query |> return
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) assignments filter =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+    let open CCResult in
+    let assignment_events =
+      assignments
+      |> Assignment.update_matches_filter_events
+      |> CCList.map Pool_event.assignment
+    in
+    Ok ((Filter.Created filter |> Pool_event.filter) :: assignment_events)
   ;;
 
   let effects = Filter.Guard.Access.create
 end
 
 module Update : sig
-  include Common.CommandSig with type t = Filter.Title.t
+  include Common.CommandSig with type t = Filter.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Filter.Key.human list
+  val create_filter
+    :  Filter.Key.human list
     -> Filter.t list
     -> Filter.t
     -> Filter.query
+    -> Filter.Title.t
+    -> (Filter.t, Pool_common.Message.error) result
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> (Assignment.t * Assignment.MatchesFilter.t) list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Filter.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Filter.Title.t
+  type t = Filter.t
 
-  let handle ?(tags = Logs.Tag.empty) key_list template_list filter query title =
-    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+  let create_filter key_list template_list filter query title =
     let open CCResult in
     let* query = validate_query key_list template_list query in
-    Ok
-      Filter.
-        [ Updated { filter with query; title = Some title } |> Pool_event.filter
-        ]
+    Ok Filter.{ filter with query; title = Some title }
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) assignments filter =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+    let open CCResult in
+    let assignment_events =
+      assignments
+      |> Assignment.update_matches_filter_events
+      |> CCList.map Pool_event.assignment
+    in
+    Ok ((Filter.Updated filter |> Pool_event.filter) :: assignment_events)
   ;;
 
   let effects = Filter.Guard.Access.update

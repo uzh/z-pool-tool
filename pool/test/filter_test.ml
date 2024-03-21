@@ -599,57 +599,39 @@ let filter_exclude_inactive _ () =
 
 let validate_filter_with_unknown_field _ () =
   let open Test_utils in
-  let%lwt () =
-    let%lwt key_list = Filter.all_keys Data.database_label in
-    let query =
-      let open Filter in
-      Pred
-        (Predicate.create
-           Key.(CustomField ("Unknown field id" |> Custom_field.Id.of_string))
-           equal_operator
-           (Single (Nr 1.2)))
-    in
-    let filter = Filter.create None query in
-    let events =
-      Cqrs_command.Experiment_command.UpdateFilter.handle
-        key_list
-        []
-        filter
-        query
-    in
-    let expected = Error Pool_common.Message.(Invalid Field.Key) in
-    check_result expected events |> Lwt.return
+  let open CCResult in
+  let%lwt key_list = Filter.all_keys Data.database_label in
+  let query =
+    let open Filter in
+    Pred
+      (Predicate.create
+         Key.(CustomField ("Unknown field id" |> Custom_field.Id.of_string))
+         equal_operator
+         (Single (Nr 1.2)))
   in
-  Lwt.return_unit
+  let res = Filter.validate_query key_list [] query >|= Filter.create None in
+  let expected = Error Pool_common.Message.(Invalid Field.Key) in
+  Alcotest.(check (result filter error) "succeeds" res expected) |> Lwt.return
 ;;
 
 let validate_filter_with_invalid_value _ () =
   let open Test_utils in
-  let%lwt () =
-    let%lwt key_list = Filter.all_keys Data.database_label in
-    let query =
-      let open Filter in
-      Pred
-        (Predicate.create
-           Key.(
-             CustomField (CustomFieldData.NrOfSiblings.field |> Custom_field.id))
-           equal_operator
-           (Single (Str "Not a number")))
-    in
-    let filter = Filter.create None query in
-    let events =
-      Cqrs_command.Experiment_command.UpdateFilter.handle
-        key_list
-        []
-        filter
-        query
-    in
-    let expected =
-      Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
-    in
-    check_result expected events |> Lwt.return
+  let open CCResult in
+  let%lwt key_list = Filter.all_keys Data.database_label in
+  let query =
+    let open Filter in
+    Pred
+      (Predicate.create
+         Key.(
+           CustomField (CustomFieldData.NrOfSiblings.field |> Custom_field.id))
+         equal_operator
+         (Single (Str "Not a number")))
   in
-  Lwt.return_unit
+  let res = Filter.validate_query key_list [] query >|= Filter.create None in
+  let expected =
+    Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
+  in
+  Alcotest.(check (result filter error) "succeeds" res expected) |> Lwt.return
 ;;
 
 let test_list_filter answer_index operator contact experiment expected =
@@ -820,31 +802,28 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
 
 let create_filter_template_with_template _ () =
   let open Pool_common in
-  let%lwt () =
-    let open CCResult in
-    let open Filter in
-    let template_id = Pool_common.Id.create () in
-    let template =
-      Pred
-        Predicate.
-          { key = Key.(Hardcoded Name)
-          ; operator = equal_operator
-          ; value = Single (Str "Foo")
-          }
-      |> create ~id:template_id None
-    in
-    let filter = Template template_id in
-    let events =
-      let open Cqrs_command.Filter_command in
-      Message.Field.[ show Title, [ "Some title" ] ]
-      |> default_decode
-      >>= Create.handle [] [ template ] filter
-    in
-    let expected = Error Message.FilterMustNotContainTemplate in
-    Alcotest.(check (result (list event) error) "succeeds" expected events)
-    |> Lwt.return
+  let open CCResult in
+  let open Test_utils in
+  let open Filter in
+  let template_id = Pool_common.Id.create () in
+  let template =
+    Pred
+      Predicate.
+        { key = Key.(Hardcoded Name)
+        ; operator = equal_operator
+        ; value = Single (Str "Foo")
+        }
+    |> create ~id:template_id None
   in
-  Lwt.return_unit
+  let res =
+    let filter = Template template_id in
+    let open Cqrs_command.Filter_command in
+    Message.Field.[ show Title, [ "Some title" ] ]
+    |> default_decode
+    >>= Create.create_filter [] [ template ] filter
+  in
+  let expected = Error Message.FilterMustNotContainTemplate in
+  Alcotest.(check (result filter error) "succeeds" res expected) |> Lwt.return
 ;;
 
 let filter_with_admin_value _ () =

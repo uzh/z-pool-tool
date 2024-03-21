@@ -39,6 +39,8 @@ let find_for_session_detail_screen ~query pool session_id =
 ;;
 
 let find_deleted_by_session = Repo.find_deleted_by_session
+let find_all_by_experiment = Repo.Sql.find_all_by_experiment
+let find_all_upcoming = Repo.Sql.find_all_upcoming
 let find_with_follow_ups = Repo.find_with_follow_ups
 let find_follow_ups = Repo.find_follow_ups
 
@@ -93,4 +95,30 @@ let counters_of_session database_label session_id =
   let open Utils.Lwt_result.Infix in
   find_uncanceled_by_session database_label session_id
   ||> assignments_to_session_counters
+;;
+
+let update_matches_filter database_label filter =
+  let open Utils.Lwt_result.Infix in
+  let handle =
+    Lwt_list.map_s (fun ({ contact; _ } as assignment) ->
+      match filter with
+      | None -> Lwt.return (assignment, MatchesFilter.create true)
+      | Some filter ->
+        Filter.contact_matches_filter database_label filter.Filter.query contact
+        ||> MatchesFilter.create
+        ||> CCPair.make assignment)
+  in
+  function
+  | `Session { Session.id; _ } ->
+    find_all_by_session database_label id >|> handle
+  | `Experiment { Experiment.id; _ } ->
+    find_all_by_experiment database_label id >|> handle
+  | `Upcoming -> find_all_upcoming database_label >|> handle
+;;
+
+let update_matches_filter_events =
+  CCList.filter_map (fun (assignment, matches_filter) ->
+    match MatchesFilter.equal assignment.matches_filter matches_filter with
+    | true -> None
+    | false -> Some ({ assignment with matches_filter } |> updated))
 ;;

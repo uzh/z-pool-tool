@@ -211,6 +211,40 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
+  let find_all_by_experiment_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE
+        pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> find_request_sql ~additional_joins:[ joins_session ]
+    |> Caqti_type.string ->* RepoEntity.t
+  ;;
+
+  let find_all_by_experiment pool id =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_all_by_experiment_request
+      (Experiment.Id.value id)
+  ;;
+
+  let find_all_upcoming_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE
+        pool_sessions.closed_at IS NULL
+    |sql}
+    |> find_request_sql ~additional_joins:[ joins_session ]
+    |> Caqti_type.unit ->* RepoEntity.t
+  ;;
+
+  let find_all_upcoming pool =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_all_upcoming_request
+      ()
+  ;;
+
   let find_public_by_experiment_and_contact_opt_request time =
     let open Caqti_request.Infix in
     let query joins =

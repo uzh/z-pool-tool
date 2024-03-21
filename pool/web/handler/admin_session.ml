@@ -1075,20 +1075,8 @@ let update_matches_filter req =
       Experiment.find database_label experiment_id >|+ Experiment.filter
     in
     let* session = Session.find database_label session_id in
-    let%lwt assignments =
-      Assignment.find_all_by_session database_label session.Session.id
-    in
     let* events =
-      assignments
-      |> Lwt_list.map_s (fun ({ Assignment.contact; _ } as assignment) ->
-        match filter with
-        | None -> Lwt.return (assignment, true)
-        | Some filter ->
-          Filter.contact_matches_filter
-            database_label
-            filter.Filter.query
-            contact
-          ||> CCPair.make assignment)
+      Assignment.update_matches_filter database_label filter (`Session session)
       ||> Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
