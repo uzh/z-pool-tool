@@ -2,12 +2,6 @@ let src = Logs.Src.create "system_event.service"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let run ?worker () =
-  let () =
-    Logs.info (fun m ->
-      m
-        "RUNNING SYSTEM EVENTS. Worker: %s"
-        (Utils.Bool.to_string (CCOption.value ~default:false worker)))
-  in
   let open Utils.Lwt_result.Infix in
   ()
   |> Repo.find_pending ?worker
