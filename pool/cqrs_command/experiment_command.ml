@@ -527,7 +527,12 @@ end = struct
     let* query = Filter.validate_query key_list template_list query in
     let id = Pool_common.Id.create () in
     let filter = Filter.create ~id None query in
-    let experiment = { experiment with Experiment.filter = Some filter } in
+    let experiment =
+      { experiment with
+        Experiment.filter = Some filter
+      ; matcher_notification_sent = MatcherNotificationSent.create false
+      }
+    in
     Ok
       [ Filter.Created filter |> Pool_event.filter
       ; Experiment.Updated experiment |> Pool_event.experiment
@@ -547,6 +552,7 @@ module UpdateFilter : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> Filter.Key.human list
     -> Filter.t list
     -> Filter.t
@@ -557,12 +563,27 @@ module UpdateFilter : sig
 end = struct
   type t = Filter.query
 
-  let handle ?(tags = Logs.Tag.empty) key_list template_list filter query =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    experiment
+    key_list
+    template_list
+    filter
+    query
+    =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
     let* query = Filter.validate_query key_list template_list query in
     let filter = Filter.{ filter with query } in
-    Ok [ Filter.Updated filter |> Pool_event.filter ]
+    Ok
+      [ Experiment.(
+          Updated
+            { experiment with
+              matcher_notification_sent = MatcherNotificationSent.create false
+            })
+        |> Pool_event.experiment
+      ; Filter.Updated filter |> Pool_event.filter
+      ]
   ;;
 
   let effects experiment_id filter_id =
@@ -595,7 +616,13 @@ end = struct
       |> CCOption.map_or ~default:[] (fun f ->
         [ Filter.Deleted f |> Pool_event.filter ])
     in
-    let experiment = Experiment.{ experiment with filter = None } in
+    let experiment =
+      Experiment.
+        { experiment with
+          filter = None
+        ; matcher_notification_sent = MatcherNotificationSent.create false
+        }
+    in
     Ok
       ([ Experiment.Updated experiment |> Pool_event.experiment ] @ filter_event)
   ;;

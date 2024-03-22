@@ -122,7 +122,8 @@ let write action req =
          | None ->
            CreateFilter.handle ~tags exp key_list template_list query |> lift
          | Some filter ->
-           UpdateFilter.handle ~tags key_list template_list filter query |> lift)
+           UpdateFilter.handle ~tags exp key_list template_list filter query
+           |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in

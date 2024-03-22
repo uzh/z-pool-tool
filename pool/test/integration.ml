@@ -78,7 +78,8 @@ let suite =
           ] )
     ; ( "filter"
       , Filter_test.
-          [ test_case "filter contacts" `Slow filter_contacts
+          [ test_case "update filter" `Slow update_filter
+          ; test_case "filter contacts" `Slow filter_contacts
           ; test_case "filter by email and custom field" `Slow filter_by_email
           ; test_case "filter exclude inactive" `Slow filter_exclude_inactive
           ; test_case

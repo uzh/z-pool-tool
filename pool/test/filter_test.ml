@@ -523,6 +523,37 @@ let save_filter filter experiment =
   |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
 ;;
 
+let update_filter _ () =
+  let open Test_utils in
+  let%lwt key_list = Filter.all_keys Data.database_label in
+  let query = firstname "Foo" in
+  let filter = Filter.create None query in
+  let experiment =
+    { (Model.create_experiment ()) with Experiment.filter = Some filter }
+  in
+  let events =
+    Cqrs_command.Experiment_command.UpdateFilter.handle
+      experiment
+      key_list
+      []
+      filter
+      query
+  in
+  let expected =
+    Ok
+      [ Experiment.updated
+          { experiment with
+            Experiment.filter = Some filter
+          ; matcher_notification_sent =
+              Experiment.MatcherNotificationSent.create false
+          }
+        |> Pool_event.experiment
+      ; Filter.Updated filter |> Pool_event.filter
+      ]
+  in
+  check_result expected events |> Lwt.return
+;;
+
 let filter_contacts _ () =
   let%lwt () =
     let open Utils.Lwt_result.Infix in
@@ -599,6 +630,7 @@ let filter_exclude_inactive _ () =
 
 let validate_filter_with_unknown_field _ () =
   let open Test_utils in
+  let experiment = Model.create_experiment () in
   let%lwt () =
     let%lwt key_list = Filter.all_keys Data.database_label in
     let query =
@@ -612,6 +644,7 @@ let validate_filter_with_unknown_field _ () =
     let filter = Filter.create None query in
     let events =
       Cqrs_command.Experiment_command.UpdateFilter.handle
+        experiment
         key_list
         []
         filter
@@ -625,6 +658,7 @@ let validate_filter_with_unknown_field _ () =
 
 let validate_filter_with_invalid_value _ () =
   let open Test_utils in
+  let experiment = Model.create_experiment () in
   let%lwt () =
     let%lwt key_list = Filter.all_keys Data.database_label in
     let query =
@@ -639,6 +673,7 @@ let validate_filter_with_invalid_value _ () =
     let filter = Filter.create None query in
     let events =
       Cqrs_command.Experiment_command.UpdateFilter.handle
+        experiment
         key_list
         []
         filter
