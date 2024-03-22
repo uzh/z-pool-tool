@@ -48,24 +48,18 @@ let update_upcoming_assignments database_label =
 
 let start () =
   let open Schedule in
-  (* TODO: How to run every morning at 02:00 ?? *)
-  let run_at =
-    let open CCResult.Infix in
-    let sec = 0. in
-    Ptime.of_float_s sec
-    |> CCOption.to_result Pool_common.Message.(Invalid Field.Time)
-    >>= ScheduledTime.create
-    |> get_or_failwith
-  in
+  let interval = Ptime.Span.of_int_s (60 * 60) |> ScheduledTimeSpan.of_span in
   let periodic_fcn () =
     Logs.debug ~src (fun m ->
-      m ~tags:Pool_database.(Logger.Tags.create root) "Run");
+      m
+        ~tags:Pool_database.(Logger.Tags.create root)
+        "Run check if future assignments match filter");
     Lwt.bind
       (Pool_tenant.find_databases ())
       (Lwt_list.iter_s (fun { Pool_database.label; _ } ->
          update_upcoming_assignments label))
   in
-  create "import_notifications" (At run_at) periodic_fcn
+  create "upcoming_assignments_match_filter" (Every interval) periodic_fcn
   |> Schedule.add_and_start
 ;;
 
