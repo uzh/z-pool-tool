@@ -141,13 +141,15 @@ let calculate_mailing_limits
   pool, limit_to_mailing
 ;;
 
-let notify_all_invited tenant experiment =
+let notify_all_invited pool tenant experiment =
   let open Experiment in
   match MatcherNotificationSent.value experiment.matcher_notification_sent with
   | true -> Lwt.return []
   | false ->
-    let recipient =
-      "timo.huber@econ.uzh.ch" |> Pool_user.EmailAddress.of_string
+    let%lwt recipient =
+      Settings.find_contact_email pool
+      ||> Settings.ContactEmail.value
+      ||> Pool_user.EmailAddress.of_string
     in
     let%lwt email_event =
       Message_template.MatcherNotification.create
@@ -189,7 +191,7 @@ let events_of_mailings =
         find_contacts_by_mailing pool mailing limit
         >>= fun (experiment, contacts, use_case) ->
         match contacts with
-        | [] -> notify_all_invited tenant experiment |> Lwt_result.ok
+        | [] -> notify_all_invited pool tenant experiment |> Lwt_result.ok
         | contacts ->
           let open Cqrs_command.Invitation_command in
           let contacts = sort_contacts contacts in

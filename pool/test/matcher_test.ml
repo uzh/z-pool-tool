@@ -314,8 +314,10 @@ let matcher_notification _ () =
   in
   let%lwt events = matcher_events () in
   let%lwt expected =
-    let recipient =
-      "timo.huber@econ.uzh.ch" |> Pool_user.EmailAddress.of_string
+    let%lwt recipient =
+      Settings.find_contact_email database_label
+      ||> Settings.ContactEmail.value
+      ||> Pool_user.EmailAddress.of_string
     in
     let%lwt mail =
       matcher_notification_mail
