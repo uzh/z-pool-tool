@@ -382,6 +382,9 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
     "Locations, where experiments are conducted. Every session has to have a \
      location."
   | MailingLimit -> "Max. generated Invitations during the mailing."
+  | MailingLimitExceedsMatchingContacts ->
+    "The given limit is larger than the number of contacts meeting the \
+     criteria of this experiment."
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been \
      temporarily suspended because of too many failed login attempts."

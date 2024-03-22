@@ -184,6 +184,8 @@ type t =
   | MainSession [@name "main_session"] [@printer go "main_session"]
   | MarkedAsDeleted [@name "marked_as_deleted"]
   [@printer go "marked_as_deleted"]
+  | MatchingFilterCount [@name "matching_filter_count"]
+  [@printer go "matching_filter_count"]
   | MaxParticipants [@name "max_participants"] [@printer go "max_participants"]
   | MaxTries [@name "max_tries"] [@printer go "max_tries"]
   | Message [@name "message"] [@printer go "message"]
