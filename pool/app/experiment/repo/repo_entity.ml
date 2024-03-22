@@ -110,11 +110,12 @@ let t =
                                   , ( m.email_session_reminder_lead_time
                                     , ( m.text_message_session_reminder_lead_time
                                       , ( m.invitation_reset_at
-                                        , ( m.created_at
-                                          , ( m.updated_at
-                                            , (m.filter, m.organisational_unit)
-                                            ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-        ) )
+                                        , ( m.matcher_notification_sent
+                                          , ( m.created_at
+                                            , ( m.updated_at
+                                              , (m.filter, m.organisational_unit)
+                                              ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+            ) ) ) )
   in
   let decode
     ( id
@@ -135,10 +136,11 @@ let t =
                                 , ( email_session_reminder_lead_time
                                   , ( text_message_session_reminder_lead_time
                                     , ( invitation_reset_at
-                                      , ( created_at
-                                        , ( updated_at
-                                          , (filter, organisational_unit) ) ) )
-                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                      , ( matcher_notification_sent
+                                        , ( created_at
+                                          , ( updated_at
+                                            , (filter, organisational_unit) ) )
+                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -162,6 +164,7 @@ let t =
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
       ; invitation_reset_at
+      ; matcher_notification_sent
       ; created_at
       ; updated_at
       }
@@ -215,18 +218,20 @@ let t =
                                                                InvitationResetAt
                                                                .t)
                                                             (t2
-                                                               CreatedAt.t
+                                                               bool
                                                                (t2
-                                                                  UpdatedAt.t
+                                                                  CreatedAt.t
                                                                   (t2
-                                                                     (option
-                                                                        Filter
-                                                                        .Repo
-                                                                        .t)
-                                                                     (option
-                                                                        Organisational_unit
-                                                                        .Repo
-                                                                        .t)))))))))))))))))))))))
+                                                                     UpdatedAt.t
+                                                                     (t2
+                                                                        (option
+                                                                           Filter
+                                                                           .Repo
+                                                                           .t)
+                                                                        (option
+                                                                           Organisational_unit
+                                                                           .Repo
+                                                                           .t))))))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -258,8 +263,9 @@ module Write = struct
                                         , ( m.email_session_reminder_lead_time
                                           , ( m
                                                 .text_message_session_reminder_lead_time
-                                            , m.invitation_reset_at ) ) ) ) ) )
-                                ) ) ) ) ) ) ) ) ) ) ) ) )
+                                            , ( m.invitation_reset_at
+                                              , m.matcher_notification_sent ) )
+                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     let open Common in
@@ -313,9 +319,11 @@ module Write = struct
                                                                     Reminder
                                                                     .TextMessageLeadTime
                                                                     .t)
-                                                                 (option
-                                                                    InvitationResetAt
-                                                                    .t)))))))))))))))))))))
+                                                                 (t2
+                                                                    (option
+                                                                       InvitationResetAt
+                                                                       .t)
+                                                                    bool)))))))))))))))))))))
   ;;
 end
 

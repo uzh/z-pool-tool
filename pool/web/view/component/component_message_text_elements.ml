@@ -180,6 +180,7 @@ module DummyData = struct
       ; email_session_reminder_lead_time = None
       ; text_message_session_reminder_lead_time = None
       ; invitation_reset_at = None
+      ; matcher_notification_sent = MatcherNotificationSent.create false
       ; created_at = Ptime_clock.now ()
       ; updated_at = Ptime_clock.now ()
       }
@@ -313,6 +314,8 @@ let message_template_help
       (create_experiment ())
       (create_session ())
       (create_assignment ())
+  | MatcherNotification ->
+    MatcherNotification.email_params layout (create_experiment ())
   | PasswordChange -> PasswordChange.email_params layout (create_sihl_user ())
   | PasswordReset ->
     let reset_url =

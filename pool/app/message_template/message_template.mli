@@ -13,6 +13,7 @@ module Label : sig
     | EmailVerification
     | ExperimentInvitation
     | ManualSessionMessage
+    | MatcherNotification
     | PasswordChange
     | PasswordReset
     | PhoneVerification
@@ -356,6 +357,17 @@ module ManualSessionMessage : sig
     -> SmsText.t
     -> Pool_user.CellPhone.t
     -> Text_message.job
+end
+
+module MatcherNotification : sig
+  val email_params : email_layout -> Experiment.t -> (string * string) list
+
+  val create
+    :  Pool_tenant.t
+    -> Pool_common.Language.t
+    -> Experiment.t
+    -> Pool_user.EmailAddress.t
+    -> Email.job Lwt.t
 end
 
 module PasswordChange : sig

@@ -408,6 +408,9 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MessageTemplateManualSessionMessage ->
     "This template serves as a template for manually sent messages in the \
      context of a session."
+  | MessageTemplateMatcherNotification ->
+    "This message is sent to inform administrators that no further contacts \
+     have been found who can be invited to an experiment."
   | MessageTemplatePasswordChange ->
     "This message is sent to notify users that the account password has been \
      changed."

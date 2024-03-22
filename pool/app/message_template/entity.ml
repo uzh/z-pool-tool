@@ -26,6 +26,8 @@ module Label = struct
     [@printer print "experiment_invitation"]
     | ManualSessionMessage [@name "manual_session_message"]
     [@printer print "manual_session_message"]
+    | MatcherNotification [@name "matcher_notification"]
+    [@printer print "matcher_notification"]
     | PasswordChange [@name "password_change"]
     [@printer print "password_change"]
     | PasswordReset [@name "password_reset"] [@printer print "password_reset"]
@@ -164,6 +166,7 @@ let template_hint label =
   | EmailVerification -> MessageTemplateEmailVerification
   | ExperimentInvitation -> MessageTemplateExperimentInvitation
   | ManualSessionMessage -> MessageTemplateManualSessionMessage
+  | MatcherNotification -> MessageTemplateMatcherNotification
   | PasswordChange -> MessageTemplatePasswordChange
   | PasswordReset -> MessageTemplatePasswordReset
   | PhoneVerification -> MessageTemplatePhoneVerification

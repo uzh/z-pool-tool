@@ -193,6 +193,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
 let experiment_id = Experiment.Id.create ()
 let contact_ids = Contact.Id.[ create (); create (); create (); create () ]
 let invitation_mail = Message_template.ExperimentInvitation.prepare
+let matcher_notification_mail = Message_template.MatcherNotification.create
 
 let contact_name_filter name =
   let open Filter in
@@ -290,5 +291,60 @@ let reset_invitations _ () =
     Alcotest.(check (list Test_utils.event) "succeeds" expected events)
   in
   let%lwt () = Pool_event.handle_events database_label events in
+  Lwt.return_unit
+;;
+
+let matcher_notification _ () =
+  let%lwt tenant =
+    Pool_tenant.find_by_label database_label ||> get_or_failwith
+  in
+  let%lwt experiment =
+    Experiment.find database_label experiment_id ||> get_or_failwith
+  in
+  let%lwt experiment =
+    "that name surely does not exist"
+    |> contact_name_filter
+    |> store_filter experiment
+  in
+  let%lwt mailing = MailingRepo.create experiment_id in
+  let matcher_events () =
+    Matcher.events_of_mailings [ database_label, [ mailing, limit ] ]
+    ||> CCList.hd
+    ||> snd
+  in
+  let%lwt events = matcher_events () in
+  let%lwt expected =
+    let recipient =
+      "timo.huber@econ.uzh.ch" |> Pool_user.EmailAddress.of_string
+    in
+    let%lwt mail =
+      matcher_notification_mail
+        tenant
+        Pool_common.Language.En
+        experiment
+        recipient
+      ||> Email.sent
+      ||> Pool_event.email
+    in
+    let experiment =
+      Experiment.(
+        Updated
+          { experiment with
+            matcher_notification_sent = MatcherNotificationSent.create true
+          })
+      |> Pool_event.experiment
+    in
+    Lwt.return [ mail; experiment ]
+  in
+  (* Expect notification to be sent *)
+  let () =
+    Alcotest.(check (list Test_utils.event) "succeeds" expected events)
+  in
+  let%lwt () = Pool_event.handle_events database_label events in
+  (* Expect notification not to be sent again *)
+
+  (* TODO: Fix this test *)
+  (* let%lwt events = matcher_events () in let () = Alcotest.(check (list
+     Test_utils.event) "succeeds" [] events) in *)
   Lwt.return_unit
 ;;

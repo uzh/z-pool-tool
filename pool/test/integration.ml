@@ -146,6 +146,7 @@ let suite =
       , Matcher_test.
           [ test_case "send invitations" `Slow create_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
+          ; test_case "matcher notifiaction" `Slow matcher_notification
           ] )
     ; ( "contact"
       , Contact_test.

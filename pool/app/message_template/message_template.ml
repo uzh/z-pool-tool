@@ -96,15 +96,18 @@ let prepare_manual_email
   Message_utils.render_email_params params mail
 ;;
 
+let layout_params layout =
+  [ "siteTitle", layout.site_title; "siteUrl", layout.link ]
+;;
+
 let global_params layout user =
   Pool_user.
     [ "contactId", user.Sihl_user.id
     ; "name", user |> user_fullname
     ; "firstname", user |> user_firstname |> Firstname.value
     ; "lastname", user |> user_lastname |> Lastname.value
-    ; "siteTitle", layout.site_title
-    ; "siteUrl", layout.link
     ]
+  @ layout_params layout
 ;;
 
 let public_experiment_params layout experiment =
@@ -749,6 +752,34 @@ module ManualSessionMessage = struct
   ;;
 end
 
+module MatcherNotification = struct
+  let label = Label.MatcherNotification
+
+  let message_history experiment =
+    let entity_uuids =
+      [ experiment.Experiment.id |> Experiment.Id.to_common ]
+    in
+    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
+  ;;
+
+  let email_params layout experiment =
+    experiment_params layout experiment @ layout_params layout
+  ;;
+
+  let create tenant language experiment recipient =
+    let pool = tenant.Pool_tenant.database_label in
+    let%lwt template = find_by_label_and_language_to_send pool label language in
+    let layout = layout_from_tenant tenant in
+    let%lwt sender = default_sender_of_pool pool in
+    let params = email_params layout experiment in
+    let email =
+      prepare_email language template sender recipient layout params
+    in
+    let message_history = message_history experiment in
+    Email.create_job ~message_history email |> Lwt.return
+  ;;
+end
+
 module PasswordChange = struct
   let email_params = global_params
   let label = Label.PasswordChange
@@ -1207,9 +1238,8 @@ module SignUpVerification = struct
     ; "firstname", firstname
     ; "lastname", lastname
     ; "verificationUrl", verification_url
-    ; "siteTitle", layout.site_title
-    ; "siteUrl", layout.link
     ]
+    @ layout_params layout
   ;;
 
   let message_history user_id =

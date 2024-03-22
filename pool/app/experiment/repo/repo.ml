@@ -23,6 +23,7 @@ let sql_select_columns =
   ; "pool_experiments.email_session_reminder_lead_time"
   ; "pool_experiments.text_message_session_reminder_lead_time"
   ; "pool_experiments.invitation_reset_at"
+  ; "pool_experiments.matcher_notification_sent"
   ; "pool_experiments.created_at"
   ; "pool_experiments.updated_at"
   ]
@@ -128,7 +129,8 @@ module Sql = struct
         experiment_type,
         email_session_reminder_lead_time,
         text_message_session_reminder_lead_time,
-        invitation_reset_at
+        invitation_reset_at,
+        matcher_notification_sent
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
         ?,
@@ -141,6 +143,7 @@ module Sql = struct
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -318,7 +321,8 @@ module Sql = struct
         experiment_type = $17,
         email_session_reminder_lead_time = $18,
         text_message_session_reminder_lead_time = $19,
-        invitation_reset_at = $20
+        invitation_reset_at = $20,
+        matcher_notification_sent = $21
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
