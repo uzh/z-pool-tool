@@ -599,5 +599,5 @@ end = struct
     |> CCResult.return
   ;;
 
-  let effects id = Session.Guard.Access.update id (* TODO: Access *)
+  let effects id = Session.Guard.Access.update id
 end

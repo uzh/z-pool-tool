@@ -885,6 +885,7 @@ let duplicate
 
 let detail
   ?access_contact_profiles
+  ?(rerun_session_filter = false)
   ?(send_direct_message = false)
   ?view_contact_name
   ?view_contact_info
@@ -1241,6 +1242,23 @@ let detail
           ]
       else txt ""
     in
+    let refresh_fiter_button =
+      if rerun_session_filter
+      then
+        header_btn
+          Icon.RefreshOutline
+          Message.UpdateAssignmentsMatchFilter
+          Htmx.
+            [ hx_post
+                (HttpUtils.Url.Admin.session_path
+                   ~suffix:"update-matches-filter"
+                   experiment_id
+                   session.id
+                 |> Sihl.Web.externalize_path)
+            ; hx_swap "None"
+            ]
+      else txt ""
+    in
     div
       ~a:[ a_class [ "stack" ] ]
       [ div
@@ -1260,18 +1278,7 @@ let detail
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
               [ direct_messaging_buttons
-              ; header_btn
-                  Icon.RefreshOutline
-                  Message.UpdateAssignmentsMatchFilter
-                  Htmx.
-                    [ hx_post
-                        (HttpUtils.Url.Admin.session_path
-                           ~suffix:"update-matches-filter"
-                           experiment_id
-                           session.id
-                         |> Sihl.Web.externalize_path)
-                    ; hx_swap "None"
-                    ]
+              ; refresh_fiter_button
               ; header_btn
                   Icon.PrintOutline
                   Message.(Print (Some Field.Assignments))

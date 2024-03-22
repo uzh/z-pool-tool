@@ -718,7 +718,7 @@ let control_to_string = function
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field
   | Update field -> format_submit "aktualisieren" field
-  | UpdateAssignmentsMatchFilter -> format_submit "rerun filter" None (* TODO *)
+  | UpdateAssignmentsMatchFilter -> format_submit "Filter erneut ausführen" None
   | UpdateOrder -> "Reihenfolge anpassen"
   | Validate -> "Validieren"
   | Verify field -> format_submit "verifizieren" field

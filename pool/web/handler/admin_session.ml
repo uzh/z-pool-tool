@@ -404,8 +404,12 @@ let show req =
     let%lwt send_direct_message =
       Helpers.Guard.can_send_direct_message context
     in
+    let%lwt rerun_session_filter =
+      Helpers.Guard.can_rerun_session_filter context experiment_id session_id
+    in
     Page.Admin.Session.detail
       ~access_contact_profiles
+      ~rerun_session_filter
       ~send_direct_message
       ~view_contact_name
       ~view_contact_info
@@ -1199,6 +1203,7 @@ module Access : sig
   val update_matches_filter : Rock.Middleware.t
 end = struct
   module SessionCommand = Cqrs_command.Session_command
+  module AssignmentCommand = Cqrs_command.Assignment_command
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
@@ -1274,5 +1279,9 @@ end = struct
     Contact.Guard.Access.send_direct_message |> Guardian.validate_admin_entity
   ;;
 
-  let update_matches_filter = direct_message (* TODO: access *)
+  let update_matches_filter =
+    AssignmentCommand.UpdateMatchesFilter.effects
+    |> combined_effects
+    |> Guardian.validate_generic
+  ;;
 end
