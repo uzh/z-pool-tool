@@ -348,7 +348,8 @@ let session_page database_label req context session experiment =
     >|> create_layout
   | `Print ->
     let%lwt assignments =
-      Assignment.find_not_deleted_by_session database_label session.Session.id
+      Assignment.(
+        query_by_session ~query:default_query database_label session_id)
     in
     Page.Admin.Session.print
       ~view_contact_name

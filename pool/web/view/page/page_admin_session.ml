@@ -1326,19 +1326,28 @@ let print
   session
   assignments
   =
+  let open Page_admin_assignments in
   let assignment_list =
-    Page_admin_assignments.Partials.print_assignments_list
+    data_table
       ?view_contact_name
       ?view_contact_info
+      ~is_print:true
       context
       experiment
       session
+      false
       assignments
   in
   let title =
     Pool_common.(Utils.text_to_string language (session_title session))
   in
-  [ div ~a:[ a_class [ "safety-margin" ] ] [ h1 [ txt title ]; assignment_list ]
+  [ div
+      ~a:[ a_class [ "safety-margin" ] ]
+      [ h1 [ txt title ]
+      ; div
+          ~a:[ a_class [ "stack-lg" ] ]
+          [ Partials.table_legend language; assignment_list ]
+      ]
   ]
   |> Layout.Print.create ~document_title:title
 ;;

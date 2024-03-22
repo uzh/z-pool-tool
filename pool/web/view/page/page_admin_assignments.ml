@@ -525,85 +525,6 @@ module Partials = struct
       direct_message_modal_id
       html
   ;;
-
-  let print_assignments_list
-    ?(view_contact_name = false)
-    ?(view_contact_info = false)
-    Pool_context.{ language; _ }
-    experiment
-    session
-    assignments
-    =
-    let assignemnts_table_id =
-      Format.asprintf "assignments-%s" Session.(Id.value session.Session.id)
-    in
-    let swap_session_modal_id = swap_session_modal_id session in
-    match CCList.is_empty assignments with
-    | true -> p [ empty language ]
-    | false ->
-      let add_field_if check values = if check then values else [] in
-      let contact_information =
-        add_field_if
-          view_contact_name
-          [ Field.Lastname, contact_lastname
-          ; Field.Firstname, contact_firstname
-          ]
-        @ add_field_if view_contact_info [ Field.Email, contact_email ]
-        @ add_field_if view_contact_info [ Field.CellPhone, contact_cellphone ]
-        |> function
-        | [] -> [ Field.Id, assignment_id ]
-        | fields -> fields
-      in
-      let external_data_field =
-        add_field_if
-          Experiment.(external_data_required_value experiment)
-          [ Field.ExternalDataId, assignment_external_data_id ]
-      in
-      let thead =
-        let field_to_text = Component.Table.field_to_txt language in
-        let left =
-          CCList.map (fun (field, _) -> field_to_text field) contact_information
-          @ CCList.map
-              (fun (field, _) -> field_to_text field)
-              external_data_field
-        in
-        let checkboxes = [ txt "P"; txt "NS" ] in
-        let right = [ Field.CanceledAt |> field_to_text ] in
-        left @ checkboxes @ right
-      in
-      let rows =
-        CCList.map
-          (fun (assignment : Assignment.t) ->
-            CCList.map snd contact_information
-            @ CCList.map snd external_data_field
-            @ [ assignment_participated; assignment_no_show; canceled_at ]
-            (* TODO: Status Icons*)
-            |> CCList.mapi (fun i fcn ->
-              let value = fcn assignment in
-              if CCInt.equal i 0
-              then
-                div
-                  ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-                  (value :: Status.make_icons language assignment.contact `Name)
-              else value))
-          assignments
-      in
-      div
-        [ table_legend language
-        ; div
-            ~a:
-              [ a_id swap_session_modal_id
-              ; a_class [ "fullscreen-overlay"; "modal" ]
-              ]
-            []
-        ; Component.Table.horizontal_table
-            `Striped
-            ~align_last_end:true
-            ~id:assignemnts_table_id
-            ~thead
-            rows
-        ]
-  ;;
 end
 
 let data_table
@@ -629,12 +550,9 @@ let data_table
     |> Uri.of_string
   in
   let data_table =
-    Component.DataTable.create_meta
-      ?filter:Assignment.filterable_by
-      ~search:Assignment.searchable_by
-      url
-      query
-      language
+    let filter = if is_print then None else Assignment.filterable_by in
+    let search = if is_print then None else Some Assignment.searchable_by in
+    Component.DataTable.create_meta ?filter ?search url query language
   in
   let conditional_left_columns =
     [ ( view_contact_name
