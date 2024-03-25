@@ -417,6 +417,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | MessageTemplateManualSessionMessage ->
     "Diese Vorlage dient als Vorlage für manuell versendete Nachrichten im \
      Rahmen einer Session."
+  | MessageTemplateMatchFilterUpdateNotification ->
+    "Diese Nachricht wird gesendet, um Admins zu informieren, wenn Kontakte \
+     nicht mehr den im Filter definierten Kriterien entsprechen."
   | MessageTemplatePasswordChange ->
     "Diese Nachricht wird gesendet, um Benutzer zu benachrichtigen, dass das \
      Kontopasswort geändert wurde."

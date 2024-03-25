@@ -773,6 +773,70 @@ module ManualSessionMessage = struct
   ;;
 end
 
+module MatchFilterUpdateNotification = struct
+  let label = Label.MatchFilterUpdateNotification
+
+  let message_history experiment assignments =
+    let open CCList in
+    let entity_uuids =
+      (experiment.Experiment.id |> Experiment.Id.to_common)
+      :: (assignments
+          |> flat_map (fun (session, assignments) ->
+            (session.Session.id |> Session.Id.to_common)
+            :: (assignments
+                >|= fun { Assignment.contact; _ } -> Contact.id contact)))
+    in
+    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
+  ;;
+
+  let assignment_list assignments =
+    let data =
+      assignments
+      |> CCList.map (fun (session, assignments) ->
+        let session_title = Session.start_end_with_duration_human session in
+        let assignment_title { Assignment.contact; _ } =
+          Format.asprintf "- %s" (Contact.fullname contact)
+        in
+        session_title :: CCList.map assignment_title assignments
+        |> CCString.concat "\n")
+      |> CCString.concat "\n\n"
+    in
+    [ "assignments", data ]
+  ;;
+
+  let email_params layout user experiment assignments =
+    global_params layout user
+    @ experiment_params layout experiment
+    @ assignment_list assignments
+  ;;
+
+  let template pool language =
+    find_by_label_and_language_to_send pool label language
+  ;;
+
+  let create tenant admin experiment assignments =
+    let pool = tenant.Pool_tenant.database_label in
+    let language = Pool_common.Language.En in
+    let%lwt template = template pool language in
+    let layout = layout_from_tenant tenant in
+    let%lwt sender = sender_of_experiment pool experiment in
+    let params =
+      email_params layout (Admin.user admin) experiment assignments
+    in
+    let email =
+      prepare_email
+        language
+        template
+        sender
+        (Admin.email_address admin)
+        layout
+        params
+    in
+    let message_history = message_history experiment assignments in
+    Email.create_job ~message_history email |> Lwt.return
+  ;;
+end
+
 module PasswordChange = struct
   let email_params = global_params
   let label = Label.PasswordChange
