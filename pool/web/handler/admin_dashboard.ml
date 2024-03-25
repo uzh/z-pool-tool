@@ -5,9 +5,9 @@ let statistics_from_request req database_label =
   let open CCOption.Infix in
   let period =
     Sihl.Web.Request.query Pool_common.Message.Field.(show Period) req
-    >>= Statistics.read_period
+    >>= Statistics.System.read_period
   in
-  let%lwt statistics = Statistics.create ?period database_label () in
+  let%lwt statistics = Statistics.System.create ?period database_label () in
   Lwt.return (period, statistics)
 ;;
 

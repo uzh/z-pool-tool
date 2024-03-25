@@ -1,6 +1,9 @@
 open Tyxml.Html
-open Component
-open Input
+open Component.Input
+module Button = Component.Button
+module Icon = Component.Icon
+module DataTable = Component.DataTable
+module Notification = Component.Notification
 open CCFun
 module HttpUtils = Http_utils
 module Message = Pool_common.Message
@@ -20,7 +23,7 @@ module Partials = struct
     id
     |> Id.value
     |> Format.asprintf "/admin/experiments/%s"
-    |> Input.link_as_button ~icon:Icon.Eye
+    |> link_as_button ~icon:Icon.Eye
   ;;
 end
 
@@ -80,7 +83,7 @@ let notifications
 ;;
 
 module Statistics = struct
-  open Experiment.Statistics
+  open Statistics.Experiment
 
   let make language statistics =
     let int_to_txt i = i |> CCInt.to_string |> txt in
@@ -237,7 +240,7 @@ let list Pool_context.{ language; _ } experiments query =
   in
   let cols =
     let create_experiment : [ | Html_types.flow5 ] elt =
-      Input.link_as_button
+      link_as_button
         ~style:`Success
         ~icon:Icon.Add
         ~control:(language, Message.(Add (Some Field.Experiment)))
@@ -611,13 +614,14 @@ let edit
       in
       div
         ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
-        [ Tag.add_tags_form context ~existing:current available assign_action
-        ; Component.Tag.tag_form
-            ~label:Pool_common.I18n.SelectedTags
-            language
-            (remove_action, csrf)
-            current
-        ])
+        Component.
+          [ Tag.add_tags_form context ~existing:current available assign_action
+          ; Tag.tag_form
+              ~label:Pool_common.I18n.SelectedTags
+              language
+              (remove_action, csrf)
+              current
+          ])
     else txt ""
   in
   let tags =
@@ -782,7 +786,7 @@ let detail
   in
   let bool_to_string = Utils.bool_to_string language in
   let vertical_table =
-    Table.vertical_table
+    Component.Table.vertical_table
       ~align_top:true
       ~break_mobile:true
       ~th_class:[ "w-4" ]

@@ -266,7 +266,7 @@ let detail edit req =
            Email.SmtpAuth.find database_label id >|+ CCOption.return)
        in
        let* statistics =
-         Experiment.Statistics.create database_label experiment
+         Statistics.Experiment.create database_label experiment
        in
        Page.Admin.Experiments.detail
          experiment

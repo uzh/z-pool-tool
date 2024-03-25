@@ -9,20 +9,21 @@ type title =
 let create
   language
   ( period
-  , { active_contacts
-    ; pending_contact_imports
-    ; login_count
-    ; sign_up_count
-    ; terms_accepted_count
-    ; terms_last_changed
-    ; assignments_created
-    ; invitations_sent
-    ; reminders_sent
-    ; emails_sent
-    } )
+  , System.
+      { active_contacts
+      ; pending_contact_imports
+      ; login_count
+      ; sign_up_count
+      ; terms_accepted_count
+      ; terms_last_changed
+      ; assignments_created
+      ; invitations_sent
+      ; reminders_sent
+      ; emails_sent
+      } )
   =
   let open Pool_common in
-  let open Statistics in
+  let open Statistics.System in
   let to_txt value = txt (CCInt.to_string value) in
   let period_select =
     let attributes =

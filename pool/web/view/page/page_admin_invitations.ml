@@ -173,7 +173,7 @@ module Partials = struct
 
   let statistics
     language
-    { Experiment.Statistics.SentInvitations.total_sent
+    { Statistics.Experiment.SentInvitations.total_sent
     ; sent_by_count
     ; total_match_filter
     }
