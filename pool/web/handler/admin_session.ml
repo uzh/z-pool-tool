@@ -349,7 +349,10 @@ let session_page database_label req context session experiment =
   | `Print ->
     let%lwt assignments =
       Assignment.(
-        query_by_session ~query:default_query database_label session_id)
+        find_for_session_detail_screen
+          ~query:default_query
+          database_label
+          session_id)
     in
     Page.Admin.Session.print
       ~view_contact_name
