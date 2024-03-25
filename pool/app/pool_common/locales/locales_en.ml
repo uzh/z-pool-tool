@@ -28,6 +28,7 @@ let rec field_to_string =
   | Assistants -> "assistants"
   | AvailableLanguages -> "available languages"
   | Building -> "building"
+  | Canceled -> "canceled"
   | CanceledAt -> "canceled at"
   | CellPhone -> "cell phone"
   | Chronological -> "chronological"
@@ -89,6 +90,7 @@ let rec field_to_string =
       (field_to_string LeadTime)
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
+  | ExternalDataIdAbbr -> "EID"
   | ExternalDataId -> "external data identifier"
   | ExternalDataRequired -> "external data is required"
   | Failed -> "failed"

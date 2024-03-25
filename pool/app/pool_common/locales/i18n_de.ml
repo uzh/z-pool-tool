@@ -128,6 +128,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SelectedTagsEmpty -> "Keine Tags zugewiesen"
   | SentInvitations -> "Versendete Einladungen"
   | SessionCloseScreen -> "Bildschirm zum Beenden der Sessions"
+  | SessionDetailScreen -> "Session-Detailansicht"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Einrückungen groupieren Folgesessions."

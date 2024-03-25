@@ -22,7 +22,21 @@ let find_by_session = Repo.find_by_session
 let find_multiple_by_session = Repo.Sql.find_multiple_by_session
 let query_by_session = Repo.query_by_session
 let find_uncanceled_by_session = Repo.find_uncanceled_by_session
-let find_for_session_close_screen = Repo.find_for_session_close_screen
+
+let find_for_session_close_screen pool session_id =
+  let open Utils.Lwt_result.Infix in
+  Repo.find_uncanceled_by_session pool session_id
+  >|> Repo.enrich_with_customfield_data `SessionClose pool
+;;
+
+let find_for_session_detail_screen ~query pool session_id =
+  let%lwt assignments, query = Repo.query_by_session ~query pool session_id in
+  let%lwt assignments =
+    assignments |> Repo.enrich_with_customfield_data `SessionDetail pool
+  in
+  Lwt.return (assignments, query)
+;;
+
 let find_deleted_by_session = Repo.find_deleted_by_session
 let find_with_follow_ups = Repo.find_with_follow_ups
 let find_follow_ups = Repo.find_follow_ups

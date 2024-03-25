@@ -76,6 +76,7 @@ type t =
   | SelectedTagsEmpty
   | SentInvitations
   | SessionCloseScreen
+  | SessionDetailScreen
   | SessionDetailTitle of Ptime.t
   | SessionIndent
   | SessionRegistrationTitle

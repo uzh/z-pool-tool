@@ -29,16 +29,20 @@ module Partials = struct
   let table_legend ?(hide_deleted = false) language =
     let open Pool_common in
     let open Component.Table in
+    let hint_to_string = Utils.hint_to_string language in
+    let field_to_string = Utils.field_to_string language in
     let deleted =
-      [ ( Utils.field_to_string language Field.MarkedAsDeleted
+      [ ( field_to_string Field.MarkedAsDeleted
         , legend_color_item "bg-red-lighter" )
       ]
     in
-    let to_string = Utils.hint_to_string language in
     let base =
       I18n.
-        [ to_string SessionCloseLegendNoShow, legend_text_item "NS"
-        ; to_string SessionCloseLegendParticipated, legend_text_item "P"
+        [ hint_to_string SessionCloseLegendNoShow, legend_text_item "NS"
+        ; hint_to_string SessionCloseLegendParticipated, legend_text_item "P"
+        ; ( field_to_string Field.ExternalDataId
+          , legend_text_item Field.(ExternalDataIdAbbr |> show) )
+        ; field_to_string Field.Canceled, legend_color_item "bg-orange-lighter"
         ]
     in
     (if hide_deleted then base else base @ deleted) |> table_legend
@@ -93,6 +97,32 @@ module Partials = struct
          (Assignment.CanceledAt.value
           %> Pool_common.Utils.Time.formatted_date_time)
     |> txt
+  ;;
+
+  let custom_fields_header language custom_fields =
+    CCList.map
+      (fun field -> div [ txt (Custom_field.name_value language field) ])
+      custom_fields
+    |> div ~a:[ a_class [ "flexcolumn" ] ]
+  ;;
+
+  let custom_field_cells language user answers custom_fields =
+    let open Custom_field in
+    answers
+    |> CCOption.map_or ~default:[] (fun custom_data ->
+      CCList.map
+        (fun field ->
+          CCList.find_opt
+            (fun public -> public |> Public.id |> Id.equal (id field))
+            custom_data
+          |> CCOption.map_or
+               ~default:(div [ txt "" ])
+               (Component.CustomField.answer_to_html
+                  ~add_data_label:true
+                  user
+                  language))
+        custom_fields)
+    |> div ~a:[ a_class [ "flexcolumn" ] ]
   ;;
 
   module ReminderModal = struct
@@ -568,11 +598,11 @@ let data_table
   ?(view_contact_name = false)
   ?(view_contact_info = false)
   ?(is_print = false)
-  (Pool_context.{ language; csrf; _ } as context)
+  (Pool_context.{ language; csrf; user; _ } as context)
   experiment
   session
   text_messages_enabled
-  (assignments, query)
+  ((assignments, custom_fields), query)
   =
   let open Pool_common in
   let open Partials in
@@ -605,9 +635,8 @@ let data_table
   in
   let conditional_right_columns =
     [ ( Experiment.(external_data_required_value experiment)
-      , column_external_data_id
+      , column_external_data_id_abbr
       , assignment_external_data_id )
-    ; true, column_canceled_at, canceled_at
     ]
   in
   let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
@@ -746,13 +775,20 @@ let data_table
       Message.MarkAsDeleted
       Component.Icon.TrashOutline
   in
+  let has_custom_fields = CCList.is_empty custom_fields |> not in
   let cols =
     let left =
       conditional_left_columns
       |> CCList.filter_map (fun (check, column, _) ->
         if check then Some (`column column) else None)
     in
-    let center = [ `column column_participated; `column column_no_show ] in
+    let custom_fields_header =
+      `custom (Partials.custom_fields_header language custom_fields)
+    in
+    let center =
+      let base = [ `column column_participated; `column column_no_show ] in
+      if has_custom_fields then custom_fields_header :: base else base
+    in
     let right =
       conditional_right_columns
       |> CCList.filter_map (fun (check, column, _) ->
@@ -761,7 +797,11 @@ let data_table
     let base = left @ center @ right in
     if is_print then base else base @ [ `empty ]
   in
-  let th_class = [ "w-3"; "w-3"; "w-2"; "w-1"; "w-1"; "w-2" ] in
+  let th_class =
+    let left = [ "w-2"; "w-3"; "w-2" ] in
+    let right = [ "w-1"; "w-1"; "w-2" ] in
+    if has_custom_fields then left @ [ "w-2" ] @ right else left @ right
+  in
   let row (assignment : t) =
     let tr cells =
       let assignment_id = a_user_data "id" (Id.value assignment.id) in
@@ -769,13 +809,23 @@ let data_table
       | true -> tr ~a:[ a_class [ "bg-red-lighter" ]; assignment_id ] cells
       | false -> tr ~a:[ assignment_id ] cells
     in
+    let custom_fields =
+      Partials.custom_field_cells
+        language
+        user
+        assignment.custom_fields
+        custom_fields
+    in
     let left =
       conditional_left_columns
       |> CCList.filter_map (fun (check, _, to_html) ->
         if check then Some (to_html assignment) else None)
     in
     let center =
-      [ assignment_participated assignment; assignment_no_show assignment ]
+      let base =
+        [ assignment_participated assignment; assignment_no_show assignment ]
+      in
+      if has_custom_fields then custom_fields :: base else base
     in
     let right =
       conditional_right_columns

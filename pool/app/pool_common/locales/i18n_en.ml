@@ -126,6 +126,7 @@ let to_string = function
   | SelectedTagsEmpty -> "No tags assigned"
   | SentInvitations -> "Sent invitations"
   | SessionCloseScreen -> "Session close screen"
+  | SessionDetailScreen -> "Session detail screen"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Indentations group follow-up sessions."

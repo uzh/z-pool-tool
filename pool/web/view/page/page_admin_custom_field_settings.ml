@@ -4,11 +4,13 @@ open Component
 let show { Pool_context.csrf; language; _ } contact_fields =
   let open Pool_common in
   let open Custom_field in
-  let action = "/admin/custom-fields/settings" |> Sihl.Web.externalize_path in
-  let checkbox field =
-    let checked =
-      if show_on_session_close_page field then [ a_checked () ] else []
-    in
+  let action suffix =
+    suffix
+    |> Format.asprintf "/admin/custom-fields/settings/%s"
+    |> Sihl.Web.externalize_path
+  in
+  let checkbox is_checked field =
+    let checked = if is_checked field then [ a_checked () ] else [] in
     input
       ~a:
         ([ a_input_type `Checkbox
@@ -18,29 +20,48 @@ let show { Pool_context.csrf; language; _ } contact_fields =
          @ checked)
       ()
   in
-  let table =
+  let table getter =
     contact_fields
     |> CCList.map (fun field ->
-      [ name_value language field |> txt; checkbox field ])
+      [ name_value language field |> txt; checkbox getter field ])
     |> Table.horizontal_table `Striped
+  in
+  let build_form setting_url title getter =
+    div
+      [ h2 [ txt (Utils.text_to_string language title) ]
+      ; form
+          ~a:
+            [ a_method `Post
+            ; a_action (action setting_url)
+            ; a_class [ "flexcolumn" ]
+            ]
+          [ Input.csrf_element csrf ()
+          ; table getter
+          ; div
+              ~a:[ a_class [ "flexrow"; "gap" ] ]
+              [ Input.submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  (Message.Save None)
+                  ()
+              ]
+          ]
+      ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
     [ h1 [ txt Utils.(nav_link_to_string language I18n.CustomFields) ]
     ; p [ txt Utils.(text_to_string language I18n.CustomFieldsSettings) ]
-    ; h2 [ txt (Utils.text_to_string language I18n.SessionCloseScreen) ]
-    ; form
-        ~a:[ a_method `Post; a_action action; a_class [ "flexcolumn" ] ]
-        [ Input.csrf_element csrf ()
-        ; table
-        ; div
-            ~a:[ a_class [ "flexrow"; "gap" ] ]
-            [ Input.submit_element
-                ~classnames:[ "push" ]
-                language
-                (Message.Save None)
-                ()
-            ]
+    ; div
+        ~a:[ a_class [ "gap-lg"; "stack-lg" ] ]
+        [ build_form
+            "session-close"
+            I18n.SessionCloseScreen
+            show_on_session_close_page
+        ; build_form
+            "session-detail"
+            I18n.SessionDetailScreen
+            show_on_session_detail_page
         ]
     ]
 ;;
