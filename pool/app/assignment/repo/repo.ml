@@ -192,6 +192,47 @@ module Sql = struct
       (Session.Id.value id)
   ;;
 
+  let count_unsuitable_by_request =
+    let open Caqti_request.Infix in
+    let base =
+      {sql|    
+        matches_filter = 0
+        AND pool_assignments.marked_as_deleted = 0
+        AND pool_assignments.canceled_at IS NULL
+        AND pool_sessions.canceled_at IS NULL
+        AND pool_sessions.closed_at IS NULL
+      |sql}
+    in
+    let count condition =
+      Format.asprintf
+        "SELECT COUNT(1) FROM pool_assignments %s WHERE %s AND %s"
+        joins_session
+        base
+        condition
+      |> Caqti_type.(string ->! int)
+    in
+    function
+    | `Session _ ->
+      {sql| pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      |> count
+    | `Experiment ->
+      Format.asprintf
+        {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      |> count
+  ;;
+
+  let count_unsuitable_by pool context =
+    let id =
+      match context with
+      | `Session id -> Session.Id.value id
+      | `Experiment id -> Experiment.Id.value id
+    in
+    Utils.Database.find
+      (Pool_database.Label.value pool)
+      (count_unsuitable_by_request context)
+      id
+  ;;
+
   let find_by_contact_request =
     let open Caqti_request.Infix in
     {sql|

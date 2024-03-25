@@ -199,6 +199,8 @@ type t =
   | NoShow [@name "no_show"] [@printer go "no_show"]
   | NoShowAbr [@name "no_show_abr"] [@printer go "no_show_abr"]
   | NoShowCount [@name "no_show_count"] [@printer go "no_show_count"]
+  | NotMatchingFilterCount [@name "not_matching_filter_count"]
+  [@printer go "not_matching_filter_count"]
   | NotifiedAt [@name "notified_at"] [@printer go "notified_at"]
   | NotifyVia [@name "notify_via"] [@printer go "notify_via"]
   | NotifyContact [@name "notify_contact"] [@printer go "notify_contact"]

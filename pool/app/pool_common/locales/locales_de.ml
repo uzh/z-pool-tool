@@ -171,6 +171,7 @@ let rec field_to_string =
   | NoShow -> "Nicht anwesend"
   | NoShowAbr -> "NS"
   | NoShowCount -> "Abwesende"
+  | NotMatchingFilterCount -> "unpassende"
   | NotifiedAt -> "Benachrichtigt am"
   | NotifyVia -> "Benachrichtigen via"
   | NotifyContact -> "Kontakt benachrichtigen"

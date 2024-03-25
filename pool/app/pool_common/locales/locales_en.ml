@@ -169,6 +169,7 @@ let rec field_to_string =
   | NoShow -> "no show"
   | NoShowAbr -> "NS"
   | NoShowCount -> "no shows"
+  | NotMatchingFilterCount -> "not matching filter"
   | NotifiedAt -> "notified at"
   | NotifyVia -> "notify via"
   | NotifyContact -> "notify contact"

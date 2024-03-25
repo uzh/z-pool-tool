@@ -40,6 +40,7 @@ let find_for_session_detail_screen ~query pool session_id =
 ;;
 
 let find_deleted_by_session = Repo.find_deleted_by_session
+let count_unsuitable_by = Repo.Sql.count_unsuitable_by
 let find_with_follow_ups = Repo.find_with_follow_ups
 let find_follow_ups = Repo.find_follow_ups
 

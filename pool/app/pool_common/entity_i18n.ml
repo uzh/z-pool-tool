@@ -150,6 +150,7 @@ type hint =
   | AssignmentCancellationMessageFollowUps
   | AssignmentConfirmationMessageFollowUps
   | AssignmentsMarkedAsClosed
+  | AssignmentsNotMatchingFilerSession of int
   | ContactCurrentCellPhone of string
   | ContactEnrollmentDoesNotMatchFilter
   | ContactEnrollmentRegistrationDisabled

@@ -885,6 +885,7 @@ let duplicate
 
 let detail
   ?access_contact_profiles
+  ~not_matching_filter_count
   ?(rerun_session_filter = false)
   ?(send_direct_message = false)
   ?view_contact_name
@@ -916,6 +917,16 @@ let detail
         ?icon
         (Format.asprintf "%s/%s" session_path url)
       |> CCOption.pure
+  in
+  let not_matching_filter_alert =
+    match not_matching_filter_count with
+    | None | Some 0 -> txt ""
+    | Some count ->
+      [ I18n.AssignmentsNotMatchingFilerSession count
+        |> Utils.hint_to_string language
+        |> txt
+      ]
+      |> Notification.notification language `Warning
   in
   let resend_reminders_modal =
     let open Pool_common in
@@ -1302,7 +1313,8 @@ let detail
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ session_overview
+    [ not_matching_filter_alert
+    ; session_overview
     ; tags_html
     ; message_templates_html
         Message_template.Label.SessionReminder

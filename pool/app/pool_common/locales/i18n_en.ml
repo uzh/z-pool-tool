@@ -222,6 +222,12 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | AssignmentsMarkedAsClosed ->
     "These assignments have been marked as deleted. Provided that the contacts \
      still meet the experiment criteria, they can register for sessions again."
+  | AssignmentsNotMatchingFilerSession count ->
+    Format.asprintf "%s die Kriterien dieses Experiments nicht."
+    @@
+      (match count with
+      | 1 -> "1 Kontakt erfüllt"
+      | count -> Format.asprintf "%i Kontakte erfüllen" count)
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->

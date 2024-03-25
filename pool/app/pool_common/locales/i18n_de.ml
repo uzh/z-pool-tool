@@ -226,6 +226,12 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
      anmelden."
+  | AssignmentsNotMatchingFilerSession count ->
+    Format.asprintf "%s not meet the criteria of this experiment."
+    @@
+      (match count with
+      | 1 -> "1 contact does"
+      | count -> Format.asprintf "%i contacts do" count)
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->

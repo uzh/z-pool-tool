@@ -394,6 +394,13 @@ let show req =
   in
   match HttpUtils.Htmx.is_hx_request req with
   | false ->
+    let%lwt not_matching_filter_count =
+      match session.Session.canceled_at with
+      | Some _ -> Lwt.return_none
+      | None ->
+        Assignment.count_unsuitable_by database_label (`Session session_id)
+        ||> CCOption.return
+    in
     let%lwt current_tags =
       Tags.ParticipationTags.(
         find_all database_label (Session (Session.Id.to_common session_id)))
@@ -413,6 +420,7 @@ let show req =
     in
     Page.Admin.Session.detail
       ~access_contact_profiles
+      ~not_matching_filter_count
       ~rerun_session_filter
       ~send_direct_message
       ~view_contact_name
