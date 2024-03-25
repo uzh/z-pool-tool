@@ -363,6 +363,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
+  | FilterTemplates ->
+    "Änderungen an einem dieser Filter wird auf alle Experimentfilter \
+     übertragen, die dieses Template beinhalten."
   | GtxKeyMissing ->
     "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten \
      verschickt werden."
