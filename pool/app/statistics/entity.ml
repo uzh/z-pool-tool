@@ -198,6 +198,14 @@ module Experiment = struct
     let schema = schema field create
   end
 
+  module NotMatchingFilerCount = struct
+    include Model.Integer
+
+    let field = Field.NotMatchingFilterCount
+    let create = CCResult.return
+    let schema = schema field create
+  end
+
   module NoShowCount = struct
     include Model.Integer
 
@@ -219,6 +227,7 @@ module Experiment = struct
     ; sending_invitations : SendingInvitations.t
     ; session_count : SessionCount.t
     ; invitations : SentInvitations.t
+    ; not_matching_filter : NotMatchingFilerCount.t
     ; showup_count : ShowUpCount.t
     ; noshow_count : NoShowCount.t
     ; participation_count : ParticipationCount.t

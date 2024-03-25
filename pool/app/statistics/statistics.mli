@@ -134,6 +134,12 @@ module Experiment : sig
     val field : Pool_common.Message.Field.t
   end
 
+  module NotMatchingFilerCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
   module NoShowCount : sig
     include Pool_common.Model.IntegerSig
 
@@ -151,6 +157,7 @@ module Experiment : sig
     ; sending_invitations : SendingInvitations.t
     ; session_count : SessionCount.t
     ; invitations : SentInvitations.t
+    ; not_matching_filter : NotMatchingFilerCount.t
     ; showup_count : ShowUpCount.t
     ; noshow_count : NoShowCount.t
     ; participation_count : ParticipationCount.t
@@ -160,6 +167,7 @@ module Experiment : sig
   val sending_invitations : t -> SendingInvitations.t
   val session_count : t -> SessionCount.t
   val invitations : t -> SentInvitations.t
+  val not_matching_filter : t -> NotMatchingFilerCount.t
   val showup_count : t -> ShowUpCount.t
   val noshow_count : t -> NoShowCount.t
   val participation_count : t -> ParticipationCount.t

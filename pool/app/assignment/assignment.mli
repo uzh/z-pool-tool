@@ -208,7 +208,7 @@ val find_deleted_by_session
 
 val count_unsuitable_by
   :  Pool_database.Label.t
-  -> [< `Experiment of  & Experiment.Id.t | `Session of 'a & Session.Id.t ]
+  -> [ `Experiment of Experiment.Id.t | `Session of Session.Id.t ]
   -> int Lwt.t
 
 val find_with_follow_ups : Pool_database.Label.t -> Id.t -> t list Lwt.t

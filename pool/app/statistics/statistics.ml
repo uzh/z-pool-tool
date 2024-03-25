@@ -48,6 +48,10 @@ module Experiment = struct
     let* sending_invitations = Repo.sending_invitations pool id in
     let%lwt session_count = Repo.session_count pool id in
     let* invitations = SentInvitations.create pool experiment in
+    let* not_matching_filter =
+      Assignment.count_unsuitable_by pool (`Experiment id)
+      ||> NotMatchingFilerCount.create
+    in
     let%lwt showup_count, noshow_count, participation_count =
       Repo.assignment_counts pool id
     in
@@ -56,6 +60,7 @@ module Experiment = struct
       ; sending_invitations
       ; session_count
       ; invitations
+      ; not_matching_filter
       ; showup_count
       ; noshow_count
       ; participation_count

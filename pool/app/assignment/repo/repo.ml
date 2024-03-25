@@ -215,7 +215,7 @@ module Sql = struct
     | `Session _ ->
       {sql| pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
       |> count
-    | `Experiment ->
+    | `Experiment _ ->
       Format.asprintf
         {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
       |> count

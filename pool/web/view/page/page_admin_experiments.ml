@@ -141,7 +141,9 @@ module Statistics = struct
       |> Page_admin_invitations.Partials.statistics language
     in
     let assignments_statistics =
-      [ ShowUpCount.(field, statistics |> showup_count |> value |> int_to_txt)
+      [ NotMatchingFilerCount.(
+          field, statistics |> not_matching_filter |> value |> int_to_txt)
+      ; ShowUpCount.(field, statistics |> showup_count |> value |> int_to_txt)
       ; NoShowCount.(field, statistics |> noshow_count |> value |> int_to_txt)
       ; ParticipationCount.(
           field, statistics |> participation_count |> value |> int_to_txt)
