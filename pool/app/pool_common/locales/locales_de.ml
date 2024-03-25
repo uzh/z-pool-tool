@@ -92,7 +92,7 @@ let rec field_to_string =
       "Experimentspezifische Erinnerungs-SMS %s"
       (field_to_string LeadTime)
   | ExperimentType -> "Experimenttyp"
-  | ExternalDataIdAbbr -> "EDI"
+  | ExternalDataIdAbbr -> "EID"
   | ExternalDataId -> "Externer Daten Identifikator"
   | ExternalDataRequired -> "Externe Daten müssen angegeben werden"
   | Failed -> "Fehlgeschlagen"

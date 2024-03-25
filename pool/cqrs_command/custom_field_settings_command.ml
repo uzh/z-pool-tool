@@ -10,7 +10,7 @@ module UpdateVisibilitySettings : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> selected:string list
-    -> [< `close | `detail ]
+    -> [< `Close | `Detail ]
     -> t
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -24,8 +24,8 @@ end = struct
     let open Custom_field in
     let getter, setter =
       match setting with
-      | `close -> show_on_session_close_page, set_show_on_session_close_page
-      | `detail -> show_on_session_detail_page, set_show_on_session_detail_page
+      | `Close -> show_on_session_close_page, set_show_on_session_close_page
+      | `Detail -> show_on_session_detail_page, set_show_on_session_detail_page
     in
     let active, inactive =
       CCList.partition_filter_map

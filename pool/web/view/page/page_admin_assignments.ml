@@ -40,7 +40,8 @@ module Partials = struct
       I18n.
         [ hint_to_string SessionCloseLegendNoShow, legend_text_item "NS"
         ; hint_to_string SessionCloseLegendParticipated, legend_text_item "P"
-        ; field_to_string Field.ExternalDataId, legend_text_item "EDI"
+        ; ( field_to_string Field.ExternalDataId
+          , legend_text_item Field.(ExternalDataIdAbbr |> show) )
         ; field_to_string Field.Canceled, legend_color_item "bg-orange-lighter"
         ]
     in

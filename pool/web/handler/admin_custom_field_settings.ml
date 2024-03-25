@@ -58,8 +58,8 @@ let update setting req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let update_close_screen = update `close
-let update_detail_screen = update `detail
+let update_close_screen = update `Close
+let update_detail_screen = update `Detail
 
 module Access : module type of Helpers.Access = struct
   module Command = Cqrs_command.Custom_field_settings_command

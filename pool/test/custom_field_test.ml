@@ -649,7 +649,7 @@ module Settings = struct
     let result =
       Cqrs_command.Custom_field_settings_command.UpdateVisibilitySettings.handle
         ~selected
-        `close
+        `Close
         [ field1; field2; field3 ]
         ()
     in

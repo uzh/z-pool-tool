@@ -90,7 +90,7 @@ let rec field_to_string =
       (field_to_string LeadTime)
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
-  | ExternalDataIdAbbr -> "EDI"
+  | ExternalDataIdAbbr -> "EID"
   | ExternalDataId -> "external data identifier"
   | ExternalDataRequired -> "external data is required"
   | Failed -> "failed"
