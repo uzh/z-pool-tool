@@ -1,5 +1,5 @@
 module Id : sig
-  include Pool_common.Model.IdSig
+  include Pool_model.Base.IdSig
 
   val to_common : t -> Pool_common.Id.t
   val of_common : Pool_common.Id.t -> t
@@ -22,12 +22,12 @@ module Model : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val schema : unit -> ('a, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> ('a, t) Pool_conformist.Field.t
   val all : t list
 end
 
-module Title : Pool_common.Model.StringSig
-module Description : Pool_common.Model.StringSig
+module Title : Pool_model.Base.StringSig
+module Description : Pool_model.Base.StringSig
 
 module Tagged : sig
   type t =

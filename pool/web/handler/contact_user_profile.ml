@@ -1,7 +1,7 @@
 open Pool_message
 module Command = Cqrs_command.Contact_command
 module HttpUtils = Http_utils
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module User = Pool_user
 
 let src = Logs.Src.create "handler.contact.user_profile"

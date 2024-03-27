@@ -426,7 +426,7 @@ let session_base_information language session =
   ; ( Field.Duration
     , session.duration
       |> Duration.value
-      |> Pool_common.Utils.Time.formatted_timespan
+      |> Pool_model.Time.formatted_timespan
       |> txt )
   ; ( Field.InternalDescription
     , CCOption.map_or
@@ -1020,12 +1020,12 @@ let detail
         let canceled =
           session.canceled_at
           |> CCOption.map (fun c ->
-            Field.CanceledAt, Utils.Time.formatted_date_time c |> txt)
+            Field.CanceledAt, Pool_model.Time.formatted_date_time c |> txt)
         in
         let closed =
           session.closed_at
           |> CCOption.map (fun c ->
-            Field.ClosedAt, Utils.Time.formatted_date_time c |> txt)
+            Field.ClosedAt, Pool_model.Time.formatted_date_time c |> txt)
         in
         let time_stamps =
           let format = Component.Utils.format_reminder_sent_opt in

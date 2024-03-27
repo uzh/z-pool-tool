@@ -689,7 +689,7 @@ let field_buttons language csrf current_model field =
          ; txt
              (published_at
               |> PublishedAt.value
-              |> Utils.Time.formatted_date_time)
+              |> Pool_model.Time.formatted_date_time)
          ]
      | None ->
        let disable_publish =
@@ -778,7 +778,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
            |> published_at
            |> CCOption.map_or
                 ~default:""
-                CCFun.(PublishedAt.value %> Utils.Time.formatted_date))
+                CCFun.(PublishedAt.value %> Pool_model.Time.formatted_date))
       ; Url.Field.edit_path (model field, id field) |> edit_link
       ]
     in

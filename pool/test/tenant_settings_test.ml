@@ -128,7 +128,7 @@ let check_inactive_user_disable_after _ () =
     DisableAfter.(
       Field.
         [ show field, [ CCInt.to_string nr ]
-        ; (show (TimeUnitOf field), Pool_common.Model.TimeUnit.[ show Days ])
+        ; (show (TimeUnitOf field), Pool_model.Base.TimeUnit.[ show Days ])
         ]
       |> decode
       >>= handle)
@@ -176,7 +176,7 @@ let check_inactive_user_warning _ () =
     Warning.(
       Field.
         [ show field, [ CCInt.to_string nr ]
-        ; (show (TimeUnitOf field), Pool_common.Model.TimeUnit.[ show Days ])
+        ; (show (TimeUnitOf field), Pool_model.Base.TimeUnit.[ show Days ])
         ]
       |> decode
       >>= handle)

@@ -5,7 +5,7 @@ module Id = struct
 end
 
 module NoShow = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let field = Pool_message.Field.NoShow
   let init = false
@@ -13,7 +13,7 @@ module NoShow = struct
 end
 
 module Participated = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let field = Pool_message.Field.Participated
   let init = false
@@ -29,21 +29,21 @@ module MatchesFilter = struct
 end
 
 module CanceledAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = Ok m
   let schema = schema Pool_message.Field.CanceledAt create
 end
 
 module MarkedAsDeleted = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let init = false
   let schema = schema Pool_message.Field.MarkedAsDeleted
 end
 
 module ExternalDataId = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.ExternalDataId
   let schema () = schema field ()

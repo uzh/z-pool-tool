@@ -69,5 +69,7 @@ val handle_sihl_login_error
   :  [< `Does_not_exist | `Incorrect_password ]
   -> Error.t
 
+val handle_ppx_yojson_err : exn * Yojson.Safe.t -> ('a, Error.t) result
+val handle_json_parse_err : string -> ('a, Error.t) result
 val to_conformist_error : (string * 'a * Error.t) list -> Error.t
 val add_field_query_params : string -> (Field.t * string) list -> string

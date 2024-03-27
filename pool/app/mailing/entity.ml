@@ -7,7 +7,7 @@ module Id = struct
 end
 
 module StartAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let field = Pool_message.Field.Start
   let create m = Ok m
@@ -15,7 +15,7 @@ module StartAt = struct
 end
 
 module StartNow = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.StartNow
 end
@@ -51,7 +51,7 @@ module Start = struct
 end
 
 module EndAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let field = Pool_message.Field.End
   let create m = Ok m
@@ -59,7 +59,7 @@ module EndAt = struct
 end
 
 module Limit = struct
-  include Pool_common.Model.Integer
+  include Pool_model.Base.Integer
 
   let field = Pool_message.Field.Limit
 
@@ -73,7 +73,7 @@ module Limit = struct
 end
 
 module InvitationCount = struct
-  include Pool_common.Model.Integer
+  include Pool_model.Base.Integer
 
   let field = Pool_message.Field.InvitationCount
 
@@ -101,7 +101,7 @@ module Distribution = struct
       [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
     end
 
-    include Pool_common.Model.SelectorType (Core)
+    include Pool_model.Base.SelectorType (Core)
     include Core
 
     let to_human language =
@@ -173,9 +173,8 @@ module Distribution = struct
   ;;
 
   let is_random_schema () =
-    let open Pool_common in
     let default = false in
-    Utils.schema_decoder
+    Pool_conformist.schema_decoder
       ~default
       CCFun.(bool_of_string_opt %> CCOption.get_or ~default %> CCResult.return)
       string_of_bool
@@ -189,10 +188,10 @@ module Distribution = struct
         m |> Yojson.Safe.from_string |> sorted_of_yojson |> CCResult.return
       with
       | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (exn, yojson) ->
-        Pool_common.Utils.handle_ppx_yojson_err (exn, yojson)
+        Pool_message.handle_ppx_yojson_err (exn, yojson)
       | _ -> Error Pool_message.(Error.Invalid field)
     in
-    Pool_common.Utils.schema_decoder decode encode field
+    Pool_conformist.schema_decoder decode encode field
   ;;
 
   let of_urlencoded_list =

@@ -5,14 +5,14 @@ module Id : sig
 end
 
 module NoShow : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 
   val field : Pool_message.Field.t
   val init : t
 end
 
 module Participated : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 
   val field : Pool_message.Field.t
   val init : t
@@ -25,17 +25,17 @@ module MatchesFilter : sig
 end
 
 module CanceledAt : sig
-  include Pool_common.Model.PtimeSig
+  include Pool_model.Base.PtimeSig
 end
 
 module MarkedAsDeleted : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 
   val init : t
 end
 
 module ExternalDataId : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 
   val field : Pool_message.Field.t
 end

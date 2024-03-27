@@ -1,5 +1,5 @@
 module Field = Pool_message.Field
-module Model = Pool_common.Model
+module Model = Pool_model.Base
 
 module SentInvitations = struct
   type sent_by_count = int * int [@@deriving eq, show]
@@ -31,7 +31,7 @@ module SendingInvitations = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let read str =

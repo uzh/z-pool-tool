@@ -1,27 +1,27 @@
 module Address : sig
   module Mail : sig
     module Institution : sig
-      include Pool_common.Model.StringSig
+      include Pool_model.Base.StringSig
     end
 
     module Room : sig
-      include Pool_common.Model.StringSig
+      include Pool_model.Base.StringSig
     end
 
     module Building : sig
-      include Pool_common.Model.StringSig
+      include Pool_model.Base.StringSig
     end
 
     module Street : sig
-      include Pool_common.Model.StringSig
+      include Pool_model.Base.StringSig
     end
 
     module Zip : sig
-      include Pool_common.Model.StringSig
+      include Pool_model.Base.StringSig
     end
 
     module City : sig
-      include Pool_common.Model.StringSig
+      include Pool_model.Base.StringSig
     end
 
     type t =
@@ -66,7 +66,7 @@ module Address : sig
              -> City.t
              -> t
            , t )
-           Pool_common.Utils.PoolConformist.t
+           Pool_conformist.t
   end
 
   type t =
@@ -82,7 +82,10 @@ end
 
 module Mapping : sig
   module Id : sig
-    include Pool_common.Model.IdSig
+    include Pool_model.Base.IdSig
+
+    val to_common : t -> Pool_common.Id.t
+    val of_common : Pool_common.Id.t -> t
   end
 
   module Label : sig
@@ -95,10 +98,7 @@ module Mapping : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
     val create : string -> (t, Pool_message.Error.t) result
-
-    val schema
-      :  unit
-      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   type file =
@@ -115,7 +115,7 @@ module Mapping : sig
   type file_base =
     { label : Label.t
     ; language : Pool_common.Language.t
-    ; asset_id : Pool_common.Id.t
+    ; asset_id : Id.t
     }
 
   val equal_file_base : file_base -> file_base -> bool
@@ -137,7 +137,7 @@ module Mapping : sig
     -> string
     -> Pool_common.Language.t
     -> Pool_common.File.t
-    -> (file, Pool_common.Utils.PoolConformist.error_msg) result
+    -> (file, Pool_conformist.error_msg) result
 
   module Write : sig
     type file =
@@ -163,11 +163,11 @@ module Mapping : sig
 end
 
 module Id : sig
-  include Pool_common.Model.IdSig
+  include Pool_model.Base.IdSig
 end
 
 module Name : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module Description : sig
@@ -188,7 +188,7 @@ module Description : sig
 end
 
 module Link : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module Status : sig
@@ -201,11 +201,7 @@ module Status : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val init : t
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val all : t list
 end
 
@@ -326,31 +322,31 @@ end
 
 module Statistics : sig
   module ExperimentCount : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val field : Pool_message.Field.t
   end
 
   module AssignmentCount : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val field : Pool_message.Field.t
   end
 
   module ShowUpCount : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val field : Pool_message.Field.t
   end
 
   module NoShowCount : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val field : Pool_message.Field.t
   end
 
   module ParticipationCount : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val field : Pool_message.Field.t
   end

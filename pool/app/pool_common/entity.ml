@@ -2,10 +2,6 @@ open CCFun
 open Sexplib.Conv
 open Ppx_yojson_conv_lib.Yojson_conv
 
-module Model = struct
-  include Entity_base_model
-end
-
 let print = Utils.ppx_printer
 
 (* TODO [aerben] to get more type-safety, every entity should have its own ID *)
@@ -20,7 +16,7 @@ module Id = struct
   let compare = CCString.compare
 
   let schema ?(field = Pool_message.Field.Id) () =
-    Pool_common_utils.schema_decoder (of_string %> CCResult.return) value field
+    Pool_conformist.schema_decoder (of_string %> CCResult.return) value field
   ;;
 
   let sql_select_fragment ~field =
@@ -51,7 +47,7 @@ module Language = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Entity_base_model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let label country_code =
@@ -78,14 +74,14 @@ module Version = struct
 end
 
 module CreatedAt = struct
-  include Model.Ptime
+  include Pool_model.Base.Ptime
 
   let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
   let create = Ptime_clock.now
 end
 
 module UpdatedAt = struct
-  include Model.Ptime
+  include Pool_model.Base.Ptime
 
   let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
   let create = Ptime_clock.now
@@ -192,7 +188,7 @@ module SortOrder = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Entity_base_model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let default = Ascending
@@ -215,7 +211,7 @@ module MessageChannel = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Entity_base_model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let filtered_channels = function
@@ -230,7 +226,7 @@ module Reminder = struct
       let name = Pool_message.Field.EmailLeadTime
     end
 
-    include Model.Duration (TimeDurationCore)
+    include Pool_model.Base.Duration (TimeDurationCore)
   end
 
   module TextMessageLeadTime = struct
@@ -238,7 +234,7 @@ module Reminder = struct
       let name = Pool_message.Field.TextMessageLeadTime
     end
 
-    include Model.Duration (TimeDurationCore)
+    include Pool_model.Base.Duration (TimeDurationCore)
   end
 
   module SentAt = struct
@@ -247,7 +243,7 @@ module Reminder = struct
     let create m = m
     let create_now () = Ptime_clock.now ()
     let value m = m
-    let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
+    let sexp_of_t = Pool_model.Time.ptime_to_sexp
   end
 
   module Channel = struct
@@ -260,7 +256,7 @@ module Reminder = struct
       [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
     end
 
-    include Entity_base_model.SelectorType (Core)
+    include Pool_model.Base.SelectorType (Core)
     include Core
 
     let filtered_channels = function
@@ -280,7 +276,7 @@ module ExperimentType = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Entity_base_model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 end
 
@@ -313,7 +309,7 @@ module NotifyVia = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Entity_base_model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let to_human language m =
@@ -337,7 +333,7 @@ module NotifyVia = struct
 end
 
 module NotifyContact = struct
-  include Entity_base_model.Boolean
+  include Pool_model.Base.Boolean
 
   let init = false
   let schema = schema Pool_message.Field.NotifyContact

@@ -1,11 +1,11 @@
 module Database = Pool_database
 module Id : module type of Pool_common.Id
-module Title : Pool_common.Model.StringSig
-module Description : Pool_common.Model.StringSig
-module GtxApiKey : Pool_common.Model.StringSig
+module Title : Pool_model.Base.StringSig
+module Description : Pool_model.Base.StringSig
+module GtxApiKey : Pool_model.Base.StringSig
 
 module Url : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 
   val of_pool : Database.Label.t -> t Lwt.t
 end
@@ -24,10 +24,7 @@ module Styles : sig
 
     val create : string -> (t, Pool_message.Error.t) result
     val value : t -> string
-
-    val schema
-      :  unit
-      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 end
 
@@ -43,10 +40,7 @@ module Icon : sig
 
     val create : string -> (t, Pool_message.Error.t) result
     val value : t -> string
-
-    val schema
-      :  unit
-      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 end
 
@@ -58,9 +52,7 @@ module Logos : sig
 
   val schema
     :  unit
-    -> ( Pool_message.Error.t
-         , Pool_common.Id.t list )
-         Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, Pool_common.Id.t list) Pool_conformist.Field.t
 
   val of_files : Pool_common.File.t list -> t
 end
@@ -73,15 +65,13 @@ module PartnerLogos : sig
 
   val schema
     :  unit
-    -> ( Pool_message.Error.t
-         , Pool_common.Id.t list )
-         Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, Pool_common.Id.t list) Pool_conformist.Field.t
 
   val of_files : Pool_common.File.t list -> t
 end
 
-module Maintenance : Pool_common.Model.BooleanSig
-module Disabled : Pool_common.Model.BooleanSig
+module Maintenance : Pool_model.Base.BooleanSig
+module Disabled : Pool_model.Base.BooleanSig
 
 module LogoMapping : sig
   module LogoType : sig

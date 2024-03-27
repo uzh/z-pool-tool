@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Message = Pool_message
 module BaseGuard = Guard
 open Pool_location
@@ -197,11 +197,10 @@ end = struct
         Field.
           [ Label.schema ()
           ; Pool_common.Language.schema ()
-          ; Pool_common.(
-              Utils.schema_decoder
-                CCFun.(Id.of_string %> CCResult.return)
-                Id.value
-                Pool_message.Field.FileMapping)
+          ; Pool_conformist.schema_decoder
+              CCFun.(Id.of_string %> CCResult.return)
+              Id.value
+              Pool_message.Field.FileMapping
           ]
         command)
   ;;
@@ -217,7 +216,7 @@ end = struct
       Mapping.Write.create
         label
         language
-        asset_id
+        (Id.to_common asset_id)
         (location.Pool_location.id
          |> Pool_location.Id.value
          |> Pool_common.Id.of_string)

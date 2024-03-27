@@ -203,11 +203,9 @@ let session_params
       in
       [ main_session; follow_ups ] |> CCString.concat "\n\n"
   in
-  let start =
-    start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
-  in
+  let start = start |> Start.value |> Pool_model.Time.formatted_date_time in
   let duration =
-    duration |> Duration.value |> Pool_common.Utils.Time.formatted_timespan
+    duration |> Duration.value |> Pool_model.Time.formatted_timespan
   in
   let description =
     session.public_description
@@ -1170,7 +1168,7 @@ module SessionReschedule = struct
 
   let email_params lang layout experiment session new_start new_duration contact
     =
-    let open Pool_common.Utils.Time in
+    let open Pool_model.Time in
     let open Session in
     global_params layout contact.Contact.user
     @ [ "newStart", new_start |> Start.value |> formatted_date_time

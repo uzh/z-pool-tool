@@ -75,7 +75,7 @@ let list
     ; txt
         (contact.Contact.cell_phone
          |> CCOption.map_or ~default:"" CellPhone.value)
-    ; txt (Utils.Time.formatted_date_time created_at)
+    ; txt (Pool_model.Time.formatted_date_time created_at)
     ; admin_comment
       |> CCOption.map_or ~default:"" Waiting_list.AdminComment.value
       |> HttpUtils.first_n_characters

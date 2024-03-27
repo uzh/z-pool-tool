@@ -1,5 +1,5 @@
 module MailingCommand = Cqrs_command.Mailing_command
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Field = Pool_message.Field
 module Model = Test_utils.Model
 
@@ -7,10 +7,7 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 module Data = struct
   let norm_ptime m =
-    m
-    |> Ptime.to_rfc3339
-    |> Pool_common.Utils.Time.parse_time
-    |> get_or_failwith
+    m |> Ptime.to_rfc3339 |> Pool_model.Time.parse_time |> get_or_failwith
   ;;
 
   module Mailing = struct

@@ -1,9 +1,9 @@
 module Id : sig
-  include Pool_common.Model.IdSig
+  include Pool_model.Base.IdSig
 end
 
 module Name : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 type t =

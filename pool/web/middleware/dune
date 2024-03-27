@@ -3,6 +3,7 @@
  (libraries
   admin
   contact
+  database_test
   http_utils
   layout
   page

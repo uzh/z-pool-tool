@@ -1,5 +1,5 @@
 open Ppx_yojson_conv_lib.Yojson_conv
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 
 type command =
   { time_value : int
@@ -9,12 +9,12 @@ type command =
 let update_command time_value time_unit = { time_value; time_unit }
 
 let update_duration_schema integer_schema field =
-  Pool_common.Utils.PoolConformist.(
+  Pool_conformist.(
     make Field.[ integer_schema; TimeUnit.named_schema field () ] update_command)
 ;;
 
 module ContactEmail = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.ContactEmail
 
@@ -30,7 +30,7 @@ module ContactEmail = struct
 end
 
 module EmailSuffix = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.EmailSuffix
   (* TODO: email address validation *)
@@ -45,7 +45,7 @@ module InactiveUser = struct
       let name = Pool_message.Field.InactiveUserDisableAfter
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
   end
 
   module Warning = struct
@@ -53,7 +53,7 @@ module InactiveUser = struct
       let name = Pool_message.Field.InactiveUserWarning
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
   end
 end
 
@@ -64,12 +64,12 @@ module TriggerProfileUpdateAfter = struct
     let name = Pool_message.Field.TriggerProfileUpdateAfter
   end
 
-  include Pool_common.Model.Duration (Core)
+  include Pool_model.Base.Duration (Core)
 end
 
 module TermsAndConditions = struct
   module Terms = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Pool_message.Field.TermsAndConditions
     (* TODO: email address validation *)
@@ -104,7 +104,7 @@ module UserImportReminder = struct
       let name = Pool_message.Field.FirstReminder
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
 
     let validate = validate
   end
@@ -116,7 +116,7 @@ module UserImportReminder = struct
       let name = Pool_message.Field.SecondReminder
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
 
     let validate = validate
   end

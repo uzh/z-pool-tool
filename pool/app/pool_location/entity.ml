@@ -1,5 +1,5 @@
 module Mapping = Entity_file_mapping
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Message = Pool_message
 module Field = Pool_message.Field
 module Address = Entity_address
@@ -9,7 +9,7 @@ module Id = struct
 end
 
 module Name = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Field.Name
   let schema () = schema field ()
@@ -56,7 +56,7 @@ module Description = struct
 end
 
 module Link = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Field.Link
   let schema () = schema field ()
@@ -75,7 +75,7 @@ module Status = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let init = Active

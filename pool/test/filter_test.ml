@@ -123,7 +123,7 @@ module CustomFieldData = struct
 
   module Birthday = struct
     let answer_value =
-      "1990-01-01" |> Pool_common.Model.Ptime.date_of_string |> get_exn
+      "1990-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn
     ;;
 
     let field = create_custom_field "Birthday" (fun a -> Custom_field.Date a)
@@ -1186,9 +1186,7 @@ let filter_by_date_custom_field _ () =
       save () :: save_answers ~answer_value:(Some answer_value) [ contact ])
     |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
   in
-  let date =
-    "1985-01-01" |> Pool_common.Model.Ptime.date_of_string |> get_exn
-  in
+  let date = "1985-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn in
   let greater_filter =
     Birthday.filter ~date Operator.(Size.Greater |> size) ()
   in

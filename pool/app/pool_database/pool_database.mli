@@ -1,9 +1,9 @@
 module Url : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module Label : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 
   val of_string : string -> t
 end

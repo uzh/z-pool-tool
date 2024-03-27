@@ -3,16 +3,16 @@ open Entity
 type base =
   { start : Start.t
   ; duration : int
-  ; duration_unit : Pool_common.Model.TimeUnit.t
+  ; duration_unit : Pool_model.Base.TimeUnit.t
   ; internal_description : InternalDescription.t option
   ; public_description : PublicDescription.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
   ; email_reminder_lead_time : int option
-  ; email_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
+  ; email_reminder_lead_time_unit : Pool_model.Base.TimeUnit.t option
   ; text_message_reminder_lead_time : int option
-  ; text_message_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
+  ; text_message_reminder_lead_time_unit : Pool_model.Base.TimeUnit.t option
   }
 [@@deriving eq, show]
 

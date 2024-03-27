@@ -86,11 +86,11 @@ val create_token
 
 module SmtpAuth : sig
   module Id : module type of Pool_common.Id
-  module Label : Pool_common.Model.StringSig
-  module Server : Pool_common.Model.StringSig
-  module Port : Pool_common.Model.IntegerSig
-  module Username : Pool_common.Model.StringSig
-  module Password : Pool_common.Model.StringSig
+  module Label : Pool_model.Base.StringSig
+  module Server : Pool_model.Base.StringSig
+  module Port : Pool_model.Base.IntegerSig
+  module Username : Pool_model.Base.StringSig
+  module Password : Pool_model.Base.StringSig
 
   module RepoEntity : sig
     module Id : sig
@@ -111,10 +111,7 @@ module SmtpAuth : sig
     val yojson_of_t : t -> Yojson.Safe.t
     val read : string -> t
     val all : t list
-
-    val schema
-      :  unit
-      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   module Protocol : sig
@@ -130,14 +127,11 @@ module SmtpAuth : sig
     val yojson_of_t : t -> Yojson.Safe.t
     val read : string -> t
     val all : t list
-
-    val schema
-      :  unit
-      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   module Default : sig
-    include Pool_common.Model.BooleanSig
+    include Pool_model.Base.BooleanSig
   end
 
   type t =

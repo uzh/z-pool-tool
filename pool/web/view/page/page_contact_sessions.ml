@@ -1,7 +1,7 @@
 open Tyxml.Html
 open Component
 module Field = Pool_message.Field
-module Time = Pool_common.Utils.Time
+module Time = Pool_model.Time
 
 let session_title language (s : Session.Public.t) =
   Pool_common.I18n.SessionDetailTitle

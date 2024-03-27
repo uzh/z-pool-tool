@@ -62,7 +62,7 @@ module NumberOfParticipations = struct
 end
 
 module AdminComment = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.AdminComment
   let schema () = schema field ()

@@ -8,7 +8,7 @@ module ResentAt : sig
 end
 
 module SendCount : sig
-  include Pool_common.Model.IntegerSig
+  include Pool_model.Base.IntegerSig
 
   val init : t
   val of_int : int -> t

@@ -1,12 +1,12 @@
 module Id = Pool_common.Id
 
 module Title : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 type single_val =
   | Bool of bool
-  | Date of Pool_common.Model.Ptime.date
+  | Date of Pool_model.Base.Ptime.date
   | Language of Pool_common.Language.t
   | Nr of float
   | Option of Custom_field.SelectOption.Id.t

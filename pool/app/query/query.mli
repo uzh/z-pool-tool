@@ -10,15 +10,15 @@ module Column : sig
 end
 
 module Pagination : sig
-  module Limit : Pool_common.Model.IntegerSig
+  module Limit : Pool_model.Base.IntegerSig
 
   module Page : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val default : t
   end
 
-  module PageCount : Pool_common.Model.IntegerSig
+  module PageCount : Pool_model.Base.IntegerSig
 
   type t =
     { limit : Limit.t
@@ -30,7 +30,7 @@ module Pagination : sig
 end
 
 module Search : sig
-  module Query : Pool_common.Model.StringSig
+  module Query : Pool_model.Base.StringSig
 
   type t =
     { query : Query.t
@@ -56,10 +56,7 @@ module Sort : sig
     val all : t list
     val default : t
     val flip : t -> t
-
-    val schema
-      :  unit
-      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   type t =

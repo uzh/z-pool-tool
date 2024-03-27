@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "custom_field.cqrs"
 
@@ -45,7 +45,7 @@ let base_command
 
 let base_schema =
   let open Custom_field in
-  Pool_common.Utils.PoolConformist.(
+  Pool_conformist.(
     make
       Field.
         [ FieldType.schema ()

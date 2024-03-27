@@ -844,11 +844,11 @@ let detail
         , show_external_data_id_links_value |> boolean_value )
       ; ( Field.ExperimentEmailReminderLeadTime
         , email_session_reminder_lead_time_value experiment
-          |> CCOption.map_or ~default:"-" Utils.Time.formatted_timespan
+          |> CCOption.map_or ~default:"-" Pool_model.Time.formatted_timespan
           |> txt )
       ; ( Field.ExperimentTextMessageReminderLeadTime
         , text_message_session_reminder_lead_time_value experiment
-          |> CCOption.map_or ~default:"-" Utils.Time.formatted_timespan
+          |> CCOption.map_or ~default:"-" Pool_model.Time.formatted_timespan
           |> txt )
       ; ( Field.InvitationResetAt
         , experiment

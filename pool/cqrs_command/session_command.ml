@@ -1,6 +1,6 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Reminder = Pool_common.Reminder
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 open CCFun
 
 type reschedule =
@@ -222,7 +222,7 @@ end = struct
     let error = Pool_message.Error.InvalidRequest in
     let open CCResult in
     let start_of_string str =
-      Pool_common.Utils.Time.parse_time str >|= Session.Start.create
+      Pool_model.Time.parse_time str >|= Session.Start.create
     in
     let parse_row id group value =
       let to_result = CCOption.to_result in
@@ -927,7 +927,7 @@ end = struct
 
   let email_schema =
     let open Message_template in
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make
         Field.
           [ Pool_common.Language.schema ()
@@ -944,7 +944,7 @@ end = struct
 
   let sms_schema =
     let open Message_template in
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make
         Field.
           [ Pool_common.Language.schema ()

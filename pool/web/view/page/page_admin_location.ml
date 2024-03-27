@@ -573,7 +573,7 @@ module SessionList = struct
   let session_title (session : Session.Public.t) =
     session.Session.Public.start
     |> Session.Start.value
-    |> Pool_common.Utils.Time.formatted_date_time
+    |> Pool_model.Time.formatted_date_time
     |> Format.asprintf "Session at %s"
   ;;
 
@@ -585,11 +585,11 @@ module SessionList = struct
         ; experiment_title |> txt
         ; session.duration
           |> Session.Duration.value
-          |> Pool_common.Utils.Time.formatted_timespan
+          |> Pool_model.Time.formatted_timespan
           |> txt
         ; session.canceled_at
           |> CCOption.map_or ~default:"" (fun t ->
-            Pool_common.Utils.Time.formatted_date_time t)
+            Pool_model.Time.formatted_date_time t)
           |> txt
         ; Format.asprintf
             "/admin/experiments/%s/sessions/%s"

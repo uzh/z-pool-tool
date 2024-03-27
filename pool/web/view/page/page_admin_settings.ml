@@ -313,7 +313,7 @@ let show
   in
   let user_import_reminder =
     let open Settings.UserImportReminder in
-    let enabled_time_units = [ Pool_common.Model.TimeUnit.Days ] in
+    let enabled_time_units = [ Pool_model.Base.TimeUnit.Days ] in
     let timespan_picker field value =
       timespan_picker
         ~enabled_time_units

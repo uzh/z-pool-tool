@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Id = Pool_tenant.Id
 module File = Pool_common.File
 

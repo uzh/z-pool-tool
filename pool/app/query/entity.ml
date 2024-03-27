@@ -16,7 +16,7 @@ end
 
 module Pagination = struct
   module Limit = struct
-    include Common.Model.Integer
+    include Pool_model.Base.Integer
 
     let default = 20
     let field = Pool_message.Field.Limit
@@ -29,7 +29,7 @@ module Pagination = struct
   end
 
   module Page = struct
-    include Common.Model.Integer
+    include Pool_model.Base.Integer
 
     let default = 1
     let field = Pool_message.Field.Page
@@ -42,7 +42,7 @@ module Pagination = struct
   end
 
   module PageCount = struct
-    include Common.Model.Integer
+    include Pool_model.Base.Integer
 
     let field = Pool_message.Field.PageCount
 
@@ -94,7 +94,7 @@ end
 
 module Search = struct
   module Query = struct
-    include Common.Model.String
+    include Pool_model.Base.String
 
     let field = Pool_message.Field.Search
     let schema = schema ?validation:None field
@@ -222,7 +222,7 @@ module Filter = struct
     t
     |> CCList.map (function
       | Checkbox (col, active) ->
-        Column.field col, Pool_common.Model.Boolean.stringify active
+        Column.field col, Pool_model.Base.Boolean.stringify active
       | Select (col, option) -> Column.field col, SelectOption.value option)
   ;;
 

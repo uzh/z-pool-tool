@@ -1,12 +1,12 @@
 module Url = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.DatabaseUrl
   let schema () = schema field ()
 end
 
 module Label = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.DatabaseLabel
   let schema () = schema field ()

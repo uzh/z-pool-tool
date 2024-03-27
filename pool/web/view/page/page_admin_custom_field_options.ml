@@ -91,7 +91,7 @@ let field_buttons language csrf custom_field option =
          ; txt
              (published_at
               |> PublishedAt.value
-              |> Utils.Time.formatted_date_time)
+              |> Pool_model.Time.formatted_date_time)
          ]
      | None ->
        div

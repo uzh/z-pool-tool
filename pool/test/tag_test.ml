@@ -1,6 +1,6 @@
 open Utils.Lwt_result.Infix
 module Command = Cqrs_command.Tags_command
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Field = Pool_message.Field
 module Model = Test_utils.Model
 

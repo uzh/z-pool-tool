@@ -56,6 +56,21 @@ let handle_sihl_login_error = function
   | `Incorrect_password | `Does_not_exist -> Error.Invalid Field.Password
 ;;
 
+let handle_ppx_yojson_err (exn, yojson) =
+  let msg =
+    Format.asprintf
+      "Yojson_conv error: %s\n\nAffected yojson: %s"
+      (Printexc.to_string exn)
+      ([%show: Yojson.Safe.t] yojson)
+  in
+  Error Error.(NotHandled msg)
+;;
+
+let handle_json_parse_err str =
+  let msg = Format.asprintf "Json parse error: %s" str in
+  Error Error.(InvalidJson msg)
+;;
+
 let to_conformist_error error_list =
   CCList.map (fun (name, _, msg) -> name |> Field.read, msg) error_list
   |> Error.conformist

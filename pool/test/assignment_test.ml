@@ -152,7 +152,7 @@ let canceled_with_closed_session () =
   let expected =
     Error
       (Error.SessionAlreadyClosed
-         (Pool_common.Utils.Time.formatted_date_time closed_at))
+         (Pool_model.Time.formatted_date_time closed_at))
   in
   check_result expected events
 ;;
@@ -402,7 +402,7 @@ let assign_to_canceled_session () =
   let expected =
     Error
       (Error.SessionAlreadyCanceled
-         (Pool_common.Utils.Time.formatted_date_time canceled_at))
+         (Pool_model.Time.formatted_date_time canceled_at))
   in
   Test_utils.check_result expected events
 ;;

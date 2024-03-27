@@ -1,8 +1,8 @@
 module BaseGuard = Guard
 open Experiment
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Reminder = Pool_common.Reminder
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 
 let opt = Conformist.optional
 let src = Logs.Src.create "experiment_command.cqrs"
@@ -88,7 +88,7 @@ let create_command
 
 let update_schema command =
   let open Pool_common in
-  Utils.PoolConformist.(
+  Pool_conformist.(
     make
       Field.
         [ Title.schema ()
@@ -113,7 +113,7 @@ let update_schema command =
 
 let create_schema command =
   let open Pool_common in
-  Utils.PoolConformist.(
+  Pool_conformist.(
     make
       Field.
         [ Title.schema ()
@@ -129,13 +129,13 @@ let create_schema command =
         ; ShowExternalDataIdLinks.schema ()
         ; opt @@ ExperimentType.schema ()
         ; opt
-          @@ Model.Integer.schema
+          @@ Pool_model.Base.Integer.schema
                Pool_message.Field.EmailLeadTime
                CCResult.return
                ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
         ; opt
-          @@ Model.Integer.schema
+          @@ Pool_model.Base.Integer.schema
                Pool_message.Field.TextMessageLeadTime
                CCResult.return
                ()

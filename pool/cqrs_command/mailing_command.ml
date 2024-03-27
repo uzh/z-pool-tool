@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Message = Pool_message
 module BaseGuard = Guard
 open Mailing

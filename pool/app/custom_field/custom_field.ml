@@ -186,9 +186,7 @@ let validate_partial_update
   in
   let entity_uuid = Contact.(contact |> id |> Id.to_common) in
   let validate schema =
-    let schema =
-      Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
-    in
+    let schema = Pool_conformist.(make Field.[ schema () ] CCFun.id) in
     Conformist.decode_and_validate
       schema
       [ field |> Pool_message.Field.show, value ]

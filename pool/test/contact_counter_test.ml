@@ -536,8 +536,7 @@ module UpdateAssignments = struct
   ;;
 
   let to_urlencoded ?external_data_id ~no_show ~participated () =
-    let open Pool_common in
-    let bool_to_string = Model.Boolean.stringify in
+    let bool_to_string = Pool_model.Base.Boolean.stringify in
     let base =
       [ Field.(show NoShow), [ bool_to_string no_show ]
       ; Field.(show Participated), [ bool_to_string participated ]

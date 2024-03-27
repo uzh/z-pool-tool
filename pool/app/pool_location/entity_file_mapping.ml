@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 module Id = struct
   include Pool_common.Id
@@ -21,7 +21,7 @@ module Label = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 end
 
@@ -36,7 +36,7 @@ type file =
 type file_base =
   { label : Label.t
   ; language : Pool_common.Language.t
-  ; asset_id : Pool_common.Id.t
+  ; asset_id : Id.t
   }
 [@@deriving eq, show]
 

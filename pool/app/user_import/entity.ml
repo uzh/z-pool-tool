@@ -1,28 +1,28 @@
 open Pool_message
 
 module Token = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Field.Token
   let schema () = schema field ()
 end
 
 module ConfirmedAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = Ok m
   let schema = schema Field.ConfirmedAt create
 end
 
 module NotifiedAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = Ok m
   let schema = schema Field.NotifiedAt create
 end
 
 module ReminderCount = struct
-  include Pool_common.Model.Integer
+  include Pool_model.Base.Integer
 
   let init = 0
   let field = Field.ReminderCount
@@ -32,7 +32,7 @@ module ReminderCount = struct
 end
 
 module LastRemindedAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = Ok m
   let schema = schema Field.LastRemindedAt create

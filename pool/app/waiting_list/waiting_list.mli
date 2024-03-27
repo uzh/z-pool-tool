@@ -11,10 +11,7 @@ module AdminComment : sig
   val pp : Format.formatter -> t -> unit
   val value : t -> string
   val create : string -> t
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 type t =

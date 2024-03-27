@@ -3,7 +3,7 @@ module Message = HttpUtils.Message
 module File = HttpUtils.File
 module Common = Pool_common
 module Database = Pool_database
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "handler.root.tenant_update"
 

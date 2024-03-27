@@ -1055,7 +1055,7 @@ module Api = struct
       let find_param field =
         let open CCResult.Infix in
         HttpUtils.find_in_urlencoded field query_params
-        >>= Pool_common.Utils.Time.parse_date_from_calendar
+        >>= Pool_model.Time.parse_date_from_calendar
         |> Lwt_result.lift
       in
       let* start_time = find_param Field.Start in

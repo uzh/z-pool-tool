@@ -1,7 +1,7 @@
 module Id = Pool_common.Id
 
 module Name = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Name
   let schema () = schema field ()

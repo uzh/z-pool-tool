@@ -6,33 +6,33 @@ module Id : sig
 end
 
 module Title : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module PublicTitle : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 
   val placeholder : t
 end
 
 module InternalDescription : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module PublicDescription : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module CostCenter : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module DirectRegistrationDisabled : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module RegistrationDisabled : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module AllowUninvitedSignup : sig
@@ -43,22 +43,19 @@ module AllowUninvitedSignup : sig
   val show : t -> string
   val create : bool -> t
   val value : t -> bool
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module ExternalDataRequired : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module ShowExternalDataIdLinks : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module InvitationResetAt : sig
-  include Pool_common.Model.PtimeSig
+  include Pool_model.Base.PtimeSig
 
   val of_ptime : Ptime.t -> t
 end
@@ -161,10 +158,10 @@ type create =
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; email_session_reminder_lead_time : int option
-  ; email_session_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
+  ; email_session_reminder_lead_time_unit : Pool_model.Base.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option
   ; text_message_session_reminder_lead_time_unit :
-      Pool_common.Model.TimeUnit.t option
+      Pool_model.Base.TimeUnit.t option
   }
 
 val equal_create : create -> create -> bool
@@ -438,7 +435,7 @@ module Statistics : sig
   end
 
   module RegistrationPossible : sig
-    include Pool_common.Model.BooleanSig
+    include Pool_model.Base.BooleanSig
 
     val field : Pool_message.Field.t
     val hint : Pool_common.I18n.hint
@@ -456,25 +453,25 @@ module Statistics : sig
   end
 
   module SessionCount : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val field : Pool_message.Field.t
   end
 
   module ShowUpCount : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val field : Pool_message.Field.t
   end
 
   module NoShowCount : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val field : Pool_message.Field.t
   end
 
   module ParticipationCount : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val field : Pool_message.Field.t
   end

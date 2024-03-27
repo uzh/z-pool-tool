@@ -1,11 +1,11 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Utils = Pool_common.Utils
 module Message = Pool_message
 module Field = Pool_message.Field
 
 module Mail = struct
   module Room = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Room
     let schema () = schema field ()
@@ -13,7 +13,7 @@ module Mail = struct
   end
 
   module Institution = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Institution
     let schema () = schema field ()
@@ -21,7 +21,7 @@ module Mail = struct
   end
 
   module Building = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Building
     let schema () = schema field ()
@@ -29,7 +29,7 @@ module Mail = struct
   end
 
   module Street = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Street
     let schema () = schema field ()
@@ -37,7 +37,7 @@ module Mail = struct
   end
 
   module Zip = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Zip
 
@@ -56,7 +56,7 @@ module Mail = struct
   end
 
   module City = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.City
     let schema () = schema field ()

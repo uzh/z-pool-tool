@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
 module Field = Pool_message.Field
 module Icon = Component_icon
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 open Tyxml.Html
 
 let submit_type_to_class = function
@@ -33,8 +33,7 @@ let csrf_attibs ?id csrf =
 ;;
 
 let flatpickr_min =
-  CCFun.(
-    Pool_common.Model.Ptime.date_time_to_flatpickr %> a_user_data "min-date")
+  CCFun.(Pool_model.Base.Ptime.date_time_to_flatpickr %> a_user_data "min-date")
 ;;
 
 module Elements = struct
@@ -237,14 +236,14 @@ let flatpicker_element
 let date_picker_element ?value =
   let value =
     value
-    |> CCOption.map (fun date -> Pool_common.Model.Ptime.date_to_flatpickr date)
+    |> CCOption.map (fun date -> Pool_model.Base.Ptime.date_to_flatpickr date)
   in
   flatpicker_element `Date ?value
 ;;
 
 let date_time_picker_element ?value =
   let value =
-    value |> CCOption.map Pool_common.Model.Ptime.date_time_to_flatpickr
+    value |> CCOption.map Pool_model.Base.Ptime.date_time_to_flatpickr
   in
   flatpicker_element `DateTime ?value
 ;;

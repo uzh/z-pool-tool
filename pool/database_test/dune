@@ -1,13 +1,22 @@
 (library
  (name database_test)
- (libraries containers caqti-lwt.unix lwt)
+ (libraries
+  containers
+  caqti-lwt.unix
+  lwt
+  guardian.backend
+  pool.conformist
+  pool.message
+  pool.model
+  sexplib)
  (wrapped true)
  (preprocess
   (pps
    lwt_ppx
-   ppx_deriving_yojson
    ppx_deriving.eq
    ppx_deriving.make
    ppx_deriving.ord
    ppx_deriving.show
-   ppx_string)))
+   ppx_sexp_conv
+   ppx_string
+   ppx_yojson_conv)))

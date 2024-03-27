@@ -1,27 +1,5 @@
 module I18n = Entity_i18n
-
-module Model : sig
-  module TimeUnit : module type of Entity_base_model.TimeUnit
-  module Boolean : module type of Entity_base_model.Boolean
-  module Duration : module type of Entity_base_model.Duration
-  module Integer : module type of Entity_base_model.Integer
-  module Ptime : module type of Entity_base_model.Ptime
-  module PtimeSpan : module type of Entity_base_model.PtimeSpan
-  module SelectorType : module type of Entity_base_model.SelectorType
-  module String : module type of Entity_base_model.String
-
-  module type BaseSig = Entity_base_model.BaseSig
-  module type BooleanSig = Entity_base_model.BooleanSig
-  module type DurationSig = Entity_base_model.DurationSig
-  module type IdSig = Entity_base_model.IdSig
-  module type IntegerSig = Entity_base_model.IntegerSig
-  module type PtimeSig = Entity_base_model.PtimeSig
-  module type PtimeSpanSig = Entity_base_model.PtimeSpanSig
-  module type SelectorCoreTypeSig = Entity_base_model.SelectorCoreTypeSig
-  module type StringSig = Entity_base_model.StringSig
-end
-
-module Id : Model.IdSig
+module Id : Pool_model.Base.IdSig
 
 module Language : sig
   type t =
@@ -37,11 +15,7 @@ module Language : sig
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val compare : t -> t -> int
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val all : t list
   val all_codes : string list
   val field_of_t : t -> Pool_message.Field.t
@@ -153,11 +127,7 @@ module SortOrder : sig
   val read : string -> t
   val flip : t -> t
   val to_query_parts : t -> (Pool_message.Field.t * string) list
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val default : t
 end
 
@@ -166,10 +136,7 @@ module MessageChannel : sig
     | Email
     | TextMessage
 
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
@@ -181,11 +148,11 @@ end
 
 module Reminder : sig
   module EmailLeadTime : sig
-    include Model.DurationSig
+    include Pool_model.Base.DurationSig
   end
 
   module TextMessageLeadTime : sig
-    include Model.DurationSig
+    include Pool_model.Base.DurationSig
   end
 
   module SentAt : sig
@@ -205,10 +172,7 @@ module ExperimentType : sig
     | Lab
     | Online
 
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
@@ -232,10 +196,7 @@ module NotifyVia : sig
     | Email
     | TextMessage
 
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common_utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
@@ -247,7 +208,7 @@ module NotifyVia : sig
 end
 
 module NotifyContact : sig
-  include Entity_base_model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module Repo : sig
@@ -337,38 +298,6 @@ module Repo : sig
 end
 
 module Utils : sig
-  module PoolConformist = Pool_common_utils.PoolConformist
-
-  module Time : sig
-    val ptime_to_sexp : Ptime.t -> Sexplib0.Sexp.t
-    val formatted_date_time : Ptime.t -> string
-    val formatted_date : Ptime.t -> string
-    val formatted_time : ?with_seconds:bool -> Ptime.t -> string
-    val formatted_timespan : Ptime.span -> string
-    val timespan_to_minutes : Ptime.span -> string
-    val parse_time : string -> (Ptime.t, Pool_message.Error.t) result
-    val parse_time_span : string -> (Ptime.Span.t, Pool_message.Error.t) result
-    val print_time_span : Ptime.Span.t -> string
-
-    val parse_date_from_calendar
-      :  string
-      -> (Ptime.t, Pool_message.Error.t) result
-  end
-
-  val schema_decoder
-    :  ?tags:Logs.Tag.set
-    -> ?default:'b
-    -> (string -> ('b, Pool_message.Error.t) result)
-    -> ('b -> string)
-    -> Pool_message.Field.t
-    -> (Pool_message.Error.t, 'b) PoolConformist.Field.t
-
-  val schema_list_decoder
-    :  (string list -> ('a, Pool_message.Error.t) result)
-    -> ('a -> string list)
-    -> Pool_message.Field.t
-    -> ('b, 'a) PoolConformist.Field.t
-
   val to_string : Language.t -> Pool_message.t -> string
   val info_to_string : Language.t -> Pool_message.Info.t -> string
   val success_to_string : Language.t -> Pool_message.Success.t -> string
@@ -420,10 +349,4 @@ module Utils : sig
 
   val get_or_failwith : ('a, Pool_message.Error.t) result -> 'a
   val failwith : Pool_message.Error.t -> 'a
-
-  val handle_ppx_yojson_err
-    :  exn * Yojson.Safe.t
-    -> ('a, Pool_message.Error.t) result
-
-  val handle_json_parse_err : string -> ('a, Pool_message.Error.t) result
 end

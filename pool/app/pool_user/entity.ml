@@ -12,7 +12,7 @@ module PasswordConfirmed = struct
   ;;
 
   let schema ?(field = Pool_message.Field.PasswordConfirmation) () =
-    Pool_common.Utils.schema_decoder (fun m -> Ok (create m)) show field
+    Pool_conformist.schema_decoder (fun m -> Ok (create m)) show field
   ;;
 end
 
@@ -120,7 +120,7 @@ module Password = struct
   let create_unvalidated p = Ok p
 
   let schema ?(field = Pool_message.Field.Password) create () =
-    Pool_common.Utils.schema_decoder create show field
+    Pool_conformist.schema_decoder create show field
   ;;
 
   let validate_current_password
@@ -193,7 +193,7 @@ module EmailAddress = struct
   let of_string m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder create show Pool_message.Field.Email
+    Pool_conformist.schema_decoder create show Pool_message.Field.Email
   ;;
 end
 
@@ -217,7 +217,7 @@ module CellPhone = struct
   let value m = m
 
   let schema_test_cell_phone () =
-    Pool_common.Utils.schema_decoder
+    Pool_conformist.schema_decoder
       create
       show
       Pool_message.Field.TestPhoneNumber
@@ -238,7 +238,7 @@ module UnverifiedCellPhone = struct
 end
 
 module Firstname = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Firstname
   let schema () = schema field ()
@@ -246,7 +246,7 @@ module Firstname = struct
 end
 
 module Lastname = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Lastname
   let schema () = schema field ()
@@ -254,7 +254,7 @@ module Lastname = struct
 end
 
 module Paused = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.Paused
 end
@@ -267,25 +267,25 @@ module Disabled = struct
 end
 
 module TermsAccepted = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = m
 end
 
 module Verified = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = m
 end
 
 module EmailVerified = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = m
 end
 
 module ImportPending = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.ImportPending
 end

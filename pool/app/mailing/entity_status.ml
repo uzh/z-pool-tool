@@ -1,5 +1,5 @@
 module ToHandle = struct
-  include Pool_common.Model.Integer
+  include Pool_model.Base.Integer
 
   let field = Pool_message.Field.ToHandle
 
@@ -11,7 +11,7 @@ module ToHandle = struct
 end
 
 module LastRun = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.LastRun
 end

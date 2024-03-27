@@ -2,7 +2,7 @@ open CCFun
 open Test_utils
 open Pool_message
 module SessionC = Cqrs_command.Session_command
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 
 let check_result expected generated =
   Alcotest.(check (result (list event) error) "succeeds" expected generated)
@@ -46,14 +46,14 @@ module Data = struct
     let start1 = Raw.start1 |> Ptime.to_rfc3339 ~frac_s:12
     let start2 = Raw.start2 |> Ptime.to_rfc3339 ~frac_s:12
     let start3 = Raw.start3 |> Ptime.to_rfc3339 ~frac_s:12
-    let duration = Raw.duration |> Pool_common.Utils.Time.timespan_to_minutes
+    let duration = Raw.duration |> Pool_model.Time.timespan_to_minutes
     let duration_unit = Raw.duration_unit |> TimeUnit.show
     let internal_description = Raw.internal_description
     let public_description = Raw.public_description
     let max_participants = Raw.max_participants |> string_of_int
     let min_participants = Raw.min_participants |> string_of_int
     let overbook = Raw.overbook |> string_of_int
-    let lead_time = Raw.lead_time |> Pool_common.Utils.Time.timespan_to_minutes
+    let lead_time = Raw.lead_time |> Pool_model.Time.timespan_to_minutes
     let sent_at = Raw.sent_at |> Ptime.to_rfc3339 ~frac_s:12
     let assignment_count = Raw.assignment_count |> string_of_int
   end
@@ -498,7 +498,7 @@ let delete_closed_session () =
   in
   check_result
     (closed_at
-     |> Pool_common.Utils.Time.formatted_date_time
+     |> Pool_model.Time.formatted_date_time
      |> Error.sessionalreadyclosed
      |> CCResult.fail)
     res
@@ -664,7 +664,7 @@ let cancel_already_canceled () =
   in
   check_result
     (now
-     |> Pool_common.Utils.Time.formatted_date_time
+     |> Pool_model.Time.formatted_date_time
      |> Error.sessionalreadycanceled
      |> CCResult.fail)
     res
@@ -1346,7 +1346,7 @@ let resend_reminders_invalid () =
     check_result
       (Error
          (Error.SessionAlreadyCanceled
-            (Pool_common.Utils.Time.formatted_date_time canceled_at)))
+            (Pool_model.Time.formatted_date_time canceled_at)))
       res1
   in
   let res2 = handle session2 in
@@ -1354,7 +1354,7 @@ let resend_reminders_invalid () =
     check_result
       (Error
          (Error.SessionAlreadyClosed
-            (Pool_common.Utils.Time.formatted_date_time closed_at)))
+            (Pool_model.Time.formatted_date_time closed_at)))
       res2
   in
   ()
@@ -1698,9 +1698,7 @@ module Duplication = struct
   let sub_timespan = handle_timespan_update Ptime.sub_span
 
   let start_to_string start =
-    start
-    |> Session.Start.value
-    |> Pool_common.Model.Ptime.date_time_to_flatpickr
+    start |> Session.Start.value |> Pool_model.Base.Ptime.date_time_to_flatpickr
   ;;
 
   let data_to_urlencded =

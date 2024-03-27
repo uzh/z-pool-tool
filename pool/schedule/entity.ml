@@ -1,12 +1,12 @@
 module Label = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Label
   let schema = schema ?validation:None field
 end
 
 module ScheduledTime = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let field = Pool_message.Field.ScheduledTime
   let create m = Ok m
@@ -14,7 +14,7 @@ module ScheduledTime = struct
 end
 
 module ScheduledTimeSpan = struct
-  include Pool_common.Model.PtimeSpan
+  include Pool_model.Base.PtimeSpan
 
   let create m =
     if Ptime.Span.abs m |> Ptime.Span.equal m
@@ -27,7 +27,7 @@ module ScheduledTimeSpan = struct
 end
 
 module LastRunAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let field = Pool_message.Field.LastRunAt
   let create m = Ok m
@@ -48,7 +48,7 @@ module Status = struct
     [@@deriving enum, eq, ord, show { with_path = false }, yojson, sexp_of]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let init = Active

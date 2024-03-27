@@ -34,7 +34,7 @@ let list Pool_context.{ language; _ } url (messages, query) =
     let formatted_date_time date =
       span
         ~a:[ a_class [ "nobr" ] ]
-        [ txt (Utils.Time.formatted_date_time date) ]
+        [ txt (Pool_model.Time.formatted_date_time date) ]
     in
     [ txt name
     ; m |> History.message_template |> CCOption.value ~default:"" |> txt

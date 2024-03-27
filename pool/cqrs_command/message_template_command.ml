@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "message_template.cqrs"
 
@@ -38,7 +38,7 @@ end = struct
 
   let schema =
     let open Message_template in
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make
         Field.
           [ Pool_common.Language.schema ()
@@ -111,7 +111,7 @@ end = struct
 
   let schema =
     let open Message_template in
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make
         Field.
           [ EmailSubject.schema ()

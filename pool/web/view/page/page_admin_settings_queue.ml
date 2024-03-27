@@ -3,7 +3,7 @@ open Component
 module HttpUtils = Http_utils
 module Message = Pool_message
 
-let formatted_date_time = Pool_common.Utils.Time.formatted_date_time
+let formatted_date_time = Pool_model.Time.formatted_date_time
 let base_path = "/admin/settings/queue"
 
 let data_table_head language =

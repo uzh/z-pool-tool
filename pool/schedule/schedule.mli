@@ -1,5 +1,5 @@
 module Label : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module Status : sig
@@ -13,7 +13,7 @@ module Status : sig
   val create : string -> (t, Pool_message.Error.t) result
   val init : t
   val all : t list
-  val schema : unit -> ('a, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> ('a, t) Pool_conformist.Field.t
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
@@ -22,9 +22,9 @@ module Status : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-module LastRunAt : Pool_common.Model.PtimeSig
-module ScheduledTime : Pool_common.Model.PtimeSig
-module ScheduledTimeSpan : Pool_common.Model.PtimeSpanSig
+module LastRunAt : Pool_model.Base.PtimeSig
+module ScheduledTime : Pool_model.Base.PtimeSig
+module ScheduledTimeSpan : Pool_model.Base.PtimeSpanSig
 
 type scheduled_time =
   | Every of ScheduledTimeSpan.t

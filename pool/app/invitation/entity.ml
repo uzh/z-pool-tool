@@ -1,21 +1,18 @@
 module ResentAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create = Ptime_clock.now
 end
 
 module SendCount = struct
-  open Pool_common
-  include Model.Integer
+  open Pool_message
+  include Pool_model.Base.Integer
 
   let field = Pool_message.Field.Count
-
-  let create m =
-    if m > 0 then Ok m else Error Pool_message.(Error.Invalid field)
-  ;;
+  let create m = if m > 0 then Ok m else Error (Error.Invalid field)
 
   let of_int m =
-    if m > 0 then m else Utils.failwith Pool_message.(Error.Invalid field)
+    if m > 0 then m else Pool_common.Utils.failwith (Error.Invalid field)
   ;;
 
   let init = 1

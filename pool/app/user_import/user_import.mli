@@ -1,21 +1,21 @@
-module Token : Pool_common.Model.StringSig
+module Token : Pool_model.Base.StringSig
 
 module ConfirmedAt : sig
-  include Pool_common.Model.PtimeSig
+  include Pool_model.Base.PtimeSig
 end
 
 module NotifiedAt : sig
-  include Pool_common.Model.PtimeSig
+  include Pool_model.Base.PtimeSig
 end
 
 module ReminderCount : sig
-  include Pool_common.Model.IntegerSig
+  include Pool_model.Base.IntegerSig
 
   val init : t
 end
 
 module LastRemindedAt : sig
-  include Pool_common.Model.PtimeSig
+  include Pool_model.Base.PtimeSig
 end
 
 type t =

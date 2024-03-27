@@ -11,11 +11,10 @@ module AdminComment = struct
   let value m = m
 
   let schema () =
-    Pool_common.(
-      Utils.schema_decoder
-        (fun m -> Ok (m |> create))
-        value
-        Pool_message.Field.AdminComment)
+    Pool_conformist.schema_decoder
+      CCFun.(create %> CCResult.return)
+      value
+      Pool_message.Field.AdminComment
   ;;
 end
 

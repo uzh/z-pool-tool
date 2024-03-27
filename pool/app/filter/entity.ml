@@ -7,7 +7,7 @@ module Helper = struct
 end
 
 module Title = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.title
   let schema () = schema field ()
@@ -25,7 +25,7 @@ let print = Utils.ppx_printer
 
 type single_val =
   | Bool of bool [@name "bool"] [@printer print "bool"]
-  | Date of Pool_common.Model.Ptime.date [@name "date"] [@printer print "date"]
+  | Date of Pool_model.Base.Ptime.date [@name "date"] [@printer print "date"]
   | Language of Pool_common.Language.t [@name "language"]
   [@printer print "language"]
   | Nr of float [@name "nr"] [@printer print "nr"]
@@ -49,7 +49,7 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
      | "bool", `Bool b -> Ok (Bool b)
      | "date", `String str ->
        str
-       |> Pool_common.Model.Ptime.date_of_string
+       |> Pool_model.Base.Ptime.date_of_string
        |> CCResult.map2 (fun date -> Date date) (fun _ -> error)
      | "language", `String str ->
        str |> Pool_common.Language.create >|= fun l -> Language l
@@ -84,7 +84,7 @@ let yojson_of_single_val value =
   @@
   match value with
   | Bool b -> `Bool b
-  | Date date -> `String (Pool_common.Model.Ptime.date_to_string date)
+  | Date date -> `String (Pool_model.Base.Ptime.date_to_string date)
   | Language lang -> `String (Pool_common.Language.show lang)
   | Nr n -> `Float n
   | Option id -> `String (Custom_field.SelectOption.Id.value id)

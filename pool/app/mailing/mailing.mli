@@ -5,32 +5,26 @@ module Id : sig
 end
 
 module StartAt : sig
-  include Pool_common.Model.BaseSig
+  include Pool_model.Base.BaseSig
 
   val create : Ptime.t -> (t, Pool_message.Error.t) result
   val create_now : unit -> t
   val value : t -> Ptime.t
   val to_human : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module StartNow : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module EndAt : sig
-  include Pool_common.Model.BaseSig
+  include Pool_model.Base.BaseSig
 
   val create : Ptime.t -> (t, Pool_message.Error.t) result
   val value : t -> Ptime.t
   val to_human : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module Start : sig
@@ -51,13 +45,13 @@ module Start : sig
 end
 
 module Limit : sig
-  include Pool_common.Model.IntegerSig
+  include Pool_model.Base.IntegerSig
 
   val default : t
 end
 
 module InvitationCount : sig
-  include Pool_common.Model.IntegerSig
+  include Pool_model.Base.IntegerSig
 
   val default : t
 end
@@ -84,10 +78,7 @@ module Distribution : sig
     val read : string -> t
     val create : string -> (t, Pool_message.Error.t) result
     val all : t list
-
-    val schema
-      :  unit
-      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   module SortOrder : sig
@@ -103,10 +94,7 @@ module Distribution : sig
     val create : string -> (t, Pool_message.Error.t) result
     val all : t list
     val default : t
-
-    val schema
-      :  unit
-      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   type sorted = (SortableField.t * SortOrder.t) list
@@ -130,14 +118,11 @@ module Distribution : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val get_order_element : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, sorted) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, sorted) Pool_conformist.Field.t
 
   val is_random_schema
     :  unit
-    -> (Pool_message.Error.t, bool) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, bool) Pool_conformist.Field.t
 
   val of_urlencoded_list
     :  string list
@@ -220,14 +205,14 @@ val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
 
 module Status : sig
   module ToHandle : sig
-    include Pool_common.Model.BaseSig
+    include Pool_model.Base.BaseSig
 
     val value : t -> int
     val create : int -> (t, Pool_message.Error.t) result
   end
 
   module LastRun : sig
-    include Pool_common.Model.BooleanSig
+    include Pool_model.Base.BooleanSig
   end
 
   type status =

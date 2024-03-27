@@ -33,7 +33,7 @@ val create : ?id:Id.t -> Job.t -> t
 
 module EventLog : sig
   module ServiceIdentifier : sig
-    include Pool_common.Model.StringSig
+    include Pool_model.Base.StringSig
 
     val get : ?identifier:string -> unit -> t
   end
@@ -52,7 +52,7 @@ module EventLog : sig
   end
 
   module Message : sig
-    include Pool_common.Model.StringSig
+    include Pool_model.Base.StringSig
   end
 
   type t

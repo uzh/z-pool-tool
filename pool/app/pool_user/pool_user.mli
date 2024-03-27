@@ -10,7 +10,7 @@ module PasswordConfirmed : sig
   val schema
     :  ?field:Pool_message.Field.t
     -> unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module Password : sig
@@ -40,7 +40,7 @@ module Password : sig
     :  ?field:Pool_message.Field.t
     -> (string -> (t, Pool_message.Error.t) result)
     -> unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 
   val validate_current_password
     :  ?field:Pool_message.Field.t
@@ -55,19 +55,19 @@ module Password : sig
 end
 
 module Firstname : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 
   val of_string : string -> t
 end
 
 module Lastname : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 
   val of_string : string -> t
 end
 
 module Paused : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module Disabled : sig
@@ -119,11 +119,11 @@ module CellPhone : sig
 
   val schema_test_cell_phone
     :  unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module ImportPending : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module UnverifiedCellPhone : sig
@@ -157,10 +157,7 @@ module EmailAddress : sig
   val value : t -> string
   val create : string -> (t, Pool_message.Error.t) result
   val of_string : string -> t
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module EmailVerified : sig
@@ -245,7 +242,7 @@ val create_session
 
 module FailedLoginAttempt : sig
   module Id : sig
-    include Pool_common.Model.IdSig
+    include Pool_model.Base.IdSig
   end
 
   module Counter : sig

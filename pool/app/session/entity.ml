@@ -5,14 +5,14 @@ module Id = struct
 end
 
 module InternalDescription = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.InternalDescription
   let schema () = schema field ()
 end
 
 module PublicDescription = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.PublicDescription
   let schema () = schema field ()
@@ -39,23 +39,20 @@ module ParticipantAmount = struct
       |> CCOption.to_result Pool_message.(Error.NotANumber str)
       >>= create
     in
-    Pool_common.(Utils.schema_decoder decode CCInt.to_string field)
+    Pool_conformist.schema_decoder decode CCInt.to_string field
   ;;
 end
 
 module Start = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = m
   let value m = m
   let compare = Ptime.compare
 
   let schema () =
-    let decode str =
-      let open CCResult in
-      Pool_common.(Utils.Time.parse_time str >|= create)
-    in
-    Pool_common.Utils.schema_decoder
+    let decode str = CCResult.(Pool_model.Time.parse_time str >|= create) in
+    Pool_conformist.schema_decoder
       decode
       Ptime.to_rfc3339
       Pool_message.Field.Start
@@ -63,7 +60,7 @@ module Start = struct
 end
 
 module End = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create start duration =
     duration
@@ -79,7 +76,7 @@ module Duration = struct
     let name = Pool_message.Field.Duration
   end
 
-  include Pool_common.Model.Duration (DurationCore)
+  include Pool_model.Base.Duration (DurationCore)
 end
 
 module AssignmentCount = struct
@@ -119,7 +116,7 @@ module ParticipantCount = struct
 end
 
 module CancellationReason = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Reason
 
@@ -131,7 +128,7 @@ module CancellationReason = struct
 end
 
 module CanceledAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = Ok m
   let schema = schema Pool_message.Field.CanceledAt create
@@ -221,7 +218,7 @@ let create
 let is_canceled_error canceled_at =
   let open Pool_message in
   canceled_at
-  |> Pool_common.Utils.Time.formatted_date_time
+  |> Pool_model.Time.formatted_date_time
   |> Error.sessionalreadycanceled
   |> CCResult.fail
 ;;
@@ -253,7 +250,7 @@ type notification_history =
   }
 
 let session_date_to_human (session : t) =
-  session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
+  session.start |> Start.value |> Pool_model.Time.formatted_date_time
 ;;
 
 let start_end_with_duration_human ({ start; duration; _ } : t) =
@@ -505,12 +502,12 @@ let email_text language start duration location =
   let start =
     format
       Pool_message.Field.Start
-      (Start.value start |> Pool_common.Utils.Time.formatted_date_time)
+      (Start.value start |> Pool_model.Time.formatted_date_time)
   in
   let duration =
     format
       Pool_message.Field.Duration
-      (Duration.value duration |> Pool_common.Utils.Time.formatted_timespan)
+      (Duration.value duration |> Pool_model.Time.formatted_timespan)
   in
   let location =
     format
@@ -552,7 +549,7 @@ let not_closed session =
   | None -> Ok ()
   | Some closed_at ->
     closed_at
-    |> Pool_common.Utils.Time.formatted_date_time
+    |> Pool_model.Time.formatted_date_time
     |> Error.sessionalreadyclosed
     |> CCResult.fail
 ;;

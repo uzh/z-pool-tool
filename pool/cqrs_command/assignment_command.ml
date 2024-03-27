@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 open CCFun.Infix
 
 let src = Logs.Src.create "assignment.cqrs"
@@ -486,7 +486,7 @@ type session_swap =
 
 let session_schema () =
   let open Session in
-  Pool_common.Utils.schema_decoder
+  Pool_conformist.schema_decoder
     CCFun.(Id.of_string %> CCResult.return)
     Id.value
     Pool_message.Field.Session
@@ -552,7 +552,7 @@ end = struct
 
   let schema =
     let open Message_template in
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make
         Field.
           [ session_schema ()

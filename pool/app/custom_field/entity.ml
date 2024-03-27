@@ -4,7 +4,7 @@ module Answer = Entity_answer
 module User = Pool_user
 
 module Ptime = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 end
 
 let printer = Utils.ppx_printer
@@ -21,7 +21,7 @@ module Model = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 end
 
@@ -72,7 +72,7 @@ module FieldType = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let to_string t =
@@ -81,51 +81,51 @@ module FieldType = struct
 end
 
 module Required = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.Required
 end
 
 module Disabled = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.Disabled
 end
 
 module PublishedAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = Ok m
   let schema = schema Pool_message.Field.PublishedAt create
 end
 
 module AdminHint = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.AdminHint
   let schema () = schema field ()
 end
 
 module AdminOverride = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.Override
 end
 
 module AdminViewOnly = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.AdminViewOnly
 end
 
 module AdminInputOnly = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.AdminInputOnly
 end
 
 module PromptOnRegistration = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.PromptOnRegistration
 end
@@ -1069,7 +1069,7 @@ let group_fields groups fields =
 
 module PartialUpdate = struct
   module PoolField = Pool_message.Field
-  module Conformist = Pool_common.Utils.PoolConformist
+  module Conformist = Pool_conformist
 
   type t =
     | Firstname of Pool_common.Version.t * User.Firstname.t

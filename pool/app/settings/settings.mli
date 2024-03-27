@@ -1,41 +1,41 @@
 type command =
   { time_value : int
-  ; time_unit : Pool_common.Model.TimeUnit.t
+  ; time_unit : Pool_model.Base.TimeUnit.t
   }
 
 val update_duration_schema
-  :  (Pool_message.Error.t, int) Pool_common.Utils.PoolConformist.Field.t
+  :  (Pool_message.Error.t, int) Pool_conformist.Field.t
   -> Pool_message.Field.t
   -> ( Pool_message.Error.t
-       , int -> Pool_common.Model.TimeUnit.t -> command
+       , int -> Pool_model.Base.TimeUnit.t -> command
        , command )
-       Pool_common.Utils.PoolConformist.t
+       Pool_conformist.t
 
 module ContactEmail : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module EmailSuffix : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module InactiveUser : sig
   module DisableAfter : sig
-    include Pool_common.Model.DurationSig
+    include Pool_model.Base.DurationSig
   end
 
   module Warning : sig
-    include Pool_common.Model.DurationSig
+    include Pool_model.Base.DurationSig
   end
 end
 
 module TriggerProfileUpdateAfter : sig
-  include Pool_common.Model.DurationSig
+  include Pool_model.Base.DurationSig
 end
 
 module TermsAndConditions : sig
   module Terms : sig
-    include Pool_common.Model.StringSig
+    include Pool_model.Base.StringSig
   end
 
   type t
@@ -48,13 +48,13 @@ end
 
 module UserImportReminder : sig
   module FirstReminderAfter : sig
-    include Pool_common.Model.DurationSig
+    include Pool_model.Base.DurationSig
 
     val validate : t -> (t, Pool_message.Error.t) result
   end
 
   module SecondReminderAfter : sig
-    include Pool_common.Model.DurationSig
+    include Pool_model.Base.DurationSig
 
     val validate : t -> (t, Pool_message.Error.t) result
   end

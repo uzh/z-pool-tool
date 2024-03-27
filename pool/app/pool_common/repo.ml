@@ -10,8 +10,8 @@ let make_caqti_type caqti_type create value =
 ;;
 
 module Model = struct
-  module SelectorType (Core : Entity_base_model.SelectorCoreTypeSig) = struct
-    include Entity_base_model.SelectorType (Core)
+  module SelectorType (Core : Pool_model.Base.SelectorCoreTypeSig) = struct
+    include Pool_model.Base.SelectorType (Core)
 
     let t = make_caqti_type Caqti_type.string create Core.show
   end
@@ -26,7 +26,7 @@ end
 module Language = Model.SelectorType (Language)
 
 module Ptime = struct
-  include Entity_base_model.Ptime
+  include Pool_model.Base.Ptime
 
   let date = make_caqti_type Caqti_type.string date_of_string date_to_string
 end

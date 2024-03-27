@@ -27,7 +27,7 @@ module Key = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let is_rich_text = function
@@ -46,7 +46,7 @@ module Key = struct
 end
 
 module Content = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Translation
   let schema () = schema field ()

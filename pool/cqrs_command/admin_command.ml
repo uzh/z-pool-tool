@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module User = Pool_user
 
 let src = Logs.Src.create "admin.cqrs"
@@ -35,7 +35,7 @@ end = struct
   ;;
 
   let schema =
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make
         Field.
           [ User.EmailAddress.schema ()
@@ -173,7 +173,7 @@ end = struct
   let command firstname lastname = { Admin.firstname; lastname }
 
   let schema =
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make Field.[ User.Firstname.schema (); User.Lastname.schema () ] command)
   ;;
 
@@ -221,7 +221,7 @@ end = struct
   type t = Pool_common.Id.t
 
   let schema =
-    let open Pool_common.Utils.PoolConformist in
+    let open Pool_conformist in
     make Field.[ Pool_common.Id.schema () ] CCFun.id
   ;;
 

@@ -3,21 +3,21 @@ module Id = Pool_common.Id
 let print = Utils.ppx_printer
 
 module Label = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.SmtpLabel
   let schema () = schema field ()
 end
 
 module Server = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.SmtpServer
   let schema () = schema field ()
 end
 
 module Port = struct
-  include Pool_common.Model.Integer
+  include Pool_model.Base.Integer
 
   let field = Pool_message.Field.SmtpPort
   let create port = Ok port
@@ -25,14 +25,14 @@ module Port = struct
 end
 
 module Username = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.SmtpUsername
   let schema () = schema field ()
 end
 
 module Password = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.SmtpPassword
   let schema () = schema field ()
@@ -50,7 +50,7 @@ module Mechanism = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let to_sendmail = function
@@ -69,12 +69,12 @@ module Protocol = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 end
 
 module Default = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let init = false
   let schema = schema Pool_message.Field.DefaultSmtpServer

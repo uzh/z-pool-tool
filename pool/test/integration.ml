@@ -279,22 +279,21 @@ let suite =
               AvailableExperiments.mark_assignment_as_deleted
           ] )
     ; ( "filtering"
-      , [ test_case
-            "uninvited contact is listed"
-            `Slow
-            Filter_invitation_tests.finds_uninvited_contacts
+      , let open Filter_invitation_tests in
+        let open Filter_assignment_tests in
+        [ test_case "uninvited contact is listed" `Slow finds_uninvited_contacts
         ; test_case
             "invited contact is not listed"
             `Slow
-            Filter_invitation_tests.filters_out_invited_contacts
+            filters_out_invited_contacts
         ; test_case
             "unassigned contact is listed"
             `Slow
-            Filter_assignment_tests.finds_unassigned_contacts
+            finds_unassigned_contacts
         ; test_case
             "assigned contact is not listed"
             `Slow
-            Filter_assignment_tests.filters_out_assigned_contacts
+            filters_out_assigned_contacts
         ] )
     ; ( "contact counter"
       , Contact_counter_test.

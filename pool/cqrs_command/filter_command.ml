@@ -1,11 +1,10 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Id = Pool_common.Id
 
 let src = Logs.Src.create "filter.cqrs"
 
 let default_schema command =
-  Pool_common.Utils.PoolConformist.(
-    make Field.[ Filter.Title.schema () ] command)
+  Pool_conformist.(make Field.[ Filter.Title.schema () ] command)
 ;;
 
 let default_command = CCFun.id

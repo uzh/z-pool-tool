@@ -1,6 +1,6 @@
 module Answer : sig
   module Id : sig
-    include Pool_common.Model.IdSig
+    include Pool_model.Base.IdSig
   end
 
   type 'a t =
@@ -27,7 +27,7 @@ module Answer : sig
 end
 
 module Id : sig
-  include Pool_common.Model.IdSig
+  include Pool_model.Base.IdSig
 end
 
 module Model : sig
@@ -40,10 +40,7 @@ module Model : sig
   val yojson_of_t : t -> Yojson.Safe.t
   val all : t list
   val create : string -> (t, Pool_message.Error.t) result
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module Name : sig
@@ -110,42 +107,39 @@ module FieldType : sig
   val show : t -> string
   val all : t list
   val to_string : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module Required : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module Disabled : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module PublishedAt : sig
-  include Pool_common.Model.PtimeSig
+  include Pool_model.Base.PtimeSig
 end
 
 module AdminHint : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module AdminOverride : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module AdminViewOnly : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module AdminInputOnly : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module PromptOnRegistration : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module Validation : sig
@@ -196,7 +190,7 @@ end
 
 module SelectOption : sig
   module Id : sig
-    include Pool_common.Model.IdSig
+    include Pool_model.Base.IdSig
   end
 
   type t =
@@ -294,11 +288,9 @@ end
 
 module Group : sig
   module Id : sig
-    include Pool_common.Model.IdSig
+    include Pool_model.Base.IdSig
 
-    val schema
-      :  unit
-      -> (Pool_message.Error.t, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   type t =

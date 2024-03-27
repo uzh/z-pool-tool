@@ -8,28 +8,28 @@ module File = Common.File
 module LogoMapping = Entity_logo_mapping
 
 module Title = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Title
   let schema () = schema field ()
 end
 
 module Description = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Description
   let schema () = schema field ()
 end
 
 module Url = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Url
   let schema () = schema field ()
 end
 
 module GtxApiKey = struct
-  include Common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.GtxApiKey
   let schema () = schema field ()
@@ -44,7 +44,7 @@ module Styles = struct
   let create m = m
 
   module Write = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Pool_message.Field.Styles
     let schema () = schema field ()
@@ -58,7 +58,7 @@ module Icon = struct
   let of_file m = m
 
   module Write = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Pool_message.Field.Icon
     let schema () = schema field ()
@@ -72,7 +72,7 @@ module Logos = struct
   let create m = Ok (CCList.map Common.Id.of_string m)
 
   let schema () =
-    Common.Utils.schema_list_decoder
+    Pool_conformist.schema_list_decoder
       create
       (CCList.map Common.Id.value)
       Pool_message.Field.TenantLogos
@@ -88,7 +88,7 @@ module PartnerLogos = struct
   let value m = m
 
   let schema () =
-    Common.Utils.schema_list_decoder
+    Pool_conformist.schema_list_decoder
       create
       (fun l -> l |> CCList.map Common.Id.value)
       Pool_message.Field.PartnerLogos
@@ -98,13 +98,13 @@ module PartnerLogos = struct
 end
 
 module Maintenance = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.TenantMaintenanceFlag
 end
 
 module Disabled = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.TenantDisabledFlag
 end

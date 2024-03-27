@@ -22,7 +22,7 @@ module Token = struct
 end
 
 module VerifiedAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = m
 end

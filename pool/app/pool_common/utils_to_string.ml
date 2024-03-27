@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Entity
 
 let to_string = function
@@ -61,12 +62,11 @@ let hint_to_string = function
 ;;
 
 let get_or_failwith m =
-  m
-  |> CCResult.map_err (error_to_string Language.En)
-  |> CCResult.get_or_failwith
+  let open CCResult in
+  m |> map_err (error_to_string Language.En) |> get_or_failwith
 ;;
 
-let failwith = CCFun.(error_to_string Language.En %> failwith)
+let failwith = error_to_string Language.En %> failwith
 
 let bool_to_string lang m =
   match lang with

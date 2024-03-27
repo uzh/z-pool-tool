@@ -5,14 +5,14 @@ module Id = struct
 end
 
 module Title = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.Title
   let schema () = schema field ()
 end
 
 module PublicTitle = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.PublicTitle
   let schema () = schema field ()
@@ -20,58 +20,58 @@ module PublicTitle = struct
 end
 
 module InternalDescription = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.InternalDescription
   let schema () = schema field ()
 end
 
 module PublicDescription = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.PublicDescription
   let schema () = schema field ()
 end
 
 module CostCenter = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Pool_message.Field.CostCenter
   let schema () = schema field ()
 end
 
 module DirectRegistrationDisabled = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.DirectRegistrationDisabled
 end
 
 module RegistrationDisabled = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.RegistrationDisabled
 end
 
 module AllowUninvitedSignup = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.AllowUninvitedSignup
 end
 
 module ExternalDataRequired = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.ExternalDataRequired
 end
 
 module ShowExternalDataIdLinks = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.ShowExteralDataIdLinks
 end
 
 module InvitationResetAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = Ok m
   let schema = schema Pool_message.Field.InvitationResetAt create

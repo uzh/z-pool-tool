@@ -79,35 +79,35 @@ module Label = struct
 end
 
 module EmailSubject = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Field.EmailSubject
   let schema () = schema field ()
 end
 
 module EmailText = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Field.EmailText
   let schema () = schema field ()
 end
 
 module PlainText = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Field.PlainText
   let schema () = schema field ()
 end
 
 module SmsText = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Field.SmsText
   let schema () = schema field ()
 end
 
 module FallbackToEmail = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.FallbackToEmail
 end

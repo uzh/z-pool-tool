@@ -50,7 +50,7 @@ let create ?(id = Id.create ()) job =
 
 module EventLog = struct
   module ServiceIdentifier = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Pool_message.Field.Host
     let schema () = schema field ()
@@ -75,7 +75,7 @@ module EventLog = struct
       [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
     end
 
-    include Pool_common.Model.SelectorType (Core)
+    include Pool_model.Base.SelectorType (Core)
     include Core
 
     let to_human language =
@@ -95,7 +95,7 @@ module EventLog = struct
   end
 
   module Message = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Pool_message.Field.Message
     let schema () = schema field ()

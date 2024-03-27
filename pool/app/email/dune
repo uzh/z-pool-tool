@@ -2,6 +2,7 @@
  (name email)
  (libraries
   i18n
+  pool.conformist
   pool_common
   pool_database
   pool_tenant
