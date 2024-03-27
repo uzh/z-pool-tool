@@ -214,6 +214,17 @@ val count_unsuitable_by
 val find_with_follow_ups : Pool_database.Label.t -> Id.t -> t list Lwt.t
 val find_follow_ups : Pool_database.Label.t -> t -> t list Lwt.t
 
+val find_upcoming_by_experiment
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> ( Experiment.t * (Session.t * t list) list
+       , Pool_common.Message.error )
+       Lwt_result.t
+
+val find_upcoming
+  :  Pool_database.Label.t
+  -> (Experiment.t * (Session.t * t list) list) list Lwt.t
+
 val contact_participation_in_other_assignments
   :  Pool_database.Label.t
   -> exclude_assignments:t list
@@ -253,21 +264,6 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-
-val update_matches_filter
-  :  Pool_database.Label.t
-  -> [< `Experiment of Experiment.t * Filter.t option
-     | `Session of Session.t * Filter.t option
-     | `Upcoming
-     ]
-  -> ((t * MatchesFilter.t) list, Pool_common.Message.error) Lwt_result.t
-
-val update_matches_filter_events : (t * MatchesFilter.t) list -> event list
-
-module Service : sig
-  val update_upcoming_assignments : Pool_database.Label.t -> unit Lwt.t
-  val register : unit -> Sihl.Container.Service.t
-end
 
 module Guard : sig
   module Target : sig

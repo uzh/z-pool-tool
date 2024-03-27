@@ -619,19 +619,18 @@ let filter_form
       filter_query
       ()
   in
-  let title_input, _ =
+  let title_input =
     match param with
     | Template _ ->
       let open CCOption.Infix in
       let open Pool_common in
-      ( Input.input_element
-          ?value:(filter >>= fun filter -> filter.title >|= Title.value)
-          ~required:true
-          language
-          `Text
-          Message.Field.Title
-      , [ a_user_data "hx-params" Message.Field.(show Title) ] )
-    | Experiment _ -> txt "", []
+      Input.input_element
+        ?value:(filter >>= fun filter -> filter.title >|= Title.value)
+        ~required:true
+        language
+        `Text
+        Message.Field.Title
+    | Experiment _ -> txt ""
   in
   let filter_id =
     (match param with

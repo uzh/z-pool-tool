@@ -1,5 +1,6 @@
 module JobName : sig
   type t =
+    | CheckMatchesFilter
     | SendEmail
     | SendTextMessage
 

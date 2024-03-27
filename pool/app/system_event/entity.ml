@@ -6,9 +6,6 @@ end
 
 module Job = struct
   type t =
-    | FilterTemplateUpdated of Pool_database.Label.t
-    [@name "filtertemplateupdated"]
-    [@printer Utils.ppx_printer "filtertemplateupdated"]
     | GuardianCacheCleared [@name "guardiancachecleared"]
     [@printer Utils.ppx_printer "guardiancachecleared"]
     | I18nPageUpdated [@name "i18npageupdated"]

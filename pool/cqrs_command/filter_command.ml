@@ -31,6 +31,7 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?id:Filter.Id.t
     -> Filter.Key.human list
     -> Filter.t list
     -> Filter.query
@@ -39,12 +40,14 @@ module Create : sig
 end = struct
   type t = Filter.Title.t
 
-  let handle ?(tags = Logs.Tag.empty) key_list template_list query title =
+  let handle ?(tags = Logs.Tag.empty) ?id key_list template_list query title =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* query = validate_query key_list template_list query in
     Ok
-      [ Filter.Created (Filter.create (Some title) query) |> Pool_event.filter ]
+      [ Filter.Created (Filter.create ?id (Some title) query)
+        |> Pool_event.filter
+      ]
   ;;
 
   let effects = Filter.Guard.Access.create
@@ -55,7 +58,6 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Pool_database.Label.t
     -> Filter.Key.human list
     -> Filter.t list
     -> Filter.t
@@ -67,29 +69,14 @@ module Update : sig
 end = struct
   type t = Filter.Title.t
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    database_label
-    key_list
-    template_list
-    filter
-    query
-    title
-    =
+  let handle ?(tags = Logs.Tag.empty) key_list template_list filter query title =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let* query = validate_query key_list template_list query in
-    let system_event =
-      let open System_event in
-      System_event.Job.FilterTemplateUpdated database_label
-      |> create ~worker_only:true
-      |> created
-      |> Pool_event.system_event
-    in
     Ok
       [ Filter.(Updated { filter with query; title = Some title })
         |> Pool_event.filter
-      ; system_event
+      ; Assignment_job.Dispatched |> Pool_event.assignmentjob
       ]
   ;;
 

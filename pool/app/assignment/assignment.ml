@@ -1,7 +1,6 @@
 include Entity
 include Event
 module Guard = Entity_guard
-module Service = Service
 
 let find = Repo.find
 let find_closed = Repo.find_closed
@@ -43,6 +42,8 @@ let find_deleted_by_session = Repo.find_deleted_by_session
 let count_unsuitable_by = Repo.Sql.count_unsuitable_by
 let find_with_follow_ups = Repo.find_with_follow_ups
 let find_follow_ups = Repo.find_follow_ups
+let find_upcoming_by_experiment = Repo.Sql.find_upcoming_by_experiment
+let find_upcoming = Repo.Sql.find_upcoming
 
 let contact_participation_in_other_assignments =
   Repo.contact_participation_in_other_assignments
@@ -96,6 +97,3 @@ let counters_of_session database_label session_id =
   find_uncanceled_by_session database_label session_id
   ||> assignments_to_session_counters
 ;;
-
-let update_matches_filter = Service.update_matches_filter
-let update_matches_filter_events = Service.update_matches_filter_events

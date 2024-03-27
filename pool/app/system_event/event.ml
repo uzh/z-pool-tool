@@ -27,9 +27,6 @@ let handle_system_event ?worker system_event =
   in
   let open Job in
   match system_event.job with
-  | FilterTemplateUpdated pool ->
-    let%lwt () = Assignment.Service.update_upcoming_assignments pool in
-    success_log ()
   | GuardianCacheCleared ->
     let () = Guard.Persistence.Cache.clear () in
     success_log ()

@@ -1083,18 +1083,17 @@ let update_matches_filter req =
       (Experiment.Id.value experiment_id)
       (Session.Id.value session_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
-    let* filter =
-      Experiment.find database_label experiment_id >|+ Experiment.filter
-    in
     let* session = Session.find database_label session_id in
+    let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
     let* events =
-      Assignment.update_matches_filter
+      Assignment_job.update_matches_filter
+        ~admin
         database_label
-        (`Session (session, filter))
+        (`Session session)
       >== Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in

@@ -101,7 +101,7 @@ let new_form = form false
 let write action req =
   let open Utils.Lwt_result.Infix in
   let open Cqrs_command in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* query =
@@ -118,8 +118,10 @@ let write action req =
       let lift = Lwt_result.lift in
       match action with
       | Experiment exp ->
-        let find_assignments filter =
-          Assignment.update_matches_filter
+        let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
+        let matcher_events filter =
+          Assignment_job.update_matches_filter
+            ~admin
             database_label
             (`Experiment (exp, Some filter))
         in
@@ -128,15 +130,15 @@ let write action req =
          | None ->
            let open CreateFilter in
            let* filter = create_filter key_list template_list query |> lift in
-           let* assignments = find_assignments filter in
-           handle ~tags exp assignments filter |> lift
+           let* matcher_events = matcher_events filter in
+           handle ~tags exp matcher_events filter |> lift
          | Some filter ->
            let open UpdateFilter in
            let* filter =
              create_filter key_list template_list filter query |> lift
            in
-           let* assignments = find_assignments filter in
-           handle ~tags assignments filter |> lift)
+           let* matcher_events = matcher_events filter in
+           handle ~tags matcher_events filter |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
@@ -144,14 +146,9 @@ let write action req =
          | None ->
            Create.handle ~tags key_list template_list query decoded |> lift
          | Some filter ->
-           Update.handle
-             ~tags
-             database_label
-             key_list
-             template_list
-             filter
-             query
-             decoded
+           (* TODO: Trigger background job, if done as event, get rid of
+              dependency of matcher to cqrs command *)
+           Update.handle ~tags key_list template_list filter query decoded
            |> lift)
     in
     let handle events =

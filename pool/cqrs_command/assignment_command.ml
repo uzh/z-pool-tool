@@ -577,9 +577,7 @@ end = struct
 end
 
 module UpdateMatchesFilter : sig
-  include
-    Common.CommandSig
-    with type t = (Assignment.t * Assignment.MatchesFilter.t) list
+  include Common.CommandSig with type t = Assignment.event list * Email.job list
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -588,15 +586,13 @@ module UpdateMatchesFilter : sig
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = (Assignment.t * Assignment.MatchesFilter.t) list
+  type t = Assignment.event list * Email.job list
 
-  let handle ?(tags = Logs.Tag.empty) assignments =
+  let handle ?(tags = Logs.Tag.empty) (assignment_events, emails) =
     Logs.info ~src (fun m -> m "Handle command UpdateMatchesFilter" ~tags);
-    let open Assignment in
-    assignments
-    |> update_matches_filter_events
-    |> CCList.map Pool_event.assignment
-    |> CCResult.return
+    Ok
+      ((assignment_events |> CCList.map Pool_event.assignment)
+       @ [ Email.BulkSent emails |> Pool_event.email ])
   ;;
 
   let effects id = Session.Guard.Access.update id

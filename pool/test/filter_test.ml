@@ -523,6 +523,30 @@ let save_filter filter experiment =
   |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
 ;;
 
+let create_and_update_filter_template _ () =
+  let open Cqrs_command.Filter_command in
+  let%lwt () =
+    CustomFieldData.NrOfSiblings.save ()
+    |> Pool_event.handle_event Data.database_label
+  in
+  let%lwt key_list = Filter.all_keys Data.database_label in
+  let title = "has siblings" |> Filter.Title.of_string in
+  let id = Filter.Id.create () in
+  let query = nr_of_siblings_filter () in
+  let events = Create.handle ~id key_list [] query title in
+  let filter = Filter.create ~id (Some title) query in
+  let expected = Ok [ Filter.Created filter |> Pool_event.filter ] in
+  check_result expected events;
+  let events = Update.handle key_list [] filter query title in
+  let expected =
+    Ok
+      [ Filter.(Updated filter) |> Pool_event.filter
+      ; Assignment_job.Dispatched |> Pool_event.assignmentjob
+      ]
+  in
+  check_result expected events |> Lwt.return
+;;
+
 let filter_contacts _ () =
   let%lwt () =
     let open Utils.Lwt_result.Infix in
@@ -531,8 +555,7 @@ let filter_contacts _ () =
     let%lwt () =
       let open CustomFieldData in
       (* Save field and answer with 3 *)
-      NrOfSiblings.(
-        save () :: save_answers ~answer_value:(Some answer_value) contacts)
+      NrOfSiblings.(save_answers ~answer_value:(Some answer_value) contacts)
       |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
     in
     let filter = Filter.create None (nr_of_siblings_filter ()) in
@@ -612,13 +635,9 @@ let validate_filter_with_unknown_field _ () =
   let filter = Filter.create None query in
   let title = Filter.Title.of_string "Title" in
   let events =
-    Cqrs_command.Filter_command.Update.handle
-      Data.database_label
-      key_list
-      []
-      filter
-      query
-      title
+    (* TODO: Trigger background job, if done as event, get rid of dependency of
+       matcher to cqrs command *)
+    Cqrs_command.Filter_command.Update.handle key_list [] filter query title
   in
   let expected = Error Pool_common.Message.(Invalid Field.Key) in
   check_result expected events |> Lwt.return

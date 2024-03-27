@@ -10,13 +10,13 @@ let worker_services =
       ~jobs:
         [ Queue.hide Email.Service.Job.send
         ; Queue.hide Text_message.Service.Job.send
+        ; Queue.hide Assignment_job.job
         ]
       ()
   ; Matcher.register ()
   ; System_event.Service.register_worker ()
   ; User_import.Service.register ()
   ; Reminder.Service.register ()
-  ; Assignment.Service.register ()
   ]
 ;;
 
@@ -31,6 +31,7 @@ let services =
   ; Service.Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register ()
+  ; Assignment_job.register ()
   ]
 ;;
 

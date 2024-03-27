@@ -516,7 +516,7 @@ module CreateFilter : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> (Assignment.t * Assignment.MatchesFilter.t) list
+    -> Assignment.event list * Email.job list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -530,21 +530,25 @@ end = struct
     Filter.create ~id None query |> return
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) experiment assignments (filter : Filter.t)
+  let handle
+    ?(tags = Logs.Tag.empty)
+    experiment
+    (assignment_events, emails)
+    (filter : Filter.t)
     =
     Logs.info ~src (fun m -> m "Handle command CreateFilter" ~tags);
     let open CCResult in
     let experiment = { experiment with Experiment.filter = Some filter } in
     let assignment_events =
-      assignments
-      |> Assignment.update_matches_filter_events
-      |> CCList.map Pool_event.assignment
+      assignment_events |> CCList.map Pool_event.assignment
     in
+    let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
       ([ Filter.Created filter |> Pool_event.filter
        ; Experiment.Updated experiment |> Pool_event.experiment
        ]
-       @ assignment_events)
+       @ assignment_events
+       @ [ email_event ])
   ;;
 
   let effects id =
@@ -565,7 +569,7 @@ module UpdateFilter : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> (Assignment.t * Assignment.MatchesFilter.t) list
+    -> Assignment.event list * Email.job list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -579,15 +583,16 @@ end = struct
     Ok Filter.{ filter with query }
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) assignments filter =
+  let handle ?(tags = Logs.Tag.empty) (assignment_events, emails) filter =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
     let assignment_events =
-      assignments
-      |> Assignment.update_matches_filter_events
-      |> CCList.map Pool_event.assignment
+      assignment_events |> CCList.map Pool_event.assignment
     in
-    Ok ((Filter.Updated filter |> Pool_event.filter) :: assignment_events)
+    let email_event = Email.BulkSent emails |> Pool_event.email in
+    Ok
+      (((Filter.Updated filter |> Pool_event.filter) :: assignment_events)
+       @ [ email_event ])
   ;;
 
   let effects experiment_id filter_id =

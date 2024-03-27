@@ -3,6 +3,8 @@ module JobName = struct
     let field = Pool_common.Message.Field.Name
 
     type t =
+      | CheckMatchesFilter [@name "check_matches_filter"]
+      [@printer Utils.ppx_printer "check_matches_filter"]
       | SendEmail [@name "send_email"] [@printer Utils.ppx_printer "send_email"]
       | SendTextMessage [@name "send_text_message"]
       [@printer Utils.ppx_printer "send_text_message"]

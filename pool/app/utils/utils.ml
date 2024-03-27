@@ -54,6 +54,19 @@ let bool_to_result_not err = function
   | false -> Ok ()
 ;;
 
+let group_tuples data =
+  let open CCOption in
+  let open Hashtbl in
+  let tbl = create 20 in
+  data
+  |> CCList.iter (fun (key, item) ->
+    find_opt tbl key
+    >|= CCList.cons item
+    |> value ~default:[ item ]
+    |> replace tbl key)
+  |> CCFun.const (fold (fun key items acc -> (key, items) :: acc) tbl [])
+;;
+
 module Url = struct
   let public_host =
     let open CCOption in

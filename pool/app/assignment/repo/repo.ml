@@ -252,82 +252,26 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
-  let find_all_by_experiment_request =
-    let open Caqti_request.Infix in
-    {sql|
-      WHERE
-        pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
-    |> find_request_sql ~additional_joins:[ joins_session ]
-    |> Caqti_type.string ->* RepoEntity.t
-  ;;
-
-  let find_all_by_experiment pool id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_all_by_experiment_request
-      (Experiment.Id.value id)
-  ;;
-
-  let find_all_upcoming_request =
-    let open Caqti_request.Infix in
-    let columns =
-      CCString.concat
-        ","
-        (Pool_common.Id.sql_select_fragment
-           ~field:"pool_sessions.experiment_uuid"
-         :: sql_select_columns)
-    in
-    Format.asprintf
-      {sql|
-        SELECT
-        %s
-        FROM pool_assignments
-        %s
-        %s
-        WHERE pool_sessions.closed_at IS NULL
-      |sql}
-      columns
-      joins
-      joins_session
-    |> Caqti_type.(unit ->* t2 Experiment.Repo.Entity.Id.t RepoEntity.t)
-  ;;
-
-  let find_all_upcoming pool =
+  let find_upcoming_by_experiment pool id =
     let open Utils.Lwt_result.Infix in
-    let%lwt data =
-      Utils.Database.collect
-        (Pool_database.Label.value pool)
-        find_all_upcoming_request
-        ()
-    in
-    let group data =
-      let open CCOption in
-      let open Hashtbl in
-      let tbl = create 20 in
-      data
-      |> CCList.iter (fun (experiment_id, assigment) ->
-        find_opt tbl experiment_id
-        >|= CCList.cons assigment
-        |> value ~default:[ assigment ]
-        |> replace tbl experiment_id)
-      |> CCFun.const
-           (fold
-              (fun experiment_id assignments acc ->
-                (experiment_id, assignments) :: acc)
-              tbl
-              [])
-    in
-    data
-    |> group
-    |> Lwt_list.fold_left_s
-         (fun acc (experiment_id, assignments) ->
-           match acc with
-           | Error err -> Lwt_result.fail err
-           | Ok acc ->
-             let* experiment = Experiment.find pool experiment_id in
-             Lwt_result.return (acc @ [ experiment, assignments ]))
-         (Ok [])
+    let open Session in
+    let* experiment = Experiment.find pool id in
+    find_sessions_to_update_matcher pool (`Experiment id)
+    >|> Lwt_list.map_s (fun session ->
+      let%lwt assignments = find_by_session pool session.id in
+      Lwt.return (session, assignments))
+    ||> CCPair.make experiment
+    |> Lwt_result.ok
+  ;;
+
+  let find_upcoming pool =
+    let open Utils.Lwt_result.Infix in
+    let open Session in
+    find_sessions_to_update_matcher pool `Upcoming
+    >|> Lwt_list.map_s (fun session ->
+      let%lwt assignments = find_by_session pool session.id in
+      Lwt.return (session.experiment, (session, assignments)))
+    ||> Utils.group_tuples
   ;;
 
   let find_public_by_experiment_and_contact_opt_request time =

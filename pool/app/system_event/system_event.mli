@@ -2,7 +2,6 @@ module Id : module type of Pool_common.Id
 
 module Job : sig
   type t =
-    | FilterTemplateUpdated of Pool_database.Label.t
     | GuardianCacheCleared
     | I18nPageUpdated
     | SmtpAccountUpdated
