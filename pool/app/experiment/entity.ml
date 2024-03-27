@@ -163,6 +163,7 @@ module DirectEnrollment = struct
     ; title : Title.t
     ; public_title : PublicTitle.t
     ; filter : Filter.query option
+    ; allow_uninvited_signup : AllowUninvitedSignup.t
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; registration_disabled : RegistrationDisabled.t
     ; available_spots : bool
@@ -173,6 +174,16 @@ module DirectEnrollment = struct
 
   let assignable { available_spots; contact_already_assigned; _ } =
     available_spots && not contact_already_assigned
+  ;;
+
+  let contact_meets_criteria
+    pool
+    ({ filter; allow_uninvited_signup; _ } : t)
+    contact
+    =
+    match allow_uninvited_signup, filter with
+    | true, _ | false, None -> Lwt.return true
+    | _, Some query -> Filter.contact_matches_filter pool query contact
   ;;
 end
 
@@ -282,6 +293,13 @@ let boolean_fields =
     ; ExternalDataRequired
     ; ShowExteralDataIdLinks
     ]
+;;
+
+let contact_meets_criteria pool { filter; allow_uninvited_signup; _ } contact =
+  match allow_uninvited_signup, filter with
+  | true, _ | false, None -> Lwt.return true
+  | _, Some { Filter.query; _ } ->
+    Filter.contact_matches_filter pool query contact
 ;;
 
 open Pool_common.Message

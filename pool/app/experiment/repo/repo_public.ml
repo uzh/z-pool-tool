@@ -118,12 +118,8 @@ let find_all_public_by_contact ?has_session pool contact =
     (find_all_public_by_contact_request ?has_session ())
     (Contact.id contact)
   (* TODO: This has to be made superfluous by a background job (#164) *)
-  >|> Lwt_list.filter_s
-        Filter.(
-          fun { Entity.filter; _ } ->
-            filter
-            |> CCOption.map_or ~default:Lwt.return_true (fun { query; _ } ->
-              contact_matches_filter pool query contact))
+  >|> Lwt_list.filter_s (fun experiment ->
+    Entity.contact_meets_criteria pool experiment contact)
   ||> CCList.map Entity.to_public
 ;;
 

@@ -210,6 +210,7 @@ module DirectEnrollment : sig
     ; title : Title.t
     ; public_title : PublicTitle.t
     ; filter : Filter.query option
+    ; allow_uninvited_signup : AllowUninvitedSignup.t
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; registration_disabled : RegistrationDisabled.t
     ; available_spots : bool
@@ -238,6 +239,12 @@ val updated : t -> event
 val resetinvitations : t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_common.Message.Field.t list
+
+val contact_meets_criteria
+  :  Pool_database.Label.t
+  -> t
+  -> Contact.t
+  -> bool Lwt.t
 
 val find
   :  Pool_database.Label.t

@@ -468,6 +468,7 @@ module Sql = struct
           pool_experiments.title,
           pool_experiments.public_title,
           pool_filter.query,
+          pool_experiments.allow_uninvited_signup,
           pool_experiments.direct_registration_disabled,
           pool_experiments.registration_disabled,
           COUNT(pool_sessions.uuid) > 0,
@@ -519,11 +520,9 @@ module Sql = struct
       (Pool_database.Label.value pool)
       (find_to_enroll_directly_request where)
       ("%" ^ query ^ "%", Contact.(contact |> id |> Id.to_common))
-    >|> Lwt_list.map_s (fun ({ DirectEnrollment.filter; _ } as experiment) ->
+    >|> Lwt_list.map_s (fun (experiment : DirectEnrollment.t) ->
       let%lwt matches_filter =
-        match filter with
-        | None -> Lwt.return_true
-        | Some filter -> Filter.contact_matches_filter pool filter contact
+        DirectEnrollment.contact_meets_criteria pool experiment contact
       in
       Lwt.return DirectEnrollment.{ experiment with matches_filter })
   ;;

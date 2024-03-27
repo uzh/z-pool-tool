@@ -347,9 +347,7 @@ let htmx_experiment_modal req =
       ||> Session.group_and_sort
     in
     let%lwt matches_filter =
-      experiment.Experiment.filter
-      |> CCOption.map_or ~default:Lwt.return_true (fun { Filter.query; _ } ->
-        Filter.contact_matches_filter database_label query contact)
+      Experiment.contact_meets_criteria database_label experiment contact
     in
     Page.Admin.Contact.assign_contact_experiment_modal
       context
