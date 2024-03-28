@@ -1,3 +1,8 @@
+type identifier =
+  [ `Server
+  | `Worker
+  ]
+
 module Id = struct
   include Pool_common.Id
 
@@ -55,11 +60,11 @@ module EventLog = struct
     let field = Pool_common.Message.Field.Host
     let schema () = schema field ()
 
-    let get ?(worker = false) () =
+    let get identifier () =
       let hostname = Unix.gethostname () in
-      match worker with
-      | false -> hostname
-      | true -> Format.asprintf "%s-worker" hostname
+      match identifier with
+      | `Server -> hostname
+      | `Worker -> Format.asprintf "%s-worker" hostname
     ;;
   end
 

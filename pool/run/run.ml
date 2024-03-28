@@ -14,7 +14,7 @@ let worker_services =
         ]
       ()
   ; Matcher.register ()
-  ; System_event.Service.register_worker ()
+  ; System_event.Service.register `Worker ()
   ; User_import.Service.register ()
   ; Reminder.Service.register ()
   ]
@@ -30,7 +30,7 @@ let services =
   ; Email.Service.Queue.register ()
   ; Service.Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
-  ; System_event.Service.register ()
+  ; System_event.Service.register `Server ()
   ; Assignment_job.register ()
   ]
 ;;

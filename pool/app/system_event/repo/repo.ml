@@ -146,8 +146,8 @@ module Sql = struct
     |> RepoEntity.EventLog.ServiceIdentifier.t ->! RepoEntity.t
   ;;
 
-  let find_pending ?(worker = false) () =
-    Entity.EventLog.ServiceIdentifier.get ~worker ()
+  let find_pending identifier () =
+    Entity.EventLog.ServiceIdentifier.get identifier ()
     |> Utils.Database.collect (Label.value root) (find_pending_request ())
   ;;
 end
