@@ -45,7 +45,7 @@ end
 module ContactEmail = struct
   open Pool_user.EmailAddress
 
-  let field = Common.Message.Field.ContactPerson
+  let field = Common.Message.Field.ContactEmail
   let schema () = Pool_common.Utils.schema_decoder create show field
 end
 

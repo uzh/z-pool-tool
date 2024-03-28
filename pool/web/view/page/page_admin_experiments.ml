@@ -469,7 +469,7 @@ let experiment_form
                           %> CCOption.map Pool_user.EmailAddress.value))
                     context_language
                     `Email
-                    Field.ContactPerson
+                    Field.ContactEmail
                 ; smtp_selector
                 ]
             ]
