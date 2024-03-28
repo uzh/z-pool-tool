@@ -35,16 +35,14 @@ end
 type t =
   { id : Id.t
   ; job : Job.t
-  ; worker_only : bool
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
-let create ?(id = Id.create ()) ?(worker_only = false) job =
+let create ?(id = Id.create ()) job =
   { id
   ; job
-  ; worker_only
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

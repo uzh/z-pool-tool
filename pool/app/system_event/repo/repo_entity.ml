@@ -13,12 +13,10 @@ module Job = struct
 end
 
 let t =
-  let encode m =
-    Ok (m.id, (m.job, (m.worker_only, (m.created_at, m.updated_at))))
-  in
-  let decode (id, (job, (worker_only, (created_at, updated_at)))) =
+  let encode m = Ok (m.id, (m.job, (m.created_at, m.updated_at))) in
+  let decode (id, (job, (created_at, updated_at))) =
     let open CCResult in
-    Ok { id; job; worker_only; created_at; updated_at }
+    Ok { id; job; created_at; updated_at }
   in
   Caqti_type.(
     custom
@@ -28,9 +26,7 @@ let t =
          Id.t
          (t2
             Job.t
-            (t2
-               bool
-               (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
+            (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))
 ;;
 
 module EventLog = struct

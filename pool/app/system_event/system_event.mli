@@ -22,7 +22,6 @@ end
 type t =
   { id : Id.t
   ; job : Job.t
-  ; worker_only : bool
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -30,7 +29,7 @@ type t =
 val equal : t -> t -> Ppx_deriving_runtime.bool
 val pp : Ppx_deriving_runtime.Format.formatter -> t -> Ppx_deriving_runtime.unit
 val show : t -> Ppx_deriving_runtime.string
-val create : ?id:Id.t -> ?worker_only:bool -> Job.t -> t
+val create : ?id:Id.t -> Job.t -> t
 
 module EventLog : sig
   module ServiceIdentifier : sig

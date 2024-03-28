@@ -15,7 +15,6 @@ module Sql = struct
           SUBSTR(HEX(pool_system_events.uuid), 21)
         )),
         pool_system_events.job,
-        pool_system_events.worker_only,
         pool_system_events.created_at,
         pool_system_events.updated_at
       FROM
@@ -45,15 +44,13 @@ module Sql = struct
       INSERT INTO pool_system_events (
         uuid,
         job,
-        worker_only,
         created_at,
         updated_at
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
         $2,
         $3,
-        $4,
-        $5
+        $4
       )
     |sql}
     |> RepoEntity.t ->. Caqti_type.unit
@@ -130,7 +127,7 @@ module Sql = struct
     let insert = Label.value %> flip Utils.Database.exec insert_request
   end
 
-  let find_pending_request ~worker () =
+  let find_pending_request () =
     let open Caqti_request.Infix in
     let joins =
       {sql|
@@ -139,34 +136,19 @@ module Sql = struct
             AND pool_system_event_logs.service_identifier = $1
       |sql}
     in
-    let base_condition =
+    let where =
       {sql|
         pool_system_event_logs.status IS NULL
         OR pool_system_event_logs.status != "successful"
       |sql}
     in
-    let exclude_worker_only =
-      {sql|
-        pool_system_events.worker_only = 0
-      |sql}
-    in
-    (match worker with
-     | true -> Format.asprintf "%s WHERE %s" joins base_condition
-     | false ->
-       Format.asprintf
-         "%s WHERE %s AND (%s)"
-         joins
-         exclude_worker_only
-         base_condition)
-    |> Format.asprintf "%s\n%s" select_sql
+    Format.asprintf "%s %s WHERE %s" select_sql joins where
     |> RepoEntity.EventLog.ServiceIdentifier.t ->! RepoEntity.t
   ;;
 
   let find_pending ?(worker = false) () =
     Entity.EventLog.ServiceIdentifier.get ~worker ()
-    |> Utils.Database.collect
-         (Label.value root)
-         (find_pending_request ~worker ())
+    |> Utils.Database.collect (Label.value root) (find_pending_request ())
   ;;
 end
 
