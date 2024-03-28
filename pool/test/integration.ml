@@ -408,8 +408,7 @@ let suite =
               `Slow
               Repo.find_contacts_to_remind
           ] )
-      (* ; "cleanup", [ test_case "clean up test database" `Slow
-         Test_seed.cleanup ] *)
+    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;
 
