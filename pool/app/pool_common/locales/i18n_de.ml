@@ -45,7 +45,7 @@ let to_string = function
     "Aktuell gibt es keine Experimente, an denen Sie teilnehmen können."
   | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
   | ExperimentListTitle -> "Experimente"
-  | ExperimentMessagingSubtitle -> "Nachrichtenversand"
+  | ExperimentMessagingSubtitle -> "Identitäten"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
   | ExperimentSessionReminderHint ->
     "Dies sind Standardeinstellungen für die Sessions dieses Experiment. Diese \
@@ -322,9 +322,12 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ExperimentAssignment ->
     "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
      nach Session."
-  | ExperimentContactPerson ->
-    "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
-     für alle experimentbezogenen E-Mails verwendet."
+  | ExperimentContactPerson default ->
+    Format.asprintf
+      "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
+       für alle experimentbezogenen E-Mails verwendet.\n\
+      \ The default sender is '%s'."
+      default
   | ExperimentLanguage ->
     "ist eine Experimentsprache definiert, werden alle Nachrichten, die dieses \
      Experiment betreffen, in dieser Sprache gesendet, ohne Rücksicht auf die \
@@ -350,6 +353,11 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
      alle verfügbaren Plätze einer Session belegt sind, wird sie nicht mehr \
      angezeigt."
+  | ExperimentSmtp default ->
+    Format.asprintf
+      "Der E-Mail-Account, über den alle experimentbezogenen E-Mails \
+       verschickt werden. Der Standardaccount is '%s'."
+      default
   | ExperimentStatisticsRegistrationPossible ->
     "Dies gilt als richtig, wenn die Registrierung nicht deaktiviert ist und \
      es zukünftige Sessions mit freien Plätzen gibt."

@@ -144,6 +144,9 @@ let new_form req =
     let%lwt default_text_msg_reminder_lead_time =
       Settings.find_default_text_msg_reminder_lead_time database_label
     in
+    let%lwt default_sender =
+      Email.Service.default_sender_of_pool database_label
+    in
     let%lwt organisational_units = Organisational_unit.all database_label () in
     let%lwt contact_persons =
       contact_person_roles None |> Admin.find_all_with_roles database_label
@@ -157,6 +160,7 @@ let new_form req =
       default_text_msg_reminder_lead_time
       contact_persons
       smtp_auth_list
+      default_sender
       text_messages_enabled
       flash_fetcher
     |> create_layout req context
@@ -293,6 +297,9 @@ let detail edit req =
          Organisational_unit.all database_label ()
        in
        let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
+       let%lwt default_sender =
+         Email.Service.default_sender_of_pool database_label
+       in
        let%lwt contact_persons =
          Some id
          |> contact_person_roles
@@ -327,6 +334,7 @@ let detail edit req =
          contact_persons
          organisational_units
          smtp_auth_list
+         default_sender
          (experiment_tags, current_tags)
          (participation_tags, current_participation_tags)
          text_messages_enabled

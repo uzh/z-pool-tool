@@ -45,7 +45,7 @@ let to_string = function
     "Currently, there are no experiments you can participate in."
   | ExperimentListPublicTitle -> "Registering for experiment sessions"
   | ExperimentListTitle -> "Experiments"
-  | ExperimentMessagingSubtitle -> "Messaging"
+  | ExperimentMessagingSubtitle -> "Identities"
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentSessionReminderHint ->
     "These are default settings for the sessions of this experiment. These \
@@ -315,9 +315,12 @@ Make sure to show links and URLs as plain text.
   | ExperimentAssignment ->
     "All assignments of contacts to sessions of this experiment, sorted by \
      session."
-  | ExperimentContactPerson ->
-    "The selected user's email address will be used as 'reply-to' address for \
-     all experiment-related emails."
+  | ExperimentContactPerson default ->
+    Format.asprintf
+      "The selected user's email address will be used as 'reply-to' address \
+       for all experiment-related emails. The default 'reply-to' address is \
+       '%s'."
+      default
   | ExperimentLanguage ->
     "If an experiment language is defined, all messages regarding this \
      experiment will be sent in this language, disregarding the contact \
@@ -346,6 +349,11 @@ By clicking on the template labels below you can open the default text message:
     "Please note: Sessions or completed experiments may no longer be \
      displayed, although listed in your email. Once all the available seats \
      are assigned, a session is no longer displayed."
+  | ExperimentSmtp default ->
+    Format.asprintf
+      "The email account that will be used to send all experiment-related \
+       emails. The default account is %s."
+      default
   | ExperimentStatisticsRegistrationPossible ->
     "This is considered true if registration is not disabled and there are \
      future sessions with available slots."

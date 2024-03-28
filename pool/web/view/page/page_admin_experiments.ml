@@ -291,6 +291,7 @@ let experiment_form
   contact_persons
   organisational_units
   smtp_auth_list
+  default_sender
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
   text_messages_enabled
@@ -363,6 +364,30 @@ let experiment_form
           ?value:CCOption.(bind experiment get_value)
           ~flash_fetcher
       ]
+  in
+  let smtp_selector =
+    let open Email.SmtpAuth in
+    let default =
+      CCList.find (fun { default; _ } -> Default.value default) smtp_auth_list
+    in
+    let has_options = CCList.length smtp_auth_list > 1 in
+    selector
+      context_language
+      Field.Smtp
+      (id %> Id.value)
+      smtp_auth_list
+      CCOption.(
+        experiment
+        >>= smtp_auth_id
+        >>= fun smtp_id ->
+        CCList.find_opt (id %> Id.equal smtp_id) smtp_auth_list)
+      ~label_field:Field.Sender
+      ~hints:[ I18n.ExperimentSmtp (Label.show default.label) ]
+      ~option_formatter:(fun { label; _ } -> Label.show label)
+      ~flash_fetcher
+      ~add_empty:has_options
+      ~disabled:(not has_options)
+      ()
   in
   form
     ~a:
@@ -438,23 +463,12 @@ let experiment_form
                     contact_persons
                     (CCOption.bind experiment contact_person_id)
                     Field.ContactPerson
-                    ~hints:[ I18n.ExperimentContactPerson ]
+                    ~hints:
+                      [ I18n.ExperimentContactPerson
+                          (Pool_user.EmailAddress.value default_sender)
+                      ]
                     ()
-                ; (let open Email.SmtpAuth in
-                   selector
-                     context_language
-                     Field.Smtp
-                     (id %> Id.value)
-                     smtp_auth_list
-                     CCOption.(
-                       experiment
-                       >>= smtp_auth_id
-                       >>= fun smtp_id ->
-                       CCList.find_opt (id %> Id.equal smtp_id) smtp_auth_list)
-                     ~option_formatter:(fun { label; _ } -> Label.value label)
-                     ~flash_fetcher
-                     ~add_empty:true
-                     ())
+                ; smtp_selector
                 ]
             ]
         ; div
@@ -539,6 +553,7 @@ let create
   default_text_msg_reminder_lead_time
   contact_persons
   smtp_auth_list
+  default_sender
   text_messages_enabled
   flash_fetcher
   =
@@ -556,6 +571,7 @@ let create
         contact_persons
         organisational_units
         smtp_auth_list
+        default_sender
         default_email_reminder_lead_time
         default_text_msg_reminder_lead_time
         text_messages_enabled
@@ -572,6 +588,7 @@ let edit
   contact_persons
   organisational_units
   smtp_auth_list
+  default_sender
   (available_tags, current_tags)
   (available_participation_tags, current_participation_tags)
   text_messages_enabled
@@ -584,6 +601,7 @@ let edit
       contact_persons
       organisational_units
       smtp_auth_list
+      default_sender
       default_email_reminder_lead_time
       default_text_msg_reminder_lead_time
       text_messages_enabled
