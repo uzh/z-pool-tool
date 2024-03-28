@@ -317,9 +317,8 @@ Make sure to show links and URLs as plain text.
      session."
   | ExperimentContactPerson default ->
     Format.asprintf
-      "The selected user's email address will be used as 'reply-to' address \
-       for all experiment-related emails. The default 'reply-to' address is \
-       '%s'."
+      "This email address will be used as 'reply-to' address for all \
+       experiment-related emails. The default 'reply-to' address is '%s'."
       default
   | ExperimentLanguage ->
     "If an experiment language is defined, all messages regarding this \
@@ -352,7 +351,7 @@ By clicking on the template labels below you can open the default text message:
   | ExperimentSmtp default ->
     Format.asprintf
       "The email account that will be used to send all experiment-related \
-       emails. The default account is %s."
+       emails. The default account is '%s'."
       default
   | ExperimentStatisticsRegistrationPossible ->
     "This is considered true if registration is not disabled and there are \

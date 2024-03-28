@@ -324,9 +324,8 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
      nach Session."
   | ExperimentContactPerson default ->
     Format.asprintf
-      "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
-       für alle experimentbezogenen E-Mails verwendet.\n\
-      \ The default sender is '%s'."
+      "Diese E-Mail-Adresse wird als 'reply-to' Adresse für alle \
+       experimentbezogenen E-Mails verwendet. The default sender is '%s'."
       default
   | ExperimentLanguage ->
     "ist eine Experimentsprache definiert, werden alle Nachrichten, die dieses \

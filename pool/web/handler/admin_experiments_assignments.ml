@@ -45,16 +45,12 @@ let cancel req =
         | [] -> None
         | sessions -> Some sessions
       in
-      let%lwt contact_person =
-        Experiment.find_contact_person database_label experiment
-      in
       Message_template.AssignmentCancellation.create
         ?follow_up_sessions
         tenant
         experiment
         session
         assignment
-        contact_person
       |> Lwt_result.ok
     in
     let events =

@@ -69,6 +69,7 @@ module Sql = struct
           SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
           SUBSTR(HEX(pool_experiments.uuid), 21)
         )),
+        pool_experiments.contact_email,
         pool_sessions.start,
         pool_sessions.duration,
         pool_sessions.internal_description,
@@ -90,17 +91,12 @@ module Sql = struct
           SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
           SUBSTR(HEX(pool_locations.uuid), 21)
         )),
-        pool_locations.name,
-        user_users.given_name,
-        user_users.name,
-        user_users.email
+        pool_locations.name
       FROM pool_sessions
       INNER JOIN pool_experiments
         ON pool_sessions.experiment_uuid = pool_experiments.uuid
       INNER JOIN pool_locations
         ON pool_sessions.location_uuid = pool_locations.uuid
-      LEFT JOIN user_users
-        ON pool_experiments.contact_person_uuid = user_users.uuid
       WHERE
         %s
         %s

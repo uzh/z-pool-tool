@@ -20,6 +20,7 @@ let default_command
   public_description
   language
   cost_center
+  contact_email
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
@@ -38,6 +39,7 @@ let default_command
   ; public_description
   ; language
   ; cost_center
+  ; contact_email
   ; direct_registration_disabled
   ; registration_disabled
   ; allow_uninvited_signup
@@ -57,6 +59,7 @@ let create_command
   description
   language
   cost_center
+  contact_email
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
@@ -74,6 +77,7 @@ let create_command
     description
     language
     cost_center
+    contact_email
     direct_registration_disabled
     registration_disabled
     allow_uninvited_signup
@@ -97,6 +101,7 @@ let update_schema command =
         ; opt @@ PublicDescription.schema ()
         ; opt @@ Pool_common.Language.schema ()
         ; opt @@ CostCenter.schema ()
+        ; opt @@ ContactEmail.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
         ; AllowUninvitedSignup.schema ()
@@ -122,6 +127,7 @@ let create_schema command =
         ; opt @@ PublicDescription.schema ()
         ; opt @@ Pool_common.Language.schema ()
         ; opt @@ CostCenter.schema ()
+        ; opt @@ ContactEmail.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
         ; AllowUninvitedSignup.schema ()
@@ -152,7 +158,6 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?id:Id.t
-    -> ?contact_person:Admin.t
     -> ?organisational_unit:Organisational_unit.t
     -> ?smtp_auth:Email.SmtpAuth.t
     -> t
@@ -167,10 +172,10 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ?(id = Id.create ())
-    ?contact_person
     ?organisational_unit
     ?smtp_auth
     ({ cost_center
+     ; contact_email
      ; internal_description
      ; public_description
      ; language
@@ -198,7 +203,7 @@ end = struct
     let* experiment =
       Experiment.create
         ~id
-        ?contact_person_id:(contact_person |> CCOption.map Admin.id)
+        ?contact_email
         ?cost_center
         ?internal_description
         ?public_description
@@ -234,7 +239,6 @@ module Update : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Admin.t option
     -> Organisational_unit.t option
     -> Email.SmtpAuth.t option
     -> t
@@ -251,7 +255,6 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     experiment
-    contact_person
     organisational_unit
     smtp
     (command : t)
@@ -276,8 +279,8 @@ end = struct
       ; public_description = command.public_description
       ; language = command.language
       ; cost_center = command.cost_center
+      ; contact_email = command.contact_email
       ; organisational_unit
-      ; contact_person_id = CCOption.map Admin.id contact_person
       ; smtp_auth_id =
           CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp
       ; direct_registration_disabled = command.direct_registration_disabled

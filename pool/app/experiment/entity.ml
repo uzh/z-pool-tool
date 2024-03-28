@@ -42,6 +42,13 @@ module CostCenter = struct
   let schema () = schema field ()
 end
 
+module ContactEmail = struct
+  open Pool_user.EmailAddress
+
+  let field = Common.Message.Field.ContactPerson
+  let schema () = Pool_common.Utils.schema_decoder create show field
+end
+
 module DirectRegistrationDisabled = struct
   include Pool_common.Model.Boolean
 
@@ -90,7 +97,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
-  ; contact_person_id : Admin.Id.t option
+  ; contact_email : Pool_user.EmailAddress.t option
   ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -110,7 +117,7 @@ type t =
 
 let create
   ?id
-  ?contact_person_id
+  ?contact_email
   ?cost_center
   ?internal_description
   ?public_description
@@ -141,7 +148,7 @@ let create
     ; cost_center
     ; organisational_unit
     ; filter
-    ; contact_person_id
+    ; contact_email
     ; smtp_auth_id
     ; direct_registration_disabled
     ; registration_disabled
