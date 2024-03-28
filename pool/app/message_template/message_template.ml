@@ -24,10 +24,6 @@ let find_by_label_and_language_to_send = Repo.find_by_label_and_language_to_send
 let find_all_by_label_to_send = Repo.find_all_by_label_to_send
 let find_entity_defaults_by_label = Repo.find_entity_defaults_by_label
 let default_sender_of_pool = Email.Service.default_sender_of_pool
-(* TODO: Remove *)
-(* let sender_of_contact_person pool admin = match admin with | None ->
-   default_sender_of_pool pool | Some admin -> admin |> Admin.email_address |>
-   Lwt.return ;; *)
 
 let to_absolute_path layout path =
   path |> Sihl.Web.externalize_path |> Format.asprintf "%s%s" layout.link
