@@ -1,56 +1,38 @@
 module System : sig
   module ActiveContacts : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module PendingContactImports : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module LoginCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module SignUpCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module TermsAcceptedCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module AssignmentsCreated : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module InvitationsSent : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module RemindersSent : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module EmailsSent : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   type period =
@@ -124,32 +106,22 @@ module Experiment : sig
 
   module SessionCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module ShowUpCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module NotMatchingFilerCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module NoShowCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module ParticipationCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   type t =
