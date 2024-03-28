@@ -146,8 +146,6 @@ let write action req =
          | None ->
            Create.handle ~tags key_list template_list query decoded |> lift
          | Some filter ->
-           (* TODO: Trigger background job, if done as event, get rid of
-              dependency of matcher to cqrs command *)
            Update.handle ~tags key_list template_list filter query decoded
            |> lift)
     in
