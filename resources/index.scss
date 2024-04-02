@@ -575,8 +575,10 @@ $n: 12;
 }
 
 .tab-nav-container {
-    border-bottom: 1px solid $grey-border;
+
+    border-bottom: $border-width solid $grey-border;
+
     .main-nav > ul > .has-dropdown > .dropdown {
-        transform: translateY(calc(100% + 1px));
+        transform: translateY(calc(100% + $border-width));
     }
 }
