@@ -1,9 +1,14 @@
 open Entity
 open Tyxml.Html
+module NavUtils = Navigation_utils
 module Field = Pool_common.Message.Field
 
 let read_entity entity =
   Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
+;;
+
+let experiment_url id =
+  Format.asprintf "/admin/experiments/%s/%s" (Experiment.Id.value id)
 ;;
 
 type title =
@@ -28,19 +33,25 @@ let nav_elements experiment =
   let open Experiment in
   let id = experiment |> id in
   let target_uuid = Uuid.target_of Id.value id in
+  let url = experiment_url id in
   let left =
-    [ "", Overview, Set (Guard.Access.read id)
-    ; "assistants", Field Field.Assistants, Set (Assistant.read ~target_uuid ())
-    ; ( "experimenter"
-      , Field Field.Experimenter
-      , Set (Experimenter.read ~target_uuid ()) )
-    ; "invitations", Invitations, Set (Invitation.Guard.Access.index id)
-    ]
-  in
-  let right =
-    [ "sessions", Sessions, Set (Session.Guard.Access.index id)
-    ; "mailings", Mailings, Set (Mailing.Guard.Access.index id)
-    ; "messages", MessageHistory, Set Queue.Guard.Access.index
+    [ Single (url "", Overview, Set (Guard.Access.read id))
+    ; Single (url "sessions", Sessions, Set (Session.Guard.Access.index id))
+    ; Parent
+        (* TODO: How to handle nested validations? can I omitt the child
+           validations? *)
+        ( None
+        , Invitations
+        , Set (Invitation.Guard.Access.index id)
+        , [ Single
+              (url "invitations", Filter, Set (Session.Guard.Access.index id))
+          ; Single
+              (url "mailings", Mailings, Set (Mailing.Guard.Access.index id))
+          ; Single
+              ( url "invitations/sent"
+              , SentInvitations
+              , Set (Session.Guard.Access.index id) )
+          ] )
     ]
   in
   let waiting_list_nav =
@@ -48,43 +59,31 @@ let nav_elements experiment =
        |> direct_registration_disabled
        |> DirectRegistrationDisabled.value
     then
-      [ "waiting-list", WaitingList, Set (Waiting_list.Guard.Access.index id) ]
+      [ Single
+          ( url "waiting-list"
+          , WaitingList
+          , Set (Waiting_list.Guard.Access.index id) )
+      ]
     else []
   in
-  left @ waiting_list_nav @ right
-  |> CCList.map (fun (url, label, set) ->
-    Single
-      (Format.asprintf "/admin/experiments/%s/%s" (Id.value id) url, label, set)
-    |> NavElement.create)
-;;
-
-let combine ?buttons ?hint language title children =
-  let title =
-    let base =
-      h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
-    in
-    let title =
-      let classnames =
-        [ "flexrow"; "justify-between"; "flex-gap"; "flexcolumn-mobile" ]
-      in
-      CCOption.map_or
-        ~default:base
-        (fun buttons ->
-          div ~a:[ a_class classnames ] [ div [ base ]; div [ buttons ] ])
-        buttons
-    in
-    CCOption.map_or
-      ~default:[ title ]
-      (fun hint ->
-        [ title
-        ; p
-            [ Pool_common.Utils.hint_to_string language hint
-              |> Http_utils.add_line_breaks
-            ]
-        ])
-      hint
+  let right =
+    [ Parent
+        ( None
+        , Settings
+        , Set (Invitation.Guard.Access.index id) (* TODO , on CHildren?? *)
+        , [ Single
+              ( url "assistants"
+              , Field Field.Assistants
+              , Set (Assistant.read ~target_uuid ()) )
+          ; Single
+              ( url "experimenter"
+              , Field Field.Experimenter
+              , Set (Experimenter.read ~target_uuid ()) )
+          ] )
+    ; Single (url "messages", MessageHistory, Set Queue.Guard.Access.index)
+    ]
   in
-  title @ [ div ~a:[ a_class [ "gap-lg" ] ] children ]
+  left @ waiting_list_nav @ right |> CCList.map NavElement.create
 ;;
 
 let with_heading experiment children =
@@ -102,19 +101,31 @@ let create
   ?active_navigation
   ?buttons
   ?hint
-  { Pool_context.database_label; language; user; guardian; _ }
+  ({ Pool_context.database_label; language; user; _ } as context)
   title
   experiment
   content
   =
-  let%lwt actor =
-    Pool_context.Utils.find_authorizable_opt database_label user
+  let open Utils.Lwt_result.Infix in
+  let open Component.Navigation in
+  let title = title_to_string language title in
+  let active_navigation =
+    active_navigation |> CCOption.map (experiment_url experiment.Experiment.id)
   in
-  let html = combine ?buttons ?hint language title content in
-  let subpage =
-    nav_elements experiment
-    |> Navigation_utils.filter_items ~validate:true ?actor ~guardian
-    |> CCFun.flip (Navigation_tab.create ?active_navigation language) html
+  let%lwt actor =
+    Pool_context.Utils.find_authorizable database_label user
+    ||> Pool_common.Utils.get_or_failwith
+  in
+  let html = make_body ?buttons ?hint language title content in
+  let%lwt subpage =
+    NavUtils.create_main
+      ~actor
+      ?active_navigation
+      ~validate:true
+      context
+      (nav_elements experiment)
+      false
+    ||> make_tabs html
   in
   with_heading experiment subpage |> Lwt.return
 ;;

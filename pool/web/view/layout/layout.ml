@@ -4,6 +4,7 @@ module File = Pool_common.File
 module Language = Pool_common.Language
 module Message = Message
 module Navigation = Navigation
+module CustomField = Navigation_custom_fields
 module Experiment = Navigation_experiment
 module Print = Layout_print
 

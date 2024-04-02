@@ -265,8 +265,8 @@ let sent_invitations
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.Invitations
+         ~active_navigation:"invitations/sent"
          context
-         (I18n I18n.SentInvitations)
+         (NavLink I18n.SentInvitations)
          experiment)
 ;;

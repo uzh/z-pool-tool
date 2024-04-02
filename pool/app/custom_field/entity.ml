@@ -20,6 +20,10 @@ module Model = struct
 
     type t = Contact [@name "contact"] [@printer printer "contact"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+
+    let to_nav_link = function
+      | Contact -> Pool_common.I18n.Contacts
+    ;;
   end
 
   include Pool_common.Model.SelectorType (Core)

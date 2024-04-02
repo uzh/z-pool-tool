@@ -573,3 +573,10 @@ $n: 12;
 [class*='grid-col-'].stretch-only-child  > *:only-child{
     grid-column: 1 / -1;
 }
+
+.tab-nav-container {
+    border-bottom: 1px solid $grey-border;
+    .main-nav > ul > .has-dropdown > .dropdown {
+        transform: translateY(calc(100% + 1px));
+    }
+}

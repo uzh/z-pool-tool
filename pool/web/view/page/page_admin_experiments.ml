@@ -919,7 +919,7 @@ let detail
   in
   Layout.Experiment.(
     create
-      ~active_navigation:I18n.Overview
+      ~active_navigation:""
       ?buttons:edit_button
       context
       (NavLink I18n.Overview)
@@ -948,7 +948,7 @@ let invitations
                     (build_experiment_path ~suffix:"invitations/sent" experiment
                      |> Sihl.Web.externalize_path)
                 ]
-              [ txt (Utils.text_to_string language I18n.SentInvitations) ]
+              [ txt (Utils.nav_link_to_string language I18n.SentInvitations) ]
           ]
       ; Page_admin_invitations.Partials.send_invitation
           context
@@ -964,7 +964,7 @@ let invitations
   ]
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.Invitations
+         ~active_navigation:"invitations"
          context
          (NavLink I18n.Invitations)
          experiment)
@@ -1009,7 +1009,7 @@ let users
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:(Pool_common.I18n.Field field)
+         ~active_navigation:(Pool_common.Message.Field.show field)
          context
          (NavLink (Pool_common.I18n.Field field))
          experiment)
@@ -1080,7 +1080,7 @@ let message_history context experiment messages =
   in
   Layout.Experiment.(
     create
-      ~active_navigation:I18n.MessageHistory
+      ~active_navigation:"messages"
       context
       (NavLink I18n.MessageHistory)
       experiment
