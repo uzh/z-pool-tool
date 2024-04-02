@@ -189,6 +189,7 @@ let rec field_to_string =
   | Participated -> "participated"
   | ParticipatedAbr -> "P"
   | ParticipationTag -> "participation tag"
+  | ParticipationTags -> "participation tags"
   | PartnerLogos -> "partner logos"
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
