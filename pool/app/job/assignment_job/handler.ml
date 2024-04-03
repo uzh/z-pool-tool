@@ -16,15 +16,27 @@ let make_messages
   let make_mail assignments admin =
     Notification.create tenant admin experiment assignments
   in
-  match sessions with
+  let remove_matching sessions =
+    let open Assignment in
+    let open CCList in
+    sessions
+    |> filter (fun (_, assignments) ->
+      assignments
+      |> filter (fun { matches_filter; _ } ->
+        MatchesFilter.value matches_filter |> not)
+      |> is_empty
+      |> not)
+  in
+  match remove_matching sessions with
   | [] -> Lwt_result.return []
   | sessions ->
-    admin
-    |> CCOption.map_or
-         ~default:(admins_to_notify database_label id)
-         (CCList.return %> Lwt.return)
-    >|> Lwt_list.map_s (make_mail sessions)
-    |> Lwt_result.ok
+    let%lwt admins =
+      admin
+      |> CCOption.map_or
+           ~default:(admins_to_notify database_label id)
+           (CCList.return %> Lwt.return)
+    in
+    admins |> Lwt_list.map_s (make_mail sessions) |> Lwt_result.ok
 ;;
 
 let make_events ?admin database_label experiment sessions =
