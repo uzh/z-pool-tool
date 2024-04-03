@@ -145,6 +145,20 @@ module RolePermission = struct
             AND guardian_role_permissions.mark_as_deleted IS NULL
         |sql}
     in
+    let select_from_actor_permissions =
+      {sql|
+        SELECT
+          guardian_actors.uuid AS uuid,
+          guardian_actor_permissions.target_model AS target_model,
+          guardian_actor_permissions.permission AS permission
+        FROM
+          guardian_actors
+          INNER JOIN guardian_actor_permissions ON guardian_actor_permissions.actor_uuid = guardian_actors.uuid
+            AND guardian_actor_permissions.mark_as_deleted IS NULL
+            AND(guardian_actor_permissions.target_uuid IS NULL
+              OR guardian_actor_permissions.target_uuid = UNHEX(REPLACE($1, '-', '')))
+      |sql}
+    in
     let permissions =
       CCList.mapi (fun i _ -> "$" ^ CCInt.to_string (i + 3)) permissions
       |> CCString.concat ", "
@@ -153,7 +167,7 @@ module RolePermission = struct
       {sql|
         SELECT
           %s
-        FROM (%s UNION %s) AS actor_rules
+        FROM (%s UNION %s UNION %s) AS actor_rules
         WHERE
           actor_rules.target_model = $2
           AND actor_rules.permission IN(%s)
@@ -163,6 +177,7 @@ module RolePermission = struct
       (Pool_common.Id.sql_select_fragment ~field:"actor_rules.uuid")
       select_from_actor_roles
       select_from_actor_role_targets
+      select_from_actor_permissions
       permissions
   ;;
 

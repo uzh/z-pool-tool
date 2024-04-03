@@ -237,18 +237,6 @@ let detail edit req =
     @@
     let* actor = Pool_context.Utils.find_authorizable database_label user in
     let id = experiment_id req in
-    let%lwt admins =
-      Admin.find_all_with_permissions_on_target
-        database_label
-        `InvitationNotification
-        (Experiment.Id.to_common id)
-        Guard.Permission.[ Read ]
-    in
-    let () =
-      CCList.iter
-        (fun admin -> Logs.info (fun m -> m "%s" (Admin.show admin)))
-        admins
-    in
     let* experiment = Experiment.find database_label id in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt message_templates =
