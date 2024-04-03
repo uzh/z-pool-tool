@@ -60,7 +60,7 @@ module EventLog = struct
     let field = Pool_common.Message.Field.Host
     let schema () = schema field ()
 
-    let get identifier () =
+    let get identifier =
       let hostname = Unix.gethostname () in
       match identifier with
       | `Server -> hostname

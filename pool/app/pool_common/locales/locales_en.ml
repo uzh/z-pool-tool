@@ -486,6 +486,7 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "has been marked as deleted."
+  | JobCannotBeRetriggered -> "This job cannot be retriggered."
   | JobPending -> "The job is still pending."
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->

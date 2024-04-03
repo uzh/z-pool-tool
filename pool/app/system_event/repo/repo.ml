@@ -127,7 +127,7 @@ module Sql = struct
     let insert = Label.value %> flip Utils.Database.exec insert_request
   end
 
-  let find_pending_request () =
+  let find_pending_request =
     let open Caqti_request.Infix in
     let joins =
       {sql|
@@ -146,9 +146,9 @@ module Sql = struct
     |> RepoEntity.EventLog.ServiceIdentifier.t ->! RepoEntity.t
   ;;
 
-  let find_pending identifier () =
-    Entity.EventLog.ServiceIdentifier.get identifier ()
-    |> Utils.Database.collect (Label.value root) (find_pending_request ())
+  let find_pending identifier =
+    Entity.EventLog.ServiceIdentifier.get identifier
+    |> Utils.Database.collect (Label.value root) find_pending_request
   ;;
 end
 

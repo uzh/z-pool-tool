@@ -1,15 +1,5 @@
 (library
  (name matcher)
- (libraries
-  assignment
-  cqrs_command
-  experiment
-  mailing
-  message_template
-  pool_common
-  pool_event
-  schedule
-  session
-  utils)
+ (libraries cqrs_command experiment mailing pool_common schedule utils)
  (preprocess
   (pps lwt_ppx)))

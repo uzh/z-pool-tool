@@ -635,8 +635,6 @@ let validate_filter_with_unknown_field _ () =
   let filter = Filter.create None query in
   let title = Filter.Title.of_string "Title" in
   let events =
-    (* TODO: Trigger background job, if done as event, get rid of dependency of
-       matcher to cqrs command *)
     Cqrs_command.Filter_command.Update.handle key_list [] filter query title
   in
   let expected = Error Pool_common.Message.(Invalid Field.Key) in

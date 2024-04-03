@@ -11,12 +11,7 @@ let name_1 = "foo"
 let name_2 = "bar"
 let get_contact id = Contact.find pool id ||> get_exn
 let contacts () = Lwt.both (get_contact contact_id_1) (get_contact contact_id_2)
-
-(* let experiment_id = Experiment.Id.create () *)
-let experiment_id =
-  Experiment.Id.of_string "2131019f-262b-4d37-a443-e4c1d33b48c8"
-;;
-
+let experiment_id = Experiment.Id.create ()
 let session_id = Session.Id.create ()
 let get_experiment () = Experiment.find pool experiment_id ||> get_exn
 let get_session () = Session.find pool session_id ||> get_exn

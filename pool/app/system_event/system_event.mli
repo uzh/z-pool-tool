@@ -40,7 +40,7 @@ module EventLog : sig
   module ServiceIdentifier : sig
     include Pool_common.Model.StringSig
 
-    val get : identifier -> unit -> t
+    val get : identifier -> t
   end
 
   module Status : sig

@@ -4,15 +4,9 @@ include Handler
 module Job = struct
   open CCFun
 
-  let handle ?(ctx : (string * string) list option) (_ : Pool_database.Label.t) =
+  let handle ?(ctx : (string * string) list option) pool =
     let open Utils.Lwt_result.Infix in
-    let pool =
-      let open CCOption in
-      ctx
-      >>= CCList.assoc_opt ~eq:( = ) "pool"
-      >|= Pool_database.Label.create %> Pool_common.Utils.get_or_failwith
-      |> get_exn_or "Invalid context passed!"
-    in
+    let _ = ctx in
     Lwt.catch
       (fun () -> update_upcoming_assignments pool ||> CCResult.return)
       (Printexc.to_string %> Lwt.return_error)

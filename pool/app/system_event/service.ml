@@ -3,8 +3,7 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let run identifier () =
   let open Utils.Lwt_result.Infix in
-  ()
-  |> Repo.find_pending identifier
+  Repo.find_pending identifier
   >|> Lwt_list.iter_s (Event.handle_system_event identifier)
 ;;
 

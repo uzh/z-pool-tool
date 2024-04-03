@@ -68,6 +68,7 @@ type error =
   | InvalidHtmxRequest
   | InvalidOptionSelected
   | IsMarkedAsDeleted of Field.t
+  | JobCannotBeRetriggered
   | JobPending
   | LoginProvideDetails
   | MeantimeUpdate of Field.t

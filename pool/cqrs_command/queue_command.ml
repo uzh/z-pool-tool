@@ -48,7 +48,6 @@ let parse_instance_job { Sihl_queue.name; input; _ } =
   (try Ok (name |> read) with
    | _ -> Error Message.(Invalid Field.Input))
   >>= function
-  (* TODO: Dependency cycle bewteen cqrs and matcher *)
   | CheckMatchesFilter ->
     (try
        Ok
@@ -74,10 +73,8 @@ let update_job ?contact ?experiment ({ Sihl_queue.id; _ } as instance) =
   | `TextMessageJob job ->
     `TextMessageJob (job |> update_text_message_job ?contact id)
     |> CCResult.return
-  | `MatcherJob _ -> Error Pool_common.Message.(Invalid Field.DatabaseLabel)
+  | `MatcherJob _ -> Error Pool_common.Message.JobCannotBeRetriggered
 ;;
-
-(* TODO: Error message or allow retrigger of job *)
 
 module Resend : sig
   include Common.CommandSig with type t = Sihl_queue.instance

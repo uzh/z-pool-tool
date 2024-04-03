@@ -121,27 +121,29 @@ module RolePermission = struct
         SELECT
           guardian_actors.uuid AS uuid,
           guardian_role_permissions.target_model AS target_model,
-          guardian_role_permissions.permission AS permission,
-          guardian_actor_roles.mark_as_deleted AS mark_as_deleted
+          guardian_role_permissions.permission AS permission
         FROM
           guardian_actors
           INNER JOIN guardian_actor_roles ON guardian_actor_roles.actor_uuid = guardian_actors.uuid
+            AND guardian_actor_roles.mark_as_deleted IS NULL
           INNER JOIN guardian_role_permissions ON guardian_role_permissions.role = guardian_actor_roles.role
-      |sql}
+            AND guardian_role_permissions.mark_as_deleted IS NULL
+        |sql}
     in
     let select_from_actor_role_targets =
       {sql|
         SELECT
           guardian_actors.uuid AS uuid,
           guardian_role_permissions.target_model AS target_model,
-          guardian_role_permissions.permission AS permission,
-          guardian_actor_role_targets.mark_as_deleted AS mark_as_deleted
+          guardian_role_permissions.permission AS permission
         FROM
           guardian_actors
           INNER JOIN guardian_actor_role_targets ON guardian_actor_role_targets.actor_uuid = guardian_actors.uuid
             AND guardian_actor_role_targets.target_uuid = UNHEX(REPLACE($1, '-', ''))
-            INNER JOIN guardian_role_permissions ON guardian_role_permissions.role = guardian_actor_role_targets.role
-      |sql}
+            AND guardian_actor_role_targets.mark_as_deleted IS NULL
+          INNER JOIN guardian_role_permissions ON guardian_role_permissions.role = guardian_actor_role_targets.role
+            AND guardian_role_permissions.mark_as_deleted IS NULL
+        |sql}
     in
     let permissions =
       CCList.mapi (fun i _ -> "$" ^ CCInt.to_string (i + 3)) permissions
@@ -155,7 +157,6 @@ module RolePermission = struct
         WHERE
           actor_rules.target_model = $2
           AND actor_rules.permission IN(%s)
-          AND actor_rules.mark_as_deleted IS NULL
         GROUP BY
           actor_rules.uuid
       |sql}
@@ -176,12 +177,10 @@ module RolePermission = struct
       empty
       |> add_string (Pool_common.Id.value entity_uuid)
       |> add_string (Role.Target.show target)
-      |> fun dyn ->
-      CCList.fold_left
-        (fun dyn permission ->
-          dyn |> add_string (permission |> Backend.Guard.Permission.show))
-        dyn
-        permissions
+      |> flip
+           (CCList.fold_left (fun dyn permission ->
+              dyn |> add_string (permission |> Backend.Guard.Permission.show)))
+           permissions
     in
     let request =
       find_by_target_and_permissions_request permissions
