@@ -93,6 +93,13 @@ val find_all_with_roles
   -> (Role.Role.t * Guard.Uuid.Target.t option) list
   -> t list Lwt.t
 
+val find_all_with_permissions_on_target
+  :  Pool_database.Label.t
+  -> Guard.Persistence.target_model
+  -> Pool_common.Id.t
+  -> Guard.Permission.t list
+  -> t list Lwt.t
+
 val search_by_name_and_email
   :  ?dyn:Utils.Database.Dynparam.t
   -> ?exclude:Id.t list

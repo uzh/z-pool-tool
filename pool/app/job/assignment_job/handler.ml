@@ -4,13 +4,7 @@ open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "job.assignment_job"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
-
-let admins_to_notify database_label experiment_id =
-  let id = experiment_id |> Guard.Uuid.target_of Experiment.Id.value in
-  Admin.find_all_with_roles
-    database_label
-    [ `Experimenter, Some id; `Recruiter, None ]
-;;
+let admins_to_notify = Experiment.find_admins_to_notify_about_invitations
 
 let make_messages
   ?admin

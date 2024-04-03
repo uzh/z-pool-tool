@@ -25,6 +25,22 @@ let find_all_with_roles ?exclude pool roles =
   >|> Repo.find_multiple pool
 ;;
 
+let find_all_with_permissions_on_target
+  database_label
+  target
+  entity_uuid
+  permissions
+  =
+  let open Utils.Lwt_result.Infix in
+  let open Guard in
+  Persistence.RolePermission.find_actors_by_target_and_permissions
+    database_label
+    target
+    entity_uuid
+    permissions
+  >|> Repo.find_multiple database_label
+;;
+
 let search_by_name_and_email = Repo.Sql.search_by_name_and_email
 
 let user_is_admin pool (user : Sihl_user.t) =
