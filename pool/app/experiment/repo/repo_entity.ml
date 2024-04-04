@@ -99,7 +99,7 @@ let t =
             , ( m.public_description
               , ( m.language
                 , ( m.cost_center
-                  , ( m.contact_person_id
+                  , ( m.contact_email
                     , ( m.smtp_auth_id
                       , ( m.direct_registration_disabled
                         , ( m.registration_disabled
@@ -124,7 +124,7 @@ let t =
           , ( public_description
             , ( language
               , ( cost_center
-                , ( contact_person_id
+                , ( contact_email
                   , ( smtp_auth_id
                     , ( direct_registration_disabled
                       , ( registration_disabled
@@ -151,7 +151,7 @@ let t =
       ; cost_center
       ; organisational_unit
       ; filter
-      ; contact_person_id
+      ; contact_email
       ; smtp_auth_id
       ; direct_registration_disabled
       ; registration_disabled
@@ -186,7 +186,7 @@ let t =
                         (t2
                            (option CostCenter.t)
                            (t2
-                              (option Admin.Repo.Entity.Id.t)
+                              (option Pool_user.Repo.EmailAddress.t)
                               (t2
                                  (option Email.SmtpAuth.RepoEntity.Id.t)
                                  (t2
@@ -247,7 +247,7 @@ module Write = struct
                   , ( m.cost_center
                     , ( organisational_unit
                       , ( filter
-                        , ( m.contact_person_id
+                        , ( m.contact_email
                           , ( m.smtp_auth_id
                             , ( m.direct_registration_disabled
                               , ( m.registration_disabled
@@ -286,7 +286,7 @@ module Write = struct
                                 (t2
                                    (option Id.t)
                                    (t2
-                                      (option Admin.Repo.Entity.Id.t)
+                                      (option Pool_user.Repo.EmailAddress.t)
                                       (t2
                                          (option Email.SmtpAuth.RepoEntity.Id.t)
                                          (t2

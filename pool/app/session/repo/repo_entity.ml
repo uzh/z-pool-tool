@@ -439,20 +439,6 @@ module Calendar = struct
     Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
   ;;
 
-  module ContactPerson = struct
-    let t =
-      let encode (_ : contact_person) = failwith read_only in
-      let decode (firstname, lastname, email) =
-        let fullname =
-          Format.asprintf "%s %s" firstname lastname |> CCString.trim
-        in
-        Ok { name = fullname; email }
-      in
-      Caqti_type.(
-        custom ~encode ~decode (t3 string string Pool_user.Repo.EmailAddress.t))
-    ;;
-  end
-
   module Location = struct
     let t =
       let encode (_ : location) = failwith read_only in
@@ -477,13 +463,14 @@ module Calendar = struct
       ( id
       , ( title
         , ( experiment_id
-          , ( start
-            , ( duration
-              , ( internal_description
-                , ( max_participants
-                  , ( min_participants
-                    , (overbook, (assignment_count, (location, contact_person)))
-                    ) ) ) ) ) ) ) )
+          , ( contact_email
+            , ( start
+              , ( duration
+                , ( internal_description
+                  , ( max_participants
+                    , ( min_participants
+                      , (overbook, (assignment_count, location)) ) ) ) ) ) ) )
+        ) )
       =
       let* end_ =
         Entity.End.create start duration
@@ -492,8 +479,9 @@ module Calendar = struct
       let links = Entity.Calendar.create_links experiment_id id location in
       Ok
         { id
-        ; experiment_id
         ; title
+        ; experiment_id
+        ; contact_email
         ; start
         ; end_
         ; internal_description
@@ -503,7 +491,6 @@ module Calendar = struct
         ; overbook
         ; assignment_count
         ; location
-        ; contact_person
         }
     in
     Caqti_type.(
@@ -517,19 +504,13 @@ module Calendar = struct
               (t2
                  Experiment.Id.t
                  (t2
-                    Start.t
+                    (option Pool_user.Repo.EmailAddress.t)
                     (t2
-                       Duration.t
+                       Start.t
                        (t2
-                          (option string)
+                          Duration.t
                           (t2
-                             int
-                             (t2
-                                int
-                                (t2
-                                   int
-                                   (t2
-                                      int
-                                      (t2 Location.t (option ContactPerson.t)))))))))))))
+                             (option string)
+                             (t2 int (t2 int (t2 int (t2 int Location.t))))))))))))
   ;;
 end

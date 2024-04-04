@@ -428,12 +428,6 @@ let to_public
 module Calendar = struct
   open Ppx_yojson_conv_lib.Yojson_conv
 
-  type contact_person =
-    { name : string
-    ; email : Pool_user.EmailAddress.t
-    }
-  [@@deriving eq, show, yojson]
-
   type location =
     { id : Pool_location.Id.t
     ; name : Pool_location.Name.t
@@ -480,6 +474,7 @@ module Calendar = struct
     { id : Id.t
     ; experiment_id : Experiment.Id.t
     ; title : Experiment.Title.t
+    ; contact_email : Pool_user.EmailAddress.t option [@option]
     ; start : Start.t
     ; end_ : End.t
     ; links : links
@@ -489,7 +484,6 @@ module Calendar = struct
     ; assignment_count : AssignmentCount.t
     ; internal_description : InternalDescription.t option [@option]
     ; location : location
-    ; contact_person : contact_person option [@option]
     }
   [@@deriving eq, show, yojson]
 end

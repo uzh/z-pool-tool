@@ -20,9 +20,6 @@ let create req =
        let* experiment =
          Experiment.find_full_by_contact database_label experiment_id contact
        in
-       let%lwt contact_person =
-         Experiment.find_contact_person database_label experiment
-       in
        let* session = Session.find_open database_label id in
        let%lwt follow_up_sessions = Session.find_follow_ups database_label id in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -33,7 +30,6 @@ let create req =
            contact
            experiment
            session
-           contact_person
        in
        let%lwt already_enrolled =
          let open Utils.Lwt_result.Infix in

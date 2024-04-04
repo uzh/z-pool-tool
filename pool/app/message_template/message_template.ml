@@ -3,7 +3,6 @@ include Event
 include Default
 include Message_utils
 module Guard = Entity_guard
-open CCFun.Infix
 
 let src = Logs.Src.create "message_template"
 let find = Repo.find
@@ -26,22 +25,13 @@ let find_all_by_label_to_send = Repo.find_all_by_label_to_send
 let find_entity_defaults_by_label = Repo.find_entity_defaults_by_label
 let default_sender_of_pool = Email.Service.default_sender_of_pool
 
-let sender_of_contact_person pool admin =
-  match admin with
-  | None -> default_sender_of_pool pool
-  | Some admin -> admin |> Admin.email_address |> Lwt.return
-;;
-
 let to_absolute_path layout path =
   path |> Sihl.Web.externalize_path |> Format.asprintf "%s%s" layout.link
 ;;
 
 let sender_of_experiment pool experiment =
-  let open Utils.Lwt_result.Infix in
-  Experiment.find_contact_person pool experiment
-  >|> CCOption.map_or
-        ~default:(default_sender_of_pool pool)
-        (Admin.email_address %> Lwt.return)
+  Experiment.contact_email experiment
+  |> CCOption.map_or ~default:(default_sender_of_pool pool) Lwt.return
 ;;
 
 let sender_of_public_experiment pool experiment =
@@ -337,14 +327,7 @@ module AssignmentCancellation = struct
       language
   ;;
 
-  let create
-    ?follow_up_sessions
-    tenant
-    experiment
-    session
-    assignment
-    admin_contact
-    =
+  let create ?follow_up_sessions tenant experiment session assignment =
     let pool = tenant.Pool_tenant.database_label in
     let%lwt sys_langs = Settings.find_languages pool in
     let language =
@@ -352,7 +335,7 @@ module AssignmentCancellation = struct
     in
     let%lwt template = template pool experiment language in
     let layout = layout_from_tenant tenant in
-    let%lwt sender = sender_of_contact_person pool admin_contact in
+    let%lwt sender = sender_of_experiment pool experiment in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let params =
       email_params
@@ -409,20 +392,13 @@ module AssignmentConfirmation = struct
       language
   ;;
 
-  let prepare
-    ?follow_up_sessions
-    tenant
-    contact
-    experiment
-    session
-    admin_contact
-    =
+  let prepare ?follow_up_sessions tenant contact experiment session =
     let pool = tenant.Pool_tenant.database_label in
     let%lwt sys_langs = Settings.find_languages pool in
     let language = experiment_message_language sys_langs experiment contact in
     let%lwt template = template pool experiment language in
     let layout = layout_from_tenant tenant in
-    let%lwt sender = sender_of_contact_person pool admin_contact in
+    let%lwt sender = sender_of_experiment pool experiment in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let fnc assignment =
       let params =
@@ -1180,10 +1156,10 @@ module SessionReschedule = struct
     @ session_params layout lang session
   ;;
 
-  let prepare pool tenant experiment sys_langs session admin_contact =
+  let prepare pool tenant experiment sys_langs session =
     let open Message_utils in
     let%lwt templates = find_all_by_label_to_send pool sys_langs label in
-    let%lwt sender = sender_of_contact_person pool admin_contact in
+    let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) new_start new_duration =
       let open CCResult in

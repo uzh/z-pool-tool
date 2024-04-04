@@ -288,9 +288,9 @@ let index (Pool_context.{ language; _ } as context) experiments query =
 let experiment_form
   ?experiment
   Pool_context.{ language; csrf; _ }
-  contact_persons
   organisational_units
   smtp_auth_list
+  default_sender
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
   text_messages_enabled
@@ -364,6 +364,30 @@ let experiment_form
           ~flash_fetcher
       ]
   in
+  let smtp_selector =
+    let open Email.SmtpAuth in
+    let default =
+      CCList.find (fun { default; _ } -> Default.value default) smtp_auth_list
+    in
+    let has_options = CCList.length smtp_auth_list > 1 in
+    selector
+      context_language
+      Field.Smtp
+      (id %> Id.value)
+      smtp_auth_list
+      CCOption.(
+        experiment
+        >>= smtp_auth_id
+        >>= fun smtp_id ->
+        CCList.find_opt (id %> Id.equal smtp_id) smtp_auth_list)
+      ~label_field:Field.Sender
+      ~hints:[ I18n.ExperimentSmtp (Label.value default.label) ]
+      ~option_formatter:(fun { label; _ } -> Label.value label)
+      ~flash_fetcher
+      ~add_empty:has_options
+      ~disabled:(not has_options)
+      ()
+  in
   form
     ~a:
       [ a_method `Post
@@ -433,28 +457,20 @@ let experiment_form
                 ]
             ; div
                 ~a:[ a_class [ "grid-col-2" ] ]
-                [ admin_select
+                [ input_element
+                    ~hints:
+                      [ I18n.ExperimentContactPerson
+                          (Pool_user.EmailAddress.value default_sender)
+                      ]
+                    ?value:
+                      (CCOption.bind
+                         experiment
+                         (contact_email
+                          %> CCOption.map Pool_user.EmailAddress.value))
                     context_language
-                    contact_persons
-                    (CCOption.bind experiment contact_person_id)
-                    Field.ContactPerson
-                    ~hints:[ I18n.ExperimentContactPerson ]
-                    ()
-                ; (let open Email.SmtpAuth in
-                   selector
-                     context_language
-                     Field.Smtp
-                     (id %> Id.value)
-                     smtp_auth_list
-                     CCOption.(
-                       experiment
-                       >>= smtp_auth_id
-                       >>= fun smtp_id ->
-                       CCList.find_opt (id %> Id.equal smtp_id) smtp_auth_list)
-                     ~option_formatter:(fun { label; _ } -> Label.value label)
-                     ~flash_fetcher
-                     ~add_empty:true
-                     ())
+                    `Email
+                    Field.ContactEmail
+                ; smtp_selector
                 ]
             ]
         ; div
@@ -537,8 +553,8 @@ let create
   organisational_units
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
-  contact_persons
   smtp_auth_list
+  default_sender
   text_messages_enabled
   flash_fetcher
   =
@@ -553,9 +569,9 @@ let create
         ]
     ; experiment_form
         context
-        contact_persons
         organisational_units
         smtp_auth_list
+        default_sender
         default_email_reminder_lead_time
         default_text_msg_reminder_lead_time
         text_messages_enabled
@@ -569,9 +585,9 @@ let edit
   ({ Pool_context.language; csrf; query_language; _ } as context)
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
-  contact_persons
   organisational_units
   smtp_auth_list
+  default_sender
   (available_tags, current_tags)
   (available_participation_tags, current_participation_tags)
   text_messages_enabled
@@ -581,9 +597,9 @@ let edit
     experiment_form
       ~experiment
       context
-      contact_persons
       organisational_units
       smtp_auth_list
+      default_sender
       default_email_reminder_lead_time
       default_text_msg_reminder_lead_time
       text_messages_enabled
@@ -657,7 +673,6 @@ let detail
   session_count
   message_templates
   sys_languages
-  contact_person
   smtp_account
   tags
   participation_tags
@@ -831,8 +846,11 @@ let detail
                  ~default
                  Organisational_unit.(fun ou -> ou.name |> Name.value)
             |> txt )
-        ; ( Field.ContactPerson
-          , contact_person |> CCOption.map_or ~default Admin.full_name |> txt )
+        ; ( Field.Sender
+          , experiment
+            |> contact_email
+            |> CCOption.map_or ~default Pool_user.EmailAddress.value
+            |> txt )
         ; ( Field.Smtp
           , smtp_account
             |> CCOption.map_or
