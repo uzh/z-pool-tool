@@ -1,5 +1,4 @@
 open Entity
-open Tyxml.Html
 module NavUtils = Navigation_utils
 module Field = Pool_common.Message.Field
 
@@ -84,17 +83,6 @@ let nav_elements experiment =
   left @ waiting_list_nav @ right |> CCList.map NavElement.create
 ;;
 
-let with_heading experiment children =
-  let open Experiment in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ experiment |> title |> Title.value |> txt ]
-    ; children
-    ]
-;;
-
 let create
   ?active_navigation
   ?buttons
@@ -115,15 +103,15 @@ let create
     ||> Pool_common.Utils.get_or_failwith
   in
   let html = make_body ?buttons ?hint language title content in
-  let overlay_title = Experiment.(Title.value experiment.title) in
+  let title = Experiment.(Title.value experiment.title) in
   let subpage =
     make_tabs
       ~actor
       ?active_navigation
-      ~overlay_title
+      ~overlay_title:title
       context
       html
       (nav_elements experiment)
   in
-  with_heading experiment subpage |> Lwt.return
+  with_heading title subpage |> Lwt.return
 ;;

@@ -18,6 +18,13 @@ h1,
     word-wrap: break-word;
 }
 
+@include mobile {
+    *+h1, h1+*, *+h2, *+.heading-1, .heading-1+*, *+.heading-2{
+        margin-top: $space-md;
+    }  
+}
+
+
 .word-wrap-break {
     -ms-word-break: break-word;
     
@@ -48,6 +55,12 @@ ul.no-style {
     padding-left: 0;
     padding-bottom: 0;
     padding-right: 0;
+}
+
+@include mobile {
+    .sm-inset-lg {
+        padding: $space-lg;
+    }
 }
 
 form[class*="stack"] input[type="hidden"]+* {
@@ -581,6 +594,10 @@ $n: 12;
     .main-nav > ul > .has-dropdown > .dropdown {
         transform: translateY(calc(100% + $border-width));
     }
+
+    @include mobile {
+        margin-top: $space-md;
+    }
 }
 
 // Add to framework
@@ -595,5 +612,5 @@ $n: 12;
     @include mobile {
       display: flex;
     }
-  }
+}
   

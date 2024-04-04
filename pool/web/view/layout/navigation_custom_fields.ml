@@ -1,5 +1,4 @@
 open Entity
-open Tyxml.Html
 module NavUtils = Navigation_utils
 module Field = Pool_common.Message.Field
 
@@ -18,18 +17,6 @@ let nav_elements =
     |> CCList.map (fun model ->
       Single (custom_field_path model, to_nav_link model, AlwaysOn))
     |> CCList.map NavElement.create)
-;;
-
-let with_heading language children =
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ Pool_common.(
-            I18n.CustomFields |> Utils.nav_link_to_string language |> txt)
-        ]
-    ; children
-    ]
 ;;
 
 let create
@@ -51,9 +38,14 @@ let create
   in
   let active_navigation = custom_field_path model in
   let html = make_body ?buttons ?hint language title content in
-  let overlay_title = Custom_field.Model.show model in
+  let overlay_title =
+    Custom_field.Model.show model |> CCString.capitalize_ascii
+  in
+  let title =
+    Pool_common.(I18n.CustomFields |> Utils.nav_link_to_string language)
+  in
   let subpage =
     make_tabs ~actor ~active_navigation ~overlay_title context html nav_elements
   in
-  with_heading language subpage |> Lwt.return
+  with_heading title subpage |> Lwt.return
 ;;

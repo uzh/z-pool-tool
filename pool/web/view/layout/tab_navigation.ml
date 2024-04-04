@@ -37,7 +37,7 @@ let make_tabs ~actor ?overlay_title ?active_navigation context html nav_elements
           (make_nav Horizonal)
       ]
   in
-  div [ nav; div ~a:[ a_class [ "tab-body" ] ] html ]
+  [ nav; div ~a:[ a_class [ "tab-body" ] ] html ]
 ;;
 
 let make_body ?buttons ?hint language title children =
@@ -65,4 +65,10 @@ let make_body ?buttons ?hint language title children =
       hint
   in
   title @ [ div ~a:[ a_class [ "gap-lg" ] ] children ]
+;;
+
+let with_heading title children =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    (h1 ~a:[ a_class [ "heading-1" ] ] [ txt title ] :: children)
 ;;
