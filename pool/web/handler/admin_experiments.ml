@@ -143,10 +143,10 @@ let new_form req =
     let%lwt default_text_msg_reminder_lead_time =
       Settings.find_default_text_msg_reminder_lead_time database_label
     in
-    let%lwt organisational_units = Organisational_unit.all database_label () in
-    let%lwt contact_persons =
-      contact_person_roles None |> Admin.find_all_with_roles database_label
+    let%lwt default_sender =
+      Email.Service.default_sender_of_pool database_label
     in
+    let%lwt organisational_units = Organisational_unit.all database_label () in
     let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
     Page.Admin.Experiments.create
@@ -154,8 +154,8 @@ let new_form req =
       organisational_units
       default_email_reminder_lead_time
       default_text_msg_reminder_lead_time
-      contact_persons
       smtp_auth_list
+      default_sender
       text_messages_enabled
       flash_fetcher
     |> create_layout req context
@@ -178,9 +178,6 @@ let create req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* contact_person =
-      contact_person_from_urlencoded database_label urlencoded None
-    in
     let* organisational_unit =
       organisational_unit_from_urlencoded urlencoded database_label
     in
@@ -212,7 +209,7 @@ let create req =
       let open Cqrs_command.Experiment_command.Create in
       urlencoded
       |> decode
-      >>= handle ~tags ~id ?contact_person ?organisational_unit ?smtp_auth
+      >>= handle ~tags ~id ?organisational_unit ?smtp_auth
       |> Lwt_result.lift
     in
     let handle events =
@@ -255,25 +252,19 @@ let detail edit req =
     (match edit with
      | false ->
        let%lwt session_count = Experiment.session_count database_label id in
-       let* contact_person =
-         experiment.Experiment.contact_person_id
-         |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Admin.find database_label id >|+ CCOption.return)
-       in
        let* smtp_auth =
          experiment.Experiment.smtp_auth_id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Email.SmtpAuth.find database_label id >|+ CCOption.return)
        in
        let* statistics =
-         Statistics.Experiment.create database_label experiment
+         Experiment.Statistics.create database_label experiment
        in
        Page.Admin.Experiments.detail
          experiment
          session_count
          message_templates
          sys_languages
-         contact_person
          smtp_auth
          current_tags
          current_participation_tags
@@ -292,10 +283,8 @@ let detail edit req =
          Organisational_unit.all database_label ()
        in
        let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
-       let%lwt contact_persons =
-         Some id
-         |> contact_person_roles
-         |> Admin.find_all_with_roles database_label
+       let%lwt default_sender =
+         Email.Service.default_sender_of_pool database_label
        in
        let%lwt allowed_to_assign =
          Guard.Persistence.validate
@@ -323,9 +312,9 @@ let detail edit req =
          context
          default_email_reminder_lead_time
          default_text_msg_reminder_lead_time
-         contact_persons
          organisational_units
          smtp_auth_list
+         default_sender
          (experiment_tags, current_tags)
          (participation_tags, current_participation_tags)
          text_messages_enabled
@@ -362,16 +351,13 @@ let update req =
     let* organisational_unit =
       organisational_unit_from_urlencoded urlencoded database_label
     in
-    let* contact_person =
-      contact_person_from_urlencoded database_label urlencoded (Some id)
-    in
     let* smtp_auth = smtp_auth_from_urlencoded urlencoded database_label in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Update in
       urlencoded
       |> decode
-      >>= handle ~tags experiment contact_person organisational_unit smtp_auth
+      >>= handle ~tags experiment organisational_unit smtp_auth
       |> Lwt_result.lift
     in
     let handle events =

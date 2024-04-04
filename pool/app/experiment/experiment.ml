@@ -69,12 +69,37 @@ let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
   | Some id -> Email.SmtpAuth.find database_label id >|+ CCOption.return
 ;;
 
-let find_contact_person database_label { contact_person_id; _ } =
-  let open Utils.Lwt_result.Infix in
-  contact_person_id
-  |> CCOption.map_or ~default:Lwt.return_none (fun id ->
-    id |> Admin.find database_label ||> CCResult.to_opt)
+let invitation_count =
+  Repo_statistics.SentInvitations.total_invitation_count_by_experiment
 ;;
 
-let invitation_count = Repo.Sql.total_invitation_count_by_experiment
-let invitation_count_by_iteration = Repo.Sql.invitation_count_by_iteration
+module Statistics = struct
+  include Statistics
+  module Repo = Repo_statistics
+
+  module SentInvitations = struct
+    include SentInvitations
+
+    let create = Repo.SentInvitations.by_experiment
+  end
+
+  let create pool ({ id; _ } as experiment) =
+    let open Utils.Lwt_result.Infix in
+    let%lwt registration_possible = Repo.registration_possible pool id in
+    let* sending_invitations = Repo.sending_invitations pool id in
+    let%lwt session_count = Repo.session_count pool id in
+    let* invitations = SentInvitations.create pool experiment in
+    let%lwt showup_count, noshow_count, participation_count =
+      Repo.assignment_counts pool id
+    in
+    Lwt_result.return
+      { registration_possible
+      ; sending_invitations
+      ; session_count
+      ; invitations
+      ; showup_count
+      ; noshow_count
+      ; participation_count
+      }
+  ;;
+end

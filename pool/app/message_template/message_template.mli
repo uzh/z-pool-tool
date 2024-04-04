@@ -233,7 +233,6 @@ module AssignmentCancellation : sig
     -> Experiment.t
     -> Session.t
     -> Assignment.t
-    -> Admin.t option
     -> Email.job Lwt.t
 end
 
@@ -253,7 +252,6 @@ module AssignmentConfirmation : sig
     -> Contact.t
     -> Experiment.t
     -> Session.t
-    -> Admin.t option
     -> (Assignment.t -> Email.job) Lwt.t
 end
 
@@ -520,7 +518,6 @@ module SessionReschedule : sig
     -> Experiment.t
     -> Pool_common.Language.t list
     -> Session.t
-    -> Admin.t option
     -> (Contact.t
         -> Session.Start.t
         -> Session.Duration.t

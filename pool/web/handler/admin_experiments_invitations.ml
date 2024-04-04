@@ -93,7 +93,7 @@ let sent_invitations req =
   | true -> Partials.list context experiment invitations |> Lwt_result.return
   | false ->
     let* statistics =
-      Statistics.Experiment.SentInvitations.create database_label experiment
+      Experiment.Statistics.SentInvitations.create database_label experiment
     in
     sent_invitations context experiment invitations statistics |> Lwt_result.ok
 ;;

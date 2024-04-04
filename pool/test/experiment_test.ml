@@ -129,12 +129,8 @@ module Data = struct
   ;;
 end
 
-let handle_update ?organisational_unit ?contact_person ?smtp_auth experiment =
-  ExperimentCommand.Update.handle
-    experiment
-    contact_person
-    organisational_unit
-    smtp_auth
+let handle_update ?organisational_unit ?smtp_auth experiment =
+  ExperimentCommand.Update.handle experiment organisational_unit smtp_auth
 ;;
 
 let create () =
@@ -186,10 +182,7 @@ let update_add_ou_and_contact_person () =
     Data.urlencoded
     |> Http_utils.format_request_boolean_values boolean_fields
     |> ExperimentCommand.Update.decode
-    >>= handle_update
-          ~organisational_unit:Data.organisational_unit
-          ~contact_person:Data.contact_person
-          experiment
+    >>= handle_update ~organisational_unit:Data.organisational_unit experiment
   in
   let expected =
     Ok
@@ -197,7 +190,6 @@ let update_add_ou_and_contact_person () =
         [ Updated
             { experiment with
               organisational_unit = Some Data.organisational_unit
-            ; contact_person_id = Some (Admin.id Data.contact_person)
             }
           |> Pool_event.experiment
         ]

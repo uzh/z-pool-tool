@@ -186,13 +186,14 @@ type hint =
   | DuplicateSessionList
   | EmailPlainText
   | ExperimentAssignment
-  | ExperimentContactPerson
+  | ExperimentContactPerson of string
   | ExperimentLanguage
   | ExperimentMailings
   | ExperimentMailingsRegistrationDisabled
   | ExperimentMessageTemplates
   | ExperimentSessions
   | ExperimentSessionsPublic
+  | ExperimentSmtp of string
   | ExperimentStatisticsRegistrationPossible
   | ExperimentStatisticsSendingInvitations
   | ExperimentWaitingList

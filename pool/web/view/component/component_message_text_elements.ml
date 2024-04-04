@@ -169,7 +169,7 @@ module DummyData = struct
       ; smtp_auth_id = None
       ; cost_center = Some ("A-11111-22-33" |> CostCenter.of_string)
       ; filter = None
-      ; contact_person_id = None
+      ; contact_email = None
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create

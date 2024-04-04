@@ -27,6 +27,14 @@ module CostCenter : sig
   include Pool_common.Model.StringSig
 end
 
+module ContactEmail : sig
+  val schema
+    :  unit
+    -> ( Pool_common.Message.error
+         , Pool_user.EmailAddress.t )
+         Pool_common.Utils.PoolConformist.Field.t
+end
+
 module DirectRegistrationDisabled : sig
   include Pool_common.Model.BooleanSig
 end
@@ -73,7 +81,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
-  ; contact_person_id : Admin.Id.t option
+  ; contact_email : Pool_user.EmailAddress.t option
   ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -102,7 +110,7 @@ val language : t -> Pool_common.Language.t option
 val cost_center : t -> CostCenter.t option
 val organisational_unit : t -> Organisational_unit.t option
 val filter : t -> Filter.t option
-val contact_person_id : t -> Admin.Id.t option
+val contact_email : t -> Pool_user.EmailAddress.t option
 val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
 val direct_registration_disabled : t -> DirectRegistrationDisabled.t
 val registration_disabled : t -> RegistrationDisabled.t
@@ -125,7 +133,7 @@ val updated_at : t -> Ptime.t
 
 val create
   :  ?id:Id.t
-  -> ?contact_person_id:Admin.Id.t
+  -> ?contact_email:Pool_user.EmailAddress.t
   -> ?cost_center:CostCenter.t
   -> ?internal_description:InternalDescription.t
   -> ?public_description:PublicDescription.t
@@ -154,6 +162,7 @@ type create =
   ; public_description : PublicDescription.t option
   ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
+  ; contact_email : Pool_user.EmailAddress.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
@@ -348,13 +357,6 @@ val find_admins_to_notify_about_invitations
   -> Admin.t list Lwt.t
 
 val invitation_count : Pool_database.Label.t -> Id.t -> int Lwt.t
-
-val invitation_count_by_iteration
-  :  Pool_database.Label.t
-  -> Id.t
-  -> int
-  -> int Lwt.t
-
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
@@ -371,8 +373,6 @@ val smtp_auth
   :  Pool_database.Label.t
   -> t
   -> (Email.SmtpAuth.t option, Pool_common.Message.error) Lwt_result.t
-
-val find_contact_person : Pool_database.Label.t -> t -> Admin.t option Lwt.t
 
 module Repo : sig
   val sql_select_columns : string list
@@ -431,6 +431,88 @@ module Guard : sig
     val update : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
     val delete : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
   end
+end
+
+module Statistics : sig
+  module SentInvitations : sig
+    type sent_by_count = int * int
+
+    type statistics =
+      { total_sent : int
+      ; total_match_filter : int
+      ; sent_by_count : sent_by_count list
+      }
+
+    val create
+      :  Pool_database.Label.t
+      -> t
+      -> (statistics, Pool_common.Message.error) Lwt_result.t
+  end
+
+  module RegistrationPossible : sig
+    include Pool_common.Model.BooleanSig
+
+    val field : Pool_common.Message.Field.t
+    val hint : Pool_common.I18n.hint
+  end
+
+  module SendingInvitations : sig
+    type t =
+      | No
+      | Sending
+      | Scheduled
+
+    val show : t -> string
+    val field : Pool_common.Message.Field.t
+    val hint : Pool_common.I18n.hint
+  end
+
+  module SessionCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module ShowUpCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module NoShowCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module ParticipationCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  type statistics =
+    { registration_possible : RegistrationPossible.t
+    ; sending_invitations : SendingInvitations.t
+    ; session_count : SessionCount.t
+    ; invitations : SentInvitations.statistics
+    ; showup_count : ShowUpCount.t
+    ; noshow_count : NoShowCount.t
+    ; participation_count : ParticipationCount.t
+    }
+
+  val registration_possible : statistics -> RegistrationPossible.t
+  val sending_invitations : statistics -> SendingInvitations.t
+  val session_count : statistics -> SessionCount.t
+  val invitations : statistics -> SentInvitations.statistics
+  val showup_count : statistics -> ShowUpCount.t
+  val noshow_count : statistics -> NoShowCount.t
+  val participation_count : statistics -> ParticipationCount.t
+
+  val create
+    :  Pool_database.Label.t
+    -> t
+    -> (statistics, Pool_common.Message.error) Lwt_result.t
 end
 
 val column_title : Query.Column.t

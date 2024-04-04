@@ -12,7 +12,7 @@ let sql_select_columns =
   ; "pool_experiments.public_description"
   ; "pool_experiments.language"
   ; "pool_experiments.cost_center"
-  ; Entity.Id.sql_select_fragment ~field:"pool_experiments.contact_person_uuid"
+  ; "pool_experiments.contact_email"
   ; Entity.Id.sql_select_fragment ~field:"pool_experiments.smtp_auth_uuid"
   ; "pool_experiments.direct_registration_disabled"
   ; "pool_experiments.registration_disabled"
@@ -118,7 +118,7 @@ module Sql = struct
         cost_center,
         organisational_unit_uuid,
         filter_uuid,
-        contact_person_uuid,
+        contact_email,
         smtp_auth_uuid,
         direct_registration_disabled,
         registration_disabled,
@@ -308,7 +308,7 @@ module Sql = struct
         cost_center = $7,
         organisational_unit_uuid = UNHEX(REPLACE($8, '-', '')),
         filter_uuid = UNHEX(REPLACE($9, '-', '')),
-        contact_person_uuid = UNHEX(REPLACE($10, '-', '')),
+        contact_email = $10,
         smtp_auth_uuid = UNHEX(REPLACE($11, '-', '')),
         direct_registration_disabled = $12,
         registration_disabled = $13,
@@ -629,15 +629,6 @@ module Sql = struct
       (pool |> Pool_database.Label.value)
       (count_invitations_request () |> Caqti_type.(string ->! int))
       (Entity.Id.value experiment_id)
-  ;;
-
-  let invitation_count_by_iteration pool experiment_id iteration =
-    let open Caqti_request.Infix in
-    Utils.Database.find
-      (pool |> Pool_database.Label.value)
-      (count_invitations_request ~by_count:true ()
-       |> Caqti_type.(t2 string int ->! int))
-      (Entity.Id.value experiment_id, iteration)
   ;;
 end
 

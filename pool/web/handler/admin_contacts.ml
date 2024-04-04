@@ -392,16 +392,12 @@ let enroll_contact_post req =
     in
     let%lwt confirmation =
       let tenant = Pool_context.Tenant.get_tenant_exn req in
-      let%lwt contact_person =
-        Experiment.find_contact_person database_label experiment
-      in
       Message_template.AssignmentConfirmation.prepare
         ~follow_up_sessions
         tenant
         contact
         experiment
         session
-        contact_person
     in
     let%lwt contact_is_enrolled =
       Experiment.contact_is_enrolled database_label experiment_id contact_id
