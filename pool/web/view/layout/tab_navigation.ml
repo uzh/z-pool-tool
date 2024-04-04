@@ -2,9 +2,17 @@ open Tyxml.Html
 open Entity
 open Navigation_utils
 
-let make_tabs ~actor ?active_navigation context html nav_elements =
+let make_tabs ~actor ?overlay_title ?active_navigation context html nav_elements
+  =
   let make_nav =
     create_nav ~actor ?active_navigation ~validate:true context nav_elements
+  in
+  let overlay_title =
+    overlay_title
+    |> CCOption.map (fun title ->
+      div
+        ~a:[ a_class [ "app-title"; "flex-grow"; "word-break-all" ] ]
+        [ txt title ])
   in
   let nav =
     div
@@ -19,7 +27,11 @@ let make_tabs ~actor ?active_navigation context html nav_elements =
                 ; "align-center"
                 ]
             ]
-          [ create_mobile_nav ~toggle_id:"tab-navigation-overlay" make_nav ]
+          [ create_mobile_nav
+              ?title:overlay_title
+              ~toggle_id:"tab-navigation-overlay"
+              make_nav
+          ]
       ; div
           ~a:[ a_class [ "flexrow"; "flex-gap"; "hidden-mobile" ] ]
           (make_nav Horizonal)

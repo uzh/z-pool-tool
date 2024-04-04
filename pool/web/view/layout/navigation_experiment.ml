@@ -68,7 +68,7 @@ let nav_elements experiment =
     [ Parent
         ( None
         , Settings
-        , Set (Invitation.Guard.Access.index id) (* TODO , on CHildren?? *)
+        , OnChildren
         , [ Single
               ( url "assistants"
               , Field Field.Assistants
@@ -115,8 +115,15 @@ let create
     ||> Pool_common.Utils.get_or_failwith
   in
   let html = make_body ?buttons ?hint language title content in
+  let overlay_title = Experiment.(Title.value experiment.title) in
   let subpage =
-    make_tabs ~actor ?active_navigation context html (nav_elements experiment)
+    make_tabs
+      ~actor
+      ?active_navigation
+      ~overlay_title
+      context
+      html
+      (nav_elements experiment)
   in
   with_heading experiment subpage |> Lwt.return
 ;;

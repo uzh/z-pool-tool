@@ -131,7 +131,6 @@ let create_nav
     |> CCList.map
          (build_nav_links ~layout ?active_navigation language query_language)
   in
-  (* TODO: Maybe use a different class, if it is vertical *)
   let nav = [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ] in
   match layout with
   | Vertical -> [ div ~a:[ a_class [ "grow"; "flexcolumn"; "gap" ] ] nav ]
