@@ -35,7 +35,8 @@ module NavElements = struct
 
   let guest ?(root = false) context =
     let prefix = if root then Some "root" else None in
-    [ NavElement.login ?prefix () ] |> NavUtils.with_language_switch context
+    [ NavElement.login ?prefix () ]
+    |> NavUtils.create_nav_with_language_switch context
   ;;
 
   let contact context =
@@ -46,7 +47,8 @@ module NavElements = struct
       ; Profile.nav ~contact:true ()
       ]
     in
-    links @ [ NavElement.logout () ] |> NavUtils.with_language_switch context
+    links @ [ NavElement.logout () ]
+    |> NavUtils.create_nav_with_language_switch context
   ;;
 
   let admin context =
@@ -127,7 +129,7 @@ module NavElements = struct
     ; Profile.nav ~prefix:"/admin" ()
     ; NavElement.logout ()
     ]
-    |> NavUtils.create_main ~validate:true context
+    |> NavUtils.create_nav ~validate:true context
   ;;
 
   let root context =
@@ -151,7 +153,7 @@ module NavElements = struct
     ; Profile.nav ~prefix:"/root" ()
     ; NavElement.logout ~prefix:"/root" ()
     ]
-    |> NavUtils.create_main ~validate:true context
+    |> NavUtils.create_nav ~validate:true context
   ;;
 
   let find_tenant_nav_links ({ Pool_context.user; _ } as context) languages =
@@ -169,7 +171,7 @@ module NavElements = struct
   ;;
 end
 
-let create
+let create_main
   ?(kind : [ `Tenant | `Root ] = `Tenant)
   ?active_navigation
   ({ Pool_context.database_label; user; _ } as context)
@@ -188,9 +190,11 @@ let create
       ?actor
       ?active_navigation
   in
-  let%lwt desktop = NavUtils.create_desktop nav_links in
-  let%lwt mobile = NavUtils.create_mobile title nav_links in
+  let desktop = NavUtils.create_desktop_nav nav_links in
+  let mobile =
+    NavUtils.create_mobile_nav ~title ~toggle_id:"navigation-overlay" nav_links
+  in
   Lwt.return [ desktop; mobile ]
 ;;
 
-let create_root ?active_navigation = create ~kind:`Root ?active_navigation
+let create_root ?active_navigation = create_main ~kind:`Root ?active_navigation

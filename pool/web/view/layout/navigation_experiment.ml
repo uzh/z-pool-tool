@@ -38,8 +38,6 @@ let nav_elements experiment =
     [ Single (url "", Overview, Set (Guard.Access.read id))
     ; Single (url "sessions", Sessions, Set (Session.Guard.Access.index id))
     ; Parent
-        (* TODO: How to handle nested validations? can I omitt the child
-           validations? *)
         ( None
         , Invitations
         , Set (Invitation.Guard.Access.index id)
@@ -107,7 +105,7 @@ let create
   content
   =
   let open Utils.Lwt_result.Infix in
-  let open Component.Navigation in
+  let open Tab_navigation in
   let title = title_to_string language title in
   let active_navigation =
     active_navigation |> CCOption.map (experiment_url experiment.Experiment.id)
@@ -117,15 +115,8 @@ let create
     ||> Pool_common.Utils.get_or_failwith
   in
   let html = make_body ?buttons ?hint language title content in
-  let%lwt subpage =
-    NavUtils.create_main
-      ~actor
-      ?active_navigation
-      ~validate:true
-      context
-      (nav_elements experiment)
-      false
-    ||> make_tabs html
+  let subpage =
+    make_tabs ~actor ?active_navigation context html (nav_elements experiment)
   in
   with_heading experiment subpage |> Lwt.return
 ;;

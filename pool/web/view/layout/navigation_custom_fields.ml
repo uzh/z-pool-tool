@@ -40,7 +40,7 @@ let create
   content
   =
   let open Utils.Lwt_result.Infix in
-  let open Component.Navigation in
+  let open Tab_navigation in
   let%lwt actor =
     Pool_context.Utils.find_authorizable database_label user
     ||> Pool_common.Utils.get_or_failwith
@@ -51,15 +51,6 @@ let create
   in
   let active_navigation = custom_field_path model in
   let html = make_body ?buttons ?hint language title content in
-  let%lwt subpage =
-    NavUtils.create_main
-      ~actor
-      ~active_navigation
-      ~validate:true
-      context
-      nav_elements
-      false
-    ||> make_tabs html
-  in
+  let subpage = make_tabs ~actor ~active_navigation context html nav_elements in
   with_heading language subpage |> Lwt.return
 ;;

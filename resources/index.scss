@@ -582,3 +582,18 @@ $n: 12;
         transform: translateY(calc(100% + $border-width));
     }
 }
+
+// Add to framework
+.fullscreen-overlay {
+    width: 100vw;
+    top: 0;
+    left: 0;
+}
+
+.mobile-only {
+    display: none;
+    @include mobile {
+      display: flex;
+    }
+  }
+  

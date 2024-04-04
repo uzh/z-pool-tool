@@ -46,7 +46,7 @@ module App = struct
     div ~a:[ a_class [ "app-title" ] ] [ a ~a:[ a_href path ] [ txt title ] ]
   ;;
 
-  let header ?(children = []) query_language title =
+  let navbar ?(children = []) query_language title =
     header
       ~a:
         [ a_class

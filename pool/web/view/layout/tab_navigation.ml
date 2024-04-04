@@ -1,20 +1,28 @@
 open Tyxml.Html
+open Entity
+open Navigation_utils
 
-let make_tabs html navigation =
-  let toggle_id = "tab-nav-toggle" in
+let make_tabs ~actor ?active_navigation context html nav_elements =
+  let make_nav =
+    create_nav ~actor ?active_navigation ~validate:true context nav_elements
+  in
   let nav =
     div
       ~a:[ a_class [ "tab-nav-container" ] ]
       [ div
-          ~a:[ a_class [ "tab-nav-header" ] ]
-          [ label
-              ~a:[ a_class [ "icon-lg" ]; a_label_for toggle_id ]
-              Component_icon.[ to_html MenuOutline ]
-          ]
-      ; input
-          ~a:[ a_input_type `Checkbox; a_class [ "toggle" ]; a_id toggle_id ]
-          ()
-      ; div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] navigation
+          ~a:
+            [ a_class
+                [ "mobile-only"
+                ; "flexrow"
+                ; "flex-gap"
+                ; "justify-between"
+                ; "align-center"
+                ]
+            ]
+          [ create_mobile_nav ~toggle_id:"tab-navigation-overlay" make_nav ]
+      ; div
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "hidden-mobile" ] ]
+          (make_nav Horizonal)
       ]
   in
   div [ nav; div ~a:[ a_class [ "tab-body" ] ] html ]

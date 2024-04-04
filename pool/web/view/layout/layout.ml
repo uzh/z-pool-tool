@@ -44,9 +44,9 @@ module Tenant = struct
       in
       [ charset; viewport ] @ stylesheets @ favicon
     in
-    let%lwt children =
+    let%lwt navbar_content =
       let title = App.create_title query_language title_text in
-      Navigation.create ?active_navigation context title tenant_languages
+      Navigation.create_main ?active_navigation context title tenant_languages
     in
     let%lwt footer =
       let%lwt privacy_policy_is_set =
@@ -107,7 +107,10 @@ module Tenant = struct
       (head page_title head_tags)
       (body
          ~a:[ a_class body_tag_classnames ]
-         ([ App.header ~children query_language title_text; content; footer ]
+         ([ App.navbar ~children:navbar_content query_language title_text
+          ; content
+          ; footer
+          ]
           @ scripts))
     |> Lwt.return
   ;;
@@ -121,7 +124,7 @@ module Root = struct
     let title_text = App.app_name in
     let page_title = title (txt title_text) in
     let message = Message.create message language () in
-    let%lwt children =
+    let%lwt navbar_content =
       let title = App.create_title None title_text in
       Navigation.create_root
         ?active_navigation
@@ -139,7 +142,7 @@ module Root = struct
          ])
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ App.header ~children None title_text
+         [ App.navbar ~children:navbar_content None title_text
          ; main_tag [ message; content ]
          ; App.root_footer
          ; js_script_tag `IndexJs
@@ -160,7 +163,7 @@ module Error = struct
          ([ charset; viewport ] @ [ `GlobalStylesheet |> css_link_tag ]))
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ App.header None title_text
+         [ App.navbar None title_text
          ; content
          ; App.root_footer
          ; js_script_tag `IndexJs
