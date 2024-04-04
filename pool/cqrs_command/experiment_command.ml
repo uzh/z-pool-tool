@@ -566,10 +566,14 @@ end = struct
   ;;
 
   let effects experiment_id filter_id =
-    BaseGuard.ValidationSet.And
-      [ Experiment.Guard.Access.update experiment_id
-      ; Filter.Guard.Access.update filter_id
-      ]
+    BaseGuard.ValidationSet.(
+      And
+        [ Experiment.Guard.Access.update experiment_id
+        ; Or
+            [ Filter.Guard.Access.update (Experiment.Id.to_common experiment_id)
+            ; Filter.Guard.Access.update filter_id
+            ]
+        ])
   ;;
 end
 
