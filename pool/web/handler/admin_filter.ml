@@ -341,7 +341,7 @@ module Access : module type of Helpers.Access = struct
 
   let filter_effects = Guardian.id_effects Filter.Id.of_string Field.Filter
   let index = Filter.Guard.Access.index |> Guardian.validate_admin_entity
-  let create = Command.Create.effects |> Guardian.validate_admin_entity
+  let create = Command.Create.effects () |> Guardian.validate_admin_entity
 
   let update =
     Command.Update.effects |> filter_effects |> Guardian.validate_generic

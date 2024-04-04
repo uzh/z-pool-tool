@@ -19,12 +19,21 @@ module Access = struct
   open ValidationSet
   open Permission
 
-  let filter action uuid =
-    one_of_tuple (action, `Filter, Some (uuid |> Uuid.target_of Entity.Id.value))
+  let filter ?id ?(model = `Filter) permission =
+    one_of_tuple
+      (permission, model, CCOption.map (Uuid.target_of Entity.Id.value) id)
   ;;
 
   let index = one_of_tuple (Read, `Filter, None)
-  let create = one_of_tuple (Read, `Filter, None)
-  let update = filter Update
-  let delete = filter Delete
+
+  let create ?id () =
+    CCOption.map_or
+      ~default:(filter Create)
+      (fun id ->
+        And [ Or [ filter Create; filter ~id:(Entity.Id.of_common id) Create ] ])
+      id
+  ;;
+
+  let update id = filter ~id Update
+  let delete id = filter ~id Delete
 end
