@@ -203,7 +203,10 @@ let sql_uuid_list_fragment pool permission model actor =
   | false, [] -> Some "(NULL)"
   | false, ids ->
     ids
-    |> CCList.map (Uuid.Target.to_string %> Pool_common.Id.sql_value_fragment)
+    |> CCList.map
+         (Uuid.Target.to_string
+          %> Format.asprintf "'%s'"
+          %> Pool_common.Id.sql_value_fragment)
     |> CCString.concat ", "
     |> Format.asprintf "(%s)"
     |> CCOption.return
