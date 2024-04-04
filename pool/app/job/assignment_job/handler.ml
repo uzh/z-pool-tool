@@ -19,12 +19,13 @@ let make_messages
   let remove_matching =
     let open Assignment in
     let open CCList in
-    filter (fun (_, assignments) ->
+    filter_map (fun (session, assignments) ->
       assignments
       |> filter (fun { matches_filter; _ } ->
         MatchesFilter.value matches_filter |> not)
-      |> is_empty
-      |> not)
+      |> function
+      | [] -> None
+      | assignments -> Some (session, assignments))
   in
   match remove_matching sessions with
   | [] -> Lwt_result.return []
