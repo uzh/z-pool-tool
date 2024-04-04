@@ -1,5 +1,5 @@
 module Data = struct
-  let database_label = "econ-test" |> Pool_database.Label.of_string
+  let database_label = "econ-test" |> Database.Label.of_string
 end
 
 (* Testable *)
@@ -8,7 +8,7 @@ let partial_update = Custom_field.PartialUpdate.(Alcotest.testable pp equal)
 let language = Pool_common.Language.(Alcotest.testable pp equal)
 let message_template = Message_template.(Alcotest.testable pp equal)
 let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
-let database_label = Pool_database.Label.(Alcotest.testable pp equal)
+let database_label = Database.Label.(Alcotest.testable pp equal)
 let error = Pool_message.Error.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let password = Pool_user.Password.(Alcotest.testable pp equal)

@@ -1,6 +1,6 @@
 module RepoEntity = Repo_entity
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Database = Database
+module Dynparam = Database.Dynparam
 
 module Sql = struct
   let sql_select_columns =
@@ -49,10 +49,7 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_request
-      (id |> Pool_common.Id.value)
+    Database.find_opt pool find_request (id |> Pool_common.Id.value)
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.WaitingList)
   ;;
 
@@ -69,8 +66,8 @@ module Sql = struct
   ;;
 
   let find_by_contact_and_experiment pool contact experiment_id =
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
+    Database.find_opt
+      pool
       user_is_enlisted_request
       ( contact |> Contact.id |> Pool_common.Id.value
       , experiment_id |> Experiment.Id.value )
@@ -133,10 +130,7 @@ module Sql = struct
 
   let find_experiment_id pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_experiment_id_request
-      id
+    Database.find_opt pool find_experiment_id_request id
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
@@ -158,9 +152,7 @@ module Sql = struct
     |> Caqti_type.(RepoEntity.Write.t ->. unit)
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -178,7 +170,7 @@ module Sql = struct
     let caqti =
       m.admin_comment |> AdminComment.value, m.id |> Pool_common.Id.value
     in
-    Utils.Database.exec (Pool_database.Label.value pool) update_request caqti
+    Database.exec pool update_request caqti
   ;;
 
   let delete_request =
@@ -192,10 +184,7 @@ module Sql = struct
   ;;
 
   let delete pool m =
-    Utils.Database.exec
-      (Database.Label.value pool)
-      delete_request
-      (m.Entity.id |> Pool_common.Id.value)
+    Database.exec pool delete_request (m.Entity.id |> Pool_common.Id.value)
   ;;
 end
 

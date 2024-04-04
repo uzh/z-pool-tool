@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let src = Logs.Src.create "handler.public.login"
-let to_ctx = Pool_database.to_ctx
+let to_ctx = Database.to_ctx
 let create_layout req = General.create_tenant_layout req
 
 let increase_sign_in_count ~tags database_label user =
@@ -282,9 +282,7 @@ let reset_password_post req =
     match reset with
     | Ok () ->
       let%lwt () =
-        Service.Token.deactivate
-          ~ctx:(Pool_database.to_ctx database_label)
-          token
+        Service.Token.deactivate ~ctx:(Database.to_ctx database_label) token
       in
       let%lwt () = import_events |> Pool_event.handle_events database_label in
       HttpUtils.(

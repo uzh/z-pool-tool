@@ -1,4 +1,4 @@
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 let job = Repo_entity.sihl_queue_job_caqti
 
@@ -38,12 +38,7 @@ let update_request =
   |> job ->. Caqti_type.unit
 ;;
 
-let update label job_instance =
-  Utils.Database.exec
-    (Pool_database.Label.value label)
-    update_request
-    job_instance
-;;
+let update label job_instance = Database.exec label update_request job_instance
 
 let find_request_sql ?(count = false) where_fragment =
   let columns =
@@ -63,7 +58,7 @@ let find_request =
 let find label id =
   let open Utils.Lwt_result.Infix in
   print_endline "";
-  Utils.Database.find_opt (Pool_database.Label.value label) find_request id
+  Database.find_opt label find_request id
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Queue)
 ;;
 
@@ -91,12 +86,7 @@ let find_workable_request =
   find_workable_query () |> Caqti_type.unit ->* job
 ;;
 
-let find_workable label =
-  Utils.Database.collect
-    (Pool_database.Label.value label)
-    find_workable_request
-    ()
-;;
+let find_workable label = Database.collect label find_workable_request ()
 
 let count_workable_request =
   let open Caqti_request.Infix in
@@ -105,9 +95,6 @@ let count_workable_request =
 
 let count_workable label =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value label)
-    count_workable_request
-    ()
+  Database.find_opt label count_workable_request ()
   ||> CCOption.to_result Pool_message.Error.NoValue
 ;;

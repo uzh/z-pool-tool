@@ -19,8 +19,6 @@ let all_tenants_session_reminder =
     "Send session reminders of all tenants"
     (fun () ->
        let open Utils.Lwt_result.Infix in
-       let%lwt (_ : Pool_database.Label.t list) =
-         Command_utils.setup_databases ()
-       in
+       let%lwt (_ : Database.Label.t list) = Command_utils.setup_databases () in
        Reminder.Service.run () ||> CCOption.some)
 ;;

@@ -92,27 +92,24 @@ val show : t -> string
 val compare : t -> t -> int
 
 val find
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_admin_comment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> AdminComment.t option Lwt.t
 
-val find_multiple
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t list
-  -> t list Lwt.t
+val find_multiple : Database.Label.t -> Pool_common.Id.t list -> t list Lwt.t
 
 val find_by_email
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_user.EmailAddress.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_by_user
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Sihl_user.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
@@ -120,36 +117,36 @@ val find_all
   :  ?query:Query.t
   -> ?actor:Guard.Actor.t
   -> ?permission:Guard.Permission.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> unit
   -> (t list * Query.t) Lwt.t
 
 val find_to_trigger_profile_update
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> (t list, 'a) Lwt_result.t
 
 val should_send_registration_attempt_notification
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t
   -> bool Lwt.t
 
 val find_cell_phone_verification_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t
   -> Pool_user.UnverifiedCellPhone.t option Lwt.t
 
 val find_cell_phone_verification_by_contact_and_code
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t
   -> Pool_common.VerificationCode.t
   -> (Pool_user.UnverifiedCellPhone.t, Pool_message.Error.t) result Lwt.t
 
 val find_full_cell_phone_verification_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t
   -> (Pool_user.UnverifiedCellPhone.full, Pool_message.Error.t) result Lwt.t
 
-val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
+val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
 
 type create =
   { user_id : Pool_common.Id.t
@@ -191,13 +188,7 @@ type event =
 
 val created : create -> event
 val updated : t -> event
-
-val handle_event
-  :  ?tags:Logs.Tag.set
-  -> Pool_database.Label.t
-  -> event
-  -> unit Lwt.t
-
+val handle_event : ?tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string

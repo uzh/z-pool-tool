@@ -4,7 +4,7 @@ include Entity
 module Guard = Entity_guard
 
 let src = Logs.Src.create "queue.service"
-let tags = Pool_database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create root)
 
 let increment_tries (retry_delay : Ptime.Span.t) (job_instance : instance) =
   let next_run_at =
@@ -68,8 +68,8 @@ let work_job
   ({ retry_delay; max_tries; _ } as job : job')
   ({ input; tries; ctx; _ } as job_instance : instance)
   =
-  let database_label = Pool_database.of_ctx_exn ctx in
-  let tags = Pool_database.Logger.Tags.create database_label in
+  let database_label = Database.of_ctx_exn ctx in
+  let tags = Database.Logger.Tags.create database_label in
   let now = Ptime_clock.now () in
   if should_run job_instance now
   then (
@@ -139,12 +139,12 @@ let create_schedule () =
       Pool_tenant.find_all ()
       ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
     in
-    let database_labels = Pool_database.root :: database_labels in
+    let database_labels = Database.root :: database_labels in
     Logs.debug ~src (fun m ->
       m
         ~tags
         "Running Queue for databases: %s"
-        ([%show: Pool_database.Label.t list] database_labels));
+        ([%show: Database.Label.t list] database_labels));
     let jobs = !registered_jobs in
     if CCList.is_empty jobs
     then (
@@ -174,7 +174,7 @@ let lifecycle =
   Sihl.Container.create_lifecycle
     "Multitenant Queue"
     ~dependencies:(fun () ->
-      [ Pool_canary.lifecycle; Database.lifecycle; Schedule.lifecycle ])
+      [ Pool_canary.lifecycle; Pool_database.lifecycle; Schedule.lifecycle ])
     ~start
     ~stop
 ;;

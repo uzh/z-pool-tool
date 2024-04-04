@@ -3,7 +3,7 @@ module Message = Http_utils.Message
 module Login = Public_login
 module Import = Public_import
 module Common = Pool_common
-module Database = Pool_database
+module Database = Database
 
 let src = Logs.Src.create "handler.public"
 let create_layout req = General.create_tenant_layout req

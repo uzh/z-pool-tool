@@ -4,7 +4,7 @@ module Repo = Repo
 let find_active_user_by_email_opt database_label email =
   let open Utils.Lwt_result.Infix in
   let open Service.User in
-  let ctx = Pool_database.to_ctx database_label in
+  let ctx = Database.to_ctx database_label in
   email
   |> EmailAddress.value
   |> find_by_email_opt ~ctx
@@ -18,7 +18,7 @@ let create_session database_label email ~password =
   let open Utils.Lwt_result.Infix in
   let open Service.User in
   login
-    ~ctx:(Pool_database.to_ctx database_label)
+    ~ctx:(Database.to_ctx database_label)
     (EmailAddress.value email)
     ~password
   >== fun ({ status; _ } as user) ->

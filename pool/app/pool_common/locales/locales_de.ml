@@ -437,6 +437,7 @@ let rec error_to_string =
     Format.asprintf "%s kann nicht gelöscht werden." (field_to_string field)
   | CannotBeUpdated field ->
     Format.asprintf "%s kann nicht angepasst werden." (field_to_string field)
+  | CaqtiError err -> err
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->

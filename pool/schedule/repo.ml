@@ -103,9 +103,7 @@ module Sql = struct
     select_fragment order_by |> Caqti_type.unit ->* public
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
-  ;;
+  let find_all pool = Database.collect pool find_all_request
 
   let upsert_request =
     let open Caqti_request.Infix in
@@ -131,9 +129,7 @@ module Sql = struct
     |> t ->. Caqti_type.unit
   ;;
 
-  let upsert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) upsert_request
-  ;;
+  let upsert pool = Database.exec pool upsert_request
 
   let change_all_status_request =
     let open Caqti_request.Infix in
@@ -148,10 +144,7 @@ module Sql = struct
   ;;
 
   let stop_all_active pool =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      change_all_status_request
-      Entity.Status.(Active, Stopped)
+    Database.exec pool change_all_status_request Entity.Status.(Active, Stopped)
   ;;
 
   let select_count where_fragment =
@@ -174,7 +167,7 @@ module Sql = struct
   ;;
 end
 
-let find_all = Sql.find_all Pool_database.root
-let find_by = Sql.find_by Pool_database.root
-let upsert = Sql.upsert Pool_database.root
-let stop_all_active () = Sql.stop_all_active Pool_database.root
+let find_all = Sql.find_all Database.root
+let find_by = Sql.find_by Database.root
+let upsert = Sql.upsert Database.root
+let stop_all_active () = Sql.stop_all_active Database.root

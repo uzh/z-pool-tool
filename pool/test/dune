@@ -10,6 +10,7 @@
   contact_counter
   cqrs_command
   custom_field
+  database
   experiment
   guard
   handler

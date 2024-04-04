@@ -13,7 +13,7 @@ let context () =
   in
   let database_label_of_request is_root req =
     if is_root
-    then Lwt.return_ok Pool_database.root
+    then Lwt.return_ok Database.root
     else tenant_database_label_of_request req
   in
   let languages_from_request ?contact req tenant_db =

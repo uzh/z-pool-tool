@@ -1,6 +1,6 @@
 include Entity
 
-let is_from_root { database_label; _ } = Pool_database.is_root database_label
+let is_from_root { database_label; _ } = Database.is_root database_label
 
 let user_is_admin = function
   | Guest | Contact _ -> false
@@ -16,7 +16,7 @@ module Utils = struct
   let find_authorizable_opt ?(admin_only = false) database_label user =
     let open Utils.Lwt_result.Infix in
     match user with
-    | Contact _ when Pool_database.is_root database_label -> Lwt.return_none
+    | Contact _ when Database.is_root database_label -> Lwt.return_none
     | Contact contact when not admin_only ->
       Contact.id contact
       |> Guard.Uuid.actor_of Pool_common.Id.value
@@ -54,7 +54,7 @@ module Logger = struct
         find req
         |> of_result
         >|= (fun { database_label; user; _ } ->
-              database_label |> Pool_database.Label.value, user |> show_log_user)
+              database_label |> Database.Label.value, user |> show_log_user)
         |> value ~default:(default, default)
       in
       let open Logs.Tag in
@@ -68,7 +68,7 @@ module Logger = struct
     let context { database_label; user; _ } : Logs.Tag.set =
       let open Logs.Tag in
       empty
-      |> add Logger.tag_database (database_label |> Pool_database.Label.value)
+      |> add Logger.tag_database (database_label |> Database.Label.value)
       |> add Logger.tag_user (user |> show_log_user)
     ;;
   end

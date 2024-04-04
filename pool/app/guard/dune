@@ -6,7 +6,7 @@
   guardian.backend
   lwt
   pool_common
-  pool_database
+  database
   role
   query
   sihl

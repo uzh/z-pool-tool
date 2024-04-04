@@ -31,7 +31,7 @@ let grant_role ctx admin (role, target_uuid) =
 
 let create =
   let create_and_grant_role_exn pool email password given_name name role =
-    let ctx = Pool_database.to_ctx pool in
+    let ctx = Database.to_ctx pool in
     match%lwt Service.User.find_by_email_opt ~ctx email with
     | None ->
       let open Pool_user in
@@ -93,7 +93,7 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
 
 let create_root_admin =
   let create_exn email password given_name name =
-    let ctx = Pool_database.to_ctx Pool_database.root in
+    let ctx = Database.to_ctx Database.root in
     match%lwt Service.User.find_by_email_opt ~ctx email with
     | None ->
       let%lwt () =
@@ -108,9 +108,7 @@ let create_root_admin =
           ; lastname = name |> Lastname.of_string
           ; roles = [ `Operator, None ]
           }
-        |> handle_event
-             ~tags:Pool_database.(Logger.Tags.create root)
-             Pool_database.root
+        |> handle_event ~tags:Database.(Logger.Tags.create root) Database.root
       in
       Lwt.return_some ()
     | Some _ -> failwith "The user already exists."
@@ -133,7 +131,7 @@ Example: admin.root.create example@mail.com securePassword Max Muster
     ~help
     (function
     | [ email; password; given_name; name ] ->
-      let%lwt () = Database.Root.setup () in
+      let%lwt (_ : Database.status) = Pool_database.Root.setup () in
       create_exn email password given_name name
     | _ -> Command_utils.failwith_missmatch help)
 ;;
@@ -141,7 +139,7 @@ Example: admin.root.create example@mail.com securePassword Max Muster
 let grant_role =
   let grant_if_admin pool email role =
     let open Utils.Lwt_result.Infix in
-    let ctx = Pool_database.to_ctx pool in
+    let ctx = Database.to_ctx pool in
     let%lwt admin =
       email
       |> Pool_user.EmailAddress.of_string

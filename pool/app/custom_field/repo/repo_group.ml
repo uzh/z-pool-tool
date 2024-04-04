@@ -1,4 +1,4 @@
-module Database = Pool_database
+module Database = Database
 
 let select_sql where =
   Format.asprintf
@@ -31,10 +31,7 @@ let find_request =
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_request
-    (Pool_common.Id.value id)
+  Database.find_opt pool find_request (Pool_common.Id.value id)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.CustomFieldGroup)
 ;;
 
@@ -48,10 +45,7 @@ let find_by_model_request =
 ;;
 
 let find_by_model pool model =
-  Utils.Database.collect
-    (Database.Label.value pool)
-    find_by_model_request
-    (Entity.Model.show model)
+  Database.collect pool find_by_model_request (Entity.Model.show model)
 ;;
 
 let insert_sql =
@@ -75,7 +69,7 @@ let insert_request =
   insert_sql |> Repo_entity_group.t ->. Caqti_type.unit
 ;;
 
-let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
+let insert pool = Database.exec pool insert_request
 
 let update_request =
   let open Caqti_request.Infix in
@@ -90,7 +84,7 @@ let update_request =
   |> Repo_entity_group.t ->. Caqti_type.unit
 ;;
 
-let update pool = Utils.Database.exec (Database.Label.value pool) update_request
+let update pool = Database.exec pool update_request
 
 let destroy_request =
   let open Caqti_request.Infix in
@@ -102,10 +96,7 @@ let destroy_request =
 ;;
 
 let destroy pool m =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    destroy_request
-    Entity.Group.(m.id |> Id.value)
+  Database.exec pool destroy_request Entity.Group.(m.id |> Id.value)
 ;;
 
 let update_position_request =
@@ -123,10 +114,7 @@ let sort_groups pool ids =
   let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
-      Utils.Database.exec
-        (Database.Label.value pool)
-        update_position_request
-        (index, Entity.Id.value id))
+      Database.exec pool update_position_request (index, Entity.Id.value id))
     ids
   ||> CCFun.const ()
 ;;

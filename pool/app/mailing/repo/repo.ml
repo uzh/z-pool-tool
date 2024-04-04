@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 let to_entity = RepoEntity.to_entity
 let of_entity = RepoEntity.of_entity
@@ -50,7 +50,7 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
+    Database.find_opt pool find_request id
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Mailing)
   ;;
 
@@ -69,10 +69,7 @@ module Sql = struct
 
   let find_with_detail pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_with_detail_request
-      id
+    Database.find_opt pool find_with_detail_request id
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Mailing)
   ;;
 
@@ -87,11 +84,7 @@ module Sql = struct
     |> Experiment.Repo.Entity.Id.t ->* RepoEntity.t
   ;;
 
-  let find_by_experiment pool =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_by_experiment_request
-  ;;
+  let find_by_experiment pool = Database.collect pool find_by_experiment_request
 
   let find_by_experiment_with_count pool query id =
     let select = select_with_count in
@@ -124,12 +117,7 @@ module Sql = struct
     |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
-  let find_current pool =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_current_request
-      ()
-  ;;
+  let find_current pool = Database.collect pool find_current_request ()
 
   let find_overlaps_request =
     let open Caqti_request.Infix in
@@ -144,10 +132,7 @@ module Sql = struct
   ;;
 
   let find_overlaps pool start_at end_at ignore_id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_overlaps_request
-      (start_at, end_at, ignore_id)
+    Database.collect pool find_overlaps_request (start_at, end_at, ignore_id)
   ;;
 
   let find_binary_experiment_id_sql =
@@ -177,10 +162,7 @@ module Sql = struct
 
   let find_experiment_id pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_experiment_id_request
-      id
+    Database.find_opt pool find_experiment_id_request id
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
@@ -210,9 +192,7 @@ module Sql = struct
     |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -228,9 +208,7 @@ module Sql = struct
     |> RepoEntity.Update.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Pool_database.Label.value pool) update_request
-  ;;
+  let update pool = Database.exec pool update_request
 
   let delete_request =
     let open Caqti_request.Infix in
@@ -241,9 +219,7 @@ module Sql = struct
     |> RepoEntity.Id.t ->. Caqti_type.unit
   ;;
 
-  let delete pool =
-    Utils.Database.exec (Pool_database.Label.value pool) delete_request
-  ;;
+  let delete pool = Database.exec pool delete_request
 
   module Status = struct
     let find_current_request =
@@ -274,10 +250,7 @@ module Sql = struct
     ;;
 
     let find_current pool interval =
-      Utils.Database.collect
-        (Pool_database.Label.value pool)
-        find_current_request
-        interval
+      Database.collect pool find_current_request interval
     ;;
   end
 end

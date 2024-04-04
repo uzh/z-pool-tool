@@ -18,7 +18,7 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
-  let ctx = Pool_database.to_ctx pool in
+  let ctx = Database.to_ctx pool in
   function
   | Created ({ files; _ } as location) ->
     let%lwt () =
@@ -38,7 +38,7 @@ let handle_event pool : event -> unit Lwt.t =
       |> Repo.RepoFileMapping.insert pool
     in
     Entity_guard.FileTarget.to_authorizable_of_write
-      ~ctx:(Pool_database.to_ctx pool)
+      ~ctx:(Database.to_ctx pool)
       file
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()

@@ -3,7 +3,7 @@ module Id = Pool_common.Id
 module RepoId = Pool_common.Repo.Id
 module File = Pool_common.File
 module RepoFile = Pool_common.Repo.File
-module Database = Pool_database
+module Database = Database
 
 let t =
   let encode m =
@@ -90,7 +90,7 @@ module Sql = struct
   ;;
 
   let find pool tenant_id =
-    Utils.Database.collect pool find_request (tenant_id |> Pool_common.Id.value)
+    Database.collect pool find_request (tenant_id |> Pool_common.Id.value)
   ;;
 
   let find_all_request =
@@ -98,7 +98,7 @@ module Sql = struct
     "" |> select_from_tenant_logo_mappings_sql |> Caqti_type.unit ->! t
   ;;
 
-  let find_all pool = Utils.Database.collect pool find_all_request
+  let find_all pool = Database.collect pool find_all_request
 
   let insert_request =
     let open Caqti_request.Infix in
@@ -118,7 +118,7 @@ module Sql = struct
     |> Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool = Utils.Database.exec pool insert_request
+  let insert pool = Database.exec pool insert_request
 
   let delete_request =
     let open Caqti_request.Infix in
@@ -131,17 +131,14 @@ module Sql = struct
   ;;
 
   let delete pool tenant_id asset_id =
-    Utils.Database.exec
+    Database.exec
       pool
       delete_request
       (tenant_id |> Id.value, asset_id |> Id.value)
   ;;
 end
 
-let insert_multiple m_list =
-  Lwt_list.map_s (Sql.insert Database.(Label.value root)) m_list
-;;
-
-let find_by_tenant = Sql.find Database.(Label.value root)
-let find_all = Sql.find_all Database.(Label.value root)
-let delete = Sql.delete Database.(Label.value root)
+let insert_multiple m_list = Lwt_list.map_s (Sql.insert Database.(root)) m_list
+let find_by_tenant = Sql.find Database.(root)
+let find_all = Sql.find_all Database.(root)
+let delete = Sql.delete Database.(root)

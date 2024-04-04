@@ -44,7 +44,7 @@ module Service : sig
     val send : job Sihl_queue.job
   end
 
-  val send : Pool_database.Label.t -> job -> unit Lwt.t
+  val send : Database.Label.t -> job -> unit Lwt.t
 end
 
 type event =
@@ -54,6 +54,6 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val sent : job -> event
 val bulksent : job list -> event

@@ -107,7 +107,7 @@ let create_invitations_repo _ () =
   in
   let find_events () =
     Matcher.create_invitation_events interval [ pool ]
-    ||> CCList.assoc ~eq:Pool_database.Label.equal pool
+    ||> CCList.assoc ~eq:Database.Label.equal pool
     ||> sort_events
   in
   let create_expected mailing experiment contacts =

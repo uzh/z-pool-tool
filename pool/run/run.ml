@@ -3,7 +3,7 @@ let () = Printexc.record_backtrace true
 
 let worker_services =
   [ Pool_canary.register ()
-  ; Database.register ()
+  ; Pool_database.register ()
   ; Service.Storage.register ()
   ; Schedule.register ()
   ; Queue.register
@@ -21,7 +21,7 @@ let worker_services =
 
 let services =
   [ Pool_canary.register ()
-  ; Database.register ()
+  ; Pool_database.register ()
   ; Service.User.register ~commands:[] ()
   ; Service.Token.register ()
   ; Email.Service.register ()

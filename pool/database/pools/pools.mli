@@ -1,5 +1,12 @@
 exception Exception of string
 
+val with_log
+  :  ?tags:Logs.Tag.set
+  -> ?log_level:Logs.level
+  -> ?msg_prefix:string
+  -> [< Caqti_error.t ]
+  -> string
+
 val get_or_raise
   :  ?ctx:(string * string) list
   -> ?tags:Logs.Tag.set
@@ -19,4 +26,4 @@ module type ConfigSig = sig
 end
 
 module DefaultConfig : ConfigSig
-module Make : functor (_ : ConfigSig) -> Database_pools_sig.Sig
+module Make : functor (_ : ConfigSig) -> Pools_sig.Sig

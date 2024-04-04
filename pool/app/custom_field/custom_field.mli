@@ -444,93 +444,82 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-val find_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
-val find_by_group : Pool_database.Label.t -> Group.Id.t -> t list Lwt.t
-val find_ungrouped_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
-
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
+val find_by_model : Database.Label.t -> Model.t -> t list Lwt.t
+val find_by_group : Database.Label.t -> Group.Id.t -> t list Lwt.t
+val find_ungrouped_by_model : Database.Label.t -> Model.t -> t list Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_by_table_view
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> [< `SessionClose | `SessionDetail ]
   -> t list Lwt.t
 
 val find_all_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_context.user
   -> Pool_common.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_all_required_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_context.user
   -> Pool_common.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_unanswered_required_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_context.user
   -> Pool_common.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_unanswered_ungrouped_required_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_context.user
   -> Pool_common.Id.t
   -> Public.t list Lwt.t
 
 val find_multiple_by_contact
   :  ?is_admin:bool
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Pool_common.Id.t
   -> Pool_common.Id.t list
   -> Public.t list Lwt.t
 
 val find_by_contact
   :  ?is_admin:bool
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Pool_common.Id.t
   -> Id.t
   -> (Public.t, Pool_message.Error.t) result Lwt.t
 
-val all_required_answered
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> bool Lwt.t
-
-val all_answered : Pool_database.Label.t -> Pool_common.Id.t -> bool Lwt.t
-val all_prompted_on_registration : Pool_database.Label.t -> Public.t list Lwt.t
+val all_required_answered : Database.Label.t -> Pool_common.Id.t -> bool Lwt.t
+val all_answered : Database.Label.t -> Pool_common.Id.t -> bool Lwt.t
+val all_prompted_on_registration : Database.Label.t -> Public.t list Lwt.t
 
 val find_public_by_contacts_and_view
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> bool
   -> Contact.Id.t list
   -> [< `SessionClose | `SessionDetail ]
   -> Public.t list Lwt.t
 
 val find_option
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> SelectOption.Id.t
   -> (SelectOption.t, Pool_message.Error.t) result Lwt.t
 
 val find_options_by_field
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
   -> SelectOption.t list Lwt.t
 
 val find_group
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Group.Id.t
   -> (Group.t, Pool_message.Error.t) result Lwt.t
 
-val find_groups_by_model
-  :  Pool_database.Label.t
-  -> Model.t
-  -> Group.t list Lwt.t
+val find_groups_by_model : Database.Label.t -> Model.t -> Group.t list Lwt.t
 
 module Repo : sig
   module Id : sig

@@ -6,7 +6,6 @@
  (libraries
   caqti-driver-mariadb
   command
-  database
   guard
   pool_canary
   queue

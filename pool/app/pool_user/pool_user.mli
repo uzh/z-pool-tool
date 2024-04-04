@@ -230,12 +230,12 @@ val column_email : Query.Column.t
 val column_inactive : Query.Column.t
 
 val find_active_user_by_email_opt
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> EmailAddress.t
   -> Service.User.t option Lwt.t
 
 val create_session
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> EmailAddress.t
   -> password:string
   -> (Service.User.t, [ `Does_not_exist | `Incorrect_password ]) Lwt_result.t
@@ -282,8 +282,8 @@ module FailedLoginAttempt : sig
     -> t
 
   module Repo : sig
-    val find_opt : Pool_database.Label.t -> EmailAddress.t -> t option Lwt.t
-    val insert : Pool_database.Label.t -> t -> unit Lwt.t
-    val delete : Pool_database.Label.t -> t -> unit Lwt.t
+    val find_opt : Database.Label.t -> EmailAddress.t -> t option Lwt.t
+    val insert : Database.Label.t -> t -> unit Lwt.t
+    val delete : Database.Label.t -> t -> unit Lwt.t
   end
 end

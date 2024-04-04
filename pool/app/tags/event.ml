@@ -11,7 +11,7 @@ type event =
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
-  let ctx = Pool_database.to_ctx pool in
+  let ctx = Database.to_ctx pool in
   function
   | Created tag ->
     let%lwt (_ : (unit, Pool_message.Error.t) result) =

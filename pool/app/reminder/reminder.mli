@@ -11,7 +11,7 @@ module Service : sig
 end
 
 val prepare_messages
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_tenant.t
   -> Pool_common.Language.t list
   -> Experiment.t

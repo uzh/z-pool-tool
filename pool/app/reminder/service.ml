@@ -125,7 +125,7 @@ let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
   | Error err ->
     Logs.err ~src (fun m ->
       m
-        ~tags:Pool_database.(Logger.Tags.create root)
+        ~tags:Database.(Logger.Tags.create root)
         "Serialized message string was NULL, can not deserialize message. \
          Please fix the string manually and reset the job instance. Error: %s"
         Pool_common.(Utils.error_to_string Language.En err))
@@ -155,8 +155,7 @@ let start_handler () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s 60 in
   let periodic_fcn () =
-    Logs.debug ~src (fun m ->
-      m ~tags:Pool_database.(Logger.Tags.create root) "Run");
+    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
     run ()
   in
   create

@@ -1,6 +1,6 @@
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 module RepoEntity = Repo_entity
-module Database = Pool_database
+module Database = Database
 open Entity
 
 let select_sql =
@@ -57,7 +57,7 @@ let insert_request =
   |> RepoEntity.t ->. Caqti_type.unit
 ;;
 
-let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
+let insert pool = Database.exec pool insert_request
 
 let update_request =
   let open Caqti_request.Infix in
@@ -75,9 +75,7 @@ let update_request =
   |> RepoEntity.t ->. Caqti_type.unit
 ;;
 
-let update pool t =
-  Utils.Database.exec (Database.Label.value pool) update_request t
-;;
+let update pool t = Database.exec pool update_request t
 
 let find_all_default_request =
   let open Caqti_request.Infix in
@@ -91,11 +89,7 @@ let find_all_default_request =
   |> Caqti_type.unit ->* RepoEntity.t
 ;;
 
-let all_default pool =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    find_all_default_request
-;;
+let all_default pool = Database.collect pool find_all_default_request
 
 let find_all_of_entity_by_label_request =
   let open Caqti_request.Infix in
@@ -110,8 +104,8 @@ let find_all_of_entity_by_label_request =
 ;;
 
 let find_all_of_entity_by_label pool entity_uuid label =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
+  Database.collect
+    pool
     find_all_of_entity_by_label_request
     (Pool_common.Id.value entity_uuid, Label.show label)
 ;;
@@ -133,8 +127,8 @@ let find_default_by_label_and_language_request =
 ;;
 
 let find_default_by_label_and_language pool language label =
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
+  Database.find_opt
+    pool
     find_default_by_label_and_language_request
     (Entity.Label.show label, Pool_common.Language.show language)
 ;;
@@ -154,10 +148,7 @@ let find_default_by_label_request =
 ;;
 
 let find_default_by_label pool label =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    find_default_by_label_request
-    (Entity.Label.show label)
+  Database.collect pool find_default_by_label_request (Entity.Label.show label)
 ;;
 
 let find_by_label_and_language_to_send pool ?entity_uuids label language =
@@ -219,7 +210,7 @@ let find_by_label_and_language_to_send pool ?entity_uuids label language =
   let sql = Format.asprintf "%s\n%s" select_sql where in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let request = sql |> pt ->! RepoEntity.t in
-  Utils.Database.find (pool |> Database.Label.value) request pv
+  Database.find pool request pv
 ;;
 
 (* The template are prioritised according to the entity_uuids list, from left to
@@ -269,10 +260,7 @@ let find_request =
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_request
-    (Pool_common.Id.value id)
+  Database.find_opt pool find_request (Pool_common.Id.value id)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.MessageTemplate)
 ;;
 
@@ -293,6 +281,4 @@ let delete_request =
   |> RepoEntity.Id.t ->. Caqti_type.unit
 ;;
 
-let delete pool id =
-  Utils.Database.exec (Pool_database.Label.value pool) delete_request id
-;;
+let delete pool id = Database.exec pool delete_request id

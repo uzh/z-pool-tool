@@ -1,5 +1,5 @@
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Database = Database
+module Dynparam = Database.Dynparam
 
 let get_field_type m = m.Repo_entity.Public.field_type
 let id m = m.Repo_entity.Public.id
@@ -115,8 +115,8 @@ module Sql = struct
 
   let find_all_by_model model ~required ~is_admin pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.collect
-      (Database.Label.value pool)
+    Database.collect
+      pool
       (find_all_by_model_request required is_admin)
       (Pool_common.Id.value id, Entity.Model.show model)
     >|> to_grouped_public is_admin pool model
@@ -141,8 +141,8 @@ module Sql = struct
 
   let find_unanswered_required_by_model model ~is_admin pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.collect
-      (Database.Label.value pool)
+    Database.collect
+      pool
       (find_unanswered_required_by_model_request is_admin)
       (Pool_common.Id.value id, Entity.Model.show model)
     >|> to_grouped_public is_admin pool model
@@ -150,8 +150,8 @@ module Sql = struct
 
   let find_unanswered_ungrouped_required_by_model model ~is_admin pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.collect
-      (Database.Label.value pool)
+    Database.collect
+      pool
       (find_unanswered_required_by_model_request is_admin)
       (Pool_common.Id.value id, Entity.Model.show model)
     >|> to_ungrouped_entities pool is_admin
@@ -198,7 +198,7 @@ module Sql = struct
         find_multiple_by_contact_request is_admin ids
         |> pt ->* Repo_entity.Public.t
       in
-      Utils.Database.collect (pool |> Database.Label.value) request pv
+      Database.collect pool request pv
       >|> fun fields ->
       let%lwt options = get_options_of_multiple pool fields in
       fields
@@ -259,7 +259,7 @@ module Sql = struct
           find_by_contacts_and_fields_request contact_ids field_ids
           |> pt ->* Repo_entity.Public.t
         in
-        Utils.Database.collect (pool |> Database.Label.value) request pv
+        Database.collect pool request pv
         >|> fun fields ->
         let%lwt options = get_options_of_multiple pool fields in
         fields
@@ -282,8 +282,8 @@ module Sql = struct
 
   let find_by_contact ?(is_admin = false) pool contact_id field_id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.collect
-      (Database.Label.value pool)
+    Database.collect
+      pool
       (find_by_contact_request is_admin)
       ( Pool_common.Id.value contact_id
       , Entity.Model.(show Contact)
@@ -325,8 +325,8 @@ module Sql = struct
 
   let all_answered required pool contact_id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find
-      (Database.Label.value pool)
+    Database.find
+      pool
       (all_answered_request required)
       Entity.(Pool_common.Id.value contact_id, Model.Contact, FieldType.Boolean)
     ||> CCInt.equal 0
@@ -349,8 +349,8 @@ module Sql = struct
 
   let all_prompted_on_registration pool =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.collect
-      (Database.Label.value pool)
+    Database.collect
+      pool
       all_prompted_on_registration_request
       Entity.Model.(show Contact)
     >|> to_ungrouped_entities pool false

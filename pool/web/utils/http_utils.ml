@@ -63,7 +63,7 @@ let intended_of_request ({ Sihl.Web.Request.target; _ } as req) =
 ;;
 
 let user_from_session db_pool req : Sihl_user.t option Lwt.t =
-  let ctx = Pool_database.to_ctx db_pool in
+  let ctx = Database.to_ctx db_pool in
   Service.User.Web.user_from_session ~ctx req
 ;;
 
@@ -233,7 +233,7 @@ let htmx_urlencoded_list key req =
 (* TODO[timhub]: hide information, at least on public site *)
 let validate_email_existance pool email =
   let open Utils.Lwt_result.Infix in
-  Service.User.find_by_email_opt ~ctx:(Pool_database.to_ctx pool) email
+  Service.User.find_by_email_opt ~ctx:(Database.to_ctx pool) email
   ||> function
   | None -> Ok ()
   | Some _ -> Error Pool_message.Error.EmailAlreadyInUse

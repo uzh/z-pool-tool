@@ -3,8 +3,8 @@ module Assets = Seed_assets
 module Root = struct
   let create () =
     let%lwt () = Seed_tenant.create () in
-    let%lwt () = Seed_guard.create Pool_database.root in
-    let%lwt () = Seed_smtp.create Pool_database.root in
+    let%lwt () = Seed_guard.create Database.root in
+    let%lwt () = Seed_smtp.create Database.root in
     Lwt.return_unit
   ;;
 end

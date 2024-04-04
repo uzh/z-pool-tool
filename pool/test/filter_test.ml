@@ -575,7 +575,7 @@ let filter_by_email _ () =
 ;;
 
 let filter_exclude_inactive _ () =
-  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
+  let ctx = Database.to_ctx Test_utils.Data.database_label in
   let%lwt contact = TestContacts.get_contact 9 in
   let%lwt experiment = Repo.first_experiment () in
   let filter =

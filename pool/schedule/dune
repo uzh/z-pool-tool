@@ -1,6 +1,6 @@
 (library
  (name schedule)
- (libraries database pool_database pool_tenant containers service sihl)
+ (libraries containers pool_database pool_tenant service sihl)
  (preprocess
   (pps
    lwt_ppx

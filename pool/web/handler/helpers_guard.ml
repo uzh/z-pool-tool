@@ -51,7 +51,7 @@ let target_model_for_actor_role
   =
   let find_target_model =
     CCOption.map_or ~default:Lwt.return_none (fun uuid ->
-      Guard.Persistence.Target.find_model ~ctx:(Pool_database.to_ctx pool) uuid
+      Guard.Persistence.Target.find_model ~ctx:(Database.to_ctx pool) uuid
       ||> CCResult.to_opt)
   in
   let%lwt target_model = find_target_model target_uuid in

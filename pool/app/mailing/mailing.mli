@@ -178,30 +178,23 @@ val created : t * Experiment.Id.t -> event
 val updated : update * t -> event
 val deleted : t -> event
 val stopped : t -> event
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_with_detail
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
   -> (t * InvitationCount.t, Pool_message.Error.t) Lwt_result.t
 
-val find_by_experiment
-  :  Pool_database.Label.t
-  -> Experiment.Id.t
-  -> t list Lwt.t
+val find_by_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
 
 val find_by_experiment_with_count
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Query.t option
   -> Experiment.Id.t
   -> ((t * InvitationCount.t) list * Query.t) Lwt.t
 
-val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
+val find_overlaps : Database.Label.t -> t -> t list Lwt.t
 
 module Status : sig
   module ToHandle : sig
@@ -227,7 +220,7 @@ module Status : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val find_current : Pool_database.Label.t -> Ptime.span -> t list Lwt.t
+  val find_current : Database.Label.t -> Ptime.span -> t list Lwt.t
 end
 
 module Repo : sig

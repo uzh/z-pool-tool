@@ -1,10 +1,10 @@
 open Entity
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Database = Database
+module Dynparam = Database.Dynparam
 
 let update_sihl_user pool ?firstname ?lastname contact =
   let open CCOption in
-  let ctx = Pool_database.to_ctx pool in
+  let ctx = Database.to_ctx pool in
   let given_name = firstname <+> contact.Contact.user.Sihl_user.given_name in
   let name = lastname <+> contact.Contact.user.Sihl_user.name in
   Service.User.update ~ctx ?given_name ?name contact.Contact.user
@@ -96,10 +96,7 @@ let clear_answer_request is_admin =
 ;;
 
 let clear_answer pool ~is_admin ~field_id ~entity_uuid () =
-  Utils.Database.exec
-    (Database.Label.value pool)
-    (clear_answer_request is_admin)
-    (field_id, entity_uuid)
+  Database.exec pool (clear_answer_request is_admin) (field_id, entity_uuid)
 ;;
 
 let map_or ~clear fnc = function
@@ -128,7 +125,7 @@ let upsert_answer pool is_admin entity_uuid t =
       if is_admin then upsert_admin_answer_request else upsert_answer_request
     in
     Repo_entity_answer.Write.of_entity id field_id entity_uuid value version
-    |> Utils.Database.exec (Database.Label.value pool) request
+    |> Database.exec pool request
   in
   match t with
   | Boolean (_, answer) ->
@@ -178,7 +175,7 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
     let open Caqti_request.Infix in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let update_request = sql |> update_sql |> pt ->. Caqti_type.unit in
-    Utils.Database.exec (pool |> Pool_database.Label.value) update_request pv
+    Database.exec pool update_request pv
   in
   let open PartialUpdate in
   match field with

@@ -1,5 +1,4 @@
 module Countries = Countries
-module Database = Database
 module LanguageCodes = Language_codes
 module PhoneCodes = Phone_codes
 module Json = Json
@@ -45,6 +44,7 @@ end =
 module Crypto = Crypto
 module Ptime = Utils_ptime
 
+let flat_unit (_ : unit list) = ()
 let todo _ = failwith "todo"
 let equal_key (a, _) (b, _) = CCString.equal a b
 let ppx_printer m fmt _ = Format.pp_print_string fmt m

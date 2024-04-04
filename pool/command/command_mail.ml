@@ -15,14 +15,12 @@ Example: test.mail admin@mail.com contact@mail.com
     ~help
     (function
     | [ sender; recipient ] ->
-      let%lwt (_ : Pool_database.Label.t list) =
-        Command_utils.setup_databases ()
-      in
+      let%lwt (_ : Database.Label.t list) = Command_utils.setup_databases () in
       let message = "Hi! \n\n This is a test message." in
       let subject = "Test subject" in
       let email = Sihl_email.create ~sender ~recipient ~subject message in
       let job = Email.create_job email in
-      let%lwt () = Email.Service.dispatch Pool_database.root job in
+      let%lwt () = Email.Service.dispatch Database.root job in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
 ;;

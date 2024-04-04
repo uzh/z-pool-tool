@@ -3,7 +3,7 @@ include Entity
 module Guard = Entity_guard
 
 let src = Logs.Src.create "schedule.service"
-let tags = Pool_database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create root)
 
 module Registered = struct
   module ScheduleMap = CCMap.Make (Label)
@@ -143,7 +143,7 @@ let stop = Registered.stop_all_active
 let lifecycle =
   Sihl.Container.create_lifecycle
     "pool schedule"
-    ~dependencies:(fun () -> [ Database.lifecycle ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
     ~stop
 ;;

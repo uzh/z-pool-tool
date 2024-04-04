@@ -51,35 +51,26 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-val find : Pool_database.Label.t -> Pool_common.Id.t -> t Lwt.t
-
-val find_with_default_content
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> t Lwt.t
-
-val find_by_key
-  :  Pool_database.Label.t
-  -> Key.t
-  -> Pool_common.Language.t
-  -> t Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
+val find : Database.Label.t -> Pool_common.Id.t -> t Lwt.t
+val find_with_default_content : Database.Label.t -> Pool_common.Id.t -> t Lwt.t
+val find_by_key : Database.Label.t -> Key.t -> Pool_common.Language.t -> t Lwt.t
 
 val find_by_key_opt
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Key.t
   -> Pool_common.Language.t
   -> t option Lwt.t
 
-val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
-val terms_and_conditions_last_updated : Pool_database.Label.t -> Ptime.t Lwt.t
+val find_all : Database.Label.t -> unit -> t list Lwt.t
+val terms_and_conditions_last_updated : Database.Label.t -> Ptime.t Lwt.t
 
 module I18nPageCache : sig
   val clear : unit -> unit
 end
 
 val i18n_is_set
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Language.t
   -> Key.t
   -> bool Lwt.t

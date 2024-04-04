@@ -99,7 +99,7 @@ let sign_up_create req =
        in
        let%lwt existing_user =
          Service.User.find_by_email_opt
-           ~ctx:(Pool_database.to_ctx database_label)
+           ~ctx:(Database.to_ctx database_label)
            (Pool_user.EmailAddress.value email_address)
        in
        let* events =
@@ -179,7 +179,7 @@ let email_verification req =
        |> CCOption.to_result (Error.NotFound Field.Token)
        |> Lwt_result.lift
      in
-     let ctx = Pool_database.to_ctx database_label in
+     let ctx = Database.to_ctx database_label in
      let* email =
        Service.Token.read
          ~ctx

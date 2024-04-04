@@ -4,7 +4,7 @@
   conformist
   guard
   pool_common
-  pool_database
+  database
   pool_user
   settings
   sihl

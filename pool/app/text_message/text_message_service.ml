@@ -10,14 +10,14 @@ type message =
   | EmailJob of Email.job
 
 let src = Logs.Src.create "pool_tenant.service.text_message"
-let tags database_label = Pool_database.(Logger.Tags.create database_label)
+let tags database_label = Database.(Logger.Tags.create database_label)
 let start () = Lwt.return_unit
 let stop () = Lwt.return_unit
 
 let lifecycle =
   Sihl.Container.create_lifecycle
     "text_messages"
-    ~dependencies:(fun () -> [ Database.lifecycle ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
     ~stop
 ;;
@@ -164,7 +164,7 @@ let handle ?ctx { message; _ } =
     let open CCOption in
     ctx
     >>= CCList.assoc_opt ~eq:( = ) "pool"
-    >|= Pool_database.Label.create %> Pool_common.Utils.get_or_failwith
+    >|= Database.Label.create %> Pool_common.Utils.get_or_failwith
     |> get_exn_or "Invalid context passed!"
   in
   let%lwt api_key = get_api_key database_label in
@@ -267,11 +267,11 @@ let callback database_label (job_instance : Sihl_queue.instance) =
 ;;
 
 let send database_label (job : Entity.job) =
-  let ctx = Pool_database.to_ctx database_label in
+  let ctx = Database.to_ctx database_label in
   let callback = callback database_label in
   Logs.debug ~src (fun m ->
     m
-      ~tags:(Pool_database.Logger.Tags.create database_label)
+      ~tags:(Database.Logger.Tags.create database_label)
       "Dispatch text message to %s"
       (Pool_user.CellPhone.value job.message.recipient));
   intercept_prepare database_label job

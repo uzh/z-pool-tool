@@ -37,17 +37,17 @@ val register
   -> Sihl.Container.Service.t
 
 val find
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> (Sihl_queue.instance, Pool_message.Error.t) Lwt_result.t
 
 val find_by
   :  ?query:Query.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> (Sihl_queue.instance list * Query.t) Lwt.t
 
 val count_workable
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> (int, Pool_message.Error.t) Lwt_result.t
 
 val is_pending : Sihl_queue.instance -> bool
@@ -92,7 +92,7 @@ module History : sig
     -> t
 
   val create_from_queue_instance
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> create
     -> Sihl_queue.instance
     -> unit Lwt.t
@@ -105,12 +105,12 @@ module History : sig
 
   val query_by_entity
     :  ?query:Query.t
-    -> Pool_database.Label.t
+    -> Database.Label.t
     -> Pool_common.Id.t
     -> (t list * Query.t) Lwt.t
 
   val find_related
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Sihl_queue.instance
     -> [< `contact | `experiment ]
     -> Pool_common.Id.t option Lwt.t

@@ -30,10 +30,11 @@ module Data = struct
   let database_label = "econ-test"
 
   let database =
-    let open Pool_database in
-    let label = Label.create database_label |> fail_with in
-    let url = Pool_database.Url.create database_url |> fail_with in
-    create label url |> fail_with
+    let open Database in
+    let open CCResult in
+    both (Label.create database_label) (Url.create database_url)
+    >|= CCFun.uncurry create
+    |> fail_with
   ;;
 
   let styles = Asset.styles |> Pool_tenant.Styles.Write.create |> fail_with
@@ -175,7 +176,7 @@ module Data = struct
     let* title = title |> Title.create in
     let* description = description |> Description.create >|= CCOption.return in
     let* url = url |> Url.create in
-    let* database_label = database_label |> Pool_database.Label.create in
+    let* database_label = database_label |> Database.Label.create in
     let styles =
       let open Pool_common.File in
       let* name = Name.create "styles.css" in
@@ -356,7 +357,7 @@ let[@warning "-4"] create_tenant () =
           Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
       ; Pool_event.PoolTenant
           (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
-      ; Pool_event.Database (Database.Migrated Pool_database.{ label; _ })
+      ; Pool_event.Database (Pool_database.Migrated database)
       ; Pool_event.SystemEvent System_event.(Created db_added_event)
       ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
       ] ->
@@ -368,7 +369,7 @@ let[@warning "-4"] create_tenant () =
       , updated_at
       , tenant_logo |> read_ids
       , partner_logo |> read_ids
-      , label
+      , Database.label database
       , db_added_event.System_event.id
       , guardian_cache_cleared.System_event.id )
     | _ -> failwith "Tenant create events don't match in test."
@@ -376,8 +377,10 @@ let[@warning "-4"] create_tenant () =
   let expected_root_events, expected_database_label =
     let open CCResult in
     let database =
-      let url = database_url |> Pool_tenant.Database.Url.create |> fail_with in
-      Pool_database.{ url; label = database_label }
+      database_url
+      |> Pool_tenant.Database.Url.create
+      |> fail_with
+      |> Database.create database_label
     in
     let create =
       let* title = title |> Pool_tenant.Title.create in
@@ -420,7 +423,7 @@ let[@warning "-4"] create_tenant () =
     let expected_root_events =
       [ Pool_tenant.Created (create |> fail_with) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
-      ; Database.Migrated database |> Pool_event.database
+      ; Pool_database.Migrated database |> Pool_event.database
       ; System_event.(
           Job.TenantDatabaseAdded database_label
           |> create ~id:db_added_event
@@ -433,22 +436,21 @@ let[@warning "-4"] create_tenant () =
         |> Pool_event.system_event
       ]
     in
-    Ok expected_root_events, database.Pool_database.label
+    Ok expected_root_events, database_label
   in
+  let open Alcotest in
   let () =
-    Alcotest.(
-      check
-        (result (list Test_utils.event) Test_utils.error)
-        "succeeds"
-        expected_root_events
-        root_events)
-  in
-  Alcotest.(
     check
-      Test_utils.database_label
+      (result (list Test_utils.event) Test_utils.error)
       "succeeds"
-      expected_database_label
-      database_label)
+      expected_root_events
+      root_events
+  in
+  check
+    Test_utils.database_label
+    "succeeds"
+    expected_database_label
+    database_label
 ;;
 
 let[@warning "-4"] update_tenant_details () =
@@ -521,23 +523,24 @@ let update_tenant_database () =
           ; DatabaseLabel |> show, [ database_label ]
           ]
         |> decode_database
-        >>= (fun { database_url; database_label } ->
-              Pool_database.create database_label database_url)
+        >|= (fun { database_url; database_label } ->
+              Database.create database_label database_url)
         |> fail_with
       in
       UpdateDatabase.handle ~system_event_id tenant database
     in
     let expected =
-      let open Pool_database in
+      let open Database in
       let open CCResult in
-      let* url = database_url |> Url.create in
-      let* label = database_label |> Label.create in
-      let database = { url; label } in
+      let* database =
+        both (Label.create database_label) (Url.create database_url)
+        >|= CCFun.uncurry create
+      in
       Ok
         [ Pool_tenant.DatabaseEdited (tenant, database)
           |> Pool_event.pool_tenant
         ; System_event.(
-            Job.TenantDatabaseUpdated database.Pool_database.label
+            Job.TenantDatabaseUpdated (label database)
             |> create ~id:system_event_id
             |> created)
           |> Pool_event.system_event

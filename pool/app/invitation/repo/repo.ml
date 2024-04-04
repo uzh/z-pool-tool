@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 module Sql = struct
   let sql_select_columns =
@@ -63,7 +63,7 @@ module Sql = struct
           (CCString.concat ",\n" value_insert)
         |> (pt ->. Caqti_type.unit) ~oneshot:true
       in
-      Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
+      Database.exec pool prepare_request pv
     ;;
   end
 
@@ -90,10 +90,7 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_request
-      (Pool_common.Id.value id)
+    Database.find_opt pool find_request (Pool_common.Id.value id)
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
@@ -127,10 +124,7 @@ module Sql = struct
   ;;
 
   let find_by_contact pool id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_by_contact_request
-      (Pool_common.Id.value id)
+    Database.collect pool find_by_contact_request (Pool_common.Id.value id)
   ;;
 
   let find_binary_experiment_id_sql =
@@ -162,8 +156,8 @@ module Sql = struct
 
   let find_experiment_id_of_invitation pool invitation =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
+    Database.find_opt
+      pool
       find_experiment_id_of_invitation_request
       (invitation.Entity.id |> Pool_common.Id.value)
     ||> CCOption.map Experiment.Id.of_string
@@ -183,12 +177,7 @@ module Sql = struct
   ;;
 
   let resend ?mailing_id pool invitation =
-    let%lwt () =
-      Utils.Database.exec
-        (Pool_database.Label.value pool)
-        resend_request
-        invitation
-    in
+    let%lwt () = Database.exec pool resend_request invitation in
     CCOption.map_or
       ~default:Lwt.return_unit
       (MailingInvitationMapping.bulk_insert pool [ invitation ])
@@ -240,7 +229,7 @@ module Sql = struct
       |> find_multiple_by_experiment_and_contacts_request
       |> pt ->* Pool_common.Repo.Id.t
     in
-    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+    Database.collect pool request pv
   ;;
 
   let bulk_insert ?mailing_id pool contacts experiment_id =
@@ -294,9 +283,7 @@ module Sql = struct
         (CCString.concat ",\n" value_insert)
       |> (pt ->. Caqti_type.unit) ~oneshot:true
     in
-    let%lwt () =
-      Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
-    in
+    let%lwt () = Database.exec pool prepare_request pv in
     let%lwt () =
       CCOption.map_or
         ~default:Lwt.return_unit
@@ -319,8 +306,8 @@ module Sql = struct
   ;;
 
   let find_by_contact_and_experiment_opt pool experiment_id contact_id =
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
+    Database.find_opt
+      pool
       find_by_contact_and_experiment_opt_request
       (Experiment.Id.value experiment_id, Contact.Id.value contact_id)
   ;;

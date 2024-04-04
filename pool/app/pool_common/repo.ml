@@ -1,13 +1,7 @@
 open CCFun
 open Entity
 
-let make_caqti_type caqti_type create value =
-  let encode = value %> CCResult.return in
-  let decode =
-    create %> CCResult.map_err (Utils_to_string.error_to_string Language.En)
-  in
-  Caqti_type.(custom ~encode ~decode caqti_type)
-;;
+let make_caqti_type = Database.Repo.make_caqti_type
 
 module Model = struct
   module SelectorType (Core : Pool_model.Base.SelectorCoreTypeSig) = struct

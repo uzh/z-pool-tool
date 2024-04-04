@@ -5,7 +5,6 @@
   contact
   email
   pool_common
-  pool_database
   pool_tenant
   pool_user
   queue

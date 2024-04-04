@@ -29,7 +29,7 @@ let create ?contact_data db_pool =
   let open Contact in
   let data = CCOption.value ~default:data contact_data in
   let open Utils.Lwt_result.Infix in
-  let ctx = Pool_database.to_ctx db_pool in
+  let ctx = Database.to_ctx db_pool in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"Password1!"
@@ -61,9 +61,9 @@ let create ?contact_data db_pool =
         | Some { Sihl_user.id; _ } ->
           Logs.debug ~src (fun m ->
             m
-              ~tags:(Pool_database.Logger.Tags.create db_pool)
+              ~tags:(Database.Logger.Tags.create db_pool)
               "Contact already exists (%s): %s"
-              (db_pool |> Pool_database.Label.value)
+              (db_pool |> Database.Label.value)
               id);
           contacts)
       []

@@ -41,8 +41,5 @@ let find_by_contact_request =
 ;;
 
 let find_by_contact pool contact_id =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    find_by_contact_request
-    (Contact.Id.value contact_id)
+  Database.collect pool find_by_contact_request (Contact.Id.value contact_id)
 ;;

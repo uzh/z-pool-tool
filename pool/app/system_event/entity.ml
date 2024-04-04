@@ -12,13 +12,11 @@ module Job = struct
     [@printer Utils.ppx_printer "i18npageupdated"]
     | SmtpAccountUpdated [@name "smtpaccountupdated"]
     [@printer Utils.ppx_printer "smtpaccountupdated"]
-    | TenantDatabaseAdded of Pool_database.Label.t [@name "tenantdatabaseadded"]
+    | TenantDatabaseAdded of Database.Label.t [@name "tenantdatabaseadded"]
     [@printer Utils.ppx_printer "tenantdatabaseadded"]
-    | TenantDatabaseUpdated of Pool_database.Label.t
-    [@name "tenantdatabaseupdated"]
+    | TenantDatabaseUpdated of Database.Label.t [@name "tenantdatabaseupdated"]
     [@printer Utils.ppx_printer "tenantdatabaseupdated"]
-    | TenantDatabaseDeleted of Pool_database.Label.t
-    [@name "tenantdatabasedeleted"]
+    | TenantDatabaseDeleted of Database.Label.t [@name "tenantdatabasedeleted"]
     [@printer Utils.ppx_printer "tenantdatabasedeleted"]
   [@@deriving eq, show, yojson]
 

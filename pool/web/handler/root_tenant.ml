@@ -4,7 +4,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module File = HttpUtils.File
 module Update = Root_tenant_update
-module Database = Pool_database
+module Database = Database
 
 let src = Logs.Src.create "handler.root.tenant"
 let tenants_path = "/root/tenants"
@@ -40,7 +40,7 @@ let create req =
         let* { database_url; database_label } =
           decode_database urlencoded |> Lwt_result.lift
         in
-        Pool_database.test_and_create database_url database_label
+        Database.test_and_create database_url database_label
       in
       let* files =
         HttpUtils.File.upload_files
@@ -57,7 +57,7 @@ let create req =
       let events = Create.handle ~tags database decoded |> Lwt_result.lift in
       events >|> HttpUtils.File.cleanup_upload Database.root files
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Pool_database.root) in
+    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path
@@ -107,7 +107,7 @@ let create_operator req =
     let tags = Pool_context.Logger.Tags.req req in
     let* tenant_db =
       Pool_tenant.find_full tenant_id
-      >|+ fun { Pool_tenant.Write.database; _ } -> database.Database.label
+      >|+ fun { Pool_tenant.Write.database; _ } -> database |> Database.label
     in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req

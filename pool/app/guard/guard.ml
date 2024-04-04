@@ -218,7 +218,7 @@ let create_where
   model
   =
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logger.Tags.create pool in
+  let tags = Database.Logger.Tags.create pool in
   let log_warning =
     Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags
   in

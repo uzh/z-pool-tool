@@ -5,7 +5,7 @@ type t =
   | Assignment of Assignment.event
   | Contact of Contact.event
   | CustomField of Custom_field.event
-  | Database of Database.event
+  | Database of Pool_database.event
   | Email of Email.event
   | EmailVerification of Email.verification_event
   | Experiment of Experiment.event
@@ -53,7 +53,7 @@ let user_import events = UserImport events
 let waiting_list events = WaitingList events
 
 let handle_event ?(tags = Logs.Tag.empty) pool event =
-  let tags = tags |> Pool_database.Logger.Tags.add pool in
+  let tags = tags |> Database.Logger.Tags.add pool in
   match event with
   | Admin event ->
     let src = Logs.Src.create "admin.events" in
@@ -77,8 +77,8 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
   | Database event ->
     let src = Logs.Src.create "database.events" in
     Logs.info ~src (fun m ->
-      m "Handle event %s" (Database.show_event event) ~tags);
-    Database.handle_event pool event
+      m "Handle event %s" (Pool_database.show_event event) ~tags);
+    Pool_database.handle_event pool event
   | Email event ->
     let src = Logs.Src.create "email.events" in
     Logs.info ~src (fun m -> m "Handle event %s" (Email.show_event event) ~tags);

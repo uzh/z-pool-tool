@@ -1,6 +1,6 @@
 (library
  (name logger)
- (libraries containers sihl utils)
+ (libraries containers database)
  (preprocess
   (pps
    lwt_ppx

@@ -305,7 +305,7 @@ module Resend = struct
       ; last_error = None
       ; last_error_at = None
       ; tag = None
-      ; ctx = database_label |> Pool_database.to_ctx
+      ; ctx = database_label |> Database.to_ctx
       }
   ;;
 

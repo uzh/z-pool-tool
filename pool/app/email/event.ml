@@ -4,7 +4,7 @@ module User = Pool_user
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let deactivate_token pool token =
-  Service.Token.deactivate ~ctx:(Pool_database.to_ctx pool) token
+  Service.Token.deactivate ~ctx:(Database.to_ctx pool) token
 ;;
 
 type verification_event =
@@ -21,7 +21,7 @@ let handle_verification_event pool : verification_event -> unit Lwt.t = function
     let%lwt () = Repo.delete_unverified_by_user pool user_id in
     let%lwt user =
       Service.User.find
-        ~ctx:(Pool_database.to_ctx pool)
+        ~ctx:(Database.to_ctx pool)
         (Pool_common.Id.value user_id)
     in
     let unverified_email = create address user token in
@@ -70,7 +70,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | BulkSent jobs -> Email_service.dispatch_all pool jobs
   | SmtpCreated ({ SmtpAuth.Write.id; _ } as created) ->
     let open Utils.Lwt_result.Infix in
-    let ctx = Pool_database.to_ctx pool in
+    let ctx = Database.to_ctx pool in
     let%lwt () = Repo.Smtp.insert pool created in
     let%lwt () =
       Repo.Smtp.find pool id

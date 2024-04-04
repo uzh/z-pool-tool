@@ -38,7 +38,7 @@ let handle_event pool =
   function
   | Created session ->
     let%lwt () = Repo.insert pool session in
-    Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) session
+    Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx pool) session
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Canceled session ->

@@ -49,8 +49,9 @@ let handle req action =
         |> Lwt_result.lift
     in
     let handle events =
-      let%lwt (_ : unit list) =
+      let%lwt () =
         Lwt_list.map_s (Pool_event.handle_event ~tags database_label) events
+        ||> Utils.flat_unit
       in
       let success_message =
         let open Pool_message.Success in

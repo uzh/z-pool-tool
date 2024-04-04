@@ -6,7 +6,6 @@
   assignment
   contact
   custom_field
-  database
   email
   experiment
   filter
@@ -16,6 +15,7 @@
   mailing
   message_template
   organisational_unit
+  pool_database
   pool_location
   pool_tenant
   pool_user

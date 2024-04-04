@@ -5,7 +5,6 @@
   guard
   i18n
   pool_common
-  pool_database
   ptime
   service
   settings

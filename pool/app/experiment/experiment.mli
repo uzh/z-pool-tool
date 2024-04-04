@@ -226,7 +226,7 @@ type event =
   | ResetInvitations of t
   | Deleted of Id.t
 
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -235,99 +235,91 @@ val updated : t -> event
 val resetinvitations : t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_message.Field.t list
-
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_all
   :  ?query:Query.t
   -> ?actor:Guard.Actor.t
   -> ?permission:Guard.Permission.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> (t list * Query.t) Lwt.t
 
 val find_all_ids_of_contact_id
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.Id.t
   -> Id.t list Lwt.t
 
 val find_public
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
   -> Contact.t
   -> (Public.t, Pool_message.Error.t) result Lwt.t
 
 val find_full_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
   -> Contact.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_of_session
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_of_mailing
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_all_public_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.t
   -> Public.t list Lwt.t
 
 val find_upcoming_to_register
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.t
   -> Public.t list Lwt.t
 
 val find_pending_waitinglists_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.t
   -> Public.t list Lwt.t
 
 val find_past_experiments_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.t
   -> Public.t list Lwt.t
 
-val session_count : Pool_database.Label.t -> Id.t -> int Lwt.t
+val session_count : Database.Label.t -> Id.t -> int Lwt.t
 
 val search
   :  ?conditions:string
-  -> ?dyn:Utils.Database.Dynparam.t
+  -> ?dyn:Database.Dynparam.t
   -> ?exclude:Id.t list
   -> ?joins:string
   -> ?limit:int
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> string
   -> (Id.t * Title.t) list Lwt.t
 
 val search_multiple_by_id
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t list
   -> (Id.t * Title.t) list Lwt.t
 
 val find_to_enroll_directly
   :  ?actor:Guard.Actor.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Contact.t
   -> query:string
   -> DirectEnrollment.t list Lwt.t
 
-val contact_is_enrolled
-  :  Pool_database.Label.t
-  -> Id.t
-  -> Contact.Id.t
-  -> bool Lwt.t
+val contact_is_enrolled : Database.Label.t -> Id.t -> Contact.Id.t -> bool Lwt.t
 
 val find_targets_grantable_by_admin
   :  ?exclude:Id.t list
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Admin.t
   -> Role.Role.t
   -> string
@@ -335,11 +327,11 @@ val find_targets_grantable_by_admin
 
 val query_participation_history_by_contact
   :  ?query:Query.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Contact.t
   -> ((t * bool) list * Query.t) Lwt.t
 
-val invitation_count : Pool_database.Label.t -> Id.t -> int Lwt.t
+val invitation_count : Database.Label.t -> Id.t -> int Lwt.t
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
@@ -353,11 +345,11 @@ val external_data_required_value : t -> bool
 val show_external_data_id_links_value : t -> bool
 
 val smtp_auth
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t
   -> (Email.SmtpAuth.t option, Pool_message.Error.t) Lwt_result.t
 
-val find_contact_person : Pool_database.Label.t -> t -> Admin.t option Lwt.t
+val find_contact_person : Database.Label.t -> t -> Admin.t option Lwt.t
 
 module Repo : sig
   val sql_select_columns : string list
@@ -429,7 +421,7 @@ module Statistics : sig
       }
 
     val create
-      :  Pool_database.Label.t
+      :  Database.Label.t
       -> t
       -> (statistics, Pool_message.Error.t) Lwt_result.t
   end
@@ -495,7 +487,7 @@ module Statistics : sig
   val participation_count : statistics -> ParticipationCount.t
 
   val create
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> t
     -> (statistics, Pool_message.Error.t) Lwt_result.t
 end

@@ -1,6 +1,6 @@
 open Sexplib.Conv
 module Common = Pool_common
-module Database = Pool_database
+module Database = Database
 module Id = Common.Id
 module CreatedAt = Common.CreatedAt
 module UpdatedAt = Common.UpdatedAt

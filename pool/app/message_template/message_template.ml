@@ -815,14 +815,12 @@ module PasswordReset = struct
     let open Pool_common in
     let* reset_token =
       Service.PasswordReset.create_reset_token
-        ~ctx:(Pool_database.to_ctx pool)
+        ~ctx:(Database.to_ctx pool)
         (Pool_user.EmailAddress.value email)
       ||> function
       | None ->
         Logs.err ~src (fun m ->
-          m
-            ~tags:(Pool_database.Logger.Tags.create pool)
-            "Reset token not found");
+          m ~tags:(Database.Logger.Tags.create pool) "Reset token not found");
         Error Pool_message.Error.PasswordResetFailMessage
       | Some token -> Ok token
     in

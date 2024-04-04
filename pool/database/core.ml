@@ -1,25 +1,6 @@
 open CCFun.Infix
 
 let src = Logs.Src.create "database"
-let flat_unit (_ : unit list) = ()
-
-module Logger = struct
-  module Tags = struct
-    let add_label : string Logs.Tag.def =
-      Logs.Tag.def "database_label" ~doc:"Database Label" CCString.pp
-    ;;
-
-    let create database = Logs.Tag.(empty |> add add_label database)
-  end
-end
-
-module Dynparam = struct
-  type t = Pack : 'a Caqti_type.t * 'a -> t
-
-  let empty = Pack (Caqti_type.unit, ())
-  let prefix t x (Pack (t', x')) = Pack (Caqti_type.t2 t t', (x, x'))
-  let add t x (Pack (t', x')) = Pack (Caqti_type.t2 t' t, (x', x))
-end
 
 let raise_caqti_error ?tags =
   let open Caqti_error in
@@ -31,9 +12,22 @@ let raise_caqti_error ?tags =
   | Error (#t as err) -> raise (Exn err)
 ;;
 
-module Make (Database : Database_pools_sig.Sig) = struct
-  let to_ctx label = [ "pool", label ]
+module Make (Database : Pools_sig.Sig) = struct
+  type status = Database.status
+
+  let to_ctx label = [ "pool", Entity.Label.value label ]
   let create_tag label = Logger.Tags.create label
+
+  let add_pool ?required ?pool_size label url =
+    Database.add_pool
+      ?required
+      ?pool_size
+      (Entity.Label.value label)
+      (Entity.Url.value url)
+  ;;
+
+  let drop_pool = Entity.Label.value %> Database.drop_pool
+  let fetch_pool label = Database.fetch_pool ~ctx:(to_ctx label)
 
   let collect label request =
     Database.collect ~ctx:(to_ctx label) request
@@ -55,6 +49,11 @@ module Make (Database : Database_pools_sig.Sig) = struct
     %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
   ;;
 
+  let populate label table columns request =
+    Database.populate ~ctx:(to_ctx label) table columns request
+    %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
+  ;;
+
   let transaction label =
     Database.transaction ~ctx:(to_ctx label)
     %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
@@ -68,7 +67,7 @@ module Make (Database : Database_pools_sig.Sig) = struct
       let exec_each =
         Lwt_list.map_s (fun request -> request connection)
         %> Lwt.map CCResult.flatten_l
-        %> Lwt_result.map flat_unit
+        %> Lwt_result.map Utils.flat_unit
       in
       let* () = exec_each setup in
       let* result = fnc connection in
@@ -80,8 +79,9 @@ module Make (Database : Database_pools_sig.Sig) = struct
 
   let exec_as_transaction database_label commands =
     let fnc connection =
-      let exec_each = Lwt_list.iter_s (fun request -> request connection) in
-      exec_each commands |> Lwt_result.return
+      Lwt_list.map_s (fun request -> request connection) commands
+      |> Lwt.map CCResult.flatten_l
+      |> Lwt_result.map Utils.flat_unit
     in
     transaction database_label fnc
   ;;
@@ -94,7 +94,7 @@ module Make (Database : Database_pools_sig.Sig) = struct
       let dyn, sql_strings =
         CCList.fold_left
           (fun (dyn, sql_strings) id ->
-            ( dyn |> Dynparam.add Caqti_type.string (id |> decode_id)
+            ( dyn |> Entity.Dynparam.add Caqti_type.string (id |> decode_id)
             , sql :: sql_strings ))
           (dyn, [])
           exclude
@@ -113,17 +113,15 @@ module Make (Database : Database_pools_sig.Sig) = struct
 
   let with_disabled_fk_check database_label f =
     let open Lwt_result.Syntax in
-    Database.query
-      ~ctx:[ "pool", database_label ]
-      (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let* () = Connection.exec set_fk_check_request false in
-        (f connection)
-          (* Use PPX for backtrace *)
-          [%lwt.finally
-            Connection.exec set_fk_check_request true
-            |> Lwt_result.map_error Caqti_error.show
-            |> Lwt.map CCResult.get_or_failwith])
+    Database.query ~ctx:(to_ctx database_label) (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      let* () = Connection.exec set_fk_check_request false in
+      (f connection)
+        (* Use PPX for backtrace *)
+        [%lwt.finally
+          Connection.exec set_fk_check_request true
+          |> Lwt_result.map_error Caqti_error.show
+          |> Lwt.map CCResult.get_or_failwith])
   ;;
 
   let message_templates_cleanup_requeset =
@@ -176,6 +174,12 @@ module Make (Database : Database_pools_sig.Sig) = struct
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Lwt_list.map_s (fun request -> Connection.exec request ()) clean_reqs
       |> Lwt.map CCResult.flatten_l
-      |> Lwt_result.map flat_unit)
+      |> Lwt_result.map Utils.flat_unit)
+  ;;
+
+  let clean_all_exn database_label =
+    let open Utils.Lwt_result.Infix in
+    clean_all database_label
+    ||> Pools.get_or_raise ~ctx:(to_ctx database_label) ()
   ;;
 end

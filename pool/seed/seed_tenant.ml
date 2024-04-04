@@ -79,10 +79,9 @@ let create () =
             let tenant =
               let database =
                 let open Pool_tenant.Database in
-                let open CCResult.Infix in
-                let* url = Url.create database_url in
-                let* label = Label.create database_label in
-                create label url
+                let open CCResult in
+                both (Label.create database_label) (Url.create database_url)
+                >|= CCFun.uncurry create
               in
               Pool_tenant.(
                 Write.create
@@ -112,7 +111,7 @@ let create () =
             [ Pool_tenant.Created tenant
             ; Pool_tenant.LogosUploaded logo_mappings
             ]
-            |> Lwt_list.iter_s (Pool_tenant.handle_event Pool_database.root))
+            |> Lwt_list.iter_s (Pool_tenant.handle_event Database.root))
   in
   Lwt.return_unit
 ;;

@@ -105,9 +105,8 @@ let collect_and_count
   ?where
   caqti_type
   =
-  let open Utils.Database in
+  let open Database in
   let open Caqti_request.Infix in
-  let database_label = Pool_database.Label.value database_label in
   let where, dyn =
     CCOption.map_or
       ~default:(None, Dynparam.empty)

@@ -1,5 +1,5 @@
 module Common = Pool_common
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 module Column = struct
   type t = Pool_message.Field.t * string [@@deriving eq, show]

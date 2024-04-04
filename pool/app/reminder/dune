@@ -7,7 +7,6 @@
   sihl
   utils
   pool_common
-  pool_database
   pool_event)
  (preprocess
   (pps

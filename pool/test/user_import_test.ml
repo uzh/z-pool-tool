@@ -169,10 +169,7 @@ module Repo = struct
         |sql}
       |> Caqti_type.(string ->. unit)
     in
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      request
-      (Contact.Id.value id)
+    Database.exec pool request (Contact.Id.value id)
   ;;
 
   let set_import_timestamp_to_past pool days id =
@@ -188,10 +185,7 @@ module Repo = struct
         |sql}
       |> Caqti_type.(t2 string int ->. unit)
     in
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      request
-      (Contact.Id.value id, days)
+    Database.exec pool request (Contact.Id.value id, days)
   ;;
 
   type testable_import = Contact.t * User_import.t [@@deriving eq, show]

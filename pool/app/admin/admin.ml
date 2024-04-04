@@ -9,7 +9,7 @@ let find_by = Repo.find_by
 
 let find_all_id_with_role ?exclude pool role =
   Guard.Persistence.ActorRole.find_actors_by_role
-    ~ctx:(Pool_database.to_ctx pool)
+    ~ctx:(Database.to_ctx pool)
     ?exclude
     role
   ||> CCList.map CCFun.(Guard.Uuid.Actor.to_string %> Pool_common.Id.of_string)

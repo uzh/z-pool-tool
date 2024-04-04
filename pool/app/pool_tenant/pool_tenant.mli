@@ -1,4 +1,4 @@
-module Database = Pool_database
+module Database = Database
 module Id : module type of Pool_common.Id
 module Title : Pool_model.Base.StringSig
 module Description : Pool_model.Base.StringSig
@@ -187,11 +187,11 @@ val find_all : unit -> t list Lwt.t
 val find_databases : unit -> Database.t list Lwt.t
 
 val find_database_by_label
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> (Database.t, Pool_message.Error.t) Lwt_result.t
 
 val find_gtx_api_key_by_label
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> (GtxApiKey.t, Pool_message.Error.t) result Lwt.t
 
 val create_public_url : Url.t -> string -> string

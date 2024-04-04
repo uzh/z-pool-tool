@@ -1,5 +1,5 @@
-module Dynparam = Utils.Database.Dynparam
-module Database = Pool_database
+module Dynparam = Database.Dynparam
+module Database = Database
 
 let sql_select_columns =
   [ Pool_common.Id.sql_select_fragment ~field:"pool_message_history.entity_uuid"
@@ -42,9 +42,7 @@ let insert_request =
   |> Caqti_type.(Repo_entity.write_caqti_type ->. unit)
 ;;
 
-let insert pool t =
-  Utils.Database.exec (Pool_database.Label.value pool) insert_request t
-;;
+let insert pool t = Database.exec pool insert_request t
 
 let find_by_entity_request =
   let open Caqti_request.Infix in
@@ -80,8 +78,8 @@ let find_related_request entity =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql|
-      SELECT 
-        %s 
+      SELECT
+        %s
       FROM pool_message_history
         %s
       WHERE queue_job_uuid = UNHEX(REPLACE(?, '-', ''))
@@ -92,8 +90,5 @@ let find_related_request entity =
 ;;
 
 let find_related pool { Sihl_queue.id; _ } entity =
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    (find_related_request entity)
-    id
+  Database.find_opt pool (find_related_request entity) id
 ;;

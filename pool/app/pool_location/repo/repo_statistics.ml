@@ -42,12 +42,7 @@ let statistics_requeset =
   |> Caqti_type.(t2 Repo_entity.Id.t int) ->! statistics
 ;;
 
-let statistics year pool id =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    statistics_requeset
-    (id, year)
-;;
+let statistics year pool id = Database.find pool statistics_requeset (id, year)
 
 let find_statistics_starting_year_request =
   let open Caqti_request.Infix in
@@ -64,8 +59,5 @@ let find_statistics_starting_year_request =
 ;;
 
 let find_statistics_starting_year pool =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    find_statistics_starting_year_request
-    ()
+  Database.find pool find_statistics_starting_year_request ()
 ;;

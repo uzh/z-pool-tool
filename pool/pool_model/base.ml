@@ -1,5 +1,42 @@
 open Ppx_yojson_conv_lib.Yojson_conv
 
+module Id = struct
+  open Sexplib.Conv
+
+  type t = string [@@deriving eq, show, sexp_of, yojson]
+
+  let create () = Uuidm.v `V4 |> Uuidm.to_string
+  let of_string m = m
+  let value m = m
+  let to_common m = m
+  let of_common m = m
+  let compare = CCString.compare
+
+  let schema ?(field = Pool_message.Field.Id) () =
+    Pool_conformist.schema_decoder
+      CCFun.(of_string %> CCResult.return)
+      value
+      field
+  ;;
+
+  let sql_select_fragment ~field =
+    [%string
+      {sql|
+        LOWER(CONCAT(
+          SUBSTR(HEX(%{field}), 1, 8), '-',
+          SUBSTR(HEX(%{field}), 9, 4), '-',
+          SUBSTR(HEX(%{field}), 13, 4), '-',
+          SUBSTR(HEX(%{field}), 17, 4), '-',
+          SUBSTR(HEX(%{field}), 21)
+        ))
+    |sql}]
+  ;;
+
+  let sql_value_fragment name =
+    [%string {sql| UNHEX(REPLACE(%{name}, '-', '')) |sql}]
+  ;;
+end
+
 module type IdSig = sig
   type t
 

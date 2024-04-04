@@ -1,6 +1,6 @@
 open Entity
 module Id = Pool_common.Id
-module Database = Pool_database
+module Database = Database
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
@@ -34,7 +34,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created ({ Write.id; _ } as tenant) ->
     let open Utils.Lwt_result.Infix in
     let open Guard in
-    let ctx = Pool_database.to_ctx pool in
+    let ctx = Database.to_ctx pool in
     let%lwt () = Repo.insert Database.root tenant in
     let%lwt () =
       Repo.find pool id

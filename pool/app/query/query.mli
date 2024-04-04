@@ -160,16 +160,16 @@ val from_request
 val empty : unit -> t
 
 val append_query_to_sql
-  :  Utils.Database.Dynparam.t
+  :  Database.Dynparam.t
   -> string option
   -> t option
-  -> Utils.Database.Dynparam.t * string * string option
+  -> Database.Dynparam.t * string * string option
 
 val collect_and_count
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t option
   -> select:(?count:bool -> string -> string)
-  -> ?where:string * Utils.Database.Dynparam.t
+  -> ?where:string * Database.Dynparam.t
   -> 'a Caqti_type.t
   -> ('a list * t) Lwt.t
 

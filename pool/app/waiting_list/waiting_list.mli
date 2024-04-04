@@ -60,27 +60,27 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 
 val find
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
 val user_is_enlisted
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.t
   -> Experiment.Id.t
   -> bool Lwt.t
 
 val find_by_experiment
   :  ?query:Query.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Experiment.Id.t
   -> (t list * Query.t) Lwt.t
 
 val find_by_contact_and_experiment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.t
   -> Experiment.Id.t
   -> t option Lwt.t

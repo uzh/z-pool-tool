@@ -16,7 +16,7 @@ let insert_i18n pool i18n =
   let open Utils.Lwt_result.Infix in
   let%lwt () = Repo.insert pool i18n in
   i18n
-  |> Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool)
+  |> Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx pool)
   ||> Pool_common.Utils.get_or_failwith
   ||> fun (_ : Guard.Target.t) -> ()
 ;;

@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 let sql_select_columns =
   (Entity.Id.sql_select_fragment ~field:"pool_assignments.uuid"
@@ -75,10 +75,7 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_request
-      (Pool_common.Id.value id)
+    Database.find_opt pool find_request (Pool_common.Id.value id)
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Assignment)
   ;;
 
@@ -97,10 +94,7 @@ module Sql = struct
 
   let find_closed pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_closed_request
-      (Pool_common.Id.value id)
+    Database.find_opt pool find_closed_request (Pool_common.Id.value id)
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Assignment)
   ;;
 
@@ -124,8 +118,8 @@ module Sql = struct
   ;;
 
   let find_by_session ?where_condition pool id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
+    Database.collect
+      pool
       (find_by_session_request ?where_condition ())
       (Session.Id.value id)
   ;;
@@ -158,7 +152,7 @@ module Sql = struct
              ids
       in
       let request = find_multiple_request ids |> pt ->* RepoEntity.t in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+      Database.collect pool request pv
   ;;
 
   let query_by_session ?query pool id =
@@ -187,8 +181,8 @@ module Sql = struct
   ;;
 
   let find_deleted_by_session pool id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
+    Database.collect
+      pool
       (find_deleted_by_session_request ())
       (Session.Id.value id)
   ;;
@@ -206,10 +200,7 @@ module Sql = struct
   ;;
 
   let find_by_contact pool id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_by_contact_request
-      (Pool_common.Id.value id)
+    Database.collect pool find_by_contact_request (Pool_common.Id.value id)
   ;;
 
   let find_public_by_experiment_and_contact_opt_request time =
@@ -243,8 +234,8 @@ module Sql = struct
   ;;
 
   let find_public_by_experiment_and_contact_opt time pool experiment_id contact =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
+    Database.collect
+      pool
       (find_public_by_experiment_and_contact_opt_request time)
       ( Experiment.Id.value experiment_id
       , Pool_common.Id.value (Contact.id contact) )
@@ -274,8 +265,8 @@ module Sql = struct
   ;;
 
   let find_by_contact_and_experiment pool experiment_id contact =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
+    Database.collect
+      pool
       find_by_contact_and_experiment_request
       ( Experiment.Id.value experiment_id
       , Pool_common.Id.value (Contact.id contact) )
@@ -300,10 +291,7 @@ module Sql = struct
   ;;
 
   let find_with_follow_ups pool id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_with_follow_ups_request
-      (Entity.Id.value id)
+    Database.collect pool find_with_follow_ups_request (Entity.Id.value id)
   ;;
 
   let find_followups_request =
@@ -322,8 +310,8 @@ module Sql = struct
   ;;
 
   let find_follow_ups pool m =
-    Utils.Database.collect
-      (pool |> Pool_database.Label.value)
+    Database.collect
+      pool
       find_followups_request
       Entity.(Id.value m.id, Contact.id m.contact |> Contact.Id.value)
   ;;
@@ -355,10 +343,7 @@ module Sql = struct
 
   let find_session_id pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_session_id_request
-      id
+    Database.find_opt pool find_session_id_request id
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
@@ -396,9 +381,7 @@ module Sql = struct
     |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -442,12 +425,7 @@ module Sql = struct
               , (m.external_data_id, m.reminder_manually_last_sent_at) ) ) ) ) ))
   ;;
 
-  let update pool m =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      update_request
-      (format_update m)
-  ;;
+  let update pool m = Database.exec pool update_request (format_update m)
 
   let marked_as_deleted_request =
     let open Caqti_request.Infix in
@@ -463,10 +441,7 @@ module Sql = struct
   ;;
 
   let marked_as_deleted pool id =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      marked_as_deleted_request
-      (id |> Entity.Id.value)
+    Database.exec pool marked_as_deleted_request (id |> Entity.Id.value)
   ;;
 
   let contact_participation_in_other_assignments_request assignments =
@@ -527,8 +502,7 @@ module Sql = struct
         contact_participation_in_other_assignments_request exclude_assignments
         |> pt ->! bool
       in
-      Utils.Database.find (pool |> Pool_database.Label.value) request pv
-      |> Lwt.map CCResult.return
+      Database.find pool request pv |> Lwt.map CCResult.return
   ;;
 end
 

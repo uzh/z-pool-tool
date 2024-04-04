@@ -1,4 +1,4 @@
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 module RepoEntity = Repo_entity
 
 module Sql = struct
@@ -32,10 +32,7 @@ module Sql = struct
   ;;
 
   let insert pool t =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      insert_request
-      (RepoEntity.Write.of_entity t)
+    Database.exec pool insert_request (RepoEntity.Write.of_entity t)
   ;;
 
   let find_request_sql ?(count = false) where_fragment =
@@ -60,10 +57,7 @@ module Sql = struct
 
   let find pool id =
     let open Lwt.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      (find_request RepoEntity.t)
-      id
+    Database.find_opt pool (find_request RepoEntity.t) id
     >|= CCOption.to_result Pool_message.(Error.NotFound Field.Admin)
   ;;
 
@@ -78,10 +72,7 @@ module Sql = struct
 
   let find_by_email pool email =
     let open Lwt.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      (find_by_email_request RepoEntity.t)
-      email
+    Database.find_opt pool (find_by_email_request RepoEntity.t) email
     >|= CCOption.to_result Pool_message.(Error.NotFound Field.Admin)
   ;;
 
@@ -122,7 +113,7 @@ module Sql = struct
           ids
       in
       let request = find_multiple_request ids |> pt ->* RepoEntity.t in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv)
+      Database.collect pool request pv)
   ;;
 
   let update_request =
@@ -139,10 +130,7 @@ module Sql = struct
   ;;
 
   let update pool t =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      update_request
-      (RepoEntity.Write.of_entity t)
+    Database.exec pool update_request (RepoEntity.Write.of_entity t)
   ;;
 
   let update_sign_in_count_request =
@@ -159,10 +147,7 @@ module Sql = struct
   ;;
 
   let update_sign_in_count pool t =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      update_sign_in_count_request
-      Entity.(id t |> Id.value)
+    Database.exec pool update_sign_in_count_request Entity.(id t |> Id.value)
   ;;
 
   let promote_contact_insert_contact_to_promoted_request =
@@ -276,7 +261,7 @@ module Sql = struct
     |> CCList.map (fun (request, input) connection ->
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.exec request input)
-    |> Utils.Database.exec_as_transaction (Pool_database.Label.value pool)
+    |> Database.exec_as_transaction pool
   ;;
 
   let search_by_name_and_email_request ?conditions limit =
@@ -307,9 +292,7 @@ module Sql = struct
     query
     =
     let open Caqti_request.Infix in
-    let exclude_ids =
-      Utils.Database.exclude_ids "pool_admins.uuid" Entity.Id.value
-    in
+    let exclude_ids = Database.exclude_ids "pool_admins.uuid" Entity.Id.value in
     let add_query = Dynparam.add Caqti_type.string ("%" ^ query ^ "%") in
     let dyn = dyn |> add_query |> add_query in
     let dyn, exclude =
@@ -326,7 +309,7 @@ module Sql = struct
     let request =
       search_by_name_and_email_request ?conditions limit |> pt ->* RepoEntity.t
     in
-    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+    Database.collect pool request pv
   ;;
 end
 

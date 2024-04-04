@@ -64,40 +64,33 @@ val handle_event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val user_is_admin : Pool_database.Label.t -> Sihl_user.t -> bool Lwt.t
-
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+val user_is_admin : Database.Label.t -> Sihl_user.t -> bool Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_by_email
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_user.EmailAddress.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
-val find_by
-  :  ?query:Query.t
-  -> Pool_database.Label.t
-  -> (t list * Query.t) Lwt.t
+val find_by : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 
 val find_all_with_role
   :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Role.Role.t * Guard.Uuid.Target.t option
   -> t list Lwt.t
 
 val find_all_with_roles
   :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> (Role.Role.t * Guard.Uuid.Target.t option) list
   -> t list Lwt.t
 
 val search_by_name_and_email
-  :  ?dyn:Utils.Database.Dynparam.t
+  :  ?dyn:Database.Dynparam.t
   -> ?exclude:Id.t list
   -> ?limit:int
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> string
   -> t list Lwt.t
 

@@ -1,7 +1,7 @@
 open CCFun
 open Entity
 module Common = Pool_common
-module Database = Pool_database
+module Database = Database
 
 module Title = struct
   include Title
@@ -28,10 +28,7 @@ module Url = struct
 
   let of_pool pool =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value Database.root)
-      find_url_request
-      pool
+    Database.find_opt Database.root find_url_request pool
     ||> function
     | None ->
       Sihl.Configuration.read_string "PUBLIC_URL"

@@ -30,7 +30,7 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
-  let ctx = Pool_database.to_ctx pool in
+  let ctx = Database.to_ctx pool in
   function
   | Created t ->
     let%lwt () = Repo.insert pool t in

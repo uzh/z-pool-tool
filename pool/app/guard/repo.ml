@@ -1,11 +1,11 @@
 open CCFun
 module BaseRole = Role
 
-module Backend =
-  Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target)
-    (Pool_database.GuardBackend)
+let create_tag = Database.Logger.Tags.create
 
-include Backend
+include
+  Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target)
+    (Database.Guard)
 
 module ActorPermission = struct
   include ActorPermission
@@ -64,9 +64,9 @@ module ActorPermission = struct
   let expanded =
     Caqti_type.(
       t4
-        Backend.Entity.ActorPermission.t
+        Entity.ActorPermission.t
         string
-        (option Backend.Entity.TargetModel.t)
+        (option Entity.TargetModel.t)
         (option string))
   ;;
 
@@ -74,7 +74,7 @@ module ActorPermission = struct
     Query.collect_and_count pool (Some query) ~select expanded
   ;;
 
-  let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
+  let insert pool = insert ~ctx:(Database.to_ctx pool)
 end
 
 module RolePermission = struct
@@ -105,14 +105,10 @@ module RolePermission = struct
   ;;
 
   let find_by query pool =
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select
-      Backend.Entity.RolePermission.t
+    Query.collect_and_count pool (Some query) ~select Entity.RolePermission.t
   ;;
 
-  let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
+  let insert pool = insert ~ctx:(Database.to_ctx pool)
 end
 
 let src = Logs.Src.create "guard"
@@ -124,11 +120,11 @@ module Cache = struct
   open CCCache
 
   let equal_find_actor (l1, a1) (l2, a2) =
-    Pool_database.Label.equal l1 l2 && Core.Uuid.Actor.equal a1 a2
+    Database.Label.equal l1 l2 && Core.Uuid.Actor.equal a1 a2
   ;;
 
   let equal_validation (l1, s1, any1, a1) (l2, s2, any2, a2) =
-    Pool_database.Label.equal l1 l2
+    Database.Label.equal l1 l2
     && Core.ValidationSet.equal s1 s2
     && CCBool.equal any1 any2
     && Core.Uuid.Actor.equal a1.Core.Actor.uuid a2.Core.Actor.uuid
@@ -152,19 +148,19 @@ module Actor = struct
     let cb ~in_cache _ _ =
       if in_cache
       then (
-        let tags = Pool_database.Logger.Tags.create database_label in
+        let tags = create_tag database_label in
         Logs.debug ~src (fun m ->
           m ~tags "Found in cache: Actor %s" (id |> Core.Uuid.Actor.to_string)))
       else ()
     in
-    let find' (label, id) = find ~ctx:(Pool_database.to_ctx label) id in
+    let find' (label, id) = find ~ctx:(Database.to_ctx label) id in
     (database_label, id) |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
   ;;
 
   let can_assign_roles database_label actor =
     let open Utils.Lwt_result.Infix in
     ActorRole.permissions_of_actor
-      ~ctx:(Pool_database.to_ctx database_label)
+      ~ctx:(Database.to_ctx database_label)
       actor.Core.Actor.uuid
     ||> CCList.filter_map
           (fun { Core.PermissionOnTarget.permission; model; target_uuid } ->
@@ -244,23 +240,20 @@ module ActorRole = struct
     let cb ~in_cache _ _ =
       if in_cache
       then (
-        let tags = Pool_database.Logger.Tags.create database_label in
+        let tags = create_tag database_label in
         Logs.debug ~src (fun m ->
           m ~tags "Found in cache: Actor %s" (actor |> Core.Uuid.Actor.to_string)))
       else ()
     in
     let find_by_actor' (label, actor) =
-      Utils.Database.collect
-        (Pool_database.Label.value label)
-        find_by_actor_request
-        actor
+      Database.collect label find_by_actor_request actor
     in
     (database_label, actor)
     |> CCCache.(with_cache ~cb Cache.lru_find_by_actor find_by_actor')
   ;;
 
   let permissions_of_actor database_label =
-    permissions_of_actor ~ctx:(Pool_database.to_ctx database_label)
+    permissions_of_actor ~ctx:(Database.to_ctx database_label)
   ;;
 end
 
@@ -275,7 +268,7 @@ let validate
     then
       Logs.debug ~src (fun m ->
         m
-          ~tags:(Pool_database.Logger.Tags.create database_label)
+          ~tags:(create_tag database_label)
           "Found in cache: Actor %s\nValidation set %s"
           (uuid |> Core.Uuid.Actor.to_string)
           ([%show: Core.ValidationSet.t] validation_set))
@@ -283,7 +276,7 @@ let validate
   in
   let validate' (label, set, any_id, actor) =
     validate
-      ~ctx:(Pool_database.to_ctx label)
+      ~ctx:(Database.to_ctx label)
       ~any_id
       Pool_message.Error.authorization
       set

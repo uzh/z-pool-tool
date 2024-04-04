@@ -51,8 +51,6 @@ end
 module GrantRoles : sig
   include Common.CommandSig with type t = grant_role
 end = struct
-  open Guard
-
   type t = grant_role
 
   let handle ?(tags = Logs.Tag.empty) { target; roles } =
@@ -76,8 +74,6 @@ end
 module RevokeRole : sig
   include Common.CommandSig with type t = revoke_role
 end = struct
-  open Guard
-
   type t = revoke_role
 
   let handle ?(tags = Logs.Tag.empty) { target; role } =

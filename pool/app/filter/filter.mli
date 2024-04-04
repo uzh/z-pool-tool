@@ -192,24 +192,20 @@ val validate_query
 val contains_template : query -> bool
 
 val find
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
-val find_all_templates : Pool_database.Label.t -> unit -> t list Lwt.t
-
-val find_templates_by
-  :  Query.t
-  -> Pool_database.Label.t
-  -> (t list * Query.t) Lwt.t
+val find_all_templates : Database.Label.t -> unit -> t list Lwt.t
+val find_templates_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 
 val find_template
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_multiple_templates
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t list
   -> t list Lwt.t
 
@@ -221,7 +217,7 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val created : t -> event
 val deleted : t -> event
 val updated : t -> event
@@ -248,15 +244,15 @@ module Repo : sig
   val query : query Caqti_type.t
 end
 
-val all_keys : Pool_database.Label.t -> Key.human list Lwt.t
+val all_keys : Database.Label.t -> Key.human list Lwt.t
 
 val key_of_string
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> string
   -> (Key.human, Pool_message.Error.t) Lwt_result.t
 
 val t_to_human : Key.human list -> t list -> query -> Human.t
-val find_templates_of_query : Pool_database.Label.t -> query -> t list Lwt.t
+val find_templates_of_query : Database.Label.t -> query -> t list Lwt.t
 
 val toggle_predicate_type
   :  Human.t
@@ -272,7 +268,7 @@ type base_condition =
   | MatcherReset of Pool_common.Id.t * Ptime.t
 
 val find_filtered_contacts
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> ?order_by:string
   -> ?limit:int
   -> base_condition
@@ -281,14 +277,14 @@ val find_filtered_contacts
 
 val count_filtered_contacts
   :  ?include_invited:bool
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> base_condition
   -> query option
   -> (int, Pool_message.Error.t) Lwt_result.t
 
 val contact_matches_filter
   :  ?default:bool
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> query
   -> Contact.t
   -> bool Lwt.t

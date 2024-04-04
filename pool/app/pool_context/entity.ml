@@ -24,7 +24,7 @@ end
 type t =
   { query_language : Pool_common.Language.t option
   ; language : Pool_common.Language.t
-  ; database_label : Pool_database.Label.t
+  ; database_label : Database.Label.t
   ; message : Pool_message.Collection.t option
   ; csrf : string
   ; user : user

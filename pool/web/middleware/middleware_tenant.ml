@@ -44,3 +44,29 @@ let valid_tenant () =
   in
   Rock.Middleware.create ~name:"tenant.valid" ~filter
 ;;
+
+let tenant_database_connection () =
+  let open Utils.Lwt_result.Infix in
+  let filter handler req =
+    match Pool_context.Tenant.find req with
+    | Ok context ->
+      (* TODO: add test *)
+      context |> Pool_context.Tenant.set req |> handler
+    | Error _ ->
+      (match%lwt tenant_of_request req with
+       | Ok tenant ->
+         Settings.find_languages tenant.Pool_tenant.database_label
+         ||> Pool_context.Tenant.create tenant
+         ||> Pool_context.Tenant.set req
+         >|> handler
+       | Error err ->
+         let (_ : Pool_message.Error.t) =
+           Pool_common.Utils.with_log_error
+             ~src
+             ~tags:(Pool_context.Logger.Tags.req req)
+             err
+         in
+         Http_utils.redirect_to "/not-found")
+  in
+  Rock.Middleware.create ~name:"tenant.database_connected" ~filter
+;;

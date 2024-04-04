@@ -22,7 +22,7 @@ end
 type t =
   { query_language : Pool_common.Language.t option
   ; language : Pool_common.Language.t
-  ; database_label : Pool_database.Label.t
+  ; database_label : Database.Label.t
   ; message : Pool_message.Collection.t option
   ; csrf : string
   ; user : user
@@ -35,13 +35,13 @@ val find : Rock.Request.t -> (t, Pool_message.Error.t) result
 val find_exn : Rock.Request.t -> t
 val set : Rock.Request.t -> t -> Rock.Request.t
 val find_contact : t -> (Contact.t, Pool_message.Error.t) result
-val user_of_sihl_user : Pool_database.Label.t -> Sihl_user.t -> user Lwt.t
+val user_of_sihl_user : Database.Label.t -> Sihl_user.t -> user Lwt.t
 val dashboard_path : ?guest:string -> user -> string
 
 val create
   :  Pool_common.Language.t option
      * Pool_common.Language.t
-     * Pool_database.Label.t
+     * Database.Label.t
      * Pool_message.Collection.t option
      * string
      * user
@@ -74,13 +74,13 @@ val get_admin_user : user -> (Admin.t, Pool_message.Error.t) result
 module Utils : sig
   val find_authorizable_opt
     :  ?admin_only:bool
-    -> Pool_database.Label.t
+    -> Database.Label.t
     -> user
     -> Guard.Actor.t option Lwt.t
 
   val find_authorizable
     :  ?admin_only:bool
-    -> Pool_database.Label.t
+    -> Database.Label.t
     -> user
     -> (Guard.Actor.t, Pool_message.Error.t) result Lwt.t
 end

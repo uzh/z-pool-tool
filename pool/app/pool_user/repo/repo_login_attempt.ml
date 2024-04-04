@@ -65,10 +65,7 @@ let find_opt_request =
 ;;
 
 let find_opt pool email =
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_opt_request
-    (Entity.EmailAddress.value email)
+  Database.find_opt pool find_opt_request (Entity.EmailAddress.value email)
 ;;
 
 let insert_request =
@@ -92,9 +89,7 @@ let insert_request =
   |> RepoEntity.t ->. Caqti_type.unit
 ;;
 
-let insert pool =
-  Utils.Database.exec (Pool_database.Label.value pool) insert_request
-;;
+let insert pool = Database.exec pool insert_request
 
 let delete_request =
   let open Caqti_request.Infix in
@@ -106,8 +101,5 @@ let delete_request =
 ;;
 
 let delete pool t =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    delete_request
-    (t.email |> Entity.EmailAddress.value)
+  Database.exec pool delete_request (t.email |> Entity.EmailAddress.value)
 ;;

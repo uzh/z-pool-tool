@@ -2,7 +2,7 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "matcher.service"
-let tags = Pool_database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create root)
 
 type config =
   { start : bool option
@@ -145,7 +145,7 @@ let events_of_mailings =
   let ok_or_log_error = function
     | Ok (pool, events) when CCList.is_empty events ->
       Logs.info ~src (fun m ->
-        m ~tags:(Pool_database.Logger.Tags.create pool) "No action");
+        m ~tags:(Database.Logger.Tags.create pool) "No action");
       None
     | Ok m -> Some m
     | Error err ->
@@ -261,7 +261,7 @@ let match_invitations interval pools =
     Lwt_list.iter_s (fun (pool, events) ->
       Logs.info ~src (fun m ->
         m
-          ~tags:(Pool_database.Logger.Tags.create pool)
+          ~tags:(Database.Logger.Tags.create pool)
           "Sending %4d intivation emails"
           (count_mails events));
       Pool_event.handle_events pool events)
@@ -274,8 +274,7 @@ let start_matcher () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s (5 * 60) in
   let periodic_fcn () =
-    Logs.debug ~src (fun m ->
-      m ~tags:Pool_database.(Logger.Tags.create root) "Run");
+    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
     Pool_tenant.find_all ()
     ||> CCList.map (fun Pool_tenant.{ database_label; _ } -> database_label)
     >|> match_invitations interval

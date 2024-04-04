@@ -26,19 +26,18 @@ let job_reporter
   =
   match status, last_error with
   | (Failed | Pending), Some last_error when tries >= max_tries ->
-    let database_label = Pool_database.of_ctx_opt ctx in
+    let database_label = Database.of_ctx_opt ctx in
     let tags =
       CCOption.map_or
         ~default:Logs.Tag.empty
-        Pool_database.Logger.Tags.create
+        Database.Logger.Tags.create
         database_label
     in
     let%lwt link =
       let default = "Couldn't generate Link" in
       let path = Format.asprintf "/admin/settings/queue/%s" id in
       match database_label with
-      | Some database_label when Pool_database.(Label.equal root database_label)
-        ->
+      | Some database_label when Database.(Label.equal root database_label) ->
         Sihl.Configuration.read_string "PUBLIC_URL"
         |> CCOption.map_or
              ~default

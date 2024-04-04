@@ -20,7 +20,7 @@ let handle_event pool =
   function
   | Created (mailing, experiment_id) ->
     let%lwt () = Repo.insert pool experiment_id mailing in
-    Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) mailing
+    Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx pool) mailing
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Updated ({ start_at; end_at; limit; distribution }, mailing) ->

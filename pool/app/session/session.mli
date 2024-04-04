@@ -158,7 +158,7 @@ type event =
   | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -256,58 +256,53 @@ val can_be_assigned_to_existing_assignment
   -> (unit, Pool_message.Error.t) result
 
 val reminder_resendable : t -> (unit, Pool_message.Error.t) result
-
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
-
-val find_multiple : Pool_database.Label.t -> Id.t list -> t list Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
 
 val find_contact_is_assigned_by_experiment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.Id.t
   -> Experiment.Id.t
   -> t list Lwt.t
 
 val find_public
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
   -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
 val find_all_public_by_location
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_location.Id.t
   -> (Public.t list, Pool_message.Error.t) Lwt_result.t
 
 val find_all_for_experiment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Experiment.Id.t
   -> t list Lwt.t
 
 val find_all_to_assign_from_waitinglist
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Experiment.Id.t
   -> t list Lwt.t
 
 val find_all_public_for_experiment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.t
   -> Experiment.Id.t
   -> (Public.t list, Pool_message.Error.t) Lwt_result.t
 
 val find_all_ids_of_contact_id
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.Id.t
   -> Id.t list Lwt.t
 
 val find_public_by_assignment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
 val find_upcoming_public_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> ( (Experiment.Public.t * Public.t * Public.t list) list
        , Pool_message.Error.t )
@@ -315,12 +310,12 @@ val find_upcoming_public_by_contact
        Lwt.t
 
 val find_by_assignment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_experiment_id_and_title
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
   -> (Experiment.Id.t * string, Pool_message.Error.t) Lwt_result.t
 
@@ -328,40 +323,40 @@ val find_sessions_to_remind
   :  Pool_tenant.t
   -> (t list * t list, Pool_message.Error.t) Lwt_result.t
 
-val find_follow_ups : Pool_database.Label.t -> Id.t -> t list Lwt.t
+val find_follow_ups : Database.Label.t -> Id.t -> t list Lwt.t
 
 val find_open_with_follow_ups
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
   -> (t list, Pool_message.Error.t) Lwt_result.t
 
 val find_open
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_for_calendar_by_location
   :  Pool_location.Id.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> start_time:Ptime.t
   -> end_time:Ptime.t
   -> Calendar.t list Lwt.t
 
 val query_grouped_by_experiment
   :  ?query:Query.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Experiment.Id.t
   -> ((t * t list) list * Query.t) Lwt.t
 
 val query_by_experiment
   :  ?query:Query.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Experiment.Id.t
   -> (t list * Query.t) Lwt.t
 
 val find_for_calendar_by_user
   :  Guard.Actor.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> start_time:Ptime.t
   -> end_time:Ptime.t
   -> Calendar.t list Lwt.t
@@ -369,13 +364,13 @@ val find_for_calendar_by_user
 val find_incomplete_by_admin
   :  ?query:Query.t
   -> Guard.Actor.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> (t list * Query.t) Lwt.t
 
 val find_upcoming_by_admin
   :  ?query:Query.t
   -> Guard.Actor.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> (t list * Query.t) Lwt.t
 
 val to_email_text : Pool_common.Language.t -> t -> string
@@ -383,12 +378,12 @@ val follow_up_sessions_to_email_list : t list -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
 
 val has_bookable_spots_for_experiments
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Experiment.Id.t
   -> bool Lwt.t
 
 val find_all_to_swap_by_experiment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Experiment.Id.t
   -> t list Lwt.t
 

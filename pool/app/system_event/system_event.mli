@@ -5,9 +5,9 @@ module Job : sig
     | GuardianCacheCleared
     | I18nPageUpdated
     | SmtpAccountUpdated
-    | TenantDatabaseAdded of Pool_database.Label.t
-    | TenantDatabaseUpdated of Pool_database.Label.t
-    | TenantDatabaseDeleted of Pool_database.Label.t
+    | TenantDatabaseAdded of Database.Label.t
+    | TenantDatabaseUpdated of Database.Label.t
+    | TenantDatabaseDeleted of Database.Label.t
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit

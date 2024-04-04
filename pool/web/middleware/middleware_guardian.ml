@@ -40,7 +40,7 @@ let access_denied database_label =
     let (_ : t) =
       Pool_common.Utils.with_log_error
         ~src
-        ~tags:(Pool_database.Logger.Tags.create database_label)
+        ~tags:(Database.Logger.Tags.create database_label)
         err
     in
     AccessDenied
@@ -57,7 +57,7 @@ let validate_access_request_fcn fcn ?any_id effects req =
   match user with
   | Pool_context.Guest | Pool_context.Contact _ -> Lwt.return_error AccessDenied
   | Pool_context.Admin admin ->
-    let ctx = Pool_database.to_ctx database_label in
+    let ctx = Database.to_ctx database_label in
     let* auth = Admin.Guard.Actor.to_authorizable ~ctx admin in
     fcn context auth ?any_id effects req
 ;;
@@ -89,7 +89,7 @@ let validate_access_request_dependent_lwt ?any_id effects req =
   | Pool_context.Guest | Pool_context.Contact _ ->
     Lwt.return_error Pool_message.Error.AccessDenied
   | Pool_context.Admin admin ->
-    let ctx = Pool_database.to_ctx database_label in
+    let ctx = Database.to_ctx database_label in
     let* auth = Admin.Guard.Actor.to_authorizable ~ctx admin in
     let* effects = effects req in
     let tags = Pool_context.Logger.Tags.context context in

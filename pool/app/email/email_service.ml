@@ -5,18 +5,14 @@ module Queue = Sihl_queue.MariaDb
 module Cache = struct
   open Hashtbl
 
-  let tbl : (SmtpAuth.Id.t * Pool_database.Label.t, SmtpAuth.Write.t) t =
-    create 5
-  ;;
-
+  let tbl : (SmtpAuth.Id.t * Database.Label.t, SmtpAuth.Write.t) t = create 5
   let find_by_id datbase_label id = find_opt tbl (id, datbase_label)
 
   let find_default pool =
     tbl
     |> to_seq
     |> Seq.find (fun ((_, database_label), { SmtpAuth.Write.default; _ }) ->
-      SmtpAuth.Default.value default
-      && Pool_database.Label.equal pool database_label)
+      SmtpAuth.Default.value default && Database.Label.equal pool database_label)
     |> CCOption.map snd
   ;;
 
@@ -29,7 +25,7 @@ module Cache = struct
 end
 
 let src = Logs.Src.create "pool_tenant.service"
-let tags = Pool_database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create root)
 
 module DevInbox = struct
   let dev_inbox : Sihl.Contract.Email.t list ref = ref []
@@ -151,7 +147,7 @@ let intercept_send sender email =
 let default_sender_of_pool database_label =
   let open Settings in
   let open Utils.Lwt_result.Infix in
-  if Pool_database.is_root database_label
+  if Database.is_root database_label
   then
     Sihl.Configuration.read_string "SMTP_SENDER"
     |> CCOption.get_exn_or "Undefined 'SMTP_SENDER'"
@@ -265,7 +261,7 @@ module Smtp = struct
                (fun id -> find_full database_label id)
           >|- with_log_error
                 ~src
-                ~tags:(Pool_database.Logger.Tags.create database_label)
+                ~tags:(Database.Logger.Tags.create database_label)
           ||> get_or_failwith
         in
         let () = Cache.add database_label auth in
@@ -323,7 +319,7 @@ module Smtp = struct
     | Ok message ->
       Logs.info ~src (fun m ->
         m
-          ~tags:(Pool_database.Logger.Tags.create database_label)
+          ~tags:(Database.Logger.Tags.create database_label)
           "Send email as %s to %s"
           sender
           email.Sihl_email.recipient);
@@ -359,7 +355,7 @@ let stop () = Lwt.return_unit
 let lifecycle =
   Sihl.Container.create_lifecycle
     Sihl.Contract.Email.name
-    ~dependencies:(fun () -> [ Database.lifecycle ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
     ~stop
 ;;
@@ -378,7 +374,7 @@ module Job = struct
         let open CCOption in
         ctx
         >>= CCList.assoc_opt ~eq:( = ) "pool"
-        >|= Pool_database.Label.create %> Pool_common.Utils.get_or_failwith
+        >|= Database.Label.create %> Pool_common.Utils.get_or_failwith
         |> get_exn_or "Invalid context passed!"
       in
       Lwt.catch
@@ -414,12 +410,12 @@ let dispatch database_label ({ Entity.email; _ } as job) =
   let callback = callback database_label in
   Logs.debug ~src (fun m ->
     m
-      ~tags:(Pool_database.Logger.Tags.create database_label)
+      ~tags:(Database.Logger.Tags.create database_label)
       "Dispatch email to %s"
       email.Sihl_email.recipient);
   Queue.dispatch
     ~callback
-    ~ctx:(Pool_database.to_ctx database_label)
+    ~ctx:(Database.to_ctx database_label)
     (job |> intercept_prepare |> Pool_common.Utils.get_or_failwith)
     Job.send
 ;;
@@ -438,12 +434,12 @@ let dispatch_all database_label (jobs : Entity.job list) =
   in
   Logs.debug ~src (fun m ->
     m
-      ~tags:(Pool_database.Logger.Tags.create database_label)
+      ~tags:(Database.Logger.Tags.create database_label)
       "Dispatch email to %s"
       ([%show: string list] recipients));
   Queue.dispatch_all
     ~callback
-    ~ctx:(Pool_database.to_ctx database_label)
+    ~ctx:(Database.to_ctx database_label)
     jobs
     Job.send
 ;;

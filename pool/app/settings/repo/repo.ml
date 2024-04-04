@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Database = Pool_database
+module Database = Database
 
 module Sql = struct
   let select_from_settings_sql =
@@ -22,8 +22,8 @@ module Sql = struct
   ;;
 
   let find pool out_type key =
-    Utils.Database.find
-      (Database.Label.value pool)
+    Database.find
+      pool
       (find_request out_type)
       (key |> Entity.yojson_of_setting_key |> Yojson.Safe.to_string)
   ;;
@@ -44,9 +44,7 @@ module Sql = struct
     update_sql |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Database.Label.value pool) update_request
-  ;;
+  let update pool = Database.exec pool update_request
 
   let upsert_request =
     let open Caqti_request.Infix in
@@ -69,9 +67,7 @@ module Sql = struct
     |> Caqti_type.(t2 Pool_common.Repo.Id.t RepoEntity.t ->. unit)
   ;;
 
-  let upsert pool =
-    Utils.Database.exec (Database.Label.value pool) upsert_request
-  ;;
+  let upsert pool = Database.exec pool upsert_request
 
   let delete_request =
     let open Caqti_request.Infix in
@@ -82,9 +78,7 @@ module Sql = struct
     |> Caqti_type.(string ->. unit)
   ;;
 
-  let delete pool =
-    Utils.Database.exec (Database.Label.value pool) delete_request
-  ;;
+  let delete pool = Database.exec pool delete_request
 end
 
 let find_languages pool = Sql.find pool RepoEntity.t Entity.Languages

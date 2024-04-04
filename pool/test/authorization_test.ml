@@ -6,7 +6,7 @@ let update_language_as actor =
     |> Contact_test.create_contact true
   in
   let* tenant = Pool_tenant.find_by_label Test_utils.Data.database_label in
-  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
+  let ctx = Database.to_ctx Test_utils.Data.database_label in
   let effects =
     Cqrs_command.Contact_command.Update.effects (Contact.id subject)
   in
@@ -28,7 +28,7 @@ let update_language_as actor =
 
 let recruiter_can_update_contact_language _ () =
   let open Utils.Lwt_result.Infix in
-  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
+  let ctx = Database.to_ctx Test_utils.Data.database_label in
   let%lwt actor =
     let open Guard.Persistence in
     ActorRole.find_actors_by_role ~ctx (`Recruiter, None)
@@ -56,7 +56,7 @@ let guest_cannot_update_language _ () =
 ;;
 
 let operator_works _ () =
-  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
+  let ctx = Database.to_ctx Test_utils.Data.database_label in
   let%lwt actual =
     let open Utils.Lwt_result.Infix in
     let open Guard in

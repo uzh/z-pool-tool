@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Database = Pool_database
+module Database = Database
 module Id = Pool_common.Id
 module LogoMapping = Entity_logo_mapping
 module LogoMappingRepo = Repo_logo_mapping
@@ -29,9 +29,7 @@ module Sql = struct
     |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Database.Label.value pool) update_request
-  ;;
+  let update pool = Database.exec pool update_request
 
   let select_from_tenants_sql where_fragment full =
     let database_fragment =
@@ -158,10 +156,7 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_request
-      (Id.value id)
+    Database.find_opt pool find_request (Id.value id)
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
@@ -173,10 +168,7 @@ module Sql = struct
 
   let find_full pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_full_request
-      (Id.value id)
+    Database.find_opt pool find_full_request (Id.value id)
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
@@ -185,15 +177,12 @@ module Sql = struct
     select_from_tenants_sql
       {sql| WHERE pool_tenant.database_label = ? |sql}
       false
-    |> Caqti_type.string ->! RepoEntity.t
+    |> Database.Repo.Label.t ->! RepoEntity.t
   ;;
 
   let find_by_label pool label =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_by_label_request
-      (Database.Label.value label)
+    Database.find_opt pool find_by_label_request label
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
@@ -202,9 +191,7 @@ module Sql = struct
     select_from_tenants_sql "" false |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Database.Label.value pool) find_all_request
-  ;;
+  let find_all pool = Database.collect pool find_all_request
 
   let find_databases_request =
     let open Caqti_request.Infix in
@@ -218,9 +205,7 @@ module Sql = struct
     |> Caqti_type.unit ->* Database.Repo.t
   ;;
 
-  let find_databases pool =
-    Utils.Database.collect (Database.Label.value pool) find_databases_request
-  ;;
+  let find_databases pool = Database.collect pool find_databases_request
 
   let find_database_by_label_request =
     let open Caqti_request.Infix in
@@ -232,15 +217,12 @@ module Sql = struct
         WHERE database_label = $1
         AND NOT disabled
       |sql}
-    |> Caqti_type.(string) ->! Database.Repo.t
+    |> Database.Repo.Label.t ->! Database.Repo.t
   ;;
 
   let find_database_by_label pool label =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_database_by_label_request
-      (Database.Label.value label)
+    Database.find_opt pool find_database_by_label_request label
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Database)
   ;;
 
@@ -282,9 +264,7 @@ module Sql = struct
     |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let find_selectable_request =
     let open Caqti_request.Infix in
@@ -298,9 +278,7 @@ module Sql = struct
     |> Caqti_type.unit ->* RepoEntity.Selection.t
   ;;
 
-  let find_selectable pool =
-    Utils.Database.collect (Database.Label.value pool) find_selectable_request
-  ;;
+  let find_selectable pool = Database.collect pool find_selectable_request
 end
 
 let set_logos tenant logos =
@@ -376,15 +354,12 @@ let find_gtx_api_key_by_label_request =
     WHERE
     pool_tenant.database_label = ?
   |sql}
-  |> Caqti_type.(string ->! RepoEntity.GtxApiKey.t)
+  |> Database.Repo.Label.t ->! RepoEntity.GtxApiKey.t
 ;;
 
 let find_gtx_api_key_by_label pool database_label =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_gtx_api_key_by_label_request
-    (Pool_database.Label.value database_label)
+  Database.find_opt pool find_gtx_api_key_by_label_request database_label
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.GtxApiKey)
 ;;
 

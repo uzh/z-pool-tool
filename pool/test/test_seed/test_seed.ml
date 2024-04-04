@@ -5,7 +5,4 @@ let create db_pool () =
   Lwt.return_unit
 ;;
 
-let cleanup _ () =
-  let pool = Test_utils.Data.database_label in
-  Utils.Database.clean_all (Pool_database.Label.value pool)
-;;
+let cleanup _ () = Database.clean_all_exn Test_utils.Data.database_label

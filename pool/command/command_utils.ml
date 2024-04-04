@@ -1,6 +1,6 @@
 let setup_databases () =
-  let%lwt () = Database.Root.setup () in
-  Database.Tenant.setup ()
+  let%lwt (_ : Database.status) = Pool_database.Root.setup () in
+  Pool_database.Tenant.setup ()
 ;;
 
 let failwith_missmatch help =
@@ -9,10 +9,10 @@ let failwith_missmatch help =
 ;;
 
 let is_available_exn ?(include_root = false) pool =
-  let open Pool_database in
+  let open Database in
   let pool = Label.create pool |> Pool_common.Utils.get_or_failwith in
-  let%lwt () = Database.Root.setup () in
-  let%lwt pools = Database.Tenant.setup () in
+  let%lwt (_ : status) = Pool_database.Root.setup () in
+  let%lwt pools = Pool_database.Tenant.setup () in
   let available_pools = if include_root then root :: pools else pools in
   if CCList.mem ~eq:Label.equal pool available_pools
   then Lwt.return pool

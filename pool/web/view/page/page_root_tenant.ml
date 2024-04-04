@@ -12,7 +12,7 @@ let database_fields tenant language flash_fetcher =
     ; ( Field.DatabaseLabel
       , tenant
         |> CCOption.map_or ~default:"" (fun t ->
-          t.Pool_tenant.database_label |> Pool_database.Label.value)
+          t.Pool_tenant.database_label |> Database.Label.value)
       , TenantDatabaseLabel )
     ]
   in

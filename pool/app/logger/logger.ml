@@ -6,7 +6,7 @@ let tag_ip : string Logs.Tag.def =
   Logs.Tag.def "request_ip" ~doc:"X-Real-IP" CCString.pp
 ;;
 
-let tag_database = Utils.Database.Logger.Tags.add_label
+let tag_database = Database.Logger.Tags.add_label
 
 let tag_user : string Logs.Tag.def =
   Logs.Tag.def "user" ~doc:"User / Administrator email" CCString.pp

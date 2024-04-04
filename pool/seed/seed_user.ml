@@ -83,7 +83,7 @@ let create_persons_from_file () =
 let create_persons_from_api db_label n_persons =
   let open CCList in
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logger.Tags.create db_label in
+  let tags = Database.Logger.Tags.create db_label in
   let chunk_size = 100 in
   let sum = fold_left ( + ) 0 in
   let%lwt contacts =
@@ -155,8 +155,8 @@ let admins db_label =
     ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", [ `Recruiter, None ]
     ]
   in
-  let ctx = Pool_database.to_ctx db_label in
-  let tags = Pool_database.Logger.Tags.create db_label in
+  let ctx = Database.to_ctx db_label in
+  let tags = Database.Logger.Tags.create db_label in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"Password1!"
@@ -207,7 +207,7 @@ let admins db_label =
       | Some _ ->
         Logs.debug ~src (fun m ->
           m
-            ~tags:(Pool_database.Logger.Tags.create db_label)
+            ~tags:(Database.Logger.Tags.create db_label)
             "%s"
             "Admin user already exists");
         Lwt.return_unit)
@@ -216,9 +216,9 @@ let admins db_label =
 
 let contacts db_label =
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logger.Tags.create db_label in
+  let tags = Database.Logger.Tags.create db_label in
   let n_contacts = 200 in
-  let ctx = Pool_database.to_ctx db_label in
+  let ctx = Database.to_ctx db_label in
   let combinations =
     let open CCList in
     let languages = Pool_common.Language.[ Some En; Some De; None ] in
@@ -302,7 +302,7 @@ let contacts db_label =
                 m
                   ~tags
                   "Contact already exists (%s): %s"
-                  (db_label |> Pool_database.Label.value)
+                  (db_label |> Database.Label.value)
                   id);
               Lwt.return_none)
     ||> CCList.flatten

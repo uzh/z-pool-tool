@@ -34,17 +34,17 @@ val show : t -> string
 val equal : t -> t -> bool
 
 val find_pending_by_token
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Token.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_pending_by_user_id_opt
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> t option Lwt.t
 
 val find_pending_by_email_opt
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_user.EmailAddress.t
   -> t option Lwt.t
 
@@ -81,6 +81,6 @@ module Repo : sig
 end
 
 module Service : sig
-  val run : Pool_database.Label.t -> unit Lwt.t
+  val run : Database.Label.t -> unit Lwt.t
   val register : unit -> Sihl.Container.Service.t
 end

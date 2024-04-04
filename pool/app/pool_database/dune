@@ -1,6 +1,6 @@
 (library
  (name pool_database)
- (libraries containers guardian.backend logger pool_common)
+ (libraries database guard pool_tenant)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_sexp_conv)))
 

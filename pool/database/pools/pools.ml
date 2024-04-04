@@ -2,7 +2,7 @@ open CCFun.Infix
 
 exception Exception of string
 
-module type Sig = Database_pools_sig.Sig
+module type Sig = Pools_sig.Sig
 
 let src = Logs.Src.create "test.pools"
 let find_pool_name = CCList.assoc_opt ~eq:CCString.equal "pool"

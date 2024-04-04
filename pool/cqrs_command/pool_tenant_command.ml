@@ -38,7 +38,7 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Pool_database.t
+    -> Database.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -108,8 +108,8 @@ end = struct
     Ok
       [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
-      ; Database.Migrated database |> Pool_event.database
-      ; System_event.Job.TenantDatabaseAdded database.Pool_database.label
+      ; Pool_database.Migrated database |> Pool_event.database
+      ; System_event.Job.TenantDatabaseAdded (Database.label database)
         |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
       ]
@@ -239,8 +239,8 @@ end = struct
 end
 
 type database_command =
-  { database_url : Pool_database.Url.t
-  ; database_label : Pool_database.Label.t
+  { database_url : Database.Url.t
+  ; database_label : Database.Label.t
   }
 
 let database_command database_url database_label =
@@ -250,7 +250,7 @@ let database_command database_url database_label =
 let database_schema =
   Conformist.(
     make
-      Field.[ Pool_database.Url.schema (); Pool_database.Label.schema () ]
+      Field.[ Database.Url.schema (); Database.Label.schema () ]
       database_command)
 ;;
 
@@ -260,7 +260,7 @@ let decode_database data =
 ;;
 
 module UpdateDatabase : sig
-  type t = Pool_database.t
+  type t = Database.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -275,7 +275,7 @@ module UpdateDatabase : sig
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Pool_database.t
+  type t = Database.t
 
   let handle
     ?(tags = Logs.Tag.empty)
@@ -286,7 +286,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateDatabase" ~tags);
     Ok
       [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
-      ; System_event.Job.TenantDatabaseUpdated database.Pool_database.label
+      ; System_event.Job.TenantDatabaseUpdated (Database.label database)
         |> system_event_from_job ?id:system_event_id
       ]
   ;;

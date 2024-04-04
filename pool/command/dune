@@ -2,7 +2,6 @@
  (name command)
  (libraries
   cqrs_command
-  database
   guard
   matcher
   pool_event

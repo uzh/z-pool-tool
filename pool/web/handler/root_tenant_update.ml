@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module File = HttpUtils.File
 module Common = Pool_common
-module Database = Pool_database
+module Database = Database
 module Conformist = Pool_conformist
 
 let src = Logs.Src.create "handler.root.tenant_update"
@@ -84,7 +84,7 @@ let update req command success_message =
           let open UpdateDatabase in
           let* { database_url; database_label } = decode urlencoded |> lift in
           let* database =
-            Pool_database.test_and_create database_url database_label
+            Database.test_and_create database_url database_label
           in
           handle ~tags tenant_model database |> lift
         | `ExitGtxApiKey ->
@@ -138,7 +138,7 @@ let delete_asset req =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
-    let ctx = database_label |> Pool_database.to_ctx in
+    let ctx = database_label |> Database.to_ctx in
     let event tenant =
       Cqrs_command.Pool_tenant_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift

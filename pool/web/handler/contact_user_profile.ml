@@ -107,7 +107,7 @@ let update_email req =
        in
        let%lwt existing_user =
          Service.User.find_by_email_opt
-           ~ctx:(Pool_database.to_ctx database_label)
+           ~ctx:(Database.to_ctx database_label)
            (Pool_user.EmailAddress.value new_email)
        in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -414,8 +414,9 @@ let completion_post req =
       >== fun fields -> fields |> CCList.map handle |> CCList.all_ok
     in
     let handle events =
-      let%lwt (_ : unit list) =
+      let%lwt () =
         Lwt_list.map_s (Pool_event.handle_event ~tags database_label) events
+        ||> Utils.flat_unit
       in
       let%lwt required_answers_given =
         Custom_field.all_required_answered database_label (Contact.id contact)

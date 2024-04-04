@@ -1,4 +1,4 @@
-module Database = Pool_database
+module Database = Database
 module SmtpAuth = Entity_smtp
 module User = Pool_user
 

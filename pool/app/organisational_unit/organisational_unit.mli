@@ -49,13 +49,9 @@ module Guard : sig
   end
 end
 
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
-
-val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
-val all : Pool_database.Label.t -> unit -> t list Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val all : Database.Label.t -> unit -> t list Lwt.t
 
 module Repo : sig
   val sql_select_columns : string list

@@ -15,7 +15,7 @@ let user_and_import_from_token database_label token =
   >>= fun ({ User_import.user_uuid; _ } as import) ->
   user_uuid
   |> Pool_common.Id.value
-  |> Service.User.find ~ctx:(Pool_database.to_ctx database_label)
+  |> Service.User.find ~ctx:(Database.to_ctx database_label)
   >|> user_of_sihl_user database_label
   ||> fun user ->
   match user with

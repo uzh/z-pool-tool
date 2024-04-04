@@ -1,5 +1,5 @@
 open CCFun.Infix
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 module Message = Pool_message
 module Field = Pool_message.Field
 open Entity

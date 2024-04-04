@@ -77,7 +77,7 @@ type t =
   ; emails_sent : EmailsSent.t
   }
 
-val create : Pool_database.Label.t -> ?period:period -> unit -> t Lwt.t
+val create : Database.Label.t -> ?period:period -> unit -> t Lwt.t
 val yojson_of_t : t -> Yojson.Safe.t
 
 module Guard : sig

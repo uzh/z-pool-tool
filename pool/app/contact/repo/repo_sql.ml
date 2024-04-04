@@ -1,6 +1,6 @@
 module Id = Pool_common.Id
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Database = Database
+module Dynparam = Database.Dynparam
 
 let src = Logs.Src.create "contact.repo"
 
@@ -66,10 +66,7 @@ let find_request =
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Database.Label.value pool)
-    find_request
-    (Pool_common.Id.value id)
+  Database.find_opt pool find_request (Pool_common.Id.value id)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
 
@@ -85,11 +82,7 @@ let find_admin_comment_request =
 
 let find_admin_comment pool id =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Database.Label.value pool)
-    find_admin_comment_request
-    id
-  ||> CCOption.flatten
+  Database.find_opt pool find_admin_comment_request id ||> CCOption.flatten
 ;;
 
 let find_by_email_request =
@@ -104,8 +97,8 @@ let find_by_email_request =
 
 let find_by_email pool email =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Database.Label.value pool)
+  Database.find_opt
+    pool
     find_by_email_request
     (Pool_user.EmailAddress.value email)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
@@ -124,8 +117,8 @@ let find_confirmed_request =
 
 let find_confirmed pool email =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Database.Label.value pool)
+  Database.find_opt
+    pool
     find_confirmed_request
     (Pool_user.EmailAddress.value email)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
@@ -155,7 +148,7 @@ let find_multiple pool ids =
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let request = find_multiple_request ids |> pt ->* Repo_model.t in
-  Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  Database.collect pool request pv
 ;;
 
 let find_all_request =
@@ -268,7 +261,7 @@ let insert_request =
   |> Repo_model.contact ->. Caqti_type.unit
 ;;
 
-let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
+let insert pool = Database.exec pool insert_request
 
 let update_request =
   let open Caqti_request.Infix in
@@ -301,12 +294,7 @@ let update_request =
   |> Repo_model.Write.t ->. Caqti_type.unit
 ;;
 
-let update pool t =
-  Utils.Database.exec
-    (Database.Label.value pool)
-    update_request
-    (Entity.Write.create t)
-;;
+let update pool t = Database.exec pool update_request (Entity.Write.create t)
 
 let delete_unverified_contact_request =
   let open Caqti_request.Infix in
@@ -336,12 +324,7 @@ let delete_unverified_email_verifications_request =
 ;;
 
 let delete_unverified pool id =
-  let exec request =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      request
-      (Pool_common.Id.value id)
-  in
+  let exec request = Database.exec pool request (Pool_common.Id.value id) in
   let%lwt () = exec delete_unverified_contact_request in
   let%lwt () = exec delete_unverified_email_verifications_request in
   exec delete_unverified_user_request
@@ -374,8 +357,8 @@ let find_to_trigger_profile_update_request =
 let find_to_trigger_profile_update pool =
   let settings_key = Settings.trigger_profile_update_after_key_yojson in
   Lwt_result.ok
-  @@ Utils.Database.collect
-       (Database.Label.value pool)
+  @@ Database.collect
+       pool
        find_to_trigger_profile_update_request
        (settings_key |> Yojson.Safe.to_string)
 ;;
@@ -408,7 +391,7 @@ let update_profile_updated_triggered pool ids =
     update_profile_updated_triggered_request ids
     |> (pt ->. Caqti_type.unit) ~oneshot:true
   in
-  Utils.Database.exec (pool |> Pool_database.Label.value) request pv
+  Database.exec pool request pv
 ;;
 
 let should_send_registration_attempt_notification_request =
@@ -424,8 +407,8 @@ let should_send_registration_attempt_notification_request =
 
 let should_send_registration_attempt_notification pool contact =
   let send_notification_again_after = 900 in
-  Utils.Database.find_opt
-    (Database.Label.value pool)
+  Database.find_opt
+    pool
     should_send_registration_attempt_notification_request
     (Entity.(id contact |> Id.value), send_notification_again_after)
   |> Lwt.map CCOption.is_none
@@ -442,8 +425,8 @@ let set_registration_attempt_notification_sent_at_request =
 ;;
 
 let set_registration_attempt_notification_sent_at pool t =
-  Utils.Database.exec
-    (Database.Label.value pool)
+  Database.exec
+    pool
     set_registration_attempt_notification_sent_at_request
     Entity.(id t |> Id.value)
 ;;
@@ -470,8 +453,8 @@ let add_cell_phone_request =
 ;;
 
 let add_cell_phone pool contact cell_phone code =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
+  Database.exec
+    pool
     add_cell_phone_request
     ( Pool_user.CellPhone.value cell_phone
     , Entity.(id contact |> Id.value)
@@ -500,8 +483,8 @@ let find_cell_phone_verification_by_contact_request =
 ;;
 
 let find_cell_phone_verification_by_contact pool contact =
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
+  Database.find_opt
+    pool
     find_cell_phone_verification_by_contact_request
     Entity.(id contact |> Id.value)
 ;;
@@ -514,8 +497,8 @@ let find_cell_phone_verification_by_contact_and_code_request =
 
 let find_cell_phone_verification_by_contact_and_code pool contact code =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
+  Database.find_opt
+    pool
     find_cell_phone_verification_by_contact_and_code_request
     (Entity.(id contact |> Id.value), Pool_common.VerificationCode.value code)
   ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
@@ -537,8 +520,8 @@ let find_full_cell_phone_verification_by_contact_request =
 
 let find_full_cell_phone_verification_by_contact pool contact =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
+  Database.find_opt
+    pool
     find_full_cell_phone_verification_by_contact_request
     Entity.(id contact |> Id.value)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Token)
@@ -554,8 +537,8 @@ let delete_unverified_cell_phone_requeset =
 ;;
 
 let delete_unverified_cell_phone pool contact =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
+  Database.exec
+    pool
     delete_unverified_cell_phone_requeset
     Entity.(id contact |> Id.value)
 ;;
@@ -575,8 +558,8 @@ let update_sign_in_count_request =
 ;;
 
 let update_sign_in_count pool contact =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
+  Database.exec
+    pool
     update_sign_in_count_request
     Entity.(id contact |> Id.value)
 ;;

@@ -1,6 +1,6 @@
 module User = Pool_user
 module Common = Pool_common
-module Database = Pool_database
+module Database = Database
 open Entity
 
 let src = Logs.Src.create "admin.event"
@@ -27,7 +27,7 @@ let set_password
   fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
   Service.User.set_password
-    ~ctx:(Pool_database.to_ctx pool)
+    ~ctx:(Database.to_ctx pool)
     user
     ~password
     ~password_confirmation
@@ -59,7 +59,7 @@ let map_or ~tags ~default fcn =
 
 let handle_event ~tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
-  let ctx = Pool_database.to_ctx pool in
+  let ctx = Database.to_ctx pool in
   let admin_authorizable ?(roles = []) admin =
     let open Guard in
     let open Common.Utils in
@@ -146,14 +146,14 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         ~ctx
         (Guard.Uuid.target_of Id.value contact_id)
     in
+    let default = Lwt.return_unit in
     target
     >|- Pool_message.Error.nothandled
-    >|> map_or ~tags ~default:Lwt.return_unit (fun { Guard.Target.uuid; _ } ->
+    >|> map_or ~tags ~default (fun { Guard.Target.uuid; _ } ->
       let%lwt () = Repo.promote_contact pool contact_id in
       let%lwt () = Guard.Persistence.Target.promote ~ctx uuid `Admin in
       let%lwt () =
-        Repo.find pool contact_id
-        >|> map_or ~tags ~default:Lwt.return_unit admin_authorizable
+        Repo.find pool contact_id >|> map_or ~tags ~default admin_authorizable
       in
       Lwt.return_unit)
   | SignInCounterUpdated m -> Repo.update_sign_in_count pool m
