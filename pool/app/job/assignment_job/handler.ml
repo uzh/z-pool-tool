@@ -16,11 +16,10 @@ let make_messages
   let make_mail assignments admin =
     Notification.create tenant admin experiment assignments
   in
-  let remove_matching sessions =
+  let remove_matching =
     let open Assignment in
     let open CCList in
-    sessions
-    |> filter (fun (_, assignments) ->
+    filter (fun (_, assignments) ->
       assignments
       |> filter (fun { matches_filter; _ } ->
         MatchesFilter.value matches_filter |> not)

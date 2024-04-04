@@ -1,4 +1,8 @@
-module Id : module type of Pool_common.Id
+module Id : sig
+  include module type of Pool_common.Id
+
+  val to_common : t -> Pool_common.Id.t
+end
 
 type t =
   { user : Sihl_user.t

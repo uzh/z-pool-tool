@@ -776,15 +776,14 @@ end
 module MatchFilterUpdateNotification = struct
   let label = Label.MatchFilterUpdateNotification
 
-  let message_history experiment assignments =
-    let open CCList in
+  let message_history experiment sessions admin =
     let entity_uuids =
-      (experiment.Experiment.id |> Experiment.Id.to_common)
-      :: (assignments
-          |> flat_map (fun (session, assignments) ->
-            (session.Session.id |> Session.Id.to_common)
-            :: (assignments
-                >|= fun { Assignment.contact; _ } -> Contact.id contact)))
+      [ experiment.Experiment.id |> Experiment.Id.to_common
+      ; Admin.id admin |> Admin.Id.to_common
+      ]
+      @ (sessions
+         |> CCList.map (fun (session, _) ->
+           Session.Id.to_common session.Session.id))
     in
     Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
   ;;
@@ -832,7 +831,7 @@ module MatchFilterUpdateNotification = struct
         layout
         params
     in
-    let message_history = message_history experiment assignments in
+    let message_history = message_history experiment assignments admin in
     Email.create_job ~message_history email |> Lwt.return
   ;;
 end
