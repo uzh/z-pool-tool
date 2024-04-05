@@ -225,7 +225,12 @@ let message_templates_html
     edit_path
 ;;
 
-let list Pool_context.{ language; _ } experiments query =
+let list Pool_context.{ language; guardian; _ } experiments query =
+  let can_create_experiment =
+    let open Guard in
+    PermissionOnTarget.(
+      validate (create Permission.Create `Experiment) guardian)
+  in
   let url = Uri.of_string "/admin/experiments" in
   let data_table =
     Component.DataTable.create_meta
@@ -245,7 +250,7 @@ let list Pool_context.{ language; _ } experiments query =
     in
     [ `column Experiment.column_title
     ; `column Experiment.column_public_title
-    ; `custom create_experiment
+    ; (if can_create_experiment then `custom create_experiment else `empty)
     ]
   in
   let th_class = [ "w-6"; "w-4"; "w-2" ] in

@@ -536,7 +536,9 @@ end = struct
 
   let effects id =
     BaseGuard.ValidationSet.And
-      [ Experiment.Guard.Access.update id; Filter.Guard.Access.create ]
+      [ Experiment.Guard.Access.update id
+      ; Filter.Guard.Access.create ~experiment_id:(Id.to_common id) ()
+      ]
   ;;
 end
 
@@ -564,9 +566,12 @@ end = struct
   ;;
 
   let effects experiment_id filter_id =
-    BaseGuard.ValidationSet.And
+    let open BaseGuard.ValidationSet in
+    And
       [ Experiment.Guard.Access.update experiment_id
-      ; Filter.Guard.Access.update filter_id
+      ; Or
+          Filter.Guard.Access.
+            [ update (Experiment.Id.to_common experiment_id); update filter_id ]
       ]
   ;;
 end
@@ -596,9 +601,12 @@ end = struct
   ;;
 
   let effects experiment_id filter_id =
-    BaseGuard.ValidationSet.And
+    let open BaseGuard.ValidationSet in
+    And
       [ Experiment.Guard.Access.update experiment_id
-      ; Filter.Guard.Access.delete filter_id
+      ; Or
+          Filter.Guard.Access.
+            [ delete (Experiment.Id.to_common experiment_id); delete filter_id ]
       ]
   ;;
 end
