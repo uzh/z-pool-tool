@@ -97,18 +97,28 @@ module RolePermission = struct
 
   let select ?(count = false) fragment =
     let select_sql = if count then {sql| COUNT(*) |sql} else select_sql in
-    Format.sprintf
-      "SELECT\n  %s\nFROM  %s\n  WHERE\n  %s\n %s"
-      select_sql
-      from_sql
-      std_filter_sql
-      fragment
+    Format.sprintf "SELECT %s FROM %s %s" select_sql from_sql fragment
   ;;
 
   let find_by query pool =
+    let where = std_filter_sql, Dynparam.(empty) in
     Query.collect_and_count
       pool
       (Some query)
+      ~where
+      ~select
+      Backend.Entity.RolePermission.t
+  ;;
+
+  let query_by_role pool query role =
+    let where =
+      ( Format.asprintf "role_permissions.role = ? AND %s" std_filter_sql
+      , Dynparam.(empty |> add Caqti_type.string (Role.Role.show role)) )
+    in
+    Query.collect_and_count
+      pool
+      (Some query)
+      ~where
       ~select
       Backend.Entity.RolePermission.t
   ;;

@@ -39,6 +39,16 @@ module Role = struct
     ]
   [@@deriving show, eq, ord, yojson, sexp_of]
 
+  let of_name = function
+    | "admin" -> Ok `Admin
+    | "assistant" -> Ok `Assistant
+    | "experimenter" -> Ok `Experimenter
+    | "locationmanager" -> Ok `LocationManager
+    | "operator" -> Ok `Operator
+    | "recruiter" -> Ok `Recruiter
+    | _ -> Error Pool_common.Message.(Invalid Field.Role)
+  ;;
+
   let name = show %> Guardian.Utils.decompose_variant_string %> fst
 
   let of_string_res =
@@ -64,6 +74,9 @@ module Role = struct
     ; `Recruiter
     ]
   ;;
+
+  let static = [ `Admin; `Operator ]
+  let customizable = CCList.sorted_diff ~cmp:compare all static
 
   type input_type =
     | QueryExperiments

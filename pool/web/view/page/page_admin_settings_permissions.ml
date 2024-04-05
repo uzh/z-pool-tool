@@ -1,22 +1,20 @@
 open CCFun
-open Containers
 open Tyxml.Html
 module HttpUtils = Http_utils
+module Icon = Component.Icon
 module Input = Component.Input
+module Table = Component.Table
 
-let role_permission_path ?suffix () =
-  let default = "/admin/settings/role-permission/" in
-  CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
-;;
+let role_permission_path = HttpUtils.Url.Admin.role_permission_path
 
-let list Pool_context.{ language; csrf; guardian; _ } rules query =
+let list Pool_context.{ language; csrf; guardian; _ } role rules query =
   let open Pool_common in
   let can_manage =
     Guard.PermissionOnTarget.validate
       Guard.(PermissionOnTarget.create Permission.Manage `Permission)
       guardian
   in
-  let url = Uri.of_string (role_permission_path ()) in
+  let url = Uri.of_string (role_permission_path ~role ()) in
   let data_table = Component.DataTable.create_meta url query language in
   let cols =
     [ `column Guard.RolePermission.column_role
@@ -33,7 +31,7 @@ let list Pool_context.{ language; csrf; guardian; _ } rules query =
         ~a:
           [ a_method `Post
           ; a_action
-              (role_permission_path ~suffix:target ()
+              (role_permission_path ~role ~suffix:target ()
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
@@ -73,7 +71,36 @@ let list Pool_context.{ language; csrf; guardian; _ } rules query =
     rules
 ;;
 
-let index (Pool_context.{ language; _ } as context) rules query =
+let show (Pool_context.{ language; _ } as context) role rules query =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt (Role.Role.name role |> CCString.capitalize_ascii) ]
+    ; p (* TODO: Update text *)
+        [ Pool_common.(Utils.hint_to_string language I18n.RolePermissionsIntro)
+          |> HttpUtils.add_line_breaks
+        ]
+    ; list context role rules query
+    ]
+;;
+
+let index Pool_context.{ language; _ } =
+  let open Role.Role in
+  let table =
+    let thead =
+      let open Pool_common.Message in
+      (Field.[ Role ] |> Table.fields_to_txt language) @ [ txt "" ]
+    in
+    let row role =
+      [ txt (name role |> CCString.capitalize_ascii)
+      ; Input.link_as_button ~icon:Icon.Eye (role_permission_path ~role ())
+      ]
+    in
+    customizable
+    |> CCList.map row
+    |> Table.horizontal_table ~align_last_end:true ~thead `Striped
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
@@ -81,10 +108,6 @@ let index (Pool_context.{ language; _ } as context) rules query =
         [ txt
             Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions)
         ]
-    ; p
-        [ Pool_common.(Utils.hint_to_string language I18n.RolePermissionsIntro)
-          |> HttpUtils.add_line_breaks
-        ]
-    ; list context rules query
+    ; table
     ]
 ;;
