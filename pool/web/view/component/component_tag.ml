@@ -1,5 +1,15 @@
 open Tyxml.Html
 
+let create_chip ?(ghost = false) ?(inline = false) style text =
+  let classnames =
+    CCList.fold_left
+      (fun acc (condition, name) -> if condition then name :: acc else acc)
+      (Component_input.submit_type_to_class style :: [ "tag" ])
+      [ ghost, "ghost"; inline, "inline" ]
+  in
+  span ~a:[ a_class classnames ] [ txt text ]
+;;
+
 let create ?remove_action language tag =
   let open Tags in
   let text = tag.title |> Title.value |> txt in

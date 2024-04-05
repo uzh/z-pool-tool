@@ -519,8 +519,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
       "If no %s is specified, the role includes all %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RolePermissionsIntro ->
-    {|All existing permissions which are defined for roles of the tenant.|}
+  | RolePermissionsModelList -> "All existing targets of this tenant."
+  | RolePermissionsRoleList -> "All customizable roles of the tenant."
   | ScheduleAt time ->
     time
     |> Pool_common_utils.Time.formatted_date_time

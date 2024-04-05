@@ -198,6 +198,8 @@ let rec field_to_string =
   | PendingContactImports -> "pending contact imports"
   | Period -> "period"
   | Permission -> "permission"
+  | PermissionOn (role, target) ->
+    Format.asprintf "permission %s of %s" target role
   | PlainText -> "plaintext"
   | Predicate -> "predicate"
   | PromptOnRegistration -> "promt during registration"

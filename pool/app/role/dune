@@ -3,6 +3,7 @@
  (libraries pool_common sihl guardian)
  (preprocess
   (pps
+   ppx_deriving.enum
    ppx_deriving.show
    ppx_deriving.ord
    ppx_deriving_yojson

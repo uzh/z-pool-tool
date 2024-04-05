@@ -9,6 +9,13 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let role_permission_target_path ?suffix ?target role () =
+    role_permission_path ~role ()
+    |> Format.asprintf "%s/target"
+    |> append_opt (CCOption.map Role.Target.name target)
+    |> append_opt suffix
+  ;;
+
   let session_path ?suffix experiment_id session_id =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s"

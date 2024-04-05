@@ -10,6 +10,45 @@ let error_path = "/admin/dashboard"
 let create_layout = General.create_tenant_layout
 let role_permission_path = HttpUtils.Url.Admin.role_permission_path
 
+let group_by_target query permissions =
+  let open Guard in
+  let open Hashtbl in
+  let targets =
+    let open Query in
+    let open Sort.SortOrder in
+    let sort =
+      let default = Ascending in
+      query.sort
+      |> CCOption.map (fun { Sort.column; order } ->
+        if Column.equal column RolePermission.column_model
+        then order
+        else default)
+      |> CCOption.value ~default
+    in
+    match sort with
+    | Ascending -> Role.Target.all
+    | Descending -> CCList.rev Role.Target.all
+  in
+  let tbl : (Role.Target.t, Permission.t list) t =
+    create (CCList.length targets)
+  in
+  let find = find_opt tbl in
+  let add = replace tbl in
+  let () =
+    CCList.iter
+      (fun { RolePermission.permission; model; _ } ->
+        find model
+        |> function
+        | None -> add model [ permission ]
+        | Some permissions -> add model (permission :: permissions))
+      permissions
+  in
+  targets
+  |> CCList.map (fun target ->
+    let permissions = find_opt tbl target |> CCOption.value ~default:[] in
+    target, permissions)
+;;
+
 let role_from_request req =
   let open Role.Role in
   let open CCResult.Infix in
@@ -18,6 +57,11 @@ let role_from_request req =
   match CCList.mem ~eq:equal role customizable with
   | false -> Error Pool_common.Message.(Invalid Field.Role)
   | true -> Ok role
+;;
+
+let target_from_request req =
+  let open Role.Target in
+  HttpUtils.find_id of_name Field.Target req
 ;;
 
 let rule_from_request req role =
@@ -54,17 +98,13 @@ let show req =
     ~query:(module Guard.RolePermission)
     ~create_layout:General.create_tenant_layout
     req
-  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let* role = role_from_request req |> Lwt_result.lift in
-  let%lwt actor =
-    Pool_context.Utils.find_authorizable_opt database_label user
-  in
   (* TODO: check only available permissions *)
-  let%lwt permissions, query =
-    match actor with
-    | None -> Lwt.return ([], query)
-    | Some _actor ->
-      Guard.Persistence.RolePermission.query_by_role database_label query role
+  let%lwt permissions =
+    Guard.Persistence.RolePermission.query_by_role database_label role
+    ||> fst
+    ||> group_by_target query
   in
   let open Page.Admin.Settings.RolePermission in
   (if HttpUtils.Htmx.is_hx_request req then list else show)
@@ -73,6 +113,29 @@ let show req =
     permissions
     query
   |> Lwt_result.return
+;;
+
+let edit_htmx req =
+  (* let open Utils.Lwt_result.Infix in *)
+  let result ({ Pool_context.database_label; _ } as context) =
+    let* role = role_from_request req |> Lwt_result.lift in
+    let* target = target_from_request req |> Lwt_result.lift in
+    let%lwt permissions =
+      Guard.Persistence.RolePermission.permissions_by_role_and_target
+        database_label
+        role
+        target
+    in
+    Page.Admin.Settings.RolePermission.edit_target_modal
+      context
+      role
+      target
+      permissions
+    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Lwt.return_ok
+  in
+  result
+  |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 let delete req =
@@ -108,12 +171,10 @@ let delete req =
 module Access : module type of Helpers.Access = struct
   include Helpers.Access
 
-  let read =
-    Guard.Access.Permission.read |> Middleware.Guardian.validate_admin_entity
-  ;;
+  let validate = Middleware.Guardian.validate_admin_entity
+  let read = Guard.Access.Permission.read |> validate
 
   let delete =
-    Cqrs_command.Guardian_command.DeleteRolePermission.effects
-    |> Middleware.Guardian.validate_admin_entity
+    Cqrs_command.Guardian_command.DeleteRolePermission.effects |> validate
   ;;
 end

@@ -110,14 +110,14 @@ module RolePermission = struct
       Backend.Entity.RolePermission.t
   ;;
 
-  let query_by_role pool query role =
+  let query_by_role ?query pool role =
     let where =
       ( Format.asprintf "role_permissions.role = ? AND %s" std_filter_sql
       , Dynparam.(empty |> add Caqti_type.string (Role.Role.show role)) )
     in
     Query.collect_and_count
       pool
-      (Some query)
+      query
       ~where
       ~select
       Backend.Entity.RolePermission.t
@@ -212,6 +212,27 @@ module RolePermission = struct
       |> pt ->* Pool_common.Repo.Id.t
     in
     Utils.Database.collect (Pool_database.Label.value pool) request pv
+  ;;
+
+  let permissions_by_role_and_target_request =
+    let open Caqti_request.Infix in
+    {|
+    SELECT
+      permission
+    FROM
+      guardian_role_permissions
+    WHERE
+      role = ?
+      AND target_model = ?
+    |}
+    |> Caqti_type.(t2 string string ->* Backend.Entity.Permission.t)
+  ;;
+
+  let permissions_by_role_and_target database_label role target =
+    Utils.Database.collect
+      (Pool_database.Label.value database_label)
+      permissions_by_role_and_target_request
+      (Role.Role.show role, Role.Target.show target)
   ;;
 end
 

@@ -249,7 +249,8 @@ type hint =
   | ResetInvitations
   | ResetInvitationsLastReset of Ptime.t
   | RoleIntro of Entity_message.Field.t * Entity_message.Field.t
-  | RolePermissionsIntro
+  | RolePermissionsModelList
+  | RolePermissionsRoleList
   | ScheduleAt of Ptime.t
   | ScheduledIntro
   | ScheduleEvery of Ptime.Span.t

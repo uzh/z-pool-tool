@@ -236,6 +236,8 @@ type t =
   | PendingContactImports [@name "pending_contact_imports"]
   | Period [@name "period"] [@printer go "period"]
   | Permission [@name "permission"] [@printer go "permission"]
+  | PermissionOn of string * string [@name "permission_on"]
+  [@printer go "permission_on"]
   | PlainText [@name "plain_text"] [@printer go "plain_text"]
   | Predicate [@name "predicate"] [@printer go "predicate"]
   | PromptOnRegistration [@name "prompt_on_registration"]

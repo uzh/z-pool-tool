@@ -14,6 +14,7 @@ export const initHTMX = () => {
     document.addEventListener('htmx:afterSettle', (e) => {
         initSearch(e.detail.elt)
         initRichTextEditor(e.detail.elt)
+        initModal(e.detail.elt)
         initNotification()
 
         const modalClose = [...e.detail.elt.querySelectorAll(".modal-close")];

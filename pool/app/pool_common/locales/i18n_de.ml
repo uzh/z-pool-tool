@@ -531,8 +531,8 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RolePermissionsIntro ->
-    {|Alle Berechtigungen, welche für Rollen des Tenants existieren.|}
+  | RolePermissionsModelList -> "All bestehenden Ziele dieses Tenants."
+  | RolePermissionsRoleList -> "Alle anpassparen Rollen des Teants."
   | ScheduleAt time ->
     time
     |> Pool_common_utils.Time.formatted_date_time
