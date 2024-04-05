@@ -26,12 +26,12 @@ module Access = struct
 
   let index = one_of_tuple (Read, `Filter, None)
 
-  let create ?id () =
+  let create ?experiment_id () =
     CCOption.map_or
       ~default:(filter Create)
       (fun id ->
         And [ Or [ filter Create; filter ~id:(Entity.Id.of_common id) Create ] ])
-      id
+      experiment_id
   ;;
 
   let update id = filter ~id Update

@@ -313,7 +313,12 @@ module Guard : sig
 
   module Access : sig
     val index : Guard.ValidationSet.t
-    val create : ?id:Pool_common.Id.t -> unit -> Guard.ValidationSet.t
+
+    val create
+      :  ?experiment_id:Pool_common.Id.t
+      -> unit
+      -> Guard.ValidationSet.t
+
     val update : Id.t -> Guard.ValidationSet.t
     val delete : Id.t -> Guard.ValidationSet.t
   end

@@ -37,7 +37,7 @@ module Create : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : ?id:Id.t -> unit -> Guard.ValidationSet.t
+  val effects : ?experiment_id:Id.t -> unit -> Guard.ValidationSet.t
 end = struct
   type t = Filter.Title.t
 
