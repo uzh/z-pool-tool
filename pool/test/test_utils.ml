@@ -11,6 +11,8 @@ let partial_update =
     Custom_field.PartialUpdate.equal
 ;;
 
+let filter = Alcotest.testable Filter.pp Filter.equal
+
 let language =
   Alcotest.testable Pool_common.Language.pp Pool_common.Language.equal
 ;;

@@ -1,5 +1,4 @@
 open CCFun
-module Assignment = Admin_experiments_assignments
 module Field = Pool_common.Message.Field
 module FilterEntity = Filter
 module HttpUtils = Http_utils

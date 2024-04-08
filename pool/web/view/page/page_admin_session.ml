@@ -885,6 +885,8 @@ let duplicate
 
 let detail
   ?access_contact_profiles
+  ~not_matching_filter_count
+  ?(rerun_session_filter = false)
   ?(send_direct_message = false)
   ?view_contact_name
   ?view_contact_info
@@ -915,6 +917,16 @@ let detail
         ?icon
         (Format.asprintf "%s/%s" session_path url)
       |> CCOption.pure
+  in
+  let not_matching_filter_alert =
+    match not_matching_filter_count with
+    | None | Some 0 -> txt ""
+    | Some count ->
+      [ I18n.AssignmentsNotMatchingFilerSession count
+        |> Utils.hint_to_string language
+        |> txt
+      ]
+      |> Notification.notification language `Warning
   in
   let resend_reminders_modal =
     let open Pool_common in
@@ -1241,6 +1253,23 @@ let detail
           ]
       else txt ""
     in
+    let refresh_fiter_button =
+      if rerun_session_filter
+      then
+        header_btn
+          Icon.RefreshOutline
+          Message.UpdateAssignmentsMatchFilter
+          Htmx.
+            [ hx_post
+                (HttpUtils.Url.Admin.session_path
+                   ~suffix:"update-matches-filter"
+                   experiment_id
+                   session.id
+                 |> Sihl.Web.externalize_path)
+            ; hx_swap "None"
+            ]
+      else txt ""
+    in
     div
       ~a:[ a_class [ "stack" ] ]
       [ div
@@ -1260,6 +1289,7 @@ let detail
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
               [ direct_messaging_buttons
+              ; refresh_fiter_button
               ; header_btn
                   Icon.PrintOutline
                   Message.(Print (Some Field.Assignments))
@@ -1283,7 +1313,8 @@ let detail
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ session_overview
+    [ not_matching_filter_alert
+    ; session_overview
     ; tags_html
     ; message_templates_html
         Message_template.Label.SessionReminder
@@ -1307,19 +1338,28 @@ let print
   session
   assignments
   =
+  let open Page_admin_assignments in
   let assignment_list =
-    Page_admin_assignments.Partials.print_assignments_list
+    data_table
       ?view_contact_name
       ?view_contact_info
+      ~is_print:true
       context
       experiment
       session
+      false
       assignments
   in
   let title =
     Pool_common.(Utils.text_to_string language (session_title session))
   in
-  [ div ~a:[ a_class [ "safety-margin" ] ] [ h1 [ txt title ]; assignment_list ]
+  [ div
+      ~a:[ a_class [ "safety-margin" ] ]
+      [ h1 [ txt title ]
+      ; div
+          ~a:[ a_class [ "stack-lg" ] ]
+          [ Partials.table_legend language; assignment_list ]
+      ]
   ]
   |> Layout.Print.create ~document_title:title
 ;;

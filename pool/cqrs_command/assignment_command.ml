@@ -575,3 +575,25 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end
+
+module UpdateMatchesFilter : sig
+  include Common.CommandSig with type t = Assignment.event list * Email.job list
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Assignment.event list * Email.job list
+
+  let handle ?(tags = Logs.Tag.empty) (assignment_events, emails) =
+    Logs.info ~src (fun m -> m "Handle command UpdateMatchesFilter" ~tags);
+    Ok
+      ((assignment_events |> CCList.map Pool_event.assignment)
+       @ [ Email.BulkSent emails |> Pool_event.email ])
+  ;;
+
+  let effects id = Session.Guard.Access.update id
+end

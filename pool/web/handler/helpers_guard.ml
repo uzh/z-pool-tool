@@ -59,10 +59,18 @@ let target_model_for_actor_role
 ;;
 
 let can_send_direct_message { Pool_context.database_label; user; _ } =
-  let open Utils.Lwt_result.Infix in
-  Pool_context.Utils.find_authorizable ~admin_only:true database_label user
-  >>= Guard.Persistence.validate
-        database_label
-        Contact.Guard.Access.send_direct_message
-  ||> CCResult.is_ok
+  has_permission database_label user Contact.Guard.Access.send_direct_message
+;;
+
+let can_rerun_session_filter
+  { Pool_context.database_label; user; _ }
+  experiment_id
+  session_id
+  =
+  has_permission
+    database_label
+    user
+    (Cqrs_command.Assignment_command.UpdateMatchesFilter.effects
+       experiment_id
+       session_id)
 ;;

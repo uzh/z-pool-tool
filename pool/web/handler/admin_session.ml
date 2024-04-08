@@ -348,7 +348,11 @@ let session_page database_label req context session experiment =
     >|> create_layout
   | `Print ->
     let%lwt assignments =
-      Assignment.find_by_session database_label session.Session.id
+      Assignment.(
+        find_for_session_detail_screen
+          ~query:default_query
+          database_label
+          session_id)
     in
     Page.Admin.Session.print
       ~view_contact_name
@@ -390,6 +394,13 @@ let show req =
   in
   match HttpUtils.Htmx.is_hx_request req with
   | false ->
+    let%lwt not_matching_filter_count =
+      match session.Session.canceled_at with
+      | Some _ -> Lwt.return_none
+      | None ->
+        Assignment.count_unsuitable_by database_label (`Session session_id)
+        ||> CCOption.return
+    in
     let%lwt current_tags =
       Tags.ParticipationTags.(
         find_all database_label (Session (Session.Id.to_common session_id)))
@@ -404,8 +415,13 @@ let show req =
     let%lwt send_direct_message =
       Helpers.Guard.can_send_direct_message context
     in
+    let%lwt rerun_session_filter =
+      Helpers.Guard.can_rerun_session_filter context experiment_id session_id
+    in
     Page.Admin.Session.detail
       ~access_contact_profiles
+      ~not_matching_filter_count
+      ~rerun_session_filter
       ~send_direct_message
       ~view_contact_name
       ~view_contact_info
@@ -1053,6 +1069,42 @@ module DirectMessage = struct
   ;;
 end
 
+let update_matches_filter req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s"
+      (Experiment.Id.value experiment_id)
+      (Session.Id.value session_id)
+  in
+  let result { Pool_context.database_label; user; _ } =
+    let tags = Pool_context.Logger.Tags.req req in
+    Utils.Lwt_result.map_error (fun err -> err, path)
+    @@
+    let* session = Session.find database_label session_id in
+    let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
+    let* events =
+      Assignment_job.update_matches_filter
+        ~admin
+        database_label
+        (`Session session)
+      >== Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Http_utils.Htmx.htmx_redirect
+      ~actions:
+        [ Message.set
+            ~success:[ Pool_common.Message.(Updated Field.Assignments) ]
+        ]
+      path
+      ()
+    |> Lwt_result.ok
+  in
+  result |> HttpUtils.Htmx.extract_happy_path ~src req
+;;
+
 module Api = struct
   let calendar_api ?actor req query =
     let result { Pool_context.database_label; guardian; _ } =
@@ -1155,8 +1207,10 @@ module Access : sig
   val cancel : Rock.Middleware.t
   val close : Rock.Middleware.t
   val direct_message : Rock.Middleware.t
+  val update_matches_filter : Rock.Middleware.t
 end = struct
   module SessionCommand = Cqrs_command.Session_command
+  module AssignmentCommand = Cqrs_command.Assignment_command
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
@@ -1230,5 +1284,11 @@ end = struct
 
   let direct_message =
     Contact.Guard.Access.send_direct_message |> Guardian.validate_admin_entity
+  ;;
+
+  let update_matches_filter =
+    AssignmentCommand.UpdateMatchesFilter.effects
+    |> combined_effects
+    |> Guardian.validate_generic
   ;;
 end

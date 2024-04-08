@@ -10,7 +10,6 @@ $green-light: color.adjust($green, $lightness: $color-shades-ratio * 2);
 $red-light: color.adjust($red, $lightness: $color-shades-ratio * 2);
 
 $orange: rgb(226, 117, 0) !default;
-$orange-lighter: color.adjust($orange, $lightness: $color-shades-ratio * 4) !default;
 
 // Typography
 h1,
@@ -32,11 +31,6 @@ h1,
 .color-orange,
 [class*="orange-on-"] {
     color: $orange;
-}
-
-.bg-orange-lighter, 
-[class*=-on-orange-lighter] {
-    background-color: $orange-lighter;
 }
 
 ul.no-style {

@@ -375,7 +375,7 @@ module Admin = struct
             ]
           in
           let assignments =
-            let open Experiments.Assignment in
+            let open Assignments in
             let specific =
               [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
               ; post "/close" ~middlewares:[ Session.Access.close ] Close.update
@@ -406,15 +406,10 @@ module Admin = struct
               (remove_session_participation_tag, Access.update)
           in
           let direct_message =
-            [ post
-                ""
-                ~middlewares:[ Access.direct_message ]
-                DirectMessage.modal_htmx
-            ; post
-                "/send"
-                ~middlewares:[ Access.direct_message ]
-                DirectMessage.send
-            ]
+            DirectMessage.
+              [ post "" ~middlewares:[ Access.direct_message ] modal_htmx
+              ; post "/send" ~middlewares:[ Access.direct_message ] send
+              ]
           in
           [ get "" ~middlewares:[ Access.read ] show
           ; post "" ~middlewares:[ Access.update ] update
@@ -429,6 +424,10 @@ module Admin = struct
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
           ; get "/print" ~middlewares:[ Access.read ] print
+          ; post
+              "/update-matches-filter"
+              ~middlewares:[ Access.update_matches_filter ]
+              update_matches_filter
           ; get "/duplicate" ~middlewares:[ Access.create ] duplicate
           ; post "/duplicate" ~middlewares:[ Access.create ] duplicate_post_htmx
           ; get
@@ -442,7 +441,7 @@ module Admin = struct
           ; post
               "/toggle-assignments"
               ~middlewares:[ Session.Access.close ]
-              Experiments.Assignment.Close.toggle
+              Assignments.Close.toggle
           ; choose ~scope:(add_human_field Assignments) assignments
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ; choose ~scope:(ParticipationTag |> human_url) participation_tags

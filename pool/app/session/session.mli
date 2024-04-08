@@ -358,6 +358,11 @@ val query_by_experiment
   -> Experiment.Id.t
   -> (t list * Query.t) Lwt.t
 
+val find_sessions_to_update_matcher
+  :  Pool_database.Label.t
+  -> [< `Experiment of Experiment.Id.t | `Upcoming ]
+  -> t list Lwt.t
+
 val find_for_calendar_by_user
   :  Guard.Actor.t
   -> Pool_database.Label.t

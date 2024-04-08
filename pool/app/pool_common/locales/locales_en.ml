@@ -28,7 +28,6 @@ let rec field_to_string =
   | Assistants -> "assistants"
   | AvailableLanguages -> "available languages"
   | Building -> "building"
-  | Canceled -> "canceled"
   | CanceledAt -> "canceled at"
   | CellPhone -> "cell phone"
   | Chronological -> "chronological"
@@ -170,6 +169,7 @@ let rec field_to_string =
   | NoShow -> "no show"
   | NoShowAbr -> "NS"
   | NoShowCount -> "no shows"
+  | NotMatchingFilterCount -> "not matching filter"
   | NotifiedAt -> "notified at"
   | NotifyVia -> "notify via"
   | NotifyContact -> "notify contact"
@@ -486,6 +486,7 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "has been marked as deleted."
+  | JobCannotBeRetriggered -> "This job cannot be retriggered."
   | JobPending -> "The job is still pending."
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
@@ -680,6 +681,7 @@ let control_to_string = function
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field
   | Update field -> format_submit "update" field
+  | UpdateAssignmentsMatchFilter -> format_submit "rerun filter" None
   | UpdateOrder -> format_submit "update order" None
   | Validate -> format_submit "validate" None
   | Verify field -> format_submit "verify" field

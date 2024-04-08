@@ -1,6 +1,7 @@
 (library
  (name system_event)
  (libraries
+  assignment
   conformist
   database
   guard

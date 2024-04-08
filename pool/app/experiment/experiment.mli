@@ -351,6 +351,11 @@ val query_participation_history_by_contact
   -> Contact.t
   -> ((t * bool) list * Query.t) Lwt.t
 
+val find_admins_to_notify_about_invitations
+  :  Pool_database.Label.t
+  -> Id.t
+  -> Admin.t list Lwt.t
+
 val invitation_count : Pool_database.Label.t -> Id.t -> int Lwt.t
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
