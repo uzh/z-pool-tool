@@ -842,6 +842,7 @@ module MatchFilterUpdateNotification = struct
     Email.create_job ~message_history email |> Lwt.return
   ;;
 end
+
 module PasswordChange = struct
   let email_params = global_params
   let label = Label.PasswordChange

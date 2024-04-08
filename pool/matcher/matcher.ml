@@ -146,18 +146,18 @@ let notify_all_invited pool tenant experiment =
   match MatcherNotificationSent.value experiment.matcher_notification_sent with
   | true -> Lwt.return []
   | false ->
-    let%lwt recipient =
-      Settings.find_contact_email pool
-      ||> Settings.ContactEmail.value
-      ||> Pool_user.EmailAddress.of_string
-    in
     let%lwt email_event =
-      Message_template.MatcherNotification.create
-        tenant
-        Pool_common.Language.En
-        experiment
-        recipient
-      ||> Email.sent
+      Experiment.find_admins_to_notify_about_invitations
+        pool
+        experiment.Experiment.id
+      >|> Lwt_list.map_s (fun admin ->
+        admin
+        |> Admin.email_address
+        |> Message_template.MatcherNotification.create
+             tenant
+             Pool_common.Language.En
+             experiment)
+      ||> Email.bulksent
       ||> Pool_event.email
     in
     let experiment_event =

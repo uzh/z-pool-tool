@@ -607,16 +607,16 @@ end = struct
     in
     let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
-      (([ Experiment.(
-            Updated
-              { experiment with
-                matcher_notification_sent = MatcherNotificationSent.create false
-              })
-          |> Pool_event.experiment
-        ; Filter.Updated filter |> Pool_event.filter
-        ]
-        @ assignment_events)
-       @ [ email_event ])
+      ([ Experiment.(
+           Updated
+             { experiment with
+               matcher_notification_sent = MatcherNotificationSent.create false
+             })
+         |> Pool_event.experiment
+       ; Filter.Updated filter |> Pool_event.filter
+       ; email_event
+       ]
+       @ assignment_events)
   ;;
 
   let effects experiment_id filter_id =

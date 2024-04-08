@@ -78,7 +78,8 @@ let suite =
           ] )
     ; ( "filter"
       , Filter_test.
-          [test_case "update filter" `Slow update_filter;  test_case
+          [ test_case "update filter" `Slow update_filter
+          ; test_case
               "create and update filter template"
               `Slow
               create_and_update_filter_template

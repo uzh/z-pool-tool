@@ -306,6 +306,20 @@ let matcher_notification _ () =
     |> contact_name_filter
     |> store_filter experiment
   in
+  let email_event () =
+    Experiment.find_admins_to_notify_about_invitations
+      database_label
+      experiment.Experiment.id
+    >|> Lwt_list.map_s (fun admin ->
+      admin
+      |> Admin.email_address
+      |> Message_template.MatcherNotification.create
+           tenant
+           Pool_common.Language.En
+           experiment)
+    ||> Email.bulksent
+    ||> Pool_event.email
+  in
   let%lwt mailing = MailingRepo.create experiment_id in
   let matcher_events () =
     Matcher.events_of_mailings [ database_label, [ mailing, limit ] ]
@@ -314,20 +328,6 @@ let matcher_notification _ () =
   in
   let%lwt events = matcher_events () in
   let%lwt expected =
-    let%lwt recipient =
-      Settings.find_contact_email database_label
-      ||> Settings.ContactEmail.value
-      ||> Pool_user.EmailAddress.of_string
-    in
-    let%lwt mail =
-      matcher_notification_mail
-        tenant
-        Pool_common.Language.En
-        experiment
-        recipient
-      ||> Email.sent
-      ||> Pool_event.email
-    in
     let experiment =
       Experiment.(
         Updated
@@ -336,7 +336,8 @@ let matcher_notification _ () =
           })
       |> Pool_event.experiment
     in
-    Lwt.return [ mail; experiment ]
+    let%lwt emails = email_event () in
+    Lwt.return [ emails; experiment ]
   in
   (* Expect notification to be sent *)
   let () =
