@@ -323,10 +323,8 @@ let matcher_notification _ () =
   let%lwt mailing = MailingRepo.create experiment_id in
   let matcher_events () =
     Matcher.events_of_mailings [ database_label, [ mailing, limit ] ]
-    ||> CCList.hd
-    ||> snd
   in
-  let%lwt events = matcher_events () in
+  let%lwt events = matcher_events () ||> CCList.hd ||> snd in
   let%lwt expected =
     let experiment =
       Experiment.(
@@ -345,9 +343,12 @@ let matcher_notification _ () =
   in
   let%lwt () = Pool_event.handle_events database_label events in
   (* Expect notification not to be sent again *)
-
-  (* TODO: Fix this test *)
-  (* let%lwt events = matcher_events () in let () = Alcotest.(check (list
-     Test_utils.event) "succeeds" [] events) in *)
+  let%lwt events =
+    matcher_events ()
+    ||> function
+    | [] -> []
+    | events -> events |> CCList.hd |> snd
+  in
+  let () = Alcotest.(check (list Test_utils.event) "succeeds" [] events) in
   Lwt.return_unit
 ;;
