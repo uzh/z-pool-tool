@@ -1,4 +1,8 @@
-module Id : module type of Pool_common.Id
+module Id : sig
+  include module type of Pool_common.Id
+
+  val to_common : t -> Pool_common.Id.t
+end
 
 type t =
   { user : Sihl_user.t
@@ -91,6 +95,13 @@ val find_all_with_roles
   :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
   -> Pool_database.Label.t
   -> (Role.Role.t * Guard.Uuid.Target.t option) list
+  -> t list Lwt.t
+
+val find_all_with_permissions_on_target
+  :  Pool_database.Label.t
+  -> Guard.Persistence.target_model
+  -> Pool_common.Id.t
+  -> Guard.Permission.t list
   -> t list Lwt.t
 
 val search_by_name_and_email

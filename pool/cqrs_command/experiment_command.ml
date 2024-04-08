@@ -507,36 +507,56 @@ end = struct
 end
 
 module CreateFilter : sig
-  include Common.CommandSig with type t = Filter.query
+  include Common.CommandSig with type t = Filter.t
+
+  val create_filter
+    :  ?id:Filter.Id.t
+    -> Filter.Key.human list
+    -> Filter.t list
+    -> Filter.query
+    -> (Filter.t, Pool_common.Message.error) result
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Filter.Key.human list
-    -> Filter.t list
+    -> Assignment.event list * Email.job list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
-  type t = Filter.query
+  type t = Filter.t
 
-  let handle ?(tags = Logs.Tag.empty) experiment key_list template_list query =
-    Logs.info ~src (fun m -> m "Handle command CreateFilter" ~tags);
+  let create_filter ?(id = Filter.Id.create ()) key_list template_list query =
     let open CCResult in
     let* query = Filter.validate_query key_list template_list query in
-    let id = Pool_common.Id.create () in
-    let filter = Filter.create ~id None query in
+    Filter.create ~id None query |> return
+  ;;
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    experiment
+    (assignment_events, emails)
+    (filter : Filter.t)
+    =
+    Logs.info ~src (fun m -> m "Handle command CreateFilter" ~tags);
+    let open CCResult in
     let experiment =
       { experiment with
         Experiment.filter = Some filter
       ; matcher_notification_sent = MatcherNotificationSent.create false
       }
     in
+    let assignment_events =
+      assignment_events |> CCList.map Pool_event.assignment
+    in
+    let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
-      [ Filter.Created filter |> Pool_event.filter
-      ; Experiment.Updated experiment |> Pool_event.experiment
-      ]
+      ([ Filter.Created filter |> Pool_event.filter
+       ; Experiment.Updated experiment |> Pool_event.experiment
+       ]
+       @ assignment_events
+       @ [ email_event ])
   ;;
 
   let effects id =
@@ -548,42 +568,55 @@ end = struct
 end
 
 module UpdateFilter : sig
-  include Common.CommandSig with type t = Filter.query
+  include Common.CommandSig with type t = Filter.t
+
+  val create_filter
+    :  Filter.Key.human list
+    -> t list
+    -> t
+    -> Filter.query
+    -> (t, Pool_common.Message.error) result
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Filter.Key.human list
-    -> Filter.t list
-    -> Filter.t
+    -> Assignment.event list * Email.job list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Experiment.Id.t -> Filter.Id.t -> BaseGuard.ValidationSet.t
 end = struct
-  type t = Filter.query
+  type t = Filter.t
+
+  let create_filter key_list template_list filter query =
+    let open CCResult in
+    let* query = Filter.validate_query key_list template_list query in
+    Ok Filter.{ filter with query }
+  ;;
 
   let handle
     ?(tags = Logs.Tag.empty)
     experiment
-    key_list
-    template_list
+    (assignment_events, emails)
     filter
-    query
     =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
-    let* query = Filter.validate_query key_list template_list query in
-    let filter = Filter.{ filter with query } in
+    let assignment_events =
+      assignment_events |> CCList.map Pool_event.assignment
+    in
+    let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
-      [ Experiment.(
-          Updated
-            { experiment with
-              matcher_notification_sent = MatcherNotificationSent.create false
-            })
-        |> Pool_event.experiment
-      ; Filter.Updated filter |> Pool_event.filter
-      ]
+      (([ Experiment.(
+            Updated
+              { experiment with
+                matcher_notification_sent = MatcherNotificationSent.create false
+              })
+          |> Pool_event.experiment
+        ; Filter.Updated filter |> Pool_event.filter
+        ]
+        @ assignment_events)
+       @ [ email_event ])
   ;;
 
   let effects experiment_id filter_id =

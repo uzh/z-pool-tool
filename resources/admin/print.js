@@ -6,7 +6,7 @@ export const initPrint = () => {
             ev.preventDefault();
 
             const body = document.querySelector("body");
-            const currentUrl = window.location.href;
+            const currentUrl = window.location.pathname;
             const printUrl = `${currentUrl}/print`
             const printFrame = document.createElement("iframe");
 

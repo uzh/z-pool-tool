@@ -106,6 +106,9 @@ let to_string = function
       (Locales_de.field_to_string field)
   | NoInvitationsSent -> "Es wurden noch keine Einladungen verschickt."
   | Note -> "Hinweis"
+  | NotMatchingFilter ->
+    "Der Kontakt erfüllt nicht die im Filter bestimmten Kriterien für dieses \
+     Experiment."
   | OurPartners -> "Unsere Partner"
   | Past -> "Vergangen"
   | PastSessionsTitle -> "Ihre vergangenen Sessions"
@@ -223,6 +226,12 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
      anmelden."
+  | AssignmentsNotMatchingFilerSession count ->
+    Format.asprintf "%s not meet the criteria of this experiment."
+    @@
+      (match count with
+      | 1 -> "1 contact does"
+      | count -> Format.asprintf "%i contacts do" count)
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
@@ -422,6 +431,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Diese Nachricht wird versendet, um Administratoren darüber zu \
      informieren, dass keine weiteren Kontakte gefunden wurden, die an ein \
      Experiment eingeladen werden können."
+  | MessageTemplateMatchFilterUpdateNotification ->
+    "Diese Nachricht wird gesendet, um Admins zu informieren, wenn Kontakte \
+     nicht mehr den im Filter definierten Kriterien entsprechen."
   | MessageTemplatePasswordChange ->
     "Diese Nachricht wird gesendet, um Benutzer zu benachrichtigen, dass das \
      Kontopasswort geändert wurde."

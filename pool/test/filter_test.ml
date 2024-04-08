@@ -525,7 +525,6 @@ let save_filter filter experiment =
 
 let update_filter _ () =
   let open Test_utils in
-  let%lwt key_list = Filter.all_keys Data.database_label in
   let query = firstname "Foo" in
   let filter = Filter.create None query in
   let experiment =
@@ -534,10 +533,8 @@ let update_filter _ () =
   let events =
     Cqrs_command.Experiment_command.UpdateFilter.handle
       experiment
-      key_list
-      []
+      ([], [])
       filter
-      query
   in
   let expected =
     Ok
@@ -549,6 +546,31 @@ let update_filter _ () =
           }
         |> Pool_event.experiment
       ; Filter.Updated filter |> Pool_event.filter
+      ; Email.BulkSent [] |> Pool_event.email
+      ]
+  in
+  check_result expected events |> Lwt.return
+;;
+
+let create_and_update_filter_template _ () =
+  let open Cqrs_command.Filter_command in
+  let%lwt () =
+    CustomFieldData.NrOfSiblings.save ()
+    |> Pool_event.handle_event Data.database_label
+  in
+  let%lwt key_list = Filter.all_keys Data.database_label in
+  let title = "has siblings" |> Filter.Title.of_string in
+  let id = Filter.Id.create () in
+  let query = nr_of_siblings_filter () in
+  let events = Create.handle ~id key_list [] query title in
+  let filter = Filter.create ~id (Some title) query in
+  let expected = Ok [ Filter.Created filter |> Pool_event.filter ] in
+  check_result expected events;
+  let events = Update.handle key_list [] filter query title in
+  let expected =
+    Ok
+      [ Filter.(Updated filter) |> Pool_event.filter
+      ; Assignment_job.Dispatched |> Pool_event.assignmentjob
       ]
   in
   check_result expected events |> Lwt.return
@@ -562,8 +584,7 @@ let filter_contacts _ () =
     let%lwt () =
       let open CustomFieldData in
       (* Save field and answer with 3 *)
-      NrOfSiblings.(
-        save () :: save_answers ~answer_value:(Some answer_value) contacts)
+      NrOfSiblings.(save_answers ~answer_value:(Some answer_value) contacts)
       |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
     in
     let filter = Filter.create None (nr_of_siblings_filter ()) in
@@ -630,61 +651,43 @@ let filter_exclude_inactive _ () =
 
 let validate_filter_with_unknown_field _ () =
   let open Test_utils in
-  let experiment = Model.create_experiment () in
-  let%lwt () =
-    let%lwt key_list = Filter.all_keys Data.database_label in
-    let query =
-      let open Filter in
-      Pred
-        (Predicate.create
-           Key.(CustomField ("Unknown field id" |> Custom_field.Id.of_string))
-           equal_operator
-           (Single (Nr 1.2)))
-    in
-    let filter = Filter.create None query in
-    let events =
-      Cqrs_command.Experiment_command.UpdateFilter.handle
-        experiment
-        key_list
-        []
-        filter
-        query
-    in
-    let expected = Error Pool_common.Message.(Invalid Field.Key) in
-    check_result expected events |> Lwt.return
+  let open CCResult in
+  let%lwt key_list = Filter.all_keys Data.database_label in
+  let query =
+    let open Filter in
+    Pred
+      (Predicate.create
+         Key.(CustomField ("Unknown field id" |> Custom_field.Id.of_string))
+         equal_operator
+         (Single (Nr 1.2)))
   in
-  Lwt.return_unit
+  let filter = Filter.create None query in
+  let title = Filter.Title.of_string "Title" in
+  let events =
+    Cqrs_command.Filter_command.Update.handle key_list [] filter query title
+  in
+  let expected = Error Pool_common.Message.(Invalid Field.Key) in
+  check_result expected events |> Lwt.return
 ;;
 
 let validate_filter_with_invalid_value _ () =
   let open Test_utils in
-  let experiment = Model.create_experiment () in
-  let%lwt () =
-    let%lwt key_list = Filter.all_keys Data.database_label in
-    let query =
-      let open Filter in
-      Pred
-        (Predicate.create
-           Key.(
-             CustomField (CustomFieldData.NrOfSiblings.field |> Custom_field.id))
-           equal_operator
-           (Single (Str "Not a number")))
-    in
-    let filter = Filter.create None query in
-    let events =
-      Cqrs_command.Experiment_command.UpdateFilter.handle
-        experiment
-        key_list
-        []
-        filter
-        query
-    in
-    let expected =
-      Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
-    in
-    check_result expected events |> Lwt.return
+  let open CCResult in
+  let%lwt key_list = Filter.all_keys Data.database_label in
+  let query =
+    let open Filter in
+    Pred
+      (Predicate.create
+         Key.(
+           CustomField (CustomFieldData.NrOfSiblings.field |> Custom_field.id))
+         equal_operator
+         (Single (Str "Not a number")))
   in
-  Lwt.return_unit
+  let res = Filter.validate_query key_list [] query >|= Filter.create None in
+  let expected =
+    Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
+  in
+  Alcotest.(check (result filter error) "succeeds" res expected) |> Lwt.return
 ;;
 
 let test_list_filter answer_index operator contact experiment expected =
@@ -855,31 +858,28 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
 
 let create_filter_template_with_template _ () =
   let open Pool_common in
-  let%lwt () =
-    let open CCResult in
-    let open Filter in
-    let template_id = Pool_common.Id.create () in
-    let template =
-      Pred
-        Predicate.
-          { key = Key.(Hardcoded Name)
-          ; operator = equal_operator
-          ; value = Single (Str "Foo")
-          }
-      |> create ~id:template_id None
-    in
-    let filter = Template template_id in
-    let events =
-      let open Cqrs_command.Filter_command in
-      Message.Field.[ show Title, [ "Some title" ] ]
-      |> default_decode
-      >>= Create.handle [] [ template ] filter
-    in
-    let expected = Error Message.FilterMustNotContainTemplate in
-    Alcotest.(check (result (list event) error) "succeeds" expected events)
-    |> Lwt.return
+  let open CCResult in
+  let open Filter in
+  let template_id = Pool_common.Id.create () in
+  let template =
+    Pred
+      Predicate.
+        { key = Key.(Hardcoded Name)
+        ; operator = equal_operator
+        ; value = Single (Str "Foo")
+        }
+    |> create ~id:template_id None
   in
-  Lwt.return_unit
+  let filter = Template template_id in
+  let events =
+    let open Cqrs_command.Filter_command in
+    Message.Field.[ show Title, [ "Some title" ] ]
+    |> default_decode
+    >>= Create.handle [] [ template ] filter
+  in
+  let expected = Error Message.FilterMustNotContainTemplate in
+  Alcotest.(check (result (list event) error) "succeeds" expected events)
+  |> Lwt.return
 ;;
 
 let filter_with_admin_value _ () =
@@ -1006,7 +1006,7 @@ let filter_by_experiment_participation _ () =
       |> handle_events
     in
     let%lwt assignment =
-      find_by_session database_label first_session.Session.id
+      find_not_deleted_by_session database_label first_session.Session.id
       ||> CCList.find (fun (assignment : t) ->
         Contact.equal assignment.contact contact)
     in

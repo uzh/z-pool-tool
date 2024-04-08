@@ -79,6 +79,7 @@ let recruiter_permissions : RolePermission.t list =
 let recruiter_role_permissions : RolePermission.t list =
   let open Core.Permission in
   [ `Recruiter, Manage, `ContactDirectMessage
+  ; `Recruiter, Manage, `InvitationNotification
   ; `Recruiter, Manage, `RoleAdmin
   ; `Recruiter, Manage, `RoleAssistant
   ; `Recruiter, Manage, `RoleExperimenter

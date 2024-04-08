@@ -1,5 +1,6 @@
 open CCFun
 module BaseRole = Role
+module Dynparam = Utils.Database.Dynparam
 
 module Backend =
   Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target)
@@ -113,6 +114,95 @@ module RolePermission = struct
   ;;
 
   let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
+
+  let find_by_target_and_permissions_request permissions =
+    let select_from_actor_roles =
+      {sql|
+        SELECT
+          guardian_actors.uuid AS uuid,
+          guardian_role_permissions.target_model AS target_model,
+          guardian_role_permissions.permission AS permission
+        FROM
+          guardian_actors
+          INNER JOIN guardian_actor_roles ON guardian_actor_roles.actor_uuid = guardian_actors.uuid
+            AND guardian_actor_roles.mark_as_deleted IS NULL
+          INNER JOIN guardian_role_permissions ON guardian_role_permissions.role = guardian_actor_roles.role
+            AND guardian_role_permissions.mark_as_deleted IS NULL
+        |sql}
+    in
+    let select_from_actor_role_targets =
+      {sql|
+        SELECT
+          guardian_actors.uuid AS uuid,
+          guardian_role_permissions.target_model AS target_model,
+          guardian_role_permissions.permission AS permission
+        FROM
+          guardian_actors
+          INNER JOIN guardian_actor_role_targets ON guardian_actor_role_targets.actor_uuid = guardian_actors.uuid
+            AND guardian_actor_role_targets.target_uuid = UNHEX(REPLACE($1, '-', ''))
+            AND guardian_actor_role_targets.mark_as_deleted IS NULL
+          INNER JOIN guardian_role_permissions ON guardian_role_permissions.role = guardian_actor_role_targets.role
+            AND guardian_role_permissions.mark_as_deleted IS NULL
+        |sql}
+    in
+    let select_from_actor_permissions =
+      {sql|
+        SELECT
+          guardian_actors.uuid AS uuid,
+          guardian_actor_permissions.target_model AS target_model,
+          guardian_actor_permissions.permission AS permission
+        FROM
+          guardian_actors
+          INNER JOIN guardian_actor_permissions ON guardian_actor_permissions.actor_uuid = guardian_actors.uuid
+            AND guardian_actor_permissions.mark_as_deleted IS NULL
+            AND(guardian_actor_permissions.target_uuid IS NULL
+              OR guardian_actor_permissions.target_uuid = UNHEX(REPLACE($1, '-', '')))
+      |sql}
+    in
+    let permissions =
+      CCList.mapi (fun i _ -> "$" ^ CCInt.to_string (i + 3)) permissions
+      |> CCString.concat ", "
+    in
+    Format.asprintf
+      {sql|
+        SELECT
+          %s
+        FROM (%s UNION %s UNION %s) AS actor_rules
+        WHERE
+          actor_rules.target_model = $2
+          AND actor_rules.permission IN(%s)
+        GROUP BY
+          actor_rules.uuid
+      |sql}
+      (Pool_common.Id.sql_select_fragment ~field:"actor_rules.uuid")
+      select_from_actor_roles
+      select_from_actor_role_targets
+      select_from_actor_permissions
+      permissions
+  ;;
+
+  let find_actors_by_target_and_permissions pool target entity_uuid permissions =
+    let open Caqti_request.Infix in
+    let permissions =
+      Entity.Permission.(Manage :: permissions |> CCList.uniq ~eq:equal)
+    in
+    let open Dynparam in
+    let (Pack (pt, pv)) =
+      let add_string = add Caqti_type.string in
+      empty
+      |> add_string (Pool_common.Id.value entity_uuid)
+      |> add_string (Role.Target.show target)
+      |> flip
+           (CCList.fold_left (fun dyn permission ->
+              dyn |> add_string (permission |> Backend.Guard.Permission.show)))
+           permissions
+    in
+    let request =
+      find_by_target_and_permissions_request permissions
+      |> pt ->* Pool_common.Repo.Id.t
+    in
+    Utils.Database.collect (Pool_database.Label.value pool) request pv
+  ;;
 end
 
 let src = Logs.Src.create "guard"

@@ -327,32 +327,22 @@ end
 module Statistics : sig
   module ExperimentCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module AssignmentCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module ShowUpCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module NoShowCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   module ParticipationCount : sig
     include Pool_common.Model.IntegerSig
-
-    val field : Pool_common.Message.Field.t
   end
 
   type t

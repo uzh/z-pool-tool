@@ -59,6 +59,7 @@ type t =
   | NoEntries of Entity_message.Field.t
   | NoInvitationsSent
   | Note
+  | NotMatchingFilter
   | OurPartners
   | Past
   | PastSessionsTitle
@@ -149,6 +150,7 @@ type hint =
   | AssignmentCancellationMessageFollowUps
   | AssignmentConfirmationMessageFollowUps
   | AssignmentsMarkedAsClosed
+  | AssignmentsNotMatchingFilerSession of int
   | ContactCurrentCellPhone of string
   | ContactEnrollmentDoesNotMatchFilter
   | ContactEnrollmentRegistrationDisabled
@@ -214,6 +216,7 @@ type hint =
   | MessageTemplateExperimentInvitation
   | MessageTemplateManualSessionMessage
   | MessageTemplateMatcherNotification
+  | MessageTemplateMatchFilterUpdateNotification
   | MessageTemplatePasswordChange
   | MessageTemplatePasswordReset
   | MessageTemplatePhoneVerification

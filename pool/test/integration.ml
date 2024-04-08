@@ -78,7 +78,10 @@ let suite =
           ] )
     ; ( "filter"
       , Filter_test.
-          [ test_case "update filter" `Slow update_filter
+          [test_case "update filter" `Slow update_filter;  test_case
+              "create and update filter template"
+              `Slow
+              create_and_update_filter_template
           ; test_case "filter contacts" `Slow filter_contacts
           ; test_case "filter by email and custom field" `Slow filter_by_email
           ; test_case "filter exclude inactive" `Slow filter_exclude_inactive
@@ -148,6 +151,12 @@ let suite =
           [ test_case "send invitations" `Slow create_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
           ; test_case "matcher notifiaction" `Slow matcher_notification
+          ] )
+    ; ( "assignment job"
+      , Assignment_job_test.
+          [ test_case "initialize tests" `Slow init
+          ; test_case "update without filter" `Slow update_without_filter
+          ; test_case "exclude contact" `Slow exclude_contact
           ] )
     ; ( "contact"
       , Contact_test.

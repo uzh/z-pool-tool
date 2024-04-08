@@ -103,6 +103,9 @@ let to_string = function
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | Note -> "Note"
+  | NotMatchingFilter ->
+    "The contact does not meet the criteria specified in the filter for this \
+     experiment."
   | NoInvitationsSent -> "No invitations have been sent yet."
   | OurPartners -> "Our partners"
   | Past -> "Past"
@@ -219,6 +222,12 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | AssignmentsMarkedAsClosed ->
     "These assignments have been marked as deleted. Provided that the contacts \
      still meet the experiment criteria, they can register for sessions again."
+  | AssignmentsNotMatchingFilerSession count ->
+    Format.asprintf "%s die Kriterien dieses Experiments nicht."
+    @@
+      (match count with
+      | 1 -> "1 Kontakt erfüllt"
+      | count -> Format.asprintf "%i Kontakte erfüllen" count)
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
@@ -414,6 +423,9 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MessageTemplateMatcherNotification ->
     "This message is sent to inform administrators that no further contacts \
      have been found who can be invited to an experiment."
+  | MessageTemplateMatchFilterUpdateNotification ->
+    "This message is sent to inform admins when contacts no longer meet the \
+     criteria defined in the filter."
   | MessageTemplatePasswordChange ->
     "This message is sent to notify users that the account password has been \
      changed."

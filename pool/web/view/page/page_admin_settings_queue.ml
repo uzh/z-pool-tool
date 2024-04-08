@@ -108,6 +108,10 @@ let text_message_job_instance_detail { Text_message.message; _ } =
   ]
 ;;
 
+let matcher_job_instance_detail label =
+  [ Message.Field.Label, txt (Pool_database.Label.value label) ]
+;;
+
 let queue_instance_detail
   language
   { Sihl_queue.tries
@@ -148,11 +152,13 @@ let queue_instance_detail
     CCOption.map_or ~default:(txt "") link
     @@
     match job with
+    | `MatcherJob _ -> None
     | `EmailJob { Email.resent; _ } -> resent
     | `TextMessageJob { Text_message.resent; _ } -> resent
   in
   let job_detail =
     match job with
+    | `MatcherJob database_label -> matcher_job_instance_detail database_label
     | `EmailJob email -> email_job_instance_detail email
     | `TextMessageJob msg -> text_message_job_instance_detail msg
   in

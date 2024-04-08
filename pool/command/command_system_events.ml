@@ -4,5 +4,5 @@ let handle_system_events_command =
     "Handle system events on one host"
     (fun () ->
        let open Utils.Lwt_result.Infix in
-       System_event.Service.run () ||> CCOption.return)
+       System_event.Service.run `Server () ||> CCOption.return)
 ;;

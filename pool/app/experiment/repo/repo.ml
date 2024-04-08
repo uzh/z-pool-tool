@@ -613,6 +613,27 @@ module Sql = struct
       ~where
       Caqti_type.(t2 Repo_entity.t bool)
   ;;
+
+  let count_invitations_request ?(by_count = false) () =
+    let base =
+      {sql|
+      SELECT COUNT(1)
+      FROM pool_invitations
+      WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    in
+    match by_count with
+    | false -> base
+    | true -> Format.asprintf "%s \n %s" base "AND send_count = ?"
+  ;;
+
+  let total_invitation_count_by_experiment pool experiment_id =
+    let open Caqti_request.Infix in
+    Utils.Database.find
+      (pool |> Pool_database.Label.value)
+      (count_invitations_request () |> Caqti_type.(string ->! int))
+      (Entity.Id.value experiment_id)
+  ;;
 end
 
 let find = Sql.find

@@ -4,6 +4,7 @@
  (libraries
   admin
   assignment
+  assignment_job
   contact
   custom_field
   database

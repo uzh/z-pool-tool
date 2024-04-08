@@ -31,8 +31,8 @@ module Partials = struct
     let open Component.Table in
     let hint_to_string = Utils.hint_to_string language in
     let field_to_string = Utils.field_to_string language in
-    let deleted =
-      [ ( field_to_string Field.MarkedAsDeleted
+    let not_matching_filter =
+      [ ( Utils.text_to_string language I18n.NotMatchingFilter
         , legend_color_item "bg-red-lighter" )
       ]
     in
@@ -42,10 +42,9 @@ module Partials = struct
         ; hint_to_string SessionCloseLegendParticipated, legend_text_item "P"
         ; ( field_to_string Field.ExternalDataId
           , legend_text_item Field.(ExternalDataIdAbbr |> show) )
-        ; field_to_string Field.Canceled, legend_color_item "bg-orange-lighter"
         ]
     in
-    (if hide_deleted then base else base @ deleted) |> table_legend
+    (if hide_deleted then base else base @ not_matching_filter) |> table_legend
   ;;
 
   let empty language =
@@ -123,6 +122,20 @@ module Partials = struct
                   language))
         custom_fields)
     |> div ~a:[ a_class [ "flexcolumn" ] ]
+  ;;
+
+  let status_label language { Assignment.canceled_at; marked_as_deleted; _ } =
+    let open Pool_common in
+    [ ( Assignment.MarkedAsDeleted.value marked_as_deleted
+      , Utils.field_to_string_capitalized language Field.MarkedAsDeleted )
+    ; CCOption.is_some canceled_at, Utils.text_to_string language I18n.Canceled
+    ]
+    |> CCList.filter_map (fun (condition, text) ->
+      match condition with
+      | false -> None
+      | true ->
+        Some (span ~a:[ a_class [ "tag"; "inline"; "error" ] ] [ txt text ]))
+    |> span
   ;;
 
   module ReminderModal = struct
@@ -512,84 +525,6 @@ module Partials = struct
       direct_message_modal_id
       html
   ;;
-
-  let print_assignments_list
-    ?(view_contact_name = false)
-    ?(view_contact_info = false)
-    Pool_context.{ language; _ }
-    experiment
-    session
-    assignments
-    =
-    let assignemnts_table_id =
-      Format.asprintf "assignments-%s" Session.(Id.value session.Session.id)
-    in
-    let swap_session_modal_id = swap_session_modal_id session in
-    match CCList.is_empty assignments with
-    | true -> p [ empty language ]
-    | false ->
-      let add_field_if check values = if check then values else [] in
-      let contact_information =
-        add_field_if
-          view_contact_name
-          [ Field.Lastname, contact_lastname
-          ; Field.Firstname, contact_firstname
-          ]
-        @ add_field_if view_contact_info [ Field.Email, contact_email ]
-        @ add_field_if view_contact_info [ Field.CellPhone, contact_cellphone ]
-        |> function
-        | [] -> [ Field.Id, assignment_id ]
-        | fields -> fields
-      in
-      let external_data_field =
-        add_field_if
-          Experiment.(external_data_required_value experiment)
-          [ Field.ExternalDataId, assignment_external_data_id ]
-      in
-      let thead =
-        let field_to_text = Component.Table.field_to_txt language in
-        let left =
-          CCList.map (fun (field, _) -> field_to_text field) contact_information
-          @ CCList.map
-              (fun (field, _) -> field_to_text field)
-              external_data_field
-        in
-        let checkboxes = [ txt "P"; txt "NS" ] in
-        let right = [ Field.CanceledAt |> field_to_text ] in
-        left @ checkboxes @ right
-      in
-      let rows =
-        CCList.map
-          (fun (assignment : Assignment.t) ->
-            CCList.map snd contact_information
-            @ CCList.map snd external_data_field
-            @ [ assignment_participated; assignment_no_show; canceled_at ]
-            |> CCList.mapi (fun i fcn ->
-              let value = fcn assignment in
-              if CCInt.equal i 0
-              then
-                div
-                  ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-                  (value :: Status.make_icons language assignment.contact `Name)
-              else value))
-          assignments
-      in
-      div
-        [ table_legend language
-        ; div
-            ~a:
-              [ a_id swap_session_modal_id
-              ; a_class [ "fullscreen-overlay"; "modal" ]
-              ]
-            []
-        ; Component.Table.horizontal_table
-            `Striped
-            ~align_last_end:true
-            ~id:assignemnts_table_id
-            ~thead
-            rows
-        ]
-  ;;
 end
 
 let data_table
@@ -615,12 +550,9 @@ let data_table
     |> Uri.of_string
   in
   let data_table =
-    Component.DataTable.create_meta
-      ?filter:Assignment.filterable_by
-      ~search:Assignment.searchable_by
-      url
-      query
-      language
+    let filter = if is_print then None else Assignment.filterable_by in
+    let search = if is_print then None else Some Assignment.searchable_by in
+    Component.DataTable.create_meta ?filter ?search url query language
   in
   let conditional_left_columns =
     [ ( view_contact_name
@@ -635,8 +567,11 @@ let data_table
   in
   let conditional_right_columns =
     [ ( Experiment.(external_data_required_value experiment)
-      , column_external_data_id_abbr
+      , `column column_external_data_id_abbr
       , assignment_external_data_id )
+    ; ( true
+      , `custom (txt (Utils.field_to_string_capitalized language Field.Status))
+      , status_label language )
     ]
   in
   let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
@@ -665,7 +600,7 @@ let data_table
         ; a_method `Post
         ; a_user_data
             "confirmable"
-            Pool_common.(Utils.confirmable_to_string language confirmable)
+            (Utils.confirmable_to_string language confirmable)
         ]
       [ csrf_element csrf ()
       ; submit_element
@@ -682,7 +617,7 @@ let data_table
     link_as_button
       action
       ~is_text:true
-      ~control:(language, Pool_common.Message.(Edit None))
+      ~control:(language, Message.(Edit None))
       ~icon:Component.Icon.CreateOutline
   in
   let profile_link { Assignment.contact; _ } =
@@ -692,7 +627,7 @@ let data_table
     link_as_button
       action
       ~is_text:true
-      ~control:(language, Pool_common.Message.OpenProfile)
+      ~control:(language, Message.OpenProfile)
       ~icon:Component.Icon.PersonOutline
   in
   let external_data_ids { Assignment.contact; _ } =
@@ -727,7 +662,7 @@ let data_table
             (Format.asprintf "#%s" (swap_session_modal_id session))
         ]
       ~is_text:true
-      ~control:(language, Pool_common.Message.ChangeSession)
+      ~control:(language, Message.ChangeSession)
       ~icon:Component.Icon.SwapHorizonal
   in
   let direct_message_toggle assignment =
@@ -750,7 +685,7 @@ let data_table
           ; hx_target ("#" ^ direct_message_modal_id)
           ]
       ~is_text:true
-      ~control:(language, Pool_common.Message.(Send (Some Field.Message)))
+      ~control:(language, Message.(Send (Some Field.Message)))
       ~icon:Component.Icon.MailOutline
   in
   let cancel =
@@ -792,7 +727,7 @@ let data_table
     let right =
       conditional_right_columns
       |> CCList.filter_map (fun (check, column, _) ->
-        if check then Some (`column column) else None)
+        if check then Some column else None)
     in
     let base = left @ center @ right in
     if is_print then base else base @ [ `empty ]
@@ -805,9 +740,12 @@ let data_table
   let row (assignment : t) =
     let tr cells =
       let assignment_id = a_user_data "id" (Id.value assignment.id) in
-      match assignment.marked_as_deleted |> MarkedAsDeleted.value with
-      | true -> tr ~a:[ a_class [ "bg-red-lighter" ]; assignment_id ] cells
-      | false -> tr ~a:[ assignment_id ] cells
+      let classname =
+        if assignment.matches_filter |> MatchesFilter.value |> not
+        then [ "bg-red-lighter" ]
+        else []
+      in
+      tr ~a:[ a_class classname; assignment_id ] cells
     in
     let custom_fields =
       Partials.custom_field_cells

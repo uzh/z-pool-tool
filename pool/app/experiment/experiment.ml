@@ -1,5 +1,6 @@
 include Entity
 include Event
+module Guardian = Guard
 module Guard = Entity_guard
 
 module Repo = struct
@@ -48,6 +49,14 @@ let find_targets_grantable_by_admin = Repo.find_targets_grantable_by_admin
 
 let query_participation_history_by_contact =
   Repo.Sql.query_participation_history_by_contact
+;;
+
+let find_admins_to_notify_about_invitations database_label experiment_id =
+  Admin.find_all_with_permissions_on_target
+    database_label
+    `InvitationNotification
+    (Id.to_common experiment_id)
+    Guardian.Permission.[ Read ]
 ;;
 
 let possible_participant_count _ = Lwt.return 0

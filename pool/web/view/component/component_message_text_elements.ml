@@ -316,6 +316,14 @@ let message_template_help
       (create_assignment ())
   | MatcherNotification ->
     MatcherNotification.email_params layout (create_experiment ())
+  | MatchFilterUpdateNotification ->
+    let session = create_session () in
+    let assignment = create_assignment () in
+    MatchFilterUpdateNotification.email_params
+      layout
+      (create_sihl_user ())
+      (create_experiment ())
+      [ session, [ assignment ] ]
   | PasswordChange -> PasswordChange.email_params layout (create_sihl_user ())
   | PasswordReset ->
     let reset_url =

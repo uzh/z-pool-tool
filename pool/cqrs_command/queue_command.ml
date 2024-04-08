@@ -48,6 +48,15 @@ let parse_instance_job { Sihl_queue.name; input; _ } =
   (try Ok (name |> read) with
    | _ -> Error Message.(Invalid Field.Input))
   >>= function
+  | CheckMatchesFilter ->
+    (try
+       Ok
+         (input
+          |> Yojson.Safe.from_string
+          |> Pool_tenant.Database.Label.t_of_yojson)
+     with
+     | _ -> Error Pool_common.Message.(Invalid Field.DatabaseLabel))
+    >|= fun job -> `MatcherJob job
   | SendEmail -> Email.parse_job_json input >|= fun job -> `EmailJob job
   | SendTextMessage ->
     Text_message.parse_job_json input >|= fun job -> `TextMessageJob job
@@ -57,10 +66,14 @@ let update_job ?contact ?experiment ({ Sihl_queue.id; _ } as instance) =
   let id = Pool_common.Id.of_string id in
   instance
   |> parse_instance_job
-  >|= function
-  | `EmailJob job -> `EmailJob (job |> update_email_job ?contact ?experiment id)
+  >>= function
+  | `EmailJob job ->
+    `EmailJob (job |> update_email_job ?contact ?experiment id)
+    |> CCResult.return
   | `TextMessageJob job ->
     `TextMessageJob (job |> update_text_message_job ?contact id)
+    |> CCResult.return
+  | `MatcherJob _ -> Error Pool_common.Message.JobCannotBeRetriggered
 ;;
 
 module Resend : sig

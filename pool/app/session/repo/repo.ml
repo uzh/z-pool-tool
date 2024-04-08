@@ -904,6 +904,42 @@ module Sql = struct
     in
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
+
+  let find_sessions_to_update_matcher_request context =
+    let base_condition =
+      {sql| 
+      WHERE
+        pool_sessions.closed_at IS NULL 
+        AND pool_sessions.canceled_at IS NULL
+      |sql}
+    in
+    let where =
+      match context with
+      | `Experiment _ ->
+        Format.asprintf
+          "%s AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))"
+          base_condition
+      | `Upcoming -> base_condition
+    in
+    Format.asprintf "%s HAVING assignment_count >= 0" (find_request_sql where)
+  ;;
+
+  let find_sessions_to_update_matcher pool context =
+    let open Caqti_request.Infix in
+    let pool = Database.Label.value pool in
+    let request = find_sessions_to_update_matcher_request context in
+    match context with
+    | `Experiment id ->
+      Utils.Database.collect
+        pool
+        (request |> Caqti_type.string ->* RepoEntity.t)
+        (Experiment.Id.value id)
+    | `Upcoming ->
+      Utils.Database.collect
+        pool
+        (request |> Caqti_type.unit ->* RepoEntity.t)
+        ()
+  ;;
 end
 
 (* TODO: solve as join *)

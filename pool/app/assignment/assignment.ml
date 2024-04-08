@@ -18,7 +18,8 @@ let find_all_public_by_experiment_and_contact_opt =
 ;;
 
 let find_by_contact_and_experiment = Repo.Sql.find_by_contact_and_experiment
-let find_by_session = Repo.find_by_session
+let find_not_deleted_by_session = Repo.find_not_deleted_by_session
+let find_all_by_session = Repo.find_all_by_session
 let find_multiple_by_session = Repo.Sql.find_multiple_by_session
 let query_by_session = Repo.query_by_session
 let find_uncanceled_by_session = Repo.find_uncanceled_by_session
@@ -38,8 +39,11 @@ let find_for_session_detail_screen ~query pool session_id =
 ;;
 
 let find_deleted_by_session = Repo.find_deleted_by_session
+let count_unsuitable_by = Repo.Sql.count_unsuitable_by
 let find_with_follow_ups = Repo.find_with_follow_ups
 let find_follow_ups = Repo.find_follow_ups
+let find_upcoming_by_experiment = Repo.Sql.find_upcoming_by_experiment
+let find_upcoming = Repo.Sql.find_upcoming
 
 let contact_participation_in_other_assignments =
   Repo.contact_participation_in_other_assignments

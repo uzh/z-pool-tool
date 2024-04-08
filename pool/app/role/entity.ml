@@ -92,6 +92,7 @@ module Target = struct
     | `Filter
     | `I18n
     | `Invitation
+    | `InvitationNotification
     | `Location
     | `LocationFile
     | `Mailing
@@ -138,6 +139,7 @@ module Target = struct
     | "filter", [] -> Ok `Filter
     | "i18n", [] -> Ok `I18n
     | "invitation", [] -> Ok `Invitation
+    | "invitationnotification", [] -> Ok `InvitationNotification
     | "location", [] -> Ok `Location
     | "locationfile", [] -> Ok `LocationFile
     | "mailing", [] -> Ok `Mailing
@@ -182,6 +184,7 @@ module Target = struct
     ; `Filter
     ; `I18n
     ; `Invitation
+    ; `InvitationNotification
     ; `Location
     ; `LocationFile
     ; `Mailing

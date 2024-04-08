@@ -151,6 +151,7 @@ module type IntegerSig = sig
   val create : int -> (t, Entity_message.error) result
   val value : t -> int
   val compare : t -> t -> int
+  val field : Entity_message.Field.t
 
   val schema
     :  unit

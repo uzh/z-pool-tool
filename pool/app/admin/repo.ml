@@ -85,15 +85,6 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
   ;;
 
-  let find_all_request =
-    {sql|
-      WHERE
-        user_users.admin = 1
-      |sql}
-    |> find_request_sql
-    |> Caqti_type.unit ->* RepoEntity.t
-  ;;
-
   let find_by ?query pool =
     Query.collect_and_count pool query ~select:find_request_sql RepoEntity.t
   ;;
