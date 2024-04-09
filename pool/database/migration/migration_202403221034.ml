@@ -1,11 +1,10 @@
-(* TODO: Fix message content and subject *)
 let seed_matcher_notification_template =
   Sihl.Database.Migration.create_step
     ~label:"seed matcher notification template"
     {sql|
-    INSERT INTO `pool_message_templates` (`uuid`, `label`, `language`, `email_subject`, `email_text_html`, `email_text_plain`, `sms_text`) VALUES
-      (UNHEX(REPLACE(UUID(), '-', '')), 'matcher_notification', 'DE', 'Betreff', '<h4>Liebe*r {name},</h4><br /><p>Freundliche Grüsse<br>{siteTitle}</p>', 'Liebe*r {name},\r\n\r\n\r\n\r\nFreundliche Grüsse\r\n{siteTitle}', 'Liebe*r {name},\r\n\r\n\r\n\r\nFreundliche Grüsse\r\n{siteTitle}'),
-      (UNHEX(REPLACE(UUID(), '-', '')), 'matcher_notification', 'EN', 'Subject', '<h4>Dear {name},</h4><br /><p>Yours sincerely,<br>{siteTitle}</p>', 'Dear {name},\r\n\r\n\r\n\r\nYours sincerely,\r\n{siteTitle}', 'Dear {name},\r\n\r\n\r\n\r\nYours sincerely,\r\n{siteTitle}');
+    INSERT INTO `pool_message_templates` (`uuid`, `label`, `LANGUAGE`, `email_subject`, `email_text_html`, `email_text_plain`, `sms_text`) VALUES
+    (UNHEX(REPLACE(UUID(), '-', '')), 'matcher_notification', 'DE', '{experimentPublicTitle}: Alle passenden Kontakte eingeladen', '<h4>Liebe*r {name}</h4><p>Alle Kontakte, die die Kriterien des Experiments <a href=\"{experimentUrl}\">{experimentPublicTitle}</a>, wurden eingeladen, es gibt jedoch noch freue Plätze.<br><br>Freundliche Grüsse<br>{siteTitle}</p>', 'Liebe*r {name}\r\n\r\nAlle Kontakte, die die Kriterien des Experiments {experimentPublicTitle}, wurden eingeladen, es gibt jedoch noch freue Plätze.\r\n\r\nFreundliche Grüsse\r\n{siteTitle}', 'Liebe*r {name}\r\n\r\nAlle Kontakte, die die Kriterien des Experiments {experimentPublicTitle}, wurden eingeladen, es gibt jedoch noch freue Plätze.\r\n\r\nFreundliche Grüsse\r\n{siteTitle}'),
+    (UNHEX(REPLACE(UUID(), '-', '')), 'matcher_notification', 'EN', '{experimentPublicTitle}: All matching contacts invited', '<p>Dear {name}</p><p>All contacts who meet the criteria of the experiment <a href=\"{experimentId}\">{experimentPublicTitle}</a> have been invited, but there are still places available.</p><p>Kind regards<br>{siteTitle}</p>', 'Dear {name}\r\n\r\nAll contacts who meet the criteria of the experiment {experimentPublicTitle} have been invited, but there are still places available.\r\n\r\nKind regards\r\n{siteTitle}', 'Dear {name}\r\n\r\nAll contacts who meet the criteria of the experiment {experimentPublicTitle} have been invited, but there are still places available.\r\n\r\nKind regards\r\n{siteTitle}');
   |sql}
 ;;
 
