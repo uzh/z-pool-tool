@@ -182,7 +182,7 @@ let create_nav_with_language_switch
 ;;
 
 let create_desktop_nav fcn =
-  fcn Horizonal |> div ~a:[ a_class [ "desktop-nav"; "flexrow"; "flex-gap" ] ]
+  fcn Horizonal |> div ~a:[ a_class [ "hidden-mobile"; "flexrow"; "flex-gap" ] ]
 ;;
 
 let create_mobile_nav ?title ~toggle_id navigation =
@@ -212,6 +212,6 @@ let create_mobile_nav ?title ~toggle_id navigation =
   navigation Vertical
   |> fun items ->
   div
-    ~a:[ a_class [ "push"; "mobile-nav-wrapper" ] ]
+    ~a:[ a_class [ "push"; "mobile-only" ] ]
     [ label Icon.MenuOutline; overlay items ]
 ;;

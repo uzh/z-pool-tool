@@ -20,12 +20,7 @@ let make_tabs ~actor ?overlay_title ?active_navigation context html nav_elements
       [ div
           ~a:
             [ a_class
-                [ "mobile-only"
-                ; "flexrow"
-                ; "flex-gap"
-                ; "justify-between"
-                ; "align-center"
-                ]
+                [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ]
             ]
           [ create_mobile_nav
               ?title:overlay_title

@@ -586,31 +586,3 @@ $n: 12;
 [class*='grid-col-'].stretch-only-child  > *:only-child{
     grid-column: 1 / -1;
 }
-
-.tab-nav-container {
-
-    border-bottom: $border-width solid $grey-border;
-
-    .main-nav > ul > .has-dropdown > .dropdown {
-        transform: translateY(calc(100% + $border-width));
-    }
-
-    @include mobile {
-        margin-top: $space-md;
-    }
-}
-
-// Add to framework
-.fullscreen-overlay {
-    width: 100vw;
-    top: 0;
-    left: 0;
-}
-
-.mobile-only {
-    display: none;
-    @include mobile {
-      display: flex;
-    }
-}
-  
