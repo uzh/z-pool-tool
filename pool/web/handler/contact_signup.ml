@@ -181,10 +181,7 @@ let email_verification req =
      in
      let ctx = Database.to_ctx database_label in
      let* email =
-       Service.Token.read
-         ~ctx
-         (Email.Token.value token)
-         ~k:Field.(Email |> show)
+       Pool_token.read ~ctx (Email.Token.value token) ~k:Field.(Email |> show)
        ||> CCOption.to_result Error.TokenInvalidFormat
        >== Pool_user.EmailAddress.create
        >>= Email.find_unverified_by_address database_label

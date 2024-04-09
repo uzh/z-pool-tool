@@ -5,7 +5,7 @@ type t =
   | Assignment of Assignment.event
   | Contact of Contact.event
   | CustomField of Custom_field.event
-  | Database of Pool_database.event
+  | PoolMigration of Pool_migration.event
   | Email of Email.event
   | EmailVerification of Email.verification_event
   | Experiment of Experiment.event
@@ -31,7 +31,6 @@ let admin events = Admin events
 let assignment events = Assignment events
 let contact events = Contact events
 let custom_field events = CustomField events
-let database events = Database events
 let email events = Email events
 let email_verification events = EmailVerification events
 let experiment events = Experiment events
@@ -43,6 +42,7 @@ let mailing events = Mailing events
 let message_template events = MessageTemplate events
 let organisational_unit events = OrganisationalUnit events
 let pool_location events = PoolLocation events
+let pool_migration events = PoolMigration events
 let pool_tenant events = PoolTenant events
 let session events = Session events
 let settings events = Settings events
@@ -74,11 +74,6 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
     Logs.info ~src (fun m ->
       m "Handle event %s" (Custom_field.show_event event) ~tags);
     Custom_field.handle_event pool event
-  | Database event ->
-    let src = Logs.Src.create "database.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Pool_database.show_event event) ~tags);
-    Pool_database.handle_event pool event
   | Email event ->
     let src = Logs.Src.create "email.events" in
     Logs.info ~src (fun m -> m "Handle event %s" (Email.show_event event) ~tags);
@@ -114,13 +109,11 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
   | Mailing event ->
     let src = Logs.Src.create "mailing.events" in
     Logs.info ~src (fun m ->
-      (* TODO [josef] use event name *)
       m "Handle event %s" (Mailing.show_event event) ~tags);
     Mailing.handle_event pool event
   | MessageTemplate event ->
     let src = Logs.Src.create "mailing.events" in
     Logs.info ~src (fun m ->
-      (* TODO [josef] use event name *)
       m "Handle event %s" (Message_template.show_event event) ~tags);
     Message_template.handle_event pool event
   | OrganisationalUnit event ->
@@ -133,6 +126,11 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
     Logs.info ~src (fun m ->
       m "Handle event %s" (Pool_location.show_event event) ~tags);
     Pool_location.handle_event pool event
+  | PoolMigration event ->
+    let src = Logs.Src.create "migration.events" in
+    Logs.info ~src (fun m ->
+      m "Handle event %s" (Pool_migration.show_event event) ~tags);
+    Pool_migration.handle_event pool event
   | PoolTenant event ->
     let src = Logs.Src.create "pool_tenant.events" in
     Logs.info ~src (fun m ->

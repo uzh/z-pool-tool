@@ -174,7 +174,11 @@ let lifecycle =
   Sihl.Container.create_lifecycle
     "Multitenant Queue"
     ~dependencies:(fun () ->
-      [ Pool_canary.lifecycle; Pool_database.lifecycle; Schedule.lifecycle ])
+      [ Pool_canary.lifecycle
+      ; Database.Root.lifecycle
+      ; Database.Tenant.lifecycle
+      ; Schedule.lifecycle
+      ])
     ~start
     ~stop
 ;;

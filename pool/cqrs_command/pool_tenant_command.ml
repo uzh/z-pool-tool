@@ -108,7 +108,7 @@ end = struct
     Ok
       [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
-      ; Pool_database.Migrated database |> Pool_event.database
+      ; Pool_migration.Migrated database |> Pool_event.pool_migration
       ; System_event.Job.TenantDatabaseAdded (Database.label database)
         |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()

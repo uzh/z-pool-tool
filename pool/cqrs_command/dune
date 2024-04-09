@@ -15,6 +15,7 @@
   pool_common
   pool_event
   pool_location
+  pool_migration
   pool_tenant
   pool_user
   role

@@ -21,8 +21,7 @@ module Data = struct
 end
 
 let check_root_database _ () =
-  let ctx = Pool_database.Root.label |> Database.to_ctx in
-  let _ = Sihl.Database.fetch_pool ~ctx () in
+  let (_ : status) = fetch_pool root () in
   Lwt.return_unit
 ;;
 

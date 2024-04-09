@@ -1,5 +1,6 @@
 include Entity
 module Repo = Repo
+module PasswordReset = Sihl_user.Password_reset.MakeMariaDb (Pool_token)
 
 let find_active_user_by_email_opt database_label email =
   let open Utils.Lwt_result.Infix in

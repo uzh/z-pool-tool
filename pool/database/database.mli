@@ -5,6 +5,25 @@ type status =
     , Caqti_error.load )
     result
 
+val raise_caqti_error
+  :  ?tags:Logs.Tag.set
+  -> ( 'a
+       , [< `Connect_failed of Caqti_error.connection_error
+         | `Connect_rejected of Caqti_error.connection_error
+         | `Decode_rejected of Caqti_error.coding_error
+         | `Encode_failed of Caqti_error.coding_error
+         | `Encode_rejected of Caqti_error.coding_error
+         | `Load_failed of Caqti_error.load_error
+         | `Load_rejected of Caqti_error.load_error
+         | `Post_connect of Caqti_error.call_or_retrieve
+         | `Request_failed of Caqti_error.query_error
+         | `Response_failed of Caqti_error.query_error
+         | `Response_rejected of Caqti_error.query_error
+         | `Unsupported
+         ] )
+       result
+  -> 'a
+
 module Caqti_encoders : sig
   module Data = Caqti_encoders.Data
   module Schema = Caqti_encoders.Schema
@@ -41,12 +60,17 @@ module Url : sig
   include Pool_model.Base.StringSig
 end
 
+module Disabled : sig
+  include Pool_model.Base.BooleanSig
+end
+
 type t
 
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
-val create : Label.t -> Url.t -> t
+val create : ?disabled:Disabled.t -> Label.t -> Url.t -> t
 val label : t -> Label.t
+val disabled : t -> Disabled.t
 val to_ctx : Label.t -> (string * string) list
 val of_ctx_opt : (string * string) list -> Label.t option
 val of_ctx_exn : (string * string) list -> Label.t
@@ -57,6 +81,12 @@ module Repo : sig
     -> ('a -> ('b, Pool_message.Error.t) result)
     -> ('b -> 'a)
     -> 'b Caqti_type.t
+
+  val find : Label.t -> Label.t -> (t, Pool_message.Error.t) result Lwt.t
+  val find_all : Label.t -> t list Lwt.t
+  val insert : Label.t -> t -> unit Lwt.t
+  val update_url : Label.t -> t -> Url.t -> unit Lwt.t
+  val update_disabled : Label.t -> t -> Disabled.t -> unit Lwt.t
 
   module Label : sig
     val t : Label.t Caqti_type.t
@@ -80,8 +110,9 @@ val show_error_with_log
   -> [< Caqti_error.t ]
   -> string
 
+val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) result Lwt.t
 val fetch_pool : Label.t -> unit -> status
-val add_pool : t -> status
+val add_pool : ?required:bool -> ?pool_size:int -> t -> status
 val drop_pool : Label.t -> unit Lwt.t
 
 val collect
@@ -117,8 +148,6 @@ val transaction_exn
   -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
   -> 'a Lwt.t
 
-val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) result Lwt.t
-
 val find_as_transaction
   :  Label.t
   -> ?setup:(Caqti_lwt.connection -> (unit, Caqti_error.t) result Lwt.t) list
@@ -149,3 +178,87 @@ val clean_requests
 
 val clean_all : Label.t -> (unit, Caqti_error.t) result Lwt.t
 val clean_all_exn : Label.t -> unit Lwt.t
+
+module Migration : sig
+  type step =
+    { label : string
+    ; statement : string
+    ; check_fk : bool
+    }
+
+  val equal_step : step -> step -> Ppx_deriving_runtime.bool
+
+  val pp_step
+    :  Ppx_deriving_runtime.Format.formatter
+    -> step
+    -> Ppx_deriving_runtime.unit
+
+  val show_step : step -> Ppx_deriving_runtime.string
+
+  type steps = step list
+
+  val equal_steps : steps -> steps -> Ppx_deriving_runtime.bool
+
+  val pp_steps
+    :  Ppx_deriving_runtime.Format.formatter
+    -> steps
+    -> Ppx_deriving_runtime.unit
+
+  val show_steps : steps -> Ppx_deriving_runtime.string
+
+  type t = string * steps
+
+  val equal : t -> t -> Ppx_deriving_runtime.bool
+  val show : t -> Ppx_deriving_runtime.string
+  val name : string
+
+  exception Exception of string
+  exception Dirty_migration
+
+  val to_sexp : string * steps -> Sexplib0.Sexp.t
+  val pp : Format.formatter -> string * steps -> unit
+  val empty : 'a -> 'a * 'b list
+  val create_step : label:string -> ?check_fk:bool -> string -> step
+  val add_step : 'a -> 'b * 'a list -> 'b * 'a list
+  val register_migration : t -> unit
+  val register_migrations : t list -> unit
+  val execute : Label.t -> t list -> unit Lwt.t
+  val run_all : Label.t -> unit -> unit Lwt.t
+
+  val migrations_status
+    :  Label.t
+    -> ?migrations:t list
+    -> unit
+    -> (string * int option) list Lwt.t
+
+  val check_migrations_status
+    :  Label.t
+    -> ?migrations:t list
+    -> unit
+    -> unit Lwt.t
+
+  val pending_migrations : Label.t -> unit -> (string * int) list Lwt.t
+  val start : Label.t -> unit -> unit Lwt.t
+  val extend_migrations : (string * steps) list -> unit -> (string * steps) list
+
+  val run_pending_migrations
+    :  Label.t list
+    -> (string * steps) list
+    -> unit Lwt.t
+end
+
+module Root : sig
+  val add : unit -> status
+  val setup : unit -> status Lwt.t
+  val lifecycle : Sihl.Container.lifecycle
+  val register : unit -> Sihl.Container.Service.t
+end
+
+module Tenant : sig
+  val setup_tenant : t -> Label.t Lwt.t
+  val setup : unit -> Label.t list Lwt.t
+  val find : Label.t -> (t, Pool_message.Error.t) result Lwt.t
+  val find_all_running : unit -> Label.t list Lwt.t
+  val lifecycle : Sihl.Container.lifecycle
+  val register : Sihl.Container.lifecycle -> unit -> Sihl.Container.Service.t
+end

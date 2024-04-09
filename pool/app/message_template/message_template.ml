@@ -814,7 +814,7 @@ module PasswordReset = struct
     let%lwt sender = default_sender_of_pool pool in
     let open Pool_common in
     let* reset_token =
-      Service.PasswordReset.create_reset_token
+      Pool_user.PasswordReset.create_reset_token
         ~ctx:(Database.to_ctx pool)
         (Pool_user.EmailAddress.value email)
       ||> function

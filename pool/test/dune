@@ -17,9 +17,9 @@
   http_utils
   invitation
   matcher
-  pool_database
   pool_event
   pool_location
+  pool_migration
   pool_tenant
   reminder
   seed

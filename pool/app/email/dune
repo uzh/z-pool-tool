@@ -1,10 +1,10 @@
 (library
  (name email)
  (libraries
+  database
   i18n
   pool.conformist
   pool_common
-  pool_database
   pool_tenant
   pool_user
   queue

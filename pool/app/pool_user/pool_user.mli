@@ -1,3 +1,5 @@
+module PasswordReset : Sihl.Contract.Password_reset.Sig
+
 module PasswordConfirmed : sig
   type t
 

@@ -247,13 +247,13 @@ let reset_password_post req =
       >|- fun err -> err, redirect_with_param
     in
     let* user_uuid =
-      Service.Token.read ~ctx token ~k:"user_id"
+      Pool_token.read ~ctx token ~k:"user_id"
       ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
       >|- (fun err -> err, redirect)
       >|+ Pool_common.Id.of_string
     in
     let%lwt reset =
-      Service.PasswordReset.reset_password
+      Pool_user.PasswordReset.reset_password
         ~ctx
         ~token
         (go Field.Password)
@@ -282,7 +282,7 @@ let reset_password_post req =
     match reset with
     | Ok () ->
       let%lwt () =
-        Service.Token.deactivate ~ctx:(Database.to_ctx database_label) token
+        Pool_token.deactivate ~ctx:(Database.to_ctx database_label) token
       in
       let%lwt () = import_events |> Pool_event.handle_events database_label in
       HttpUtils.(

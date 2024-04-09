@@ -25,10 +25,7 @@ let handle_system_event ?identifier system_event =
     | Error err ->
       err |> Pool_common.(Utils.error_to_string Language.En) |> error_log
   in
-  let add_pool database_label =
-    Pool_tenant.find_database_by_label database_label
-    |>> Pool_database.Tenant.setup_tenant
-  in
+  let add_pool label = Database.Tenant.(find label |>> setup_tenant) in
   let open Job in
   match system_event.job with
   | GuardianCacheCleared ->

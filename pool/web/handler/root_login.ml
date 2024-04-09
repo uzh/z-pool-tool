@@ -122,7 +122,7 @@ let reset_password_post req =
     let go field = field |> Field.show |> CCFun.flip List.assoc params in
     let token = go Field.Token in
     let* () =
-      Service.PasswordReset.reset_password
+      Pool_user.PasswordReset.reset_password
         ~ctx
         ~token
         (go Field.Password)

@@ -4,7 +4,7 @@ module User = Pool_user
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let deactivate_token pool token =
-  Service.Token.deactivate ~ctx:(Database.to_ctx pool) token
+  Pool_token.deactivate ~ctx:(Database.to_ctx pool) token
 ;;
 
 type verification_event =

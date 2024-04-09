@@ -357,7 +357,7 @@ let[@warning "-4"] create_tenant () =
           Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
       ; Pool_event.PoolTenant
           (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
-      ; Pool_event.Database (Pool_database.Migrated database)
+      ; Pool_event.PoolMigration (Pool_migration.Migrated database)
       ; Pool_event.SystemEvent System_event.(Created db_added_event)
       ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
       ] ->
@@ -423,7 +423,7 @@ let[@warning "-4"] create_tenant () =
     let expected_root_events =
       [ Pool_tenant.Created (create |> fail_with) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
-      ; Pool_database.Migrated database |> Pool_event.database
+      ; Pool_migration.Migrated database |> Pool_event.pool_migration
       ; System_event.(
           Job.TenantDatabaseAdded database_label
           |> create ~id:db_added_event
