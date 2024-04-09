@@ -1,6 +1,5 @@
 module User = Pool_user
 module Id = Pool_common.Id
-module Database = Database
 open Entity
 
 let src = Logs.Src.create "contact.event"
@@ -27,11 +26,7 @@ let set_password
   =
   fun pool { user; _ } password password_confirmation ->
   let open Utils.Lwt_result.Infix in
-  Service.User.set_password
-    ~ctx:(Database.to_ctx pool)
-    user
-    ~password
-    ~password_confirmation
+  User.Persistence.set_password pool user ~password ~password_confirmation
   >|+ ignore
 ;;
 
@@ -58,12 +53,11 @@ type event =
 
 let handle_event ?tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
-  let ctx = Database.to_ctx pool in
   function
   | Created contact ->
     let%lwt user =
-      Service.User.create_user
-        ~ctx
+      User.Persistence.create_user
+        pool
         ~id:(contact.user_id |> Id.value)
         ~name:(contact.lastname |> User.Lastname.value)
         ~given_name:(contact.firstname |> User.Firstname.value)
@@ -101,8 +95,8 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     ||> fun (_ : Guard.Target.t) -> ()
   | EmailUpdated (contact, email) ->
     let%lwt _ =
-      Service.User.update
-        ~ctx
+      User.Persistence.update
+        pool
         ~email:(Pool_user.EmailAddress.value email)
         contact.user
     in
@@ -114,8 +108,8 @@ let handle_event ?tags pool : event -> unit Lwt.t =
       confirmed |> User.PasswordConfirmed.to_sihl
     in
     let%lwt _ =
-      Service.User.update_password
-        ~ctx
+      User.Persistence.update_password
+        pool
         ~password_policy:(CCFun.const (CCResult.return ()))
         ~old_password
         ~new_password
@@ -129,7 +123,9 @@ let handle_event ?tags pool : event -> unit Lwt.t =
       { contact with verified = Some (Pool_user.Verified.create_now ()) }
   | EmailVerified contact ->
     let%lwt _ =
-      Service.User.update ~ctx Sihl_user.{ contact.user with confirmed = true }
+      User.Persistence.update
+        pool
+        Sihl_user.{ contact.user with confirmed = true }
     in
     Repo.update
       pool
@@ -158,10 +154,8 @@ let handle_event ?tags pool : event -> unit Lwt.t =
   | ImportConfirmed (contact, password) ->
     let (_ : (Sihl_user.t Lwt.t, string) result) =
       let open Pool_common in
-      Service.User.set_user_password
-        contact.user
-        (User.Password.to_sihl password)
-      |> CCResult.map (Service.User.update ~ctx:(Database.to_ctx pool))
+      User.set_user_password contact.user (User.Password.to_sihl password)
+      |> CCResult.map (User.Persistence.update pool)
       |> Utils.with_log_result_error ~src ?tags Pool_message.Error.nothandled
     in
     Repo.update

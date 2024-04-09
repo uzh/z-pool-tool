@@ -7,7 +7,7 @@ module Users = Root_users
 
 let forward_to_entrypoint req =
   let open Utils.Lwt_result.Infix in
-  Service.User.Web.user_from_session ~ctx:Database.(to_ctx root) req
+  Pool_user.Persistence.Web.user_from_session Database.root req
   >|> function
   | Some _ -> Http_utils.redirect_to "/root/tenants"
   | None -> Http_utils.redirect_to "/root/login"

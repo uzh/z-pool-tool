@@ -49,7 +49,7 @@ module Contact = struct
     let open Pool_user in
     function
     | EmailUnverified -> CCOption.is_none email_verified
-    | Inactive -> Service.User.(equal_status user.status Inactive)
+    | Inactive -> Pool_user.(equal_status user.status Inactive)
     | Paused -> Paused.value paused
     | Verified -> CCOption.is_some verified
   ;;
@@ -112,7 +112,7 @@ module Admin = struct
 
   let has_status { Admin.email_verified; user; _ } = function
     | EmailUnverified -> CCOption.is_none email_verified
-    | Inactive -> Service.User.(equal_status Inactive user.status)
+    | Inactive -> Pool_user.(equal_status Inactive user.status)
     | Paused | Verified -> false
   ;;
 

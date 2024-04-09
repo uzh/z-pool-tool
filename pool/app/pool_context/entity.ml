@@ -121,7 +121,7 @@ end
 
 (* Logging *)
 let show_log_user = function
-  | Admin user -> user |> Admin.user |> fun user -> user.Sihl_user.email
-  | Contact contact -> contact.Contact.user.Sihl_user.email
+  | Admin user -> user |> Admin.user |> fun user -> user.Pool_user.email
+  | Contact contact -> contact.Contact.user.Pool_user.email
   | Guest -> "anonymous"
 ;;

@@ -1,3 +1,5 @@
+include module type of Sihl.Contract.User
+module Persistence : Service_user_sig.Sig
 module PasswordReset : Sihl.Contract.Password_reset.Sig
 
 module PasswordConfirmed : sig
@@ -234,13 +236,13 @@ val column_inactive : Query.Column.t
 val find_active_user_by_email_opt
   :  Database.Label.t
   -> EmailAddress.t
-  -> Service.User.t option Lwt.t
+  -> t option Lwt.t
 
 val create_session
   :  Database.Label.t
   -> EmailAddress.t
   -> password:string
-  -> (Service.User.t, [ `Does_not_exist | `Incorrect_password ]) Lwt_result.t
+  -> (t, [ `Does_not_exist | `Incorrect_password ]) Lwt_result.t
 
 module FailedLoginAttempt : sig
   module Id : sig

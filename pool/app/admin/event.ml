@@ -26,11 +26,7 @@ let set_password
   =
   fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
-  Service.User.set_password
-    ~ctx:(Database.to_ctx pool)
-    user
-    ~password
-    ~password_confirmation
+  User.Persistence.set_password pool user ~password ~password_confirmation
   >|= ignore
 ;;
 
@@ -78,8 +74,8 @@ let handle_event ~tags pool : event -> unit Lwt.t =
   | Created { id; lastname; firstname; password; email; roles } ->
     let open Common.Utils in
     let%lwt admin =
-      Service.User.create_admin
-        ~ctx
+      User.Persistence.create_admin
+        pool
         ?id:(id |> CCOption.map Common.Id.value)
         ~name:(lastname |> User.Lastname.value)
         ~given_name:(firstname |> User.Firstname.value)
@@ -99,20 +95,22 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     let name = User.Lastname.value lastname in
     let given_name = User.Firstname.value firstname in
     let%lwt (_ : Sihl_user.t) =
-      Service.User.update ~ctx ~name ~given_name (user admin)
+      User.Persistence.update pool ~name ~given_name (user admin)
     in
     Lwt.return_unit
   | EmailVerified admin ->
     let%lwt (_ : Sihl_user.t) =
-      Service.User.update ~ctx Sihl_user.{ admin.user with confirmed = true }
+      User.Persistence.update
+        pool
+        Sihl_user.{ admin.user with confirmed = true }
     in
     { admin with email_verified = Some (Pool_user.EmailVerified.create_now ()) }
     |> Repo.update pool
   | ImportConfirmed (admin, password) ->
     let (_ : (Sihl_user.t Lwt.t, string) result) =
       let open Common in
-      Service.User.set_user_password admin.user (User.Password.to_sihl password)
-      |> CCResult.map (Service.User.update ~ctx)
+      User.set_user_password admin.user (User.Password.to_sihl password)
+      |> CCResult.map (User.Persistence.update pool)
       |> Utils.with_log_result_error ~src ~tags Pool_message.Error.nothandled
     in
     Repo.update
@@ -130,8 +128,8 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     in
     let%lwt (_ : (Sihl_user.t, string) result) =
       let open Common in
-      Service.User.update_password
-        ~ctx
+      User.Persistence.update_password
+        pool
         ~password_policy:(CCFun.const (CCResult.return ()))
         ~old_password
         ~new_password

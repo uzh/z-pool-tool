@@ -4,10 +4,9 @@ module Dynparam = Database.Dynparam
 
 let update_sihl_user pool ?firstname ?lastname contact =
   let open CCOption in
-  let ctx = Database.to_ctx pool in
   let given_name = firstname <+> contact.Contact.user.Sihl_user.given_name in
   let name = lastname <+> contact.Contact.user.Sihl_user.name in
-  Service.User.update ~ctx ?given_name ?name contact.Contact.user
+  User.Persistence.update pool ?given_name ?name contact.Contact.user
 ;;
 
 let update_sql column_fragment =

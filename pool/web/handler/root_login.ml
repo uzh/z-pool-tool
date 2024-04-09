@@ -11,7 +11,7 @@ let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
 let login_get req =
   let open Utils.Lwt_result.Infix in
   let result context =
-    Service.User.Web.user_from_session ~ctx req
+    Pool_user.Persistence.Web.user_from_session Database.root req
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
@@ -47,7 +47,7 @@ let request_reset_password_get req =
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
-    Service.User.Web.user_from_session ~ctx req
+    Pool_user.Persistence.Web.user_from_session Database.root req
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->

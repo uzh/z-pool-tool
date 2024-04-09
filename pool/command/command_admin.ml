@@ -31,14 +31,14 @@ let grant_role ctx admin (role, target_uuid) =
 
 let create =
   let create_and_grant_role_exn pool email password given_name name role =
-    let ctx = Database.to_ctx pool in
-    match%lwt Service.User.find_by_email_opt ~ctx email with
+    match%lwt Pool_user.Persistence.find_by_email_opt pool email with
     | None ->
-      let open Pool_user in
-      let email = EmailAddress.create email |> get_or_failwith in
-      let firstname = Firstname.create given_name |> get_or_failwith in
-      let lastname = Lastname.create name |> get_or_failwith in
-      let password = Password.create password |> get_or_failwith in
+      let email = Pool_user.EmailAddress.create email |> get_or_failwith in
+      let firstname =
+        Pool_user.Firstname.create given_name |> get_or_failwith
+      in
+      let lastname = Pool_user.Lastname.create name |> get_or_failwith in
+      let password = Pool_user.Password.create password |> get_or_failwith in
       let admin : Admin.create =
         { id = None
         ; Admin.email
@@ -93,19 +93,17 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
 
 let create_root_admin =
   let create_exn email password given_name name =
-    let ctx = Database.to_ctx Database.root in
-    match%lwt Service.User.find_by_email_opt ~ctx email with
+    match%lwt Pool_user.Persistence.find_by_email_opt Database.root email with
     | None ->
       let%lwt () =
         let open Admin in
-        let open Pool_user in
         let admin_id = Id.create () in
         Created
           { id = Some admin_id
-          ; email = email |> EmailAddress.of_string
-          ; password = password |> Password.create |> CCResult.get_exn
-          ; firstname = given_name |> Firstname.of_string
-          ; lastname = name |> Lastname.of_string
+          ; email = email |> Pool_user.EmailAddress.of_string
+          ; password = password |> Pool_user.Password.create |> CCResult.get_exn
+          ; firstname = given_name |> Pool_user.Firstname.of_string
+          ; lastname = name |> Pool_user.Lastname.of_string
           ; roles = [ `Operator, None ]
           }
         |> handle_event ~tags:Database.(Logger.Tags.create root) Database.root

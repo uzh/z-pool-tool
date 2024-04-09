@@ -29,7 +29,6 @@ let create ?contact_data db_pool =
   let open Contact in
   let data = CCOption.value ~default:data contact_data in
   let open Utils.Lwt_result.Infix in
-  let ctx = Database.to_ctx db_pool in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"Password1!"
@@ -41,7 +40,9 @@ let create ?contact_data db_pool =
       (fun contacts
         (user_id, firstname, lastname, email, language, terms_accepted_at) ->
         let%lwt user =
-          Service.User.find_by_email_opt ~ctx (User.EmailAddress.value email)
+          Pool_user.Persistence.find_by_email_opt
+            db_pool
+            (User.EmailAddress.value email)
         in
         Lwt.return
         @@
@@ -76,8 +77,8 @@ let create ?contact_data db_pool =
       match contact with
       | Ok contact ->
         let%lwt _ =
-          Service.User.update
-            ~ctx
+          Pool_user.Persistence.update
+            db_pool
             Sihl_user.{ contact.user with confirmed = true }
         in
         let contact =

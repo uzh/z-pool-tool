@@ -166,18 +166,17 @@ let admins db_label =
          , name
          , email
          , (roles : (Role.Role.t * Guard.Uuid.Target.t option) list) ) ->
-      let%lwt user = Service.User.find_by_email_opt ~ctx email in
+      let%lwt user = User.Persistence.find_by_email_opt db_label email in
       match user with
       | None ->
         let%lwt admin =
-          let open Pool_user in
           let id = Admin.Id.create () in
           let create =
             { Admin.id = id |> CCOption.return
-            ; email = EmailAddress.of_string email
-            ; password = Password.create password |> CCResult.get_exn
-            ; firstname = Firstname.of_string given_name
-            ; lastname = Lastname.of_string name
+            ; email = Pool_user.EmailAddress.of_string email
+            ; password = Pool_user.Password.create password |> CCResult.get_exn
+            ; firstname = Pool_user.Firstname.of_string given_name
+            ; lastname = Pool_user.Lastname.of_string name
             ; roles = []
             }
           in
@@ -218,7 +217,6 @@ let contacts db_label =
   let open Utils.Lwt_result.Infix in
   let tags = Database.Logger.Tags.create db_label in
   let n_contacts = 200 in
-  let ctx = Database.to_ctx db_label in
   let combinations =
     let open CCList in
     let languages = Pool_common.Language.[ Some En; Some De; None ] in
@@ -281,8 +279,8 @@ let contacts db_label =
              , _ )
            ->
             match%lwt
-              Service.User.find_by_email_opt
-                ~ctx
+              Pool_user.Persistence.find_by_email_opt
+                db_label
                 (User.EmailAddress.value email)
             with
             | None ->

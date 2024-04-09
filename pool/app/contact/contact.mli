@@ -54,7 +54,7 @@ module AdminComment : sig
 end
 
 type t =
-  { user : Service.User.t
+  { user : Pool_user.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option

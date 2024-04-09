@@ -98,8 +98,8 @@ let sign_up_create req =
          |> Lwt_result.lift
        in
        let%lwt existing_user =
-         Service.User.find_by_email_opt
-           ~ctx:(Database.to_ctx database_label)
+         Pool_user.Persistence.find_by_email_opt
+           database_label
            (Pool_user.EmailAddress.value email_address)
        in
        let* events =
@@ -108,7 +108,7 @@ let sign_up_create req =
            let* events = create_contact_events () in
            log_request ();
            Lwt_result.return events
-         | Some user when Service.User.is_admin user -> Lwt_result.return []
+         | Some user when Pool_user.is_admin user -> Lwt_result.return []
          | Some _ ->
            let%lwt contact =
              email_address |> Contact.find_by_email database_label

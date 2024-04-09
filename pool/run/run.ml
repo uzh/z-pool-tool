@@ -28,7 +28,7 @@ let services =
   ; Database.Tenant.register Pool_migration.Root.lifecycle ()
   ; Pool_migration.Root.register ()
   ; Pool_migration.Tenant.register ()
-  ; Service.User.register ~commands:[] ()
+  ; Pool_user.Persistence.register ()
   ; Pool_token.register ()
   ; Email.Service.register ()
   ; Text_message.Service.register ()

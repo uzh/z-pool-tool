@@ -271,7 +271,9 @@ let reset_password_post req =
       | None -> Lwt_result.return []
       | Some import ->
         let%lwt user =
-          Service.User.find ~ctx (Pool_common.Id.value user_uuid)
+          Pool_user.Persistence.find
+            database_label
+            (Pool_common.Id.value user_uuid)
           >|> Pool_context.user_of_sihl_user database_label
         in
         Cqrs_command.User_import_command.DisableImport.handle

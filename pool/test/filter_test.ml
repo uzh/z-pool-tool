@@ -575,7 +575,6 @@ let filter_by_email _ () =
 ;;
 
 let filter_exclude_inactive _ () =
-  let ctx = Database.to_ctx Test_utils.Data.database_label in
   let%lwt contact = TestContacts.get_contact 9 in
   let%lwt experiment = Repo.first_experiment () in
   let filter =
@@ -591,8 +590,11 @@ let filter_exclude_inactive _ () =
   (* Expect contact to be included *)
   let%lwt () = test_filter true contact filter experiment in
   let%lwt (_ : Sihl_user.t) =
-    let open Service.User in
-    update ~ctx ~status:Inactive contact.Contact.user
+    let open Pool_user in
+    Persistence.update
+      Test_utils.Data.database_label
+      ~status:Inactive
+      contact.Contact.user
   in
   (* Expect inactive contact to be excluded *)
   test_filter false contact filter experiment
