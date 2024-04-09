@@ -40,7 +40,7 @@ end = struct
     |> CCResult.return
   ;;
 
-  let[@warning "-27"] handle
+  let handle
     ?(tags = Logs.Tag.empty)
     role
     model
