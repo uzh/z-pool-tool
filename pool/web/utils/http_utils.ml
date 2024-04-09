@@ -409,7 +409,7 @@ module Htmx = struct
   ;;
 
   let handler
-    :  ?active_navigation:string -> error_path:string
+    :  ?active_navigation:string -> error_path:string -> ?query_cache_key:string
     -> query:(module Queryable)
     -> create_layout:
          (Rock.Request.t
@@ -425,12 +425,23 @@ module Htmx = struct
         -> ('page Tyxml_html.elt, Pool_common.Message.error) Lwt_result.t)
     -> Rock.Response.t Lwt.t
     =
-    fun ?active_navigation ~error_path ~query:(module Q) ~create_layout req run ->
+    fun ?active_navigation
+      ~error_path
+      ?query_cache_key
+      ~query:(module Q)
+      ~create_layout
+      req
+      run ->
     let open Utils.Lwt_result.Infix in
     extract_happy_path ~src req
-    @@ fun context ->
+    @@ fun ({ Pool_context.user; _ } as context) ->
+    let cached_key =
+      let user_id = user |> Pool_context.get_user_id in
+      CCOption.( and* ) user_id query_cache_key
+    in
     let query =
       Query.from_request
+        ?cached_key
         ?filterable_by:Q.filterable_by
         ~searchable_by:Q.searchable_by
         ~sortable_by:Q.sortable_by

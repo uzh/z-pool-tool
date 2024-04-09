@@ -339,7 +339,10 @@ let resetbar language =
   div
     ~a:[ a_class [ "flexrow"; "justify-end"; "filter-bar-reset" ] ]
     [ a
-        ~a:[ a_class [ "has-icon"; "undecorated"; "color-dark" ]; a_href "?" ]
+        ~a:
+          [ a_class [ "has-icon"; "undecorated"; "color-dark" ]
+          ; a_href "?reset=true"
+          ]
         [ Component_icon.(to_html RefreshOutline)
         ; txt
             (Utils.control_to_string

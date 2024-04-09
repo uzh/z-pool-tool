@@ -1,6 +1,25 @@
 include Entity
 
+module Cache = struct
+  open Hashtbl
+
+  (* TODO: How to determine when to clear the cache? Add param to reset button?
+     Clear after some time without reading? *)
+  type key = Pool_common.Id.t * string [@@deriving show]
+
+  let tbl : (key, Entity.t) t = create 50
+  let find = find_opt tbl
+  let add = add tbl
+  let clear = remove tbl
+
+  let should_reset req =
+    Sihl.Web.Request.query "reset" req
+    |> CCOption.map_or ~default:false Utils.Bool.of_string
+  ;;
+end
+
 let from_request
+  ?(cached_key : Cache.key option)
   ?(filterable_by : Filter.human option)
   ?(searchable_by : Column.t list option)
   ?(sortable_by : Column.t list option)
@@ -38,12 +57,9 @@ let from_request
     | [] -> None
     | conditions -> Some conditions
   in
-  let pagination =
-    let open Pagination in
-    let limit = find Limit.field >>= CCInt.of_string in
-    let page = find Page.field >>= CCInt.of_string in
-    create ?limit ?page ()
-  in
+  let limit = find Pagination.Limit.field >>= CCInt.of_string in
+  let page = find Pagination.Page.field >>= CCInt.of_string in
+  let pagination () = Pagination.create ?limit ?page () in
   let search =
     let open Search in
     searchable_by
@@ -64,7 +80,25 @@ let from_request
     >>= fun columns ->
     find Field.Order >|= Field.read >>= Sort.create ?order columns
   in
-  create ~pagination ?filter ?search ?sort () |> apply_default ~default
+  let anything_set =
+    match filter, limit, page, search, sort with
+    | None, None, None, None, None -> false
+    | _ -> true
+  in
+  let from_request = create ~pagination:(pagination ()) ?filter ?search ?sort in
+  apply_default ~default
+  @@
+  match anything_set with
+  | true ->
+    let query = from_request () in
+    let () = cached_key |> map_or ~default:() (CCFun.flip Cache.add query) in
+    query
+  | false ->
+    (match Cache.should_reset req with
+     | false -> cached_key >>= Cache.find |> value ~default:(from_request ())
+     | true ->
+       let () = cached_key |> map_or ~default:() Cache.clear in
+       from_request ())
 ;;
 
 let empty () = create ()

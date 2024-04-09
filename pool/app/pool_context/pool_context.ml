@@ -12,6 +12,12 @@ let get_admin_user = function
   | Admin admin -> Ok admin
 ;;
 
+let get_user_id : user -> Pool_common.Id.t option = function
+  | Guest -> None
+  | Admin admin -> Admin.(id admin |> Id.to_common |> CCOption.return)
+  | Contact contact -> Contact.(id contact |> CCOption.return)
+;;
+
 module Utils = struct
   let find_authorizable_opt ?(admin_only = false) database_label user =
     let open Utils.Lwt_result.Infix in
