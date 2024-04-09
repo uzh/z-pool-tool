@@ -1,6 +1,6 @@
 import { csrfToken } from "./admin/utils.js";
 import { initSearch } from "./search.js";
-import { initNotification } from '../node_modules/@econ/frontend-framework/dist/main'
+import { initNotification, initModal } from '../node_modules/@econ/frontend-framework/dist/main'
 import { initRichTextEditor } from "./admin/richTextEditor.js";
 
 const configRequest = (e, form) => {

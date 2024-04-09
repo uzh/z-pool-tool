@@ -778,7 +778,9 @@ module Admin = struct
         let open RolePermission in
         let specific =
           let target_specific =
-            [ get "edit" ~middlewares:[ Access.read ] edit_htmx ]
+            [ get "edit" ~middlewares:[ Access.read ] edit_htmx
+            ; post "" ~middlewares:[ Access.read ] update
+            ]
           in
           [ get "" ~middlewares:[ Access.read ] show
           ; choose

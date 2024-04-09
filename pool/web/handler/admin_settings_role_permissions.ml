@@ -116,7 +116,6 @@ let show req =
 ;;
 
 let edit_htmx req =
-  (* let open Utils.Lwt_result.Infix in *)
   let result ({ Pool_context.database_label; _ } as context) =
     let* role = role_from_request req |> Lwt_result.lift in
     let* target = target_from_request req |> Lwt_result.lift in
@@ -133,6 +132,58 @@ let edit_htmx req =
       permissions
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
+  in
+  result
+  |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+;;
+
+let update req =
+  let open Utils.Lwt_result.Infix in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let open Cqrs_command.Guardian_command in
+    let open Guard in
+    let tags = Pool_context.Logger.Tags.req req in
+    let* role = role_from_request req |> Lwt_result.lift in
+    let* target = target_from_request req |> Lwt_result.lift in
+    let flash_fetcher value = Sihl.Web.Flash.find value req in
+    let%lwt current_permissions =
+      Persistence.RolePermission.permissions_by_role_and_target
+        database_label
+        role
+        target
+    in
+    let events =
+      Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.format_request_boolean_values
+            Permission.(all |> CCList.map show)
+      ||> UpdateRolePermissions.decode
+      >== UpdateRolePermissions.handle ~tags role target current_permissions
+    in
+    let handle =
+      let open HttpUtils in
+      let open Pool_common.Message in
+      function
+      | Ok events ->
+        let%lwt () =
+          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+        in
+        HttpUtils.Htmx.htmx_redirect
+          ~actions:[ Message.set ~success:[ Updated Field.Permission ] ]
+          (Url.Admin.role_permission_path ~role ())
+          ()
+        |> Lwt_result.ok
+      | Error error ->
+        Page.Admin.Settings.RolePermission.edit_target_modal
+          ~error
+          ~flash_fetcher
+          context
+          role
+          target
+          current_permissions
+        |> Http_utils.Htmx.html_to_plain_text_response
+        |> Lwt_result.return
+    in
+    events >|> handle
   in
   result
   |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req

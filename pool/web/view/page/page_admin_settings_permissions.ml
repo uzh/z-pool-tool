@@ -10,11 +10,17 @@ let edit_permission_modal_id = "edit-permission-modal"
 
 let edit_target_modal
   { Pool_context.language; csrf; _ }
+  ?error
+  ?flash_fetcher
   role
   target
   current_permissions
   =
   let open Role in
+  let action =
+    HttpUtils.Url.Admin.role_permission_target_path ~target role ()
+    |> Sihl.Web.externalize_path
+  in
   let all_permissions = Guard.Permission.all in
   let title language =
     let open Pool_common in
@@ -25,13 +31,18 @@ let edit_target_modal
     |> CCString.capitalize_ascii
   in
   let html =
-    let open Pool_common in
     let checkbox permission =
       let name = Guard.Permission.show permission in
       let checked =
-        if CCList.mem ~eq:Guard.Permission.equal permission current_permissions
-        then [ a_checked () ]
-        else []
+        (match flash_fetcher with
+         | Some flash_fetcher ->
+           flash_fetcher name
+           |> CCOption.map_or ~default:false Utils.Bool.of_string
+         | None ->
+           CCList.mem ~eq:Guard.Permission.equal permission current_permissions)
+        |> function
+        | true -> [ a_checked () ]
+        | false -> []
       in
       div
         ~a:[ a_class [ "form-group" ] ]
@@ -45,16 +56,33 @@ let edit_target_modal
             ]
         ]
     in
+    let error =
+      error
+      |> CCOption.map_or ~default:(txt "") (fun err ->
+        [ txt (Pool_common.Utils.error_to_string language err) ]
+        |> Component.Notification.notification language `Error)
+    in
     let permissions = all_permissions |> CCList.map checkbox in
-    form
-      ~a:[ a_class [ "flexcolumn"; "stack" ] ]
-      ((Input.csrf_element csrf () :: permissions)
-       @ [ Input.submit_element
-             ~has_icon:Icon.Save
-             language
-             Message.(Save (Some Field.Permission))
-             ()
-         ])
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ error
+      ; form
+          ~a:
+            Htmx.
+              [ hx_trigger "submit"
+              ; hx_post action
+              ; hx_swap "outerHTML"
+              ; hx_target (Format.asprintf "#%s" edit_permission_modal_id)
+              ; a_class [ "flexcolumn"; "stack" ]
+              ]
+          ((Input.csrf_element csrf () :: permissions)
+           @ [ Input.submit_element
+                 ~has_icon:Icon.Save
+                 language
+                 Pool_common.Message.(Save (Some Field.Permission))
+                 ()
+             ])
+      ]
   in
   Component.Modal.create
     ~active:true
@@ -94,19 +122,17 @@ let list
       Input.link_as_button
         "#"
         ~attributes:
-          [ a_user_data "hx-trigger" "click"
-          ; a_user_data
-              "hx-get"
-              (HttpUtils.Url.Admin.role_permission_target_path
-                 ~suffix:"edit"
-                 ~target
-                 role
-                 ())
-          ; a_user_data "hx-swap" "outerHTML"
-          ; a_user_data
-              "hx-target"
-              (Format.asprintf "#%s" edit_permission_modal_id)
-          ]
+          Htmx.
+            [ hx_trigger "click"
+            ; hx_get
+                (HttpUtils.Url.Admin.role_permission_target_path
+                   ~suffix:"edit"
+                   ~target
+                   role
+                   ())
+            ; hx_swap "outerHTML"
+            ; hx_target (Format.asprintf "#%s" edit_permission_modal_id)
+            ]
         ~icon:Component.Icon.Create
     in
     [ txt (Role.Target.show target)

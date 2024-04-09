@@ -12,6 +12,64 @@ type revoke_role =
   ; role : Role.Role.t * Guard.Uuid.Target.t option
   }
 
+module UpdateRolePermissions : sig
+  include Common.CommandSig with type t = (Guard.Permission.t * bool) list
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Role.Role.t
+    -> Role.Target.t
+    -> Guard.Permission.t list
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> ((Guard.Permission.t * bool) list, Pool_common.Message.error) result
+end = struct
+  type t = (Guard.Permission.t * bool) list
+
+  let decode data =
+    let open CCList in
+    let open Guard.Permission in
+    all
+    |> filter_map (fun permission ->
+      assoc_opt ~eq:CCString.equal (show permission) data
+      |> CCOption.map (fun value ->
+        permission, value |> hd |> Utils.Bool.of_string))
+    |> CCResult.return
+  ;;
+
+  let[@warning "-27"] handle
+    ?(tags = Logs.Tag.empty)
+    role
+    model
+    current_permissions
+    new_permissions
+    =
+    Logs.info ~src (fun m -> m "Handle command UpdateRolePermissions" ~tags);
+    (* TODO: Currently I am assuming that the current user is allowed to update
+       all permissions that were subitted *)
+    let create, destroy =
+      let open Guard in
+      new_permissions
+      |> CCList.partition_filter_map (fun (permission, value) ->
+        let role_permission = RolePermission.{ role; permission; model } in
+        CCList.mem ~eq:Permission.equal permission current_permissions
+        |> function
+        | false -> if value then `Left role_permission else `Drop
+        | true -> if value then `Drop else `Right role_permission)
+    in
+    Guard.RolePermissionSaved create
+    :: (destroy |> CCList.map Guard.rolepermissiondeleted)
+    |> CCList.map Pool_event.guard
+    |> CCResult.return
+  ;;
+
+  let effects = Guard.Access.Permission.manage
+end
+
+(* TODO: Create and Delete required? *)
 module CreateRolePermission : sig
   include Common.CommandSig with type t = Guard.RolePermission.t
 
@@ -29,6 +87,8 @@ end = struct
 
   let effects = Guard.Access.Permission.manage
 end
+
+(* TODO: Create and Delete required? *)
 
 module DeleteRolePermission : sig
   include Common.CommandSig with type t = Guard.RolePermission.t
@@ -48,6 +108,7 @@ end = struct
   let effects = Guard.Access.Permission.manage
 end
 
+(* TODO: Move this commands to admin_command.ml *)
 module GrantRoles : sig
   include Common.CommandSig with type t = grant_role
 end = struct

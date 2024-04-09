@@ -217,13 +217,14 @@ module RolePermission = struct
   let permissions_by_role_and_target_request =
     let open Caqti_request.Infix in
     {|
-    SELECT
-      permission
-    FROM
-      guardian_role_permissions
-    WHERE
-      role = ?
-      AND target_model = ?
+      SELECT
+        permission
+      FROM
+        guardian_role_permissions
+      WHERE
+        role = ?
+        AND target_model = ?
+        AND mark_as_deleted IS NULL
     |}
     |> Caqti_type.(t2 string string ->* Backend.Entity.Permission.t)
   ;;
