@@ -144,9 +144,7 @@ let add_file req =
       | Error err ->
         let%lwt () =
           Lwt_list.iter_s
-            (fun (_, asset_id) ->
-              asset_id
-              |> Service.Storage.delete ~ctx:(Database.to_ctx database_label))
+            (fun (_, asset_id) -> asset_id |> Storage.delete database_label)
             files
         in
         Logs.err (fun m ->

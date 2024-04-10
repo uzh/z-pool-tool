@@ -138,14 +138,13 @@ let delete_asset req =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
-    let ctx = database_label |> Database.to_ctx in
     let event tenant =
       Cqrs_command.Pool_tenant_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift
     in
     let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
     let destroy_file () =
-      Service.Storage.delete ~ctx (Common.Id.value asset_id)
+      Storage.delete database_label (Common.Id.value asset_id)
     in
     let return_to_tenant () =
       Http_utils.redirect_to_with_actions

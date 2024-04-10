@@ -187,7 +187,7 @@ module Sql = struct
     (* TODO: Transaction *)
     let%lwt { file; _ } = find pool id ||> Pool_common.Utils.get_or_failwith in
     let%lwt () = Database.exec pool delete_request id in
-    Service.Storage.delete ~ctx:(Database.to_ctx pool) (Id.value file.File.id)
+    Storage.delete pool (Id.value file.File.id)
   ;;
 end
 

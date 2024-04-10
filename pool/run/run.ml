@@ -7,7 +7,7 @@ let worker_services =
   ; Database.Tenant.register Pool_migration.Root.lifecycle ()
   ; Pool_migration.Root.register ()
   ; Pool_migration.Tenant.register ()
-  ; Service.Storage.register ()
+  ; Storage.register ()
   ; Schedule.register ()
   ; Queue.register
       ~jobs:
@@ -33,7 +33,7 @@ let services =
   ; Email.Service.register ()
   ; Text_message.Service.register ()
   ; Email.Service.Queue.register ()
-  ; Service.Storage.register ()
+  ; Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register ()
   ]

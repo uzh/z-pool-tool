@@ -1,7 +1,7 @@
 (library
  ; Cannot just be named as "location" because there is a module location
  (name pool_location)
- (libraries admin guard pool_common pool_tenant service query sihl utils)
+ (libraries admin guard pool_common pool_tenant storage query sihl utils)
  (preprocess
   (pps
    lwt_ppx
