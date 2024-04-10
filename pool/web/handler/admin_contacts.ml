@@ -365,6 +365,7 @@ let htmx_experiment_modal req =
 ;;
 
 let enroll_contact_post req =
+  let () = Logs.info (fun m -> m "%s" "HERERERERERERERERERERERR") in
   let open Utils.Lwt_result.Infix in
   let contact_id = contact_id req in
   let experiment_id = experiment_id req in
@@ -406,6 +407,7 @@ let enroll_contact_post req =
       let open Cqrs_command.Assignment_command.Create in
       handle
         ~tags
+        ~direct_enrollment_by_admin:true
         { contact; session; follow_up_sessions; experiment }
         confirmation
         contact_is_enrolled
