@@ -75,7 +75,6 @@ type t =
   | RolesGranted
   | SelectedTags
   | SelectedTagsEmpty
-  | SentInvitations
   | SessionCloseScreen
   | SessionDetailScreen
   | SessionDetailTitle of Ptime.t
@@ -132,6 +131,7 @@ type nav_link =
   | Queue
   | RolePermissions
   | Schedules
+  | SentInvitations
   | Sessions
   | Settings
   | Smtp

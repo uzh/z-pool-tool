@@ -225,6 +225,8 @@ type t =
   | ParticipatedAbr [@name "participated_abr"] [@printer go "participated_abr"]
   | ParticipationTag [@name "participation_tag"]
   [@printer go "participation_tag"]
+  | ParticipationTags [@name "participation_tags"]
+  [@printer go "participation_tags"]
   | PartnerLogos [@name "partner_logos"] [@printer go "partner_logos"]
   [@printer go "pending_contact_imports"]
   | Password [@name "password"] [@printer go "password"]

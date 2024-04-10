@@ -214,7 +214,7 @@ let index ({ Pool_context.language; _ } as context) experiment mailings =
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.Mailings
+         ~active_navigation:"mailings"
          ~hint:I18n.ExperimentMailings
          context
          (NavLink I18n.Mailings)

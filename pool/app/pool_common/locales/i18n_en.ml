@@ -127,7 +127,6 @@ let to_string = function
   | RolesGranted -> "Granted roles"
   | SelectedTags -> "Currently assigned tags"
   | SelectedTagsEmpty -> "No tags assigned"
-  | SentInvitations -> "Sent invitations"
   | SessionCloseScreen -> "Session close screen"
   | SessionDetailScreen -> "Session detail screen"
   | SessionDetailTitle start ->
@@ -195,6 +194,7 @@ let nav_link_to_string = function
   | Queue -> "Queued jobs"
   | RolePermissions -> "Role permission"
   | Schedules -> "Schedules"
+  | SentInvitations -> "Sent invitations"
   | Sessions -> "Sessions"
   | Settings -> "Settings"
   | Smtp -> "Email Server (SMTP)"

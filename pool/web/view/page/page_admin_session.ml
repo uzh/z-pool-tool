@@ -656,7 +656,7 @@ let index
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.Sessions
+         ~active_navigation:"sessions"
          ~hint:I18n.ExperimentSessions
          context
          (NavLink I18n.Sessions)

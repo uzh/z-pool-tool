@@ -17,6 +17,13 @@ h1,
     word-wrap: break-word;
 }
 
+@include mobile {
+    *+h1, h1+*, *+h2, *+.heading-1, .heading-1+*, *+.heading-2{
+        margin-top: $space-md;
+    }  
+}
+
+
 .word-wrap-break {
     -ms-word-break: break-word;
     
@@ -42,6 +49,12 @@ ul.no-style {
     padding-left: 0;
     padding-bottom: 0;
     padding-right: 0;
+}
+
+@include mobile {
+    .sm-inset-lg {
+        padding: $space-lg;
+    }
 }
 
 form[class*="stack"] input[type="hidden"]+* {

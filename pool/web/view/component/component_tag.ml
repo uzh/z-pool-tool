@@ -29,7 +29,8 @@ let create ?remove_action language tag =
   div ~a:[ a_class classnames ] content
 ;;
 
-let tag_list ?remove_action language tags =
+let tag_list ?(tight = false) ?remove_action language tags =
+  let gap = if tight then "flex-gap-sm" else "flex-gap" in
   match tags with
   | [] ->
     p
@@ -38,7 +39,7 @@ let tag_list ?remove_action language tags =
   | tags ->
     tags
     |> CCList.map (create ?remove_action language)
-    |> div ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "align-start" ] ]
+    |> div ~a:[ a_class [ "flexrow"; "wrap"; gap; "align-start" ] ]
 ;;
 
 let tag_form ?label language remove_action tags =

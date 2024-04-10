@@ -129,7 +129,6 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | RolesGranted -> "Zugewiesene Rollen"
   | SelectedTags -> "Aktuell zugewiesene Tags"
   | SelectedTagsEmpty -> "Keine Tags zugewiesen"
-  | SentInvitations -> "Versendete Einladungen"
   | SessionCloseScreen -> "Bildschirm zum Beenden der Sessions"
   | SessionDetailScreen -> "Session-Detailansicht"
   | SessionDetailTitle start ->
@@ -197,6 +196,7 @@ let nav_link_to_string = function
   | Queue -> "Hintergrundjobs"
   | RolePermissions -> "Rollenberechtigungen"
   | Schedules -> "Prozesse"
+  | SentInvitations -> "Versendete Einladungen"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
   | Smtp -> "E-Mail Server (SMTP)"

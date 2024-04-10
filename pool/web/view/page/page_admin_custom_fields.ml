@@ -71,48 +71,6 @@ let model_subtitle language model =
     ]
 ;;
 
-let custom_fields_layout ?hint language current_model html =
-  let subnav_links =
-    Custom_field.Model.(
-      all
-      |> CCList.map (fun f ->
-        ( f |> show |> CCString.capitalize_ascii
-        , f |> Url.index_path |> CCOption.return
-        , equal current_model f )))
-  in
-  let html =
-    let open CCFun in
-    let title =
-      h2
-        ~a:[ a_class [ "heading-2" ] ]
-        [ txt
-            (current_model
-             |> Custom_field.Model.show
-             |> CCString.capitalize_ascii)
-        ]
-    in
-    let text =
-      hint
-      |> CCOption.map_or
-           ~default:(txt "")
-           Pool_common.(
-             Utils.hint_to_string language
-             %> HttpUtils.add_line_breaks
-             %> CCList.pure
-             %> p)
-    in
-    [ title; text; div ~a:[ a_class [ "gap-lg" ] ] [ html ] ]
-  in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.CustomFields)
-        ]
-    ; Component.Navigation.make_tabs html subnav_links
-    ]
-;;
-
 let input_by_lang
   ?(required = false)
   language
@@ -759,7 +717,11 @@ let detail
     ]
 ;;
 
-let index field_list group_list current_model Pool_context.{ language; csrf; _ }
+let index
+  field_list
+  group_list
+  current_model
+  Pool_context.({ language; csrf; _ } as context)
   =
   let grouped, ungrouped = Custom_field.group_fields group_list field_list in
   let thead =
@@ -966,11 +928,12 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
        ]
        @ list)
   in
-  div
-    ~a:[ a_class [ "stack-lg" ] ]
-    [ Table.horizontal_table `Striped ~thead ~align_last_end:true rows
-    ; groups_html
-    ; sort_ungrouped
-    ]
-  |> custom_fields_layout ~hint language current_model
+  [ div
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ Table.horizontal_table `Striped ~thead ~align_last_end:true rows
+      ; groups_html
+      ; sort_ungrouped
+      ]
+  ]
+  |> Layout.CustomField.create ~hint context current_model
 ;;

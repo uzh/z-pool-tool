@@ -44,6 +44,8 @@ module Model : sig
   val schema
     :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+
+  val to_nav_link : t -> Pool_common.I18n.nav_link
 end
 
 module Name : sig

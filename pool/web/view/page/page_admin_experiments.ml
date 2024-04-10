@@ -805,6 +805,7 @@ let detail
     else []
   in
   let bool_to_string = Utils.bool_to_string language in
+  let tag_list = Component.Tag.tag_list ~tight:true language in
   let vertical_table =
     Component.Table.vertical_table
       ~align_top:true
@@ -889,6 +890,8 @@ let detail
             |> invitation_reset_at
             |> CCOption.map_or ~default:"-" InvitationResetAt.to_human
             |> txt )
+        ; Field.Tags, tag_list tags
+        ; Field.ParticipationTags, tag_list participation_tags
         ]
       |> vertical_table
     in
@@ -915,19 +918,6 @@ let detail
             ]
         ]
     in
-    let tag_overview =
-      let build (title, tags) =
-        div
-          [ h3
-              ~a:[ a_class [ "heading-3" ] ]
-              [ Utils.nav_link_to_string language title |> txt ]
-          ; Component.Tag.tag_list language tags
-          ]
-      in
-      I18n.[ Tags, tags; ParticipationTags, participation_tags ]
-      |> CCList.map build
-      |> div ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-    in
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
         ([ notifications
@@ -938,7 +928,6 @@ let detail
                  ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
                  [ statistics ]
              ]
-         ; tag_overview
          ; message_template
          ]
          @ setting)
@@ -957,7 +946,7 @@ let detail
   in
   Layout.Experiment.(
     create
-      ~active_navigation:I18n.Overview
+      ~active_navigation:""
       ?buttons:edit_button
       context
       (NavLink I18n.Overview)
@@ -986,7 +975,7 @@ let invitations
                     (build_experiment_path ~suffix:"invitations/sent" experiment
                      |> Sihl.Web.externalize_path)
                 ]
-              [ txt (Utils.text_to_string language I18n.SentInvitations) ]
+              [ txt (Utils.nav_link_to_string language I18n.SentInvitations) ]
           ]
       ; Page_admin_invitations.Partials.send_invitation
           context
@@ -1002,7 +991,7 @@ let invitations
   ]
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.Invitations
+         ~active_navigation:"invitations"
          context
          (NavLink I18n.Invitations)
          experiment)
@@ -1047,7 +1036,7 @@ let users
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:(Pool_common.I18n.Field field)
+         ~active_navigation:(Pool_common.Message.Field.show field)
          context
          (NavLink (Pool_common.I18n.Field field))
          experiment)
@@ -1118,7 +1107,7 @@ let message_history context experiment messages =
   in
   Layout.Experiment.(
     create
-      ~active_navigation:I18n.MessageHistory
+      ~active_navigation:"messages"
       context
       (NavLink I18n.MessageHistory)
       experiment
