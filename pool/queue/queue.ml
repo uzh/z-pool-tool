@@ -171,21 +171,31 @@ let stop () =
   Lwt.return_unit
 ;;
 
-let lifecycle =
+type kind =
+  | Service
+  | Worker
+
+let lifecycle ?(kind = Service) () =
+  let implementation_name, start =
+    match kind with
+    | Service -> "service", fun () -> Lwt.return_unit
+    | Worker -> "worker", start
+  in
   Sihl.Container.create_lifecycle
     "Multitenant Queue"
+    ~implementation_name
     ~dependencies:(fun () ->
       [ Pool_canary.lifecycle; Pool_database.lifecycle; Schedule.lifecycle ])
     ~start
     ~stop
 ;;
 
-let register ?(jobs = []) () =
+let register ?kind ?(jobs = []) () =
   Repo.register_migration ();
   Repo.register_cleaner ();
   registered_jobs := !registered_jobs @ jobs;
   let configuration = Sihl.Configuration.make () in
-  Sihl.Container.Service.create ~configuration lifecycle
+  Sihl.Container.Service.create ~configuration (lifecycle ?kind ())
 ;;
 
 module History = struct

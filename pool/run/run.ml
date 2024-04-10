@@ -7,6 +7,7 @@ let worker_services =
   ; Storage.register ()
   ; Schedule.register ()
   ; Queue.register
+      ~kind:Queue.Worker
       ~jobs:
         [ Queue.hide Email.Service.Job.send
         ; Queue.hide Text_message.Service.Job.send
@@ -24,6 +25,7 @@ let services =
   ; Pool_canary.register ()
   ; Pool_user.Persistence.register ()
   ; Pool_token.register ()
+  ; Queue.register ()
   ; Email.Service.register ()
   ; Text_message.Service.register ()
   ; Storage.register ()

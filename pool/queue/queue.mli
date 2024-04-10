@@ -106,8 +106,12 @@ val dispatch_all
   -> 'a job
   -> unit Lwt.t
 
-val lifecycle : Sihl.Container.lifecycle
-val register : ?jobs:job' list -> unit -> Sihl.Container.Service.t
+type kind =
+  | Service
+  | Worker
+
+val lifecycle : ?kind:kind -> unit -> Sihl.Container.lifecycle
+val register : ?kind:kind -> ?jobs:job' list -> unit -> Sihl.Container.Service.t
 
 val find
   :  Database.Label.t

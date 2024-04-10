@@ -91,7 +91,7 @@ let stop () = Lwt.return_unit
 let lifecycle =
   Sihl.Container.create_lifecycle
     "System events"
-    ~dependencies:(fun () -> [ Pool_database.lifecycle; Queue.lifecycle ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle; Queue.lifecycle () ])
     ~start
     ~stop
 ;;
