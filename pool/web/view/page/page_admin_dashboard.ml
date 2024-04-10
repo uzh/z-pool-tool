@@ -43,8 +43,7 @@ module Partials = struct
           ~a:[ a_class [ "word-break-all" ] ]
           [ txt Experiment.(experiment.title |> Title.value) ]
       ; txt Pool_location.(session.location.name |> Name.value)
-      ; Component.(
-          Input.link_as_button ~icon:Icon.OpenOutline (session_path session))
+      ; Component.(Input.link_as_button ~icon:Icon.Eye (session_path session))
       ]
       |> CCList.map CCFun.(CCList.return %> td)
       |> tr ~a:row_attribs
