@@ -32,11 +32,10 @@ let steps =
 ;;
 
 let start () =
-  let open Database in
-  let tags = Logger.Tags.create root in
-  Logs.info (fun m -> m ~tags "Migrate database: %a" Label.pp root);
+  let label = Database.root in
+  Logger.log_migration label;
   let%lwt () =
-    Migration.check_migrations_status root ~migrations:(steps ()) ()
+    Database.Migration.check_migrations_status label ~migrations:(steps ()) ()
   in
   Lwt.return_unit
 ;;

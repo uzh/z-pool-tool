@@ -81,13 +81,11 @@ let steps =
 ;;
 
 let start () =
-  let open Database in
-  let tags = Logger.Tags.create root in
   let%lwt db_pools = Database.Tenant.find_all_running () in
   Lwt_list.iter_s
     (fun pool ->
-      Logs.info (fun m -> m ~tags "Migrate database: %a" Label.pp pool);
-      Migration.check_migrations_status pool ~migrations:(steps ()) ())
+      Logger.log_migration pool;
+      Database.Migration.check_migrations_status pool ~migrations:(steps ()) ())
     db_pools
 ;;
 

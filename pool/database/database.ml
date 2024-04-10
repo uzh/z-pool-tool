@@ -12,14 +12,18 @@ let log_status database =
   let tags = database |> label |> Logger.Tags.create in
   function
   | Ok _ ->
-    Logs.info (fun m -> m ~tags "Database connected: %s" ([%show: t] database))
+    Logs.debug (fun m -> m ~tags "Database connected: %s" ([%show: t] database))
   | Error conn ->
-    Logs.info (fun m ->
+    Logs.warn (fun m ->
       m
         ~tags
         "Database connection failed: [%s] [%s]"
         ([%show: t] database)
         (Caqti_error.show conn))
+;;
+
+let log_start label =
+  Logs.info (fun m -> m ~tags:(Logger.Tags.create label) "Start database")
 ;;
 
 module Root = struct
@@ -35,8 +39,7 @@ module Root = struct
   let setup = add %> Lwt.return
 
   let start () =
-    let tags = Logger.Tags.create label in
-    Logs.info (fun m -> m ~tags "Start database %a" Label.pp label);
+    log_start label;
     let%lwt (_ : status) = setup () in
     Lwt.return_unit
   ;;
@@ -46,10 +49,12 @@ end
 
 module Tenant = struct
   let setup_tenant database =
+    let label = database |> label in
+    log_start label;
     let () =
       add_pool ~pool_size:(pool_size ()) database |> log_status database
     in
-    database |> Entity.label |> Lwt.return
+    Lwt.return label
   ;;
 
   let setup () =

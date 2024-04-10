@@ -1,6 +1,4 @@
-let src = Logs.Src.create "migration"
-
-module Logs = (val Logs.src_log src : Logs.LOG)
+module Logs = Logger.Logs
 module Root = Root
 module Tenant = Tenant
 
