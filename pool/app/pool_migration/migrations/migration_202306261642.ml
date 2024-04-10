@@ -1,5 +1,5 @@
 let create_failed_login_attempts_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create failed login attempts table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_failed_login_attempts (

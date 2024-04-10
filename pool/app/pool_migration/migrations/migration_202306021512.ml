@@ -1,5 +1,5 @@
 let add_uuid_foreignkey_column_to_sessions =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add uuid foreignkey column to sessions"
     {sql|
       ALTER TABLE pool_sessions
@@ -8,7 +8,7 @@ let add_uuid_foreignkey_column_to_sessions =
 ;;
 
 let set_uuid_foreignkey_on_sessions =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"set uuid foreignkey on sessions"
     {sql|
       UPDATE pool_sessions SET
@@ -17,7 +17,7 @@ let set_uuid_foreignkey_on_sessions =
 ;;
 
 let add_fk_contraint_to_sessions =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique contraint to waiting_list"
     {sql|
       ALTER TABLE pool_sessions
@@ -27,7 +27,7 @@ let add_fk_contraint_to_sessions =
 ;;
 
 let drop_location_id_from_sessions =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"drop location id from sessions"
     {sql|
       ALTER TABLE pool_sessions

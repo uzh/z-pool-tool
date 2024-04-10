@@ -1,5 +1,5 @@
 let add_missing_columns_to_contacts =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add missing columns to experiments"
     {sql|
     ALTER TABLE pool_contacts

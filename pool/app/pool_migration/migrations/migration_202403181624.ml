@@ -1,5 +1,5 @@
 let add_direct_message_permission =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add direct message permission"
     {sql|
     INSERT INTO `guardian_role_permissions` (`role`, `permission`, `target_model`) VALUES

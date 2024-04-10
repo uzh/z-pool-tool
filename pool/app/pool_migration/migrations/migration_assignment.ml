@@ -1,5 +1,5 @@
 let create_participation_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create participation table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_participations (
@@ -20,7 +20,7 @@ let create_participation_table =
 ;;
 
 let rename_participant_to_subject =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename participant id to subject id"
     {sql|
       ALTER TABLE pool_participations
@@ -29,7 +29,7 @@ let rename_participant_to_subject =
 ;;
 
 let rename_subject_to_contact =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename subject id to contact id"
     {sql|
       ALTER TABLE pool_participations
@@ -38,7 +38,7 @@ let rename_subject_to_contact =
 ;;
 
 let rename_table_to_assignments =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename subject id to contact id"
     {sql|
       ALTER TABLE pool_participations
@@ -47,7 +47,7 @@ let rename_table_to_assignments =
 ;;
 
 let make_show_up_participated_nullable =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"make show_up and participated nullable"
     {sql|
       ALTER TABLE pool_assignments
@@ -57,7 +57,7 @@ let make_show_up_participated_nullable =
 ;;
 
 let add_marked_as_deleted_column =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename subject id to contact id"
     {sql|
       ALTER TABLE pool_assignments

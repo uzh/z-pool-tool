@@ -1,5 +1,5 @@
 let add_external_data_id_to_assignments =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add external data id to assignments"
     {sql|
       ALTER TABLE pool_assignments

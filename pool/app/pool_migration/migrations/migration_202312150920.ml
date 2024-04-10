@@ -1,5 +1,5 @@
 let seed_default_signup_cta_i18n =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed root default i18n data"
     {sql|
     INSERT INTO pool_i18n (uuid, i18n_key, language, content) VALUES

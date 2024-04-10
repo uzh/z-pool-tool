@@ -180,64 +180,89 @@ val clean_all : Label.t -> (unit, Caqti_error.t) result Lwt.t
 val clean_all_exn : Label.t -> unit Lwt.t
 
 module Migration : sig
-  type step =
-    { label : string
-    ; statement : string
-    ; check_fk : bool
-    }
-
-  val equal_step : step -> step -> Ppx_deriving_runtime.bool
-
-  val pp_step
-    :  Ppx_deriving_runtime.Format.formatter
-    -> step
-    -> Ppx_deriving_runtime.unit
-
-  val show_step : step -> Ppx_deriving_runtime.string
-
-  type steps = step list
-
-  val equal_steps : steps -> steps -> Ppx_deriving_runtime.bool
-
-  val pp_steps
-    :  Ppx_deriving_runtime.Format.formatter
-    -> steps
-    -> Ppx_deriving_runtime.unit
-
-  val show_steps : steps -> Ppx_deriving_runtime.string
-
-  type t = string * steps
-
-  val equal : t -> t -> Ppx_deriving_runtime.bool
-  val show : t -> Ppx_deriving_runtime.string
-  val name : string
-
   exception Exception of string
   exception Dirty_migration
 
+  module Step : sig
+    type t =
+      { label : string
+      ; statement : string
+      ; check_fk : bool
+      }
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : label:string -> ?check_fk:bool -> string -> t
+  end
+
+  type steps = Step.t list
+
+  val equal_steps : steps -> steps -> bool
+  val pp_steps : Format.formatter -> steps -> unit
+  val show_steps : steps -> string
+
+  type t = string * steps
+
+  val equal : t -> t -> bool
+  val show : t -> string
   val to_sexp : string * steps -> Sexplib0.Sexp.t
   val pp : Format.formatter -> string * steps -> unit
   val empty : 'a -> 'a * 'b list
-  val create_step : label:string -> ?check_fk:bool -> string -> step
   val add_step : 'a -> 'b * 'a list -> 'b * 'a list
+
+  (** [register_migration migration] registers a migration [migration] with the
+      migration service so it can be executed with `run_all`. *)
   val register_migration : t -> unit
+
+  (** [register_migrations migrations] registers migrations [migrations] with
+      the migration service so it can be executed with `run_all`. *)
   val register_migrations : t list -> unit
+
+  (** [execute database_label migrations] runs all migrations [migrations] on the
+      connection pool. *)
   val execute : Label.t -> t list -> unit Lwt.t
+
+  (** [run_all database_label ()] runs all migrations that have been registered on the
+      connection pool. *)
   val run_all : Label.t -> unit -> unit Lwt.t
 
+  (** [migrations_status database_label ?migrations ()] returns a list of migration
+      namespaces and the number of their unapplied migrations.
+
+      By default, the migrations are checked that have been registered when
+      registering the migration service. Custom [migrations] can be provided to
+      override this behaviour. *)
   val migrations_status
-    :  Label.t
-    -> ?migrations:t list
+    :  ?migrations:t list
+    -> Label.t
     -> unit
     -> (string * int option) list Lwt.t
 
+  (** [check_migration_status database_label ?migrations ()] returns a list of migration
+      namespaces and the number of their unapplied migrations.
+
+      It does the same thing as {!migration_status} and additionally interprets
+      whether there are too many, not enough or just the right number of
+      migrations applied. If there are too many or not enough migrations
+      applied, a descriptive warning message is logged. *)
   val check_migrations_status
-    :  Label.t
-    -> ?migrations:t list
+    :  ?migrations:t list
+    -> Label.t
     -> unit
     -> unit Lwt.t
 
+  (** [pending_migrations database_label ()] returns a list of migrations that need to be
+      executed in order to have all migrations applied on the connection pool.
+      The returned migration is a tuple [(namespace, number)] where [namespace]
+      is the namespace of the migration and [number] is the number of pending
+      migrations that need to be applied in order to achieve the desired schema
+      version.
+
+      An empty list means that there are no pending migrations and that the
+      database schema is up-to-date. *)
   val pending_migrations : Label.t -> unit -> (string * int) list Lwt.t
+
   val start : Label.t -> unit -> unit Lwt.t
   val extend_migrations : (string * steps) list -> unit -> (string * steps) list
 

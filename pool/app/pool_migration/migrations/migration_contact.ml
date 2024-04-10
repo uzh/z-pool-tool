@@ -1,5 +1,5 @@
 let create_participant_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create participant table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_participants (
@@ -19,7 +19,7 @@ let create_participant_table =
 ;;
 
 let add_field_versioning =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add field versioning for participants"
     {sql|
       ALTER TABLE pool_participants
@@ -30,7 +30,7 @@ let add_field_versioning =
 ;;
 
 let add_user_language =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add field versioning for participants"
     {sql|
       ALTER TABLE pool_participants
@@ -39,7 +39,7 @@ let add_user_language =
 ;;
 
 let add_user_language_version =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add field versioning for participant language"
     {sql|
       ALTER TABLE pool_participants
@@ -48,7 +48,7 @@ let add_user_language_version =
 ;;
 
 let add_user_email_verified_counts =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:
       "add field for email verification, assignment inclusive show up count"
     {sql|
@@ -60,7 +60,7 @@ let add_user_email_verified_counts =
 ;;
 
 let rename_participants_to_subjects_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename participants to subjects table"
     {sql|
       ALTER TABLE pool_participants
@@ -69,7 +69,7 @@ let rename_participants_to_subjects_table =
 ;;
 
 let rename_subjects_to_contacts_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename subjects to contacts table"
     {sql|
       ALTER TABLE pool_subjects
@@ -78,7 +78,7 @@ let rename_subjects_to_contacts_table =
 ;;
 
 let add_experiment_type_preference =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add experiment_type_preference"
     {sql|
       ALTER TABLE pool_contacts
@@ -88,7 +88,7 @@ let add_experiment_type_preference =
 ;;
 
 let add_profile_update_triggered_timestamp =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add profile update triggered timestamp"
     {sql|
       ALTER TABLE pool_contacts
@@ -98,7 +98,7 @@ let add_profile_update_triggered_timestamp =
 ;;
 
 let make_recruitment_channel_optional =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"make recruitment channel optional"
     {sql|
       ALTER TABLE pool_contacts
@@ -107,7 +107,7 @@ let make_recruitment_channel_optional =
 ;;
 
 let add_contact_participation_counts =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add contact participation counts"
     {sql|
       ALTER TABLE pool_contacts
@@ -119,7 +119,7 @@ let add_contact_participation_counts =
 ;;
 
 let remove_recruitment_channel =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"remove recruitment channel"
     {sql|
       ALTER TABLE pool_contacts
@@ -128,7 +128,7 @@ let remove_recruitment_channel =
 ;;
 
 let add_registration_attempt_notification_sent_timestamp =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add registration_attempt_notification_sent_at timestamp"
     {sql|
       ALTER TABLE pool_contacts

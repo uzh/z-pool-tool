@@ -259,7 +259,7 @@ let search_query =
 
 module Migration = struct
   let fix_collation =
-    Database.Migration.create_step
+    Database.Migration.Step.create
       ~label:"fix collation"
       {sql|
           SET collation_server = 'utf8mb4_unicode_ci'
@@ -267,7 +267,7 @@ module Migration = struct
   ;;
 
   let create_jobs_table =
-    Database.Migration.create_step
+    Database.Migration.Step.create
       ~label:"create jobs table"
       {sql|
           CREATE TABLE IF NOT EXISTS queue_jobs (
@@ -286,7 +286,7 @@ module Migration = struct
   ;;
 
   let set_null_input_to_empty_string =
-    Database.Migration.create_step
+    Database.Migration.Step.create
       ~label:"set input to not null"
       {sql|
           UPDATE queue_jobs SET input = '' WHERE input IS NULL
@@ -294,7 +294,7 @@ module Migration = struct
   ;;
 
   let set_input_not_null =
-    Database.Migration.create_step
+    Database.Migration.Step.create
       ~label:"set input to not null"
       {sql|
           ALTER TABLE queue_jobs MODIFY COLUMN input TEXT NOT NULL DEFAULT ''
@@ -302,7 +302,7 @@ module Migration = struct
   ;;
 
   let add_error_columns =
-    Database.Migration.create_step
+    Database.Migration.Step.create
       ~label:"add error columns"
       {sql|
           ALTER TABLE queue_jobs
@@ -312,7 +312,7 @@ module Migration = struct
   ;;
 
   let add_tag_column =
-    Database.Migration.create_step
+    Database.Migration.Step.create
       ~label:"add tag column"
       {sql|
           ALTER TABLE queue_jobs
@@ -321,7 +321,7 @@ module Migration = struct
   ;;
 
   let add_ctx_column =
-    Database.Migration.create_step
+    Database.Migration.Step.create
       ~label:"add ctx column"
       {sql|
       ALTER TABLE queue_jobs

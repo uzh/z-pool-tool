@@ -1,5 +1,5 @@
 let seed_default_message_templates =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed default message templates"
     {sql|
     INSERT INTO `pool_message_templates` (`uuid`, `label`, `language`, `email_subject`, `email_text_html`, `email_text_plain`, `sms_text`) VALUES
@@ -35,7 +35,7 @@ let seed_default_message_templates =
 ;;
 
 let seed_waiting_list_confirmation =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed waiting list confirmation"
     {sql|
     INSERT INTO `pool_message_templates` (`uuid`, `label`, `language`, `email_subject`, `email_text_html`, `email_text_plain`, `sms_text`) VALUES
@@ -45,7 +45,7 @@ let seed_waiting_list_confirmation =
 ;;
 
 let seed_assignment_session_change_notification =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed waiting list confirmation"
     {sql|
     INSERT INTO `pool_message_templates` (`uuid`, `label`, `language`, `email_subject`, `email_text_html`, `email_text_plain`, `sms_text`) VALUES
@@ -55,7 +55,7 @@ let seed_assignment_session_change_notification =
 ;;
 
 let add_i18n_unique_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add i18n unique constraint"
     {sql|
       ALTER TABLE pool_i18n
@@ -64,7 +64,7 @@ let add_i18n_unique_constraint =
 ;;
 
 let seed_default_i18n =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed default i18n data"
     {sql|
     INSERT INTO `pool_i18n` (`uuid`, `i18n_key`, `language`, `content`) VALUES
@@ -83,7 +83,7 @@ let seed_default_i18n =
 ;;
 
 let seed_default_system_settings =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed default system settings"
     {sql|
       INSERT INTO pool_system_settings (uuid, settings_key, value) VALUES
@@ -112,7 +112,7 @@ let migration () =
 ;;
 
 let seed_root_default_message_templates_workiing =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed default message templates"
     {sql|
     INSERT INTO `pool_message_templates` (`uuid`, `label`, `language`, `email_subject`, `email_text_html`, `email_text_plain`, `sms_text`) VALUES
@@ -122,7 +122,7 @@ let seed_root_default_message_templates_workiing =
 ;;
 
 let seed_root_default_message_templates =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed root default message templates"
     {sql|
     INSERT INTO `pool_message_templates` (`uuid`, `label`, `language`, `email_subject`, `email_text_html`, `email_text_plain`, `sms_text`) VALUES
@@ -132,7 +132,7 @@ let seed_root_default_message_templates =
 ;;
 
 let add_root_i18n_unique_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add root i18n unique constraint"
     {sql|
       ALTER TABLE pool_i18n
@@ -141,7 +141,7 @@ let add_root_i18n_unique_constraint =
 ;;
 
 let seed_root_default_i18n =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed root default i18n data"
     {sql|
     INSERT INTO pool_i18n (uuid, i18n_key, language, content) VALUES

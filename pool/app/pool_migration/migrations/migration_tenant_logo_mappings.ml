@@ -1,5 +1,5 @@
 let create_tenant_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create tenant_logo_mappings table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_tenant_logo_mappings (

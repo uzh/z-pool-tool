@@ -1,5 +1,5 @@
 let create_custom_field_answer_versions_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create custom field answer versions table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_custom_field_answer_versions (
@@ -16,7 +16,7 @@ let create_custom_field_answer_versions_table =
 ;;
 
 let add_unique_combination_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique combination constraint to custom field versions"
     {sql|
       ALTER TABLE pool_custom_field_answer_versions
@@ -26,7 +26,7 @@ let add_unique_combination_constraint =
 ;;
 
 let drop_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"drop custom fields answer versions table"
     {sql|
       DROP TABLE IF EXISTS pool_custom_field_answer_versions

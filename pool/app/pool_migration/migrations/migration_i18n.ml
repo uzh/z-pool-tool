@@ -1,5 +1,5 @@
 let create_i18n_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create i18n table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_i18n (
@@ -17,7 +17,7 @@ let create_i18n_table =
 ;;
 
 let remove_unused_rows =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"remove unused rows from i18n table"
     {sql|
       DELETE FROM pool_i18n

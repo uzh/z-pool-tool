@@ -1,5 +1,5 @@
 let create_location_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create locations table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_locations (
@@ -24,7 +24,7 @@ let create_location_table =
 ;;
 
 let add_institution_to_address =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add institution to address"
     {sql|
       ALTER TABLE pool_locations

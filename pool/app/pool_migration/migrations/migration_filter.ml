@@ -1,5 +1,5 @@
 let create_filter_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create filter table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_filter (
@@ -15,7 +15,7 @@ let create_filter_table =
 ;;
 
 let add_title_to_filter =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add title to filter"
     {sql|
       ALTER TABLE pool_filter
@@ -24,7 +24,7 @@ let add_title_to_filter =
 ;;
 
 let rename_filter_column =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename filter column"
     {sql|
       ALTER TABLE pool_filter

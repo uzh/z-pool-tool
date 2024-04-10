@@ -1,5 +1,5 @@
 let create_custom_field_answers_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create custom field answers table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_custom_field_answers (
@@ -18,7 +18,7 @@ let create_custom_field_answers_table =
 ;;
 
 let remove_version_column =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"remove version column"
     {sql|
       ALTER TABLE pool_custom_field_answers
@@ -27,7 +27,7 @@ let remove_version_column =
 ;;
 
 let make_value_nullable =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"remove version column"
     {sql|
       ALTER TABLE pool_custom_field_answers
@@ -38,7 +38,7 @@ let make_value_nullable =
 (* To keep the migrations clean, I added a default value (Versions only matter
    when mutliple people are updating) *)
 let add_versions_and_admin_values =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add versions and admin values"
     {sql|
       ALTER TABLE pool_custom_field_answers
@@ -49,7 +49,7 @@ let add_versions_and_admin_values =
 ;;
 
 let add_unique_combination_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique combination constraint to answers"
     {sql|
       ALTER TABLE pool_custom_field_answers

@@ -1,5 +1,5 @@
 let create_system_events_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create system events table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_system_events (
@@ -15,7 +15,7 @@ let create_system_events_table =
 ;;
 
 let create_system_event_logs_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create system event logs table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_system_event_logs (

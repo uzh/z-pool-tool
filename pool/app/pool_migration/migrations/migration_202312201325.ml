@@ -1,5 +1,5 @@
 let convert_settings_terms_to_i18n_en =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"convert settings terms to i18n: EN"
     {sql|
     INSERT INTO pool_i18n (uuid, i18n_key, language, content) VALUES (
@@ -14,7 +14,7 @@ let convert_settings_terms_to_i18n_en =
 ;;
 
 let convert_settings_terms_to_i18n_de =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"convert settings terms to i18n: DE"
     {sql|
     INSERT INTO pool_i18n (uuid, i18n_key, language, content) VALUES (
@@ -29,7 +29,7 @@ let convert_settings_terms_to_i18n_de =
 ;;
 
 let delete_settings_entries =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"convert settings terms to i18n"
     {sql|
       DELETE FROM pool_system_settings WHERE settings_key = "[\"terms_and_conditions\"]"

@@ -1,5 +1,5 @@
 let seed_manual_message_templates =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed default message templates"
     {sql|
     INSERT INTO `pool_message_templates` (`uuid`, `label`, `language`, `email_subject`, `email_text_html`, `email_text_plain`, `sms_text`) VALUES

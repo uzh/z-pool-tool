@@ -1,5 +1,5 @@
 let create_pool_participation_tags =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create pool admins table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_participation_tags (

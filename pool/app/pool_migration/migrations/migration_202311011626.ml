@@ -1,5 +1,5 @@
 let change_disable_user_after_from_weeks_to_days =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"change disable user after from week to days"
     {sql|
       UPDATE

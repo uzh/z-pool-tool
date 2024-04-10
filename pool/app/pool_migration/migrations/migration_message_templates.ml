@@ -1,5 +1,5 @@
 let create_pool_message_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create pool message table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_message_templates (
@@ -21,7 +21,7 @@ let create_pool_message_table =
 ;;
 
 let add_plain_text_column =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add plain text column"
     {sql|
       ALTER TABLE pool_message_templates
@@ -30,7 +30,7 @@ let add_plain_text_column =
 ;;
 
 let set_plain_text_to_sms_text =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"set plain text to sms text"
     {sql|
       UPDATE pool_message_templates
@@ -39,7 +39,7 @@ let set_plain_text_to_sms_text =
 ;;
 
 let make_plain_text_not_nullable =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"make plain text not nullable"
     {sql|
     ALTER TABLE pool_message_templates

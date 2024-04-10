@@ -1,5 +1,5 @@
 let add_uuid_columns_to_invitations_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add uuid columns to invitations table"
     {sql|
       ALTER TABLE pool_invitations
@@ -9,7 +9,7 @@ let add_uuid_columns_to_invitations_table =
 ;;
 
 let set_uuid_columns_on_invitations_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"set uuid columns on invitations table"
     {sql|
       UPDATE pool_invitations SET
@@ -19,7 +19,7 @@ let set_uuid_columns_on_invitations_table =
 ;;
 
 let add_constraint_to_invitations_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add constraint to invitations table"
     {sql|
       ALTER TABLE pool_invitations
@@ -28,7 +28,7 @@ let add_constraint_to_invitations_table =
 ;;
 
 let make_invitation_uuids_not_nullable =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"make invitation uuids not nullable"
     {sql|
       ALTER TABLE pool_invitations
@@ -38,7 +38,7 @@ let make_invitation_uuids_not_nullable =
 ;;
 
 let remove_id_columns_from_invitations =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"remove id columns from invitations"
     {sql|
       ALTER TABLE pool_invitations
@@ -48,7 +48,7 @@ let remove_id_columns_from_invitations =
 ;;
 
 let add_uuid_column_to_mailings =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add uuid column to mailings"
     {sql|
       ALTER TABLE pool_mailing
@@ -57,7 +57,7 @@ let add_uuid_column_to_mailings =
 ;;
 
 let set_uuid_column_on_mailing_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"set uuid column on mailing table"
     {sql|
       UPDATE pool_mailing SET
@@ -66,7 +66,7 @@ let set_uuid_column_on_mailing_table =
 ;;
 
 let make_mailing_uuid_foreignkey_not_nullable =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"make mailing uuid foreignkey not nullable"
     {sql|
       ALTER TABLE pool_mailing
@@ -75,7 +75,7 @@ let make_mailing_uuid_foreignkey_not_nullable =
 ;;
 
 let drop_id_foreignkey_column_from_mailings =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"drop id foreignkey column from mailings"
     {sql|
       ALTER TABLE pool_mailing

@@ -1,4 +1,21 @@
-module Migration = struct
+open CCFun.Infix
+
+module Migration : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val version : t -> int
+  val namespace : t -> string
+  val create : namespace:string -> t
+  val mark_dirty : t -> t
+  val mark_clean : t -> t
+  val increment : t -> t
+  val steps_to_apply : 'a * 'b list -> t -> 'a * 'b list
+  val dirty : t -> bool
+  val t : t Caqti_type.t
+end = struct
   type t =
     { namespace : string
     ; version : int
@@ -15,30 +32,23 @@ module Migration = struct
     namespace, CCList.drop version steps
   ;;
 
-  let of_tuple (namespace, version, dirty) = { namespace; version; dirty }
-  let to_tuple state = state.namespace, state.version, state.dirty
-  let dirty state = state.dirty
-end
-
-module type Sig = sig
-  module Migration = Migration
-
-  val create_table_if_not_exists : Entity.Label.t -> string -> unit Lwt.t
-
-  val get
-    :  Entity.Label.t
-    -> string
-    -> namespace:string
-    -> Migration.t option Lwt.t
-
-  val get_all : Entity.Label.t -> string -> Migration.t list Lwt.t
-  val upsert : Entity.Label.t -> string -> Migration.t -> unit Lwt.t
+  let t =
+    let open Caqti_encoders in
+    let decode (namespace, (version, (dirty, ()))) =
+      Ok { namespace; version; dirty }
+    in
+    let encode t : ('a Data.t, string) result =
+      Ok Data.[ namespace t; version t; dirty t ]
+    in
+    custom ~encode ~decode Schema.(Caqti_type.[ string; int; bool ])
+  ;;
 end
 
 (* Common functions *)
-let get_request table =
-  let open Caqti_request.Infix in
-  Format.sprintf
+open Caqti_request.Infix
+
+let get_request =
+  Format.asprintf
     {sql|
        SELECT
          namespace,
@@ -47,18 +57,15 @@ let get_request table =
        FROM %s
        WHERE namespace = ?
     |sql}
-    table
-  |> Caqti_type.(string ->? t3 string int bool)
+  %> (Caqti_type.string ->? Migration.t)
 ;;
 
 let get label table ~namespace =
   Service.find_opt label (get_request table) namespace
-  |> Lwt.map (Option.map Migration.of_tuple)
 ;;
 
-let get_all_request table =
-  let open Caqti_request.Infix in
-  Format.sprintf
+let get_all_request =
+  Format.asprintf
     {sql|
        SELECT
          namespace,
@@ -66,22 +73,14 @@ let get_all_request table =
          dirty
        FROM %s
     |sql}
-    table
-  |> Caqti_type.(unit ->* t3 string int bool)
+  %> (Caqti_type.unit ->* Migration.t)
 ;;
 
-let get_all label table =
-  Service.collect label (get_all_request table) ()
-  |> Lwt.map (List.map Migration.of_tuple)
-;;
+let get_all label table = Service.collect label (get_all_request table) ()
 
-module MariaDb : Sig = struct
-  module Migration = Migration
-
-  let create_request table =
-    let open Caqti_request.Infix in
-    Format.sprintf
-      {sql|
+let create_request =
+  Format.asprintf
+    {sql|
         CREATE TABLE IF NOT EXISTS %s (
           namespace VARCHAR(128) NOT NULL,
           version INTEGER,
@@ -89,21 +88,19 @@ module MariaDb : Sig = struct
         PRIMARY KEY (namespace)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       |sql}
-      table
-    |> Caqti_type.(unit ->. unit)
-  ;;
+  %> Caqti_type.(unit ->. unit)
+;;
 
-  let create_table_if_not_exists label table =
-    Service.exec label (create_request table) ()
-  ;;
+let create_table_if_not_exists label table =
+  Service.exec label (create_request table) ()
+;;
 
-  let get = get
-  let get_all = get_all
+let get = get
+let get_all = get_all
 
-  let upsert_request table =
-    let open Caqti_request.Infix in
-    Format.sprintf
-      {sql|
+let upsert_request =
+  Format.asprintf
+    {sql|
         INSERT INTO %s (
           namespace,
           version,
@@ -116,11 +113,7 @@ module MariaDb : Sig = struct
           version = VALUES(version),
           dirty = VALUES(dirty)
       |sql}
-      table
-    |> Caqti_type.(t3 string int bool ->. unit)
-  ;;
+  %> (Migration.t ->. Caqti_type.unit)
+;;
 
-  let upsert label table state =
-    Service.exec label (upsert_request table) (Migration.to_tuple state)
-  ;;
-end
+let upsert label = upsert_request %> Service.exec label

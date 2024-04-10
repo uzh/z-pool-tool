@@ -1,5 +1,5 @@
 let create_phone_number_verifications_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create phone number verifications table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_phone_number_verifications (
@@ -16,7 +16,7 @@ let create_phone_number_verifications_table =
 ;;
 
 let add_phone_number_column_to_contact_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add phone number column to contact table"
     {sql|
       ALTER TABLE pool_contacts

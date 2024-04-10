@@ -1,5 +1,5 @@
 let add_uuid_foreignkey_columns_to_waiting_list =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add uuid foreignkey columns to waiting_list"
     {sql|
       ALTER TABLE pool_waiting_list
@@ -9,7 +9,7 @@ let add_uuid_foreignkey_columns_to_waiting_list =
 ;;
 
 let set_uuid_foreignkey_columns_on_waiting_list =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"set uuid foreignkey columns on waiting_list"
     {sql|
       UPDATE pool_waiting_list SET
@@ -19,7 +19,7 @@ let set_uuid_foreignkey_columns_on_waiting_list =
 ;;
 
 let add_unique_contraint_to_waiting_list =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique contraint to waiting_list"
     {sql|
       ALTER TABLE pool_waiting_list
@@ -28,7 +28,7 @@ let add_unique_contraint_to_waiting_list =
 ;;
 
 let make_waiting_list_foreignkeys_not_nullable =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique contraint to waiting_list"
     {sql|
       ALTER TABLE pool_waiting_list
@@ -38,7 +38,7 @@ let make_waiting_list_foreignkeys_not_nullable =
 ;;
 
 let drop_waiting_list_id_foreignkey_columns =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique contraint to waiting_list"
     {sql|
       ALTER TABLE pool_waiting_list

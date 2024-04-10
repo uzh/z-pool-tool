@@ -1,5 +1,5 @@
 let add_default_guardian_role_permission =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add default guardian role permissions"
     {sql|
     INSERT INTO `guardian_role_permissions` (`role`, `permission`, `target_model`) VALUES
@@ -90,7 +90,7 @@ let migration () =
 ;;
 
 let add_default_guardian_role_permission_root =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add default guardian role permissions"
     {sql|
     INSERT INTO `guardian_role_permissions` (`role`, `permission`, `target_model`) VALUES

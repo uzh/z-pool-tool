@@ -1,5 +1,5 @@
 let create_experiment_language_column =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create experiment language column"
     {sql|
       ALTER TABLE pool_experiments

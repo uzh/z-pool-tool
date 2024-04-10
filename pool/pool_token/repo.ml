@@ -203,13 +203,13 @@ module Migration = struct
   module Migration = Database.Migration
 
   let fix_collation =
-    Migration.create_step
+    Migration.Step.create
       ~label:"fix collation"
       "SET collation_server = 'utf8mb4_unicode_ci'"
   ;;
 
   let create_tokens_table =
-    Migration.create_step
+    Migration.Step.create
       ~label:"create tokens table"
       {sql|
           CREATE TABLE IF NOT EXISTS token_tokens (
@@ -229,7 +229,7 @@ module Migration = struct
   ;;
 
   let remove_token_kind_column =
-    Migration.create_step
+    Migration.Step.create
       ~label:"remove token kind column"
       "ALTER TABLE token_tokens DROP COLUMN token_kind"
   ;;

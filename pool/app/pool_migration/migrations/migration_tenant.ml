@@ -1,5 +1,5 @@
 let create_tenant_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create tenant table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_tenant (
@@ -30,7 +30,7 @@ let create_tenant_table =
 ;;
 
 let change_description_column_type =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"change description column type"
     {sql|
       ALTER TABLE pool_tenant
@@ -39,7 +39,7 @@ let change_description_column_type =
 ;;
 
 let create_smtp_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create smtp table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_smtp (
@@ -62,7 +62,7 @@ let create_smtp_table =
 ;;
 
 let remove_smtp_from_tenant_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"remove smtp columns from tenant table"
     {sql|
       ALTER TABLE pool_tenant
@@ -76,7 +76,7 @@ let remove_smtp_from_tenant_table =
 ;;
 
 let make_styles_and_icon_nullable =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"make styles nullable"
     {sql|
       ALTER TABLE pool_tenant

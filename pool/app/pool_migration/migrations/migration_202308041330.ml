@@ -1,5 +1,5 @@
 let add_external_data_required =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add promoted contacts table"
     {sql|
       ALTER TABLE pool_experiments

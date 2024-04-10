@@ -1,5 +1,5 @@
 let create_invitation_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create invitation table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_invitations (
@@ -17,7 +17,7 @@ let create_invitation_table =
 ;;
 
 let rename_participant_to_subject =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename participant id to subject id"
     {sql|
       ALTER TABLE pool_invitations
@@ -26,7 +26,7 @@ let rename_participant_to_subject =
 ;;
 
 let rename_subject_to_contact =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename subject id to contact id"
     {sql|
       ALTER TABLE pool_invitations

@@ -1,5 +1,5 @@
 let store_settings_timespans_in_seconds =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"store settings timespans in seconds instead of days"
     {sql|
       UPDATE

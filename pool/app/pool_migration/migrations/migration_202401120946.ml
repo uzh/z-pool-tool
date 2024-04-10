@@ -1,5 +1,5 @@
 let rename_experiment_description =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename experiment description"
     {sql|
       ALTER TABLE pool_experiments
@@ -8,7 +8,7 @@ let rename_experiment_description =
 ;;
 
 let add_internal_experiment_description =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add internal experiment description"
     {sql|
       ALTER TABLE pool_experiments
@@ -17,7 +17,7 @@ let add_internal_experiment_description =
 ;;
 
 let modify_session_description =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"modify session description"
     {sql|
       ALTER TABLE pool_sessions
@@ -26,7 +26,7 @@ let modify_session_description =
 ;;
 
 let rename_session_limitations =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename session limitations"
     {sql|
       ALTER TABLE pool_sessions
@@ -35,7 +35,7 @@ let rename_session_limitations =
 ;;
 
 let replace_message_template_experiment_description_elements =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"replace message template experiment description elements"
     {sql|
       UPDATE

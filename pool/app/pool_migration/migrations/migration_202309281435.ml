@@ -1,5 +1,5 @@
 let add_send_count_field_to_invitation =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add resend count field to invitation"
     {sql|
       ALTER TABLE pool_invitations
@@ -8,7 +8,7 @@ let add_send_count_field_to_invitation =
 ;;
 
 let update_send_count_field_of_invitation =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"update resend count field of invitation"
     {sql|
       UPDATE pool_invitations
@@ -18,7 +18,7 @@ let update_send_count_field_of_invitation =
 ;;
 
 let add_invitation_reset_at_to_experiment =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add invitation reset at to\n   experiment"
     {sql| ALTER TABLE pool_experiments ADD COLUMN invitation_reset_at
    datetime NULL DEFAULT NULL AFTER text_message_session_reminder_lead_time
@@ -26,7 +26,7 @@ let add_invitation_reset_at_to_experiment =
 ;;
 
 let create_pool_mailing_invitation_mapping_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create pool mailing invitation mapping table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_mailing_invitations (

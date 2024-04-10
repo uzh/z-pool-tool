@@ -1,5 +1,5 @@
 let add_external_data_show_flag =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add flag to show external data id link"
     {sql|
       ALTER TABLE pool_experiments
@@ -8,7 +8,7 @@ let add_external_data_show_flag =
 ;;
 
 let set_show_external_data_id_links_default_values =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add flag to show external data id link"
     {sql|
     UPDATE

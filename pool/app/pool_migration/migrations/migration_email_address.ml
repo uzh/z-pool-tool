@@ -1,5 +1,5 @@
 let create_email_address_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create email address table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_email_verifications (

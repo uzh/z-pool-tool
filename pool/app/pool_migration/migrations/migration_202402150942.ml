@@ -1,5 +1,5 @@
 let add_actor_permission_create_hint_en =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add actor permission hint to i18n: EN"
     {sql|
       INSERT INTO `pool_i18n` (`uuid`, `i18n_key`, `language`, `content`) VALUES (
@@ -12,7 +12,7 @@ let add_actor_permission_create_hint_en =
 ;;
 
 let add_actor_permission_create_hint_de =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add actor permission hint to i18n: DE"
     {sql|
       INSERT INTO `pool_i18n` (`uuid`, `i18n_key`, `language`, `content`) VALUES (
@@ -25,7 +25,7 @@ let add_actor_permission_create_hint_de =
 ;;
 
 let add_actor_permission_hint_en =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add actor permission hint to i18n: EN"
     {sql|
       INSERT INTO `pool_i18n` (`uuid`, `i18n_key`, `language`, `content`) VALUES (
@@ -38,7 +38,7 @@ let add_actor_permission_hint_en =
 ;;
 
 let add_actor_permission_hint_de =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add actor permission hint to i18n: DE"
     {sql|
       INSERT INTO `pool_i18n` (`uuid`, `i18n_key`, `language`, `content`) VALUES (

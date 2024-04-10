@@ -1,5 +1,5 @@
 let add_unique_database_label_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique database_label constraint"
     {sql|
       ALTER TABLE pool_tenant

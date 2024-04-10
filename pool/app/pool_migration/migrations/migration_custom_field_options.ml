@@ -1,5 +1,5 @@
 let create_custom_field_options_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create custom field options table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_custom_field_options (
@@ -16,7 +16,7 @@ let create_custom_field_options_table =
 ;;
 
 let add_order_column_to_custom_field_options =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add order column to custom field options table"
     {sql|
       ALTER TABLE pool_custom_field_options
@@ -25,7 +25,7 @@ let add_order_column_to_custom_field_options =
 ;;
 
 let change_position_datatype =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"change position datatype"
     {sql|
       ALTER TABLE pool_custom_field_options
@@ -34,7 +34,7 @@ let change_position_datatype =
 ;;
 
 let rename_custom_field_foreign_key =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename custom field foreign_key"
     {sql|
       ALTER TABLE pool_custom_field_options
@@ -43,7 +43,7 @@ let rename_custom_field_foreign_key =
 ;;
 
 let add_published_at_to_custom_field_options =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add published to custom field options"
     {sql|
       ALTER TABLE pool_custom_field_options

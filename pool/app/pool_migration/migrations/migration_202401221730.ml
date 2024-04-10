@@ -1,5 +1,5 @@
 let convert_assistant_role_hint_to_i18n_en =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"convert assistant role hint to i18n: EN"
     {sql|
       INSERT INTO `pool_i18n` (`uuid`, `i18n_key`, `language`, `content`) VALUES (
@@ -12,7 +12,7 @@ let convert_assistant_role_hint_to_i18n_en =
 ;;
 
 let convert_assistant_role_hint_to_i18n_de =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"convert assistant role hint to i18n: DE"
     {sql|
       INSERT INTO `pool_i18n` (`uuid`, `i18n_key`, `language`, `content`) VALUES (
@@ -25,7 +25,7 @@ let convert_assistant_role_hint_to_i18n_de =
 ;;
 
 let convert_experimenter_role_hint_to_i18n_en =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"convert experimenter role hint to i18n: EN"
     {sql|
       INSERT INTO `pool_i18n` (`uuid`, `i18n_key`, `language`, `content`) VALUES (
@@ -38,7 +38,7 @@ let convert_experimenter_role_hint_to_i18n_en =
 ;;
 
 let convert_experimenter_role_hint_to_i18n_de =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"convert experimenter role hint to i18n: DE"
     {sql|
       INSERT INTO `pool_i18n` (`uuid`, `i18n_key`, `language`, `content`) VALUES (

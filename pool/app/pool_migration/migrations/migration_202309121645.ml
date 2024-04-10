@@ -1,5 +1,5 @@
 let add_default_text_message_lead_time =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add default text message lead time"
     {sql|
       INSERT INTO pool_system_settings (uuid, settings_key, `value`)

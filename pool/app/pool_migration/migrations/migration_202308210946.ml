@@ -1,5 +1,5 @@
 let add_unique_settings_key_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique settings key constraint"
     {sql|
       ALTER TABLE pool_system_settings
@@ -8,7 +8,7 @@ let add_unique_settings_key_constraint =
 ;;
 
 let rename_experiment_session_reminder_lead_time =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename experiment session reminder lead time"
     {sql|
       ALTER TABLE pool_experiments
@@ -17,7 +17,7 @@ let rename_experiment_session_reminder_lead_time =
 ;;
 
 let rename_session_reminder_lead_time =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename session reminder lead time"
     {sql|
       ALTER TABLE pool_sessions
@@ -27,7 +27,7 @@ let rename_session_reminder_lead_time =
 ;;
 
 let add_experimen_text_msg_reminder_lead_time =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add experimen text msg reminder lead time"
     {sql|
       ALTER TABLE pool_experiments
@@ -36,7 +36,7 @@ let add_experimen_text_msg_reminder_lead_time =
 ;;
 
 let add_session_text_msg_reminder_lead_time =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add session text msg reminder lead time"
     {sql|
       ALTER TABLE pool_sessions

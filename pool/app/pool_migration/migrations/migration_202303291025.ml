@@ -1,5 +1,5 @@
 let add_num_no_shows_to_contacts =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add num_no_shows to contacts"
     {sql|
         ALTER TABLE pool_contacts
@@ -8,7 +8,7 @@ let add_num_no_shows_to_contacts =
 ;;
 
 let add_no_show_to_assignments =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add no_show to assignments"
     {sql|
       ALTER TABLE pool_assignments
@@ -17,7 +17,7 @@ let add_no_show_to_assignments =
 ;;
 
 let set_no_show_value =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"set no show value"
     {sql|
       UPDATE pool_assignments SET
@@ -26,7 +26,7 @@ let set_no_show_value =
 ;;
 
 let drop_show_up_column =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"drop show up column"
     {sql|
       ALTER TABLE pool_assignments

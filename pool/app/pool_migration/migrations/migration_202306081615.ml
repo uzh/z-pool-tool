@@ -1,5 +1,5 @@
 let create_organisational_units_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create organisational units table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_organisational_units (
@@ -15,7 +15,7 @@ let create_organisational_units_table =
 ;;
 
 let add_missing_columns_to_experiments =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add missing columns to experiments"
     {sql|
     ALTER TABLE pool_experiments
@@ -29,7 +29,7 @@ let add_missing_columns_to_experiments =
 ;;
 
 let add_fk_contraint_to_organisational_units =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique contraint to organisational_units"
     {sql|
       ALTER TABLE pool_experiments
@@ -39,7 +39,7 @@ let add_fk_contraint_to_organisational_units =
 ;;
 
 let add_missing_columns_to_sessions =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add missing columns to sessions"
     {sql|
     ALTER TABLE pool_sessions

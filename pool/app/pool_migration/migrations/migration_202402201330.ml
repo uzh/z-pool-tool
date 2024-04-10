@@ -1,5 +1,5 @@
 let add_show_on_session_detail_screen_flag =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add show on session detail screen flag"
     {sql|
       ALTER TABLE pool_custom_fields

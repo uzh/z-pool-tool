@@ -1,5 +1,5 @@
 let create_custom_field_groups_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create custom field groups table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_custom_field_groups (
@@ -17,7 +17,7 @@ let create_custom_field_groups_table =
 ;;
 
 let change_position_datatype =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"change position datatype"
     {sql|
       ALTER TABLE pool_custom_field_groups

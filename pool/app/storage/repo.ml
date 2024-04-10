@@ -168,7 +168,7 @@ let clean_blobs_request =
 let clean_blobs label () = Database.exec label clean_blobs_request ()
 
 let fix_collation =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"fix collation"
     {sql|
         SET collation_server = 'utf8mb4_unicode_ci'
@@ -176,7 +176,7 @@ let fix_collation =
 ;;
 
 let create_blobs_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create blobs table"
     {sql|
         CREATE TABLE IF NOT EXISTS storage_blobs (
@@ -192,7 +192,7 @@ let create_blobs_table =
 ;;
 
 let create_handles_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create handles table"
     {sql|
         CREATE TABLE IF NOT EXISTS storage_handles (

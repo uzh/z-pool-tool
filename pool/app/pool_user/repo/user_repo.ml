@@ -94,7 +94,7 @@ module Migration = struct
   open Database.Migration
 
   let fix_collation =
-    create_step
+    Step.create
       ~label:"fix collation"
       {sql|
         SET collation_server = 'utf8mb4_unicode_ci'
@@ -102,7 +102,7 @@ module Migration = struct
   ;;
 
   let create_users_table =
-    create_step
+    Step.create
       ~label:"create users table"
       {sql|
         CREATE TABLE IF NOT EXISTS user_users (
@@ -123,7 +123,7 @@ module Migration = struct
   ;;
 
   let add_updated_at_column =
-    create_step
+    Step.create
       ~label:"add updated_at column"
       {sql|
         ALTER TABLE user_users
@@ -132,7 +132,7 @@ module Migration = struct
   ;;
 
   let add_name_columns =
-    create_step
+    Step.create
       ~label:"add name columns"
       {sql|
         ALTER TABLE user_users

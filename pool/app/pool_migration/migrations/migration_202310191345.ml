@@ -1,5 +1,5 @@
 let add_limit_to_mailing =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add limit to mailing"
     {sql|
       ALTER TABLE pool_mailing
@@ -8,7 +8,7 @@ let add_limit_to_mailing =
 ;;
 
 let change_mailing_rate_to_limit =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"change mailing rate to limit"
     {sql|
       UPDATE pool_mailing
@@ -20,7 +20,7 @@ let change_mailing_rate_to_limit =
 ;;
 
 let drop_rate_from_mailing =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"drop rate from mailing"
     {sql|
       ALTER TABLE pool_mailing

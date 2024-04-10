@@ -1,5 +1,5 @@
 let add_gtx_api_key_to_tenant =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add gtx api key to tenant"
     {sql|
     ALTER TABLE pool_tenant

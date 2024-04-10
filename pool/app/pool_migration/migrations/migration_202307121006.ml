@@ -1,5 +1,5 @@
 let create_tracking_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create tracking table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_tracking (

@@ -1,5 +1,5 @@
 let seed_concat_email_change_attempt_template =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed concat_email_change_attempt template"
     {sql|
     INSERT INTO `pool_message_templates` (`uuid`, `label`, `language`, `email_subject`, `email_text_html`, `email_text_plain`, `sms_text`) VALUES

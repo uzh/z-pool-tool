@@ -1,5 +1,5 @@
 let create_mappings_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create location_file_mappings table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_location_file_mappings (

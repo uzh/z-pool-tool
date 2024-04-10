@@ -1,5 +1,5 @@
 let add_assignment_session_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add assignment session fk constraint"
     {sql|
       ALTER TABLE pool_assignments
@@ -11,7 +11,7 @@ let add_assignment_session_fk_constraint =
 ;;
 
 let add_assignment_contact_index =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add assignment contact index"
     {sql|
       CREATE INDEX index_contact_uuid ON pool_assignments (contact_uuid)
@@ -19,7 +19,7 @@ let add_assignment_contact_index =
 ;;
 
 let add_custom_field_answers_custom_field_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add custom field answers custom field fk constraint"
     {sql|
       ALTER TABLE pool_custom_field_answers
@@ -31,7 +31,7 @@ let add_custom_field_answers_custom_field_fk_constraint =
 ;;
 
 let add_custom_field_options_custom_field_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add custom field options custom field fk constraint"
     {sql|
         ALTER TABLE pool_custom_field_options
@@ -43,7 +43,7 @@ let add_custom_field_options_custom_field_fk_constraint =
 ;;
 
 let add_custom_fields_custom_field_groups_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add custom field custom field groups fk constraint"
     {sql|
         ALTER TABLE pool_custom_fields
@@ -55,7 +55,7 @@ let add_custom_fields_custom_field_groups_fk_constraint =
 ;;
 
 let add_email_verification_index =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add email verification index"
     {sql|
       CREATE INDEX index_user_uuid ON pool_email_verifications (user_uuid)
@@ -63,7 +63,7 @@ let add_email_verification_index =
 ;;
 
 let add_location_file_asseet_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add location file asseet fk constraint"
     {sql|
         ALTER TABLE pool_location_file_mappings
@@ -75,7 +75,7 @@ let add_location_file_asseet_fk_constraint =
 ;;
 
 let add_location_file_location_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add location file location fk constraint"
     {sql|
         ALTER TABLE pool_location_file_mappings
@@ -87,7 +87,7 @@ let add_location_file_location_fk_constraint =
 ;;
 
 let add_mailing_experiment_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add mailing experiment fk constraint"
     {sql|
         ALTER TABLE pool_mailing
@@ -99,7 +99,7 @@ let add_mailing_experiment_fk_constraint =
 ;;
 
 let add_session_experiment_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add session experiment fk constraint"
     {sql|
         ALTER TABLE pool_sessions
@@ -111,7 +111,7 @@ let add_session_experiment_fk_constraint =
 ;;
 
 let add_experiment_filter_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add session experiment fk constraint"
     {sql|
         ALTER TABLE pool_experiments
@@ -123,7 +123,7 @@ let add_experiment_filter_fk_constraint =
 ;;
 
 let add_admin_sihl_user_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add admin sihl user fk constraint"
     {sql|
         ALTER TABLE pool_admins
@@ -135,7 +135,7 @@ let add_admin_sihl_user_fk_constraint =
 ;;
 
 let add_contact_sihl_user_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add contact sihl user fk constraint"
     {sql|
         ALTER TABLE pool_contacts
@@ -147,7 +147,7 @@ let add_contact_sihl_user_fk_constraint =
 ;;
 
 let add_promoted_contact_sihl_user_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add promoted contact sihl user fk constraint"
     {sql|
         ALTER TABLE pool_contacts_promoted
@@ -159,7 +159,7 @@ let add_promoted_contact_sihl_user_fk_constraint =
 ;;
 
 let add_waiting_list_experiment_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add waiting list experiment fk constraint"
     {sql|
         ALTER TABLE pool_waiting_list
@@ -171,7 +171,7 @@ let add_waiting_list_experiment_fk_constraint =
 ;;
 
 let add_invitations_experiment_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add invitations experiment fk constraint"
     {sql|
         ALTER TABLE pool_invitations
@@ -183,7 +183,7 @@ let add_invitations_experiment_fk_constraint =
 ;;
 
 let add_taggings_tags_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add taggings tag fk constraint"
     {sql|
         ALTER TABLE pool_tagging
@@ -195,7 +195,7 @@ let add_taggings_tags_fk_constraint =
 ;;
 
 let add_participation_tags_tags_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add participation tags tag fk constraint"
     {sql|
         ALTER TABLE pool_participation_tags
@@ -230,7 +230,7 @@ let migration () =
 ;;
 
 let add_system_event_logs_system_event_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add system event logs system event fk constraint"
     {sql|
         ALTER TABLE pool_system_event_logs
@@ -242,7 +242,7 @@ let add_system_event_logs_system_event_fk_constraint =
 ;;
 
 let add_tenant_logo_tenant_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add tenant logo tenant fk constraint"
     {sql|
         ALTER TABLE pool_tenant_logo_mappings
@@ -254,7 +254,7 @@ let add_tenant_logo_tenant_fk_constraint =
 ;;
 
 let add_tenant_logo_storage_handle_fk_constraint =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add tenant logo storage handle fk constraint"
     {sql|
         ALTER TABLE pool_tenant_logo_mappings

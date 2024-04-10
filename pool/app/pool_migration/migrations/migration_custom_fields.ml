@@ -1,5 +1,5 @@
 let create_custom_fields_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create custom fields table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_custom_fields (
@@ -23,7 +23,7 @@ let create_custom_fields_table =
 ;;
 
 let add_admin_boolean_columns =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add admin boolean fields to custom fields table"
     {sql|
       ALTER TABLE pool_custom_fields
@@ -33,7 +33,7 @@ let add_admin_boolean_columns =
 ;;
 
 let add_group_column_to_custom_fields =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add group column to custom fields"
     {sql|
       ALTER TABLE pool_custom_fields
@@ -42,7 +42,7 @@ let add_group_column_to_custom_fields =
 ;;
 
 let add_position_to_custom_fields =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add position to custom fields"
     {sql|
       ALTER TABLE pool_custom_fields
@@ -51,7 +51,7 @@ let add_position_to_custom_fields =
 ;;
 
 let change_position_datatype =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"change position datatype"
     {sql|
       ALTER TABLE pool_custom_fields
@@ -60,7 +60,7 @@ let change_position_datatype =
 ;;
 
 let add_published_at_to_custom_fields =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add published at to custom fields"
     {sql|
       ALTER TABLE pool_custom_fields
@@ -69,7 +69,7 @@ let add_published_at_to_custom_fields =
 ;;
 
 let rename_overwrite_to_override =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename overwrite to override"
     {sql|
       ALTER TABLE pool_custom_fields

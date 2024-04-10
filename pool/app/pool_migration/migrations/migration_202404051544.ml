@@ -1,5 +1,5 @@
 let add_tenant_database_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add tenant database table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_tenant_databases (
@@ -16,7 +16,7 @@ let add_tenant_database_table =
 ;;
 
 let insert_existing_databases =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"insert existing databases"
     {sql|
       INSERT INTO pool_tenant_databases (label, url)

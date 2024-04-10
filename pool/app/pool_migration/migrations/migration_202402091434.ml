@@ -1,5 +1,5 @@
 let create_pool_message_history_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create pool_message_history table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_message_history (
@@ -15,7 +15,7 @@ let create_pool_message_history_table =
 ;;
 
 let add_fk_contraint_to_entity_queue_jobs =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add fk contraint to entity_queue_jobs"
     {sql|
       ALTER TABLE pool_message_history
@@ -25,7 +25,7 @@ let add_fk_contraint_to_entity_queue_jobs =
 ;;
 
 let add_unique_contraint_to_entity_queue_jobs =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add unique contraint to entity_queue_jobs"
     {sql|
       ALTER TABLE pool_message_history
@@ -34,7 +34,7 @@ let add_unique_contraint_to_entity_queue_jobs =
 ;;
 
 let add_entity_uuid_index =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add entity uuid index"
     {sql|
       CREATE INDEX entity_uuid ON pool_message_history (entity_uuid)

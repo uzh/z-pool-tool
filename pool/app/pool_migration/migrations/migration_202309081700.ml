@@ -1,5 +1,5 @@
 let update_location_descriptions =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"update location descriptions"
     {sql|
       UPDATE pool_locations

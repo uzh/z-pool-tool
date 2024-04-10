@@ -1,5 +1,5 @@
 let add_home_title_to_welcome_text_i18n_en =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add home title to welcome text i18n: EN"
     {sql|
       UPDATE pool_i18n
@@ -10,7 +10,7 @@ let add_home_title_to_welcome_text_i18n_en =
 ;;
 
 let add_home_title_to_welcome_text_i18n_de =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add home title to welcome text i18n: DE"
     {sql|
       UPDATE pool_i18n

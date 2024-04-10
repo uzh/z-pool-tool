@@ -1,5 +1,5 @@
 let create_participant_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create session table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_sessions (
@@ -22,7 +22,7 @@ let create_participant_table =
 ;;
 
 let add_location =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add field for location"
     {sql|
       ALTER TABLE pool_sessions
@@ -31,7 +31,7 @@ let add_location =
 ;;
 
 let add_follow_up =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add follow up for sessions"
     {sql|
      ALTER TABLE pool_sessions
@@ -41,7 +41,7 @@ let add_follow_up =
 ;;
 
 let add_reminder_columns =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add field versioning for participants"
     {sql|
      ALTER TABLE pool_sessions
@@ -53,7 +53,7 @@ let add_reminder_columns =
 ;;
 
 let add_closed_at_column =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add closed at column"
     {sql|
      ALTER TABLE pool_sessions
@@ -62,7 +62,7 @@ let add_closed_at_column =
 ;;
 
 let remove_message_columns =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename filter column"
     {sql|
       ALTER TABLE pool_sessions
@@ -72,7 +72,7 @@ let remove_message_columns =
 ;;
 
 let drop_start_default_value =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"drop start default value"
     {sql|
       ALTER TABLE pool_sessions
@@ -81,7 +81,7 @@ let drop_start_default_value =
 ;;
 
 let use_uuids_as_foreign_keys_in_assignment_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"replace ids with uuids as foreignkeys"
     {sql|
       BEGIN NOT ATOMIC

@@ -1,5 +1,5 @@
 let create_waiting_list_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create waiting list table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_waiting_list (
@@ -16,7 +16,7 @@ let create_waiting_list_table =
 ;;
 
 let rename_subject_to_contact =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename subject id to contact id"
     {sql|
       ALTER TABLE pool_waiting_list
@@ -25,7 +25,7 @@ let rename_subject_to_contact =
 ;;
 
 let add_comment_to_waiting_list =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add comment to waiting list"
     {sql|
       ALTER TABLE pool_waiting_list

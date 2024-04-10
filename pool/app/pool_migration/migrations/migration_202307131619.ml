@@ -1,5 +1,5 @@
 let create_pool_admins_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create pool admins table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_admins (
@@ -17,7 +17,7 @@ let create_pool_admins_table =
 ;;
 
 let seed_pool_admins_table_from_user_users_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"seed pool admins table from user users table"
     {sql|
       INSERT INTO pool_admins (user_uuid, created_at, updated_at)
@@ -28,7 +28,7 @@ let seed_pool_admins_table_from_user_users_table =
 ;;
 
 let create_user_imports_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create user imports table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_user_imports (
@@ -50,7 +50,7 @@ let create_user_imports_table =
 ;;
 
 let add_import_flag_to_contacts_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add import fk to contacts table"
     {sql|
       ALTER TABLE pool_contacts

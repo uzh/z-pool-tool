@@ -1,5 +1,5 @@
 let add_prompt_on_registration_flag_to_custom_fields =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create pool admins table"
     {sql|
       ALTER TABLE pool_custom_fields

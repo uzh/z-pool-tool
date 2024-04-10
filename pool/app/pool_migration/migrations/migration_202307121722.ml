@@ -1,5 +1,5 @@
 let add_contact_person_fk_to_experiments =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add contact admin fk to experiments"
     {sql|
       ALTER TABLE pool_experiments
@@ -8,7 +8,7 @@ let add_contact_person_fk_to_experiments =
 ;;
 
 let add_fk_contraint_to_contact_person_uuid =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add contraint to contact_person_uuid"
     {sql|
       ALTER TABLE pool_experiments
@@ -18,7 +18,7 @@ let add_fk_contraint_to_contact_person_uuid =
 ;;
 
 let add_default_flag_to_smtp_accounts =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add default flag to smtp accounts"
     {sql|
       ALTER TABLE pool_smtp
@@ -27,7 +27,7 @@ let add_default_flag_to_smtp_accounts =
 ;;
 
 let add_smpt_fk_to_experiments =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add contact smtp fk to experiments"
     {sql|
       ALTER TABLE pool_experiments
@@ -36,7 +36,7 @@ let add_smpt_fk_to_experiments =
 ;;
 
 let add_fk_contraint_to_smtp_auth_uuid =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add contraint to smtp_auth_uuid"
     {sql|
       ALTER TABLE pool_experiments

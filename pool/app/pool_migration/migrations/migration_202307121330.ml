@@ -1,5 +1,5 @@
 let create_tag_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create tag table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_tags (
@@ -18,7 +18,7 @@ let create_tag_table =
 ;;
 
 let create_tagging_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create tagging table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_tagging (

@@ -1,5 +1,5 @@
 let create_person_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create person table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_person (
@@ -15,7 +15,7 @@ let create_person_table =
 ;;
 
 let drop_person_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"drop person table"
     {sql|DROP TABLE IF EXISTS pool_person|sql}
 ;;

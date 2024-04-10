@@ -1,5 +1,5 @@
 let create_system_settings_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create system_settings table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_system_settings (

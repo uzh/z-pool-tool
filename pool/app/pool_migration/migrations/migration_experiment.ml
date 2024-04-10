@@ -1,5 +1,5 @@
 let create_pool_experiments_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create pool_experiments table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_experiments (
@@ -17,7 +17,7 @@ let create_pool_experiments_table =
 ;;
 
 let add_waiting_list_flags_to_experiment =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename subject id to contact id"
     {sql|
       ALTER TABLE pool_experiments
@@ -27,7 +27,7 @@ let add_waiting_list_flags_to_experiment =
 ;;
 
 let change_description_column_type =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"change description column type"
     {sql|
       ALTER TABLE pool_experiments
@@ -36,7 +36,7 @@ let change_description_column_type =
 ;;
 
 let add_disable_registration =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename subject id to contact id"
     {sql|
       ALTER TABLE pool_experiments
@@ -45,7 +45,7 @@ let add_disable_registration =
 ;;
 
 let merge_waiting_list_flags =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"merge waiting list flags"
     {sql|
       ALTER TABLE pool_experiments
@@ -54,7 +54,7 @@ let merge_waiting_list_flags =
 ;;
 
 let add_public_title =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add public title"
     {sql|
       ALTER TABLE pool_experiments
@@ -63,7 +63,7 @@ let add_public_title =
 ;;
 
 let set_default_public_title =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"set default public title"
     {sql|
       UPDATE pool_experiments SET public_title = title
@@ -72,7 +72,7 @@ let set_default_public_title =
 ;;
 
 let add_session_reminder_columns =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add session reminder columns"
     {sql|
      ALTER TABLE pool_experiments
@@ -83,7 +83,7 @@ let add_session_reminder_columns =
 ;;
 
 let add_invitation_columns =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add invitation columns"
     {sql|
      ALTER TABLE pool_experiments
@@ -93,7 +93,7 @@ let add_invitation_columns =
 ;;
 
 let add_experiment_type_column =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add experiment_type columns"
     {sql|
      ALTER TABLE pool_experiments
@@ -102,7 +102,7 @@ let add_experiment_type_column =
 ;;
 
 let add_public_visibility_and_uninvited_signup_flags =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add experiment_type columns"
     {sql|
      ALTER TABLE pool_experiments
@@ -111,7 +111,7 @@ let add_public_visibility_and_uninvited_signup_flags =
 ;;
 
 let make_filter_uuid_foreign_key =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"make filter column a foreign key"
     {sql|
       ALTER TABLE pool_experiments
@@ -120,7 +120,7 @@ let make_filter_uuid_foreign_key =
 ;;
 
 let rename_filter_column =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename filter column"
     {sql|
       ALTER TABLE pool_experiments
@@ -129,7 +129,7 @@ let rename_filter_column =
 ;;
 
 let remove_message_columns =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"rename filter column"
     {sql|
       ALTER TABLE pool_experiments

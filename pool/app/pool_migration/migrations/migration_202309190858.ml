@@ -1,5 +1,5 @@
 let add_reminder_manually_sent_timestamp =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add reminder manually sent timestamp"
     {sql|
       ALTER TABLE pool_assignments

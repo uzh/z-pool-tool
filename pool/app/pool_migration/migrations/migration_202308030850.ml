@@ -1,5 +1,5 @@
 let add_promoted_contacts_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add promoted contacts table"
     {sql|CREATE TABLE `pool_contacts_promoted` LIKE `pool_contacts`|sql}
 ;;

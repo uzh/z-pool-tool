@@ -1,5 +1,5 @@
 let add_email_verified_column_to_admin =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add email verified column to admin"
     {sql|
       ALTER TABLE pool_admins
@@ -8,7 +8,7 @@ let add_email_verified_column_to_admin =
 ;;
 
 let add_email_verified_timestamp_to_existing_admins =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"add email_verified timestamp to existing admins"
     {sql|
       UPDATE

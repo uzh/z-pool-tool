@@ -1,5 +1,5 @@
 let create_mailing_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create mailing table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_mailing (

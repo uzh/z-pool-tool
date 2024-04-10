@@ -1,5 +1,5 @@
 let create_schedule_table =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"create registered schedule table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_schedules (

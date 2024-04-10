@@ -1,5 +1,5 @@
 let insert_user_import_interval_default_values =
-  Database.Migration.create_step
+  Database.Migration.Step.create
     ~label:"insert user import interval default values"
     {sql|
       INSERT INTO pool_system_settings (`uuid`, `settings_key`, `value`) VALUES (
