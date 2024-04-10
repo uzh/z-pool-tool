@@ -39,16 +39,6 @@ module Role = struct
     ]
   [@@deriving show, eq, ord, yojson, sexp_of]
 
-  let of_name = function
-    | "admin" -> Ok `Admin
-    | "assistant" -> Ok `Assistant
-    | "experimenter" -> Ok `Experimenter
-    | "locationmanager" -> Ok `LocationManager
-    | "operator" -> Ok `Operator
-    | "recruiter" -> Ok `Recruiter
-    | _ -> Error Pool_common.Message.(Invalid Field.Role)
-  ;;
-
   let name = show %> Guardian.Utils.decompose_variant_string %> fst
 
   let of_string_res =
@@ -64,6 +54,14 @@ module Role = struct
   ;;
 
   let of_string = of_string_res %> CCResult.get_or_failwith
+
+  let of_name str =
+    str
+    |> CCString.capitalize_ascii
+    |> Format.asprintf "`%s"
+    |> of_string_res
+    |> CCResult.map_err (CCFun.const Pool_common.Message.(Invalid Field.Target))
+  ;;
 
   let all =
     [ `Admin

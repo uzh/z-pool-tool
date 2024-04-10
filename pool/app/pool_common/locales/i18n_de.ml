@@ -490,7 +490,7 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Solange Ihr Konto pausiert ist, werden Sie nicht zu weiteren Experimenten \
      eingeladen."
   | Permissions ->
-    "Die Berechtigung <strong>manage</strong> beinhaltet die anderen \
+    "Die Berechtigung <strong>manage</strong> beinhaltet alle anderen \
      Berechtigungen."
   | PromoteContact ->
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, \
