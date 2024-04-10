@@ -41,7 +41,7 @@ module Service : sig
     -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) result Lwt.t
 
   module Job : sig
-    val send : job Sihl_queue.job
+    val send : job Queue.job
   end
 
   val send : Database.Label.t -> job -> unit Lwt.t

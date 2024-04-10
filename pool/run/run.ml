@@ -32,7 +32,7 @@ let services =
   ; Pool_token.register ()
   ; Email.Service.register ()
   ; Text_message.Service.register ()
-  ; Email.Service.Queue.register ()
+  ; Queue.register ()
   ; Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register ()

@@ -1,6 +1,5 @@
 open CCFun
 open Utils.Lwt_result.Infix
-open Sihl.Contract.Queue
 
 let src = Logs.Src.create "queue.notifier"
 
@@ -10,7 +9,7 @@ let create_external_link pool_url =
 ;;
 
 let job_reporter
-  ({ id
+  ({ Entity.id
    ; name
    ; tries
    ; next_run_at
@@ -22,8 +21,9 @@ let job_reporter
    ; ctx
    ; _
    } :
-    instance)
+    Entity.instance)
   =
+  let open Entity.Status in
   match status, last_error with
   | (Failed | Pending), Some last_error when tries >= max_tries ->
     let database_label = Database.of_ctx_opt ctx in
@@ -68,7 +68,7 @@ let job_reporter
         ([%show: string option] tag)
         link
     in
-    Pool_canary.notify ~src ~tags ~additional (Exception last_error) ""
+    Pool_canary.notify ~src ~tags ~additional (Failure last_error) ""
     |> Lwt.map (CCResult.get_or ~default:())
   | (Succeeded | Pending | Cancelled | Failed), _ -> Lwt.return_unit
 ;;

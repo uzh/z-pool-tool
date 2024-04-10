@@ -2,7 +2,6 @@ open CCFun
 open Utils.Lwt_result.Infix
 open Entity
 module History = Queue.History
-module Queue = Sihl_queue.MariaDb
 module CellPhone = Pool_user.CellPhone
 
 type message =
@@ -158,15 +157,8 @@ let send_message api_key msg =
   Lwt.return (resp, body_string)
 ;;
 
-let handle ?ctx { message; _ } =
+let handle database_label { message; _ } =
   let open Sihl.Configuration in
-  let database_label =
-    let open CCOption in
-    ctx
-    >>= CCList.assoc_opt ~eq:( = ) "pool"
-    >|= Database.Label.create %> Pool_common.Utils.get_or_failwith
-    |> get_exn_or "Invalid context passed!"
-  in
   let%lwt api_key = get_api_key database_label in
   let tags = tags database_label in
   match is_production () || bypass () with
@@ -243,7 +235,7 @@ module Job = struct
   let send =
     let encode = Entity.yojson_of_job %> Yojson.Safe.to_string in
     let decode = parse_job_json in
-    Sihl.Contract.Queue.create_job
+    Queue.create_job
       handle
       ~max_tries:10
       ~retry_delay:(Sihl.Time.Span.hours 1)
@@ -253,9 +245,9 @@ module Job = struct
   ;;
 end
 
-let callback database_label (job_instance : Sihl_queue.instance) =
+let callback database_label (job_instance : Queue.instance) =
   let job =
-    parse_job_json job_instance.Sihl_queue.input |> CCResult.get_or_failwith
+    parse_job_json job_instance.Queue.input |> CCResult.get_or_failwith
   in
   match job.message_history with
   | None -> Lwt.return_unit
@@ -267,7 +259,6 @@ let callback database_label (job_instance : Sihl_queue.instance) =
 ;;
 
 let send database_label (job : Entity.job) =
-  let ctx = Database.to_ctx database_label in
   let callback = callback database_label in
   Logs.debug ~src (fun m ->
     m
@@ -277,6 +268,6 @@ let send database_label (job : Entity.job) =
   intercept_prepare database_label job
   ||> Pool_common.Utils.get_or_failwith
   >|> function
-  | TextMessageJob job -> Queue.dispatch ~callback ~ctx job Job.send
-  | EmailJob job -> Queue.dispatch ~ctx job Email.Service.Job.send
+  | TextMessageJob job -> Queue.dispatch ~callback database_label job Job.send
+  | EmailJob job -> Queue.dispatch database_label job Email.Service.Job.send
 ;;

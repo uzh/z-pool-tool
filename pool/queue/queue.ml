@@ -1,5 +1,4 @@
 open CCFun
-include Sihl.Contract.Queue
 include Entity
 module Guard = Entity_guard
 
@@ -19,6 +18,8 @@ let registered_jobs : job' list ref = ref []
 let find = Repo.find
 let find_by = Repo.find_by
 let count_workable = Repo.count_workable
+let dispatch = Service.dispatch
+let dispatch_all = Service.dispatch_all
 
 let run_job
   ?tags
@@ -32,10 +33,10 @@ let run_job
     Logs.err ~src (fun m -> m ?tags message exn_string);
     Lwt.return_error exn_string
   in
-  let ctx = if CCList.is_empty ctx then None else Some ctx in
+  let label = Database.of_ctx_exn ctx in
   let%lwt result =
     Lwt.catch
-      (fun () -> handle ?ctx input)
+      (fun () -> handle label input)
       (with_log_error
          ?tags
          "Exception caught while running job, this is a bug in your job \
@@ -51,7 +52,7 @@ let run_job
         msg);
     Lwt.catch
       (fun () ->
-        let%lwt () = failed ?ctx msg job_instance in
+        let%lwt () = failed label msg job_instance in
         Lwt.return_error msg)
       (with_log_error
          ?tags
@@ -79,7 +80,7 @@ let work_job
       match job_run_status with
       | Error msg when tries >= max_tries ->
         { job_instance with
-          status = Failed
+          status = Status.Failed
         ; last_error = Some msg
         ; last_error_at = Some (Ptime_clock.now ())
         }
@@ -88,7 +89,7 @@ let work_job
           last_error = Some msg
         ; last_error_at = Some (Ptime_clock.now ())
         }
-      | Ok () -> { job_instance with status = Succeeded }
+      | Ok () -> { job_instance with status = Status.Succeeded }
     in
     let%lwt () = Notifier.job_reporter job_instance in
     update database_label job_instance)
@@ -184,6 +185,8 @@ let lifecycle =
 ;;
 
 let register ?(jobs = []) () =
+  Repo.register_migration ();
+  Repo.register_cleaner ();
   registered_jobs := !registered_jobs @ jobs;
   let configuration = Sihl.Configuration.make () in
   Sihl.Container.Service.create ~configuration lifecycle
@@ -195,7 +198,7 @@ module History = struct
   let create_from_queue_instance
     database_label
     { entity_uuids; message_template }
-    (job_instance : Sihl_queue.instance)
+    (job_instance : instance)
     =
     entity_uuids
     |> Lwt_list.iter_s (fun entity_uuid ->

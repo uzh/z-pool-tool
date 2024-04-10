@@ -2,7 +2,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 
 type t =
   { entity_uuid : Pool_common.Id.t
-  ; job : Sihl_queue.instance
+  ; job : Entity.instance
   ; message_template : string option
   }
 [@@deriving show, fields]

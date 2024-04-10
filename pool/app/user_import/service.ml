@@ -92,10 +92,7 @@ let lifecycle =
   Sihl.Container.create_lifecycle
     "System events"
     ~dependencies:(fun () ->
-      [ Database.Root.lifecycle
-      ; Database.Tenant.lifecycle
-      ; Email.Service.Queue.lifecycle
-      ])
+      [ Database.Root.lifecycle; Database.Tenant.lifecycle; Queue.lifecycle ])
     ~start
     ~stop
 ;;

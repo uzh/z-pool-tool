@@ -409,7 +409,7 @@ let services =
   ; Pool_user.Persistence.register ()
   ; Pool_token.register ()
   ; Email.Service.register ()
-  ; Email.Service.Queue.register ()
+  ; Queue.register ()
   ; Storage.register ()
   ]
 ;;

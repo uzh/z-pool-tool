@@ -225,8 +225,6 @@ val create_job
   -> job
 
 module Service : sig
-  module Queue : Sihl.Contract.Queue.Sig
-
   module Cache : sig
     val clear : unit -> unit
   end
@@ -252,7 +250,7 @@ module Service : sig
   end
 
   module Job : sig
-    val send : job Sihl_queue.job
+    val send : job Queue.job
   end
 
   val default_sender_of_pool

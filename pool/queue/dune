@@ -3,6 +3,7 @@
  (libraries
   canary
   containers
+  database
   pool_canary
   pool_tenant
   schedule

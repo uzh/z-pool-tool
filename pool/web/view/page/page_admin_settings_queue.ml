@@ -39,21 +39,13 @@ let data_table Pool_context.{ language; _ } (queued_jobs, query) =
   let cols = data_table_head language `settings in
   let th_class = [ "w-1"; "w-1"; "w-4"; "w-2"; "w-1"; "w-1" ] in
   let row
-    { Sihl_queue.id
-    ; name
-    ; status
-    ; input
-    ; last_error
-    ; last_error_at
-    ; next_run_at
-    ; _
-    }
+    { Queue.id; name; status; input; last_error; last_error_at; next_run_at; _ }
     =
     let formatted_date_time date =
       span ~a:[ a_class [ "nobr" ] ] [ txt (formatted_date_time date) ]
     in
     [ txt name
-    ; txt (Status.sihl_queue_to_human status)
+    ; txt (Status.show status |> CCString.capitalize_ascii)
     ; span ~a:[ a_class [ "word-break-all" ] ] [ txt (CCString.take 80 input) ]
     ; txt (CCOption.value ~default:"-" last_error)
     ; last_error_at |> CCOption.map_or ~default:(txt "-") formatted_date_time
@@ -110,7 +102,7 @@ let text_message_job_instance_detail { Text_message.message; _ } =
 
 let queue_instance_detail
   language
-  { Sihl_queue.tries
+  { Queue.tries
   ; next_run_at
   ; max_tries
   ; status
@@ -158,7 +150,9 @@ let queue_instance_detail
   in
   let queue_instance_detail =
     let open Message in
-    ((Field.Status, strong [ status |> Queue.Status.sihl_queue_to_human |> txt ])
+    (( Field.Status
+     , strong
+         [ status |> Queue.Status.show |> CCString.capitalize_ascii |> txt ] )
      :: job_detail)
     @ [ Field.Tag, tag |> CCOption.value ~default |> txt
       ; Field.Tries, tries |> CCInt.to_string |> txt
@@ -187,7 +181,7 @@ let resend_form Pool_context.{ csrf; language; _ } job =
   form
     ~a:
       [ a_action
-          (Format.asprintf "%s/%s/resend" base_path job.Sihl_queue.id
+          (Format.asprintf "%s/%s/resend" base_path job.Queue.id
            |> Sihl.Web.externalize_path)
       ; a_method `Post
       ]
@@ -216,7 +210,7 @@ let detail Pool_context.({ language; _ } as context) instance job =
       [ queue_instance_detail language instance job ]
   in
   let title =
-    let { Sihl_queue.name; last_error_at; _ } = instance in
+    let { Queue.name; last_error_at; _ } = instance in
     div
       ~a:
         [ a_class

@@ -44,12 +44,12 @@ let equal_queue_entry (mail1, queue1) (mail2, queue2) =
   CCString.equal mail1.Sihl_email.recipient mail2.Sihl_email.recipient
   && CCString.equal mail1.Sihl_email.subject mail2.Sihl_email.subject
   && CCString.equal mail1.Sihl_email.text mail2.Sihl_email.text
-  && CCString.equal queue1.Sihl_queue.id queue2.Sihl_queue.id
+  && CCString.equal queue1.Queue.id queue2.Queue.id
 ;;
 
 type notification_history =
   { invitation : t
-  ; queue_entries : (Sihl_email.t * Sihl_queue.instance) list
+  ; queue_entries : (Sihl_email.t * Queue.instance) list
        [@equal
          fun queue_entries1 queue_entries2 ->
            CCList.map2 equal_queue_entry queue_entries1 queue_entries2

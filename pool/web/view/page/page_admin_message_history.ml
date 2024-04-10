@@ -20,15 +20,7 @@ let list Pool_context.{ language; _ } url (messages, query) =
   let cols = Page_admin_settings_queue.data_table_head language `history in
   let th_class = [ "w-2"; "w-2"; "w-2"; "w-2"; "w-2" ] in
   let row m =
-    let { Sihl_queue.id
-        ; name
-        ; status
-        ; last_error
-        ; last_error_at
-        ; next_run_at
-        ; _
-        }
-      =
+    let { Queue.id; name; status; last_error; last_error_at; next_run_at; _ } =
       History.job m
     in
     let formatted_date_time date =
@@ -38,7 +30,7 @@ let list Pool_context.{ language; _ } url (messages, query) =
     in
     [ txt name
     ; m |> History.message_template |> CCOption.value ~default:"" |> txt
-    ; status |> Status.sihl_queue_to_human |> txt
+    ; status |> Status.show |> CCString.capitalize_ascii |> txt
     ; txt (CCOption.value ~default:"-" last_error)
     ; last_error_at |> CCOption.map_or ~default:(txt "-") formatted_date_time
     ; next_run_at |> formatted_date_time

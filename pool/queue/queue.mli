@@ -25,37 +25,106 @@ module Status : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val equal : t -> t -> bool
-  val sihl_queue_to_human : Sihl.Contract.Queue.instance_status -> string
 end
 
-val hide : 'a Sihl.Contract.Queue.job -> Sihl.Contract.Queue.job'
-val lifecycle : Sihl.Container.lifecycle
+type instance =
+  { id : string
+  ; name : string
+  ; input : string
+  ; tries : int
+  ; next_run_at : Ptime.t
+  ; max_tries : int
+  ; status : Status.t
+  ; last_error : string option
+  ; last_error_at : Ptime.t option
+  ; tag : string option
+  ; ctx : (string * string) list
+  }
 
-val register
-  :  ?jobs:Sihl.Contract.Queue.job' list
+val pp_instance : Format.formatter -> instance -> unit
+val show_instance : instance -> string
+
+type 'a job =
+  { name : string
+  ; encode : 'a -> string
+  ; decode : string -> ('a, string) result
+  ; handle : Database.Label.t -> 'a -> (unit, string) result Lwt.t
+  ; failed : Database.Label.t -> string -> instance -> unit Lwt.t
+  ; max_tries : int
+  ; retry_delay : Ptime.span
+  ; tag : string option
+  }
+
+val pp_job
+  :  (Format.formatter -> 'a -> unit)
+  -> Format.formatter
+  -> 'a job
   -> unit
-  -> Sihl.Container.Service.t
+
+val show_job : (Format.formatter -> 'a -> unit) -> 'a job -> string
+
+type job' =
+  { name : string
+  ; handle : Database.Label.t -> string -> (unit, string) result Lwt.t
+  ; failed : Database.Label.t -> string -> instance -> unit Lwt.t
+  ; max_tries : int
+  ; retry_delay : Ptime.span
+  }
+
+val pp_job' : Format.formatter -> job' -> unit
+val show_job' : job' -> string
+val hide : 'a job -> job'
+val should_run : instance -> Ptime.t -> bool
+val default_tries : int
+val default_retry_delay : Ptime.span
+val default_error_handler : Database.Label.t -> string -> instance -> unit Lwt.t
+
+val create_job
+  :  (Database.Label.t -> 'a -> (unit, string) result Lwt.t)
+  -> ?max_tries:int
+  -> ?retry_delay:Ptime.span
+  -> ?failed:(Database.Label.t -> string -> instance -> unit Lwt.t)
+  -> ?tag:string
+  -> ('a -> string)
+  -> (string -> ('a, string) result)
+  -> string
+  -> 'a job
+
+val dispatch
+  :  ?callback:(instance -> unit Lwt.t)
+  -> ?delay:Ptime.span
+  -> Database.Label.t
+  -> 'a
+  -> 'a job
+  -> unit Lwt.t
+
+val dispatch_all
+  :  ?callback:(instance -> unit Lwt.t)
+  -> ?delay:Ptime.span
+  -> Database.Label.t
+  -> 'a list
+  -> 'a job
+  -> unit Lwt.t
+
+val lifecycle : Sihl.Container.lifecycle
+val register : ?jobs:job' list -> unit -> Sihl.Container.Service.t
 
 val find
   :  Database.Label.t
   -> Pool_common.Id.t
-  -> (Sihl_queue.instance, Pool_message.Error.t) Lwt_result.t
+  -> (instance, Pool_message.Error.t) Lwt_result.t
 
 val find_by
   :  ?query:Query.t
   -> Database.Label.t
-  -> (Sihl_queue.instance list * Query.t) Lwt.t
+  -> (instance list * Query.t) Lwt.t
 
 val count_workable
   :  Database.Label.t
   -> (int, Pool_message.Error.t) Lwt_result.t
 
-val is_pending : Sihl_queue.instance -> bool
-
-val resendable
-  :  Sihl_queue.instance
-  -> (Sihl_queue.instance, Pool_message.Error.t) Result.t
-
+val is_pending : instance -> bool
+val resendable : instance -> (instance, Pool_message.Error.t) Result.t
 val column_job_name : Query.Column.t
 val column_job_status : Query.Column.t
 val column_last_error : Query.Column.t
@@ -71,7 +140,7 @@ module History : sig
 
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val job : t -> Sihl.Contract.Queue.instance
+  val job : t -> instance
   val message_template : t -> string option
 
   type create =
@@ -88,13 +157,13 @@ module History : sig
   val create
     :  ?message_template:string
     -> entity_uuid:Pool_common.Id.t
-    -> Sihl_queue.instance
+    -> instance
     -> t
 
   val create_from_queue_instance
     :  Database.Label.t
     -> create
-    -> Sihl_queue.instance
+    -> instance
     -> unit Lwt.t
 
   val column_created_at : Query.Column.t
@@ -111,7 +180,7 @@ module History : sig
 
   val find_related
     :  Database.Label.t
-    -> Sihl_queue.instance
+    -> instance
     -> [< `contact | `experiment ]
     -> Pool_common.Id.t option Lwt.t
 end

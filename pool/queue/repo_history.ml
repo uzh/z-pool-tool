@@ -89,6 +89,6 @@ let find_related_request entity =
   |> Caqti_type.(string ->? Pool_common.Repo.Id.t)
 ;;
 
-let find_related pool { Sihl_queue.id; _ } entity =
+let find_related pool { Entity.id; _ } entity =
   Database.find_opt pool (find_related_request entity) id
 ;;

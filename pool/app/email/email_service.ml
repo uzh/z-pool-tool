@@ -1,6 +1,5 @@
 module SmtpAuth = Entity.SmtpAuth
 module History = Queue.History
-module Queue = Sihl_queue.MariaDb
 
 module Cache = struct
   open Hashtbl
@@ -369,21 +368,14 @@ module Job = struct
   let send =
     let open CCFun in
     let open Utils.Lwt_result.Infix in
-    let handle ?ctx { Entity.email; smtp_auth_id; _ } =
-      let database_label =
-        let open CCOption in
-        ctx
-        >>= CCList.assoc_opt ~eq:( = ) "pool"
-        >|= Database.Label.create %> Pool_common.Utils.get_or_failwith
-        |> get_exn_or "Invalid context passed!"
-      in
+    let handle label { Entity.email; smtp_auth_id; _ } =
       Lwt.catch
-        (fun () -> send ?smtp_auth_id database_label email ||> CCResult.return)
+        (fun () -> send ?smtp_auth_id label email ||> CCResult.return)
         (Printexc.to_string %> Lwt.return_error)
     in
     let encode = Entity.yojson_of_job %> Yojson.Safe.to_string in
     let decode = parse_job_json in
-    Sihl.Contract.Queue.create_job
+    Queue.create_job
       handle
       ~max_tries:10
       ~retry_delay:(Sihl.Time.Span.hours 1)
@@ -393,9 +385,9 @@ module Job = struct
   ;;
 end
 
-let callback database_label (job_instance : Sihl_queue.instance) =
+let callback database_label (job_instance : Queue.instance) =
   let job =
-    parse_job_json job_instance.Sihl_queue.input |> CCResult.get_or_failwith
+    parse_job_json job_instance.Queue.input |> CCResult.get_or_failwith
   in
   match job.Entity.message_history with
   | None -> Lwt.return_unit
@@ -415,7 +407,7 @@ let dispatch database_label ({ Entity.email; _ } as job) =
       email.Sihl_email.recipient);
   Queue.dispatch
     ~callback
-    ~ctx:(Database.to_ctx database_label)
+    database_label
     (job |> intercept_prepare |> Pool_common.Utils.get_or_failwith)
     Job.send
 ;;
@@ -437,9 +429,5 @@ let dispatch_all database_label (jobs : Entity.job list) =
       ~tags:(Database.Logger.Tags.create database_label)
       "Dispatch email to %s"
       ([%show: string list] recipients));
-  Queue.dispatch_all
-    ~callback
-    ~ctx:(Database.to_ctx database_label)
-    jobs
-    Job.send
+  Queue.dispatch_all ~callback database_label jobs Job.send
 ;;
