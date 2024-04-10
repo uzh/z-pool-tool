@@ -170,7 +170,7 @@ let show (Pool_context.{ language; _ } as context) role rules query =
     ]
 ;;
 
-let index Pool_context.{ language; _ } =
+let index Pool_context.{ language; _ } roles =
   let open Role.Role in
   let table =
     let thead =
@@ -182,7 +182,7 @@ let index Pool_context.{ language; _ } =
       ; Input.link_as_button ~icon:Icon.Eye (role_permission_path ~role ())
       ]
     in
-    customizable
+    roles
     |> CCList.map row
     |> Table.horizontal_table ~align_last_end:true ~thead `Striped
   in

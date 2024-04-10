@@ -72,8 +72,6 @@ end = struct
     new_permissions
     =
     Logs.info ~src (fun m -> m "Handle command UpdateRolePermissions" ~tags);
-    (* TODO: Currently I am assuming that the current user is allowed to update
-       all permissions that were subitted *)
     let create, destroy =
       let open Guard in
       new_permissions

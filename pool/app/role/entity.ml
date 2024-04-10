@@ -199,5 +199,7 @@ module Target = struct
     |> CCOption.get_exn_or "Could not create list of all targets!"
   ;;
 
+  let static = [ `RoleOperator ]
+  let customizable = CCList.sorted_diff ~cmp:compare all static
   let actor_permission = [ `Experiment ]
 end

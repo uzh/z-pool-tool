@@ -16,6 +16,7 @@ let group_by_target query permissions =
   let targets =
     let open Query in
     let open Sort.SortOrder in
+    let all = Role.Target.customizable in
     let sort =
       let default = Ascending in
       query.sort
@@ -26,8 +27,8 @@ let group_by_target query permissions =
       |> CCOption.value ~default
     in
     match sort with
-    | Ascending -> Role.Target.all
-    | Descending -> CCList.rev Role.Target.all
+    | Ascending -> all
+    | Descending -> CCList.rev all
   in
   let tbl : (Role.Target.t, Permission.t list) t =
     create (CCList.length targets)
@@ -60,8 +61,13 @@ let role_from_request req =
 ;;
 
 let target_from_request req =
+  let open CCResult.Infix in
   let open Role.Target in
   HttpUtils.find_id of_name Field.Target req
+  >>= fun target ->
+  match CCList.mem ~eq:equal target customizable with
+  | false -> Error Pool_common.Message.(Invalid Field.Target)
+  | true -> Ok target
 ;;
 
 let rule_from_request req role =
@@ -81,12 +87,49 @@ let rule_from_request req role =
   else Error Pool_common.Message.AccessDenied
 ;;
 
+let roles_from_permission_list permission_list action =
+  let open Guard in
+  let open CCOption in
+  let allows ~action permision =
+    let open Permission in
+    match permision with
+    | Manage -> true
+    | Create | Read | Update | Delete -> equal action permision
+  in
+  permission_list
+  |> CCList.filter_map (fun { PermissionOnTarget.permission; model; _ } ->
+    Utils.find_assignable_role model
+    |> of_result
+    >>= fun role ->
+    let open Role.Role in
+    match
+      CCList.mem ~eq:equal role customizable && allows ~action permission
+    with
+    | true -> Some role
+    | false -> None)
+;;
+
 let index req =
-  let result context =
+  let open Utils.Lwt_result.Infix in
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Lwt_result.map_error (fun err -> err, error_path)
-    @@ (Page.Admin.Settings.RolePermission.index context
-        |> create_layout req context
-        >|+ Sihl.Web.Response.of_html)
+    @@
+    let* actor_id =
+      user
+      |> Pool_context.get_admin_user
+      |> Lwt_result.lift
+      >|+ Admin.id
+      >|+ Admin.Id.to_common
+    in
+    let* roles =
+      Guard.Persistence.Role.find_by_actor_and_permission
+        database_label
+        actor_id
+        Guard.Permission.[ Read ]
+    in
+    Page.Admin.Settings.RolePermission.index context roles
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

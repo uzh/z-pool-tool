@@ -786,7 +786,6 @@ module Admin = struct
           ; choose
               ~scope:(Format.asprintf "target/%s" (url_key Target))
               target_specific
-            (* ; post "remove" ~middlewares:[ Access.delete ] delete *)
           ]
         in
         [ get "" ~middlewares:[ Access.read ] index
