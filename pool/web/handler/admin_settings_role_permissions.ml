@@ -87,28 +87,6 @@ let rule_from_request req role =
   else Error Pool_common.Message.AccessDenied
 ;;
 
-let roles_from_permission_list permission_list action =
-  let open Guard in
-  let open CCOption in
-  let allows ~action permision =
-    let open Permission in
-    match permision with
-    | Manage -> true
-    | Create | Read | Update | Delete -> equal action permision
-  in
-  permission_list
-  |> CCList.filter_map (fun { PermissionOnTarget.permission; model; _ } ->
-    Utils.find_assignable_role model
-    |> of_result
-    >>= fun role ->
-    let open Role.Role in
-    match
-      CCList.mem ~eq:equal role customizable && allows ~action permission
-    with
-    | true -> Some role
-    | false -> None)
-;;
-
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
