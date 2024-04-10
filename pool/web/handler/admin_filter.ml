@@ -138,7 +138,7 @@ let write action req =
              create_filter key_list template_list filter query |> lift
            in
            let* matcher_events = matcher_events filter in
-           handle ~tags matcher_events filter |> lift)
+           handle ~tags exp matcher_events filter |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in

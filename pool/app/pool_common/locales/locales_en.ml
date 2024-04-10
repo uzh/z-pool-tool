@@ -155,6 +155,7 @@ let rec field_to_string =
   | Mailing -> "mailing"
   | MainSession -> "main session"
   | MarkedAsDeleted -> "marked as deleted"
+  | MatchingFilterCount -> "Number of contacts meeting criteria"
   | MaxParticipants -> "maximum participants"
   | MaxTries -> "maximum tries"
   | Message -> "message"

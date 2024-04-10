@@ -205,6 +205,7 @@ type hint =
   | LocationFiles
   | LocationsIndex
   | MailingLimit
+  | MailingLimitExceedsMatchingContacts
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentCancellation
   | MessageTemplateAssignmentConfirmation
@@ -214,6 +215,7 @@ type hint =
   | MessageTemplateEmailVerification
   | MessageTemplateExperimentInvitation
   | MessageTemplateManualSessionMessage
+  | MessageTemplateMatcherNotification
   | MessageTemplateMatchFilterUpdateNotification
   | MessageTemplatePasswordChange
   | MessageTemplatePasswordReset

@@ -523,6 +523,35 @@ let save_filter filter experiment =
   |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
 ;;
 
+let update_filter _ () =
+  let open Test_utils in
+  let query = firstname "Foo" in
+  let filter = Filter.create None query in
+  let experiment =
+    { (Model.create_experiment ()) with Experiment.filter = Some filter }
+  in
+  let events =
+    Cqrs_command.Experiment_command.UpdateFilter.handle
+      experiment
+      ([], [])
+      filter
+  in
+  let expected =
+    Ok
+      [ Experiment.updated
+          { experiment with
+            Experiment.filter = Some filter
+          ; matcher_notification_sent =
+              Experiment.MatcherNotificationSent.create false
+          }
+        |> Pool_event.experiment
+      ; Filter.Updated filter |> Pool_event.filter
+      ; Email.BulkSent [] |> Pool_event.email
+      ]
+  in
+  check_result expected events |> Lwt.return
+;;
+
 let create_and_update_filter_template _ () =
   let open Cqrs_command.Filter_command in
   let%lwt () =

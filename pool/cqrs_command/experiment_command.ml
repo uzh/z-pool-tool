@@ -541,7 +541,12 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command CreateFilter" ~tags);
     let open CCResult in
-    let experiment = { experiment with Experiment.filter = Some filter } in
+    let experiment =
+      { experiment with
+        Experiment.filter = Some filter
+      ; matcher_notification_sent = MatcherNotificationSent.create false
+      }
+    in
     let assignment_events =
       assignment_events |> CCList.map Pool_event.assignment
     in
@@ -574,6 +579,7 @@ module UpdateFilter : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> Assignment.event list * Email.job list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -588,7 +594,12 @@ end = struct
     Ok Filter.{ filter with query }
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) (assignment_events, emails) filter =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    experiment
+    (assignment_events, emails)
+    filter
+    =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
     let assignment_events =
@@ -596,8 +607,16 @@ end = struct
     in
     let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
-      (((Filter.Updated filter |> Pool_event.filter) :: assignment_events)
-       @ [ email_event ])
+      ([ Experiment.(
+           Updated
+             { experiment with
+               matcher_notification_sent = MatcherNotificationSent.create false
+             })
+         |> Pool_event.experiment
+       ; Filter.Updated filter |> Pool_event.filter
+       ; email_event
+       ]
+       @ assignment_events)
   ;;
 
   let effects experiment_id filter_id =
@@ -630,7 +649,13 @@ end = struct
       |> CCOption.map_or ~default:[] (fun f ->
         [ Filter.Deleted f |> Pool_event.filter ])
     in
-    let experiment = Experiment.{ experiment with filter = None } in
+    let experiment =
+      Experiment.
+        { experiment with
+          filter = None
+        ; matcher_notification_sent = MatcherNotificationSent.create false
+        }
+    in
     Ok
       ([ Experiment.Updated experiment |> Pool_event.experiment ] @ filter_event)
   ;;

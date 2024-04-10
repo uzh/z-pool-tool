@@ -397,6 +397,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
   | MailingLimit -> "Max. generierte Einladungen pro Mailing."
+  | MailingLimitExceedsMatchingContacts ->
+    "Die angegebene Limite ist grösser als die Anzahl Kontakt, die die \
+     Kriterien dieses Experiments erfüllen."
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
      zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."
@@ -424,6 +427,10 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | MessageTemplateManualSessionMessage ->
     "Diese Vorlage dient als Vorlage für manuell versendete Nachrichten im \
      Rahmen einer Session."
+  | MessageTemplateMatcherNotification ->
+    "Diese Nachricht wird versendet, um Administratoren darüber zu \
+     informieren, dass keine weiteren Kontakte gefunden wurden, die an ein \
+     Experiment eingeladen werden können."
   | MessageTemplateMatchFilterUpdateNotification ->
     "Diese Nachricht wird gesendet, um Admins zu informieren, wenn Kontakte \
      nicht mehr den im Filter definierten Kriterien entsprechen."

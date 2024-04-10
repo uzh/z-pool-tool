@@ -78,7 +78,8 @@ let suite =
           ] )
     ; ( "filter"
       , Filter_test.
-          [ test_case
+          [ test_case "update filter" `Slow update_filter
+          ; test_case
               "create and update filter template"
               `Slow
               create_and_update_filter_template
@@ -150,6 +151,7 @@ let suite =
       , Matcher_test.
           [ test_case "send invitations" `Slow create_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
+          ; test_case "matcher notifiaction" `Slow matcher_notification
           ] )
     ; ( "assignment job"
       , Assignment_job_test.

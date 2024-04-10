@@ -71,6 +71,13 @@ module InvitationResetAt : sig
   val of_ptime : Ptime.t -> t
 end
 
+module MatcherNotificationSent : sig
+  type t
+
+  val value : t -> bool
+  val create : bool -> t
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -94,6 +101,7 @@ type t =
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
   ; invitation_reset_at : InvitationResetAt.t option
+  ; matcher_notification_sent : MatcherNotificationSent.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
