@@ -238,6 +238,7 @@ type hint =
   | ParticipationTagsHint
   | PauseAccountAdmin
   | PauseAccountContact
+  | Permissions
   | PromoteContact
   | RateDependencyWith
   | RateDependencyWithout

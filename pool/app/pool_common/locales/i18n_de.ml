@@ -489,6 +489,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | PauseAccountContact ->
     "Solange Ihr Konto pausiert ist, werden Sie nicht zu weiteren Experimenten \
      eingeladen."
+  | Permissions ->
+    "Die Berechtigung <strong>manage</strong> beinhaltet die anderen \
+     Berechtigungen."
   | PromoteContact ->
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, \
      dieser wird anschliessend nicht mehr für Experimente eingeladen und kann \
@@ -531,7 +534,8 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RolePermissionsModelList -> "All bestehenden Ziele dieses Tenants."
+  | RolePermissionsModelList ->
+    "Wählen Sie das Objekt, für welches Sie die Berechtigungen anpassen wollen."
   | RolePermissionsRoleList -> "Alle anpassparen Rollen des Teants."
   | ScheduleAt time ->
     time

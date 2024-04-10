@@ -65,7 +65,10 @@ let edit_target_modal
     let permissions = all_permissions |> CCList.map checkbox in
     div
       ~a:[ a_class [ "stack" ] ]
-      [ error
+      [ p
+          Pool_common.
+            [ Utils.hint_to_string language I18n.Permissions |> Unsafe.data ]
+      ; error
       ; form
           ~a:
             Htmx.
@@ -165,8 +168,8 @@ let show (Pool_context.{ language; _ } as context) role rules query =
             Pool_common.(
               Utils.hint_to_string language I18n.RolePermissionsModelList)
         ]
-    ; Component.Modal.create_placeholder edit_permission_modal_id
     ; list context role rules query
+    ; Component.Modal.create_placeholder edit_permission_modal_id
     ]
 ;;
 
