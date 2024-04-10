@@ -403,7 +403,7 @@ let suite =
 
 let services =
   [ Database.Root.register ()
-  ; Database.Tenant.register Pool_migration.Root.lifecycle ()
+  ; Database.Tenant.register ()
   ; Pool_migration.Root.register ()
   ; Pool_migration.Tenant.register ()
   ; Pool_user.Persistence.register ()

@@ -260,5 +260,5 @@ module Tenant : sig
   val find : Label.t -> (t, Pool_message.Error.t) result Lwt.t
   val find_all_running : unit -> Label.t list Lwt.t
   val lifecycle : Sihl.Container.lifecycle
-  val register : Sihl.Container.lifecycle -> unit -> Sihl.Container.Service.t
+  val register : unit -> Sihl.Container.Service.t
 end

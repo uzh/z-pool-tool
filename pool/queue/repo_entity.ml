@@ -1,17 +1,6 @@
 open CCFun
 open Ppx_yojson_conv_lib.Yojson_conv
-
-module Status = struct
-  include Entity.Status
-
-  let t =
-    Caqti_type.(
-      custom
-        ~encode:(yojson_of_t %> Yojson.Safe.to_string %> CCResult.return)
-        ~decode:(Yojson.Safe.from_string %> t_of_yojson %> CCResult.return)
-        string)
-  ;;
-end
+module Status = Pool_common.Repo.Model.SelectorType (Entity.Status)
 
 type ctx = (string * string) list [@@deriving yojson]
 

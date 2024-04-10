@@ -18,10 +18,10 @@ module Status = struct
     let field = Pool_message.Field.Status
 
     type t =
-      | Pending [@name "pending"]
-      | Succeeded [@name "succeeded"]
-      | Failed [@name "failed"]
-      | Cancelled [@name "cancelled"]
+      | Pending [@name "pending"] [@printer Utils.ppx_printer "pending"]
+      | Succeeded [@name "succeeded"] [@printer Utils.ppx_printer "succeeded"]
+      | Failed [@name "failed"] [@printer Utils.ppx_printer "failed"]
+      | Cancelled [@name "cancelled"] [@printer Utils.ppx_printer "cancelled"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 

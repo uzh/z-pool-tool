@@ -4,7 +4,7 @@ let () = Printexc.record_backtrace true
 let worker_services =
   [ Pool_canary.register ()
   ; Database.Root.register ()
-  ; Database.Tenant.register Pool_migration.Root.lifecycle ()
+  ; Database.Tenant.register ()
   ; Pool_migration.Root.register ()
   ; Pool_migration.Tenant.register ()
   ; Storage.register ()
@@ -25,7 +25,7 @@ let worker_services =
 let services =
   [ Pool_canary.register ()
   ; Database.Root.register ()
-  ; Database.Tenant.register Pool_migration.Root.lifecycle ()
+  ; Database.Tenant.register ()
   ; Pool_migration.Root.register ()
   ; Pool_migration.Tenant.register ()
   ; Pool_user.Persistence.register ()

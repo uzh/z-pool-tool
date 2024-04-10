@@ -77,24 +77,18 @@ module Tenant = struct
 
   let stop () = Lwt.return_unit
 
-  let lifecycle ?migration_lifecycle () =
+  let lifecycle =
     Sihl.Container.create_lifecycle
       "database.tenants"
-      ~dependencies:(fun () ->
-        let default = [ Root.lifecycle ] in
-        CCOption.map_or ~default (CCList.cons' default) migration_lifecycle)
+      ~dependencies:(fun () -> [ Root.lifecycle ])
       ~start
       ~stop
   ;;
 
-  let register migration_lifecycle () =
+  let register () =
     let configuration = Sihl.Configuration.make ~schema () in
-    Sihl.Container.Service.create
-      ~configuration
-      (lifecycle ~migration_lifecycle ())
+    Sihl.Container.Service.create ~configuration lifecycle
   ;;
-
-  let lifecycle = lifecycle ()
 end
 
 let test_and_create url label =
