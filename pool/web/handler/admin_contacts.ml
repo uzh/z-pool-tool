@@ -406,6 +406,7 @@ let enroll_contact_post req =
       let open Cqrs_command.Assignment_command.Create in
       handle
         ~tags
+        ~direct_enrollment_by_admin:true
         { contact; session; follow_up_sessions; experiment }
         confirmation
         contact_is_enrolled

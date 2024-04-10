@@ -42,6 +42,7 @@ type t =
   | IncompleteSessions
   | InvitationsStatistics
   | InvitationsStatisticsIntro
+  | Iteration
   | JobCloneOf
   | LocationDetails
   | LocationFileNew
