@@ -25,8 +25,21 @@ val raise_caqti_error
   -> 'a
 
 module Caqti_encoders : sig
-  module Data = Caqti_encoders.Data
-  module Schema = Caqti_encoders.Schema
+  module Data : sig
+    type _ t =
+      | [] : unit t
+      | ( :: ) : ('a * 'b t) -> ('a * 'b) t
+
+    val make_value : 'a t -> 'a
+  end
+
+  module Schema : sig
+    type _ t =
+      | [] : unit t
+      | ( :: ) : ('a Caqti_type.t * 'b t) -> ('a * 'b) t
+
+    val make_type : 'a t -> 'a Caqti_type.t
+  end
 
   val custom
     :  encode:('b -> ('a Data.t, string) result)
@@ -52,9 +65,6 @@ end
 module Label : sig
   include Pool_model.Base.StringSig
 end
-
-val root : Label.t
-val is_root : Label.t -> bool
 
 module Url : sig
   include Pool_model.Base.StringSig
@@ -278,6 +288,9 @@ module Root : sig
   val lifecycle : Sihl.Container.lifecycle
   val register : unit -> Sihl.Container.Service.t
 end
+
+val root : Label.t
+val is_root : Label.t -> bool
 
 module Tenant : sig
   val setup_tenant : t -> Label.t Lwt.t

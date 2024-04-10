@@ -2,7 +2,8 @@ open CCFun.Infix
 module Guard = Guardian_backend.Pools.Make (Entity.MariaConfig)
 module Core = Pools.Make (Entity.MariaConfigPool)
 
-let to_ctx = Entity.to_ctx
+type status = Core.status
+
 let src = Logs.Src.create "database"
 
 module Logs = (val Logs.src_log src : Logs.LOG)
@@ -17,8 +18,7 @@ let raise_caqti_error ?tags =
   | Error (#t as err) -> raise (Exn err)
 ;;
 
-type status = Core.status
-
+let to_ctx = Entity.to_ctx
 let create_tag label = Logger.Tags.create label
 
 let add_pool ?required ?pool_size database =
