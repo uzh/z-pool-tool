@@ -143,7 +143,7 @@ let stop = Registered.stop_all_active
 let lifecycle =
   Sihl.Container.create_lifecycle
     "pool schedule"
-    ~dependencies:(fun () -> Database.[ Root.lifecycle; Tenant.lifecycle ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
     ~stop
 ;;

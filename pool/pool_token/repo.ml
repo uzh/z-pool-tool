@@ -71,7 +71,7 @@ module type Sig = sig
   module Model = Model
 end
 
-let lifecycles = [ Database.Root.lifecycle; Database.Tenant.lifecycle ]
+let lifecycles = [ Pool_database.lifecycle ]
 
 let label =
   let open CCFun.Infix in

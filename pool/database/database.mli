@@ -285,8 +285,8 @@ end
 module Root : sig
   val add : unit -> status
   val setup : unit -> status Lwt.t
-  val lifecycle : Sihl.Container.lifecycle
-  val register : unit -> Sihl.Container.Service.t
+  val start : unit -> unit Lwt.t
+  val stop : unit -> unit Lwt.t
 end
 
 val root : Label.t
@@ -297,6 +297,6 @@ module Tenant : sig
   val setup : unit -> Label.t list Lwt.t
   val find : Label.t -> (t, Pool_message.Error.t) result Lwt.t
   val find_all_running : unit -> Label.t list Lwt.t
-  val lifecycle : Sihl.Container.lifecycle
-  val register : unit -> Sihl.Container.Service.t
+  val start : unit -> unit Lwt.t
+  val stop : unit -> unit Lwt.t
 end

@@ -1,6 +1,6 @@
 (library
  (name pool_token)
- (libraries containers database sihl sihl-token utils)
+ (libraries containers database pool_database sihl sihl-token utils)
  (preprocess
   (pps
    lwt_ppx

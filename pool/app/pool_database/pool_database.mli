@@ -7,12 +7,11 @@ val handle_event : 'a -> event -> unit Lwt.t
 
 module Root : sig
   val steps : unit -> Database.Migration.t list
-  val lifecycle : Sihl.Container.lifecycle
-  val register : unit -> Sihl.Container.Service.t
 end
 
 module Tenant : sig
   val steps : unit -> Database.Migration.t list
-  val lifecycle : Sihl.Container.lifecycle
-  val register : unit -> Sihl.Container.Service.t
 end
+
+val lifecycle : Sihl.Container.lifecycle
+val register : unit -> Sihl.Container.Service.t

@@ -21,3 +21,29 @@ let handle_event _ : event -> unit Lwt.t = function
      | false -> label, tenant_steps ())
     |> CCFun.uncurry Database.Migration.execute
 ;;
+
+let start () =
+  let%lwt () = Database.Root.start () in
+  let%lwt () = Root.start () in
+  let%lwt () = Database.Tenant.start () in
+  let%lwt () = Tenant.start () in
+  Lwt.return_unit
+;;
+
+let stop () =
+  let%lwt () = Tenant.stop () in
+  let%lwt () = Database.Tenant.stop () in
+  let%lwt () = Root.stop () in
+  let%lwt () = Database.Root.stop () in
+  Lwt.return_unit
+;;
+
+let lifecycle =
+  Sihl.Container.create_lifecycle
+    "database"
+    ~implementation_name:"root and tenants incl. migrations"
+    ~start
+    ~stop
+;;
+
+let register () = Sihl.Container.Service.create lifecycle

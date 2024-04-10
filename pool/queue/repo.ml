@@ -98,14 +98,6 @@ let count_workable label =
   ||> CCOption.to_result Pool_message.Error.NoValue
 ;;
 
-let lifecycles =
-  [ Database.Root.lifecycle
-  ; Database.Tenant.lifecycle
-  ; Pool_migration.Root.lifecycle
-  ; Pool_migration.Tenant.lifecycle
-  ]
-;;
-
 let enqueue_request =
   let open Caqti_request.Infix in
   {sql|

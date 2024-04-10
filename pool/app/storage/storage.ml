@@ -85,7 +85,7 @@ let stop () = Lwt.return ()
 let lifecycle =
   Sihl.Container.create_lifecycle
     "storage"
-    ~dependencies:(fun () -> Database.[ Root.lifecycle; Tenant.lifecycle ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
     ~stop
 ;;

@@ -5,7 +5,7 @@
   containers
   database
   pool_common
-  pool_migration
+  pool_database
   settings
   sihl
   utils)

@@ -13,9 +13,9 @@
   i18n
   organisational_unit
   pool_common
+  pool_database
   pool_event
   pool_location
-  pool_migration
   pool_tenant
   pool_user
   role

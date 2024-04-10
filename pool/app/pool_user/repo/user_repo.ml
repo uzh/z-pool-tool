@@ -88,7 +88,7 @@ let user =
                         (t2 status (t2 bool (t2 bool (t2 ptime ptime)))))))))))
 ;;
 
-let lifecycles = Database.[ Root.lifecycle; Tenant.lifecycle ]
+let lifecycles = [ Pool_database.lifecycle ]
 
 module Migration = struct
   open Database.Migration

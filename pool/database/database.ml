@@ -42,12 +42,6 @@ module Root = struct
   ;;
 
   let stop () = Lwt.return_unit
-  let lifecycle = Sihl.Container.create_lifecycle "database.root" ~start ~stop
-
-  let register () =
-    let configuration = Sihl.Configuration.make ~schema () in
-    Sihl.Container.Service.create ~configuration lifecycle
-  ;;
 end
 
 module Tenant = struct
@@ -76,19 +70,6 @@ module Tenant = struct
   ;;
 
   let stop () = Lwt.return_unit
-
-  let lifecycle =
-    Sihl.Container.create_lifecycle
-      "database.tenants"
-      ~dependencies:(fun () -> [ Root.lifecycle ])
-      ~start
-      ~stop
-  ;;
-
-  let register () =
-    let configuration = Sihl.Configuration.make ~schema () in
-    Sihl.Container.Service.create ~configuration lifecycle
-  ;;
 end
 
 let test_and_create url label =

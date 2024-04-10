@@ -92,14 +92,3 @@ let start () =
 ;;
 
 let stop () = Lwt.return_unit
-
-let lifecycle =
-  Sihl.Container.create_lifecycle
-    "migration.tenants"
-    ~dependencies:(fun () ->
-      [ Database.Tenant.lifecycle; Pool_token.lifecycle ])
-    ~start
-    ~stop
-;;
-
-let register () = Sihl.Container.Service.create lifecycle

@@ -16,7 +16,7 @@ let stop () = Lwt.return_unit
 let lifecycle =
   Sihl.Container.create_lifecycle
     "text_messages"
-    ~dependencies:(fun () -> Database.[ Root.lifecycle; Tenant.lifecycle ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
     ~stop
 ;;

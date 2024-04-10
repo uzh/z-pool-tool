@@ -2,11 +2,8 @@ let src = Logs.Src.create "run"
 let () = Printexc.record_backtrace true
 
 let worker_services =
-  [ Pool_canary.register ()
-  ; Database.Root.register ()
-  ; Database.Tenant.register ()
-  ; Pool_migration.Root.register ()
-  ; Pool_migration.Tenant.register ()
+  [ Pool_database.register ()
+  ; Pool_canary.register ()
   ; Storage.register ()
   ; Schedule.register ()
   ; Queue.register
@@ -23,16 +20,12 @@ let worker_services =
 ;;
 
 let services =
-  [ Pool_canary.register ()
-  ; Database.Root.register ()
-  ; Database.Tenant.register ()
-  ; Pool_migration.Root.register ()
-  ; Pool_migration.Tenant.register ()
+  [ Pool_database.register ()
+  ; Pool_canary.register ()
   ; Pool_user.Persistence.register ()
   ; Pool_token.register ()
   ; Email.Service.register ()
   ; Text_message.Service.register ()
-  ; Queue.register ()
   ; Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register ()

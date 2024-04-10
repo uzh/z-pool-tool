@@ -402,10 +402,7 @@ let suite =
 ;;
 
 let services =
-  [ Database.Root.register ()
-  ; Database.Tenant.register ()
-  ; Pool_migration.Root.register ()
-  ; Pool_migration.Tenant.register ()
+  [ Pool_database.register ()
   ; Pool_user.Persistence.register ()
   ; Pool_token.register ()
   ; Email.Service.register ()
