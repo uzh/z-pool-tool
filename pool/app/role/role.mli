@@ -13,10 +13,15 @@ module Role : sig
   val show_input_type : input_type -> string
   val equal_input_type : input_type -> input_type -> bool
   val type_of_key : t -> (input_type option, Pool_common.Message.error) result
+  val of_name : string -> (t, Pool_common.Message.error) Result.t
+  val customizable : t list
 end
 
 module Target : sig
   include Guardian.RoleSig with type t = Entity.Target.t
 
   val actor_permission : t list
+  val of_name : string -> (t, Pool_common.Message.error) Result.t
+  val static : t list
+  val customizable : t list
 end

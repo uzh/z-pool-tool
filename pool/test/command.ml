@@ -550,5 +550,11 @@ let () =
             `Quick
             Tag_test.remove_auto_tag_from_experiment
         ] )
+    ; ( "role permission"
+      , [ test_case
+            "update role permissions"
+            `Quick
+            Role_permission_test.update_permissions
+        ] )
     ]
 ;;

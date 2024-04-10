@@ -30,6 +30,10 @@ let create ?(active = false) ?subtitle language title id html =
     ]
 ;;
 
+let create_placeholder id =
+  div ~a:[ a_id id; a_class [ "fullscreen-overlay"; "modal" ] ] []
+;;
+
 let js_modal_add_spinner =
   Format.asprintf
     {js|

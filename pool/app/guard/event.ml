@@ -21,7 +21,7 @@ type event =
   | RolePermissionDeleted of RolePermission.t
   | ActorPermissionSaved of ActorPermission.t list
   | ActorPermissionDeleted of ActorPermission.t
-[@@deriving eq, show]
+[@@deriving eq, show, variants]
 
 let handle_event database_label : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in

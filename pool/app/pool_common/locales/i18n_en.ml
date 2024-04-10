@@ -480,6 +480,8 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | PauseAccountContact ->
     "As long as your account is paused, you will not be invited to any further \
      experiments."
+  | Permissions ->
+    "The permission <strong>manage</strong> includes all the other permissions."
   | PromoteContact ->
     "Attention: one-time action. The contact is promoted to an admin, who is \
      subsequently no longer invited for experiments and can no longer register \
@@ -520,8 +522,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
       "If no %s is specified, the role includes all %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RolePermissionsIntro ->
-    {|All existing permissions which are defined for roles of the tenant.|}
+  | RolePermissionsModelList ->
+    "Select the target for which you want to adjust the permissions."
+  | RolePermissionsRoleList -> "All customizable roles of the tenant."
   | ScheduleAt time ->
     time
     |> Pool_common_utils.Time.formatted_date_time

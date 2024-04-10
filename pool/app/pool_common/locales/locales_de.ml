@@ -199,6 +199,11 @@ let rec field_to_string =
   | PendingContactImports -> "Pendente Kontaktimporte"
   | Period -> "Zeitraum"
   | Permission -> "Berechtigung"
+  | PermissionOn (role, target) ->
+    Format.asprintf
+      "Berechtiung %s von %s"
+      (CCString.capitalize_ascii target)
+      (CCString.capitalize_ascii role)
   | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"

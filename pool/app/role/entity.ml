@@ -55,6 +55,14 @@ module Role = struct
 
   let of_string = of_string_res %> CCResult.get_or_failwith
 
+  let of_name str =
+    str
+    |> CCString.capitalize_ascii
+    |> Format.asprintf "`%s"
+    |> of_string_res
+    |> CCResult.map_err (CCFun.const Pool_common.Message.(Invalid Field.Target))
+  ;;
+
   let all =
     [ `Admin
     ; `Assistant
@@ -64,6 +72,9 @@ module Role = struct
     ; `Recruiter
     ]
   ;;
+
+  let static = [ `Operator ]
+  let customizable = CCList.sorted_diff ~cmp:compare all static
 
   type input_type =
     | QueryExperiments
@@ -119,7 +130,7 @@ module Target = struct
     | `Tenant
     | `WaitingList
     ]
-  [@@deriving show, eq, ord, yojson, sexp_of]
+  [@@deriving show, eq, enum, ord, yojson, sexp_of]
 
   let name t = show t |> Guardian.Utils.decompose_variant_string |> fst
   let to_admin m = `Admin m
@@ -168,49 +179,25 @@ module Target = struct
     | role -> Error (Guardian.Utils.invalid_role role)
   ;;
 
+  let of_name str =
+    str
+    |> CCString.capitalize_ascii
+    |> Format.asprintf "`%s"
+    |> of_string_res
+    |> CCResult.map_err (CCFun.const Pool_common.Message.(Invalid Field.Target))
+  ;;
+
   let of_string = of_string_res %> CCResult.get_or_failwith
 
   let all =
-    [ `Admin
-    ; `Schedule
-    ; `Assignment
-    ; `Contact
-    ; `ContactDirectMessage
-    ; `ContactInfo
-    ; `ContactName
-    ; `CustomField
-    ; `CustomFieldGroup
-    ; `Experiment
-    ; `Filter
-    ; `I18n
-    ; `Invitation
-    ; `InvitationNotification
-    ; `Location
-    ; `LocationFile
-    ; `Mailing
-    ; `Message
-    ; `MessageTemplate
-    ; `OrganisationalUnit
-    ; `Permission
-    ; `Queue
-    ; `Role
-    ; `RoleAdmin
-    ; `RoleAssistant
-    ; `RoleExperimenter
-    ; `RoleLocationManager
-    ; `RoleOperator
-    ; `RoleRecruiter
-    ; `Session
-    ; `SessionClose
-    ; `Smtp
-    ; `Statistics
-    ; `System
-    ; `SystemSetting
-    ; `Tag
-    ; `Tenant
-    ; `WaitingList
-    ]
+    let open CCList in
+    range min max
+    |> map of_enum
+    |> all_some
+    |> CCOption.get_exn_or "Could not create list of all targets!"
   ;;
 
+  let static = [ `Permission; `RoleOperator ]
+  let customizable = CCList.sorted_diff ~cmp:compare all static
   let actor_permission = [ `Experiment ]
 end

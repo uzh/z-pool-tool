@@ -776,8 +776,20 @@ module Admin = struct
       in
       let role_permission =
         let open RolePermission in
-        [ get "" ~middlewares:[ Access.index ] show
-        ; post "remove" ~middlewares:[ Access.delete ] delete
+        let specific =
+          let target_specific =
+            [ get "edit" ~middlewares:[ Access.read ] edit_htmx
+            ; post "" ~middlewares:[ Access.read ] update
+            ]
+          in
+          [ get "" ~middlewares:[ Access.read ] show
+          ; choose
+              ~scope:(Format.asprintf "target/%s" (url_key Target))
+              target_specific
+          ]
+        in
+        [ get "" ~middlewares:[ Access.read ] index
+        ; choose ~scope:(url_key Role) specific
         ]
       in
       let smtp =

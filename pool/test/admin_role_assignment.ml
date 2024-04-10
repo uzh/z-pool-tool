@@ -1,6 +1,7 @@
 open CCFun
 open Utils.Lwt_result.Infix
 open Test_utils
+module AdminCommand = Cqrs_command.Admin_command
 module GuardianCommand = Cqrs_command.Guardian_command
 module Field = Pool_common.Message.Field
 
@@ -72,7 +73,7 @@ let target_has_role db target (target_role, target_uuid) () =
 ;;
 
 let handle_validated_events db target actor role =
-  let open GuardianCommand in
+  let open AdminCommand in
   let grant_role role = { target; roles = [ role ] } in
   let validate = Guard.Persistence.Actor.validate_assign_role db in
   validate actor role
