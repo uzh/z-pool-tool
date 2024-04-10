@@ -365,7 +365,6 @@ let htmx_experiment_modal req =
 ;;
 
 let enroll_contact_post req =
-  let () = Logs.info (fun m -> m "%s" "HERERERERERERERERERERERR") in
   let open Utils.Lwt_result.Infix in
   let contact_id = contact_id req in
   let experiment_id = experiment_id req in
