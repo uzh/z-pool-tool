@@ -29,6 +29,7 @@ let default_command
   experiment_type
   assignment_without_session
   redirect_immediately
+  survey_url
   email_session_reminder_lead_time
   email_session_reminder_lead_time_unit
   text_message_session_reminder_lead_time
@@ -50,6 +51,7 @@ let default_command
   ; experiment_type
   ; assignment_without_session
   ; redirect_immediately
+  ; survey_url
   ; email_session_reminder_lead_time
   ; email_session_reminder_lead_time_unit
   ; text_message_session_reminder_lead_time
@@ -72,6 +74,7 @@ let create_command
   experiment_type
   assignment_without_session
   redirect_immediately
+  survey_url
   email_session_reminder_lead_time
   email_session_reminder_lead_time_unit
   text_message_session_reminder_lead_time
@@ -92,6 +95,7 @@ let create_command
     experiment_type
     assignment_without_session
     redirect_immediately
+    survey_url
     email_session_reminder_lead_time
     email_session_reminder_lead_time_unit
     text_message_session_reminder_lead_time
@@ -118,6 +122,7 @@ let update_schema command =
         ; opt @@ ExperimentType.schema ()
         ; AssignmentWithoutSession.schema ()
         ; RedirectImmediately.schema ()
+        ; opt @@ SurveyUrl.schema ()
         ; opt @@ Reminder.EmailLeadTime.integer_schema ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
         ; opt @@ Reminder.TextMessageLeadTime.integer_schema ()
@@ -146,6 +151,7 @@ let create_schema command =
         ; opt @@ ExperimentType.schema ()
         ; AssignmentWithoutSession.schema ()
         ; RedirectImmediately.schema ()
+        ; opt @@ SurveyUrl.schema ()
         ; opt
           @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
@@ -196,6 +202,9 @@ end = struct
      ; email_session_reminder_lead_time_unit
      ; text_message_session_reminder_lead_time
      ; text_message_session_reminder_lead_time_unit
+     ; assignment_without_session
+     ; redirect_immediately
+     ; survey_url
      ; _
      } as command :
       t)
@@ -212,6 +221,12 @@ end = struct
         text_message_session_reminder_lead_time
         text_message_session_reminder_lead_time_unit
     in
+    let online_study =
+      OnlineStudy.create_opt
+        ~assignment_without_session
+        ~redirect_immediately
+        ~survey_url
+    in
     let* experiment =
       Experiment.create
         ~id
@@ -226,6 +241,7 @@ end = struct
         ?smtp_auth_id:
           (smtp_auth |> CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id))
         ?text_message_session_reminder_lead_time
+        ?online_study
         command.title
         command.public_title
         command.direct_registration_disabled
@@ -233,8 +249,6 @@ end = struct
         command.allow_uninvited_signup
         command.external_data_required
         command.show_external_data_id_links
-        command.assignment_without_session
-        command.redirect_immediately
     in
     Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   ;;
@@ -271,7 +285,9 @@ end = struct
     experiment
     organisational_unit
     smtp
-    (command : t)
+    ({ assignment_without_session; redirect_immediately; survey_url; _ } as
+     command :
+      t)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
@@ -285,6 +301,12 @@ end = struct
         command.text_message_session_reminder_lead_time
         command.text_message_session_reminder_lead_time_unit
     in
+    let online_study =
+      OnlineStudy.create_opt
+        ~assignment_without_session
+        ~redirect_immediately
+        ~survey_url
+    in
     let experiment =
       { experiment with
         Experiment.title = command.title
@@ -295,6 +317,7 @@ end = struct
       ; cost_center = command.cost_center
       ; contact_email = command.contact_email
       ; organisational_unit
+      ; online_study
       ; smtp_auth_id =
           CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp
       ; direct_registration_disabled = command.direct_registration_disabled
@@ -303,8 +326,6 @@ end = struct
       ; external_data_required = command.external_data_required
       ; show_external_data_id_links = command.show_external_data_id_links
       ; experiment_type = command.experiment_type
-      ; assignment_without_session = command.assignment_without_session
-      ; redirect_immediately = command.redirect_immediately
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
       }

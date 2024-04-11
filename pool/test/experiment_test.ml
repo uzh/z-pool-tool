@@ -129,10 +129,6 @@ module Data = struct
       (show_external_data_id_links
        |> to_bool
        |> Experiment.ShowExternalDataIdLinks.create)
-      (assignment_without_session
-       |> to_bool
-       |> Experiment.AssignmentWithoutSession.create)
-      (redirect_immediately |> to_bool |> Experiment.RedirectImmediately.create)
   ;;
 end
 

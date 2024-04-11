@@ -63,8 +63,6 @@ let experiment () =
   let allow_uninvited_singup = AllowUninvitedSignup.create false in
   let external_data_required = ExternalDataRequired.create false in
   let show_external_data_id_links = ShowExternalDataIdLinks.create false in
-  let assignment_without_session = AssignmentWithoutSession.create false in
-  let redirect_immediately = RedirectImmediately.create false in
   let* experiment =
     Experiment.create
       ~id:experiment_id
@@ -75,8 +73,6 @@ let experiment () =
       allow_uninvited_singup
       external_data_required
       show_external_data_id_links
-      assignment_without_session
-      redirect_immediately
   in
   let experiment_created =
     experiment |> Experiment.created |> Pool_event.experiment

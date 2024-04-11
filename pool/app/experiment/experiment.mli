@@ -73,6 +73,34 @@ module RedirectImmediately : sig
   include Pool_common.Model.BooleanSig
 end
 
+module SurveyUrl : sig
+  include Pool_common.Model.StringSig
+end
+
+module OnlineStudy : sig
+  type t =
+    { redirect_immediately : RedirectImmediately.t
+    ; survey_url : SurveyUrl.t
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val survey_url : t -> SurveyUrl.t
+  val redirect_immediately : t -> RedirectImmediately.t
+
+  val create
+    :  redirect_immediately:RedirectImmediately.t
+    -> survey_url:SurveyUrl.t
+    -> t
+
+  val create_opt
+    :  assignment_without_session:AssignmentWithoutSession.t
+    -> redirect_immediately:RedirectImmediately.t
+    -> survey_url:SurveyUrl.t option
+    -> t option
+end
+
 module InvitationResetAt : sig
   include Pool_common.Model.PtimeSig
 
@@ -104,8 +132,7 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; assignment_without_session : AssignmentWithoutSession.t
-  ; redirect_immediately : RedirectImmediately.t
+  ; online_study : OnlineStudy.t option
   ; email_session_reminder_lead_time :
       Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -164,6 +191,7 @@ val create
   -> ?smtp_auth_id:Email.SmtpAuth.Id.t
   -> ?text_message_session_reminder_lead_time:
        Pool_common.Reminder.TextMessageLeadTime.t
+  -> ?online_study:OnlineStudy.t
   -> Title.t
   -> PublicTitle.t
   -> DirectRegistrationDisabled.t
@@ -171,8 +199,6 @@ val create
   -> AllowUninvitedSignup.t
   -> ExternalDataRequired.t
   -> ShowExternalDataIdLinks.t
-  -> AssignmentWithoutSession.t
-  -> RedirectImmediately.t
   -> (t, Pool_common.Message.error) result
 
 type create =
@@ -191,6 +217,7 @@ type create =
   ; experiment_type : Pool_common.ExperimentType.t option
   ; assignment_without_session : AssignmentWithoutSession.t
   ; redirect_immediately : RedirectImmediately.t
+  ; survey_url : SurveyUrl.t option
   ; email_session_reminder_lead_time : int option
   ; email_session_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option
@@ -387,6 +414,7 @@ val email_session_reminder_lead_time_value : t -> Ptime.span option
 val text_message_session_reminder_lead_time_value : t -> Ptime.span option
 val redirect_immediately_value : t -> bool
 val assignment_without_session_value : t -> bool
+val survey_url_value : t -> string option
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
 val allow_uninvited_signup_value : t -> bool

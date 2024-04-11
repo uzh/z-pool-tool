@@ -22,6 +22,7 @@ let sql_select_columns =
   ; "pool_experiments.experiment_type"
   ; "pool_experiments.assignment_without_session"
   ; "pool_experiments.redirect_immediately"
+  ; "pool_experiments.survey_url"
   ; "pool_experiments.email_session_reminder_lead_time"
   ; "pool_experiments.text_message_session_reminder_lead_time"
   ; "pool_experiments.invitation_reset_at"
@@ -131,6 +132,7 @@ module Sql = struct
         experiment_type,
         assignment_without_session,
         redirect_immediately,
+        survey_url,
         email_session_reminder_lead_time,
         text_message_session_reminder_lead_time,
         invitation_reset_at,
@@ -147,6 +149,7 @@ module Sql = struct
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -327,18 +330,19 @@ module Sql = struct
         experiment_type = $17,
         assignment_without_session = $18,
         redirect_immediately = $19,
-        email_session_reminder_lead_time = $20,
-        text_message_session_reminder_lead_time = $21,
-        invitation_reset_at = $22,
-        matcher_notification_sent = $23
+        survey_url = $20,
+        email_session_reminder_lead_time = $21,
+        text_message_session_reminder_lead_time = $22,
+        invitation_reset_at = $23,
+        matcher_notification_sent = $24
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Database.Label.value pool) update_request
+  let update pool experiment =
+    Utils.Database.exec (Database.Label.value pool) update_request experiment
   ;;
 
   let delete_request =

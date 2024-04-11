@@ -336,7 +336,6 @@ let experiment_form
       ~flash_fetcher
       ()
   in
-  (* TODO: Finish form *)
   let time_window_subform =
     let input field =
       date_time_picker_element
@@ -357,15 +356,24 @@ let experiment_form
             ; "bg-grey-light"
             ]
         ]
-      [ h4 [ txt "Time window" ]
-      ; div
+      [ div
           ~a:[ a_class [ "flexcolumn"; "stack" ] ]
-          [ div
-              ~a:[ a_class [ "grid-col-2" ] ]
-              [ input Field.Start; input Field.End ]
+          [ input_element
+              ~required:true
+              ?value:(CCOption.bind experiment survey_url_value)
+              ~flash_fetcher
+              context_language
+              `Text
+              Field.SurveyUrl
           ; checkbox_element
               Field.RedirectImmediately
               redirect_immediately_value
+          ; div
+              [ h4 [ txt "Time window" ]
+              ; div
+                  ~a:[ a_class [ "grid-col-2" ] ]
+                  [ input Field.Start; input Field.End ]
+              ]
           ]
       ]
   in
@@ -434,6 +442,7 @@ let experiment_form
       {js|
       const selector = document.getElementById('%s');
       const timeWindow = document.getElementById('time-window');
+      const inputs = [...timeWindow.querySelectorAll('input')];
       const reminder = document.getElementById('session-reminder');
       const toggle = () => {
         if(selector.checked) {
@@ -443,6 +452,7 @@ let experiment_form
           timeWindow.classList.add("hidden");
           reminder.classList.remove("hidden");
         }
+        inputs.forEach( input => input.disabled = !selector.checked)
       }
       selector.addEventListener('change', (e) => toggle())
       toggle();

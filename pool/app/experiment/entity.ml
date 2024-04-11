@@ -113,6 +113,24 @@ module MatcherNotificationSent = struct
   let create t = t
 end
 
+module OnlineStudy = struct
+  type t =
+    { redirect_immediately : RedirectImmediately.t
+    ; survey_url : SurveyUrl.t
+    }
+  [@@deriving eq, fields ~getters, show]
+
+  let create ~redirect_immediately ~survey_url =
+    { redirect_immediately; survey_url }
+  ;;
+
+  let create_opt ~assignment_without_session ~redirect_immediately ~survey_url =
+    match assignment_without_session, survey_url with
+    | false, _ | _, None -> None
+    | true, Some survey_url -> Some { redirect_immediately; survey_url }
+  ;;
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -131,8 +149,7 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; assignment_without_session : AssignmentWithoutSession.t
-  ; redirect_immediately : RedirectImmediately.t
+  ; online_study : OnlineStudy.t option
   ; email_session_reminder_lead_time :
       Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -158,6 +175,7 @@ let create
   ?organisational_unit
   ?smtp_auth_id
   ?text_message_session_reminder_lead_time
+  ?online_study
   title
   public_title
   direct_registration_disabled
@@ -165,8 +183,6 @@ let create
   allow_uninvited_signup
   external_data_required
   show_external_data_id_links
-  assignment_without_session
-  redirect_immediately
   =
   let open CCResult in
   Ok
@@ -187,11 +203,10 @@ let create
     ; external_data_required
     ; show_external_data_id_links
     ; experiment_type
-    ; assignment_without_session
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
     ; invitation_reset_at
-    ; redirect_immediately
+    ; online_study
     ; matcher_notification_sent = false
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
@@ -295,12 +310,17 @@ let text_message_session_reminder_lead_time_value m =
   |> CCOption.map Pool_common.Reminder.TextMessageLeadTime.value
 ;;
 
-let assignment_without_session_value (m : t) =
-  AssignmentWithoutSession.value m.assignment_without_session
+let assignment_without_session_value ({ online_study; _ } : t) =
+  CCOption.is_some online_study
 ;;
 
-let redirect_immediately_value (m : t) =
-  AssignmentWithoutSession.value m.redirect_immediately
+let redirect_immediately_value ({ online_study; _ } : t) =
+  online_study
+  |> CCOption.map_or ~default:false OnlineStudy.redirect_immediately
+;;
+
+let survey_url_value ({ online_study; _ } : t) =
+  online_study |> CCOption.map OnlineStudy.survey_url
 ;;
 
 let direct_registration_disabled_value (m : t) =

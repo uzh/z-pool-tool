@@ -16,6 +16,7 @@ type create =
   ; experiment_type : Pool_common.ExperimentType.t option
   ; assignment_without_session : AssignmentWithoutSession.t
   ; redirect_immediately : RedirectImmediately.t
+  ; survey_url : SurveyUrl.t option
   ; email_session_reminder_lead_time : int option
   ; email_session_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option

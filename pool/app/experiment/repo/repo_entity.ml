@@ -89,38 +89,26 @@ module InvitationResetAt = struct
   let t = Common.make_caqti_type Caqti_type.ptime create value
 end
 
+module OnlineStudyRepo = struct
+  type t =
+    { assignment_without_session : AssignmentWithoutSession.t
+    ; redirect_immediately : RedirectImmediately.t
+    ; survey_url : SurveyUrl.t option
+    }
+
+  let t =
+    let encode m =
+      Ok (m.assignment_without_session, m.redirect_immediately, m.survey_url)
+    in
+    let decode (assignment_without_session, redirect_immediately, survey_url) =
+      Ok { assignment_without_session; redirect_immediately; survey_url }
+    in
+    Caqti_type.(custom ~encode ~decode (t3 bool bool (option string)))
+  ;;
+end
+
 let t =
-  let encode (m : t) =
-    Ok
-      ( m.id
-      , ( m.title
-        , ( m.public_title
-          , ( m.internal_description
-            , ( m.public_description
-              , ( m.language
-                , ( m.cost_center
-                  , ( m.contact_email
-                    , ( m.smtp_auth_id
-                      , ( m.direct_registration_disabled
-                        , ( m.registration_disabled
-                          , ( m.allow_uninvited_signup
-                            , ( m.external_data_required
-                              , ( m.show_external_data_id_links
-                                , ( m.experiment_type
-                                  , ( m.assignment_without_session
-                                    , ( m.redirect_immediately
-                                      , ( m.email_session_reminder_lead_time
-                                        , ( m
-                                              .text_message_session_reminder_lead_time
-                                          , ( m.invitation_reset_at
-                                            , ( m.matcher_notification_sent
-                                              , ( m.created_at
-                                                , ( m.updated_at
-                                                  , ( m.filter
-                                                    , m.organisational_unit ) )
-                                                ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-                ) ) ) ) ) )
-  in
+  let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
   let decode
     ( id
     , ( title
@@ -137,19 +125,28 @@ let t =
                           , ( external_data_required
                             , ( show_external_data_id_links
                               , ( experiment_type
-                                , ( assignment_without_session
-                                  , ( redirect_immediately
-                                    , ( email_session_reminder_lead_time
-                                      , ( text_message_session_reminder_lead_time
-                                        , ( invitation_reset_at
-                                          , ( matcher_notification_sent
-                                            , ( created_at
-                                              , ( updated_at
-                                                , (filter, organisational_unit)
-                                                ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-                ) ) ) ) ) ) )
+                                , ( OnlineStudyRepo.
+                                      { assignment_without_session
+                                      ; redirect_immediately
+                                      ; survey_url
+                                      }
+                                  , ( email_session_reminder_lead_time
+                                    , ( text_message_session_reminder_lead_time
+                                      , ( invitation_reset_at
+                                        , ( matcher_notification_sent
+                                          , ( created_at
+                                            , ( updated_at
+                                              , (filter, organisational_unit) )
+                                            ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+        ) ) )
     =
     let open CCResult in
+    let online_study =
+      OnlineStudy.create_opt
+        ~assignment_without_session
+        ~redirect_immediately
+        ~survey_url
+    in
     Ok
       { id
       ; title
@@ -168,8 +165,7 @@ let t =
       ; external_data_required
       ; show_external_data_id_links
       ; experiment_type
-      ; assignment_without_session
-      ; redirect_immediately
+      ; online_study
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
       ; invitation_reset_at
@@ -214,40 +210,37 @@ let t =
                                                 (t2
                                                    (option ExperimentType.t)
                                                    (t2
-                                                      bool
+                                                      OnlineStudyRepo.t
                                                       (t2
-                                                         bool
+                                                         (option
+                                                            Reminder
+                                                            .EmailLeadTime
+                                                            .t)
                                                          (t2
                                                             (option
                                                                Reminder
-                                                               .EmailLeadTime
+                                                               .TextMessageLeadTime
                                                                .t)
                                                             (t2
                                                                (option
-                                                                  Reminder
-                                                                  .TextMessageLeadTime
+                                                                  InvitationResetAt
                                                                   .t)
                                                                (t2
-                                                                  (option
-                                                                     InvitationResetAt
-                                                                     .t)
+                                                                  bool
                                                                   (t2
-                                                                     bool
+                                                                     CreatedAt.t
                                                                      (t2
-                                                                        CreatedAt
+                                                                        UpdatedAt
                                                                         .t
                                                                         (t2
-                                                                           UpdatedAt
-                                                                           .t
-                                                                           (t2
-                                                                              (option
-                                                                                Filter
-                                                                                .Repo
-                                                                                .t)
-                                                                              (option
-                                                                                Organisational_unit
-                                                                                .Repo
-                                                                                .t))))))))))))))))))))))))))
+                                                                           (option
+                                                                              Filter
+                                                                              .Repo
+                                                                              .t)
+                                                                           (option
+                                                                              Organisational_unit
+                                                                              .Repo
+                                                                              .t)))))))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -257,6 +250,20 @@ module Write = struct
       let organisational_unit =
         m.organisational_unit
         |> CCOption.map (fun ou -> ou.Organisational_unit.id)
+      in
+      let online_study =
+        let open OnlineStudyRepo in
+        match m.online_study with
+        | None ->
+          { assignment_without_session = false
+          ; redirect_immediately = false
+          ; survey_url = None
+          }
+        | Some { OnlineStudy.redirect_immediately; survey_url } ->
+          { assignment_without_session = true
+          ; redirect_immediately
+          ; survey_url = Some survey_url
+          }
       in
       Ok
         ( m.id
@@ -276,16 +283,14 @@ module Write = struct
                                   , ( m.external_data_required
                                     , ( m.show_external_data_id_links
                                       , ( m.experiment_type
-                                        , ( m.assignment_without_session
-                                          , ( m.redirect_immediately
+                                        , ( online_study
+                                          , ( m.email_session_reminder_lead_time
                                             , ( m
-                                                  .email_session_reminder_lead_time
-                                              , ( m
-                                                    .text_message_session_reminder_lead_time
-                                                , ( m.invitation_reset_at
-                                                  , m.matcher_notification_sent
-                                                  ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-                    ) ) ) ) ) ) )
+                                                  .text_message_session_reminder_lead_time
+                                              , ( m.invitation_reset_at
+                                                , m.matcher_notification_sent )
+                                              ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+            ) ) )
     in
     let decode _ = failwith "Write only model" in
     let open Common in
@@ -330,24 +335,22 @@ module Write = struct
                                                            (option
                                                               ExperimentType.t)
                                                            (t2
-                                                              bool
+                                                              OnlineStudyRepo.t
                                                               (t2
-                                                                 bool
+                                                                 (option
+                                                                    Reminder
+                                                                    .EmailLeadTime
+                                                                    .t)
                                                                  (t2
                                                                     (option
                                                                        Reminder
-                                                                       .EmailLeadTime
+                                                                       .TextMessageLeadTime
                                                                        .t)
                                                                     (t2
                                                                        (option
-                                                                          Reminder
-                                                                          .TextMessageLeadTime
+                                                                          InvitationResetAt
                                                                           .t)
-                                                                       (t2
-                                                                          (option
-                                                                             InvitationResetAt
-                                                                             .t)
-                                                                          bool)))))))))))))))))))))))
+                                                                       bool))))))))))))))))))))))
   ;;
 end
 

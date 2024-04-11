@@ -229,8 +229,6 @@ module Model = struct
       (Experiment.AllowUninvitedSignup.create false)
       (Experiment.ExternalDataRequired.create false)
       (Experiment.ShowExternalDataIdLinks.create false)
-      (Experiment.AssignmentWithoutSession.create false)
-      (Experiment.RedirectImmediately.create true)
     |> get_or_failwith
   ;;
 
