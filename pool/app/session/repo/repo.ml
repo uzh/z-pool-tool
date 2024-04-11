@@ -940,6 +940,25 @@ module Sql = struct
         (request |> Caqti_type.unit ->* RepoEntity.t)
         ()
   ;;
+
+  let find_overlapping_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE
+        pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+        pool_sessions.start BETWEEN $2 AND $3
+        OR pool_sessions.end BETWEEN $2 AND $3
+    |sql}
+    |> find_request_sql
+    |> Caqti_type.(t3 string ptime ptime) ->* RepoEntity.t
+  ;;
+
+  let find_overlapping pool experiment_id ~start ~end_at =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_overlapping_request
+      (Experiment.Id.value experiment_id, start, end_at)
+  ;;
 end
 
 (* TODO: solve as join *)

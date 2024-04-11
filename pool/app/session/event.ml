@@ -16,6 +16,15 @@ type base =
   }
 [@@deriving eq, show]
 
+type time_window =
+  { start : Start.t
+  ; end_at : End.t
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
+  ; max_participants : ParticipantAmount.t
+  }
+[@@deriving eq, show]
+
 type reschedule =
   { start : Start.t
   ; duration : Duration.t

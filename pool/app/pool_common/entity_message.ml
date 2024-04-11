@@ -117,6 +117,7 @@ type error =
   | SessionInvalid
   | SessionNotClosed
   | SessionNotStarted
+  | SessionOverlap
   | SessionRegistrationViaParent
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)

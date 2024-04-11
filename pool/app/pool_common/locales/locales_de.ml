@@ -25,6 +25,7 @@ let rec field_to_string =
   | AssignmentCount -> "Anmeldungen"
   | Assignments -> "Anmeldungen"
   | AssignmentsCreated -> "Sessionanmeldungen"
+  | AssignmentWithoutSession -> "Teilnahme ohne Session"
   | Assistants -> "Assistenten"
   | AvailableLanguages -> "Verfügbare Sprachen"
   | Building -> "Gebäude"
@@ -217,6 +218,7 @@ let rec field_to_string =
   | Reason -> "Grund"
   | Recipient -> "Empfänger"
   | Redirect -> "Weiterleitung"
+  | RedirectImmediately -> "Sofort weiterleiten"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | RegistrationPossible -> "Registrierung möglich"
   | Reminder -> "Erinnerung"
@@ -262,6 +264,7 @@ let rec field_to_string =
   | Street -> "Strasse"
   | Styles -> "Styles"
   | Successful -> "Erfolgreich"
+  | SurveyUrl -> "Umfrage-URL"
   | SystemEvent -> "System Event"
   | Tag -> "Tag"
   | Tags -> "Tags"
@@ -630,6 +633,7 @@ let rec error_to_string = function
       "%s kleiner als %s"
       (field_to_string field1)
       (field_to_string field2)
+  | SessionOverlap -> "Dieses Zeitfenster überschneidet sich mit einem anderen."
   | SmtpException exn -> exn
   | SmtpLoginMissingCredentials ->
     "Der SMTP-Authentifizierungsmechanismus kann nicht auf LOGIN gesetzt \

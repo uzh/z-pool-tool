@@ -27,6 +27,8 @@ let default_command
   external_data_required
   show_external_data_id_links
   experiment_type
+  assignment_without_session
+  redirect_immediately
   email_session_reminder_lead_time
   email_session_reminder_lead_time_unit
   text_message_session_reminder_lead_time
@@ -46,6 +48,8 @@ let default_command
   ; external_data_required
   ; show_external_data_id_links
   ; experiment_type
+  ; assignment_without_session
+  ; redirect_immediately
   ; email_session_reminder_lead_time
   ; email_session_reminder_lead_time_unit
   ; text_message_session_reminder_lead_time
@@ -66,6 +70,8 @@ let create_command
   external_data_required
   show_external_data_id_links
   experiment_type
+  assignment_without_session
+  redirect_immediately
   email_session_reminder_lead_time
   email_session_reminder_lead_time_unit
   text_message_session_reminder_lead_time
@@ -84,6 +90,8 @@ let create_command
     external_data_required
     show_external_data_id_links
     experiment_type
+    assignment_without_session
+    redirect_immediately
     email_session_reminder_lead_time
     email_session_reminder_lead_time_unit
     text_message_session_reminder_lead_time
@@ -108,6 +116,8 @@ let update_schema command =
         ; ExternalDataRequired.schema ()
         ; ShowExternalDataIdLinks.schema ()
         ; opt @@ ExperimentType.schema ()
+        ; AssignmentWithoutSession.schema ()
+        ; RedirectImmediately.schema ()
         ; opt @@ Reminder.EmailLeadTime.integer_schema ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
         ; opt @@ Reminder.TextMessageLeadTime.integer_schema ()
@@ -134,6 +144,8 @@ let create_schema command =
         ; ExternalDataRequired.schema ()
         ; ShowExternalDataIdLinks.schema ()
         ; opt @@ ExperimentType.schema ()
+        ; AssignmentWithoutSession.schema ()
+        ; RedirectImmediately.schema ()
         ; opt
           @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
@@ -221,6 +233,8 @@ end = struct
         command.allow_uninvited_signup
         command.external_data_required
         command.show_external_data_id_links
+        command.assignment_without_session
+        command.redirect_immediately
     in
     Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   ;;
@@ -289,6 +303,8 @@ end = struct
       ; external_data_required = command.external_data_required
       ; show_external_data_id_links = command.show_external_data_id_links
       ; experiment_type = command.experiment_type
+      ; assignment_without_session = command.assignment_without_session
+      ; redirect_immediately = command.redirect_immediately
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
       }

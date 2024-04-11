@@ -20,6 +20,8 @@ let sql_select_columns =
   ; "pool_experiments.external_data_required"
   ; "pool_experiments.show_external_data_id_links"
   ; "pool_experiments.experiment_type"
+  ; "pool_experiments.assignment_without_session"
+  ; "pool_experiments.redirect_immediately"
   ; "pool_experiments.email_session_reminder_lead_time"
   ; "pool_experiments.text_message_session_reminder_lead_time"
   ; "pool_experiments.invitation_reset_at"
@@ -127,6 +129,8 @@ module Sql = struct
         external_data_required,
         show_external_data_id_links,
         experiment_type,
+        assignment_without_session,
+        redirect_immediately,
         email_session_reminder_lead_time,
         text_message_session_reminder_lead_time,
         invitation_reset_at,
@@ -143,6 +147,8 @@ module Sql = struct
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
+        ?,
+        ?,
         ?,
         ?,
         ?,
@@ -319,10 +325,12 @@ module Sql = struct
         external_data_required = $15,
         show_external_data_id_links = $16,
         experiment_type = $17,
-        email_session_reminder_lead_time = $18,
-        text_message_session_reminder_lead_time = $19,
-        invitation_reset_at = $20,
-        matcher_notification_sent = $21
+        assignment_without_session = $18,
+        redirect_immediately = $19,
+        email_session_reminder_lead_time = $20,
+        text_message_session_reminder_lead_time = $21,
+        invitation_reset_at = $22,
+        matcher_notification_sent = $23
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

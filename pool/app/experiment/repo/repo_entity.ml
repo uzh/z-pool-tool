@@ -107,15 +107,19 @@ let t =
                             , ( m.external_data_required
                               , ( m.show_external_data_id_links
                                 , ( m.experiment_type
-                                  , ( m.email_session_reminder_lead_time
-                                    , ( m.text_message_session_reminder_lead_time
-                                      , ( m.invitation_reset_at
-                                        , ( m.matcher_notification_sent
-                                          , ( m.created_at
-                                            , ( m.updated_at
-                                              , (m.filter, m.organisational_unit)
-                                              ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-            ) ) ) )
+                                  , ( m.assignment_without_session
+                                    , ( m.redirect_immediately
+                                      , ( m.email_session_reminder_lead_time
+                                        , ( m
+                                              .text_message_session_reminder_lead_time
+                                          , ( m.invitation_reset_at
+                                            , ( m.matcher_notification_sent
+                                              , ( m.created_at
+                                                , ( m.updated_at
+                                                  , ( m.filter
+                                                    , m.organisational_unit ) )
+                                                ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                ) ) ) ) ) )
   in
   let decode
     ( id
@@ -133,14 +137,17 @@ let t =
                           , ( external_data_required
                             , ( show_external_data_id_links
                               , ( experiment_type
-                                , ( email_session_reminder_lead_time
-                                  , ( text_message_session_reminder_lead_time
-                                    , ( invitation_reset_at
-                                      , ( matcher_notification_sent
-                                        , ( created_at
-                                          , ( updated_at
-                                            , (filter, organisational_unit) ) )
-                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                , ( assignment_without_session
+                                  , ( redirect_immediately
+                                    , ( email_session_reminder_lead_time
+                                      , ( text_message_session_reminder_lead_time
+                                        , ( invitation_reset_at
+                                          , ( matcher_notification_sent
+                                            , ( created_at
+                                              , ( updated_at
+                                                , (filter, organisational_unit)
+                                                ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -161,6 +168,8 @@ let t =
       ; external_data_required
       ; show_external_data_id_links
       ; experiment_type
+      ; assignment_without_session
+      ; redirect_immediately
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
       ; invitation_reset_at
@@ -205,33 +214,40 @@ let t =
                                                 (t2
                                                    (option ExperimentType.t)
                                                    (t2
-                                                      (option
-                                                         Reminder.EmailLeadTime
-                                                         .t)
+                                                      bool
                                                       (t2
-                                                         (option
-                                                            Reminder
-                                                            .TextMessageLeadTime
-                                                            .t)
+                                                         bool
                                                          (t2
                                                             (option
-                                                               InvitationResetAt
+                                                               Reminder
+                                                               .EmailLeadTime
                                                                .t)
                                                             (t2
-                                                               bool
+                                                               (option
+                                                                  Reminder
+                                                                  .TextMessageLeadTime
+                                                                  .t)
                                                                (t2
-                                                                  CreatedAt.t
+                                                                  (option
+                                                                     InvitationResetAt
+                                                                     .t)
                                                                   (t2
-                                                                     UpdatedAt.t
+                                                                     bool
                                                                      (t2
-                                                                        (option
-                                                                           Filter
-                                                                           .Repo
-                                                                           .t)
-                                                                        (option
-                                                                           Organisational_unit
-                                                                           .Repo
-                                                                           .t))))))))))))))))))))))))
+                                                                        CreatedAt
+                                                                        .t
+                                                                        (t2
+                                                                           UpdatedAt
+                                                                           .t
+                                                                           (t2
+                                                                              (option
+                                                                                Filter
+                                                                                .Repo
+                                                                                .t)
+                                                                              (option
+                                                                                Organisational_unit
+                                                                                .Repo
+                                                                                .t))))))))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -260,12 +276,16 @@ module Write = struct
                                   , ( m.external_data_required
                                     , ( m.show_external_data_id_links
                                       , ( m.experiment_type
-                                        , ( m.email_session_reminder_lead_time
-                                          , ( m
-                                                .text_message_session_reminder_lead_time
-                                            , ( m.invitation_reset_at
-                                              , m.matcher_notification_sent ) )
-                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                        , ( m.assignment_without_session
+                                          , ( m.redirect_immediately
+                                            , ( m
+                                                  .email_session_reminder_lead_time
+                                              , ( m
+                                                    .text_message_session_reminder_lead_time
+                                                , ( m.invitation_reset_at
+                                                  , m.matcher_notification_sent
+                                                  ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                    ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     let open Common in
@@ -310,20 +330,24 @@ module Write = struct
                                                            (option
                                                               ExperimentType.t)
                                                            (t2
-                                                              (option
-                                                                 Reminder
-                                                                 .EmailLeadTime
-                                                                 .t)
+                                                              bool
                                                               (t2
-                                                                 (option
-                                                                    Reminder
-                                                                    .TextMessageLeadTime
-                                                                    .t)
+                                                                 bool
                                                                  (t2
                                                                     (option
-                                                                       InvitationResetAt
+                                                                       Reminder
+                                                                       .EmailLeadTime
                                                                        .t)
-                                                                    bool)))))))))))))))))))))
+                                                                    (t2
+                                                                       (option
+                                                                          Reminder
+                                                                          .TextMessageLeadTime
+                                                                          .t)
+                                                                       (t2
+                                                                          (option
+                                                                             InvitationResetAt
+                                                                             .t)
+                                                                          bool)))))))))))))))))))))))
   ;;
 end
 

@@ -79,6 +79,25 @@ module ShowExternalDataIdLinks = struct
   let schema = schema Common.Message.Field.ShowExteralDataIdLinks
 end
 
+module AssignmentWithoutSession = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema Common.Message.Field.AssignmentWithoutSession
+end
+
+module RedirectImmediately = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema Common.Message.Field.AssignmentWithoutSession
+end
+
+module SurveyUrl = struct
+  include Pool_common.Model.String
+
+  let field = Common.Message.Field.SurveyUrl
+  let schema () = schema field ()
+end
+
 module InvitationResetAt = struct
   include Pool_common.Model.Ptime
 
@@ -112,6 +131,8 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
+  ; assignment_without_session : AssignmentWithoutSession.t
+  ; redirect_immediately : RedirectImmediately.t
   ; email_session_reminder_lead_time :
       Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -144,6 +165,8 @@ let create
   allow_uninvited_signup
   external_data_required
   show_external_data_id_links
+  assignment_without_session
+  redirect_immediately
   =
   let open CCResult in
   Ok
@@ -164,9 +187,11 @@ let create
     ; external_data_required
     ; show_external_data_id_links
     ; experiment_type
+    ; assignment_without_session
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
     ; invitation_reset_at
+    ; redirect_immediately
     ; matcher_notification_sent = false
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
@@ -270,6 +295,14 @@ let text_message_session_reminder_lead_time_value m =
   |> CCOption.map Pool_common.Reminder.TextMessageLeadTime.value
 ;;
 
+let assignment_without_session_value (m : t) =
+  AssignmentWithoutSession.value m.assignment_without_session
+;;
+
+let redirect_immediately_value (m : t) =
+  AssignmentWithoutSession.value m.redirect_immediately
+;;
+
 let direct_registration_disabled_value (m : t) =
   DirectRegistrationDisabled.value m.direct_registration_disabled
 ;;
@@ -292,7 +325,8 @@ let show_external_data_id_links_value (m : t) =
 
 let boolean_fields =
   Pool_common.Message.Field.
-    [ DirectRegistrationDisabled
+    [ AssignmentWithoutSession
+    ; DirectRegistrationDisabled
     ; RegistrationDisabled
     ; AllowUninvitedSignup
     ; ExternalDataRequired

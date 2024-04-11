@@ -715,14 +715,16 @@ let selector
       Elements.input_label language field None required
       |> txt
       |> CCList.return
-      |> label
+      |> label ~a:[ a_label_for name ]
   in
   div
     ~a:[ a_class (Elements.group_class classnames `Vertical) ]
     ([ label
      ; div
          ~a:[ a_class [ "select" ] ]
-         [ select ~a:(a_name name :: attributes) options; hidden_field ]
+         [ select ~a:([ a_name name; a_id name ] @ attributes) options
+         ; hidden_field
+         ]
      ]
      @ help
      @ error

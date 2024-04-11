@@ -62,6 +62,10 @@ let experiments pool =
             ShowExternalDataIdLinks.create false
           in
           let registration_disabled = RegistrationDisabled.create false in
+          let assignment_without_session =
+            AssignmentWithoutSession.create false
+          in
+          let redirect_immediately = RedirectImmediately.create false in
           create
             title
             public_title
@@ -74,6 +78,8 @@ let experiments pool =
             allow_uninvited_signup
             external_data_required
             show_external_data_id_links
+            assignment_without_session
+            redirect_immediately
           |> get_or_failwith
         in
         Experiment.Created experiment)

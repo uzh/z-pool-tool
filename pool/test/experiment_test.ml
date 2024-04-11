@@ -35,6 +35,8 @@ module Data = struct
   let allow_uninvited_signup = "false"
   let external_data_required = "false"
   let show_external_data_id_links = "false"
+  let assignment_without_session = "false"
+  let redirect_immediately = "false"
   let experiment_type = Pool_common.ExperimentType.(show Lab)
 
   let urlencoded =
@@ -52,6 +54,7 @@ module Data = struct
       ; Field.(show ExternalDataRequired), [ external_data_required ]
       ; Field.(show ShowExteralDataIdLinks), [ show_external_data_id_links ]
       ; Field.(show ExperimentType), [ experiment_type ]
+      ; Field.(show RedirectImmediately), [ redirect_immediately ]
       ]
   ;;
 
@@ -126,6 +129,10 @@ module Data = struct
       (show_external_data_id_links
        |> to_bool
        |> Experiment.ShowExternalDataIdLinks.create)
+      (assignment_without_session
+       |> to_bool
+       |> Experiment.AssignmentWithoutSession.create)
+      (redirect_immediately |> to_bool |> Experiment.RedirectImmediately.create)
   ;;
 end
 

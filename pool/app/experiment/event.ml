@@ -14,6 +14,8 @@ type create =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
+  ; assignment_without_session : AssignmentWithoutSession.t
+  ; redirect_immediately : RedirectImmediately.t
   ; email_session_reminder_lead_time : int option
   ; email_session_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option

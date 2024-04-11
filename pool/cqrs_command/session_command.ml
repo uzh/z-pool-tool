@@ -201,6 +201,113 @@ end = struct
   let effects exp_id = Session.Guard.Access.create exp_id
 end
 
+let time_window_command
+  start
+  end_at
+  internal_description
+  public_description
+  max_participants
+  : Session.time_window
+  =
+  Session.
+    { start
+    ; end_at
+    ; internal_description
+    ; public_description
+    ; max_participants
+    }
+;;
+
+let time_window_schema =
+  let open Pool_common in
+  Conformist.(
+    make
+      Field.
+        [ Session.Start.schema ()
+        ; Session.End.schema ()
+        ; Conformist.optional @@ Session.InternalDescription.schema ()
+        ; Conformist.optional @@ Session.PublicDescription.schema ()
+        ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
+        ]
+      time_window_command)
+;;
+
+module CreateTimeWindow : sig
+  include Common.CommandSig with type t = Session.time_window
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> overlapps:Session.t list
+    -> ?session_id:Session.Id.t
+    -> Experiment.t
+    -> Pool_location.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Session.time_window
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ~overlapps
+    ?session_id
+    experiment
+    location
+    { Session.start
+    ; end_at
+    ; internal_description
+    ; public_description
+    ; max_participants
+    }
+    =
+    Logs.info ~src (fun m -> m "Handle command CreateTimeWindow" ~tags);
+    let open CCResult in
+    let open Session in
+    let* () =
+      if Ptime.is_later (Start.value start) ~than:(End.value end_at)
+      then Error Pool_common.Message.EndBeforeStart
+      else Ok ()
+    in
+    let* () =
+      if CCList.is_empty overlapps
+      then Ok ()
+      else Error Pool_common.Message.SessionOverlap
+    in
+    let* duration =
+      Ptime.to_float_s (End.value end_at)
+      -. Ptime.to_float_s (Start.value start)
+      |> Ptime.Span.of_float_s
+      |> CCOption.to_result Pool_common.Message.(Invalid Field.End)
+      >>= Duration.create
+    in
+    let* min_participants = 0 |> ParticipantAmount.create in
+    let* overbook = 0 |> ParticipantAmount.create in
+    let session =
+      create
+        ?id:session_id
+        ?internal_description
+        ?public_description
+        start
+        duration
+        location
+        max_participants
+        min_participants
+        overbook
+        experiment
+    in
+    Ok [ Session.Created session |> Pool_event.session ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate time_window_schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects exp_id = Session.Guard.Access.create exp_id
+end
+
 module Duplicate : sig
   include Common.CommandSig with type t = (string * string list) list
 

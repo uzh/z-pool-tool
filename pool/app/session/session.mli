@@ -31,7 +31,10 @@ module Start : sig
 end
 
 module End : sig
-  type t
+  include Pool_common.Model.BaseSig
+
+  val value : t -> Ptime.t
+  val create : Ptime.t -> t
 end
 
 module Duration : sig
@@ -51,6 +54,14 @@ type base =
   ; email_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   ; text_message_reminder_lead_time : int option
   ; text_message_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
+  }
+
+type time_window =
+  { start : Start.t
+  ; end_at : End.t
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
+  ; max_participants : ParticipantAmount.t
   }
 
 type reschedule =
@@ -394,6 +405,13 @@ val has_bookable_spots_for_experiments
 val find_all_to_swap_by_experiment
   :  Pool_database.Label.t
   -> Experiment.Id.t
+  -> t list Lwt.t
+
+val find_overlapping
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> start:Start.t
+  -> end_at:End.t
   -> t list Lwt.t
 
 val column_date : Query.Column.t

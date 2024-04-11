@@ -336,6 +336,39 @@ let experiment_form
       ~flash_fetcher
       ()
   in
+  (* TODO: Finish form *)
+  let time_window_subform =
+    let input field =
+      date_time_picker_element
+        context_language
+        field
+        ~flash_fetcher
+        ~disable_past:true
+    in
+    div
+      ~a:
+        [ a_id "time-window"
+        ; a_class
+            [ "full-width"
+            ; "flexcolumn"
+            ; "hidden"
+            ; "border"
+            ; "inset"
+            ; "bg-grey-light"
+            ]
+        ]
+      [ h4 [ txt "Time window" ]
+      ; div
+          ~a:[ a_class [ "flexcolumn"; "stack" ] ]
+          [ div
+              ~a:[ a_class [ "grid-col-2" ] ]
+              [ input Field.Start; input Field.End ]
+          ; checkbox_element
+              Field.RedirectImmediately
+              redirect_immediately_value
+          ]
+      ]
+  in
   let language_select =
     let open Language in
     selector
@@ -395,6 +428,26 @@ let experiment_form
       ~add_empty:has_options
       ~disabled:(not has_options)
       ()
+  in
+  let scripts =
+    Format.asprintf
+      {js|
+      const selector = document.getElementById('%s');
+      const timeWindow = document.getElementById('time-window');
+      const reminder = document.getElementById('session-reminder');
+      const toggle = () => {
+        if(selector.checked) {
+          timeWindow.classList.remove("hidden");
+          reminder.classList.add("hidden");
+        } else {
+          timeWindow.classList.add("hidden");
+          reminder.classList.remove("hidden");
+        }
+      }
+      selector.addEventListener('change', (e) => toggle())
+      toggle();
+    |js}
+      Field.(show AssignmentWithoutSession)
   in
   form
     ~a:
@@ -484,6 +537,10 @@ let experiment_form
         ; div
             ~a:[ a_class [ "stack" ] ]
             [ checkbox_element
+                Field.AssignmentWithoutSession
+                assignment_without_session_value
+            ; time_window_subform
+            ; checkbox_element
                 ~hints:[ I18n.DirectRegistrationDisbled ]
                 Field.DirectRegistrationDisabled
                 direct_registration_disabled_value
@@ -504,6 +561,7 @@ let experiment_form
                 show_external_data_id_links_value
             ]
         ; div
+            ~a:[ a_id "session-reminder" ]
             [ h3
                 ~a:[ a_class [ "heading-3" ] ]
                 [ txt
@@ -553,6 +611,7 @@ let experiment_form
                 ()
             ]
         ]
+    ; script (Unsafe.data scripts)
     ]
 ;;
 
@@ -867,6 +926,8 @@ let detail
                  ~default
                  Email.SmtpAuth.(fun auth -> auth.label |> Label.value)
             |> txt )
+        ; ( Field.AssignmentWithoutSession
+          , assignment_without_session_value |> boolean_value )
         ; ( Field.DirectRegistrationDisabled
           , direct_registration_disabled_value |> boolean_value )
         ; ( Field.RegistrationDisabled

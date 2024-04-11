@@ -65,6 +65,14 @@ module ShowExternalDataIdLinks : sig
   include Pool_common.Model.BooleanSig
 end
 
+module AssignmentWithoutSession : sig
+  include Pool_common.Model.BooleanSig
+end
+
+module RedirectImmediately : sig
+  include Pool_common.Model.BooleanSig
+end
+
 module InvitationResetAt : sig
   include Pool_common.Model.PtimeSig
 
@@ -96,6 +104,8 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
+  ; assignment_without_session : AssignmentWithoutSession.t
+  ; redirect_immediately : RedirectImmediately.t
   ; email_session_reminder_lead_time :
       Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -161,6 +171,8 @@ val create
   -> AllowUninvitedSignup.t
   -> ExternalDataRequired.t
   -> ShowExternalDataIdLinks.t
+  -> AssignmentWithoutSession.t
+  -> RedirectImmediately.t
   -> (t, Pool_common.Message.error) result
 
 type create =
@@ -177,6 +189,8 @@ type create =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
+  ; assignment_without_session : AssignmentWithoutSession.t
+  ; redirect_immediately : RedirectImmediately.t
   ; email_session_reminder_lead_time : int option
   ; email_session_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option
@@ -371,6 +385,8 @@ val title_value : t -> string
 val public_title_value : t -> string
 val email_session_reminder_lead_time_value : t -> Ptime.span option
 val text_message_session_reminder_lead_time_value : t -> Ptime.span option
+val redirect_immediately_value : t -> bool
+val assignment_without_session_value : t -> bool
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
 val allow_uninvited_signup_value : t -> bool
@@ -381,6 +397,8 @@ val smtp_auth
   :  Pool_database.Label.t
   -> t
   -> (Email.SmtpAuth.t option, Pool_common.Message.error) Lwt_result.t
+
+val is_sessionless : t -> bool
 
 module Repo : sig
   val sql_select_columns : string list

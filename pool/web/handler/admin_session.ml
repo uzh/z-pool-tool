@@ -243,13 +243,28 @@ let create req =
     let database_label = context.Pool_context.database_label in
     let* location = location urlencoded database_label in
     let* experiment = Experiment.find database_label id in
+    let open Cqrs_command.Session_command in
     let* events =
-      let open CCResult.Infix in
-      let open Cqrs_command.Session_command.Create in
-      urlencoded
-      |> decode
-      >>= handle ~tags experiment location
-      |> Lwt_result.lift
+      let open Session in
+      match Experiment.is_sessionless experiment with
+      | true ->
+        let open CreateTimeWindow in
+        let* decoded = urlencoded |> decode |> Lwt_result.lift in
+        let%lwt overlapps =
+          Session.find_overlapping
+            database_label
+            experiment.Experiment.id
+            ~start:decoded.start
+            ~end_at:decoded.end_at
+        in
+        handle ~tags ~overlapps experiment location decoded |> Lwt_result.lift
+      | false ->
+        let open CCResult.Infix in
+        let open Create in
+        urlencoded
+        |> decode
+        >>= handle ~tags experiment location
+        |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions

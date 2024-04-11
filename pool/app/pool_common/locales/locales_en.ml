@@ -25,6 +25,7 @@ let rec field_to_string =
   | AssignmentCount -> "no. assignments"
   | Assignments -> "assignments"
   | AssignmentsCreated -> "assignments created"
+  | AssignmentWithoutSession -> "assignment without session"
   | Assistants -> "assistants"
   | AvailableLanguages -> "available languages"
   | Building -> "building"
@@ -213,6 +214,7 @@ let rec field_to_string =
   | Reason -> "reason"
   | Recipient -> "recipient"
   | Redirect -> "redirect"
+  | RedirectImmediately -> "redirect immediately"
   | Reminder -> "reminder"
   | RegistrationDisabled -> "registration disabled"
   | RegistrationPossible -> "registration possible"
@@ -259,6 +261,7 @@ let rec field_to_string =
   | Street -> "street"
   | Styles -> "styles"
   | Successful -> "successful"
+  | SurveyUrl -> "survey url"
   | SystemEvent -> "system event"
   | Tag -> "tag"
   | Tags -> "tags"
@@ -592,6 +595,7 @@ let rec error_to_string = function
       "%s smaller than %s"
       (field_to_string field1)
       (field_to_string field2)
+  | SessionOverlap -> "This time window overlaps with another."
   | SmtpException exn -> exn
   | SmtpLoginMissingCredentials ->
     "SMTP auth mechanism cannot be set to LOGIN when no username or password \

@@ -63,13 +63,24 @@ end
 module End = struct
   include Pool_common.Model.Ptime
 
-  let create start duration =
+  let create m = m
+  let value m = m
+  let compare = Ptime.compare
+
+  let schema () =
+    let decode str =
+      let open CCResult in
+      Pool_common.(Utils.Time.parse_time str >|= create)
+    in
+    Pool_common.(
+      Utils.schema_decoder decode Ptime.to_rfc3339 Message.Field.Start)
+  ;;
+
+  let build start duration =
     duration
     |> Ptime.add_span start
     |> CCOption.to_result Pool_common.Message.(Invalid Field.Duration)
   ;;
-
-  let value m = m
 end
 
 module Duration = struct
