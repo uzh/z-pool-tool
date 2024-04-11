@@ -81,7 +81,7 @@ jobs:
 
   assets:
     name: Build assets
-    if: github.repository == 'uzh/pool'
+    if: github.repository == 'uzh/z-pool-tool'
     runs-on: ubuntu-latest
     container:
       image: node:lts
