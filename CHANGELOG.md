@@ -4,6 +4,29 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.7.0](https://github.com/uzh/pool/tree/0.7.0) - 2024-04-11
+
+### Added
+
+- allow custom fields to be shown in the assignment list
+- consistently check if assigned contacts still meet the criteria of the experiment
+- notify admins when matcher does not find any more contacts
+- UI to change role permissions
+
+###  Changed
+
+- restructured experiment page
+- remove utility functions from guardian
+- add a hint to filter template form
+- change experiment contact person from admin to email address
+
+### Fixed
+
+- unique constraints for tenant database label
+- only return distinct experiments on the dashboard
+- allow assignment of contact by admin when registration is disabled
+- create, update, and delete permissions for the experiment filter
+
 ## [0.6.3](https://github.com/uzh/pool/tree/0.6.3) - 2024-03-19
 
 ### Added
