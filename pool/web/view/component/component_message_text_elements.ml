@@ -315,7 +315,10 @@ let message_template_help
       (create_session ())
       (create_assignment ())
   | MatcherNotification ->
-    MatcherNotification.email_params layout (create_experiment ())
+    MatcherNotification.email_params
+      layout
+      (create_sihl_user ())
+      (create_experiment ())
   | MatchFilterUpdateNotification ->
     let session = create_session () in
     let assignment = create_assignment () in

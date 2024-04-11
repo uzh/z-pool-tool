@@ -762,18 +762,19 @@ module MatcherNotification = struct
     Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
   ;;
 
-  let email_params layout experiment =
-    experiment_params layout experiment @ layout_params layout
+  let email_params layout user experiment =
+    global_params layout user @ experiment_params layout experiment
   ;;
 
-  let create tenant language experiment recipient =
+  let create tenant language experiment admin =
     let pool = tenant.Pool_tenant.database_label in
     let%lwt template = find_by_label_and_language_to_send pool label language in
     let layout = layout_from_tenant tenant in
     let%lwt sender = default_sender_of_pool pool in
-    let params = email_params layout experiment in
+    let params = email_params layout (Admin.user admin) experiment in
+    let email_address = Admin.email_address admin in
     let email =
-      prepare_email language template sender recipient layout params
+      prepare_email language template sender email_address layout params
     in
     let message_history = message_history experiment in
     Email.create_job ~message_history email |> Lwt.return

@@ -152,7 +152,6 @@ let notify_all_invited pool tenant experiment =
         experiment.Experiment.id
       >|> Lwt_list.map_s (fun admin ->
         admin
-        |> Admin.email_address
         |> Message_template.MatcherNotification.create
              tenant
              Pool_common.Language.En

@@ -361,13 +361,17 @@ module ManualSessionMessage : sig
 end
 
 module MatcherNotification : sig
-  val email_params : email_layout -> Experiment.t -> (string * string) list
+  val email_params
+    :  email_layout
+    -> Sihl_user.t
+    -> Experiment.t
+    -> (string * string) list
 
   val create
     :  Pool_tenant.t
     -> Pool_common.Language.t
     -> Experiment.t
-    -> Pool_user.EmailAddress.t
+    -> Admin.t
     -> Email.job Lwt.t
 end
 

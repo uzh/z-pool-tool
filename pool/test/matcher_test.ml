@@ -312,7 +312,6 @@ let matcher_notification _ () =
       experiment.Experiment.id
     >|> Lwt_list.map_s (fun admin ->
       admin
-      |> Admin.email_address
       |> Message_template.MatcherNotification.create
            tenant
            Pool_common.Language.En

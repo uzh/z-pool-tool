@@ -9,9 +9,9 @@ TODO
 maintainer: ["engineering@uzh.econ.ch"]
 authors: ["Department of Economics, University of Zurich"]
 license: "GPL-2.0-or-later"
-homepage: "https://gitlab.uzh.ch/econ/study-coordination/pool"
-doc: "https://gitlab.uzh.ch/econ/study-coordination/pool/doc"
-bug-reports: "https://gitlab.uzh.ch/econ/study-coordination/pool"
+homepage: "https://github.com/uzh/z-pool-tool"
+doc: "https://uzh.github.io/z-pool-tool-documentation/"
+bug-reports: "https://github.com/uzh/z-pool-tool"
 depends: [
   "dune" {>= "2.8"}
   "ocaml" {>= "4.14.0"}
@@ -56,4 +56,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://gitlab.uzh.ch/econ/study-coordination/pool"
+dev-repo: "git+https://github.com/uzh/z-pool-tool"
