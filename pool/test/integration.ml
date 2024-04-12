@@ -403,7 +403,7 @@ let suite =
 
 let services =
   [ Pool_database.register ()
-  ; Pool_user.Persistence.register ()
+  ; Pool_user.register ()
   ; Pool_token.register ()
   ; Email.Service.register ()
   ; Queue.register ()

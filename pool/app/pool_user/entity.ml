@@ -1,12 +1,7 @@
 open Ppx_yojson_conv_lib.Yojson_conv
+include Sihl_user
 
-module User = struct
-  include Sihl_user
-
-  let sexp_of_t t = t.id |> fun s -> Sexplib0.Sexp.Atom s
-end
-
-include User
+let sexp_of_t t = t.id |> fun s -> Sexplib0.Sexp.Atom s
 
 module PasswordConfirmed = struct
   type t = string [@@deriving eq]

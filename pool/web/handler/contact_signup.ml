@@ -98,7 +98,7 @@ let sign_up_create req =
          |> Lwt_result.lift
        in
        let%lwt existing_user =
-         Pool_user.Persistence.find_by_email_opt
+         Pool_user.find_by_email_opt
            database_label
            (Pool_user.EmailAddress.value email_address)
        in

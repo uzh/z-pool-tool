@@ -63,7 +63,7 @@ let intended_of_request ({ Sihl.Web.Request.target; _ } as req) =
 ;;
 
 let user_from_session db_pool req : Sihl_user.t option Lwt.t =
-  Pool_user.Persistence.Web.user_from_session db_pool req
+  Pool_user.Web.user_from_session db_pool req
 ;;
 
 let get_field_router_param req field =
@@ -232,7 +232,7 @@ let htmx_urlencoded_list key req =
 (* TODO[timhub]: hide information, at least on public site *)
 let validate_email_existance pool email =
   let open Utils.Lwt_result.Infix in
-  Pool_user.Persistence.find_by_email_opt pool email
+  Pool_user.find_by_email_opt pool email
   ||> function
   | None -> Ok ()
   | Some _ -> Error Pool_message.Error.EmailAlreadyInUse

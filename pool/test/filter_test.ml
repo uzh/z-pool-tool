@@ -591,10 +591,7 @@ let filter_exclude_inactive _ () =
   let%lwt () = test_filter true contact filter experiment in
   let%lwt (_ : Sihl_user.t) =
     let open Pool_user in
-    Persistence.update
-      Test_utils.Data.database_label
-      ~status:Inactive
-      contact.Contact.user
+    update Test_utils.Data.database_label ~status:Inactive contact.Contact.user
   in
   (* Expect inactive contact to be excluded *)
   test_filter false contact filter experiment

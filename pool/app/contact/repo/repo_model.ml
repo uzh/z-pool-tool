@@ -121,7 +121,7 @@ let t =
       ~encode
       ~decode
       (t2
-         Pool_user.Repo.user_caqti
+         Pool_user.Repo.User.t
          (t2
             (option TermsAccepted.t)
             (t2
@@ -303,7 +303,7 @@ module Write = struct
                  (t2
                     (option Pool_common.Repo.ExperimentType.t)
                     (t2
-                       (option User.Repo.CellPhone.t)
+                       (option CellPhone.t)
                        (t2
                           Paused.t
                           (t2
@@ -382,11 +382,11 @@ module Preview = struct
         ~encode
         ~decode
         (t2
-           Pool_user.Repo.user_caqti
+           Pool_user.Repo.User.t
            (t2
               (option Pool_common.Repo.Language.t)
               (t2
-                 (option User.Repo.CellPhone.t)
+                 (option CellPhone.t)
                  (t2
                     Paused.t
                     (t2

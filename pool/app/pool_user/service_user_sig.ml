@@ -38,27 +38,6 @@ module type Sig = sig
       -> t option Lwt.t
   end
 
-  (** [search ?ctx ?sort ?filter ?limit ?offset ()] returns a list of users that
-      is a partial view on all stored users.
-
-      [sort] is the default sorting order of the created date. By default, this
-      value is [`Desc].
-
-      [filter] is a search keyword that is applied in a best-effort way on user
-      details. The keyword has to occur in only one field (such as email).
-
-      [limit] is the length of the returned list.
-
-      [offset] is the pagination offset of the partial view. *)
-  val search
-    :  ?sort:[ `Desc | `Asc ]
-    -> ?filter:string
-    -> ?limit:int
-    -> ?offset:int
-    -> Database.Label.t
-    -> unit
-    -> (t list * int) Lwt.t
-
   (** [find_opt database_label id] returns a user with [id]. *)
   val find_opt : Database.Label.t -> string -> t option Lwt.t
 

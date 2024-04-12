@@ -166,7 +166,7 @@ let admins db_label =
          , name
          , email
          , (roles : (Role.Role.t * Guard.Uuid.Target.t option) list) ) ->
-      let%lwt user = User.Persistence.find_by_email_opt db_label email in
+      let%lwt user = User.find_by_email_opt db_label email in
       match user with
       | None ->
         let%lwt admin =
@@ -279,7 +279,7 @@ let contacts db_label =
              , _ )
            ->
             match%lwt
-              Pool_user.Persistence.find_by_email_opt
+              Pool_user.find_by_email_opt
                 db_label
                 (User.EmailAddress.value email)
             with

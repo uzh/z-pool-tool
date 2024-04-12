@@ -6,7 +6,7 @@ let update_sihl_user pool ?firstname ?lastname contact =
   let open CCOption in
   let given_name = firstname <+> contact.Contact.user.Sihl_user.given_name in
   let name = lastname <+> contact.Contact.user.Sihl_user.name in
-  User.Persistence.update pool ?given_name ?name contact.Contact.user
+  User.update pool ?given_name ?name contact.Contact.user
 ;;
 
 let update_sql column_fragment =

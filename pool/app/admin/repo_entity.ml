@@ -12,9 +12,7 @@ let t =
       ~encode
       ~decode
       Pool_user.Repo.(
-        t2
-          user_caqti
-          (t2 (option Pool_user.Repo.EmailVerified.t) ImportPending.t)))
+        t2 User.t (t2 (option Pool_user.Repo.EmailVerified.t) ImportPending.t)))
 ;;
 
 module Write = struct

@@ -23,7 +23,7 @@ let worker_services =
 let services =
   [ Pool_database.register ()
   ; Pool_canary.register ()
-  ; Pool_user.Persistence.register ()
+  ; Pool_user.register ()
   ; Pool_token.register ()
   ; Queue.register ()
   ; Email.Service.register ()

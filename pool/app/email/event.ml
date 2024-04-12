@@ -19,7 +19,7 @@ let verification_event_name = function
 let handle_verification_event pool : verification_event -> unit Lwt.t = function
   | Created (address, token, user_id) ->
     let%lwt () = Repo.delete_unverified_by_user pool user_id in
-    let%lwt user = User.Persistence.find pool (Pool_common.Id.value user_id) in
+    let%lwt user = User.find pool (Pool_common.Id.value user_id) in
     let unverified_email = create address user token in
     Repo.insert pool unverified_email
   | EmailVerified (Unverified { token; _ } as email) ->

@@ -26,8 +26,7 @@ let set_password
   =
   fun pool { user; _ } password password_confirmation ->
   let open Utils.Lwt_result.Infix in
-  User.Persistence.set_password pool user ~password ~password_confirmation
-  >|+ ignore
+  User.set_password pool user ~password ~password_confirmation >|+ ignore
 ;;
 
 type event =
@@ -56,7 +55,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
   function
   | Created contact ->
     let%lwt user =
-      User.Persistence.create_user
+      User.create_user
         pool
         ~id:(contact.user_id |> Id.value)
         ~name:(contact.lastname |> User.Lastname.value)
@@ -95,10 +94,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     ||> fun (_ : Guard.Target.t) -> ()
   | EmailUpdated (contact, email) ->
     let%lwt _ =
-      User.Persistence.update
-        pool
-        ~email:(Pool_user.EmailAddress.value email)
-        contact.user
+      User.update pool ~email:(Pool_user.EmailAddress.value email) contact.user
     in
     Lwt.return_unit
   | PasswordUpdated (person, old_password, new_password, confirmed) ->
@@ -108,7 +104,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
       confirmed |> User.PasswordConfirmed.to_sihl
     in
     let%lwt _ =
-      User.Persistence.update_password
+      User.update_password
         pool
         ~password_policy:(CCFun.const (CCResult.return ()))
         ~old_password
@@ -123,9 +119,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
       { contact with verified = Some (Pool_user.Verified.create_now ()) }
   | EmailVerified contact ->
     let%lwt _ =
-      User.Persistence.update
-        pool
-        Sihl_user.{ contact.user with confirmed = true }
+      User.update pool Sihl_user.{ contact.user with confirmed = true }
     in
     Repo.update
       pool
@@ -155,7 +149,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     let (_ : (Sihl_user.t Lwt.t, string) result) =
       let open Pool_common in
       User.set_user_password contact.user (User.Password.to_sihl password)
-      |> CCResult.map (User.Persistence.update pool)
+      |> CCResult.map (User.update pool)
       |> Utils.with_log_result_error ~src ?tags Pool_message.Error.nothandled
     in
     Repo.update

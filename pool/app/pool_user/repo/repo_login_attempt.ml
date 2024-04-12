@@ -30,7 +30,9 @@ module RepoEntity = struct
         ~decode
         (t2
            Pool_common.Repo.Id.t
-           (t2 Repo_model.EmailAddress.t (t2 Counter.t (option BlockedUntil.t)))))
+           (t2
+              Repo_entity.EmailAddress.t
+              (t2 Counter.t (option BlockedUntil.t)))))
   ;;
 end
 

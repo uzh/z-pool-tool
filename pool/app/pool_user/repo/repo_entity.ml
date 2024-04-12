@@ -112,41 +112,8 @@ module User = struct
     Caqti_type.(custom ~encode ~decode string)
   ;;
 
-  let user_type ~encode ~decode =
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (t2
-           string
-           (t2
-              string
-              (t2
-                 (option string)
-                 (t2
-                    (option string)
-                    (t2
-                       (option string)
-                       (t2
-                          string
-                          (t2 status (t2 bool (t2 bool (t2 ptime ptime)))))))))))
-  ;;
-
-  let encode m =
-    let open Sihl.Contract.User in
-    Ok
-      ( m.id
-      , ( m.email
-        , ( m.username
-          , ( m.name
-            , ( m.given_name
-              , ( m.password
-                , ( m.status
-                  , (m.admin, (m.confirmed, (m.created_at, m.updated_at))) ) )
-              ) ) ) ) )
-  ;;
-
-  let user_caqti =
+  let t =
+    let open Database.Caqti_encoders in
     let open Sihl.Contract.User in
     let decode
       ( id
@@ -155,8 +122,8 @@ module User = struct
           , ( name
             , ( given_name
               , ( password
-                , (status, (admin, (confirmed, (created_at, updated_at)))) ) )
-            ) ) ) )
+                , (status, (admin, (confirmed, (created_at, (updated_at, ())))))
+                ) ) ) ) ) )
       =
       Ok
         { id
@@ -172,6 +139,38 @@ module User = struct
         ; updated_at
         }
     in
-    user_type ~encode ~decode
+    let encode m : ('a Data.t, string) result =
+      Ok
+        Data.
+          [ m.id
+          ; m.email
+          ; m.username
+          ; m.name
+          ; m.given_name
+          ; m.password
+          ; m.status
+          ; m.admin
+          ; m.confirmed
+          ; m.created_at
+          ; m.updated_at
+          ]
+    in
+    custom
+      ~encode
+      ~decode
+      Schema.(
+        Caqti_type.
+          [ string
+          ; string
+          ; option string
+          ; option string
+          ; option string
+          ; string
+          ; status
+          ; bool
+          ; bool
+          ; ptime
+          ; ptime
+          ])
   ;;
 end

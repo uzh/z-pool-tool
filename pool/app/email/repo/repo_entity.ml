@@ -41,7 +41,7 @@ let unverified_t =
       (t2
          User.Repo.EmailAddress.t
          (t2
-            Pool_user.Repo.user_caqti
+            Pool_user.Repo.User.t
             (t2
                Token.t
                (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
@@ -69,7 +69,7 @@ let verified_t =
       (t2
          User.Repo.EmailAddress.t
          (t2
-            Pool_user.Repo.user_caqti
+            Pool_user.Repo.User.t
             (t2
                VerifiedAt.t
                (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))

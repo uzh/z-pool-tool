@@ -26,8 +26,7 @@ let set_password
   =
   fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
-  User.Persistence.set_password pool user ~password ~password_confirmation
-  >|= ignore
+  User.set_password pool user ~password ~password_confirmation >|= ignore
 ;;
 
 type event =
@@ -74,7 +73,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
   | Created { id; lastname; firstname; password; email; roles } ->
     let open Common.Utils in
     let%lwt admin =
-      User.Persistence.create_admin
+      User.create_admin
         pool
         ?id:(id |> CCOption.map Common.Id.value)
         ~name:(lastname |> User.Lastname.value)
@@ -95,14 +94,12 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     let name = User.Lastname.value lastname in
     let given_name = User.Firstname.value firstname in
     let%lwt (_ : Sihl_user.t) =
-      User.Persistence.update pool ~name ~given_name (user admin)
+      User.update pool ~name ~given_name (user admin)
     in
     Lwt.return_unit
   | EmailVerified admin ->
     let%lwt (_ : Sihl_user.t) =
-      User.Persistence.update
-        pool
-        Sihl_user.{ admin.user with confirmed = true }
+      User.update pool Sihl_user.{ admin.user with confirmed = true }
     in
     { admin with email_verified = Some (Pool_user.EmailVerified.create_now ()) }
     |> Repo.update pool
@@ -110,7 +107,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     let (_ : (Sihl_user.t Lwt.t, string) result) =
       let open Common in
       User.set_user_password admin.user (User.Password.to_sihl password)
-      |> CCResult.map (User.Persistence.update pool)
+      |> CCResult.map (User.update pool)
       |> Utils.with_log_result_error ~src ~tags Pool_message.Error.nothandled
     in
     Repo.update
@@ -128,7 +125,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     in
     let%lwt (_ : (Sihl_user.t, string) result) =
       let open Common in
-      User.Persistence.update_password
+      User.update_password
         pool
         ~password_policy:(CCFun.const (CCResult.return ()))
         ~old_password

@@ -106,7 +106,7 @@ let update_email req =
          | Contact contact -> Contact.email_address contact |> equal
        in
        let%lwt existing_user =
-         Pool_user.Persistence.find_by_email_opt
+         Pool_user.find_by_email_opt
            database_label
            (Pool_user.EmailAddress.value new_email)
        in

@@ -15,7 +15,7 @@ let user_and_import_from_token database_label token =
   >>= fun ({ User_import.user_uuid; _ } as import) ->
   user_uuid
   |> Pool_common.Id.value
-  |> Pool_user.Persistence.find database_label
+  |> Pool_user.find database_label
   >|> user_of_sihl_user database_label
   ||> fun user ->
   match user with

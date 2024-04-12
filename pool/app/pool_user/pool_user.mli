@@ -1,5 +1,5 @@
 include module type of Sihl.Contract.User
-module Persistence : Service_user_sig.Sig
+include Service_user_sig.Sig
 module PasswordReset : Sihl.Contract.Password_reset.Sig
 
 module PasswordConfirmed : sig
@@ -214,7 +214,10 @@ module Repo : sig
     val t : EmailAddress.t Caqti_type.t
   end
 
-  val user_caqti : Sihl_user.t Caqti_type.t
+  module User : sig
+    val t : Sihl_user.t Caqti_type.t
+  end
+
   val sql_select_columns : string list
 end
 

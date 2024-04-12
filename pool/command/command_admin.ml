@@ -31,7 +31,7 @@ let grant_role ctx admin (role, target_uuid) =
 
 let create =
   let create_and_grant_role_exn pool email password given_name name role =
-    match%lwt Pool_user.Persistence.find_by_email_opt pool email with
+    match%lwt Pool_user.find_by_email_opt pool email with
     | None ->
       let email = Pool_user.EmailAddress.create email |> get_or_failwith in
       let firstname =
@@ -93,7 +93,7 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
 
 let create_root_admin =
   let create_exn email password given_name name =
-    match%lwt Pool_user.Persistence.find_by_email_opt Database.root email with
+    match%lwt Pool_user.find_by_email_opt Database.root email with
     | None ->
       let%lwt () =
         let open Admin in

@@ -1,5 +1,5 @@
 let src = Logs.Src.create "handler.general"
-let user_from_session = Pool_user.Persistence.Web.user_from_session
+let user_from_session = Pool_user.Web.user_from_session
 
 let admin_from_session db_pool req =
   let open Utils.Lwt_result.Infix in
