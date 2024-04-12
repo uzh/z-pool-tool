@@ -246,11 +246,11 @@ let is_fully_booked_res (m : t) =
   |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
 ;;
 
-let available_spots m =
+let available_spots (m : t) =
   m.max_participants + m.overbook - m.assignment_count |> CCInt.max 0
 ;;
 
-let has_assignments m = AssignmentCount.value m.assignment_count > 0
+let has_assignments (m : t) = AssignmentCount.value m.assignment_count > 0
 
 type notification_log =
   | Email of Sihl_email.t * Sihl_queue.instance
@@ -275,7 +275,7 @@ let start_end_human ({ start; duration; _ } : t) =
   Utils.Ptime.format_start_end start duration
 ;;
 
-let compare_start s1 s2 = Start.compare s1.start s2.start
+let compare_start (s1 : t) (s2 : t) = Start.compare s1.start s2.start
 
 let add_follow_ups_to_parents groups (parent, session) =
   CCList.Assoc.update
@@ -540,20 +540,20 @@ let public_to_email_text
   email_text language start duration location
 ;;
 
-let get_session_end session =
+let get_session_end (session : t) =
   Ptime.add_span session.start session.duration
   |> CCOption.get_exn_or "Session end not in range"
 ;;
 
-let not_canceled session =
-  match session.canceled_at with
+let not_canceled ({ canceled_at; _ } : t) =
+  match canceled_at with
   | None -> Ok ()
   | Some canceled_at -> is_canceled_error canceled_at
 ;;
 
-let not_closed session =
+let not_closed ({ closed_at; _ } : t) =
   let open Pool_common.Message in
-  match session.closed_at with
+  match closed_at with
   | None -> Ok ()
   | Some closed_at ->
     closed_at

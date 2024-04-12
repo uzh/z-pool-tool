@@ -375,8 +375,8 @@ module Partials = struct
       let open Session in
       HttpUtils.Url.Admin.session_path
         ~suffix:"direct-message/send"
+        ~id:session.id
         experiment.Experiment.id
-        session.id
       |> Sihl.Web.externalize_path
     in
     let text_message_enabled =
@@ -663,8 +663,8 @@ let data_table
     let action =
       HttpUtils.Url.Admin.session_path
         ~suffix:"direct-message"
+        ~id:session.Session.id
         experiment.Experiment.id
-        session.Session.id
       |> Sihl.Web.externalize_path
     in
     link_as_button

@@ -407,13 +407,6 @@ val find_all_to_swap_by_experiment
   -> Experiment.Id.t
   -> t list Lwt.t
 
-val find_overlapping
-  :  Pool_database.Label.t
-  -> Experiment.Id.t
-  -> start:Start.t
-  -> end_at:End.t
-  -> t list Lwt.t
-
 val column_date : Query.Column.t
 val column_no_assignments : Query.Column.t
 val column_noshow_count : Query.Column.t

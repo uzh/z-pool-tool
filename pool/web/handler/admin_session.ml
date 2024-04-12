@@ -241,24 +241,24 @@ let create req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let database_label = context.Pool_context.database_label in
-    let* location = location urlencoded database_label in
     let* experiment = Experiment.find database_label id in
     let open Cqrs_command.Session_command in
     let* events =
-      let open Session in
       match Experiment.is_sessionless experiment with
       | true ->
         let open CreateTimeWindow in
+        let open Time_window in
         let* decoded = urlencoded |> decode |> Lwt_result.lift in
         let%lwt overlapps =
-          Session.find_overlapping
+          Time_window.find_overlapping
             database_label
             experiment.Experiment.id
             ~start:decoded.start
             ~end_at:decoded.end_at
         in
-        handle ~tags ~overlapps experiment location decoded |> Lwt_result.lift
+        handle ~tags ~overlapps experiment decoded |> Lwt_result.lift
       | false ->
+        let* location = location urlencoded database_label in
         let open CCResult.Infix in
         let open Create in
         urlencoded

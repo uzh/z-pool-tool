@@ -95,7 +95,7 @@ module Sql = struct
       FROM pool_sessions
       INNER JOIN pool_experiments
         ON pool_sessions.experiment_uuid = pool_experiments.uuid
-      INNER JOIN pool_locations
+      LEFT JOIN pool_locations
         ON pool_sessions.location_uuid = pool_locations.uuid
       WHERE
         %s
@@ -290,7 +290,7 @@ module Sql = struct
         |> prepare_find_multiple pool find_multiple_followups_request
       in
       parents
-      |> CCList.map (fun session ->
+      |> CCList.map (fun (session : Entity.t) ->
         let followups =
           CCList.filter
             (fun { follow_up_to; _ } ->
@@ -743,7 +743,7 @@ module Sql = struct
     |> Caqti_type.(t2 string RepoEntity.Write.t ->. unit)
   ;;
 
-  let insert pool session =
+  let insert pool (session : Entity.t) =
     Utils.Database.exec
       (Database.Label.value pool)
       insert_request
@@ -939,25 +939,6 @@ module Sql = struct
         pool
         (request |> Caqti_type.unit ->* RepoEntity.t)
         ()
-  ;;
-
-  let find_overlapping_request =
-    let open Caqti_request.Infix in
-    {sql|
-      WHERE
-        pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
-        pool_sessions.start BETWEEN $2 AND $3
-        OR pool_sessions.end BETWEEN $2 AND $3
-    |sql}
-    |> find_request_sql
-    |> Caqti_type.(t3 string ptime ptime) ->* RepoEntity.t
-  ;;
-
-  let find_overlapping pool experiment_id ~start ~end_at =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_overlapping_request
-      (Experiment.Id.value experiment_id, start, end_at)
   ;;
 end
 

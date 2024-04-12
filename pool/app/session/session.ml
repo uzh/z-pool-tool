@@ -34,7 +34,6 @@ let find_upcoming_by_admin = Repo.Sql.find_upcoming_by_admin
 let query_grouped_by_experiment = Repo.Sql.query_grouped_by_experiment
 let query_by_experiment = Repo.Sql.query_by_experiment
 let find_sessions_to_update_matcher = Repo.Sql.find_sessions_to_update_matcher
-let find_overlapping = Repo.Sql.find_overlapping
 
 let has_bookable_spots_for_experiments tenant experiment =
   let open Utils.Lwt_result.Infix in

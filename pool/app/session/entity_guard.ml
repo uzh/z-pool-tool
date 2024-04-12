@@ -5,9 +5,10 @@ module Target = struct
 
   let to_authorizable ?ctx t =
     let open Guard in
+    let open Entity in
     Persistence.Target.decorate
       ?ctx
-      (fun { Entity.id; _ } ->
+      (fun ({ id; _ } : t) ->
         Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
       t
     >|- Pool_common.Message.authorization

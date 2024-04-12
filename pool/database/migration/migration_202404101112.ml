@@ -19,9 +19,21 @@ let add_experiment_assignment_without_session_flag =
     |sql}
 ;;
 
+let make_session_participant_counts_nullable =
+  Sihl.Database.Migration.create_step
+    ~label:"make session participant counts nullable"
+    {sql|
+      ALTER TABLE pool_sessions 
+        MODIFY max_participants SMALLINT UNSIGNED,
+        MODIFY min_participants SMALLINT UNSIGNED,
+        MODIFY overbook SMALLINT UNSIGNED
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "202404101112"
     |> add_step add_not_null_constraints
-    |> add_step add_experiment_assignment_without_session_flag)
+    |> add_step add_experiment_assignment_without_session_flag
+    |> add_step make_session_participant_counts_nullable)
 ;;

@@ -20,7 +20,7 @@ let ids_from_request req =
 let cancel req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
-  let redirect_path = Url.session_path experiment_id session_id in
+  let redirect_path = Url.session_path ~id:session_id experiment_id in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -78,7 +78,7 @@ let cancel req =
 let mark_as_deleted req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
-  let redirect_path = Url.session_path experiment_id session_id in
+  let redirect_path = Url.session_path ~id:session_id experiment_id in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -243,7 +243,7 @@ end
 let edit req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
-  let redirect_path = Url.session_path experiment_id session_id in
+  let redirect_path = Url.session_path ~id:session_id experiment_id in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -331,7 +331,7 @@ let remind req =
   let open Assignment in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path =
-    Page.Admin.Session.session_path experiment_id session_id
+    Page.Admin.Session.session_path ~id:session_id experiment_id
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
@@ -469,7 +469,7 @@ let swap_session_post req =
   let open Cqrs_command.Assignment_command in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path =
-    Page.Admin.Session.session_path experiment_id session_id
+    Page.Admin.Session.session_path ~id:session_id experiment_id
   in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req

@@ -424,6 +424,86 @@ let session_form
     ]
 ;;
 
+let time_window_form
+  csrf
+  language
+  ?(session : Time_window.t option)
+  (experiment : Experiment.t)
+  ~flash_fetcher
+  =
+  let open CCFun in
+  let open Session in
+  let open Time_window in
+  let open Pool_common in
+  let value = CCFun.flip (CCOption.map_or ~default:"") session in
+  let action, submit =
+    let path ?id () =
+      session_path ?id experiment.Experiment.id |> Sihl.Web.externalize_path
+    in
+    match session with
+    | None -> path (), Message.(Create (Some Field.Session))
+    | Some session ->
+      path ~id:session.Time_window.id (), Message.(Update (Some Field.Session))
+  in
+  form
+    ~a:
+      [ a_class [ "stack" ]
+      ; a_method `Post
+      ; a_action (action |> Sihl.Web.externalize_path)
+      ; a_user_data "detect-unsaved-changes" ""
+      ]
+    [ csrf_element csrf ()
+    ; div
+        ~a:[ a_class [ "grid-col-2" ] ]
+        [ date_time_picker_element
+            language
+            ~required:true
+            ~flash_fetcher
+            ?value:
+              (CCOption.map (fun (s : t) -> s.start |> Start.value) session)
+            ~disable_past:true
+            Message.Field.Start
+        ; date_time_picker_element
+            language
+            ~required:true
+            ~flash_fetcher
+            ?value:(CCOption.map ends_at session)
+            ~disable_past:true
+            Message.Field.End
+        ; textarea_element
+            language
+            Message.Field.InternalDescription
+            ~value:
+              (value (fun s ->
+                 s.internal_description
+                 |> CCOption.map_or ~default:"" InternalDescription.value))
+            ~flash_fetcher
+        ; textarea_element
+            language
+            Message.Field.PublicDescription
+            ~value:
+              (value (fun s ->
+                 s.public_description
+                 |> CCOption.map_or ~default:"" PublicDescription.value))
+            ~flash_fetcher
+        ; input_element
+            language
+            `Number
+            Message.Field.MaxParticipants
+            ?value:
+              CCOption.(
+                bind session (fun s ->
+                  map
+                    (ParticipantAmount.value %> CCInt.to_string)
+                    s.max_participants))
+            ~flash_fetcher
+        ]
+    ; div
+        ~a:[ a_class [ "flexrow" ] ]
+        [ submit_element ~classnames:[ "push" ] language submit () ]
+    ]
+;;
+
 let session_base_information language session =
   let open Session in
   let amount amt = amt |> ParticipantAmount.value |> string_of_int in
@@ -671,14 +751,20 @@ let new_form
   text_messages_enabled
   flash_fetcher
   =
-  session_form
-    csrf
-    language
-    experiment
-    default_leadtime_settings
-    locations
-    text_messages_enabled
-    ~flash_fetcher
+  let form =
+    match experiment.Experiment.online_study with
+    | None ->
+      session_form
+        csrf
+        language
+        experiment
+        default_leadtime_settings
+        locations
+        text_messages_enabled
+        ~flash_fetcher
+    | Some _ -> time_window_form csrf language experiment ~flash_fetcher
+  in
+  form
   |> CCList.return
   |> Layout.Experiment.(
        create context (Control Message.(Create (Some Field.Session))) experiment)
@@ -787,7 +873,7 @@ let duplicate
         ; a
             ~a:
               [ a_href
-                  (session_path experiment.Experiment.id session.id
+                  (session_path ~id:session.id experiment.Experiment.id
                    |> Sihl.Web.externalize_path)
               ; a_target "_blank"
               ]
@@ -827,7 +913,7 @@ let duplicate
     |> Component.Notification.notification language `Warning
   in
   let subform_wrapper = "session-duplication-subforms" in
-  let session_path = session_path experiment.Experiment.id session.id in
+  let session_path = session_path ~id:session.id experiment.Experiment.id in
   let add_subform_button =
     button
       ~a:
@@ -902,7 +988,7 @@ let detail
   let open Pool_common in
   let open Session in
   let experiment_id = experiment.Experiment.id in
-  let session_path = session_path experiment_id session.id in
+  let session_path = session_path ~id:session.id experiment_id in
   let session_link ?style (show, url, control) =
     let style, icon =
       style |> CCOption.map_or ~default:(`Primary, None) CCFun.id
@@ -1218,8 +1304,8 @@ let detail
       let open Session in
       HttpUtils.Url.Admin.session_path
         ~suffix:"direct-message"
+        ~id:session.id
         experiment.Experiment.id
-        session.id
       |> Sihl.Web.externalize_path
     in
     let direct_messaging_buttons =
@@ -1263,8 +1349,8 @@ let detail
             [ hx_post
                 (HttpUtils.Url.Admin.session_path
                    ~suffix:"update-matches-filter"
+                   ~id:session.id
                    experiment_id
-                   session.id
                  |> Sihl.Web.externalize_path)
             ; hx_swap "None"
             ]
@@ -1377,7 +1463,7 @@ let edit
   let session_path =
     Format.asprintf
       "%s/%s"
-      (session_path experiment.Experiment.id session.Session.id)
+      (session_path ~id:session.Session.id experiment.Experiment.id)
   in
   let form =
     div
@@ -1535,7 +1621,9 @@ let close_assignment_htmx_form
     | Ok () -> None
     | Error err -> Some err
   in
-  let session_path = session_path experiment.Experiment.id session.Session.id in
+  let session_path =
+    session_path ~id:session.Session.id experiment.Experiment.id
+  in
   let action =
     Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)
     |> Sihl.Web.externalize_path
@@ -1666,7 +1754,7 @@ let close_assignments_table
     let thead =
       let form_header =
         let action =
-          session_path experiment.Experiment.id session.Session.id
+          session_path ~id:session.Session.id experiment.Experiment.id
           |> Format.asprintf "%s/toggle-assignments"
           |> Sihl.Web.externalize_path
         in
@@ -1757,7 +1845,9 @@ let close
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
-  let session_path = session_path experiment.Experiment.id session.Session.id in
+  let session_path =
+    session_path ~id:session.Session.id experiment.Experiment.id
+  in
   let tags_html =
     let participation_tags_list =
       match participation_tags with

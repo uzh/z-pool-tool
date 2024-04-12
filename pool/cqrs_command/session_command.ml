@@ -207,15 +207,10 @@ let time_window_command
   internal_description
   public_description
   max_participants
-  : Session.time_window
+  : Time_window.create
   =
-  Session.
-    { start
-    ; end_at
-    ; internal_description
-    ; public_description
-    ; max_participants
-    }
+  let open Time_window in
+  { start; end_at; internal_description; public_description; max_participants }
 ;;
 
 let time_window_schema =
@@ -227,35 +222,34 @@ let time_window_schema =
         ; Session.End.schema ()
         ; Conformist.optional @@ Session.InternalDescription.schema ()
         ; Conformist.optional @@ Session.PublicDescription.schema ()
-        ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
+        ; Conformist.optional
+          @@ Session.ParticipantAmount.schema Message.Field.MaxParticipants
         ]
       time_window_command)
 ;;
 
 module CreateTimeWindow : sig
-  include Common.CommandSig with type t = Session.time_window
+  include Common.CommandSig with type t = Time_window.create
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> overlapps:Session.t list
+    -> overlapps:Time_window.t list
     -> ?session_id:Session.Id.t
     -> Experiment.t
-    -> Pool_location.t
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
 
   val decode : Conformist.input -> (t, Conformist.error_msg) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Session.time_window
+  type t = Time_window.create
 
   let handle
     ?(tags = Logs.Tag.empty)
     ~overlapps
     ?session_id
     experiment
-    location
-    { Session.start
+    { Time_window.start
     ; end_at
     ; internal_description
     ; public_description
@@ -275,29 +269,18 @@ end = struct
       then Ok ()
       else Error Pool_common.Message.SessionOverlap
     in
-    let* duration =
-      Ptime.to_float_s (End.value end_at)
-      -. Ptime.to_float_s (Start.value start)
-      |> Ptime.Span.of_float_s
-      |> CCOption.to_result Pool_common.Message.(Invalid Field.End)
-      >>= Duration.create
-    in
-    let* min_participants = 0 |> ParticipantAmount.create in
-    let* overbook = 0 |> ParticipantAmount.create in
-    let session =
-      create
+    let* duration = Time_window.duration ~start ~end_at in
+    let time_window =
+      Time_window.create
         ?id:session_id
         ?internal_description
         ?public_description
+        ?max_participants
         start
         duration
-        location
-        max_participants
-        min_participants
-        overbook
         experiment
     in
-    Ok [ Session.Created session |> Pool_event.session ]
+    Ok [ Time_window.Created time_window |> Pool_event.time_window ]
   ;;
 
   let decode data =
