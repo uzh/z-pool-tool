@@ -72,8 +72,7 @@ module End = struct
       let open CCResult in
       Pool_common.(Utils.Time.parse_time str >|= create)
     in
-    Pool_common.(
-      Utils.schema_decoder decode Ptime.to_rfc3339 Message.Field.Start)
+    Pool_common.(Utils.schema_decoder decode Ptime.to_rfc3339 Message.Field.End)
   ;;
 
   let build start duration =

@@ -50,6 +50,8 @@ let message_history_crate =
   Alcotest.testable pp_create equal_create
 ;;
 
+let time_window_testable = Alcotest.testable Time_window.pp Time_window.equal
+
 (* Helper functions *)
 
 let setup_test () =
@@ -334,6 +336,7 @@ module Model = struct
   let create_session
     ?(id = Session.Id.create ())
     ?(location = create_location ())
+    ?(duration = Session.Duration.create hour |> get_or_failwith)
     ?follow_up_to
     ?start
     ?email_reminder_sent_at
@@ -345,7 +348,7 @@ module Model = struct
       ~id
       ?follow_up_to
       (start |> CCOption.value ~default:(in_an_hour ()))
-      (Duration.create hour |> get_or_failwith)
+      duration
       location
       (ParticipantAmount.create 30 |> get_or_failwith)
       (ParticipantAmount.create 1 |> get_or_failwith)

@@ -52,13 +52,17 @@ let find_request_sql ?(count = false) where_fragment =
 
 let find_overlapping_request =
   let open Caqti_request.Infix in
-  {sql|
-    WHERE
-      pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
-      AND (
-        pool_sessions.start BETWEEN $2 AND $3
-        OR DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) BETWEEN $2 AND $3)
-  |sql}
+  let end_at =
+    "DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND)"
+  in
+  (* TODO: How to deal with start or and at the same time? *)
+  [%string
+    {sql|
+      WHERE
+        pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_sessions.start <= $3 
+        AND %{end_at} >= $2
+    |sql}]
   |> find_request_sql
   |> Caqti_type.(t3 string ptime ptime) ->* RepoEntity.t
 ;;
@@ -104,4 +108,22 @@ let insert pool t =
     (Pool_database.Label.value pool)
     insert_request
     (RepoEntity.Write.of_entity t)
+;;
+
+let query_by_experiment ?query pool id =
+  let where =
+    let sql =
+      {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+    in
+    let dyn =
+      Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+    in
+    sql, dyn
+  in
+  Query.collect_and_count
+    pool
+    query
+    ~select:find_request_sql
+    ~where
+    Repo_entity.t
 ;;

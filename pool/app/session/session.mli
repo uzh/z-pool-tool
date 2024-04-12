@@ -152,6 +152,7 @@ val create
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val is_canceled_error : Ptime.t -> ('a, Pool_common.Message.error) result
 val is_fully_booked : t -> bool
 val available_spots : t -> int
 val has_assignments : t -> bool

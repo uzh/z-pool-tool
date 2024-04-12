@@ -36,6 +36,11 @@ val duration
   -> end_at:Session.End.t
   -> (Session.Duration.t, Pool_common.Message.error) result
 
+val has_assignments : t -> bool
+val is_deletable : t -> bool
+val is_closable : t -> (unit, Pool_common.Message.error) result
+val start_end_with_duration_human : t -> string
+
 type create =
   { start : Session.Start.t
   ; end_at : Session.End.t
@@ -57,3 +62,9 @@ val find_overlapping
   -> start:Session.Start.t
   -> end_at:Session.End.t
   -> t list Lwt.t
+
+val query_by_experiment
+  :  ?query:Query.t
+  -> Pool_database.Label.t
+  -> Experiment.Id.t
+  -> (t list * Query.t) Lwt.t

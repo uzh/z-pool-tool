@@ -59,11 +59,18 @@ let list req =
       []
   in
   let%lwt sessions =
-    match chronological with
-    | true -> Session.query_by_experiment ~query database_label experiment_id
+    match Experiment.is_sessionless experiment with
+    | true ->
+      Time_window.query_by_experiment ~query database_label experiment_id
+      ||> fun time_windows -> `TimeWindow time_windows
     | false ->
-      Session.query_grouped_by_experiment ~query database_label experiment_id
-      ||> fun (sessions, query) -> flatten_sessions sessions, query
+      (match chronological with
+       | true ->
+         Session.query_by_experiment ~query database_label experiment_id
+         ||> fun sessions -> `Session sessions
+       | false ->
+         Session.query_grouped_by_experiment ~query database_label experiment_id
+         ||> fun (sessions, query) -> `Session (flatten_sessions sessions, query))
   in
   let open Page.Admin.Session in
   Lwt_result.ok
@@ -106,14 +113,19 @@ let new_helper req page =
              flash_fetcher
            |> Lwt_result.ok
          | `New ->
-           Page.Admin.Session.new_form
-             context
-             experiment
-             default_leadtime_settings
-             locations
-             text_messages_enabled
-             flash_fetcher
-           |> Lwt_result.ok
+           Lwt_result.ok
+           @@
+             (match CCOption.is_some experiment.Experiment.online_study with
+             | false ->
+               Page.Admin.Session.new_form
+                 context
+                 experiment
+                 default_leadtime_settings
+                 locations
+                 text_messages_enabled
+                 flash_fetcher
+             | true ->
+               Page.Admin.TimeWindow.new_form context experiment flash_fetcher)
        in
        html >>= create_layout req context >|+ Sihl.Web.Response.of_html
   in

@@ -410,6 +410,9 @@ let suite =
               `Slow
               Repo.find_contacts_to_remind
           ] )
+    ; ( "time window"
+      , Time_window_test.
+          [ test_case "confirm as contact" `Slow find_overlapping ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;

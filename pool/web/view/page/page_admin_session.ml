@@ -4,6 +4,54 @@ open Input
 open CCFun.Infix
 module Message = Pool_common.Message
 
+let session_id = function
+  | `Session { Session.id; _ } -> id
+  | `TimeWindow { Time_window.id; _ } -> id
+;;
+
+let deletable = function
+  | `Session session -> Session.is_deletable session |> CCResult.is_ok
+  | `TimeWindow time_window -> Time_window.is_deletable time_window
+;;
+
+let closable session =
+  CCResult.is_ok
+  @@
+  match session with
+  | `Session session -> Session.is_closable session
+  | `TimeWindow time_window -> Time_window.is_closable time_window
+;;
+
+let canceled_at = function
+  | `Session { Session.canceled_at; _ } -> canceled_at
+  | `TimeWindow { Time_window.canceled_at; _ } -> canceled_at
+;;
+
+let closed_at = function
+  | `Session { Session.closed_at; _ } -> closed_at
+  | `TimeWindow { Time_window.closed_at; _ } -> closed_at
+;;
+
+let no_show_count = function
+  | `Session { Session.no_show_count; _ } -> no_show_count
+  | `TimeWindow { Time_window.no_show_count; _ } -> no_show_count
+;;
+
+let participant_count = function
+  | `Session { Session.participant_count; _ } -> participant_count
+  | `TimeWindow { Time_window.participant_count; _ } -> participant_count
+;;
+
+let assignment_count = function
+  | `Session { Session.assignment_count; _ } -> assignment_count
+  | `TimeWindow { Time_window.assignment_count; _ } -> assignment_count
+;;
+
+let follow_up_to = function
+  | `Session { Session.follow_up_to; _ } -> follow_up_to
+  | `TimeWindow _ -> None
+;;
+
 let session_title (s : Session.t) =
   Pool_common.I18n.SessionDetailTitle (s.Session.start |> Session.Start.value)
 ;;
@@ -50,33 +98,38 @@ module Partials = struct
     (if hide_closed then [ canceled ] else [ closed; canceled ]) |> table_legend
   ;;
 
-  let row_classnames { canceled_at; closed_at; follow_up_to; _ } =
-    let check opt classname = if opt then Some classname else None in
-    [ check (CCOption.is_some canceled_at) "bg-red-lighter"
-    ; check (CCOption.is_some closed_at) "bg-green-lighter"
-    ; check (CCOption.is_some follow_up_to) "follow-up"
+  let row_classnames session =
+    let check opt classname =
+      if session |> opt |> CCOption.is_some then Some classname else None
+    in
+    [ check canceled_at "bg-red-lighter"
+    ; check closed_at "bg-green-lighter"
+    ; check follow_up_to "follow-up"
     ]
     |> CCList.filter_map CCFun.id
   ;;
 
-  let row_attrs ({ id; follow_up_to; _ } as session) =
-    let id = a_user_data "id" (Id.value id) in
+  let row_attrs (session : [< `Session of t | `TimeWindow of Time_window.t ]) =
+    let id = a_user_data "id" (session |> session_id |> Id.value) in
     let classnames = row_classnames session in
-    follow_up_to
+    follow_up_to session
     |> CCOption.map (fun parent -> a_user_data "parent-id" (Id.value parent))
     |> CCOption.map_or ~default:[ id ] (fun parent -> [ id; parent ])
     |> fun attrs -> a_class classnames :: attrs
   ;;
 
-  let session_row_title language chronological session =
-    let date = span [ txt (session |> start_end_with_duration_human) ] in
-    match CCOption.is_some session.follow_up_to, chronological with
-    | false, true | false, false -> date
-    | true, true ->
-      div
-        ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-        [ date; follow_up_icon language ]
-    | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
+  let session_row_title language chronological = function
+    | `Session session ->
+      let date = span [ txt (session |> start_end_with_duration_human) ] in
+      (match CCOption.is_some session.follow_up_to, chronological with
+       | false, true | false, false -> date
+       | true, true ->
+         div
+           ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+           [ date; follow_up_icon language ]
+       | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ])
+    | `TimeWindow time_window ->
+      span [ txt (time_window |> Time_window.start_end_with_duration_human) ]
   ;;
 
   let session_key_figures
@@ -90,7 +143,8 @@ module Partials = struct
       (overbook |> value)
   ;;
 
-  let detail_button language experiment_id { id; _ } =
+  let detail_button language experiment_id session =
+    let id = session_id session in
     Format.asprintf
       "/admin/experiments/%s/sessions/%s"
       (Experiment.Id.value experiment_id)
@@ -101,12 +155,8 @@ module Partials = struct
          ~control:(language, Message.SessionDetails)
   ;;
 
-  let delete_form
-    { Pool_context.language; csrf; _ }
-    experiment_id
-    ({ id; _ } as session : t)
-    =
-    if Session.is_deletable session |> CCResult.is_ok
+  let delete_form { Pool_context.language; csrf; _ } experiment_id session =
+    if deletable session
     then
       form
         ~a:
@@ -115,7 +165,7 @@ module Partials = struct
               (Format.asprintf
                  "/admin/experiments/%s/sessions/%s/delete"
                  (Experiment.Id.value experiment_id)
-                 (Id.value id)
+                 (Id.value (session_id session))
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
@@ -142,12 +192,12 @@ module Partials = struct
   ;;
 
   let close_button language experiment_id session =
-    if is_closable session |> CCResult.is_ok
+    if closable session
     then
       Format.asprintf
         "/admin/experiments/%s/sessions/%s/close"
         (Experiment.Id.value experiment_id)
-        (Id.value session.id)
+        (Id.value (session_id session))
       |> link_as_button
            ~icon:Icon.Create
            ~is_text:true
@@ -424,86 +474,6 @@ let session_form
     ]
 ;;
 
-let time_window_form
-  csrf
-  language
-  ?(session : Time_window.t option)
-  (experiment : Experiment.t)
-  ~flash_fetcher
-  =
-  let open CCFun in
-  let open Session in
-  let open Time_window in
-  let open Pool_common in
-  let value = CCFun.flip (CCOption.map_or ~default:"") session in
-  let action, submit =
-    let path ?id () =
-      session_path ?id experiment.Experiment.id |> Sihl.Web.externalize_path
-    in
-    match session with
-    | None -> path (), Message.(Create (Some Field.Session))
-    | Some session ->
-      path ~id:session.Time_window.id (), Message.(Update (Some Field.Session))
-  in
-  form
-    ~a:
-      [ a_class [ "stack" ]
-      ; a_method `Post
-      ; a_action (action |> Sihl.Web.externalize_path)
-      ; a_user_data "detect-unsaved-changes" ""
-      ]
-    [ csrf_element csrf ()
-    ; div
-        ~a:[ a_class [ "grid-col-2" ] ]
-        [ date_time_picker_element
-            language
-            ~required:true
-            ~flash_fetcher
-            ?value:
-              (CCOption.map (fun (s : t) -> s.start |> Start.value) session)
-            ~disable_past:true
-            Message.Field.Start
-        ; date_time_picker_element
-            language
-            ~required:true
-            ~flash_fetcher
-            ?value:(CCOption.map ends_at session)
-            ~disable_past:true
-            Message.Field.End
-        ; textarea_element
-            language
-            Message.Field.InternalDescription
-            ~value:
-              (value (fun s ->
-                 s.internal_description
-                 |> CCOption.map_or ~default:"" InternalDescription.value))
-            ~flash_fetcher
-        ; textarea_element
-            language
-            Message.Field.PublicDescription
-            ~value:
-              (value (fun s ->
-                 s.public_description
-                 |> CCOption.map_or ~default:"" PublicDescription.value))
-            ~flash_fetcher
-        ; input_element
-            language
-            `Number
-            Message.Field.MaxParticipants
-            ?value:
-              CCOption.(
-                bind session (fun s ->
-                  map
-                    (ParticipantAmount.value %> CCInt.to_string)
-                    s.max_participants))
-            ~flash_fetcher
-        ]
-    ; div
-        ~a:[ a_class [ "flexrow" ] ]
-        [ submit_element ~classnames:[ "push" ] language submit () ]
-    ]
-;;
-
 let session_base_information language session =
   let open Session in
   let amount amt = amt |> ParticipantAmount.value |> string_of_int in
@@ -594,10 +564,21 @@ let reschedule_session
 let data_table
   ({ Pool_context.language; _ } as context)
   experiment
-  (sessions, query)
+  sessions_data
   chronological
   =
   let open Session in
+  let sessions, query, key_figures_head =
+    match sessions_data with
+    | `Session (sessions, query) ->
+      ( sessions |> CCList.map (fun session -> `Session session)
+      , query
+      , key_figures_head )
+    | `TimeWindow (time_windows, query) ->
+      ( time_windows |> CCList.map (fun session -> `TimeWindow session)
+      , query
+      , "Max" )
+  in
   let session_index_path =
     Format.asprintf
       "/admin/experiments/%s/sessions"
@@ -636,29 +617,30 @@ let data_table
     ]
   in
   let th_class = [ "w-3"; "w-2"; "w-2"; "w-2"; "w-2"; "w-1" ] in
-  let row
-    ({ Session.assignment_count
-     ; no_show_count
-     ; participant_count
-     ; closed_at
-     ; _
-     } as session :
-      Session.t)
-    =
+  let row session =
     let open Partials in
     let row_attrs = Partials.row_attrs session in
     let no_show_count, participant_count =
-      match CCOption.is_some closed_at with
+      match session |> closed_at |> CCOption.is_some with
       | true ->
-        ( no_show_count |> NoShowCount.value |> int_to_txt
-        , participant_count |> ParticipantCount.value |> int_to_txt )
+        ( session |> no_show_count |> NoShowCount.value |> int_to_txt
+        , session |> participant_count |> ParticipantCount.value |> int_to_txt )
       | false -> txt "", txt ""
     in
+    let key_figures =
+      match session with
+      | `Session session -> session_key_figures session
+      | `TimeWindow ({ Time_window.max_participants; _ } : Time_window.t) ->
+        max_participants
+        |> CCOption.map_or
+             ~default:""
+             (Session.ParticipantAmount.value %> CCInt.to_string)
+    in
     [ session_row_title language chronological session
-    ; assignment_count |> AssignmentCount.value |> int_to_txt
+    ; session |> assignment_count |> AssignmentCount.value |> int_to_txt
     ; no_show_count
     ; participant_count
-    ; Partials.session_key_figures session |> txt
+    ; key_figures |> txt
     ; Partials.button_dropdown context experiment.Experiment.id session
     ]
     |> CCList.map CCFun.(CCList.return %> td)
@@ -678,61 +660,72 @@ let data_table
 let index
   ({ Pool_context.language; _ } as context)
   experiment
-  sessions
+  sessions_data
   chronological
   =
   let open Pool_common in
-  let hover_script =
-    match chronological with
-    | false -> txt ""
-    | true ->
-      let js =
-        {js|
-          const highlight = "highlighted";
-          const initHover = () => {
-              const table = document.getElementById("session-list");
-              const toggleClass = (e) => {
-                  const { id, parentId } = e.currentTarget.dataset;
-                  if (parentId) {
-                      table
-                          .querySelector(`[data-id='${parentId}']`)
-                          .classList.toggle(highlight);
-                  } else {
-                      table.querySelectorAll(`[data-parent-id='${id}']`).forEach((tr) => {
-                          tr.classList.toggle(highlight);
+  let html =
+    match sessions_data with
+    | `Session sessions ->
+      let hover_script =
+        match chronological with
+        | false -> txt ""
+        | true ->
+          let js =
+            {js|
+              const highlight = "highlighted";
+              const initHover = () => {
+                  const table = document.getElementById("session-list");
+                  const toggleClass = (e) => {
+                      const { id, parentId } = e.currentTarget.dataset;
+                      if (parentId) {
+                          table
+                              .querySelector(`[data-id='${parentId}']`)
+                              .classList.toggle(highlight);
+                      } else {
+                          table.querySelectorAll(`[data-parent-id='${id}']`).forEach((tr) => {
+                              tr.classList.toggle(highlight);
+                          });
+                      }
+                      e.currentTarget.classList.toggle(highlight);
+                  };
+                  table.querySelectorAll("tbody tr").forEach((row) => {
+                      row.addEventListener("mouseenter", (e) => {
+                          toggleClass(e);
                       });
-                  }
-                  e.currentTarget.classList.toggle(highlight);
+                      row.addEventListener("mouseleave", (e) => {
+                          toggleClass(e);
+                      });
+                  });
               };
-              table.querySelectorAll("tbody tr").forEach((row) => {
-                  row.addEventListener("mouseenter", (e) => {
-                      toggleClass(e);
-                  });
-                  row.addEventListener("mouseleave", (e) => {
-                      toggleClass(e);
-                  });
-              });
-          };
-          initHover();
-          document.addEventListener("htmx:afterSettle", () => {
               initHover();
-          })
-      |js}
+              document.addEventListener("htmx:afterSettle", () => {
+                  initHover();
+              })
+          |js}
+          in
+          script (Unsafe.data js)
       in
-      script (Unsafe.data js)
+      let chronological_toggle =
+        if sessions |> fst |> some_session_is_followup
+        then Partials.chronological_toggle language chronological
+        else txt ""
+      in
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ chronological_toggle
+        ; Partials.table_legend language
+        ; data_table context experiment sessions_data chronological
+        ; hover_script
+        ]
+    | `TimeWindow _ ->
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ Partials.table_legend language
+        ; data_table context experiment sessions_data chronological
+        ]
   in
-  let chronological_toggle =
-    if sessions |> fst |> some_session_is_followup
-    then Partials.chronological_toggle language chronological
-    else txt ""
-  in
-  div
-    ~a:[ a_class [ "stack" ] ]
-    [ chronological_toggle
-    ; Partials.table_legend language
-    ; data_table context experiment sessions chronological
-    ; hover_script
-    ]
+  html
   |> CCList.return
   |> Layout.Experiment.(
        create
@@ -751,20 +744,14 @@ let new_form
   text_messages_enabled
   flash_fetcher
   =
-  let form =
-    match experiment.Experiment.online_study with
-    | None ->
-      session_form
-        csrf
-        language
-        experiment
-        default_leadtime_settings
-        locations
-        text_messages_enabled
-        ~flash_fetcher
-    | Some _ -> time_window_form csrf language experiment ~flash_fetcher
-  in
-  form
+  session_form
+    csrf
+    language
+    experiment
+    default_leadtime_settings
+    locations
+    text_messages_enabled
+    ~flash_fetcher
   |> CCList.return
   |> Layout.Experiment.(
        create context (Control Message.(Create (Some Field.Session))) experiment)

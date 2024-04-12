@@ -95,7 +95,7 @@ module Sql = struct
       FROM pool_sessions
       INNER JOIN pool_experiments
         ON pool_sessions.experiment_uuid = pool_experiments.uuid
-      LEFT JOIN pool_locations
+      INNER JOIN pool_locations
         ON pool_sessions.location_uuid = pool_locations.uuid
       WHERE
         %s

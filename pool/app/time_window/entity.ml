@@ -59,3 +59,36 @@ let duration ~start ~end_at =
   |> CCOption.to_result Pool_common.Message.(Invalid Field.End)
   >>= Duration.create
 ;;
+
+let has_assignments (m : t) = AssignmentCount.value m.assignment_count > 0
+let is_deletable (m : t) = m |> has_assignments |> not
+
+let not_canceled ({ canceled_at; _ } : t) =
+  match canceled_at with
+  | None -> Ok ()
+  | Some canceled_at -> Session.is_canceled_error canceled_at
+;;
+
+let not_closed ({ closed_at; _ } : t) =
+  let open Pool_common.Message in
+  match closed_at with
+  | None -> Ok ()
+  | Some closed_at ->
+    closed_at
+    |> Pool_common.Utils.Time.formatted_date_time
+    |> sessionalreadyclosed
+    |> CCResult.fail
+;;
+
+let not_closed_or_canceled session =
+  let open CCResult.Infix in
+  let* () = not_closed session in
+  let* () = not_canceled session in
+  Ok ()
+;;
+
+let is_closable = not_closed_or_canceled
+
+let start_end_with_duration_human ({ start; duration; _ } : t) =
+  Utils.Ptime.format_start_end (Start.value start) (Duration.value duration)
+;;
