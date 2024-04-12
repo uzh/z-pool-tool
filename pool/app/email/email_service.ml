@@ -375,27 +375,28 @@ module Job = struct
     in
     let encode = Entity.yojson_of_job %> Yojson.Safe.to_string in
     let decode = parse_job_json in
-    Queue.create_job
+    let open Queue in
+    Job.create
       handle
       ~max_tries:10
       ~retry_delay:(Sihl.Time.Span.hours 1)
       encode
       decode
-      "send_email"
+      JobName.SendEmail
   ;;
 end
 
-let callback database_label (job_instance : Queue.instance) =
+let callback database_label instance =
   let job =
-    parse_job_json job_instance.Queue.input |> CCResult.get_or_failwith
+    instance
+    |> Queue.Instance.input
+    |> parse_job_json
+    |> CCResult.get_or_failwith
   in
   match job.Entity.message_history with
   | None -> Lwt.return_unit
   | Some message_history ->
-    History.create_from_queue_instance
-      database_label
-      message_history
-      job_instance
+    History.create_from_queue_instance database_label message_history instance
 ;;
 
 let dispatch database_label ({ Entity.email; _ } as job) =

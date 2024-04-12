@@ -9,19 +9,18 @@ let create_external_link pool_url =
 ;;
 
 let job_reporter
-  ({ Entity.id
-   ; name
-   ; tries
-   ; next_run_at
-   ; max_tries
-   ; status
-   ; last_error
-   ; last_error_at
-   ; tag
-   ; ctx
-   ; _
-   } :
-    Entity.instance)
+  { Entity.Instance.id
+  ; name
+  ; tries
+  ; next_run_at
+  ; max_tries
+  ; status
+  ; last_error
+  ; last_error_at
+  ; tag
+  ; ctx
+  ; _
+  }
   =
   let open Entity.Status in
   match status, last_error with
@@ -35,7 +34,7 @@ let job_reporter
     in
     let%lwt link =
       let default = "Couldn't generate Link" in
-      let path = Format.asprintf "/admin/settings/queue/%s" id in
+      let path = [%string "/admin/settings/queue/%{Entity.Id.value id}"] in
       match database_label with
       | Some database_label when Database.(Label.equal root database_label) ->
         Sihl.Configuration.read_string "PUBLIC_URL"
@@ -59,8 +58,8 @@ let job_reporter
          Next Run At: %s\n\
          Tags: %s\n\
          Link: <%s>"
-        name
-        id
+        ([%show: Entity.JobName.t] name)
+        ([%show: Entity.Id.t] id)
         tries
         max_tries
         ([%show: Ptime.t option] last_error_at)

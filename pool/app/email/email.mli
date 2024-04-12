@@ -211,7 +211,7 @@ type job =
   { email : Sihl.Contract.Email.t
   ; smtp_auth_id : SmtpAuth.Id.t option
   ; message_history : Queue.History.create option
-  ; resent : Pool_common.Id.t option
+  ; resent : Queue.Id.t option
   }
 
 val parse_job_json : string -> (job, Pool_message.Error.t) result
@@ -250,7 +250,7 @@ module Service : sig
   end
 
   module Job : sig
-    val send : job Queue.job
+    val send : job Queue.Job.t
   end
 
   val default_sender_of_pool

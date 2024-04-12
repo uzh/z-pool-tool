@@ -16,7 +16,7 @@ val create : Pool_user.CellPhone.t -> Pool_tenant.Title.t -> Content.t -> t
 type job =
   { message : t
   ; message_history : Queue.History.create option
-  ; resent : Pool_common.Id.t option
+  ; resent : Queue.Id.t option
   }
 
 val parse_job_json : string -> (job, Pool_message.Error.t) result
@@ -41,7 +41,7 @@ module Service : sig
     -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) result Lwt.t
 
   module Job : sig
-    val send : job Queue.job
+    val send : job Queue.Job.t
   end
 
   val send : Database.Label.t -> job -> unit Lwt.t

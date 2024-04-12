@@ -38,19 +38,22 @@ let data_table Pool_context.{ language; _ } (queued_jobs, query) =
   in
   let cols = data_table_head language `settings in
   let th_class = [ "w-1"; "w-1"; "w-4"; "w-2"; "w-1"; "w-1" ] in
-  let row
-    { Queue.id; name; status; input; last_error; last_error_at; next_run_at; _ }
-    =
+  let row instance =
     let formatted_date_time date =
       span ~a:[ a_class [ "nobr" ] ] [ txt (formatted_date_time date) ]
     in
-    [ txt name
-    ; txt (Status.show status |> CCString.capitalize_ascii)
-    ; span ~a:[ a_class [ "word-break-all" ] ] [ txt (CCString.take 80 input) ]
-    ; txt (CCOption.value ~default:"-" last_error)
-    ; last_error_at |> CCOption.map_or ~default:(txt "-") formatted_date_time
-    ; next_run_at |> formatted_date_time
-    ; Format.asprintf "/admin/settings/queue/%s" id
+    [ txt (instance |> Instance.name |> JobName.show)
+    ; txt
+        (instance |> Instance.status |> Status.show |> CCString.capitalize_ascii)
+    ; span
+        ~a:[ a_class [ "word-break-all" ] ]
+        [ txt (instance |> Instance.input |> CCString.take 80) ]
+    ; txt (instance |> Instance.last_error |> CCOption.value ~default:"-")
+    ; instance
+      |> Instance.last_error_at
+      |> CCOption.map_or ~default:(txt "-") formatted_date_time
+    ; instance |> Instance.next_run_at |> formatted_date_time
+    ; [%string "/admin/settings/queue/%{instance |> Instance.id |> Id.value}"]
       |> Component.Input.link_as_button ~icon:Component.Icon.Eye
     ]
     |> CCList.map CCFun.(CCList.return %> td)
@@ -100,19 +103,7 @@ let text_message_job_instance_detail { Text_message.message; _ } =
   ]
 ;;
 
-let queue_instance_detail
-  language
-  { Queue.tries
-  ; next_run_at
-  ; max_tries
-  ; status
-  ; last_error
-  ; last_error_at
-  ; tag
-  ; _
-  }
-  job
-  =
+let queue_instance_detail language instance job =
   let default = "-" in
   let vertical_table =
     Component.Table.vertical_table
@@ -123,10 +114,9 @@ let queue_instance_detail
   in
   let clone_link =
     let link id =
-      let open Pool_common in
-      let id = Id.value id in
+      let id = Queue.Id.value id in
       div
-        [ txt (Utils.text_to_string language I18n.JobCloneOf)
+        [ txt Pool_common.(Utils.text_to_string language I18n.JobCloneOf)
         ; txt " "
         ; a
             ~a:
@@ -150,17 +140,28 @@ let queue_instance_detail
   in
   let queue_instance_detail =
     let open Message in
+    let open Queue in
     (( Field.Status
      , strong
-         [ status |> Queue.Status.show |> CCString.capitalize_ascii |> txt ] )
+         [ instance
+           |> Instance.status
+           |> Queue.Status.show
+           |> CCString.capitalize_ascii
+           |> txt
+         ] )
      :: job_detail)
-    @ [ Field.Tag, tag |> CCOption.value ~default |> txt
-      ; Field.Tries, tries |> CCInt.to_string |> txt
-      ; Field.MaxTries, max_tries |> CCInt.to_string |> txt
+    @ [ Field.Tag, instance |> Instance.tag |> CCOption.value ~default |> txt
+      ; Field.Tries, instance |> Instance.tries |> CCInt.to_string |> txt
+      ; Field.MaxTries, instance |> Instance.max_tries |> CCInt.to_string |> txt
       ; ( Field.LastErrorAt
-        , last_error_at |> CCOption.map_or ~default formatted_date_time |> txt )
-      ; Field.LastError, last_error |> CCOption.value ~default |> txt
-      ; Field.NextRunAt, next_run_at |> formatted_date_time |> txt
+        , instance
+          |> Instance.last_error_at
+          |> CCOption.map_or ~default formatted_date_time
+          |> txt )
+      ; ( Field.LastError
+        , instance |> Instance.last_error |> CCOption.value ~default |> txt )
+      ; ( Field.NextRunAt
+        , instance |> Instance.next_run_at |> formatted_date_time |> txt )
       ]
     |> vertical_table
   in
@@ -181,7 +182,10 @@ let resend_form Pool_context.{ csrf; language; _ } job =
   form
     ~a:
       [ a_action
-          (Format.asprintf "%s/%s/resend" base_path job.Queue.id
+          (Format.asprintf
+             "%s/%s/resend"
+             base_path
+             (job |> Queue.Instance.id |> Queue.Id.value)
            |> Sihl.Web.externalize_path)
       ; a_method `Post
       ]
@@ -197,7 +201,7 @@ let resend_form Pool_context.{ csrf; language; _ } job =
 
 let detail Pool_context.({ language; _ } as context) instance job =
   let buttons_html =
-    if Queue.resendable instance |> CCResult.is_ok
+    if Queue.Instance.resendable instance |> CCResult.is_ok
     then
       div
         ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
@@ -210,7 +214,6 @@ let detail Pool_context.({ language; _ } as context) instance job =
       [ queue_instance_detail language instance job ]
   in
   let title =
-    let { Queue.name; last_error_at; _ } = instance in
     div
       ~a:
         [ a_class
@@ -226,8 +229,9 @@ let detail Pool_context.({ language; _ } as context) instance job =
               ~a:[ a_class [ "heading-1" ] ]
               [ Format.asprintf
                   "%s%s"
-                  name
-                  (last_error_at
+                  (instance |> Queue.Instance.name |> Queue.JobName.show)
+                  (instance
+                   |> Queue.Instance.last_error_at
                    |> CCOption.map_or
                         ~default:""
                         CCFun.(formatted_date_time %> Format.asprintf " (%s)"))

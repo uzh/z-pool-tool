@@ -21,7 +21,7 @@ type t =
 type job =
   { message : t
   ; message_history : Queue.History.create option [@yojson.option]
-  ; resent : Pool_common.Id.t option
+  ; resent : Queue.Id.t option
   }
 [@@deriving eq, show, yojson]
 

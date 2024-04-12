@@ -293,20 +293,12 @@ module Resend = struct
   let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
 
   let to_queue_job ?(status = Queue.Status.Succeeded) name input =
-    let now = Ptime_clock.now () in
-    Queue.
-      { id = Pool_common.Id.(create () |> value)
-      ; name = Queue.JobName.show name
-      ; input = Yojson.Safe.to_string input
-      ; tries = 0
-      ; max_tries = 10
-      ; next_run_at = now
-      ; status
-      ; last_error = None
-      ; last_error_at = None
-      ; tag = None
-      ; ctx = database_label |> Database.to_ctx
-      }
+    Queue.Instance.create
+      ~max_tries:10
+      ~status
+      (database_label |> Database.to_ctx)
+      name
+      (Yojson.Safe.to_string input)
   ;;
 
   let email_queue_job ?status () =
@@ -349,7 +341,7 @@ module Resend = struct
       let job =
         Email.
           { (Model.create_email_job ()) with
-            resent = Some (Pool_common.Id.of_string email_job.Queue.id)
+            resent = Some (email_job |> Queue.Instance.id)
           }
       in
       Ok [ Email.(Sent job) |> Pool_event.email ]
@@ -361,7 +353,7 @@ module Resend = struct
       let job =
         Text_message.
           { (Model.create_text_message_job cell_phone) with
-            resent = Some (Pool_common.Id.of_string text_message_job.Queue.id)
+            resent = Some (text_message_job |> Queue.Instance.id)
           }
       in
       Ok [ Text_message.(Sent job) |> Pool_event.text_message ]
@@ -387,7 +379,7 @@ module Resend = struct
       let job =
         Email.
           { (Model.create_email_job ~recipient:updated_email_address ()) with
-            resent = Some (Pool_common.Id.of_string email_job.Queue.id)
+            resent = Some (email_job |> Queue.Instance.id)
           }
       in
       Ok [ Email.(Sent job) |> Pool_event.email ]
@@ -399,7 +391,7 @@ module Resend = struct
       let job =
         Text_message.
           { (Model.create_text_message_job updated_cellphone) with
-            resent = Some (Pool_common.Id.of_string text_message_job.Queue.id)
+            resent = Some (text_message_job |> Queue.Instance.id)
           }
       in
       Ok [ Text_message.(Sent job) |> Pool_event.text_message ]
@@ -421,7 +413,7 @@ module Resend = struct
       let job =
         Email.
           { (Model.create_email_job ~smtp_auth_id:updated_smtp_auth_id ()) with
-            resent = Some (Pool_common.Id.of_string email_job.Queue.id)
+            resent = Some (email_job |> Queue.Instance.id)
           }
       in
       Ok [ Email.(Sent job) |> Pool_event.email ]

@@ -3,7 +3,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 module Id = struct
   open Sexplib.Conv
 
-  type t = string [@@deriving eq, show, sexp_of, yojson]
+  type t = string [@@deriving eq, show, sexp, yojson]
 
   let create () = Uuidm.v `V4 |> Uuidm.to_string
   let of_string m = m

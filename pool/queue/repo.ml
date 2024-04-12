@@ -1,7 +1,5 @@
 module Dynparam = Database.Dynparam
 
-let job = Repo_entity.job
-
 let sql_select_columns =
   [ Pool_common.Id.sql_select_fragment ~field:"queue_jobs.uuid"
   ; "queue_jobs.name"
@@ -19,7 +17,8 @@ let sql_select_columns =
 
 let update_request =
   let open Caqti_request.Infix in
-  {sql|
+  [%string
+    {sql|
       UPDATE queue_jobs
       SET
         name = $2,
@@ -33,9 +32,9 @@ let update_request =
         tag = $10,
         ctx = $11
       WHERE
-        queue_jobs.uuid = UNHEX(REPLACE($1, '-', ''))
-    |sql}
-  |> job ->. Caqti_type.unit
+        queue_jobs.uuid = %{Pool_common.Id.sql_value_fragment "$1"}
+    |sql}]
+  |> Repo_entity.Instance.t ->. Caqti_type.unit
 ;;
 
 let update label job_instance = Database.exec label update_request job_instance
@@ -49,10 +48,13 @@ let find_request_sql ?(count = false) where_fragment =
 
 let find_request =
   let open Caqti_request.Infix in
-  Format.asprintf
-    {sql| SELECT %s FROM queue_jobs WHERE queue_jobs.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-    (sql_select_columns |> CCString.concat ", ")
-  |> Pool_common.Repo.Id.t ->? job
+  [%string
+    {sql|
+      SELECT %{sql_select_columns |> CCString.concat ", "}
+      FROM queue_jobs
+      WHERE queue_jobs.uuid = %{Pool_common.Id.sql_value_fragment "?"}
+    |sql}]
+  |> Repo_entity.Id.t ->? Repo_entity.Instance.t
 ;;
 
 let find label id =
@@ -62,7 +64,11 @@ let find label id =
 ;;
 
 let find_by ?query pool =
-  Query.collect_and_count pool query ~select:find_request_sql job
+  Query.collect_and_count
+    pool
+    query
+    ~select:find_request_sql
+    Repo_entity.Instance.t
 ;;
 
 let find_workable_query ?(count = false) () =
@@ -82,7 +88,7 @@ let find_workable_query ?(count = false) () =
 
 let find_workable_request =
   let open Caqti_request.Infix in
-  find_workable_query () |> Caqti_type.unit ->* job
+  find_workable_query () |> Caqti_type.unit ->* Repo_entity.Instance.t
 ;;
 
 let find_workable label = Database.collect label find_workable_request ()
@@ -100,7 +106,8 @@ let count_workable label =
 
 let enqueue_request =
   let open Caqti_request.Infix in
-  {sql|
+  [%string
+    {sql|
       INSERT INTO queue_jobs (
         uuid,
         name,
@@ -114,7 +121,7 @@ let enqueue_request =
         tag,
         ctx
       ) VALUES (
-        UNHEX(REPLACE($1, '-', '')),
+        %{Pool_common.Id.sql_value_fragment "$1"},
         $2,
         $3,
         $4,
@@ -126,8 +133,8 @@ let enqueue_request =
         $10,
         $11
       )
-    |sql}
-  |> job ->. Caqti_type.unit
+    |sql}]
+  |> Repo_entity.Instance.t ->. Caqti_type.unit
 ;;
 
 let enqueue label job_instance =
@@ -137,12 +144,13 @@ let enqueue label job_instance =
 (* MariaDB expects uuid to be bytes, since we can't unhex when using caqti's
    populate, we have to do that manually. *)
 let populatable job_instances =
+  let open Entity in
   job_instances
-  |> List.map (fun j ->
+  |> List.map (fun ({ Instance.id; _ } as j) ->
     { j with
-      Entity.id =
-        (match j.Entity.id |> Uuidm.of_string with
-         | Some uuid -> Uuidm.to_bytes uuid
+      Instance.id =
+        (match id |> Entity.Id.value |> Uuidm.of_string with
+         | Some uuid -> Uuidm.to_bytes uuid |> Entity.Id.of_string
          | None -> failwith "Invalid uuid provided")
     })
 ;;
@@ -165,37 +173,21 @@ let enqueue_all label job_instances =
         ; "tag"
         ; "ctx"
         ]
-      job
+      Repo_entity.Instance.t
       (job_instances |> populatable |> List.rev |> Caqti_lwt.Stream.of_list)
     |> Lwt.map Caqti_error.uncongested)
 ;;
 
 let query =
   let open Caqti_request.Infix in
-  {sql|
-      SELECT
-        LOWER(CONCAT(
-          SUBSTR(HEX(uuid), 1, 8), '-',
-          SUBSTR(HEX(uuid), 9, 4), '-',
-          SUBSTR(HEX(uuid), 13, 4), '-',
-          SUBSTR(HEX(uuid), 17, 4), '-',
-          SUBSTR(HEX(uuid), 21)
-          )),
-        name,
-        input,
-        tries,
-        next_run_at,
-        max_tries,
-        status,
-        last_error,
-        last_error_at,
-        tag,
-        ctx
+  [%string
+    {sql|
+      SELECT %{sql_select_columns |> CCString.concat ", "}
       FROM queue_jobs
       ORDER BY next_run_at DESC
       LIMIT 100
-    |sql}
-  |> Caqti_type.unit ->* job
+    |sql}]
+  |> Caqti_type.unit ->* Repo_entity.Instance.t
 ;;
 
 let query label () = Database.collect label query ()
@@ -203,9 +195,9 @@ let query label () = Database.collect label query ()
 let delete_request =
   let open Caqti_request.Infix in
   {sql|
-      DELETE FROM job_queues
-      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
+    DELETE FROM job_queues
+    WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
   |> Caqti_type.(string ->. unit)
 ;;
 
@@ -219,34 +211,16 @@ let clean_request =
 ;;
 
 let clean label () = Database.exec label clean_request ()
-
-let filter_fragment = {sql|
-      WHERE queue_jobs.tag LIKE $1
-    |sql}
+let filter_fragment = {sql| WHERE queue_jobs.tag LIKE $1 |sql}
 
 let search_query =
-  {sql|
+  [%string
+    {sql|
       SELECT
         COUNT(*) OVER() as total,
-        LOWER(CONCAT(
-          SUBSTR(HEX(uuid), 1, 8), '-',
-          SUBSTR(HEX(uuid), 9, 4), '-',
-          SUBSTR(HEX(uuid), 13, 4), '-',
-          SUBSTR(HEX(uuid), 17, 4), '-',
-          SUBSTR(HEX(uuid), 21)
-          )),
-        name,
-        input,
-        tries,
-        next_run_at,
-        max_tries,
-        status,
-        last_error,
-        last_error_at,
-        tag,
-        ctx
+        %{sql_select_columns |> CCString.concat ", "}
       FROM queue_jobs
-    |sql}
+    |sql}]
 ;;
 
 module Migration = struct
@@ -254,70 +228,70 @@ module Migration = struct
     Database.Migration.Step.create
       ~label:"fix collation"
       {sql|
-          SET collation_server = 'utf8mb4_unicode_ci'
-        |sql}
+        SET collation_server = 'utf8mb4_unicode_ci'
+      |sql}
   ;;
 
   let create_jobs_table =
     Database.Migration.Step.create
       ~label:"create jobs table"
       {sql|
-          CREATE TABLE IF NOT EXISTS queue_jobs (
-            id BIGINT UNSIGNED AUTO_INCREMENT,
-            uuid BINARY(16) NOT NULL,
-            name VARCHAR(128) NOT NULL,
-            input TEXT NULL,
-            tries BIGINT UNSIGNED,
-            next_run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            max_tries BIGINT UNSIGNED,
-            status VARCHAR(128) NOT NULL,
-            PRIMARY KEY (id),
-            CONSTRAINT unique_uuid UNIQUE KEY (uuid)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        |sql}
+        CREATE TABLE IF NOT EXISTS queue_jobs (
+          id BIGINT UNSIGNED AUTO_INCREMENT,
+          uuid BINARY(16) NOT NULL,
+          name VARCHAR(128) NOT NULL,
+          input TEXT NULL,
+          tries BIGINT UNSIGNED,
+          next_run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          max_tries BIGINT UNSIGNED,
+          status VARCHAR(128) NOT NULL,
+          PRIMARY KEY (id),
+          CONSTRAINT unique_uuid UNIQUE KEY (uuid)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      |sql}
   ;;
 
   let set_null_input_to_empty_string =
     Database.Migration.Step.create
       ~label:"set input to not null"
       {sql|
-          UPDATE queue_jobs SET input = '' WHERE input IS NULL
-        |sql}
+        UPDATE queue_jobs SET input = '' WHERE input IS NULL
+      |sql}
   ;;
 
   let set_input_not_null =
     Database.Migration.Step.create
       ~label:"set input to not null"
       {sql|
-          ALTER TABLE queue_jobs MODIFY COLUMN input TEXT NOT NULL DEFAULT ''
-        |sql}
+        ALTER TABLE queue_jobs MODIFY COLUMN input TEXT NOT NULL DEFAULT ''
+      |sql}
   ;;
 
   let add_error_columns =
     Database.Migration.Step.create
       ~label:"add error columns"
       {sql|
-          ALTER TABLE queue_jobs
-            ADD COLUMN last_error TEXT,
-            ADD COLUMN last_error_at TIMESTAMP
-        |sql}
+        ALTER TABLE queue_jobs
+          ADD COLUMN last_error TEXT,
+          ADD COLUMN last_error_at TIMESTAMP
+      |sql}
   ;;
 
   let add_tag_column =
     Database.Migration.Step.create
       ~label:"add tag column"
       {sql|
-          ALTER TABLE queue_jobs
-            ADD COLUMN tag TEXT NULL
-        |sql}
+        ALTER TABLE queue_jobs
+          ADD COLUMN tag TEXT NULL
+      |sql}
   ;;
 
   let add_ctx_column =
     Database.Migration.Step.create
       ~label:"add ctx column"
       {sql|
-      ALTER TABLE queue_jobs
-       ADD COLUMN ctx TEXT NULL
+        ALTER TABLE queue_jobs
+        ADD COLUMN ctx TEXT NULL
       |sql}
   ;;
 

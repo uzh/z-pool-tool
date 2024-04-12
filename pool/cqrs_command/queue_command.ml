@@ -43,18 +43,18 @@ let update_text_message_job
   { job with message; resent = Some instance_id }
 ;;
 
-let parse_instance_job { Queue.name; input; _ } =
-  let open Queue.JobName in
-  (try Ok (name |> read) with
-   | _ -> Error Message.(Error.Invalid Field.Input))
-  >>= function
+let parse_instance_job instance =
+  let open Queue in
+  let open JobName in
+  let input = Instance.input instance in
+  match Instance.name instance with
   | SendEmail -> Email.parse_job_json input >|= fun job -> `EmailJob job
   | SendTextMessage ->
     Text_message.parse_job_json input >|= fun job -> `TextMessageJob job
 ;;
 
-let update_job ?contact ?experiment ({ Queue.id; _ } as instance) =
-  let id = Pool_common.Id.of_string id in
+let update_job ?contact ?experiment instance =
+  let id = Queue.Instance.id instance in
   instance
   |> parse_instance_job
   >|= function
@@ -64,7 +64,7 @@ let update_job ?contact ?experiment ({ Queue.id; _ } as instance) =
 ;;
 
 module Resend : sig
-  include Common.CommandSig with type t = Queue.instance
+  include Common.CommandSig with type t = Queue.Instance.t
 
   val handle
     :  ?contact:Contact.t
@@ -72,10 +72,10 @@ module Resend : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
-  type t = Queue.instance
+  type t = Queue.Instance.t
 
   let handle ?contact ?experiment queue_instance =
-    let* queue_instance = Queue.resendable queue_instance in
+    let* queue_instance = Queue.Instance.resendable queue_instance in
     queue_instance
     |> update_job ?contact ?experiment
     >|= function

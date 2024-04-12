@@ -132,7 +132,7 @@ type job =
   { email : email
   ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
   ; message_history : Queue.History.create option [@yojson.option]
-  ; resent : Pool_common.Id.t option [@yojson.option]
+  ; resent : Queue.Id.t option [@yojson.option]
   }
 [@@deriving eq, show, yojson]
 
