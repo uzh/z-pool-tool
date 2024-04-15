@@ -629,19 +629,18 @@ let update_handler action req =
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
+    let open Cqrs_command.Session_command in
     let* events =
       match action with
       | `Update ->
         (match Experiment.is_sessionless experiment with
          | true ->
-           let open Cqrs_command.Session_command in
            let open UpdateTimeWindow in
            let* time_window = Time_window.find database_label session_id in
-           let* (decoded : Time_window.create) =
-             urlencoded |> decode |> Lwt_result.lift
-           in
-           let%lwt[@warning "-40"] overlapps =
-             Time_window.find_overlapping
+           let* decoded = urlencoded |> decode |> Lwt_result.lift in
+           let%lwt overlapps =
+             let open Time_window in
+             find_overlapping
                ~exclude:session_id
                database_label
                experiment.Experiment.id
@@ -653,13 +652,13 @@ let update_handler action req =
            let* session, follow_ups, parent = sessions_data () in
            let* location = location urlencoded database_label in
            let open CCResult.Infix in
-           let open Cqrs_command.Session_command.Update in
+           let open Update in
            urlencoded
            |> decode
            >>= handle ~tags ?parent_session:parent follow_ups session location
            |> Lwt_result.lift)
       | `Reschedule ->
-        let open Cqrs_command.Session_command.Reschedule in
+        let open Reschedule in
         let* session, follow_ups, parent = sessions_data () in
         let%lwt assignments =
           Assignment.find_uncanceled_by_session

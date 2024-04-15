@@ -30,16 +30,16 @@ let time_window_form
     | None -> false
     | Some value -> Ptime.is_earlier value ~than:(Ptime_clock.now ())
   in
-  let date_input field value =
-    let is_past = is_past value in
+  let date_input ?min_value ?read_only field value =
     date_time_picker_element
       language
       ~required:true
       ~flash_fetcher
       ?value
+      ?min_value
       ~disable_past:(CCOption.is_none time_window)
       ~warn_past:true
-      ~read_only:is_past
+      ?read_only
       field
   in
   let start_field =
@@ -47,11 +47,16 @@ let time_window_form
       time_window
       |> CCOption.map (fun ({ start; _ } : Time_window.t) -> Start.value start)
     in
-    date_input Message.Field.Start value
+    let read_only = is_past value in
+    date_input ~read_only Message.Field.Start value
   in
   let end_field =
     let value = time_window |> CCOption.map Time_window.ends_at in
-    date_input Message.Field.End value
+    let min_value =
+      time_window
+      |> CCOption.map (fun ({ start; _ } : Time_window.t) -> Start.value start)
+    in
+    date_input ?min_value Message.Field.End value
   in
   form
     ~a:
@@ -161,7 +166,7 @@ let detail
       ~control:(language, Message.(Edit (Some Field.Session)))
       (Format.asprintf "%s/edit" session_path)
   in
-  let session_overview =
+  let overview =
     let open Message in
     let open Session in
     let int_to_txt i = i |> CCInt.to_string |> txt in
@@ -219,9 +224,7 @@ let detail
       ; Component.Tag.tag_list language participation_tags
       ]
   in
-  div
-    ~a:[ a_class [ "stack-lg" ] ]
-    [ session_overview; tags_html; assignments_html ]
+  div ~a:[ a_class [ "stack-lg" ] ] [ overview; tags_html; assignments_html ]
   |> CCList.return
   |> Layout.Experiment.(
        create
