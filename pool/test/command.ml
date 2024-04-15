@@ -561,5 +561,7 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
+    ; ( "time window"
+      , Time_window_test.[ test_case "create" `Slow create_timewindow ] )
     ]
 ;;

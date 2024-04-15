@@ -357,6 +357,20 @@ module Model = struct
     |> fun session -> { session with email_reminder_sent_at }
   ;;
 
+  let create_timewindow
+    ?(id = Session.Id.create ())
+    ?(duration = Session.Duration.create hour |> get_or_failwith)
+    ?start
+    ?(experiment = create_experiment ())
+    ()
+    =
+    Time_window.create
+      ~id
+      (start |> CCOption.value ~default:(in_an_hour ()))
+      duration
+      experiment
+  ;;
+
   let create_public_session ?start () =
     let Session.
           { id
