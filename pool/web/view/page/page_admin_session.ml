@@ -1386,21 +1386,68 @@ let print
   |> Layout.Print.create ~document_title:title
 ;;
 
+let tags_subform
+  ({ Pool_context.language; csrf; _ } as context)
+  experiment
+  session
+  (current_tags, available_tags, experiment_tags)
+  =
+  let tags_action =
+    Format.asprintf
+      "%s/%s"
+      (session_path
+         ~suffix:Message.Field.(human_url ParticipationTag)
+         ~id:(session_id session)
+         experiment.Experiment.id)
+  in
+  let remove_action (tag : Tags.t) =
+    Format.asprintf "%s/%s" Tags.(tag.id |> Id.value) "remove" |> tags_action
+  in
+  div
+    [ h3
+        ~a:[ a_class [ "heading-3" ] ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
+    ; p
+        Pool_common.
+          [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt ]
+    ; div
+        ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+        [ Tag.add_tags_form
+            context
+            ~existing:current_tags
+            available_tags
+            (tags_action "assign")
+        ; div
+            ~a:[ a_class [ "flexcolumn"; "flex-gap" ] ]
+            [ Component.Tag.tag_form
+                ~label:Pool_common.I18n.SelectedTags
+                language
+                (remove_action, csrf)
+                current_tags
+            ; div
+                ~a:[ a_class [ "border-top"; "inset"; "vertical"; "n-shape" ] ]
+                [ p
+                    [ txt
+                        "Every participant of a session of this experiment \
+                         will be tagged with the following tags by default."
+                    ]
+                ; Component.Tag.tag_list language experiment_tags
+                ]
+            ]
+        ]
+    ]
+;;
+
 let edit
   ({ Pool_context.language; csrf; _ } as context)
   experiment
   default_leadtime_settings
   (session : Session.t)
   locations
-  (current_tags, available_tags, experiment_tags)
+  tags
   text_messages_enabled
   flash_fetcher
   =
-  let session_path =
-    Format.asprintf
-      "%s/%s"
-      (session_path ~id:session.Session.id experiment.Experiment.id)
-  in
   let form =
     div
       [ p
@@ -1420,50 +1467,7 @@ let edit
           ~flash_fetcher
       ]
   in
-  let tags_html =
-    let tags_action =
-      Format.asprintf
-        "%s/%s"
-        (session_path Message.Field.(human_url ParticipationTag))
-    in
-    let remove_action (tag : Tags.t) =
-      Format.asprintf "%s/%s" Tags.(tag.id |> Id.value) "remove" |> tags_action
-    in
-    div
-      [ h3
-          ~a:[ a_class [ "heading-3" ] ]
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
-      ; p
-          Pool_common.
-            [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt ]
-      ; div
-          ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
-          [ Tag.add_tags_form
-              context
-              ~existing:current_tags
-              available_tags
-              (tags_action "assign")
-          ; div
-              ~a:[ a_class [ "flexcolumn"; "flex-gap" ] ]
-              [ Component.Tag.tag_form
-                  ~label:Pool_common.I18n.SelectedTags
-                  language
-                  (remove_action, csrf)
-                  current_tags
-              ; div
-                  ~a:
-                    [ a_class [ "border-top"; "inset"; "vertical"; "n-shape" ] ]
-                  [ p
-                      [ txt
-                          "Every participant of a session of this experiment \
-                           will be tagged with the following tags by default."
-                      ]
-                  ; Component.Tag.tag_list language experiment_tags
-                  ]
-              ]
-          ]
-      ]
-  in
+  let tags_html = tags_subform context experiment (`Session session) tags in
   div ~a:[ a_class [ "stack-lg" ] ] [ form; tags_html ]
   |> CCList.return
   |> Layout.Experiment.(

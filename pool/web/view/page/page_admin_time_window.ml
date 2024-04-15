@@ -117,9 +117,20 @@ let edit
   ({ Pool_context.language; csrf; _ } as context)
   experiment
   time_window
+  tags
   flash_fetcher
   =
-  time_window_form csrf language experiment ~time_window ~flash_fetcher
+  let tags_html =
+    Page_admin_session.tags_subform
+      context
+      experiment
+      (`TimeWindow time_window)
+      tags
+  in
+  let form =
+    time_window_form csrf language experiment ~time_window ~flash_fetcher
+  in
+  div ~a:[ a_class [ "stack-lg" ] ] [ form; tags_html ]
   |> CCList.return
   |> Layout.Experiment.(
        create

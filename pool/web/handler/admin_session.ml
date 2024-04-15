@@ -422,10 +422,8 @@ let time_window_page database_label req context time_window experiment =
           database_label
           (Experiment (Experiment.Id.to_common experiment_id)))
     in
-    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
-    let _ = text_messages_enabled in
-    let _ = current_tags, available_tags, experiment_participation_tags in
-    Page.Admin.TimeWindow.edit context experiment time_window flash_fetcher
+    let tags = current_tags, available_tags, experiment_participation_tags in
+    Page.Admin.TimeWindow.edit context experiment time_window tags flash_fetcher
     >|> create_layout
   | `Print ->
     let%lwt assignments =
@@ -615,31 +613,54 @@ let update_handler action req =
       , Format.asprintf "%s/%s" path error_path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
+    let sessions_data () =
+      let* session = Session.find database_label session_id in
+      let%lwt follow_ups =
+        Session.find_follow_ups database_label session.Session.id
+      in
+      let* parent =
+        match session.Session.follow_up_to with
+        | None -> Lwt_result.return None
+        | Some parent_id ->
+          parent_id |> Session.find database_label >|+ CCOption.some
+      in
+      Lwt_result.return (session, follow_ups, parent)
+    in
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
-    let%lwt follow_ups =
-      Session.find_follow_ups database_label session.Session.id
-    in
-    let* parent =
-      match session.Session.follow_up_to with
-      | None -> Lwt_result.return None
-      | Some parent_id ->
-        parent_id |> Session.find database_label >|+ CCOption.some
-    in
     let* events =
       match action with
       | `Update ->
-        let* location = location urlencoded database_label in
-        let open CCResult.Infix in
-        let open Cqrs_command.Session_command.Update in
-        urlencoded
-        |> decode
-        >>= handle ~tags ?parent_session:parent follow_ups session location
-        |> Lwt_result.lift
+        (match Experiment.is_sessionless experiment with
+         | true ->
+           let open Cqrs_command.Session_command in
+           let open UpdateTimeWindow in
+           let* time_window = Time_window.find database_label session_id in
+           let* (decoded : Time_window.create) =
+             urlencoded |> decode |> Lwt_result.lift
+           in
+           let%lwt[@warning "-40"] overlapps =
+             Time_window.find_overlapping
+               ~exclude:session_id
+               database_label
+               experiment.Experiment.id
+               ~start:decoded.start
+               ~end_at:decoded.end_at
+           in
+           handle ~tags ~overlapps time_window decoded |> Lwt_result.lift
+         | false ->
+           let* session, follow_ups, parent = sessions_data () in
+           let* location = location urlencoded database_label in
+           let open CCResult.Infix in
+           let open Cqrs_command.Session_command.Update in
+           urlencoded
+           |> decode
+           >>= handle ~tags ?parent_session:parent follow_ups session location
+           |> Lwt_result.lift)
       | `Reschedule ->
         let open Cqrs_command.Session_command.Reschedule in
+        let* session, follow_ups, parent = sessions_data () in
         let%lwt assignments =
           Assignment.find_uncanceled_by_session
             database_label

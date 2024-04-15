@@ -49,7 +49,9 @@ type create =
   ; max_participants : Session.ParticipantAmount.t option
   }
 
-type event = Created of t
+type event =
+  | Created of t
+  | Updated of t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -62,7 +64,8 @@ val find
   -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_overlapping
-  :  Pool_database.Label.t
+  :  ?exclude:Session.Id.t
+  -> Pool_database.Label.t
   -> Experiment.Id.t
   -> start:Session.Start.t
   -> end_at:Session.End.t

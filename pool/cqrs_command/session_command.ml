@@ -234,7 +234,7 @@ module CreateTimeWindow : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> overlapps:Time_window.t list
-    -> ?session_id:Session.Id.t
+    -> ?id:Session.Id.t
     -> Experiment.t
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
@@ -247,7 +247,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ~overlapps
-    ?session_id
+    ?id
     experiment
     { Time_window.start
     ; end_at
@@ -272,7 +272,7 @@ end = struct
     let* duration = Time_window.duration ~start ~end_at in
     let time_window =
       Time_window.create
-        ?id:session_id
+        ?id
         ?internal_description
         ?public_description
         ?max_participants
@@ -281,6 +281,67 @@ end = struct
         experiment
     in
     Ok [ Time_window.Created time_window |> Pool_event.time_window ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate time_window_schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects exp_id = Session.Guard.Access.create exp_id
+end
+
+module UpdateTimeWindow : sig
+  include Common.CommandSig with type t = Time_window.create
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> overlapps:Time_window.t list
+    -> Time_window.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Time_window.create
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ~overlapps
+    time_window
+    { Time_window.start
+    ; end_at
+    ; internal_description
+    ; public_description
+    ; max_participants
+    }
+    =
+    Logs.info ~src (fun m -> m "Handle command UpdateTimeWindow" ~tags);
+    let open CCResult in
+    let open Time_window in
+    let* () =
+      let open Session in
+      if Ptime.is_later (Start.value start) ~than:(End.value end_at)
+      then Error Pool_common.Message.EndBeforeStart
+      else Ok ()
+    in
+    let* () =
+      if CCList.is_empty overlapps
+      then Ok ()
+      else Error Pool_common.Message.SessionOverlap
+    in
+    let* duration = Time_window.duration ~start ~end_at in
+    let time_window =
+      { time_window with
+        start
+      ; duration
+      ; internal_description
+      ; public_description
+      ; max_participants
+      }
+    in
+    Ok [ Time_window.Updated time_window |> Pool_event.time_window ]
   ;;
 
   let decode data =

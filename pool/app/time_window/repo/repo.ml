@@ -68,29 +68,47 @@ let find pool id =
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
 ;;
 
-let find_overlapping_request =
-  let open Caqti_request.Infix in
+let find_overlapping_request exclude =
   let end_at =
     "DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND)"
   in
   (* TODO: How to deal with start or and at the same time? *)
-  [%string
-    {sql|
-      WHERE
-        pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
-        AND pool_sessions.start <= $3 
-        AND %{end_at} >= $2
-    |sql}]
-  |> find_request_sql
-  |> Caqti_type.(t3 string ptime ptime) ->* RepoEntity.t
+  let base =
+    [%string
+      {sql|
+        WHERE
+          pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+          AND pool_sessions.start <= $3 
+          AND %{end_at} >= $2
+      |sql}]
+  in
+  let where =
+    if CCOption.is_some exclude
+    then
+      Format.asprintf
+        "%s AND pool_sessions.uuid != UNHEX(REPLACE($4, '-', ''))"
+        base
+    else base
+  in
+  where |> find_request_sql
 ;;
 
-let find_overlapping pool experiment_id ~start ~end_at =
+let find_overlapping ?exclude pool experiment_id ~start ~end_at =
+  let open Caqti_request.Infix in
   let open Session in
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    find_overlapping_request
-    (Experiment.Id.value experiment_id, Start.value start, End.value end_at)
+  let (Dynparam.Pack (pt, pv)) =
+    let open Dynparam in
+    empty
+    |> add Caqti_type.string (Experiment.Id.value experiment_id)
+    |> add Caqti_type.ptime (Start.value start)
+    |> add Caqti_type.ptime (End.value end_at)
+    |> fun dyn ->
+    match exclude with
+    | None -> dyn
+    | Some id -> dyn |> add Caqti_type.string (Id.value id)
+  in
+  let request = find_overlapping_request exclude |> pt ->* RepoEntity.t in
+  Utils.Database.collect (pool |> Pool_database.Label.value) request pv
 ;;
 
 let insert_request =
@@ -121,11 +139,36 @@ let insert_request =
   |> Caqti_type.(RepoEntity.Write.t ->. unit)
 ;;
 
-let insert pool t =
+let insert pool m =
   Utils.Database.exec
     (Pool_database.Label.value pool)
     insert_request
-    (RepoEntity.Write.of_entity t)
+    (RepoEntity.Write.of_entity m)
+;;
+
+let update_request =
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE pool_sessions
+    SET
+      start = $3,
+      duration = $4,
+      internal_description = $5,
+      public_description = $6,
+      max_participants = $7,
+      closed_at = $8,
+      canceled_at = $9
+    WHERE
+      uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> RepoEntity.Write.t ->. Caqti_type.unit
+;;
+
+let update pool m =
+  Utils.Database.exec
+    (Database.Label.value pool)
+    update_request
+    (RepoEntity.Write.of_entity m)
 ;;
 
 let query_by_experiment ?query pool id =

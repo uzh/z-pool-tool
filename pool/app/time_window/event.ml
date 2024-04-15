@@ -9,7 +9,10 @@ type create =
   }
 [@@deriving eq, show]
 
-type event = Created of t [@@deriving eq, show]
+type event =
+  | Created of t
+  | Updated of t
+[@@deriving eq, show]
 
 let handle_event pool =
   let open Utils.Lwt_result.Infix in
@@ -21,4 +24,5 @@ let handle_event pool =
       time_window
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
+  | Updated time_window -> Repo.update pool time_window
 ;;
