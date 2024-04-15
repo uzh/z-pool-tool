@@ -154,6 +154,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \
      Bitte lesen und akzeptieren Sie diese, um fortzufahren."
   | TextTemplates -> "Textelemente"
+  | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
     "Sie sind aktuell an keine kommenden Sessions angemeldet."
   | UpcomingSessionsTitle -> "Ihre nächsten Sessions"

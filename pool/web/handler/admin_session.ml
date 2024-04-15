@@ -386,7 +386,61 @@ let session_page database_label req context session experiment =
       ~view_contact_info
       context
       experiment
-      session
+      (`Session session)
+      assignments
+    |> Lwt_result.return
+;;
+
+let time_window_page database_label req context time_window experiment =
+  let open Utils.Lwt_result.Infix in
+  let open Helpers.Guard in
+  let time_window_id = time_window.Time_window.id in
+  let experiment_id = Experiment.(experiment.id) in
+  let experiment_target_id =
+    [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
+  in
+  let view_contact_name = can_read_contact_name context experiment_target_id in
+  let view_contact_info = can_read_contact_info context experiment_target_id in
+  let flash_fetcher = flip Sihl.Web.Flash.find req in
+  let current_tags () =
+    let open Tags.ParticipationTags in
+    find_all database_label (Session (Session.Id.to_common time_window_id))
+  in
+  let create_layout = create_layout req context in
+  function
+  | `Edit ->
+    let%lwt current_tags = current_tags () in
+    let%lwt available_tags =
+      Tags.ParticipationTags.(
+        find_available
+          database_label
+          (Session (Session.Id.to_common time_window_id)))
+    in
+    let%lwt experiment_participation_tags =
+      Tags.ParticipationTags.(
+        find_all
+          database_label
+          (Experiment (Experiment.Id.to_common experiment_id)))
+    in
+    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+    let _ = text_messages_enabled in
+    let _ = current_tags, available_tags, experiment_participation_tags in
+    Page.Admin.TimeWindow.edit context experiment time_window flash_fetcher
+    >|> create_layout
+  | `Print ->
+    let%lwt assignments =
+      Assignment.(
+        find_for_session_detail_screen
+          ~query:default_query
+          database_label
+          time_window_id)
+    in
+    Page.Admin.Session.print
+      ~view_contact_name
+      ~view_contact_info
+      context
+      experiment
+      (`TimeWindow time_window)
       assignments
     |> Lwt_result.return
 ;;
@@ -409,7 +463,14 @@ let show req =
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
-  let* session = Session.find database_label session_id in
+  let* session =
+    match Experiment.is_sessionless experiment with
+    | true ->
+      Time_window.find database_label session_id
+      >|+ fun time_window -> `TimeWindow time_window
+    | false ->
+      Session.find database_label session_id >|+ fun session -> `Session session
+  in
   let view_contact_name = can_read_contact_name context experiment_target_id in
   let view_contact_info = can_read_contact_info context experiment_target_id in
   let access_contact_profiles =
@@ -422,7 +483,7 @@ let show req =
   match HttpUtils.Htmx.is_hx_request req with
   | false ->
     let%lwt not_matching_filter_count =
-      match session.Session.canceled_at with
+      match HttpUtils.Session.canceled_at session with
       | Some _ -> Lwt.return_none
       | None ->
         Assignment.count_unsuitable_by database_label (`Session session_id)
@@ -445,22 +506,37 @@ let show req =
     let%lwt rerun_session_filter =
       Helpers.Guard.can_rerun_session_filter context experiment_id session_id
     in
-    Page.Admin.Session.detail
-      ~access_contact_profiles
-      ~not_matching_filter_count
-      ~rerun_session_filter
-      ~send_direct_message
-      ~view_contact_name
-      ~view_contact_info
-      context
-      experiment
-      session
-      current_tags
-      sys_languages
-      session_reminder_templates
-      text_messages_enabled
-      assignments
-    |> Lwt_result.ok
+    (match session with
+     | `Session session ->
+       Page.Admin.Session.detail
+         ~access_contact_profiles
+         ~not_matching_filter_count
+         ~rerun_session_filter
+         ~send_direct_message
+         ~view_contact_name
+         ~view_contact_info
+         context
+         experiment
+         session
+         current_tags
+         sys_languages
+         session_reminder_templates
+         text_messages_enabled
+         assignments
+       |> Lwt_result.ok
+     | `TimeWindow time_window ->
+       Page.Admin.TimeWindow.detail
+         ~access_contact_profiles
+         ~send_direct_message
+         ~view_contact_name
+         ~view_contact_info
+         ~text_messages_enabled
+         context
+         experiment
+         time_window
+         current_tags
+         assignments
+       |> Lwt_result.ok)
   | true ->
     Page.Admin.Assignment.(
       data_table
@@ -489,13 +565,25 @@ let detail page req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
-    let* session = Session.find database_label session_id in
     let* experiment =
       Experiment.find_of_session
         database_label
         (session_id |> Session.Id.to_common)
     in
-    session_page database_label req context session experiment page
+    (match Experiment.is_sessionless experiment with
+     | false ->
+       let* session = Session.find database_label session_id in
+       session_page database_label req context session experiment page
+     | true ->
+       let* time_window = Time_window.find database_label session_id in
+       let* page =
+         match page with
+         | `Edit -> Lwt_result.return `Edit
+         | `Print -> Lwt_result.return `Print
+         | `Reschedule | `Cancel | `Close ->
+           Lwt_result.fail Pool_common.Message.(Invalid Field.Action)
+       in
+       time_window_page database_label req context time_window experiment page)
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -1245,14 +1333,14 @@ end = struct
   ;;
 
   let combined_effects fcn req =
-    let open HttpUtils in
+    let find_id = HttpUtils.find_id in
     let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
     let session_id = find_id Session.Id.of_string Field.Session req in
     fcn experiment_id session_id
   ;;
 
   let combined_with_location_effects fcn req =
-    let open HttpUtils in
+    let find_id = HttpUtils.find_id in
     let location_id = find_id Pool_location.Id.of_string Field.Location req in
     let session_id = find_id Session.Id.of_string Field.Session req in
     fcn location_id session_id

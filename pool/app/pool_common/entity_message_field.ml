@@ -338,6 +338,7 @@ type t =
   | TextMessageRemindersSentAt [@name "text_message_reminders_sent_at"]
   [@printer go "text_message_reminders_sent_at"]
   | Time [@name "time"] [@printer go "time"]
+  | TimeWindow [@name "time_window"] [@printer go "time_window"]
   | TimeSpan [@name "timespan"] [@printer go "timespan"]
   | TimeUnit [@name "timeunit"] [@printer go "timeunit"]
   | TimeUnitOf of t [@name "timeunit_of"] [@printer nested "timeunit_of" show]

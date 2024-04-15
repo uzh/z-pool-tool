@@ -152,6 +152,7 @@ let to_string = function
     "We have recently changed our terms and conditions. Please read and accept \
      them to continue."
   | TextTemplates -> "text templates"
+  | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
   | UpcomingSessionsTitle -> "Your upcoming sessions"

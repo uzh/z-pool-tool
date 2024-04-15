@@ -93,6 +93,7 @@ type t =
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated
   | TextTemplates
+  | TimeWindowDetailTitle of string
   | UpcomingSessionsListEmpty
   | UpcomingSessionsTitle
   | UserProfileDetailsSubtitle

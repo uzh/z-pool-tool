@@ -50,6 +50,24 @@ let find_request_sql ?(count = false) where_fragment =
   | true -> Format.asprintf "SELECT COUNT(*) FROM (%s) c" query
 ;;
 
+let find_request =
+  let open Caqti_request.Infix in
+  {sql|
+      WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
+  |> find_request_sql
+  |> Caqti_type.string ->! RepoEntity.t
+;;
+
+let find pool id =
+  let open Utils.Lwt_result.Infix in
+  Utils.Database.find_opt
+    (Pool_database.Label.value pool)
+    find_request
+    (Session.Id.value id)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+;;
+
 let find_overlapping_request =
   let open Caqti_request.Infix in
   let end_at =

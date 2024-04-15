@@ -2,59 +2,8 @@ open Tyxml.Html
 open Component
 open Input
 open CCFun.Infix
+open Http_utils.Session
 module Message = Pool_common.Message
-
-let session_id = function
-  | `Session { Session.id; _ } -> id
-  | `TimeWindow { Time_window.id; _ } -> id
-;;
-
-let deletable = function
-  | `Session session -> Session.is_deletable session |> CCResult.is_ok
-  | `TimeWindow time_window -> Time_window.is_deletable time_window
-;;
-
-let closable session =
-  CCResult.is_ok
-  @@
-  match session with
-  | `Session session -> Session.is_closable session
-  | `TimeWindow time_window -> Time_window.is_closable time_window
-;;
-
-let canceled_at = function
-  | `Session { Session.canceled_at; _ } -> canceled_at
-  | `TimeWindow { Time_window.canceled_at; _ } -> canceled_at
-;;
-
-let closed_at = function
-  | `Session { Session.closed_at; _ } -> closed_at
-  | `TimeWindow { Time_window.closed_at; _ } -> closed_at
-;;
-
-let no_show_count = function
-  | `Session { Session.no_show_count; _ } -> no_show_count
-  | `TimeWindow { Time_window.no_show_count; _ } -> no_show_count
-;;
-
-let participant_count = function
-  | `Session { Session.participant_count; _ } -> participant_count
-  | `TimeWindow { Time_window.participant_count; _ } -> participant_count
-;;
-
-let assignment_count = function
-  | `Session { Session.assignment_count; _ } -> assignment_count
-  | `TimeWindow { Time_window.assignment_count; _ } -> assignment_count
-;;
-
-let follow_up_to = function
-  | `Session { Session.follow_up_to; _ } -> follow_up_to
-  | `TimeWindow _ -> None
-;;
-
-let session_title (s : Session.t) =
-  Pool_common.I18n.SessionDetailTitle (s.Session.start |> Session.Start.value)
-;;
 
 let session_counter_id = "session-counter-table"
 
@@ -1225,7 +1174,7 @@ let detail
   in
   let assignments_html =
     let open Page_admin_assignments in
-    let swap_session_modal_id = swap_session_modal_id session in
+    let swap_session_modal_id = swap_session_modal_id session.Session.id in
     let legend = Partials.table_legend language in
     let modal id =
       div ~a:[ a_id id; a_class [ "fullscreen-overlay"; "modal" ] ] []
@@ -1238,7 +1187,7 @@ let detail
         ?view_contact_info
         context
         experiment
-        session
+        (`Session session)
         text_messages_enabled
         (assignments, query)
     in
@@ -1408,7 +1357,7 @@ let print
   ?view_contact_info
   ({ Pool_context.language; _ } as context)
   experiment
-  session
+  (session : [< `Session of Session.t | `TimeWindow of Time_window.t ])
   assignments
   =
   let open Page_admin_assignments in
@@ -1424,7 +1373,7 @@ let print
       assignments
   in
   let title =
-    Pool_common.(Utils.text_to_string language (session_title session))
+    Pool_common.(Utils.text_to_string language (detail_page_title session))
   in
   [ div
       ~a:[ a_class [ "safety-margin" ] ]

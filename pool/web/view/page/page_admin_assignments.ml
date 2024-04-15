@@ -1,6 +1,7 @@
 open CCFun.Infix
 open Tyxml.Html
 open Component.Input
+open Http_utils.Session
 module Field = Pool_common.Message.Field
 module Status = Component.UserStatus.Contact
 
@@ -17,8 +18,8 @@ let assignment_specific_path ?suffix experiment_id session_id assignment_id =
   suffix |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
 ;;
 
-let swap_session_modal_id session =
-  Format.asprintf "swap-session-%s" Session.(Id.value session.Session.id)
+let swap_session_modal_id session_id =
+  Format.asprintf "swap-session-%s" Session.(Id.value session_id)
 ;;
 
 let direct_message_modal_id = Format.asprintf "direct-message-modal"
@@ -357,7 +358,7 @@ module Partials = struct
       language
       (fun lang ->
         Pool_common.(Utils.control_to_string lang Message.ChangeSession))
-      (swap_session_modal_id session)
+      (swap_session_modal_id session.Session.id)
       html
   ;;
 
@@ -535,7 +536,7 @@ let data_table
   ?(is_print = false)
   (Pool_context.{ language; csrf; user; _ } as context)
   experiment
-  session
+  (session : [ `Session of Session.t | `TimeWindow of Time_window.t ])
   text_messages_enabled
   ((assignments, custom_fields), query)
   =
@@ -543,15 +544,14 @@ let data_table
   let open Partials in
   let open Assignment in
   let url =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (experiment.Experiment.id |> Experiment.Id.value)
-      (session.Session.id |> Session.Id.value)
+    HttpUtils.Url.Admin.session_path
+      ~id:(session_id session)
+      experiment.Experiment.id
     |> Uri.of_string
   in
   let data_table =
-    let filter = if is_print then None else Assignment.filterable_by in
-    let search = if is_print then None else Some Assignment.searchable_by in
+    let filter = if is_print then None else filterable_by in
+    let search = if is_print then None else Some searchable_by in
     Component.DataTable.create_meta ?filter ?search url query language
   in
   let conditional_left_columns =
@@ -570,21 +570,19 @@ let data_table
   in
   let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
   let cancelable m =
-    Session.assignments_cancelable session |> CCResult.is_ok
+    assignments_cancelable session
     && Assignment.is_cancellable m |> CCResult.is_ok
   in
-  let session_changeable m =
-    Assignment.session_changeable session m |> CCResult.is_ok
-  in
+  let session_changeable m = HttpUtils.Session.session_changeable session m in
   let action { Assignment.id; _ } suffix =
     assignment_specific_path
       ~suffix
       experiment.Experiment.id
-      session.Session.id
+      (session_id session)
       id
   in
   let create_reminder_modal assignment =
-    Assignment.reminder_sendable session assignment |> CCResult.is_ok
+    HttpUtils.Session.reminder_sendable session assignment
   in
   let button_form ?(style = `Primary) suffix confirmable control icon assignment
     =
@@ -653,7 +651,7 @@ let data_table
         ; a_user_data "hx-swap" "outerHTML"
         ; a_user_data
             "hx-target"
-            (Format.asprintf "#%s" (swap_session_modal_id session))
+            (Format.asprintf "#%s" (swap_session_modal_id (session_id session)))
         ]
       ~is_text:true
       ~control:(language, Message.ChangeSession)
@@ -663,7 +661,7 @@ let data_table
     let action =
       HttpUtils.Url.Admin.session_path
         ~suffix:"direct-message"
-        ~id:session.Session.id
+        ~id:(session_id session)
         experiment.Experiment.id
       |> Sihl.Web.externalize_path
     in
@@ -675,7 +673,10 @@ let data_table
           ; hx_post action
           ; hx_swap "outerHTML"
           ; make_hx_vals
-              [ Field.(array_key Assignment), Id.value assignment.id ]
+              Assignment.
+                [ ( Field.(array_key Assignment)
+                  , Id.value assignment.Assignment.id )
+                ]
           ; hx_target ("#" ^ direct_message_modal_id)
           ]
       ~is_text:true
@@ -687,7 +688,7 @@ let data_table
       ~style:`Error
       "cancel"
       I18n.(
-        if session.Session.has_follow_ups
+        if has_follow_ups session
         then CancelAssignmentWithFollowUps
         else CancelAssignment)
       (Message.Cancel None)
@@ -698,7 +699,7 @@ let data_table
       ~style:`Error
       "mark-as-deleted"
       I18n.(
-        if session.Session.has_follow_ups
+        if has_follow_ups session
         then MarkAssignmentWithFollowUpsAsDeleted
         else MarkAssignmentAsDeleted)
       Message.MarkAsDeleted
@@ -722,7 +723,9 @@ let data_table
       `custom (Partials.custom_fields_header language custom_fields)
     in
     let center =
-      let base = [ `column column_participated; `column column_no_show ] in
+      let base =
+        Assignment.[ `column column_participated; `column column_no_show ]
+      in
       if has_custom_fields then custom_fields_header :: base else base
     in
     let right =
@@ -751,6 +754,7 @@ let data_table
           [ txt Contact.(assignment.contact |> id |> Id.value) ]
     in
     let tr cells =
+      let open Assignment in
       let assignment_id = a_user_data "id" (Id.value assignment.id) in
       let classname =
         if assignment.matches_filter |> MatchesFilter.value |> not
@@ -763,7 +767,7 @@ let data_table
       Partials.custom_field_cells
         language
         user
-        assignment.custom_fields
+        assignment.Assignment.custom_fields
         custom_fields
     in
     let left =
@@ -806,8 +810,8 @@ let data_table
   let modals =
     CCList.filter_map
       (fun assignment ->
-        match create_reminder_modal assignment with
-        | true ->
+        match create_reminder_modal assignment, session with
+        | true, `Session session ->
           Some
             (ReminderModal.modal
                context
@@ -815,7 +819,7 @@ let data_table
                session
                assignment
                text_messages_enabled)
-        | false -> None)
+        | false, _ | _, `TimeWindow _ -> None)
       assignments
     |> function
     | [] -> None

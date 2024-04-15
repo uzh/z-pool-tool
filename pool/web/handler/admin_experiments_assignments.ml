@@ -11,10 +11,10 @@ let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
 
 let ids_from_request req =
   let open Pool_common.Message.Field in
-  HttpUtils.(
-    ( find_id Experiment.Id.of_string Experiment req
-    , find_id Session.Id.of_string Session req
-    , find_id Assignment.Id.of_string Assignment req ))
+  let find_id = HttpUtils.find_id in
+  ( find_id Experiment.Id.of_string Experiment req
+  , find_id Session.Id.of_string Session req
+  , find_id Assignment.Id.of_string Assignment req )
 ;;
 
 let cancel req =

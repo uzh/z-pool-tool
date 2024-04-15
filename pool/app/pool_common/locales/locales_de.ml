@@ -285,6 +285,7 @@ let rec field_to_string =
   | TextMessageLeadTime -> "SMS Vorlaufzeit"
   | TextMessageRemindersSentAt -> "SMS Erinnerungen verschickt am"
   | Time -> "Uhrzeit"
+  | TimeWindow -> "Zeitfenster"
   | TimeSpan -> "Zeitspanne"
   | TimeUnit -> "Zeiteinheit"
   | TimeUnitOf field -> combine TimeUnit field

@@ -56,6 +56,11 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 
+val find
+  :  Pool_database.Label.t
+  -> Session.Id.t
+  -> (t, Pool_common.Message.error) Lwt_result.t
+
 val find_overlapping
   :  Pool_database.Label.t
   -> Experiment.Id.t

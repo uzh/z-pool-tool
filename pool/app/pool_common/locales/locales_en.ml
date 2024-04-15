@@ -282,6 +282,7 @@ let rec field_to_string =
   | TextMessageLeadTime -> "text message lead time"
   | TextMessageRemindersSentAt -> "text message reminders sent at"
   | Time -> "time"
+  | TimeWindow -> "time window"
   | TimeSpan -> "time span"
   | TimeUnit -> "time unit"
   | TimeUnitOf field -> combine TimeUnit field
