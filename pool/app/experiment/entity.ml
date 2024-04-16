@@ -345,11 +345,12 @@ let show_external_data_id_links_value (m : t) =
 
 let boolean_fields =
   Pool_common.Message.Field.
-    [ AssignmentWithoutSession
+    [ AllowUninvitedSignup
+    ; AssignmentWithoutSession
     ; DirectRegistrationDisabled
-    ; RegistrationDisabled
-    ; AllowUninvitedSignup
     ; ExternalDataRequired
+    ; RedirectImmediately
+    ; RegistrationDisabled
     ; ShowExteralDataIdLinks
     ]
 ;;
