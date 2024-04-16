@@ -35,8 +35,7 @@ module Data = struct
   let allow_uninvited_signup = "false"
   let external_data_required = "false"
   let show_external_data_id_links = "false"
-  let assignment_without_session = "false"
-  let redirect_immediately = "false"
+  let survey_url = "www.survey-url.ch"
   let experiment_type = Pool_common.ExperimentType.(show Lab)
 
   let urlencoded =
@@ -54,7 +53,13 @@ module Data = struct
       ; Field.(show ExternalDataRequired), [ external_data_required ]
       ; Field.(show ShowExteralDataIdLinks), [ show_external_data_id_links ]
       ; Field.(show ExperimentType), [ experiment_type ]
-      ; Field.(show RedirectImmediately), [ redirect_immediately ]
+      ]
+  ;;
+
+  let online_study_urlencoded =
+    Pool_common.Message.
+      [ Field.(show AssignmentWithoutSession), [ "true" ]
+      ; Field.(show SurveyUrl), [ survey_url ]
       ]
   ;;
 
@@ -170,7 +175,7 @@ let update () =
     Data.urlencoded
     |> Http_utils.format_request_boolean_values boolean_fields
     |> ExperimentCommand.Update.decode
-    >>= handle_update experiment
+    >>= handle_update ~session_count:0 experiment
   in
   let expected =
     Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
@@ -185,7 +190,10 @@ let update_add_ou_and_contact_person () =
     Data.urlencoded
     |> Http_utils.format_request_boolean_values boolean_fields
     |> ExperimentCommand.Update.decode
-    >>= handle_update ~organisational_unit:Data.organisational_unit experiment
+    >>= handle_update
+          ~session_count:0
+          ~organisational_unit:Data.organisational_unit
+          experiment
   in
   let expected =
     Ok
@@ -196,6 +204,54 @@ let update_add_ou_and_contact_person () =
             }
           |> Pool_event.experiment
         ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let update_with_existing_sessions () =
+  let experiment = Data.experiment |> get_exn in
+  let online_experiment =
+    let open Experiment in
+    let online_study =
+      OnlineStudy.
+        { survey_url = SurveyUrl.of_string Data.survey_url
+        ; redirect_immediately = RedirectImmediately.create false
+        }
+    in
+    { experiment with online_study = Some online_study }
+  in
+  let open CCResult.Infix in
+  let session_count = 1 in
+  let make_events urlencoded experiment =
+    urlencoded
+    |> Http_utils.format_request_boolean_values boolean_fields
+    |> ExperimentCommand.Update.decode
+    >>= handle_update ~session_count experiment
+  in
+  (* offline experiment *)
+  let events = make_events Data.urlencoded experiment in
+  let expected =
+    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
+  in
+  Test_utils.check_result expected events;
+  let events =
+    make_events Data.(urlencoded @ online_study_urlencoded) experiment
+  in
+  let expected =
+    Error Pool_common.Message.(CannotBeUpdated Field.AssignmentWithoutSession)
+  in
+  Test_utils.check_result expected events;
+  (* online experiment *)
+  let events = make_events Data.urlencoded online_experiment in
+  let expected =
+    Error Pool_common.Message.(CannotBeUpdated Field.AssignmentWithoutSession)
+  in
+  Test_utils.check_result expected events;
+  let events =
+    make_events Data.(urlencoded @ online_study_urlencoded) online_experiment
+  in
+  let expected =
+    Ok [ Experiment.Updated online_experiment |> Pool_event.experiment ]
   in
   Test_utils.check_result expected events
 ;;
@@ -211,7 +267,7 @@ let update_remove_ou () =
     Data.urlencoded
     |> Http_utils.format_request_boolean_values boolean_fields
     |> ExperimentCommand.Update.decode
-    >>= handle_update experiment
+    >>= handle_update ~session_count:0 experiment
   in
   let expected =
     Ok

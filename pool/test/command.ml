@@ -250,6 +250,10 @@ let () =
             "add ou and contact person"
             `Quick
             Experiment_test.update_add_ou_and_contact_person
+        ; test_case
+            "update with existing sessions"
+            `Quick
+            Experiment_test.update_with_existing_sessions
         ; test_case "remove ou" `Quick Experiment_test.update_remove_ou
         ; test_case
             "delete experiment with sessions"

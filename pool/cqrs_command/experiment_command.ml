@@ -266,6 +266,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> session_count:int
     -> Experiment.t
     -> Organisational_unit.t option
     -> Email.SmtpAuth.t option
@@ -282,6 +283,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    ~session_count
     experiment
     organisational_unit
     smtp
@@ -306,6 +308,21 @@ end = struct
         ~assignment_without_session
         ~redirect_immediately
         ~survey_url
+    in
+    let* () =
+      match
+        CCBool.equal
+          (assignment_without_session_value experiment)
+          (AssignmentWithoutSession.value assignment_without_session)
+      with
+      | true -> Ok ()
+      | false ->
+        if session_count > 0
+        then
+          Error
+            Pool_common.(
+              Message.(CannotBeUpdated Field.AssignmentWithoutSession))
+        else Ok ()
     in
     let experiment =
       { experiment with

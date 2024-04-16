@@ -249,9 +249,9 @@ let detail edit req =
           database_label
           (ParticipationTags.Experiment (Experiment.Id.to_common id)))
     in
+    let%lwt session_count = Experiment.session_count database_label id in
     (match edit with
      | false ->
-       let%lwt session_count = Experiment.session_count database_label id in
        let* smtp_auth =
          experiment.Experiment.smtp_auth_id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
@@ -308,6 +308,7 @@ let detail edit req =
        in
        Page.Admin.Experiments.edit
          ~allowed_to_assign
+         ~session_count
          experiment
          context
          default_email_reminder_lead_time
@@ -352,12 +353,13 @@ let update req =
       organisational_unit_from_urlencoded urlencoded database_label
     in
     let* smtp_auth = smtp_auth_from_urlencoded urlencoded database_label in
+    let%lwt session_count = Experiment.session_count database_label id in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Update in
       urlencoded
       |> decode
-      >>= handle ~tags experiment organisational_unit smtp_auth
+      >>= handle ~tags ~session_count experiment organisational_unit smtp_auth
       |> Lwt_result.lift
     in
     let handle events =

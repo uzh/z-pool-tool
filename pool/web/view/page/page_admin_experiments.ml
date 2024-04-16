@@ -295,6 +295,7 @@ let index (Pool_context.{ language; _ } as context) experiments query =
 
 let experiment_form
   ?experiment
+  ?session_count
   Pool_context.{ language; csrf; _ }
   organisational_units
   smtp_auth_list
@@ -306,6 +307,9 @@ let experiment_form
   =
   let open Pool_common in
   let context_language = language in
+  let has_sessions =
+    session_count |> CCOption.map_or ~default:false (fun count -> count > 0)
+  in
   let open Experiment in
   let action =
     match experiment with
@@ -315,11 +319,12 @@ let experiment_form
         "/admin/experiments/%s"
         (experiment.id |> Experiment.Id.value)
   in
-  let checkbox_element ?hints ?(default = false) field fnc =
+  let checkbox_element ?hints ?(default = false) ?read_only field fnc =
     checkbox_element
       context_language
       ?hints
       field
+      ?read_only
       ~value:(experiment |> CCOption.map_or ~default fnc)
       ~flash_fetcher
   in
@@ -534,6 +539,7 @@ let experiment_form
         ; div
             ~a:[ a_class [ "stack" ] ]
             [ checkbox_element
+                ~read_only:has_sessions
                 Field.AssignmentWithoutSession
                 assignment_without_session_value
             ; time_window_subform
@@ -645,6 +651,7 @@ let create
 
 let edit
   ?(allowed_to_assign = false)
+  ~session_count
   experiment
   ({ Pool_context.language; csrf; query_language; _ } as context)
   default_email_reminder_lead_time
@@ -660,6 +667,7 @@ let edit
   let form =
     experiment_form
       ~experiment
+      ~session_count
       context
       organisational_units
       smtp_auth_list
