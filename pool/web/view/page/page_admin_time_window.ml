@@ -5,6 +5,52 @@ module Message = Pool_common.Message
 
 let session_path = HttpUtils.Url.Admin.session_path
 
+module Partials = struct
+  let table_legend language =
+    let open Pool_common in
+    let to_string = Utils.text_to_string language in
+    let open Component.Table in
+    let closed =
+      I18n.(to_string Closed, legend_color_item "bg-green-lighter")
+    in
+    [ closed ] |> table_legend
+  ;;
+
+  let row_classnames time_window =
+    let check opt classname = if opt then Some classname else None in
+    [ check
+        (Time_window.ends_at time_window
+         |> Ptime.is_earlier ~than:(Ptime_clock.now ()))
+        "bg-green-lighter"
+    ]
+    |> CCList.filter_map CCFun.id
+  ;;
+
+  let row_attrs time_window =
+    let classnames = row_classnames time_window in
+    [ a_class classnames ]
+  ;;
+
+  let detail_button language experiment_id time_window_id =
+    HttpUtils.Url.Admin.session_path experiment_id ~id:time_window_id
+    |> link_as_button
+         ~is_text:true
+         ~icon:Icon.Eye
+         ~control:(language, Message.Details)
+  ;;
+
+  let button_dropdown { Pool_context.language; _ } experiment_id time_window =
+    [ detail_button language experiment_id time_window.Time_window.id
+      |> CCOption.return
+    ]
+    |> CCList.filter_map CCFun.id
+    |> fun buttons ->
+    div
+      ~a:[ a_class [ "flexrow" ] ]
+      [ Component.ButtonGroup.dropdown ~classnames:[ "push" ] buttons ]
+  ;;
+end
+
 let time_window_form
   csrf
   language
@@ -141,6 +187,97 @@ let edit
        create
          context
          (Control Message.(Edit (Some Field.TimeWindow)))
+         experiment)
+;;
+
+let data_table
+  ({ Pool_context.language; _ } as context)
+  experiment
+  (time_windows, query)
+  =
+  let open Session in
+  let target_id = "session-list" in
+  let time_windows_path ?id ?suffix () =
+    session_path ?id ?suffix experiment.Experiment.id
+  in
+  let data_table =
+    let url = time_windows_path () |> Uri.of_string in
+    Component.DataTable.create_meta url query language
+  in
+  let cols =
+    let create_session : [ | Html_types.flow5 ] elt =
+      link_as_button
+        ~style:`Success
+        ~icon:Icon.Add
+        ~classnames:[ "small"; "nobr" ]
+        ~control:(language, Message.(Add (Some Field.Session)))
+        (time_windows_path ~suffix:"create" ())
+    in
+    [ `column column_date
+    ; `column column_no_assignments
+    ; `column column_noshow_count
+    ; `column column_participation_count
+    ; `custom (txt "Min")
+    ; `custom create_session
+    ]
+  in
+  let th_class = [ "w-4"; "w-2"; "w-2"; "w-2"; "w-1"; "w-1" ] in
+  let row
+    ({ Time_window.assignment_count
+     ; no_show_count
+     ; participant_count
+     ; max_participants
+     ; _
+     } as time_window :
+      Time_window.t)
+    =
+    let open Time_window in
+    let int_to_txt i = CCInt.to_string i |> txt in
+    let row_attrs = Partials.row_attrs time_window in
+    let is_terminated =
+      ends_at time_window |> Ptime.is_earlier ~than:(Ptime_clock.now ())
+    in
+    let no_show_count =
+      if is_terminated
+      then no_show_count |> NoShowCount.value |> int_to_txt
+      else txt ""
+    in
+    [ start_end_with_duration_human time_window |> txt
+    ; assignment_count |> AssignmentCount.value |> int_to_txt
+    ; no_show_count
+    ; participant_count |> ParticipantCount.value |> int_to_txt
+    ; max_participants
+      |> CCOption.map_or
+           ~default:(txt "")
+           CCFun.(ParticipantAmount.value %> int_to_txt)
+    ; Partials.button_dropdown context experiment.Experiment.id time_window
+    ]
+    |> CCList.map CCFun.(CCList.return %> td)
+    |> tr ~a:row_attrs
+  in
+  DataTable.make
+    ~classnames:
+      [ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
+    ~target_id
+    ~th_class
+    ~cols
+    ~row
+    data_table
+    time_windows
+;;
+
+let index ({ Pool_context.language; _ } as context) experiment sessions =
+  let open Pool_common in
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ Partials.table_legend language; data_table context experiment sessions ]
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:"sessions"
+         ~hint:I18n.ExperimentSessions
+         context
+         (NavLink I18n.Sessions)
          experiment)
 ;;
 

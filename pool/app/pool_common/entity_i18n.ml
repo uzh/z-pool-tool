@@ -141,6 +141,7 @@ type nav_link =
   | Tags
   | Tenants
   | TextMessages
+  | TimeWindows
   | Users
   | WaitingList
 [@@deriving eq]

@@ -178,6 +178,7 @@ let rec field_to_string =
   | NotifyVia -> "Benachrichtigen via"
   | NotifyContact -> "Kontakt benachrichtigen"
   | Offset -> "Offset"
+  | OnlineStudy -> "Onlinestudie"
   | Operator -> "Operator"
   | Operators -> "Operatoren"
   | Order -> "Reihenfolge"
@@ -687,6 +688,7 @@ let control_to_string = function
   | Create field -> format_submit "erstellen" field
   | Decline -> format_submit "ablehnen" None
   | Delete field -> format_submit "löschen" field
+  | Details -> format_submit "details" None
   | Descending -> "absteigend"
   | Disable -> format_submit "deaktivieren" None
   | Duplicate field -> format_submit "duplizieren" field

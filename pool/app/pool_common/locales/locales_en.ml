@@ -176,6 +176,7 @@ let rec field_to_string =
   | NotifyVia -> "notify via"
   | NotifyContact -> "notify contact"
   | Offset -> "offset"
+  | OnlineStudy -> "online study"
   | Operator -> "operator"
   | Operators -> "operators"
   | Order -> "order"
@@ -645,6 +646,7 @@ let control_to_string = function
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None
   | Delete field -> format_submit "delete" field
+  | Details -> format_submit "details" None
   | Descending -> format_submit "descending" None
   | Disable -> format_submit "disable" None
   | Duplicate field -> format_submit "duplicate" field

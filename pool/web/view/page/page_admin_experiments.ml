@@ -764,6 +764,7 @@ let detail
       (Experiment.Guard.Access.update_permission_on_target experiment_id)
       guardian
   in
+  let field_to_string = Utils.field_to_string_capitalized language in
   let notifications =
     notifications
       ~can_update_experiment
@@ -864,7 +865,7 @@ let detail
           [ h2
               ~a:[ a_class [ "heading-2" ] ]
               [ txt
-                  (Utils.field_to_string language Message.Field.Settings
+                  (field_to_string Message.Field.Settings
                    |> CCString.capitalize_ascii)
               ]
           ; reset_invitation_form
@@ -888,6 +889,30 @@ let detail
       let open Experiment in
       let boolean_value fnc = fnc experiment |> bool_to_string |> txt in
       let default = "" in
+      let online_study =
+        match experiment.online_study with
+        | None -> Field.OnlineStudy, txt (bool_to_string false)
+        | Some { OnlineStudy.redirect_immediately; survey_url } ->
+          ( Field.OnlineStudy
+          , div
+              ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ]
+              [ div
+                  [ txt
+                      (Format.asprintf
+                         "%s: %s"
+                         (field_to_string Field.SurveyUrl)
+                         (SurveyUrl.value survey_url))
+                  ]
+              ; div
+                  [ txt
+                      (Format.asprintf
+                         "%s: %s"
+                         (field_to_string Field.RedirectImmediately)
+                         (bool_to_string
+                            (RedirectImmediately.value redirect_immediately)))
+                  ]
+              ] )
+      in
       Message.
         [ ( Field.PublicTitle
           , experiment |> public_title |> PublicTitle.value |> txt )
@@ -936,8 +961,7 @@ let detail
                  ~default
                  Email.SmtpAuth.(fun auth -> auth.label |> Label.value)
             |> txt )
-        ; ( Field.AssignmentWithoutSession
-          , assignment_without_session_value |> boolean_value )
+        ; online_study
         ; ( Field.DirectRegistrationDisabled
           , direct_registration_disabled_value |> boolean_value )
         ; ( Field.RegistrationDisabled

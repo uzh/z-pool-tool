@@ -209,6 +209,7 @@ type t =
   | NotifyVia [@name "notify_via"] [@printer go "notify_via"]
   | NotifyContact [@name "notify_contact"] [@printer go "notify_contact"]
   | Offset [@name "offset"] [@printer go "offset"]
+  | OnlineStudy [@name "online_study"] [@printer go "online_study"]
   | Operator [@name "operator"] [@printer go "operator"]
   | Operators [@name "operators"] [@printer go "operators"]
   | Order [@name "order"] [@printer go "order"]

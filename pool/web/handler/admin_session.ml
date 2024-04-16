@@ -48,36 +48,44 @@ let list req =
   HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Session) req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
-  let chronological =
-    Sihl.Web.Request.query Pool_common.Message.Field.(show Chronological) req
-    |> CCOption.map_or ~default:false (CCString.equal "true")
-  in
   let* experiment = Experiment.find database_label experiment_id in
   let flatten_sessions =
     CCList.fold_left
       (fun acc (parent, follow_ups) -> acc @ (parent :: follow_ups))
       []
   in
-  let%lwt sessions =
-    match Experiment.is_sessionless experiment with
-    | true ->
-      Time_window.query_by_experiment ~query database_label experiment_id
-      ||> fun time_windows -> `TimeWindow time_windows
-    | false ->
-      (match chronological with
-       | true ->
-         Session.query_by_experiment ~query database_label experiment_id
-         ||> fun sessions -> `Session sessions
-       | false ->
-         Session.query_grouped_by_experiment ~query database_label experiment_id
-         ||> fun (sessions, query) -> `Session (flatten_sessions sessions, query))
-  in
-  let open Page.Admin.Session in
   Lwt_result.ok
   @@
-  match HttpUtils.Htmx.is_hx_request req with
-  | true -> data_table context experiment sessions chronological |> Lwt.return
-  | false -> index context experiment sessions chronological
+  match Experiment.is_sessionless experiment with
+  | true ->
+    let to_html time_windows =
+      let open Page.Admin.TimeWindow in
+      match HttpUtils.Htmx.is_hx_request req with
+      | true -> data_table context experiment time_windows |> Lwt.return
+      | false -> index context experiment time_windows
+    in
+    Time_window.query_by_experiment ~query database_label experiment_id
+    >|> to_html
+  | false ->
+    let chronological =
+      Sihl.Web.Request.query Pool_common.Message.Field.(show Chronological) req
+      |> CCOption.map_or ~default:false (CCString.equal "true")
+    in
+    let to_html sessions =
+      let open Page.Admin.Session in
+      match HttpUtils.Htmx.is_hx_request req with
+      | true ->
+        data_table context experiment sessions chronological |> Lwt.return
+      | false -> index context experiment sessions chronological
+    in
+    (match chronological with
+     | true ->
+       Session.query_by_experiment ~query database_label experiment_id
+       >|> to_html
+     | false ->
+       Session.query_grouped_by_experiment ~query database_label experiment_id
+       ||> (fun (sessions, query) -> flatten_sessions sessions, query)
+       >|> to_html)
 ;;
 
 let new_helper req page =

@@ -223,6 +223,7 @@ type control =
   | Create of Field.t option
   | Decline
   | Delete of Field.t option
+  | Details
   | Descending
   | Disable
   | Duplicate of Field.t option

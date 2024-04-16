@@ -206,6 +206,7 @@ let nav_link_to_string = function
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "SMS"
+  | TimeWindows -> "Zeitfenster"
   | Users -> "Benutzer"
   | WaitingList -> "Warteliste"
 ;;
