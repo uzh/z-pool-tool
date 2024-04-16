@@ -73,10 +73,8 @@ let t =
                 , ( m.assignment_count
                   , ( m.no_show_count
                     , ( m.participant_count
-                      , ( m.closed_at
-                        , ( m.canceled_at
-                          , (m.created_at, (m.updated_at, m.experiment)) ) ) )
-                    ) ) ) ) ) ) ) )
+                      , (m.created_at, (m.updated_at, m.experiment)) ) ) ) ) )
+            ) ) ) )
   in
   let decode
     ( id
@@ -87,10 +85,8 @@ let t =
             , ( max_participants
               , ( assignment_count
                 , ( no_show_count
-                  , ( participant_count
-                    , ( closed_at
-                      , (canceled_at, (created_at, (updated_at, experiment))) )
-                    ) ) ) ) ) ) ) ) )
+                  , (participant_count, (created_at, (updated_at, experiment)))
+                  ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -102,8 +98,6 @@ let t =
       ; assignment_count
       ; no_show_count
       ; participant_count
-      ; closed_at
-      ; canceled_at
       ; experiment
       ; created_at
       ; updated_at
@@ -131,11 +125,7 @@ let t =
                               NoShowCount.t
                               (t2
                                  ParticipantCount.t
-                                 (t2
-                                    (option ptime)
-                                    (t2
-                                       (option ptime)
-                                       (t2 ptime (t2 ptime ExperimentRepo.t))))))))))))))
+                                 (t2 ptime (t2 ptime ExperimentRepo.t))))))))))))
 ;;
 
 module Write = struct
@@ -147,8 +137,6 @@ module Write = struct
     ; internal_description : Session.InternalDescription.t option
     ; public_description : Session.PublicDescription.t option
     ; max_participants : Session.ParticipantAmount.t option
-    ; closed_at : Ptime.t option
-    ; canceled_at : Ptime.t option
     }
 
   let of_entity
@@ -159,8 +147,6 @@ module Write = struct
        ; internal_description
        ; public_description
        ; max_participants
-       ; closed_at
-       ; canceled_at
        ; experiment
        ; _
        } :
@@ -173,8 +159,6 @@ module Write = struct
     ; internal_description
     ; public_description
     ; max_participants
-    ; closed_at
-    ; canceled_at
     }
   ;;
 
@@ -186,9 +170,7 @@ module Write = struct
           , ( m.start
             , ( m.duration
               , ( m.internal_description
-                , ( m.public_description
-                  , (m.max_participants, (m.closed_at, m.canceled_at)) ) ) ) )
-          ) )
+                , (m.public_description, m.max_participants) ) ) ) ) )
     in
     let decode _ = Pool_common.(Utils.failwith Message.WriteOnlyModel) in
     Caqti_type.(
@@ -207,8 +189,6 @@ module Write = struct
                        (option InternalDescription.t)
                        (t2
                           (option PublicDescription.t)
-                          (t2
-                             (option ParticipantAmount.t)
-                             (t2 (option ptime) (option ptime))))))))))
+                          (option ParticipantAmount.t))))))))
   ;;
 end

@@ -334,10 +334,6 @@ let detail
       , time_window.max_participants
         |> CCOption.map_or ~default:"" amount
         |> txt )
-    ; ( Field.ClosedAt
-      , time_window.closed_at |> CCOption.map_or ~default:"" date |> txt )
-    ; ( Field.CanceledAt
-      , time_window.canceled_at |> CCOption.map_or ~default:"" date |> txt )
     ]
     |> Table.vertical_table `Striped language ~align_top:true
   in

@@ -12,8 +12,6 @@ let sql_select_columns =
   ; "COUNT(pool_assignments.id) as assignment_count"
   ; "COALESCE( SUM(pool_assignments.no_show), 0) as noshow_count"
   ; "COALESCE( SUM(pool_assignments.participated), 0) as participation_count"
-  ; "pool_sessions.closed_at"
-  ; "pool_sessions.canceled_at"
   ; "pool_sessions.created_at"
   ; "pool_sessions.updated_at"
   ]
@@ -121,9 +119,7 @@ let insert_request =
       duration,
       internal_description,
       public_description,
-      max_participants,
-      closed_at,
-      canceled_at
+      max_participants
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
       UNHEX(REPLACE($2, '-', '')),
@@ -131,9 +127,7 @@ let insert_request =
       $4,
       $5,
       $6,
-      $7,
-      $8,
-      $9
+      $7
     )
   |sql}
   |> Caqti_type.(RepoEntity.Write.t ->. unit)
@@ -155,9 +149,7 @@ let update_request =
       duration = $4,
       internal_description = $5,
       public_description = $6,
-      max_participants = $7,
-      closed_at = $8,
-      canceled_at = $9
+      max_participants = $7
     WHERE
       uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}

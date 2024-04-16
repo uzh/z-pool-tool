@@ -8,8 +8,6 @@ type t =
   ; assignment_count : Session.AssignmentCount.t
   ; no_show_count : Session.NoShowCount.t
   ; participant_count : Session.ParticipantCount.t
-  ; closed_at : Ptime.t option
-  ; canceled_at : Ptime.t option
   ; experiment : Experiment.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
@@ -38,6 +36,7 @@ val duration
 
 val has_assignments : t -> bool
 val is_deletable : t -> bool
+val is_closed : t -> bool
 val is_closable : t -> (unit, Pool_common.Message.error) result
 val start_end_with_duration_human : t -> string
 

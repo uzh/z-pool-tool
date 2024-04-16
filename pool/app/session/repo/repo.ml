@@ -290,7 +290,7 @@ module Sql = struct
         |> prepare_find_multiple pool find_multiple_followups_request
       in
       parents
-      |> CCList.map (fun (session : Entity.t) ->
+      |> CCList.map (fun session ->
         let followups =
           CCList.filter
             (fun { follow_up_to; _ } ->
@@ -743,7 +743,7 @@ module Sql = struct
     |> Caqti_type.(t2 string RepoEntity.Write.t ->. unit)
   ;;
 
-  let insert pool (session : Entity.t) =
+  let insert pool session =
     Utils.Database.exec
       (Database.Label.value pool)
       insert_request

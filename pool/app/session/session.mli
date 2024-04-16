@@ -56,14 +56,6 @@ type base =
   ; text_message_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   }
 
-type time_window =
-  { start : Start.t
-  ; end_at : End.t
-  ; internal_description : InternalDescription.t option
-  ; public_description : PublicDescription.t option
-  ; max_participants : ParticipantAmount.t
-  }
-
 type reschedule =
   { start : Start.t
   ; duration : Duration.t

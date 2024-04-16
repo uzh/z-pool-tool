@@ -337,13 +337,6 @@ let experiment_form
       ()
   in
   let time_window_subform =
-    let input field =
-      date_time_picker_element
-        context_language
-        field
-        ~flash_fetcher
-        ~disable_past:true
-    in
     div
       ~a:
         [ a_id "time-window"
@@ -368,12 +361,6 @@ let experiment_form
           ; checkbox_element
               Field.RedirectImmediately
               redirect_immediately_value
-          ; div
-              [ h4 [ txt "Time window" ]
-              ; div
-                  ~a:[ a_class [ "grid-col-2" ] ]
-                  [ input Field.Start; input Field.End ]
-              ]
           ]
       ]
   in
