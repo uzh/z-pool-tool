@@ -88,7 +88,7 @@ end
 module RedirectImmediately = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Common.Message.Field.AssignmentWithoutSession
+  let schema = schema Common.Message.Field.RedirectImmediately
 end
 
 module SurveyUrl = struct
