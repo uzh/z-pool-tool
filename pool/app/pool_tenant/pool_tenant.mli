@@ -1,5 +1,12 @@
 module Database = Database
-module Id : module type of Pool_common.Id
+
+module Id : sig
+  include Pool_model.Base.IdSig
+
+  val to_common : t -> Pool_common.Id.t
+  val of_common : Pool_common.Id.t -> t
+end
+
 module Title : Pool_model.Base.StringSig
 module Description : Pool_model.Base.StringSig
 module GtxApiKey : Pool_model.Base.StringSig
@@ -128,7 +135,7 @@ module Write : sig
     ; title : Title.t
     ; description : Description.t option
     ; url : Url.t
-    ; database : Database.t
+    ; database_label : Database.Label.t
     ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
@@ -143,13 +150,14 @@ module Write : sig
     :  Title.t
     -> Description.t option
     -> Url.t
-    -> Database.t
+    -> Database.Label.t
     -> Styles.Write.t option
     -> Icon.Write.t option
     -> Pool_common.Language.t
     -> t
 
   val show : t -> string
+  val database_label : t -> Database.Label.t
 end
 
 type update =
@@ -165,7 +173,7 @@ type update =
 type logo_mappings = LogoMapping.Write.t list
 
 type event =
-  | Created of Write.t [@equal equal]
+  | Created of (Write.t * Database.t) [@equal equal]
   | LogosUploaded of logo_mappings
   | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
@@ -184,11 +192,6 @@ val find : Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_full : Id.t -> (Write.t, Pool_message.Error.t) Lwt_result.t
 val find_by_label : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_all : unit -> t list Lwt.t
-val find_databases : unit -> Database.t list Lwt.t
-
-val find_database_by_label
-  :  Database.Label.t
-  -> (Database.t, Pool_message.Error.t) Lwt_result.t
 
 val find_gtx_api_key_by_label
   :  Database.Label.t

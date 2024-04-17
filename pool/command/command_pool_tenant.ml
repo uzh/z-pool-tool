@@ -98,7 +98,7 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
         let%lwt updated_database =
           let open Database in
           let url = Url.create database_url |> failwith in
-          test_and_create url (tenant.Write.database |> label)
+          test_and_create url (tenant |> Write.database_label)
           |> Lwt.map failwith
         in
         handle tenant updated_database |> Lwt.return

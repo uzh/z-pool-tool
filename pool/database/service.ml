@@ -90,6 +90,10 @@ let exec_as_transaction database_label commands =
   transaction database_label fnc
 ;;
 
+let exec_query request input (module Connection : Caqti_lwt.CONNECTION) =
+  Connection.exec request input
+;;
+
 let exclude_ids column_name decode_id dyn exclude =
   let sql = "UNHEX(REPLACE(?, '-', ''))" in
   match exclude with

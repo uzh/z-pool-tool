@@ -35,9 +35,13 @@ let t =
 
 let sql_select_label = "pool_tenant_databases.label"
 
-let sql_database_join_on_label ?(disabled = false) label_column =
+let sql_database_join_on_label
+  ?(join_prefix = "")
+  ?(disabled = false)
+  label_column
+  =
   [%string
-    {sql| JOIN pool_tenant_databases
+    {sql| %{join_prefix} JOIN pool_tenant_databases
       ON pool_tenant_databases.disabled = %{disabled |>CCBool.to_int |> CCInt.to_string}
       AND pool_tenant_databases.label = %{label_column} |sql}]
 ;;
@@ -101,34 +105,20 @@ module Sql = struct
 
   let insert = flip Service.exec insert_request
 
-  let update_url_request =
+  let update_request =
     {sql|
       UPDATE pool_tenant_databases
       SET
-        url = $2
-      WHERE
-        uuid = UNHEX(REPLACE($1, '-', ''))
+        label = $2,
+        url = $3,
+        disabled = $4
+      WHERE label = $1
     |sql}
-    |> Caqti_type.(t2 Label.t Url.t ->. unit)
+    |> Caqti_type.(t2 Label.t t ->. unit)
   ;;
 
-  let update_url pool database url =
-    Service.exec pool update_url_request (database |> label, url)
-  ;;
-
-  let update_disabled_request =
-    {sql|
-      UPDATE pool_tenant_databases
-      SET
-        disabled = $2
-      WHERE
-        uuid = UNHEX(REPLACE($1, '-', ''))
-    |sql}
-    |> Caqti_type.(t2 Label.t Disabled.t ->. unit)
-  ;;
-
-  let update_disabled pool database disabled =
-    Service.exec pool update_disabled_request (database |> label, disabled)
+  let update pool database new_database =
+    Service.exec pool update_request (database |> label, new_database)
   ;;
 end
 

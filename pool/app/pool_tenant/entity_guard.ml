@@ -22,7 +22,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun ({ Entity.id; _ } : t) ->
-        Target.create `Tenant (id |> Uuid.target_of Pool_common.Id.value))
+        Target.create `Tenant (id |> Uuid.target_of Entity.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;

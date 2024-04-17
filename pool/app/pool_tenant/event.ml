@@ -1,6 +1,5 @@
 open Entity
 module Id = Pool_common.Id
-module Database = Database
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
@@ -18,7 +17,7 @@ type update =
 type logo_mappings = LogoMapping.Write.t list [@@deriving eq, show]
 
 type event =
-  | Created of Write.t
+  | Created of (Write.t * Database.t)
   | LogosUploaded of logo_mappings
   | LogoDeleted of t * Id.t
   | DetailsEdited of Write.t * update
@@ -31,11 +30,11 @@ type event =
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | Created ({ Write.id; _ } as tenant) ->
+  | Created (({ Write.id; _ } as tenant), database) ->
     let open Utils.Lwt_result.Infix in
     let open Guard in
     let ctx = Database.to_ctx pool in
-    let%lwt () = Repo.insert Database.root tenant in
+    let%lwt () = Repo.insert Database.root (tenant, database) in
     let%lwt () =
       Repo.find pool id
       >>= Entity_guard.Target.to_authorizable ~ctx
@@ -64,11 +63,7 @@ let handle_event pool : event -> unit Lwt.t = function
     }
     |> Repo.update Database.root
   | DatabaseEdited (tenant, database) ->
-    let open Entity.Write in
-    let%lwt () =
-      { tenant with database; updated_at = Ptime_clock.now () }
-      |> Repo.update Database.root
-    in
+    let%lwt () = Repo.update_database Database.root (tenant, database) in
     Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
   | ActivateMaintenance tenant ->

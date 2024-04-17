@@ -76,13 +76,14 @@ let create () =
              , icon
              , default_language )
            ->
+            let database =
+              let open Pool_tenant.Database in
+              let open CCResult in
+              Pool_common.Utils.get_or_failwith
+              @@ (both (Label.create database_label) (Url.create database_url)
+                  >|= CCFun.uncurry create)
+            in
             let tenant =
-              let database =
-                let open Pool_tenant.Database in
-                let open CCResult in
-                both (Label.create database_label) (Url.create database_url)
-                >|= CCFun.uncurry create
-              in
               Pool_tenant.(
                 Write.create
                   (Title.create title |> get_or_failwith)
@@ -90,7 +91,7 @@ let create () =
                    |> get_or_failwith
                    |> CCOption.return)
                   (Url.create url |> get_or_failwith)
-                  (database |> get_or_failwith)
+                  (database |> Database.label)
                   (Styles.Write.create styles
                    |> get_or_failwith
                    |> CCOption.return)
@@ -108,7 +109,7 @@ let create () =
                 ; logo_type
                 })
             in
-            [ Pool_tenant.Created tenant
+            [ Pool_tenant.Created (tenant, database)
             ; Pool_tenant.LogosUploaded logo_mappings
             ]
             |> Lwt_list.iter_s (Pool_tenant.handle_event Database.root))

@@ -106,8 +106,7 @@ let create_operator req =
     let open CCFun in
     let tags = Pool_context.Logger.Tags.req req in
     let* tenant_db =
-      Pool_tenant.find_full tenant_id
-      >|+ fun { Pool_tenant.Write.database; _ } -> database |> Database.label
+      Pool_tenant.(find_full tenant_id >|+ Write.database_label)
     in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req

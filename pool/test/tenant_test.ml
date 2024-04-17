@@ -151,23 +151,23 @@ module Data = struct
     let* title = title |> Title.create in
     let* description = description |> Description.create >|= CCOption.return in
     let* url = url |> Url.create in
+    let* database_label = Database.Label.create database_label in
     let gtx_api_key = gtx_api_key |> GtxApiKey.of_string |> CCOption.return in
     Ok
-      Write.
-        { id = Id.create ()
-        ; title
-        ; description
-        ; url
-        ; database
-        ; gtx_api_key
-        ; styles = styles |> CCOption.return
-        ; icon = icon |> CCOption.return
-        ; maintenance = Maintenance.create false
-        ; disabled = Disabled.create false
-        ; default_language = Common.Language.En
-        ; created_at = Common.CreatedAt.create ()
-        ; updated_at = Common.UpdatedAt.create ()
-        }
+      { Write.id = Id.create ()
+      ; title
+      ; description
+      ; url
+      ; database_label
+      ; gtx_api_key
+      ; styles = styles |> CCOption.return
+      ; icon = icon |> CCOption.return
+      ; maintenance = Maintenance.create false
+      ; disabled = Disabled.create false
+      ; default_language = Common.Language.En
+      ; created_at = Common.CreatedAt.create ()
+      ; updated_at = Common.UpdatedAt.create ()
+      }
   ;;
 
   let full_tenant =
@@ -354,7 +354,7 @@ let[@warning "-4"] create_tenant () =
     |> fail_with
     |> function
     | [ Pool_event.PoolTenant
-          Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
+          Pool_tenant.(Created (Write.{ id; created_at; updated_at; _ }, _))
       ; Pool_event.PoolTenant
           (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
       ; Pool_event.Database (Pool_database.Migrated database)
@@ -390,21 +390,20 @@ let[@warning "-4"] create_tenant () =
       let* url = url |> Pool_tenant.Url.create in
       let* default_language = default_language |> Common.Language.create in
       Ok
-        Pool_tenant.Write.
-          { id = tenant_id
-          ; title
-          ; description
-          ; url
-          ; database
-          ; gtx_api_key = None
-          ; styles = styles |> CCOption.return
-          ; icon = icon |> CCOption.return
-          ; maintenance = Pool_tenant.Maintenance.create false
-          ; disabled = Pool_tenant.Disabled.create false
-          ; default_language
-          ; created_at
-          ; updated_at
-          }
+        { Pool_tenant.Write.id = tenant_id
+        ; title
+        ; description
+        ; url
+        ; database_label
+        ; gtx_api_key = None
+        ; styles = styles |> CCOption.return
+        ; icon = icon |> CCOption.return
+        ; maintenance = Pool_tenant.Maintenance.create false
+        ; disabled = Pool_tenant.Disabled.create false
+        ; default_language
+        ; created_at
+        ; updated_at
+        }
     in
     let logos : Pool_tenant.LogoMapping.Write.t list =
       Pool_tenant.LogoMapping.Write.
@@ -421,7 +420,8 @@ let[@warning "-4"] create_tenant () =
         ]
     in
     let expected_root_events =
-      [ Pool_tenant.Created (create |> fail_with) |> Pool_event.pool_tenant
+      [ Pool_tenant.Created (create |> fail_with, database)
+        |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
       ; Pool_database.Migrated database |> Pool_event.database
       ; System_event.(

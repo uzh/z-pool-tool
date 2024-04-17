@@ -1,7 +1,5 @@
 open CCFun
 open Entity
-module Common = Pool_common
-module Database = Database
 
 module Title = struct
   include Title
@@ -99,33 +97,39 @@ end
 
 let t =
   let open Entity.Read in
-  let encode m =
+  let open Caqti_type in
+  let open Database.Caqti_encoders in
+  let encode m : ('a Data.t, string) result =
     Ok
-      ( m.Read.id
-      , ( m.title
-        , ( m.description
-          , ( Url.value m.url
-            , ( m.database_label
-              , ( m.text_messages_enabled
-                , ( m.styles
-                  , ( m.icon
-                    , ( m.maintenance
-                      , ( m.disabled
-                        , (m.default_language, (m.created_at, m.updated_at)) )
-                      ) ) ) ) ) ) ) ) )
+      Data.
+        [ m.Read.id
+        ; m.title
+        ; m.description
+        ; m.url
+        ; m.maintenance
+        ; m.disabled
+        ; m.default_language
+        ; m.created_at
+        ; m.updated_at
+        ; m.database_label
+        ; m.styles
+        ; m.icon
+        ; m.text_messages_enabled
+        ]
   in
   let decode
     ( id
     , ( title
       , ( description
         , ( url
-          , ( database_label
-            , ( text_messages_enabled
-              , ( styles
-                , ( icon
-                  , ( maintenance
-                    , (disabled, (default_language, (created_at, updated_at)))
-                    ) ) ) ) ) ) ) ) )
+          , ( maintenance
+            , ( disabled
+              , ( default_language
+                , ( created_at
+                  , ( updated_at
+                    , ( database_label
+                      , (styles, (icon, (text_messages_enabled, ()))) ) ) ) ) )
+            ) ) ) ) )
     =
     Ok
       { id
@@ -143,75 +147,69 @@ let t =
       ; updated_at
       }
   in
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (t2
-         Common.Repo.Id.t
-         (t2
-            Title.t
-            (t2
-               (option Description.t)
-               (t2
-                  Url.t
-                  (t2
-                     Database.Repo.Label.t
-                     (t2
-                        Caqti_type.bool
-                        (t2
-                           (option Styles.t)
-                           (t2
-                              (option Icon.t)
-                              (t2
-                                 Maintenance.t
-                                 (t2
-                                    Disabled.t
-                                    (t2
-                                       Pool_common.Repo.Language.t
-                                       (t2
-                                          Common.Repo.CreatedAt.t
-                                          Common.Repo.UpdatedAt.t)))))))))))))
+  custom
+    ~encode
+    ~decode
+    Schema.
+      [ Pool_common.Repo.Id.t
+      ; Title.t
+      ; option Description.t
+      ; Url.t
+      ; Maintenance.t
+      ; Disabled.t
+      ; Pool_common.Repo.Language.t
+      ; Pool_common.Repo.CreatedAt.t
+      ; Pool_common.Repo.UpdatedAt.t
+      ; Database.Repo.Label.t
+      ; option Styles.t
+      ; option Icon.t
+      ; bool
+      ]
 ;;
 
 module Write = struct
   open Entity.Write
 
   let t =
-    let encode m =
+    let open Caqti_type in
+    let open Database.Caqti_encoders in
+    let encode m : ('a Data.t, string) result =
       Ok
-        ( m.Write.id
-        , ( m.title
-          , ( m.description
-            , ( Url.value m.url
-              , ( m.database
-                , ( m.gtx_api_key
-                  , ( m.styles
-                    , ( m.icon
-                      , ( m.maintenance
-                        , ( m.disabled
-                          , (m.default_language, (m.created_at, m.updated_at))
-                          ) ) ) ) ) ) ) ) ) )
+        Data.
+          [ m.Write.id
+          ; m.title
+          ; m.description
+          ; m.url
+          ; m.maintenance
+          ; m.disabled
+          ; m.default_language
+          ; m.created_at
+          ; m.updated_at
+          ; m.database_label
+          ; m.styles
+          ; m.icon
+          ; m.gtx_api_key
+          ]
     in
     let decode
       ( id
       , ( title
         , ( description
           , ( url
-            , ( database
-              , ( gtx_api_key
-                , ( styles
-                  , ( icon
-                    , ( maintenance
-                      , (disabled, (default_language, (created_at, updated_at)))
-                      ) ) ) ) ) ) ) ) )
+            , ( maintenance
+              , ( disabled
+                , ( default_language
+                  , ( created_at
+                    , ( updated_at
+                      , (database_label, (styles, (icon, (gtx_api_key, ())))) )
+                    ) ) ) ) ) ) ) )
       =
       Ok
         { id
         ; title
         ; description
         ; url
-        ; database
+        ; database_label
         ; gtx_api_key
         ; styles
         ; icon
@@ -222,35 +220,24 @@ module Write = struct
         ; updated_at
         }
     in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (t2
-           Common.Repo.Id.t
-           (t2
-              Title.t
-              (t2
-                 (option Description.t)
-                 (t2
-                    Url.t
-                    (t2
-                       Database.Repo.t
-                       (t2
-                          (option GtxApiKey.t)
-                          (t2
-                             (option Styles.Write.t)
-                             (t2
-                                (option Icon.Write.t)
-                                (t2
-                                   Maintenance.t
-                                   (t2
-                                      Disabled.t
-                                      (t2
-                                         Pool_common.Repo.Language.t
-                                         (t2
-                                            Common.Repo.CreatedAt.t
-                                            Common.Repo.UpdatedAt.t)))))))))))))
+    custom
+      ~encode
+      ~decode
+      Schema.
+        [ Pool_common.Repo.Id.t
+        ; Title.t
+        ; option Description.t
+        ; Url.t
+        ; Maintenance.t
+        ; Disabled.t
+        ; Pool_common.Repo.Language.t
+        ; Pool_common.Repo.CreatedAt.t
+        ; Pool_common.Repo.UpdatedAt.t
+        ; Database.Repo.Label.t
+        ; option Styles.Write.t
+        ; option Icon.Write.t
+        ; option GtxApiKey.t
+        ]
   ;;
 end
 

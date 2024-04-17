@@ -92,11 +92,21 @@ module Repo : sig
     -> ('b -> 'a)
     -> 'b Caqti_type.t
 
+  val sql_select_label : string
+  val sql_select_columns : string list
+
+  val sql_database_join_on_label
+    :  ?join_prefix:string
+    -> ?disabled:bool
+    -> string
+    -> string
+
   val find : Label.t -> Label.t -> (t, Pool_message.Error.t) result Lwt.t
   val find_all : Label.t -> t list Lwt.t
+  val insert_request : (t, unit, [ `Zero ]) Caqti_request.t
   val insert : Label.t -> t -> unit Lwt.t
-  val update_url : Label.t -> t -> Url.t -> unit Lwt.t
-  val update_disabled : Label.t -> t -> Disabled.t -> unit Lwt.t
+  val update_request : (Label.t * t, unit, [ `Zero ]) Caqti_request.t
+  val update : Label.t -> t -> t -> unit Lwt.t
 
   module Label : sig
     val t : Label.t Caqti_type.t
@@ -169,6 +179,12 @@ val exec_as_transaction
   :  Label.t
   -> (Caqti_lwt.connection -> (unit, Caqti_error.t) result Lwt.t) list
   -> unit Lwt.t
+
+val exec_query
+  :  ('a, unit, [< `Zero ]) Caqti_request.t
+  -> 'a
+  -> (module Caqti_lwt.CONNECTION)
+  -> (unit, [> Caqti_error.call_or_retrieve ]) result Lwt.t
 
 val exclude_ids
   :  string

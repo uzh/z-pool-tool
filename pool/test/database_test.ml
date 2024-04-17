@@ -3,6 +3,7 @@ open Database
 let get_exn = Test_utils.get_or_failwith
 
 module Testable = struct
+  let label = Database.Label.(Alcotest.testable pp equal)
   let database = Database.(Alcotest.testable pp equal)
 end
 
@@ -26,9 +27,9 @@ let check_root_database _ () =
 ;;
 
 let check_find_tenant_database _ () =
-  let expected = CCList.map (CCFun.uncurry Database.create) [ Data.database ] in
-  let%lwt tenants = Pool_tenant.find_databases () in
-  Alcotest.(check (list Testable.database) "databases found" expected tenants)
+  let expected = [ fst Data.database ] in
+  let%lwt tenants = Database.Tenant.find_all_running () in
+  Alcotest.(check (list Testable.label) "databases found" expected tenants)
   |> Lwt.return
 ;;
 

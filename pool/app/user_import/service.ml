@@ -68,8 +68,7 @@ let run database_label =
 
 let run_all () =
   let open Utils.Lwt_result.Infix in
-  Pool_tenant.find_databases ()
-  >|> Lwt_list.iter_s CCFun.(Database.label %> run)
+  Database.Tenant.find_all_running () >|> Lwt_list.iter_s run
 ;;
 
 let start () =

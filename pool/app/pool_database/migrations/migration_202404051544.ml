@@ -24,9 +24,22 @@ let insert_existing_databases =
     |sql}
 ;;
 
+let add_foreign_key_on_label_and_drop_url =
+  Database.Migration.Step.create
+    ~label:"add foreign key for database label and drop database url"
+    {sql|
+      ALTER TABLE pool_tenant
+        ADD CONSTRAINT fk_pool_tenant_database_label
+        FOREIGN KEY (database_label) REFERENCES pool_tenant_databases(label),
+        RENAME COLUMN mainenance TO maintenance,
+        DROP COLUMN database_url
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "202404051544"
     |> add_step add_tenant_database_table
-    |> add_step insert_existing_databases)
+    |> add_step insert_existing_databases
+    |> add_step add_foreign_key_on_label_and_drop_url)
 ;;

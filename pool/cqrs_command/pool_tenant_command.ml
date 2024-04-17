@@ -90,7 +90,7 @@ end = struct
         command.title
         command.description
         command.url
-        database
+        (database |> Database.label)
         command.styles
         command.icon
         command.default_language
@@ -106,7 +106,7 @@ end = struct
       |> CCList.flatten
     in
     Ok
-      [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
+      [ Pool_tenant.Created (tenant, database) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; Pool_database.Migrated database |> Pool_event.database
       ; System_event.Job.TenantDatabaseAdded (Database.label database)
