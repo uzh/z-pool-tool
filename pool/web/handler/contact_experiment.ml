@@ -10,7 +10,7 @@ let index req =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt experiment_list =
-         Experiment.find_upcoming_to_register database_label contact
+         Experiment.find_upcoming_to_register database_label contact `OnSite
        in
        let* upcoming_sessions =
          Session.find_upcoming_public_by_contact

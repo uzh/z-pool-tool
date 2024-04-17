@@ -51,8 +51,19 @@ let condition_allow_uninvited_signup =
     |sql}
 ;;
 
-let find_all_public_by_contact_request ?(has_session = false) () =
+let find_all_public_by_contact_request ?(has_session = false) experiment_type ()
+  =
   let open Caqti_request.Infix in
+  let experiment_type =
+    Format.asprintf
+      {sql|
+        pool_experiments.assignment_without_session = %s
+      |sql}
+    @@
+    match experiment_type with
+    | `Online -> "1"
+    | `OnSite -> "0"
+  in
   let session_exists =
     match has_session with
     | false -> ""
@@ -99,8 +110,9 @@ let find_all_public_by_contact_request ?(has_session = false) () =
     {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
   in
   Format.asprintf
-    "%s WHERE %s AND %s AND %s AND (%s OR %s) %s"
+    "%s WHERE %s AND %s AND %s AND %s AND (%s OR %s) %s"
     pool_invitations_left_join
+    experiment_type
     not_assigned
     not_on_waitinglist
     condition_registration_not_disabled
@@ -111,11 +123,11 @@ let find_all_public_by_contact_request ?(has_session = false) () =
   |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
 
-let find_all_public_by_contact ?has_session pool contact =
+let find_all_public_by_contact ?has_session pool contact experiment_type =
   let open Utils.Lwt_result.Infix in
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    (find_all_public_by_contact_request ?has_session ())
+    (find_all_public_by_contact_request ?has_session experiment_type ())
     (Contact.id contact)
   (* TODO: This has to be made superfluous by a background job (#164) *)
   >|> Lwt_list.filter_s

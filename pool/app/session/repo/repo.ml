@@ -41,6 +41,7 @@ let joins =
         ON pool_locations.uuid = pool_sessions.location_uuid
       INNER JOIN pool_experiments
         ON pool_experiments.uuid = pool_sessions.experiment_uuid
+        AND pool_experiments.assignment_without_session = 0
       %s
     |sql}
     Experiment.Repo.joins
@@ -95,6 +96,7 @@ module Sql = struct
       FROM pool_sessions
       INNER JOIN pool_experiments
         ON pool_sessions.experiment_uuid = pool_experiments.uuid
+        AND pool_experiments.assignment_without_session = 0
       INNER JOIN pool_locations
         ON pool_sessions.location_uuid = pool_locations.uuid
       WHERE
@@ -155,6 +157,9 @@ module Sql = struct
           (SELECT COUNT(pool_assignments.id) FROM pool_assignments WHERE session_uuid = pool_sessions.uuid AND marked_as_deleted = 0 AND pool_assignments.canceled_at IS NULL),
           pool_sessions.canceled_at
         FROM pool_sessions
+        INNER JOIN pool_experiments
+          ON pool_experiments.uuid = pool_sessions.experiment_uuid
+          AND pool_experiments.assignment_without_session = 0
         INNER JOIN pool_locations
           ON pool_locations.uuid = pool_sessions.location_uuid
       |sql}

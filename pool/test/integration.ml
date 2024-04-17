@@ -413,7 +413,8 @@ let suite =
     ; ( "time window"
       , Time_window_test.
           [ test_case "confirm as contact" `Slow find_overlapping ] )
-    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
+      (* ; "cleanup", [ test_case "clean up test database" `Slow
+         Test_seed.cleanup ] *)
     ]
 ;;
 

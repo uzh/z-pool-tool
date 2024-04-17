@@ -76,8 +76,8 @@ module AdminRepo = struct
 end
 
 module ExperimentRepo = struct
-  let create ?(id = Experiment.Id.create ()) ?title () =
-    let experiment = Model.create_experiment ~id ?title () in
+  let create ?(id = Experiment.Id.create ()) ?title ?online_study () =
+    let experiment = Model.create_experiment ~id ?title ?online_study () in
     let%lwt () =
       Experiment.Created experiment
       |> Pool_event.experiment

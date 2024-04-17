@@ -38,6 +38,13 @@ module Data = struct
   let survey_url = "www.survey-url.ch"
   let experiment_type = Pool_common.ExperimentType.(show Lab)
 
+  let online_study =
+    let open Experiment in
+    { OnlineStudy.survey_url = SurveyUrl.of_string survey_url
+    ; redirect_immediately = RedirectImmediately.create false
+    }
+  ;;
+
   let urlencoded =
     Pool_common.Message.
       [ Field.(show Title), [ title ]
@@ -212,13 +219,7 @@ let update_with_existing_sessions () =
   let experiment = Data.experiment |> get_exn in
   let online_experiment =
     let open Experiment in
-    let online_study =
-      OnlineStudy.
-        { survey_url = SurveyUrl.of_string Data.survey_url
-        ; redirect_immediately = RedirectImmediately.create false
-        }
-    in
-    { experiment with online_study = Some online_study }
+    { experiment with online_study = Some Data.online_study }
   in
   let open CCResult.Infix in
   let session_count = 1 in
@@ -378,19 +379,41 @@ module AvailableExperiments = struct
     let%lwt contact =
       ContactRepo.create ~id:contact_id ~with_terms_accepted:true ()
     in
-    let%lwt experiment = ExperimentRepo.create ~id:experiment_id () in
-    let%lwt () =
-      Invitation.(
-        Created { contacts = [ contact ]; mailing = None; experiment })
-      |> Pool_event.invitation
-      |> Pool_event.handle_event database_label
+    let%lwt on_site_experiment = ExperimentRepo.create ~id:experiment_id () in
+    let%lwt online_experiment =
+      ExperimentRepo.create ~online_study:Data.online_study ()
     in
-    let%lwt res =
-      (* Expect the experiment to be found *)
+    let%lwt () =
+      let invitation experiment =
+        Invitation.(
+          Created { contacts = [ contact ]; mailing = None; experiment })
+        |> Pool_event.invitation
+      in
+      [ on_site_experiment; online_experiment ]
+      |> CCList.map invitation
+      |> Pool_event.handle_events database_label
+    in
+    let find_experiment experiment experiment_type =
       let public = experiment |> Experiment.to_public in
-      Experiment.find_all_public_by_contact database_label contact
+      Experiment.find_all_public_by_contact
+        database_label
+        contact
+        experiment_type
       ||> CCList.find_opt (Experiment.Public.equal public)
       ||> CCOption.is_some
+    in
+    let%lwt res =
+      (* Expect the onsite expteriment to be found *)
+      let%lwt onsite_found = find_experiment on_site_experiment `OnSite in
+      let%lwt online_found = find_experiment online_experiment `OnSite in
+      Lwt.return (onsite_found && not online_found)
+    in
+    let () = Alcotest.(check bool "succeeds" true res) in
+    let%lwt res =
+      (* Expect the online experiment to be found *)
+      let%lwt onsite_found = find_experiment on_site_experiment `Online in
+      let%lwt online_found = find_experiment online_experiment `Online in
+      Lwt.return ((not onsite_found) && online_found)
     in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
@@ -412,7 +435,7 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after registration for a
          session *)
       let open Experiment in
-      find_all_public_by_contact database_label contact
+      find_all_public_by_contact database_label contact `OnSite
       ||> CCList.find_opt (fun public ->
         Id.equal (Public.id public) experiment.id)
       ||> CCOption.is_none
@@ -445,7 +468,7 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after session cancellation to
          enable reregistration of contact *)
       let open Experiment in
-      find_all_public_by_contact database_label contact
+      find_all_public_by_contact database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
@@ -482,7 +505,7 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after session cancellation to
          enable reregistration of contact *)
       let open Experiment in
-      find_all_public_by_contact database_label contact
+      find_all_public_by_contact database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
