@@ -60,22 +60,6 @@ let has_assignments (m : t) = AssignmentCount.value m.assignment_count > 0
 let is_deletable (m : t) = m |> has_assignments |> not
 let is_closed m = ends_at m |> Ptime.is_earlier ~than:(Ptime_clock.now ())
 
-let is_closable m =
-  let open CCResult in
-  let open Pool_common in
-  let* () =
-    if is_closed m
-    then
-      m
-      |> ends_at
-      |> Utils.Time.formatted_date_time
-      |> Message.sessionalreadyclosed
-      |> CCResult.fail
-    else Ok ()
-  in
-  Ok ()
-;;
-
 let start_end_with_duration_human ({ start; duration; _ } : t) =
   Utils.Ptime.format_start_end (Start.value start) (Duration.value duration)
 ;;

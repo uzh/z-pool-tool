@@ -37,7 +37,6 @@ val duration
 val has_assignments : t -> bool
 val is_deletable : t -> bool
 val is_closed : t -> bool
-val is_closable : t -> (unit, Pool_common.Message.error) result
 val start_end_with_duration_human : t -> string
 
 type create =

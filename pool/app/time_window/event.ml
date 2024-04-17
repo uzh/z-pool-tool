@@ -19,9 +19,9 @@ let handle_event pool =
   function
   | Created time_window ->
     let%lwt () = Repo.insert pool time_window in
-    Entity_guard.Target.to_authorizable
+    Session.Guard.Target.to_authorizable
       ~ctx:(Pool_database.to_ctx pool)
-      time_window
+      time_window.id
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Updated time_window -> Repo.update pool time_window
