@@ -80,10 +80,3 @@ val find_current_by_experiment
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
-
-module Public : sig
-  val find_current_by_contact
-    :  Pool_database.Label.t
-    -> Contact.t
-    -> t list Lwt.t
-end

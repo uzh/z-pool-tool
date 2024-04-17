@@ -47,19 +47,19 @@ let condition_allow_uninvited_signup =
     |sql}
 ;;
 
-let condition_not_assigned =
+let condition_assigned =
   {sql|
-  NOT EXISTS (
-    SELECT
-      1
-    FROM
-      pool_assignments
-      INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
-    WHERE
-      pool_sessions.experiment_uuid = pool_experiments.uuid
-      AND pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
-      AND pool_assignments.marked_as_deleted = 0
-      AND pool_sessions.canceled_at IS NULL)
+    EXISTS (
+      SELECT
+        1
+      FROM
+        pool_assignments
+        INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
+      WHERE
+        pool_sessions.experiment_uuid = pool_experiments.uuid
+        AND pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_assignments.marked_as_deleted = 0
+        AND pool_sessions.canceled_at IS NULL)
     |sql}
 ;;
 
@@ -67,14 +67,10 @@ let condition_is_invited =
   {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
 ;;
 
-let find_all_public_by_contact_request ?(has_session = false) experiment_type ()
-  =
+let find_upcoming_to_register_request experiment_type () =
   let open Caqti_request.Infix in
   let onsite_session_exists =
-    match has_session with
-    | false -> ""
-    | true ->
-      {sql|
+    {sql|
       AND EXISTS (SELECT
         1
       FROM
@@ -123,7 +119,7 @@ let find_all_public_by_contact_request ?(has_session = false) experiment_type ()
     "%s WHERE %s AND %s AND %s AND %s AND (%s OR %s) %s"
     pool_invitations_left_join
     experiment_type
-    condition_not_assigned
+    ("NOT " ^ condition_assigned)
     not_on_waitinglist
     condition_registration_not_disabled
     condition_allow_uninvited_signup
@@ -133,11 +129,11 @@ let find_all_public_by_contact_request ?(has_session = false) experiment_type ()
   |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
 
-let find_all_public_by_contact ?has_session pool contact experiment_type =
+let find_upcoming_to_register pool contact experiment_type =
   let open Utils.Lwt_result.Infix in
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    (find_all_public_by_contact_request ?has_session experiment_type ())
+    (find_upcoming_to_register_request experiment_type ())
     (Contact.id contact)
   (* TODO: This has to be made superfluous by a background job (#164) *)
   >|> Lwt_list.filter_s
@@ -198,7 +194,6 @@ let find_past_experiments_by_contact pool contact =
   Utils.Database.collect (Pool_database.Label.value pool) request pv
 ;;
 
-(* TODO: Reuse conditions from above, if possible *)
 let where_contact_can_access =
   let id_fragment = "pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))" in
   let waiting_list_join =
@@ -207,26 +202,6 @@ let where_contact_can_access =
       ON pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND pool_experiments.uuid = pool_waiting_list.experiment_uuid
   |sql}
-  in
-  let assignment_exists =
-    {sql|
-    EXISTS (
-      SELECT
-        1
-      FROM
-        pool_assignments
-        INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
-          AND pool_sessions.experiment_uuid = UNHEX(REPLACE($2, '-', ''))
-      WHERE
-        pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
-        AND pool_assignments.canceled_at IS NULL)
-  |sql}
-  in
-  let invitation_uuid =
-    {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
-  in
-  let registration_not_disabled =
-    {sql| pool_experiments.registration_disabled = 0 |sql}
   in
   let waiting_list_exists =
     {sql| pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
@@ -237,9 +212,9 @@ let where_contact_can_access =
     pool_invitations_left_join
     id_fragment
     condition_allow_uninvited_signup
-    assignment_exists
-    registration_not_disabled
-    invitation_uuid
+    condition_assigned
+    condition_registration_not_disabled
+    condition_is_invited
     waiting_list_exists
 ;;
 

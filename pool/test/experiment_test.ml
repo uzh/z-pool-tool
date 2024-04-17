@@ -384,6 +384,9 @@ module AvailableExperiments = struct
     let%lwt online_experiment =
       ExperimentRepo.create ~online_study:Data.online_study ()
     in
+    let%lwt _ =
+      Integration_utils.SessionRepo.create ~id:session_id on_site_experiment ()
+    in
     let%lwt (_ : Time_window.t) =
       let open Test_utils.Model in
       TimeWindowRepo.create
@@ -405,7 +408,7 @@ module AvailableExperiments = struct
     in
     let find_experiment experiment experiment_type =
       let public = experiment |> Experiment.to_public in
-      Experiment.find_all_public_by_contact
+      Experiment.find_upcoming_to_register
         database_label
         contact
         experiment_type
@@ -435,9 +438,7 @@ module AvailableExperiments = struct
       Experiment.find database_label experiment_id ||> get_exn
     in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
-    let%lwt session =
-      Integration_utils.SessionRepo.create ~id:session_id experiment ()
-    in
+    let%lwt session = Session.find database_label session_id ||> get_exn in
     let%lwt (_ : Assignment.t) =
       Integration_utils.AssignmentRepo.create session contact
     in
@@ -445,7 +446,7 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after registration for a
          session *)
       let open Experiment in
-      find_all_public_by_contact database_label contact `OnSite
+      find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (fun public ->
         Id.equal (Public.id public) experiment.id)
       ||> CCOption.is_none
@@ -478,7 +479,7 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after session cancellation to
          enable reregistration of contact *)
       let open Experiment in
-      find_all_public_by_contact database_label contact `OnSite
+      find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
@@ -515,7 +516,7 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after session cancellation to
          enable reregistration of contact *)
       let open Experiment in
-      find_all_public_by_contact database_label contact `OnSite
+      find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in

@@ -339,12 +339,6 @@ val find_of_mailing
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_all_public_by_contact
-  :  Pool_database.Label.t
-  -> Contact.t
-  -> [ `OnSite | `Online ]
-  -> Public.t list Lwt.t
-
 val find_upcoming_to_register
   :  Pool_database.Label.t
   -> Contact.t
@@ -439,11 +433,6 @@ module Repo : sig
 
   module Public : sig
     val select_from_experiments_sql : ?distinct:bool -> string -> string
-    val pool_invitations_left_join : string
-    val condition_registration_not_disabled : string
-    val condition_allow_uninvited_signup : string
-    val condition_not_assigned : string
-    val condition_is_invited : string
 
     module Entity : sig
       val t : Public.t Caqti_type.t

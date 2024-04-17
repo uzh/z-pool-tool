@@ -319,11 +319,12 @@ let experiment_form
         "/admin/experiments/%s"
         (experiment.id |> Experiment.Id.value)
   in
-  let checkbox_element ?hints ?(default = false) ?read_only field fnc =
+  let checkbox_element ?hints ?(default = false) ?disabled ?read_only field fnc =
     checkbox_element
       context_language
       ?hints
       field
+      ?disabled
       ?read_only
       ~value:(experiment |> CCOption.map_or ~default fnc)
       ~flash_fetcher
@@ -433,6 +434,7 @@ let experiment_form
     Format.asprintf
       {js|
       const selector = document.getElementById('%s');
+      const directRegistrationDisabled = document.getElementById('%s');
       const timeWindow = document.getElementById('time-window');
       const inputs = [...timeWindow.querySelectorAll('input')];
       const reminder = document.getElementById('session-reminder');
@@ -440,16 +442,19 @@ let experiment_form
         if(selector.checked) {
           timeWindow.classList.remove("hidden");
           reminder.classList.add("hidden");
+          directRegistrationDisabled.checked = false;
         } else {
           timeWindow.classList.add("hidden");
           reminder.classList.remove("hidden");
         }
-        inputs.forEach( input => input.disabled = !selector.checked)
+        inputs.forEach( input => input.disabled = !selector.checked);
+        directRegistrationDisabled.disabled = selector.checked;
       }
       selector.addEventListener('change', (e) => toggle())
       toggle();
     |js}
       Field.(show AssignmentWithoutSession)
+      Field.(show DirectRegistrationDisabled)
   in
   form
     ~a:
@@ -544,6 +549,8 @@ let experiment_form
                 assignment_without_session_value
             ; time_window_subform
             ; checkbox_element
+                ?disabled:
+                  (CCOption.map assignment_without_session_value experiment)
                 ~hints:[ I18n.DirectRegistrationDisbled ]
                 Field.DirectRegistrationDisabled
                 direct_registration_disabled_value

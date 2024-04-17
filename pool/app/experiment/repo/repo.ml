@@ -510,6 +510,7 @@ module Sql = struct
           WHERE
             (pool_experiments.title LIKE $1
             OR pool_experiments.public_title LIKE $1)
+            AND pool_experiments.assignment_without_session = 0
             %s
           GROUP BY
             pool_experiments.uuid
