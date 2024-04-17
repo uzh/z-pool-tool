@@ -241,6 +241,7 @@ module Public : sig
     -> ?language:Pool_common.Language.t
     -> ?experiment_type:Pool_common.ExperimentType.t
     -> ?smtp_auth_id:Email.SmtpAuth.Id.t
+    -> ?online_study:OnlineStudy.t
     -> Id.t
     -> PublicTitle.t
     -> DirectRegistrationDisabled.t
@@ -253,6 +254,8 @@ module Public : sig
   val direct_registration_disabled : t -> DirectRegistrationDisabled.t
   val experiment_type : t -> Pool_common.ExperimentType.t option
   val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
+  val online_study : t -> OnlineStudy.t option
+  val is_sessionless : t -> bool
 
   val update_direct_registration_disabled
     :  t
@@ -436,6 +439,11 @@ module Repo : sig
 
   module Public : sig
     val select_from_experiments_sql : ?distinct:bool -> string -> string
+    val pool_invitations_left_join : string
+    val condition_registration_not_disabled : string
+    val condition_allow_uninvited_signup : string
+    val condition_not_assigned : string
+    val condition_is_invited : string
 
     module Entity : sig
       val t : Public.t Caqti_type.t

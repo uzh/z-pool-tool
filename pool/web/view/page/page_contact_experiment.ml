@@ -24,6 +24,7 @@ let experiment_title =
 
 let index
   experiment_list
+  online_studies
   upcoming_sessions
   waiting_list
   past_experiments
@@ -117,6 +118,15 @@ let index
          ~empty_msg:ExperimentListEmpty
          [ "striped" ]
   in
+  let online_studies_html =
+    online_studies
+    |> CCList.map experiment_item
+    |> list_html
+         ExperimentListPublicTitle
+         ~note:ExperimentSessionsPublic
+         ~empty_msg:ExperimentListEmpty
+         [ "striped" ]
+  in
   let past_experiments_html =
     match past_experiments with
     | [] -> txt ""
@@ -190,6 +200,7 @@ let index
                 ~a:[ a_class [ "stack-lg" ] ]
                 [ session_html; waiting_list_html ]
             ; experiment_html
+            ; online_studies_html
             ; past_experiments_html
             ]
         ]
@@ -320,5 +331,31 @@ let show
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ experiment |> experiment_public_description; html ]
+    ]
+;;
+
+let show_online_study
+  (experiment : Experiment.Public.t)
+  { Pool_context.language; _ }
+  (_ : Contact.t)
+  time_window
+  =
+  let time_window_html =
+    let open Pool_common.Message in
+    match time_window with
+    | `Upcoming time_window ->
+      [ ( Field.End
+        , txt
+            (Time_window.ends_at time_window
+             |> Pool_common.Utils.Time.formatted_date_time) )
+      ]
+      |> Component.Table.vertical_table `Striped language ~break_mobile:true
+  in
+  div
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
+        [ experiment |> experiment_title ]
+    ; time_window_html
     ]
 ;;

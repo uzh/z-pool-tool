@@ -244,6 +244,7 @@ module Public = struct
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
     ; smtp_auth_id : Email.SmtpAuth.Id.t option
+    ; online_study : OnlineStudy.t option
     }
   [@@deriving eq, show]
 
@@ -252,6 +253,7 @@ module Public = struct
     ?language
     ?experiment_type
     ?smtp_auth_id
+    ?online_study
     id
     public_title
     direct_registration_disabled
@@ -263,6 +265,7 @@ module Public = struct
     ; direct_registration_disabled
     ; experiment_type
     ; smtp_auth_id
+    ; online_study
     }
   ;;
 
@@ -277,6 +280,8 @@ module Public = struct
   let direct_registration_disabled (m : t) = m.direct_registration_disabled
   let experiment_type (m : t) = m.experiment_type
   let smtp_auth_id (m : t) = m.smtp_auth_id
+  let online_study (m : t) = m.online_study
+  let is_sessionless (m : t) = m |> online_study |> CCOption.is_some
 end
 
 let to_public
@@ -287,6 +292,7 @@ let to_public
   ; direct_registration_disabled
   ; experiment_type
   ; smtp_auth_id
+  ; online_study
   ; _
   }
   =
@@ -297,6 +303,7 @@ let to_public
   ; direct_registration_disabled
   ; experiment_type
   ; smtp_auth_id
+  ; online_study
   }
 ;;
 

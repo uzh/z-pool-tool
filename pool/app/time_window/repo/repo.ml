@@ -180,3 +180,25 @@ let query_by_experiment ?query pool id =
     ~where
     Repo_entity.t
 ;;
+
+let find_current_by_experiment_request =
+  let open Caqti_request.Infix in
+  {sql|
+      WHERE 
+        pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_sessions.start < NOW()
+        AND DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW()
+        AND pool_sessions.canceled_at IS NULL
+    |sql}
+  |> find_request_sql
+  |> Pool_common.Repo.Id.t ->! RepoEntity.t
+;;
+
+let find_current_by_experiment pool experiment_id =
+  let open Utils.Lwt_result.Infix in
+  Utils.Database.find_opt
+    (Pool_database.Label.value pool)
+    find_current_by_experiment_request
+    (Experiment.Id.to_common experiment_id)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.TimeWindow)
+;;

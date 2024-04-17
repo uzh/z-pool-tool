@@ -358,23 +358,27 @@ module Public = struct
   open Entity.Public
 
   let t =
-    let encode (m : t) =
-      Ok
-        ( m.id
-        , ( m.public_title
-          , ( m.description
-            , ( m.language
-              , ( m.direct_registration_disabled
-                , (m.experiment_type, m.smtp_auth_id) ) ) ) ) )
-    in
+    let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
     let decode
       ( id
       , ( public_title
         , ( description
           , ( language
-            , (direct_registration_disabled, (experiment_type, smtp_auth_id)) )
-          ) ) )
+            , ( direct_registration_disabled
+              , ( experiment_type
+                , ( smtp_auth_id
+                  , OnlineStudyRepo.
+                      { assignment_without_session
+                      ; redirect_immediately
+                      ; survey_url
+                      } ) ) ) ) ) ) )
       =
+      let online_study =
+        OnlineStudy.create_opt
+          ~assignment_without_session
+          ~redirect_immediately
+          ~survey_url
+      in
       Ok
         { id
         ; public_title
@@ -383,6 +387,7 @@ module Public = struct
         ; direct_registration_disabled
         ; experiment_type
         ; smtp_auth_id
+        ; online_study
         }
     in
     Caqti_type.(
@@ -401,7 +406,9 @@ module Public = struct
                        DirectRegistrationDisabled.t
                        (t2
                           (option Common.ExperimentType.t)
-                          (option Email.SmtpAuth.RepoEntity.Id.t))))))))
+                          (t2
+                             (option Email.SmtpAuth.RepoEntity.Id.t)
+                             OnlineStudyRepo.t))))))))
   ;;
 end
 

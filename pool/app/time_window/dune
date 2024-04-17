@@ -3,6 +3,7 @@
  (libraries
   containers
   experiment
+  filter
   pool_common
   pool_location
   ptime

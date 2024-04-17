@@ -372,6 +372,7 @@ module AvailableExperiments = struct
   let contact_id = Pool_common.Id.create ()
   let experiment_id = Experiment.Id.create ()
   let session_id = Session.Id.create ()
+  let time_window_id = Session.Id.create ()
 
   let list_available_experiments _ () =
     let open Utils.Lwt_result.Infix in
@@ -382,6 +383,15 @@ module AvailableExperiments = struct
     let%lwt on_site_experiment = ExperimentRepo.create ~id:experiment_id () in
     let%lwt online_experiment =
       ExperimentRepo.create ~online_study:Data.online_study ()
+    in
+    let%lwt (_ : Time_window.t) =
+      let open Test_utils.Model in
+      TimeWindowRepo.create
+        ~id:time_window_id
+        (an_hour_ago ())
+        (Session.Duration.create two_hours |> get_exn)
+        online_experiment
+        ()
     in
     let%lwt () =
       let invitation experiment =

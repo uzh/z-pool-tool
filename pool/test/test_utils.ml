@@ -317,6 +317,7 @@ module Model = struct
   ;;
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)
+  let two_hours = Ptime.Span.of_int_s @@ (60 * 60 * 2)
 
   let an_hour_ago () =
     let hour = Ptime.Span.of_int_s @@ (60 * 60) in
