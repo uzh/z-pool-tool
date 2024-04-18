@@ -153,8 +153,14 @@ let reminder_sendable session m =
 module Public = struct
   type t =
     { id : Id.t
+    ; participated : Participated.t option
     ; canceled_at : CanceledAt.t option
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
+  [@@deriving eq, show]
+
+  let participated ({ participated; _ } : t) = participated
 end
 
 module IncrementParticipationCount = struct

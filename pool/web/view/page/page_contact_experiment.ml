@@ -21,6 +21,17 @@ let experiment_title =
   Public.public_title %> PublicTitle.value %> txt
 ;;
 
+let experiment_detail_page experiment html =
+  div
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
+        [ experiment |> experiment_title ]
+    ; experiment |> experiment_public_description
+    ; html
+    ]
+;;
+
 let index
   experiment_list
   online_studies
@@ -323,63 +334,66 @@ let show
         ; sessions_html PastSessionsTitle past_sessions
         ]
   in
-  div
-    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
-        [ experiment |> experiment_title ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ experiment |> experiment_public_description; html ]
-    ]
+  experiment_detail_page experiment html
 ;;
 
 let show_online_study
   (experiment : Experiment.Public.t)
   { Pool_context.language; _ }
-  time_window
-  assignment
+  (argument :
+    [< `Participated of Assignment.Public.t
+    | `Pending of Assignment.Public.t * Time_window.t
+    | `Upcoming of Time_window.t
+    ])
   =
   let html =
-    match time_window with
-    | `Upcoming time_window ->
-      let open Pool_common in
-      let start_button =
-        let field = Some Message.Field.Survey in
-        let control =
-          if CCOption.is_some assignment
-          then Message.Resume field
-          else Message.Start field
-        in
-        div
-          ~a:[ a_class [ "flexcolumn" ] ]
-          [ Component.Input.link_as_button
-              ~control:(language, control)
-              (HttpUtils.Url.Contact.experiment_path
-                 ~id:(Experiment.Public.id experiment)
-                 ~suffix:"start"
-                 ())
-          ]
+    let open Pool_common in
+    let open Assignment in
+    let start_button assignment =
+      let field = Some Message.Field.Survey in
+      let control =
+        if CCOption.is_some assignment
+        then Message.Resume field
+        else Message.Start field
       in
-      let end_at =
-        p
-          ~a:[ a_class [ "font-italic" ] ]
-          [ txt
-              (I18n.OnlineStudyParticipationDeadline
-                 (Time_window.ends_at time_window)
-               |> Utils.hint_to_string language)
-          ]
-      in
-      div ~a:[ a_class [ "stack"; "flexcolumn" ] ] [ start_button; end_at ]
+      div
+        ~a:[ a_class [ "flexcolumn" ] ]
+        [ Component.Input.link_as_button
+            ~control:(language, control)
+            (HttpUtils.Url.Contact.experiment_path
+               ~id:(Experiment.Public.id experiment)
+               ~suffix:"start"
+               ())
+        ]
+    in
+    let end_at_hint time_window =
+      p
+        ~a:[ a_class [ "font-italic" ] ]
+        [ txt
+            (I18n.OnlineStudyParticipationDeadline
+               (Time_window.ends_at time_window)
+             |> Utils.hint_to_string language)
+        ]
+    in
+    let participated assignment =
+      let open Utils in
+      p
+        [ strong
+            [ txt (field_to_string_capitalized language Field.Participated)
+            ; txt ": "
+            ; txt (Time.formatted_date_time assignment.Public.created_at)
+            ]
+        ]
+    in
+    div ~a:[ a_class [ "stack"; "flexcolumn" ] ]
+    @@
+    match argument with
+    | `Pending (assignment, time_window) ->
+      [ start_button (Some assignment); end_at_hint time_window ]
+    | `Participated assignment -> [ participated assignment ]
+    | `Upcoming time_window -> [ start_button None; end_at_hint time_window ]
   in
-  div
-    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
-        [ experiment |> experiment_title ]
-    ; experiment |> experiment_public_description
-    ; html
-    ]
+  experiment_detail_page experiment html
 ;;
 
 let online_study_completition

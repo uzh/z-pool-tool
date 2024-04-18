@@ -102,8 +102,13 @@ val reminder_sendable
 module Public : sig
   type t =
     { id : Id.t
+    ; participated : Participated.t option
     ; canceled_at : CanceledAt.t option
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
+
+  val participated : t -> Participated.t option
 end
 
 module IncrementParticipationCount : sig

@@ -66,11 +66,21 @@ let show_online_study
       contact
     ||> CCList.head_opt
   in
-  Page.Contact.Experiment.show_online_study
-    experiment
-    context
-    (`Upcoming time_window)
-    assignment
+  let argument =
+    let open CCOption in
+    let open Assignment in
+    match assignment with
+    | None -> `Upcoming time_window
+    | Some assignment ->
+      assignment
+      |> Public.participated
+      >|= Participated.value
+      |> value ~default:false
+      |> (function
+       | true -> `Participated assignment
+       | false -> `Pending (assignment, time_window))
+  in
+  Page.Contact.Experiment.show_online_study experiment context argument
   |> Lwt.return_ok
   >>= create_layout req context
   >|+ Sihl.Web.Response.of_html
