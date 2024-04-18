@@ -195,7 +195,7 @@ let find_pending_waitinglists_by_contact pool contact =
 let find_past_experiments_by_contact pool contact =
   let open Caqti_request.Infix in
   let (where, Dynparam.Pack (pt, pv)), joins =
-    Repo.Sql.participation_history_where ~exclude_past:true (Contact.id contact)
+    Repo.Sql.participation_history_where ~only_closed:true (Contact.id contact)
   in
   let request =
     Format.asprintf "%s WHERE %s" joins where

@@ -87,8 +87,13 @@ let participation_history_sql additional_joins ?(count = false) where_fragment =
           a.contact_uuid = pool_assignments.contact_uuid
           AND a.canceled_at IS NULL
           AND a.marked_as_deleted = 0
-          AND pool_sessions.closed_at IS NULL
-          AND pool_sessions.experiment_uuid = pool_experiments.uuid)
+          AND pool_sessions.experiment_uuid = pool_experiments.uuid
+          AND(
+            CASE WHEN pool_experiments.assignment_without_session = 1 THEN
+              a.participated IS NULL
+            ELSE
+              pool_sessions.closed_at IS NULL
+            END))    
     |sql}
   in
   let columns =
@@ -588,22 +593,48 @@ module Sql = struct
 
   let participation_history_where
     ?(dyn = Dynparam.empty)
-    ~exclude_past
+    ~only_closed
     contact_id
     =
     let joins =
-      Format.asprintf
-        {sql|
-        INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
-          %s
-        INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
-          AND pool_assignments.canceled_at IS NULL
-          AND pool_assignments.marked_as_deleted = 0
-       |sql}
-        (if exclude_past then "AND pool_sessions.closed_at IS NOT NULL" else "")
+      {sql| 
+        INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid 
+        INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid 
+          AND pool_assignments.canceled_at IS NULL 
+          AND pool_assignments.marked_as_deleted = 0 
+        |sql}
     in
     let where =
-      {sql| pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      let only_closed_condition =
+        {sql|
+          CASE WHEN pool_experiments.assignment_without_session = 1 THEN
+            pool_assignments.participated = 1
+          ELSE
+            pool_sessions.closed_at IS NOT NULL
+          END
+        |sql}
+      in
+      Format.asprintf
+        {sql|
+            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+            %s
+        |sql}
+        (if only_closed
+         then Format.asprintf "AND (%s)" only_closed_condition
+         else "")
+    in
+    let _ =
+      Format.asprintf
+        {sql|
+            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')) 
+            AND(
+              CASE WHEN pool_experiments.assignment_without_session = 1 THEN
+                pool_assignments.participated = 1
+              ELSE
+                %s
+              END)
+        |sql}
+        (if only_closed then "pool_sessions.closed_at IS NOT NULL" else "TRUE")
     in
     ( ( where
       , dyn |> Dynparam.add Caqti_type.string (Contact.Id.value contact_id) )
@@ -613,7 +644,7 @@ module Sql = struct
   let query_participation_history_by_contact ?query pool contact =
     let contact_id = Contact.id contact in
     let where, additional_joins =
-      participation_history_where ~exclude_past:false contact_id
+      participation_history_where ~only_closed:false contact_id
     in
     Query.collect_and_count
       pool
