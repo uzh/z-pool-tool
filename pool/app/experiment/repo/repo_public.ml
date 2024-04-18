@@ -46,8 +46,12 @@ let condition_allow_uninvited_signup =
     |sql}
 ;;
 
-let condition_assigned =
-  {sql|
+let assignments_base_condition ~require_participated =
+  let condition =
+    if require_participated then "AND pool_assignments.participated = 1" else ""
+  in
+  Format.asprintf
+    {sql|
     EXISTS (
       SELECT
         1
@@ -58,8 +62,16 @@ let condition_assigned =
         pool_sessions.experiment_uuid = pool_experiments.uuid
         AND pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
         AND pool_assignments.marked_as_deleted = 0
-        AND pool_sessions.canceled_at IS NULL)
+        AND pool_sessions.canceled_at IS NULL
+        %s)
     |sql}
+    condition
+;;
+
+let condition_assigned = assignments_base_condition ~require_participated:false
+
+let condition_participated =
+  assignments_base_condition ~require_participated:true
 ;;
 
 let condition_is_invited =
@@ -92,14 +104,14 @@ let find_upcoming_to_register_request experiment_type () =
           AND DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW())
       |sql}
   in
-  let experiment_type, session_condition =
-    let experiment_type_condition =
+  let experiment_type, session_condition, assignment_condition =
+    let type_condition =
       Format.asprintf
         {sql| pool_experiments.assignment_without_session = %s |sql}
     in
     match experiment_type with
-    | `Online -> experiment_type_condition "1", timewindow_exists
-    | `OnSite -> experiment_type_condition "0", onsite_session_exists
+    | `Online -> type_condition "1", timewindow_exists, condition_participated
+    | `OnSite -> type_condition "0", onsite_session_exists, condition_assigned
   in
   let not_on_waitinglist =
     {sql|
@@ -118,7 +130,7 @@ let find_upcoming_to_register_request experiment_type () =
     "%s WHERE %s AND %s AND %s AND %s AND (%s OR %s) %s"
     pool_invitations_left_join
     experiment_type
-    ("NOT " ^ condition_assigned)
+    ("NOT " ^ assignment_condition)
     not_on_waitinglist
     condition_registration_not_disabled
     condition_allow_uninvited_signup

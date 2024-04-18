@@ -17,6 +17,7 @@ let check_result ?(msg = "succeeds") =
 
 module Data = struct
   open Session
+  module Field = Pool_common.Message.Field
 
   let start = create_start (2024, 04, 01)
   let end_at = create_end (2024, 05, 01)
@@ -24,7 +25,6 @@ module Data = struct
   let public_description = PublicDescription.of_string "public"
 
   let urlencoded =
-    let open Pool_common.Message in
     [ Field.Start, Start.value start |> Ptime.to_rfc3339
     ; Field.End, End.value end_at |> Ptime.to_rfc3339
     ; Field.InternalDescription, InternalDescription.value internal_description

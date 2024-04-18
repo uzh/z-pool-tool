@@ -2,7 +2,6 @@ open CCFun
 open Tyxml.Html
 open Component.Input
 module PageSession = Page_contact_sessions
-module Assignment = Page_contact_assignment
 module HttpUtils = Http_utils
 module Field = Pool_common.Message.Field
 
@@ -339,14 +338,21 @@ let show_online_study
   (experiment : Experiment.Public.t)
   { Pool_context.language; _ }
   time_window
+  assignment
   =
   let html =
     match time_window with
     | `Upcoming time_window ->
       let open Pool_common in
       let start_button =
-        let control = Message.StartSurvey in
+        let field = Some Message.Field.Survey in
+        let control =
+          if CCOption.is_some assignment
+          then Message.Resume field
+          else Message.Start field
+        in
         div
+          ~a:[ a_class [ "flexcolumn" ] ]
           [ Component.Input.link_as_button
               ~control:(language, control)
               (HttpUtils.Url.Contact.experiment_path
@@ -364,17 +370,14 @@ let show_online_study
                |> Utils.hint_to_string language)
           ]
       in
-      div
-        ~a:[ a_class [ "stack-lg" ] ]
-        [ experiment |> experiment_public_description
-        ; div ~a:[ a_class [ "stack" ] ] [ start_button; end_at ]
-        ]
+      div ~a:[ a_class [ "stack"; "flexcolumn" ] ] [ start_button; end_at ]
   in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
         [ experiment |> experiment_title ]
+    ; experiment |> experiment_public_description
     ; html
     ]
 ;;

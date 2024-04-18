@@ -526,7 +526,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Session in
     let open CCResult in
-    let open Pool_common.Message in
+    let open Pool_common in
     let* duration, email_reminder_lead_time, text_message_reminder_lead_time =
       decode_time_durations command
     in
@@ -534,18 +534,21 @@ end = struct
       match Session.has_assignments session with
       | false -> Ok ()
       | true ->
-        let error field = Error (CannotBeUpdated field) in
+        let error field = Error (Message.CannotBeUpdated field) in
         let* () =
-          if Start.equal session.start start then Ok () else error Field.Start
+          if Start.equal session.start start
+          then Ok ()
+          else error Message.Field.Start
         in
         if Duration.equal session.duration duration
         then Ok ()
-        else error Field.Start
+        else error Message.Field.Start
     in
     let* () = validate_start follow_up_sessions parent_session start in
     let* () =
       if max_participants < min_participants
-      then Error (Smaller (Field.MaxParticipants, Field.MinParticipants))
+      then
+        Error Message.(Smaller (Field.MaxParticipants, Field.MinParticipants))
       else Ok ()
     in
     let session =

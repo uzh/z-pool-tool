@@ -262,6 +262,7 @@ let rec field_to_string =
   | Street -> "street"
   | Styles -> "styles"
   | Successful -> "successful"
+  | Survey -> "survey"
   | SurveyUrl -> "survey url"
   | SystemEvent -> "system event"
   | Tag -> "tag"
@@ -682,6 +683,7 @@ let control_to_string = function
       "Reset %s to rich '%s'"
       (field_to_string Field.PlainText)
       (field_to_string Field.EmailText)
+  | Resume field -> format_submit "resume" field
   | Save field -> format_submit "save" field
   | SessionDetails -> format_submit "session details" None
   | Select -> format_submit "select" None
@@ -691,7 +693,7 @@ let control_to_string = function
   | SendResetLink -> format_submit "send reset link" None
   | Show -> format_submit "show" None
   | SignUp -> format_submit "sign up" None
-  | StartSurvey -> format_submit "start survey" None
+  | Start field -> format_submit "start" field
   | Stop field -> format_submit "stop" field
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field

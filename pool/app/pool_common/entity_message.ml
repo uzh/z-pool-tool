@@ -256,15 +256,16 @@ type control =
   | ResetForm
   | ResetPlainText
   | Save of Field.t option
-  | SessionDetails
+  | Resume of Field.t option
   | Select
   | SelectAll of Field.t option
   | SelectFilePlaceholder
   | Send of Field.t option
   | SendResetLink
+  | SessionDetails
   | Show
   | SignUp
-  | StartSurvey
+  | Start of Field.t option
   | Stop of Field.t option
   | ToggleAll
   | Unassign of Field.t option

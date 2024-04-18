@@ -101,7 +101,7 @@ module Public = struct
               [ CustomMiddleware.Guardian.require_user_type_of
                   Pool_context.UserType.[ Guest; Contact ]
               ]
-            [ choose ~scope:Field.(Experiment |> human_url) experiment ]
+            [ choose ~scope:"/experiments" experiment ]
         ; choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of

@@ -265,6 +265,7 @@ let rec field_to_string =
   | Street -> "Strasse"
   | Styles -> "Styles"
   | Successful -> "Erfolgreich"
+  | Survey -> "Umfrage"
   | SurveyUrl -> "Umfrage-URL"
   | SystemEvent -> "System Event"
   | Tag -> "Tag"
@@ -724,6 +725,7 @@ let control_to_string = function
   | Resend field -> format_submit "erneut senden" field
   | Reset field -> format_submit "zurücksetzen" field
   | ResetForm -> "Formular zurücksetzen"
+  | Resume field -> format_submit "fortsetzen" field
   | Save field -> format_submit "speichern" field
   | SessionDetails -> format_submit "Sessiondetails" None
   | Select -> format_submit "auswählen" None
@@ -733,7 +735,7 @@ let control_to_string = function
   | SendResetLink -> format_submit "link senden" None
   | Show -> "anzeigen"
   | SignUp -> format_submit "anmelden" None
-  | StartSurvey -> "Umfrage starten"
+  | Start field -> format_submit "starten" field
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field

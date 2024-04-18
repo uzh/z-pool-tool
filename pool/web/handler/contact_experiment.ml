@@ -50,18 +50,27 @@ let show_online_study
   req
   ({ Pool_context.database_label; _ } as context)
   experiment
+  contact
   =
   let open Utils.Lwt_result.Infix in
+  let experiment_id = Experiment.Public.id experiment in
   let* time_window =
-    Time_window.find_current_by_experiment
-      database_label
-      (Experiment.Public.id experiment)
+    Time_window.find_current_by_experiment database_label experiment_id
     >|- CCFun.const Pool_common.Message.(NotFound Field.Experiment)
+  in
+  let%lwt assignment =
+    let open Utils.Lwt_result.Infix in
+    Assignment.find_all_public_by_experiment_and_contact_opt
+      database_label
+      experiment_id
+      contact
+    ||> CCList.head_opt
   in
   Page.Contact.Experiment.show_online_study
     experiment
     context
     (`Upcoming time_window)
+    assignment
   |> Lwt.return_ok
   >>= create_layout req context
   >|+ Sihl.Web.Response.of_html
@@ -78,7 +87,7 @@ let show req =
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let* experiment = Experiment.find_public database_label id contact in
     match Experiment.Public.is_sessionless experiment with
-    | true -> show_online_study req context experiment
+    | true -> show_online_study req context experiment contact
     | false ->
       let* grouped_sessions =
         Session.find_all_public_for_experiment database_label contact id
@@ -188,8 +197,7 @@ module OnlineSurvey = struct
 
   let submit req =
     let open Utils.Lwt_result.Infix in
-    (* TODO: Where to redirect? Do contacts have to be logged in? *)
-    let error_path = "/experiments" in
+    let error_path = "/" in
     let result ({ Pool_context.database_label; _ } as context) =
       Utils.Lwt_result.map_error (fun err -> err, error_path)
       @@
@@ -202,7 +210,7 @@ module OnlineSurvey = struct
           >== fun ({ participated; marked_as_deleted; _ } as assignment) ->
           match
             CCOption.is_some participated
-            && MarkedAsDeleted.value marked_as_deleted
+            || MarkedAsDeleted.value marked_as_deleted
           with
           | false -> Ok assignment
           | true -> Error Pool_common.Message.(NotFound Field.Assignment))
