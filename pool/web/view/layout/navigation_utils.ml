@@ -76,10 +76,7 @@ let rec build_nav_links
       icon
   in
   let nav_link : [< Html_types.li_content_fun ] elt list_wrap =
-    let classnames =
-      let base = [ "nav-link" ] in
-      if is_active then "active" :: base else base
-    in
+    let classnames = [ "nav-link" ] in
     match is_active, url with
     | true, _ | false, None -> [ span ~a:[ a_class classnames ] label ]
     | _, Some url ->
@@ -92,7 +89,8 @@ let rec build_nav_links
       ]
   in
   match children with
-  | [] -> li nav_link
+  | [] ->
+    if is_active then li ~a:[ a_class [ "active" ] ] nav_link else li nav_link
   | children ->
     let parent_attrs, list_attrs =
       match layout with
@@ -150,20 +148,25 @@ let i18n_links languages active_language layout =
     (fun language ->
       let lang = Language.show language in
       if Language.equal language active_language
-      then span ~a:[ a_class ("active" :: link_classes) ] [ txt lang ]
+      then
+        li
+          ~a:[ a_class [ "active" ] ]
+          [ span ~a:[ a_class link_classes ] [ txt lang ] ]
       else (
         let query_param =
           [ Field.Language, lang |> CCString.lowercase_ascii ]
         in
-        a
-          ~a:
-            [ a_href (add_field_query_params "" query_param)
-            ; a_class link_classes
-            ]
-          [ txt lang ]))
+        li
+          [ a
+              ~a:
+                [ a_href (add_field_query_params "" query_param)
+                ; a_class link_classes
+                ]
+              [ txt lang ]
+          ]))
     |> CCList.map
   in
-  languages |> to_html |> nav ~a:[ a_class nav_class ]
+  [ languages |> to_html |> ul ] |> nav ~a:[ a_class nav_class ]
 ;;
 
 let create_nav_with_language_switch
