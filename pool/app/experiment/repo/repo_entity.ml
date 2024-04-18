@@ -92,18 +92,15 @@ end
 module OnlineStudyRepo = struct
   type t =
     { assignment_without_session : AssignmentWithoutSession.t
-    ; redirect_immediately : RedirectImmediately.t
     ; survey_url : SurveyUrl.t option
     }
 
   let t =
-    let encode m =
-      Ok (m.assignment_without_session, m.redirect_immediately, m.survey_url)
+    let encode m = Ok (m.assignment_without_session, m.survey_url) in
+    let decode (assignment_without_session, survey_url) =
+      Ok { assignment_without_session; survey_url }
     in
-    let decode (assignment_without_session, redirect_immediately, survey_url) =
-      Ok { assignment_without_session; redirect_immediately; survey_url }
-    in
-    Caqti_type.(custom ~encode ~decode (t3 bool bool (option string)))
+    Caqti_type.(custom ~encode ~decode (t2 bool (option string)))
   ;;
 end
 
@@ -126,10 +123,7 @@ let t =
                             , ( show_external_data_id_links
                               , ( experiment_type
                                 , ( OnlineStudyRepo.
-                                      { assignment_without_session
-                                      ; redirect_immediately
-                                      ; survey_url
-                                      }
+                                      { assignment_without_session; survey_url }
                                   , ( email_session_reminder_lead_time
                                     , ( text_message_session_reminder_lead_time
                                       , ( invitation_reset_at
@@ -142,10 +136,7 @@ let t =
     =
     let open CCResult in
     let online_study =
-      OnlineStudy.create_opt
-        ~assignment_without_session
-        ~redirect_immediately
-        ~survey_url
+      OnlineStudy.create_opt ~assignment_without_session ~survey_url
     in
     Ok
       { id
@@ -254,16 +245,9 @@ module Write = struct
       let online_study =
         let open OnlineStudyRepo in
         match m.online_study with
-        | None ->
-          { assignment_without_session = false
-          ; redirect_immediately = false
-          ; survey_url = None
-          }
-        | Some { OnlineStudy.redirect_immediately; survey_url } ->
-          { assignment_without_session = true
-          ; redirect_immediately
-          ; survey_url = Some survey_url
-          }
+        | None -> { assignment_without_session = false; survey_url = None }
+        | Some { OnlineStudy.survey_url } ->
+          { assignment_without_session = true; survey_url = Some survey_url }
       in
       Ok
         ( m.id
@@ -367,17 +351,11 @@ module Public = struct
             , ( direct_registration_disabled
               , ( experiment_type
                 , ( smtp_auth_id
-                  , OnlineStudyRepo.
-                      { assignment_without_session
-                      ; redirect_immediately
-                      ; survey_url
-                      } ) ) ) ) ) ) )
+                  , OnlineStudyRepo.{ assignment_without_session; survey_url }
+                  ) ) ) ) ) ) )
       =
       let online_study =
-        OnlineStudy.create_opt
-          ~assignment_without_session
-          ~redirect_immediately
-          ~survey_url
+        OnlineStudy.create_opt ~assignment_without_session ~survey_url
       in
       Ok
         { id

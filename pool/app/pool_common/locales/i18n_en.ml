@@ -512,10 +512,6 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
       "Generates max %i new invitations every %d minutes"
       (number +. 0.5 |> CCFloat.round |> CCInt.of_float)
       per_n_minutes
-  | RedirectImmediately ->
-    "If activated, the invitation will contain a link that automatically \
-     forwards the contact to the survey URL. Otherwise, a link to the \
-     experiment page will be sent, where the contact can start the survey."
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."

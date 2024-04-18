@@ -45,9 +45,7 @@ module Data = struct
 
   let online_study =
     let open Experiment in
-    { OnlineStudy.survey_url = SurveyUrl.of_string survey_url
-    ; redirect_immediately = RedirectImmediately.create false
-    }
+    { OnlineStudy.survey_url = SurveyUrl.of_string survey_url }
   ;;
 
   let urlencoded =

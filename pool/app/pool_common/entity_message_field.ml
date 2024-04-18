@@ -257,8 +257,6 @@ type t =
   | Reason [@name "reason"] [@printer go "reason"]
   | Recipient [@name "recipient"] [@printer go "recipient"]
   | Redirect [@name "redirect"] [@printer go "redirect"]
-  | RedirectImmediately [@name "redirect_immediately"]
-  [@printer go "redirect_immediately"]
   | Reminder [@name "reminder"] [@printer go "reminder"]
   | RegistrationDisabled [@name "registration_disabled"]
   [@printer go "registration_disabled"]

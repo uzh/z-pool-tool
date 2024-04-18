@@ -220,7 +220,6 @@ let rec field_to_string =
   | Reason -> "Grund"
   | Recipient -> "Empfänger"
   | Redirect -> "Weiterleitung"
-  | RedirectImmediately -> "Sofort weiterleiten"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | RegistrationPossible -> "Registrierung möglich"
   | Reminder -> "Erinnerung"

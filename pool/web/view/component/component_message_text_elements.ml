@@ -155,8 +155,7 @@ module DummyData = struct
     let open Experiment in
     let online_study =
       OnlineStudy.
-        { redirect_immediately = RedirectImmediately.create false
-        ; survey_url = SurveyUrl.of_string "https://www.qualtics.com/T8rp6WTdk"
+        { survey_url = SurveyUrl.of_string "https://www.qualtics.com/T8rp6WTdk"
         }
     in
     { id = Id.create ()

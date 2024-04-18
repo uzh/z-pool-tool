@@ -375,10 +375,6 @@ let experiment_form
               context_language
               `Text
               Field.SurveyUrl
-          ; checkbox_element
-              ~hints:[ I18n.RedirectImmediately ]
-              Field.RedirectImmediately
-              redirect_immediately_value
           ]
       ]
   in
@@ -911,7 +907,7 @@ let detail
       let online_study =
         match experiment.online_study with
         | None -> Field.OnlineStudy, txt (bool_to_string false)
-        | Some { OnlineStudy.redirect_immediately; survey_url } ->
+        | Some { OnlineStudy.survey_url } ->
           ( Field.OnlineStudy
           , div
               ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ]
@@ -921,14 +917,6 @@ let detail
                          "%s: %s"
                          (field_to_string Field.SurveyUrl)
                          (SurveyUrl.value survey_url))
-                  ]
-              ; div
-                  [ txt
-                      (Format.asprintf
-                         "%s: %s"
-                         (field_to_string Field.RedirectImmediately)
-                         (bool_to_string
-                            (RedirectImmediately.value redirect_immediately)))
                   ]
               ] )
       in

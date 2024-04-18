@@ -113,18 +113,16 @@ let global_params layout user =
 let public_experiment_params layout experiment =
   let open Experiment in
   let experiment_id = experiment |> Public.id |> Id.value in
-  let redirect_immediately =
+  let experiment_url =
+    Format.asprintf "experiments/%s" experiment_id |> to_absolute_path layout
+  in
+  let experiment_redirect_url =
     experiment
     |> Public.online_study
-    |> CCOption.map_or
-         ~default:false
-         CCFun.(OnlineStudy.redirect_immediately %> RedirectImmediately.value)
-  in
-  let experiment_url =
-    let base =
-      Format.asprintf "experiments/%s" experiment_id |> to_absolute_path layout
-    in
-    if redirect_immediately then Format.asprintf "%s/start" base else base
+    |> CCOption.is_some
+    |> function
+    | true -> experiment_id ^ "/start"
+    | false -> ""
   in
   [ "experimentId", experiment_id
   ; ( "experimentPublicTitle"
@@ -134,6 +132,7 @@ let public_experiment_params layout experiment =
       |> Public.description
       |> CCOption.map_or ~default:"" PublicDescription.value )
   ; "experimentUrl", experiment_url
+  ; "experumentSurveyRedirectUrl", experiment_redirect_url
   ]
 ;;
 

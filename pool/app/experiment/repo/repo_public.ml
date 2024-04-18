@@ -10,7 +10,6 @@ let sql_select_columns =
   ; "pool_experiments.experiment_type"
   ; Entity.Id.sql_select_fragment ~field:"pool_experiments.smtp_auth_uuid"
   ; "pool_experiments.assignment_without_session"
-  ; "pool_experiments.redirect_immediately"
   ; "pool_experiments.survey_url"
   ]
 ;;

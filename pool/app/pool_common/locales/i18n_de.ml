@@ -528,10 +528,6 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
       "Generiert alle %d Minuten %.2f neue Einladungen."
       per_n_minutes
       number
-  | RedirectImmediately ->
-    "Falls aktiviert, enthält die Einladung einen Link, der den Kontakt \
-     automatisch zur Umfrage-URL weiterleitet. Andernfalls wird ein Link zur \
-     Experiment-Seite gesendet, auf der der Kontakt die Umfrage starten kann."
   | RegistrationDisabled ->
     "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \

@@ -14,8 +14,7 @@ let add_experiment_assignment_without_session_flag =
     {sql|
       ALTER TABLE pool_experiments 
         ADD COLUMN assignment_without_session boolean NOT NULL DEFAULT 0 AFTER experiment_type,
-        ADD COLUMN redirect_immediately boolean NOT NULL DEFAULT 0 AFTER assignment_without_session,
-        ADD COLUMN survey_url VARCHAR(255) AFTER redirect_immediately
+        ADD COLUMN survey_url VARCHAR(255) AFTER assignment_without_session
     |sql}
 ;;
 

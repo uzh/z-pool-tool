@@ -85,12 +85,6 @@ module AssignmentWithoutSession = struct
   let schema = schema Common.Message.Field.AssignmentWithoutSession
 end
 
-module RedirectImmediately = struct
-  include Pool_common.Model.Boolean
-
-  let schema = schema Common.Message.Field.RedirectImmediately
-end
-
 module SurveyUrl = struct
   include Pool_common.Model.String
 
@@ -140,20 +134,14 @@ module MatcherNotificationSent = struct
 end
 
 module OnlineStudy = struct
-  type t =
-    { redirect_immediately : RedirectImmediately.t
-    ; survey_url : SurveyUrl.t
-    }
-  [@@deriving eq, fields ~getters, show]
+  type t = { survey_url : SurveyUrl.t } [@@deriving eq, fields ~getters, show]
 
-  let create ~redirect_immediately ~survey_url =
-    { redirect_immediately; survey_url }
-  ;;
+  let create ~survey_url = { survey_url }
 
-  let create_opt ~assignment_without_session ~redirect_immediately ~survey_url =
+  let create_opt ~assignment_without_session ~survey_url =
     match assignment_without_session, survey_url with
     | false, _ | _, None -> None
-    | true, Some survey_url -> Some { redirect_immediately; survey_url }
+    | true, Some survey_url -> Some { survey_url }
   ;;
 
   let callback_url (tenant : Pool_tenant.t) experiment_id contact =
@@ -362,11 +350,6 @@ let assignment_without_session_value ({ online_study; _ } : t) =
   CCOption.is_some online_study
 ;;
 
-let redirect_immediately_value ({ online_study; _ } : t) =
-  online_study
-  |> CCOption.map_or ~default:false OnlineStudy.redirect_immediately
-;;
-
 let survey_url_value ({ online_study; _ } : t) =
   online_study |> CCOption.map OnlineStudy.survey_url
 ;;
@@ -397,7 +380,6 @@ let boolean_fields =
     ; AssignmentWithoutSession
     ; DirectRegistrationDisabled
     ; ExternalDataRequired
-    ; RedirectImmediately
     ; RegistrationDisabled
     ; ShowExteralDataIdLinks
     ]

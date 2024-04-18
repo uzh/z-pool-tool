@@ -249,7 +249,6 @@ type hint =
   | RateDependencyWith
   | RateDependencyWithout
   | RateNumberPerMinutes of int * float
-  | RedirectImmediately
   | RegistrationDisabled
   | RescheduleSession
   | ResendRemindersChannel

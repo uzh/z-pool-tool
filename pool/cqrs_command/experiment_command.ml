@@ -28,7 +28,6 @@ let default_command
   show_external_data_id_links
   experiment_type
   assignment_without_session
-  redirect_immediately
   survey_url
   email_session_reminder_lead_time
   email_session_reminder_lead_time_unit
@@ -50,7 +49,6 @@ let default_command
   ; show_external_data_id_links
   ; experiment_type
   ; assignment_without_session
-  ; redirect_immediately
   ; survey_url
   ; email_session_reminder_lead_time
   ; email_session_reminder_lead_time_unit
@@ -73,7 +71,6 @@ let create_command
   show_external_data_id_links
   experiment_type
   assignment_without_session
-  redirect_immediately
   survey_url
   email_session_reminder_lead_time
   email_session_reminder_lead_time_unit
@@ -94,7 +91,6 @@ let create_command
     show_external_data_id_links
     experiment_type
     assignment_without_session
-    redirect_immediately
     survey_url
     email_session_reminder_lead_time
     email_session_reminder_lead_time_unit
@@ -121,7 +117,6 @@ let update_schema command =
         ; ShowExternalDataIdLinks.schema ()
         ; opt @@ ExperimentType.schema ()
         ; AssignmentWithoutSession.schema ()
-        ; RedirectImmediately.schema ()
         ; opt @@ SurveyUrl.schema ()
         ; opt @@ Reminder.EmailLeadTime.integer_schema ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
@@ -150,7 +145,6 @@ let create_schema command =
         ; ShowExternalDataIdLinks.schema ()
         ; opt @@ ExperimentType.schema ()
         ; AssignmentWithoutSession.schema ()
-        ; RedirectImmediately.schema ()
         ; opt @@ SurveyUrl.schema ()
         ; opt
           @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
@@ -203,7 +197,6 @@ end = struct
      ; text_message_session_reminder_lead_time
      ; text_message_session_reminder_lead_time_unit
      ; assignment_without_session
-     ; redirect_immediately
      ; survey_url
      ; _
      } as command :
@@ -222,10 +215,7 @@ end = struct
         text_message_session_reminder_lead_time_unit
     in
     let online_study =
-      OnlineStudy.create_opt
-        ~assignment_without_session
-        ~redirect_immediately
-        ~survey_url
+      OnlineStudy.create_opt ~assignment_without_session ~survey_url
     in
     let* experiment =
       Experiment.create
@@ -287,9 +277,7 @@ end = struct
     experiment
     organisational_unit
     smtp
-    ({ assignment_without_session; redirect_immediately; survey_url; _ } as
-     command :
-      t)
+    ({ assignment_without_session; survey_url; _ } as command : t)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
@@ -304,10 +292,7 @@ end = struct
         command.text_message_session_reminder_lead_time_unit
     in
     let online_study =
-      OnlineStudy.create_opt
-        ~assignment_without_session
-        ~redirect_immediately
-        ~survey_url
+      OnlineStudy.create_opt ~assignment_without_session ~survey_url
     in
     let* () =
       match
