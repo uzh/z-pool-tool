@@ -235,6 +235,9 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
       (match count with
       | 1 -> "1 contact does"
       | count -> Format.asprintf "%i contacts do" count)
+  | AssignmentWithoutSession ->
+    "Aktivieren Sie diese Option, falls die Teilnahme am Experiment nicht an \
+     eine Session gebunden ist, z.B. bei einer Onlineumfrage."
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
@@ -383,6 +386,10 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
+  | SurveyUrl ->
+    "ine URL inkl. Protokoll. Der URL-Parameter 'callbackUrl' ist \
+     erforderlich. Z.B.: \
+     https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | FilterTemplates ->
     "Änderungen an einem dieser Filter wird auf alle Experimentfilter \
      übertragen, die dieses Template beinhalten."
@@ -477,6 +484,13 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | NumberIsWeeksHint -> "Anzahl Wochen"
   | NumberMax i -> error_to_string (Entity_message.NumberMax i)
   | NumberMin i -> error_to_string (Entity_message.NumberMin i)
+  | OnlineStudy ->
+    Format.asprintf
+      "Anstelle von Sessions können Zeitfenster definiert werden, während \
+       deren an der Umfrage teilgenommen werden kann. Unter %s geben Sie die \
+       externe URL der Studie an, auf welche die Kontakte weitergeleitet \
+       werden sollen."
+      (Locales_de.field_to_string Entity_message_field.SurveyUrl)
   | OnlineStudyParticipationDeadline end_at ->
     Format.asprintf
       "Sie können noch bis zum %s an diesem Experiment teilnehmen."
@@ -514,6 +528,10 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
       "Generiert alle %d Minuten %.2f neue Einladungen."
       per_n_minutes
       number
+  | RedirectImmediately ->
+    "Falls aktiviert, enthält die Einladung einen Link, der den Kontakt \
+     automatisch zur Umfrage-URL weiterleitet. Andernfalls wird ein Link zur \
+     Experiment-Seite gesendet, auf der der Kontakt die Umfrage starten kann."
   | RegistrationDisabled ->
     "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \

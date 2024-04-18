@@ -231,6 +231,9 @@ When inviting contacts, the filter will prefer the overriding value if both are 
       (match count with
       | 1 -> "1 Kontakt erfüllt"
       | count -> Format.asprintf "%i Kontakte erfüllen" count)
+  | AssignmentWithoutSession ->
+    "Activate this option if participation in the experiment is not tied to a \
+     session, e.g. in an online survey."
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
@@ -467,6 +470,12 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | NumberIsWeeksHint -> "Nr. of weeks"
   | NumberMax i -> error_to_string (Entity_message.NumberMax i)
   | NumberMin i -> error_to_string (Entity_message.NumberMin i)
+  | OnlineStudy ->
+    Format.asprintf
+      "Instead of sessions, you can define time windows in which you can take \
+       part in the survey. Under %s, enter the external URL of the survey to \
+       which the contacts should be forwarded."
+      (Locales_en.field_to_string Entity_message_field.SurveyUrl)
   | OnlineStudyParticipationDeadline end_at ->
     Format.asprintf
       "You can participate in this experiment until %s."
@@ -503,6 +512,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
       "Generates max %i new invitations every %d minutes"
       (number +. 0.5 |> CCFloat.round |> CCInt.of_float)
       per_n_minutes
+  | RedirectImmediately ->
+    "If activated, the invitation will contain a link that automatically \
+     forwards the contact to the survey URL. Otherwise, a link to the \
+     experiment page will be sent, where the contact can start the survey."
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
@@ -606,6 +619,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
     {|Changing the session will only change the session of this assignment. If follow-up assignments exists, they must be updated manually.
 
 Only sessions with open spots can be selected.|}
+  | SurveyUrl ->
+    "A URL incl. protocol. The url parameter 'callbackUrl' is required. E.g: \
+     https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | TagsIntro ->
     "The defined tags can be added to several types (e.g. contacts). The tags \
      can be used by the experiment filter to eighter include or exclude them."

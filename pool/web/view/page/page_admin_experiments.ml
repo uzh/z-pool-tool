@@ -348,6 +348,9 @@ let experiment_form
       let open Component.MessageTextElements in
       online_survey_help tenant ?experiment () |> build_help context_language
     in
+    let hint =
+      p [ txt (Utils.hint_to_string context_language I18n.OnlineStudy) ]
+    in
     div
       ~a:
         [ a_id "time-window"
@@ -362,8 +365,10 @@ let experiment_form
         ]
       [ div
           ~a:[ a_class [ "flexcolumn"; "stack" ] ]
-          [ text_elements
+          [ hint
+          ; text_elements
           ; input_element
+              ~hints:[ I18n.SurveyUrl ]
               ~required:true
               ?value:(CCOption.bind experiment survey_url_value)
               ~flash_fetcher
@@ -371,6 +376,7 @@ let experiment_form
               `Text
               Field.SurveyUrl
           ; checkbox_element
+              ~hints:[ I18n.RedirectImmediately ]
               Field.RedirectImmediately
               redirect_immediately_value
           ]
@@ -550,6 +556,7 @@ let experiment_form
         ; div
             ~a:[ a_class [ "stack" ] ]
             [ checkbox_element
+                ~hints:[ I18n.AssignmentWithoutSession ]
                 ~read_only:has_sessions
                 Field.AssignmentWithoutSession
                 assignment_without_session_value

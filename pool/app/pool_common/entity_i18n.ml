@@ -154,6 +154,7 @@ type hint =
   | AssignmentConfirmationMessageFollowUps
   | AssignmentsMarkedAsClosed
   | AssignmentsNotMatchingFilerSession of int
+  | AssignmentWithoutSession
   | ContactCurrentCellPhone of string
   | ContactEnrollmentDoesNotMatchFilter
   | ContactEnrollmentRegistrationDisabled
@@ -236,6 +237,7 @@ type hint =
   | NumberIsWeeksHint
   | NumberMax of int
   | NumberMin of int
+  | OnlineStudy
   | OnlineStudyParticipationDeadline of Ptime.t
   | Overbook
   | PartialUpdate
@@ -247,6 +249,7 @@ type hint =
   | RateDependencyWith
   | RateDependencyWithout
   | RateNumberPerMinutes of int * float
+  | RedirectImmediately
   | RegistrationDisabled
   | RescheduleSession
   | ResendRemindersChannel
@@ -280,6 +283,7 @@ type hint =
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
   | SmtpValidation
+  | SurveyUrl
   | SwapSessions
   | TagsIntro
   | TemplateTextElementsHint
