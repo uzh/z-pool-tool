@@ -297,6 +297,7 @@ let experiment_form
   ?experiment
   ?session_count
   Pool_context.{ language; csrf; _ }
+  tenant
   organisational_units
   smtp_auth_list
   default_sender
@@ -343,6 +344,10 @@ let experiment_form
       ()
   in
   let time_window_subform =
+    let text_elements =
+      let open Component.MessageTextElements in
+      online_survey_help tenant ?experiment () |> build_help context_language
+    in
     div
       ~a:
         [ a_id "time-window"
@@ -357,7 +362,8 @@ let experiment_form
         ]
       [ div
           ~a:[ a_class [ "flexcolumn"; "stack" ] ]
-          [ input_element
+          [ text_elements
+          ; input_element
               ~required:true
               ?value:(CCOption.bind experiment survey_url_value)
               ~flash_fetcher
@@ -627,6 +633,7 @@ let experiment_form
 
 let create
   (Pool_context.{ language; _ } as context)
+  tenant
   organisational_units
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
@@ -646,6 +653,7 @@ let create
         ]
     ; experiment_form
         context
+        tenant
         organisational_units
         smtp_auth_list
         default_sender
@@ -661,6 +669,7 @@ let edit
   ~session_count
   experiment
   ({ Pool_context.language; csrf; query_language; _ } as context)
+  tenant
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
   organisational_units
@@ -676,6 +685,7 @@ let edit
       ~experiment
       ~session_count
       context
+      tenant
       organisational_units
       smtp_auth_list
       default_sender

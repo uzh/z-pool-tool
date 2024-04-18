@@ -1,10 +1,10 @@
+let map = CCOption.map
+
+let append_opt suffix path =
+  suffix |> CCOption.map_or ~default:path (Format.asprintf "%s/%s" path)
+;;
+
 module Admin = struct
-  let map = CCOption.map
-
-  let append_opt suffix path =
-    suffix |> CCOption.map_or ~default:path (Format.asprintf "%s/%s" path)
-  ;;
-
   let role_permission_path ?suffix ?role () =
     "/admin/settings/role-permission"
     |> append_opt (map Role.Role.name role)
@@ -23,6 +23,14 @@ module Admin = struct
       "/admin/experiments/%s/sessions"
       Experiment.(Id.value experiment_id)
     |> append_opt Session.(map Id.value id)
+    |> append_opt suffix
+  ;;
+end
+
+module Contact = struct
+  let experiment_path ?suffix ?id () =
+    "/experiments"
+    |> append_opt (map Experiment.Id.value id)
     |> append_opt suffix
   ;;
 end

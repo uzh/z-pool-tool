@@ -152,39 +152,44 @@ module DummyData = struct
 
   let create_experiment () =
     let get_exn = CCResult.get_exn in
-    Experiment.
-      { id = Id.create ()
-      ; title = Title.create "The Wallet Game\t" |> get_exn
-      ; public_title = PublicTitle.create "public_title" |> get_exn
-      ; internal_description =
-          InternalDescription.create "An internal description"
-          |> get_exn
-          |> CCOption.return
-      ; public_description =
-          PublicDescription.create "A description for everyone"
-          |> get_exn
-          |> CCOption.return
-      ; language = None
-      ; organisational_unit = None
-      ; smtp_auth_id = None
-      ; cost_center = Some ("A-11111-22-33" |> CostCenter.of_string)
-      ; filter = None
-      ; contact_email = None
-      ; direct_registration_disabled =
-          false |> DirectRegistrationDisabled.create
-      ; registration_disabled = false |> RegistrationDisabled.create
-      ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
-      ; external_data_required = false |> ExternalDataRequired.create
-      ; show_external_data_id_links = false |> ShowExternalDataIdLinks.create
-      ; experiment_type = Some Pool_common.ExperimentType.Lab
-      ; online_study = None
-      ; email_session_reminder_lead_time = None
-      ; text_message_session_reminder_lead_time = None
-      ; invitation_reset_at = None
-      ; matcher_notification_sent = MatcherNotificationSent.create false
-      ; created_at = Ptime_clock.now ()
-      ; updated_at = Ptime_clock.now ()
-      }
+    let open Experiment in
+    let online_study =
+      OnlineStudy.
+        { redirect_immediately = RedirectImmediately.create false
+        ; survey_url = SurveyUrl.of_string "https://www.qualtics.com/T8rp6WTdk"
+        }
+    in
+    { id = Id.create ()
+    ; title = Title.create "The Wallet Game\t" |> get_exn
+    ; public_title = PublicTitle.create "public_title" |> get_exn
+    ; internal_description =
+        InternalDescription.create "An internal description"
+        |> get_exn
+        |> CCOption.return
+    ; public_description =
+        PublicDescription.create "A description for everyone"
+        |> get_exn
+        |> CCOption.return
+    ; language = None
+    ; organisational_unit = None
+    ; smtp_auth_id = None
+    ; cost_center = Some ("A-11111-22-33" |> CostCenter.of_string)
+    ; filter = None
+    ; contact_email = None
+    ; direct_registration_disabled = false |> DirectRegistrationDisabled.create
+    ; registration_disabled = false |> RegistrationDisabled.create
+    ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
+    ; external_data_required = false |> ExternalDataRequired.create
+    ; show_external_data_id_links = false |> ShowExternalDataIdLinks.create
+    ; experiment_type = Some Pool_common.ExperimentType.Lab
+    ; online_study = Some online_study
+    ; email_session_reminder_lead_time = None
+    ; text_message_session_reminder_lead_time = None
+    ; invitation_reset_at = None
+    ; matcher_notification_sent = MatcherNotificationSent.create false
+    ; created_at = Ptime_clock.now ()
+    ; updated_at = Ptime_clock.now ()
+    }
   ;;
 
   let create_assignment ?contact () =
@@ -306,7 +311,6 @@ let message_template_help
     ExperimentInvitation.email_params
       layout
       (create_experiment ())
-      tenant.Pool_tenant.url
       (create_contact ())
   | ManualSessionMessage ->
     ManualSessionMessage.email_params
@@ -417,4 +421,11 @@ let message_template_help
       layout
       (create_contact ())
       (create_public_experiment ())
+;;
+
+let online_survey_help tenant ?experiment () =
+  let open DummyData in
+  let contact = create_contact () in
+  let experiment = CCOption.value ~default:(create_experiment ()) experiment in
+  Experiment.OnlineStudy.url_params tenant experiment.Experiment.id contact
 ;;

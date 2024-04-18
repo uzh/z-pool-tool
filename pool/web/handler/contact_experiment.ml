@@ -1,7 +1,9 @@
 module HttpUtils = Http_utils
+module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.contact.assignment"
 let create_layout = Contact_general.create_layout
+let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
 let index req =
   let open Utils.Lwt_result.Infix in
@@ -54,6 +56,7 @@ let show_online_study
     Time_window.find_current_by_experiment
       database_label
       (Experiment.Public.id experiment)
+    >|- CCFun.const Pool_common.Message.(NotFound Field.Experiment)
   in
   Page.Contact.Experiment.show_online_study
     experiment
@@ -72,10 +75,7 @@ let show req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
-    let id =
-      let open Pool_common.Message.Field in
-      HttpUtils.find_id Experiment.Id.of_string Experiment req
-    in
+    let id = experiment_id req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let* experiment = Experiment.find_public database_label id contact in
     match Experiment.Public.is_sessionless experiment with
@@ -114,6 +114,60 @@ let show req =
       |> Lwt.return_ok
       >>= create_layout req context
       >|+ Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let redirect req =
+  let open Utils.Lwt_result.Infix in
+  let error_path = "/experiments" in
+  let result ({ Pool_context.database_label; _ } as context) =
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    @@
+    let open Experiment in
+    let tags = Pool_context.Logger.Tags.req req in
+    let experiment_id = experiment_id req in
+    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+    let* experiment =
+      Experiment.find_public database_label experiment_id contact
+    in
+    let* survey_url =
+      let open Public in
+      experiment
+      |> online_study
+      |> CCOption.to_result (Pool_common.Message.NotFound Field.Experiment)
+      |> Lwt_result.lift
+      >|+ OnlineStudy.survey_url
+      >|+ SurveyUrl.value
+    in
+    let* time_window =
+      Time_window.find_current_by_experiment
+        database_label
+        (Experiment.Public.id experiment)
+      >|- CCFun.const Pool_common.Message.(NotFound Field.Experiment)
+    in
+    let* () =
+      let open Utils.Lwt_result.Infix in
+      Assignment.find_all_public_by_experiment_and_contact_opt
+        database_label
+        experiment_id
+        contact
+      ||> CCList.is_empty
+      ||> function
+      | true -> Ok ()
+      | false -> Error Pool_common.Message.AlreadySignedUpForExperiment
+    in
+    let* events =
+      let open Cqrs_command.Assignment_command.CreateForOnlineStudy in
+      handle ~tags { contact; time_window; experiment } |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Sihl.Web.Response.redirect_to survey_url |> Lwt_result.return
+    in
+    events |> handle
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;

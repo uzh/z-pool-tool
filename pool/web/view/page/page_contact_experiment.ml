@@ -243,9 +243,10 @@ let show
   in
   let waiting_list_form () =
     let form_action =
-      Format.asprintf
-        "/experiments/%s/waiting-list/"
-        Experiment.(experiment |> Public.id |> Id.value)
+      HttpUtils.Url.Contact.experiment_path
+        ~id:(Experiment.Public.id experiment)
+        ~suffix:"waiting-list"
+        ()
       |> (fun url ->
            if user_is_enlisted then Format.asprintf "%s/remove" url else url)
       |> HttpUtils.externalize_path_with_lang query_language
@@ -340,22 +341,41 @@ let show_online_study
   (_ : Contact.t)
   time_window
   =
-  let time_window_html =
-    let open Pool_common.Message in
+  let html =
     match time_window with
     | `Upcoming time_window ->
-      [ ( Field.End
-        , txt
-            (Time_window.ends_at time_window
-             |> Pool_common.Utils.Time.formatted_date_time) )
-      ]
-      |> Component.Table.vertical_table `Striped language ~break_mobile:true
+      let open Pool_common in
+      let start_button =
+        let control = Message.StartSurvey in
+        div
+          [ Component.Input.link_as_button
+              ~control:(language, control)
+              (HttpUtils.Url.Contact.experiment_path
+                 ~id:(Experiment.Public.id experiment)
+                 ~suffix:"start"
+                 ())
+          ]
+      in
+      let end_at =
+        p
+          ~a:[ a_class [ "font-italic" ] ]
+          [ txt
+              (I18n.OnlineStudyParticipationDeadline
+                 (Time_window.ends_at time_window)
+               |> Utils.hint_to_string language)
+          ]
+      in
+      div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ experiment |> experiment_public_description
+        ; div ~a:[ a_class [ "stack" ] ] [ start_button; end_at ]
+        ]
   in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
         [ experiment |> experiment_title ]
-    ; time_window_html
+    ; html
     ]
 ;;

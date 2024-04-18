@@ -94,8 +94,34 @@ end
 module SurveyUrl = struct
   include Pool_common.Model.String
 
+  let validation str =
+    let open CCResult.Infix in
+    let open Pool_common.Message in
+    let open Uri in
+    let invalid_error = Error (Invalid Field.SurveyUrl) in
+    let trimmed = CCString.trim str in
+    let uri = of_string trimmed in
+    try
+      let* () =
+        match scheme uri with
+        | Some ("http" | "https") -> Ok ()
+        | _ -> invalid_error
+      in
+      let* () =
+        let key = Field.(show CallbackUrl) in
+        let value = Format.asprintf "{%s}" key in
+        match get_query_param uri key with
+        | Some param when param = value -> Ok ()
+        | Some _ | None -> Error (FieldRequired Field.CallbackUrl)
+      in
+      Ok trimmed
+    with
+    | _ -> invalid_error
+  ;;
+
+  let create = validation
   let field = Common.Message.Field.SurveyUrl
-  let schema () = schema field ()
+  let schema () = schema ~validation field ()
 end
 
 module InvitationResetAt = struct
@@ -128,6 +154,21 @@ module OnlineStudy = struct
     match assignment_without_session, survey_url with
     | false, _ | _, None -> None
     | true, Some survey_url -> Some { redirect_immediately; survey_url }
+  ;;
+
+  let callback_url (tenant : Pool_tenant.t) experiment_id contact =
+    Format.asprintf
+      "/experiments/%s/terminate/%s"
+      (Id.value experiment_id)
+      Contact.(contact |> id |> Id.value)
+    |> Pool_tenant.(create_public_url tenant.url)
+  ;;
+
+  let url_params tenant experiment_id contact =
+    [ ("contactId", Contact.(contact |> id |> Id.value))
+    ; ( Pool_common.Message.Field.(show CallbackUrl)
+      , callback_url tenant experiment_id contact )
+    ]
   ;;
 end
 

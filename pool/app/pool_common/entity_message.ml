@@ -264,6 +264,7 @@ type control =
   | SendResetLink
   | Show
   | SignUp
+  | StartSurvey
   | Stop of Field.t option
   | ToggleAll
   | Unassign of Field.t option

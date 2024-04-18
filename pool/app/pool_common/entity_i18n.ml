@@ -236,6 +236,7 @@ type hint =
   | NumberIsWeeksHint
   | NumberMax of int
   | NumberMin of int
+  | OnlineStudyParticipationDeadline of Ptime.t
   | Overbook
   | PartialUpdate
   | ParticipationTagsHint

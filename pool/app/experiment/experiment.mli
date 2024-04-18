@@ -99,6 +99,9 @@ module OnlineStudy : sig
     -> redirect_immediately:RedirectImmediately.t
     -> survey_url:SurveyUrl.t option
     -> t option
+
+  val callback_url : Pool_tenant.t -> Id.t -> Contact.t -> string
+  val url_params : Pool_tenant.t -> Id.t -> Contact.t -> (string * string) list
 end
 
 module InvitationResetAt : sig

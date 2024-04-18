@@ -131,8 +131,11 @@ module Contact = struct
           ; post (Session |> url_key) Assignment.create
           ]
         in
+        let specific =
+          [ get "" Experiment.show; get "start" Experiment.redirect ]
+        in
         [ get "" Experiment.index
-        ; get Field.(Experiment |> url_key) Experiment.show
+        ; choose ~scope:Field.(Experiment |> url_key) specific
         ; choose ~scope:(build_scope "waiting-list") waiting_list
         ; choose ~scope:(build_scope "sessions") sessions
         ]

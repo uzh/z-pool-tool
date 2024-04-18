@@ -467,6 +467,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | NumberIsWeeksHint -> "Nr. of weeks"
   | NumberMax i -> error_to_string (Entity_message.NumberMax i)
   | NumberMin i -> error_to_string (Entity_message.NumberMin i)
+  | OnlineStudyParticipationDeadline end_at ->
+    Format.asprintf
+      "You can participate in this experiment until %s."
+      (Utils_time.formatted_date_time end_at)
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."

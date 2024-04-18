@@ -42,6 +42,7 @@ type t =
   [@printer go "available_languages"]
   | Building [@name "building"] [@printer go "building"]
   | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
+  | CallbackUrl [@name "callbackUrl"] [@printer go "callbackUrl"]
   | CellPhone [@name "cell_phone"] [@printer go "cell_phone"]
   | Chronological [@name "chronological"] [@printer go "chronological"]
   | City [@name "city"] [@printer go "city"]

@@ -14,6 +14,7 @@ let boolean_fields =
 ;;
 
 module Data = struct
+  let callbackUrl = Pool_common.Message.Field.(show CallbackUrl)
   let organisational_unit = Test_utils.Model.create_organisational_unit ()
 
   let contact_person =
@@ -35,7 +36,11 @@ module Data = struct
   let allow_uninvited_signup = "false"
   let external_data_required = "false"
   let show_external_data_id_links = "false"
-  let survey_url = "www.survey-url.ch"
+
+  let survey_url =
+    Format.asprintf "https://www.survey-url.ch?callbackUrl={callbackUrl}"
+  ;;
+
   let experiment_type = Pool_common.ExperimentType.(show Lab)
 
   let online_study =
@@ -173,6 +178,48 @@ let create_without_title () =
     Error Pool_common.Message.(Conformist [ Field.Title, NoValue ])
   in
   Test_utils.check_result expected events
+;;
+
+let create_survey_url () =
+  let open Experiment in
+  let open Pool_common.Message in
+  let survey_url = Alcotest.testable SurveyUrl.pp SurveyUrl.equal in
+  let check ?(msg = "succeeds") =
+    Alcotest.(check (result survey_url Test_utils.error) msg)
+  in
+  let callback = Pool_common.Message.Field.(show CallbackUrl) in
+  let ok =
+    [ [%string {sql|https://www.domain.com/foo?%{callback}={%{callback}}|sql}]
+    ; [%string
+        {sql|https://www.domain.com/foo?contactId=123123&%{callback}={%{callback}}|sql}]
+    ; [%string {sql|https://www.domain.com?%{callback}={%{callback}}|sql}]
+    ]
+  in
+  let missing_callback =
+    [ "https://www.domain.com"
+    ; "https://www.domain.com/foo?contactId=123123"
+    ; "http://www.domain.com&%{callback}={%{callback}}"
+    ]
+  in
+  let invalid = [ "www.domain.com"; ""; "/experiment/123123" ] in
+  let run_test expected url =
+    let result = Experiment.SurveyUrl.create url in
+    check expected result
+  in
+  let () =
+    ok
+    |> CCList.iter (fun url ->
+      let expected = Ok (SurveyUrl.of_string url) in
+      run_test expected url)
+  in
+  let () =
+    missing_callback
+    |> CCList.iter (run_test (Error (FieldRequired Field.CallbackUrl)))
+  in
+  let () =
+    invalid |> CCList.iter (run_test (Error (Invalid Field.SurveyUrl)))
+  in
+  ()
 ;;
 
 let update () =

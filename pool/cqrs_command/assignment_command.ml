@@ -133,6 +133,59 @@ end = struct
   let effects = Assignment.Guard.Access.create
 end
 
+module CreateForOnlineStudy : sig
+  include Common.CommandSig
+
+  type t =
+    { contact : Contact.t
+    ; time_window : Time_window.t
+    ; experiment : Experiment.Public.t
+    }
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?id:Assignment.Id.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t =
+    { contact : Contact.t
+    ; time_window : Time_window.t
+    ; experiment : Experiment.Public.t
+    }
+
+  let handle ?(tags = Logs.Tag.empty) ?id { contact; time_window; experiment } =
+    Logs.info ~src (fun m -> m "Handle command CreateForOnlineStudy" ~tags);
+    let open CCResult in
+    let open Pool_common.Message in
+    let* () =
+      if Contact.is_inactive contact then Error ContactIsInactive else Ok ()
+    in
+    let* () =
+      let open Experiment in
+      experiment
+      |> Public.direct_registration_disabled
+      |> DirectRegistrationDisabled.value
+      |> Utils.bool_to_result_not DirectRegistrationIsDisabled
+    in
+    let assignment_event =
+      let open Assignment in
+      (create ?id contact, time_window.Time_window.id)
+      |> created
+      |> Pool_event.assignment
+    in
+    let contact_event =
+      let open Contact in
+      update_num_assignments ~step:1 contact |> updated |> Pool_event.contact
+    in
+    Ok [ assignment_event; contact_event ]
+  ;;
+
+  let effects = Assignment.Guard.Access.create
+end
+
 module Cancel : sig
   include Common.CommandSig with type t = Assignment.t list * Session.t
 

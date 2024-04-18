@@ -30,6 +30,7 @@ let rec field_to_string =
   | AvailableLanguages -> "Verfügbare Sprachen"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
+  | CallbackUrl -> "Callback-URL"
   | CellPhone -> "Mobiltelefon"
   | Chronological -> "chronologisch"
   | City -> "Ort"
@@ -733,6 +734,7 @@ let control_to_string = function
   | SendResetLink -> format_submit "link senden" None
   | Show -> "anzeigen"
   | SignUp -> format_submit "anmelden" None
+  | StartSurvey -> "Umfrage starten"
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field

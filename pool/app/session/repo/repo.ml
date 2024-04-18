@@ -584,19 +584,18 @@ module Sql = struct
     let open Caqti_request.Infix in
     Format.asprintf
       {sql|
-    WHERE
-      %s
-    AND
-      pool_sessions.canceled_at IS NULL
-    AND
-      pool_sessions.closed_at IS NULL
-    AND
-      pool_sessions.start >= NOW()
-    AND
-      pool_sessions.start <= DATE_ADD(NOW(), INTERVAL
-        COALESCE(
+        WHERE
           %s
-        ) SECOND)
+        AND
+          pool_experiments.assignment_without_session = 0
+        AND
+          pool_sessions.canceled_at IS NULL
+        AND
+          pool_sessions.closed_at IS NULL
+        AND
+          pool_sessions.start >= NOW()
+        AND
+          pool_sessions.start <= DATE_ADD(NOW(), INTERVAL COALESCE(%s) SECOND)
     |sql}
       reminder_sent_at
       lead_time

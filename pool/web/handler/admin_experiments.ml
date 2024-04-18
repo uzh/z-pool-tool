@@ -136,6 +136,7 @@ let new_form req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let%lwt default_email_reminder_lead_time =
       Settings.find_default_reminder_lead_time database_label
@@ -151,6 +152,7 @@ let new_form req =
     let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
     Page.Admin.Experiments.create
       context
+      tenant
       organisational_units
       default_email_reminder_lead_time
       default_text_msg_reminder_lead_time
@@ -233,6 +235,7 @@ let detail edit req =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
     @@
     let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let id = experiment_id req in
     let* experiment = Experiment.find database_label id in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
@@ -311,6 +314,7 @@ let detail edit req =
          ~session_count
          experiment
          context
+         tenant
          default_email_reminder_lead_time
          default_text_msg_reminder_lead_time
          organisational_units
