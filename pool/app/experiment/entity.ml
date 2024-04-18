@@ -149,7 +149,7 @@ module OnlineStudy = struct
 
   let callback_url (tenant : Pool_tenant.t) ~experiment_id ~assignment_id =
     Format.asprintf
-      "/experiments/%s/terminate/%s"
+      "/experiments/%s/submit/%s"
       (Id.value experiment_id)
       (Pool_common.Id.value assignment_id)
     |> Pool_tenant.(create_public_url tenant.url)

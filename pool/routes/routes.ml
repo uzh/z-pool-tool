@@ -52,6 +52,15 @@ module Public = struct
       in
       [ choose ~scope:(add_key Field.Location) specific ]
     in
+    let experiment =
+      let open Handler.Contact.Experiment in
+      let online_study =
+        let open OnlineSurvey in
+        [ get (Format.asprintf "submit/%s" Field.(url_key Assignment)) submit ]
+      in
+      let specific = [ choose online_study ] in
+      [ choose ~scope:Field.(url_key Experiment) specific ]
+    in
     Handler.Public.(
       choose
         ~middlewares:
@@ -87,6 +96,12 @@ module Public = struct
             ; get "/unsubscribe" Import.unsubscribe
             ; post "/unsubscribe" Import.unsubscribe_post
             ]
+        ; choose
+            ~middlewares:
+              [ CustomMiddleware.Guardian.require_user_type_of
+                  Pool_context.UserType.[ Guest; Contact ]
+              ]
+            [ choose ~scope:Field.(Experiment |> human_url) experiment ]
         ; choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
@@ -132,7 +147,9 @@ module Contact = struct
           ]
         in
         let specific =
-          [ get "" Experiment.show; get "start" Experiment.redirect ]
+          [ get "" Experiment.show
+          ; get "start" Experiment.OnlineSurvey.redirect
+          ]
         in
         [ get "" Experiment.index
         ; choose ~scope:Field.(Experiment |> url_key) specific

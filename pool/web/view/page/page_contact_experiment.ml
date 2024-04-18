@@ -338,7 +338,6 @@ let show
 let show_online_study
   (experiment : Experiment.Public.t)
   { Pool_context.language; _ }
-  (_ : Contact.t)
   time_window
   =
   let html =
@@ -377,5 +376,18 @@ let show_online_study
         ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
         [ experiment |> experiment_title ]
     ; html
+    ]
+;;
+
+let online_study_completition
+  (experiment : Experiment.Public.t)
+  (_ : Pool_context.t)
+  =
+  div
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
+        [ experiment |> experiment_title ]
+    ; p [ txt "Thanks for participating" ]
     ]
 ;;

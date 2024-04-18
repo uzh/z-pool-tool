@@ -160,6 +160,12 @@ val find_all_public_by_experiment_and_contact_opt
   -> Contact.t
   -> Public.t list Lwt.t
 
+val assignment_to_experiment_exists
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> Contact.t
+  -> bool Lwt.t
+
 val find_by_contact_and_experiment
   :  Pool_database.Label.t
   -> Experiment.Id.t
