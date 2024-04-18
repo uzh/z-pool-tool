@@ -127,10 +127,12 @@ let redirect req =
     let open Experiment in
     let tags = Pool_context.Logger.Tags.req req in
     let experiment_id = experiment_id req in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let* experiment =
       Experiment.find_public database_label experiment_id contact
     in
+    let assignment_id = Assignment.Id.create () in
     let* survey_url =
       let open Public in
       experiment
@@ -138,7 +140,10 @@ let redirect req =
       |> CCOption.to_result (Pool_common.Message.NotFound Field.Experiment)
       |> Lwt_result.lift
       >|+ OnlineStudy.survey_url
-      >|+ SurveyUrl.value
+      >|+ OnlineStudy.render_survey_url
+            tenant
+            ~experiment_id
+            ~assignment_id:(Assignment.Id.to_common assignment_id)
     in
     let* time_window =
       Time_window.find_current_by_experiment
@@ -159,7 +164,8 @@ let redirect req =
     in
     let* events =
       let open Cqrs_command.Assignment_command.CreateForOnlineStudy in
-      handle ~tags { contact; time_window; experiment } |> Lwt_result.lift
+      handle ~id:assignment_id ~tags { contact; time_window; experiment }
+      |> Lwt_result.lift
     in
     let handle events =
       let%lwt () =

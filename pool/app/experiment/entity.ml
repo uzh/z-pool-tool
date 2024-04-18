@@ -101,12 +101,15 @@ module SurveyUrl = struct
         | Some ("http" | "https") -> Ok ()
         | _ -> invalid_error
       in
-      let* () =
-        let key = Field.(show CallbackUrl) in
-        let value = Format.asprintf "{%s}" key in
-        match get_query_param uri key with
-        | Some param when param = value -> Ok ()
-        | Some _ | None -> Error (FieldRequired Field.CallbackUrl)
+      let* (_ : string * string list) =
+        let value = Format.asprintf "{%s}" Field.(show CallbackUrl) in
+        uri
+        |> query
+        |> CCList.find_opt (fun (_, values) ->
+          values
+          |> CCList.head_opt
+          |> CCOption.map_or ~default:false (CCString.equal value))
+        |> CCOption.to_result (FieldRequired Field.CallbackUrl)
       in
       Ok trimmed
     with
@@ -144,19 +147,24 @@ module OnlineStudy = struct
     | true, Some survey_url -> Some { survey_url }
   ;;
 
-  let callback_url (tenant : Pool_tenant.t) experiment_id contact =
+  let callback_url (tenant : Pool_tenant.t) ~experiment_id ~assignment_id =
     Format.asprintf
       "/experiments/%s/terminate/%s"
       (Id.value experiment_id)
-      Contact.(contact |> id |> Id.value)
+      (Pool_common.Id.value assignment_id)
     |> Pool_tenant.(create_public_url tenant.url)
   ;;
 
-  let url_params tenant experiment_id contact =
-    [ ("contactId", Contact.(contact |> id |> Id.value))
+  let url_params tenant ~experiment_id ~assignment_id =
+    [ "assignmentId", Pool_common.Id.value assignment_id
     ; ( Pool_common.Message.Field.(show CallbackUrl)
-      , callback_url tenant experiment_id contact )
+      , callback_url tenant ~experiment_id ~assignment_id )
     ]
+  ;;
+
+  let render_survey_url tenant ~experiment_id ~assignment_id survey_url =
+    let params = url_params tenant ~experiment_id ~assignment_id in
+    Utils.Message.render_params params survey_url
   ;;
 end
 

@@ -185,18 +185,21 @@ let create_survey_url () =
   let check ?(msg = "succeeds") =
     Alcotest.(check (result survey_url Test_utils.error) msg)
   in
-  let callback = Pool_common.Message.Field.(show CallbackUrl) in
+  let callback =
+    Format.asprintf "{%s}" Pool_common.Message.Field.(show CallbackUrl)
+  in
   let ok =
-    [ [%string {sql|https://www.domain.com/foo?%{callback}={%{callback}}|sql}]
+    [ [%string {sql|https://www.domain.com/foo?callback=%{callback}|sql}]
     ; [%string
-        {sql|https://www.domain.com/foo?contactId=123123&%{callback}={%{callback}}|sql}]
-    ; [%string {sql|https://www.domain.com?%{callback}={%{callback}}|sql}]
+        {sql|https://www.domain.com/foo?contactId=123123&%callback=%{callback}|sql}]
+    ; [%string {sql|https://www.domain.com?callback=%{callback}|sql}]
+    ; [%string {sql|https://www.domain.com?callbackUrl=%{callback}|sql}]
     ]
   in
   let missing_callback =
     [ "https://www.domain.com"
     ; "https://www.domain.com/foo?contactId=123123"
-    ; "http://www.domain.com&%{callback}={%{callback}}"
+    ; "http://www.domain.com&callback=%{callback}"
     ]
   in
   let invalid = [ "www.domain.com"; ""; "/experiment/123123" ] in

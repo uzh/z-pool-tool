@@ -87,8 +87,24 @@ module OnlineStudy : sig
     -> survey_url:SurveyUrl.t option
     -> t option
 
-  val callback_url : Pool_tenant.t -> Id.t -> Contact.t -> string
-  val url_params : Pool_tenant.t -> Id.t -> Contact.t -> (string * string) list
+  val callback_url
+    :  Pool_tenant.t
+    -> experiment_id:Id.t
+    -> assignment_id:Pool_common.Id.t
+    -> string
+
+  val url_params
+    :  Pool_tenant.t
+    -> experiment_id:Id.t
+    -> assignment_id:Pool_common.Id.t
+    -> (string * string) list
+
+  val render_survey_url
+    :  Pool_tenant.t
+    -> experiment_id:Id.t
+    -> assignment_id:Pool_common.Id.t
+    -> SurveyUrl.t
+    -> string
 end
 
 module InvitationResetAt : sig
