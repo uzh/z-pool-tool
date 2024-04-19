@@ -22,7 +22,6 @@ type event =
   | LogoDeleted of t * Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
-  | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
   | GtxApiKeyUpdated of Write.t * GtxApiKey.t
@@ -65,7 +64,6 @@ let handle_event pool : event -> unit Lwt.t = function
   | DatabaseEdited (tenant, database) ->
     let%lwt () = Repo.update_database Database.root (tenant, database) in
     Lwt.return_unit
-  | Destroyed tenant_id -> Repo.destroy tenant_id
   | ActivateMaintenance tenant ->
     let open Entity.Write in
     let maintenance = true |> Maintenance.create in

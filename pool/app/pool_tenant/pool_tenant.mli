@@ -190,7 +190,6 @@ type event =
   | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
-  | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
   | GtxApiKeyUpdated of Write.t * GtxApiKey.t

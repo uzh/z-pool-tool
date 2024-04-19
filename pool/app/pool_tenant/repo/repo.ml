@@ -259,7 +259,8 @@ let find_by_url pool url =
     if in_cache
     then (
       let tags = Database.Logger.Tags.create pool in
-      Logs.warn (fun m -> m ~tags "Found in cache: Tenant %a" Entity.Url.pp url))
+      Logs.debug (fun m ->
+        m ~tags "Found in cache: Tenant %s" ([%show: Entity.Url.t] url)))
     else ()
   in
   let find_by_url' (pool, url) : Entity.t option Lwt.t =
@@ -318,8 +319,6 @@ let update_database pool (tenant, database) =
         }
     ]
 ;;
-
-let destroy = Utils.todo
 
 let find_gtx_api_key_by_label_request =
   {sql|

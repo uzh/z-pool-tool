@@ -330,27 +330,3 @@ end = struct
 
   let effects = Pool_tenant.Guard.Access.update
 end
-
-module Destroy : sig
-  type t = Pool_tenant.t
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
-end = struct
-  type t = Pool_tenant.t
-
-  let handle ?(tags = Logs.Tag.empty) t =
-    Logs.info ~src (fun m -> m "Handle command Destroy" ~tags);
-    Ok
-      [ Pool_tenant.Destroyed t.Pool_tenant.id |> Pool_event.pool_tenant
-      ; System_event.Job.TenantDatabaseDeleted t.Pool_tenant.database_label
-        |> system_event_from_job
-      ]
-  ;;
-
-  let effects = Pool_tenant.Guard.Access.delete
-end
