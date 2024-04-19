@@ -22,7 +22,7 @@ module Data = struct
 end
 
 let check_root_database _ () =
-  let (_ : status) = fetch_pool root () in
+  let (_ : status) = fetch_pool root in
   Lwt.return_unit
 ;;
 

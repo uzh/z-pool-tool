@@ -105,7 +105,6 @@ let collect_and_count
   ?where
   caqti_type
   =
-  let open Database in
   let open Caqti_request.Infix in
   let where, dyn =
     CCOption.map_or
@@ -123,8 +122,8 @@ let collect_and_count
     |> pt ->* caqti_type
   in
   let count_request = select ~count:true where |> pt ->! Caqti_type.int in
-  let%lwt rows = collect database_label request pv in
-  let%lwt count = find database_label count_request pv in
+  let%lwt rows = Database.collect database_label request pv in
+  let%lwt count = Database.find database_label count_request pv in
   let query = CCOption.value ~default:(empty ()) query in
   Lwt.return (rows, set_page_count query count)
 ;;

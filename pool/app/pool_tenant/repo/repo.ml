@@ -5,6 +5,25 @@ module Id = Pool_common.Id
 module LogoMapping = Entity_logo_mapping
 module LogoMappingRepo = Repo_logo_mapping
 
+module Cache : sig
+  val lru_find_by_url
+    : (Database.Label.t * Entity.Url.t, Entity.t option Lwt.t) CCCache.t
+
+  val clear : unit -> unit
+end = struct
+  open CCCache
+
+  let equal_find_by_url (label1, (url1 : Entity.Url.t)) (label2, url2) =
+    Database.Label.equal label1 label2 && Entity.Url.equal url1 url2
+  ;;
+
+  let lru_find_by_url =
+    lru ~eq:equal_find_by_url Database.Config.expected_databases
+  ;;
+
+  let clear () = clear lru_find_by_url
+end
+
 module Sql = struct
   let update_request =
     {sql|
@@ -138,6 +157,13 @@ module Sql = struct
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
+  let find_by_url_request =
+    select_from_tenants_sql {sql| WHERE pool_tenant.url = ? |sql} false
+    |> RepoEntity.(Url.t ->! t)
+  ;;
+
+  let find_by_url pool = Database.find_opt pool find_by_url_request
+
   let find_all_request =
     select_from_tenants_sql "" false |> Caqti_type.unit ->* RepoEntity.t
   ;;
@@ -181,21 +207,6 @@ module Sql = struct
   ;;
 
   let insert pool = Database.exec pool insert_request
-
-  let find_selectable_request =
-    {sql|
-      SELECT
-        url,
-        pool_tenant_databases.label
-      FROM pool_tenant
-      LEFT JOIN pool_tenant_databases
-        ON pool_tenant_databases.label = pool_tenant.database_label
-        AND NOT pool_tenant_databases.disabled
-    |sql}
-    |> Caqti_type.unit ->* RepoEntity.Selection.t
-  ;;
-
-  let find_selectable pool = Database.collect pool find_selectable_request
 end
 
 let set_logos tenant logos =
@@ -242,6 +253,33 @@ let find_by_label pool label =
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
+let find_by_url pool url =
+  let open Utils.Lwt_result.Infix in
+  let cb ~in_cache _ _ =
+    if in_cache
+    then (
+      let tags = Database.Logger.Tags.create pool in
+      Logs.warn (fun m -> m ~tags "Found in cache: Tenant %a" Entity.Url.pp url))
+    else ()
+  in
+  let find_by_url' (pool, url) : Entity.t option Lwt.t =
+    Database.query pool (fun connection ->
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      let combine = function
+        | Some ({ Entity.Read.id; _ } as tenant) ->
+          id
+          |> Connection.collect_list Repo_logo_mapping.Sql.find_request
+          ||> CCResult.to_opt
+          ||> CCOption.map (set_logos tenant)
+        | None -> Lwt.return_none
+      in
+      Connection.find_opt Sql.find_by_url_request url |>> combine)
+  in
+  (pool, url)
+  |> CCCache.(with_cache ~cb Cache.lru_find_by_url find_by_url')
+  ||> CCOption.to_result Pool_message.Error.SessionTenantNotFound
+;;
+
 let find_full = Sql.find_full
 
 let find_all pool () =
@@ -254,11 +292,9 @@ let find_all pool () =
   |> Lwt.return
 ;;
 
-let find_selectable = Sql.find_selectable
-
 let insert pool (tenant, database) =
   let open Database in
-  exec_as_transaction
+  transactions
     pool
     [ exec_query Repo.insert_request database
     ; exec_query Sql.insert_request tenant
@@ -269,7 +305,7 @@ let update = Sql.update
 
 let update_database pool (tenant, database) =
   let open Database in
-  exec_as_transaction
+  transactions
     pool
     [ exec_query
         Database.Repo.update_request
@@ -292,7 +328,7 @@ let find_gtx_api_key_by_label_request =
     FROM
       pool_tenant
     WHERE
-    pool_tenant.database_label = ?
+      pool_tenant.database_label = ?
   |sql}
   |> Database.Repo.Label.t ->! RepoEntity.GtxApiKey.t
 ;;
@@ -302,7 +338,3 @@ let find_gtx_api_key_by_label pool database_label =
   Database.find_opt pool find_gtx_api_key_by_label_request database_label
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.GtxApiKey)
 ;;
-
-module Url = struct
-  let of_pool = RepoEntity.Url.of_pool
-end

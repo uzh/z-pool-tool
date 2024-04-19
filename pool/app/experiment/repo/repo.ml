@@ -187,7 +187,7 @@ module Sql = struct
         autofill_public_title
         (experiment.id, PublicTitle.placeholder)
     in
-    Database.exec_as_transaction pool [ insert; set_title ]
+    Database.transactions pool [ insert; set_title ]
   ;;
 
   let search_select =

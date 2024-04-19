@@ -261,7 +261,7 @@ module Sql = struct
     |> CCList.map (fun (request, input) connection ->
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.exec request input)
-    |> Database.exec_as_transaction pool
+    |> Database.transactions pool
   ;;
 
   let search_by_name_and_email_request ?conditions limit =

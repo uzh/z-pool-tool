@@ -5,25 +5,6 @@ type status =
     , Caqti_error.load )
     result
 
-val raise_caqti_error
-  :  ?tags:Logs.Tag.set
-  -> ( 'a
-       , [< `Connect_failed of Caqti_error.connection_error
-         | `Connect_rejected of Caqti_error.connection_error
-         | `Decode_rejected of Caqti_error.coding_error
-         | `Encode_failed of Caqti_error.coding_error
-         | `Encode_rejected of Caqti_error.coding_error
-         | `Load_failed of Caqti_error.load_error
-         | `Load_rejected of Caqti_error.load_error
-         | `Post_connect of Caqti_error.call_or_retrieve
-         | `Request_failed of Caqti_error.query_error
-         | `Response_failed of Caqti_error.query_error
-         | `Response_rejected of Caqti_error.query_error
-         | `Unsupported
-         ] )
-       result
-  -> 'a
-
 module Caqti_encoders : sig
   module Data : sig
     type _ t =
@@ -123,6 +104,12 @@ module Logger : sig
   end
 end
 
+module Config : sig
+  val database : t
+  val database_pool_size : int
+  val expected_databases : int
+end
+
 val show_error_with_log
   :  ?tags:Logs.Tag.set
   -> ?log_level:Logs.level
@@ -131,9 +118,14 @@ val show_error_with_log
   -> string
 
 val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) result Lwt.t
-val fetch_pool : Label.t -> unit -> status
+val fetch_pool : Label.t -> status
 val add_pool : ?required:bool -> ?pool_size:int -> t -> status
 val drop_pool : Label.t -> unit Lwt.t
+
+val query
+  :  Label.t
+  -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
+  -> 'a Lwt.t
 
 val collect
   :  Label.t
@@ -159,25 +151,15 @@ val populate
   -> unit Lwt.t
 
 val transaction
-  :  Label.t
+  :  ?setup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
+  -> ?cleanup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
+  -> Label.t
   -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
   -> 'a Lwt.t
 
-val transaction_exn
+val transactions
   :  Label.t
-  -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
-  -> 'a Lwt.t
-
-val find_as_transaction
-  :  Label.t
-  -> ?setup:(Caqti_lwt.connection -> (unit, Caqti_error.t) result Lwt.t) list
-  -> ?cleanup:(Caqti_lwt.connection -> (unit, Caqti_error.t) result Lwt.t) list
-  -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
-  -> 'a Lwt.t
-
-val exec_as_transaction
-  :  Label.t
-  -> (Caqti_lwt.connection -> (unit, Caqti_error.t) result Lwt.t) list
+  -> (Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
   -> unit Lwt.t
 
 val exec_query
@@ -196,14 +178,13 @@ val exclude_ids
 val with_disabled_fk_check
   :  Label.t
   -> (Caqti_lwt.connection -> ('a, Caqti_error.t) result Lwt.t)
-  -> ('a, Caqti_error.t) Lwt_result.t
+  -> 'a Lwt.t
 
 val clean_requests
   :  Label.t
   -> (unit, unit, [ `Zero ]) Caqti_request.t list Lwt.t
 
-val clean_all : Label.t -> (unit, Caqti_error.t) result Lwt.t
-val clean_all_exn : Label.t -> unit Lwt.t
+val clean_all : Label.t -> unit Lwt.t
 
 module Migration : sig
   exception Exception of string

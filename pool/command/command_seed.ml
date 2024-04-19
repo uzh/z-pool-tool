@@ -14,13 +14,13 @@ let root_data_clean =
   in
   Command_utils.make_no_args name description (fun () ->
     let%lwt (_ : Database.status) = Database.Root.setup () in
-    let%lwt () = Database.clean_all_exn Database.root in
+    let%lwt () = Database.clean_all Database.root in
     let%lwt () = Seed.Root.create () in
     Lwt.return_some ())
 ;;
 
 let seed_tenant_clean ?is_test db_pools =
-  let%lwt () = Lwt_list.iter_s Database.clean_all_exn db_pools in
+  let%lwt () = Lwt_list.iter_s Database.clean_all db_pools in
   let%lwt () = Seed.Tenant.create ?is_test db_pools () in
   Lwt.return_some ()
 ;;

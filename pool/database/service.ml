@@ -1,94 +1,26 @@
-open CCFun.Infix
-module Guard = Guardian_backend.Pools.Make (Entity.MariaConfig)
-module Core = Pools.Make (Entity.MariaConfigPool)
-
-type status = Core.status
-
 let src = Logs.Src.create "database"
 
 module Logs = (val Logs.src_log src : Logs.LOG)
 
-let raise_caqti_error ?tags =
-  let open Caqti_error in
-  function
-  | Ok resp -> resp
-  | Error `Unsupported ->
-    Logs.err (fun m -> m ?tags "Caqti error unsupported");
-    failwith "Caqti error unsupported"
-  | Error (#t as err) -> raise (Exn err)
-;;
+module MariaConfigPool = struct
+  open Pools
+  include DefaultConfig
 
-let to_ctx = Entity.to_ctx
-let create_tag label = Logger.Tags.create label
+  let database = Entity.(create root (database_url ()))
+  let expected_databases = 5
+end
 
-let add_pool ?required ?pool_size database =
-  Core.add_pool
-    ?required
-    ?pool_size
-    (database |> Entity.label |> Entity.Label.value)
-    (database |> Entity.url |> Entity.Url.value)
-;;
+module MariaConfig = struct
+  open Guardian_backend.Pools
+  include DefaultConfig
 
-let drop_pool = Entity.Label.value %> Core.drop_pool
-let fetch_pool label = Core.fetch_pool ~ctx:(to_ctx label)
-let query label = Core.query ~ctx:(to_ctx label)
+  let database =
+    MultiPools Entity.[ root |> Label.value, database_url () |> Url.value ]
+  ;;
+end
 
-let collect label request =
-  Core.collect ~ctx:(to_ctx label) request
-  %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
-;;
-
-let exec label request =
-  Core.exec ~ctx:(to_ctx label) request
-  %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
-;;
-
-let find label request =
-  Core.find ~ctx:(to_ctx label) request
-  %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
-;;
-
-let find_opt label request =
-  Core.find_opt ~ctx:(to_ctx label) request
-  %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
-;;
-
-let populate label table columns request =
-  Core.populate ~ctx:(to_ctx label) table columns request
-  %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
-;;
-
-let transaction label =
-  Core.transaction ~ctx:(to_ctx label)
-  %> Lwt.map (raise_caqti_error ~tags:(create_tag label))
-;;
-
-let transaction_exn label = Core.transaction_exn ~ctx:(to_ctx label)
-
-let find_as_transaction database_label ?(setup = []) ?(cleanup = []) fnc =
-  let open Lwt_result.Syntax in
-  let fnc connection =
-    let exec_each =
-      Lwt_list.map_s (fun request -> request connection)
-      %> Lwt.map CCResult.flatten_l
-      %> Lwt_result.map Utils.flat_unit
-    in
-    let* () = exec_each setup in
-    let* result = fnc connection in
-    let* () = exec_each cleanup in
-    Lwt.return @@ Ok result
-  in
-  transaction database_label fnc
-;;
-
-let exec_as_transaction database_label commands =
-  let fnc connection =
-    Lwt_list.map_s (fun request -> request connection) commands
-    |> Lwt.map CCResult.flatten_l
-    |> Lwt_result.map Utils.flat_unit
-  in
-  transaction database_label fnc
-;;
+module Guard = Guardian_backend.Pools.Make (MariaConfig)
+include Pools.Make (MariaConfigPool)
 
 let exec_query request input (module Connection : Caqti_lwt.CONNECTION) =
   Connection.exec request input
@@ -121,7 +53,7 @@ let set_fk_check_request =
 
 let with_disabled_fk_check database_label f =
   let open Lwt_result.Syntax in
-  Core.query ~ctx:(to_ctx database_label) (fun connection ->
+  query database_label (fun connection ->
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let* () = Connection.exec set_fk_check_request false in
     (f connection)
@@ -183,12 +115,6 @@ let clean_all database_label =
     Lwt_list.map_s (fun request -> Connection.exec request ()) clean_reqs
     |> Lwt.map CCResult.flatten_l
     |> Lwt_result.map Utils.flat_unit)
-;;
-
-let clean_all_exn database_label =
-  let open Utils.Lwt_result.Infix in
-  clean_all database_label
-  ||> Pools.get_or_raise ~ctx:(to_ctx database_label) ()
 ;;
 
 let add_pool ?required ?(pool_size = 10) (model : Entity.t) =

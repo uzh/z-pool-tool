@@ -65,7 +65,7 @@ let smtp_form location req =
         >|+ show context location flash_fetcher
         >>= General.create_tenant_layout req ~active_navigation context
       | `Root ->
-        Pool_tenant.Database.root
+        Database.root
         |> SmtpAuth.find_default
         ||> CCResult.to_opt
         ||> (function

@@ -1,4 +1,8 @@
-module Database = Database
+module Title : Pool_model.Base.StringSig
+module Description : Pool_model.Base.StringSig
+module GtxApiKey : Pool_model.Base.StringSig
+module Maintenance : Pool_model.Base.BooleanSig
+module Disabled : Pool_model.Base.BooleanSig
 
 module Id : sig
   include Pool_model.Base.IdSig
@@ -6,10 +10,6 @@ module Id : sig
   val to_common : t -> Pool_common.Id.t
   val of_common : Pool_common.Id.t -> t
 end
-
-module Title : Pool_model.Base.StringSig
-module Description : Pool_model.Base.StringSig
-module GtxApiKey : Pool_model.Base.StringSig
 
 module Url : sig
   include Pool_model.Base.StringSig
@@ -76,9 +76,6 @@ module PartnerLogos : sig
 
   val of_files : Pool_common.File.t list -> t
 end
-
-module Maintenance : Pool_model.Base.BooleanSig
-module Disabled : Pool_model.Base.BooleanSig
 
 module LogoMapping : sig
   module LogoType : sig
@@ -170,6 +167,21 @@ type update =
   ; icon : Icon.Write.t option
   }
 
+val file_fields : Pool_message.Field.t list
+val find : Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_full : Id.t -> (Write.t, Pool_message.Error.t) Lwt_result.t
+val find_by_label : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_by_url : Url.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_all : unit -> t list Lwt.t
+
+val find_gtx_api_key_by_label
+  :  Database.Label.t
+  -> (GtxApiKey.t, Pool_message.Error.t) result Lwt.t
+
+val create_public_url : Url.t -> string -> string
+
+type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
+type handle_list_tenants = unit -> t list Lwt.t
 type logo_mappings = LogoMapping.Write.t list
 
 type event =
@@ -188,33 +200,6 @@ val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val find : Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_full : Id.t -> (Write.t, Pool_message.Error.t) Lwt_result.t
-val find_by_label : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_all : unit -> t list Lwt.t
-
-val find_gtx_api_key_by_label
-  :  Database.Label.t
-  -> (GtxApiKey.t, Pool_message.Error.t) result Lwt.t
-
-val create_public_url : Url.t -> string -> string
-
-type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
-type handle_list_tenants = unit -> t list Lwt.t
-
-module Selection : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : Url.t -> Database.Label.t -> t
-  val find_all : unit -> t list Lwt.t
-  val url : t -> string
-  val label : t -> Database.Label.t
-end
-
-val file_fields : Pool_message.Field.t list
 
 module Guard : sig
   module Actor : sig

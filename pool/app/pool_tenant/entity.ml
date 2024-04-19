@@ -187,18 +187,6 @@ module Write = struct
   let database_label (m : t) = m.database_label
 end
 
-module Selection = struct
-  type t =
-    { url : Url.t
-    ; database_label : Database.Label.t
-    }
-  [@@deriving eq, show]
-
-  let create url database_label = { url; database_label }
-  let url ({ url; _ } : t) = url |> Url.value
-  let label ({ database_label; _ } : t) = database_label
-end
-
 let file_fields =
   Pool_message.Field.([ Styles; Icon ] @ LogoMapping.LogoType.all_fields)
 ;;

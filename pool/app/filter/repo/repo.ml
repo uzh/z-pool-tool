@@ -426,7 +426,7 @@ module Sql = struct
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.collect_list request pv
     in
-    Database.find_as_transaction
+    Database.transaction
       pool
       ~setup:(drop_temp_table :: create_temp_tables filter)
       ~cleanup:[ drop_temp_table ]
@@ -468,7 +468,7 @@ module Sql = struct
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.find_opt request pv
     in
-    Database.find_as_transaction
+    Database.transaction
       pool
       ~setup:(drop_temp_table :: create_temp_tables (Some query))
       ~cleanup:[ drop_temp_table ]
@@ -535,7 +535,7 @@ module Sql = struct
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.find_opt request pv
     in
-    Database.find_as_transaction
+    Database.transaction
       pool
       ~setup:(drop_temp_table :: create_temp_tables filter)
       ~cleanup:[ drop_temp_table ]

@@ -22,7 +22,7 @@ type event =
   | Created of t
   | Updated of (t * Name.t)
 
-val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string

@@ -22,6 +22,8 @@ module Url = struct
     |> CCResult.map_err (fun _ -> Pool_message.(Error.Decode Field.DatabaseUrl))
     >|= of_string
   ;;
+
+  let to_uri = Uri.of_string
 end
 
 module Label = struct
@@ -30,6 +32,7 @@ module Label = struct
   let field = Pool_message.Field.DatabaseLabel
   let schema () = schema field ()
   let of_string m = m
+  let hash = CCString.hash
 end
 
 module Disabled = struct
@@ -87,20 +90,6 @@ let database_url () =
 let pool_size () =
   (Sihl.Configuration.read schema).pool_size |> CCOption.value ~default:10
 ;;
-
-module MariaConfigPool = struct
-  open Pools
-  include DefaultConfig
-
-  let database = MultiPools [ root |> Label.value, database_url (), true ]
-end
-
-module MariaConfig = struct
-  open Guardian_backend.Pools
-  include DefaultConfig
-
-  let database = MultiPools [ root |> Label.value, database_url () ]
-end
 
 let to_ctx (pool : Label.t) = [ "pool", Label.value pool ]
 

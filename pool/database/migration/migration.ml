@@ -28,9 +28,7 @@ let table () =
     (Sihl.Configuration.read schema).migration_state_table
 ;;
 
-let raise_error label =
-  Service.raise_caqti_error ~tags:(Logger.Tags.create label)
-;;
+let raise_error label = Pools.raise_caqti_error ~tags:(Logger.Tags.create label)
 
 let setup label () =
   Logs.debug (fun m -> m "Setting up table if not exists");
@@ -124,10 +122,7 @@ let execute_steps database_label migration =
         let req = statement |> Caqti_type.(unit ->. unit) ~oneshot:true in
         Connection.exec req ()
       in
-      let%lwt () =
-        Service.query database_label query
-        |> Lwt.map (raise_error database_label)
-      in
+      let%lwt () = Service.query database_label query in
       Logs.debug (fun m -> m ~tags "Ran %s" label);
       let%lwt _ = increment database_label namespace in
       run steps
@@ -140,7 +135,6 @@ let execute_steps database_label migration =
             Connection.exec req ()
           in
           query connection)
-        |> Lwt.map (raise_error database_label)
       in
       Logs.debug (fun m -> m ~tags "Ran %s" label);
       let%lwt _ = increment database_label namespace in

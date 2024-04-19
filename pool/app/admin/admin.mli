@@ -55,12 +55,7 @@ type event =
   | PromotedContact of Pool_common.Id.t
   | SignInCounterUpdated of t
 
-val handle_event
-  :  tags:Logs.Tag.set
-  -> Pool_tenant.Database.Label.t
-  -> event
-  -> unit Lwt.t
-
+val handle_event : tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string

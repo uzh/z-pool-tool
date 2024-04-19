@@ -31,6 +31,7 @@ module Url = struct
     | None ->
       Sihl.Configuration.read_string "PUBLIC_URL"
       |> CCOption.get_exn_or "PUBLIC_URL not found in configuration"
+      |> Url.of_string
     | Some url -> url
   ;;
 end
@@ -238,15 +239,5 @@ module Write = struct
         ; option Icon.Write.t
         ; option GtxApiKey.t
         ]
-  ;;
-end
-
-module Selection = struct
-  open Entity.Selection
-
-  let t =
-    let encode m = Ok (m.Selection.url, m.database_label) in
-    let decode (url, database_label) = Ok { url; database_label } in
-    Caqti_type.(custom ~encode ~decode (t2 Url.t Database.Repo.Label.t))
   ;;
 end

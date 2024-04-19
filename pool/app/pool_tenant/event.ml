@@ -43,7 +43,7 @@ let handle_event pool : event -> unit Lwt.t = function
     in
     Lwt.return_unit
   | LogosUploaded logo_mappings ->
-    let%lwt _ = Repo.LogoMappingRepo.insert_multiple logo_mappings in
+    let%lwt () = Repo.LogoMappingRepo.insert_multiple logo_mappings in
     Lwt.return_unit
   | LogoDeleted (tenant, asset_id) ->
     let%lwt () = Repo.LogoMappingRepo.delete tenant.id asset_id in

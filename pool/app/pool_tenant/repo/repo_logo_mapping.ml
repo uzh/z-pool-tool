@@ -1,4 +1,5 @@
 open CCFun.Infix
+open Caqti_request.Infix
 open Entity_logo_mapping
 module Id = Pool_common.Id
 module RepoId = Pool_common.Repo.Id
@@ -84,24 +85,19 @@ module Sql = struct
   ;;
 
   let find_request =
-    let open Caqti_request.Infix in
     select_from_tenant_logo_mappings_sql where_fragment
-    |> Caqti_type.string ->! t
+    |> Pool_common.Repo.Id.t ->! t
   ;;
 
-  let find pool tenant_id =
-    Database.collect pool find_request (tenant_id |> Pool_common.Id.value)
-  ;;
+  let find pool = Database.collect pool find_request
 
   let find_all_request =
-    let open Caqti_request.Infix in
     "" |> select_from_tenant_logo_mappings_sql |> Caqti_type.unit ->! t
   ;;
 
   let find_all pool = Database.collect pool find_all_request
 
   let insert_request =
-    let open Caqti_request.Infix in
     [%string
       {sql|
         INSERT INTO pool_tenant_logo_mappings (
@@ -122,25 +118,19 @@ module Sql = struct
   let insert pool = Database.exec pool insert_request
 
   let delete_request =
-    let open Caqti_request.Infix in
     [%string
       {sql|
         DELETE FROM pool_tenant_logo_mappings
         WHERE tenant_uuid = %{Id.sql_value_fragment "?"}
         AND asset_uuid = %{Id.sql_value_fragment "?"}
       |sql}]
-    |> Caqti_type.(t2 string string ->. unit)
+    |> Caqti_type.(t2 RepoId.t RepoId.t ->. unit)
   ;;
 
-  let delete pool tenant_id asset_id =
-    Database.exec
-      pool
-      delete_request
-      (tenant_id |> Id.value, asset_id |> Id.value)
-  ;;
+  let delete pool = CCFun.curry (Database.exec pool delete_request)
 end
 
-let insert_multiple m_list = Lwt_list.map_s (Sql.insert Database.(root)) m_list
-let find_by_tenant = Sql.find Database.(root)
-let find_all = Sql.find_all Database.(root)
-let delete = Sql.delete Database.(root)
+let insert_multiple = Lwt_list.iter_s (Sql.insert Database.root)
+let find_by_tenant = Sql.find Database.root
+let find_all = Sql.find_all Database.root
+let delete = Sql.delete Database.root

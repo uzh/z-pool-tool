@@ -56,12 +56,12 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
-val insert : Pool_tenant.Database.Label.t -> t -> unit Lwt.t
-val update : Pool_tenant.Database.Label.t -> t -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
+val insert : Database.Label.t -> t -> unit Lwt.t
+val update : Database.Label.t -> t -> unit Lwt.t
 
 val find_contacts_to_notify
-  :  Pool_tenant.Database.Label.t
+  :  Database.Label.t
   -> int
   -> unit
   -> (Contact.t * t) list Lwt.t
@@ -69,7 +69,7 @@ val find_contacts_to_notify
 val find_contacts_to_remind
   :  Settings.UserImportReminder.FirstReminderAfter.t
      * Settings.UserImportReminder.SecondReminderAfter.t
-  -> Pool_tenant.Database.Label.t
+  -> Database.Label.t
   -> int
   -> unit
   -> (Contact.t * t) list Lwt.t
