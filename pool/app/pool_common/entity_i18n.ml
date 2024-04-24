@@ -35,6 +35,7 @@ type t =
   | FilterNrOfContacts
   | FilterNrOfSentInvitations
   | FollowUpSessionFor
+  | Help
   | ImportConfirmationNote
   | ImportConfirmationTitle
   | ImportPendingNote
@@ -190,6 +191,7 @@ type hint =
   | DuplicateSessionList
   | EmailPlainText
   | ExperimentAssignment
+  | ExperimentCallbackUrl
   | ExperimentContactPerson of string
   | ExperimentLanguage
   | ExperimentMailings
@@ -201,6 +203,7 @@ type hint =
   | ExperimentStatisticsRegistrationPossible
   | ExperimentStatisticsSendingInvitations
   | ExperimentWaitingList
+  | ExperumentSurveyRedirectUrl
   | ExternalDataRequired
   | FilterTemplates
   | GtxKeyMissing

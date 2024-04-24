@@ -64,6 +64,7 @@ let to_string = function
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
   | FilterNrOfSentInvitations -> "Anzahl bereits eingeladener Kontakte:"
   | FollowUpSessionFor -> "Folgesession für:"
+  | Help -> "Hilfe"
   | ImportConfirmationNote ->
     "Bitte geben Sie ein neues Paswort an. Ihre restlichen Angaben wurden \
      automatisch übernommen."
@@ -337,6 +338,11 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ExperimentAssignment ->
     "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
      nach Session."
+  | ExperimentCallbackUrl ->
+    "<strong>Nur für Online-Umfragen verwenden.</strong> Teilnehmer einer \
+     Onlineumfrage sollten nach Abschluss der Umfrage auf diese URL \
+     weitergeleitet werden, damit die Teilnahme abgeschlossen werden kann. \
+     Wird diese URL nicht aufgerufen, wird die Teilnahme nicht bestätigt."
   | ExperimentContactPerson default ->
     Format.asprintf
       "Diese E-Mail-Adresse wird als 'reply-to' Adresse für alle \
@@ -383,6 +389,12 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
      werden."
+  | ExperumentSurveyRedirectUrl ->
+    "<strong>Nur für Online-Umfragen verwenden.</strong> Diese URL erstellt \
+     eine Anmeldung zum Experiment und leitet den Kontakt direkt auf die URL \
+     der Onlineumfrage weiter. Alternativ kann {experimentUrl} verwendet \
+     werden, mit dem Unterschied, dass der Kontakt die Teilnahme und \
+     Weiterleitung zusätzlich bestätigen muss."
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."

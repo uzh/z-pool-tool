@@ -346,7 +346,9 @@ let experiment_form
   let time_window_subform =
     let text_elements =
       let open Component.MessageTextElements in
-      online_survey_help tenant ?experiment () |> build_help context_language
+      let hints = online_survey_hints in
+      online_survey_help tenant ?experiment ()
+      |> build_help ~hints context_language
     in
     let hint =
       p [ txt (Utils.hint_to_string context_language I18n.OnlineStudy) ]

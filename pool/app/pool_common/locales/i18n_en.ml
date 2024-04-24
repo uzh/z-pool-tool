@@ -64,6 +64,7 @@ let to_string = function
     "Number of contacts meeting the criteria of this filter:"
   | FilterNrOfSentInvitations -> "Number of contacts already invited:"
   | FollowUpSessionFor -> "Follow-up for:"
+  | Help -> "Help"
   | ImportConfirmationNote ->
     "Please enter a new password. The rest of your data has been automatically \
      taken over."
@@ -330,6 +331,10 @@ Make sure to show links and URLs as plain text.
   | ExperimentAssignment ->
     "All assignments of contacts to sessions of this experiment, sorted by \
      session."
+  | ExperimentCallbackUrl ->
+    "Participants in an online survey should be redirected to this URL after \
+     completing the survey so that the assignment can be completed. If the \
+     contact is not redirected, the participated flag will not be set."
   | ExperimentContactPerson default ->
     Format.asprintf
       "This email address will be used as 'reply-to' address for all \
@@ -379,6 +384,12 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
     "Contacts that have been invited to this experiment and have placed \
      themselves on the waiting list. They have to be manually assigned to a \
      session."
+  | ExperumentSurveyRedirectUrl ->
+    "<strong>Use for online surveys only.</strong> This URL creates an \
+     assignment for the experiment and forwards the contact directly to the \
+     URL of the online survey. Alternatively, {experimentUrl} can be used, \
+     with the difference that the contact must also confirm the participation \
+     and forwarding."
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
