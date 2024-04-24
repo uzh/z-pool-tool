@@ -214,17 +214,7 @@ module OnlineSurvey = struct
       let tags = Pool_context.Logger.Tags.req req in
       let assignment_id = assignment_id req in
       let experiment_id = experiment_id req in
-      let* assignment =
-        Assignment.(
-          find database_label assignment_id
-          >== fun ({ participated; marked_as_deleted; _ } as assignment) ->
-          match
-            CCOption.is_some participated
-            || MarkedAsDeleted.value marked_as_deleted
-          with
-          | false -> Ok assignment
-          | true -> Error Pool_common.Message.(NotFound Field.Assignment))
-      in
+      let* assignment = Assignment.find database_label assignment_id in
       let* experiment =
         Experiment.find_public
           database_label

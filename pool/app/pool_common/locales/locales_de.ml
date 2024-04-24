@@ -430,6 +430,7 @@ let rec error_to_string = function
     "Einige Anmeldungen haben Fehler. Bitte korrigieren Sie diese zuerst."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
+  | AssignmentAlreadySubmitted -> "Die Teilnahme wurde bereits abgeschlossen."
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: \

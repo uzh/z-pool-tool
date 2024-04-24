@@ -415,6 +415,7 @@ let rec error_to_string = function
   | AssignmentsHaveErrors ->
     "Some assignments have errors. Please resolve them first."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
+  | AssignmentAlreadySubmitted -> "This assignment was already submitted."
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"

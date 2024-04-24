@@ -689,13 +689,24 @@ module OnlineSurvey = struct
 
     let handle
       ?(tags = Logs.Tag.empty)
-      ({ Assignment.contact; _ } as assignment)
+      ({ Assignment.contact; participated; marked_as_deleted; _ } as assignment)
       ({ external_data_id } : t)
       =
       Logs.info ~src (fun m -> m "Handle command OnlineSurvey.Submit" ~tags);
       let open CCResult in
+      let open Assignment in
+      let open Pool_common in
+      let* () =
+        if MarkedAsDeleted.value marked_as_deleted
+        then Error Message.(NotFound Field.Assignment)
+        else Ok ()
+      in
+      let* () =
+        if CCOption.is_some participated
+        then Error Message.AssignmentAlreadySubmitted
+        else Ok ()
+      in
       let assignment_event =
-        let open Assignment in
         { assignment with
           external_data_id
         ; participated = Some (Participated.create true)

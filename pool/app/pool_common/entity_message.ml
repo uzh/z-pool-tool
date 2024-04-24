@@ -25,6 +25,7 @@ type error =
   | AlreadyPublished of Field.t
   | AlreadySignedUpForExperiment
   | AlreadyStarted
+  | AssignmentAlreadySubmitted
   | AssignmentIsCanceled
   | AssignmentIsClosed
   | AssignmentsHaveErrors
