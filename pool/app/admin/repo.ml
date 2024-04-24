@@ -1,3 +1,4 @@
+open CCFun.Infix
 module Dynparam = Database.Dynparam
 module RepoEntity = Repo_entity
 
@@ -52,7 +53,7 @@ module Sql = struct
         user_users.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> find_request_sql
-    |> Pool_common.Repo.Id.t ->! caqti_type
+    |> Pool_user.Repo.Id.t ->! caqti_type
   ;;
 
   let find pool id =
@@ -107,8 +108,7 @@ module Sql = struct
     else (
       let (Dynparam.Pack (pt, pv)) =
         CCList.fold_left
-          (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+          (fun dyn id -> dyn |> Dynparam.add Pool_user.Repo.Id.t id)
           Dynparam.empty
           ids
       in
@@ -129,8 +129,8 @@ module Sql = struct
     |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool t =
-    Database.exec pool update_request (RepoEntity.Write.of_entity t)
+  let update pool =
+    RepoEntity.Write.of_entity %> Database.exec pool update_request
   ;;
 
   let update_sign_in_count_request =
@@ -143,11 +143,11 @@ module Sql = struct
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_type.(string ->. unit)
+    |> Pool_user.Repo.Id.t ->. Caqti_type.unit
   ;;
 
-  let update_sign_in_count pool t =
-    Database.exec pool update_sign_in_count_request Entity.(id t |> Id.value)
+  let update_sign_in_count pool =
+    Entity.id %> Database.exec pool update_sign_in_count_request
   ;;
 
   let promote_contact_insert_contact_to_promoted_request =
@@ -222,7 +222,7 @@ module Sql = struct
       FROM pool_contacts
       WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+    |> Pool_user.Repo.Id.t ->. Caqti_type.unit
   ;;
 
   let promote_contact_insert_admin_request =
@@ -232,7 +232,7 @@ module Sql = struct
       FROM pool_contacts
       WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+    |> Pool_user.Repo.Id.t ->. Caqti_type.unit
   ;;
 
   let promote_contact_set_admin_request =
@@ -241,7 +241,7 @@ module Sql = struct
       SET admin = 1
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+    |> Pool_user.Repo.Id.t ->. Caqti_type.unit
   ;;
 
   let promote_contact_delete_contact_request =
@@ -249,7 +249,7 @@ module Sql = struct
       DELETE FROM pool_contacts
       WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+    |> Pool_user.Repo.Id.t ->. Caqti_type.unit
   ;;
 
   let promote_contact pool id =
@@ -292,7 +292,9 @@ module Sql = struct
     query
     =
     let open Caqti_request.Infix in
-    let exclude_ids = Database.exclude_ids "pool_admins.uuid" Entity.Id.value in
+    let exclude_ids =
+      Database.exclude_ids "pool_admins.uuid" Pool_user.Id.value
+    in
     let add_query = Dynparam.add Caqti_type.string ("%" ^ query ^ "%") in
     let dyn = dyn |> add_query |> add_query in
     let dyn, exclude =

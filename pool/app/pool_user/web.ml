@@ -1,5 +1,5 @@
 let user_from_token find_user ?(key = "user_id") label read_token req
-  : Sihl.Contract.User.t option Lwt.t
+  : Entity.t option Lwt.t
   =
   match Sihl.Web.Request.bearer_token req with
   | Some token ->
@@ -11,7 +11,7 @@ let user_from_token find_user ?(key = "user_id") label read_token req
 ;;
 
 let user_from_session find_user ?cookie_key ?secret ?(key = "user_id") label req
-  : Sihl.Contract.User.t option Lwt.t
+  : Entity.t option Lwt.t
   =
   match Sihl.Web.Session.find ?cookie_key ?secret key req with
   | Some user_id -> find_user label user_id

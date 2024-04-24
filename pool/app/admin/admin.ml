@@ -12,7 +12,7 @@ let find_all_id_with_role ?exclude pool role =
     ~ctx:(Database.to_ctx pool)
     ?exclude
     role
-  ||> CCList.map CCFun.(Guard.Uuid.Actor.to_string %> Pool_common.Id.of_string)
+  ||> CCList.map CCFun.(Guard.Uuid.Actor.to_string %> Pool_user.Id.of_string)
 ;;
 
 let find_all_with_role ?exclude pool role =
@@ -21,16 +21,16 @@ let find_all_with_role ?exclude pool role =
 
 let find_all_with_roles ?exclude pool roles =
   Lwt_list.map_s (find_all_id_with_role ?exclude pool) roles
-  ||> CCList.flatten %> CCList.uniq ~eq:Id.equal
+  ||> CCList.flatten %> CCList.uniq ~eq:Pool_user.Id.equal
   >|> Repo.find_multiple pool
 ;;
 
 let search_by_name_and_email = Repo.Sql.search_by_name_and_email
 
-let user_is_admin pool (user : Sihl_user.t) =
-  if Sihl_user.is_admin user
+let user_is_admin pool (user : Pool_user.t) =
+  if Pool_user.is_admin user
   then (
-    let%lwt admin = find pool (Pool_common.Id.of_string user.Sihl_user.id) in
+    let%lwt admin = find pool user.Pool_user.id in
     Lwt.return @@ CCResult.is_ok admin)
   else Lwt.return_false
 ;;

@@ -989,7 +989,7 @@ let users
       Format.asprintf
         "%s/%s"
         (Field.show field)
-        (Admin.id admin |> Admin.Id.value)
+        (Admin.id admin |> Pool_user.Id.value)
     in
     build_experiment_path ~suffix experiment |> Sihl.Web.externalize_path
   in

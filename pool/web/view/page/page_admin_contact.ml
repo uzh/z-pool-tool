@@ -9,7 +9,7 @@ module Modal = Component.Modal
 module Status = Component.UserStatus.Contact
 
 let path =
-  Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
+  Contact.id %> Pool_user.Id.value %> Format.asprintf "/admin/contacts/%s"
 ;;
 
 let contact_lastname_firstname access_contact_profiles contact =
@@ -24,7 +24,7 @@ let enroll_contact_modal_id = "enroll-modal"
 let enroll_contact_path ?suffix contact_id =
   Format.asprintf
     "/admin/contacts/%s/%s"
-    (Contact.Id.value contact_id)
+    (Pool_user.Id.value contact_id)
     Pool_message.Field.(Experiments |> human_url)
   |> (fun base ->
        match suffix with
@@ -372,7 +372,7 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
   let url =
     contact
     |> Contact.id
-    |> Contact.Id.value
+    |> Pool_user.Id.value
     |> Format.asprintf "/admin/contacts/%s/past-experiments"
     |> Uri.of_string
   in
@@ -400,7 +400,7 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
         Format.asprintf
           "/admin/experiments/%s/contact-history/%s"
           (Id.value experiment.id)
-          Contact.(contact |> id |> Id.value)
+          Contact.(contact |> id |> Pool_user.Id.value)
         |> Sihl.Web.externalize_path
       in
       let attributes =
@@ -572,7 +572,7 @@ let promote_form csrf language query_language contact =
   let action =
     Format.asprintf
       "/admin/contacts/%s/promote"
-      (contact |> Contact.id |> Pool_common.Id.value)
+      (contact |> Contact.id |> Pool_user.Id.value)
     |> Http_utils.externalize_path_with_lang query_language
   in
   [ div
@@ -672,7 +672,7 @@ let edit
                       (Sihl.Web.externalize_path
                          (Format.asprintf
                             "/admin/contacts/%s"
-                            (contact |> Contact.id |> Pool_common.Id.value)))
+                            (contact |> Contact.id |> Pool_user.Id.value)))
                   ]
                 [ Pool_message.Control.Back
                   |> Pool_common.Utils.control_to_string language
@@ -700,7 +700,7 @@ let message_history_url contact =
   Uri.of_string
     (Format.asprintf
        "/admin/contacts/%s/messages"
-       Contact.(contact |> id |> Id.value))
+       Contact.(contact |> id |> Pool_user.Id.value))
 ;;
 
 let message_history ({ Pool_context.language; _ } as context) contact messages =

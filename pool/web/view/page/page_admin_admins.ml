@@ -37,7 +37,7 @@ let list Pool_context.{ language; guardian; _ } (admins, query) =
     let button =
       admin
       |> id
-      |> Id.value
+      |> Pool_user.Id.value
       |> Format.asprintf "/admin/admins/%s"
       |> Input.link_as_button ~icon:Icon.Eye
     in
@@ -71,23 +71,16 @@ let static_overview ?(disable_edit = false) language admins =
   in
   CCList.map
     (fun admin ->
-      let open Sihl_user in
-      let default_empty o = CCOption.value ~default:"" o in
       let user = Admin.user admin in
       let base =
-        [ Status.email_with_icons admin
-        ; txt
-            (Format.asprintf
-               "%s %s"
-               (user.given_name |> default_empty)
-               (user.name |> default_empty)
-             |> CCString.trim)
-        ]
+        [ Status.email_with_icons admin; txt (Pool_user.user_fullname user) ]
       in
       match disable_edit with
       | false ->
         base
-        @ [ Format.asprintf "/admin/admins/%s" user.id
+        @ [ Format.asprintf
+              "/admin/admins/%s"
+              (user.Pool_user.id |> Pool_user.Id.value)
             |> Input.link_as_button ~icon:Icon.Eye
           ]
       | true -> base)
@@ -168,38 +161,24 @@ let index (Pool_context.{ language; _ } as context) admins =
 ;;
 
 let detail ({ Pool_context.language; _ } as context) admin granted_roles =
-  let open Sihl.Contract.User in
   let user = Admin.user admin in
-  [ h1
-      ~a:[ a_class [ "heading-1" ] ]
-      [ txt
-          (Format.asprintf
-             "%s %s"
-             (user.given_name |> Option.value ~default:"")
-             (user.name |> Option.value ~default:""))
-      ]
+  [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.user_fullname user) ]
   ; Input.link_as_button
       ~icon:Icon.Create
       ~control:(language, Control.(Edit None))
-      (Format.asprintf "/admin/admins/%s/edit" user.id)
+      (Format.asprintf
+         "/admin/admins/%s/edit"
+         (user.Pool_user.id |> Pool_user.Id.value))
   ]
   @ roles_list context admin granted_roles
   |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
 ;;
 
 let edit context editable_admin granted_roles top_element =
-  let open Sihl.Contract.User in
   let user = Admin.user editable_admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    ([ h1
-         ~a:[ a_class [ "heading-1" ] ]
-         [ txt
-             (Format.asprintf
-                "%s %s"
-                (user.given_name |> Option.value ~default:"")
-                (user.name |> Option.value ~default:""))
-         ]
+    ([ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.user_fullname user) ]
      ]
      @ roles_list
          ~is_edit:true

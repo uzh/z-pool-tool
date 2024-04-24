@@ -14,5 +14,4 @@
   service
   sihl
   system_event
-  tenant
   text_message))

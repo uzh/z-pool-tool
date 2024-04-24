@@ -11,7 +11,7 @@ module Utils = Component_utils
 
 let roles_path ?suffix admin =
   let default =
-    Format.asprintf "/admin/admins/%s/" Admin.(id admin |> Id.value)
+    Format.asprintf "/admin/admins/%s/" Admin.(id admin |> Pool_user.Id.value)
   in
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
 ;;
@@ -169,7 +169,9 @@ end
 
 module Search = struct
   let action_path admin =
-    Format.asprintf "/admin/admins/%s/%s" Admin.(admin |> id |> Id.value)
+    Format.asprintf
+      "/admin/admins/%s/%s"
+      Admin.(admin |> id |> Pool_user.Id.value)
   ;;
 
   let value_input language admin_id =

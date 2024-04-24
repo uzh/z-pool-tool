@@ -34,7 +34,7 @@ let t =
 module Write = struct
   type t =
     { id : Entity.Id.t
-    ; contact_id : Pool_common.Id.t
+    ; contact_id : Pool_user.Id.t
     ; experiment_id : Experiment.Id.t
     ; admin_comment : Entity.AdminComment.t option
     }
@@ -66,7 +66,7 @@ module Write = struct
         (t2
            Pool_common.Repo.Id.t
            (t2
-              Pool_common.Repo.Id.t
+              Pool_user.Repo.Id.t
               (t2 Experiment.Repo.Entity.Id.t (option AdminComment.t)))))
   ;;
 end

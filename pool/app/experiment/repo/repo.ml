@@ -429,7 +429,7 @@ module Sql = struct
     Database.collect
       pool
       find_all_ids_of_contact_id_request
-      (Contact.Id.to_common id)
+      (Pool_user.Id.to_common id)
   ;;
 
   let find_to_enroll_directly_request where =
@@ -497,7 +497,7 @@ module Sql = struct
     Database.collect
       pool
       (find_to_enroll_directly_request where)
-      ("%" ^ query ^ "%", Contact.(contact |> id |> Id.to_common))
+      ("%" ^ query ^ "%", Contact.(contact |> id |> Pool_user.Id.to_common))
     >|> Lwt_list.map_s (fun ({ DirectEnrollment.filter; _ } as experiment) ->
       let%lwt matches_filter =
         match filter with
@@ -524,14 +524,11 @@ module Sql = struct
           AND pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
           AND pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
-    |> Caqti_type.(t2 string string ->! bool)
+    |> Caqti_type.(t2 Repo_entity.Id.t Pool_user.Repo.Id.t ->! bool)
   ;;
 
   let contact_is_enrolled pool experiment_id contact_id =
-    Database.find
-      pool
-      contact_is_enrolled_request
-      (experiment_id |> Entity.Id.value, contact_id |> Contact.Id.value)
+    Database.find pool contact_is_enrolled_request (experiment_id, contact_id)
   ;;
 
   let find_targets_grantable_by_admin ?exclude database_label admin role query =
@@ -546,7 +543,7 @@ module Sql = struct
     let dyn =
       Dynparam.(
         empty
-        |> add Caqti_type.string Admin.(id admin |> Id.value)
+        |> add Pool_user.Repo.Id.t Admin.(id admin)
         |> add Caqti_type.string Role.Role.(show role))
     in
     search ~conditions ~joins ~dyn ?exclude database_label query
@@ -571,9 +568,7 @@ module Sql = struct
     let where =
       {sql| pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
     in
-    ( ( where
-      , dyn |> Dynparam.add Caqti_type.string (Contact.Id.value contact_id) )
-    , joins )
+    (where, dyn |> Dynparam.add Pool_user.Repo.Id.t contact_id), joins
   ;;
 
   let query_participation_history_by_contact ?query pool contact =

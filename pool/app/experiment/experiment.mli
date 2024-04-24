@@ -58,6 +58,7 @@ module InvitationResetAt : sig
   include Pool_model.Base.PtimeSig
 
   val of_ptime : Ptime.t -> t
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
 type t =
@@ -70,7 +71,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
-  ; contact_person_id : Admin.Id.t option
+  ; contact_person_id : Pool_user.Id.t option
   ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -83,8 +84,8 @@ type t =
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
   ; invitation_reset_at : InvitationResetAt.t option
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 
 val equal : t -> t -> bool
@@ -99,7 +100,7 @@ val language : t -> Pool_common.Language.t option
 val cost_center : t -> CostCenter.t option
 val organisational_unit : t -> Organisational_unit.t option
 val filter : t -> Filter.t option
-val contact_person_id : t -> Admin.Id.t option
+val contact_person_id : t -> Pool_user.Id.t option
 val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
 val direct_registration_disabled : t -> DirectRegistrationDisabled.t
 val registration_disabled : t -> RegistrationDisabled.t
@@ -117,12 +118,12 @@ val text_message_session_reminder_lead_time
   -> Pool_common.Reminder.TextMessageLeadTime.t option
 
 val invitation_reset_at : t -> InvitationResetAt.t option
-val created_at : t -> Ptime.t
-val updated_at : t -> Ptime.t
+val created_at : t -> Pool_common.CreatedAt.t
+val updated_at : t -> Pool_common.UpdatedAt.t
 
 val create
   :  ?id:Id.t
-  -> ?contact_person_id:Admin.Id.t
+  -> ?contact_person_id:Pool_user.Id.t
   -> ?cost_center:CostCenter.t
   -> ?internal_description:InternalDescription.t
   -> ?public_description:PublicDescription.t
@@ -246,7 +247,7 @@ val find_all
 
 val find_all_ids_of_contact_id
   :  Database.Label.t
-  -> Contact.Id.t
+  -> Pool_user.Id.t
   -> Id.t list Lwt.t
 
 val find_public
@@ -315,7 +316,11 @@ val find_to_enroll_directly
   -> query:string
   -> DirectEnrollment.t list Lwt.t
 
-val contact_is_enrolled : Database.Label.t -> Id.t -> Contact.Id.t -> bool Lwt.t
+val contact_is_enrolled
+  :  Database.Label.t
+  -> Id.t
+  -> Pool_user.Id.t
+  -> bool Lwt.t
 
 val find_targets_grantable_by_admin
   :  ?exclude:Id.t list
@@ -364,17 +369,8 @@ module Repo : sig
   end
 
   module Entity : sig
-    module Id : sig
-      type t = Id.t
-
-      val t : t Caqti_type.t
-    end
-
-    module Title : sig
-      type t = Title.t
-
-      val t : t Caqti_type.t
-    end
+    module Id : Pool_model.Base.CaqtiSig with type t = Id.t
+    module Title : Pool_model.Base.CaqtiSig with type t = Title.t
 
     val t : t Caqti_type.t
   end

@@ -1,8 +1,20 @@
-open Entity
 open CCFun
 
+module Id = struct
+  include Entity.Id
+
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.string
+      (of_string %> CCResult.return)
+      value
+  ;;
+end
+
+module Status = Pool_common.Repo.Model.SelectorType (Entity.Status)
+
 module Paused = struct
-  include Paused
+  include Entity.Paused
 
   let t =
     Pool_common.Repo.make_caqti_type
@@ -13,7 +25,7 @@ module Paused = struct
 end
 
 module Disabled = struct
-  include Disabled
+  include Entity.Disabled
 
   let t =
     Pool_common.Repo.make_caqti_type
@@ -24,7 +36,7 @@ module Disabled = struct
 end
 
 module TermsAccepted = struct
-  include TermsAccepted
+  include Entity.TermsAccepted
 
   let t =
     Pool_common.Repo.make_caqti_type
@@ -35,7 +47,7 @@ module TermsAccepted = struct
 end
 
 module Verified = struct
-  include Verified
+  include Entity.Verified
 
   let t =
     Pool_common.Repo.make_caqti_type
@@ -46,13 +58,13 @@ module Verified = struct
 end
 
 module CellPhone = struct
-  include CellPhone
+  include Entity.CellPhone
 
   let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module ImportPending = struct
-  include ImportPending
+  include Entity.ImportPending
 
   let t =
     Pool_common.Repo.make_caqti_type
@@ -63,7 +75,7 @@ module ImportPending = struct
 end
 
 module UnverifiedCellPhone = struct
-  include UnverifiedCellPhone
+  include Entity.UnverifiedCellPhone
 
   let t =
     let encode (m : t) = Ok (m.cell_phone, m.created_at) in
@@ -88,14 +100,25 @@ module UnverifiedCellPhone = struct
   ;;
 end
 
+module HashedPassword = struct
+  include Entity.HashedPassword
+
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.string
+      (of_string %> CCResult.return)
+      value
+  ;;
+end
+
 module EmailAddress = struct
-  include EmailAddress
+  include Entity.EmailAddress
 
   let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module EmailVerified = struct
-  include EmailVerified
+  include Entity.EmailVerified
 
   let t =
     Pool_common.Repo.make_caqti_type
@@ -105,72 +128,70 @@ module EmailVerified = struct
   ;;
 end
 
-module User = struct
-  let status =
-    let encode m = m |> Sihl_user.status_to_string |> CCResult.return in
-    let decode = Sihl_user.status_of_string in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
+module Firstname = struct
+  include Entity.Firstname
 
-  let t =
-    let open Database.Caqti_encoders in
-    let open Sihl.Contract.User in
-    let decode
-      ( id
-      , ( email
-        , ( username
-          , ( name
-            , ( given_name
-              , ( password
-                , (status, (admin, (confirmed, (created_at, (updated_at, ())))))
-                ) ) ) ) ) )
-      =
-      Ok
-        { id
-        ; email
-        ; username
-        ; name
-        ; given_name
-        ; password
-        ; status
-        ; admin
-        ; confirmed
-        ; created_at
-        ; updated_at
-        }
-    in
-    let encode m : ('a Data.t, string) result =
-      Ok
-        Data.
-          [ m.id
-          ; m.email
-          ; m.username
-          ; m.name
-          ; m.given_name
-          ; m.password
-          ; m.status
-          ; m.admin
-          ; m.confirmed
-          ; m.created_at
-          ; m.updated_at
-          ]
-    in
-    custom
-      ~encode
-      ~decode
-      Schema.(
-        Caqti_type.
-          [ string
-          ; string
-          ; option string
-          ; option string
-          ; option string
-          ; string
-          ; status
-          ; bool
-          ; bool
-          ; ptime
-          ; ptime
-          ])
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
+
+module Lastname = struct
+  include Entity.Lastname
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+end
+
+let t =
+  let open Database.Caqti_encoders in
+  let decode
+    ( id
+    , ( email
+      , ( name
+        , ( given_name
+          , ( password
+            , (status, (admin, (confirmed, (created_at, (updated_at, ()))))) )
+          ) ) ) )
+    =
+    Ok
+      { Entity.id
+      ; email
+      ; name
+      ; given_name
+      ; password
+      ; status
+      ; admin
+      ; confirmed
+      ; created_at
+      ; updated_at
+      }
+  in
+  let encode (m : Entity.t) : ('a Data.t, string) result =
+    Ok
+      Data.
+        [ m.Entity.id
+        ; m.Entity.email
+        ; m.Entity.name
+        ; m.Entity.given_name
+        ; m.Entity.password
+        ; m.Entity.status
+        ; m.Entity.admin
+        ; m.Entity.confirmed
+        ; m.Entity.created_at
+        ; m.Entity.updated_at
+        ]
+  in
+  custom
+    ~encode
+    ~decode
+    Schema.
+      [ Id.t
+      ; EmailAddress.t
+      ; Lastname.t
+      ; Firstname.t
+      ; HashedPassword.t
+      ; Status.t
+      ; Caqti_type.bool
+      ; Caqti_type.bool
+      ; Pool_common.Repo.CreatedAt.t
+      ; Pool_common.Repo.UpdatedAt.t
+      ]
+;;

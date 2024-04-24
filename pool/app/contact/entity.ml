@@ -1,63 +1,36 @@
-module User = Pool_user
-
-module Sihl_user = struct
-  include Sihl_user
-
-  let equal a b =
-    let open CCString in
-    equal a.id b.id
-    && equal a.email b.email
-    && equal_status a.status b.status
-    && CCBool.equal a.admin b.admin
-    && CCBool.equal a.confirmed b.confirmed
-  ;;
-
-  let compare a b = CCString.compare a.Sihl_user.email b.Sihl_user.email
-end
-
 module NumberOfInvitations = struct
-  type t = int [@@deriving eq, ord, show]
+  include Pool_model.Base.Integer
 
   let init = 0
-  let value m = m
-  let of_int m = m
   let increment m = m + 1
   let update step m = m + step |> max 0
 end
 
 module NumberOfAssignments = struct
-  type t = int [@@deriving eq, ord, show]
+  include Pool_model.Base.Integer
 
   let init = 0
-  let value m = m
-  let of_int m = m
   let update step m = m + step |> max 0
 end
 
 module NumberOfShowUps = struct
-  type t = int [@@deriving eq, ord, show]
+  include Pool_model.Base.Integer
 
   let init = 0
-  let value m = m
-  let of_int m = m
   let update step m = m + step |> max 0
 end
 
 module NumberOfNoShows = struct
-  type t = int [@@deriving eq, ord, show]
+  include Pool_model.Base.Integer
 
   let init = 0
-  let value m = m
-  let of_int m = m
   let update step m = m + step |> max 0
 end
 
 module NumberOfParticipations = struct
-  type t = int [@@deriving eq, ord, show]
+  include Pool_model.Base.Integer
 
   let init = 0
-  let value m = m
-  let of_int m = m
   let update step m = m + step |> max 0
 end
 
@@ -70,15 +43,15 @@ module AdminComment = struct
 end
 
 type t =
-  { user : Sihl_user.t
-  ; terms_accepted_at : User.TermsAccepted.t option
+  { user : Pool_user.t
+  ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
-  ; cell_phone : User.CellPhone.t option
-  ; paused : User.Paused.t
-  ; disabled : User.Disabled.t
-  ; verified : User.Verified.t option
-  ; email_verified : User.EmailVerified.t option
+  ; cell_phone : Pool_user.CellPhone.t option
+  ; paused : Pool_user.Paused.t
+  ; disabled : Pool_user.Disabled.t
+  ; verified : Pool_user.Verified.t option
+  ; email_verified : Pool_user.EmailVerified.t option
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
   ; num_show_ups : NumberOfShowUps.t
@@ -95,17 +68,43 @@ type t =
   }
 [@@deriving eq, show, ord]
 
+let create ?terms_accepted_at ?language user =
+  { user
+  ; terms_accepted_at
+  ; language
+  ; experiment_type_preference = None
+  ; cell_phone = None
+  ; paused = Pool_user.Paused.create false
+  ; disabled = Pool_user.Disabled.create false
+  ; verified = None
+  ; email_verified = None
+  ; num_invitations = NumberOfInvitations.init
+  ; num_assignments = NumberOfAssignments.init
+  ; num_show_ups = NumberOfShowUps.init
+  ; num_no_shows = NumberOfNoShows.init
+  ; num_participations = NumberOfParticipations.init
+  ; firstname_version = Pool_common.Version.create ()
+  ; lastname_version = Pool_common.Version.create ()
+  ; paused_version = Pool_common.Version.create ()
+  ; language_version = Pool_common.Version.create ()
+  ; experiment_type_preference_version = Pool_common.Version.create ()
+  ; import_pending = Pool_user.ImportPending.create false
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  }
+;;
+
 module Write = struct
   type t =
-    { user_id : Pool_common.Id.t
-    ; terms_accepted_at : User.TermsAccepted.t option
+    { user_id : Pool_user.Id.t
+    ; terms_accepted_at : Pool_user.TermsAccepted.t option
     ; language : Pool_common.Language.t option
     ; experiment_type_preference : Pool_common.ExperimentType.t option
-    ; cell_phone : User.CellPhone.t option
-    ; paused : User.Paused.t
-    ; disabled : User.Disabled.t
-    ; verified : User.Verified.t option
-    ; email_verified : User.EmailVerified.t option
+    ; cell_phone : Pool_user.CellPhone.t option
+    ; paused : Pool_user.Paused.t
+    ; disabled : Pool_user.Disabled.t
+    ; verified : Pool_user.Verified.t option
+    ; email_verified : Pool_user.EmailVerified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
     ; num_show_ups : NumberOfShowUps.t
@@ -121,7 +120,7 @@ module Write = struct
   [@@deriving eq, show]
 
   let create m =
-    { user_id = Pool_common.Id.of_string m.user.Sihl.Contract.User.id
+    { user_id = m.user.Pool_user.id
     ; terms_accepted_at = m.terms_accepted_at
     ; language = m.language
     ; experiment_type_preference = m.experiment_type_preference
@@ -146,17 +145,18 @@ module Write = struct
 end
 
 let user { user; _ } = user
-let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
-let fullname m = m.user |> User.user_fullname
-let firstname m = m.user |> User.user_firstname
-let lastname m = m.user |> User.user_lastname
-let lastname_firstname m = m.user |> User.user_lastname_firstname
-let email_address m = m.user.Sihl_user.email |> User.EmailAddress.of_string
-let is_inactive { user; _ } = Sihl_user.(equal_status user.status Inactive)
+let id m = m.user.Pool_user.id
+let fullname m = m.user |> Pool_user.user_fullname
+let firstname m = m.user |> Pool_user.user_firstname
+let lastname m = m.user |> Pool_user.user_lastname
+let lastname_firstname m = m.user |> Pool_user.user_lastname_firstname
+let email_address m = m.user.Pool_user.email
 
-let sexp_of_t t =
-  t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s
+let is_inactive { user; _ } =
+  Pool_user.Status.(equal user.Pool_user.status Inactive)
 ;;
+
+let sexp_of_t t = t |> id |> Pool_user.Id.sexp_of_t
 
 let update_num_invitations ~step ({ num_invitations; _ } as m) =
   { m with num_invitations = NumberOfInvitations.update step num_invitations }
@@ -182,21 +182,18 @@ let update_num_participations ~step ({ num_participations; _ } as m) =
 
 module Preview = struct
   type t =
-    { user : Sihl_user.t
+    { user : Pool_user.t
     ; language : Pool_common.Language.t option
-    ; cell_phone : User.CellPhone.t option
-    ; paused : User.Paused.t
-    ; verified : User.Verified.t option
+    ; cell_phone : Pool_user.CellPhone.t option
+    ; paused : Pool_user.Paused.t
+    ; verified : Pool_user.Verified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
     }
   [@@deriving eq, show]
 
-  let fullname (m : t) = m.user |> User.user_fullname
-
-  let email_address (m : t) =
-    m.user.Sihl_user.email |> User.EmailAddress.of_string
-  ;;
+  let fullname (m : t) = m.user |> Pool_user.user_fullname
+  let email_address (m : t) = m.user.Pool_user.email
 end
 
 let profile_completion_cookie = "profile_completion"
@@ -221,7 +218,7 @@ let filterable_by =
     Query.Filter.Condition.Human.
       [ Checkbox column_hide_unverified
       ; Checkbox column_hide_paused
-      ; Checkbox User.column_inactive
+      ; Checkbox Pool_user.column_inactive
       ]
 ;;
 
@@ -229,7 +226,7 @@ let default_filter =
   let open Query.Filter in
   [ Condition.(Checkbox (column_hide_unverified, true))
   ; Condition.(Checkbox (column_hide_paused, true))
-  ; Condition.(Checkbox (User.column_inactive, true))
+  ; Condition.(Checkbox (Pool_user.column_inactive, true))
   ]
 ;;
 

@@ -26,6 +26,8 @@ end
 
 module CanceledAt : sig
   include Pool_model.Base.PtimeSig
+
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
 module MarkedAsDeleted : sig
@@ -186,12 +188,12 @@ val contact_participation_in_other_assignments
   :  Database.Label.t
   -> exclude_assignments:t list
   -> Experiment.Id.t
-  -> Contact.Id.t
+  -> Pool_user.Id.t
   -> (bool, Pool_message.Error.t) Lwt_result.t
 
 val find_external_data_identifiers_by_contact
   :  Database.Label.t
-  -> Contact.Id.t
+  -> Pool_user.Id.t
   -> ExternalDataIdentifier.t list Lwt.t
 
 val group_by_contact : t list -> (Contact.t * t list) list

@@ -16,7 +16,7 @@ module CreateAdmin : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?id:Admin.Id.t
+    -> ?id:Pool_user.Id.t
     -> ?roles:(Role.Role.t * Guard.Uuid.Target.t option) list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -97,7 +97,7 @@ module UpdatePassword : sig
     -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
-  val effects : Admin.Id.t -> Guard.ValidationSet.t
+  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { current_password : User.Password.t [@opaque]
@@ -125,9 +125,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
     let open CCResult in
     let* () =
-      User.Password.validate_current_password
-        (Admin.user admin)
-        command.current_password
+      User.validate_current_password (Admin.user admin) command.current_password
     in
     let* () =
       User.Password.validate_password_confirmation
@@ -209,7 +207,7 @@ end
 module PromoteContact : sig
   include Common.CommandSig
 
-  type t = Pool_common.Id.t
+  type t = Pool_user.Id.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -218,11 +216,11 @@ module PromoteContact : sig
 
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
-  type t = Pool_common.Id.t
+  type t = Pool_user.Id.t
 
   let schema =
     let open Pool_conformist in
-    make Field.[ Pool_common.Id.schema () ] CCFun.id
+    make Field.[ Pool_user.Id.schema () ] CCFun.id
   ;;
 
   let handle ?(tags = Logs.Tag.empty) id =

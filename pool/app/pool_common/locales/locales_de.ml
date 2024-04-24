@@ -8,12 +8,13 @@ let rec field_to_string =
   in
   function
   | Action -> "Aktion"
-  | Actor -> "Akteur"
+  | Active -> "Aktiv"
   | ActiveContactsCount -> "Anzahl aktive Kontakte"
+  | Actor -> "Akteur"
   | Admin -> "Administrator"
   | AdminComment -> "Adminkommentar"
-  | AdminInput -> "Admineingabe"
   | AdminHint -> "Hint für Administratoren"
+  | AdminInput -> "Admineingabe"
   | AdminInputOnly -> "Eingabe nur durch Admins"
   | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AllowUninvitedSignup -> "Einschreiben aller Kontakte erlauben"
@@ -286,11 +287,13 @@ let rec field_to_string =
   | Translation -> "Übersetzung"
   | Tries -> "Versuche"
   | TriggerProfileUpdateAfter -> "Aufforderung zur Kontrolle des Profils"
+  | UpdatedAt -> "aktualisiert am"
   | Url -> "Url"
   | User -> "Benutzer"
   | Validation -> "Validierung"
   | Value -> "Wert"
   | ValueOf field -> combine Value field
+  | VerificationCode -> "Verifizierungs Code"
   | Verified -> "Verifiziert"
   | Version -> "Version"
   | Virtual -> "Virtuell"
@@ -508,6 +511,8 @@ let rec error_to_string =
       (error_to_string (Invalid Field.EmailSuffix))
       (CCString.concat ", " suffixes)
   | InvalidJson exn -> Format.asprintf "Ungültiges Json: %s" exn
+  | InvalidPasswordHashingCount ->
+    "Die Anzahl der Hashwerte für das Passwort muss zwischen 4 und 31 liegen."
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidRequest | InvalidHtmxRequest -> "Ungültige Anfrage."
   | IsMarkedAsDeleted field ->

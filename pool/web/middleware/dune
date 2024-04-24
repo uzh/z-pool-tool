@@ -10,7 +10,6 @@
   pool_canary
   service
   sihl
-  tenant
   tyxml
   utils)
  (preprocess

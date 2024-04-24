@@ -35,10 +35,13 @@ let experiment () =
 
 let contact ~prefix () =
   let open Contact in
-  let invited_contact_id = Id.create () in
+  let invited_contact_id = Pool_user.Id.create () in
   let* email =
     let email =
-      Format.asprintf "%s+%s@domain.test" prefix (Id.value invited_contact_id)
+      Format.asprintf
+        "%s+%s@domain.test"
+        prefix
+        (Pool_user.Id.value invited_contact_id)
     in
     Pool_user.EmailAddress.create email
   in
@@ -167,7 +170,7 @@ let finds_uninvited_contacts =
     CCList.filter
       (fun contact ->
         let open Contact in
-        let open Sihl_user in
+        let open Pool_user in
         contact.user.id = invited_contact.user.id
         || contact.user.id = expected_contact.user.id)
       found_contacts
@@ -239,7 +242,7 @@ let filters_out_invited_contacts =
     CCList.filter
       (fun contact ->
         let open Contact in
-        let open Sihl_user in
+        let open Pool_user in
         contact.user.id = invited_contact.user.id)
       found_contacts
   in

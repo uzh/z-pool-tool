@@ -1,26 +1,30 @@
 include Entity
 include Service_user
-module Repo = Repo
-module PasswordReset = Sihl_user.Password_reset.MakeMariaDb (Pool_token)
+
+module Repo = struct
+  include Repo_entity
+  include Repo
+end
+
+module PasswordReset = Password_reset
 
 let find_active_user_by_email_opt database_label email =
   let open Utils.Lwt_result.Infix in
   email
-  |> EmailAddress.value
   |> find_by_email_opt database_label
   ||> CCFun.flip CCOption.bind (fun ({ status; _ } as user) ->
     match status with
-    | Active -> Some user
-    | Inactive -> None)
+    | Status.Active -> Some user
+    | Status.Inactive -> None)
 ;;
 
-let create_session database_label email ~password =
+let create_session database_label email password =
   let open Utils.Lwt_result.Infix in
-  login database_label (EmailAddress.value email) ~password
+  login database_label email password
   >== fun ({ status; _ } as user) ->
   match status with
-  | Inactive -> Error `Does_not_exist
-  | Active -> Ok user
+  | Status.Inactive -> Error `Does_not_exist
+  | Status.Active -> Ok user
 ;;
 
 module FailedLoginAttempt = struct

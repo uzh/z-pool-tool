@@ -33,8 +33,8 @@ let create ?(id = Pool_common.Id.create ()) contact experiment admin_comment =
   ; contact
   ; experiment
   ; admin_comment
-  ; created_at = Pool_common.CreatedAt.create ()
-  ; updated_at = Pool_common.UpdatedAt.create ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 

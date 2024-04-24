@@ -28,7 +28,7 @@ let sign_up req =
 let sign_up_create req =
   let open Utils.Lwt_result.Infix in
   let terms_key = Field.(TermsAccepted |> show) in
-  let user_id = Pool_common.Id.create () in
+  let user_id = Pool_user.Id.create () in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.remove_empty_values
@@ -52,7 +52,7 @@ let sign_up_create req =
                req
                urlencoded
                language
-               user_id
+               (user_id |> Pool_user.Id.to_common)
        in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* email_address =
@@ -98,9 +98,7 @@ let sign_up_create req =
          |> Lwt_result.lift
        in
        let%lwt existing_user =
-         Pool_user.find_by_email_opt
-           database_label
-           (Pool_user.EmailAddress.value email_address)
+         Pool_user.find_by_email_opt database_label email_address
        in
        let* events =
          match existing_user with
@@ -116,7 +114,7 @@ let sign_up_create req =
            let* events =
              contact
              |> function
-             | Ok contact when contact.Contact.user.Sihl_user.confirmed ->
+             | Ok contact when contact.Contact.user.Pool_user.confirmed ->
                let%lwt send_notification =
                  Contact.should_send_registration_attempt_notification
                    database_label
@@ -179,9 +177,11 @@ let email_verification req =
        |> CCOption.to_result (Error.NotFound Field.Token)
        |> Lwt_result.lift
      in
-     let ctx = Database.to_ctx database_label in
      let* email =
-       Pool_token.read ~ctx (Email.Token.value token) ~k:Field.(Email |> show)
+       Pool_token.read
+         database_label
+         (Email.Token.value token)
+         ~k:Field.(Email |> show)
        ||> CCOption.to_result Error.TokenInvalidFormat
        >== Pool_user.EmailAddress.create
        >>= Email.find_unverified_by_address database_label
@@ -189,11 +189,7 @@ let email_verification req =
      in
      let* events =
        let open UserCommand in
-       let%lwt admin =
-         Admin.find
-           database_label
-           (email |> Email.user_id |> Pool_common.Id.value |> Admin.Id.of_string)
-       in
+       let%lwt admin = Admin.find database_label (email |> Email.user_id) in
        let%lwt contact = Contact.find database_label (Email.user_id email) in
        let verify_email user =
          VerifyEmail.(handle ~tags user email) |> Lwt_result.lift
@@ -240,11 +236,7 @@ let terms req =
          |> CCOption.map
               (CCFun.const Pool_common.I18n.TermsAndConditionsUpdated)
        in
-       Page.Contact.terms
-         ?notification
-         Contact.(contact |> id |> Pool_common.Id.value)
-         terms
-         context
+       Page.Contact.terms ?notification Contact.(contact |> id) terms context
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
@@ -258,7 +250,7 @@ let terms_accept req =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     let id =
-      Sihl.Web.Router.param req Field.(Id |> show) |> Pool_common.Id.of_string
+      Sihl.Web.Router.param req Field.(Id |> show) |> Pool_user.Id.of_string
     in
     let* contact = Contact.find database_label id in
     let* events =

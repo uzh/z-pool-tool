@@ -76,72 +76,6 @@ let suite =
               `Slow
               set_value_of_required_field_to_null
           ] )
-    ; ( "filter"
-      , Filter_test.
-          [ test_case "filter contacts" `Slow filter_contacts
-          ; test_case "filter by email and custom field" `Slow filter_by_email
-          ; test_case "filter exclude inactive" `Slow filter_exclude_inactive
-          ; test_case
-              "validate filter with unknown field"
-              `Slow
-              validate_filter_with_unknown_field
-          ; test_case
-              "validate filter with invalid value"
-              `Slow
-              validate_filter_with_invalid_value
-          ; test_case "filter contains all" `Slow filter_by_list_contains_all
-          ; test_case "filter contains none" `Slow filter_by_list_contains_none
-          ; test_case "filter contains some" `Slow filter_by_list_contains_some
-          ; test_case "filter by select field" `Slow filter_by_select_field
-          ; test_case
-              "retrieve ordered contacts"
-              `Slow
-              retrieve_fitleterd_and_ordered_contacts
-          ; test_case
-              "create filter template with template"
-              `Slow
-              create_filter_template_with_template
-          ; test_case
-              "test filter with admin overridden values"
-              `Slow
-              filter_with_admin_value
-          ; test_case
-              "no admin values shown to contacts"
-              `Slow
-              no_admin_values_shown_to_contacts
-          ; test_case
-              "filter ignore admin value"
-              `Slow
-              filter_ignore_admin_value
-          ; test_case
-              "filter by experiment participation"
-              `Slow
-              filter_by_experiment_participation
-          ; test_case
-              "filter by empty language"
-              `Slow
-              filter_by_empty_hardcoded_value
-          ; test_case
-              "filter by non-empty language"
-              `Slow
-              filter_by_non_empty_hardcoded_value
-          ; test_case
-              "filter by empty custom field"
-              `Slow
-              filter_by_empty_custom_field
-          ; test_case
-              "filter by nonempty custom field"
-              `Slow
-              filter_by_non_empty_custom_field
-          ; test_case
-              "filter by empty custom field with deleted answer"
-              `Slow
-              filter_by_empty_custom_field_with_deleted_value
-          ; test_case
-              "filter by date type custom field"
-              `Slow
-              filter_by_date_custom_field
-          ] )
     ; ( "matcher"
       , Matcher_test.
           [ test_case "send invitations" `Slow create_invitations
@@ -397,7 +331,6 @@ let suite =
               `Slow
               Repo.find_contacts_to_remind
           ] )
-    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;
 
@@ -416,6 +349,8 @@ let () =
     (let open Test_utils in
      let%lwt () = setup_test () in
      let%lwt _ = Sihl.Container.start_services services in
+     let%lwt () = Database.clean_all Data.database_label in
+     let%lwt () = Seed.Tenant.create ~is_test:true [ Data.database_label ] () in
      let%lwt () = Test_seed.create Data.database_label () in
      Alcotest_lwt.run "integration" @@ suite)
 ;;

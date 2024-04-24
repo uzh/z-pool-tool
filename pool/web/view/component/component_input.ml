@@ -914,7 +914,6 @@ let admin_select
   ()
   =
   let open Pool_common in
-  let open Admin in
   let name = Pool_message.Field.show field in
   let select_attrs =
     let name = [ a_name name ] in
@@ -950,12 +949,15 @@ let admin_select
         let is_selected =
           selected
           |> CCOption.map (fun selected ->
-            if Id.equal (id admin) selected then [ a_selected () ] else [])
+            if Pool_user.Id.equal (Admin.id admin) selected
+            then [ a_selected () ]
+            else [])
           |> CCOption.value ~default:[]
         in
         option
-          ~a:([ a_value (admin |> id |> Id.value) ] @ is_selected)
-          (txt (full_name admin)))
+          ~a:
+            ([ a_value (admin |> Admin.id |> Pool_user.Id.value) ] @ is_selected)
+          (txt (Admin.full_name admin)))
       options
     |> CCList.cons default_option
   in

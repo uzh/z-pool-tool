@@ -9,8 +9,7 @@ module ScheduledTime = struct
   include Pool_model.Base.Ptime
 
   let field = Pool_message.Field.ScheduledTime
-  let create m = Ok m
-  let schema = schema field create
+  let schema = schema field CCFun.(create %> CCResult.return)
 end
 
 module ScheduledTimeSpan = struct
@@ -30,8 +29,7 @@ module LastRunAt = struct
   include Pool_model.Base.Ptime
 
   let field = Pool_message.Field.LastRunAt
-  let create m = Ok m
-  let schema = schema field create
+  let schema = schema field CCFun.(create %> CCResult.return)
 end
 
 module Status = struct

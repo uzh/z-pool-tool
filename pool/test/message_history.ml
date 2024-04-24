@@ -7,7 +7,7 @@ let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
 let tenant = Tenant_test.Data.full_tenant |> get_exn
 let experiment_id = Experiment.Id.create ()
-let contact_id = Contact.Id.create ()
+let contact_id = Pool_user.Id.create ()
 let session_id = Session.Id.create ()
 let assignment_id = Assignment.Id.create ()
 let language = Pool_common.Language.En
@@ -72,7 +72,7 @@ let account_suspension_notification _ () =
     ||> with_sorted_entity_uuids
   in
   let expected =
-    [ Contact.Id.to_common contact_id ]
+    [ Pool_user.Id.to_common contact_id ]
     |> create_history Label.AccountSuspensionNotification
   in
   let () = check_history_create expected res in
@@ -91,7 +91,7 @@ let assignment_confirmation _ () =
   let expected =
     [ Experiment.Id.to_common experiment_id
     ; Session.Id.to_common session_id
-    ; Contact.Id.to_common contact_id
+    ; Pool_user.Id.to_common contact_id
     ]
     |> create_history Label.AssignmentConfirmation
   in
@@ -124,7 +124,7 @@ let assignment_session_change _ () =
     [ Experiment.Id.to_common experiment_id
     ; Session.Id.to_common session_id
     ; Session.(Id.to_common new_session.id)
-    ; Contact.Id.to_common contact_id
+    ; Pool_user.Id.to_common contact_id
     ]
     |> create_history Label.AssignmentSessionChange
   in
@@ -140,7 +140,7 @@ let contact_email_change_attempt _ () =
     ||> with_sorted_entity_uuids
   in
   let expected =
-    [ Contact.Id.to_common contact_id ]
+    [ Pool_user.Id.to_common contact_id ]
     |> create_history Label.ContactEmailChangeAttempt
   in
   let () = check_history_create expected res in
@@ -154,7 +154,7 @@ let contact_registration_attempt _ () =
     ||> with_sorted_entity_uuids
   in
   let expected =
-    [ Contact.Id.to_common contact_id ]
+    [ Pool_user.Id.to_common contact_id ]
     |> create_history Label.ContactRegistrationAttempt
   in
   let () = check_history_create expected res in
@@ -174,7 +174,7 @@ let email_verification _ () =
     ||> with_sorted_entity_uuids
   in
   let expected =
-    [ Contact.Id.to_common contact_id ]
+    [ Pool_user.Id.to_common contact_id ]
     |> create_history Label.EmailVerification
   in
   let () = check_history_create expected res in
@@ -189,7 +189,7 @@ let experiment_invitation _ () =
     ||> with_sorted_entity_uuids
   in
   let expected =
-    [ Experiment.Id.to_common experiment_id; Contact.Id.to_common contact_id ]
+    [ Experiment.Id.to_common experiment_id; Pool_user.Id.to_common contact_id ]
     |> create_history Label.ExperimentInvitation
   in
   let () = check_history_create expected res in
@@ -203,7 +203,7 @@ let password_change _ () =
     ||> with_sorted_entity_uuids
   in
   let expected =
-    [ Contact.Id.to_common contact_id ] |> create_history Label.PasswordChange
+    [ Pool_user.Id.to_common contact_id ] |> create_history Label.PasswordChange
   in
   let () = check_history_create expected res in
   Lwt.return_unit
@@ -221,7 +221,7 @@ let password_reset _ () =
     ||> with_sorted_entity_uuids
   in
   let expected =
-    [ Contact.Id.to_common contact_id ] |> create_history Label.PasswordReset
+    [ Pool_user.Id.to_common contact_id ] |> create_history Label.PasswordReset
   in
   let () = check_history_create expected res in
   Lwt.return_unit
@@ -243,7 +243,7 @@ let phone_verification _ () =
     ||> txt_msg_with_sorted_entity_uuids
   in
   let expected =
-    [ Contact.Id.to_common contact_id ]
+    [ Pool_user.Id.to_common contact_id ]
     |> create_history Label.PhoneVerification
   in
   let () = check_history_create expected res in
@@ -277,7 +277,7 @@ let session_reminder _ () =
   let expected =
     [ Experiment.Id.to_common experiment_id
     ; Session.Id.to_common session_id
-    ; Contact.Id.to_common contact_id
+    ; Pool_user.Id.to_common contact_id
     ]
     |> create_history Label.SessionReminder
   in
@@ -370,7 +370,9 @@ module Resend = struct
       let open Contact in
       let contact = Model.create_contact () in
       let sihl_user =
-        Sihl_user.{ (user contact) with email = updated_email_address }
+        { (user contact) with
+          Pool_user.email = EmailAddress.of_string updated_email_address
+        }
       in
       { contact with cell_phone = Some updated_cellphone; user = sihl_user }
     in

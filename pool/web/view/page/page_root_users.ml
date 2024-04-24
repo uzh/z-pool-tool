@@ -15,19 +15,21 @@ let table Pool_context.{ language; _ } (admins, query) =
   in
   let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
   let row admin =
-    let open Sihl_user in
+    let open Pool_user in
     let status_toggle =
       let user = admin.user in
       let text, style =
         match user.status with
-        | Active -> Pool_message.Control.Disable, "error"
-        | Inactive -> Pool_message.Control.Enable, "primary"
+        | Status.Active -> Pool_message.Control.Disable, "error"
+        | Status.Inactive -> Pool_message.Control.Enable, "primary"
       in
       form
         ~a:
           [ a_action
               (Sihl.Web.externalize_path
-                 (Format.asprintf "/root/users/%s/toggle-status" user.id))
+                 (Format.asprintf
+                    "/root/users/%s/toggle-status"
+                    (user.Pool_user.id |> Pool_user.Id.value)))
           ; a_method `Post
           ; a_class [ "stack" ]
           ]

@@ -33,7 +33,7 @@ let login_information
   let details_form =
     let firstname, lastname =
       Admin.user admin
-      |> fun user -> user.Sihl_user.given_name, user.Sihl_user.name
+      |> fun user -> user.Pool_user.given_name, user.Pool_user.name
     in
     div
       [ h2
@@ -47,12 +47,12 @@ let login_information
               language
               `Text
               Field.Firstname
-              ~value:(firstname |> CCOption.value ~default:"")
+              ~value:(firstname |> Pool_user.Firstname.value)
           ; input_element
               language
               `Text
               Field.Lastname
-              ~value:(lastname |> CCOption.value ~default:"")
+              ~value:(lastname |> Pool_user.Lastname.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element

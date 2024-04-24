@@ -1,5 +1,6 @@
 type t =
   | Action
+  | Active
   | ActiveContactsCount
   | Actor
   | Admin
@@ -272,11 +273,13 @@ type t =
   | Translation
   | Tries
   | TriggerProfileUpdateAfter
+  | UpdatedAt
   | Url
   | User
   | Validation
   | Value
   | ValueOf of t
+  | VerificationCode
   | Verified
   | Version
   | Virtual

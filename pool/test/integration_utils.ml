@@ -24,10 +24,7 @@ module ContactRepo = struct
       [ Created
           { user_id = id contact
           ; email = email_address contact
-          ; password =
-              contact.user.Sihl_user.password
-              |> Pool_user.Password.create
-              |> get_or_failwith
+          ; password = Model.password
           ; firstname = firstname contact
           ; lastname = lastname contact
           ; terms_accepted_at = None
@@ -44,7 +41,7 @@ end
 module AdminRepo = struct
   let create ?id ?email () =
     let open Pool_user in
-    let admin_id = id |> CCOption.value ~default:(Admin.Id.create ()) in
+    let admin_id = id |> CCOption.value ~default:(Pool_user.Id.create ()) in
     let open Admin in
     let open Utils.Lwt_result.Infix in
     let tags = Database.Logger.Tags.create Data.database_label in

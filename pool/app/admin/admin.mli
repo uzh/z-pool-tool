@@ -1,7 +1,5 @@
-module Id : module type of Pool_common.Id
-
 type t =
-  { user : Sihl_user.t
+  { user : Pool_user.t
   ; email_verified : Pool_user.EmailVerified.t option
   ; import_pending : Pool_user.ImportPending.t
   }
@@ -10,15 +8,15 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val sexp_of_t : t -> Sexplib0.Sexp.t
-val user : t -> Sihl_user.t
-val create : email_verified:Pool_user.EmailVerified.t option -> Sihl_user.t -> t
-val id : t -> Id.t
+val user : t -> Pool_user.t
+val create : email_verified:Pool_user.EmailVerified.t option -> Pool_user.t -> t
+val id : t -> Pool_user.Id.t
 val email_address : t -> Pool_user.EmailAddress.t
 val full_name : t -> string
 val full_name_reversed : t -> string
 
 type create =
-  { id : Id.t option
+  { id : Pool_user.Id.t option
   ; email : Pool_user.EmailAddress.t
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
@@ -52,15 +50,19 @@ type event =
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | PromotedContact of Pool_common.Id.t
+  | PromotedContact of Pool_user.Id.t
   | SignInCounterUpdated of t
 
 val handle_event : tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val user_is_admin : Database.Label.t -> Sihl_user.t -> bool Lwt.t
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val user_is_admin : Database.Label.t -> Pool_user.t -> bool Lwt.t
+
+val find
+  :  Database.Label.t
+  -> Pool_user.Id.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_by_email
   :  Database.Label.t
@@ -83,7 +85,7 @@ val find_all_with_roles
 
 val search_by_name_and_email
   :  ?dyn:Database.Dynparam.t
-  -> ?exclude:Id.t list
+  -> ?exclude:Pool_user.Id.t list
   -> ?limit:int
   -> Database.Label.t
   -> string
@@ -94,14 +96,6 @@ val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val default_sort : Query.Sort.t
 val default_query : Query.t
-
-module Duplicate : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-end
 
 module Guard : sig
   module Actor : sig
@@ -133,19 +127,13 @@ module Guard : sig
   module Access : sig
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
-    val read : Id.t -> Guard.ValidationSet.t
-    val update : Id.t -> Guard.ValidationSet.t
+    val read : Pool_user.Id.t -> Guard.ValidationSet.t
+    val update : Pool_user.Id.t -> Guard.ValidationSet.t
   end
 end
 
 module Repo : sig
-  module Entity : sig
-    module Id : sig
-      val t : Id.t Caqti_type.t
-    end
-
-    val t : t Caqti_type.t
-  end
+  module Entity : Pool_model.Base.CaqtiSig with type t = t
 
   val sql_select_columns : string list
   val joins : string

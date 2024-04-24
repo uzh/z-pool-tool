@@ -6,24 +6,24 @@ module DummyData = struct
   let create_contact () =
     let open Pool_common in
     let open Pool_user in
+    let open CCResult.Infix in
     Contact.
       { user =
-          Sihl_user.
-            { id = Id.(create () |> value)
-            ; email = "jane.doe@econ.uzh.ch"
-            ; username = None
-            ; name = Some "Doe"
-            ; given_name = Some "Jane"
+          Pool_user.
+            { id = Id.(create ())
+            ; email = EmailAddress.of_string "jane.doe@econ.uzh.ch"
+            ; name = Lastname.of_string "Doe"
+            ; given_name = Firstname.of_string "Jane"
             ; password =
                 "somepassword"
-                |> Sihl_user.Hashing.hash
-                |> CCResult.get_or_failwith
-            ; status =
-                Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
+                |> Password.create_unvalidated
+                >>= HashedPassword.create
+                |> Pool_common.Utils.get_or_failwith
+            ; status = Status.Active
             ; admin = false
             ; confirmed = true
-            ; created_at = CreatedAt.create ()
-            ; updated_at = UpdatedAt.create ()
+            ; created_at = CreatedAt.create_now ()
+            ; updated_at = UpdatedAt.create_now ()
             }
       ; terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure
       ; language = Some Language.En
@@ -45,8 +45,8 @@ module DummyData = struct
       ; language_version = Version.create ()
       ; experiment_type_preference_version = Version.create ()
       ; import_pending = Pool_user.ImportPending.create false
-      ; created_at = CreatedAt.create ()
-      ; updated_at = UpdatedAt.create ()
+      ; created_at = CreatedAt.create_now ()
+      ; updated_at = UpdatedAt.create_now ()
       }
   ;;
 
@@ -109,8 +109,8 @@ module DummyData = struct
     ; link = Some link
     ; status
     ; files
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
   ;;
 
@@ -144,8 +144,8 @@ module DummyData = struct
       ; text_message_reminder_sent_at = None
       ; closed_at = None
       ; canceled_at = None
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; updated_at = Pool_common.UpdatedAt.create_now ()
       ; experiment
       }
   ;;
@@ -180,8 +180,8 @@ module DummyData = struct
       ; email_session_reminder_lead_time = None
       ; text_message_session_reminder_lead_time = None
       ; invitation_reset_at = None
-      ; created_at = Ptime_clock.now ()
-      ; updated_at = Ptime_clock.now ()
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; updated_at = Pool_common.UpdatedAt.create_now ()
       }
   ;;
 
@@ -198,8 +198,8 @@ module DummyData = struct
     ; external_data_id = Some (ExternalDataId.of_string "DATA_ID")
     ; reminder_manually_last_sent_at = None
     ; custom_fields = None
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
   ;;
 

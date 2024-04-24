@@ -91,6 +91,8 @@ end
 
 module CanceledAt : sig
   include Pool_model.Base.PtimeSig
+
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
 type t =
@@ -261,7 +263,7 @@ val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
 
 val find_contact_is_assigned_by_experiment
   :  Database.Label.t
-  -> Contact.Id.t
+  -> Pool_user.Id.t
   -> Experiment.Id.t
   -> t list Lwt.t
 
@@ -293,7 +295,7 @@ val find_all_public_for_experiment
 
 val find_all_ids_of_contact_id
   :  Database.Label.t
-  -> Contact.Id.t
+  -> Pool_user.Id.t
   -> Id.t list Lwt.t
 
 val find_public_by_assignment
@@ -303,7 +305,7 @@ val find_public_by_assignment
 
 val find_upcoming_public_by_contact
   :  Database.Label.t
-  -> Pool_common.Id.t
+  -> Pool_user.Id.t
   -> ( (Experiment.Public.t * Public.t * Public.t list) list
        , Pool_message.Error.t )
        result

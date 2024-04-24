@@ -26,7 +26,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       in
       let is_confirmed contact =
         Lwt_result.lift
-          (match contact.Contact.user.Sihl_user.confirmed with
+          (match contact.Contact.user.Pool_user.confirmed with
            | true -> Ok contact
            | false -> Error ContactUnconfirmed)
       in

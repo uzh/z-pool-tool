@@ -66,7 +66,7 @@ let contact_person_from_urlencoded database_label urlencoded experiment_id =
             database_label
             (validation_set experiment_id)
     in
-    id |> Admin.Id.of_string |> Admin.find database_label
+    id |> Pool_user.Id.of_string |> Admin.find database_label
   in
   find_entity_in_urlencoded urlencoded Field.ContactPerson query
 ;;
@@ -302,6 +302,7 @@ let detail edit req =
            database_label
            (id
             |> Experiment.Id.to_common
+            |> Pool_user.Id.of_common
             |> Cqrs_command.Tags_command.AssignTagToContact.effects)
            actor
          ||> CCResult.is_ok

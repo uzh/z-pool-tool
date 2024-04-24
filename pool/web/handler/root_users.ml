@@ -28,6 +28,7 @@ let create req =
         Field.Email
         urlencoded
       |> Lwt_result.lift
+      >== Pool_user.EmailAddress.create
       >>= HttpUtils.validate_email_existance database_label
     in
     let events () =
@@ -56,7 +57,7 @@ let toggle_status req =
   let result { Pool_context.database_label; _ } =
     let open CCFun in
     let tags = Pool_context.Logger.Tags.req req in
-    let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+    let id = HttpUtils.find_id Pool_user.Id.of_string Field.Admin req in
     let events = RootCommand.ToggleStatus.handle ~tags %> Lwt_result.lift in
     let handle =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
@@ -85,7 +86,7 @@ end = struct
   module Command = Cqrs_command.Root_command
   module Guardian = Middleware.Guardian
 
-  let root_effects = Guardian.id_effects Admin.Id.of_string Field.Root
+  let root_effects = Guardian.id_effects Pool_user.Id.of_string Field.Root
   let index = Admin.Guard.Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity Command.Create.effects
 

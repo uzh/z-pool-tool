@@ -1,10 +1,8 @@
-include Repo_entity
 open Caqti_request.Infix
 
 let sql_select_columns =
   [ Pool_common.Id.sql_select_fragment ~field:"user_users.uuid"
   ; "user_users.email"
-  ; "user_users.username"
   ; "user_users.name"
   ; "user_users.given_name"
   ; "user_users.password"
@@ -19,7 +17,6 @@ let sql_select_columns =
 let filter_fragment =
   {sql|
     WHERE user_users.email LIKE $1
-      OR user_users.username LIKE $1
       OR user_users.name LIKE $1
       OR user_users.given_name LIKE $1
       OR user_users.status LIKE $1
@@ -34,10 +31,10 @@ let get_request =
       FROM user_users
       WHERE user_users.uuid = %{Pool_common.Id.sql_value_fragment "?"}
     |sql}]
-  |> Caqti_type.string ->? Repo_entity.User.t
+  |> Repo_entity.(Id.t ->? t)
 ;;
 
-let get label = Database.find_opt label get_request
+let find_opt label = Database.find_opt label get_request
 
 let get_by_email_request =
   let columns = sql_select_columns |> CCString.concat ", " in
@@ -45,9 +42,9 @@ let get_by_email_request =
     {sql|
       SELECT %{columns}
       FROM user_users
-      WHERE user_users.email LIKE ?
+      WHERE user_users.email = ?
     |sql}]
-  |> Caqti_type.string ->? Repo_entity.User.t
+  |> Repo_entity.(EmailAddress.t ->? t)
 ;;
 
 let get_by_email label = Database.find_opt label get_by_email_request
@@ -57,7 +54,6 @@ let insert_request =
       INSERT INTO user_users (
         uuid,
         email,
-        username,
         name,
         given_name,
         password,
@@ -76,11 +72,10 @@ let insert_request =
         $7,
         $8,
         $9,
-        $10,
-        $11
+        $10
       )
     |sql}
-  |> Repo_entity.User.t ->. Caqti_type.unit
+  |> Repo_entity.t ->. Caqti_type.unit
 ;;
 
 let insert label = Database.exec label insert_request
@@ -90,18 +85,17 @@ let update_request =
       UPDATE user_users
       SET
         email = LOWER($2),
-        username = $3,
-        name = $4,
-        given_name = $5,
-        password = $6,
-        status = $7,
-        admin = $8,
-        confirmed = $9,
-        created_at = $10,
-        updated_at = $11
+        name = $3,
+        given_name = $4,
+        password = $5,
+        status = $6,
+        admin = $7,
+        confirmed = $8,
+        created_at = $9,
+        updated_at = $10
       WHERE user_users.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-  |> Repo_entity.User.t ->. Caqti_type.unit
+  |> Repo_entity.t ->. Caqti_type.unit
 ;;
 
 let update label = Database.exec label update_request

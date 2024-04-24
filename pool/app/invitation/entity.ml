@@ -35,8 +35,8 @@ let create ?(id = Pool_common.Id.create ()) contact =
   ; contact
   ; resent_at = None
   ; send_count = SendCount.init
-  ; created_at = Pool_common.CreatedAt.create ()
-  ; updated_at = Pool_common.UpdatedAt.create ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 

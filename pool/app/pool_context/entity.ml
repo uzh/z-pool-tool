@@ -70,10 +70,9 @@ let find_contact { user; _ } =
 
 let user_of_sihl_user database_label user =
   let open Utils.Lwt_result.Infix in
-  if Sihl_user.is_admin user
+  if Pool_user.is_admin user
   then
-    user.Sihl_user.id
-    |> Admin.Id.of_string
+    user.Pool_user.id
     |> Admin.find database_label
     ||> function
     | Ok user -> user |> admin
@@ -121,7 +120,9 @@ end
 
 (* Logging *)
 let show_log_user = function
-  | Admin user -> user |> Admin.user |> fun user -> user.Pool_user.email
-  | Contact contact -> contact.Contact.user.Pool_user.email
+  | Admin user ->
+    user.Admin.user.Pool_user.email |> Pool_user.EmailAddress.value
+  | Contact contact ->
+    contact.Contact.user.Pool_user.email |> Pool_user.EmailAddress.value
   | Guest -> "anonymous"
 ;;

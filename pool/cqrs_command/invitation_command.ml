@@ -2,7 +2,7 @@ let src = Logs.Src.create "invitation.cqrs"
 
 let contact_partition invited =
   CCList.partition (fun contact ->
-    CCList.mem ~eq:Pool_common.Id.equal (Contact.id contact) invited)
+    CCList.mem ~eq:Pool_user.Id.equal (Contact.id contact) invited)
 ;;
 
 let contact_update_on_invitation_sent contacts =
@@ -21,7 +21,7 @@ module Create : sig
     { experiment : Experiment.t
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
-    ; invited_contacts : Pool_common.Id.t list
+    ; invited_contacts : Pool_user.Id.t list
     ; create_message : Contact.t -> (Email.job, Pool_message.Error.t) result
     }
 
@@ -36,7 +36,7 @@ end = struct
     { experiment : Experiment.t
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
-    ; invited_contacts : Pool_common.Id.t list
+    ; invited_contacts : Pool_user.Id.t list
     ; create_message : Contact.t -> (Email.job, Pool_message.Error.t) result
     }
 
@@ -48,7 +48,7 @@ end = struct
     let open CCResult in
     let open CCFun in
     let errors, contacts = contact_partition invited_contacts contacts in
-    let errors = CCList.map (Contact.id %> Pool_common.Id.value) errors in
+    let errors = CCList.map (Contact.id %> Pool_user.Id.value) errors in
     let emails = contacts |> CCList.map create_message in
     if CCList.is_empty errors |> not
     then Error Pool_message.(Error.AlreadyInvitedToExperiment errors)

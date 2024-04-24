@@ -8,8 +8,7 @@
   organisational_unit
   pool_common
   query
-  sihl
-  tenant)
+  sihl)
  (preprocess
   (pps
    lwt_ppx

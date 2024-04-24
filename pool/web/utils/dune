@@ -8,7 +8,6 @@
   pool_context
   service
   sexplib
-  tenant
   user_import
   version)
  (preprocess

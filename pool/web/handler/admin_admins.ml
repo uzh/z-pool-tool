@@ -41,7 +41,7 @@ let admin_detail req is_edit =
     in
     Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
     @@
-    let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+    let id = HttpUtils.find_id Pool_user.Id.of_string Field.Admin req in
     let* admin = id |> Admin.find database_label in
     let%lwt roles =
       let open Helpers.Guard in
@@ -83,10 +83,11 @@ let create_admin req =
       err, Format.asprintf "%s/new" redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let id = Admin.Id.create () in
+    let id = Pool_user.Id.create () in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result Error.EmailAddressMissingAdmin
+      >== Pool_user.EmailAddress.create
       >>= HttpUtils.validate_email_existance database_label
     in
     let events =
@@ -99,7 +100,7 @@ let create_admin req =
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
-        (Format.asprintf "%s/%s" redirect_path (Admin.Id.value id))
+        (Format.asprintf "%s/%s" redirect_path (Pool_user.Id.value id))
         [ Message.set ~success:[ Success.Created Field.Admin ] ]
     in
     () |> validate_user >> events >>= handle |>> return_to_overview
@@ -109,7 +110,7 @@ let create_admin req =
 
 let handle_toggle_role req =
   let result (_ : Pool_context.t) =
-    let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+    let admin_id = HttpUtils.find_id Pool_user.Id.of_string Field.Admin req in
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.find_in_urlencoded Field.Role
     >== Role.Role.of_string_res %> CCResult.map_err Error.authorization
@@ -121,7 +122,7 @@ let handle_toggle_role req =
 ;;
 
 let search_role_entities req =
-  let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+  let admin_id = HttpUtils.find_id Pool_user.Id.of_string Field.Admin req in
   let result { Pool_context.database_label; user; language; _ } =
     let* admin = Admin.find database_label admin_id in
     let* actor =
@@ -183,9 +184,9 @@ let search_role_entities req =
 let grant_role req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
-  let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+  let admin_id = HttpUtils.find_id Pool_user.Id.of_string Field.Admin req in
   let redirect_path =
-    Format.asprintf "/admin/admins/%s/edit" (Admin.Id.value admin_id)
+    Format.asprintf "/admin/admins/%s/edit" (Pool_user.Id.value admin_id)
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
@@ -256,7 +257,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
   let result { Pool_context.database_label; _ } =
     (let tags = Pool_context.Logger.Tags.req req in
      let* admin =
-       HttpUtils.find_id Admin.Id.of_string Field.Admin req
+       HttpUtils.find_id Pool_user.Id.of_string Field.Admin req
        |> Admin.find database_label
      in
      let role =
@@ -307,7 +308,7 @@ end = struct
   module Guardian = Middleware.Guardian
   module GuardianCommand = Cqrs_command.Guardian_command
 
-  let admin_effects = Guardian.id_effects Admin.Id.of_string Field.Admin
+  let admin_effects = Guardian.id_effects Pool_user.Id.of_string Field.Admin
 
   let index =
     Admin.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true

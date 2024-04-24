@@ -108,7 +108,7 @@ let find_all_public_by_contact_request ?(has_session = false) () =
     is_invited
     session_exists
   |> Repo.find_request_sql
-  |> Pool_common.Repo.Id.t ->* RepoEntity.t
+  |> Pool_user.Repo.Id.t ->* RepoEntity.t
 ;;
 
 let find_all_public_by_contact ?has_session pool contact =
@@ -153,7 +153,7 @@ let find_pending_waitinglists_by_contact_request =
   in
   join
   |> select_from_experiments_sql ~distinct:true
-  |> Pool_common.Repo.Id.t ->* RepoEntity.Public.t
+  |> Pool_user.Repo.Id.t ->* RepoEntity.Public.t
 ;;
 
 let find_pending_waitinglists_by_contact pool contact =
@@ -224,15 +224,12 @@ let find_request =
   let open Caqti_request.Infix in
   where_contact_can_access
   |> select_from_experiments_sql
-  |> Caqti_type.(t2 string string) ->! RepoEntity.Public.t
+  |> Caqti_type.(t2 Pool_user.Repo.Id.t RepoEntity.Id.t) ->! RepoEntity.Public.t
 ;;
 
 let find pool id contact =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt
-    pool
-    find_request
-    Pool_common.Id.(Contact.id contact |> value, id |> value)
+  Database.find_opt pool find_request (Contact.id contact, id)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
 ;;
 
@@ -240,14 +237,11 @@ let find_full_by_contact_request =
   let open Caqti_request.Infix in
   where_contact_can_access
   |> Repo.find_request_sql
-  |> Caqti_type.(t2 string string) ->! RepoEntity.t
+  |> Caqti_type.(t2 Pool_user.Repo.Id.t RepoEntity.Id.t) ->! RepoEntity.t
 ;;
 
 let find_full_by_contact pool id contact =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt
-    pool
-    find_full_by_contact_request
-    Pool_common.Id.(Contact.id contact |> value, id |> value)
+  Database.find_opt pool find_full_by_contact_request (Contact.id contact, id)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
 ;;

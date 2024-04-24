@@ -6,7 +6,7 @@ open Entity
 let src = Logs.Src.create "admin.event"
 
 type create =
-  { id : Id.t option
+  { id : Pool_user.Id.t option
   ; email : User.EmailAddress.t
   ; password : User.Password.t [@opaque]
   ; firstname : User.Firstname.t
@@ -21,12 +21,9 @@ type update =
   }
 [@@deriving eq, show]
 
-let set_password
-  : Database.Label.t -> t -> string -> string -> (unit, string) result Lwt.t
-  =
-  fun pool { user; _ } password password_confirmation ->
+let set_password pool { user; _ } password password_confirmation =
   let open Lwt_result.Infix in
-  User.set_password pool user ~password ~password_confirmation >|= ignore
+  User.set_password pool user password password_confirmation >|= ignore
 ;;
 
 type event =
@@ -39,7 +36,7 @@ type event =
   | ImportDisabled of t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
-  | PromotedContact of Common.Id.t
+  | PromotedContact of Pool_user.Id.t
   | SignInCounterUpdated of t
 [@@deriving eq, show]
 
@@ -73,13 +70,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
   | Created { id; lastname; firstname; password; email; roles } ->
     let open Common.Utils in
     let%lwt admin =
-      User.create_admin
-        pool
-        ?id:(id |> CCOption.map Common.Id.value)
-        ~name:(lastname |> User.Lastname.value)
-        ~given_name:(firstname |> User.Firstname.value)
-        ~password:(password |> User.Password.to_sihl)
-        (User.EmailAddress.value email)
+      User.create_admin pool ?id email lastname firstname password
       ||> create ~email_verified:None
     in
     let%lwt () = Repo.insert pool admin in
@@ -91,24 +82,24 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     in
     admin_authorizable ~roles admin
   | DetailsUpdated (admin, { firstname; lastname }) ->
-    let name = User.Lastname.value lastname in
-    let given_name = User.Firstname.value firstname in
-    let%lwt (_ : Sihl_user.t) =
-      User.update pool ~name ~given_name (user admin)
+    let%lwt (_ : Pool_user.t) =
+      User.update pool ~name:lastname ~given_name:firstname (user admin)
     in
     Lwt.return_unit
   | EmailVerified admin ->
-    let%lwt (_ : Sihl_user.t) =
-      User.update pool Sihl_user.{ admin.user with confirmed = true }
+    let%lwt (_ : Pool_user.t) =
+      User.update pool Pool_user.{ admin.user with confirmed = true }
     in
     { admin with email_verified = Some (Pool_user.EmailVerified.create_now ()) }
     |> Repo.update pool
   | ImportConfirmed (admin, password) ->
-    let (_ : (Sihl_user.t Lwt.t, string) result) =
-      let open Common in
-      User.set_user_password admin.user (User.Password.to_sihl password)
-      |> CCResult.map (User.update pool)
-      |> Utils.with_log_result_error ~src ~tags Pool_message.Error.nothandled
+    let (_ : (Pool_user.t, Pool_message.Error.t) Lwt_result.t) =
+      User.set_password
+        pool
+        admin.user
+        password
+        (Pool_user.Password.to_confirmed password)
+      >|- Pool_common.Utils.with_log_error ~src ~tags
     in
     Repo.update
       pool
@@ -118,28 +109,21 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       pool
       { admin with import_pending = Pool_user.ImportPending.create false }
   | PasswordUpdated (admin, old_password, new_password, confirmed) ->
-    let old_password = old_password |> User.Password.to_sihl in
-    let new_password = new_password |> User.Password.to_sihl in
-    let new_password_confirmation =
-      confirmed |> User.PasswordConfirmed.to_sihl
-    in
-    let%lwt (_ : (Sihl_user.t, string) result) =
-      let open Common in
+    let%lwt (_ : (Pool_user.t, Pool_message.Error.t) result) =
       User.update_password
         pool
-        ~password_policy:(CCFun.const (CCResult.return ()))
         ~old_password
         ~new_password
-        ~new_password_confirmation
+        ~new_password_confirmation:confirmed
         (user admin)
-      ||> Utils.with_log_result_error ~src ~tags Pool_message.Error.nothandled
+      >|- Common.Utils.with_log_error ~src ~tags
     in
     Lwt.return_unit
   | PromotedContact contact_id ->
     let target =
       Guard.Persistence.Target.find
         ~ctx
-        (Guard.Uuid.target_of Id.value contact_id)
+        (Guard.Uuid.target_of Pool_user.Id.value contact_id)
     in
     let default = Lwt.return_unit in
     target

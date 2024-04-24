@@ -112,8 +112,8 @@ let upsert pool ?(id = Pool_common.Id.create ()) (value : Entity.Value.t) =
     pool
     ( id
     , { Entity.value
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; updated_at = Pool_common.UpdatedAt.create_now ()
       } )
 ;;
 

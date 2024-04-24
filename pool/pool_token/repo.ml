@@ -58,19 +58,6 @@ module Model = struct
   ;;
 end
 
-module type Sig = sig
-  val lifecycles : Sihl.Container.lifecycle list
-  val register_migration : unit -> unit
-  val register_cleaner : unit -> unit
-  val find : ?ctx:(string * string) list -> string -> Model.t Lwt.t
-  val find_opt : ?ctx:(string * string) list -> string -> Model.t option Lwt.t
-  val find_by_id : ?ctx:(string * string) list -> string -> Model.t Lwt.t
-  val insert : ?ctx:(string * string) list -> Model.t -> unit Lwt.t
-  val update : ?ctx:(string * string) list -> Model.t -> unit Lwt.t
-
-  module Model = Model
-end
-
 let lifecycles = [ Pool_database.lifecycle ]
 
 let label =
@@ -101,7 +88,7 @@ module Sql = struct
     |> Caqti_type.string ->! Model.t
   ;;
 
-  let find ?ctx value = Database.find (label ctx) find_request value
+  let find label = Database.find label find_request
 
   let find_request_opt =
     let open Caqti_request.Infix in
@@ -125,7 +112,7 @@ module Sql = struct
     |> Caqti_type.string ->? Model.t
   ;;
 
-  let find_opt ?ctx value = Database.find_opt (label ctx) find_request_opt value
+  let find_opt label = Database.find_opt label find_request_opt
 
   let find_by_id_request =
     let open Caqti_request.Infix in
@@ -149,7 +136,7 @@ module Sql = struct
     |> Caqti_type.string ->! Model.t
   ;;
 
-  let find_by_id ?ctx id = Database.find (label ctx) find_by_id_request id
+  let find_by_id label = Database.find label find_by_id_request
 
   let insert_request =
     let open Caqti_request.Infix in
@@ -173,7 +160,7 @@ module Sql = struct
     |> Model.t ->. Caqti_type.unit
   ;;
 
-  let insert ?ctx token = Database.exec (label ctx) insert_request token
+  let insert label = Database.exec label insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -189,14 +176,14 @@ module Sql = struct
     |> Model.t ->. Caqti_type.unit
   ;;
 
-  let update ?ctx token = Database.exec (label ctx) update_request token
+  let update label = Database.exec label update_request
 
   let clean_request =
     let open Caqti_request.Infix in
     "TRUNCATE token_tokens" |> Caqti_type.(unit ->. unit)
   ;;
 
-  let clean ?ctx () = Database.exec (label ctx) clean_request ()
+  let clean label () = Database.exec label clean_request ()
 end
 
 module Migration = struct
@@ -247,7 +234,11 @@ let register_migration () =
   Database.Migration.register_migration (Migration.migration ())
 ;;
 
-let register_cleaner () = Sihl.Cleaner.register_cleaner Sql.clean
+let register_cleaner () =
+  Sihl.Cleaner.register_cleaner (fun ?(ctx = []) ->
+    Sql.clean (Database.of_ctx_exn ctx))
+;;
+
 let find = Sql.find
 let find_opt = Sql.find_opt
 let find_by_id = Sql.find_by_id

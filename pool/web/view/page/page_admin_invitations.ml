@@ -66,7 +66,7 @@ module Partials = struct
                 ~default:""
                 (ResentAt.value %> Pool_model.Time.formatted_date_time))
       ; txt (send_count |> SendCount.value |> CCInt.to_string)
-      ; txt (formatted_date created_at)
+      ; txt (created_at |> Pool_common.CreatedAt.value |> formatted_date)
       ; resend_form
       ]
       |> CCList.map (CCList.return %> td)
@@ -103,7 +103,7 @@ module Partials = struct
           else
             CCList.map
               (fun (contact : Contact.t) ->
-                let id = Contact.id contact |> Id.value in
+                let id = Contact.id contact |> Pool_user.Id.value in
                 [ div
                     [ input
                         ~a:

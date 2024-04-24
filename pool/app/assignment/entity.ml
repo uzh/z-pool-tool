@@ -86,8 +86,8 @@ let create
   ; external_data_id
   ; reminder_manually_last_sent_at
   ; custom_fields = None
-  ; created_at = Pool_common.CreatedAt.create ()
-  ; updated_at = Pool_common.UpdatedAt.create ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 

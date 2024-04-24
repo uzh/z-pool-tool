@@ -271,7 +271,8 @@ let login_information
               language
               `Email
               Pool_message.Field.Email
-              ~value:contact.user.Sihl_user.email
+              ~value:
+                (contact.user.Pool_user.email |> Pool_user.EmailAddress.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element

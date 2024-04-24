@@ -281,7 +281,7 @@ module Sql = struct
     let dyn =
       Dynparam.(
         empty
-        |> add Caqti_type.string Admin.(id admin |> Id.value)
+        |> add Pool_user.Repo.Id.t Admin.(id admin)
         |> add Caqti_type.string Role.Role.(show `LocationManager))
     in
     search ~conditions ~joins ~dyn ?exclude database_label query

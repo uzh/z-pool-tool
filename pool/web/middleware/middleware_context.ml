@@ -32,7 +32,7 @@ let context () =
           Http_utils.user_from_session tenant_db req
           ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
           >>= fun user ->
-          Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+          Contact.find tenant_db user.Pool_user.id
           >|+ fun p -> p.Contact.language
         in
         CCResult.get_or lang ~default:None |> Lwt.return
@@ -65,7 +65,7 @@ let context () =
       let* database_label = database_label_of_request is_root req in
       let%lwt user = find_user database_label in
       let%lwt query_lang, language, guardian =
-        let to_actor = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
+        let to_actor = Admin.id %> Guard.Uuid.actor_of Pool_user.Id.value in
         let combine roles = Lwt.return (None, Pool_common.Language.En, roles) in
         match user with
         | Admin admin ->

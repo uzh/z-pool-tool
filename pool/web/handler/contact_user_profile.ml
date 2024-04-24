@@ -106,9 +106,7 @@ let update_email req =
          | Contact contact -> Contact.email_address contact |> equal
        in
        let%lwt existing_user =
-         Pool_user.find_by_email_opt
-           database_label
-           (Pool_user.EmailAddress.value new_email)
+         Pool_user.find_by_email_opt database_label new_email
        in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let send_verification_mail unverified_contact =
@@ -409,7 +407,7 @@ let completion_post req =
         req
         urlencoded
         language
-        (Contact.Id.to_common contact_id)
+        (Pool_user.Id.to_common contact_id)
         custom_fields
       >== fun fields -> fields |> CCList.map handle |> CCList.all_ok
     in

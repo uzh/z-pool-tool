@@ -44,7 +44,7 @@ module Sql = struct
               |> Dynparam.add Mailing.Repo.Id.t mailing_id
               |> Dynparam.add Mailing.Repo.Id.t mailing_id
               |> Dynparam.add
-                   Pool_common.Repo.Id.t
+                   Pool_user.Repo.Id.t
                    (invitation.Entity.contact |> Contact.id)
             , sql @ [ sql_line ] ))
           (Dynparam.empty, [])
@@ -120,12 +120,10 @@ module Sql = struct
         contact_uuid = UNHEX(REPLACE(?, '-', '')),
     |sql}
     |> find_request_sql
-    |> Caqti_type.string ->* RepoEntity.t
+    |> Pool_user.Repo.Id.t ->* RepoEntity.t
   ;;
 
-  let find_by_contact pool id =
-    Database.collect pool find_by_contact_request (Pool_common.Id.value id)
-  ;;
+  let find_by_contact pool = Database.collect pool find_by_contact_request
 
   let find_binary_experiment_id_sql =
     {sql|
@@ -215,19 +213,16 @@ module Sql = struct
     let open Caqti_request.Infix in
     let dyn =
       CCList.fold_left
-        (fun dyn id ->
-          dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+        (fun dyn id -> dyn |> Dynparam.add Pool_user.Repo.Id.t id)
         (Dynparam.empty
-         |> Dynparam.add
-              Caqti_type.string
-              (experiment.Experiment.id |> Experiment.Id.value))
+         |> Dynparam.add Experiment.Repo.Entity.Id.t experiment.Experiment.id)
         ids
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
       ids
       |> find_multiple_by_experiment_and_contacts_request
-      |> pt ->* Pool_common.Repo.Id.t
+      |> pt ->* Pool_user.Repo.Id.t
     in
     Database.collect pool request pv
   ;;
@@ -302,14 +297,15 @@ module Sql = struct
         contact_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> find_request_sql
-    |> Caqti_type.(t2 string string) ->? RepoEntity.t
+    |> Caqti_type.(t2 Experiment.Repo.Entity.Id.t Pool_user.Repo.Id.t)
+       ->? RepoEntity.t
   ;;
 
   let find_by_contact_and_experiment_opt pool experiment_id contact_id =
     Database.find_opt
       pool
       find_by_contact_and_experiment_opt_request
-      (Experiment.Id.value experiment_id, Contact.Id.value contact_id)
+      (experiment_id, contact_id)
   ;;
 end
 

@@ -62,7 +62,7 @@ let intended_of_request ({ Sihl.Web.Request.target; _ } as req) =
   | None -> flip intended_to_url target
 ;;
 
-let user_from_session db_pool req : Sihl_user.t option Lwt.t =
+let user_from_session db_pool req : Pool_user.t option Lwt.t =
   Pool_user.Web.user_from_session db_pool req
 ;;
 

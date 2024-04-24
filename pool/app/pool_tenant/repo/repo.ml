@@ -93,18 +93,18 @@ module Sql = struct
       |sql}]
   ;;
 
-  let select_from_tenants_sql where_fragment full =
+  let select_from_tenants_sql where_fragment kind =
     let api_key =
-      match full with
-      | true -> "pool_tenant.gtx_api_key"
-      | false ->
+      match kind with
+      | `Write -> "pool_tenant.gtx_api_key"
+      | `Read ->
         {sql| gtx_api_key IS NOT NULL AND gtx_api_key <> "" AS text_messages_enabled |sql}
     in
     let columns =
       sql_select_columns
       @ [ Database.Repo.sql_select_label ]
-      @ sql_select_storage_handle_columns ~alias:"styles" `Read
-      @ sql_select_storage_handle_columns ~alias:"icon" `Read
+      @ sql_select_storage_handle_columns ~alias:"styles" kind
+      @ sql_select_storage_handle_columns ~alias:"icon" kind
       @ [ api_key ]
       |> CCString.concat ",\n"
     in
@@ -123,7 +123,7 @@ module Sql = struct
   ;;
 
   let find_request =
-    select_from_tenants_sql find_fragment false
+    select_from_tenants_sql find_fragment `Read
     |> Pool_common.Repo.Id.t ->! RepoEntity.t
   ;;
 
@@ -134,20 +134,20 @@ module Sql = struct
   ;;
 
   let find_full_request =
-    select_from_tenants_sql find_fragment true
-    |> Caqti_type.string ->! RepoEntity.Write.t
+    select_from_tenants_sql find_fragment `Write
+    |> RepoEntity.Id.t ->! RepoEntity.Write.t
   ;;
 
   let find_full pool id =
     let open Utils.Lwt_result.Infix in
-    Database.find_opt pool find_full_request (Id.value id)
+    Database.find_opt pool find_full_request id
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
   let find_by_label_request =
     select_from_tenants_sql
       {sql| WHERE pool_tenant.database_label = ? |sql}
-      false
+      `Read
     |> Database.Repo.Label.t ->! RepoEntity.t
   ;;
 
@@ -158,14 +158,14 @@ module Sql = struct
   ;;
 
   let find_by_url_request =
-    select_from_tenants_sql {sql| WHERE pool_tenant.url = ? |sql} false
+    select_from_tenants_sql {sql| WHERE pool_tenant.url = ? |sql} `Read
     |> RepoEntity.(Url.t ->! t)
   ;;
 
   let find_by_url pool = Database.find_opt pool find_by_url_request
 
   let find_all_request =
-    select_from_tenants_sql "" false |> Caqti_type.unit ->* RepoEntity.t
+    select_from_tenants_sql "" `Read |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
   let find_all pool = Database.collect pool find_all_request
@@ -315,7 +315,7 @@ let update_database pool (tenant, database) =
         Sql.update_request
         { tenant with
           Entity.Write.database_label = Database.label database
-        ; updated_at = Ptime_clock.now ()
+        ; updated_at = Pool_common.UpdatedAt.create_now ()
         }
     ]
 ;;

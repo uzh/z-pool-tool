@@ -2,10 +2,14 @@ module Token : Pool_model.Base.StringSig
 
 module ConfirmedAt : sig
   include Pool_model.Base.PtimeSig
+
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
 module NotifiedAt : sig
   include Pool_model.Base.PtimeSig
+
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
 module ReminderCount : sig
@@ -16,10 +20,12 @@ end
 
 module LastRemindedAt : sig
   include Pool_model.Base.PtimeSig
+
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
 type t =
-  { user_uuid : Pool_common.Id.t
+  { user_uuid : Pool_user.Id.t
   ; token : Token.t
   ; confirmed_at : ConfirmedAt.t option
   ; notified_at : NotifiedAt.t option
@@ -40,7 +46,7 @@ val find_pending_by_token
 
 val find_pending_by_user_id_opt
   :  Database.Label.t
-  -> Pool_common.Id.t
+  -> Pool_user.Id.t
   -> t option Lwt.t
 
 val find_pending_by_email_opt

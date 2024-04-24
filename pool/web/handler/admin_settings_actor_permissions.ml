@@ -128,7 +128,7 @@ let create req =
       ||> CCResult.flatten_l
     in
     let%lwt actors =
-      let to_id = Guard.Uuid.Actor.to_string %> Admin.Id.of_string in
+      let to_id = Guard.Uuid.Actor.to_string %> Pool_user.Id.of_string in
       actors
       |> Lwt_list.filter_s (fun id ->
         id |> to_id |> Admin.find database_label ||> CCResult.is_ok)

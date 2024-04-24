@@ -87,8 +87,8 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) (admin : Admin.t) =
     Logs.info ~src (fun m -> m "Handle command ToggleStatus" ~tags);
-    let open Sihl.Contract.User in
-    match (admin |> Admin.user).status with
+    let open Pool_user.Status in
+    match (admin |> Admin.user).Pool_user.status with
     | Active -> Ok [ Admin.Disabled admin |> Pool_event.admin ]
     | Inactive -> Ok [ Admin.Enabled admin |> Pool_event.admin ]
   ;;

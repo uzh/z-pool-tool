@@ -62,15 +62,15 @@ module Sql = struct
         experiment_uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
     |> find_request_sql
-    |> Caqti_type.(t2 string string) ->! RepoEntity.t
+    |> Caqti_type.(t2 Pool_user.Repo.Id.t Experiment.Repo.Entity.Id.t)
+       ->! RepoEntity.t
   ;;
 
   let find_by_contact_and_experiment pool contact experiment_id =
     Database.find_opt
       pool
       user_is_enlisted_request
-      ( contact |> Contact.id |> Pool_common.Id.value
-      , experiment_id |> Experiment.Id.value )
+      (contact |> Contact.id, experiment_id)
   ;;
 
   let find_by_experiment ?query pool id =

@@ -108,7 +108,7 @@ let prepare_manual_email
 
 let global_params layout user =
   Pool_user.
-    [ "contactId", user.Sihl_user.id
+    [ "contactId", user.Pool_user.id |> Pool_user.Id.value
     ; "name", user |> user_fullname
     ; "firstname", user |> user_firstname |> Firstname.value
     ; "lastname", user |> user_lastname |> Lastname.value
@@ -238,13 +238,13 @@ let assignment_params { Assignment.id; external_data_id; _ } =
 ;;
 
 let user_message_history label user =
-  let entity_uuids = [ user.Sihl_user.id |> Pool_common.Id.of_string ] in
+  let entity_uuids = [ user.Pool_user.id |> Pool_user.Id.to_common ] in
   Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
 ;;
 
 let experiment_message_history label experiment contact =
   let entity_uuids =
-    [ Contact.(id contact |> Id.to_common)
+    [ Contact.(id contact |> Pool_user.Id.to_common)
     ; Experiment.(experiment.Experiment.id |> Id.to_common)
     ]
   in
@@ -253,7 +253,7 @@ let experiment_message_history label experiment contact =
 
 let public_experiment_message_history label experiment contact =
   let entity_uuids =
-    [ Contact.(id contact |> Id.to_common)
+    [ Contact.(id contact |> Pool_user.Id.to_common)
     ; Experiment.(experiment |> Public.id |> Id.to_common)
     ]
   in
@@ -262,7 +262,7 @@ let public_experiment_message_history label experiment contact =
 
 let session_message_history label experiment session contact =
   let entity_uuids =
-    [ Contact.(id contact |> Id.to_common)
+    [ Contact.(id contact |> Pool_user.Id.to_common)
     ; Session.(session.Session.id |> Id.to_common)
     ; Experiment.(experiment.Experiment.id |> Id.to_common)
     ]
@@ -279,9 +279,9 @@ module AccountSuspensionNotification = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let%lwt system_languages = Settings.find_languages database_label in
-    let email = user.Sihl_user.email |> Pool_user.EmailAddress.of_string in
+    let email = user.Pool_user.email in
     let* language =
-      match user.Sihl_user.admin with
+      match user.Pool_user.admin with
       | true -> Lwt_result.return Pool_common.Language.En
       | false ->
         email
@@ -458,7 +458,7 @@ module AssignmentSessionChange = struct
       [ experiment.Experiment.id |> Experiment.Id.to_common
       ; new_session.Session.id |> Session.Id.to_common
       ; old_session.Session.id |> Session.Id.to_common
-      ; contact |> Contact.id
+      ; contact |> Contact.id |> Pool_user.Id.to_common
       ]
     in
     Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
@@ -714,7 +714,7 @@ module ManualSessionMessage = struct
     let entity_uuids =
       [ experiment.Experiment.id |> Experiment.Id.to_common
       ; session.Session.id |> Session.Id.to_common
-      ; contact |> Contact.id
+      ; contact |> Contact.id |> Pool_user.Id.to_common
       ]
     in
     Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
@@ -814,9 +814,7 @@ module PasswordReset = struct
     let%lwt sender = default_sender_of_pool pool in
     let open Pool_common in
     let* reset_token =
-      Pool_user.PasswordReset.create_reset_token
-        ~ctx:(Database.to_ctx pool)
-        (Pool_user.EmailAddress.value email)
+      Pool_user.PasswordReset.create_reset_token pool email
       ||> function
       | None ->
         Logs.err ~src (fun m ->
@@ -1234,7 +1232,7 @@ module SignUpVerification = struct
 
   let message_history user_id =
     let open Queue.History in
-    { entity_uuids = [ user_id ]
+    { entity_uuids = [ user_id |> Pool_user.Id.to_common |> Id.of_common ]
     ; message_template = Label.show label |> CCOption.return
     }
   ;;

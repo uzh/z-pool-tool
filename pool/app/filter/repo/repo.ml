@@ -459,8 +459,7 @@ module Sql = struct
          ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
     |> fun (dyn, sql) ->
     let (Dynparam.Pack (pt, pv)) =
-      Dynparam.(
-        dyn |> add Caqti_type.string Contact.(contact |> id |> Id.value))
+      Dynparam.(dyn |> add Pool_user.Repo.Id.t Contact.(contact |> id))
     in
     let open Caqti_request.Infix in
     let request = sql |> find_sql |> pt ->? Caqti_type.int in

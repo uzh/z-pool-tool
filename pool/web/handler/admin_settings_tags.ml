@@ -119,7 +119,7 @@ end = struct
   module Guardian = Middleware.Guardian
   module Command = Cqrs_command.Tags_command
 
-  let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
+  let contact_effects = Guardian.id_effects Pool_user.Id.of_string Field.Contact
 
   let experiment_effects =
     Guardian.id_effects Experiment.Id.of_string Field.Experiment

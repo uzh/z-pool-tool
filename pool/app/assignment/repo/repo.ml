@@ -196,12 +196,10 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
     |> find_request_sql
-    |> Caqti_type.string ->* RepoEntity.t
+    |> Pool_user.Repo.Id.t ->* RepoEntity.t
   ;;
 
-  let find_by_contact pool id =
-    Database.collect pool find_by_contact_request (Pool_common.Id.value id)
-  ;;
+  let find_by_contact pool = Database.collect pool find_by_contact_request
 
   let find_public_by_experiment_and_contact_opt_request time =
     let open Caqti_request.Infix in
@@ -214,7 +212,8 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
       |> select_public_sql ~joins
-      |> Caqti_type.(t2 string string) ->* RepoEntity.Public.t
+      |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Pool_user.Repo.Id.t
+         ->* RepoEntity.Public.t
     in
     let joins =
       Format.asprintf
@@ -237,8 +236,7 @@ module Sql = struct
     Database.collect
       pool
       (find_public_by_experiment_and_contact_opt_request time)
-      ( Experiment.Id.value experiment_id
-      , Pool_common.Id.value (Contact.id contact) )
+      (experiment_id, Contact.id contact)
   ;;
 
   let find_by_contact_and_experiment_request =
@@ -261,15 +259,15 @@ module Sql = struct
       columns
       joins
       where
-    |> Caqti_type.(t2 string string) ->* RepoEntity.with_session
+    |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Pool_user.Repo.Id.t
+       ->* RepoEntity.with_session
   ;;
 
   let find_by_contact_and_experiment pool experiment_id contact =
     Database.collect
       pool
       find_by_contact_and_experiment_request
-      ( Experiment.Id.value experiment_id
-      , Pool_common.Id.value (Contact.id contact) )
+      (experiment_id, Contact.id contact)
   ;;
 
   let find_with_follow_ups_request =
@@ -306,14 +304,14 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
     |> find_request_sql ~additional_joins
-    |> Caqti_type.(t2 string string) ->* RepoEntity.t
+    |> Caqti_type.t2 Pool_common.Repo.Id.t Pool_user.Repo.Id.t ->* RepoEntity.t
   ;;
 
   let find_follow_ups pool m =
     Database.collect
       pool
       find_followups_request
-      Entity.(Id.value m.id, Contact.id m.contact |> Contact.Id.value)
+      Entity.(m.id, Contact.id m.contact)
   ;;
 
   let find_binary_session_id_sql =
@@ -488,8 +486,8 @@ module Sql = struct
       let dyn =
         let init =
           empty
-          |> add string (experiment_uuid |> Experiment.Id.value)
-          |> add string (contact_uuid |> Contact.Id.value)
+          |> add Experiment.Repo.Entity.Id.t experiment_uuid
+          |> add Pool_user.Repo.Id.t contact_uuid
         in
         CCList.fold_left
           (fun dyn { Entity.id; _ } ->
@@ -563,7 +561,7 @@ let enrich_with_customfield_data table_view pool assignments =
     | [] -> result
     | hd :: tl ->
       let contact_id =
-        hd.Entity.contact |> Contact.id |> Contact.Id.to_common
+        hd.Entity.contact |> Contact.id |> Pool_user.Id.to_common
       in
       let current, rest =
         CCList.partition_filter_map
@@ -604,7 +602,7 @@ let find_with_custom_field_data table_view pool session_id =
     | [] -> result
     | hd :: tl ->
       let contact_id =
-        hd.Entity.contact |> Contact.id |> Contact.Id.to_common
+        hd.Entity.contact |> Contact.id |> Pool_user.Id.to_common
       in
       let current, rest =
         CCList.partition_filter_map

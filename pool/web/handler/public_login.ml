@@ -58,7 +58,9 @@ let login_post req =
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language path)
-             ([ Sihl.Web.Session.set [ "user_id", sihl_user.Sihl_user.id ] ]
+             ([ Sihl.Web.Session.set
+                  [ "user_id", sihl_user.Pool_user.id |> Pool_user.Id.value ]
+              ]
               @ actions))
          ||> (fun res ->
                if set_completion_cookie
@@ -83,18 +85,11 @@ let login_post req =
          in
          login user path []
        in
-       let find_contact user =
-         Contact.find
-           database_label
-           (user.Sihl_user.id |> Pool_common.Id.of_string)
-       in
+       let find_contact user = Contact.find database_label user.Pool_user.id in
        let find_admin user =
-         user.Sihl_user.id
-         |> Admin.Id.of_string
-         |> Admin.find database_label
-         >|+ Pool_context.admin
+         user.Pool_user.id |> Admin.find database_label >|+ Pool_context.admin
        in
-       match user.Sihl_user.confirmed with
+       match user.Pool_user.confirmed with
        | false ->
          redirect
            (Http_utils.path_with_language query_language "/email-confirmation")
@@ -237,27 +232,29 @@ let reset_password_post req =
     let redirect_with_param =
       add_field_query_params redirect [ Field.Token, token ]
     in
-    let ctx = to_ctx database_label in
-    let* (_ : Pool_user.Password.t) =
-      let open Pool_user.Password in
+    let* password =
       Field.Password
       |> go
-      |> create
+      |> Pool_user.Password.create
       |> Lwt_result.lift
       >|- fun err -> err, redirect_with_param
     in
+    let password_confirmed =
+      let open Pool_user.PasswordConfirmed in
+      Field.PasswordConfirmation |> go |> create
+    in
     let* user_uuid =
-      Pool_token.read ~ctx token ~k:"user_id"
+      Pool_token.read database_label token ~k:"user_id"
       ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
       >|- (fun err -> err, redirect)
-      >|+ Pool_common.Id.of_string
+      >|+ Pool_user.Id.of_string
     in
     let%lwt reset =
       Pool_user.PasswordReset.reset_password
-        ~ctx
+        database_label
         ~token
-        (go Field.Password)
-        (go Field.PasswordConfirmation)
+        password
+        password_confirmed
       >|- CCFun.const (Error.PasswordResetInvalidData, redirect_with_param)
     in
     let* import_events =
@@ -271,7 +268,7 @@ let reset_password_post req =
       | None -> Lwt_result.return []
       | Some import ->
         let%lwt user =
-          Pool_user.find database_label (Pool_common.Id.value user_uuid)
+          Pool_user.find database_label user_uuid
           >|> Pool_context.user_of_sihl_user database_label
         in
         Cqrs_command.User_import_command.DisableImport.handle
@@ -281,9 +278,7 @@ let reset_password_post req =
     in
     match reset with
     | Ok () ->
-      let%lwt () =
-        Pool_token.deactivate ~ctx:(Database.to_ctx database_label) token
-      in
+      let%lwt () = Pool_token.deactivate database_label token in
       let%lwt () = import_events |> Pool_event.handle_events database_label in
       HttpUtils.(
         redirect_to_with_actions

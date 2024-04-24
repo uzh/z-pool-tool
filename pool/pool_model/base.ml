@@ -153,6 +153,7 @@ module Integer = struct
   type t = int [@@deriving eq, ord, show, sexp_of, yojson]
 
   let value m = m
+  let of_int m = m
   let to_string t = Int.to_string t
 
   let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t
@@ -178,6 +179,7 @@ module type IntegerSig = sig
   val yojson_of_t : t -> Yojson.Safe.t
   val create : int -> (t, Pool_message.Error.t) result
   val value : t -> int
+  val of_int : int -> t
   val compare : t -> t -> int
   val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
@@ -231,6 +233,7 @@ module Ptime = struct
   let t_of_yojson = Utils.Ptime.ptime_of_yojson
   let yojson_of_t = Utils.Ptime.yojson_of_ptime
   let value m = m
+  let create m = m
   let create_now = Ptime_clock.now
   let to_human = Utils.Ptime.formatted_date_time
   let date_time_to_flatpickr = Ptime.to_rfc3339
@@ -274,6 +277,7 @@ module type PtimeSig = sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val value : t -> Ptime.t
+  val create : Ptime.t -> t
   val create_now : unit -> t
   val to_human : t -> string
   val compare : t -> t -> int
@@ -461,4 +465,10 @@ module type DurationSig = sig
   val integer_schema
     :  unit
     -> (Pool_message.Error.t, int) Pool_conformist.Field.t
+end
+
+module type CaqtiSig = sig
+  type t
+
+  val t : t Caqti_type.t
 end

@@ -21,7 +21,8 @@ let terms
     | None -> txt ""
   in
   let submit_url =
-    Format.asprintf "/terms-accepted/%s" user_id |> externalize
+    Format.asprintf "/terms-accepted/%s" (Pool_user.Id.show user_id)
+    |> externalize
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]

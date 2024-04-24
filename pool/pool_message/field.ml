@@ -14,6 +14,7 @@ let nested name show fmt t =
 
 type t =
   | Action [@name "action"] [@printer go "action"]
+  | Active [@name "active"] [@printer go "active"]
   | ActiveContactsCount [@name "active_contacts_count"]
   [@printer go "active_contacts_count"]
   | Actor [@name "actor"] [@printer go "actor"]
@@ -337,11 +338,14 @@ type t =
   | Tries [@name "tries"] [@printer go "tries"]
   | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
   [@printer go "trigger_profile_update_after"]
+  | UpdatedAt [@name "updated_at"] [@printer go "updated_at"]
   | Url [@name "url"] [@printer go "url"]
   | User [@name "user"] [@printer go "user"]
   | Validation [@name "validation"] [@printer go "validation"]
   | Value [@name "value"] [@printer go "value"]
   | ValueOf of t [@name "value_of"] [@printer nested "value_of" show]
+  | VerificationCode [@name "verification_code"]
+  [@printer go "verification_code"]
   | Verified [@name "verified"] [@printer go "verified"]
   | Version [@name "version"] [@printer go "version"]
   | Virtual [@name "virtual"] [@printer go "virtual"]

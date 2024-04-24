@@ -110,7 +110,7 @@ module Sql = struct
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
     Format.asprintf "%s \n %s \n %s" select_sql where order
-    |> Caqti_type.(t2 string string ->* Repo_entity.Public.t)
+    |> Caqti_type.(t2 Pool_user.Repo.Id.t string ->* Repo_entity.Public.t)
   ;;
 
   let find_all_by_model model ~required ~is_admin pool id =
@@ -118,7 +118,7 @@ module Sql = struct
     Database.collect
       pool
       (find_all_by_model_request required is_admin)
-      (Pool_common.Id.value id, Entity.Model.show model)
+      (id, Entity.Model.show model)
     >|> to_grouped_public is_admin pool model
   ;;
 
@@ -136,7 +136,7 @@ module Sql = struct
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
     Format.asprintf "%s \n %s \n %s" select_sql where order
-    |> Caqti_type.(t2 string string ->* Repo_entity.Public.t)
+    |> Caqti_type.(t2 Pool_user.Repo.Id.t string ->* Repo_entity.Public.t)
   ;;
 
   let find_unanswered_required_by_model model ~is_admin pool id =
@@ -144,7 +144,7 @@ module Sql = struct
     Database.collect
       pool
       (find_unanswered_required_by_model_request is_admin)
-      (Pool_common.Id.value id, Entity.Model.show model)
+      (id, Entity.Model.show model)
     >|> to_grouped_public is_admin pool model
   ;;
 
@@ -153,7 +153,7 @@ module Sql = struct
     Database.collect
       pool
       (find_unanswered_required_by_model_request is_admin)
-      (Pool_common.Id.value id, Entity.Model.show model)
+      (id, Entity.Model.show model)
     >|> to_ungrouped_entities pool is_admin
   ;;
 
@@ -184,12 +184,11 @@ module Sql = struct
         let base =
           Dynparam.(
             empty
-            |> add Caqti_type.string (contact_id |> Pool_common.Id.value)
+            |> add Pool_user.Repo.Id.t contact_id
             |> add Caqti_type.string Entity.Model.(show Contact))
         in
         CCList.fold_left
-          (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+          (fun dyn id -> dyn |> Dynparam.add Pool_user.Repo.Id.t id)
           base
           ids
       in
@@ -252,7 +251,7 @@ module Sql = struct
           in
           Dynparam.empty
           |> add_ids Entity.Id.value field_ids
-          |> add_ids Contact.Id.value contact_ids
+          |> add_ids Pool_user.Id.value contact_ids
         in
         let (Dynparam.Pack (pt, pv)) = dyn in
         let request =
@@ -285,7 +284,7 @@ module Sql = struct
     Database.collect
       pool
       (find_by_contact_request is_admin)
-      ( Pool_common.Id.value contact_id
+      ( Pool_user.Id.value contact_id
       , Entity.Model.(show Contact)
       , Entity.Id.value field_id )
     >|> fun field_list ->
@@ -328,7 +327,7 @@ module Sql = struct
     Database.find
       pool
       (all_answered_request required)
-      Entity.(Pool_common.Id.value contact_id, Model.Contact, FieldType.Boolean)
+      Entity.(Pool_user.Id.value contact_id, Model.Contact, FieldType.Boolean)
     ||> CCInt.equal 0
   ;;
 

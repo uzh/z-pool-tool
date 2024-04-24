@@ -55,22 +55,24 @@ let sign_up_contact contact_info =
 ;;
 
 let create_contact verified contact_info =
+  let open CCResult.Infix in
   let email_address, password, firstname, lastname, language = contact_info in
   { Contact.user =
-      Sihl_user.
-        { id = Pool_common.Id.(create () |> value)
-        ; email = email_address
-        ; username = None
-        ; name = Some lastname
-        ; given_name = Some firstname
+      Pool_user.
+        { id = Id.(create ())
+        ; email = EmailAddress.of_string email_address
+        ; name = Lastname.of_string lastname
+        ; given_name = Firstname.of_string firstname
         ; password =
-            password |> Sihl_user.Hashing.hash |> CCResult.get_or_failwith
-        ; status =
-            Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
+            password
+            |> Password.create_unvalidated
+            >>= HashedPassword.create
+            |> Pool_common.Utils.get_or_failwith
+        ; status = Status.Active
         ; admin = false
         ; confirmed = true
-        ; created_at = Pool_common.CreatedAt.create ()
-        ; updated_at = Pool_common.UpdatedAt.create ()
+        ; created_at = Pool_common.CreatedAt.create_now ()
+        ; updated_at = Pool_common.UpdatedAt.create_now ()
         }
   ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
   ; language
@@ -94,8 +96,8 @@ let create_contact verified contact_info =
   ; language_version = Pool_common.Version.create ()
   ; experiment_type_preference_version = Pool_common.Version.create ()
   ; import_pending = Pool_user.ImportPending.create false
-  ; created_at = Pool_common.CreatedAt.create ()
-  ; updated_at = Pool_common.UpdatedAt.create ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 
@@ -144,7 +146,7 @@ let sign_up_not_allowed_suffix () =
 ;;
 
 let sign_up () =
-  let user_id = Pool_common.Id.create () in
+  let user_id = Pool_user.Id.create () in
   let terms_accepted_at =
     Pool_user.TermsAccepted.create_now () |> CCOption.pure
   in
@@ -473,8 +475,8 @@ let update_email () =
       { Email.address = new_email |> Pool_user.EmailAddress.of_string
       ; user = contact.Contact.user
       ; token = Email.Token.create "testing"
-      ; created_at = Ptime_clock.now ()
-      ; updated_at = Ptime_clock.now ()
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; updated_at = Pool_common.UpdatedAt.create_now ()
       }
   in
   let events =
@@ -506,8 +508,8 @@ let verify_email () =
       { Email.address = email_address |> Pool_user.EmailAddress.of_string
       ; user = contact.Contact.user
       ; token = Email.Token.create "testing"
-      ; created_at = Ptime_clock.now ()
-      ; updated_at = Ptime_clock.now ()
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; updated_at = Pool_common.UpdatedAt.create_now ()
       }
   in
   let events =

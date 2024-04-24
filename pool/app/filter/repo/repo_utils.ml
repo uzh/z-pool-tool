@@ -415,9 +415,7 @@ let filtered_params
   let open CCResult.Infix in
   let base_dyn =
     let open Dynparam in
-    let dyn =
-      empty |> add Caqti_type.string Sihl_user.(status_to_string Inactive)
-    in
+    let dyn = empty |> add Caqti_type.string Pool_user.Status.(show Inactive) in
     match use_case with
     | MatchesFilter -> dyn
     | Matcher experiment_id ->

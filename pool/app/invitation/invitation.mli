@@ -20,8 +20,8 @@ type t =
   ; contact : Contact.t
   ; resent_at : ResentAt.t option
   ; send_count : SendCount.t
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 
 val equal : t -> t -> bool
@@ -80,14 +80,14 @@ val find_experiment_id_of_invitation
 
 val find_multiple_by_experiment_and_contacts
   :  Database.Label.t
-  -> Pool_common.Id.t list
+  -> Pool_user.Id.t list
   -> Experiment.t
-  -> Pool_common.Id.t list Lwt.t
+  -> Pool_user.Id.t list Lwt.t
 
 val find_by_contact_and_experiment_opt
   :  Database.Label.t
   -> Experiment.Id.t
-  -> Contact.Id.t
+  -> Pool_user.Id.t
   -> t option Lwt.t
 
 val column_resent_at : Query.Column.t

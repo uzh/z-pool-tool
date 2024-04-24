@@ -24,7 +24,7 @@ let answer_custom_fields fields contact =
   let select_random options =
     Random.int (List.length options) |> CCList.nth options
   in
-  let entity_uuid = Contact.(contact |> id |> Id.to_common) in
+  let entity_uuid = Contact.(contact |> id |> Pool_user.Id.to_common) in
   CCList.filter_map
     (function
       | (Select (public, options, _) : Public.t) ->
@@ -166,14 +166,15 @@ let admins db_label =
          , name
          , email
          , (roles : (Role.Role.t * Guard.Uuid.Target.t option) list) ) ->
+      let email = Pool_user.EmailAddress.of_string email in
       let%lwt user = User.find_by_email_opt db_label email in
       match user with
       | None ->
         let%lwt admin =
-          let id = Admin.Id.create () in
+          let id = Pool_user.Id.create () in
           let create =
             { Admin.id = id |> CCOption.return
-            ; email = Pool_user.EmailAddress.of_string email
+            ; email
             ; password = Pool_user.Password.create password |> CCResult.get_exn
             ; firstname = Pool_user.Firstname.of_string given_name
             ; lastname = Pool_user.Lastname.of_string name
@@ -197,7 +198,7 @@ let admins db_label =
           |> Lwt_list.iter_s (fun (role, target_uuid) ->
             ActorRole.create
               ?target_uuid
-              (Uuid.Actor.of_string_exn Admin.(id admin |> Id.value))
+              (Uuid.Actor.of_string_exn Admin.(id admin |> Pool_user.Id.value))
               role
             |> Persistence.ActorRole.upsert ~ctx)
           ||> tap (fun _ -> Persistence.Cache.clear ())
@@ -248,7 +249,7 @@ let contacts db_label =
       let language, terms_accepted_at, paused, disabled, verified =
         CCList.get_at_idx_exn (idx mod CCList.length combinations) combinations
       in
-      ( person.uid |> Id.of_string
+      ( person.uid |> Pool_user.Id.of_string
       , person.first_name |> User.Firstname.of_string
       , person.last_name |> User.Lastname.of_string
       , person.email |> User.EmailAddress.of_string
@@ -278,11 +279,7 @@ let contacts db_label =
              , _
              , _ )
            ->
-            match%lwt
-              Pool_user.find_by_email_opt
-                db_label
-                (User.EmailAddress.value email)
-            with
+            match%lwt Pool_user.find_by_email_opt db_label email with
             | None ->
               Lwt.return_some
                 [ Contact.Created
@@ -295,12 +292,13 @@ let contacts db_label =
                     ; language
                     }
                 ]
-            | Some { Sihl_user.id; _ } ->
+            | Some { Pool_user.id; _ } ->
               Logs.debug ~src (fun m ->
                 m
                   ~tags
-                  "Contact already exists (%s): %s"
+                  "Contact already exists (%s): %a"
                   (db_label |> Database.Label.value)
+                  Pool_user.Id.pp
                   id);
               Lwt.return_none)
     ||> CCList.flatten

@@ -14,7 +14,6 @@ let user_and_import_from_token database_label token =
   |> User_import.find_pending_by_token database_label
   >>= fun ({ User_import.user_uuid; _ } as import) ->
   user_uuid
-  |> Pool_common.Id.value
   |> Pool_user.find database_label
   >|> user_of_sihl_user database_label
   ||> fun user ->

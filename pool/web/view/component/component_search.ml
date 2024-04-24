@@ -199,7 +199,7 @@ module Experiment = struct
       dynamic_search
         (Format.asprintf
            "/admin/contacts/%s/experiments"
-           (Contact.id contact |> Pool_common.Id.value))
+           (Contact.id contact |> Pool_user.Id.value))
         `Get
     in
     multi_search
@@ -281,7 +281,7 @@ end
 
 module RoleTarget = struct
   let hx_url admin_id =
-    Format.asprintf "/admin/admins/%s/search-role" Admin.(Id.value admin_id)
+    Format.asprintf "/admin/admins/%s/search-role" Pool_user.(Id.value admin_id)
   ;;
 
   let additional_attributes =
@@ -320,22 +320,21 @@ module RoleTarget = struct
 end
 
 module Admin = struct
-  open Admin
-
   let field = Field.Admin
   let placeholder = "Search by admin name or email"
 
   let to_label admin =
     Format.asprintf
-      "%s (%s)"
+      "%s (%a)"
       (admin |> Admin.user |> Pool_user.user_fullname)
-      (admin |> Admin.email_address |> Pool_user.EmailAddress.value)
+      Pool_user.EmailAddress.pp
+      (admin |> Admin.email_address)
   ;;
 
-  let to_value = Admin.id %> Id.value
+  let to_value = Admin.id %> Pool_user.Id.value
 
   let hx_url admin_id =
-    Format.asprintf "/admin/admins/%s/search-role" Admin.(Id.value admin_id)
+    Format.asprintf "/admin/admins/%s/search-role" Pool_user.(Id.value admin_id)
   ;;
 
   let dynamic_search ?(selected = []) hx_url hx_method =

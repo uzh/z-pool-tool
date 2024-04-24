@@ -234,7 +234,8 @@ module Sql = struct
             pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
             AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       |sql}
-    |> Caqti_type.(t2 string string) ->* RepoEntity.Id.t
+    |> Caqti_type.(t2 Pool_user.Repo.Id.t Experiment.Repo.Entity.Id.t)
+       ->* RepoEntity.Id.t
   ;;
 
   let find_contact_is_assigned_by_experiment pool contact_id experiment_id =
@@ -242,7 +243,7 @@ module Sql = struct
     Database.collect
       pool
       find_contact_is_assigned_by_experiment_request
-      (Contact.Id.value contact_id, Experiment.Id.value experiment_id)
+      (contact_id, experiment_id)
     >|> find_multiple pool
   ;;
 
@@ -381,14 +382,11 @@ module Sql = struct
       WHERE pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
         AND pool_assignments.marked_as_deleted = 0
       |sql}
-    |> Pool_common.Repo.Id.t ->* RepoEntity.Id.t
+    |> Pool_user.Repo.Id.t ->* RepoEntity.Id.t
   ;;
 
-  let find_all_ids_of_contact_id pool id =
-    Database.collect
-      pool
-      find_all_ids_of_contact_id_request
-      (Contact.Id.to_common id)
+  let find_all_ids_of_contact_id pool =
+    Database.collect pool find_all_ids_of_contact_id_request
   ;;
 
   let find_public_request =
@@ -447,14 +445,11 @@ module Sql = struct
         pool_sessions.start ASC
     |sql}
     |> find_public_sql
-    |> Caqti_type.string ->* RepoEntity.Public.t
+    |> Pool_user.Repo.Id.t ->* RepoEntity.Public.t
   ;;
 
-  let find_public_upcoming_by_contact pool contact_id =
-    Database.collect
-      pool
-      find_public_upcoming_by_contact_request
-      (Pool_common.Id.value contact_id)
+  let find_public_upcoming_by_contact pool =
+    Database.collect pool find_public_upcoming_by_contact_request
   ;;
 
   let find_by_assignment_request =

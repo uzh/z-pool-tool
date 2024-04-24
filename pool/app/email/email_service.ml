@@ -254,13 +254,12 @@ module Smtp = struct
       | None ->
         let open Repo.Smtp in
         let%lwt auth =
+          let tags = Database.Logger.Tags.create database_label in
           smtp_auth_id
           |> CCOption.map_or
                ~default:(find_full_default database_label)
-               (fun id -> find_full database_label id)
-          >|- with_log_error
-                ~src
-                ~tags:(Database.Logger.Tags.create database_label)
+               (find_full database_label)
+          >|- with_log_error ~src ~tags
           ||> get_or_failwith
         in
         let () = Cache.add database_label auth in

@@ -51,7 +51,10 @@ let resend req =
       | None -> Lwt.return_none
       | Some contact_id ->
         let open Contact in
-        contact_id |> Id.of_common |> find database_label ||> CCResult.to_opt
+        contact_id
+        |> Pool_user.Id.of_common
+        |> find database_label
+        ||> CCResult.to_opt
     in
     let%lwt job_experiment =
       match%lwt find_related `experiment with

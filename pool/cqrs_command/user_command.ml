@@ -16,7 +16,7 @@ module UpdateEmail : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
+  val effects : Role.Target.t -> Pool_user.t -> Guard.ValidationSet.t
 end = struct
   type t = Email.unverified Email.t
 
@@ -41,7 +41,9 @@ end = struct
 
   let effects role user =
     let open Guard in
-    let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
+    let target_id =
+      user.Pool_user.id |> Guard.Uuid.target_of Pool_user.Id.value
+    in
     ValidationSet.one_of_tuple (Permission.Update, role, Some target_id)
   ;;
 end
@@ -55,7 +57,7 @@ module VerifyEmail : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
+  val effects : Role.Target.t -> Pool_user.t -> Guard.ValidationSet.t
 end = struct
   type t = Email.unverified Email.t
 
@@ -76,7 +78,9 @@ end = struct
 
   let effects role user =
     let open Guard in
-    let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
+    let target_id =
+      user.Pool_user.id |> Guard.Uuid.target_of Pool_user.Id.value
+    in
     ValidationSet.one_of_tuple (Permission.Update, role, Some target_id)
   ;;
 end

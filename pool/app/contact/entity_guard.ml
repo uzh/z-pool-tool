@@ -11,7 +11,7 @@ module Target = struct
       (fun user ->
         Target.create
           `Contact
-          (user |> Entity.id |> Uuid.target_of Pool_common.Id.value))
+          (user |> Entity.id |> Uuid.target_of Pool_user.Id.value))
       t
     >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
     >|- Pool_message.Error.authorization
@@ -28,7 +28,7 @@ module Actor = struct
   ;;
 
   let to_authorizable ?ctx =
-    let encode = Entity.id %> Uuid.actor_of Pool_common.Id.value in
+    let encode = Entity.id %> Uuid.actor_of Pool_user.Id.value in
     decorate ?ctx encode
   ;;
 end
@@ -40,7 +40,7 @@ module Access = struct
 
   let contact action uuid =
     one_of_tuple
-      (action, `Contact, Some (uuid |> Uuid.target_of Pool_common.Id.value))
+      (action, `Contact, Some (uuid |> Uuid.target_of Pool_user.Id.value))
   ;;
 
   let index_permission = Read

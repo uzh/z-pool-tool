@@ -180,7 +180,7 @@ val find_gtx_api_key_by_label
 
 val create_public_url : Url.t -> string -> string
 
-type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
+type handle_list_recruiters = unit -> Pool_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
 type logo_mappings = LogoMapping.Write.t list
 

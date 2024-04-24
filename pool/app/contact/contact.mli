@@ -1,5 +1,3 @@
-module Id = Pool_common.Id
-
 module NumberOfInvitations : sig
   type t
 
@@ -79,8 +77,8 @@ type t =
   }
 
 val profile_completion_cookie : string
-val user : t -> Sihl_user.t
-val id : t -> Pool_common.Id.t
+val user : t -> Pool_user.t
+val id : t -> Pool_user.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
@@ -93,15 +91,15 @@ val compare : t -> t -> int
 
 val find
   :  Database.Label.t
-  -> Pool_common.Id.t
+  -> Pool_user.Id.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_admin_comment
   :  Database.Label.t
-  -> Pool_common.Id.t
+  -> Pool_user.Id.t
   -> AdminComment.t option Lwt.t
 
-val find_multiple : Database.Label.t -> Pool_common.Id.t list -> t list Lwt.t
+val find_multiple : Database.Label.t -> Pool_user.Id.t list -> t list Lwt.t
 
 val find_by_email
   :  Database.Label.t
@@ -110,7 +108,7 @@ val find_by_email
 
 val find_by_user
   :  Database.Label.t
-  -> Sihl_user.t
+  -> Pool_user.t
   -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_all
@@ -149,7 +147,7 @@ val find_full_cell_phone_verification_by_contact
 val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
 
 type create =
-  { user_id : Pool_common.Id.t
+  { user_id : Pool_user.Id.t
   ; email : Pool_user.EmailAddress.t
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
@@ -202,7 +200,7 @@ val update_num_participations : step:int -> t -> t
 
 module Preview : sig
   type t =
-    { user : Sihl_user.t
+    { user : Pool_user.t
     ; language : Pool_common.Language.t option
     ; cell_phone : Pool_user.CellPhone.t option
     ; paused : Pool_user.Paused.t
@@ -272,8 +270,8 @@ module Guard : sig
     val index_permission : Guard.Permission.t
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
-    val read : Id.t -> Guard.ValidationSet.t
-    val update : Id.t -> Guard.ValidationSet.t
+    val read : Pool_user.Id.t -> Guard.ValidationSet.t
+    val update : Pool_user.Id.t -> Guard.ValidationSet.t
     val read_of_target : Guard.Uuid.Target.t -> Guard.PermissionOnTarget.t list
 
     val read_name

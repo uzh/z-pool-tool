@@ -13,9 +13,7 @@ let should_send_registration_attempt_notification =
   Repo.should_send_registration_attempt_notification
 ;;
 
-let find_by_user pool (user : Sihl_user.t) =
-  user.Sihl_user.id |> Pool_common.Id.of_string |> Repo.find pool
-;;
+let find_by_user pool (user : Pool_user.t) = user.Pool_user.id |> Repo.find pool
 
 let find_cell_phone_verification_by_contact =
   Repo.find_cell_phone_verification_by_contact

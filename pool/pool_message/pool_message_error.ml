@@ -54,6 +54,7 @@ type t =
   | InvalidHtmxRequest
   | InvalidJson of string
   | InvalidOptionSelected
+  | InvalidPasswordHashingCount
   | InvalidRequest
   | IsMarkedAsDeleted of Field.t
   | JobPending

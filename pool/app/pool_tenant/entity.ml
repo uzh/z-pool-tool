@@ -163,7 +163,7 @@ module Write = struct
     ; disabled : Disabled.t
     ; default_language : Common.Language.t
     ; created_at : CreatedAt.t
-    ; updated_at : CreatedAt.t
+    ; updated_at : UpdatedAt.t
     }
   [@@deriving eq, show]
 
@@ -179,8 +179,8 @@ module Write = struct
     ; maintenance = Maintenance.create false
     ; disabled = Disabled.create false
     ; default_language
-    ; created_at = CreatedAt.create ()
-    ; updated_at = UpdatedAt.create ()
+    ; created_at = CreatedAt.create_now ()
+    ; updated_at = UpdatedAt.create_now ()
     }
   ;;
 

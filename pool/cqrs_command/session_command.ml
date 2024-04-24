@@ -726,7 +726,10 @@ end = struct
             participation_tags
             |> CCList.map (fun (tag : t) ->
               Tagged
-                Tagged.{ model_uuid = Contact.id contact; tag_uuid = tag.id }
+                Tagged.
+                  { model_uuid = Contact.id contact |> Pool_user.Id.to_common
+                  ; tag_uuid = tag.id
+                  }
               |> Pool_event.tags)
         in
         let contact_events =

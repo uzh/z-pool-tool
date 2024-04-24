@@ -1,6 +1,7 @@
 open Pool_message
 module Label = Database.Label
 module EmailAddress = Pool_user.EmailAddress
+module Password = Pool_user.Password
 
 let src = Logs.Src.create "login helper"
 
@@ -30,8 +31,9 @@ let notify_user database_label tags email =
         Logs.err (fun m ->
           m
             ~tags
-            "Could not send account suspension notification to '%s': %s"
-            (email |> EmailAddress.value)
+            "Could not send account suspension notification to '%a': %s"
+            EmailAddress.pp
+            email
             Pool_common.(Utils.error_to_string Language.En err));
         err
     in
@@ -76,8 +78,10 @@ let login_params urlencoded =
     |> EmailAddress.create
     |> Lwt_result.lift
   in
-  let password =
+  let* password =
     CCList.assoc ~eq:String.equal Field.(Password |> show) params
+    |> Password.create
+    |> Lwt_result.lift
   in
   Lwt_result.return (email, password)
 ;;
@@ -134,7 +138,7 @@ let login req urlencoded database_label =
     in
     let login () =
       let create_session () =
-        Pool_user.create_session database_label email ~password
+        Pool_user.create_session database_label email password
       in
       (match is_root with
        | true -> create_session ()

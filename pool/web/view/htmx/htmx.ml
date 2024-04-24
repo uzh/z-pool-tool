@@ -16,7 +16,7 @@ let hx_base_params = [ "_csrf"; "version"; "field" ]
 let contact_profile_hx_post = "/user/update"
 
 let admin_profile_hx_post id =
-  Format.asprintf "/admin/contacts/%s" (id |> Pool_common.Id.value)
+  Format.asprintf "/admin/contacts/%s" (id |> Pool_user.Id.value)
 ;;
 
 let admin_profile_hx_delete id field_id =

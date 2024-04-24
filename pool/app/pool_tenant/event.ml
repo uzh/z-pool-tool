@@ -58,7 +58,7 @@ let handle_event pool : event -> unit Lwt.t = function
     ; icon = update_t.icon <+> tenant.icon
     ; disabled = update_t.disabled
     ; default_language = update_t.default_language
-    ; updated_at = Ptime_clock.now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
     |> Repo.update Database.root
   | DatabaseEdited (tenant, database) ->

@@ -4,13 +4,15 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let src = Logs.Src.create "handler.admin.contacts.tags"
-let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
+let contact_id = HttpUtils.find_id Pool_user.Id.of_string Field.Contact
 
 let handle_tag action req =
   let tags = Pool_context.Logger.Tags.req req in
   let contact_id = contact_id req in
   let path =
-    contact_id |> Contact.Id.value |> Format.asprintf "/admin/contacts/%s/edit"
+    contact_id
+    |> Pool_user.Id.value
+    |> Format.asprintf "/admin/contacts/%s/edit"
   in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values

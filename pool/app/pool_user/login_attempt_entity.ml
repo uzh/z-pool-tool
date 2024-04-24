@@ -1,9 +1,8 @@
-module Id = Pool_common.Id
+module Id = Pool_model.Base.Id
 
 module Counter = struct
-  type t = int [@@deriving eq, show]
+  include Pool_model.Base.Integer
 
-  let value m = m
   let create = CCInt.max 0
   let init = 0
   let increment m = m + 1

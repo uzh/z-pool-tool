@@ -68,7 +68,7 @@ module RepoEntity = struct
         ~encode
         ~decode
         (t2
-           Common.Id.t
+           Pool_user.Repo.Id.t
            (t2
               Token.t
               (t2
@@ -97,7 +97,7 @@ module RepoEntity = struct
 
   module Write = struct
     type t =
-      { user_uuid : Pool_common.Id.t
+      { user_uuid : Pool_user.Id.t
       ; confirmed_at : ConfirmedAt.t option
       ; notified_at : NotifiedAt.t option
       ; reminder_count : ReminderCount.t
@@ -131,7 +131,7 @@ module RepoEntity = struct
           ~encode
           ~decode
           (t2
-             Common.Id.t
+             Pool_user.Repo.Id.t
              (t2
                 (option ConfirmedAt.t)
                 (t2
@@ -197,7 +197,7 @@ let find_pending_by_user_id_opt_request =
       WHERE pool_user_imports.user_uuid = UNHEX(REPLACE($1, '-', ''))
       AND pool_user_imports.confirmed_at IS NULL
     |sql}
-  |> Pool_common.Repo.Id.t ->! RepoEntity.t
+  |> Pool_user.Repo.Id.t ->! RepoEntity.t
 ;;
 
 let find_pending_by_user_id_opt pool =
@@ -362,12 +362,9 @@ let insert_request =
       $2
     )
   |sql}
-  |> Caqti_type.(t2 string string ->. unit)
+  |> Caqti_type.(t2 Pool_user.Repo.Id.t string ->. unit)
 ;;
 
 let insert pool t =
-  Database.exec
-    pool
-    insert_request
-    (t.user_uuid |> Pool_common.Id.value, t.token |> Token.value)
+  Database.exec pool insert_request (t.user_uuid, t.token |> Token.value)
 ;;

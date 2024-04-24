@@ -39,7 +39,7 @@ module LastRemindedAt = struct
 end
 
 type t =
-  { user_uuid : Pool_common.Id.t
+  { user_uuid : Pool_user.Id.t
   ; token : Token.t
   ; confirmed_at : ConfirmedAt.t option
   ; notified_at : NotifiedAt.t option

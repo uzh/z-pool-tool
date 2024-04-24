@@ -11,21 +11,47 @@ module Data = struct
   ;;
 
   let create_email () = Sihl_email.create ~sender ~recipient ~subject body
+
+  let smtp_account =
+    let open Email.SmtpAuth in
+    Write.create
+      (Label.of_string "example")
+      (Server.of_string "smtp.example.com")
+      (Port.of_int 587)
+      None
+      None
+      Mechanism.PLAIN
+      Protocol.STARTTLS
+      (Default.create true)
+    |> Test_utils.get_or_failwith
+  ;;
 end
 
-let validate_email _ () =
+let validate_email =
+  let database_label = Test_utils.Data.database_label in
+  Test_utils.case ~preparation:(fun () ->
+    let open Email in
+    (* NOTE: An SMTP configuration is also for testing required *)
+    let%lwt () = handle_event database_label (SmtpCreated Data.smtp_account) in
+    Lwt.return_ok ())
+  @@ fun () ->
   let open Email.Service in
-  let open Smtp in
-  let email = Data.create_email () in
   let smtp_auth_id = None in
   let { Email.email; _ } =
-    Email.create_job ?smtp_auth_id email
+    Data.create_email ()
+    |> Email.create_job ?smtp_auth_id
     |> intercept_prepare
     |> Test_utils.get_or_failwith
   in
   let msg = "Missing 'TEST_EMAIL' env variable." in
-  let%lwt { subject; _ } =
-    prepare ?smtp_auth_id Test_utils.Data.database_label email
+  Alcotest.(
+    check
+      string
+      "intercepted recipient"
+      email.Sihl_email.recipient
+      (Sihl.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
+  let%lwt { Smtp.subject; _ } =
+    Smtp.prepare ?smtp_auth_id database_label email
   in
   Alcotest.(
     check
@@ -36,11 +62,5 @@ let validate_email _ () =
          "[Pool Tool] %s (original to: %s)"
          Data.subject
          Data.recipient));
-  Alcotest.(
-    check
-      string
-      "intercepted recipient"
-      email.Sihl_email.recipient
-      (Sihl.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;

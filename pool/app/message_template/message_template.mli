@@ -204,11 +204,11 @@ val layout_from_tenant : Pool_tenant.t -> email_layout
 val template_hint : Label.t -> Pool_common.I18n.hint
 
 module AccountSuspensionNotification : sig
-  val email_params : email_layout -> Sihl_user.t -> (string * string) list
+  val email_params : email_layout -> Pool_user.t -> (string * string) list
 
   val create
     :  Pool_tenant.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> (Email.job, Pool_message.Error.t) result Lwt.t
 end
 
@@ -276,12 +276,12 @@ module ContactEmailChangeAttempt : sig
   val email_params
     :  email_layout
     -> Pool_tenant.Url.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> (string * string) list
 
   val create
     :  Pool_tenant.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> (Email.job, Pool_message.Error.t) Lwt_result.t
 end
 
@@ -289,13 +289,13 @@ module ContactRegistrationAttempt : sig
   val email_params
     :  email_layout
     -> Pool_tenant.Url.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> (string * string) list
 
   val create
     :  Pool_common.Language.t
     -> Pool_tenant.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> Email.job Lwt.t
 end
 
@@ -357,12 +357,12 @@ module ManualSessionMessage : sig
 end
 
 module PasswordChange : sig
-  val email_params : email_layout -> Sihl_user.t -> (string * string) list
+  val email_params : email_layout -> Pool_user.t -> (string * string) list
 
   val create
     :  Pool_common.Language.t
     -> Pool_tenant.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> Email.job Lwt.t
 end
 
@@ -370,14 +370,14 @@ module PasswordReset : sig
   val email_params
     :  email_layout
     -> string
-    -> Sihl_user.t
+    -> Pool_user.t
     -> (string * string) list
 
   val create
     :  Database.Label.t
     -> Pool_common.Language.t
     -> layout
-    -> Sihl_user.t
+    -> Pool_user.t
     -> (Email.job, Pool_message.Error.t) result Lwt.t
 end
 
@@ -523,7 +523,7 @@ module SignUpVerification : sig
     -> Email.Token.t
     -> Pool_user.Firstname.t
     -> Pool_user.Lastname.t
-    -> Pool_common.Id.t
+    -> Pool_user.Id.t
     -> Email.job Lwt.t
 end
 

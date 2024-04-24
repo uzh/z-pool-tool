@@ -1,4 +1,3 @@
-module Id = Pool_common.Id
 module Database = Database
 module Dynparam = Database.Dynparam
 
@@ -61,12 +60,12 @@ let find_request =
       WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
         AND user_users.admin = 0
     |sql}
-  |> Caqti_type.string ->! Repo_model.t
+  |> Pool_user.Repo.Id.t ->! Repo_model.t
 ;;
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt pool find_request (Pool_common.Id.value id)
+  Database.find_opt pool find_request id
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
 
@@ -77,7 +76,7 @@ let find_admin_comment_request =
     FROM pool_contacts
     WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', ''))
   |sql}
-  |> Pool_common.Repo.Id.t ->! Caqti_type.option Repo_model.AdminComment.t
+  |> Pool_user.Repo.Id.t ->! Caqti_type.option Repo_model.AdminComment.t
 ;;
 
 let find_admin_comment pool id =
@@ -92,15 +91,12 @@ let find_by_email_request =
       WHERE user_users.email = ?
         AND user_users.admin = 0
     |sql}
-  |> Caqti_type.string ->! Repo_model.t
+  |> Pool_user.Repo.EmailAddress.t ->! Repo_model.t
 ;;
 
 let find_by_email pool email =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt
-    pool
-    find_by_email_request
-    (Pool_user.EmailAddress.value email)
+  Database.find_opt pool find_by_email_request email
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
 
@@ -112,15 +108,12 @@ let find_confirmed_request =
         AND user_users.admin = 0
         AND user_users.confirmed = 1
     |sql}
-  |> Caqti_type.string ->! Repo_model.t
+  |> Pool_user.Repo.EmailAddress.t ->! Repo_model.t
 ;;
 
 let find_confirmed pool email =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt
-    pool
-    find_confirmed_request
-    (Pool_user.EmailAddress.value email)
+  Database.find_opt pool find_confirmed_request email
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
 
@@ -141,8 +134,7 @@ let find_multiple pool ids =
   let open Caqti_request.Infix in
   let dyn =
     CCList.fold_left
-      (fun dyn id ->
-        dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+      (fun dyn id -> dyn |> Dynparam.add Pool_user.Repo.Id.t id)
       Dynparam.empty
       ids
   in
@@ -302,7 +294,7 @@ let delete_unverified_contact_request =
     DELETE FROM pool_contacts
     WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL
   |sql}
-  |> Caqti_type.(string ->. unit)
+  |> Pool_user.Repo.Id.t ->. Caqti_type.unit
 ;;
 
 let delete_unverified_user_request =
@@ -311,7 +303,7 @@ let delete_unverified_user_request =
     DELETE FROM user_users
     WHERE uuid = UNHEX(REPLACE(?, '-', ''))
   |sql}
-  |> Caqti_type.(string ->. unit)
+  |> Pool_user.Repo.Id.t ->. Caqti_type.unit
 ;;
 
 let delete_unverified_email_verifications_request =
@@ -320,11 +312,11 @@ let delete_unverified_email_verifications_request =
     DELETE FROM pool_email_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL
   |sql}
-  |> Caqti_type.(string ->. unit)
+  |> Pool_user.Repo.Id.t ->. Caqti_type.unit
 ;;
 
 let delete_unverified pool id =
-  let exec request = Database.exec pool request (Pool_common.Id.value id) in
+  let exec request = Database.exec pool request id in
   let%lwt () = exec delete_unverified_contact_request in
   let%lwt () = exec delete_unverified_email_verifications_request in
   exec delete_unverified_user_request
@@ -381,8 +373,7 @@ let update_profile_updated_triggered pool ids =
   let open Caqti_request.Infix in
   let dyn =
     CCList.fold_left
-      (fun dyn id ->
-        dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+      (fun dyn id -> dyn |> Dynparam.add Pool_user.Repo.Id.t id)
       (Dynparam.empty |> Dynparam.add Caqti_type.ptime (Ptime_clock.now ()))
       ids
   in
@@ -402,7 +393,7 @@ let should_send_registration_attempt_notification_request =
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
     AND registration_attempt_notification_sent_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)
   |}
-  |> Caqti_type.(t2 string int ->? int)
+  |> Caqti_type.(t2 Pool_user.Repo.Id.t int ->? int)
 ;;
 
 let should_send_registration_attempt_notification pool contact =
@@ -410,7 +401,7 @@ let should_send_registration_attempt_notification pool contact =
   Database.find_opt
     pool
     should_send_registration_attempt_notification_request
-    (Entity.(id contact |> Id.value), send_notification_again_after)
+    (Entity.id contact, send_notification_again_after)
   |> Lwt.map CCOption.is_none
 ;;
 
@@ -421,14 +412,14 @@ let set_registration_attempt_notification_sent_at_request =
     SET registration_attempt_notification_sent_at = NOW()
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
   |}
-  |> Caqti_type.(string ->. unit)
+  |> Pool_user.Repo.Id.t ->. Caqti_type.unit
 ;;
 
 let set_registration_attempt_notification_sent_at pool t =
   Database.exec
     pool
     set_registration_attempt_notification_sent_at_request
-    Entity.(id t |> Id.value)
+    Entity.(id t)
 ;;
 
 let add_cell_phone_request =
@@ -449,16 +440,19 @@ let add_cell_phone_request =
       updated_at = NOW(),
       created_at = NOW()
     |sql}
-  |> Caqti_type.(t3 string string string ->. unit)
+  |> Caqti_type.(
+       t3
+         Pool_user.Repo.CellPhone.t
+         Pool_user.Repo.Id.t
+         Pool_common.Repo.VerificationCode.t
+       ->. unit)
 ;;
 
 let add_cell_phone pool contact cell_phone code =
   Database.exec
     pool
     add_cell_phone_request
-    ( Pool_user.CellPhone.value cell_phone
-    , Entity.(id contact |> Id.value)
-    , Pool_common.VerificationCode.value code )
+    (cell_phone, Entity.(id contact), code)
 ;;
 
 let cell_phone_verifiaction_sql ?(where = "") () =
@@ -479,20 +473,22 @@ let cell_phone_verifiaction_sql ?(where = "") () =
 let find_cell_phone_verification_by_contact_request =
   let open Caqti_request.Infix in
   cell_phone_verifiaction_sql ()
-  |> Caqti_type.(string ->? Pool_user.Repo.UnverifiedCellPhone.t)
+  |> Pool_user.Repo.Id.t ->? Pool_user.Repo.UnverifiedCellPhone.t
 ;;
 
 let find_cell_phone_verification_by_contact pool contact =
   Database.find_opt
     pool
     find_cell_phone_verification_by_contact_request
-    Entity.(id contact |> Id.value)
+    Entity.(id contact)
 ;;
 
 let find_cell_phone_verification_by_contact_and_code_request =
   let open Caqti_request.Infix in
   cell_phone_verifiaction_sql ~where:"AND token = ?" ()
-  |> Caqti_type.(t2 string string ->? Pool_user.Repo.UnverifiedCellPhone.t)
+  |> Caqti_type.(
+       t2 Pool_user.Repo.Id.t Pool_common.Repo.VerificationCode.t
+       ->? Pool_user.Repo.UnverifiedCellPhone.t)
 ;;
 
 let find_cell_phone_verification_by_contact_and_code pool contact code =
@@ -500,7 +496,7 @@ let find_cell_phone_verification_by_contact_and_code pool contact code =
   Database.find_opt
     pool
     find_cell_phone_verification_by_contact_and_code_request
-    (Entity.(id contact |> Id.value), Pool_common.VerificationCode.value code)
+    (Entity.(id contact), code)
   ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
 ;;
 
@@ -515,7 +511,7 @@ let find_full_cell_phone_verification_by_contact_request =
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
     LIMIT 1
     |sql}
-  |> Caqti_type.(string ->? Pool_user.Repo.UnverifiedCellPhone.full)
+  |> Pool_user.Repo.Id.t ->? Pool_user.Repo.UnverifiedCellPhone.full
 ;;
 
 let find_full_cell_phone_verification_by_contact pool contact =
@@ -523,7 +519,7 @@ let find_full_cell_phone_verification_by_contact pool contact =
   Database.find_opt
     pool
     find_full_cell_phone_verification_by_contact_request
-    Entity.(id contact |> Id.value)
+    Entity.(id contact)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Token)
 ;;
 
@@ -533,14 +529,11 @@ let delete_unverified_cell_phone_requeset =
     DELETE FROM pool_cell_phone_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
   |sql}
-  |> Caqti_type.(string ->. unit)
+  |> Pool_user.Repo.Id.t ->. Caqti_type.unit
 ;;
 
 let delete_unverified_cell_phone pool contact =
-  Database.exec
-    pool
-    delete_unverified_cell_phone_requeset
-    Entity.(id contact |> Id.value)
+  Database.exec pool delete_unverified_cell_phone_requeset Entity.(id contact)
 ;;
 
 let update_sign_in_count_request =
@@ -554,12 +547,9 @@ let update_sign_in_count_request =
     WHERE
       user_uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
-  |> Caqti_type.(string ->. unit)
+  |> Pool_user.Repo.Id.t ->. Caqti_type.unit
 ;;
 
 let update_sign_in_count pool contact =
-  Database.exec
-    pool
-    update_sign_in_count_request
-    Entity.(id contact |> Id.value)
+  Database.exec pool update_sign_in_count_request Entity.(id contact)
 ;;

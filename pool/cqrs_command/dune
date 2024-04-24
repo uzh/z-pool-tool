@@ -24,7 +24,6 @@
   sihl
   system_event
   tags
-  tenant
   user_import)
  (preprocess
   (pps

@@ -684,7 +684,9 @@ let data_table
   in
   let profile_link { Assignment.contact; _ } =
     let action =
-      Format.asprintf "/admin/contacts/%s" Contact.(id contact |> Id.value)
+      Format.asprintf
+        "/admin/contacts/%s"
+        Contact.(id contact |> Pool_user.Id.value)
     in
     link_as_button
       action

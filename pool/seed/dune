@@ -17,7 +17,6 @@
   pool_user
   session
   sihl
-  tenant
   utils
   waiting_list)
  (preprocess

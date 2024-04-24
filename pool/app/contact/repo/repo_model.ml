@@ -121,7 +121,7 @@ let t =
       ~encode
       ~decode
       (t2
-         Pool_user.Repo.User.t
+         t
          (t2
             (option TermsAccepted.t)
             (t2
@@ -176,7 +176,7 @@ let t =
 let contact =
   let encode m =
     Ok
-      ( m.user.Sihl_user.id
+      ( m.user.Pool_user.id
       , ( m.terms_accepted_at
         , ( m.language
           , ( m.experiment_type_preference
@@ -201,14 +201,14 @@ let contact =
   let decode _ =
     Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
   in
-  let open Pool_user.Repo in
   let open Pool_common.Repo in
+  let open Pool_user.Repo in
   Caqti_type.(
     custom
       ~encode
       ~decode
       (t2
-         string
+         Id.t
          (t2
             (option TermsAccepted.t)
             (t2
@@ -288,8 +288,8 @@ module Write = struct
     let decode _ =
       Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
     in
-    let open Pool_user.Repo in
     let open Pool_common.Repo in
+    let open Pool_user.Repo in
     Caqti_type.(
       custom
         ~encode
@@ -382,7 +382,7 @@ module Preview = struct
         ~encode
         ~decode
         (t2
-           Pool_user.Repo.User.t
+           t
            (t2
               (option Pool_common.Repo.Language.t)
               (t2

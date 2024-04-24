@@ -111,6 +111,7 @@ let create_operator req =
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result Error.EmailAddressMissingAdmin
+      >== Pool_user.EmailAddress.create
       >>= HttpUtils.validate_email_existance tenant_db
     in
     let events =

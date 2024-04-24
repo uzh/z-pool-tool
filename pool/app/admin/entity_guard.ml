@@ -2,7 +2,7 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Guard
 
-let target_of = Uuid.target_of Entity.Id.value
+let target_of = Uuid.target_of Pool_user.Id.value
 
 module Actor = struct
   type t = Entity.t [@@deriving eq, show]
@@ -11,7 +11,7 @@ module Actor = struct
     Persistence.Actor.decorate
       ?ctx
       (Entity.user
-       %> (fun { Sihl_user.id; _ } -> id |> Uuid.Actor.of_string_exn)
+       %> (fun { Pool_user.id; _ } -> id |> Uuid.actor_of Pool_user.Id.value)
        %> Actor.create `Admin)
       t
     >|- Pool_message.Error.authorization
@@ -25,7 +25,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (Entity.user
-       %> (fun { Sihl_user.id; _ } -> id |> Uuid.Target.of_string_exn)
+       %> (fun { Pool_user.id; _ } -> id |> Uuid.target_of Pool_user.Id.value)
        %> Target.create `Admin)
       t
     >|- Pool_message.Error.authorization

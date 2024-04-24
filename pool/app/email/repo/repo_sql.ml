@@ -18,7 +18,6 @@ let find_request_sql : type a. a carrier -> string -> string =
         SUBSTR(HEX(user_users.uuid), 21)
       )),
       user_users.email,
-      user_users.username,
       user_users.name,
       user_users.given_name,
       user_users.password,
@@ -104,7 +103,7 @@ let find_by_address pool carrier address =
   Database.find_opt
     pool
     (find_by_address_request carrier)
-    (address |> User.EmailAddress.value)
+    (Pool_user.EmailAddress.value address)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Email)
 ;;
 
@@ -122,15 +121,11 @@ let insert_request =
       )
     |sql}
   |> Caqti_type.(
-       t3 User.Repo.EmailAddress.t Pool_common.Repo.Id.t RepoEntity.Token.t
-       ->. unit)
+       t3 User.Repo.EmailAddress.t User.Repo.Id.t RepoEntity.Token.t ->. unit)
 ;;
 
 let insert pool t =
-  Database.exec
-    pool
-    insert_request
-    (address t, user_id t, token t |> Token.value)
+  Database.exec pool insert_request (address t, user_id t, token t)
 ;;
 
 let verify_request =
@@ -142,7 +137,7 @@ let verify_request =
       WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) AND address = $2 AND verified IS NULL
     |sql}
   |> Caqti_type.(
-       t3 Pool_common.Repo.Id.t User.Repo.EmailAddress.t RepoEntity.VerifiedAt.t
+       t3 User.Repo.Id.t User.Repo.EmailAddress.t RepoEntity.VerifiedAt.t
        ->. unit)
 ;;
 
@@ -159,12 +154,11 @@ let delete_unverified_by_user_request =
     DELETE FROM pool_email_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL
   |sql}
-  |> Caqti_type.(string ->. unit)
+  |> User.Repo.Id.t ->. Caqti_type.unit
 ;;
 
-let delete_unverified_by_user pool id =
+let delete_unverified_by_user pool =
   Database.exec pool delete_unverified_by_user_request
-  @@ Pool_common.Id.value id
 ;;
 
 module Smtp = struct

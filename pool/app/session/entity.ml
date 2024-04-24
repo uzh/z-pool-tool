@@ -210,8 +210,8 @@ let create
   ; closed_at = None
   ; canceled_at = None
   ; experiment
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 

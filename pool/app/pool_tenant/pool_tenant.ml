@@ -4,7 +4,7 @@ include Event
 module LogoMapping = LogoMapping
 module Guard = Entity_guard
 
-type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
+type handle_list_recruiters = unit -> Pool_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
 
 module Url = struct

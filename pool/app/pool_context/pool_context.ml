@@ -19,13 +19,13 @@ module Utils = struct
     | Contact _ when Database.is_root database_label -> Lwt.return_none
     | Contact contact when not admin_only ->
       Contact.id contact
-      |> Guard.Uuid.actor_of Pool_common.Id.value
+      |> Guard.Uuid.actor_of Pool_user.Id.value
       |> Guard.Persistence.Actor.find database_label
       ||> CCOption.of_result
     | Guest | Contact _ -> Lwt.return_none
     | Admin admin ->
       Admin.id admin
-      |> Guard.Uuid.actor_of Admin.Id.value
+      |> Guard.Uuid.actor_of Pool_user.Id.value
       |> Guard.Persistence.Actor.find database_label
       ||> CCOption.of_result
   ;;

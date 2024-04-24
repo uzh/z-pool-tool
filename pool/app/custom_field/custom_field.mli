@@ -120,6 +120,8 @@ end
 
 module PublishedAt : sig
   include Pool_model.Base.PtimeSig
+
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
 module AdminHint : sig
@@ -423,7 +425,7 @@ val validate_partial_update
 
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
-  | AnswerUpserted of Public.t * Pool_common.Id.t * Pool_context.user
+  | AnswerUpserted of Public.t * Pool_user.Id.t * Pool_context.user
   | AnsweredOnSignup of Public.t * Pool_common.Id.t
   | Created of t
   | Deleted of t
@@ -458,49 +460,49 @@ val find_by_table_view
 val find_all_by_contact
   :  Database.Label.t
   -> Pool_context.user
-  -> Pool_common.Id.t
+  -> Pool_user.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_all_required_by_contact
   :  Database.Label.t
   -> Pool_context.user
-  -> Pool_common.Id.t
+  -> Pool_user.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_unanswered_required_by_contact
   :  Database.Label.t
   -> Pool_context.user
-  -> Pool_common.Id.t
+  -> Pool_user.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_unanswered_ungrouped_required_by_contact
   :  Database.Label.t
   -> Pool_context.user
-  -> Pool_common.Id.t
+  -> Pool_user.Id.t
   -> Public.t list Lwt.t
 
 val find_multiple_by_contact
   :  ?is_admin:bool
   -> Database.Label.t
-  -> Pool_common.Id.t
-  -> Pool_common.Id.t list
+  -> Pool_user.Id.t
+  -> Pool_user.Id.t list
   -> Public.t list Lwt.t
 
 val find_by_contact
   :  ?is_admin:bool
   -> Database.Label.t
-  -> Pool_common.Id.t
+  -> Pool_user.Id.t
   -> Id.t
   -> (Public.t, Pool_message.Error.t) result Lwt.t
 
-val all_required_answered : Database.Label.t -> Pool_common.Id.t -> bool Lwt.t
-val all_answered : Database.Label.t -> Pool_common.Id.t -> bool Lwt.t
+val all_required_answered : Database.Label.t -> Pool_user.Id.t -> bool Lwt.t
+val all_answered : Database.Label.t -> Pool_user.Id.t -> bool Lwt.t
 val all_prompted_on_registration : Database.Label.t -> Public.t list Lwt.t
 
 val find_public_by_contacts_and_view
   :  Database.Label.t
   -> bool
-  -> Contact.Id.t list
+  -> Pool_user.Id.t list
   -> [< `SessionClose | `SessionDetail ]
   -> Public.t list Lwt.t
 

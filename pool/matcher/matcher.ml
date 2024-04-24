@@ -77,8 +77,7 @@ let sort_contacts contacts =
   | false -> contacts
   | true ->
     CCList.stable_sort
-      (fun c1 c2 ->
-        Contact.(CCString.compare (id c1 |> Id.value) (id c2 |> Id.value)))
+      (fun c1 c2 -> Contact.(Pool_user.Id.compare (id c1) (id c2)))
       contacts
 ;;
 

@@ -550,7 +550,7 @@ let filter_contacts _ () =
     let res =
       filtered_contacts
       |> (CCList.subset ~eq:(fun filtered contact ->
-            Pool_common.Id.equal (Contact.id contact) (Contact.id filtered)))
+            Pool_user.Id.equal (Contact.id contact) (Contact.id filtered)))
            contacts
     in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -589,9 +589,12 @@ let filter_exclude_inactive _ () =
   let%lwt () = save_filter filter experiment in
   (* Expect contact to be included *)
   let%lwt () = test_filter true contact filter experiment in
-  let%lwt (_ : Sihl_user.t) =
+  let%lwt (_ : Pool_user.t) =
     let open Pool_user in
-    update Test_utils.Data.database_label ~status:Inactive contact.Contact.user
+    update
+      Test_utils.Data.database_label
+      ~status:Status.Inactive
+      contact.Contact.user
   in
   (* Expect inactive contact to be excluded *)
   test_filter false contact filter experiment
@@ -770,11 +773,18 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     let%lwt id = Repo.first_experiment () ||> Experiment.(id %> Id.to_common) in
     let filter =
       let open Filter in
-      Pred
-        (Predicate.create
-           Key.(Hardcoded ContactLanguage)
-           equal_operator
-           (Single (Language Pool_common.Language.En)))
+      And
+        [ Pred
+            (Predicate.create
+               Key.(Hardcoded ContactLanguage)
+               equal_operator
+               (Single (Language Pool_common.Language.En)))
+        ; Pred
+            (Predicate.create
+               Key.(Hardcoded Firstname)
+               FilterHelper.contains
+               (Single (Str "firstname")))
+        ]
       |> create None
     in
     let%lwt () =
@@ -788,7 +798,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     in
     let order_by =
       let open Mailing.Distribution in
-      Sorted [ SortableField.InvitationCount, SortOrder.Ascending ]
+      Sorted [ SortableField.InvitationCount, SortOrder.Descending ]
       |> get_order_element
     in
     let%lwt contacts =
@@ -802,7 +812,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     in
     let get_index contact =
       CCList.find_idx
-        (fun c -> Contact.(Pool_common.Id.equal (id c) (id contact)))
+        (fun c -> Contact.(Pool_user.Id.equal (id c) (id contact)))
         contacts
       |> CCOption.get_exn_or "Cannot find contact"
       |> fst
@@ -1057,7 +1067,7 @@ let filter_by_empty_hardcoded_value _ () =
     let%lwt contact =
       Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
     in
-    let user = Sihl_user.{ contact.user with confirmed = true } in
+    let user = Pool_user.{ contact.user with confirmed = true } in
     { contact with language = None; user }
     |> TestContacts.persist_contact_update
   in
@@ -1229,7 +1239,9 @@ let filter_by_tags _ () =
   let%lwt () =
     let create_tagged_event contact tag =
       let open Tagged in
-      { model_uuid = Contact.id contact; tag_uuid = tag.Tags.id }
+      { model_uuid = Contact.id contact |> Pool_user.Id.to_common
+      ; tag_uuid = tag.Tags.id
+      }
       |> tagged
       |> Pool_event.tags
     in

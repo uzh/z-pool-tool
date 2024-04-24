@@ -4,30 +4,23 @@ let src = Logs.Src.create "test.database.seed.contacts"
 let defafult_range = CCList.range 0 10
 
 let create_contact i =
-  let open Pool_common in
   let open Pool_user in
-  let get = CCResult.get_exn in
   let id = Id.create () in
-  let first_name =
-    i |> Format.asprintf "firstname%i" |> Firstname.create |> get
-  in
-  let last_name = i |> Format.asprintf "lastname%i" |> Lastname.create |> get in
+  let first_name = Format.asprintf "firstname%i" i |> Firstname.of_string in
+  let last_name = Format.asprintf "lastname%i" i |> Lastname.of_string in
   let email =
-    "contact-" ^ CCInt.to_string i ^ "@econ.uzh.ch"
-    |> EmailAddress.create
-    |> get
+    Format.asprintf "contact-%i@econ.uzh.ch" i |> EmailAddress.of_string
   in
-  let lang = Pool_common.Language.En |> CCOption.pure in
-  let terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure in
-  id, first_name, last_name, email, lang, terms_accepted_at
+  let lang = Pool_common.Language.En in
+  let terms_accepted_at = TermsAccepted.create_now () in
+  id, first_name, last_name, email, Some lang, Some terms_accepted_at
 ;;
 
 let data = defafult_range |> CCList.map create_contact
 let contact_ids = CCList.map (fun (id, _, _, _, _, _) -> id) data
 
-let create ?contact_data db_pool =
+let create ?(contact_data = data) db_pool =
   let open Contact in
-  let data = CCOption.value ~default:data contact_data in
   let open Utils.Lwt_result.Infix in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
@@ -39,12 +32,7 @@ let create ?contact_data db_pool =
     Lwt_list.fold_left_s
       (fun contacts
         (user_id, firstname, lastname, email, language, terms_accepted_at) ->
-        let%lwt user =
-          Pool_user.find_by_email_opt db_pool (User.EmailAddress.value email)
-        in
-        Lwt.return
-        @@
-        match user with
+        match%lwt Pool_user.find_by_email_opt db_pool email with
         | None ->
           [ Contact.Created
               { Contact.user_id
@@ -57,16 +45,17 @@ let create ?contact_data db_pool =
               }
           ]
           @ contacts
-        | Some { Sihl_user.id; _ } ->
+          |> Lwt.return
+        | Some { Pool_user.id; _ } ->
           Logs.debug ~src (fun m ->
             m
               ~tags:(Database.Logger.Tags.create db_pool)
               "Contact already exists (%s): %s"
               (db_pool |> Database.Label.value)
-              id);
-          contacts)
+              (id |> Pool_user.Id.value));
+          Lwt.return contacts)
       []
-      data
+      contact_data
     >|> Lwt_list.iter_s (handle_event db_pool)
   in
   Lwt_list.map_s
@@ -77,7 +66,7 @@ let create ?contact_data db_pool =
         let%lwt _ =
           Pool_user.update
             db_pool
-            Sihl_user.{ contact.user with confirmed = true }
+            Pool_user.{ contact.user with confirmed = true }
         in
         let contact =
           { contact with

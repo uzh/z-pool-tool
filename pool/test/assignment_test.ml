@@ -98,7 +98,7 @@ let create_inactive_user () =
   let { session; experiment; contact } = assignment_data () in
   let contact =
     let open Contact in
-    let user = Sihl_user.{ contact.user with status = Inactive } in
+    let user = Pool_user.{ contact.user with status = Status.Inactive } in
     { contact with user }
   in
   let confirmation_email = confirmation_email experiment in

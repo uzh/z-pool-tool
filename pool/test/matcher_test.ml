@@ -191,7 +191,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
 ;;
 
 let experiment_id = Experiment.Id.create ()
-let contact_ids = Contact.Id.[ create (); create (); create (); create () ]
+let contact_ids = Pool_user.Id.[ create (); create (); create (); create () ]
 let invitation_mail = Message_template.ExperimentInvitation.prepare
 
 let contact_name_filter name =
@@ -233,7 +233,10 @@ let create_invitations _ () =
   let%lwt contacts =
     Lwt_list.map_s
       (fun id ->
-        ContactRepo.create ~id ~name:(Experiment.Id.value experiment_id) ())
+        let name =
+          Experiment.Id.value experiment_id |> Pool_user.Lastname.of_string
+        in
+        ContactRepo.create ~id ~name ())
       contact_ids
     ||> Matcher.sort_contacts
   in

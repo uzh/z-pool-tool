@@ -30,7 +30,7 @@ let find_assignment_by_contact_and_session contact_id session_id =
   let open Assignment in
   find_uncanceled_by_session database_label session_id
   ||> CCList.find (fun ({ contact; _ } : Assignment.t) ->
-    Contact.(Id.equal (id contact) contact_id))
+    Contact.(Pool_user.Id.equal (id contact) contact_id))
 ;;
 
 let set_sessions_to_past session_ids =
@@ -129,7 +129,7 @@ let initialize contact_id experiment_id session_id ?followup_session_id () =
 ;;
 
 module InviteContact = struct
-  let contact_id = Contact.Id.create ()
+  let contact_id = Pool_user.Id.create ()
   let experiment_id = Experiment.Id.create ()
   let session_id = Session.Id.create ()
   let initialize = initialize contact_id experiment_id session_id
@@ -159,7 +159,7 @@ module InviteContact = struct
 end
 
 module AttendAll = struct
-  let contact_id = Contact.Id.create ()
+  let contact_id = Pool_user.Id.create ()
   let session_id = Session.Id.create ()
   let followup_session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
@@ -218,7 +218,7 @@ module CancelSession = struct
   let initialize ?followup_session_id u =
     initialize
       ?followup_session_id
-      (Contact.Id.create u)
+      (Pool_user.Id.create u)
       (Experiment.Id.create u)
       (Session.Id.create u)
       ()
@@ -298,7 +298,7 @@ module CancelSession = struct
 end
 
 module DoNotAttend = struct
-  let contact_id = Contact.Id.create ()
+  let contact_id = Pool_user.Id.create ()
   let session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
 
@@ -342,7 +342,7 @@ module DoNotAttend = struct
 end
 
 module NoShow = struct
-  let contact_id = Contact.Id.create ()
+  let contact_id = Pool_user.Id.create ()
   let session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
 
@@ -434,7 +434,7 @@ module DeleteAttended = struct
 end
 
 module DeleteUnattended = struct
-  let contact_id = Contact.Id.create ()
+  let contact_id = Pool_user.Id.create ()
   let session_id = Session.Id.create ()
   let followup_session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
@@ -503,7 +503,7 @@ module UpdateAssignments = struct
   open CCResult
   open Contact
 
-  let contact_id = Contact.Id.create ()
+  let contact_id = Pool_user.Id.create ()
   let session_id = Session.Id.create ()
   let followup_session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()

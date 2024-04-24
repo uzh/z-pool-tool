@@ -450,7 +450,7 @@ module ValidationTests = struct
   open Custom_field
 
   let contact = Test_utils.Model.create_contact ()
-  let contact_id = Contact.(contact |> id |> Id.to_common)
+  let contact_id = Contact.(contact |> id |> Pool_user.Id.to_common)
 
   let check_result expected generated =
     let open Alcotest in

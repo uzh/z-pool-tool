@@ -56,7 +56,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) { target; roles } =
     Logs.info ~src (fun m -> m "Handle command GrantRoles" ~tags);
     let actor_roles =
-      let to_id = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
+      let to_id = Admin.id %> Guard.Uuid.actor_of Pool_user.Id.value in
       CCList.map
         (fun (role, target_uuid) ->
           Guard.ActorRole.create ?target_uuid (target |> to_id) role)
@@ -80,7 +80,7 @@ end = struct
     Logs.info ~src (fun m -> m ~tags "Handle command RevokeRole");
     let actor_roles =
       let role, target_uuid = role in
-      let to_id = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
+      let to_id = Admin.id %> Guard.Uuid.actor_of Pool_user.Id.value in
       Guard.ActorRole.create ?target_uuid (target |> to_id) role
     in
     Ok

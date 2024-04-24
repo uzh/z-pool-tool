@@ -3,10 +3,7 @@ module Database = Database
 module Dynparam = Database.Dynparam
 
 let update_sihl_user pool ?firstname ?lastname contact =
-  let open CCOption in
-  let given_name = firstname <+> contact.Contact.user.Sihl_user.given_name in
-  let name = lastname <+> contact.Contact.user.Sihl_user.name in
-  User.update pool ?given_name ?name contact.Contact.user
+  User.update pool ?given_name:firstname ?name:lastname contact.Contact.user
 ;;
 
 let update_sql column_fragment =
@@ -164,7 +161,7 @@ let upsert_answer pool is_admin entity_uuid t =
 let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
   let open Entity in
   let is_admin = Pool_context.user_is_admin user in
-  let base_caqti = Pool_common.Repo.Id.t in
+  let base_caqti = Pool_user.Repo.Id.t in
   let dyn =
     Dynparam.empty
     |> Dynparam.add base_caqti (contact |> Contact.id)
@@ -178,25 +175,15 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
   in
   let open PartialUpdate in
   match field with
-  | Firstname (version, value) ->
-    let%lwt (_ : Sihl_user.t) =
-      update_sihl_user
-        pool
-        ~firstname:(value |> Pool_user.Firstname.value)
-        contact
-    in
+  | Firstname (version, firstname) ->
+    let%lwt (_ : Pool_user.t) = update_sihl_user pool ~firstname contact in
     ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
         firstname_version = $3
       |sql} )
     |> update_user_table
-  | Lastname (version, value) ->
-    let%lwt (_ : Sihl_user.t) =
-      update_sihl_user
-        pool
-        ~lastname:(value |> Pool_user.Lastname.value)
-        contact
-    in
+  | Lastname (version, lastname) ->
+    let%lwt (_ : Pool_user.t) = update_sihl_user pool ~lastname contact in
     ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
         lastname_version = $3
@@ -211,5 +198,7 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
         language_version = $4
       |sql} )
     |> update_user_table
-  | Custom field -> (upsert_answer pool is_admin (Contact.id contact)) field
+  | Custom field ->
+    (upsert_answer pool is_admin (Contact.id contact |> Pool_user.Id.to_common))
+      field
 ;;

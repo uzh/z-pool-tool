@@ -22,41 +22,18 @@ module Language : sig
 end
 
 module Version : sig
-  type t
+  include Pool_model.Base.IntegerSig
 
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val show : t -> string
-  val value : t -> int
   val create : unit -> t
-  val of_int : int -> t
   val increment : t -> t
-  val compare : t -> t -> int
 end
 
 module CreatedAt : sig
-  type t = Ptime.t
-
-  val equal : t -> t -> bool
-  val compare : t -> t -> int
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : unit -> t
-  val value : t -> Ptime.t
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  include Pool_model.Base.PtimeSig
 end
 
 module UpdatedAt : sig
-  type t = Ptime.t
-
-  val equal : t -> t -> bool
-  val compare : t -> t -> int
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : unit -> t
-  val value : t -> Ptime.t
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  include Pool_model.Base.PtimeSig
 end
 
 module File : sig
@@ -156,14 +133,7 @@ module Reminder : sig
   end
 
   module SentAt : sig
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val create : Ptime.t -> t
-    val create_now : unit -> t
-    val value : t -> Ptime.t
+    include Pool_model.Base.PtimeSig
   end
 end
 
@@ -182,12 +152,8 @@ module ExperimentType : sig
 end
 
 module VerificationCode : sig
-  type t
+  include Pool_model.Base.StringSig
 
-  val value : t -> string
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val of_string : string -> t
   val create : ?length:int -> unit -> t
 end
 
@@ -222,11 +188,7 @@ module Repo : sig
     module SelectorType : module type of Repo.Model.SelectorType
   end
 
-  module Id : sig
-    type t = Id.t
-
-    val t : t Caqti_type.t
-  end
+  module Id : Pool_model.Base.CaqtiSig with type t = Id.t
 
   module Ptime : sig
     type date = Ptime.date
@@ -234,67 +196,27 @@ module Repo : sig
     val date : date Caqti_type.t
   end
 
-  module Language : sig
-    type t = Language.t
-
-    val t : t Caqti_type.t
-  end
-
-  module Version : sig
-    type t = Version.t
-
-    val t : t Caqti_type.t
-  end
-
-  module CreatedAt : sig
-    type t = CreatedAt.t
-
-    val t : t Caqti_type.t
-  end
-
-  module UpdatedAt : sig
-    type t = UpdatedAt.t
-
-    val t : t Caqti_type.t
-  end
-
-  module File : sig
-    type t = File.t
-
-    val t : t Caqti_type.t
-  end
+  module Language : Pool_model.Base.CaqtiSig with type t = Language.t
+  module Version : Pool_model.Base.CaqtiSig with type t = Version.t
+  module CreatedAt : Pool_model.Base.CaqtiSig with type t = CreatedAt.t
+  module UpdatedAt : Pool_model.Base.CaqtiSig with type t = UpdatedAt.t
+  module File : Pool_model.Base.CaqtiSig with type t = File.t
 
   module Reminder : sig
-    module EmailLeadTime : sig
-      type t = Reminder.EmailLeadTime.t
+    module EmailLeadTime :
+      Pool_model.Base.CaqtiSig with type t = Reminder.EmailLeadTime.t
 
-      val t : t Caqti_type.t
-    end
+    module TextMessageLeadTime :
+      Pool_model.Base.CaqtiSig with type t = Reminder.TextMessageLeadTime.t
 
-    module TextMessageLeadTime : sig
-      type t = Reminder.TextMessageLeadTime.t
-
-      val t : t Caqti_type.t
-    end
-
-    module SentAt : sig
-      type t = Reminder.SentAt.t
-
-      val t : t Caqti_type.t
-    end
+    module SentAt : Pool_model.Base.CaqtiSig with type t = Reminder.SentAt.t
   end
 
-  module VerificationCode : sig
-    type t = VerificationCode.t
+  module VerificationCode :
+    Pool_model.Base.CaqtiSig with type t = VerificationCode.t
 
-    val t : t Caqti_type.t
-  end
-
-  module ExperimentType : sig
-    type t = ExperimentType.t
-
-    val t : t Caqti_type.t
-  end
+  module ExperimentType :
+    Pool_model.Base.CaqtiSig with type t = ExperimentType.t
 end
 
 module Utils : sig

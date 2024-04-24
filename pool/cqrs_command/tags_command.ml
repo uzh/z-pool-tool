@@ -107,14 +107,18 @@ module AssignTagToContact : sig
 
   val validate : Tags.t -> (t, Conformist.error_msg) result
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
-  val effects : Contact.Id.t -> Guard.ValidationSet.t
+  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Tags.Id.t
 
   let handle ?(tags = Logs.Tag.empty) contact (tag_uuid : t) =
     Logs.info ~src (fun m -> m "Handle command AssignTagToContact" ~tags);
     Ok
-      [ Tags.(Tagged { Tagged.model_uuid = Contact.id contact; tag_uuid })
+      [ Tags.(
+          Tagged
+            { Tagged.model_uuid = Contact.id contact |> Pool_user.Id.to_common
+            ; tag_uuid
+            })
         |> Pool_event.tags
       ]
   ;;
@@ -138,7 +142,7 @@ module RemoveTagFromContact : sig
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
 
-  val effects : Contact.Id.t -> Guard.ValidationSet.t
+  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Tags.t
 
@@ -146,7 +150,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command RemoveTagFromContact" ~tags);
     let open CCResult in
     let* tag_uuid = validate Tags.Model.Contact tag in
-    let model_uuid = Contact.id contact in
+    let model_uuid = Contact.id contact |> Pool_user.Id.to_common in
     Ok [ Tags.(Untagged { Tagged.model_uuid; tag_uuid }) |> Pool_event.tags ]
   ;;
 

@@ -1,41 +1,8 @@
-open CCFun
 open Sexplib.Conv
-open Ppx_yojson_conv_lib.Yojson_conv
 
 let print = Utils.ppx_printer
 
-(* TODO [aerben] to get more type-safety, every entity should have its own ID *)
-module Id = struct
-  type t = string [@@deriving eq, show, sexp, yojson]
-
-  let create () = Uuidm.v `V4 |> Uuidm.to_string
-  let of_string m = m
-  let value m = m
-  let to_common m = m
-  let of_common m = m
-  let compare = CCString.compare
-
-  let schema ?(field = Pool_message.Field.Id) () =
-    Pool_conformist.schema_decoder (of_string %> CCResult.return) value field
-  ;;
-
-  let sql_select_fragment ~field =
-    [%string
-      {sql|
-        LOWER(CONCAT(
-          SUBSTR(HEX(%{field}), 1, 8), '-',
-          SUBSTR(HEX(%{field}), 9, 4), '-',
-          SUBSTR(HEX(%{field}), 13, 4), '-',
-          SUBSTR(HEX(%{field}), 17, 4), '-',
-          SUBSTR(HEX(%{field}), 21)
-        ))
-    |sql}]
-  ;;
-
-  let sql_value_fragment name =
-    [%string {sql| UNHEX(REPLACE(%{name}, '-', '')) |sql}]
-  ;;
-end
+module Id = Pool_model.Base.Id
 
 module Language = struct
   module Core = struct
@@ -65,9 +32,10 @@ module Language = struct
 end
 
 module Version = struct
-  type t = int [@@deriving eq, ord, show, yojson, sexp_of]
+  include Pool_model.Base.Integer
 
-  let value m = m
+  let field = Pool_message.Field.Version
+  let schema = schema field CCResult.return
   let create () = 0
   let of_int i = i
   let increment m = m + 1
@@ -76,32 +44,32 @@ end
 module CreatedAt = struct
   include Pool_model.Base.Ptime
 
+  let field = Pool_message.Field.CreatedAt
+  let schema = schema field CCResult.return
   let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
-  let create = Ptime_clock.now
 end
 
 module UpdatedAt = struct
   include Pool_model.Base.Ptime
 
+  let field = Pool_message.Field.UpdatedAt
+  let schema = schema field CCResult.return
   let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
-  let create = Ptime_clock.now
 end
 
 module File = struct
   module Name = struct
-    type t = string [@@deriving eq, show, sexp_of]
+    include Pool_model.Base.String
 
     let create m =
       if CCString.is_empty m
       then Error Pool_message.(Error.Invalid Field.Filename)
       else Ok m
     ;;
-
-    let value m = m
   end
 
   module Size = struct
-    type t = int [@@deriving eq, show, sexp_of]
+    include Pool_model.Base.Integer
 
     let create m =
       let open CCInt.Infix in
@@ -109,8 +77,6 @@ module File = struct
       then Ok m
       else Error Pool_message.(Error.Invalid Field.Filesize)
     ;;
-
-    let value m = m
   end
 
   module Mime = struct
@@ -238,12 +204,10 @@ module Reminder = struct
   end
 
   module SentAt = struct
-    type t = Ptime.t [@@deriving eq, show]
+    include Pool_model.Base.Ptime
 
-    let create m = m
-    let create_now () = Ptime_clock.now ()
-    let value m = m
-    let sexp_of_t = Pool_model.Time.ptime_to_sexp
+    let field = Pool_message.Field.SentAt
+    let schema = schema field CCResult.return
   end
 
   module Channel = struct
@@ -281,10 +245,9 @@ module ExperimentType = struct
 end
 
 module VerificationCode = struct
-  type t = string [@@deriving eq, show]
+  include Pool_model.Base.String
 
-  let value m = m
-  let of_string m = m
+  let schema () = schema Pool_message.Field.VerificationCode ()
 
   let create ?(length = 6) () =
     let rec go n acc =

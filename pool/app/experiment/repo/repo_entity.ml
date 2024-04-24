@@ -186,7 +186,7 @@ let t =
                         (t2
                            (option CostCenter.t)
                            (t2
-                              (option Admin.Repo.Entity.Id.t)
+                              (option Pool_user.Repo.Id.t)
                               (t2
                                  (option Email.SmtpAuth.RepoEntity.Id.t)
                                  (t2
@@ -286,7 +286,7 @@ module Write = struct
                                 (t2
                                    (option Id.t)
                                    (t2
-                                      (option Admin.Repo.Entity.Id.t)
+                                      (option Pool_user.Repo.Id.t)
                                       (t2
                                          (option Email.SmtpAuth.RepoEntity.Id.t)
                                          (t2

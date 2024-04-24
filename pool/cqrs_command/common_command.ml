@@ -9,7 +9,7 @@ module ResetPassword : sig
 
   val handle : ?tags:Logs.Tag.set -> Email.job -> (Pool_event.t list, 'a) result
   val decode : Conformist.input -> (t, Conformist.error_msg) result
-  val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
+  val effects : Role.Target.t -> Pool_user.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_user.EmailAddress.t
 
@@ -31,7 +31,9 @@ end = struct
 
   let effects role user =
     let open Guard in
-    let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
+    let target_id =
+      user.Pool_user.id |> Guard.Uuid.target_of Pool_user.Id.value
+    in
     ValidationSet.one_of_tuple (Permission.Update, role, Some target_id)
   ;;
 end

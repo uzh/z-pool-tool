@@ -85,9 +85,11 @@ let experiment () =
 
 let contact ~prefix () =
   let open Contact in
-  let user_id = Id.create () in
+  let user_id = Pool_user.Id.create () in
   let* email =
-    let email = Format.asprintf "%s+%s@domain.test" prefix (Id.value user_id) in
+    let email =
+      Format.asprintf "%s+%s@domain.test" prefix (Pool_user.Id.value user_id)
+    in
     Pool_user.EmailAddress.create email
   in
   let* password = Pool_user.Password.create_unvalidated "a-password" in
@@ -240,7 +242,7 @@ let finds_unassigned_contacts =
     CCList.filter
       (fun contact ->
         let open Contact in
-        let open Sihl_user in
+        let open Pool_user in
         contact.user.id = unassigned_contact.user.id
         || contact.user.id = assigned_contact.user.id)
       found_contacts
@@ -319,7 +321,7 @@ let filters_out_assigned_contacts =
     CCList.filter
       (fun contact ->
         let open Contact in
-        let open Sihl_user in
+        let open Pool_user in
         contact.user.id = assigned_contact.user.id)
       found_contacts
   in

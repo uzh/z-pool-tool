@@ -8,8 +8,9 @@ let rec field_to_string =
   in
   function
   | Action -> "action"
-  | Actor -> "actor"
+  | Active -> "active"
   | ActiveContactsCount -> "active contacts count"
+  | Actor -> "actor"
   | Admin -> "admin"
   | AdminComment -> "admin comment"
   | AdminInput -> "admin input"
@@ -286,11 +287,13 @@ let rec field_to_string =
   | Translation -> "translation"
   | Tries -> "tries"
   | TriggerProfileUpdateAfter -> "request to check the profile"
+  | UpdatedAt -> "updated at"
   | Url -> "url"
   | User -> "user"
   | Validation -> "validation"
   | Value -> "value"
   | ValueOf field -> combine Value field
+  | VerificationCode -> "verification code"
   | Verified -> "verified"
   | Version -> "version"
   | Virtual -> "virtual"
@@ -490,6 +493,8 @@ let rec error_to_string =
       (CCString.concat ", " suffixes)
   | InvalidJson exn -> Format.asprintf "Invalid Json: %s" exn
   | InvalidOptionSelected -> "Invalid option selected."
+  | InvalidPasswordHashingCount ->
+    "Password hashing count has to be between 4 and 31"
   | InvalidRequest | InvalidHtmxRequest -> "Invalid request."
   | IsMarkedAsDeleted field ->
     field_message

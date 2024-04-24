@@ -165,8 +165,8 @@ module Data = struct
       ; maintenance = Maintenance.create false
       ; disabled = Disabled.create false
       ; default_language = Common.Language.En
-      ; created_at = Common.CreatedAt.create ()
-      ; updated_at = Common.UpdatedAt.create ()
+      ; created_at = Common.CreatedAt.create_now ()
+      ; updated_at = Common.UpdatedAt.create_now ()
       }
   ;;
 
@@ -187,8 +187,8 @@ module Data = struct
          ; name
          ; size
          ; mime_type
-         ; created_at = Ptime_clock.now ()
-         ; updated_at = Ptime_clock.now ()
+         ; created_at = Common.CreatedAt.create_now ()
+         ; updated_at = Common.UpdatedAt.create_now ()
          }
          |> Styles.create)
     in
@@ -202,8 +202,8 @@ module Data = struct
         ; name
         ; size
         ; mime_type
-        ; created_at = Ptime_clock.now ()
-        ; updated_at = Ptime_clock.now ()
+        ; created_at = Common.CreatedAt.create_now ()
+        ; updated_at = Common.UpdatedAt.create_now ()
         }
     in
     let logos =
@@ -227,8 +227,8 @@ module Data = struct
       ; disabled = Disabled.create false
       ; default_language = Common.Language.En
       ; text_messages_enabled = false
-      ; created_at = Common.CreatedAt.create ()
-      ; updated_at = Common.UpdatedAt.create ()
+      ; created_at = Common.CreatedAt.create_now ()
+      ; updated_at = Common.UpdatedAt.create_now ()
       }
   ;;
 end
@@ -378,7 +378,7 @@ let[@warning "-4"] create_tenant () =
     let open CCResult in
     let database =
       database_url
-      |> Pool_tenant.Database.Url.create
+      |> Database.Url.create
       |> fail_with
       |> Database.create database_label
     in
@@ -556,7 +556,7 @@ let update_tenant_database () =
 
 let create_operator () =
   let open Data in
-  let id = Admin.Id.create () in
+  let id = Pool_user.Id.create () in
   let events =
     let open CCResult.Infix in
     let open Admin_command.CreateAdmin in

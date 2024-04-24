@@ -19,8 +19,8 @@ type t =
   ; contact : Contact.t
   ; experiment : Experiment.t
   ; admin_comment : AdminComment.t option
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 
 val equal : t -> t -> bool

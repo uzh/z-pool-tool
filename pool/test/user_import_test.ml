@@ -13,7 +13,7 @@ let create_user_import ?(token = Data.token) user =
     let open Pool_context in
     match user with
     | Contact contact -> Contact.(id contact)
-    | Admin admin -> Admin.(id admin |> Id.value |> Pool_common.Id.of_string)
+    | Admin admin -> Admin.(id admin)
     | Guest -> failwith "Invalid user"
   in
   { user_uuid
@@ -22,8 +22,8 @@ let create_user_import ?(token = Data.token) user =
   ; notified_at = None
   ; reminder_count = ReminderCount.init
   ; last_reminded_at = None
-  ; created_at = Pool_common.CreatedAt.create ()
-  ; updated_at = Pool_common.UpdatedAt.create ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 
@@ -169,7 +169,7 @@ module Repo = struct
         |sql}
       |> Caqti_type.(string ->. unit)
     in
-    Database.exec pool request (Contact.Id.value id)
+    Database.exec pool request (Pool_user.Id.value id)
   ;;
 
   let set_import_timestamp_to_past pool days id =
@@ -185,7 +185,7 @@ module Repo = struct
         |sql}
       |> Caqti_type.(t2 string int ->. unit)
     in
-    Database.exec pool request (Contact.Id.value id, days)
+    Database.exec pool request (Pool_user.Id.value id, days)
   ;;
 
   type testable_import = Contact.t * User_import.t [@@deriving eq, show]
@@ -198,8 +198,8 @@ module Repo = struct
 
   let limit = 5
   let database_label = Test_utils.Data.database_label
-  let contact_id_1 = Contact.Id.create ()
-  let contact_id_2 = Contact.Id.create ()
+  let contact_id_1 = Pool_user.Id.create ()
+  let contact_id_2 = Pool_user.Id.create ()
   let sort_testable = CCList.sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
 
   let reminder_settings database_label =

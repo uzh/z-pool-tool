@@ -26,22 +26,27 @@ let update_language_as actor =
   Lwt.return_ok ()
 ;;
 
-let recruiter_can_update_contact_language _ () =
+let recruiter_can_update_contact_language =
+  let database_label = Test_utils.Data.database_label in
+  Test_utils.case
+  @@ fun () ->
   let open Utils.Lwt_result.Infix in
-  let ctx = Database.to_ctx Test_utils.Data.database_label in
+  let ctx = Database.to_ctx database_label in
   let%lwt actor =
     let open Guard.Persistence in
     ActorRole.find_actors_by_role ~ctx (`Recruiter, None)
-    ||> CCList.hd
-    >|> Actor.find Test_utils.Data.database_label
+    ||> (function
+           | [] -> failwith "No actors with role `Recruiter found."
+           | hd :: _ -> hd)
+    >|> Actor.find database_label
     ||> CCResult.get_or_failwith
   in
   let%lwt actual = update_language_as actor in
   Alcotest.(check (result unit Test_utils.error))
     "Admin can update a contact."
     (Ok ())
-    actual
-  |> Lwt.return
+    actual;
+  Lwt.return_ok ()
 ;;
 
 let guest_cannot_update_language _ () =

@@ -88,7 +88,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
-  ; contact_person_id : Admin.Id.t option
+  ; contact_person_id : Pool_user.Id.t option
   ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -150,8 +150,8 @@ let create
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
     ; invitation_reset_at
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 

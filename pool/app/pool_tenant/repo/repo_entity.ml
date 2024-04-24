@@ -1,6 +1,17 @@
 open CCFun
 open Entity
 
+module Id = struct
+  include Id
+
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.string
+      (of_string %> CCResult.return)
+      value
+  ;;
+end
+
 module Title = struct
   include Title
 

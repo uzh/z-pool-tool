@@ -35,7 +35,7 @@ val find : Rock.Request.t -> (t, Pool_message.Error.t) result
 val find_exn : Rock.Request.t -> t
 val set : Rock.Request.t -> t -> Rock.Request.t
 val find_contact : t -> (Contact.t, Pool_message.Error.t) result
-val user_of_sihl_user : Database.Label.t -> Sihl_user.t -> user Lwt.t
+val user_of_sihl_user : Database.Label.t -> Pool_user.t -> user Lwt.t
 val dashboard_path : ?guest:string -> user -> string
 
 val create

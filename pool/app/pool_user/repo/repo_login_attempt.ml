@@ -1,6 +1,17 @@
 open Login_attempt_entity
 
 module RepoEntity = struct
+  module Id : Pool_model.Base.CaqtiSig with type t = Id.t = struct
+    include Id
+
+    let t =
+      Pool_common.Repo.make_caqti_type
+        Caqti_type.string
+        CCFun.(of_string %> CCResult.return)
+        value
+    ;;
+  end
+
   module Counter = struct
     include Counter
 
@@ -29,7 +40,7 @@ module RepoEntity = struct
         ~encode
         ~decode
         (t2
-           Pool_common.Repo.Id.t
+           Id.t
            (t2
               Repo_entity.EmailAddress.t
               (t2 Counter.t (option BlockedUntil.t)))))
@@ -63,12 +74,10 @@ let find_opt_request =
       email = ?
   |sql}
   |> select_sql
-  |> Caqti_type.string ->! RepoEntity.t
+  |> Repo_entity.EmailAddress.t ->! RepoEntity.t
 ;;
 
-let find_opt pool email =
-  Database.find_opt pool find_opt_request (Entity.EmailAddress.value email)
-;;
+let find_opt pool = Database.find_opt pool find_opt_request
 
 let insert_request =
   let open Caqti_request.Infix in
@@ -99,9 +108,7 @@ let delete_request =
     DELETE FROM pool_failed_login_attempts
     WHERE email = $1
   |sql}
-  |> Caqti_type.(string ->. unit)
+  |> Repo_entity.EmailAddress.t ->. Caqti_type.unit
 ;;
 
-let delete pool t =
-  Database.exec pool delete_request (t.email |> Entity.EmailAddress.value)
-;;
+let delete pool t = Database.exec pool delete_request t.email
