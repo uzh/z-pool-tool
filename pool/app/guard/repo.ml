@@ -286,7 +286,13 @@ module Cache = struct
   let clear () =
     let () = clear lru_validation in
     let () = clear lru_find_by_actor in
-    clear lru_find_actor
+    let () = clear lru_find_actor in
+    clear_cache ()
+  ;;
+
+  let log_cache_size cache label =
+    Logs.info ~src (fun m ->
+      m "Updated size of guard cache %s: %i" label (size cache))
   ;;
 end
 
@@ -300,7 +306,7 @@ module Actor = struct
         let tags = Pool_database.Logger.Tags.create database_label in
         Logs.debug ~src (fun m ->
           m ~tags "Found in cache: Actor %s" (id |> Core.Uuid.Actor.to_string)))
-      else ()
+      else Cache.log_cache_size Cache.lru_find_actor "lru_find_actor"
     in
     let find' (label, id) = find ~ctx:(Pool_database.to_ctx label) id in
     (database_label, id) |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
@@ -392,7 +398,7 @@ module ActorRole = struct
         let tags = Pool_database.Logger.Tags.create database_label in
         Logs.debug ~src (fun m ->
           m ~tags "Found in cache: Actor %s" (actor |> Core.Uuid.Actor.to_string)))
-      else ()
+      else Cache.log_cache_size Cache.lru_find_by_actor "lru_find_by_actor"
     in
     let find_by_actor' (label, actor) =
       Utils.Database.collect
@@ -424,7 +430,7 @@ let validate
           "Found in cache: Actor %s\nValidation set %s"
           (uuid |> Core.Uuid.Actor.to_string)
           ([%show: Core.ValidationSet.t] validation_set))
-    else ()
+    else Cache.log_cache_size Cache.lru_validation "lru_validation"
   in
   let validate' (label, set, any_id, actor) =
     validate
