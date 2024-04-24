@@ -145,9 +145,8 @@ let lwt_file_reporter ?(pp_header = pp_exec_header) () =
         Buffer.reset b;
         m )
   in
-  let app, app_flush = buf () in
-  let err, err_flush = buf () in
   let report src level ~over k msgf =
+    let buf, buf_flush = buf () in
     let k _ = k () in
     let write () =
       let name =
@@ -163,12 +162,7 @@ let lwt_file_reporter ?(pp_header = pp_exec_header) () =
           ~mode:Lwt_io.Output
           name
       in
-      let%lwt () =
-        match level with
-        | Logs.Error -> Lwt_io.write log (err_flush ())
-        | Logs.App | Logs.Debug | Logs.Info | Logs.Warning ->
-          Lwt_io.write log (app_flush ())
-      in
+      let%lwt () = Lwt_io.write log (buf_flush ()) in
       Lwt_io.close log
     in
     let unblock () =
@@ -178,12 +172,7 @@ let lwt_file_reporter ?(pp_header = pp_exec_header) () =
     (write ()) [%lwt.finally unblock ()] |> Lwt.ignore_result;
     msgf
     @@ fun ?header ?tags fmt ->
-    let ppf =
-      match level with
-      | Logs.Error -> Format.formatter_of_buffer err
-      | Logs.App | Logs.Debug | Logs.Info | Logs.Warning ->
-        Format.formatter_of_buffer app
-    in
+    let ppf = Format.formatter_of_buffer buf in
     Format.kfprintf
       k
       ppf
