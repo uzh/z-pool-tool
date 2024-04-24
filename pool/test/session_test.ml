@@ -925,7 +925,7 @@ let close_valid_with_assignments () =
           |> CCList.map (fun (tag : t) ->
             Tagged
               { Tagged.model_uuid =
-                  Contact.id assignment.contact |> Pool_user.Id.to_common
+                  Contact.id assignment.contact |> Contact.Id.to_common
               ; tag_uuid = tag.id
               }
             |> Pool_event.tags)
@@ -1435,7 +1435,7 @@ let close_session_check_contact_figures _ () =
     CCList.find
       Contact.(
         fun (assignment : Assignment.t) ->
-          Pool_user.Id.equal (id assignment.Assignment.contact) (id contact))
+          Id.equal (id assignment.Assignment.contact) (id contact))
       assignments
   in
   let%lwt () =

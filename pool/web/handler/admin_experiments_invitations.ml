@@ -110,7 +110,7 @@ let create req =
     let tags = Pool_context.Logger.Tags.req req in
     let* contact_ids =
       Sihl.Web.Request.urlencoded_list Field.(Contacts |> array_key) req
-      ||> CCList.map Pool_user.Id.of_string
+      ||> CCList.map Contact.Id.of_string
       ||> fun list ->
       if CCList.is_empty list
       then Error (Error.NoOptionSelected Field.Contact)
@@ -123,7 +123,7 @@ let create req =
         let retrieved_ids = CCList.map Contact.id contacts in
         CCList.fold_left
           (fun missing id ->
-            match CCList.mem ~eq:Pool_user.Id.equal id retrieved_ids with
+            match CCList.mem ~eq:Contact.Id.equal id retrieved_ids with
             | true -> missing
             | false -> CCList.cons id missing)
           []
@@ -136,7 +136,7 @@ let create req =
       | true -> Ok contacts
       | false ->
         find_missing contacts
-        |> CCList.map Pool_user.Id.value
+        |> CCList.map Contact.Id.value
         |> fun ids -> Error (Error.NotFoundList (Field.Contacts, ids))
     in
     let%lwt invited_contacts =

@@ -6,7 +6,7 @@ module UpdateMultiple : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Pool_context.user
-    -> Pool_user.Id.t
+    -> Contact.Id.t
     -> t
     -> (Pool_event.t, Pool_message.Error.t) result
 

@@ -523,7 +523,7 @@ module SignUpVerification : sig
     -> Email.Token.t
     -> Pool_user.Firstname.t
     -> Pool_user.Lastname.t
-    -> Pool_user.Id.t
+    -> Contact.Id.t
     -> Email.job Lwt.t
 end
 

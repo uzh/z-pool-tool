@@ -234,7 +234,7 @@ module Sql = struct
             pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
             AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       |sql}
-    |> Caqti_type.(t2 Pool_user.Repo.Id.t Experiment.Repo.Entity.Id.t)
+    |> Caqti_type.(t2 Contact.Repo.Id.t Experiment.Repo.Entity.Id.t)
        ->* RepoEntity.Id.t
   ;;
 
@@ -382,7 +382,7 @@ module Sql = struct
       WHERE pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
         AND pool_assignments.marked_as_deleted = 0
       |sql}
-    |> Pool_user.Repo.Id.t ->* RepoEntity.Id.t
+    |> Contact.Repo.Id.t ->* RepoEntity.Id.t
   ;;
 
   let find_all_ids_of_contact_id pool =
@@ -445,7 +445,7 @@ module Sql = struct
         pool_sessions.start ASC
     |sql}
     |> find_public_sql
-    |> Pool_user.Repo.Id.t ->* RepoEntity.Public.t
+    |> Contact.Repo.Id.t ->* RepoEntity.Public.t
   ;;
 
   let find_public_upcoming_by_contact pool =

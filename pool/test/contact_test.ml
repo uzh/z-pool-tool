@@ -146,7 +146,7 @@ let sign_up_not_allowed_suffix () =
 ;;
 
 let sign_up () =
-  let user_id = Pool_user.Id.create () in
+  let user_id = Contact.Id.create () in
   let terms_accepted_at =
     Pool_user.TermsAccepted.create_now () |> CCOption.pure
   in
@@ -200,7 +200,8 @@ let sign_up () =
     in
     Ok
       [ Contact.Created contact |> Pool_event.contact
-      ; Email.Created (email, token, user_id) |> Pool_event.email_verification
+      ; Email.Created (email, token, user_id |> Contact.Id.to_user)
+        |> Pool_event.email_verification
       ; Email.Sent verification_email |> Pool_event.email
       ]
   in
@@ -431,7 +432,7 @@ let request_email_validation () =
   in
   let expected =
     Ok
-      [ Email.Created (new_email, token, Contact.id contact)
+      [ Email.Created (new_email, token, Contact.(id contact |> Id.to_user))
         |> Pool_event.email_verification
       ; Email.Sent verification_email |> Pool_event.email
       ]

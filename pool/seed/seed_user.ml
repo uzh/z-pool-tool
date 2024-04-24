@@ -24,7 +24,7 @@ let answer_custom_fields fields contact =
   let select_random options =
     Random.int (List.length options) |> CCList.nth options
   in
-  let entity_uuid = Contact.(contact |> id |> Pool_user.Id.to_common) in
+  let entity_uuid = Contact.(contact |> id |> Id.to_common) in
   CCList.filter_map
     (function
       | (Select (public, options, _) : Public.t) ->
@@ -249,7 +249,7 @@ let contacts db_label =
       let language, terms_accepted_at, paused, disabled, verified =
         CCList.get_at_idx_exn (idx mod CCList.length combinations) combinations
       in
-      ( person.uid |> Pool_user.Id.of_string
+      ( person.uid |> Contact.Id.of_string
       , person.first_name |> User.Firstname.of_string
       , person.last_name |> User.Lastname.of_string
       , person.email |> User.EmailAddress.of_string

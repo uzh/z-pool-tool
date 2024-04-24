@@ -429,7 +429,7 @@ module Sql = struct
     Database.collect
       pool
       find_all_ids_of_contact_id_request
-      (Pool_user.Id.to_common id)
+      (Contact.Id.to_common id)
   ;;
 
   let find_to_enroll_directly_request where =
@@ -497,7 +497,7 @@ module Sql = struct
     Database.collect
       pool
       (find_to_enroll_directly_request where)
-      ("%" ^ query ^ "%", Contact.(contact |> id |> Pool_user.Id.to_common))
+      ("%" ^ query ^ "%", Contact.(contact |> id |> Id.to_common))
     >|> Lwt_list.map_s (fun ({ DirectEnrollment.filter; _ } as experiment) ->
       let%lwt matches_filter =
         match filter with
@@ -524,7 +524,7 @@ module Sql = struct
           AND pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
           AND pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
-    |> Caqti_type.(t2 Repo_entity.Id.t Pool_user.Repo.Id.t ->! bool)
+    |> Caqti_type.(t2 Repo_entity.Id.t Contact.Repo.Id.t ->! bool)
   ;;
 
   let contact_is_enrolled pool experiment_id contact_id =
@@ -568,7 +568,7 @@ module Sql = struct
     let where =
       {sql| pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
     in
-    (where, dyn |> Dynparam.add Pool_user.Repo.Id.t contact_id), joins
+    (where, dyn |> Dynparam.add Contact.Repo.Id.t contact_id), joins
   ;;
 
   let query_participation_history_by_contact ?query pool contact =

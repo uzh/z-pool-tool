@@ -199,7 +199,7 @@ module Experiment = struct
       dynamic_search
         (Format.asprintf
            "/admin/contacts/%s/experiments"
-           (Contact.id contact |> Pool_user.Id.value))
+           (Contact.id contact |> Contact.Id.value))
         `Get
     in
     multi_search

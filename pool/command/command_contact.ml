@@ -36,7 +36,7 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
        when CCString.equal terms_accepted "accept" ->
        let%lwt pool = Command_utils.is_available_exn db_pool in
        let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
-       let user_id = Pool_user.Id.create () in
+       let user_id = Contact.Id.create () in
        let%lwt events =
          let open Cqrs_command.Contact_command.SignUp in
          let language =

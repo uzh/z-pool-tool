@@ -247,7 +247,7 @@ val find_all
 
 val find_all_ids_of_contact_id
   :  Database.Label.t
-  -> Pool_user.Id.t
+  -> Contact.Id.t
   -> Id.t list Lwt.t
 
 val find_public
@@ -316,11 +316,7 @@ val find_to_enroll_directly
   -> query:string
   -> DirectEnrollment.t list Lwt.t
 
-val contact_is_enrolled
-  :  Database.Label.t
-  -> Id.t
-  -> Pool_user.Id.t
-  -> bool Lwt.t
+val contact_is_enrolled : Database.Label.t -> Id.t -> Contact.Id.t -> bool Lwt.t
 
 val find_targets_grantable_by_admin
   :  ?exclude:Id.t list

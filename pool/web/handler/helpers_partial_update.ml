@@ -86,7 +86,7 @@ let update ?contact req =
       then
         Format.asprintf
           "/admin/contacts/%s/edit"
-          (contact |> Contact.id |> Pool_user.Id.value)
+          Contact.(contact |> id |> Id.value)
       else "/user/personal-details"
     in
     let* Pool_context.Tenant.{ tenant_languages; _ } =

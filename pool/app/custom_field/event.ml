@@ -2,7 +2,7 @@ open Entity
 
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
-  | AnswerUpserted of Public.t * Pool_user.Id.t * Pool_context.user
+  | AnswerUpserted of Public.t * Contact.Id.t * Pool_context.user
   | AnsweredOnSignup of Public.t * Pool_common.Id.t
   | Created of t
   | Deleted of t
@@ -36,7 +36,7 @@ let handle_event pool : event -> unit Lwt.t =
     Repo_partial_update.upsert_answer
       pool
       is_admin
-      (Pool_user.Id.to_common entity_uuid)
+      (Contact.Id.to_common entity_uuid)
       m
   | AnsweredOnSignup (m, entity_uuid) ->
     Repo_partial_update.upsert_answer pool false entity_uuid m

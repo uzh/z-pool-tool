@@ -330,7 +330,7 @@ let find_contacts_to_notify pool limit =
           AND pool_contacts.disabled = 0
           AND pool_user_imports.notification_sent_at IS NULL|}
        limit
-     |> Caqti_type.(unit ->* t2 Contact.Repo.Entity.t RepoEntity.t))
+     |> Caqti_type.(unit ->* t2 Contact.Repo.t RepoEntity.t))
 ;;
 
 let find_contacts_to_remind reminder_settings pool limit () =
@@ -345,8 +345,7 @@ let find_contacts_to_remind reminder_settings pool limit () =
            reminder_where_clause)
       limit
     |> Caqti_type.(
-         RepoEntity.reminder_settings_caqti
-         ->* t2 Contact.Repo.Entity.t RepoEntity.t)
+         RepoEntity.reminder_settings_caqti ->* t2 Contact.Repo.t RepoEntity.t)
   in
   Database.collect pool request reminder_settings
 ;;

@@ -152,7 +152,7 @@ let assign_tag_to_contact _ () =
   let%lwt () = Pool_event.handle_events Test_utils.Data.database_label events in
   let%lwt found_tagged =
     Tags.(find_all_of_entity Test_utils.Data.database_label Model.Contact)
-      (contact |> Contact.id |> Pool_user.Id.to_common)
+      Contact.(contact |> id |> Id.to_common)
   in
   let expected = [ tag ] in
   let () =
@@ -170,7 +170,7 @@ let remove_tag_from_contact _ () =
   let%lwt () = Pool_event.handle_events Test_utils.Data.database_label events in
   let%lwt found_tagged =
     Tags.(find_all_of_entity Test_utils.Data.database_label Model.Contact)
-      (contact |> Contact.id |> Pool_user.Id.to_common)
+      Contact.(contact |> id |> Id.to_common)
   in
   let expected = [] in
   let () =

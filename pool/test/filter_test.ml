@@ -550,7 +550,7 @@ let filter_contacts _ () =
     let res =
       filtered_contacts
       |> (CCList.subset ~eq:(fun filtered contact ->
-            Pool_user.Id.equal (Contact.id contact) (Contact.id filtered)))
+            Contact.(Id.equal (id contact) (id filtered))))
            contacts
     in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -811,9 +811,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
       |> Lwt.map get_exn
     in
     let get_index contact =
-      CCList.find_idx
-        (fun c -> Contact.(Pool_user.Id.equal (id c) (id contact)))
-        contacts
+      CCList.find_idx (fun c -> Contact.(Id.equal (id c) (id contact))) contacts
       |> CCOption.get_exn_or "Cannot find contact"
       |> fst
     in
@@ -1239,7 +1237,7 @@ let filter_by_tags _ () =
   let%lwt () =
     let create_tagged_event contact tag =
       let open Tagged in
-      { model_uuid = Contact.id contact |> Pool_user.Id.to_common
+      { model_uuid = Contact.(id contact |> Id.to_common)
       ; tag_uuid = tag.Tags.id
       }
       |> tagged

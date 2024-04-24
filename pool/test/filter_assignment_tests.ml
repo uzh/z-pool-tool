@@ -85,10 +85,10 @@ let experiment () =
 
 let contact ~prefix () =
   let open Contact in
-  let user_id = Pool_user.Id.create () in
+  let user_id = Contact.Id.create () in
   let* email =
     let email =
-      Format.asprintf "%s+%s@domain.test" prefix (Pool_user.Id.value user_id)
+      Format.asprintf "%s+%s@domain.test" prefix (Contact.Id.value user_id)
     in
     Pool_user.EmailAddress.create email
   in
@@ -118,7 +118,8 @@ let contact ~prefix () =
   let* verification_events =
     let open Cqrs_command.User_command in
     let created_email =
-      Email.Created (email, token, user_id) |> Pool_event.email_verification
+      Email.Created (email, token, user_id |> Id.to_user)
+      |> Pool_event.email_verification
     in
     let email = Email.create email contact.user token in
     let@ verify_events = VerifyEmail.handle (Contact contact) email in

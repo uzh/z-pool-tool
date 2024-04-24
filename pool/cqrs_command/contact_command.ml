@@ -17,7 +17,7 @@ module SignUp : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?user_id:Pool_user.Id.t
+    -> ?user_id:Contact.Id.t
     -> ?terms_accepted_at:User.TermsAccepted.t option
     -> Custom_field.Public.t list
     -> Email.Token.t
@@ -56,7 +56,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ?allowed_email_suffixes
-    ?(user_id = Pool_user.Id.create ())
+    ?(user_id = Contact.Id.create ())
     ?(terms_accepted_at = Some (User.TermsAccepted.create_now ()))
     custom_fields
     token
@@ -82,12 +82,12 @@ end = struct
     let custom_field_events =
       custom_fields
       |> CCList.map (fun field ->
-        Custom_field.AnsweredOnSignup (field, user_id |> Pool_user.Id.to_common)
+        Custom_field.AnsweredOnSignup (field, user_id |> Contact.Id.to_common)
         |> Pool_event.custom_field)
     in
     Ok
       ([ Contact.Created contact |> Pool_event.contact
-       ; Email.Created (unverified_email, token, user_id)
+       ; Email.Created (unverified_email, token, user_id |> Contact.Id.to_user)
          |> Pool_event.email_verification
        ; Email.Sent verification_email |> Pool_event.email
        ]
@@ -126,7 +126,7 @@ module DeleteUnverified : sig
     -> Contact.t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t
 
@@ -153,7 +153,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.PartialUpdate.t
 
@@ -179,7 +179,7 @@ module ClearAnswer : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t
 
@@ -187,7 +187,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command ClearAnswer" ~tags);
     Ok
       [ Custom_field.AdminAnswerCleared
-          (field, Contact.id contact |> Pool_user.Id.to_common)
+          (field, Contact.(id contact |> Id.to_common))
         |> Pool_event.custom_field
       ]
   ;;
@@ -212,7 +212,7 @@ module UpdatePassword : sig
     -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { current_password : User.Password.t [@opaque]
@@ -282,7 +282,7 @@ module RequestEmailValidation : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_user.EmailAddress.t
 
@@ -298,7 +298,7 @@ end = struct
     let open CCResult in
     let* () = User.EmailAddress.validate allowed_email_suffixes email in
     Ok
-      [ Email.Created (email, token, Contact.id contact)
+      [ Email.Created (email, token, Contact.(id contact |> Id.to_user))
         |> Pool_event.email_verification
       ; Email.Sent verification_email |> Pool_event.email
       ]
@@ -317,7 +317,7 @@ module UpdateEmail : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Email.unverified Email.t
 
@@ -345,7 +345,7 @@ module AcceptTermsAndConditions : sig
     -> Contact.t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t
 
@@ -370,7 +370,7 @@ module SendProfileUpdateTrigger : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { contacts : Contact.t list
@@ -397,7 +397,7 @@ module SendRegistrationAttemptNotifitacion : sig
     -> Email.job
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t
 
@@ -424,7 +424,7 @@ module AddCellPhone : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t * User.CellPhone.t * Pool_common.VerificationCode.t
 
@@ -447,7 +447,7 @@ module VerifyCellPhone : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t * User.CellPhone.t
 
@@ -467,7 +467,7 @@ module ResetCellPhoneVerification : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t
 
@@ -489,7 +489,7 @@ module TogglePaused : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_user.Paused.t
 

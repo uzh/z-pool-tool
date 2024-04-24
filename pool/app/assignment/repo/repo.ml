@@ -196,7 +196,7 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
     |> find_request_sql
-    |> Pool_user.Repo.Id.t ->* RepoEntity.t
+    |> Contact.Repo.Id.t ->* RepoEntity.t
   ;;
 
   let find_by_contact pool = Database.collect pool find_by_contact_request
@@ -212,7 +212,7 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
       |> select_public_sql ~joins
-      |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Pool_user.Repo.Id.t
+      |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t
          ->* RepoEntity.Public.t
     in
     let joins =
@@ -259,7 +259,7 @@ module Sql = struct
       columns
       joins
       where
-    |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Pool_user.Repo.Id.t
+    |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t
        ->* RepoEntity.with_session
   ;;
 
@@ -304,7 +304,7 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
     |> find_request_sql ~additional_joins
-    |> Caqti_type.t2 Pool_common.Repo.Id.t Pool_user.Repo.Id.t ->* RepoEntity.t
+    |> Caqti_type.t2 Pool_common.Repo.Id.t Contact.Repo.Id.t ->* RepoEntity.t
   ;;
 
   let find_follow_ups pool m =
@@ -487,7 +487,7 @@ module Sql = struct
         let init =
           empty
           |> add Experiment.Repo.Entity.Id.t experiment_uuid
-          |> add Pool_user.Repo.Id.t contact_uuid
+          |> add Contact.Repo.Id.t contact_uuid
         in
         CCList.fold_left
           (fun dyn { Entity.id; _ } ->
@@ -561,7 +561,7 @@ let enrich_with_customfield_data table_view pool assignments =
     | [] -> result
     | hd :: tl ->
       let contact_id =
-        hd.Entity.contact |> Contact.id |> Pool_user.Id.to_common
+        hd.Entity.contact |> Contact.id |> Contact.Id.to_common
       in
       let current, rest =
         CCList.partition_filter_map
@@ -602,7 +602,7 @@ let find_with_custom_field_data table_view pool session_id =
     | [] -> result
     | hd :: tl ->
       let contact_id =
-        hd.Entity.contact |> Contact.id |> Pool_user.Id.to_common
+        hd.Entity.contact |> Contact.id |> Contact.Id.to_common
       in
       let current, rest =
         CCList.partition_filter_map

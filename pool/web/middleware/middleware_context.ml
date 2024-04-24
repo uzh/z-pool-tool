@@ -32,7 +32,8 @@ let context () =
           Http_utils.user_from_session tenant_db req
           ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
           >>= fun user ->
-          Contact.find tenant_db user.Pool_user.id
+          user.Pool_user.id
+          |> Contact.(Id.of_user %> find tenant_db)
           >|+ fun p -> p.Contact.language
         in
         CCResult.get_or lang ~default:None |> Lwt.return

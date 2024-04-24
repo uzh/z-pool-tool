@@ -27,7 +27,7 @@ let t =
       (t2
          Id.t
          (t2
-            Contact.Repo.Entity.t
+            Contact.Repo.t
             (t2
                (option ResentAt.t)
                (t2 SendCount.t (t2 CreatedAt.t UpdatedAt.t))))))
@@ -55,7 +55,7 @@ module Write = struct
   type t =
     { id : Pool_common.Id.t
     ; experiment_id : Experiment.Id.t
-    ; contact_id : Pool_user.Id.t
+    ; contact_id : Contact.Id.t
     ; resent_at : Entity.ResentAt.t option
     ; send_count : SendCount.t
     ; created_at : Pool_common.CreatedAt.t
@@ -92,7 +92,7 @@ module Write = struct
            (t2
               Experiment.Repo.Entity.Id.t
               (t2
-                 Pool_user.Repo.Id.t
+                 Contact.Repo.Id.t
                  (t2
                     (option ResentAt.t)
                     (t2 SendCount.t (t2 CreatedAt.t UpdatedAt.t)))))))

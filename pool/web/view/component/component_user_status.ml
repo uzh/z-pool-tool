@@ -96,7 +96,7 @@ module Contact = struct
     let text =
       if view_contact_name
       then Contact.lastname_firstname contact
-      else Pool_user.Id.value (Contact.id contact)
+      else Contact.(id contact |> Id.value)
     in
     make_icons language contact context |> wrap_icons text
   ;;

@@ -94,7 +94,7 @@ let update () =
 (* Integration *)
 
 module PendingWaitingLists = struct
-  let contact_id = Pool_user.Id.create ()
+  let contact_id = Contact.Id.create ()
   let experiment_id = Experiment.Id.create ()
   let session_id = Session.Id.create ()
 

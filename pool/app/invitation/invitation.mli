@@ -80,14 +80,14 @@ val find_experiment_id_of_invitation
 
 val find_multiple_by_experiment_and_contacts
   :  Database.Label.t
-  -> Pool_user.Id.t list
+  -> Contact.Id.t list
   -> Experiment.t
-  -> Pool_user.Id.t list Lwt.t
+  -> Contact.Id.t list Lwt.t
 
 val find_by_contact_and_experiment_opt
   :  Database.Label.t
   -> Experiment.Id.t
-  -> Pool_user.Id.t
+  -> Contact.Id.t
   -> t option Lwt.t
 
 val column_resent_at : Query.Column.t

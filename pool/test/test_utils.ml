@@ -101,38 +101,37 @@ module Model = struct
   ;;
 
   let create_contact ?id ?language ?name ?(with_terms_accepted = true) () =
-    let sihl_user = create_user ?id ?name () in
-    Contact.
-      { user = sihl_user
-      ; terms_accepted_at =
-          (if with_terms_accepted
-           then Pool_user.TermsAccepted.create_now () |> CCOption.return
-           else None)
-      ; language
-      ; experiment_type_preference = None
-      ; cell_phone = Some ("+41791234567" |> Pool_user.CellPhone.of_string)
-      ; paused = Pool_user.Paused.create false
-      ; disabled = Pool_user.Disabled.create false
-      ; verified = None
-      ; email_verified =
-          ()
-          |> Ptime_clock.now
-          |> Pool_user.EmailVerified.create
-          |> CCOption.return
-      ; num_invitations = NumberOfInvitations.init
-      ; num_assignments = NumberOfAssignments.init
-      ; num_show_ups = NumberOfShowUps.init
-      ; num_no_shows = NumberOfNoShows.init
-      ; num_participations = NumberOfParticipations.init
-      ; firstname_version = Pool_common.Version.create ()
-      ; lastname_version = Pool_common.Version.create ()
-      ; paused_version = Pool_common.Version.create ()
-      ; language_version = Pool_common.Version.create ()
-      ; experiment_type_preference_version = Pool_common.Version.create ()
-      ; import_pending = Pool_user.ImportPending.create false
-      ; created_at = Pool_common.CreatedAt.create_now ()
-      ; updated_at = Pool_common.UpdatedAt.create_now ()
-      }
+    let user = create_user ?id:(CCOption.map Contact.Id.to_user id) ?name () in
+    { Contact.user
+    ; terms_accepted_at =
+        (if with_terms_accepted
+         then Pool_user.TermsAccepted.create_now () |> CCOption.return
+         else None)
+    ; language
+    ; experiment_type_preference = None
+    ; cell_phone = Some ("+41791234567" |> Pool_user.CellPhone.of_string)
+    ; paused = Pool_user.Paused.create false
+    ; disabled = Pool_user.Disabled.create false
+    ; verified = None
+    ; email_verified =
+        ()
+        |> Ptime_clock.now
+        |> Pool_user.EmailVerified.create
+        |> CCOption.return
+    ; num_invitations = Contact.NumberOfInvitations.init
+    ; num_assignments = Contact.NumberOfAssignments.init
+    ; num_show_ups = Contact.NumberOfShowUps.init
+    ; num_no_shows = Contact.NumberOfNoShows.init
+    ; num_participations = Contact.NumberOfParticipations.init
+    ; firstname_version = Pool_common.Version.create ()
+    ; lastname_version = Pool_common.Version.create ()
+    ; paused_version = Pool_common.Version.create ()
+    ; language_version = Pool_common.Version.create ()
+    ; experiment_type_preference_version = Pool_common.Version.create ()
+    ; import_pending = Pool_user.ImportPending.create false
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    }
   ;;
 
   let create_admin ?id ?email () =

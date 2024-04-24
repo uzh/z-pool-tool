@@ -421,7 +421,7 @@ module Sql = struct
     let Dynparam.Pack (pt, pv), prepared_request =
       sql |> where_prefix |> find_filtered_request_sql ?limit use_case dyn
     in
-    let request = prepared_request |> pt ->* Contact.Repo.Entity.t in
+    let request = prepared_request |> pt ->* Contact.Repo.t in
     let query connection =
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.collect_list request pv
@@ -459,7 +459,7 @@ module Sql = struct
          ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
     |> fun (dyn, sql) ->
     let (Dynparam.Pack (pt, pv)) =
-      Dynparam.(dyn |> add Pool_user.Repo.Id.t Contact.(contact |> id))
+      Dynparam.(dyn |> add Contact.Repo.Id.t Contact.(contact |> id))
     in
     let open Caqti_request.Infix in
     let request = sql |> find_sql |> pt ->? Caqti_type.int in

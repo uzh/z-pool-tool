@@ -191,7 +191,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
 ;;
 
 let experiment_id = Experiment.Id.create ()
-let contact_ids = Pool_user.Id.[ create (); create (); create (); create () ]
+let contact_ids = Contact.Id.[ create (); create (); create (); create () ]
 let invitation_mail = Message_template.ExperimentInvitation.prepare
 
 let contact_name_filter name =

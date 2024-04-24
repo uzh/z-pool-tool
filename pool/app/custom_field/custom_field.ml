@@ -184,7 +184,7 @@ let validate_partial_update
     then Error Pool_message.(Error.MeantimeUpdate field)
     else t |> increment_version |> CCResult.return
   in
-  let entity_uuid = Contact.(contact |> id |> Pool_user.Id.to_common) in
+  let entity_uuid = Contact.(contact |> id |> Id.to_common) in
   let validate schema =
     let schema = Pool_conformist.(make Field.[ schema () ] CCFun.id) in
     Conformist.decode_and_validate

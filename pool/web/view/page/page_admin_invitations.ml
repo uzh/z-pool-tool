@@ -103,7 +103,7 @@ module Partials = struct
           else
             CCList.map
               (fun (contact : Contact.t) ->
-                let id = Contact.id contact |> Pool_user.Id.value in
+                let id = Contact.id contact |> Contact.Id.value in
                 [ div
                     [ input
                         ~a:

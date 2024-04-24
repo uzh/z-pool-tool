@@ -40,7 +40,6 @@ end
 
 module AdminRepo = struct
   let create ?id ?email () =
-    let open Pool_user in
     let admin_id = id |> CCOption.value ~default:(Pool_user.Id.create ()) in
     let open Admin in
     let open Utils.Lwt_result.Infix in
@@ -55,8 +54,8 @@ module AdminRepo = struct
       |> Pool_user.EmailAddress.of_string
     in
     let admin =
-      Admin.
-        { id = Some admin_id
+      Pool_user.
+        { Admin.id = Some admin_id
         ; lastname = Lastname.of_string "Bar"
         ; firstname = Firstname.of_string "Foo"
         ; password = Password.create "Password1!" |> CCResult.get_exn

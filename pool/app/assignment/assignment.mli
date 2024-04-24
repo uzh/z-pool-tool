@@ -188,12 +188,12 @@ val contact_participation_in_other_assignments
   :  Database.Label.t
   -> exclude_assignments:t list
   -> Experiment.Id.t
-  -> Pool_user.Id.t
+  -> Contact.Id.t
   -> (bool, Pool_message.Error.t) Lwt_result.t
 
 val find_external_data_identifiers_by_contact
   :  Database.Label.t
-  -> Pool_user.Id.t
+  -> Contact.Id.t
   -> ExternalDataIdentifier.t list Lwt.t
 
 val group_by_contact : t list -> (Contact.t * t list) list

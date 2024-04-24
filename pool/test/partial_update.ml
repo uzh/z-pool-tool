@@ -6,7 +6,7 @@ let database_label = Test_utils.Data.database_label
 let save_custom_fields custom_field contact =
   let public =
     Custom_field_test.Data.to_public
-      Contact.(contact |> id |> Pool_user.Id.to_common)
+      Contact.(contact |> id |> Id.to_common)
       custom_field
   in
   let events =
@@ -57,7 +57,7 @@ let update_custom_field _ () =
     let custom_field = Custom_field_test.Data.custom_text_field () in
     let public =
       Custom_field_test.Data.to_public
-        Contact.(id contact |> Pool_user.Id.to_common)
+        Contact.(id contact |> Id.to_common)
         custom_field
     in
     let%lwt () = save_custom_fields custom_field contact in
@@ -107,7 +107,7 @@ let partial_update_exec
     let contact = Test_utils.Model.create_contact () in
     let public =
       Custom_field_test.Data.to_public
-        Contact.(id contact |> Pool_user.Id.to_common)
+        Contact.(id contact |> Id.to_common)
         custom_field
     in
     let%lwt () = save_custom_fields custom_field contact in

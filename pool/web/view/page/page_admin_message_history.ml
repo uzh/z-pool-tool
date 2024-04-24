@@ -4,7 +4,7 @@ open Tyxml.Html
 module Field = Pool_message.Field
 
 let path =
-  Contact.id %> Pool_user.Id.value %> Format.asprintf "/admin/contacts/%s"
+  Contact.id %> Contact.Id.value %> Format.asprintf "/admin/contacts/%s"
 ;;
 
 let list Pool_context.{ language; _ } url (messages, query) =

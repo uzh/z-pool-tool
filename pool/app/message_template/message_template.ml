@@ -244,7 +244,7 @@ let user_message_history label user =
 
 let experiment_message_history label experiment contact =
   let entity_uuids =
-    [ Contact.(id contact |> Pool_user.Id.to_common)
+    [ Contact.(id contact |> Id.to_common)
     ; Experiment.(experiment.Experiment.id |> Id.to_common)
     ]
   in
@@ -253,7 +253,7 @@ let experiment_message_history label experiment contact =
 
 let public_experiment_message_history label experiment contact =
   let entity_uuids =
-    [ Contact.(id contact |> Pool_user.Id.to_common)
+    [ Contact.(id contact |> Id.to_common)
     ; Experiment.(experiment |> Public.id |> Id.to_common)
     ]
   in
@@ -262,7 +262,7 @@ let public_experiment_message_history label experiment contact =
 
 let session_message_history label experiment session contact =
   let entity_uuids =
-    [ Contact.(id contact |> Pool_user.Id.to_common)
+    [ Contact.(id contact |> Id.to_common)
     ; Session.(session.Session.id |> Id.to_common)
     ; Experiment.(experiment.Experiment.id |> Id.to_common)
     ]
@@ -458,7 +458,7 @@ module AssignmentSessionChange = struct
       [ experiment.Experiment.id |> Experiment.Id.to_common
       ; new_session.Session.id |> Session.Id.to_common
       ; old_session.Session.id |> Session.Id.to_common
-      ; contact |> Contact.id |> Pool_user.Id.to_common
+      ; contact |> Contact.id |> Contact.Id.to_common
       ]
     in
     Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
@@ -714,7 +714,7 @@ module ManualSessionMessage = struct
     let entity_uuids =
       [ experiment.Experiment.id |> Experiment.Id.to_common
       ; session.Session.id |> Session.Id.to_common
-      ; contact |> Contact.id |> Pool_user.Id.to_common
+      ; contact |> Contact.id |> Contact.Id.to_common
       ]
     in
     Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
@@ -1232,7 +1232,7 @@ module SignUpVerification = struct
 
   let message_history user_id =
     let open Queue.History in
-    { entity_uuids = [ user_id |> Pool_user.Id.to_common |> Id.of_common ]
+    { entity_uuids = [ user_id |> Contact.Id.to_common |> Id.of_common ]
     ; message_template = Label.show label |> CCOption.return
     }
   ;;

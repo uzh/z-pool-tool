@@ -439,6 +439,7 @@ let equal a b =
 ;;
 
 let compare a b = EmailAddress.compare a.email b.email
+let id { id; _ } = id
 let user_email_address user = user.email
 let user_firstname { given_name; _ } = given_name
 let user_lastname { name; _ } = name

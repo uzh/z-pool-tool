@@ -28,7 +28,7 @@ let sign_up req =
 let sign_up_create req =
   let open Utils.Lwt_result.Infix in
   let terms_key = Field.(TermsAccepted |> show) in
-  let user_id = Pool_user.Id.create () in
+  let user_id = Contact.Id.create () in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.remove_empty_values
@@ -52,7 +52,7 @@ let sign_up_create req =
                req
                urlencoded
                language
-               (user_id |> Pool_user.Id.to_common)
+               (user_id |> Contact.Id.to_common)
        in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* email_address =
@@ -190,7 +190,9 @@ let email_verification req =
      let* events =
        let open UserCommand in
        let%lwt admin = Admin.find database_label (email |> Email.user_id) in
-       let%lwt contact = Contact.find database_label (Email.user_id email) in
+       let%lwt contact =
+         Contact.find database_label (Email.user_id email |> Contact.Id.of_user)
+       in
        let verify_email user =
          VerifyEmail.(handle ~tags user email) |> Lwt_result.lift
        in
@@ -236,7 +238,11 @@ let terms req =
          |> CCOption.map
               (CCFun.const Pool_common.I18n.TermsAndConditionsUpdated)
        in
-       Page.Contact.terms ?notification Contact.(contact |> id) terms context
+       Page.Contact.terms
+         ?notification
+         Contact.(contact |> id |> Id.to_user)
+         terms
+         context
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
@@ -250,7 +256,7 @@ let terms_accept req =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     let id =
-      Sihl.Web.Router.param req Field.(Id |> show) |> Pool_user.Id.of_string
+      Sihl.Web.Router.param req Field.(Id |> show) |> Contact.Id.of_string
     in
     let* contact = Contact.find database_label id in
     let* events =

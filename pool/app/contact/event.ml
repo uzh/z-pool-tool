@@ -4,7 +4,7 @@ open Entity
 let src = Logs.Src.create "contact.event"
 
 type create =
-  { user_id : User.Id.t
+  { user_id : Id.t
   ; email : User.EmailAddress.t
   ; password : User.Password.t [@opaque]
   ; firstname : User.Firstname.t
@@ -59,7 +59,8 @@ let handle_event ?tags pool : event -> unit Lwt.t =
       ; language
       } ->
     let%lwt user =
-      User.create_user pool ~id:user_id email lastname firstname password
+      let id = user_id |> Id.to_user in
+      User.create_user pool ~id email lastname firstname password
     in
     let contact = Entity.create ?terms_accepted_at ?language user in
     let%lwt () = Repo.insert pool contact in

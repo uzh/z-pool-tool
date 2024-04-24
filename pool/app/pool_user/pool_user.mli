@@ -234,6 +234,7 @@ val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val is_admin : t -> bool
+val id : t -> Id.t
 val user_firstname : t -> Firstname.t
 val user_lastname : t -> Lastname.t
 val user_fullname : t -> string

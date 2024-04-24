@@ -1,3 +1,12 @@
+module Id : sig
+  include Pool_model.Base.IdSig
+
+  val of_common : Pool_common.Id.t -> t
+  val to_common : t -> Pool_common.Id.t
+  val of_user : Pool_user.Id.t -> t
+  val to_user : t -> Pool_user.Id.t
+end
+
 module NumberOfInvitations : sig
   type t
 
@@ -78,7 +87,7 @@ type t =
 
 val profile_completion_cookie : string
 val user : t -> Pool_user.t
-val id : t -> Pool_user.Id.t
+val id : t -> Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
@@ -88,18 +97,9 @@ val is_inactive : t -> bool
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val show : t -> string
 val compare : t -> t -> int
-
-val find
-  :  Database.Label.t
-  -> Pool_user.Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
-
-val find_admin_comment
-  :  Database.Label.t
-  -> Pool_user.Id.t
-  -> AdminComment.t option Lwt.t
-
-val find_multiple : Database.Label.t -> Pool_user.Id.t list -> t list Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find_admin_comment : Database.Label.t -> Id.t -> AdminComment.t option Lwt.t
+val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
 
 val find_by_email
   :  Database.Label.t
@@ -147,7 +147,7 @@ val find_full_cell_phone_verification_by_contact
 val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
 
 type create =
-  { user_id : Pool_user.Id.t
+  { user_id : Id.t
   ; email : Pool_user.EmailAddress.t
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
@@ -223,14 +223,10 @@ val default_sort : Query.Sort.t
 val default_query : Query.t
 
 module Repo : sig
-  module Preview : sig
-    val t : Preview.t Caqti_type.t
-  end
+  module Id : Pool_model.Base.CaqtiSig with type t = Id.t
+  module Preview : Pool_model.Base.CaqtiSig with type t = Preview.t
 
-  module Entity : sig
-    val t : t Caqti_type.t
-  end
-
+  val t : t Caqti_type.t
   val joins : string
   val sql_select_columns : string list
 
@@ -270,8 +266,8 @@ module Guard : sig
     val index_permission : Guard.Permission.t
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
-    val read : Pool_user.Id.t -> Guard.ValidationSet.t
-    val update : Pool_user.Id.t -> Guard.ValidationSet.t
+    val read : Id.t -> Guard.ValidationSet.t
+    val update : Id.t -> Guard.ValidationSet.t
     val read_of_target : Guard.Uuid.Target.t -> Guard.PermissionOnTarget.t list
 
     val read_name

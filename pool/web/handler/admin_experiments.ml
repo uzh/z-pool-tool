@@ -302,7 +302,7 @@ let detail edit req =
            database_label
            (id
             |> Experiment.Id.to_common
-            |> Pool_user.Id.of_common
+            |> Contact.Id.of_common
             |> Cqrs_command.Tags_command.AssignTagToContact.effects)
            actor
          ||> CCResult.is_ok

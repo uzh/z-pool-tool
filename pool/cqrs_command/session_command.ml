@@ -727,7 +727,7 @@ end = struct
             |> CCList.map (fun (tag : t) ->
               Tagged
                 Tagged.
-                  { model_uuid = Contact.id contact |> Pool_user.Id.to_common
+                  { model_uuid = Contact.id contact |> Contact.Id.to_common
                   ; tag_uuid = tag.id
                   }
               |> Pool_event.tags)

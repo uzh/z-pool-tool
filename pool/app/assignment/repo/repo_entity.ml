@@ -73,7 +73,7 @@ let t =
       (t2
          Pool_common.Repo.Id.t
          (t2
-            Contact.Repo.Entity.t
+            Contact.Repo.t
             (t2
                (option NoShow.t)
                (t2
@@ -97,7 +97,7 @@ module Write = struct
   type t =
     { id : Pool_common.Id.t
     ; session_id : Session.Id.t
-    ; contact_id : Pool_user.Id.t
+    ; contact_id : Contact.Id.t
     ; no_show : NoShow.t option
     ; participated : Participated.t option
     ; matches_filter : MatchesFilter.t
@@ -152,7 +152,7 @@ module Write = struct
            (t2
               Session.Repo.Id.t
               (t2
-                 Pool_user.Repo.Id.t
+                 Contact.Repo.Id.t
                  (t2
                     (option NoShow.t)
                     (t2

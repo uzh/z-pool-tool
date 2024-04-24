@@ -5,7 +5,7 @@ let defafult_range = CCList.range 0 10
 
 let create_contact i =
   let open Pool_user in
-  let id = Id.create () in
+  let id = Contact.Id.create () in
   let first_name = Format.asprintf "firstname%i" i |> Firstname.of_string in
   let last_name = Format.asprintf "lastname%i" i |> Lastname.of_string in
   let email =

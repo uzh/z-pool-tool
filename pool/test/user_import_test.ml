@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Pool_message
 
 module Data = struct
@@ -12,7 +13,7 @@ let create_user_import ?(token = Data.token) user =
   let user_uuid =
     let open Pool_context in
     match user with
-    | Contact contact -> Contact.(id contact)
+    | Contact contact -> Contact.(id contact |> Id.to_user)
     | Admin admin -> Admin.(id admin)
     | Guest -> failwith "Invalid user"
   in
@@ -156,20 +157,20 @@ let confirm_as_contact_integration _ () =
 module Repo = struct
   open Utils.Lwt_result.Infix
 
-  let set_contact_import_pending pool id =
+  let set_contact_import_pending pool =
     let request =
       let open Caqti_request.Infix in
       {sql|
-          UPDATE
-            pool_contacts
-          SET
-            import_pending = 1
-          WHERE
-            user_uuid = UNHEX(REPLACE($1, '-', ''))
-        |sql}
-      |> Caqti_type.(string ->. unit)
+        UPDATE
+          pool_contacts
+        SET
+          import_pending = 1
+        WHERE
+          user_uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+      |> Contact.Repo.Id.t ->. Caqti_type.unit
     in
-    Database.exec pool request (Pool_user.Id.value id)
+    Database.exec pool request
   ;;
 
   let set_import_timestamp_to_past pool days id =
@@ -198,8 +199,8 @@ module Repo = struct
 
   let limit = 5
   let database_label = Test_utils.Data.database_label
-  let contact_id_1 = Pool_user.Id.create ()
-  let contact_id_2 = Pool_user.Id.create ()
+  let contact_id_1 = Contact.Id.create ()
+  let contact_id_2 = Contact.Id.create ()
   let sort_testable = CCList.sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
 
   let reminder_settings database_label =
@@ -230,7 +231,9 @@ module Repo = struct
   let import_of_contact contact_id =
     Lwt.both
       (Contact.find database_label contact_id ||> get_exn)
-      (User_import.find_pending_by_user_id_opt database_label contact_id
+      (User_import.find_pending_by_user_id_opt
+         database_label
+         (contact_id |> Contact.Id.to_user)
        ||> CCOption.get_exn_or "Import not found")
   ;;
 
@@ -278,7 +281,8 @@ module Repo = struct
     in
     let%lwt () =
       [ contact_id_1; contact_id_2 ]
-      |> Lwt_list.iter_s (set_import_timestamp_to_past database_label 8)
+      |> Lwt_list.iter_s
+           (Contact.Id.to_user %> set_import_timestamp_to_past database_label 8)
     in
     (* Expect both imports to be returned *)
     let%lwt contacts_to_remind =

@@ -1,3 +1,4 @@
+open CCFun.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
@@ -85,7 +86,9 @@ let login_post req =
          in
          login user path []
        in
-       let find_contact user = Contact.find database_label user.Pool_user.id in
+       let find_contact user =
+         user.Pool_user.id |> Contact.(Id.of_user %> find database_label)
+       in
        let find_admin user =
          user.Pool_user.id |> Admin.find database_label >|+ Pool_context.admin
        in

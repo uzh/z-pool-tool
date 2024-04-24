@@ -1,3 +1,14 @@
+open CCFun.Infix
+
+module Id = struct
+  include Pool_model.Base.Id
+
+  let of_common = Pool_common.Id.value %> of_string
+  let to_common = value %> Pool_common.Id.of_string
+  let of_user = Pool_user.Id.value %> of_string
+  let to_user = value %> Pool_user.Id.of_string
+end
+
 module NumberOfInvitations = struct
   include Pool_model.Base.Integer
 
@@ -68,6 +79,14 @@ type t =
   }
 [@@deriving eq, show, ord]
 
+let user { user; _ } = user
+let id m : Id.t = m.user.Pool_user.id |> Id.of_user
+let fullname m = m.user |> Pool_user.user_fullname
+let firstname m = m.user |> Pool_user.user_firstname
+let lastname m = m.user |> Pool_user.user_lastname
+let lastname_firstname m = m.user |> Pool_user.user_lastname_firstname
+let email_address m = m.user.Pool_user.email
+
 let create ?terms_accepted_at ?language user =
   { user
   ; terms_accepted_at
@@ -96,7 +115,7 @@ let create ?terms_accepted_at ?language user =
 
 module Write = struct
   type t =
-    { user_id : Pool_user.Id.t
+    { user_id : Id.t
     ; terms_accepted_at : Pool_user.TermsAccepted.t option
     ; language : Pool_common.Language.t option
     ; experiment_type_preference : Pool_common.ExperimentType.t option
@@ -118,45 +137,37 @@ module Write = struct
     ; import_pending : Pool_user.ImportPending.t
     }
   [@@deriving eq, show]
-
-  let create m =
-    { user_id = m.user.Pool_user.id
-    ; terms_accepted_at = m.terms_accepted_at
-    ; language = m.language
-    ; experiment_type_preference = m.experiment_type_preference
-    ; cell_phone = m.cell_phone
-    ; paused = m.paused
-    ; disabled = m.disabled
-    ; verified = m.verified
-    ; email_verified = m.email_verified
-    ; num_invitations = m.num_invitations
-    ; num_assignments = m.num_assignments
-    ; num_show_ups = m.num_show_ups
-    ; num_no_shows = m.num_no_shows
-    ; num_participations = m.num_participations
-    ; firstname_version = m.firstname_version
-    ; lastname_version = m.lastname_version
-    ; paused_version = m.paused_version
-    ; language_version = m.paused_version
-    ; experiment_type_preference_version = m.experiment_type_preference_version
-    ; import_pending = m.import_pending
-    }
-  ;;
 end
 
-let user { user; _ } = user
-let id m = m.user.Pool_user.id
-let fullname m = m.user |> Pool_user.user_fullname
-let firstname m = m.user |> Pool_user.user_firstname
-let lastname m = m.user |> Pool_user.user_lastname
-let lastname_firstname m = m.user |> Pool_user.user_lastname_firstname
-let email_address m = m.user.Pool_user.email
+let to_write (m : t) : Write.t =
+  { Write.user_id = m |> id
+  ; terms_accepted_at = m.terms_accepted_at
+  ; language = m.language
+  ; experiment_type_preference = m.experiment_type_preference
+  ; cell_phone = m.cell_phone
+  ; paused = m.paused
+  ; disabled = m.disabled
+  ; verified = m.verified
+  ; email_verified = m.email_verified
+  ; num_invitations = m.num_invitations
+  ; num_assignments = m.num_assignments
+  ; num_show_ups = m.num_show_ups
+  ; num_no_shows = m.num_no_shows
+  ; num_participations = m.num_participations
+  ; firstname_version = m.firstname_version
+  ; lastname_version = m.lastname_version
+  ; paused_version = m.paused_version
+  ; language_version = m.paused_version
+  ; experiment_type_preference_version = m.experiment_type_preference_version
+  ; import_pending = m.import_pending
+  }
+;;
 
 let is_inactive { user; _ } =
   Pool_user.Status.(equal user.Pool_user.status Inactive)
 ;;
 
-let sexp_of_t t = t |> id |> Pool_user.Id.sexp_of_t
+let sexp_of_t t = t |> id |> Id.sexp_of_t
 
 let update_num_invitations ~step ({ num_invitations; _ } as m) =
   { m with num_invitations = NumberOfInvitations.update step num_invitations }

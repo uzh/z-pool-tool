@@ -108,7 +108,7 @@ let find_all_public_by_contact_request ?(has_session = false) () =
     is_invited
     session_exists
   |> Repo.find_request_sql
-  |> Pool_user.Repo.Id.t ->* RepoEntity.t
+  |> Contact.Repo.Id.t ->* RepoEntity.t
 ;;
 
 let find_all_public_by_contact ?has_session pool contact =
@@ -153,7 +153,7 @@ let find_pending_waitinglists_by_contact_request =
   in
   join
   |> select_from_experiments_sql ~distinct:true
-  |> Pool_user.Repo.Id.t ->* RepoEntity.Public.t
+  |> Contact.Repo.Id.t ->* RepoEntity.Public.t
 ;;
 
 let find_pending_waitinglists_by_contact pool contact =
@@ -224,7 +224,7 @@ let find_request =
   let open Caqti_request.Infix in
   where_contact_can_access
   |> select_from_experiments_sql
-  |> Caqti_type.(t2 Pool_user.Repo.Id.t RepoEntity.Id.t) ->! RepoEntity.Public.t
+  |> Caqti_type.(t2 Contact.Repo.Id.t RepoEntity.Id.t) ->! RepoEntity.Public.t
 ;;
 
 let find pool id contact =
@@ -237,7 +237,7 @@ let find_full_by_contact_request =
   let open Caqti_request.Infix in
   where_contact_can_access
   |> Repo.find_request_sql
-  |> Caqti_type.(t2 Pool_user.Repo.Id.t RepoEntity.Id.t) ->! RepoEntity.t
+  |> Caqti_type.(t2 Contact.Repo.Id.t RepoEntity.Id.t) ->! RepoEntity.t
 ;;
 
 let find_full_by_contact pool id contact =

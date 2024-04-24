@@ -407,7 +407,7 @@ let completion_post req =
         req
         urlencoded
         language
-        (Pool_user.Id.to_common contact_id)
+        (Contact.Id.to_common contact_id)
         custom_fields
       >== fun fields -> fields |> CCList.map handle |> CCList.all_ok
     in

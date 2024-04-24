@@ -110,7 +110,7 @@ module Sql = struct
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
     Format.asprintf "%s \n %s \n %s" select_sql where order
-    |> Caqti_type.(t2 Pool_user.Repo.Id.t string ->* Repo_entity.Public.t)
+    |> Caqti_type.(t2 Contact.Repo.Id.t string ->* Repo_entity.Public.t)
   ;;
 
   let find_all_by_model model ~required ~is_admin pool id =
@@ -136,7 +136,7 @@ module Sql = struct
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
     Format.asprintf "%s \n %s \n %s" select_sql where order
-    |> Caqti_type.(t2 Pool_user.Repo.Id.t string ->* Repo_entity.Public.t)
+    |> Caqti_type.(t2 Contact.Repo.Id.t string ->* Repo_entity.Public.t)
   ;;
 
   let find_unanswered_required_by_model model ~is_admin pool id =
@@ -184,11 +184,11 @@ module Sql = struct
         let base =
           Dynparam.(
             empty
-            |> add Pool_user.Repo.Id.t contact_id
+            |> add Contact.Repo.Id.t contact_id
             |> add Caqti_type.string Entity.Model.(show Contact))
         in
         CCList.fold_left
-          (fun dyn id -> dyn |> Dynparam.add Pool_user.Repo.Id.t id)
+          (fun dyn id -> dyn |> Dynparam.add Contact.Repo.Id.t id)
           base
           ids
       in
@@ -251,7 +251,7 @@ module Sql = struct
           in
           Dynparam.empty
           |> add_ids Entity.Id.value field_ids
-          |> add_ids Pool_user.Id.value contact_ids
+          |> add_ids Contact.Id.value contact_ids
         in
         let (Dynparam.Pack (pt, pv)) = dyn in
         let request =
@@ -276,7 +276,8 @@ module Sql = struct
     |sql}
       select_sql
       (base_filter_conditions is_admin)
-    |> Caqti_type.(t3 string string string) ->* Repo_entity.Public.t
+    |> Caqti_type.(t3 Contact.Repo.Id.t string Repo_entity.Id.t)
+       ->* Repo_entity.Public.t
   ;;
 
   let find_by_contact ?(is_admin = false) pool contact_id field_id =
@@ -284,9 +285,7 @@ module Sql = struct
     Database.collect
       pool
       (find_by_contact_request is_admin)
-      ( Pool_user.Id.value contact_id
-      , Entity.Model.(show Contact)
-      , Entity.Id.value field_id )
+      (contact_id, Entity.Model.(show Contact), field_id)
     >|> fun field_list ->
     let%lwt options =
       field_list
@@ -319,7 +318,8 @@ module Sql = struct
      | false -> base
      | true -> Format.asprintf "%s AND pool_custom_fields.required = 1" base)
     |> Caqti_type.(
-         t3 string Repo_entity.Model.t Repo_entity.FieldType.t ->! int)
+         t3 Contact.Repo.Id.t Repo_entity.Model.t Repo_entity.FieldType.t
+         ->! int)
   ;;
 
   let all_answered required pool contact_id =
@@ -327,7 +327,7 @@ module Sql = struct
     Database.find
       pool
       (all_answered_request required)
-      Entity.(Pool_user.Id.value contact_id, Model.Contact, FieldType.Boolean)
+      Entity.(contact_id, Model.Contact, FieldType.Boolean)
     ||> CCInt.equal 0
   ;;
 

@@ -62,7 +62,7 @@ module Sql = struct
         experiment_uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
     |> find_request_sql
-    |> Caqti_type.(t2 Pool_user.Repo.Id.t Experiment.Repo.Entity.Id.t)
+    |> Caqti_type.(t2 Contact.Repo.Id.t Experiment.Repo.Entity.Id.t)
        ->! RepoEntity.t
   ;;
 

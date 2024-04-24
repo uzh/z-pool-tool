@@ -23,7 +23,7 @@ let t =
       (t2
          Common.Id.t
          (t2
-            Contact.Repo.Entity.t
+            Contact.Repo.t
             (t2
                Experiment.Repo.Entity.t
                (t2
@@ -34,7 +34,7 @@ let t =
 module Write = struct
   type t =
     { id : Entity.Id.t
-    ; contact_id : Pool_user.Id.t
+    ; contact_id : Contact.Id.t
     ; experiment_id : Experiment.Id.t
     ; admin_comment : Entity.AdminComment.t option
     }
@@ -66,7 +66,7 @@ module Write = struct
         (t2
            Pool_common.Repo.Id.t
            (t2
-              Pool_user.Repo.Id.t
+              Contact.Repo.Id.t
               (t2 Experiment.Repo.Entity.Id.t (option AdminComment.t)))))
   ;;
 end

@@ -35,13 +35,13 @@ let experiment () =
 
 let contact ~prefix () =
   let open Contact in
-  let invited_contact_id = Pool_user.Id.create () in
+  let invited_contact_id = Contact.Id.create () in
   let* email =
     let email =
       Format.asprintf
         "%s+%s@domain.test"
         prefix
-        (Pool_user.Id.value invited_contact_id)
+        (Contact.Id.value invited_contact_id)
     in
     Pool_user.EmailAddress.create email
   in
@@ -71,7 +71,7 @@ let contact ~prefix () =
   let* verification_events =
     let open Cqrs_command.User_command in
     let created_email =
-      Email.Created (email, token, invited_contact_id)
+      Email.Created (email, token, invited_contact_id |> Id.to_user)
       |> Pool_event.email_verification
     in
     let email = Email.create email contact.user token in
