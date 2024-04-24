@@ -40,7 +40,7 @@ end
 
 module AdminRepo = struct
   let create ?id ?email () =
-    let admin_id = id |> CCOption.value ~default:(Pool_user.Id.create ()) in
+    let admin_id = id |> CCOption.value ~default:(Admin.Id.create ()) in
     let open Admin in
     let open Utils.Lwt_result.Infix in
     let tags = Database.Logger.Tags.create Data.database_label in

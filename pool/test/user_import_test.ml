@@ -14,7 +14,7 @@ let create_user_import ?(token = Data.token) user =
     let open Pool_context in
     match user with
     | Contact contact -> Contact.(id contact |> Id.to_user)
-    | Admin admin -> Admin.(id admin)
+    | Admin admin -> Admin.(id admin |> Id.to_user)
     | Guest -> failwith "Invalid user"
   in
   { user_uuid

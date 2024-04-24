@@ -279,7 +279,7 @@ let get_templates_in_multile_languages _ () =
 
 module ExperimentSenderData = struct
   let experiment_id = Experiment.Id.create ()
-  let admin_id = Pool_user.Id.create ()
+  let admin_id = Admin.Id.create ()
   let contact_id = Contact.Id.create ()
   let session_id = Session.Id.create ()
   let database_label = Test_utils.Data.database_label

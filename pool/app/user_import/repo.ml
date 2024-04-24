@@ -281,7 +281,7 @@ let find_admins_to_notify pool limit =
          {|pool_admins.import_pending = 1
           AND pool_user_imports.notification_sent_at IS NULL|}
        limit
-     |> Caqti_type.(unit ->* t2 Admin.Repo.Entity.t RepoEntity.t))
+     |> Caqti_type.(unit ->* t2 Admin.Repo.t RepoEntity.t))
 ;;
 
 let find_admins_to_remind reminder_settings pool limit () =
@@ -294,8 +294,7 @@ let find_admins_to_remind reminder_settings pool limit () =
            reminder_where_clause)
       limit
     |> Caqti_type.(
-         RepoEntity.reminder_settings_caqti
-         ->* t2 Admin.Repo.Entity.t RepoEntity.t)
+         RepoEntity.reminder_settings_caqti ->* t2 Admin.Repo.t RepoEntity.t)
   in
   Database.collect pool request reminder_settings
 ;;

@@ -90,7 +90,9 @@ let login_post req =
          user.Pool_user.id |> Contact.(Id.of_user %> find database_label)
        in
        let find_admin user =
-         user.Pool_user.id |> Admin.find database_label >|+ Pool_context.admin
+         user.Pool_user.id
+         |> Admin.(Id.of_user %> find database_label)
+         >|+ Pool_context.admin
        in
        match user.Pool_user.confirmed with
        | false ->

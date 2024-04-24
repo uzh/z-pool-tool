@@ -16,7 +16,7 @@ module CreateAdmin : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?id:Pool_user.Id.t
+    -> ?id:Admin.Id.t
     -> ?roles:(Role.Role.t * Guard.Uuid.Target.t option) list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -97,7 +97,7 @@ module UpdatePassword : sig
     -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
-  val effects : Pool_user.Id.t -> Guard.ValidationSet.t
+  val effects : Admin.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { current_password : User.Password.t [@opaque]

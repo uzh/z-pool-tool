@@ -37,11 +37,11 @@ let list Pool_context.{ language; guardian; _ } (admins, query) =
     let button =
       admin
       |> id
-      |> Pool_user.Id.value
+      |> Id.value
       |> Format.asprintf "/admin/admins/%s"
       |> Input.link_as_button ~icon:Icon.Eye
     in
-    [ txt (full_name_reversed admin); Status.email_with_icons admin; button ]
+    [ txt (fullname_reversed admin); Status.email_with_icons admin; button ]
     |> CCList.map (CCList.return %> td)
     |> tr
   in

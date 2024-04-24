@@ -55,7 +55,7 @@ let role_assignment
       else []
     in
     [ admin |> Admin.email_address |> Pool_user.EmailAddress.value |> txt
-    ; admin |> Admin.full_name |> txt
+    ; admin |> Admin.fullname |> txt
     ]
     @ button
   in

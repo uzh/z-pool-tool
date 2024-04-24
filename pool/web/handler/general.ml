@@ -5,7 +5,7 @@ let admin_from_session db_pool req =
   let open Utils.Lwt_result.Infix in
   user_from_session db_pool req
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
-  >>= fun user -> user.Pool_user.id |> Admin.find db_pool
+  >>= fun user -> user.Pool_user.id |> Admin.Id.of_user |> Admin.find db_pool
 ;;
 
 let create_tenant_layout req ?active_navigation context children =

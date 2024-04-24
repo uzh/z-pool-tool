@@ -281,7 +281,7 @@ end
 
 module RoleTarget = struct
   let hx_url admin_id =
-    Format.asprintf "/admin/admins/%s/search-role" Pool_user.(Id.value admin_id)
+    Format.asprintf "/admin/admins/%s/search-role" Admin.(Id.value admin_id)
   ;;
 
   let additional_attributes =
@@ -331,7 +331,7 @@ module Admin = struct
       (admin |> Admin.email_address)
   ;;
 
-  let to_value = Admin.id %> Pool_user.Id.value
+  let to_value = Admin.(id %> Id.value)
 
   let hx_url admin_id =
     Format.asprintf "/admin/admins/%s/search-role" Pool_user.(Id.value admin_id)

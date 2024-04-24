@@ -826,7 +826,7 @@ let detail
                Organisational_unit.(fun ou -> ou.name |> Name.value)
           |> txt )
       ; ( Field.ContactPerson
-        , contact_person |> CCOption.map_or ~default Admin.full_name |> txt )
+        , contact_person |> CCOption.map_or ~default Admin.fullname |> txt )
       ; ( Field.Smtp
         , smtp_account
           |> CCOption.map_or
@@ -986,10 +986,7 @@ let users
   =
   let base_url field admin =
     let suffix =
-      Format.asprintf
-        "%s/%s"
-        (Field.show field)
-        (Admin.id admin |> Pool_user.Id.value)
+      Format.asprintf "%s/%s" (Field.show field) Admin.(id admin |> Id.value)
     in
     build_experiment_path ~suffix experiment |> Sihl.Web.externalize_path
   in

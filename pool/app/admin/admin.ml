@@ -2,10 +2,7 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 include Event
 include Entity
-
-let find = Repo.find
-let find_by_email = Repo.find_by_email
-let find_by = Repo.find_by
+include Repo
 
 let find_all_id_with_role ?exclude pool role =
   Guard.Persistence.ActorRole.find_actors_by_role
@@ -25,12 +22,10 @@ let find_all_with_roles ?exclude pool roles =
   >|> Repo.find_multiple pool
 ;;
 
-let search_by_name_and_email = Repo.Sql.search_by_name_and_email
-
 let user_is_admin pool (user : Pool_user.t) =
   if Pool_user.is_admin user
   then (
-    let%lwt admin = find pool user.Pool_user.id in
+    let%lwt admin = user.Pool_user.id |> Id.of_user |> find pool in
     Lwt.return @@ CCResult.is_ok admin)
   else Lwt.return_false
 ;;
@@ -38,8 +33,8 @@ let user_is_admin pool (user : Pool_user.t) =
 module Guard = Entity_guard
 
 module Repo = struct
-  module Entity = Repo_entity
+  include Repo_entity
 
-  let sql_select_columns = Repo.Sql.sql_select_columns
-  let joins = Repo.Sql.joins
+  let sql_select_columns = Repo.sql_select_columns
+  let joins = Repo.joins
 end

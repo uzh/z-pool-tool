@@ -2,7 +2,7 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Guard
 
-let target_of = Uuid.target_of Pool_user.Id.value
+let target_of = Uuid.target_of Entity.Id.value
 
 module Actor = struct
   type t = Entity.t [@@deriving eq, show]

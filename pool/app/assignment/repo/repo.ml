@@ -1,4 +1,4 @@
-module RepoEntity = Repo_entity
+open Repo_entity
 module Dynparam = Database.Dynparam
 
 let sql_select_columns =
@@ -70,7 +70,7 @@ module Sql = struct
         WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> find_request_sql
-    |> Caqti_type.string ->! RepoEntity.t
+    |> Caqti_type.string ->! t
   ;;
 
   let find pool id =
@@ -89,7 +89,7 @@ module Sql = struct
       pool_sessions.closed_at IS NOT NULL
     |sql}
     |> find_request_sql ~additional_joins
-    |> Caqti_type.string ->! RepoEntity.t
+    |> Caqti_type.string ->! t
   ;;
 
   let find_closed pool id =
@@ -114,7 +114,7 @@ module Sql = struct
          (Format.asprintf "%s AND %s" id_fragment)
     |> find_request_sql
     |> Format.asprintf "%s\n ORDER BY user_users.name, user_users.given_name"
-    |> Caqti_type.string ->* RepoEntity.t
+    |> Caqti_type.string ->* t
   ;;
 
   let find_by_session ?where_condition pool id =
@@ -151,7 +151,7 @@ module Sql = struct
                 dyn |> add Caqti_type.string (id |> Entity.Id.value)))
              ids
       in
-      let request = find_multiple_request ids |> pt ->* RepoEntity.t in
+      let request = find_multiple_request ids |> pt ->* t in
       Database.collect pool request pv
   ;;
 
@@ -177,7 +177,7 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 1
       |sql}
     |> find_request_sql
-    |> Caqti_type.string ->* RepoEntity.t
+    |> Caqti_type.string ->* t
   ;;
 
   let find_deleted_by_session pool id =
@@ -196,7 +196,7 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
     |> find_request_sql
-    |> Contact.Repo.Id.t ->* RepoEntity.t
+    |> Contact.Repo.Id.t ->* t
   ;;
 
   let find_by_contact pool = Database.collect pool find_by_contact_request
@@ -213,7 +213,7 @@ module Sql = struct
     |sql}
       |> select_public_sql ~joins
       |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t
-         ->* RepoEntity.Public.t
+         ->* Public.t
     in
     let joins =
       Format.asprintf
@@ -260,7 +260,7 @@ module Sql = struct
       joins
       where
     |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t
-       ->* RepoEntity.with_session
+       ->* with_session
   ;;
 
   let find_by_contact_and_experiment pool experiment_id contact =
@@ -285,7 +285,7 @@ module Sql = struct
         ))
     |sql}
     |> find_request_sql ~additional_joins
-    |> Caqti_type.string ->* RepoEntity.t
+    |> Caqti_type.string ->* t
   ;;
 
   let find_with_follow_ups pool id =
@@ -304,7 +304,7 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
     |> find_request_sql ~additional_joins
-    |> Caqti_type.t2 Pool_common.Repo.Id.t Contact.Repo.Id.t ->* RepoEntity.t
+    |> Caqti_type.t2 Pool_common.Repo.Id.t Contact.Repo.Id.t ->* t
   ;;
 
   let find_follow_ups pool m =
@@ -376,7 +376,7 @@ module Sql = struct
       ON DUPLICATE KEY UPDATE
         marked_as_deleted = 0
     |sql}
-    |> RepoEntity.Write.t ->. Caqti_type.unit
+    |> Write.t ->. Caqti_type.unit
   ;;
 
   let insert pool = Database.exec pool insert_request
@@ -525,7 +525,7 @@ let find_follow_ups = Sql.find_follow_ups
 let find_session_id = Sql.find_session_id
 
 let insert pool session_id model =
-  model |> RepoEntity.Write.of_entity session_id |> Sql.insert pool
+  model |> Write.of_entity session_id |> Sql.insert pool
 ;;
 
 let update = Sql.update

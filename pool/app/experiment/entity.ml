@@ -88,7 +88,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
-  ; contact_person_id : Pool_user.Id.t option
+  ; contact_person_id : Admin.Id.t option
   ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t

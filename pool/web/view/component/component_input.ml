@@ -949,15 +949,14 @@ let admin_select
         let is_selected =
           selected
           |> CCOption.map (fun selected ->
-            if Pool_user.Id.equal (Admin.id admin) selected
+            if Admin.(Id.equal (id admin) selected)
             then [ a_selected () ]
             else [])
           |> CCOption.value ~default:[]
         in
         option
-          ~a:
-            ([ a_value (admin |> Admin.id |> Pool_user.Id.value) ] @ is_selected)
-          (txt (Admin.full_name admin)))
+          ~a:([ a_value Admin.(admin |> id |> Id.value) ] @ is_selected)
+          (txt (Admin.fullname admin)))
       options
     |> CCList.cons default_option
   in

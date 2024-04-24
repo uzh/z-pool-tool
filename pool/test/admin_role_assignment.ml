@@ -20,7 +20,7 @@ let check_result = Alcotest.(check (result unit Test_utils.error))
 
 let to_actor database_label admin =
   Admin.id admin
-  |> Guard.Uuid.actor_of Pool_user.Id.value
+  |> Guard.Uuid.actor_of Admin.Id.value
   |> Guard.Persistence.Actor.find database_label
   ||> CCResult.get_or_failwith
 ;;
@@ -28,7 +28,7 @@ let to_actor database_label admin =
 module Data = struct
   let create_admin database_label firstname roles =
     let open Cqrs_command.Admin_command.CreateAdmin in
-    let id = Pool_user.Id.create () in
+    let id = Admin.Id.create () in
     let email =
       Format.asprintf "admin+%s@mail.com" (CCString.lowercase_ascii firstname)
     in
@@ -62,7 +62,7 @@ end
 
 let target_has_role db target (target_role, target_uuid) () =
   let open Guard in
-  let actor = Uuid.actor_of Pool_user.Id.value (Admin.id target) in
+  let actor = Uuid.actor_of Admin.Id.value (Admin.id target) in
   let actor_role = ActorRole.create ?target_uuid actor target_role in
   let%lwt actor_roles =
     Persistence.ActorRole.find_by_actor db actor

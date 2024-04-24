@@ -66,7 +66,7 @@ let context () =
       let* database_label = database_label_of_request is_root req in
       let%lwt user = find_user database_label in
       let%lwt query_lang, language, guardian =
-        let to_actor = Admin.id %> Guard.Uuid.actor_of Pool_user.Id.value in
+        let to_actor = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
         let combine roles = Lwt.return (None, Pool_common.Language.En, roles) in
         match user with
         | Admin admin ->

@@ -6,7 +6,7 @@ open Entity
 let src = Logs.Src.create "admin.event"
 
 type create =
-  { id : Pool_user.Id.t option
+  { id : Id.t option
   ; email : User.EmailAddress.t
   ; password : User.Password.t [@opaque]
   ; firstname : User.Firstname.t
@@ -70,6 +70,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
   | Created { id; lastname; firstname; password; email; roles } ->
     let open Common.Utils in
     let%lwt admin =
+      let id = CCOption.map Id.to_user id in
       User.create_admin pool ?id email lastname firstname password
       ||> create ~email_verified:None
     in
@@ -132,7 +133,8 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       let%lwt () = Repo.promote_contact pool contact_id in
       let%lwt () = Guard.Persistence.Target.promote ~ctx uuid `Admin in
       let%lwt () =
-        Repo.find pool contact_id >|> map_or ~tags ~default admin_authorizable
+        Repo.find pool (Id.of_user contact_id)
+        >|> map_or ~tags ~default admin_authorizable
       in
       Lwt.return_unit)
   | SignInCounterUpdated m -> Repo.update_sign_in_count pool m

@@ -189,7 +189,9 @@ let email_verification req =
      in
      let* events =
        let open UserCommand in
-       let%lwt admin = Admin.find database_label (email |> Email.user_id) in
+       let%lwt admin =
+         Admin.find database_label (email |> Email.user_id |> Admin.Id.of_user)
+       in
        let%lwt contact =
          Contact.find database_label (Email.user_id email |> Contact.Id.of_user)
        in

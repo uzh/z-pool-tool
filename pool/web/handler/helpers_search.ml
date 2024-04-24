@@ -69,7 +69,7 @@ let htmx_search_helper
     | `Admin ->
       let open Component.Search.Admin in
       let open Admin.Guard.Access in
-      let%lwt exclude = entities_to_exclude Pool_user.Id.of_string in
+      let%lwt exclude = entities_to_exclude Admin.Id.of_string in
       let search_experiment value actor =
         Admin.search_by_name_and_email ~exclude database_label value
         >|> Lwt_list.filter_s (fun admin ->

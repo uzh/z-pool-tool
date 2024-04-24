@@ -71,7 +71,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
-  ; contact_person_id : Pool_user.Id.t option
+  ; contact_person_id : Admin.Id.t option
   ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -100,7 +100,7 @@ val language : t -> Pool_common.Language.t option
 val cost_center : t -> CostCenter.t option
 val organisational_unit : t -> Organisational_unit.t option
 val filter : t -> Filter.t option
-val contact_person_id : t -> Pool_user.Id.t option
+val contact_person_id : t -> Admin.Id.t option
 val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
 val direct_registration_disabled : t -> DirectRegistrationDisabled.t
 val registration_disabled : t -> RegistrationDisabled.t
@@ -123,7 +123,7 @@ val updated_at : t -> Pool_common.UpdatedAt.t
 
 val create
   :  ?id:Id.t
-  -> ?contact_person_id:Pool_user.Id.t
+  -> ?contact_person_id:Admin.Id.t
   -> ?cost_center:CostCenter.t
   -> ?internal_description:InternalDescription.t
   -> ?public_description:PublicDescription.t

@@ -25,7 +25,7 @@ module Utils = struct
     | Guest | Contact _ -> Lwt.return_none
     | Admin admin ->
       Admin.id admin
-      |> Guard.Uuid.actor_of Pool_user.Id.value
+      |> Guard.Uuid.actor_of Admin.Id.value
       |> Guard.Persistence.Actor.find database_label
       ||> CCOption.of_result
   ;;

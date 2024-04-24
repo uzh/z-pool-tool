@@ -98,7 +98,7 @@ let create_root_admin =
     | None ->
       let%lwt () =
         let open Admin in
-        let admin_id = Pool_user.Id.create () in
+        let admin_id = Admin.Id.create () in
         Created
           { id = Some admin_id
           ; email

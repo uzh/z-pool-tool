@@ -73,6 +73,7 @@ let user_of_sihl_user database_label user =
   if Pool_user.is_admin user
   then
     user.Pool_user.id
+    |> Admin.Id.of_user
     |> Admin.find database_label
     ||> function
     | Ok user -> user |> admin

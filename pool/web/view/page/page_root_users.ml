@@ -36,7 +36,7 @@ let table Pool_context.{ language; _ } (admins, query) =
         [ submit_element language text ~classnames:[ style ] () ]
     in
     [ txt (Admin.email_address admin |> Pool_user.EmailAddress.value)
-    ; txt (full_name admin)
+    ; txt (fullname admin)
     ; status_toggle
     ]
     |> CCList.map CCFun.(CCList.return %> td)

@@ -171,7 +171,7 @@ let admins db_label =
       match user with
       | None ->
         let%lwt admin =
-          let id = Pool_user.Id.create () in
+          let id = Admin.Id.create () in
           let create =
             { Admin.id = id |> CCOption.return
             ; email
@@ -198,7 +198,7 @@ let admins db_label =
           |> Lwt_list.iter_s (fun (role, target_uuid) ->
             ActorRole.create
               ?target_uuid
-              (Uuid.Actor.of_string_exn Admin.(id admin |> Pool_user.Id.value))
+              (Uuid.Actor.of_string_exn Admin.(id admin |> Id.value))
               role
             |> Persistence.ActorRole.upsert ~ctx)
           ||> tap (fun _ -> Persistence.Cache.clear ())

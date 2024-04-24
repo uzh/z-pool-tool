@@ -66,7 +66,7 @@ let contact_person_from_urlencoded database_label urlencoded experiment_id =
             database_label
             (validation_set experiment_id)
     in
-    id |> Pool_user.Id.of_string |> Admin.find database_label
+    id |> Admin.Id.of_string |> Admin.find database_label
   in
   find_entity_in_urlencoded urlencoded Field.ContactPerson query
 ;;

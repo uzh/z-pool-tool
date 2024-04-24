@@ -8,7 +8,7 @@ let experiment_id =
   HttpUtils.find_id Experiment.Id.of_string Pool_message.Field.Experiment
 ;;
 
-let admin_id = HttpUtils.find_id Pool_user.Id.of_string Pool_message.Field.Admin
+let admin_id = HttpUtils.find_id Admin.Id.of_string Pool_message.Field.Admin
 
 let index role req =
   let open Utils.Lwt_result.Infix in

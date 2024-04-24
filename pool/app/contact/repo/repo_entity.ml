@@ -98,13 +98,6 @@ let t =
   in
   let encode _ : ('a Data.t, string) result =
     Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
-    (* Ok Data. [ m.user ; m.terms_accepted_at ; m.language ;
-       m.experiment_type_preference ; m.cell_phone ; m.paused ; m.disabled ;
-       m.verified ; m.email_verified ; m.num_invitations ; m.num_assignments ;
-       m.num_show_ups ; m.num_no_shows ; m.num_participations ;
-       m.firstname_version ; m.lastname_version ; m.paused_version ;
-       m.language_version ; m.experiment_type_preference_version ;
-       m.import_pending ; m.created_at ; m.updated_at ] *)
   in
   let open Schema in
   custom

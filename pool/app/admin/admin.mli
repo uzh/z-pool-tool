@@ -1,3 +1,12 @@
+module Id : sig
+  include Pool_model.Base.IdSig
+
+  val of_common : Pool_common.Id.t -> t
+  val to_common : t -> Pool_common.Id.t
+  val of_user : Pool_user.Id.t -> t
+  val to_user : t -> Pool_user.Id.t
+end
+
 type t =
   { user : Pool_user.t
   ; email_verified : Pool_user.EmailVerified.t option
@@ -10,13 +19,13 @@ val show : t -> string
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val user : t -> Pool_user.t
 val create : email_verified:Pool_user.EmailVerified.t option -> Pool_user.t -> t
-val id : t -> Pool_user.Id.t
+val id : t -> Id.t
 val email_address : t -> Pool_user.EmailAddress.t
-val full_name : t -> string
-val full_name_reversed : t -> string
+val fullname : t -> string
+val fullname_reversed : t -> string
 
 type create =
-  { id : Pool_user.Id.t option
+  { id : Id.t option
   ; email : Pool_user.EmailAddress.t
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
@@ -58,11 +67,7 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val user_is_admin : Database.Label.t -> Pool_user.t -> bool Lwt.t
-
-val find
-  :  Database.Label.t
-  -> Pool_user.Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
 
 val find_by_email
   :  Database.Label.t
@@ -85,7 +90,7 @@ val find_all_with_roles
 
 val search_by_name_and_email
   :  ?dyn:Database.Dynparam.t
-  -> ?exclude:Pool_user.Id.t list
+  -> ?exclude:Id.t list
   -> ?limit:int
   -> Database.Label.t
   -> string
@@ -127,13 +132,15 @@ module Guard : sig
   module Access : sig
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
-    val read : Pool_user.Id.t -> Guard.ValidationSet.t
-    val update : Pool_user.Id.t -> Guard.ValidationSet.t
+    val read : Id.t -> Guard.ValidationSet.t
+    val update : Id.t -> Guard.ValidationSet.t
   end
 end
 
 module Repo : sig
-  module Entity : Pool_model.Base.CaqtiSig with type t = t
+  val t : t Caqti_type.t
+
+  module Id : Pool_model.Base.CaqtiSig with type t = Id.t
 
   val sql_select_columns : string list
   val joins : string
