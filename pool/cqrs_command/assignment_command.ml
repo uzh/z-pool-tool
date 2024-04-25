@@ -735,7 +735,9 @@ module OnlineSurvey = struct
       in
       let contact_event =
         let open Contact in
-        update_num_participations ~step:1 contact
+        contact
+        |> update_num_participations ~step:1
+        |> update_num_show_ups ~step:1
         |> updated
         |> Pool_event.contact
       in

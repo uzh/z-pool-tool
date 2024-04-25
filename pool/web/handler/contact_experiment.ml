@@ -227,9 +227,7 @@ module OnlineSurvey = struct
         let open CCResult.Infix in
         query |> decode >>= handle ~tags assignment |> Lwt_result.lift
       in
-      let handle =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
-      in
+      let handle = Pool_event.handle_events ~tags database_label in
       let return () =
         Page.Contact.Experiment.online_study_completition experiment context
         |> Lwt.return_ok
