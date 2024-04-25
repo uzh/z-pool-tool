@@ -971,19 +971,12 @@ let admin_select
      @ help)
 ;;
 
-let custom_field_to_static_input
-  ?(force_required = false)
-  ?flash_fetcher
-  language
-  custom_field
-  =
+let custom_field_to_static_input ?flash_fetcher language custom_field =
   let open Custom_field in
   let open CCOption in
   let field = Public.to_common_field language custom_field in
   let hints = Public.help_elements language custom_field in
-  let required =
-    force_required || Public.required custom_field |> Required.value
-  in
+  let required = Public.required custom_field |> Required.value in
   let create input_type value =
     input_element
       ?flash_fetcher
