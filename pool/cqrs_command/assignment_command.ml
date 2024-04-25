@@ -727,6 +727,7 @@ module OnlineSurvey = struct
       let assignment_event =
         { assignment with
           external_data_id
+        ; no_show = Some (NoShow.create false)
         ; participated = Some (Participated.create true)
         }
         |> updated
