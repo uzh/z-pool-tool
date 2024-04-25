@@ -1,3 +1,8 @@
+type update_counters =
+  { no_show : Assignment.NoShow.t
+  ; participated : Assignment.Participated.t
+  }
+
 let update_on_invitation_sent = Contact.update_num_invitations ~step:1
 
 let update_on_session_signup m sessions =
@@ -73,31 +78,27 @@ let update_on_assignment_deletion
 
 let update_on_assignment_update
   { Assignment.contact; _ }
-  { Session.closed_at; _ }
-  current_no_show
-  updated_no_show
-  participated_in_other_assignments
+  ~(current_values : update_counters)
+  ~(updated_values : update_counters)
+  ~participated_in_other_assignments
   =
   let open Contact in
-  if CCOption.is_none closed_at
-  then contact
-  else (
-    let value = Assignment.NoShow.value in
-    let update_participation_count ~step =
-      if participated_in_other_assignments
-      then CCFun.id
-      else update_num_participations ~step
-    in
-    match current_no_show |> value, updated_no_show |> value with
-    | true, false ->
-      contact
-      |> update_num_no_shows ~step:(-1)
-      |> update_num_show_ups ~step:1
-      |> update_participation_count ~step:1
-    | false, true ->
-      contact
-      |> update_num_no_shows ~step:1
-      |> update_num_show_ups ~step:(-1)
-      |> update_participation_count ~step:(-1)
-    | true, true | false, false -> contact)
+  let no_show = Assignment.NoShow.value in
+  let update_participation_count ~step =
+    if participated_in_other_assignments
+    then CCFun.id
+    else update_num_participations ~step
+  in
+  match no_show current_values.no_show, no_show updated_values.no_show with
+  | true, false ->
+    contact
+    |> update_num_no_shows ~step:(-1)
+    |> update_num_show_ups ~step:1
+    |> update_participation_count ~step:1
+  | false, true ->
+    contact
+    |> update_num_no_shows ~step:1
+    |> update_num_show_ups ~step:(-1)
+    |> update_participation_count ~step:(-1)
+  | true, true | false, false -> contact
 ;;

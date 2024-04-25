@@ -127,6 +127,29 @@ let initialize contact_id experiment_id session_id ?followup_session_id () =
   Lwt.return (contact, experiment, session, follow_up_session)
 ;;
 
+let initialize_online_survey contact_id experiment_id time_window_id () =
+  let open Integration_utils in
+  let open Test_utils in
+  let%lwt contact =
+    ContactRepo.create ~id:contact_id ~with_terms_accepted:true ()
+  in
+  let%lwt experiment =
+    ExperimentRepo.create
+      ~id:experiment_id
+      ~online_study:Experiment_test.Data.online_study
+      ()
+  in
+  let%lwt time_window =
+    TimeWindowRepo.create
+      ~id:time_window_id
+      (Model.in_an_hour ())
+      (Session.Duration.create Model.hour |> get_exn)
+      experiment
+      ()
+  in
+  Lwt.return (contact, experiment, time_window)
+;;
+
 module InviteContact = struct
   let contact_id = Contact.Id.create ()
   let experiment_id = Experiment.Id.create ()
@@ -214,12 +237,12 @@ module AttendAll = struct
 end
 
 module CancelSession = struct
-  let initialize ?followup_session_id u =
+  let initialize ?followup_session_id () =
     initialize
       ?followup_session_id
-      (Contact.Id.create u)
-      (Experiment.Id.create u)
-      (Session.Id.create u)
+      (Contact.Id.create ())
+      (Experiment.Id.create ())
+      (Session.Id.create ())
       ()
   ;;
 
@@ -559,7 +582,11 @@ module UpdateAssignments = struct
     let res =
       to_urlencoded ~no_show:true ~participated:false ()
       |> decode
-      >>= handle experiment session assignment participated_in_other_sessions
+      >>= handle
+            experiment
+            (`Session session)
+            assignment
+            participated_in_other_sessions
     in
     let expected =
       Assignment.(
@@ -624,7 +651,11 @@ module UpdateAssignments = struct
       let open Update in
       urlencoded
       |> decode
-      >>= handle experiment session assignment participated_in_other_sessions
+      >>= handle
+            experiment
+            (`Session session)
+            assignment
+            participated_in_other_sessions
       |> get_exn
       |> Pool_event.handle_events database_label
     in
@@ -660,6 +691,100 @@ module UpdateAssignments = struct
       Alcotest.(
         check Test_utils.contact "counters were manually updated" expected res)
       |> Lwt.return
+    in
+    Lwt.return_unit
+  ;;
+
+  let update_online_assignment _ () =
+    let open Cqrs_command.Assignment_command in
+    let open Assignment in
+    let contact_id = Contact.Id.create () in
+    let experiment_id = Experiment.Id.create () in
+    let timewindow_id = Session.Id.create () in
+    let%lwt contact, experiment, time_window =
+      initialize_online_survey contact_id experiment_id timewindow_id ()
+    in
+    let contact =
+      { contact with
+        num_assignments = initial_assignments
+      ; num_show_ups = initial_showups
+      ; num_no_shows = initial_noshows
+      ; num_participations = initial_participations
+      }
+    in
+    let assignment = create contact in
+    let handle assignment =
+      Update.handle experiment (`TimeWindow time_window) assignment false
+    in
+    let update ~no_show ~participated =
+      { external_data_id = None
+      ; no_show = NoShow.create no_show
+      ; participated = Participated.create participated
+      }
+    in
+    let () =
+      let update = update ~no_show:false ~participated:true in
+      let expected =
+        Ok
+          [ Updated
+              { assignment with
+                no_show = Some update.no_show
+              ; participated = Some update.participated
+              }
+            |> Pool_event.assignment
+          ]
+      in
+      check_result
+        ~msg:"Update unsubmitted online assignment"
+        expected
+        (handle assignment update)
+    in
+    let assignment =
+      { assignment with
+        no_show = Some (NoShow.create false)
+      ; participated = Some (Participated.create true)
+      }
+    in
+    let () =
+      let update = update ~no_show:false ~participated:true in
+      let expected =
+        Ok
+          [ Updated
+              { assignment with
+                no_show = Some update.no_show
+              ; participated = Some update.participated
+              }
+            |> Pool_event.assignment
+          ; Contact.Updated contact |> Pool_event.contact
+          ]
+      in
+      check_result
+        ~msg:"Update submitted online assignment"
+        expected
+        (handle assignment update)
+    in
+    let () =
+      let update = update ~no_show:true ~participated:false in
+      let expected =
+        Ok
+          [ Updated
+              { assignment with
+                no_show = Some update.no_show
+              ; participated = Some update.participated
+              }
+            |> Pool_event.assignment
+          ; Contact.Updated
+              (contact
+               |> update_num_show_ups ~step:(-1)
+               |> update_num_no_shows ~step:1
+               |> update_num_participations ~step:(-1))
+            |> Pool_event.contact
+          ]
+      in
+      check_result
+        ~msg:"Update submitted online assignment with no_show"
+        expected
+        (handle assignment update)
     in
     Lwt.return_unit
   ;;
@@ -705,7 +830,7 @@ module UpdateAssignments = struct
       |> decode
       >>= handle
             experiment
-            followup_session
+            (`Session followup_session)
             assignment
             participated_in_other_sessions
       |> get_exn

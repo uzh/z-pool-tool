@@ -846,12 +846,18 @@ let edit
   let open Assignment in
   let open Component.Input in
   let open CCOption.Infix in
+  let session_id = HttpUtils.Session.session_id session in
   let action =
-    assignment_specific_path experiment.Experiment.id session.Session.id id
+    assignment_specific_path experiment.Experiment.id session_id id
     |> Sihl.Web.externalize_path
   in
   let session_data =
     let open Session in
+    let location =
+      match session with
+      | `Session { location; _ } -> Component.Location.preview location
+      | `TimeWindow _ -> txt ""
+    in
     div
       ~a:[ a_class [ "stack"; "inset"; "border"; " bg-grey-light" ] ]
       [ h3
@@ -860,8 +866,13 @@ let edit
                 Utils.field_to_string language Message.Field.Session
                 |> CCString.capitalize_ascii)
           ]
-      ; p [ session |> Session.start_end_with_duration_human |> txt ]
-      ; Component.Location.preview session.location
+      ; p
+          [ session
+            |> HttpUtils.Session.detail_page_title
+            |> Pool_common.Utils.text_to_string language
+            |> txt
+          ]
+      ; location
       ]
   in
   [ div

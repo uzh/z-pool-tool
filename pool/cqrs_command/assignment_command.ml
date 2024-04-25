@@ -287,7 +287,7 @@ module Update : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Session.t
+    -> [ `Session of Session.t | `TimeWindow of Time_window.t ]
     -> Assignment.t
     -> bool
     -> t
@@ -302,7 +302,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (experiment : Experiment.t)
-    ({ Session.closed_at; _ } as session)
+    session
     ({ Assignment.no_show; participated; _ } as assignment)
     participated_in_other_assignments
     (command : update)
@@ -310,15 +310,33 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let open Assignment in
+    let current_values, updated_values =
+      let open Contact_counter in
+      let current_values =
+        match session with
+        | `Session { Session.closed_at; _ } ->
+          (match CCOption.is_some closed_at, no_show, participated with
+           | true, Some no_show, Some participated ->
+             Some { no_show; participated }
+           | _, _, _ -> None)
+        | `TimeWindow _ ->
+          (match no_show, participated with
+           | Some no_show, Some participated -> Some { no_show; participated }
+           | _, _ -> None)
+      in
+      let updated_values =
+        { no_show = command.no_show; participated = command.participated }
+      in
+      current_values, updated_values
+    in
     let contact_counters =
-      match CCOption.is_some closed_at, no_show, participated with
-      | true, Some no_show, Some _ ->
+      match current_values with
+      | Some current_values ->
         Contact_counter.update_on_assignment_update
           assignment
-          session
-          no_show
-          command.no_show
-          participated_in_other_assignments
+          ~current_values
+          ~updated_values
+          ~participated_in_other_assignments
         |> Contact.updated
         |> Pool_event.contact
         |> CCList.return
