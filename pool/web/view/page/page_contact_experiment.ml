@@ -132,8 +132,7 @@ let index
     online_studies
     |> CCList.map experiment_item
     |> list_html
-         ExperimentListPublicTitle
-         ~note:ExperimentSessionsPublic
+         ExperimentOnlineListPublicTitle
          ~empty_msg:ExperimentListEmpty
          [ "striped" ]
   in

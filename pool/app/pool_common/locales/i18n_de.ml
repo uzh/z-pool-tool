@@ -44,6 +44,7 @@ let to_string = function
   | ExperimentListEmpty ->
     "Aktuell gibt es keine Experimente, an denen Sie teilnehmen können."
   | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
+  | ExperimentOnlineListPublicTitle -> "Verfügbare Onlinestudien"
   | ExperimentListTitle -> "Experimente"
   | ExperimentMessagingSubtitle -> "Identitäten"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
