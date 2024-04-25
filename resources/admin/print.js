@@ -17,7 +17,11 @@ export const initPrint = () => {
             printFrame.classList.add(frameClass);
 
             body.appendChild(printFrame);
-            printFrame.contentWindow.print();
+
+            const contentWindow = printFrame.contentWindow;
+            contentWindow.addEventListener("load", () => {
+                contentWindow.print();
+            });
         })
     })
 
