@@ -611,7 +611,7 @@ module Admin = struct
       let open Contacts in
       let specific =
         let field_specific =
-          [ post "/delete" ~middlewares:[ Access.delete_answer ] delete_answer ]
+          [ post "/delete" ~middlewares:[ Access.update ] delete_answer ]
         in
         let tags =
           let open Settings.Tags in
