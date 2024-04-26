@@ -3,6 +3,7 @@
  (libraries
   conformist
   guard
+  letters
   pool_common
   ppx_deriving_yojson.runtime
   sihl

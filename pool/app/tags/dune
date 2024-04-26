@@ -1,6 +1,6 @@
 (library
  (name tags)
- (libraries guard pool_common ptime service sihl utils)
+ (libraries guard pool_common ptime sihl utils)
  (preprocess
   (pps
    lwt_ppx

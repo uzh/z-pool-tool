@@ -1,13 +1,6 @@
 (library
  (name reminder)
- (libraries
-  assignment
-  message_template
-  service
-  sihl
-  utils
-  pool_common
-  pool_event)
+ (libraries assignment message_template sihl utils pool_common pool_event)
  (preprocess
   (pps
    lwt_ppx

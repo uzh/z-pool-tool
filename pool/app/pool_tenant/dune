@@ -8,7 +8,6 @@
   pool_user
   settings
   sihl
-  sihl-user
   utils)
  (preprocess
   (pps

@@ -10,7 +10,7 @@
   pool_user
   queue
   query
-  service
+  sihl-email
   utils)
  (preprocess
   (pps

@@ -7,7 +7,6 @@
   pool_canary
   pool_tenant
   schedule
-  service
   sihl
   utils)
  (preprocess

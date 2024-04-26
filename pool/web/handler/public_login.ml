@@ -38,7 +38,7 @@ let login_get req =
 
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let to_sihl_user =
+  let to_user =
     let open Pool_context in
     function
     | Admin { Admin.user; _ } -> Ok user
@@ -53,14 +53,14 @@ let login_post req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* user = Helpers.Login.login req urlencoded database_label in
        let login user ?(set_completion_cookie = false) path actions =
-         let* sihl_user = to_sihl_user user |> Lwt_result.lift in
+         let* pool_user = to_user user |> Lwt_result.lift in
          let tags = Pool_context.Logger.Tags.req req in
          let* () = increase_sign_in_count ~tags database_label user in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language path)
              ([ Sihl.Web.Session.set
-                  [ "user_id", sihl_user.Pool_user.id |> Pool_user.Id.value ]
+                  [ "user_id", pool_user.Pool_user.id |> Pool_user.Id.value ]
               ]
               @ actions))
          ||> (fun res ->

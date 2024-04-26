@@ -41,9 +41,7 @@ module DummyData = struct
       }
   ;;
 
-  let create_sihl_user () =
-    () |> create_contact |> fun { Contact.user; _ } -> user
-  ;;
+  let create_user () = () |> create_contact |> fun { Contact.user; _ } -> user
 
   let location =
     let open Pool_location in
@@ -275,16 +273,10 @@ let message_template_help
       (create_assignment ())
   | ContactEmailChangeAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
-    ContactEmailChangeAttempt.email_params
-      layout
-      tenant_url
-      (create_sihl_user ())
+    ContactEmailChangeAttempt.email_params layout tenant_url (create_user ())
   | ContactRegistrationAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
-    ContactRegistrationAttempt.email_params
-      layout
-      tenant_url
-      (create_sihl_user ())
+    ContactRegistrationAttempt.email_params layout tenant_url (create_user ())
   | EmailVerification ->
     let validation_url =
       [ Pool_message.Field.Token, Email.Token.value token ]
@@ -304,13 +296,13 @@ let message_template_help
       (create_experiment ())
       (create_session ())
       (create_assignment ())
-  | PasswordChange -> PasswordChange.email_params layout (create_sihl_user ())
+  | PasswordChange -> PasswordChange.email_params layout (create_user ())
   | PasswordReset ->
     let reset_url =
       [ Pool_message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/reset-password/"
     in
-    PasswordReset.email_params layout reset_url (create_sihl_user ())
+    PasswordReset.email_params layout reset_url (create_user ())
   | PhoneVerification ->
     let code = Pool_common.VerificationCode.create () in
     PhoneVerification.message_params code

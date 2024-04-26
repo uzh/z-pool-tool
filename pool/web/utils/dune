@@ -6,8 +6,8 @@
   logger
   pool_common
   pool_context
-  service
   sexplib
+  sihl-storage
   user_import
   version)
  (preprocess

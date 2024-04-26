@@ -8,7 +8,6 @@
   layout
   page
   pool_canary
-  service
   sihl
   tyxml
   utils)

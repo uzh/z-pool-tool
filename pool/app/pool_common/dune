@@ -1,14 +1,7 @@
 (library
  ; Cannot just be named as "common" because there is a module common in caqti-driver-mariadb
  (name pool_common)
- (libraries
-  database
-  pool.conformist
-  pool.message
-  pool.model
-  service
-  sihl
-  utils)
+ (libraries database pool.conformist pool.message pool.model sihl utils)
  (preprocess
   (pps
    lwt_ppx

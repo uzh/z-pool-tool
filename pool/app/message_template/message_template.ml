@@ -1265,12 +1265,12 @@ end
 module UserImport = struct
   let label = Label.UserImport
 
-  let sihl_user = function
+  let to_user = function
     | `Admin admin -> Admin.user admin
     | `Contact contact -> Contact.user contact
   ;;
 
-  let message_history user = user |> sihl_user |> user_message_history label
+  let message_history user = user |> to_user |> user_message_history label
 
   let email_address = function
     | `Admin admin -> Admin.email_address admin
@@ -1284,7 +1284,7 @@ module UserImport = struct
   ;;
 
   let email_params layout confirmation_url user =
-    let user = sihl_user user in
+    let user = to_user user in
     global_params layout user @ [ "confirmationUrl", confirmation_url ]
   ;;
 

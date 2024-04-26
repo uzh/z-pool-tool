@@ -369,12 +369,12 @@ module Resend = struct
     let contact =
       let open Contact in
       let contact = Model.create_contact () in
-      let sihl_user =
+      let pool_user =
         { (user contact) with
           Pool_user.email = EmailAddress.of_string updated_email_address
         }
       in
-      { contact with cell_phone = Some updated_cellphone; user = sihl_user }
+      { contact with cell_phone = Some updated_cellphone; user = pool_user }
     in
     let events = Command.Resend.handle ~contact email_job in
     let expected =

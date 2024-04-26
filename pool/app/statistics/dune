@@ -1,15 +1,6 @@
 (library
  (name statistics)
- (libraries
-  containers
-  guard
-  i18n
-  pool_common
-  ptime
-  service
-  settings
-  sihl
-  utils)
+ (libraries containers guard i18n pool_common ptime settings sihl utils)
  (preprocess
   (pps
    lwt_ppx

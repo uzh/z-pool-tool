@@ -17,6 +17,7 @@
   pool_user
   session
   sihl
+  sihl-storage
   utils
   waiting_list)
  (preprocess

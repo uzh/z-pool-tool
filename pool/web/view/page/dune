@@ -17,7 +17,6 @@
   pool_location
   pool_tenant
   schedule
-  service
   session
   sihl
   tags

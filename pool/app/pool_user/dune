@@ -7,7 +7,6 @@
   pool_database
   pool_token
   ptime
-  service
   settings
   sihl
   utils)
