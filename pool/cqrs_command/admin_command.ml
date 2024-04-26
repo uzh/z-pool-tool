@@ -1,5 +1,5 @@
+open CCFun.Infix
 module Conformist = Pool_conformist
-module User = Pool_user
 
 let src = Logs.Src.create "admin.cqrs"
 
@@ -7,10 +7,10 @@ module CreateAdmin : sig
   include Common.CommandSig
 
   type t =
-    { email : User.EmailAddress.t
-    ; password : User.Password.t [@opaque]
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
+    { email : Pool_user.EmailAddress.t
+    ; password : Pool_user.Password.Plain.t [@opaque]
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
     }
 
   val handle
@@ -24,10 +24,10 @@ module CreateAdmin : sig
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t =
-    { email : User.EmailAddress.t
-    ; password : User.Password.t [@opaque]
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
+    { email : Pool_user.EmailAddress.t
+    ; password : Pool_user.Password.Plain.t [@opaque]
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
     }
 
   let command email password firstname lastname =
@@ -38,10 +38,10 @@ end = struct
     Pool_conformist.(
       make
         Field.
-          [ User.EmailAddress.schema ()
-          ; User.Password.(schema create ())
-          ; User.Firstname.schema ()
-          ; User.Lastname.schema ()
+          [ Pool_user.EmailAddress.schema ()
+          ; Pool_user.Password.Plain.schema ()
+          ; Pool_user.Firstname.schema ()
+          ; Pool_user.Lastname.schema ()
           ]
         command)
   ;;
@@ -84,9 +84,9 @@ module UpdatePassword : sig
   include Common.CommandSig
 
   type t =
-    { current_password : User.Password.t
-    ; new_password : User.Password.t
-    ; password_confirmation : User.PasswordConfirmed.t
+    { current_password : Pool_user.Password.Plain.t
+    ; new_password : Pool_user.Password.Plain.t
+    ; password_confirmation : Pool_user.Password.Confirmation.t
     }
 
   val handle
@@ -100,9 +100,9 @@ module UpdatePassword : sig
   val effects : Admin.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
-    { current_password : User.Password.t [@opaque]
-    ; new_password : User.Password.t [@opaque]
-    ; password_confirmation : User.PasswordConfirmed.t [@opaque]
+    { current_password : Pool_user.Password.Plain.t [@opaque]
+    ; new_password : Pool_user.Password.Plain.t [@opaque]
+    ; password_confirmation : Pool_user.Password.Confirmation.t [@opaque]
     }
 
   let command current_password new_password password_confirmation =
@@ -114,34 +114,33 @@ end = struct
     Conformist.(
       make
         Field.
-          [ User.Password.(schema ~field:CurrentPassword create_unvalidated ())
-          ; User.Password.(schema ~field:NewPassword create ())
-          ; User.PasswordConfirmed.schema ()
+          [ Pool_user.Password.Plain.(schema ~field:CurrentPassword ())
+          ; Pool_user.Password.Plain.(schema ~field:NewPassword ())
+          ; Pool_user.Password.Confirmation.schema ()
           ]
         command)
   ;;
 
   let handle ?(tags = Logs.Tag.empty) ?notification admin command =
     Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
+    (* NOTE use 'Pool_user.validate_current_password' in handler before this
+       command. *)
     let open CCResult in
     let* () =
-      User.validate_current_password (Admin.user admin) command.current_password
-    in
-    let* () =
-      User.Password.validate_password_confirmation
+      Pool_user.Password.validate_confirmation
         command.new_password
         command.password_confirmation
     in
     Ok
-      ((Admin.PasswordUpdated
-          ( admin
+      ((Pool_user.PasswordUpdated
+          ( (admin |> Admin.(id %> Id.to_user))
           , command.current_password
           , command.new_password
           , command.password_confirmation )
-        |> Pool_event.admin)
+        |> Pool_event.user)
        :: CCOption.map_or
             ~default:[]
-            (fun note -> Email.Sent note |> Pool_event.email |> CCList.return)
+            (Email.sent %> Pool_event.email %> CCList.return)
             notification)
   ;;
 
@@ -172,7 +171,9 @@ end = struct
 
   let schema =
     Pool_conformist.(
-      make Field.[ User.Firstname.schema (); User.Lastname.schema () ] command)
+      make
+        Field.[ Pool_user.Firstname.schema (); Pool_user.Lastname.schema () ]
+        command)
   ;;
 
   let handle ?(tags = Logs.Tag.empty) admin update =

@@ -1,4 +1,5 @@
 open Pool_message
+open Pool_user
 module Root_command = Cqrs_command.Root_command
 
 module Data = struct
@@ -21,10 +22,9 @@ let create_root () =
   in
   let events = Root_command.Create.handle command in
   let expected =
-    let open Pool_user in
     let open CCResult in
     let* email = email |> EmailAddress.create in
-    let* password = password |> Password.create in
+    let password = password |> Password.Plain.create in
     let* firstname = firstname |> Firstname.create in
     let* lastname = lastname |> Lastname.create in
     let create =

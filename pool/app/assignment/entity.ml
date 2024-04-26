@@ -157,12 +157,7 @@ module Public = struct
     }
 end
 
-module IncrementParticipationCount = struct
-  type t = bool
-
-  let value m = m
-  let create m = m
-end
+module IncrementParticipationCount = Pool_model.Base.Boolean
 
 let validate experiment { no_show; participated; external_data_id; _ } =
   let value = CCOption.value ~default:false in

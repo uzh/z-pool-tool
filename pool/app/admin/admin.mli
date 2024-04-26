@@ -27,7 +27,7 @@ val fullname_reversed : t -> string
 type create =
   { id : Id.t option
   ; email : Pool_user.EmailAddress.t
-  ; password : Pool_user.Password.t
+  ; password : Pool_user.Password.Plain.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
   ; roles : (Role.Role.t * Guard.Uuid.Target.t option) list
@@ -52,13 +52,8 @@ type event =
   | EmailVerified of t
   | Disabled of t
   | Enabled of t
-  | ImportConfirmed of t * Pool_user.Password.t
+  | ImportConfirmed of t * Pool_user.Password.Plain.t
   | ImportDisabled of t
-  | PasswordUpdated of
-      t
-      * Pool_user.Password.t
-      * Pool_user.Password.t
-      * Pool_user.PasswordConfirmed.t
   | PromotedContact of Pool_user.Id.t
   | SignInCounterUpdated of t
 

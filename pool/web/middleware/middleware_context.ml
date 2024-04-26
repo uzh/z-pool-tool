@@ -60,7 +60,9 @@ let context () =
     in
     let find_user pool =
       Http_utils.user_from_session pool req
-      >|> CCOption.map_or ~default:(Lwt.return Guest) (user_of_sihl_user pool)
+      >|> CCOption.map_or
+            ~default:(Lwt.return Guest)
+            (context_user_of_user pool)
     in
     let%lwt context =
       let* database_label = database_label_of_request is_root req in

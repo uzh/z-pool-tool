@@ -7,7 +7,7 @@ let src = Logs.Src.create "root.cqrs"
 module Create : sig
   type t =
     { email : User.EmailAddress.t
-    ; password : User.Password.t
+    ; password : User.Password.Plain.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
     }
@@ -23,7 +23,7 @@ module Create : sig
 end = struct
   type t =
     { email : User.EmailAddress.t
-    ; password : User.Password.t [@opaque]
+    ; password : User.Password.Plain.t [@opaque]
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
     }
@@ -37,7 +37,7 @@ end = struct
       make
         Field.
           [ User.EmailAddress.schema ()
-          ; User.Password.(schema create ())
+          ; User.Password.Plain.schema ()
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
           ]

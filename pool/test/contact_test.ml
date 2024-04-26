@@ -55,25 +55,17 @@ let sign_up_contact contact_info =
 ;;
 
 let create_contact verified contact_info =
-  let open CCResult.Infix in
-  let email_address, password, firstname, lastname, language = contact_info in
+  let open Pool_user in
+  let email_address, _, firstname, lastname, language = contact_info in
   { Contact.user =
-      Pool_user.
-        { id = Id.(create ())
-        ; email = EmailAddress.of_string email_address
-        ; name = Lastname.of_string lastname
-        ; given_name = Firstname.of_string firstname
-        ; password =
-            password
-            |> Password.create_unvalidated
-            >>= HashedPassword.create
-            |> Pool_common.Utils.get_or_failwith
-        ; status = Status.Active
-        ; admin = false
-        ; confirmed = true
-        ; created_at = Pool_common.CreatedAt.create_now ()
-        ; updated_at = Pool_common.UpdatedAt.create_now ()
-        }
+      { id = Id.(create ())
+      ; email = EmailAddress.of_string email_address
+      ; lastname = Lastname.of_string lastname
+      ; firstname = Firstname.of_string firstname
+      ; status = Status.Active
+      ; admin = Pool_user.IsAdmin.create false
+      ; confirmed = Pool_user.Confirmed.create true
+      }
   ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
   ; language
   ; experiment_type_preference = None
@@ -188,10 +180,7 @@ let sign_up () =
     let contact : Contact.create =
       { Contact.user_id
       ; email
-      ; password =
-          password
-          |> Pool_user.Password.create
-          |> Pool_common.Utils.get_or_failwith
+      ; password = password |> Pool_user.Password.Plain.create
       ; firstname
       ; lastname
       ; terms_accepted_at
@@ -265,16 +254,12 @@ let update_password () =
   in
   let expected =
     Ok
-      [ Contact.PasswordUpdated
-          ( contact
-          , password
-            |> Pool_user.Password.create
-            |> Pool_common.Utils.get_or_failwith
-          , new_password
-            |> Pool_user.Password.create
-            |> Pool_common.Utils.get_or_failwith
-          , new_password |> Pool_user.PasswordConfirmed.create )
-        |> Pool_event.contact
+      [ Pool_user.PasswordUpdated
+          ( Contact.(contact |> id |> Id.to_user)
+          , password |> Pool_user.Password.Plain.create
+          , new_password |> Pool_user.Password.Plain.create
+          , new_password |> Pool_user.Password.Confirmation.create )
+        |> Pool_event.user
       ; Email.Sent confirmation_mail |> Pool_event.email
       ]
   in
@@ -282,8 +267,9 @@ let update_password () =
 ;;
 
 let validate_password_policy password expected =
-  let res = password |> Pool_user.Password.create in
-  Alcotest.(check Test_utils.(result password error) "succeeds" expected res)
+  let res = Pool_user.Password.Plain.(password |> create |> validate) in
+  Alcotest.(
+    check Test_utils.(result password_plain error) "succeeds" expected res)
 ;;
 
 let password_min_length () =
@@ -306,6 +292,14 @@ let password_special_char () =
     (Error
        (Error.PasswordPolicySpecialChar
           Pool_user.Password.Policy.default_special_char_set))
+;;
+
+let valid_password () =
+  let password = "Password9*" in
+  let expected =
+    password |> Pool_user.Password.Plain.create |> CCResult.return
+  in
+  validate_password_policy password expected
 ;;
 
 let validate_cell_phone nr expected =
@@ -333,36 +327,6 @@ let valid_german_number () =
     |> CCResult.return
   in
   validate_cell_phone nr expected
-;;
-
-let valid_password () =
-  let password = "Password9*" in
-  let expected =
-    password
-    |> Pool_user.Password.create
-    |> Test_utils.get_or_failwith
-    |> CCResult.return
-  in
-  validate_password_policy password expected
-;;
-
-let update_password_wrong_current_password () =
-  let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let current_password = "Password2!" in
-  let new_password = "Password3!" in
-  let confirmation_mail = confirmation_mail contact in
-  let events =
-    Contact_command.UpdatePassword.(
-      [ Field.(CurrentPassword |> show), [ current_password ]
-      ; Field.(NewPassword |> show), [ new_password ]
-      ; Field.(PasswordConfirmation |> show), [ new_password ]
-      ]
-      |> decode
-      |> Pool_common.Utils.get_or_failwith
-      |> handle contact confirmation_mail)
-  in
-  let expected = Error (Error.Invalid Field.CurrentPassword) in
-  check_result expected events
 ;;
 
 let update_password_wrong_policy () =

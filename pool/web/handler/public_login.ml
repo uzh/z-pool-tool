@@ -94,7 +94,7 @@ let login_post req =
          |> Admin.(Id.of_user %> find database_label)
          >|+ Pool_context.admin
        in
-       match user.Pool_user.confirmed with
+       match user |> Pool_user.is_confirmed with
        | false ->
          redirect
            (Http_utils.path_with_language query_language "/email-confirmation")
@@ -157,7 +157,7 @@ let request_reset_password_post req =
     let* user =
       Sihl.Web.Request.to_urlencoded req
       ||> decode
-      |>> Pool_user.find_active_user_by_email_opt database_label
+      |>> Pool_user.find_active_by_email_opt database_label
     in
     let* () =
       match user with
@@ -237,15 +237,9 @@ let reset_password_post req =
     let redirect_with_param =
       add_field_query_params redirect [ Field.Token, token ]
     in
-    let* password =
-      Field.Password
-      |> go
-      |> Pool_user.Password.create
-      |> Lwt_result.lift
-      >|- fun err -> err, redirect_with_param
-    in
+    let password = Field.Password |> go |> Pool_user.Password.Plain.create in
     let password_confirmed =
-      let open Pool_user.PasswordConfirmed in
+      let open Pool_user.Password.Confirmation in
       Field.PasswordConfirmation |> go |> create
     in
     let* user_uuid =
@@ -255,7 +249,7 @@ let reset_password_post req =
       >|+ Pool_user.Id.of_string
     in
     let%lwt reset =
-      Pool_user.PasswordReset.reset_password
+      Pool_user.Password.Reset.reset_password
         database_label
         ~token
         password
@@ -273,8 +267,8 @@ let reset_password_post req =
       | None -> Lwt_result.return []
       | Some import ->
         let%lwt user =
-          Pool_user.find database_label user_uuid
-          >|> Pool_context.user_of_sihl_user database_label
+          Pool_user.find_exn database_label user_uuid
+          >|> Pool_context.context_user_of_user database_label
         in
         Cqrs_command.User_import_command.DisableImport.handle
           ~tags

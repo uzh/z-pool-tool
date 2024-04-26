@@ -1,16 +1,23 @@
 open Caqti_request.Infix
+open Utils.Lwt_result.Infix
+open Repo_entity
+module Password = Repo_password_entity
 
 let sql_select_columns =
   [ Pool_common.Id.sql_select_fragment ~field:"user_users.uuid"
   ; "user_users.email"
   ; "user_users.name"
   ; "user_users.given_name"
-  ; "user_users.password"
   ; "user_users.status"
   ; "user_users.admin"
   ; "user_users.confirmed"
-  ; "user_users.created_at"
-  ; "user_users.updated_at"
+  ]
+;;
+
+let sql_select_password_columns =
+  [ Pool_common.Id.sql_select_fragment ~field:"user_users.uuid"
+  ; "user_users.email"
+  ; "user_users.password"
   ]
 ;;
 
@@ -23,7 +30,7 @@ let filter_fragment =
   |sql}
 ;;
 
-let get_request =
+let find_request =
   let columns = sql_select_columns |> CCString.concat ", " in
   [%string
     {sql|
@@ -31,12 +38,19 @@ let get_request =
       FROM user_users
       WHERE user_users.uuid = %{Pool_common.Id.sql_value_fragment "?"}
     |sql}]
-  |> Repo_entity.(Id.t ->? t)
+  |> Id.t ->? t
 ;;
 
-let find_opt label = Database.find_opt label get_request
+let find_opt label = Database.find_opt label find_request
 
-let get_by_email_request =
+let find label id =
+  find_opt label id
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
+;;
+
+let find_exn label id = find label id ||> Pool_common.Utils.get_or_failwith
+
+let find_by_email_request =
   let columns = sql_select_columns |> CCString.concat ", " in
   [%string
     {sql|
@@ -44,12 +58,22 @@ let get_by_email_request =
       FROM user_users
       WHERE user_users.email = ?
     |sql}]
-  |> Repo_entity.(EmailAddress.t ->? t)
+  |> EmailAddress.t ->? t
 ;;
 
-let get_by_email label = Database.find_opt label get_by_email_request
+let find_by_email_opt label = Database.find_opt label find_by_email_request
+
+let find_by_email label id =
+  find_by_email_opt label id
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
+;;
+
+let find_by_email_exn label id =
+  find_by_email label id ||> Pool_common.Utils.get_or_failwith
+;;
 
 let insert_request =
+  let open Caqti_type in
   {sql|
       INSERT INTO user_users (
         uuid,
@@ -59,9 +83,7 @@ let insert_request =
         password,
         status,
         admin,
-        confirmed,
-        created_at,
-        updated_at
+        confirmed
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
         LOWER($2),
@@ -70,47 +92,51 @@ let insert_request =
         $5,
         $6,
         $7,
-        $8,
-        $9,
-        $10
+        $8
       )
     |sql}
-  |> Repo_entity.t ->. Caqti_type.unit
+  |> t2
+       Id.t
+       (t2
+          EmailAddress.t
+          (t2
+             Lastname.t
+             (t2
+                Firstname.t
+                (t2 Password.t (t2 Status.t (t2 IsAdmin.t Confirmed.t))))))
+     ->. Caqti_type.unit
 ;;
 
-let insert label = Database.exec label insert_request
+let insert
+  label
+  ( { Entity.id; email; lastname; firstname; status; admin; confirmed }
+  , (password : Password.t) )
+  =
+  Database.exec
+    label
+    insert_request
+    ( id
+    , (email, (lastname, (firstname, (password, (status, (admin, confirmed))))))
+    )
+;;
 
 let update_request =
   {sql|
-      UPDATE user_users
-      SET
-        email = LOWER($2),
-        name = $3,
-        given_name = $4,
-        password = $5,
-        status = $6,
-        admin = $7,
-        confirmed = $8,
-        created_at = $9,
-        updated_at = $10
-      WHERE user_users.uuid = UNHEX(REPLACE($1, '-', ''))
-    |sql}
-  |> Repo_entity.t ->. Caqti_type.unit
+    UPDATE user_users
+    SET
+      email = LOWER($2),
+      name = $3,
+      given_name = $4,
+      status = $5,
+      admin = $6,
+      confirmed = $7
+    WHERE user_users.uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> t ->. Caqti_type.unit
 ;;
 
 let update label = Database.exec label update_request
-let clean_request = "TRUNCATE user_users" |> Caqti_type.(unit ->. unit)
-let clean label () = Database.exec label clean_request ()
 
 let register_migration () =
   Database.Migration.register_migration (Repo_migration.migration ())
-;;
-
-let register_cleaner () =
-  Sihl.Cleaner.register_cleaner (fun ?ctx () ->
-    clean
-      CCOption.(
-        map Database.of_ctx_exn ctx
-        |> get_exn_or Pool_message.(Error.(NotFound Field.Context |> show)))
-      ())
 ;;

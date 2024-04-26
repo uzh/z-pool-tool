@@ -814,8 +814,9 @@ let cancel_valid_with_missing_cell_phone () =
     (Ok
        (messages
         @ [ Session.Canceled session |> Pool_event.session ]
-        @ contact_events))
-    res
+        @ contact_events
+        |> Test_utils.sort_events))
+    (res |> CCResult.map Test_utils.sort_events)
 ;;
 
 let cancel_with_email_and_text_notification () =
@@ -877,8 +878,9 @@ let cancel_with_email_and_text_notification () =
     (Ok
        (messages
         @ [ Session.Canceled session |> Pool_event.session ]
-        @ contact_events))
-    res
+        @ contact_events
+        |> Test_utils.sort_events))
+    (res |> CCResult.map Test_utils.sort_events)
 ;;
 
 let close_valid () =

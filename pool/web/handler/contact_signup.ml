@@ -114,7 +114,8 @@ let sign_up_create req =
            let* events =
              contact
              |> function
-             | Ok contact when contact.Contact.user.Pool_user.confirmed ->
+             | Ok contact when contact |> Contact.user |> Pool_user.is_confirmed
+               ->
                let%lwt send_notification =
                  Contact.should_send_registration_attempt_notification
                    database_label
@@ -169,7 +170,7 @@ let email_verification req =
       | None -> "/login" |> Lwt.return
       | Some user ->
         let open Pool_context in
-        user_of_sihl_user database_label user ||> dashboard_path
+        context_user_of_user database_label user ||> dashboard_path
     in
     (let* token =
        Sihl.Web.Request.query Field.(show Token) req

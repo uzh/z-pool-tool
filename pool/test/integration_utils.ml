@@ -13,10 +13,10 @@ module AssignmentRepo = struct
 end
 
 module ContactRepo = struct
-  let create ?id ?name ?language ?(with_terms_accepted = false) () =
+  let create ?id ?lastname ?language ?(with_terms_accepted = false) () =
     let open Utils.Lwt_result.Infix in
     let contact =
-      Model.create_contact ?id ?name ?language ~with_terms_accepted ()
+      Model.create_contact ?id ?lastname ?language ~with_terms_accepted ()
     in
     let open Contact in
     let confirm = [ Verified contact; EmailVerified contact ] in
@@ -39,6 +39,8 @@ module ContactRepo = struct
 end
 
 module AdminRepo = struct
+  open Pool_user
+
   let create ?id ?email () =
     let admin_id = id |> CCOption.value ~default:(Admin.Id.create ()) in
     let open Admin in
@@ -54,14 +56,13 @@ module AdminRepo = struct
       |> Pool_user.EmailAddress.of_string
     in
     let admin =
-      Pool_user.
-        { Admin.id = Some admin_id
-        ; lastname = Lastname.of_string "Bar"
-        ; firstname = Firstname.of_string "Foo"
-        ; password = Password.create "Password1!" |> CCResult.get_exn
-        ; email
-        ; roles = []
-        }
+      { Admin.id = Some admin_id
+      ; lastname = Lastname.of_string "Bar"
+      ; firstname = Firstname.of_string "Foo"
+      ; password = Password.Plain.create "Password1!"
+      ; email
+      ; roles = []
+      }
     in
     let%lwt () =
       [ Created admin ]

@@ -24,6 +24,7 @@ type t =
   | Tags of Tags.event
   | TextMessage of Text_message.event
   | UserImport of User_import.event
+  | User of Pool_user.event
   | WaitingList of Waiting_list.event
 [@@deriving eq, show, variants]
 
@@ -50,6 +51,7 @@ let system_event events = SystemEvent events
 let tags events = Tags events
 let text_message events = TextMessage events
 let user_import events = UserImport events
+let user events = User events
 let waiting_list events = WaitingList events
 
 let handle_event ?(tags = Logs.Tag.empty) pool =
@@ -129,6 +131,9 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
   | UserImport event ->
     info "user_import" User_import.pp_event event;
     User_import.handle_event pool event
+  | User event ->
+    info "user" Pool_user.pp_event event;
+    Pool_user.handle_event pool event
   | WaitingList event ->
     info "waiting_list" Waiting_list.pp_event event;
     Waiting_list.handle_event pool event

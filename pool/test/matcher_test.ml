@@ -5,10 +5,7 @@ module Model = Test_utils.Model
 
 let get_or_failwith = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
-
-let sort_events =
-  CCList.stable_sort Pool_event.(fun a b -> CCString.compare (show a) (show b))
-;;
+let sort_events = Test_utils.sort_events
 
 let expected_events experiment mailing contacts create_message =
   let emails =
@@ -233,10 +230,10 @@ let create_invitations _ () =
   let%lwt contacts =
     Lwt_list.map_s
       (fun id ->
-        let name =
+        let lastname =
           Experiment.Id.value experiment_id |> Pool_user.Lastname.of_string
         in
-        ContactRepo.create ~id ~name ())
+        ContactRepo.create ~id ~lastname ())
       contact_ids
     ||> Matcher.sort_contacts
   in

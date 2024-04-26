@@ -175,7 +175,7 @@ let admins db_label =
           let create =
             { Admin.id = id |> CCOption.return
             ; email
-            ; password = Pool_user.Password.create password |> CCResult.get_exn
+            ; password = Pool_user.Password.Plain.create password
             ; firstname = Pool_user.Firstname.of_string given_name
             ; lastname = Pool_user.Lastname.of_string name
             ; roles = []
@@ -262,8 +262,7 @@ let contacts db_label =
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"Password1!"
-    |> User.Password.create
-    |> Pool_common.Utils.get_or_failwith
+    |> User.Password.Plain.create
   in
   let%lwt () =
     users

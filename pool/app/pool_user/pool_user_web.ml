@@ -17,3 +17,6 @@ let user_from_session find_user ?cookie_key ?secret ?(key = "user_id") label req
   | Some user_id -> find_user label user_id
   | None -> Lwt.return None
 ;;
+
+let user_from_token = user_from_token Repo.find_opt
+let user_from_session = user_from_session Repo.find_opt

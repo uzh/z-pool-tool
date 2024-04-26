@@ -1,6 +1,5 @@
+open CCFun.Infix
 module Conformist = Pool_conformist
-module User = Pool_user
-module Id = Pool_common.Id
 
 let src = Logs.Src.create "contact.cqrs"
 
@@ -8,20 +7,20 @@ module SignUp : sig
   include Common.CommandSig
 
   type t =
-    { email : User.EmailAddress.t
-    ; password : User.Password.t
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
+    { email : Pool_user.EmailAddress.t
+    ; password : Pool_user.Password.Plain.t
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
     }
 
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?user_id:Contact.Id.t
-    -> ?terms_accepted_at:User.TermsAccepted.t option
+    -> ?terms_accepted_at:Pool_user.TermsAccepted.t option
     -> Custom_field.Public.t list
     -> Email.Token.t
-    -> User.EmailAddress.t
+    -> Pool_user.EmailAddress.t
     -> Email.job
     -> Pool_common.Language.t option
     -> t
@@ -31,10 +30,10 @@ module SignUp : sig
   val effects : Guard.ValidationSet.t
 end = struct
   type t =
-    { email : User.EmailAddress.t
-    ; password : User.Password.t [@opaque]
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
+    { email : Pool_user.EmailAddress.t
+    ; password : Pool_user.Password.Plain.t [@opaque]
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
     }
 
   let command email password firstname lastname =
@@ -45,10 +44,10 @@ end = struct
     Conformist.(
       make
         Field.
-          [ User.EmailAddress.schema ()
-          ; User.Password.(schema create ())
-          ; User.Firstname.schema ()
-          ; User.Lastname.schema ()
+          [ Pool_user.EmailAddress.schema ()
+          ; Pool_user.Password.Plain.schema ()
+          ; Pool_user.Firstname.schema ()
+          ; Pool_user.Lastname.schema ()
           ]
         command)
   ;;
@@ -57,7 +56,7 @@ end = struct
     ?(tags = Logs.Tag.empty)
     ?allowed_email_suffixes
     ?(user_id = Contact.Id.create ())
-    ?(terms_accepted_at = Some (User.TermsAccepted.create_now ()))
+    ?(terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ()))
     custom_fields
     token
     unverified_email
@@ -67,7 +66,9 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command SignUp" ~tags);
     let open CCResult in
-    let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
+    let* () =
+      Pool_user.EmailAddress.validate allowed_email_suffixes command.email
+    in
     let contact =
       Contact.
         { user_id
@@ -199,9 +200,9 @@ module UpdatePassword : sig
   include Common.CommandSig
 
   type t =
-    { current_password : User.Password.t
-    ; new_password : User.Password.t
-    ; password_confirmation : User.PasswordConfirmed.t
+    { current_password : Pool_user.Password.Plain.t
+    ; new_password : Pool_user.Password.Plain.t
+    ; password_confirmation : Pool_user.Password.Confirmation.t
     }
 
   val handle
@@ -215,9 +216,9 @@ module UpdatePassword : sig
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
-    { current_password : User.Password.t [@opaque]
-    ; new_password : User.Password.t [@opaque]
-    ; password_confirmation : User.PasswordConfirmed.t [@opaque]
+    { current_password : Pool_user.Password.Plain.t [@opaque]
+    ; new_password : Pool_user.Password.Plain.t [@opaque]
+    ; password_confirmation : Pool_user.Password.Confirmation.t [@opaque]
     }
 
   let command current_password new_password password_confirmation =
@@ -229,33 +230,31 @@ end = struct
     Conformist.(
       make
         Field.
-          [ User.Password.(schema ~field:CurrentPassword create_unvalidated ())
-          ; User.Password.(schema ~field:NewPassword create ())
-          ; User.PasswordConfirmed.schema ()
+          [ Pool_user.Password.Plain.(
+              schema ~field:CurrentPassword ~validation:CCResult.return ())
+          ; Pool_user.Password.Plain.(schema ~field:NewPassword ())
+          ; Pool_user.Password.Confirmation.schema ()
           ]
         command)
   ;;
 
   let handle ?(tags = Logs.Tag.empty) contact notification command =
     Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
+    (* NOTE use 'Pool_user.validate_current_password' in handler before this
+       command. *)
     let open CCResult in
     let* () =
-      User.validate_current_password
-        contact.Contact.user
-        command.current_password
-    in
-    let* () =
-      User.Password.validate_password_confirmation
+      Pool_user.Password.validate_confirmation
         command.new_password
         command.password_confirmation
     in
     Ok
-      [ Contact.PasswordUpdated
-          ( contact
+      [ Pool_user.PasswordUpdated
+          ( (contact |> Contact.(id %> Id.to_user))
           , command.current_password
           , command.new_password
           , command.password_confirmation )
-        |> Pool_event.contact
+        |> Pool_event.user
       ; Email.Sent notification |> Pool_event.email
       ]
   ;;
@@ -296,7 +295,7 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command RequestEmailValidation" ~tags);
     let open CCResult in
-    let* () = User.EmailAddress.validate allowed_email_suffixes email in
+    let* () = Pool_user.EmailAddress.validate allowed_email_suffixes email in
     Ok
       [ Email.Created (email, token, Contact.(id contact |> Id.to_user))
         |> Pool_event.email_verification
@@ -325,7 +324,9 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateEmail" ~tags);
     let open CCResult in
     let* () =
-      User.EmailAddress.validate allowed_email_suffixes (Email.address email)
+      Pool_user.EmailAddress.validate
+        allowed_email_suffixes
+        (Email.address email)
     in
     Ok
       [ Contact.EmailUpdated (contact, Email.address email)
@@ -417,7 +418,8 @@ end
 module AddCellPhone : sig
   include
     Common.CommandSig
-    with type t = Contact.t * User.CellPhone.t * Pool_common.VerificationCode.t
+    with type t =
+      Contact.t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -426,7 +428,7 @@ module AddCellPhone : sig
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Contact.t * User.CellPhone.t * Pool_common.VerificationCode.t
+  type t = Contact.t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
 
   let handle ?(tags = Logs.Tag.empty) (contact, cell_phone, token) =
     Logs.info ~src (fun m -> m "Handle command AddCellPhone" ~tags);
@@ -440,7 +442,7 @@ end = struct
 end
 
 module VerifyCellPhone : sig
-  include Common.CommandSig with type t = Contact.t * User.CellPhone.t
+  include Common.CommandSig with type t = Contact.t * Pool_user.CellPhone.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -449,7 +451,7 @@ module VerifyCellPhone : sig
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Contact.t * User.CellPhone.t
+  type t = Contact.t * Pool_user.CellPhone.t
 
   let handle ?(tags = Logs.Tag.empty) (contact, cell_phone) =
     Logs.info ~src (fun m -> m "Handle command VerifyCellPhone" ~tags);

@@ -8,7 +8,7 @@ let src = Logs.Src.create "admin.event"
 type create =
   { id : Id.t option
   ; email : User.EmailAddress.t
-  ; password : User.Password.t [@opaque]
+  ; password : User.Password.Plain.t [@opaque]
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
   ; roles : (Role.Role.t * Guard.Uuid.Target.t option) list
@@ -21,21 +21,14 @@ type update =
   }
 [@@deriving eq, show]
 
-let set_password pool { user; _ } password password_confirmation =
-  let open Lwt_result.Infix in
-  User.set_password pool user password password_confirmation >|= ignore
-;;
-
 type event =
   | Created of create
   | DetailsUpdated of t * update
   | EmailVerified of t
   | Disabled of t
   | Enabled of t
-  | ImportConfirmed of t * User.Password.t
+  | ImportConfirmed of t * User.Password.Plain.t
   | ImportDisabled of t
-  | PasswordUpdated of
-      t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | PromotedContact of Pool_user.Id.t
   | SignInCounterUpdated of t
 [@@deriving eq, show]
@@ -71,8 +64,17 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     let open Common.Utils in
     let%lwt admin =
       let id = CCOption.map Id.to_user id in
-      User.create_admin pool ?id email lastname firstname password
-      ||> create ~email_verified:None
+      User.create_admin
+        pool
+        ?id
+        email
+        lastname
+        firstname
+        password
+        (Pool_user.Password.to_confirmed password)
+      >|+ create ~email_verified:None
+      >|- with_log_error ~src ~tags
+      ||> get_or_failwith
     in
     let%lwt () = Repo.insert pool admin in
     let () = Guard.Persistence.clear_cache () in
@@ -84,20 +86,18 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     admin_authorizable ~roles admin
   | DetailsUpdated (admin, { firstname; lastname }) ->
     let%lwt (_ : Pool_user.t) =
-      User.update pool ~name:lastname ~given_name:firstname (user admin)
+      User.update pool ~lastname ~firstname (user admin)
     in
     Lwt.return_unit
   | EmailVerified admin ->
-    let%lwt (_ : Pool_user.t) =
-      User.update pool Pool_user.{ admin.user with confirmed = true }
-    in
+    let%lwt (_ : Pool_user.t) = User.confirm pool admin.user in
     { admin with email_verified = Some (Pool_user.EmailVerified.create_now ()) }
     |> Repo.update pool
   | ImportConfirmed (admin, password) ->
-    let (_ : (Pool_user.t, Pool_message.Error.t) Lwt_result.t) =
-      User.set_password
+    let (_ : (unit, Pool_message.Error.t) Lwt_result.t) =
+      User.Password.define
         pool
-        admin.user
+        (admin |> user |> Pool_user.id)
         password
         (Pool_user.Password.to_confirmed password)
       >|- Pool_common.Utils.with_log_error ~src ~tags
@@ -109,17 +109,6 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     Repo.update
       pool
       { admin with import_pending = Pool_user.ImportPending.create false }
-  | PasswordUpdated (admin, old_password, new_password, confirmed) ->
-    let%lwt (_ : (Pool_user.t, Pool_message.Error.t) result) =
-      User.update_password
-        pool
-        ~old_password
-        ~new_password
-        ~new_password_confirmation:confirmed
-        (user admin)
-      >|- Common.Utils.with_log_error ~src ~tags
-    in
-    Lwt.return_unit
   | PromotedContact contact_id ->
     let target =
       Guard.Persistence.Target.find

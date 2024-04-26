@@ -1,9 +1,8 @@
 open Entity
-module Database = Database
 module Dynparam = Database.Dynparam
 
-let update_sihl_user pool ?firstname ?lastname contact =
-  User.update pool ?given_name:firstname ?name:lastname contact.Contact.user
+let update_user pool ?firstname ?lastname contact =
+  User.update pool ?firstname ?lastname contact.Contact.user
 ;;
 
 let update_sql column_fragment =
@@ -175,18 +174,14 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
   let open PartialUpdate in
   match field with
   | Firstname (version, firstname) ->
-    let%lwt (_ : Pool_user.t) = update_sihl_user pool ~firstname contact in
+    let%lwt (_ : Pool_user.t) = update_user pool ~firstname contact in
     ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
-    , {sql|
-        firstname_version = $3
-      |sql} )
+    , {sql| firstname_version = $3 |sql} )
     |> update_user_table
   | Lastname (version, lastname) ->
-    let%lwt (_ : Pool_user.t) = update_sihl_user pool ~lastname contact in
+    let%lwt (_ : Pool_user.t) = update_user pool ~lastname contact in
     ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
-    , {sql|
-        lastname_version = $3
-      |sql} )
+    , {sql| lastname_version = $3 |sql} )
     |> update_user_table
   | Language (version, value) ->
     ( dyn

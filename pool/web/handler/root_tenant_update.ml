@@ -12,10 +12,7 @@ let validated_gtx_api_key ~tags title urlencoded =
   let schema =
     Conformist.(
       make
-        Field.
-          [ Pool_tenant.GtxApiKey.schema ()
-          ; Pool_user.CellPhone.schema_test_cell_phone ()
-          ]
+        Field.[ Pool_tenant.GtxApiKey.schema (); Pool_user.CellPhone.schema () ]
         CCPair.make)
   in
   Conformist.decode_and_validate schema urlencoded

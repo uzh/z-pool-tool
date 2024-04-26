@@ -74,7 +74,7 @@ let request_reset_password_post req =
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= (fun email ->
-          Pool_user.find_active_user_by_email_opt database_label email
+          Pool_user.find_active_by_email_opt database_label email
           ||> CCOption.to_result Error.PasswordResetFailMessage)
     >>= PasswordReset.create database_label language Root
     >>= CCFun.(handle ~tags %> Lwt_result.lift)
@@ -123,22 +123,13 @@ let reset_password_post req =
     in
     let go field = field |> Field.show |> CCFun.flip List.assoc params in
     let token = go Field.Token in
-    let redirect_with_param =
-      add_field_query_params redirect [ Field.Token, token ]
-    in
-    let* password =
-      Field.Password
-      |> go
-      |> Pool_user.Password.create
-      |> Lwt_result.lift
-      >|- fun err -> err, redirect_with_param
-    in
+    let password = Field.Password |> go |> Pool_user.Password.Plain.create in
     let password_confirmed =
-      let open Pool_user.PasswordConfirmed in
+      let open Pool_user.Password.Confirmation in
       Field.PasswordConfirmation |> go |> create
     in
     let* () =
-      Pool_user.PasswordReset.reset_password
+      Pool_user.Password.Reset.reset_password
         Database.root
         ~token
         password

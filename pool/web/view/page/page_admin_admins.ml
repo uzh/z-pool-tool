@@ -73,7 +73,7 @@ let static_overview ?(disable_edit = false) language admins =
     (fun admin ->
       let user = Admin.user admin in
       let base =
-        [ Status.email_with_icons admin; txt (Pool_user.user_fullname user) ]
+        [ Status.email_with_icons admin; txt (Pool_user.fullname user) ]
       in
       match disable_edit with
       | false ->
@@ -162,7 +162,7 @@ let index (Pool_context.{ language; _ } as context) admins =
 
 let detail ({ Pool_context.language; _ } as context) admin granted_roles =
   let user = Admin.user admin in
-  [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.user_fullname user) ]
+  [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ]
   ; Input.link_as_button
       ~icon:Icon.Create
       ~control:(language, Control.(Edit None))
@@ -178,8 +178,7 @@ let edit context editable_admin granted_roles top_element =
   let user = Admin.user editable_admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    ([ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.user_fullname user) ]
-     ]
+    ([ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ] ]
      @ roles_list
          ~is_edit:true
          ~top_element

@@ -28,6 +28,7 @@ type t =
   | Chronological
   | City
   | ClosedAt
+  | Confirmed
   | ConfirmedAt
   | Contact
   | ContactCount
@@ -123,6 +124,7 @@ type t =
   | InvitationsSent
   | InvitationSubject
   | InvitationText
+  | IsAdmin
   | Key
   | Label
   | Language

@@ -1,38 +1,32 @@
+open CCFun.Infix
 open Login_attempt_entity
 
+let make_caqti_type = Pool_common.Repo.make_caqti_type
+
 module RepoEntity = struct
-  module Id : Pool_model.Base.CaqtiSig with type t = Id.t = struct
+  module Id = struct
     include Id
 
     let t =
-      Pool_common.Repo.make_caqti_type
-        Caqti_type.string
-        CCFun.(of_string %> CCResult.return)
-        value
+      make_caqti_type Caqti_type.string (of_string %> CCResult.return) value
     ;;
   end
 
   module Counter = struct
     include Counter
 
-    let t =
-      Pool_common.Repo.make_caqti_type
-        Caqti_type.int
-        CCFun.(create %> CCResult.return)
-        value
-    ;;
+    let t = make_caqti_type Caqti_type.int (create %> CCResult.return) value
   end
 
   module BlockedUntil = struct
     include BlockedUntil
 
-    let t = Caqti_type.ptime
+    let t = make_caqti_type Caqti_type.ptime create value
   end
 
   let t =
     let encode m = Ok (m.id, (m.email, (m.counter, m.blocked_until))) in
     let decode (id, (email, (counter, blocked_until))) =
-      let open CCResult in
       Ok { id; email; counter; blocked_until }
     in
     Caqti_type.(
@@ -46,6 +40,8 @@ module RepoEntity = struct
               (t2 Counter.t (option BlockedUntil.t)))))
   ;;
 end
+
+open Caqti_request.Infix
 
 let select_sql =
   Format.asprintf
@@ -69,10 +65,7 @@ let select_sql =
 ;;
 
 let find_opt_request =
-  let open Caqti_request.Infix in
-  {sql|
-      email = ?
-  |sql}
+  {sql| email = ? |sql}
   |> select_sql
   |> Repo_entity.EmailAddress.t ->! RepoEntity.t
 ;;
@@ -80,7 +73,6 @@ let find_opt_request =
 let find_opt pool = Database.find_opt pool find_opt_request
 
 let insert_request =
-  let open Caqti_request.Infix in
   {sql|
     INSERT INTO pool_failed_login_attempts (
       uuid,
@@ -103,7 +95,6 @@ let insert_request =
 let insert pool = Database.exec pool insert_request
 
 let delete_request =
-  let open Caqti_request.Infix in
   {sql|
     DELETE FROM pool_failed_login_attempts
     WHERE email = $1
@@ -111,4 +102,4 @@ let delete_request =
   |> Repo_entity.EmailAddress.t ->. Caqti_type.unit
 ;;
 
-let delete pool t = Database.exec pool delete_request t.email
+let delete pool = email %> Database.exec pool delete_request

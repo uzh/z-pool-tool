@@ -45,7 +45,10 @@ let contact ~prefix () =
     in
     Pool_user.EmailAddress.create email
   in
-  let* password = Pool_user.Password.create_unvalidated "a-password" in
+  let password =
+    Pool_user.Password.Plain.(
+      create "Somepassword1!" |> validate |> Pool_common.Utils.get_or_failwith)
+  in
   let* firstname = Pool_user.Firstname.create "firstname" in
   let* lastname = Pool_user.Lastname.create "lastname" in
   let terms_accepted_at =

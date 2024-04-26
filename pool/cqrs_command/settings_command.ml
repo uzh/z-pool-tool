@@ -311,9 +311,7 @@ end = struct
       Conformist.(
         make
           Field.
-            [ Pool_tenant.GtxApiKey.schema ()
-            ; Pool_user.CellPhone.schema_test_cell_phone ()
-            ]
+            [ Pool_tenant.GtxApiKey.schema (); Pool_user.CellPhone.schema () ]
           CCPair.make)
     in
     Conformist.decode_and_validate schema urlencoded

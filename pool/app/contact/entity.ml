@@ -81,10 +81,10 @@ type t =
 
 let user { user; _ } = user
 let id m : Id.t = m.user.Pool_user.id |> Id.of_user
-let fullname m = m.user |> Pool_user.user_fullname
-let firstname m = m.user |> Pool_user.user_firstname
-let lastname m = m.user |> Pool_user.user_lastname
-let lastname_firstname m = m.user |> Pool_user.user_lastname_firstname
+let fullname m = m.user |> Pool_user.fullname
+let firstname m = m.user |> Pool_user.firstname
+let lastname m = m.user |> Pool_user.lastname
+let lastname_firstname m = m.user |> Pool_user.fullname ~reversed:true
 let email_address m = m.user.Pool_user.email
 
 let create ?terms_accepted_at ?language user =
@@ -203,7 +203,7 @@ module Preview = struct
     }
   [@@deriving eq, show]
 
-  let fullname (m : t) = m.user |> Pool_user.user_fullname
+  let fullname (m : t) = m.user |> Pool_user.fullname
   let email_address (m : t) = m.user.Pool_user.email
 end
 

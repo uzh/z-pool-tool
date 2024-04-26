@@ -17,7 +17,7 @@ let notify_user database_label tags email =
   | None -> Lwt.return ()
   | Some (_ : Pool_user.FailedLoginAttempt.BlockedUntil.t) ->
     let notify () =
-      Pool_user.find_active_user_by_email_opt database_label email
+      Pool_user.find_active_by_email_opt database_label email
       >|> function
       | None -> Lwt_result.return ()
       | Some user ->
@@ -78,10 +78,9 @@ let login_params urlencoded =
     |> EmailAddress.create
     |> Lwt_result.lift
   in
-  let* password =
+  let password =
     CCList.assoc ~eq:String.equal Field.(Password |> show) params
-    |> Password.create
-    |> Lwt_result.lift
+    |> Password.Plain.create
   in
   Lwt_result.return (email, password)
 ;;
@@ -132,20 +131,17 @@ let login req urlencoded database_label =
         log_request req tags email;
         let%lwt { blocked_until; _ } = counter |> increment in
         let%lwt () = notify_user database_label tags email blocked_until in
-        suspension_error
-          (fun () -> err |> handle_sihl_login_error |> Lwt_result.fail)
-          blocked_until
+        suspension_error (fun () -> Lwt_result.fail err) blocked_until
     in
     let login () =
-      let create_session () =
-        Pool_user.create_session database_label email password
-      in
+      let create_session () = Pool_user.login database_label email password in
       (match is_root with
        | true -> create_session ()
        | false ->
          User_import.find_pending_by_email_opt database_label email
          >|> (function
-          | Some _ -> Lwt.return_error `Incorrect_password
+          | Some _ ->
+            Lwt.return_error Pool_message.(Error.Invalid Field.Password)
           | None -> create_session ()))
       >|> handle_result
     in

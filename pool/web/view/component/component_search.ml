@@ -326,7 +326,7 @@ module Admin = struct
   let to_label admin =
     Format.asprintf
       "%s (%a)"
-      (admin |> Admin.user |> Pool_user.user_fullname)
+      (admin |> Admin.user |> Pool_user.fullname)
       Pool_user.EmailAddress.pp
       (admin |> Admin.email_address)
   ;;

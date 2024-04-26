@@ -1,6 +1,4 @@
 open CCFun.Infix
-open Sexplib.Conv
-open Ppx_yojson_conv_lib.Yojson_conv
 
 module Id = struct
   include Pool_model.Base.Id
@@ -39,245 +37,12 @@ module Status = struct
   ;;
 end
 
-module PasswordConfirmed = struct
-  type t = string [@@deriving eq]
-
-  let create m = m
-  let show m = CCString.repeat "*" @@ CCString.length m
-
-  let pp (formatter : Format.formatter) (m : t) : unit =
-    m |> show |> Format.fprintf formatter "%s"
-  ;;
-
-  let schema ?(field = Pool_message.Field.PasswordConfirmation) () =
-    Pool_conformist.schema_decoder (fun m -> Ok (create m)) show field
-  ;;
-end
-
-module Password : sig
-  include Pool_model.Base.StringSig
-
-  module Policy : sig
-    type rule =
-      | MinLength of int
-      | MustContainCapitalLetter
-      | MustContainNumber
-      | MustContainSpecialChar of char list
-
-    type t = rule list
-
-    val validate_min_length
-      :  int
-      -> string
-      -> (string, Pool_conformist.error_msg) result
-
-    val validate_characters
-      :  (char -> bool)
-      -> 'a
-      -> string
-      -> (string, 'a) result
-
-    val validate_capital_letter
-      :  string
-      -> (string, Pool_conformist.error_msg) result
-
-    val validate_number : string -> (string, Pool_conformist.error_msg) result
-
-    val validate_special_char
-      :  char list
-      -> string
-      -> (string, Pool_conformist.error_msg) result
-
-    val default_special_char_set : char list
-    val default : rule list
-
-    val validate
-      :  string
-      -> rule list
-      -> (string, Pool_conformist.error_msg) result
-  end
-
-  val schema
-    :  ?field:Pool_message.Field.t
-    -> (string -> (t, Pool_conformist.error_msg) result)
-    -> unit
-    -> ('a, t) Pool_conformist.Field.t
-
-  val create_unvalidated : string -> (t, Pool_message.Error.t) result
-  val to_confirmed : t -> PasswordConfirmed.t
-
-  val validate_password_confirmation
-    :  t
-    -> PasswordConfirmed.t
-    -> (unit, Pool_conformist.error_msg) result
-end = struct
-  module Policy = struct
-    type rule =
-      | MinLength of int
-      | MustContainCapitalLetter
-      | MustContainNumber
-      | MustContainSpecialChar of char list
-
-    type t = rule list
-
-    let validate_min_length num p =
-      if CCString.length p < num
-      then Error (Pool_message.Error.PasswordPolicyMinLength num)
-      else Ok p
-    ;;
-
-    let validate_characters validator error p =
-      p
-      |> CCString.to_list
-      |> CCList.fold_left (fun is_ok c -> is_ok || validator c) false
-      |> function
-      | true -> Ok p
-      | false -> Error error
-    ;;
-
-    let validate_capital_letter =
-      let validate c = CCChar.to_int c >= 65 && CCChar.to_int c <= 90 in
-      validate_characters
-        validate
-        Pool_message.Error.PasswordPolicyCapitalLetter
-    ;;
-
-    let validate_number =
-      let validate c = CCChar.to_int c >= 48 && CCChar.to_int c <= 57 in
-      validate_characters validate Pool_message.Error.PasswordPolicyNumber
-    ;;
-
-    let validate_special_char chars p =
-      chars
-      |> CCList.fold_left (fun is_ok c -> is_ok || CCString.contains p c) false
-      |> function
-      | true -> Ok p
-      | false -> Error (Pool_message.Error.PasswordPolicySpecialChar chars)
-    ;;
-
-    let default_special_char_set =
-      [ '!'
-      ; '?'
-      ; '*'
-      ; '+'
-      ; '-'
-      ; '_'
-      ; '&'
-      ; '%'
-      ; '('
-      ; ')'
-      ; '}'
-      ; '{'
-      ; '$'
-      ; ','
-      ; '.'
-      ]
-    ;;
-
-    let default =
-      [ MinLength 8
-      ; MustContainCapitalLetter
-      ; MustContainNumber
-      ; MustContainSpecialChar default_special_char_set
-      ]
-    ;;
-
-    let validate password =
-      let open CCResult in
-      CCList.fold_left
-        (fun password rule ->
-          password
-          >>=
-          match rule with
-          | MinLength n -> validate_min_length n
-          | MustContainCapitalLetter -> validate_capital_letter
-          | MustContainNumber -> validate_number
-          | MustContainSpecialChar chars -> validate_special_char chars)
-        (Ok password)
-    ;;
-  end
-
-  include Pool_model.Base.String
-
-  let show m = CCString.repeat "*" @@ CCString.length m
-
-  let pp (formatter : Format.formatter) (m : t) : unit =
-    Format.fprintf formatter "%s" m
-  ;;
-
-  let create password =
-    (* TODO: Consider checking against old password *)
-    Policy.validate password Policy.default
-  ;;
-
-  let create_unvalidated = CCResult.return
-  let to_confirmed m = m
-
-  let schema ?(field = Pool_message.Field.Password) create () =
-    Pool_conformist.schema_decoder create show field
-  ;;
-
-  let validate_password_confirmation
-    new_password
-    (password_confirmation : PasswordConfirmed.t)
-    =
-    if equal new_password password_confirmation
-    then Ok ()
-    else Error Pool_message.Error.PasswordConfirmationDoesNotMatch
-  ;;
-end
-
-module HashedPassword : sig
-  include Pool_model.Base.StringSig
-
-  val create : Password.t -> (t, Pool_message.Error.t) result
-  val matches : t -> Password.t -> bool
-end = struct
-  module Hashing = struct
-    let hash ?count plain =
-      match count, not (Sihl.Configuration.is_production ()) with
-      | _, true -> Ok (Bcrypt.hash ~count:4 plain |> Bcrypt.string_of_hash)
-      | Some count, false ->
-        if count < 4 || count > 31
-        then Error Pool_message.Error.InvalidPasswordHashingCount
-        else Ok (Bcrypt.hash ~count plain |> Bcrypt.string_of_hash)
-      | None, false -> Ok (Bcrypt.hash ~count:10 plain |> Bcrypt.string_of_hash)
-    ;;
-
-    let matches ~hash ~plain = Bcrypt.verify plain (Bcrypt.hash_of_string hash)
-  end
-
-  include Pool_model.Base.String
-
-  let create = Password.value %> Hashing.hash
-  let schema = schema Pool_message.Field.Password ~validation:Hashing.hash
-
-  let matches user_password plain_password =
-    Hashing.matches ~hash:user_password ~plain:(Password.value plain_password)
-  ;;
-end
-
 let remove_whitespaces =
   let open Re in
   replace_string (space |> compile) ~by:""
 ;;
 
-module EmailAddress : sig
-  include Pool_model.Base.StringSig
-
-  val validate_characters : t -> (t, Pool_message.Error.t) result
-  val strip_email_suffix : t -> t option
-
-  val validate_suffix
-    :  Settings.EmailSuffix.t list option
-    -> t
-    -> (unit, Pool_message.Error.t) result
-
-  val validate
-    :  Settings.EmailSuffix.t list option
-    -> t
-    -> (unit, Pool_message.Error.t) result
-end = struct
+module EmailAddress = struct
   include Pool_model.Base.String
 
   let validate_characters email =
@@ -340,10 +105,7 @@ module CellPhone = struct
   ;;
 
   let create = CCFun.(remove_whitespaces %> validate)
-
-  let schema_test_cell_phone =
-    schema Pool_message.Field.TestPhoneNumber ~validation:create
-  ;;
+  let schema = schema Pool_message.Field.TestPhoneNumber ~validation:create
 end
 
 module UnverifiedCellPhone = struct
@@ -359,9 +121,7 @@ module UnverifiedCellPhone = struct
     }
 end
 
-module Firstname : sig
-  include Pool_model.Base.StringSig
-end = struct
+module Firstname = struct
   include Pool_model.Base.String
 
   let field = Pool_message.Field.Firstname
@@ -369,9 +129,7 @@ end = struct
   let of_string m = m
 end
 
-module Lastname : sig
-  include Pool_model.Base.StringSig
-end = struct
+module Lastname = struct
   include Pool_model.Base.String
 
   let field = Pool_message.Field.Lastname
@@ -386,28 +144,27 @@ module Paused = struct
 end
 
 module Disabled = struct
-  type t = bool [@@deriving eq, ord, show]
+  include Pool_model.Base.Boolean
 
-  let create m = m
-  let value m = m
+  let schema = schema Pool_message.Field.Disabled
 end
 
 module TermsAccepted = struct
   include Pool_model.Base.Ptime
 
-  let create m = m
+  let schema = schema Pool_message.Field.TermsAccepted CCResult.return
 end
 
 module Verified = struct
   include Pool_model.Base.Ptime
 
-  let create m = m
+  let schema = schema Pool_message.Field.Verified CCResult.return
 end
 
 module EmailVerified = struct
   include Pool_model.Base.Ptime
 
-  let create m = m
+  let schema = schema Pool_message.Field.EmailAddressVerified CCResult.return
 end
 
 module ImportPending = struct
@@ -416,103 +173,62 @@ module ImportPending = struct
   let schema = schema Pool_message.Field.ImportPending
 end
 
+module IsAdmin = struct
+  include Pool_model.Base.Boolean
+
+  let schema = schema Pool_message.Field.IsAdmin
+end
+
+module Confirmed = struct
+  include Pool_model.Base.Boolean
+
+  let schema = schema Pool_message.Field.Confirmed
+end
+
 type t =
   { id : Id.t
   ; email : EmailAddress.t
-  ; name : Lastname.t
-  ; given_name : Firstname.t
-  ; password : HashedPassword.t [@opaque] [@sexp.opaque]
+  ; lastname : Lastname.t
+  ; firstname : Firstname.t
   ; status : Status.t
-  ; admin : bool
-  ; confirmed : bool
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
+  ; admin : IsAdmin.t
+  ; confirmed : Confirmed.t
   }
-[@@deriving yojson, show, sexp_of]
+[@@deriving eq, fields, ord, show, sexp_of, yojson]
 
-let equal a b =
-  Id.equal a.id b.id
-  && EmailAddress.equal a.email b.email
-  && Status.equal a.status b.status
-  && CCBool.equal a.admin b.admin
-  && CCBool.equal a.confirmed b.confirmed
+let fullname ?(reversed = false) user =
+  [ user |> firstname |> Firstname.value; user |> lastname |> Lastname.value ]
+  |> (if reversed then CCList.rev else CCFun.id)
+  |> CCString.concat " "
 ;;
 
-let compare a b = EmailAddress.compare a.email b.email
-let id { id; _ } = id
-let user_email_address user = user.email
-let user_firstname { given_name; _ } = given_name
-let user_lastname { name; _ } = name
-
-let user_fullname user =
-  Format.asprintf
-    "%s %s"
-    (user |> user_firstname |> Firstname.value)
-    (user |> user_lastname |> Lastname.value)
-;;
-
-let user_lastname_firstname user =
-  Format.asprintf
-    "%s %s"
-    (user |> user_lastname |> Lastname.value)
-    (user |> user_firstname |> Firstname.value)
-;;
-
-let confirm user = { user with confirmed = true }
-
-let set_user_password user new_password =
-  let open CCResult in
-  HashedPassword.create new_password >|= fun password -> { user with password }
-;;
-
-let is_admin user = user.admin
-let is_confirmed user = user.confirmed
+let is_admin user = user.admin |> IsAdmin.value
+let is_confirmed user = user.confirmed |> Confirmed.value
 
 let create
   ?(id = Id.create ())
-  ?(admin = false)
-  ?(confirmed = false)
+  ?(admin = IsAdmin.create false)
+  ?(confirmed = Confirmed.create false)
   email
-  name
-  given_name
-  password
+  lastname
+  firstname
   : (t, Pool_message.Error.t) result
   =
-  let open CCResult.Infix in
-  let* hash = HashedPassword.create password in
   Ok
-    { id
-    ; email
-    ; password = hash
-    ; name
-    ; given_name
-    ; admin
-    ; confirmed
-    ; status = Status.Active
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
-    }
+    { id; email; lastname; firstname; admin; confirmed; status = Status.Active }
 ;;
 
-let validate_current_password
-  ?(field = Pool_message.Field.CurrentPassword)
-  user
-  password
-  =
-  if HashedPassword.matches user.password password
-  then Ok ()
-  else Error Pool_message.Error.(Invalid field)
-;;
+let confirm user = { user with confirmed = Confirmed.create true }
+let promote user = { user with admin = IsAdmin.create true }
 
-let validate_change_password
-  (user : t)
-  ~(old_password : Password.t)
-  ~(new_password : Password.t)
-  ~(new_password_confirmation : PasswordConfirmed.t)
-  =
-  let open CCResult.Infix in
-  let* () = validate_current_password user old_password in
-  Password.validate_password_confirmation new_password new_password_confirmation
+let update ?email ?lastname ?firstname ?status ?confirmed user =
+  { user with
+    email = CCOption.value ~default:user.email email
+  ; lastname = CCOption.value ~default:user.lastname lastname
+  ; firstname = CCOption.value ~default:user.firstname firstname
+  ; status = Option.value ~default:user.status status
+  ; confirmed = Option.value ~default:user.confirmed confirmed
+  }
 ;;
 
 open Pool_message

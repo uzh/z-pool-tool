@@ -33,7 +33,7 @@ let login_information
   let details_form =
     let firstname, lastname =
       Admin.user admin
-      |> fun user -> user.Pool_user.given_name, user.Pool_user.name
+      |> fun user -> user |> Pool_user.firstname, user |> Pool_user.lastname
     in
     div
       [ h2

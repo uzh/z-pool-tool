@@ -565,7 +565,7 @@ let create_operator () =
   let expected =
     let open CCResult in
     let* email = email |> Pool_user.EmailAddress.create in
-    let* password = password |> Pool_user.Password.create in
+    let password = password |> Pool_user.Password.Plain.create in
     let* firstname = firstname |> Pool_user.Firstname.create in
     let* lastname = lastname |> Pool_user.Lastname.create in
     let admin : Admin.create =

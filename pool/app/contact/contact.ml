@@ -10,7 +10,7 @@ let find_by_user pool (user : Pool_user.t) =
 let has_terms_accepted pool (contact : t) =
   let%lwt last_updated = I18n.terms_and_conditions_last_updated pool in
   let terms_accepted_at =
-    contact.terms_accepted_at |> CCOption.map User.TermsAccepted.value
+    contact.terms_accepted_at |> CCOption.map Pool_user.TermsAccepted.value
   in
   CCOption.map_or
     ~default:false

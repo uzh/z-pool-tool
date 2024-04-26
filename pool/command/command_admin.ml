@@ -38,7 +38,7 @@ let create =
         Pool_user.Firstname.create given_name |> get_or_failwith
       in
       let lastname = Pool_user.Lastname.create name |> get_or_failwith in
-      let password = Pool_user.Password.create password |> get_or_failwith in
+      let password = Pool_user.Password.Plain.create password in
       let admin : Admin.create =
         { id = None
         ; Admin.email
@@ -102,7 +102,7 @@ let create_root_admin =
         Created
           { id = Some admin_id
           ; email
-          ; password = password |> Pool_user.Password.create |> CCResult.get_exn
+          ; password = password |> Pool_user.Password.Plain.create
           ; firstname = given_name |> Pool_user.Firstname.of_string
           ; lastname = name |> Pool_user.Lastname.of_string
           ; roles = [ `Operator, None ]

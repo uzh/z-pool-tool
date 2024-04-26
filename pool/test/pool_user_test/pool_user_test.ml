@@ -1,28 +1,35 @@
 open Alcotest_lwt
+open Utils.Lwt_result.Infix
 module PasswordReset = Password_reset_test
 
-let testable_password = Pool_user.Password.(Alcotest.testable pp equal)
+let testable_plain_password =
+  Pool_user.Password.Plain.(Alcotest.testable pp equal)
+;;
+
 let testable_email = Pool_user.EmailAddress.(Alcotest.testable pp equal)
 let alcotest = Pool_user.(Alcotest.testable pp equal)
 let database_label = Test_utils.Data.database_label
+let created_password = Pool_user.Password.Plain.create "CD&*BA8txf3mRuGF"
 
-let created_password =
-  Pool_user.Password.create "CD&*BA8txf3mRuGF" |> Test_utils.get_or_failwith
+let created_password_confirmation =
+  Pool_user.Password.to_confirmed created_password
 ;;
 
 let validate_valid_password =
   Test_utils.case
   @@ fun () ->
-  let password = Pool_user.Password.create "CD&*BA8txf3mRuGF" in
+  let password =
+    Pool_user.Password.Plain.(create "CD&*BA8txf3mRuGF" |> validate)
+  in
   Alcotest.(
     check
-      (result testable_password Test_utils.error)
+      (result testable_plain_password Test_utils.error)
       "valid password"
       (Ok created_password)
       password);
   let password = password |> Test_utils.get_or_failwith in
   let actual =
-    Pool_user.Password.validate_password_confirmation
+    Pool_user.Password.validate_confirmation
       password
       (password |> Pool_user.Password.to_confirmed)
   in
@@ -44,10 +51,10 @@ let validate_invalid_password =
       ]
   in
   let check_invalid (plain, error) =
-    let password = Pool_user.Password.create plain in
+    let password = Pool_user.Password.Plain.(create plain |> validate) in
     Alcotest.(
       check
-        (result testable_password Test_utils.error)
+        (result testable_plain_password Test_utils.error)
         [%string "invalid password: %{plain}"]
         (Error error)
         password);
@@ -68,6 +75,8 @@ let json_serialization =
       (Lastname.of_string "Doe")
       (Firstname.of_string "Jane")
       created_password
+      created_password_confirmation
+    ||> Pool_common.Utils.get_or_failwith
   in
   let user_after = user |> Pool_user.yojson_of_t |> Pool_user.t_of_yojson in
   let user = Format.asprintf "%a" Pool_user.pp user in
@@ -87,12 +96,14 @@ let update_details =
       (Lastname.of_string "Star")
       (Firstname.of_string "Jane")
       created_password
+      created_password_confirmation
+    ||> Pool_common.Utils.get_or_failwith
   in
   let%lwt updated_user =
     update database_label user ~email:(EmailAddress.of_string "new@example.com")
   in
-  let actual_email = updated_user.Pool_user.email |> EmailAddress.value in
-  let actual_name = updated_user.Pool_user.name |> Lastname.value in
+  let actual_email = updated_user |> Pool_user.email |> EmailAddress.value in
+  let actual_name = updated_user |> Pool_user.lastname |> Lastname.value in
   Alcotest.(check string "Has updated email" "new@example.com" actual_email);
   Alcotest.(check string "Hasn't updated name" "Star" actual_name);
   Lwt.return_ok ()
@@ -103,9 +114,7 @@ let update_password =
   @@ fun () ->
   let open Pool_user in
   let email_address = EmailAddress.of_string "foobar3@example.com" in
-  let new_password =
-    Password.create "Password1!" |> Test_utils.get_or_failwith
-  in
+  let new_password = Password.Plain.create "Password1!" in
   let%lwt user =
     create_user
       database_label
@@ -113,11 +122,13 @@ let update_password =
       (Lastname.of_string "Star")
       (Firstname.of_string "Jane")
       created_password
+      created_password_confirmation
+    ||> Pool_common.Utils.get_or_failwith
   in
   let%lwt _ =
-    Pool_user.update_password
+    Pool_user.Password.update
       database_label
-      user
+      user.id
       ~old_password:created_password
       ~new_password
       ~new_password_confirmation:(new_password |> Password.to_confirmed)
@@ -142,9 +153,7 @@ let update_password_fails =
   @@ fun () ->
   let open Pool_user in
   let email_address = EmailAddress.of_string "foobar4@example.com" in
-  let new_password =
-    Password.create "Password1!" |> Test_utils.get_or_failwith
-  in
+  let new_password = Password.Plain.create "Password1!" in
   let%lwt user =
     create_user
       database_label
@@ -152,20 +161,20 @@ let update_password_fails =
       (Lastname.of_string "Star")
       (Firstname.of_string "Jane")
       created_password
+      created_password_confirmation
+    ||> Pool_common.Utils.get_or_failwith
   in
   let%lwt change_result =
-    update_password
+    Password.update
       database_label
-      user
-      ~old_password:
-        (Password.create_unvalidated "wrong_old_password"
-         |> Test_utils.get_or_failwith)
+      user.id
+      ~old_password:(Password.Plain.create "wrong_old_password")
       ~new_password
       ~new_password_confirmation:(new_password |> Password.to_confirmed)
   in
   Alcotest.(
     check
-      (result alcotest Test_utils.error)
+      (result unit Test_utils.error)
       "Can login with updated password"
       (Error Pool_message.(Error.Invalid Field.CurrentPassword))
       change_result);
@@ -188,7 +197,9 @@ let find_by_email_is_case_insensitive =
           email
           (Lastname.of_string "Star")
           (Firstname.of_string "Jane")
-          created_password)
+          created_password
+          created_password_confirmation
+        ||> Pool_common.Utils.get_or_failwith)
       email_addresses
   in
   let%lwt user =
@@ -216,12 +227,14 @@ let filter_users_by_email_returns_single_user =
           email
           (Lastname.of_string "Star")
           (Firstname.of_string "Jane")
-          created_password)
+          created_password
+          created_password_confirmation
+        ||> Pool_common.Utils.get_or_failwith)
       email_addresses
   in
   let%lwt actual_user =
     EmailAddress.of_string "fooz@example.com"
-    |> Pool_user.find_by_email database_label
+    |> Pool_user.find_by_email_exn database_label
   in
   Alcotest.(
     check
@@ -253,6 +266,8 @@ module Web = struct
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
         created_password
+        created_password_confirmation
+      ||> Pool_common.Utils.get_or_failwith
     in
     let read_token = read_token user.Pool_user.id in
     let token_header = Format.sprintf "Bearer %s" fake_token in
@@ -289,6 +304,8 @@ module Web = struct
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
         created_password
+        created_password_confirmation
+      ||> Pool_common.Utils.get_or_failwith
     in
     let cookie =
       Sihl.Web.Response.of_plain_text ""

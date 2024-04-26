@@ -25,8 +25,7 @@ let create ?(contact_data = data) db_pool =
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"Password1!"
-    |> User.Password.create
-    |> Pool_common.Utils.get_or_failwith
+    |> User.Password.Plain.create
   in
   let%lwt () =
     Lwt_list.fold_left_s
@@ -63,11 +62,7 @@ let create ?(contact_data = data) db_pool =
       let%lwt contact = find db_pool id in
       match contact with
       | Ok contact ->
-        let%lwt _ =
-          Pool_user.update
-            db_pool
-            Pool_user.{ contact.user with confirmed = true }
-        in
+        let%lwt _ = Pool_user.confirm db_pool contact.user in
         let contact =
           { contact with
             email_verified = Some (Pool_user.EmailVerified.create_now ())

@@ -109,9 +109,9 @@ let prepare_manual_email
 let global_params layout user =
   Pool_user.
     [ "contactId", user.Pool_user.id |> Pool_user.Id.value
-    ; "name", user |> user_fullname
-    ; "firstname", user |> user_firstname |> Firstname.value
-    ; "lastname", user |> user_lastname |> Lastname.value
+    ; "name", user |> fullname
+    ; "firstname", user |> firstname |> Firstname.value
+    ; "lastname", user |> lastname |> Lastname.value
     ; "siteTitle", layout.site_title
     ; "siteUrl", layout.link
     ]
@@ -281,7 +281,7 @@ module AccountSuspensionNotification = struct
     let%lwt system_languages = Settings.find_languages database_label in
     let email = user.Pool_user.email in
     let* language =
-      match user.Pool_user.admin with
+      match Pool_user.is_admin user with
       | true -> Lwt_result.return Pool_common.Language.En
       | false ->
         email
@@ -512,8 +512,7 @@ module ContactEmailChangeAttempt = struct
     global_params layout user
     @ [ "tenantUrl", Pool_tenant.Url.value tenant_url
       ; "resetUrl", reset_url
-      ; ( "emailAddress"
-        , Pool_user.EmailAddress.value (Pool_user.user_email_address user) )
+      ; "emailAddress", Pool_user.EmailAddress.value (Pool_user.email user)
       ]
   ;;
 
@@ -542,7 +541,7 @@ module ContactEmailChangeAttempt = struct
         message_language
         template
         sender
-        (Pool_user.user_email_address user)
+        (Pool_user.email user)
         layout
         (email_params layout tenant_url user)
     in
@@ -560,8 +559,7 @@ module ContactRegistrationAttempt = struct
     global_params layout user
     @ [ "tenantUrl", Pool_tenant.Url.value tenant_url
       ; "resetUrl", reset_url
-      ; ( "emailAddress"
-        , Pool_user.EmailAddress.value (Pool_user.user_email_address user) )
+      ; "emailAddress", Pool_user.EmailAddress.value (Pool_user.email user)
       ]
   ;;
 
@@ -578,7 +576,7 @@ module ContactRegistrationAttempt = struct
         message_language
         template
         sender
-        (Pool_user.user_email_address user)
+        (Pool_user.email user)
         layout
         (email_params layout tenant_url user)
     in
@@ -780,7 +778,7 @@ module PasswordChange = struct
     let pool = tenant.Pool_tenant.database_label in
     let%lwt template = find_by_label_and_language_to_send pool label language in
     let layout = layout_from_tenant tenant in
-    let email_address = Pool_user.user_email_address user in
+    let email_address = Pool_user.email user in
     let%lwt sender = default_sender_of_pool pool in
     let email =
       prepare_email
@@ -806,7 +804,7 @@ module PasswordReset = struct
 
   let create pool language layout user =
     let open Utils.Lwt_result.Infix in
-    let email = Pool_user.user_email_address user in
+    let email = Pool_user.email user in
     let%lwt template =
       find_by_label_and_language_to_send pool Label.PasswordReset language
     in
@@ -814,7 +812,7 @@ module PasswordReset = struct
     let%lwt sender = default_sender_of_pool pool in
     let open Pool_common in
     let* reset_token =
-      Pool_user.PasswordReset.create_reset_token pool email
+      Pool_user.Password.Reset.create_token pool email
       ||> function
       | None ->
         Logs.err ~src (fun m ->
@@ -1218,9 +1216,8 @@ module SignUpVerification = struct
   let label = Label.SignUpVerification
 
   let email_params layout verification_url firstname lastname =
-    let open Pool_user in
-    let firstname = firstname |> Firstname.value in
-    let lastname = lastname |> Lastname.value in
+    let firstname = firstname |> Pool_user.Firstname.value in
+    let lastname = lastname |> Pool_user.Lastname.value in
     [ "name", Format.asprintf "%s %s" firstname lastname
     ; "firstname", firstname
     ; "lastname", lastname

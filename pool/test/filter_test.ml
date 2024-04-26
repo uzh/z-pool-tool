@@ -1065,7 +1065,9 @@ let filter_by_empty_hardcoded_value _ () =
     let%lwt contact =
       Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
     in
-    let user = Pool_user.{ contact.user with confirmed = true } in
+    let user =
+      Pool_user.{ contact.user with confirmed = Confirmed.create true }
+    in
     { contact with language = None; user }
     |> TestContacts.persist_contact_update
   in

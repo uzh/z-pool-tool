@@ -69,7 +69,7 @@ let confirm_as_contact () =
   let expected =
     Ok
       [ Contact.ImportConfirmed
-          (contact, Pool_user.Password.create Data.password |> get_exn)
+          (contact, Pool_user.Password.Plain.create Data.password)
         |> Pool_event.contact
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
@@ -101,7 +101,7 @@ let confirm_as_admin () =
   let expected =
     Ok
       [ Admin.ImportConfirmed
-          (admin, Pool_user.Password.create Data.password |> get_exn)
+          (admin, Pool_user.Password.Plain.create Data.password)
         |> Pool_event.admin
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]

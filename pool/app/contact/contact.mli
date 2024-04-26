@@ -149,7 +149,7 @@ val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
 type create =
   { user_id : Id.t
   ; email : Pool_user.EmailAddress.t
-  ; password : Pool_user.Password.t
+  ; password : Pool_user.Password.Plain.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
@@ -164,11 +164,6 @@ type session_participation =
 type event =
   | Created of create
   | EmailUpdated of t * Pool_user.EmailAddress.t
-  | PasswordUpdated of
-      t
-      * Pool_user.Password.t
-      * Pool_user.Password.t
-      * Pool_user.PasswordConfirmed.t
   | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
@@ -177,7 +172,7 @@ type event =
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
-  | ImportConfirmed of t * Pool_user.Password.t
+  | ImportConfirmed of t * Pool_user.Password.Plain.t
   | ImportDisabled of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t

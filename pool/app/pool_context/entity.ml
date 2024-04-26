@@ -68,7 +68,7 @@ let find_contact { user; _ } =
   | Admin _ | Guest -> Error Pool_message.(Error.NotFound Field.User)
 ;;
 
-let user_of_sihl_user database_label user =
+let context_user_of_user database_label user =
   let open Utils.Lwt_result.Infix in
   if Pool_user.is_admin user
   then

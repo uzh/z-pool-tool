@@ -6,34 +6,25 @@ module DummyData = struct
   let create_contact () =
     let open Pool_common in
     let open Pool_user in
-    let open CCResult.Infix in
     Contact.
       { user =
           Pool_user.
             { id = Id.(create ())
             ; email = EmailAddress.of_string "jane.doe@econ.uzh.ch"
-            ; name = Lastname.of_string "Doe"
-            ; given_name = Firstname.of_string "Jane"
-            ; password =
-                "somepassword"
-                |> Password.create_unvalidated
-                >>= HashedPassword.create
-                |> Pool_common.Utils.get_or_failwith
+            ; lastname = Lastname.of_string "Doe"
+            ; firstname = Firstname.of_string "Jane"
             ; status = Status.Active
-            ; admin = false
-            ; confirmed = true
-            ; created_at = CreatedAt.create_now ()
-            ; updated_at = UpdatedAt.create_now ()
+            ; admin = IsAdmin.create false
+            ; confirmed = Confirmed.create true
             }
-      ; terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure
+      ; terms_accepted_at = TermsAccepted.create_now () |> CCOption.return
       ; language = Some Language.En
       ; experiment_type_preference = None
-      ; cell_phone = Some (Pool_user.CellPhone.of_string "+41791234567")
+      ; cell_phone = Some (CellPhone.of_string "+41791234567")
       ; paused = Paused.create false
       ; disabled = Disabled.create false
       ; verified = None
-      ; email_verified =
-          () |> Ptime_clock.now |> EmailVerified.create |> CCOption.pure
+      ; email_verified = EmailVerified.create_now () |> CCOption.return
       ; num_invitations = NumberOfInvitations.init
       ; num_assignments = NumberOfAssignments.init
       ; num_show_ups = NumberOfShowUps.init
@@ -44,7 +35,7 @@ module DummyData = struct
       ; paused_version = Version.create ()
       ; language_version = Version.create ()
       ; experiment_type_preference_version = Version.create ()
-      ; import_pending = Pool_user.ImportPending.create false
+      ; import_pending = ImportPending.create false
       ; created_at = CreatedAt.create_now ()
       ; updated_at = UpdatedAt.create_now ()
       }

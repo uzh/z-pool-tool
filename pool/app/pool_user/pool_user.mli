@@ -5,6 +5,124 @@ module Id : sig
   val of_common : Pool_common.Id.t -> t
 end
 
+module EmailAddress : sig
+  include Pool_model.Base.StringSig
+
+  val validate_characters : t -> (t, Pool_message.Error.t) result
+
+  val validate
+    :  Settings.EmailSuffix.t list option
+    -> t
+    -> (unit, Pool_message.Error.t) result
+end
+
+module Password : sig
+  module Policy : sig
+    type rule =
+      | MinLength of int
+      | MustContainCapitalLetter
+      | MustContainNumber
+      | MustContainSpecialChar of char list
+
+    type t
+
+    val default_special_char_set : char list
+    val default : t
+  end
+
+  module Confirmation : sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> 'a -> unit
+    val show : t -> string
+    val create : string -> t
+
+    val schema
+      :  ?field:Pool_message.Field.t
+      -> unit
+      -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  end
+
+  module Plain : sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> 'a -> unit
+    val show : t -> string
+    val create : string -> t
+
+    val schema
+      :  ?field:Pool_message.Field.t
+      -> ?validation:(t -> (t, Pool_message.Error.t) result)
+      -> unit
+      -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+
+    val validate : t -> (t, Pool_message.Error.t) result
+  end
+
+  val to_confirmed : Plain.t -> Confirmation.t
+
+  val validate_confirmation
+    :  Plain.t
+    -> Confirmation.t
+    -> (unit, Pool_conformist.error_msg) result
+
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> 'a -> unit
+  val show : t -> string
+
+  val schema
+    :  ?field:Pool_message.Field.t
+    -> unit
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+
+  val validate_current : Database.Label.t -> Id.t -> Plain.t -> bool Lwt.t
+
+  (** [define database_label user_id password password_confirmation]
+      overrides the current password of a [user_id] if [password] and
+      [password_confirmation] are equal.
+
+      The current password doesn't have to be provided, therefore it should not
+      expose this function to users but only admins. If you want the user to
+      update their own password use {!update} instead. *)
+  val define
+    :  Database.Label.t
+    -> Id.t
+    -> Plain.t
+    -> Confirmation.t
+    -> (unit, Pool_message.Error.t) Lwt_result.t
+
+  (** [update database_label user_id ~old_password ~new_password
+    ~new_password_confirmation]
+      updates the password of a [user_id] to [new_password] and returns the user.
+      The [old_password] is the current password that the user has to enter.
+      [new_password] has to equal [new_password_confirmation]. *)
+  val update
+    :  Database.Label.t
+    -> Id.t
+    -> old_password:Plain.t
+    -> new_password:Plain.t
+    -> new_password_confirmation:Confirmation.t
+    -> (unit, Pool_message.Error.t) Lwt_result.t
+
+  module Reset : sig
+    val create_token : Database.Label.t -> EmailAddress.t -> string option Lwt.t
+
+    val reset_password
+      :  token:string
+      -> Database.Label.t
+      -> Plain.t
+      -> Confirmation.t
+      -> (unit, Pool_message.Error.t) Result.t Lwt.t
+
+    val register : unit -> Sihl.Container.Service.t
+    val lifecycle : Sihl.Container.lifecycle
+  end
+end
+
 module Status : sig
   type t =
     | Active
@@ -23,71 +141,12 @@ module Status : sig
   val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
-module PasswordConfirmed : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> t
-
-  val schema
-    :  ?field:Pool_message.Field.t
-    -> unit
-    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
-end
-
-module Password : sig
-  module Policy : sig
-    type rule =
-      | MinLength of int
-      | MustContainCapitalLetter
-      | MustContainNumber
-      | MustContainSpecialChar of char list
-
-    type t
-
-    val default_special_char_set : char list
-    val default : t
-  end
-
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, Pool_message.Error.t) result
-  val create_unvalidated : string -> (t, Pool_message.Error.t) result
-  val to_confirmed : t -> PasswordConfirmed.t
-
-  val schema
-    :  ?field:Pool_message.Field.t
-    -> (string -> (t, Pool_message.Error.t) result)
-    -> unit
-    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
-
-  val validate_password_confirmation
-    :  t
-    -> PasswordConfirmed.t
-    -> (unit, Pool_message.Error.t) result
-end
-
-module HashedPassword : sig
-  include Pool_model.Base.StringSig
-
-  val create : Password.t -> (t, Pool_message__Pool_message_error.t) result
-end
-
 module Firstname : sig
   include Pool_model.Base.StringSig
-
-  val of_string : string -> t
 end
 
 module Lastname : sig
   include Pool_model.Base.StringSig
-
-  val of_string : string -> t
 end
 
 module Paused : sig
@@ -95,55 +154,19 @@ module Paused : sig
 end
 
 module Disabled : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val value : t -> bool
-  val create : bool -> t
-  val compare : t -> t -> int
+  include Pool_model.Base.BooleanSig
 end
 
 module TermsAccepted : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : Ptime.t -> t
-  val create_now : unit -> t
-  val value : t -> Ptime.t
-  val compare : t -> t -> int
+  include Pool_model.Base.PtimeSig
 end
 
 module Verified : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : Ptime.t -> t
-  val create_now : unit -> t
-  val value : t -> Ptime.t
-  val compare : t -> t -> int
+  include Pool_model.Base.PtimeSig
 end
 
 module CellPhone : sig
-  type t
-
-  val create : string -> (t, Pool_message.Error.t) result
-  val of_string : string -> t
-  val value : t -> string
-  val equal : t -> t -> bool
-  val t_of_yojson : Yojson.Safe.t -> t
-  val yojson_of_t : t -> Yojson.Safe.t
-  val pp : Format.formatter -> t -> unit
-  val compare : t -> t -> int
-
-  val schema_test_cell_phone
-    :  unit
-    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  include Pool_model.Base.StringSig
 end
 
 module ImportPending : sig
@@ -163,67 +186,26 @@ module UnverifiedCellPhone : sig
     }
 end
 
-module EmailAddress : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val t_of_yojson : Yojson.Safe.t -> t
-  val yojson_of_t : t -> Yojson.Safe.t
-  val validate_characters : t -> (t, Pool_message.Error.t) result
-
-  val validate
-    :  Settings.EmailSuffix.t list option
-    -> t
-    -> (unit, Pool_message.Error.t) result
-
-  val value : t -> string
-  val create : string -> (t, Pool_message.Error.t) result
-  val of_string : string -> t
-  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
-end
-
 module EmailVerified : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : Ptime.t -> t
-  val create_now : unit -> t
-  val value : t -> Ptime.t
-  val compare : t -> t -> int
+  include Pool_model.Base.PtimeSig
 end
 
-module PasswordReset : sig
-  val create_reset_token
-    :  Database.Label.t
-    -> EmailAddress.t
-    -> string option Lwt.t
+module IsAdmin : sig
+  include Pool_model.Base.BooleanSig
+end
 
-  val reset_password
-    :  token:string
-    -> Database.Label.t
-    -> Password.t
-    -> PasswordConfirmed.t
-    -> (unit, Pool_message.Error.t) Result.t Lwt.t
-
-  val register : unit -> Sihl.Container.Service.t
-  val lifecycle : Sihl.Container.lifecycle
+module Confirmed : sig
+  include Pool_model.Base.BooleanSig
 end
 
 type t =
   { id : Id.t
   ; email : EmailAddress.t
-  ; name : Lastname.t
-  ; given_name : Firstname.t
-  ; password : HashedPassword.t
+  ; lastname : Lastname.t
+  ; firstname : Firstname.t
   ; status : Status.t
-  ; admin : bool
-  ; confirmed : bool
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
+  ; admin : IsAdmin.t
+  ; confirmed : Confirmed.t
   }
 
 val compare : t -> t -> int
@@ -233,37 +215,36 @@ val show : t -> string
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
 val sexp_of_t : t -> Sexplib0.Sexp.t
-val is_admin : t -> bool
 val id : t -> Id.t
-val user_firstname : t -> Firstname.t
-val user_lastname : t -> Lastname.t
-val user_fullname : t -> string
-val user_lastname_firstname : t -> string
-val user_email_address : t -> EmailAddress.t
+val email : t -> EmailAddress.t
+val firstname : t -> Firstname.t
+val lastname : t -> Lastname.t
+val fullname : ?reversed:bool -> t -> string
+val status : t -> Status.t
+val is_admin : t -> bool
+val is_confirmed : t -> bool
 
-val validate_current_password
-  :  ?field:Pool_message.Field.t
-  -> t
-  -> Password.t
-  -> (unit, Pool_message.Error.t) result
+val find_active_by_email_opt
+  :  Database.Label.t
+  -> EmailAddress.t
+  -> t option Lwt.t
 
 module Repo : sig
   module Id : Pool_model.Base.CaqtiSig with type t = Id.t
-  module Paused : Pool_model.Base.CaqtiSig with type t = Paused.t
+  module CellPhone : Pool_model.Base.CaqtiSig with type t = CellPhone.t
   module Disabled : Pool_model.Base.CaqtiSig with type t = Disabled.t
+  module EmailAddress : Pool_model.Base.CaqtiSig with type t = EmailAddress.t
+  module EmailVerified : Pool_model.Base.CaqtiSig with type t = EmailVerified.t
+  module ImportPending : Pool_model.Base.CaqtiSig with type t = ImportPending.t
+  module Paused : Pool_model.Base.CaqtiSig with type t = Paused.t
   module TermsAccepted : Pool_model.Base.CaqtiSig with type t = TermsAccepted.t
   module Verified : Pool_model.Base.CaqtiSig with type t = Verified.t
-  module EmailVerified : Pool_model.Base.CaqtiSig with type t = EmailVerified.t
-  module CellPhone : Pool_model.Base.CaqtiSig with type t = CellPhone.t
-  module ImportPending : Pool_model.Base.CaqtiSig with type t = ImportPending.t
 
   module UnverifiedCellPhone : sig
     include Pool_model.Base.CaqtiSig with type t = UnverifiedCellPhone.t
 
     val full : UnverifiedCellPhone.full Caqti_type.t
   end
-
-  module EmailAddress : Pool_model.Base.CaqtiSig with type t = EmailAddress.t
 
   val t : t Caqti_type.t
   val sql_select_columns : string list
@@ -278,17 +259,6 @@ val column_last_name : Query.Column.t
 val column_name : Query.Column.t
 val column_email : Query.Column.t
 val column_inactive : Query.Column.t
-
-val find_active_user_by_email_opt
-  :  Database.Label.t
-  -> EmailAddress.t
-  -> t option Lwt.t
-
-val create_session
-  :  Database.Label.t
-  -> EmailAddress.t
-  -> Password.t
-  -> (t, [ `Does_not_exist | `Incorrect_password ]) Lwt_result.t
 
 module FailedLoginAttempt : sig
   module Id : sig
@@ -338,6 +308,15 @@ module FailedLoginAttempt : sig
   end
 end
 
+type event =
+  | PasswordUpdated of
+      Id.t * Password.Plain.t * Password.Plain.t * Password.Confirmation.t
+
+val equal_event : event -> event -> bool
+val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string
+val handle_event : ?tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
+
 module Web : sig
   (** [user_from_token ?key database_label read_token request] returns the user that is
       associated to the user id in the [Bearer] token of the [request].
@@ -375,72 +354,59 @@ module Web : sig
     -> t option Lwt.t
 end
 
-(** [find_opt database_label id] returns a user with [id]. *)
+(** [find database_label id] returns a user with [id], [Error NotFound] otherwise. *)
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+
+(** [find_exn database_label id] returns a user with [id], throws exception otherwise. *)
+val find_exn : Database.Label.t -> Id.t -> t Lwt.t
+
+(** [find_opt database_label id] returns a user with [id], [None] otherwise. *)
 val find_opt : Database.Label.t -> Id.t -> t option Lwt.t
 
-(** [find database_label id] returns a user with [id], [None] otherwise. *)
-val find : Database.Label.t -> Id.t -> t Lwt.t
+(** [find_by_email database_label email] returns a [User.t] if there is a user with
+    email address [email]. The lookup is case-insensitive. [Error NotFound] otherwise. *)
+val find_by_email
+  :  Database.Label.t
+  -> EmailAddress.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 (** [find_by_email database_label email] returns a [User.t] if there is a user with
     email address [email]. The lookup is case-insensitive. Raises an
     [{!Exception}] otherwise. *)
-val find_by_email : Database.Label.t -> EmailAddress.t -> t Lwt.t
+val find_by_email_exn : Database.Label.t -> EmailAddress.t -> t Lwt.t
 
 (** [find_by_email_opt database_label email] returns a [User.t] if there is a user with
     email address [email]. *)
 val find_by_email_opt : Database.Label.t -> EmailAddress.t -> t option Lwt.t
 
-(** [update_password database_label user ~old_password ~new_password
-    ~new_password_confirmation]
-    updates the password of a [user] to [new_password] and returns the user.
-    The [old_password] is the current password that the user has to enter.
-    [new_password] has to equal [new_password_confirmation]. *)
-val update_password
-  :  Database.Label.t
-  -> t
-  -> old_password:Password.t
-  -> new_password:Password.t
-  -> new_password_confirmation:PasswordConfirmed.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
-
-(** [update ?email ?name ?given_name ?status user] stores the
+(** [update ?email ?lastname ?firstname ?status database_label user] stores the
     updated [user] and returns it. *)
 val update
   :  ?email:EmailAddress.t
-  -> ?name:Lastname.t
-  -> ?given_name:Firstname.t
+  -> ?lastname:Lastname.t
+  -> ?firstname:Firstname.t
   -> ?status:Status.t
+  -> ?confirmed:Confirmed.t
   -> Database.Label.t
   -> t
   -> t Lwt.t
 
-(** [set_password user ~password ~password_confirmation]
-    overrides the current password of a [user] and returns that user.
-    [password] has to equal [password_confirmation].
+(** [confirm database_label user] stores the [user] as confirmed and returns it. *)
+val confirm : Database.Label.t -> t -> t Lwt.t
 
-    The current password doesn't have to be provided, therefore you should not
-    expose this function to users but only admins. If you want the user to
-    update their own password use {!update_password} instead. *)
-val set_password
-  :  Database.Label.t
-  -> t
-  -> Password.t
-  -> PasswordConfirmed.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
-
-(** [create_user ?id label email name given_name password] returns
-    a non-admin user. Note that using [create_user] skips the registration
-    workflow and should only be used with care.*)
+(** [create_user ?id label email lastname firstname password password_confirmed] returns
+    a non-admin user. *)
 val create_user
   :  ?id:Id.t
   -> Database.Label.t
   -> EmailAddress.t
   -> Lastname.t
   -> Firstname.t
-  -> Password.t
-  -> t Lwt.t
+  -> Password.Plain.t
+  -> Password.Confirmation.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
-(** [create_admin ?id label email name given_name password] returns
+(** [create_admin ?id label email lastname firstname password password_confirmed] returns
     an admin user. *)
 val create_admin
   :  ?id:Id.t
@@ -448,34 +414,17 @@ val create_admin
   -> EmailAddress.t
   -> Lastname.t
   -> Firstname.t
-  -> Password.t
-  -> t Lwt.t
-
-(** [register_user ?id label email name given_name password
-    password_confirmation]
-    creates a new user if the password is valid and if the email address was
-    not already registered. *)
-val register_user
-  :  ?id:Id.t
-  -> Database.Label.t
-  -> EmailAddress.t
-  -> Lastname.t
-  -> Firstname.t
-  -> Password.t
-  -> PasswordConfirmed.t
-  -> ( t
-       , [ `Already_registered
-         | `Invalid_password_provided of Pool_message.Error.t
-         ] )
-       Lwt_result.t
+  -> Password.Plain.t
+  -> Password.Confirmation.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 (** [login label email password] returns the user associated with [email] if
     [password] matches the current password. *)
 val login
   :  Database.Label.t
   -> EmailAddress.t
-  -> Password.t
-  -> (t, [ `Does_not_exist | `Incorrect_password ]) Lwt_result.t
+  -> Password.Plain.t
+  -> (t, Pool_message.Error.t) result Lwt.t
 
 val lifecycle : Sihl.Container.lifecycle
 val register : ?commands:Sihl.Command.t list -> unit -> Sihl.Container.Service.t

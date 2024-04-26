@@ -79,7 +79,8 @@ let user_id : type state. state t -> Pool_user.Id.t = function
 ;;
 
 let user_is_confirmed : type state. state t -> bool = function
-  | Unverified { user; _ } | Verified { user; _ } -> user.Pool_user.confirmed
+  | Unverified { user; _ } | Verified { user; _ } ->
+    user.Pool_user.confirmed |> Pool_user.Confirmed.value
 ;;
 
 let address : type state. state t -> User.EmailAddress.t = function
