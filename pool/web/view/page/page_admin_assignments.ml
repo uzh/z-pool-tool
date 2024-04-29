@@ -555,13 +555,7 @@ let data_table
     Component.DataTable.create_meta ?filter ?search url query language
   in
   let conditional_left_columns =
-    [ ( view_contact_name
-      , Pool_user.column_name
-      , fun { contact; _ } ->
-          Page_admin_contact.contact_lastname_firstname
-            access_contact_profiles
-            contact )
-    ; view_contact_info, Pool_user.column_email, contact_email
+    [ view_contact_info, Pool_user.column_email, contact_email
     ; view_contact_info, Contact.column_cell_phone, contact_cellphone
     ]
   in
@@ -712,6 +706,13 @@ let data_table
   in
   let has_custom_fields = CCList.is_empty custom_fields |> not in
   let cols =
+    let name_column =
+      match view_contact_name with
+      | true -> `column Pool_user.column_name
+      | false ->
+        `custom
+          (txt (Utils.field_to_string_capitalized language Message.Field.Id))
+    in
     let left =
       conditional_left_columns
       |> CCList.filter_map (fun (check, column, _) ->
@@ -729,7 +730,7 @@ let data_table
       |> CCList.filter_map (fun (check, column, _) ->
         if check then Some column else None)
     in
-    let base = left @ center @ right in
+    let base = (name_column :: left) @ center @ right in
     if is_print then base else base @ [ `empty ]
   in
   let th_class =
@@ -738,6 +739,17 @@ let data_table
     if has_custom_fields then left @ [ "w-2" ] @ right else left @ right
   in
   let row (assignment : t) =
+    let name_column =
+      match view_contact_name with
+      | true ->
+        Page_admin_contact.contact_lastname_firstname
+          access_contact_profiles
+          assignment.contact
+      | false ->
+        span
+          ~a:[ a_class [ "nobr" ] ]
+          [ txt Contact.(assignment.contact |> id |> Id.value) ]
+    in
     let tr cells =
       let assignment_id = a_user_data "id" (Id.value assignment.id) in
       let classname =
@@ -786,7 +798,7 @@ let data_table
       |> Component.ButtonGroup.dropdown
       |> CCList.pure
     in
-    let base = left @ center @ right in
+    let base = (name_column :: left) @ center @ right in
     (if is_print then base else base @ buttons)
     |> CCList.map (CCList.return %> td)
     |> tr

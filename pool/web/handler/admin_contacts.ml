@@ -458,15 +458,11 @@ module Access : sig
   include module type of Helpers.Access
 
   val external_data_ids : Rock.Middleware.t
-  val delete_answer : Rock.Middleware.t
   val promote : Rock.Middleware.t
   val message_history : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  module ContactCommand = Cqrs_command.Contact_command
   module Guardian = Middleware.Guardian
-
-  let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
 
   let index =
     Contact.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
@@ -511,13 +507,6 @@ end = struct
   ;;
 
   let external_data_ids = read
-
-  let delete_answer =
-    ContactCommand.ClearAnswer.effects
-    |> contact_effects
-    |> Guardian.validate_generic
-  ;;
-
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
 
   let message_history =
