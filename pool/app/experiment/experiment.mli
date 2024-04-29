@@ -73,7 +73,7 @@ module SurveyUrl : sig
   include Pool_common.Model.StringSig
 end
 
-module OnlineStudy : sig
+module OnlineExperiment : sig
   type t = { survey_url : SurveyUrl.t }
 
   val equal : t -> t -> bool
@@ -138,7 +138,7 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; online_study : OnlineStudy.t option
+  ; online_experiment : OnlineExperiment.t option
   ; email_session_reminder_lead_time :
       Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -197,7 +197,7 @@ val create
   -> ?smtp_auth_id:Email.SmtpAuth.Id.t
   -> ?text_message_session_reminder_lead_time:
        Pool_common.Reminder.TextMessageLeadTime.t
-  -> ?online_study:OnlineStudy.t
+  -> ?online_experiment:OnlineExperiment.t
   -> Title.t
   -> PublicTitle.t
   -> DirectRegistrationDisabled.t
@@ -246,7 +246,7 @@ module Public : sig
     -> ?language:Pool_common.Language.t
     -> ?experiment_type:Pool_common.ExperimentType.t
     -> ?smtp_auth_id:Email.SmtpAuth.Id.t
-    -> ?online_study:OnlineStudy.t
+    -> ?online_experiment:OnlineExperiment.t
     -> Id.t
     -> PublicTitle.t
     -> DirectRegistrationDisabled.t
@@ -259,7 +259,7 @@ module Public : sig
   val direct_registration_disabled : t -> DirectRegistrationDisabled.t
   val experiment_type : t -> Pool_common.ExperimentType.t option
   val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
-  val online_study : t -> OnlineStudy.t option
+  val online_experiment : t -> OnlineExperiment.t option
   val is_sessionless : t -> bool
 
   val update_direct_registration_disabled

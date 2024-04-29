@@ -906,10 +906,10 @@ let detail
       let open Experiment in
       let boolean_value fnc = fnc experiment |> bool_to_string |> txt in
       let default = "" in
-      let online_study =
-        match experiment.online_study with
+      let online_experiment =
+        match experiment.online_experiment with
         | None -> Field.OnlineStudy, txt (bool_to_string false)
-        | Some { OnlineStudy.survey_url } ->
+        | Some { OnlineExperiment.survey_url } ->
           ( Field.OnlineStudy
           , div
               ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ]
@@ -970,7 +970,7 @@ let detail
                  ~default
                  Email.SmtpAuth.(fun auth -> auth.label |> Label.value)
             |> txt )
-        ; online_study
+        ; online_experiment
         ; ( Field.DirectRegistrationDisabled
           , direct_registration_disabled_value |> boolean_value )
         ; ( Field.RegistrationDisabled

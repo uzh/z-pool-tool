@@ -136,7 +136,7 @@ let initialize_online_survey contact_id experiment_id time_window_id () =
   let%lwt experiment =
     ExperimentRepo.create
       ~id:experiment_id
-      ~online_study:Experiment_test.Data.online_study
+      ~online_experiment:Experiment_test.Data.online_experiment
       ()
   in
   let%lwt time_window =

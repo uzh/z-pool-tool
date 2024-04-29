@@ -70,7 +70,6 @@ let find_overlapping_request exclude =
   let end_at =
     "DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND)"
   in
-  (* TODO: How to deal with start or and at the same time? *)
   let base =
     [%string
       {sql|
@@ -97,13 +96,13 @@ let find_overlapping ?exclude pool experiment_id ~start ~end_at =
   let (Dynparam.Pack (pt, pv)) =
     let open Dynparam in
     empty
-    |> add Caqti_type.string (Experiment.Id.value experiment_id)
-    |> add Caqti_type.ptime (Start.value start)
-    |> add Caqti_type.ptime (End.value end_at)
+    |> add Experiment.Repo.Entity.Id.t experiment_id
+    |> add Repo.Start.t start
+    |> add Repo.End.t end_at
     |> fun dyn ->
     match exclude with
     | None -> dyn
-    | Some id -> dyn |> add Caqti_type.string (Id.value id)
+    | Some id -> dyn |> add Repo.Id.t id
   in
   let request = find_overlapping_request exclude |> pt ->* RepoEntity.t in
   Utils.Database.collect (pool |> Pool_database.Label.value) request pv
@@ -168,9 +167,7 @@ let query_by_experiment ?query pool id =
     let sql =
       {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
     in
-    let dyn =
-      Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
-    in
+    let dyn = Dynparam.(empty |> add Experiment.Repo.Entity.Id.t id) in
     sql, dyn
   in
   Query.collect_and_count

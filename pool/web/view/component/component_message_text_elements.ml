@@ -283,7 +283,7 @@ let online_survey_help tenant ?experiment () =
   let open DummyData in
   let assignment = create_assignment () in
   let experiment = CCOption.value ~default:(create_experiment ()) experiment in
-  Experiment.OnlineStudy.url_params
+  Experiment.OnlineExperiment.url_params
     tenant
     ~experiment_id:experiment.Experiment.id
     ~assignment_id:Assignment.(assignment.id |> Id.to_common)

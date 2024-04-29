@@ -89,7 +89,7 @@ module InvitationResetAt = struct
   let t = Common.make_caqti_type Caqti_type.ptime create value
 end
 
-module OnlineStudyRepo = struct
+module OnlineExperimentRepo = struct
   type t =
     { assignment_without_session : AssignmentWithoutSession.t
     ; survey_url : SurveyUrl.t option
@@ -122,7 +122,7 @@ let t =
                           , ( external_data_required
                             , ( show_external_data_id_links
                               , ( experiment_type
-                                , ( OnlineStudyRepo.
+                                , ( OnlineExperimentRepo.
                                       { assignment_without_session; survey_url }
                                   , ( email_session_reminder_lead_time
                                     , ( text_message_session_reminder_lead_time
@@ -135,8 +135,8 @@ let t =
         ) ) )
     =
     let open CCResult in
-    let online_study =
-      OnlineStudy.create_opt ~assignment_without_session ~survey_url
+    let online_experiment =
+      OnlineExperiment.create_opt ~assignment_without_session ~survey_url
     in
     Ok
       { id
@@ -156,7 +156,7 @@ let t =
       ; external_data_required
       ; show_external_data_id_links
       ; experiment_type
-      ; online_study
+      ; online_experiment
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
       ; invitation_reset_at
@@ -201,7 +201,7 @@ let t =
                                                 (t2
                                                    (option ExperimentType.t)
                                                    (t2
-                                                      OnlineStudyRepo.t
+                                                      OnlineExperimentRepo.t
                                                       (t2
                                                          (option
                                                             Reminder
@@ -243,10 +243,10 @@ module Write = struct
         |> CCOption.map (fun ou -> ou.Organisational_unit.id)
       in
       let online_study =
-        let open OnlineStudyRepo in
-        match m.online_study with
+        let open OnlineExperimentRepo in
+        match m.online_experiment with
         | None -> { assignment_without_session = false; survey_url = None }
-        | Some { OnlineStudy.survey_url } ->
+        | Some { OnlineExperiment.survey_url } ->
           { assignment_without_session = true; survey_url = Some survey_url }
       in
       Ok
@@ -319,7 +319,8 @@ module Write = struct
                                                            (option
                                                               ExperimentType.t)
                                                            (t2
-                                                              OnlineStudyRepo.t
+                                                              OnlineExperimentRepo
+                                                              .t
                                                               (t2
                                                                  (option
                                                                     Reminder
@@ -351,11 +352,11 @@ module Public = struct
             , ( direct_registration_disabled
               , ( experiment_type
                 , ( smtp_auth_id
-                  , OnlineStudyRepo.{ assignment_without_session; survey_url }
-                  ) ) ) ) ) ) )
+                  , OnlineExperimentRepo.
+                      { assignment_without_session; survey_url } ) ) ) ) ) ) )
       =
-      let online_study =
-        OnlineStudy.create_opt ~assignment_without_session ~survey_url
+      let online_experiment =
+        OnlineExperiment.create_opt ~assignment_without_session ~survey_url
       in
       Ok
         { id
@@ -365,7 +366,7 @@ module Public = struct
         ; direct_registration_disabled
         ; experiment_type
         ; smtp_auth_id
-        ; online_study
+        ; online_experiment
         }
     in
     Caqti_type.(
@@ -386,7 +387,7 @@ module Public = struct
                           (option Common.ExperimentType.t)
                           (t2
                              (option Email.SmtpAuth.RepoEntity.Id.t)
-                             OnlineStudyRepo.t))))))))
+                             OnlineExperimentRepo.t))))))))
   ;;
 end
 

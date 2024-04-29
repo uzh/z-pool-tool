@@ -136,7 +136,7 @@ module MatcherNotificationSent = struct
   let create t = t
 end
 
-module OnlineStudy = struct
+module OnlineExperiment = struct
   type t = { survey_url : SurveyUrl.t } [@@deriving eq, fields ~getters, show]
 
   let create ~survey_url = { survey_url }
@@ -186,7 +186,7 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; online_study : OnlineStudy.t option
+  ; online_experiment : OnlineExperiment.t option
   ; email_session_reminder_lead_time :
       Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -212,7 +212,7 @@ let create
   ?organisational_unit
   ?smtp_auth_id
   ?text_message_session_reminder_lead_time
-  ?online_study
+  ?online_experiment
   title
   public_title
   direct_registration_disabled
@@ -243,7 +243,7 @@ let create
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
     ; invitation_reset_at
-    ; online_study
+    ; online_experiment
     ; matcher_notification_sent = false
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
@@ -281,7 +281,7 @@ module Public = struct
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
     ; smtp_auth_id : Email.SmtpAuth.Id.t option
-    ; online_study : OnlineStudy.t option
+    ; online_experiment : OnlineExperiment.t option
     }
   [@@deriving eq, show]
 
@@ -290,7 +290,7 @@ module Public = struct
     ?language
     ?experiment_type
     ?smtp_auth_id
-    ?online_study
+    ?online_experiment
     id
     public_title
     direct_registration_disabled
@@ -302,7 +302,7 @@ module Public = struct
     ; direct_registration_disabled
     ; experiment_type
     ; smtp_auth_id
-    ; online_study
+    ; online_experiment
     }
   ;;
 
@@ -317,8 +317,8 @@ module Public = struct
   let direct_registration_disabled (m : t) = m.direct_registration_disabled
   let experiment_type (m : t) = m.experiment_type
   let smtp_auth_id (m : t) = m.smtp_auth_id
-  let online_study (m : t) = m.online_study
-  let is_sessionless (m : t) = m |> online_study |> CCOption.is_some
+  let online_experiment (m : t) = m.online_experiment
+  let is_sessionless (m : t) = m |> online_experiment |> CCOption.is_some
 end
 
 let to_public
@@ -329,7 +329,7 @@ let to_public
   ; direct_registration_disabled
   ; experiment_type
   ; smtp_auth_id
-  ; online_study
+  ; online_experiment
   ; _
   }
   =
@@ -340,7 +340,7 @@ let to_public
   ; direct_registration_disabled
   ; experiment_type
   ; smtp_auth_id
-  ; online_study
+  ; online_experiment
   }
 ;;
 
@@ -354,12 +354,12 @@ let text_message_session_reminder_lead_time_value m =
   |> CCOption.map Pool_common.Reminder.TextMessageLeadTime.value
 ;;
 
-let assignment_without_session_value ({ online_study; _ } : t) =
-  CCOption.is_some online_study
+let assignment_without_session_value ({ online_experiment; _ } : t) =
+  CCOption.is_some online_experiment
 ;;
 
-let survey_url_value ({ online_study; _ } : t) =
-  online_study |> CCOption.map OnlineStudy.survey_url
+let survey_url_value ({ online_experiment; _ } : t) =
+  online_experiment |> CCOption.map OnlineExperiment.survey_url
 ;;
 
 let direct_registration_disabled_value (m : t) =

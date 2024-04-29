@@ -150,8 +150,8 @@ let create_session experiment =
 let create_experiment () =
   let get_exn = CCResult.get_exn in
   let open Experiment in
-  let online_study =
-    OnlineStudy.
+  let online_experiment =
+    OnlineExperiment.
       { survey_url = SurveyUrl.of_string "https://www.qualtics.com/T8rp6WTdk" }
   in
   { id = Id.create ()
@@ -177,7 +177,7 @@ let create_experiment () =
   ; external_data_required = false |> ExternalDataRequired.create
   ; show_external_data_id_links = false |> ShowExternalDataIdLinks.create
   ; experiment_type = Some Pool_common.ExperimentType.Lab
-  ; online_study = Some online_study
+  ; online_experiment = Some online_experiment
   ; email_session_reminder_lead_time = None
   ; text_message_session_reminder_lead_time = None
   ; invitation_reset_at = None

@@ -47,8 +47,6 @@ module Start = struct
   include Pool_common.Model.Ptime
 
   let create m = m
-  let value m = m
-  let compare = Ptime.compare
 
   let schema () =
     let decode str =

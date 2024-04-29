@@ -170,11 +170,11 @@ module OnlineSurvey = struct
       let* survey_url =
         let open Public in
         experiment
-        |> online_study
+        |> online_experiment
         |> CCOption.to_result (Pool_common.Message.NotFound Field.Experiment)
         |> Lwt_result.lift
-        >|+ OnlineStudy.survey_url
-        >|+ OnlineStudy.render_survey_url
+        >|+ OnlineExperiment.survey_url
+        >|+ OnlineExperiment.render_survey_url
               tenant
               ~experiment_id
               ~assignment_id:(Assignment.Id.to_common assignment_id)

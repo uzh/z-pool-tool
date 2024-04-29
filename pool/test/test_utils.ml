@@ -198,7 +198,7 @@ module Model = struct
     ?(title = "An Experiment")
     ?email_session_reminder_lead_time_hours
     ?filter
-    ?online_study
+    ?online_experiment
     ()
     =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
@@ -225,7 +225,7 @@ module Model = struct
       ~experiment_type:Pool_common.ExperimentType.Lab
       ?filter
       ?email_session_reminder_lead_time
-      ?online_study
+      ?online_experiment
       title
       public_title
       (Experiment.DirectRegistrationDisabled.create false)

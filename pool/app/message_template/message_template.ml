@@ -118,7 +118,7 @@ let public_experiment_params layout experiment =
   in
   let online_study_params =
     experiment
-    |> Public.online_study
+    |> Public.online_experiment
     |> CCOption.is_some
     |> function
     | true -> [ "experumentSurveyRedirectUrl", experiment_url ^ "/start" ]

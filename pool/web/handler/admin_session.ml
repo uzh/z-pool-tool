@@ -123,7 +123,9 @@ let new_helper req page =
          | `New ->
            Lwt_result.ok
            @@
-             (match CCOption.is_some experiment.Experiment.online_study with
+             (match
+                CCOption.is_some experiment.Experiment.online_experiment
+              with
              | false ->
                Page.Admin.Session.new_form
                  context

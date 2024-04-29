@@ -214,8 +214,8 @@ end = struct
         text_message_session_reminder_lead_time
         text_message_session_reminder_lead_time_unit
     in
-    let online_study =
-      OnlineStudy.create_opt ~assignment_without_session ~survey_url
+    let online_experiment =
+      OnlineExperiment.create_opt ~assignment_without_session ~survey_url
     in
     let* experiment =
       Experiment.create
@@ -231,7 +231,7 @@ end = struct
         ?smtp_auth_id:
           (smtp_auth |> CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id))
         ?text_message_session_reminder_lead_time
-        ?online_study
+        ?online_experiment
         command.title
         command.public_title
         command.direct_registration_disabled
@@ -291,8 +291,8 @@ end = struct
         command.text_message_session_reminder_lead_time
         command.text_message_session_reminder_lead_time_unit
     in
-    let online_study =
-      OnlineStudy.create_opt ~assignment_without_session ~survey_url
+    let online_experiment =
+      OnlineExperiment.create_opt ~assignment_without_session ~survey_url
     in
     let* () =
       match
@@ -300,14 +300,10 @@ end = struct
           (assignment_without_session_value experiment)
           (AssignmentWithoutSession.value assignment_without_session)
       with
-      | true -> Ok ()
-      | false ->
-        if session_count > 0
-        then
-          Error
-            Pool_common.(
-              Message.(CannotBeUpdated Field.AssignmentWithoutSession))
-        else Ok ()
+      | false when session_count > 0 ->
+        Error
+          Pool_common.(Message.(CannotBeUpdated Field.AssignmentWithoutSession))
+      | true | false -> Ok ()
     in
     let experiment =
       { experiment with
@@ -319,7 +315,7 @@ end = struct
       ; cost_center = command.cost_center
       ; contact_email = command.contact_email
       ; organisational_unit
-      ; online_study
+      ; online_experiment
       ; smtp_auth_id =
           CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp
       ; direct_registration_disabled = command.direct_registration_disabled

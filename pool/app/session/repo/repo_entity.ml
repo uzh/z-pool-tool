@@ -14,6 +14,12 @@ module Start = struct
   let t = Caqti_type.ptime
 end
 
+module End = struct
+  include Entity.End
+
+  let t = Caqti_type.ptime
+end
+
 module Duration = struct
   include Entity.Duration
 

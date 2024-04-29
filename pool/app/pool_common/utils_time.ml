@@ -46,3 +46,9 @@ let parse_date_from_calendar str =
   |> parse_date
   >>= Ptime.of_date %> CCOption.to_result Entity_message.(Invalid Field.Date)
 ;;
+
+let start_is_before_end ~start ~end_at =
+  if Ptime.is_later start ~than:end_at
+  then Error Entity_message.EndBeforeStart
+  else Ok ()
+;;

@@ -424,6 +424,10 @@ module Repo : sig
     val t : Start.t Caqti_type.t
   end
 
+  module End : sig
+    val t : End.t Caqti_type.t
+  end
+
   module Duration : sig
     val t : Duration.t Caqti_type.t
   end

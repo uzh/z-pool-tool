@@ -43,9 +43,9 @@ module Data = struct
 
   let experiment_type = Pool_common.ExperimentType.(show Lab)
 
-  let online_study =
+  let online_experiment =
     let open Experiment in
-    { OnlineStudy.survey_url = SurveyUrl.of_string survey_url }
+    { OnlineExperiment.survey_url = SurveyUrl.of_string survey_url }
   ;;
 
   let urlencoded =
@@ -66,7 +66,7 @@ module Data = struct
       ]
   ;;
 
-  let online_study_urlencoded =
+  let online_experiment_urlencoded =
     Pool_common.Message.
       [ Field.(show AssignmentWithoutSession), [ "true" ]
       ; Field.(show SurveyUrl), [ survey_url ]
@@ -185,21 +185,21 @@ let create_survey_url () =
   let check ?(msg = "succeeds") =
     Alcotest.(check (result survey_url Test_utils.error) msg)
   in
-  let callback =
+  let callbackUrl =
     Format.asprintf "{%s}" Pool_common.Message.Field.(show CallbackUrl)
   in
   let ok =
-    [ [%string {sql|https://www.domain.com/foo?callback=%{callback}|sql}]
+    [ [%string {sql|https://www.domain.com/foo?callback=%{callbackUrl}|sql}]
     ; [%string
-        {sql|https://www.domain.com/foo?contactId=123123&%callback=%{callback}|sql}]
-    ; [%string {sql|https://www.domain.com?callback=%{callback}|sql}]
-    ; [%string {sql|https://www.domain.com?callbackUrl=%{callback}|sql}]
+        {sql|https://www.domain.com/foo?contactId=123123&%callback=%{callbackUrl}|sql}]
+    ; [%string {sql|https://www.domain.com?callback=%{callbackUrl}|sql}]
+    ; [%string {sql|https://www.domain.com?callbackUrl=%{callbackUrl}|sql}]
     ]
   in
   let missing_callback =
     [ "https://www.domain.com"
     ; "https://www.domain.com/foo?contactId=123123"
-    ; "http://www.domain.com&callback=%{callback}"
+    ; "http://www.domain.com&callback=%{callbackUrl}"
     ]
   in
   let invalid = [ "www.domain.com"; ""; "/experiment/123123" ] in
@@ -267,7 +267,7 @@ let update_with_existing_sessions () =
   let experiment = Data.experiment |> get_exn in
   let online_experiment =
     let open Experiment in
-    { experiment with online_study = Some Data.online_study }
+    { experiment with online_experiment = Some Data.online_experiment }
   in
   let open CCResult.Infix in
   let session_count = 1 in
@@ -284,7 +284,7 @@ let update_with_existing_sessions () =
   in
   Test_utils.check_result expected events;
   let events =
-    make_events Data.(urlencoded @ online_study_urlencoded) experiment
+    make_events Data.(urlencoded @ online_experiment_urlencoded) experiment
   in
   let expected =
     Error Pool_common.Message.(CannotBeUpdated Field.AssignmentWithoutSession)
@@ -297,7 +297,9 @@ let update_with_existing_sessions () =
   in
   Test_utils.check_result expected events;
   let events =
-    make_events Data.(urlencoded @ online_study_urlencoded) online_experiment
+    make_events
+      Data.(urlencoded @ online_experiment_urlencoded)
+      online_experiment
   in
   let expected =
     Ok [ Experiment.Updated online_experiment |> Pool_event.experiment ]
@@ -430,7 +432,7 @@ module AvailableExperiments = struct
     in
     let%lwt on_site_experiment = ExperimentRepo.create ~id:experiment_id () in
     let%lwt online_experiment =
-      ExperimentRepo.create ~online_study:Data.online_study ()
+      ExperimentRepo.create ~online_experiment:Data.online_experiment ()
     in
     let%lwt _ =
       Integration_utils.SessionRepo.create ~id:session_id on_site_experiment ()

@@ -502,44 +502,6 @@ let reschedule_session
          experiment)
 ;;
 
-(* 
-
-   let data_table ({ Pool_context.language; _ } as context) experiment
-   sessions_data chronological = let open Session in let sessions, query,
-   key_figures_head = match sessions_data with | `Session (sessions, query) -> (
-   sessions |> CCList.map (fun session -> `Session session) , query ,
-   key_figures_head ) | `TimeWindow (time_windows, query) -> ( time_windows |>
-   CCList.map (fun session -> `TimeWindow session) , query , "Max" ) in let
-   session_index_path = Format.asprintf "/admin/experiments/%s/sessions"
-   (experiment.Experiment.id |> Experiment.Id.value) in let target_id =
-   "session-list" in let data_table = let url = session_index_path |>
-   Uri.of_string in let additional_url_params = match chronological with | true
-   -> Some [ Message.Field.Chronological, "true" ] | false -> None in
-   Component.DataTable.create_meta ?additional_url_params ?filter:filterable_by
-   url query language in let cols = let create_session : [ | Html_types.flow5 ]
-   elt = link_as_button ~style:`Success ~icon:Icon.Add ~classnames:[ "small";
-   "nobr" ] ~control:(language, Message.(Add (Some Field.Session)))
-   (Format.asprintf "%s/create" session_index_path) in [ `column column_date ;
-   `column column_no_assignments ; `column column_noshow_count ; `column
-   column_participation_count ; `custom (txt key_figures_head) ; `custom
-   create_session ] in let th_class = [ "w-3"; "w-2"; "w-2"; "w-2"; "w-2"; "w-1"
-   ] in let row session = let open Partials in let row_attrs =
-   Partials.row_attrs session in let no_show_count, participant_count = match
-   session |> closed_at |> CCOption.is_some with | true -> ( session |>
-   no_show_count |> NoShowCount.value |> int_to_txt , session |>
-   participant_count |> ParticipantCount.value |> int_to_txt ) | false -> txt
-   "", txt "" in let key_figures = match session with | `Session session ->
-   session_key_figures session | `TimeWindow ({ Time_window.max_participants; _
-   } : Time_window.t) -> max_participants |> CCOption.map_or ~default:""
-   (Session.ParticipantAmount.value %> CCInt.to_string) in [ session_row_title
-   language chronological session ; session |> assignment_count |>
-   AssignmentCount.value |> int_to_txt ; no_show_count ; participant_count ;
-   key_figures |> txt ; Partials.button_dropdown context
-   experiment.Experiment.id session ] |> CCList.map CCFun.(CCList.return %> td)
-   |> tr ~a:row_attrs in DataTable.make ~classnames: [ "table"; "break-mobile";
-   "session-list"; "striped"; "align-last-end" ] ~target_id ~th_class ~cols ~row
-   data_table sessions ;; *)
-
 let data_table
   ({ Pool_context.language; _ } as context)
   experiment

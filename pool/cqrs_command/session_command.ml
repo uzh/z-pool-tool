@@ -260,9 +260,9 @@ end = struct
     let open CCResult in
     let open Session in
     let* () =
-      if Ptime.is_later (Start.value start) ~than:(End.value end_at)
-      then Error Pool_common.Message.EndBeforeStart
-      else Ok ()
+      Pool_common.Utils.Time.start_is_before_end
+        ~start:(Start.value start)
+        ~end_at:(End.value end_at)
     in
     let* () =
       if CCList.is_empty overlapps
@@ -322,9 +322,9 @@ end = struct
     let open Time_window in
     let* () =
       let open Session in
-      if Ptime.is_later (Start.value start) ~than:(End.value end_at)
-      then Error Pool_common.Message.EndBeforeStart
-      else Ok ()
+      Pool_common.Utils.Time.start_is_before_end
+        ~start:(Start.value start)
+        ~end_at:(End.value end_at)
     in
     let* () =
       if CCList.is_empty overlapps

@@ -62,7 +62,9 @@ let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
   | Some id -> Email.SmtpAuth.find database_label id >|+ CCOption.return
 ;;
 
-let is_sessionless ({ online_study; _ } : t) = CCOption.is_some online_study
+let is_sessionless ({ online_experiment; _ } : t) =
+  CCOption.is_some online_experiment
+;;
 
 let invitation_count =
   Repo_statistics.SentInvitations.total_invitation_count_by_experiment
