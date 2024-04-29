@@ -71,6 +71,8 @@
    (>= 0.14.0))
   (ppx_variants_conv
    (= v0.16.0))
+  (tyxml-ppx
+   (>= 4.6.0))
   canary
   (guardian
    (= 0.3.2))

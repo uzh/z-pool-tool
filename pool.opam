@@ -32,6 +32,7 @@ depends: [
   "ppx_string" {>= "0.16.0"}
   "ppx_yojson_conv" {>= "0.14.0"}
   "ppx_variants_conv" {= "v0.16.0"}
+  "tyxml-ppx" {>= "4.6.0"}
   "canary"
   "guardian" {= "0.3.2"}
   "alcotest-lwt" {with-test}
