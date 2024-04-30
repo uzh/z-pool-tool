@@ -121,6 +121,7 @@ type error =
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)
   | SmtpException of string
+  | SmtpLoginMissingCredentials
   | TerminatoryRootError
   | TerminatoryRootErrorTitle
   | TerminatoryTenantError

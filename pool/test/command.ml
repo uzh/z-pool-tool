@@ -538,6 +538,11 @@ let () =
             `Quick
             User_import_test.confirm_as_contact
         ] )
+    ; Smtp_test.(
+        ( "smtp auth"
+        , [ test_case "creat valid" `Quick create_smtp_valid
+          ; test_case "create missing username" `Quick create_missing_username
+          ] ))
     ; ( "tags"
       , [ test_case "create tag succeeds" `Quick Tag_test.create_event
         ; test_case "update tag succeeds" `Quick Tag_test.update_event

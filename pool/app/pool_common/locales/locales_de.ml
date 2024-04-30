@@ -631,6 +631,9 @@ let rec error_to_string = function
       (field_to_string field1)
       (field_to_string field2)
   | SmtpException exn -> exn
+  | SmtpLoginMissingCredentials ->
+    "Der SMTP-Authentifizierungsmechanismus kann nicht auf LOGIN gesetzt \
+     werden, wenn kein Benutzername oder Passwort festgelegt ist."
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
