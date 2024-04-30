@@ -4,6 +4,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.7.1](https://github.com/uzh/z-pool-tool/tree/0.7.1) - 2024-04-30
+
+### Fixed
+
+- optional custom fields are now optional on registration as well
+- assignment list print view fixed on Firefox and Safari
+- only open a single buffer to write logs
+
 ## [0.7.0](https://github.com/uzh/z-pool-tool/tree/0.7.0) - 2024-04-11
 
 ### Added
