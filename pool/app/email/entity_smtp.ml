@@ -101,6 +101,17 @@ type update_password =
   }
 [@@deriving eq, show]
 
+let validate_mechanism
+  mechanism
+  (username : Username.t option)
+  (password : Password.t option)
+  =
+  if Mechanism.(equal LOGIN) mechanism
+     && (CCOption.is_none username || CCOption.is_none password)
+  then Error Pool_common.Message.SmtpLoginMissingCredentials
+  else Ok mechanism
+;;
+
 module Write = struct
   type t =
     { id : Id.t
@@ -116,6 +127,8 @@ module Write = struct
   [@@deriving eq, show]
 
   let create ?id label server port username password mechanism protocol default =
+    let open CCResult.Infix in
+    let* mechanism = validate_mechanism mechanism username password in
     Ok
       { id = id |> CCOption.value ~default:(Id.create ())
       ; label

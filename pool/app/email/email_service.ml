@@ -203,14 +203,10 @@ module Smtp = struct
     let hostname = SmtpAuth.Server.value server in
     let port = Some (SmtpAuth.Port.value port) in
     let mechanism =
-      if SmtpAuth.Mechanism.(equal LOGIN) mechanism
-         && (CCOption.is_none username || CCOption.is_none password)
-      then
-        raise
-          (Sihl.Contract.Email.Exception
-             "SMTP auth mechanism cannot be set to LOGIN when no username or \
-              password is set.")
-      else SmtpAuth.Mechanism.to_sendmail mechanism
+      SmtpAuth.validate_mechanism mechanism username password
+      |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+      |> CCResult.get_or_failwith
+      |> SmtpAuth.Mechanism.to_sendmail
     in
     let with_starttls = SmtpAuth.Protocol.(equal STARTTLS) protocol in
     let config =
