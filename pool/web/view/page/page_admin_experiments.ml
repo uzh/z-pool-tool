@@ -174,7 +174,7 @@ let message_template_buttons
   let open Message_template in
   let build_button label =
     build_experiment_path ~suffix:Label.(prefixed_human_url label) experiment
-    |> Button.add label
+    |> Button.add ~is_text:true label
   in
   let exclude =
     experiment.Experiment.language

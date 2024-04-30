@@ -297,9 +297,9 @@
     lodash-es "^4.17.15"
 
 "@econ/frontend-framework@^3.4.1":
-  version "3.6.1"
-  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-3.6.1.tgz#f261400fec5b7bf5e254534a849952d207967a3a"
-  integrity sha1-8mFAD+xbe/XiVFNKhJlS0geWejo=
+  version "3.6.2"
+  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-3.6.2.tgz#51820171a9026ceed8041e8d48f8e7679a523455"
+  integrity sha1-UYIBcakCbO7YBB6NSPjnZ5pSNFU=
   dependencies:
     flatpickr "^4.6.13"
 
@@ -1772,9 +1772,9 @@ htmlparser2@^7.1.1:
     entities "^3.0.1"
 
 htmx.org@^1.6.0:
-  version "1.9.11"
-  resolved "https://registry.yarnpkg.com/htmx.org/-/htmx.org-1.9.11.tgz#00192041ee682d6ca7146d0fbd901169ffe72d87"
-  integrity sha512-WlVuICn8dfNOOgYmdYzYG8zSnP3++AdHkMHooQAzGZObWpVXYathpz/I37ycF4zikR6YduzfCvEcxk20JkIUsw==
+  version "1.9.12"
+  resolved "https://registry.yarnpkg.com/htmx.org/-/htmx.org-1.9.12.tgz#1c5bc7fb4d3eb4e8c0d72323dc774a6b9b66addc"
+  integrity sha512-VZAohXyF7xPGS52IM8d1T1283y+X4D+Owf3qY1NZ9RuBypyu9l8cGsxUMAG5fEAb/DhT7rDoJ9Hpu5/HxFD3cw==
 
 ieee754@^1.2.1:
   version "1.2.1"
