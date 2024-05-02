@@ -245,11 +245,16 @@ let () =
             "create experiment without title"
             `Quick
             Experiment_test.create_without_title
+        ; test_case "create survey url" `Quick Experiment_test.create_survey_url
         ; test_case "update experiment" `Quick Experiment_test.update
         ; test_case
             "add ou and contact person"
             `Quick
             Experiment_test.update_add_ou_and_contact_person
+        ; test_case
+            "update with existing sessions"
+            `Quick
+            Experiment_test.update_with_existing_sessions
         ; test_case "remove ou" `Quick Experiment_test.update_remove_ou
         ; test_case
             "delete experiment with sessions"
@@ -561,5 +566,7 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
+    ; ( "time window"
+      , Time_window_test.[ test_case "create" `Slow create_timewindow ] )
     ]
 ;;

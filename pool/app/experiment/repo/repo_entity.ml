@@ -89,34 +89,23 @@ module InvitationResetAt = struct
   let t = Common.make_caqti_type Caqti_type.ptime create value
 end
 
+module OnlineExperimentRepo = struct
+  type t =
+    { assignment_without_session : AssignmentWithoutSession.t
+    ; survey_url : SurveyUrl.t option
+    }
+
+  let t =
+    let encode m = Ok (m.assignment_without_session, m.survey_url) in
+    let decode (assignment_without_session, survey_url) =
+      Ok { assignment_without_session; survey_url }
+    in
+    Caqti_type.(custom ~encode ~decode (t2 bool (option string)))
+  ;;
+end
+
 let t =
-  let encode (m : t) =
-    Ok
-      ( m.id
-      , ( m.title
-        , ( m.public_title
-          , ( m.internal_description
-            , ( m.public_description
-              , ( m.language
-                , ( m.cost_center
-                  , ( m.contact_email
-                    , ( m.smtp_auth_id
-                      , ( m.direct_registration_disabled
-                        , ( m.registration_disabled
-                          , ( m.allow_uninvited_signup
-                            , ( m.external_data_required
-                              , ( m.show_external_data_id_links
-                                , ( m.experiment_type
-                                  , ( m.email_session_reminder_lead_time
-                                    , ( m.text_message_session_reminder_lead_time
-                                      , ( m.invitation_reset_at
-                                        , ( m.matcher_notification_sent
-                                          , ( m.created_at
-                                            , ( m.updated_at
-                                              , (m.filter, m.organisational_unit)
-                                              ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-            ) ) ) )
-  in
+  let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
   let decode
     ( id
     , ( title
@@ -133,16 +122,22 @@ let t =
                           , ( external_data_required
                             , ( show_external_data_id_links
                               , ( experiment_type
-                                , ( email_session_reminder_lead_time
-                                  , ( text_message_session_reminder_lead_time
-                                    , ( invitation_reset_at
-                                      , ( matcher_notification_sent
-                                        , ( created_at
-                                          , ( updated_at
-                                            , (filter, organisational_unit) ) )
-                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                , ( OnlineExperimentRepo.
+                                      { assignment_without_session; survey_url }
+                                  , ( email_session_reminder_lead_time
+                                    , ( text_message_session_reminder_lead_time
+                                      , ( invitation_reset_at
+                                        , ( matcher_notification_sent
+                                          , ( created_at
+                                            , ( updated_at
+                                              , (filter, organisational_unit) )
+                                            ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+        ) ) )
     =
     let open CCResult in
+    let online_experiment =
+      OnlineExperiment.create_opt ~assignment_without_session ~survey_url
+    in
     Ok
       { id
       ; title
@@ -161,6 +156,7 @@ let t =
       ; external_data_required
       ; show_external_data_id_links
       ; experiment_type
+      ; online_experiment
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
       ; invitation_reset_at
@@ -205,33 +201,37 @@ let t =
                                                 (t2
                                                    (option ExperimentType.t)
                                                    (t2
-                                                      (option
-                                                         Reminder.EmailLeadTime
-                                                         .t)
+                                                      OnlineExperimentRepo.t
                                                       (t2
                                                          (option
                                                             Reminder
-                                                            .TextMessageLeadTime
+                                                            .EmailLeadTime
                                                             .t)
                                                          (t2
                                                             (option
-                                                               InvitationResetAt
+                                                               Reminder
+                                                               .TextMessageLeadTime
                                                                .t)
                                                             (t2
-                                                               bool
+                                                               (option
+                                                                  InvitationResetAt
+                                                                  .t)
                                                                (t2
-                                                                  CreatedAt.t
+                                                                  bool
                                                                   (t2
-                                                                     UpdatedAt.t
+                                                                     CreatedAt.t
                                                                      (t2
-                                                                        (option
-                                                                           Filter
-                                                                           .Repo
-                                                                           .t)
-                                                                        (option
-                                                                           Organisational_unit
-                                                                           .Repo
-                                                                           .t))))))))))))))))))))))))
+                                                                        UpdatedAt
+                                                                        .t
+                                                                        (t2
+                                                                           (option
+                                                                              Filter
+                                                                              .Repo
+                                                                              .t)
+                                                                           (option
+                                                                              Organisational_unit
+                                                                              .Repo
+                                                                              .t)))))))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -241,6 +241,13 @@ module Write = struct
       let organisational_unit =
         m.organisational_unit
         |> CCOption.map (fun ou -> ou.Organisational_unit.id)
+      in
+      let online_experiment =
+        let open OnlineExperimentRepo in
+        match m.online_experiment with
+        | None -> { assignment_without_session = false; survey_url = None }
+        | Some { OnlineExperiment.survey_url } ->
+          { assignment_without_session = true; survey_url = Some survey_url }
       in
       Ok
         ( m.id
@@ -260,12 +267,14 @@ module Write = struct
                                   , ( m.external_data_required
                                     , ( m.show_external_data_id_links
                                       , ( m.experiment_type
-                                        , ( m.email_session_reminder_lead_time
-                                          , ( m
-                                                .text_message_session_reminder_lead_time
-                                            , ( m.invitation_reset_at
-                                              , m.matcher_notification_sent ) )
-                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                        , ( online_experiment
+                                          , ( m.email_session_reminder_lead_time
+                                            , ( m
+                                                  .text_message_session_reminder_lead_time
+                                              , ( m.invitation_reset_at
+                                                , m.matcher_notification_sent )
+                                              ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+            ) ) )
     in
     let decode _ = failwith "Write only model" in
     let open Common in
@@ -310,20 +319,23 @@ module Write = struct
                                                            (option
                                                               ExperimentType.t)
                                                            (t2
-                                                              (option
-                                                                 Reminder
-                                                                 .EmailLeadTime
-                                                                 .t)
+                                                              OnlineExperimentRepo
+                                                              .t
                                                               (t2
                                                                  (option
                                                                     Reminder
-                                                                    .TextMessageLeadTime
+                                                                    .EmailLeadTime
                                                                     .t)
                                                                  (t2
                                                                     (option
-                                                                       InvitationResetAt
+                                                                       Reminder
+                                                                       .TextMessageLeadTime
                                                                        .t)
-                                                                    bool)))))))))))))))))))))
+                                                                    (t2
+                                                                       (option
+                                                                          InvitationResetAt
+                                                                          .t)
+                                                                       bool))))))))))))))))))))))
   ;;
 end
 
@@ -331,23 +343,21 @@ module Public = struct
   open Entity.Public
 
   let t =
-    let encode (m : t) =
-      Ok
-        ( m.id
-        , ( m.public_title
-          , ( m.description
-            , ( m.language
-              , ( m.direct_registration_disabled
-                , (m.experiment_type, m.smtp_auth_id) ) ) ) ) )
-    in
+    let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
     let decode
       ( id
       , ( public_title
         , ( description
           , ( language
-            , (direct_registration_disabled, (experiment_type, smtp_auth_id)) )
-          ) ) )
+            , ( direct_registration_disabled
+              , ( experiment_type
+                , ( smtp_auth_id
+                  , OnlineExperimentRepo.
+                      { assignment_without_session; survey_url } ) ) ) ) ) ) )
       =
+      let online_experiment =
+        OnlineExperiment.create_opt ~assignment_without_session ~survey_url
+      in
       Ok
         { id
         ; public_title
@@ -356,6 +366,7 @@ module Public = struct
         ; direct_registration_disabled
         ; experiment_type
         ; smtp_auth_id
+        ; online_experiment
         }
     in
     Caqti_type.(
@@ -374,7 +385,9 @@ module Public = struct
                        DirectRegistrationDisabled.t
                        (t2
                           (option Common.ExperimentType.t)
-                          (option Email.SmtpAuth.RepoEntity.Id.t))))))))
+                          (t2
+                             (option Email.SmtpAuth.RepoEntity.Id.t)
+                             OnlineExperimentRepo.t))))))))
   ;;
 end
 

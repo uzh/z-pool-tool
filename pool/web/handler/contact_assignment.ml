@@ -32,13 +32,10 @@ let create req =
            session
        in
        let%lwt already_enrolled =
-         let open Utils.Lwt_result.Infix in
-         Assignment.find_all_public_by_experiment_and_contact_opt
+         Assignment.assignment_to_experiment_exists
            database_label
-           experiment.Experiment.id
+           experiment_id
            contact
-         ||> CCList.is_empty
-         ||> not
        in
        let events =
          let open Cqrs_command.Assignment_command.Create in

@@ -14,6 +14,7 @@ let boolean_fields =
 ;;
 
 module Data = struct
+  let callbackUrl = Pool_common.Message.Field.(show CallbackUrl)
   let organisational_unit = Test_utils.Model.create_organisational_unit ()
 
   let contact_person =
@@ -35,7 +36,17 @@ module Data = struct
   let allow_uninvited_signup = "false"
   let external_data_required = "false"
   let show_external_data_id_links = "false"
+
+  let survey_url =
+    Format.asprintf "https://www.survey-url.ch?callbackUrl={callbackUrl}"
+  ;;
+
   let experiment_type = Pool_common.ExperimentType.(show Lab)
+
+  let online_experiment =
+    let open Experiment in
+    { OnlineExperiment.survey_url = SurveyUrl.of_string survey_url }
+  ;;
 
   let urlencoded =
     Pool_common.Message.
@@ -52,6 +63,13 @@ module Data = struct
       ; Field.(show ExternalDataRequired), [ external_data_required ]
       ; Field.(show ShowExteralDataIdLinks), [ show_external_data_id_links ]
       ; Field.(show ExperimentType), [ experiment_type ]
+      ]
+  ;;
+
+  let online_experiment_urlencoded =
+    Pool_common.Message.
+      [ Field.(show AssignmentWithoutSession), [ "true" ]
+      ; Field.(show SurveyUrl), [ survey_url ]
       ]
   ;;
 
@@ -160,6 +178,51 @@ let create_without_title () =
   Test_utils.check_result expected events
 ;;
 
+let create_survey_url () =
+  let open Experiment in
+  let open Pool_common.Message in
+  let survey_url = Alcotest.testable SurveyUrl.pp SurveyUrl.equal in
+  let check ?(msg = "succeeds") =
+    Alcotest.(check (result survey_url Test_utils.error) msg)
+  in
+  let callbackUrl =
+    Format.asprintf "{%s}" Pool_common.Message.Field.(show CallbackUrl)
+  in
+  let ok =
+    [ [%string {sql|https://www.domain.com/foo?callback=%{callbackUrl}|sql}]
+    ; [%string
+        {sql|https://www.domain.com/foo?contactId=123123&%callback=%{callbackUrl}|sql}]
+    ; [%string {sql|https://www.domain.com?callback=%{callbackUrl}|sql}]
+    ; [%string {sql|https://www.domain.com?callbackUrl=%{callbackUrl}|sql}]
+    ]
+  in
+  let missing_callback =
+    [ "https://www.domain.com"
+    ; "https://www.domain.com/foo?contactId=123123"
+    ; "http://www.domain.com&callback=%{callbackUrl}"
+    ]
+  in
+  let invalid = [ "www.domain.com"; ""; "/experiment/123123" ] in
+  let run_test expected url =
+    let result = Experiment.SurveyUrl.create url in
+    check expected result
+  in
+  let () =
+    ok
+    |> CCList.iter (fun url ->
+      let expected = Ok (SurveyUrl.of_string url) in
+      run_test expected url)
+  in
+  let () =
+    missing_callback
+    |> CCList.iter (run_test (Error (FieldRequired Field.CallbackUrl)))
+  in
+  let () =
+    invalid |> CCList.iter (run_test (Error (Invalid Field.SurveyUrl)))
+  in
+  ()
+;;
+
 let update () =
   let experiment = Data.experiment |> get_exn in
   let open CCResult.Infix in
@@ -167,7 +230,7 @@ let update () =
     Data.urlencoded
     |> Http_utils.format_request_boolean_values boolean_fields
     |> ExperimentCommand.Update.decode
-    >>= handle_update experiment
+    >>= handle_update ~session_count:0 experiment
   in
   let expected =
     Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
@@ -182,7 +245,10 @@ let update_add_ou_and_contact_person () =
     Data.urlencoded
     |> Http_utils.format_request_boolean_values boolean_fields
     |> ExperimentCommand.Update.decode
-    >>= handle_update ~organisational_unit:Data.organisational_unit experiment
+    >>= handle_update
+          ~session_count:0
+          ~organisational_unit:Data.organisational_unit
+          experiment
   in
   let expected =
     Ok
@@ -193,6 +259,50 @@ let update_add_ou_and_contact_person () =
             }
           |> Pool_event.experiment
         ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let update_with_existing_sessions () =
+  let experiment = Data.experiment |> get_exn in
+  let online_experiment =
+    let open Experiment in
+    { experiment with online_experiment = Some Data.online_experiment }
+  in
+  let open CCResult.Infix in
+  let session_count = 1 in
+  let make_events urlencoded experiment =
+    urlencoded
+    |> Http_utils.format_request_boolean_values boolean_fields
+    |> ExperimentCommand.Update.decode
+    >>= handle_update ~session_count experiment
+  in
+  (* offline experiment *)
+  let events = make_events Data.urlencoded experiment in
+  let expected =
+    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
+  in
+  Test_utils.check_result expected events;
+  let events =
+    make_events Data.(urlencoded @ online_experiment_urlencoded) experiment
+  in
+  let expected =
+    Error Pool_common.Message.(CannotBeUpdated Field.AssignmentWithoutSession)
+  in
+  Test_utils.check_result expected events;
+  (* online experiment *)
+  let events = make_events Data.urlencoded online_experiment in
+  let expected =
+    Error Pool_common.Message.(CannotBeUpdated Field.AssignmentWithoutSession)
+  in
+  Test_utils.check_result expected events;
+  let events =
+    make_events
+      Data.(urlencoded @ online_experiment_urlencoded)
+      online_experiment
+  in
+  let expected =
+    Ok [ Experiment.Updated online_experiment |> Pool_event.experiment ]
   in
   Test_utils.check_result expected events
 ;;
@@ -208,7 +318,7 @@ let update_remove_ou () =
     Data.urlencoded
     |> Http_utils.format_request_boolean_values boolean_fields
     |> ExperimentCommand.Update.decode
-    >>= handle_update experiment
+    >>= handle_update ~session_count:0 experiment
   in
   let expected =
     Ok
@@ -312,6 +422,7 @@ module AvailableExperiments = struct
   let contact_id = Pool_common.Id.create ()
   let experiment_id = Experiment.Id.create ()
   let session_id = Session.Id.create ()
+  let time_window_id = Session.Id.create ()
 
   let list_available_experiments _ () =
     let open Utils.Lwt_result.Infix in
@@ -319,19 +430,53 @@ module AvailableExperiments = struct
     let%lwt contact =
       ContactRepo.create ~id:contact_id ~with_terms_accepted:true ()
     in
-    let%lwt experiment = ExperimentRepo.create ~id:experiment_id () in
-    let%lwt () =
-      Invitation.(
-        Created { contacts = [ contact ]; mailing = None; experiment })
-      |> Pool_event.invitation
-      |> Pool_event.handle_event database_label
+    let%lwt on_site_experiment = ExperimentRepo.create ~id:experiment_id () in
+    let%lwt online_experiment =
+      ExperimentRepo.create ~online_experiment:Data.online_experiment ()
     in
-    let%lwt res =
-      (* Expect the experiment to be found *)
+    let%lwt _ =
+      Integration_utils.SessionRepo.create ~id:session_id on_site_experiment ()
+    in
+    let%lwt (_ : Time_window.t) =
+      let open Test_utils.Model in
+      TimeWindowRepo.create
+        ~id:time_window_id
+        (an_hour_ago ())
+        (Session.Duration.create two_hours |> get_exn)
+        online_experiment
+        ()
+    in
+    let%lwt () =
+      let invitation experiment =
+        Invitation.(
+          Created { contacts = [ contact ]; mailing = None; experiment })
+        |> Pool_event.invitation
+      in
+      [ on_site_experiment; online_experiment ]
+      |> CCList.map invitation
+      |> Pool_event.handle_events database_label
+    in
+    let find_experiment experiment experiment_type =
       let public = experiment |> Experiment.to_public in
-      Experiment.find_all_public_by_contact database_label contact
+      Experiment.find_upcoming_to_register
+        database_label
+        contact
+        experiment_type
       ||> CCList.find_opt (Experiment.Public.equal public)
       ||> CCOption.is_some
+    in
+    let%lwt res =
+      (* Expect the onsite expteriment to be found *)
+      let%lwt onsite_found = find_experiment on_site_experiment `OnSite in
+      let%lwt online_found = find_experiment online_experiment `OnSite in
+      Lwt.return (onsite_found && not online_found)
+    in
+    let () = Alcotest.(check bool "succeeds" true res) in
+    let%lwt res =
+      (* Expect the online experiment to be found *)
+      let%lwt onsite_found = find_experiment on_site_experiment `Online in
+      let%lwt online_found = find_experiment online_experiment `Online in
+      Lwt.return ((not onsite_found) && online_found)
     in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
@@ -343,9 +488,7 @@ module AvailableExperiments = struct
       Experiment.find database_label experiment_id ||> get_exn
     in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
-    let%lwt session =
-      Integration_utils.SessionRepo.create ~id:session_id experiment ()
-    in
+    let%lwt session = Session.find database_label session_id ||> get_exn in
     let%lwt (_ : Assignment.t) =
       Integration_utils.AssignmentRepo.create session contact
     in
@@ -353,7 +496,7 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after registration for a
          session *)
       let open Experiment in
-      find_all_public_by_contact database_label contact
+      find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (fun public ->
         Id.equal (Public.id public) experiment.id)
       ||> CCOption.is_none
@@ -386,7 +529,7 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after session cancellation to
          enable reregistration of contact *)
       let open Experiment in
-      find_all_public_by_contact database_label contact
+      find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
@@ -423,7 +566,7 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after session cancellation to
          enable reregistration of contact *)
       let open Experiment in
-      find_all_public_by_contact database_label contact
+      find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in

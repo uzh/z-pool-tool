@@ -14,6 +14,12 @@ module Start = struct
   let t = Caqti_type.ptime
 end
 
+module End = struct
+  include Entity.End
+
+  let t = Caqti_type.ptime
+end
+
 module Duration = struct
   include Entity.Duration
 
@@ -473,7 +479,7 @@ module Calendar = struct
         ) )
       =
       let* end_ =
-        Entity.End.create start duration
+        Entity.End.build start duration
         |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
       in
       let links = Entity.Calendar.create_links experiment_id id location in

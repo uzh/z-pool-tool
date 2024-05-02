@@ -287,7 +287,7 @@ module Update : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Session.t
+    -> [ `Session of Session.t | `TimeWindow of Time_window.t ]
     -> Assignment.t
     -> bool
     -> t
@@ -302,7 +302,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (experiment : Experiment.t)
-    ({ Session.closed_at; _ } as session)
+    session
     ({ Assignment.no_show; participated; _ } as assignment)
     participated_in_other_assignments
     (command : update)
@@ -310,15 +310,33 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let open Assignment in
+    let current_values, updated_values =
+      let open Contact_counter in
+      let current_values =
+        match session with
+        | `Session { Session.closed_at; _ } ->
+          (match CCOption.is_some closed_at, no_show, participated with
+           | true, Some no_show, Some participated ->
+             Some { no_show; participated }
+           | _, _, _ -> None)
+        | `TimeWindow _ ->
+          (match no_show, participated with
+           | Some no_show, Some participated -> Some { no_show; participated }
+           | _, _ -> None)
+      in
+      let updated_values =
+        { no_show = command.no_show; participated = command.participated }
+      in
+      current_values, updated_values
+    in
     let contact_counters =
-      match CCOption.is_some closed_at, no_show, participated with
-      | true, Some no_show, Some _ ->
+      match current_values with
+      | Some current_values ->
         Contact_counter.update_on_assignment_update
           assignment
-          session
-          no_show
-          command.no_show
-          participated_in_other_assignments
+          ~current_values
+          ~updated_values
+          ~participated_in_other_assignments
         |> Contact.updated
         |> Pool_event.contact
         |> CCList.return
@@ -596,4 +614,136 @@ end = struct
   ;;
 
   let effects id = Session.Guard.Access.update id
+end
+
+module OnlineSurvey = struct
+  module Create : sig
+    include Common.CommandSig
+
+    type t =
+      { contact : Contact.t
+      ; time_window : Time_window.t
+      ; experiment : Experiment.Public.t
+      }
+
+    val handle
+      :  ?tags:Logs.Tag.set
+      -> ?id:Assignment.Id.t
+      -> t
+      -> (Pool_event.t list, Pool_common.Message.error) result
+
+    val effects : Experiment.Id.t -> Guard.ValidationSet.t
+  end = struct
+    type t =
+      { contact : Contact.t
+      ; time_window : Time_window.t
+      ; experiment : Experiment.Public.t
+      }
+
+    let handle ?(tags = Logs.Tag.empty) ?id { contact; time_window; experiment }
+      =
+      Logs.info ~src (fun m -> m "Handle command OnlineSurvey.Create" ~tags);
+      let open CCResult in
+      let open Pool_common.Message in
+      let* () =
+        if Contact.is_inactive contact then Error ContactIsInactive else Ok ()
+      in
+      let* () =
+        let open Experiment in
+        experiment
+        |> Public.direct_registration_disabled
+        |> DirectRegistrationDisabled.value
+        |> Utils.bool_to_result_not DirectRegistrationIsDisabled
+      in
+      let assignment_event =
+        let open Assignment in
+        (create ?id contact, time_window.Time_window.id)
+        |> created
+        |> Pool_event.assignment
+      in
+      let contact_event =
+        let open Contact in
+        update_num_assignments ~step:1 contact |> updated |> Pool_event.contact
+      in
+      Ok [ assignment_event; contact_event ]
+    ;;
+
+    let effects = Assignment.Guard.Access.create
+  end
+
+  type submit = { external_data_id : Assignment.ExternalDataId.t option }
+
+  module Submit : sig
+    include Common.CommandSig
+
+    type t = submit
+
+    val decode
+      :  (string * string list) list
+      -> (t, Pool_common.Message.error) result
+
+    val handle
+      :  ?tags:Logs.Tag.set
+      -> Assignment.t
+      -> t
+      -> (Pool_event.t list, Pool_common.Message.error) result
+
+    val effects : Experiment.Id.t -> Guard.ValidationSet.t
+  end = struct
+    type t = submit
+
+    let command external_data_id = { external_data_id }
+
+    let schema =
+      let open Assignment in
+      Conformist.(
+        make Field.[ Conformist.optional @@ ExternalDataId.schema () ] command)
+    ;;
+
+    let decode data =
+      Conformist.decode_and_validate schema data
+      |> CCResult.map_err Pool_common.Message.to_conformist_error
+    ;;
+
+    let handle
+      ?(tags = Logs.Tag.empty)
+      ({ Assignment.contact; participated; marked_as_deleted; _ } as assignment)
+      ({ external_data_id } : t)
+      =
+      Logs.info ~src (fun m -> m "Handle command OnlineSurvey.Submit" ~tags);
+      let open CCResult in
+      let open Assignment in
+      let open Pool_common in
+      let* () =
+        if MarkedAsDeleted.value marked_as_deleted
+        then Error Message.(NotFound Field.Assignment)
+        else Ok ()
+      in
+      let* () =
+        if CCOption.is_some participated
+        then Error Message.AssignmentAlreadySubmitted
+        else Ok ()
+      in
+      let assignment_event =
+        { assignment with
+          external_data_id
+        ; no_show = Some (NoShow.create false)
+        ; participated = Some (Participated.create true)
+        }
+        |> updated
+        |> Pool_event.assignment
+      in
+      let contact_event =
+        let open Contact in
+        contact
+        |> update_num_participations ~step:1
+        |> update_num_show_ups ~step:1
+        |> updated
+        |> Pool_event.contact
+      in
+      Ok [ assignment_event; contact_event ]
+    ;;
+
+    let effects = Assignment.Guard.Access.create
+  end
 end

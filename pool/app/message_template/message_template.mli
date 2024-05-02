@@ -324,7 +324,6 @@ module ExperimentInvitation : sig
   val email_params
     :  email_layout
     -> Experiment.t
-    -> Pool_tenant.Url.t
     -> Contact.t
     -> (string * string) list
 

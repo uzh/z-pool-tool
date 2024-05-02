@@ -22,6 +22,7 @@
   sihl
   tags
   tenant
+  time_window
   tyxml
   utils
   version

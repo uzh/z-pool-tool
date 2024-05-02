@@ -44,6 +44,7 @@ let to_string = function
   | ExperimentListEmpty ->
     "Currently, there are no experiments you can participate in."
   | ExperimentListPublicTitle -> "Registering for experiment sessions"
+  | ExperimentOnlineListPublicTitle -> "Available online surveys"
   | ExperimentListTitle -> "Experiments"
   | ExperimentMessagingSubtitle -> "Identities"
   | ExperimentNewTitle -> "Create new experiment"
@@ -64,6 +65,7 @@ let to_string = function
     "Number of contacts meeting the criteria of this filter:"
   | FilterNrOfSentInvitations -> "Number of contacts already invited:"
   | FollowUpSessionFor -> "Follow-up for:"
+  | Help -> "Help"
   | ImportConfirmationNote ->
     "Please enter a new password. The rest of your data has been automatically \
      taken over."
@@ -152,6 +154,7 @@ let to_string = function
     "We have recently changed our terms and conditions. Please read and accept \
      them to continue."
   | TextTemplates -> "text templates"
+  | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
   | UpcomingSessionsTitle -> "Your upcoming sessions"
@@ -203,6 +206,7 @@ let nav_link_to_string = function
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "Text messages"
+  | TimeWindows -> "Time windows"
   | Users -> "Users"
   | WaitingList -> "Waiting list"
 ;;
@@ -229,6 +233,9 @@ When inviting contacts, the filter will prefer the overriding value if both are 
       (match count with
       | 1 -> "1 Kontakt erfüllt"
       | count -> Format.asprintf "%i Kontakte erfüllen" count)
+  | AssignmentWithoutSession ->
+    "Activate this option if participation in the experiment is not tied to a \
+     session, e.g. in an online survey."
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
@@ -325,6 +332,10 @@ Make sure to show links and URLs as plain text.
   | ExperimentAssignment ->
     "All assignments of contacts to sessions of this experiment, sorted by \
      session."
+  | ExperimentCallbackUrl ->
+    "Participants in an online survey should be redirected to this URL after \
+     completing the survey so that the assignment can be completed. If the \
+     contact is not redirected, the participated flag will not be set."
   | ExperimentContactPerson default ->
     Format.asprintf
       "This email address will be used as 'reply-to' address for all \
@@ -374,6 +385,12 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
     "Contacts that have been invited to this experiment and have placed \
      themselves on the waiting list. They have to be manually assigned to a \
      session."
+  | ExperumentSurveyRedirectUrl ->
+    "<strong>Use for online surveys only.</strong> This URL creates an \
+     assignment for the experiment and forwards the contact directly to the \
+     URL of the online survey. Alternatively, {experimentUrl} can be used, \
+     with the difference that the contact must also confirm the participation \
+     and forwarding."
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
@@ -465,6 +482,16 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | NumberIsWeeksHint -> "Nr. of weeks"
   | NumberMax i -> error_to_string (Entity_message.NumberMax i)
   | NumberMin i -> error_to_string (Entity_message.NumberMin i)
+  | OnlineExperiment ->
+    Format.asprintf
+      "Instead of sessions, you can define time windows in which you can take \
+       part in the survey. Under %s, enter the external URL of the survey to \
+       which the contacts should be forwarded."
+      (Locales_en.field_to_string Entity_message_field.SurveyUrl)
+  | OnlineExperimentParticipationDeadline end_at ->
+    Format.asprintf
+      "You can participate in this experiment until %s."
+      (Utils_time.formatted_date_time end_at)
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
@@ -600,6 +627,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
     {|Changing the session will only change the session of this assignment. If follow-up assignments exists, they must be updated manually.
 
 Only sessions with open spots can be selected.|}
+  | SurveyUrl ->
+    "A URL incl. protocol. The url parameter 'callbackUrl' is required. E.g: \
+     https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | TagsIntro ->
     "The defined tags can be added to several types (e.g. contacts). The tags \
      can be used by the experiment filter to eighter include or exclude them."

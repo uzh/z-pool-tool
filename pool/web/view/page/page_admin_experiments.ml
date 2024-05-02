@@ -295,7 +295,9 @@ let index (Pool_context.{ language; _ } as context) experiments query =
 
 let experiment_form
   ?experiment
+  ?session_count
   Pool_context.{ language; csrf; _ }
+  tenant
   organisational_units
   smtp_auth_list
   default_sender
@@ -306,6 +308,9 @@ let experiment_form
   =
   let open Pool_common in
   let context_language = language in
+  let has_sessions =
+    session_count |> CCOption.map_or ~default:false (fun count -> count > 0)
+  in
   let open Experiment in
   let action =
     match experiment with
@@ -315,11 +320,13 @@ let experiment_form
         "/admin/experiments/%s"
         (experiment.id |> Experiment.Id.value)
   in
-  let checkbox_element ?hints ?(default = false) field fnc =
+  let checkbox_element ?hints ?(default = false) ?disabled ?read_only field fnc =
     checkbox_element
       context_language
       ?hints
       field
+      ?disabled
+      ?read_only
       ~value:(experiment |> CCOption.map_or ~default fnc)
       ~flash_fetcher
   in
@@ -335,6 +342,43 @@ let experiment_form
       ~add_empty:true
       ~flash_fetcher
       ()
+  in
+  let time_window_subform =
+    let text_elements =
+      let open Component.MessageTextElements in
+      let hints = online_survey_hints in
+      online_survey_help tenant ?experiment ()
+      |> build_help ~hints context_language
+    in
+    let hint =
+      p [ txt (Utils.hint_to_string context_language I18n.OnlineExperiment) ]
+    in
+    div
+      ~a:
+        [ a_id "time-window"
+        ; a_class
+            [ "full-width"
+            ; "flexcolumn"
+            ; "hidden"
+            ; "border"
+            ; "inset"
+            ; "bg-grey-light"
+            ]
+        ]
+      [ div
+          ~a:[ a_class [ "flexcolumn"; "stack" ] ]
+          [ hint
+          ; text_elements
+          ; input_element
+              ~hints:[ I18n.SurveyUrl ]
+              ~required:true
+              ?value:(CCOption.bind experiment survey_url_value)
+              ~flash_fetcher
+              context_language
+              `Text
+              Field.SurveyUrl
+          ]
+      ]
   in
   let language_select =
     let open Language in
@@ -395,6 +439,32 @@ let experiment_form
       ~add_empty:has_options
       ~disabled:(not has_options)
       ()
+  in
+  let scripts =
+    Format.asprintf
+      {js|
+      const selector = document.getElementById('%s');
+      const directRegistrationDisabled = document.getElementById('%s');
+      const timeWindow = document.getElementById('time-window');
+      const inputs = [...timeWindow.querySelectorAll('input')];
+      const reminder = document.getElementById('session-reminder');
+      const toggle = () => {
+        if(selector.checked) {
+          timeWindow.classList.remove("hidden");
+          reminder.classList.add("hidden");
+          directRegistrationDisabled.checked = false;
+        } else {
+          timeWindow.classList.add("hidden");
+          reminder.classList.remove("hidden");
+        }
+        inputs.forEach( input => input.disabled = !selector.checked);
+        directRegistrationDisabled.disabled = selector.checked;
+      }
+      selector.addEventListener('change', (e) => toggle())
+      toggle();
+    |js}
+      Field.(show AssignmentWithoutSession)
+      Field.(show DirectRegistrationDisabled)
   in
   form
     ~a:
@@ -484,6 +554,14 @@ let experiment_form
         ; div
             ~a:[ a_class [ "stack" ] ]
             [ checkbox_element
+                ~hints:[ I18n.AssignmentWithoutSession ]
+                ~read_only:has_sessions
+                Field.AssignmentWithoutSession
+                assignment_without_session_value
+            ; time_window_subform
+            ; checkbox_element
+                ?disabled:
+                  (CCOption.map assignment_without_session_value experiment)
                 ~hints:[ I18n.DirectRegistrationDisbled ]
                 Field.DirectRegistrationDisabled
                 direct_registration_disabled_value
@@ -504,6 +582,7 @@ let experiment_form
                 show_external_data_id_links_value
             ]
         ; div
+            ~a:[ a_id "session-reminder" ]
             [ h3
                 ~a:[ a_class [ "heading-3" ] ]
                 [ txt
@@ -553,11 +632,13 @@ let experiment_form
                 ()
             ]
         ]
+    ; script (Unsafe.data scripts)
     ]
 ;;
 
 let create
   (Pool_context.{ language; _ } as context)
+  tenant
   organisational_units
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
@@ -577,6 +658,7 @@ let create
         ]
     ; experiment_form
         context
+        tenant
         organisational_units
         smtp_auth_list
         default_sender
@@ -589,8 +671,10 @@ let create
 
 let edit
   ?(allowed_to_assign = false)
+  ~session_count
   experiment
   ({ Pool_context.language; csrf; query_language; _ } as context)
+  tenant
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
   organisational_units
@@ -604,7 +688,9 @@ let edit
   let form =
     experiment_form
       ~experiment
+      ~session_count
       context
+      tenant
       organisational_units
       smtp_auth_list
       default_sender
@@ -695,6 +781,7 @@ let detail
       (Experiment.Guard.Access.update_permission_on_target experiment_id)
       guardian
   in
+  let field_to_string = Utils.field_to_string_capitalized language in
   let notifications =
     notifications
       ~can_update_experiment
@@ -795,7 +882,7 @@ let detail
           [ h2
               ~a:[ a_class [ "heading-2" ] ]
               [ txt
-                  (Utils.field_to_string language Message.Field.Settings
+                  (field_to_string Message.Field.Settings
                    |> CCString.capitalize_ascii)
               ]
           ; reset_invitation_form
@@ -819,6 +906,22 @@ let detail
       let open Experiment in
       let boolean_value fnc = fnc experiment |> bool_to_string |> txt in
       let default = "" in
+      let online_experiment =
+        match experiment.online_experiment with
+        | None -> Field.OnlineExperiment, txt (bool_to_string false)
+        | Some { OnlineExperiment.survey_url } ->
+          ( Field.OnlineExperiment
+          , div
+              ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ]
+              [ div
+                  [ txt
+                      (Format.asprintf
+                         "%s: %s"
+                         (field_to_string Field.SurveyUrl)
+                         (SurveyUrl.value survey_url))
+                  ]
+              ] )
+      in
       Message.
         [ ( Field.PublicTitle
           , experiment |> public_title |> PublicTitle.value |> txt )
@@ -867,6 +970,7 @@ let detail
                  ~default
                  Email.SmtpAuth.(fun auth -> auth.label |> Label.value)
             |> txt )
+        ; online_experiment
         ; ( Field.DirectRegistrationDisabled
           , direct_registration_disabled_value |> boolean_value )
         ; ( Field.RegistrationDisabled

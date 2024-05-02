@@ -1,3 +1,4 @@
+module Assignment = Page_contact_assignment
 module Experiment = Page_contact_experiment
 module Location = Page_contact_location
 

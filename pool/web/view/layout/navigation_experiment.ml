@@ -33,9 +33,13 @@ let nav_elements experiment =
   let id = experiment |> id in
   let target_uuid = Uuid.target_of Id.value id in
   let url = experiment_url id in
+  let sessions_label =
+    if Experiment.is_sessionless experiment then TimeWindows else Sessions
+  in
   let left =
     [ Single (url "", Overview, Set (Guard.Access.read id))
-    ; Single (url "sessions", Sessions, Set (Session.Guard.Access.index id))
+    ; Single
+        (url "sessions", sessions_label, Set (Session.Guard.Access.index id))
     ; Parent
         ( None
         , Invitations

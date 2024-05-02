@@ -27,6 +27,8 @@ let default_command
   external_data_required
   show_external_data_id_links
   experiment_type
+  assignment_without_session
+  survey_url
   email_session_reminder_lead_time
   email_session_reminder_lead_time_unit
   text_message_session_reminder_lead_time
@@ -46,6 +48,8 @@ let default_command
   ; external_data_required
   ; show_external_data_id_links
   ; experiment_type
+  ; assignment_without_session
+  ; survey_url
   ; email_session_reminder_lead_time
   ; email_session_reminder_lead_time_unit
   ; text_message_session_reminder_lead_time
@@ -66,6 +70,8 @@ let create_command
   external_data_required
   show_external_data_id_links
   experiment_type
+  assignment_without_session
+  survey_url
   email_session_reminder_lead_time
   email_session_reminder_lead_time_unit
   text_message_session_reminder_lead_time
@@ -84,6 +90,8 @@ let create_command
     external_data_required
     show_external_data_id_links
     experiment_type
+    assignment_without_session
+    survey_url
     email_session_reminder_lead_time
     email_session_reminder_lead_time_unit
     text_message_session_reminder_lead_time
@@ -108,6 +116,8 @@ let update_schema command =
         ; ExternalDataRequired.schema ()
         ; ShowExternalDataIdLinks.schema ()
         ; opt @@ ExperimentType.schema ()
+        ; AssignmentWithoutSession.schema ()
+        ; opt @@ SurveyUrl.schema ()
         ; opt @@ Reminder.EmailLeadTime.integer_schema ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
         ; opt @@ Reminder.TextMessageLeadTime.integer_schema ()
@@ -134,6 +144,8 @@ let create_schema command =
         ; ExternalDataRequired.schema ()
         ; ShowExternalDataIdLinks.schema ()
         ; opt @@ ExperimentType.schema ()
+        ; AssignmentWithoutSession.schema ()
+        ; opt @@ SurveyUrl.schema ()
         ; opt
           @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
@@ -184,6 +196,8 @@ end = struct
      ; email_session_reminder_lead_time_unit
      ; text_message_session_reminder_lead_time
      ; text_message_session_reminder_lead_time_unit
+     ; assignment_without_session
+     ; survey_url
      ; _
      } as command :
       t)
@@ -200,6 +214,9 @@ end = struct
         text_message_session_reminder_lead_time
         text_message_session_reminder_lead_time_unit
     in
+    let online_experiment =
+      OnlineExperiment.create_opt ~assignment_without_session ~survey_url
+    in
     let* experiment =
       Experiment.create
         ~id
@@ -214,6 +231,7 @@ end = struct
         ?smtp_auth_id:
           (smtp_auth |> CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id))
         ?text_message_session_reminder_lead_time
+        ?online_experiment
         command.title
         command.public_title
         command.direct_registration_disabled
@@ -238,6 +256,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> session_count:int
     -> Experiment.t
     -> Organisational_unit.t option
     -> Email.SmtpAuth.t option
@@ -254,10 +273,11 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    ~session_count
     experiment
     organisational_unit
     smtp
-    (command : t)
+    ({ assignment_without_session; survey_url; _ } as command : t)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
@@ -271,6 +291,20 @@ end = struct
         command.text_message_session_reminder_lead_time
         command.text_message_session_reminder_lead_time_unit
     in
+    let online_experiment =
+      OnlineExperiment.create_opt ~assignment_without_session ~survey_url
+    in
+    let* () =
+      match
+        CCBool.equal
+          (assignment_without_session_value experiment)
+          (AssignmentWithoutSession.value assignment_without_session)
+      with
+      | false when session_count > 0 ->
+        Error
+          Pool_common.(Message.(CannotBeUpdated Field.AssignmentWithoutSession))
+      | true | false -> Ok ()
+    in
     let experiment =
       { experiment with
         Experiment.title = command.title
@@ -281,6 +315,7 @@ end = struct
       ; cost_center = command.cost_center
       ; contact_email = command.contact_email
       ; organisational_unit
+      ; online_experiment
       ; smtp_auth_id =
           CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp
       ; direct_registration_disabled = command.direct_registration_disabled

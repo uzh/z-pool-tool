@@ -11,16 +11,16 @@ let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
 
 let ids_from_request req =
   let open Pool_common.Message.Field in
-  HttpUtils.(
-    ( find_id Experiment.Id.of_string Experiment req
-    , find_id Session.Id.of_string Session req
-    , find_id Assignment.Id.of_string Assignment req ))
+  let find_id = HttpUtils.find_id in
+  ( find_id Experiment.Id.of_string Experiment req
+  , find_id Session.Id.of_string Session req
+  , find_id Assignment.Id.of_string Assignment req )
 ;;
 
 let cancel req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
-  let redirect_path = Url.session_path experiment_id session_id in
+  let redirect_path = Url.session_path ~id:session_id experiment_id in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -78,7 +78,7 @@ let cancel req =
 let mark_as_deleted req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
-  let redirect_path = Url.session_path experiment_id session_id in
+  let redirect_path = Url.session_path ~id:session_id experiment_id in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -240,10 +240,20 @@ module Close = struct
   ;;
 end
 
+let session_of_experiment database_label session_id experiment =
+  let open Utils.Lwt_result.Infix in
+  match Experiment.is_sessionless experiment with
+  | true ->
+    Time_window.find database_label session_id
+    >|+ fun time_window -> `TimeWindow time_window
+  | false ->
+    Session.find database_label session_id >|+ fun session -> `Session session
+;;
+
 let edit req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
-  let redirect_path = Url.session_path experiment_id session_id in
+  let redirect_path = Url.session_path ~id:session_id experiment_id in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -253,7 +263,7 @@ let edit req =
         [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
     in
     let* experiment = Experiment.find database_label experiment_id in
-    let* session = Session.find database_label session_id in
+    let* session = session_of_experiment database_label session_id experiment in
     let* assignment = Assignment.find database_label assignment_id in
     Page.Admin.Assignment.edit
       context
@@ -290,7 +300,7 @@ let update req =
     in
     let* assignment = find database_label assignment_id in
     let* experiment = Experiment.find database_label experiment_id in
-    let* session = Session.find database_label session_id in
+    let* session = session_of_experiment database_label session_id experiment in
     let* participated_in_other_sessions =
       Assignment.contact_participation_in_other_assignments
         database_label
@@ -331,7 +341,7 @@ let remind req =
   let open Assignment in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path =
-    Page.Admin.Session.session_path experiment_id session_id
+    Page.Admin.Session.session_path ~id:session_id experiment_id
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
@@ -469,7 +479,7 @@ let swap_session_post req =
   let open Cqrs_command.Assignment_command in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path =
-    Page.Admin.Session.session_path experiment_id session_id
+    Page.Admin.Session.session_path ~id:session_id experiment_id
   in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req

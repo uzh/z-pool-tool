@@ -320,12 +320,7 @@ let template_form
     |> txt
     |> Component.Collapsible.create_note language
   in
-  let text_elements_html =
-    text_elements
-    |> CCOption.map_or
-         ~default:(txt "")
-         (Component.MessageTextElements.build_help language)
-  in
+  let text_elements_html = CCOption.value ~default:(txt "") text_elements in
   let form =
     form
       ~a:

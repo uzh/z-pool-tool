@@ -102,8 +102,13 @@ val reminder_sendable
 module Public : sig
   type t =
     { id : Id.t
+    ; participated : Participated.t option
     ; canceled_at : CanceledAt.t option
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
+
+  val participated : t -> Participated.t option
 end
 
 module IncrementParticipationCount : sig
@@ -159,6 +164,12 @@ val find_all_public_by_experiment_and_contact_opt
   -> Experiment.Id.t
   -> Contact.t
   -> Public.t list Lwt.t
+
+val assignment_to_experiment_exists
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> Contact.t
+  -> bool Lwt.t
 
 val find_by_contact_and_experiment
   :  Pool_database.Label.t

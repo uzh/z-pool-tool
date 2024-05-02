@@ -1,33 +1,28 @@
 module RepoEntity = Repo_entity
 module Dynparam = Utils.Database.Dynparam
 
+let sql_select_columns =
+  [ Entity.Id.sql_select_fragment ~field:"pool_experiments.uuid"
+  ; "pool_experiments.public_title"
+  ; "pool_experiments.public_description"
+  ; "pool_experiments.language"
+  ; "pool_experiments.direct_registration_disabled"
+  ; "pool_experiments.experiment_type"
+  ; Entity.Id.sql_select_fragment ~field:"pool_experiments.smtp_auth_uuid"
+  ; "pool_experiments.assignment_without_session"
+  ; "pool_experiments.survey_url"
+  ]
+;;
+
 let select_from_experiments_sql ?(distinct = false) where_fragment =
   let select_from =
     Format.asprintf
       {sql|
-        SELECT %s
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 21)
-          )),
-          pool_experiments.public_title,
-          pool_experiments.public_description,
-          pool_experiments.language,
-          pool_experiments.direct_registration_disabled,
-          pool_experiments.experiment_type,
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 21)
-          ))
+        SELECT %s %s
         FROM pool_experiments
       |sql}
       (if distinct then "DISTINCT" else "")
+      (CCString.concat "," sql_select_columns)
   in
   Format.asprintf "%s %s" select_from where_fragment
 ;;
@@ -51,25 +46,13 @@ let condition_allow_uninvited_signup =
     |sql}
 ;;
 
-let find_all_public_by_contact_request ?(has_session = false) () =
-  let open Caqti_request.Infix in
-  let session_exists =
-    match has_session with
-    | false -> ""
-    | true ->
-      {sql|
-      AND EXISTS (SELECT
-        1
-      FROM
-        pool_sessions
-      WHERE
-        pool_sessions.experiment_uuid = pool_experiments.uuid
-      AND pool_sessions.start > NOW())
-    |sql}
+let assignments_base_condition ~require_participated =
+  let condition =
+    if require_participated then "AND pool_assignments.participated = 1" else ""
   in
-  let not_assigned =
+  Format.asprintf
     {sql|
-    NOT EXISTS (
+    EXISTS (
       SELECT
         1
       FROM
@@ -79,8 +62,56 @@ let find_all_public_by_contact_request ?(has_session = false) () =
         pool_sessions.experiment_uuid = pool_experiments.uuid
         AND pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
         AND pool_assignments.marked_as_deleted = 0
-        AND pool_sessions.canceled_at IS NULL)
+        AND pool_sessions.canceled_at IS NULL
+        %s)
+    |sql}
+    condition
+;;
+
+let condition_assigned = assignments_base_condition ~require_participated:false
+
+let condition_participated =
+  assignments_base_condition ~require_participated:true
+;;
+
+let condition_is_invited =
+  {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
+;;
+
+let find_upcoming_to_register_request experiment_type () =
+  let open Caqti_request.Infix in
+  let onsite_session_exists =
+    {sql|
+      AND EXISTS (SELECT
+        1
+      FROM
+        pool_sessions
+      WHERE
+        pool_sessions.experiment_uuid = pool_experiments.uuid
+      AND pool_sessions.start > NOW())
+    |sql}
+  in
+  let timewindow_exists =
+    {sql|
+      AND EXISTS (
+        SELECT
+          1
+        FROM
+          pool_sessions
+        WHERE
+          pool_sessions.experiment_uuid = pool_experiments.uuid
+          AND pool_sessions.start < NOW()
+          AND DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW())
       |sql}
+  in
+  let experiment_type, session_condition, assignment_condition =
+    let type_condition =
+      Format.asprintf
+        {sql| pool_experiments.assignment_without_session = %s |sql}
+    in
+    match experiment_type with
+    | `Online -> type_condition "1", timewindow_exists, condition_participated
+    | `OnSite -> type_condition "0", onsite_session_exists, condition_assigned
   in
   let not_on_waitinglist =
     {sql|
@@ -95,27 +126,25 @@ let find_all_public_by_contact_request ?(has_session = false) () =
       )
       |sql}
   in
-  let is_invited =
-    {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
-  in
   Format.asprintf
-    "%s WHERE %s AND %s AND %s AND (%s OR %s) %s"
+    "%s WHERE %s AND %s AND %s AND %s AND (%s OR %s) %s"
     pool_invitations_left_join
-    not_assigned
+    experiment_type
+    ("NOT " ^ assignment_condition)
     not_on_waitinglist
     condition_registration_not_disabled
     condition_allow_uninvited_signup
-    is_invited
-    session_exists
+    condition_is_invited
+    session_condition
   |> Repo.find_request_sql
   |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
 
-let find_all_public_by_contact ?has_session pool contact =
+let find_upcoming_to_register pool contact experiment_type =
   let open Utils.Lwt_result.Infix in
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    (find_all_public_by_contact_request ?has_session ())
+    (find_upcoming_to_register_request experiment_type ())
     (Contact.id contact)
   (* TODO: This has to be made superfluous by a background job (#164) *)
   >|> Lwt_list.filter_s
@@ -166,7 +195,7 @@ let find_pending_waitinglists_by_contact pool contact =
 let find_past_experiments_by_contact pool contact =
   let open Caqti_request.Infix in
   let (where, Dynparam.Pack (pt, pv)), joins =
-    Repo.Sql.participation_history_where ~exclude_past:true (Contact.id contact)
+    Repo.Sql.participation_history_where ~only_closed:true (Contact.id contact)
   in
   let request =
     Format.asprintf "%s WHERE %s" joins where
@@ -185,26 +214,6 @@ let where_contact_can_access =
       AND pool_experiments.uuid = pool_waiting_list.experiment_uuid
   |sql}
   in
-  let assignment_exists =
-    {sql|
-    EXISTS (
-      SELECT
-        1
-      FROM
-        pool_assignments
-        INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
-          AND pool_sessions.experiment_uuid = UNHEX(REPLACE($2, '-', ''))
-      WHERE
-        pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
-        AND pool_assignments.canceled_at IS NULL)
-  |sql}
-  in
-  let invitation_uuid =
-    {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
-  in
-  let registration_not_disabled =
-    {sql| pool_experiments.registration_disabled = 0 |sql}
-  in
   let waiting_list_exists =
     {sql| pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
   in
@@ -214,9 +223,9 @@ let where_contact_can_access =
     pool_invitations_left_join
     id_fragment
     condition_allow_uninvited_signup
-    assignment_exists
-    registration_not_disabled
-    invitation_uuid
+    condition_assigned
+    condition_registration_not_disabled
+    condition_is_invited
     waiting_list_exists
 ;;
 

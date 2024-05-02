@@ -25,10 +25,12 @@ let rec field_to_string =
   | AssignmentCount -> "Anmeldungen"
   | Assignments -> "Anmeldungen"
   | AssignmentsCreated -> "Sessionanmeldungen"
+  | AssignmentWithoutSession -> "Teilnahme ohne Session"
   | Assistants -> "Assistenten"
   | AvailableLanguages -> "Verfügbare Sprachen"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
+  | CallbackUrl -> "Callback-URL"
   | CellPhone -> "Mobiltelefon"
   | Chronological -> "chronologisch"
   | City -> "Ort"
@@ -177,6 +179,7 @@ let rec field_to_string =
   | NotifyVia -> "Benachrichtigen via"
   | NotifyContact -> "Kontakt benachrichtigen"
   | Offset -> "Offset"
+  | OnlineExperiment -> "Onlinestudie"
   | Operator -> "Operator"
   | Operators -> "Operatoren"
   | Order -> "Reihenfolge"
@@ -262,6 +265,8 @@ let rec field_to_string =
   | Street -> "Strasse"
   | Styles -> "Styles"
   | Successful -> "Erfolgreich"
+  | Survey -> "Umfrage"
+  | SurveyUrl -> "Umfrage-URL"
   | SystemEvent -> "System Event"
   | Tag -> "Tag"
   | Tags -> "Tags"
@@ -282,6 +287,7 @@ let rec field_to_string =
   | TextMessageLeadTime -> "SMS Vorlaufzeit"
   | TextMessageRemindersSentAt -> "SMS Erinnerungen verschickt am"
   | Time -> "Uhrzeit"
+  | TimeWindow -> "Zeitfenster"
   | TimeSpan -> "Zeitspanne"
   | TimeUnit -> "Zeiteinheit"
   | TimeUnitOf field -> combine TimeUnit field
@@ -424,6 +430,7 @@ let rec error_to_string = function
     "Einige Anmeldungen haben Fehler. Bitte korrigieren Sie diese zuerst."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
+  | AssignmentAlreadySubmitted -> "Die Teilnahme wurde bereits abgeschlossen."
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: \
@@ -630,6 +637,7 @@ let rec error_to_string = function
       "%s kleiner als %s"
       (field_to_string field1)
       (field_to_string field2)
+  | SessionOverlap -> "Dieses Zeitfenster überschneidet sich mit einem anderen."
   | SmtpException exn -> exn
   | SmtpLoginMissingCredentials ->
     "Der SMTP-Authentifizierungsmechanismus kann nicht auf LOGIN gesetzt \
@@ -682,6 +690,7 @@ let control_to_string = function
   | Create field -> format_submit "erstellen" field
   | Decline -> format_submit "ablehnen" None
   | Delete field -> format_submit "löschen" field
+  | Details -> format_submit "details" None
   | Descending -> "absteigend"
   | Disable -> format_submit "deaktivieren" None
   | Duplicate field -> format_submit "duplizieren" field
@@ -717,6 +726,7 @@ let control_to_string = function
   | Resend field -> format_submit "erneut senden" field
   | Reset field -> format_submit "zurücksetzen" field
   | ResetForm -> "Formular zurücksetzen"
+  | Resume field -> format_submit "fortsetzen" field
   | Save field -> format_submit "speichern" field
   | SessionDetails -> format_submit "Sessiondetails" None
   | Select -> format_submit "auswählen" None
@@ -726,6 +736,7 @@ let control_to_string = function
   | SendResetLink -> format_submit "link senden" None
   | Show -> "anzeigen"
   | SignUp -> format_submit "anmelden" None
+  | Start field -> format_submit "starten" field
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field

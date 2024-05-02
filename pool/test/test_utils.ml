@@ -50,6 +50,8 @@ let message_history_crate =
   Alcotest.testable pp_create equal_create
 ;;
 
+let time_window_testable = Alcotest.testable Time_window.pp Time_window.equal
+
 (* Helper functions *)
 
 let setup_test () =
@@ -196,6 +198,7 @@ module Model = struct
     ?(title = "An Experiment")
     ?email_session_reminder_lead_time_hours
     ?filter
+    ?online_experiment
     ()
     =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
@@ -222,6 +225,7 @@ module Model = struct
       ~experiment_type:Pool_common.ExperimentType.Lab
       ?filter
       ?email_session_reminder_lead_time
+      ?online_experiment
       title
       public_title
       (Experiment.DirectRegistrationDisabled.create false)
@@ -313,6 +317,7 @@ module Model = struct
   ;;
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)
+  let two_hours = Ptime.Span.of_int_s @@ (60 * 60 * 2)
 
   let an_hour_ago () =
     let hour = Ptime.Span.of_int_s @@ (60 * 60) in
@@ -334,6 +339,7 @@ module Model = struct
   let create_session
     ?(id = Session.Id.create ())
     ?(location = create_location ())
+    ?(duration = Session.Duration.create hour |> get_or_failwith)
     ?follow_up_to
     ?start
     ?email_reminder_sent_at
@@ -345,13 +351,27 @@ module Model = struct
       ~id
       ?follow_up_to
       (start |> CCOption.value ~default:(in_an_hour ()))
-      (Duration.create hour |> get_or_failwith)
+      duration
       location
       (ParticipantAmount.create 30 |> get_or_failwith)
       (ParticipantAmount.create 1 |> get_or_failwith)
       (ParticipantAmount.create 4 |> get_or_failwith)
       experiment
     |> fun session -> { session with email_reminder_sent_at }
+  ;;
+
+  let create_timewindow
+    ?(id = Session.Id.create ())
+    ?(duration = Session.Duration.create hour |> get_or_failwith)
+    ?start
+    ?(experiment = create_experiment ())
+    ()
+    =
+    Time_window.create
+      ~id
+      (start |> CCOption.value ~default:(in_an_hour ()))
+      duration
+      experiment
   ;;
 
   let create_public_session ?start () =

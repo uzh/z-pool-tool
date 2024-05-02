@@ -25,10 +25,12 @@ let rec field_to_string =
   | AssignmentCount -> "no. assignments"
   | Assignments -> "assignments"
   | AssignmentsCreated -> "assignments created"
+  | AssignmentWithoutSession -> "assignment without session"
   | Assistants -> "assistants"
   | AvailableLanguages -> "available languages"
   | Building -> "building"
   | CanceledAt -> "canceled at"
+  | CallbackUrl -> "callback url"
   | CellPhone -> "cell phone"
   | Chronological -> "chronological"
   | City -> "city"
@@ -175,6 +177,7 @@ let rec field_to_string =
   | NotifyVia -> "notify via"
   | NotifyContact -> "notify contact"
   | Offset -> "offset"
+  | OnlineExperiment -> "online experiment"
   | Operator -> "operator"
   | Operators -> "operators"
   | Order -> "order"
@@ -259,6 +262,8 @@ let rec field_to_string =
   | Street -> "street"
   | Styles -> "styles"
   | Successful -> "successful"
+  | Survey -> "survey"
+  | SurveyUrl -> "survey url"
   | SystemEvent -> "system event"
   | Tag -> "tag"
   | Tags -> "tags"
@@ -279,6 +284,7 @@ let rec field_to_string =
   | TextMessageLeadTime -> "text message lead time"
   | TextMessageRemindersSentAt -> "text message reminders sent at"
   | Time -> "time"
+  | TimeWindow -> "time window"
   | TimeSpan -> "time span"
   | TimeUnit -> "time unit"
   | TimeUnitOf field -> combine TimeUnit field
@@ -409,6 +415,7 @@ let rec error_to_string = function
   | AssignmentsHaveErrors ->
     "Some assignments have errors. Please resolve them first."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
+  | AssignmentAlreadySubmitted -> "This assignment was already submitted."
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"
@@ -592,6 +599,7 @@ let rec error_to_string = function
       "%s smaller than %s"
       (field_to_string field1)
       (field_to_string field2)
+  | SessionOverlap -> "This time window overlaps with another."
   | SmtpException exn -> exn
   | SmtpLoginMissingCredentials ->
     "SMTP auth mechanism cannot be set to LOGIN when no username or password \
@@ -640,6 +648,7 @@ let control_to_string = function
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None
   | Delete field -> format_submit "delete" field
+  | Details -> format_submit "details" None
   | Descending -> format_submit "descending" None
   | Disable -> format_submit "disable" None
   | Duplicate field -> format_submit "duplicate" field
@@ -675,6 +684,7 @@ let control_to_string = function
       "Reset %s to rich '%s'"
       (field_to_string Field.PlainText)
       (field_to_string Field.EmailText)
+  | Resume field -> format_submit "resume" field
   | Save field -> format_submit "save" field
   | SessionDetails -> format_submit "session details" None
   | Select -> format_submit "select" None
@@ -684,6 +694,7 @@ let control_to_string = function
   | SendResetLink -> format_submit "send reset link" None
   | Show -> format_submit "show" None
   | SignUp -> format_submit "sign up" None
+  | Start field -> format_submit "start" field
   | Stop field -> format_submit "stop" field
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field

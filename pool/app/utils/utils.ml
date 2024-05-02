@@ -3,6 +3,7 @@ module Database = Database
 module LanguageCodes = Language_codes
 module PhoneCodes = Phone_codes
 module Json = Json
+module Message = Message
 
 module Lwt_result : sig
   module Infix : sig
