@@ -116,7 +116,7 @@ let public_experiment_params layout experiment =
   let experiment_url =
     Format.asprintf "experiments/%s" experiment_id |> to_absolute_path layout
   in
-  let online_study_params =
+  let online_experiment_params =
     experiment
     |> Public.online_experiment
     |> CCOption.is_some
@@ -133,7 +133,7 @@ let public_experiment_params layout experiment =
       |> CCOption.map_or ~default:"" PublicDescription.value )
   ; "experimentUrl", experiment_url
   ]
-  @ online_study_params
+  @ online_experiment_params
 ;;
 
 let experiment_params layout experiment =

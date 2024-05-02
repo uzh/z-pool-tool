@@ -482,13 +482,13 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | NumberIsWeeksHint -> "Nr. of weeks"
   | NumberMax i -> error_to_string (Entity_message.NumberMax i)
   | NumberMin i -> error_to_string (Entity_message.NumberMin i)
-  | OnlineStudy ->
+  | OnlineExperiment ->
     Format.asprintf
       "Instead of sessions, you can define time windows in which you can take \
        part in the survey. Under %s, enter the external URL of the survey to \
        which the contacts should be forwarded."
       (Locales_en.field_to_string Entity_message_field.SurveyUrl)
-  | OnlineStudyParticipationDeadline end_at ->
+  | OnlineExperimentParticipationDeadline end_at ->
     Format.asprintf
       "You can participate in this experiment until %s."
       (Utils_time.formatted_date_time end_at)

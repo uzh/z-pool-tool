@@ -241,8 +241,8 @@ type hint =
   | NumberIsWeeksHint
   | NumberMax of int
   | NumberMin of int
-  | OnlineStudy
-  | OnlineStudyParticipationDeadline of Ptime.t
+  | OnlineExperiment
+  | OnlineExperimentParticipationDeadline of Ptime.t
   | Overbook
   | PartialUpdate
   | ParticipationTagsHint

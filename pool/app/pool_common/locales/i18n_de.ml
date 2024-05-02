@@ -497,14 +497,14 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | NumberIsWeeksHint -> "Anzahl Wochen"
   | NumberMax i -> error_to_string (Entity_message.NumberMax i)
   | NumberMin i -> error_to_string (Entity_message.NumberMin i)
-  | OnlineStudy ->
+  | OnlineExperiment ->
     Format.asprintf
       "Anstelle von Sessions können Zeitfenster definiert werden, während \
        deren an der Umfrage teilgenommen werden kann. Unter %s geben Sie die \
        externe URL der Studie an, auf welche die Kontakte weitergeleitet \
        werden sollen."
       (Locales_de.field_to_string Entity_message_field.SurveyUrl)
-  | OnlineStudyParticipationDeadline end_at ->
+  | OnlineExperimentParticipationDeadline end_at ->
     Format.asprintf
       "Sie können noch bis zum %s an diesem Experiment teilnehmen."
       (Utils_time.formatted_date_time end_at)

@@ -351,7 +351,7 @@ let experiment_form
       |> build_help ~hints context_language
     in
     let hint =
-      p [ txt (Utils.hint_to_string context_language I18n.OnlineStudy) ]
+      p [ txt (Utils.hint_to_string context_language I18n.OnlineExperiment) ]
     in
     div
       ~a:
@@ -908,9 +908,9 @@ let detail
       let default = "" in
       let online_experiment =
         match experiment.online_experiment with
-        | None -> Field.OnlineStudy, txt (bool_to_string false)
+        | None -> Field.OnlineExperiment, txt (bool_to_string false)
         | Some { OnlineExperiment.survey_url } ->
-          ( Field.OnlineStudy
+          ( Field.OnlineExperiment
           , div
               ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ]
               [ div

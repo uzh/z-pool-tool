@@ -369,7 +369,7 @@ let show_online_study
       p
         ~a:[ a_class [ "font-italic" ] ]
         [ txt
-            (I18n.OnlineStudyParticipationDeadline
+            (I18n.OnlineExperimentParticipationDeadline
                (Time_window.ends_at time_window)
              |> Utils.hint_to_string language)
         ]

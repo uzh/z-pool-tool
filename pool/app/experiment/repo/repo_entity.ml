@@ -242,7 +242,7 @@ module Write = struct
         m.organisational_unit
         |> CCOption.map (fun ou -> ou.Organisational_unit.id)
       in
-      let online_study =
+      let online_experiment =
         let open OnlineExperimentRepo in
         match m.online_experiment with
         | None -> { assignment_without_session = false; survey_url = None }
@@ -267,7 +267,7 @@ module Write = struct
                                   , ( m.external_data_required
                                     , ( m.show_external_data_id_links
                                       , ( m.experiment_type
-                                        , ( online_study
+                                        , ( online_experiment
                                           , ( m.email_session_reminder_lead_time
                                             , ( m
                                                   .text_message_session_reminder_lead_time

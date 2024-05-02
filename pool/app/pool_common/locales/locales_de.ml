@@ -179,7 +179,7 @@ let rec field_to_string =
   | NotifyVia -> "Benachrichtigen via"
   | NotifyContact -> "Kontakt benachrichtigen"
   | Offset -> "Offset"
-  | OnlineStudy -> "Onlinestudie"
+  | OnlineExperiment -> "Onlinestudie"
   | Operator -> "Operator"
   | Operators -> "Operatoren"
   | Order -> "Reihenfolge"
