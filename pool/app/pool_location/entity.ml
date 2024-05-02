@@ -95,7 +95,12 @@ type t =
 [@@deriving show]
 
 let to_string language location =
-  CCString.concat ", " (Address.address_rows_human language location.address)
+  let address =
+    CCString.concat ", " (Address.address_rows_human language location.address)
+  in
+  match location.link with
+  | None -> address
+  | Some link -> Format.asprintf "%s\n%s" address link
 ;;
 
 let equal m k =
