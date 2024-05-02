@@ -31,7 +31,10 @@ module Start : sig
 end
 
 module End : sig
-  type t
+  include Pool_common.Model.BaseSig
+
+  val value : t -> Ptime.t
+  val create : Ptime.t -> t
 end
 
 module Duration : sig
@@ -141,6 +144,7 @@ val create
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val is_canceled_error : Ptime.t -> ('a, Pool_common.Message.error) result
 val is_fully_booked : t -> bool
 val available_spots : t -> int
 val has_assignments : t -> bool
@@ -420,6 +424,10 @@ module Repo : sig
     val t : Start.t Caqti_type.t
   end
 
+  module End : sig
+    val t : End.t Caqti_type.t
+  end
+
   module Duration : sig
     val t : Duration.t Caqti_type.t
   end
@@ -431,7 +439,7 @@ module Guard : sig
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list
-      -> t
+      -> Id.t
       -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t

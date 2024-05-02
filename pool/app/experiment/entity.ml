@@ -79,6 +79,48 @@ module ShowExternalDataIdLinks = struct
   let schema = schema Common.Message.Field.ShowExteralDataIdLinks
 end
 
+module AssignmentWithoutSession = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema Common.Message.Field.AssignmentWithoutSession
+end
+
+module SurveyUrl = struct
+  include Pool_common.Model.String
+
+  let validation str =
+    let open CCResult.Infix in
+    let open Pool_common.Message in
+    let open Uri in
+    let invalid_error = Error (Invalid Field.SurveyUrl) in
+    let trimmed = CCString.trim str in
+    let uri = of_string trimmed in
+    try
+      let* () =
+        match scheme uri with
+        | Some ("http" | "https") -> Ok ()
+        | _ -> invalid_error
+      in
+      let* (_ : string * string list) =
+        let value = Format.asprintf "{%s}" Field.(show CallbackUrl) in
+        uri
+        |> query
+        |> CCList.find_opt (fun (_, values) ->
+          values
+          |> CCList.head_opt
+          |> CCOption.map_or ~default:false (CCString.equal value))
+        |> CCOption.to_result (FieldRequired Field.CallbackUrl)
+      in
+      Ok trimmed
+    with
+    | _ -> invalid_error
+  ;;
+
+  let create = validation
+  let field = Common.Message.Field.SurveyUrl
+  let schema () = schema ~validation field ()
+end
+
 module InvitationResetAt = struct
   include Pool_common.Model.Ptime
 
@@ -92,6 +134,38 @@ module MatcherNotificationSent = struct
 
   let value t = t
   let create t = t
+end
+
+module OnlineExperiment = struct
+  type t = { survey_url : SurveyUrl.t } [@@deriving eq, fields ~getters, show]
+
+  let create ~survey_url = { survey_url }
+
+  let create_opt ~assignment_without_session ~survey_url =
+    match assignment_without_session, survey_url with
+    | false, _ | _, None -> None
+    | true, Some survey_url -> Some { survey_url }
+  ;;
+
+  let callback_url (tenant : Pool_tenant.t) ~experiment_id ~assignment_id =
+    Format.asprintf
+      "/experiments/%s/submit/%s"
+      (Id.value experiment_id)
+      (Pool_common.Id.value assignment_id)
+    |> Pool_tenant.(create_public_url tenant.url)
+  ;;
+
+  let url_params tenant ~experiment_id ~assignment_id =
+    [ "assignmentId", Pool_common.Id.value assignment_id
+    ; ( Pool_common.Message.Field.(show CallbackUrl)
+      , callback_url tenant ~experiment_id ~assignment_id )
+    ]
+  ;;
+
+  let render_survey_url tenant ~experiment_id ~assignment_id survey_url =
+    let params = url_params tenant ~experiment_id ~assignment_id in
+    Utils.Message.render_params params survey_url
+  ;;
 end
 
 type t =
@@ -112,6 +186,7 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
+  ; online_experiment : OnlineExperiment.t option
   ; email_session_reminder_lead_time :
       Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -137,6 +212,7 @@ let create
   ?organisational_unit
   ?smtp_auth_id
   ?text_message_session_reminder_lead_time
+  ?online_experiment
   title
   public_title
   direct_registration_disabled
@@ -167,6 +243,7 @@ let create
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
     ; invitation_reset_at
+    ; online_experiment
     ; matcher_notification_sent = false
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
@@ -204,6 +281,7 @@ module Public = struct
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
     ; smtp_auth_id : Email.SmtpAuth.Id.t option
+    ; online_experiment : OnlineExperiment.t option
     }
   [@@deriving eq, show]
 
@@ -212,6 +290,7 @@ module Public = struct
     ?language
     ?experiment_type
     ?smtp_auth_id
+    ?online_experiment
     id
     public_title
     direct_registration_disabled
@@ -223,6 +302,7 @@ module Public = struct
     ; direct_registration_disabled
     ; experiment_type
     ; smtp_auth_id
+    ; online_experiment
     }
   ;;
 
@@ -237,6 +317,8 @@ module Public = struct
   let direct_registration_disabled (m : t) = m.direct_registration_disabled
   let experiment_type (m : t) = m.experiment_type
   let smtp_auth_id (m : t) = m.smtp_auth_id
+  let online_experiment (m : t) = m.online_experiment
+  let is_sessionless (m : t) = m |> online_experiment |> CCOption.is_some
 end
 
 let to_public
@@ -247,6 +329,7 @@ let to_public
   ; direct_registration_disabled
   ; experiment_type
   ; smtp_auth_id
+  ; online_experiment
   ; _
   }
   =
@@ -257,6 +340,7 @@ let to_public
   ; direct_registration_disabled
   ; experiment_type
   ; smtp_auth_id
+  ; online_experiment
   }
 ;;
 
@@ -268,6 +352,14 @@ let email_session_reminder_lead_time_value m =
 let text_message_session_reminder_lead_time_value m =
   m.text_message_session_reminder_lead_time
   |> CCOption.map Pool_common.Reminder.TextMessageLeadTime.value
+;;
+
+let assignment_without_session_value ({ online_experiment; _ } : t) =
+  CCOption.is_some online_experiment
+;;
+
+let survey_url_value ({ online_experiment; _ } : t) =
+  online_experiment |> CCOption.map OnlineExperiment.survey_url
 ;;
 
 let direct_registration_disabled_value (m : t) =
@@ -292,10 +384,11 @@ let show_external_data_id_links_value (m : t) =
 
 let boolean_fields =
   Pool_common.Message.Field.
-    [ DirectRegistrationDisabled
-    ; RegistrationDisabled
-    ; AllowUninvitedSignup
+    [ AllowUninvitedSignup
+    ; AssignmentWithoutSession
+    ; DirectRegistrationDisabled
     ; ExternalDataRequired
+    ; RegistrationDisabled
     ; ShowExteralDataIdLinks
     ]
 ;;

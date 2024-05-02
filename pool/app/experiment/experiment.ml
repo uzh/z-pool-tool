@@ -21,14 +21,7 @@ let find_all = Repo.find_all
 let find_all_ids_of_contact_id = Repo.find_all_ids_of_contact_id
 let find_public = Repo_public.find
 let find_full_by_contact = Repo_public.find_full_by_contact
-
-let find_all_public_by_contact =
-  Repo_public.find_all_public_by_contact ~has_session:false
-;;
-
-let find_upcoming_to_register =
-  Repo_public.find_all_public_by_contact ~has_session:true
-;;
+let find_upcoming_to_register = Repo_public.find_upcoming_to_register
 
 let find_pending_waitinglists_by_contact =
   Repo_public.find_pending_waitinglists_by_contact
@@ -67,6 +60,10 @@ let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
   match smtp_auth_id with
   | None -> Lwt_result.return None
   | Some id -> Email.SmtpAuth.find database_label id >|+ CCOption.return
+;;
+
+let is_sessionless ({ online_experiment; _ } : t) =
+  CCOption.is_some online_experiment
 ;;
 
 let invitation_count =

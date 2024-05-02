@@ -377,6 +377,10 @@ let suite =
               `Slow
               UpdateAssignments.update_assignment_manually
           ; test_case
+              "update online assignment manually"
+              `Slow
+              UpdateAssignments.update_online_assignment
+          ; test_case
               "update closed: close follow up session"
               `Slow
               UpdateAssignments.close_followup_session
@@ -410,6 +414,9 @@ let suite =
               `Slow
               Repo.find_contacts_to_remind
           ] )
+    ; ( "time window"
+      , Time_window_test.
+          [ test_case "confirm as contact" `Slow find_overlapping ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;

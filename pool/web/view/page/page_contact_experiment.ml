@@ -2,7 +2,6 @@ open CCFun
 open Tyxml.Html
 open Component.Input
 module PageSession = Page_contact_sessions
-module Assignment = Page_contact_assignment
 module HttpUtils = Http_utils
 module Field = Pool_common.Message.Field
 
@@ -22,8 +21,20 @@ let experiment_title =
   Public.public_title %> PublicTitle.value %> txt
 ;;
 
+let experiment_detail_page experiment html =
+  div
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
+        [ experiment |> experiment_title ]
+    ; experiment |> experiment_public_description
+    ; html
+    ]
+;;
+
 let index
   experiment_list
+  online_studies
   upcoming_sessions
   waiting_list
   past_experiments
@@ -117,6 +128,14 @@ let index
          ~empty_msg:ExperimentListEmpty
          [ "striped" ]
   in
+  let online_studies_html =
+    online_studies
+    |> CCList.map experiment_item
+    |> list_html
+         ExperimentOnlineListPublicTitle
+         ~empty_msg:ExperimentListEmpty
+         [ "striped" ]
+  in
   let past_experiments_html =
     match past_experiments with
     | [] -> txt ""
@@ -190,6 +209,7 @@ let index
                 ~a:[ a_class [ "stack-lg" ] ]
                 [ session_html; waiting_list_html ]
             ; experiment_html
+            ; online_studies_html
             ; past_experiments_html
             ]
         ]
@@ -232,9 +252,10 @@ let show
   in
   let waiting_list_form () =
     let form_action =
-      Format.asprintf
-        "/experiments/%s/waiting-list/"
-        Experiment.(experiment |> Public.id |> Id.value)
+      HttpUtils.Url.Contact.experiment_path
+        ~id:(Experiment.Public.id experiment)
+        ~suffix:"waiting-list"
+        ()
       |> (fun url ->
            if user_is_enlisted then Format.asprintf "%s/remove" url else url)
       |> HttpUtils.externalize_path_with_lang query_language
@@ -312,13 +333,77 @@ let show
         ; sessions_html PastSessionsTitle past_sessions
         ]
   in
+  experiment_detail_page experiment html
+;;
+
+let show_online_study
+  (experiment : Experiment.Public.t)
+  { Pool_context.language; _ }
+  (argument :
+    [< `Participated of Assignment.Public.t
+    | `Pending of Assignment.Public.t * Time_window.t
+    | `Upcoming of Time_window.t
+    ])
+  =
+  let html =
+    let open Pool_common in
+    let open Assignment in
+    let start_button assignment =
+      let field = Some Message.Field.Survey in
+      let control =
+        if CCOption.is_some assignment
+        then Message.Resume field
+        else Message.Start field
+      in
+      div
+        ~a:[ a_class [ "flexcolumn" ] ]
+        [ Component.Input.link_as_button
+            ~control:(language, control)
+            (HttpUtils.Url.Contact.experiment_path
+               ~id:(Experiment.Public.id experiment)
+               ~suffix:"start"
+               ())
+        ]
+    in
+    let end_at_hint time_window =
+      p
+        ~a:[ a_class [ "font-italic" ] ]
+        [ txt
+            (I18n.OnlineExperimentParticipationDeadline
+               (Time_window.ends_at time_window)
+             |> Utils.hint_to_string language)
+        ]
+    in
+    let participated assignment =
+      let open Utils in
+      p
+        [ strong
+            [ txt (field_to_string_capitalized language Field.Participated)
+            ; txt ": "
+            ; txt (Time.formatted_date_time assignment.Public.created_at)
+            ]
+        ]
+    in
+    div ~a:[ a_class [ "stack"; "flexcolumn" ] ]
+    @@
+    match argument with
+    | `Pending (assignment, time_window) ->
+      [ start_button (Some assignment); end_at_hint time_window ]
+    | `Participated assignment -> [ participated assignment ]
+    | `Upcoming time_window -> [ start_button None; end_at_hint time_window ]
+  in
+  experiment_detail_page experiment html
+;;
+
+let online_study_completition
+  (experiment : Experiment.Public.t)
+  (_ : Pool_context.t)
+  =
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
         [ experiment |> experiment_title ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ experiment |> experiment_public_description; html ]
+    ; p [ txt "Thanks for participating" ]
     ]
 ;;

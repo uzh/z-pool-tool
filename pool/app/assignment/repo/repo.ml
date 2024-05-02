@@ -56,7 +56,10 @@ module Sql = struct
             SUBSTR(HEX(pool_assignments.uuid), 17, 4), '-',
             SUBSTR(HEX(pool_assignments.uuid), 21)
           )),
-          pool_assignments.canceled_at
+          pool_assignments.participated,
+          pool_assignments.canceled_at,
+          pool_assignments.created_at,
+          pool_assignments.updated_at
         FROM
           pool_assignments
         %s

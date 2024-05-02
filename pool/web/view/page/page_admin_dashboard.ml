@@ -17,9 +17,9 @@ module Partials = struct
     in
     let url = url |> Format.asprintf "/admin/dashboard/%s" |> Uri.of_string in
     let session_path session =
-      Page_admin_session.session_path
+      Http_utils.Url.Admin.session_path
+        ~id:session.id
         session.experiment.Experiment.id
-        session.id
     in
     let data_table =
       Component.DataTable.create_meta url query language ~push_url:false

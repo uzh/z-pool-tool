@@ -24,6 +24,7 @@ type t =
   | ExperimentHistory
   | ExperimentListEmpty
   | ExperimentListPublicTitle
+  | ExperimentOnlineListPublicTitle
   | ExperimentListTitle
   | ExperimentMessagingSubtitle
   | ExperimentNewTitle
@@ -35,6 +36,7 @@ type t =
   | FilterNrOfContacts
   | FilterNrOfSentInvitations
   | FollowUpSessionFor
+  | Help
   | ImportConfirmationNote
   | ImportConfirmationTitle
   | ImportPendingNote
@@ -93,6 +95,7 @@ type t =
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated
   | TextTemplates
+  | TimeWindowDetailTitle of string
   | UpcomingSessionsListEmpty
   | UpcomingSessionsTitle
   | UserProfileDetailsSubtitle
@@ -140,6 +143,7 @@ type nav_link =
   | Tags
   | Tenants
   | TextMessages
+  | TimeWindows
   | Users
   | WaitingList
 [@@deriving eq]
@@ -152,6 +156,7 @@ type hint =
   | AssignmentConfirmationMessageFollowUps
   | AssignmentsMarkedAsClosed
   | AssignmentsNotMatchingFilerSession of int
+  | AssignmentWithoutSession
   | ContactCurrentCellPhone of string
   | ContactEnrollmentDoesNotMatchFilter
   | ContactEnrollmentRegistrationDisabled
@@ -187,6 +192,7 @@ type hint =
   | DuplicateSessionList
   | EmailPlainText
   | ExperimentAssignment
+  | ExperimentCallbackUrl
   | ExperimentContactPerson of string
   | ExperimentLanguage
   | ExperimentMailings
@@ -198,6 +204,7 @@ type hint =
   | ExperimentStatisticsRegistrationPossible
   | ExperimentStatisticsSendingInvitations
   | ExperimentWaitingList
+  | ExperumentSurveyRedirectUrl
   | ExternalDataRequired
   | FilterTemplates
   | GtxKeyMissing
@@ -234,6 +241,8 @@ type hint =
   | NumberIsWeeksHint
   | NumberMax of int
   | NumberMin of int
+  | OnlineExperiment
+  | OnlineExperimentParticipationDeadline of Ptime.t
   | Overbook
   | PartialUpdate
   | ParticipationTagsHint
@@ -277,6 +286,7 @@ type hint =
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
   | SmtpValidation
+  | SurveyUrl
   | SwapSessions
   | TagsIntro
   | TemplateTextElementsHint

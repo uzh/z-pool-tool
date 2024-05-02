@@ -26,6 +26,7 @@
   system_event
   tags
   tenant
+  time_window
   user_import)
  (preprocess
   (pps

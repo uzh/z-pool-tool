@@ -25,6 +25,7 @@ type error =
   | AlreadyPublished of Field.t
   | AlreadySignedUpForExperiment
   | AlreadyStarted
+  | AssignmentAlreadySubmitted
   | AssignmentIsCanceled
   | AssignmentIsClosed
   | AssignmentsHaveErrors
@@ -117,6 +118,7 @@ type error =
   | SessionInvalid
   | SessionNotClosed
   | SessionNotStarted
+  | SessionOverlap
   | SessionRegistrationViaParent
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)
@@ -222,6 +224,7 @@ type control =
   | Create of Field.t option
   | Decline
   | Delete of Field.t option
+  | Details
   | Descending
   | Disable
   | Duplicate of Field.t option
@@ -254,14 +257,16 @@ type control =
   | ResetForm
   | ResetPlainText
   | Save of Field.t option
-  | SessionDetails
+  | Resume of Field.t option
   | Select
   | SelectAll of Field.t option
   | SelectFilePlaceholder
   | Send of Field.t option
   | SendResetLink
+  | SessionDetails
   | Show
   | SignUp
+  | Start of Field.t option
   | Stop of Field.t option
   | ToggleAll
   | Unassign of Field.t option

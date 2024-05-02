@@ -24,6 +24,7 @@ type t =
   | SystemEvent of System_event.event
   | Tags of Tags.event
   | TextMessage of Text_message.event
+  | TimeWindow of Time_window.event
   | UserImport of User_import.event
   | WaitingList of Waiting_list.event
 [@@deriving eq, show, variants]
@@ -51,6 +52,7 @@ let settings events = Settings events
 let system_event events = SystemEvent events
 let tags events = Tags events
 let text_message events = TextMessage events
+let time_window events = TimeWindow events
 let user_import events = UserImport events
 let waiting_list events = WaitingList events
 
@@ -170,6 +172,11 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
     Logs.info ~src (fun m ->
       m "Handle event %s" (Text_message.show_event event) ~tags);
     Text_message.handle_event pool event
+  | TimeWindow event ->
+    let src = Logs.Src.create "time_window.events" in
+    Logs.info ~src (fun m ->
+      m "Handle event %s" (Time_window.show_event event) ~tags);
+    Time_window.handle_event pool event
   | UserImport event ->
     let src = Logs.Src.create "user_import.events" in
     Logs.info ~src (fun m ->

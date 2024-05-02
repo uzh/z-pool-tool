@@ -3,13 +3,13 @@ open Utils.Lwt_result.Infix
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
-  let to_authorizable ?ctx t =
+  let to_authorizable ?ctx id =
     let open Guard in
     Persistence.Target.decorate
       ?ctx
-      (fun { Entity.id; _ } ->
+      (fun id ->
         Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
-      t
+      id
     >|- Pool_common.Message.authorization
   ;;
 end

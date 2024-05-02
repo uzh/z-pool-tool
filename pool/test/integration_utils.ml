@@ -76,8 +76,8 @@ module AdminRepo = struct
 end
 
 module ExperimentRepo = struct
-  let create ?(id = Experiment.Id.create ()) ?title () =
-    let experiment = Model.create_experiment ~id ?title () in
+  let create ?(id = Experiment.Id.create ()) ?title ?online_experiment () =
+    let experiment = Model.create_experiment ~id ?title ?online_experiment () in
     let%lwt () =
       Experiment.Created experiment
       |> Pool_event.experiment
@@ -129,6 +129,7 @@ module SessionRepo = struct
     ?location
     ?follow_up_to
     ?start
+    ?duration
     ?email_reminder_sent_at
     experiment
     ()
@@ -142,6 +143,7 @@ module SessionRepo = struct
         ~location
         ?follow_up_to
         ?start
+        ?duration
         ?email_reminder_sent_at
         ~experiment
         ()
@@ -152,5 +154,17 @@ module SessionRepo = struct
       |> Pool_event.handle_event Data.database_label
     in
     Lwt.return session
+  ;;
+end
+
+module TimeWindowRepo = struct
+  let create ?id start duration experiment () =
+    let time_window = Time_window.create ?id start duration experiment in
+    let%lwt () =
+      Time_window.(Created time_window)
+      |> Pool_event.time_window
+      |> Pool_event.handle_event Data.database_label
+    in
+    Lwt.return time_window
   ;;
 end

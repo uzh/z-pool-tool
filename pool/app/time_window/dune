@@ -1,0 +1,23 @@
+(library
+ (name time_window)
+ (libraries
+  containers
+  experiment
+  filter
+  pool_common
+  pool_location
+  ptime
+  service
+  session
+  sihl
+  utils)
+ (preprocess
+  (pps
+   lwt_ppx
+   ppx_string
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_variants_conv
+   ppx_yojson_conv)))
+
+(include_subdirs unqualified)

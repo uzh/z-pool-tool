@@ -1,6 +1,7 @@
 open Entity
 
 let create_public_url = Pool_tenant.create_public_url
+let render_params = Utils.Message.render_params
 
 type email_layout =
   { link : string
@@ -87,23 +88,6 @@ let line_breaks_to_html str =
   |> CCString.split ~by:"\n"
   |> fun lst ->
   lst |> CCList.flat_map (CCString.split ~by:"\\n") |> CCString.concat "<br>"
-;;
-
-let render_params ?cb data text =
-  let replace str k v =
-    let regexp = Str.regexp @@ "{" ^ k ^ "}" in
-    Str.global_replace regexp v str
-  in
-  let rec render data value =
-    match data with
-    | [] -> value
-    | (k, v) :: data ->
-      (match cb with
-       | None -> v
-       | Some cb -> v |> cb)
-      |> fun v -> render data @@ replace value k v
-  in
-  render data text
 ;;
 
 let render_email_params params ({ Sihl_email.text; html; subject; _ } as email) =

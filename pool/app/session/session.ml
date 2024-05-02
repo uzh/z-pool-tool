@@ -68,6 +68,7 @@ module Repo = struct
 
   module Id = Repo_entity.Id
   module Start = Repo_entity.Start
+  module End = Repo_entity.End
   module Duration = Repo_entity.Duration
 
   let t = Repo_entity.t

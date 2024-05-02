@@ -116,6 +116,14 @@ let public_experiment_params layout experiment =
   let experiment_url =
     Format.asprintf "experiments/%s" experiment_id |> to_absolute_path layout
   in
+  let online_experiment_params =
+    experiment
+    |> Public.online_experiment
+    |> CCOption.is_some
+    |> function
+    | true -> [ "experumentSurveyRedirectUrl", experiment_url ^ "/start" ]
+    | false -> []
+  in
   [ "experimentId", experiment_id
   ; ( "experimentPublicTitle"
     , experiment |> Public.public_title |> PublicTitle.value )
@@ -125,6 +133,7 @@ let public_experiment_params layout experiment =
       |> CCOption.map_or ~default:"" PublicDescription.value )
   ; "experimentUrl", experiment_url
   ]
+  @ online_experiment_params
 ;;
 
 let experiment_params layout experiment =
@@ -611,13 +620,8 @@ module ExperimentInvitation = struct
   let message_history = experiment_message_history label
   let optout_link = Verified
 
-  let email_params layout experiment public_url contact =
-    let open Experiment in
-    let id = experiment.Experiment.id |> Id.value in
+  let email_params layout experiment contact =
     global_params layout contact.Contact.user
-    @ [ ( "experimentUrl"
-        , create_public_url public_url (Format.asprintf "experiments/%s" id) )
-      ]
     @ experiment_params layout experiment
   ;;
 
@@ -632,7 +636,6 @@ module ExperimentInvitation = struct
         sys_langs
         Label.ExperimentInvitation
     in
-    let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
@@ -644,7 +647,7 @@ module ExperimentInvitation = struct
       let* lang, template =
         find_template_by_language templates message_language
       in
-      let params = email_params layout experiment tenant_url contact in
+      let params = email_params layout experiment contact in
       let email =
         prepare_email
           ~optout_link
@@ -668,11 +671,10 @@ module ExperimentInvitation = struct
     let%lwt template =
       find_by_label_and_language_to_send database_label label language
     in
-    let%lwt tenant_url = Pool_tenant.Url.of_pool database_label in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let%lwt sender = sender_of_experiment database_label experiment in
     let layout = layout_from_tenant tenant in
-    let params = email_params layout experiment tenant_url contact in
+    let params = email_params layout experiment contact in
     let email =
       prepare_email
         ~optout_link

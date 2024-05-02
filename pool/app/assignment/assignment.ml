@@ -17,6 +17,16 @@ let find_all_public_by_experiment_and_contact_opt =
   Repo.find_public_by_experiment_and_contact_opt `All
 ;;
 
+let assignment_to_experiment_exists database_label experiment_id contact =
+  let open Utils.Lwt_result.Infix in
+  find_all_public_by_experiment_and_contact_opt
+    database_label
+    experiment_id
+    contact
+  ||> CCList.is_empty
+  ||> not
+;;
+
 let find_by_contact_and_experiment = Repo.Sql.find_by_contact_and_experiment
 let find_not_deleted_by_session = Repo.find_not_deleted_by_session
 let find_all_by_session = Repo.find_all_by_session

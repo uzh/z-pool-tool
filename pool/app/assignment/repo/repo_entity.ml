@@ -176,13 +176,24 @@ module Public = struct
   open Public
 
   let t =
-    let encode (m : t) = Ok (m.id, m.canceled_at) in
-    let decode (id, canceled_at) =
-      let open CCResult in
-      Ok { id; canceled_at }
+    let encode (m : t) =
+      Ok (m.id, m.participated, m.canceled_at, m.created_at, m.updated_at)
     in
+    let decode (id, participated, canceled_at, created_at, updated_at) =
+      let open CCResult in
+      Ok { id; participated; canceled_at; created_at; updated_at }
+    in
+    let open Pool_common.Repo in
     Caqti_type.(
-      custom ~encode ~decode (t2 Pool_common.Repo.Id.t (option CanceledAt.t)))
+      custom
+        ~encode
+        ~decode
+        (t5
+           Id.t
+           (option Participated.t)
+           (option CanceledAt.t)
+           CreatedAt.t
+           UpdatedAt.t))
   ;;
 end
 
