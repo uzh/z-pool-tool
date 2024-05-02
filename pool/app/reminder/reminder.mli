@@ -3,7 +3,7 @@ module Service : sig
     :  Pool_tenant.t
     -> Session.t list
     -> Session.t list
-    -> (Pool_event.t list, Pool_message.Error.t) result Lwt.t
+    -> (Pool_event.t list, Pool_message.Error.t) Lwt_result.t
 
   val send_tenant_reminder : Pool_tenant.t -> unit Lwt.t
   val run : unit -> unit Lwt.t

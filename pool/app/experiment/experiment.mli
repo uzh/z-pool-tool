@@ -236,7 +236,7 @@ val updated : t -> event
 val resetinvitations : t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_message.Field.t list
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_all
   :  ?query:Query.t
@@ -254,23 +254,23 @@ val find_public
   :  Database.Label.t
   -> Id.t
   -> Contact.t
-  -> (Public.t, Pool_message.Error.t) result Lwt.t
+  -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
 val find_full_by_contact
   :  Database.Label.t
   -> Id.t
   -> Contact.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_of_session
   :  Database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_of_mailing
   :  Database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_all_public_by_contact
   :  Database.Label.t

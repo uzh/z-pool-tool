@@ -76,7 +76,7 @@ val find_by_contact : Database.Label.t -> Contact.t -> t list Lwt.t
 val find_experiment_id_of_invitation
   :  Database.Label.t
   -> t
-  -> (Experiment.Id.t, Pool_message.Error.t) result Lwt.t
+  -> (Experiment.Id.t, Pool_message.Error.t) Lwt_result.t
 
 val find_multiple_by_experiment_and_contacts
   :  Database.Label.t

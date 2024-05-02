@@ -119,12 +119,12 @@ val counters_of_session
   -> Session.Id.t
   -> session_counters Lwt.t
 
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_closed
   :  Database.Label.t
   -> Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_upcoming_public_by_experiment_and_contact_opt
   :  Database.Label.t

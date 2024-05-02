@@ -87,7 +87,7 @@ module Job : sig
   val retry_delay : 'a t -> Ptime.span
   val max_tries : 'a t -> int
   val failed : 'a t -> Database.Label.t -> string -> Instance.t -> unit Lwt.t
-  val handle : 'a t -> Database.Label.t -> 'a -> (unit, string) result Lwt.t
+  val handle : 'a t -> Database.Label.t -> 'a -> (unit, string) Lwt_result.t
   val decode : 'a t -> string -> ('a, string) result
   val encode : 'a t -> 'a -> string
   val name : 'a t -> JobName.t
@@ -97,7 +97,7 @@ module Job : sig
     -> ?retry_delay:Ptime.span
     -> ?failed:(Database.Label.t -> string -> Instance.t -> unit Lwt.t)
     -> ?tag:string
-    -> (Database.Label.t -> 'a -> (unit, string) result Lwt.t)
+    -> (Database.Label.t -> 'a -> (unit, string) Lwt_result.t)
     -> ('a -> string)
     -> (string -> ('a, string) result)
     -> JobName.t
@@ -120,7 +120,7 @@ module AnyJob : sig
   val retry_delay : t -> Ptime.span
   val max_tries : t -> int
   val failed : t -> Database.Label.t -> string -> Instance.t -> unit Lwt.t
-  val handle : t -> Database.Label.t -> string -> (unit, string) result Lwt.t
+  val handle : t -> Database.Label.t -> string -> (unit, string) Lwt_result.t
   val name : t -> JobName.t
 end
 
@@ -143,7 +143,7 @@ val register_jobs : AnyJob.t list -> unit Lwt.t
 val find
   :  Database.Label.t
   -> Id.t
-  -> (Instance.t, Pool_message.Error.t) result Lwt.t
+  -> (Instance.t, Pool_message.Error.t) Lwt_result.t
 
 val find_by
   :  ?query:Query.t
@@ -152,7 +152,7 @@ val find_by
 
 val count_workable
   :  Database.Label.t
-  -> (int, Pool_message.Error.t) result Lwt.t
+  -> (int, Pool_message.Error.t) Lwt_result.t
 
 val dispatch
   :  ?callback:(Instance.t -> unit Lwt.t)

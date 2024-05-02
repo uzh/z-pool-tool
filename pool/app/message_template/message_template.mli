@@ -106,7 +106,7 @@ val created : t -> event
 val updated : t -> update -> event
 val deleted : t -> event
 val handle_event : Database.Label.t -> event -> unit Lwt.t
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_default_by_label_and_language
   :  Database.Label.t
@@ -209,7 +209,7 @@ module AccountSuspensionNotification : sig
   val create
     :  Pool_tenant.t
     -> Pool_user.t
-    -> (Email.job, Pool_message.Error.t) result Lwt.t
+    -> (Email.job, Pool_message.Error.t) Lwt_result.t
 end
 
 module AssignmentCancellation : sig
@@ -378,7 +378,7 @@ module PasswordReset : sig
     -> Pool_common.Language.t
     -> layout
     -> Pool_user.t
-    -> (Email.job, Pool_message.Error.t) result Lwt.t
+    -> (Email.job, Pool_message.Error.t) Lwt_result.t
 end
 
 module PhoneVerification : sig
@@ -391,7 +391,7 @@ module PhoneVerification : sig
     -> Contact.t
     -> Pool_user.CellPhone.t
     -> Pool_common.VerificationCode.t
-    -> (Text_message.job, Pool_message.Error.t) result Lwt.t
+    -> (Text_message.job, Pool_message.Error.t) Lwt_result.t
 end
 
 module ProfileUpdateTrigger : sig
@@ -552,7 +552,7 @@ module WaitingListConfirmation : sig
     :  Pool_tenant.t
     -> Contact.t
     -> Experiment.Public.t
-    -> (Email.job, Pool_message.Error.t) result Lwt.t
+    -> (Email.job, Pool_message.Error.t) Lwt_result.t
 end
 
 val sms_text_to_email : SmsText.t -> EmailText.t * PlainText.t

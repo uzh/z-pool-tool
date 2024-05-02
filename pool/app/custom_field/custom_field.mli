@@ -450,7 +450,7 @@ val handle_event : Database.Label.t -> event -> unit Lwt.t
 val find_by_model : Database.Label.t -> Model.t -> t list Lwt.t
 val find_by_group : Database.Label.t -> Group.Id.t -> t list Lwt.t
 val find_ungrouped_by_model : Database.Label.t -> Model.t -> t list Lwt.t
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_by_table_view
   :  Database.Label.t
@@ -493,7 +493,7 @@ val find_by_contact
   -> Database.Label.t
   -> Contact.Id.t
   -> Id.t
-  -> (Public.t, Pool_message.Error.t) result Lwt.t
+  -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
 val all_required_answered : Database.Label.t -> Contact.Id.t -> bool Lwt.t
 val all_answered : Database.Label.t -> Contact.Id.t -> bool Lwt.t
@@ -509,7 +509,7 @@ val find_public_by_contacts_and_view
 val find_option
   :  Database.Label.t
   -> SelectOption.Id.t
-  -> (SelectOption.t, Pool_message.Error.t) result Lwt.t
+  -> (SelectOption.t, Pool_message.Error.t) Lwt_result.t
 
 val find_options_by_field
   :  Database.Label.t
@@ -519,7 +519,7 @@ val find_options_by_field
 val find_group
   :  Database.Label.t
   -> Group.Id.t
-  -> (Group.t, Pool_message.Error.t) result Lwt.t
+  -> (Group.t, Pool_message.Error.t) Lwt_result.t
 
 val find_groups_by_model : Database.Label.t -> Model.t -> Group.t list Lwt.t
 

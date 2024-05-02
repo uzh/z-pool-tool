@@ -133,13 +133,12 @@ let find_multiple_request ids =
 
 let find_multiple pool ids =
   let open Caqti_request.Infix in
-  let dyn =
+  let (Dynparam.Pack (pt, pv)) =
     CCList.fold_left
       (fun dyn id -> dyn |> Dynparam.add Id.t id)
       Dynparam.empty
       ids
   in
-  let (Dynparam.Pack (pt, pv)) = dyn in
   let request = find_multiple_request ids |> pt ->* t in
   Database.collect pool request pv
 ;;

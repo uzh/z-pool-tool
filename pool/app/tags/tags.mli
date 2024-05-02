@@ -85,7 +85,7 @@ val updated : t -> event
 val tagged : Tagged.t -> event
 val untagged : Tagged.t -> event
 val handle_event : Database.Label.t -> event -> unit Lwt.t
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_multiple : Database.Label.t -> Id.t list -> (Id.t * Title.t) list Lwt.t
 
 val search_by_title
@@ -126,13 +126,13 @@ val already_exists
   -> Model.t
   -> bool Lwt.t
 
-val insert : Database.Label.t -> t -> (unit, Pool_message.Error.t) result Lwt.t
+val insert : Database.Label.t -> t -> (unit, Pool_message.Error.t) Lwt_result.t
 val update : Database.Label.t -> t -> unit Lwt.t
 
 val insert_tagged
   :  Database.Label.t
   -> Tagged.t
-  -> (unit, Pool_message.Error.t) result Lwt.t
+  -> (unit, Pool_message.Error.t) Lwt_result.t
 
 val delete_tagged : Database.Label.t -> Tagged.t -> unit Lwt.t
 

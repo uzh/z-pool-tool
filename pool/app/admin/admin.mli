@@ -62,12 +62,12 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val user_is_admin : Database.Label.t -> Pool_user.t -> bool Lwt.t
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_by_email
   :  Database.Label.t
   -> Pool_user.EmailAddress.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_by : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 

@@ -166,7 +166,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> Pool_common.Id.t
-      -> (Guard.Target.t, Pool_message.Error.t) result Lwt.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

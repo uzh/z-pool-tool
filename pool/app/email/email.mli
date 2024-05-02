@@ -62,17 +62,17 @@ val create : Pool_user.EmailAddress.t -> Pool_user.t -> Token.t -> unverified t
 val find_unverified_by_user
   :  Database.Label.t
   -> Pool_common.Id.t
-  -> (unverified t, Pool_message.Error.t) result Lwt.t
+  -> (unverified t, Pool_message.Error.t) Lwt_result.t
 
 val find_verified_by_user
   :  Database.Label.t
   -> Pool_common.Id.t
-  -> (verified t, Pool_message.Error.t) result Lwt.t
+  -> (verified t, Pool_message.Error.t) Lwt_result.t
 
 val find_unverified_by_address
   :  Database.Label.t
   -> Pool_user.EmailAddress.t
-  -> (unverified t, Pool_message.Error.t) result Lwt.t
+  -> (unverified t, Pool_message.Error.t) Lwt_result.t
 
 val delete_unverified_by_user : Database.Label.t -> Pool_user.Id.t -> unit Lwt.t
 val create_token : Database.Label.t -> Pool_user.EmailAddress.t -> Token.t Lwt.t

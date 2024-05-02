@@ -97,19 +97,19 @@ val is_inactive : t -> bool
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val show : t -> string
 val compare : t -> t -> int
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_admin_comment : Database.Label.t -> Id.t -> AdminComment.t option Lwt.t
 val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
 
 val find_by_email
   :  Database.Label.t
   -> Pool_user.EmailAddress.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_by_user
   :  Database.Label.t
   -> Pool_user.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_all
   :  ?query:Query.t
@@ -137,12 +137,12 @@ val find_cell_phone_verification_by_contact_and_code
   :  Database.Label.t
   -> t
   -> Pool_common.VerificationCode.t
-  -> (Pool_user.UnverifiedCellPhone.t, Pool_message.Error.t) result Lwt.t
+  -> (Pool_user.UnverifiedCellPhone.t, Pool_message.Error.t) Lwt_result.t
 
 val find_full_cell_phone_verification_by_contact
   :  Database.Label.t
   -> t
-  -> (Pool_user.UnverifiedCellPhone.full, Pool_message.Error.t) result Lwt.t
+  -> (Pool_user.UnverifiedCellPhone.full, Pool_message.Error.t) Lwt_result.t
 
 val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
 

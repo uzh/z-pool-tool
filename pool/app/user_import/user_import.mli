@@ -42,7 +42,7 @@ val equal : t -> t -> bool
 val find_pending_by_token
   :  Database.Label.t
   -> Token.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_pending_by_user_id_opt
   :  Database.Label.t

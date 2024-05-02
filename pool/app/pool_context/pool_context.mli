@@ -82,7 +82,7 @@ module Utils : sig
     :  ?admin_only:bool
     -> Database.Label.t
     -> user
-    -> (Guard.Actor.t, Pool_message.Error.t) result Lwt.t
+    -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
 end
 
 module Logger : sig

@@ -49,7 +49,7 @@ module Guard : sig
   end
 end
 
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 val all : Database.Label.t -> unit -> t list Lwt.t
 

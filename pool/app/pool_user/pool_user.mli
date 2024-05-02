@@ -424,7 +424,7 @@ val login
   :  Database.Label.t
   -> EmailAddress.t
   -> Password.Plain.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val lifecycle : Sihl.Container.lifecycle
 val register : ?commands:Sihl.Command.t list -> unit -> Sihl.Container.Service.t

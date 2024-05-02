@@ -284,7 +284,7 @@ val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 val find_location_file
   :  Database.Label.t
   -> Pool_common.Repo.Id.t
-  -> (Mapping.file, Pool_message.Error.t) result Lwt.t
+  -> (Mapping.file, Pool_message.Error.t) Lwt_result.t
 
 val search
   :  ?conditions:string

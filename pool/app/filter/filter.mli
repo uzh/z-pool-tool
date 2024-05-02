@@ -194,7 +194,7 @@ val contains_template : query -> bool
 val find
   :  Database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_all_templates : Database.Label.t -> unit -> t list Lwt.t
 val find_templates_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
@@ -202,7 +202,7 @@ val find_templates_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 val find_template
   :  Database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_message.Error.t) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_multiple_templates
   :  Database.Label.t
