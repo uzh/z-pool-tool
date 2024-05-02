@@ -34,6 +34,7 @@ let reporter
 let error () =
   Sihl.Web.Middleware.error
     ~reporter:(fun req ({ Sihl.Web.Middleware.exn; _ } as excn) ->
+      let%lwt () = System_event.Service.ConnectionWatcher.verify_tenants () in
       if CCString.find ~sub:"Failed to connect to" exn >= 0
          && CCString.find ~sub:"host" exn >= 0
       then Logs.err ~src (fun m -> m "Try again later: %s" exn) |> Lwt.return

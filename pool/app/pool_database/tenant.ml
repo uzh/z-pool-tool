@@ -1,4 +1,9 @@
 open Migrations
+open Utils.Lwt_result.Infix
+
+let src = Logs.Src.create "database.tenant"
+
+module Logs = (val Logs.src_log src : Logs.LOG)
 
 let sort = CCList.stable_sort (fun a b -> CCString.compare (fst a) (fst b))
 
@@ -81,11 +86,55 @@ let steps =
 ;;
 
 let start () =
-  let%lwt db_pools = Database.Tenant.find_all_running () in
+  let open Database in
+  let open Status in
+  let%lwt db_pools =
+    Tenant.find_all_by_status
+      ~status:[ Active; ConnectionIssue; OpenMigrations ]
+      ()
+  in
+  let check_migration_status pool =
+    let open Migration in
+    let%lwt () =
+      let%lwt uptodate = pending_migrations pool () ||> CCList.is_empty in
+      Tenant.update_status
+        pool
+        (if not uptodate then OpenMigrations else Active)
+    in
+    check_migrations_status pool ~migrations:(steps ()) ()
+  in
   Lwt_list.iter_s
-    (fun pool ->
-      Logger.log_migration pool;
-      Database.Migration.check_migrations_status pool ~migrations:(steps ()) ())
+    (fun db_pool ->
+      Lwt.catch
+        (fun () -> check_migration_status db_pool)
+        (fun err ->
+          let find_database_label text =
+            let open Re in
+            let regex =
+              seq [ char '<'; group (rep1 any); str ">:" ] |> compile
+            in
+            exec regex text |> CCFun.flip Group.get_opt 1
+          in
+          let%lwt (_ : (unit, Pool_message.Error.t) result) =
+            Lwt_result.map_error Pool_common.Utils.with_log_error
+            @@
+            let printed_error = Printexc.to_string err in
+            match find_database_label printed_error with
+            | Some database_url ->
+              let* database_label =
+                Url.create database_url
+                |> Lwt_result.lift
+                >>= Tenant.find_label_by_url
+              in
+              let tags = Logger.Tags.create database_label in
+              Logs.err (fun m -> m ~tags "%s" printed_error);
+              Tenant.update_status database_label ConnectionIssue
+              |> Lwt_result.ok
+            | None ->
+              Logs.err (fun m -> m "%s" printed_error);
+              Lwt.return_ok ()
+          in
+          Lwt.return_unit))
     db_pools
 ;;
 

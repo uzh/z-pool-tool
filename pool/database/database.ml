@@ -4,26 +4,22 @@ include Service
 module Logger = Logger
 module Caqti_encoders = Caqti_encoders
 module Migration = Migration
-module Repo = Repo
+
+module Repo = struct
+  include Repo_entity
+  include Repo
+end
 
 let show_error_with_log = Pools.with_log
 
-let log_status database =
-  let tags = database |> label |> Logger.Tags.create in
-  function
-  | Ok _ ->
-    Logs.debug (fun m -> m ~tags "Database connected: %s" ([%show: t] database))
-  | Error conn ->
-    Logs.warn (fun m ->
-      m
-        ~tags
-        "Database connection failed: [%s] [%s]"
-        ([%show: t] database)
-        (Caqti_error.show conn))
-;;
-
 let log_start label =
   Logs.info (fun m -> m ~tags:(Logger.Tags.create label) "Start database")
+;;
+
+let test_connection url =
+  let uri = url |> Url.value |> Uri.of_string in
+  Caqti_lwt_unix.with_connection uri (fun (_ : Caqti_lwt.connection) ->
+    Lwt_result.return ())
 ;;
 
 module Root = struct
@@ -31,9 +27,20 @@ module Root = struct
 
   let add () =
     let database = database_url () |> create label in
-    let status = add_pool ~pool_size:(pool_size ()) database in
-    log_status database status;
-    status
+    let tags = database |> Entity.label |> Logger.Tags.create in
+    let log_db = [%show: t] database in
+    match add_pool ~pool_size:(pool_size ()) database with
+    | Ok _ as status ->
+      Logs.debug (fun m -> m ~tags "Database connected: %s" log_db);
+      status
+    | Error err as status ->
+      Logs.warn (fun m ->
+        m
+          ~tags
+          "Database connection failed: [%s] [%s]"
+          log_db
+          (Caqti_error.show err));
+      status
   ;;
 
   let setup = add %> Lwt.return
@@ -45,29 +52,60 @@ module Root = struct
   ;;
 
   let stop () = Lwt.return_unit
+
+  let test_connection () =
+    match%lwt database_url () |> test_connection with
+    | Ok () -> Lwt.return_ok ()
+    | Error (_ : Caqti_error.load_or_connect) ->
+      Lwt_result.fail Pool_message.(Error.NotFound Field.Database)
+  ;;
 end
 
 module Tenant = struct
-  let setup_tenant database =
+  let add database =
     let label = database |> label in
-    log_start label;
-    let () =
-      add_pool ~pool_size:(pool_size ()) database |> log_status database
-    in
-    Lwt.return label
+    let tags = database |> Entity.label |> Logger.Tags.create in
+    let log_db = [%show: t] database in
+    match add_pool ~pool_size:(pool_size ()) database with
+    | Ok _ ->
+      let%lwt () = Repo.update_status root label Status.Active in
+      Logs.debug (fun m -> m ~tags "Database connected: %s" log_db);
+      Lwt.return label
+    | Error err ->
+      let%lwt () = Repo.update_status root label Status.ConnectionIssue in
+      Logs.warn (fun m ->
+        m
+          ~tags
+          "Database connection failed: [%s] [%s]"
+          log_db
+          (Caqti_error.show err));
+      Lwt.return label
   ;;
 
   let setup () =
-    match%lwt Repo.find_all_running root with
-    | [] -> failwith Pool_message.Error.(NoTenantsRegistered |> show)
-    | tenants -> Lwt_list.map_s setup_tenant tenants
+    let start_tenant database =
+      log_start (database |> label);
+      add database
+    in
+    match%lwt Repo.find_all_by_status root with
+    | [] ->
+      Logs.warn (fun m ->
+        m "%s" Pool_message.Error.(NoTenantsRegistered |> show));
+      Lwt.return []
+    | tenants -> Lwt_list.map_s start_tenant tenants
   ;;
 
   let find = Repo.find root
 
-  let find_all_running () =
-    Repo.find_all_running root |> Lwt.map (CCList.map Entity.label)
+  let find_all_by_status ?status () =
+    Repo.find_all_by_status ?status root |> Lwt.map (CCList.map Entity.label)
   ;;
+
+  let find_label_by_url ?allowed_status =
+    Repo.find_label_by_url ?allowed_status root
+  ;;
+
+  let update_status = Repo.update_status root
 
   let start () =
     let%lwt (_ : Label.t list) = setup () in
@@ -75,15 +113,22 @@ module Tenant = struct
   ;;
 
   let stop () = Lwt.return_unit
+
+  let test_connection database_label =
+    let open Utils.Lwt_result.Infix in
+    let* database = Repo.find root database_label in
+    match%lwt database |> url |> test_connection with
+    | Ok () -> Lwt.return_ok ()
+    | Error (_ : Caqti_error.load_or_connect) ->
+      let%lwt () =
+        Repo.update_status root (database |> label) Status.ConnectionIssue
+      in
+      Lwt_result.fail Pool_message.(Error.SessionTenantNotFound)
+  ;;
 end
 
 let test_and_create url label =
-  let%lwt connection =
-    let uri = url |> Url.value |> Uri.of_string in
-    Caqti_lwt_unix.with_connection uri (fun (_ : Caqti_lwt.connection) ->
-      Lwt_result.return ())
-  in
-  match connection with
+  match%lwt test_connection url with
   | Ok () -> create label url |> Lwt.return_ok
   | Error (_ : Caqti_error.load_or_connect) ->
     Lwt_result.fail Pool_message.(Error.Invalid Field.DatabaseUrl)

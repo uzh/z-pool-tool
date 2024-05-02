@@ -8,6 +8,7 @@ module Job : sig
     | TenantDatabaseAdded of Database.Label.t
     | TenantDatabaseUpdated of Database.Label.t
     | TenantDatabaseDeleted of Database.Label.t
+    | TenantDatabaseCacheCleared
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
@@ -72,4 +73,9 @@ module Service : sig
   val run : ?identifier:string -> unit -> unit Lwt.t
   val register : ?identifier:string -> unit -> Sihl.Container.Service.t
   val register_worker : unit -> Sihl.Container.Service.t
+
+  module ConnectionWatcher : sig
+    val verify_tenants : unit -> unit Lwt.t
+    val register : unit -> Sihl.Container.Service.t
+  end
 end

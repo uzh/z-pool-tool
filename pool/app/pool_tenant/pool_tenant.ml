@@ -24,3 +24,5 @@ let create_public_url pool_url =
   Sihl.Web.externalize_path
   %> Format.asprintf "https://%s%s" (Url.value pool_url)
 ;;
+
+let clear_cache = Repo.Cache.clear

@@ -1,4 +1,5 @@
 open Entity
+module ConnectionWatcher = Service_connections
 
 let src = Logs.Src.create "system_event.service"
 let get_or_failwith = Pool_common.Utils.get_or_failwith

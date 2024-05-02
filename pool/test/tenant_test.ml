@@ -162,8 +162,6 @@ module Data = struct
       ; gtx_api_key
       ; styles = styles |> CCOption.return
       ; icon = icon |> CCOption.return
-      ; maintenance = Maintenance.create false
-      ; disabled = Disabled.create false
       ; default_language = Common.Language.En
       ; created_at = Common.CreatedAt.create_now ()
       ; updated_at = Common.UpdatedAt.create_now ()
@@ -223,8 +221,7 @@ module Data = struct
       ; icon = icon |> CCOption.return
       ; logos
       ; partner_logo
-      ; maintenance = Maintenance.create false
-      ; disabled = Disabled.create false
+      ; status = Database.Status.Active
       ; default_language = Common.Language.En
       ; text_messages_enabled = false
       ; created_at = Common.CreatedAt.create_now ()
@@ -398,8 +395,6 @@ let[@warning "-4"] create_tenant () =
         ; gtx_api_key = None
         ; styles = styles |> CCOption.return
         ; icon = icon |> CCOption.return
-        ; maintenance = Pool_tenant.Maintenance.create false
-        ; disabled = Pool_tenant.Disabled.create false
         ; default_language
         ; created_at
         ; updated_at
@@ -476,7 +471,6 @@ let[@warning "-4"] update_tenant_details () =
       in
       let* url = url |> Pool_tenant.Url.create in
       let* default_language = default_language |> Common.Language.create in
-      let disabled = false |> Disabled.create in
       let update : update =
         { title
         ; description
@@ -484,7 +478,7 @@ let[@warning "-4"] update_tenant_details () =
         ; default_language
         ; styles = Some styles
         ; icon = Some icon
-        ; disabled
+        ; status = None
         }
       in
       let logo_event =

@@ -4,17 +4,13 @@ let context () =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
   let find_query_language = Http_utils.find_query_lang in
-  let tenant_database_label_of_request req =
-    match Tenant.find req with
-    | Ok { Tenant.tenant; _ } -> Lwt.return_ok tenant.Pool_tenant.database_label
-    | Error _ ->
-      Middleware_tenant.tenant_of_request req
-      >|+ fun { Pool_tenant.database_label; _ } -> database_label
-  in
   let database_label_of_request is_root req =
-    if is_root
-    then Lwt.return_ok Database.root
-    else tenant_database_label_of_request req
+    let tenant_database_label_of_request req =
+      match Tenant.find req with
+      | Ok { Tenant.tenant; _ } -> Ok tenant.Pool_tenant.database_label
+      | Error _ -> Error Pool_message.(Error.Missing Field.Context)
+    in
+    if is_root then Ok Database.root else tenant_database_label_of_request req
   in
   let languages_from_request ?contact req tenant_db =
     let%lwt tenant_languages = Settings.find_languages tenant_db in
@@ -65,7 +61,9 @@ let context () =
             (context_user_of_user pool)
     in
     let%lwt context =
-      let* database_label = database_label_of_request is_root req in
+      let* database_label =
+        database_label_of_request is_root req |> Lwt_result.lift
+      in
       let%lwt user = find_user database_label in
       let%lwt query_lang, language, guardian =
         let to_actor = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in

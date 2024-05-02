@@ -85,28 +85,6 @@ module Icon = struct
   end
 end
 
-module Maintenance = struct
-  include Maintenance
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
-
-module Disabled = struct
-  include Disabled
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
-
 let t =
   let open Entity.Read in
   let open Caqti_type in
@@ -118,8 +96,7 @@ let t =
         ; m.title
         ; m.description
         ; m.url
-        ; m.maintenance
-        ; m.disabled
+        ; m.status
         ; m.default_language
         ; m.created_at
         ; m.updated_at
@@ -134,14 +111,13 @@ let t =
     , ( title
       , ( description
         , ( url
-          , ( maintenance
-            , ( disabled
-              , ( default_language
-                , ( created_at
-                  , ( updated_at
-                    , ( database_label
-                      , (styles, (icon, (text_messages_enabled, ()))) ) ) ) ) )
-            ) ) ) ) )
+          , ( status
+            , ( default_language
+              , ( created_at
+                , ( updated_at
+                  , ( database_label
+                    , (styles, (icon, (text_messages_enabled, ()))) ) ) ) ) ) )
+        ) ) )
     =
     Ok
       { id
@@ -151,8 +127,7 @@ let t =
       ; database_label
       ; styles
       ; icon
-      ; maintenance
-      ; disabled
+      ; status
       ; default_language
       ; text_messages_enabled
       ; created_at
@@ -167,8 +142,7 @@ let t =
       ; Title.t
       ; option Description.t
       ; Url.t
-      ; Maintenance.t
-      ; Disabled.t
+      ; Database.Repo.Status.t
       ; Pool_common.Repo.Language.t
       ; Pool_common.Repo.CreatedAt.t
       ; Pool_common.Repo.UpdatedAt.t
@@ -192,8 +166,6 @@ module Write = struct
           ; m.title
           ; m.description
           ; m.url
-          ; m.maintenance
-          ; m.disabled
           ; m.default_language
           ; m.created_at
           ; m.updated_at
@@ -208,13 +180,11 @@ module Write = struct
       , ( title
         , ( description
           , ( url
-            , ( maintenance
-              , ( disabled
-                , ( default_language
-                  , ( created_at
-                    , ( updated_at
-                      , (database_label, (styles, (icon, (gtx_api_key, ())))) )
-                    ) ) ) ) ) ) ) )
+            , ( default_language
+              , ( created_at
+                , ( updated_at
+                  , (database_label, (styles, (icon, (gtx_api_key, ())))) ) ) )
+            ) ) ) )
       =
       Ok
         { id
@@ -225,8 +195,6 @@ module Write = struct
         ; gtx_api_key
         ; styles
         ; icon
-        ; maintenance
-        ; disabled
         ; default_language
         ; created_at
         ; updated_at
@@ -240,8 +208,6 @@ module Write = struct
         ; Title.t
         ; option Description.t
         ; Url.t
-        ; Maintenance.t
-        ; Disabled.t
         ; Pool_common.Repo.Language.t
         ; Pool_common.Repo.CreatedAt.t
         ; Pool_common.Repo.UpdatedAt.t

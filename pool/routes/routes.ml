@@ -55,7 +55,7 @@ module Public = struct
     Handler.Public.(
       choose
         ~middlewares:
-          [ CustomMiddleware.Tenant.valid_tenant ()
+          [ CustomMiddleware.Tenant.validate ()
           ; CustomMiddleware.Context.context ()
           ; CustomMiddleware.Logger.logger
           ]
@@ -163,7 +163,7 @@ module Contact = struct
   let routes =
     choose
       ~middlewares:
-        [ CustomMiddleware.Tenant.valid_tenant ()
+        [ CustomMiddleware.Tenant.validate ()
         ; CustomMiddleware.Context.context ()
         ; CustomMiddleware.Logger.logger
         ]
@@ -199,7 +199,7 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Tenant.valid_tenant ()
+    [ CustomMiddleware.Tenant.validate ()
     ; CustomMiddleware.Context.context ()
     ; CustomMiddleware.Logger.logger
     ; CustomMiddleware.Admin.require_admin ()

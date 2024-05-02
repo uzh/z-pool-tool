@@ -6,7 +6,7 @@ let add_tenant_database_table =
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `label` varchar(255) NOT NULL,
         `url` varchar(255) NOT NULL,
-        `disabled` boolean NOT NULL DEFAULT FALSE,
+        `status` varchar(128) NOT NULL DEFAULT 'active',
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
@@ -36,10 +36,51 @@ let add_foreign_key_on_label_and_drop_url =
     |sql}
 ;;
 
+let set_status_if_disabled =
+  Database.Migration.Step.create
+    ~label:"set status if disabled"
+    {sql|
+      UPDATE pool_tenant_databases
+      JOIN pool_tenant ON pool_tenant.database_label = pool_tenant_databases.label
+      SET pool_tenant_databases.status = 'disabled'
+      WHERE pool_tenant.disabled = 1
+    |sql}
+;;
+
+let set_status_if_maintenance =
+  Database.Migration.Step.create
+    ~label:"set status if maintenance"
+    {sql|
+      UPDATE pool_tenant_databases
+      JOIN pool_tenant ON pool_tenant.database_label = pool_tenant_databases.label
+      SET pool_tenant.status = 'maintenance'
+      WHERE pool_tenant.maintenance = 1
+    |sql}
+;;
+
+let remove_default_from_status_column =
+  Database.Migration.Step.create
+    ~label:"remove default from status column"
+    {sql| ALTER TABLE pool_tenant_databases ALTER `status` DROP DEFAULT |sql}
+;;
+
+let remove_status_columns_from_pool_tenant =
+  Database.Migration.Step.create
+    ~label:"remove status columns from pool tenant"
+    {sql|
+      ALTER TABLE pool_tenant
+        DROP COLUMN disabled,
+        DROP COLUMN maintenance
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "202404051544"
     |> add_step add_tenant_database_table
     |> add_step insert_existing_databases
-    |> add_step add_foreign_key_on_label_and_drop_url)
+    |> add_step add_foreign_key_on_label_and_drop_url
+    |> add_step set_status_if_disabled
+    |> add_step remove_default_from_status_column
+    |> add_step remove_status_columns_from_pool_tenant)
 ;;

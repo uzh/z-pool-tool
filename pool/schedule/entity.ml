@@ -95,8 +95,16 @@ let is_ok ({ scheduled_time; status; last_run; _ } : public) =
     match scheduled_time, last_run with
     | (At _ | Every _), None -> false
     | At _, Some _ -> true
-    | Every duration, Some last_run ->
-      Ptime.add_span last_run (Ptime.Span.add duration duration)
+    | Every interval, Some last_run ->
+      let minimum_interval =
+        let default = 5 in
+        CCOption.(
+          Ptime.Span.to_int_s interval
+          >|= CCInt.(max default)
+          |> value ~default
+          |> Ptime.Span.of_int_s)
+      in
+      Ptime.add_span last_run (Ptime.Span.add minimum_interval minimum_interval)
       |> CCOption.map_or
            ~default:false
            (Ptime.is_later ~than:(Ptime_clock.now ()))

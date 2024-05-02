@@ -51,17 +51,35 @@ module Url : sig
   include Pool_model.Base.StringSig
 end
 
-module Disabled : sig
-  include Pool_model.Base.BooleanSig
+module Status : sig
+  type t =
+    | Active
+    | ConnectionIssue
+    | Disabled
+    | Maintenance
+    | OpenMigrations
+
+  val create : string -> (t, Pool_message.Error.t) result
+  val all : t list
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  val equal : t -> t -> bool
+  val compare : t -> t -> int
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val sexp_of_t : t -> Sexplib0.Sexp.t
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val read : string -> t
+  val of_string : string -> (t, Pool_conformist.error_msg) result
 end
 
 type t
 
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
-val create : ?disabled:Disabled.t -> Label.t -> Url.t -> t
+val create : ?status:Status.t -> Label.t -> Url.t -> t
 val label : t -> Label.t
-val disabled : t -> Disabled.t
+val status : t -> Status.t
 val to_ctx : Label.t -> (string * string) list
 val of_ctx_opt : (string * string) list -> Label.t option
 val of_ctx_exn : (string * string) list -> Label.t
@@ -78,20 +96,19 @@ module Repo : sig
 
   val sql_database_join_on_label
     :  ?join_prefix:string
-    -> ?disabled:bool
+    -> ?status:[ `All | `List of Status.t list ]
     -> string
     -> string
 
-  val find : Label.t -> Label.t -> (t, Pool_message.Error.t) result Lwt.t
+  val find : Label.t -> Label.t -> (t, Pool_message.Error.t) Lwt_result.t
   val find_all : Label.t -> t list Lwt.t
   val insert_request : (t, unit, [ `Zero ]) Caqti_request.t
   val insert : Label.t -> t -> unit Lwt.t
   val update_request : (Label.t * t, unit, [ `Zero ]) Caqti_request.t
   val update : Label.t -> t -> t -> unit Lwt.t
 
-  module Label : sig
-    val t : Label.t Caqti_type.t
-  end
+  module Status : Pool_model.Base.CaqtiSig with type t = Status.t
+  module Label : Pool_model.Base.CaqtiSig with type t = Label.t
 
   val t : t Caqti_type.t
 end
@@ -101,6 +118,7 @@ module Logger : sig
     val add_label : string Logs.Tag.def
     val add : Label.t -> Logs.Tag.set -> Logs.Tag.set
     val create : Label.t -> Logs.Tag.set
+    val extend : Label.t -> Logs.Tag.set option -> Logs.Tag.set
   end
 end
 
@@ -117,7 +135,7 @@ val show_error_with_log
   -> [< Caqti_error.t ]
   -> string
 
-val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) result Lwt.t
+val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) Lwt_result.t
 val fetch_pool : Label.t -> status
 val add_pool : ?required:bool -> ?pool_size:int -> t -> status
 val drop_pool : Label.t -> unit Lwt.t
@@ -166,7 +184,7 @@ val exec_query
   :  ('a, unit, [< `Zero ]) Caqti_request.t
   -> 'a
   -> (module Caqti_lwt.CONNECTION)
-  -> (unit, [> Caqti_error.call_or_retrieve ]) result Lwt.t
+  -> (unit, [> Caqti_error.call_or_retrieve ]) Lwt_result.t
 
 val exclude_ids
   :  string
@@ -177,7 +195,7 @@ val exclude_ids
 
 val with_disabled_fk_check
   :  Label.t
-  -> (Caqti_lwt.connection -> ('a, Caqti_error.t) result Lwt.t)
+  -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
   -> 'a Lwt.t
 
 val clean_requests
@@ -284,16 +302,25 @@ module Root : sig
   val setup : unit -> status Lwt.t
   val start : unit -> unit Lwt.t
   val stop : unit -> unit Lwt.t
+  val test_connection : unit -> (unit, Pool_message.Error.t) result Lwt.t
 end
 
 val root : Label.t
 val is_root : Label.t -> bool
 
 module Tenant : sig
-  val setup_tenant : t -> Label.t Lwt.t
+  val add : t -> Label.t Lwt.t
   val setup : unit -> Label.t list Lwt.t
-  val find : Label.t -> (t, Pool_message.Error.t) result Lwt.t
-  val find_all_running : unit -> Label.t list Lwt.t
+  val find : Label.t -> (t, Pool_message.Error.t) Lwt_result.t
+  val find_all_by_status : ?status:Status.t list -> unit -> Label.t list Lwt.t
+
+  val find_label_by_url
+    :  ?allowed_status:Status.t list
+    -> Url.t
+    -> (Label.t, Pool_message.Error.t) Lwt_result.t
+
+  val update_status : Label.t -> Status.t -> unit Lwt.t
   val start : unit -> unit Lwt.t
   val stop : unit -> unit Lwt.t
+  val test_connection : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
 end

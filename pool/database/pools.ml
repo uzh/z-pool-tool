@@ -142,7 +142,6 @@ module Make (Config : Pools_sig.ConfigSig) = struct
   ;;
 
   let fetch_pool database_label =
-    let () = initialize () in
     Hashtbl.find_opt pools database_label
     |> function
     | Some (Ok status) -> Ok status

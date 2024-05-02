@@ -128,7 +128,7 @@ module EditDetails : sig
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
-    ; disabled : Pool_tenant.Disabled.t
+    ; status : Database.Status.t option
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
     ; icon : Pool_tenant.Icon.Write.t option
@@ -149,7 +149,7 @@ end = struct
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
-    ; disabled : Pool_tenant.Disabled.t
+    ; status : Database.Status.t option
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
     ; icon : Pool_tenant.Icon.Write.t option
@@ -161,7 +161,7 @@ end = struct
     title
     description
     url
-    disabled
+    status
     default_language
     styles
     icon
@@ -171,7 +171,7 @@ end = struct
     { title
     ; description
     ; url
-    ; disabled
+    ; status
     ; default_language
     ; styles
     ; icon
@@ -187,7 +187,7 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Pool_tenant.Disabled.schema ()
+          ; Conformist.optional @@ Database.Status.schema ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
@@ -208,7 +208,7 @@ end = struct
         { title = command.title
         ; description = command.description
         ; url = command.url
-        ; disabled = command.disabled
+        ; status = command.status
         ; styles = command.styles
         ; icon = command.icon
         ; default_language = command.default_language

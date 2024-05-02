@@ -97,18 +97,6 @@ module PartnerLogos = struct
   let of_files lst = lst
 end
 
-module Maintenance = struct
-  include Pool_model.Base.Boolean
-
-  let schema = schema Pool_message.Field.TenantMaintenanceFlag
-end
-
-module Disabled = struct
-  include Pool_model.Base.Boolean
-
-  let schema = schema Pool_message.Field.TenantDisabledFlag
-end
-
 type t =
   { id : Id.t
   ; title : Title.t
@@ -119,8 +107,7 @@ type t =
   ; icon : Icon.t option
   ; logos : Logos.t
   ; partner_logo : PartnerLogos.t
-  ; maintenance : Maintenance.t
-  ; disabled : Disabled.t
+  ; status : Database.Status.t
   ; default_language : Common.Language.t
   ; text_messages_enabled : bool
   ; created_at : CreatedAt.t
@@ -139,8 +126,7 @@ module Read = struct
     ; database_label : Database.Label.t
     ; styles : Styles.t option
     ; icon : Icon.t option
-    ; maintenance : Maintenance.t
-    ; disabled : Disabled.t
+    ; status : Database.Status.t
     ; default_language : Common.Language.t
     ; text_messages_enabled : bool
     ; created_at : CreatedAt.t
@@ -159,8 +145,6 @@ module Write = struct
     ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
-    ; maintenance : Maintenance.t
-    ; disabled : Disabled.t
     ; default_language : Common.Language.t
     ; created_at : CreatedAt.t
     ; updated_at : UpdatedAt.t
@@ -176,8 +160,6 @@ module Write = struct
     ; gtx_api_key = None
     ; styles
     ; icon
-    ; maintenance = Maintenance.create false
-    ; disabled = Disabled.create false
     ; default_language
     ; created_at = CreatedAt.create_now ()
     ; updated_at = UpdatedAt.create_now ()

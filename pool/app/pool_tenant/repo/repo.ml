@@ -28,19 +28,19 @@ module Sql = struct
   let update_request =
     {sql|
       UPDATE pool_tenant
+      JOIN pool_tenant_databases ON pool_tenant_databases.label = pool_tenant.database_label
       SET
-        title = $2,
-        description = $3,
-        url = $4,
-        maintenance = $5,
-        disabled = $6,
-        default_language = $7,
-        created_at = $8,
-        updated_at = $9,
-        database_label = $10,
-        styles = UNHEX(REPLACE($11, '-', '')),
-        icon = UNHEX(REPLACE($12, '-', '')),
-        gtx_api_key = $13
+        pool_tenant.title = $2,
+        pool_tenant.description = $3,
+        pool_tenant.url = $4,
+        pool_tenant_databases.status = $5,
+        pool_tenant.default_language = $6,
+        pool_tenant.created_at = $7,
+        pool_tenant.updated_at = $8,
+        pool_tenant.database_label = $9,
+        pool_tenant.styles = UNHEX(REPLACE($10, '-', '')),
+        pool_tenant.icon = UNHEX(REPLACE($11, '-', '')),
+        pool_tenant.gtx_api_key = $12
       WHERE
       pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -69,8 +69,7 @@ module Sql = struct
     ; "pool_tenant.title"
     ; "pool_tenant.description"
     ; "pool_tenant.url"
-    ; "pool_tenant.maintenance"
-    ; "pool_tenant.disabled"
+    ; "pool_tenant_databases.status"
     ; "pool_tenant.default_language"
     ; "pool_tenant.created_at"
     ; "pool_tenant.updated_at"
@@ -80,6 +79,7 @@ module Sql = struct
   let joins =
     let database_join =
       Database.Repo.sql_database_join_on_label
+        ~status:`All
         ~join_prefix:"INNER"
         "pool_tenant.database_label"
     in
@@ -110,12 +110,12 @@ module Sql = struct
     in
     [%string
       {sql|
-      SELECT
-        %{columns}
-      FROM pool_tenant
-      %{joins}
-      %{where_fragment}
-    |sql}]
+        SELECT
+          %{columns}
+        FROM pool_tenant
+        %{joins}
+        %{where_fragment}
+      |sql}]
   ;;
 
   let find_fragment =
@@ -178,8 +178,6 @@ module Sql = struct
           title,
           description,
           url,
-          maintenance,
-          disabled,
           default_language,
           created_at,
           updated_at,
@@ -196,11 +194,9 @@ module Sql = struct
           $6,
           $7,
           $8,
-          $9,
-          $10,
-          %{Id.sql_value_fragment "$11"},
-          %{Id.sql_value_fragment "$12"},
-          $13
+          %{Id.sql_value_fragment "$9"},
+          %{Id.sql_value_fragment "$10"},
+          $11
         )
       |sql}]
     |> RepoEntity.Write.t ->. Caqti_type.unit
@@ -230,8 +226,7 @@ let set_logos tenant logos =
     ; icon = tenant.icon
     ; logos = tenant_logos
     ; partner_logo
-    ; maintenance = tenant.maintenance
-    ; disabled = tenant.disabled
+    ; status = tenant.status
     ; default_language = tenant.default_language
     ; text_messages_enabled = tenant.text_messages_enabled
     ; created_at = tenant.created_at

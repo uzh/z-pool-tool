@@ -1,8 +1,6 @@
 module Title : Pool_model.Base.StringSig
 module Description : Pool_model.Base.StringSig
 module GtxApiKey : Pool_model.Base.StringSig
-module Maintenance : Pool_model.Base.BooleanSig
-module Disabled : Pool_model.Base.BooleanSig
 
 module Id : sig
   include Pool_model.Base.IdSig
@@ -113,8 +111,7 @@ type t =
   ; icon : Icon.t option
   ; logos : Logos.t
   ; partner_logo : PartnerLogos.t
-  ; maintenance : Maintenance.t
-  ; disabled : Disabled.t
+  ; status : Database.Status.t
   ; default_language : Pool_common.Language.t
   ; text_messages_enabled : bool
   ; created_at : Pool_common.CreatedAt.t
@@ -136,8 +133,6 @@ module Write : sig
     ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
-    ; maintenance : Maintenance.t
-    ; disabled : Disabled.t
     ; default_language : Pool_common.Language.t
     ; created_at : Pool_common.CreatedAt.t
     ; updated_at : Pool_common.UpdatedAt.t
@@ -161,7 +156,7 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; disabled : Disabled.t
+  ; status : Database.Status.t option
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
   ; icon : Icon.Write.t option
@@ -176,9 +171,10 @@ val find_all : unit -> t list Lwt.t
 
 val find_gtx_api_key_by_label
   :  Database.Label.t
-  -> (GtxApiKey.t, Pool_message.Error.t) result Lwt.t
+  -> (GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
 
 val create_public_url : Url.t -> string -> string
+val clear_cache : unit -> unit
 
 type handle_list_recruiters = unit -> Pool_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t

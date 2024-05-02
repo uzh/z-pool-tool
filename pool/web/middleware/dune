@@ -9,6 +9,7 @@
   page
   pool_canary
   sihl
+  system_event
   tyxml
   utils)
  (preprocess

@@ -18,6 +18,8 @@ module Job = struct
     [@printer Utils.ppx_printer "tenantdatabaseupdated"]
     | TenantDatabaseDeleted of Database.Label.t [@name "tenantdatabasedeleted"]
     [@printer Utils.ppx_printer "tenantdatabasedeleted"]
+    | TenantDatabaseCacheCleared [@name "tenantdatabasecachecleared"]
+    [@printer Utils.ppx_printer "tenantdatabasecachecleared"]
   [@@deriving eq, show, yojson]
 
   let read m = m |> Yojson.Safe.from_string |> t_of_yojson

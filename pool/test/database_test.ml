@@ -28,7 +28,7 @@ let check_root_database _ () =
 
 let check_find_tenant_database _ () =
   let expected = [ fst Data.database ] in
-  let%lwt tenants = Database.Tenant.find_all_running () in
+  let%lwt tenants = Database.Tenant.find_all_by_status () in
   Alcotest.(check (list Testable.label) "databases found" expected tenants)
   |> Lwt.return
 ;;

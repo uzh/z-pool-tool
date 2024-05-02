@@ -68,7 +68,7 @@ let run database_label =
 
 let run_all () =
   let open Utils.Lwt_result.Infix in
-  Database.Tenant.find_all_running () >|> Lwt_list.iter_s run
+  Database.Tenant.find_all_by_status () >|> Lwt_list.iter_s run
 ;;
 
 let start () =

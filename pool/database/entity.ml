@@ -35,21 +35,41 @@ module Label = struct
   let hash = CCString.hash
 end
 
-module Disabled = struct
-  include Pool_model.Base.Boolean
+module Status = struct
+  module Core = struct
+    let print = Utils.ppx_printer
+    let field = Pool_message.Field.Status
 
-  let field = Pool_message.Field.Disabled
-  let schema () = schema field ()
+    type t =
+      | Active [@name "active"] [@printer print "active"]
+      | ConnectionIssue [@name "connection_issue"]
+      [@printer print "connection_issue"]
+      | Disabled [@name "disabled"] [@printer print "disabled"]
+      | Maintenance [@name "maintenance"] [@printer print "maintenance"]
+      | OpenMigrations [@name "open_migrations"]
+      [@printer print "open_migrations"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
+
+  include Pool_model.Base.SelectorType (Core)
+  include Core
+
+  let read = Utils.Json.read_variant t_of_yojson
+
+  let of_string str =
+    try Ok (read str) with
+    | _ -> Error Pool_message.(Error.Invalid Field.Status)
+  ;;
 end
 
 type t =
   { label : Label.t
   ; url : Url.t [@opaque]
-  ; disabled : Disabled.t
+  ; status : Status.t
   }
 [@@deriving eq, show, fields]
 
-let create ?(disabled = false) label url = { url; label; disabled }
+let create ?(status = Status.Active) label url = { url; label; status }
 let root = Label.of_string "root"
 let is_root = Label.equal root
 
