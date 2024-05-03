@@ -17,6 +17,6 @@ let create_tenant_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "tenant_logo_mappings" |> add_step create_tenant_table)
 ;;

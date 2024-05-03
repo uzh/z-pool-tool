@@ -66,7 +66,7 @@ let add_marked_as_deleted_column =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "participation"
     |> add_step create_participation_table
     |> add_step rename_participant_to_subject

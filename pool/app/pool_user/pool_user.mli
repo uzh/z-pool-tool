@@ -14,6 +14,11 @@ module EmailAddress : sig
     :  Settings.EmailSuffix.t list option
     -> t
     -> (unit, Pool_message.Error.t) result
+
+  val schema
+    :  ?field:Pool_message.Field.t
+    -> unit
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module Password : sig
@@ -66,7 +71,7 @@ module Password : sig
   val validate_confirmation
     :  Plain.t
     -> Confirmation.t
-    -> (unit, Pool_conformist.error_msg) result
+    -> (unit, Pool_message.Error.t) result
 
   type t
 

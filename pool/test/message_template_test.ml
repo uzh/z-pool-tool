@@ -292,11 +292,13 @@ module ExperimentSenderData = struct
 
   let initialize () =
     let open Integration_utils in
-    let%lwt admin = AdminRepo.create ~id:admin_id ~email:admin_email () in
     let%lwt experiment = ExperimentRepo.create ~id:experiment_id () in
     let%lwt (_ : Contact.t) = ContactRepo.create ~id:contact_id () in
     let open Experiment in
-    Updated { experiment with contact_person_id = Some (Admin.id admin) }
+    Updated
+      { experiment with
+        contact_email = Some (Pool_user.EmailAddress.of_string admin_email)
+      }
     |> handle_event database_label
   ;;
 end
@@ -351,14 +353,12 @@ let assignment_creation_with_sender _ () =
     let%lwt session =
       Integration_utils.SessionRepo.create ~id:session_id experiment ()
     in
-    let%lwt admin = Admin.find database_label admin_id ||> get_exn in
     let%lwt confirmation_email =
       Message_template.AssignmentConfirmation.prepare
         tenant
         contact
         experiment
         session
-        (Some admin)
       ||> fun fnc -> fnc (Assignment.create contact)
     in
     Alcotest.(

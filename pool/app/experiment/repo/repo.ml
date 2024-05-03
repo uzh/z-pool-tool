@@ -12,7 +12,7 @@ let sql_select_columns =
   ; "pool_experiments.public_description"
   ; "pool_experiments.language"
   ; "pool_experiments.cost_center"
-  ; Entity.Id.sql_select_fragment ~field:"pool_experiments.contact_person_uuid"
+  ; "pool_experiments.contact_email"
   ; Entity.Id.sql_select_fragment ~field:"pool_experiments.smtp_auth_uuid"
   ; "pool_experiments.direct_registration_disabled"
   ; "pool_experiments.registration_disabled"
@@ -20,9 +20,12 @@ let sql_select_columns =
   ; "pool_experiments.external_data_required"
   ; "pool_experiments.show_external_data_id_links"
   ; "pool_experiments.experiment_type"
+  ; "pool_experiments.assignment_without_session"
+  ; "pool_experiments.survey_url"
   ; "pool_experiments.email_session_reminder_lead_time"
   ; "pool_experiments.text_message_session_reminder_lead_time"
   ; "pool_experiments.invitation_reset_at"
+  ; "pool_experiments.matcher_notification_sent"
   ; "pool_experiments.created_at"
   ; "pool_experiments.updated_at"
   ]
@@ -84,8 +87,13 @@ let participation_history_sql additional_joins ?(count = false) where_fragment =
           a.contact_uuid = pool_assignments.contact_uuid
           AND a.canceled_at IS NULL
           AND a.marked_as_deleted = 0
-          AND pool_sessions.closed_at IS NULL
-          AND pool_sessions.experiment_uuid = pool_experiments.uuid)
+          AND pool_sessions.experiment_uuid = pool_experiments.uuid
+          AND(
+            CASE WHEN pool_experiments.assignment_without_session = 1 THEN
+              a.participated IS NULL
+            ELSE
+              pool_sessions.closed_at IS NULL
+            END))
     |sql}
   in
   let columns =
@@ -118,7 +126,7 @@ module Sql = struct
         cost_center,
         organisational_unit_uuid,
         filter_uuid,
-        contact_person_uuid,
+        contact_email,
         smtp_auth_uuid,
         direct_registration_disabled,
         registration_disabled,
@@ -126,9 +134,12 @@ module Sql = struct
         external_data_required,
         show_external_data_id_links,
         experiment_type,
+        assignment_without_session,
+        survey_url,
         email_session_reminder_lead_time,
         text_message_session_reminder_lead_time,
-        invitation_reset_at
+        invitation_reset_at,
+        matcher_notification_sent
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
         ?,
@@ -141,6 +152,9 @@ module Sql = struct
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
+        ?,
+        ?,
+        ?,
         ?,
         ?,
         ?,
@@ -294,7 +308,7 @@ module Sql = struct
         cost_center = $7,
         organisational_unit_uuid = UNHEX(REPLACE($8, '-', '')),
         filter_uuid = UNHEX(REPLACE($9, '-', '')),
-        contact_person_uuid = UNHEX(REPLACE($10, '-', '')),
+        contact_email = $10,
         smtp_auth_uuid = UNHEX(REPLACE($11, '-', '')),
         direct_registration_disabled = $12,
         registration_disabled = $13,
@@ -302,9 +316,12 @@ module Sql = struct
         external_data_required = $15,
         show_external_data_id_links = $16,
         experiment_type = $17,
-        email_session_reminder_lead_time = $18,
-        text_message_session_reminder_lead_time = $19,
-        invitation_reset_at = $20
+        assignment_without_session = $18,
+        survey_url = $19,
+        email_session_reminder_lead_time = $20,
+        text_message_session_reminder_lead_time = $21,
+        invitation_reset_at = $22,
+        matcher_notification_sent = $23
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -473,6 +490,7 @@ module Sql = struct
           WHERE
             (pool_experiments.title LIKE $1
             OR pool_experiments.public_title LIKE $1)
+            AND pool_experiments.assignment_without_session = 0
             %s
           GROUP BY
             pool_experiments.uuid
@@ -551,22 +569,48 @@ module Sql = struct
 
   let participation_history_where
     ?(dyn = Dynparam.empty)
-    ~exclude_past
+    ~only_closed
     contact_id
     =
     let joins =
-      Format.asprintf
-        {sql|
+      {sql|
         INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
-          %s
         INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
           AND pool_assignments.canceled_at IS NULL
           AND pool_assignments.marked_as_deleted = 0
-       |sql}
-        (if exclude_past then "AND pool_sessions.closed_at IS NOT NULL" else "")
+        |sql}
     in
     let where =
-      {sql| pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      let only_closed_condition =
+        {sql|
+          CASE WHEN pool_experiments.assignment_without_session = 1 THEN
+            pool_assignments.participated = 1
+          ELSE
+            pool_sessions.closed_at IS NOT NULL
+          END
+        |sql}
+      in
+      Format.asprintf
+        {sql|
+            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+            %s
+        |sql}
+        (if only_closed
+         then Format.asprintf "AND (%s)" only_closed_condition
+         else "")
+    in
+    let _ =
+      Format.asprintf
+        {sql|
+            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+            AND(
+              CASE WHEN pool_experiments.assignment_without_session = 1 THEN
+                pool_assignments.participated = 1
+              ELSE
+                %s
+              END)
+        |sql}
+        (if only_closed then "pool_sessions.closed_at IS NOT NULL" else "TRUE")
     in
     (where, dyn |> Dynparam.add Contact.Repo.Id.t contact_id), joins
   ;;
@@ -574,7 +618,7 @@ module Sql = struct
   let query_participation_history_by_contact ?query pool contact =
     let contact_id = Contact.id contact in
     let where, additional_joins =
-      participation_history_where ~exclude_past:false contact_id
+      participation_history_where ~only_closed:false contact_id
     in
     Query.collect_and_count
       pool
@@ -582,6 +626,27 @@ module Sql = struct
       ~select:(participation_history_sql additional_joins)
       ~where
       Caqti_type.(t2 Repo_entity.t bool)
+  ;;
+
+  let count_invitations_request ?(by_count = false) () =
+    let base =
+      {sql|
+      SELECT COUNT(1)
+      FROM pool_invitations
+      WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    in
+    match by_count with
+    | false -> base
+    | true -> Format.asprintf "%s \n %s" base "AND send_count = ?"
+  ;;
+
+  let total_invitation_count_by_experiment pool experiment_id =
+    let open Caqti_request.Infix in
+    Database.find
+      pool
+      (count_invitations_request () |> Caqti_type.(string ->! int))
+      (Entity.Id.value experiment_id)
   ;;
 end
 

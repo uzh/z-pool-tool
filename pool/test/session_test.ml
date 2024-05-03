@@ -1431,7 +1431,9 @@ let close_session_check_contact_figures _ () =
     contacts |> Lwt_list.map_s (fst %> AssignmentRepo.create session)
   in
   let%lwt assignments =
-    Assignment.find_by_session Data.database_label session.Session.id
+    Assignment.find_not_deleted_by_session
+      Data.database_label
+      session.Session.id
   in
   let find_assignment contact =
     CCList.find

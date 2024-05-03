@@ -84,7 +84,7 @@ let drop_id_foreignkey_column_from_mailings =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202303230956"
     |> add_step add_uuid_columns_to_invitations_table
     |> add_step set_uuid_columns_on_invitations_table

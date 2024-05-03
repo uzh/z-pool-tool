@@ -1,3 +1,8 @@
+type identifier =
+  [ `Server
+  | `Worker
+  ]
+
 module Id : module type of Pool_common.Id
 
 module Job : sig
@@ -36,7 +41,7 @@ module EventLog : sig
   module ServiceIdentifier : sig
     include Pool_model.Base.StringSig
 
-    val get : ?identifier:string -> unit -> t
+    val get : identifier -> t
   end
 
   module Status : sig
@@ -65,14 +70,12 @@ val created : t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val find_pending : EventLog.ServiceIdentifier.t -> t list Lwt.t
 val handle_event : event -> unit Lwt.t
-val handle_system_event : ?identifier:string -> t -> unit Lwt.t
+val handle_system_event : identifier -> t -> unit Lwt.t
 
 module Service : sig
-  val run : ?identifier:string -> unit -> unit Lwt.t
-  val register : ?identifier:string -> unit -> Sihl.Container.Service.t
-  val register_worker : unit -> Sihl.Container.Service.t
+  val run : identifier -> unit -> unit Lwt.t
+  val register : identifier -> unit -> Sihl.Container.Service.t
 
   module ConnectionWatcher : sig
     val verify_tenants : unit -> unit Lwt.t

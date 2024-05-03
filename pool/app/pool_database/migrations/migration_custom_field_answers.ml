@@ -59,7 +59,7 @@ let add_unique_combination_constraint =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "custom_field_answers"
     |> add_step create_custom_field_answers_table
     |> add_step remove_version_column

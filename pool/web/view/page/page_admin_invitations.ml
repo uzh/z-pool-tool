@@ -179,13 +179,15 @@ module Partials = struct
     let field_to_string field =
       Utils.field_to_string language field |> CCString.capitalize_ascii
     in
+    let text_to_string = Utils.text_to_string language in
     let thead =
-      let to_string = CCFun.(field_to_string %> txt) in
       thead
         Field.
           [ tr
-              [ td ~a:[ a_class [ "w-7" ] ] [ to_string InvitationCount ]
-              ; td [ to_string InvitationCount ]
+              [ td
+                  ~a:[ a_class [ "w-7" ] ]
+                  [ text_to_string I18n.Iteration |> txt ]
+              ; td [ field_to_string InvitationCount |> txt ]
               ]
           ]
     in
@@ -199,14 +201,7 @@ module Partials = struct
     in
     let table =
       match sent_by_count with
-      | [] ->
-        p
-          [ strong
-              [ txt
-                  Pool_common.(
-                    Utils.text_to_string language I18n.NoInvitationsSent)
-              ]
-          ]
+      | [] -> p [ strong [ txt (text_to_string I18n.NoInvitationsSent) ] ]
       | sent_by_count ->
         sent_by_count
         |> CCList.map (fun (key, value) ->
@@ -217,17 +212,13 @@ module Partials = struct
         rows @ [ total ] |> table ~thead ~a:[ a_class [ "table"; "simple" ] ]
     in
     div
-      [ p
-          [ txt
-              Pool_common.(
-                Utils.text_to_string language I18n.InvitationsStatisticsIntro)
-          ]
+      [ p [ txt (text_to_string I18n.InvitationsStatisticsIntro) ]
       ; p
           [ txt
               Pool_common.(
                 Format.asprintf
                   "%s %i"
-                  (Utils.text_to_string language I18n.FilterNrOfContacts)
+                  (text_to_string I18n.FilterNrOfContacts)
                   total_match_filter)
           ]
       ; table
@@ -261,8 +252,8 @@ let sent_invitations
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.Invitations
+         ~active_navigation:"invitations/sent"
          context
-         (I18n I18n.SentInvitations)
+         (NavLink I18n.SentInvitations)
          experiment)
 ;;

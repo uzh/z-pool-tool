@@ -27,6 +27,12 @@ module CostCenter : sig
   include Pool_model.Base.StringSig
 end
 
+module ContactEmail : sig
+  val schema
+    :  unit
+    -> (Pool_message.Error.t, Pool_user.EmailAddress.t) Pool_conformist.Field.t
+end
+
 module DirectRegistrationDisabled : sig
   include Pool_model.Base.BooleanSig
 end
@@ -54,11 +60,60 @@ module ShowExternalDataIdLinks : sig
   include Pool_model.Base.BooleanSig
 end
 
+module AssignmentWithoutSession : sig
+  include Pool_model.Base.BooleanSig
+end
+
+module SurveyUrl : sig
+  include Pool_model.Base.StringSig
+end
+
+module OnlineExperiment : sig
+  type t = { survey_url : SurveyUrl.t }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val survey_url : t -> SurveyUrl.t
+  val create : survey_url:SurveyUrl.t -> t
+
+  val create_opt
+    :  assignment_without_session:AssignmentWithoutSession.t
+    -> survey_url:SurveyUrl.t option
+    -> t option
+
+  val callback_url
+    :  Pool_tenant.t
+    -> experiment_id:Id.t
+    -> assignment_id:Pool_common.Id.t
+    -> string
+
+  val url_params
+    :  Pool_tenant.t
+    -> experiment_id:Id.t
+    -> assignment_id:Pool_common.Id.t
+    -> (string * string) list
+
+  val render_survey_url
+    :  Pool_tenant.t
+    -> experiment_id:Id.t
+    -> assignment_id:Pool_common.Id.t
+    -> SurveyUrl.t
+    -> string
+end
+
 module InvitationResetAt : sig
   include Pool_model.Base.PtimeSig
 
   val of_ptime : Ptime.t -> t
   val create : Ptime.t -> (t, Pool_message.Error.t) result
+end
+
+module MatcherNotificationSent : sig
+  type t
+
+  val value : t -> bool
+  val create : bool -> t
 end
 
 type t =
@@ -71,7 +126,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
-  ; contact_person_id : Admin.Id.t option
+  ; contact_email : Pool_user.EmailAddress.t option
   ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -79,11 +134,13 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
+  ; online_experiment : OnlineExperiment.t option
   ; email_session_reminder_lead_time :
       Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
   ; invitation_reset_at : InvitationResetAt.t option
+  ; matcher_notification_sent : MatcherNotificationSent.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -100,7 +157,7 @@ val language : t -> Pool_common.Language.t option
 val cost_center : t -> CostCenter.t option
 val organisational_unit : t -> Organisational_unit.t option
 val filter : t -> Filter.t option
-val contact_person_id : t -> Admin.Id.t option
+val contact_email : t -> Pool_user.EmailAddress.t option
 val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
 val direct_registration_disabled : t -> DirectRegistrationDisabled.t
 val registration_disabled : t -> RegistrationDisabled.t
@@ -123,7 +180,7 @@ val updated_at : t -> Pool_common.UpdatedAt.t
 
 val create
   :  ?id:Id.t
-  -> ?contact_person_id:Admin.Id.t
+  -> ?contact_email:Pool_user.EmailAddress.t
   -> ?cost_center:CostCenter.t
   -> ?internal_description:InternalDescription.t
   -> ?public_description:PublicDescription.t
@@ -136,6 +193,7 @@ val create
   -> ?smtp_auth_id:Email.SmtpAuth.Id.t
   -> ?text_message_session_reminder_lead_time:
        Pool_common.Reminder.TextMessageLeadTime.t
+  -> ?online_experiment:OnlineExperiment.t
   -> Title.t
   -> PublicTitle.t
   -> DirectRegistrationDisabled.t
@@ -152,12 +210,15 @@ type create =
   ; public_description : PublicDescription.t option
   ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
+  ; contact_email : Pool_user.EmailAddress.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
+  ; assignment_without_session : AssignmentWithoutSession.t
+  ; survey_url : SurveyUrl.t option
   ; email_session_reminder_lead_time : int option
   ; email_session_reminder_lead_time_unit : Pool_model.Base.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option
@@ -181,6 +242,7 @@ module Public : sig
     -> ?language:Pool_common.Language.t
     -> ?experiment_type:Pool_common.ExperimentType.t
     -> ?smtp_auth_id:Email.SmtpAuth.Id.t
+    -> ?online_experiment:OnlineExperiment.t
     -> Id.t
     -> PublicTitle.t
     -> DirectRegistrationDisabled.t
@@ -193,6 +255,8 @@ module Public : sig
   val direct_registration_disabled : t -> DirectRegistrationDisabled.t
   val experiment_type : t -> Pool_common.ExperimentType.t option
   val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
+  val online_experiment : t -> OnlineExperiment.t option
+  val is_sessionless : t -> bool
 
   val update_direct_registration_disabled
     :  t
@@ -272,14 +336,10 @@ val find_of_mailing
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_all_public_by_contact
-  :  Database.Label.t
-  -> Contact.t
-  -> Public.t list Lwt.t
-
 val find_upcoming_to_register
   :  Database.Label.t
   -> Contact.t
+  -> [ `OnSite | `Online ]
   -> Public.t list Lwt.t
 
 val find_pending_waitinglists_by_contact
@@ -332,6 +392,11 @@ val query_participation_history_by_contact
   -> Contact.t
   -> ((t * bool) list * Query.t) Lwt.t
 
+val find_admins_to_notify_about_invitations
+  :  Database.Label.t
+  -> Id.t
+  -> Admin.t list Lwt.t
+
 val invitation_count : Database.Label.t -> Id.t -> int Lwt.t
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
@@ -339,6 +404,8 @@ val title_value : t -> string
 val public_title_value : t -> string
 val email_session_reminder_lead_time_value : t -> Ptime.span option
 val text_message_session_reminder_lead_time_value : t -> Ptime.span option
+val assignment_without_session_value : t -> bool
+val survey_url_value : t -> string option
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
 val allow_uninvited_signup_value : t -> bool
@@ -350,7 +417,7 @@ val smtp_auth
   -> t
   -> (Email.SmtpAuth.t option, Pool_message.Error.t) Lwt_result.t
 
-val find_contact_person : Database.Label.t -> t -> Admin.t option Lwt.t
+val is_sessionless : t -> bool
 
 module Repo : sig
   val sql_select_columns : string list

@@ -13,6 +13,6 @@ let add_default_text_message_lead_time =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309121645" |> add_step add_default_text_message_lead_time)
 ;;

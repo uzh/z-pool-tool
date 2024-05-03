@@ -241,11 +241,16 @@ let () =
             "create experiment without title"
             `Quick
             Experiment_test.create_without_title
+        ; test_case "create survey url" `Quick Experiment_test.create_survey_url
         ; test_case "update experiment" `Quick Experiment_test.update
         ; test_case
             "add ou and contact person"
             `Quick
             Experiment_test.update_add_ou_and_contact_person
+        ; test_case
+            "update with existing sessions"
+            `Quick
+            Experiment_test.update_with_existing_sessions
         ; test_case "remove ou" `Quick Experiment_test.update_remove_ou
         ; test_case
             "delete experiment with sessions"
@@ -534,6 +539,11 @@ let () =
             `Quick
             User_import_test.confirm_as_contact
         ] )
+    ; Smtp_test.(
+        ( "smtp auth"
+        , [ test_case "creat valid" `Quick create_smtp_valid
+          ; test_case "create missing username" `Quick create_missing_username
+          ] ))
     ; ( "tags"
       , [ test_case "create tag succeeds" `Quick Tag_test.create_event
         ; test_case "update tag succeeds" `Quick Tag_test.update_event
@@ -546,5 +556,13 @@ let () =
             `Quick
             Tag_test.remove_auto_tag_from_experiment
         ] )
+    ; ( "role permission"
+      , [ test_case
+            "update role permissions"
+            `Quick
+            Role_permission_test.update_permissions
+        ] )
+    ; ( "time window"
+      , Time_window_test.[ test_case "create" `Slow create_timewindow ] )
     ]
 ;;

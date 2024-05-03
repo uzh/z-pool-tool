@@ -59,7 +59,7 @@ let add_import_flag_to_contacts_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202307131619"
     |> add_step create_pool_admins_table
     |> add_step seed_pool_admins_table_from_user_users_table
@@ -68,7 +68,7 @@ let migration () =
 ;;
 
 let migration_root () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202307131619"
     |> add_step create_pool_admins_table
     |> add_step seed_pool_admins_table_from_user_users_table)

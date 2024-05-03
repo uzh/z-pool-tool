@@ -33,6 +33,7 @@ let find_incomplete_by_admin = Repo.Sql.find_incomplete_by_admin
 let find_upcoming_by_admin = Repo.Sql.find_upcoming_by_admin
 let query_grouped_by_experiment = Repo.Sql.query_grouped_by_experiment
 let query_by_experiment = Repo.Sql.query_by_experiment
+let find_sessions_to_update_matcher = Repo.Sql.find_sessions_to_update_matcher
 
 let has_bookable_spots_for_experiments tenant experiment =
   let open Utils.Lwt_result.Infix in
@@ -67,6 +68,7 @@ module Repo = struct
 
   module Id = Repo_entity.Id
   module Start = Repo_entity.Start
+  module End = Repo_entity.End
   module Duration = Repo_entity.Duration
 
   let t = Repo_entity.t

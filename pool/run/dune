@@ -4,6 +4,7 @@
  (preprocess
   (pps lwt_ppx ppx_deriving.show))
  (libraries
+  assignment_job
   caqti-driver-mariadb
   command
   guard

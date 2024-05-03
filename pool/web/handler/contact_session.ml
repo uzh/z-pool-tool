@@ -33,11 +33,7 @@ let show req =
          Session.find_follow_ups database_label id
          ||> CCList.map Session.to_public
        in
-       Page.Contact.Experiment.Assignment.detail
-         session
-         follow_ups
-         experiment
-         context
+       Page.Contact.Assignment.detail session follow_ups experiment context
        |> Lwt.return_ok
        >>= create_layout req context
        >|+ Sihl.Web.Response.of_html

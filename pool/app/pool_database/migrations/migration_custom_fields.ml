@@ -78,7 +78,7 @@ let rename_overwrite_to_override =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "custom_fields"
     |> add_step create_custom_fields_table
     |> add_step add_admin_boolean_columns

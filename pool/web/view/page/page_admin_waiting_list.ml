@@ -299,7 +299,7 @@ let index ?access_contact_profiles context experiment waiting_list =
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.WaitingList
+         ~active_navigation:"waiting-list"
          ~hint:I18n.ExperimentWaitingList
          context
          (NavLink I18n.WaitingList)

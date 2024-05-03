@@ -8,6 +8,6 @@ let add_reminder_manually_sent_timestamp =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309190858" |> add_step add_reminder_manually_sent_timestamp)
 ;;

@@ -9,6 +9,6 @@ let seed_concat_email_change_attempt_template =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202310110929" |> add_step seed_concat_email_change_attempt_template)
 ;;

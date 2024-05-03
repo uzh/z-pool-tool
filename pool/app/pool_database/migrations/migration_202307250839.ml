@@ -15,6 +15,6 @@ let create_pool_participation_tags =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202307250839" |> add_step create_pool_participation_tags)
 ;;

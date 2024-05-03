@@ -2,6 +2,7 @@ module Countries = Countries
 module LanguageCodes = Language_codes
 module PhoneCodes = Phone_codes
 module Json = Json
+module Message = Message
 
 module Lwt_result : sig
   module Infix : sig
@@ -52,6 +53,19 @@ let ppx_printer m fmt _ = Format.pp_print_string fmt m
 let bool_to_result_not err = function
   | true -> Error err
   | false -> Ok ()
+;;
+
+let group_tuples data =
+  let open CCOption in
+  let open Hashtbl in
+  let tbl = create 20 in
+  data
+  |> CCList.iter (fun (key, item) ->
+    find_opt tbl key
+    >|= CCList.cons item
+    |> value ~default:[ item ]
+    |> replace tbl key)
+  |> CCFun.const (fold (fun key items acc -> (key, items) :: acc) tbl [])
 ;;
 
 module Url = struct

@@ -14,6 +14,6 @@ let insert_user_import_interval_default_values =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202402081615" |> add_step insert_user_import_interval_default_values)
 ;;

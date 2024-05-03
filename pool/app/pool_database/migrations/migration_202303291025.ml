@@ -35,7 +35,7 @@ let drop_show_up_column =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202303291025"
     |> add_step add_num_no_shows_to_contacts
     |> add_step add_no_show_to_assignments

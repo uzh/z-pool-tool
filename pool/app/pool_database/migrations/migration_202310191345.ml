@@ -29,7 +29,7 @@ let drop_rate_from_mailing =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202310191345"
     |> add_step add_limit_to_mailing
     |> add_step change_mailing_rate_to_limit

@@ -141,7 +141,7 @@ let remove_message_columns =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "pool_experiments"
     |> add_step create_pool_experiments_table
     |> add_step add_waiting_list_flags_to_experiment

@@ -101,7 +101,7 @@ let seed_default_system_settings =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309261013"
     |> add_step seed_default_message_templates
     |> add_step seed_waiting_list_confirmation
@@ -160,7 +160,7 @@ let seed_root_default_i18n =
 ;;
 
 let migration_root () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309261013"
     |> add_step seed_root_default_message_templates
     |> add_step add_root_i18n_unique_constraint

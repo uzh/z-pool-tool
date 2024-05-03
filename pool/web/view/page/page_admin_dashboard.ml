@@ -17,9 +17,9 @@ module Partials = struct
     in
     let url = url |> Format.asprintf "/admin/dashboard/%s" |> Uri.of_string in
     let session_path session =
-      Page_admin_session.session_path
+      Http_utils.Url.Admin.session_path
+        ~id:session.id
         session.experiment.Experiment.id
-        session.id
     in
     let data_table =
       Component.DataTable.create_meta url query language ~push_url:false
@@ -43,8 +43,7 @@ module Partials = struct
           ~a:[ a_class [ "word-break-all" ] ]
           [ txt Experiment.(experiment.title |> Title.value) ]
       ; txt Pool_location.(session.location.name |> Name.value)
-      ; Component.(
-          Input.link_as_button ~icon:Icon.OpenOutline (session_path session))
+      ; Component.(Input.link_as_button ~icon:Icon.Eye (session_path session))
       ]
       |> CCList.map CCFun.(CCList.return %> td)
       |> tr ~a:row_attribs

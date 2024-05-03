@@ -9,6 +9,6 @@ let seed_assignment_cancellation_templates =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202402161523" |> add_step seed_assignment_cancellation_templates)
 ;;

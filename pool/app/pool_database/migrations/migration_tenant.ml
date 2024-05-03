@@ -86,7 +86,7 @@ let make_styles_and_icon_nullable =
 ;;
 
 let migration_root () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "tenant"
     |> add_step create_tenant_table
     |> add_step change_description_column_type
@@ -96,5 +96,5 @@ let migration_root () =
 ;;
 
 let migration_tenant () =
-  Sihl.Database.Migration.(empty "tenant" |> add_step create_smtp_table)
+  Database.Migration.(empty "tenant" |> add_step create_smtp_table)
 ;;

@@ -86,7 +86,10 @@ module EmailAddress = struct
 
   let validate = validate_suffix
   let create = CCFun.(remove_whitespaces %> validate_characters)
-  let schema = schema Pool_message.Field.Email ~validation:create
+
+  let schema ?(field = Pool_message.Field.Email) =
+    schema field ~validation:create
+  ;;
 end
 
 module CellPhone = struct

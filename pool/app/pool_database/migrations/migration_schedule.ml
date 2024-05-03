@@ -18,5 +18,5 @@ let create_schedule_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(empty "schedule" |> add_step create_schedule_table)
+  Database.Migration.(empty "schedule" |> add_step create_schedule_table)
 ;;

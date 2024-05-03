@@ -36,7 +36,7 @@ let drop_location_id_from_sessions =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202306021512"
     |> add_step add_uuid_foreignkey_column_to_sessions
     |> add_step set_uuid_foreignkey_on_sessions

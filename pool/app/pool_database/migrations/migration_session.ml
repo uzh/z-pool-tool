@@ -104,7 +104,7 @@ let use_uuids_as_foreign_keys_in_assignment_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "session"
     |> add_step create_participant_table
     |> add_step add_location

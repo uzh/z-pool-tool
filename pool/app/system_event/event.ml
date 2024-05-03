@@ -6,16 +6,12 @@ let handle_event : event -> unit Lwt.t = function
   | Created t -> Repo.insert Database.root t
 ;;
 
-let handle_system_event ?identifier system_event =
+let handle_system_event identifier system_event =
   let open Utils.Lwt_result.Infix in
   let open EventLog in
   let pool = Database.root in
   let create_event_log ?message status =
-    create
-      ?message
-      system_event.id
-      (ServiceIdentifier.get ?identifier ())
-      status
+    create ?message system_event.id (ServiceIdentifier.get identifier) status
     |> Repo.EventLog.insert pool
   in
   let success_log () = create_event_log Status.Successful in

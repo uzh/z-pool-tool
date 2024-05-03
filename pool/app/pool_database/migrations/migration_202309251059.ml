@@ -21,7 +21,7 @@ let set_show_external_data_id_links_default_values =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309251059"
     |> add_step add_external_data_show_flag
     |> add_step set_show_external_data_id_links_default_values)

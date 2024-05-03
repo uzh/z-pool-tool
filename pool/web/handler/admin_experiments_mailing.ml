@@ -12,6 +12,19 @@ let experiment_path ?suffix id =
   |> CCString.concat "/"
 ;;
 
+let matching_filter_count database_label experiment =
+  let open Filter in
+  let query =
+    experiment
+    |> Experiment.filter
+    |> CCOption.map (fun { Filter.query; _ } -> query)
+  in
+  count_filtered_contacts
+    database_label
+    (Matcher Experiment.(experiment |> id |> Id.to_common))
+    query
+;;
+
 let index req =
   let id = experiment_id req in
   let error_path =
@@ -58,8 +71,12 @@ let new_form req =
            database_label
            experiment.Experiment.id
        in
+       let* matching_filter_count =
+         matching_filter_count database_label experiment
+       in
        Page.Admin.Mailing.form
          ~fully_booked:(not is_bookable)
+         ~matching_filter_count
          context
          experiment
          (CCFun.flip Sihl.Web.Flash.find req)
@@ -125,14 +142,21 @@ let detail edit req =
        in
        let* experiment = Experiment.find database_label experiment_id in
        (match edit with
-        | false -> Page.Admin.Mailing.detail context experiment (mailing, count)
+        | false ->
+          Page.Admin.Mailing.detail context experiment (mailing, count)
+          |> Lwt_result.ok
         | true ->
+          let* matching_filter_count =
+            matching_filter_count database_label experiment
+          in
           Page.Admin.Mailing.form
+            ~matching_filter_count
             ~mailing
             context
             experiment
-            (CCFun.flip Sihl.Web.Flash.find req))
-       >|> create_layout req context
+            (CCFun.flip Sihl.Web.Flash.find req)
+          |> Lwt_result.ok)
+       >>= create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -199,12 +223,29 @@ let search_info req =
         |> decode
         >>= handle)
     in
+    let* matching_filter_count =
+      let field = Field.MatchingFilterCount in
+      HttpUtils.find_in_urlencoded field urlencoded
+      |> Lwt_result.lift
+      >== fun string ->
+      string
+      |> CCInt.of_string
+      |> CCOption.to_result Pool_message.Error.(Invalid field)
+    in
+    let show_limit_warning =
+      Mailing.(mailing.limit |> Limit.value) > matching_filter_count
+    in
     let average_send =
       let interval = 5 * 60 |> Ptime.Span.of_int_s in
       Mailing.per_interval interval mailing
     in
     let%lwt mailings = Mailing.find_overlaps database_label mailing in
-    Page.Admin.Mailing.overlaps ~average_send context id mailings
+    Page.Admin.Mailing.overlaps
+      ~average_send
+      ~show_limit_warning
+      context
+      id
+      mailings
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in

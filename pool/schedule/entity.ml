@@ -8,8 +8,9 @@ end
 module ScheduledTime = struct
   include Pool_model.Base.Ptime
 
+  let create m = Ok m
   let field = Pool_message.Field.ScheduledTime
-  let schema = schema field CCFun.(create %> CCResult.return)
+  let schema = schema field create
 end
 
 module ScheduledTimeSpan = struct

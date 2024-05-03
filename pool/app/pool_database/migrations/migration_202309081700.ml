@@ -11,6 +11,6 @@ let update_location_descriptions =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309081700" |> add_step update_location_descriptions)
 ;;

@@ -22,6 +22,23 @@ let find_all_with_roles ?exclude pool roles =
   >|> Repo.find_multiple pool
 ;;
 
+let find_all_with_permissions_on_target
+  database_label
+  target
+  entity_uuid
+  permissions
+  =
+  let open Utils.Lwt_result.Infix in
+  let open Guard in
+  Persistence.RolePermission.find_actors_by_target_and_permissions
+    database_label
+    target
+    entity_uuid
+    permissions
+  ||> CCList.map Pool_user.Id.of_common
+  >|> Repo.find_multiple database_label
+;;
+
 let user_is_admin pool (user : Pool_user.t) =
   if Pool_user.is_admin user
   then (

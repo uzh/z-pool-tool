@@ -25,7 +25,7 @@ let add_phone_number_column_to_contact_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202305151556"
     |> add_step create_phone_number_verifications_table
     |> add_step add_phone_number_column_to_contact_table)

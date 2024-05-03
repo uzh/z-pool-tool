@@ -47,3 +47,9 @@ let parse_date_from_calendar str =
   >>= Ptime.of_date
       %> CCOption.to_result Pool_message.(Error.Invalid Field.Date)
 ;;
+
+let start_is_before_end ~start ~end_at =
+  if Ptime.is_later start ~than:end_at
+  then Error Pool_message.Error.EndBeforeStart
+  else Ok ()
+;;

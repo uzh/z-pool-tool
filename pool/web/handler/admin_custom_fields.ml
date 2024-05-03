@@ -55,7 +55,7 @@ let index req =
        in
        let%lwt field_list = find_by_model database_label model in
        Page.Admin.CustomFields.index field_list group_list model context
-       |> create_layout ~active_navigation:Url.fallback_path req context
+       >|> create_layout ~active_navigation:Url.fallback_path req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req

@@ -51,7 +51,7 @@ let convert_experimenter_role_hint_to_i18n_de =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202401221730"
     |> add_step convert_assistant_role_hint_to_i18n_de
     |> add_step convert_assistant_role_hint_to_i18n_en

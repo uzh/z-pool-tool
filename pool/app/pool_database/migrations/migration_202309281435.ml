@@ -44,7 +44,7 @@ let create_pool_mailing_invitation_mapping_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309281435"
     |> add_step add_send_count_field_to_invitation
     |> add_step update_send_count_field_of_invitation

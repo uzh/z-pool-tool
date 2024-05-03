@@ -42,7 +42,7 @@ let add_entity_uuid_index =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202402091434"
     |> add_step create_pool_message_history_table
     |> add_step add_fk_contraint_to_entity_queue_jobs

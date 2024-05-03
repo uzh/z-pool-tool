@@ -26,6 +26,6 @@ let remove_unused_rows =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "i18n" |> add_step create_i18n_table |> add_step remove_unused_rows)
 ;;

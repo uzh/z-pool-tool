@@ -19,10 +19,11 @@ type t =
   | AssignmentCount
   | Assignments
   | AssignmentsCreated
+  | AssignmentWithoutSession
   | Assistants
   | AvailableLanguages
   | Building
-  | Canceled
+  | CallbackUrl
   | CanceledAt
   | CellPhone
   | Chronological
@@ -147,6 +148,7 @@ type t =
   | Mailing
   | MainSession
   | MarkedAsDeleted
+  | MatchingFilterCount
   | MaxParticipants
   | MaxTries
   | Message
@@ -164,7 +166,9 @@ type t =
   | NotifiedAt
   | NotifyContact
   | NotifyVia
+  | NotMatchingFilterCount
   | Offset
+  | OnlineExperiment
   | Operator
   | Operators
   | Order
@@ -180,6 +184,7 @@ type t =
   | Participated
   | ParticipatedAbr
   | ParticipationTag
+  | ParticipationTags
   | PartnerLogos
   | Password
   | PasswordConfirmation
@@ -187,6 +192,7 @@ type t =
   | PendingContactImports
   | Period
   | Permission
+  | PermissionOn of string * string
   | PlainText
   | Predicate
   | Profile
@@ -245,6 +251,8 @@ type t =
   | Street
   | Styles
   | Successful
+  | Survey
+  | SurveyUrl
   | SystemEvent
   | Tag
   | Tagging
@@ -268,6 +276,7 @@ type t =
   | TimeSpan
   | TimeUnit
   | TimeUnitOf of t
+  | TimeWindow
   | Title
   | ToHandle
   | Token

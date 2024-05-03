@@ -12,6 +12,7 @@ type t =
   | AlreadyPublished of Field.t
   | AlreadySignedUpForExperiment
   | AlreadyStarted
+  | AssignmentAlreadySubmitted
   | AssignmentIsCanceled
   | AssignmentIsClosed
   | AssignmentsHaveErrors
@@ -59,6 +60,7 @@ type t =
   | InvalidPasswordHashingCount
   | InvalidRequest
   | IsMarkedAsDeleted of Field.t
+  | JobCannotBeRetriggered
   | JobPending
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
@@ -107,10 +109,12 @@ type t =
   | SessionInvalid
   | SessionNotClosed
   | SessionNotStarted
+  | SessionOverlap
   | SessionRegistrationViaParent
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)
   | SmtpException of string
+  | SmtpLoginMissingCredentials
   | TerminatoryRootError
   | TerminatoryRootErrorTitle
   | TerminatoryTenantError

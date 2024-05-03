@@ -47,7 +47,15 @@ let parse_instance_job instance =
   let open Queue in
   let open JobName in
   let input = Instance.input instance in
-  match Instance.name instance with
+  instance
+  |> Instance.name
+  |> function
+  | CheckMatchesFilter ->
+    (try
+       Ok (input |> Yojson.Safe.from_string |> Database.Label.t_of_yojson)
+     with
+     | _ -> Error Pool_message.(Error.Invalid Field.DatabaseLabel))
+    >|= fun job -> `MatcherJob job
   | SendEmail -> Email.parse_job_json input >|= fun job -> `EmailJob job
   | SendTextMessage ->
     Text_message.parse_job_json input >|= fun job -> `TextMessageJob job
@@ -57,10 +65,14 @@ let update_job ?contact ?experiment instance =
   let id = Queue.Instance.id instance in
   instance
   |> parse_instance_job
-  >|= function
-  | `EmailJob job -> `EmailJob (job |> update_email_job ?contact ?experiment id)
+  >>= function
+  | `EmailJob job ->
+    `EmailJob (job |> update_email_job ?contact ?experiment id)
+    |> CCResult.return
   | `TextMessageJob job ->
     `TextMessageJob (job |> update_text_message_job ?contact id)
+    |> CCResult.return
+  | `MatcherJob _ -> Error Pool_message.Error.JobCannotBeRetriggered
 ;;
 
 module Resend : sig

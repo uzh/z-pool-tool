@@ -1,7 +1,7 @@
 open Tyxml.Html
 open Component
+open Pool_message
 module HttpUtils = Http_utils
-module Message = Pool_message
 
 let formatted_date_time = Pool_model.Time.formatted_date_time
 let base_path = "/admin/settings/queue"
@@ -14,8 +14,8 @@ let data_table_head language =
   in
   let name = `column column_job_name in
   let status = `column column_job_status in
-  let input = `custom (field_to_string Pool_message.Field.Input) in
-  let last_error = `custom (field_to_string Pool_message.Field.LastError) in
+  let input = `custom (field_to_string Field.Input) in
+  let last_error = `custom (field_to_string Field.LastError) in
   let last_error_at = `column column_last_error_at in
   let next_run = `column column_next_run in
   function
@@ -81,7 +81,6 @@ let render_email_html html =
 
 let email_job_instance_detail { Email.email; _ } =
   let { Sihl_email.sender; recipient; subject; text; html; _ } = email in
-  let open Message in
   [ Field.Sender, txt sender
   ; Field.Recipient, txt recipient
   ; Field.EmailSubject, txt subject
@@ -96,11 +95,14 @@ let email_job_instance_detail { Email.email; _ } =
 let text_message_job_instance_detail { Text_message.message; _ } =
   let open Text_message in
   let { recipient; sender; text } = message in
-  let open Message in
   [ Field.Recipient, txt (Pool_user.CellPhone.value recipient)
   ; Field.Sender, txt (Pool_tenant.Title.value sender)
   ; Field.SmsText, Content.value text |> HttpUtils.add_line_breaks
   ]
+;;
+
+let matcher_job_instance_detail label =
+  [ Field.Label, txt (Database.Label.value label) ]
 ;;
 
 let queue_instance_detail language instance job =
@@ -130,16 +132,17 @@ let queue_instance_detail language instance job =
     CCOption.map_or ~default:(txt "") link
     @@
     match job with
+    | `MatcherJob _ -> None
     | `EmailJob { Email.resent; _ } -> resent
     | `TextMessageJob { Text_message.resent; _ } -> resent
   in
   let job_detail =
     match job with
+    | `MatcherJob database_label -> matcher_job_instance_detail database_label
     | `EmailJob email -> email_job_instance_detail email
     | `TextMessageJob msg -> text_message_job_instance_detail msg
   in
   let queue_instance_detail =
-    let open Message in
     let open Queue in
     (( Field.Status
      , strong
@@ -192,7 +195,7 @@ let resend_form Pool_context.{ csrf; language; _ } job =
     [ Input.csrf_element csrf ()
     ; Input.submit_element
         language
-        Message.(Control.Resend (Some Field.Message))
+        (Control.Resend (Some Field.Message))
         ~classnames:[ "small" ]
         ~has_icon:Icon.RefreshOutline
         ()

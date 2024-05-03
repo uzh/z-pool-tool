@@ -41,6 +41,7 @@ module Model : sig
   val all : t list
   val create : string -> (t, Pool_message.Error.t) result
   val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  val to_nav_link : t -> Pool_common.I18n.nav_link
 end
 
 module Name : sig

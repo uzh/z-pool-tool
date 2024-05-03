@@ -3,6 +3,7 @@
 type t =
   | Admin of Admin.event
   | Assignment of Assignment.event
+  | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
   | CustomField of Custom_field.event
   | Database of Pool_database.event
@@ -23,6 +24,7 @@ type t =
   | SystemEvent of System_event.event
   | Tags of Tags.event
   | TextMessage of Text_message.event
+  | TimeWindow of Time_window.event
   | UserImport of User_import.event
   | User of Pool_user.event
   | WaitingList of Waiting_list.event
@@ -30,6 +32,7 @@ type t =
 
 let admin events = Admin events
 let assignment events = Assignment events
+let assignmentjob events = AssignmentJob events
 let contact events = Contact events
 let custom_field events = CustomField events
 let database events = Database events
@@ -50,6 +53,7 @@ let settings events = Settings events
 let system_event events = SystemEvent events
 let tags events = Tags events
 let text_message events = TextMessage events
+let time_window events = TimeWindow events
 let user_import events = UserImport events
 let user events = User events
 let waiting_list events = WaitingList events
@@ -67,6 +71,11 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
   | Assignment event ->
     info "assignment" Assignment.pp_event event;
     Assignment.handle_event pool event
+  | AssignmentJob event ->
+    let src = Logs.Src.create "assignment.events" in
+    Logs.info ~src (fun m ->
+      m "Handle event %s" (Assignment_job.show_event event) ~tags);
+    Assignment_job.handle_event pool event
   | Contact event ->
     info "contact" Contact.pp_event event;
     Contact.handle_event pool event
@@ -128,6 +137,11 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
   | TextMessage event ->
     info "text_message" Text_message.pp_event event;
     Text_message.handle_event pool event
+  | TimeWindow event ->
+    let src = Logs.Src.create "time_window.events" in
+    Logs.info ~src (fun m ->
+      m "Handle event %s" (Time_window.show_event event) ~tags);
+    Time_window.handle_event pool event
   | UserImport event ->
     info "user_import" User_import.pp_event event;
     User_import.handle_event pool event

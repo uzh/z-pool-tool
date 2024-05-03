@@ -16,6 +16,6 @@ let create_system_settings_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "system_settings" |> add_step create_system_settings_table)
 ;;

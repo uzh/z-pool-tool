@@ -34,7 +34,7 @@ const determineView = () => window.innerWidth >= viewBreakpoint ? "dayGridMonth"
 const tooltipContent = ({ _instance, _def }, hideLocation) => {
     const { start, end } = _instance.range;
     const { title, extendedProps } = _def;
-    const contactPerson = extendedProps.contact_person
+    const contactEmail = extendedProps.contact_email
     const { assignment_count, max_participants, min_participants, overbook, links } = extendedProps;
     const { show_experiment, show_session, show_location_session, experiment, session, location_session } = links;
     const counterHtml = `<p><strong>Participants: ${assignment_count} / ${max_participants}</strong><br>Overbook: ${overbook}<br>Min. participants: ${min_participants}</p>`;
@@ -49,7 +49,7 @@ const tooltipContent = ({ _instance, _def }, hideLocation) => {
     }
     show_experiment ? linkList.push(experimentLink) : null;
     const linksHtml = !linkList.lenght ? `<p>${linkList.join(`<br/>`)}</p>` : '';
-    const contactPersonHtml = contactPerson ? `<a href="mailto:${contactPerson.email}">${contactPerson.name}</a><br>` : ''
+    const contactPersonHtml = contactEmail ? `<a href="mailto:${contactEmail}">${contactEmail}</a><br>` : ''
     const header = `<div class="card-header">${title}</div>`
     const body = `<div class="card-body">
         <p>${hideLocation ? "" : `${extendedProps.location.name}<br>`}

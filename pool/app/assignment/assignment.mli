@@ -21,6 +21,9 @@ end
 module MatchesFilter : sig
   type t
 
+  val equal : t -> t -> bool
+  val value : t -> bool
+  val create : bool -> t
   val init : t
 end
 
@@ -93,8 +96,13 @@ val reminder_sendable : Session.t -> t -> (unit, Pool_message.Error.t) result
 module Public : sig
   type t =
     { id : Id.t
+    ; participated : Participated.t option
     ; canceled_at : CanceledAt.t option
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
+
+  val participated : t -> Participated.t option
 end
 
 module IncrementParticipationCount : sig
@@ -144,13 +152,24 @@ val find_all_public_by_experiment_and_contact_opt
   -> Contact.t
   -> Public.t list Lwt.t
 
+val assignment_to_experiment_exists
+  :  Database.Label.t
+  -> Experiment.Id.t
+  -> Contact.t
+  -> bool Lwt.t
+
 val find_by_contact_and_experiment
   :  Database.Label.t
   -> Experiment.Id.t
   -> Contact.t
   -> (Session.t * t) list Lwt.t
 
-val find_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
+val find_not_deleted_by_session
+  :  Database.Label.t
+  -> Session.Id.t
+  -> t list Lwt.t
+
+val find_all_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val find_multiple_by_session
   :  Database.Label.t
@@ -181,8 +200,25 @@ val find_for_session_detail_screen
   -> ((t list * Custom_field.t list) * Query.t) Lwt.t
 
 val find_deleted_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
+
+val count_unsuitable_by
+  :  Database.Label.t
+  -> [ `Experiment of Experiment.Id.t | `Session of Session.Id.t ]
+  -> int Lwt.t
+
 val find_with_follow_ups : Database.Label.t -> Id.t -> t list Lwt.t
 val find_follow_ups : Database.Label.t -> t -> t list Lwt.t
+
+val find_upcoming_by_experiment
+  :  Database.Label.t
+  -> Experiment.Id.t
+  -> ( Experiment.t * (Session.t * t list) list
+       , Pool_message.Error.t )
+       Lwt_result.t
+
+val find_upcoming
+  :  Database.Label.t
+  -> (Experiment.t * (Session.t * t list) list) list Lwt.t
 
 val contact_participation_in_other_assignments
   :  Database.Label.t
@@ -218,6 +254,7 @@ type event =
 val canceled : t -> event
 val created : t * Session.Id.t -> event
 val markedasdeleted : t -> event
+val updated : t -> event
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

@@ -392,16 +392,12 @@ let enroll_contact_post req =
     in
     let%lwt confirmation =
       let tenant = Pool_context.Tenant.get_tenant_exn req in
-      let%lwt contact_person =
-        Experiment.find_contact_person database_label experiment
-      in
       Message_template.AssignmentConfirmation.prepare
         ~follow_up_sessions
         tenant
         contact
         experiment
         session
-        contact_person
     in
     let%lwt contact_is_enrolled =
       Experiment.contact_is_enrolled database_label experiment_id contact_id
@@ -410,6 +406,7 @@ let enroll_contact_post req =
       let open Cqrs_command.Assignment_command.Create in
       handle
         ~tags
+        ~direct_enrollment_by_admin:true
         { contact; session; follow_up_sessions; experiment }
         confirmation
         contact_is_enrolled
@@ -461,15 +458,11 @@ module Access : sig
   include module type of Helpers.Access
 
   val external_data_ids : Rock.Middleware.t
-  val delete_answer : Rock.Middleware.t
   val promote : Rock.Middleware.t
   val message_history : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  module ContactCommand = Cqrs_command.Contact_command
   module Guardian = Middleware.Guardian
-
-  let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
 
   let index =
     Contact.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
@@ -514,13 +507,6 @@ end = struct
   ;;
 
   let external_data_ids = read
-
-  let delete_answer =
-    ContactCommand.ClearAnswer.effects
-    |> contact_effects
-    |> Guardian.validate_generic
-  ;;
-
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
 
   let message_history =

@@ -127,19 +127,27 @@ module Sql = struct
 
   let find_pending_request =
     let open Caqti_request.Infix in
-    {sql|
-    LEFT JOIN pool_system_event_logs
-      ON pool_system_event_logs.event_uuid = pool_system_events.uuid
-        AND pool_system_event_logs.service_identifier = $1
-    WHERE
-      pool_system_event_logs.status IS NULL
-      OR pool_system_event_logs.status != "successful"
-    |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    let joins =
+      {sql|
+        LEFT JOIN pool_system_event_logs
+          ON pool_system_event_logs.event_uuid = pool_system_events.uuid
+            AND pool_system_event_logs.service_identifier = $1
+      |sql}
+    in
+    let where =
+      {sql|
+        pool_system_event_logs.status IS NULL
+        OR pool_system_event_logs.status != "successful"
+      |sql}
+    in
+    Format.asprintf "%s %s WHERE %s" select_sql joins where
     |> RepoEntity.EventLog.ServiceIdentifier.t ->! RepoEntity.t
   ;;
 
-  let find_pending = Database.collect root find_pending_request
+  let find_pending identifier =
+    Entity.EventLog.ServiceIdentifier.get identifier
+    |> Database.collect root find_pending_request
+  ;;
 end
 
 let find = Sql.find

@@ -85,7 +85,7 @@ let add_default_guardian_role_permission =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309211305" |> add_step add_default_guardian_role_permission)
 ;;
 
@@ -129,6 +129,6 @@ let add_default_guardian_role_permission_root =
 ;;
 
 let migration_root () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309211305" |> add_step add_default_guardian_role_permission_root)
 ;;

@@ -1,6 +1,7 @@
 open Tyxml.Html
 open Filter
 open Http_utils.Filter
+open Pool_message
 module Input = Component_input
 module Icon = Component_icon
 module Utils = Component_utils
@@ -29,7 +30,7 @@ let form_action = function
 
 let select_default_option language selected =
   let attrs = if selected then [ a_selected () ] else [] in
-  Pool_common.Utils.control_to_string language Pool_message.Control.PleaseSelect
+  Pool_common.Utils.control_to_string language Control.PleaseSelect
   |> txt
   |> option ~a:attrs
 ;;
@@ -41,7 +42,7 @@ let operators_select language ?operators ?selected () =
     Input.selector
       ~option_formatter:Operator.to_human
       language
-      Pool_message.Field.Operator
+      Field.Operator
       Operator.show
       operators
       selected
@@ -59,7 +60,7 @@ let value_input
   =
   let open Filter in
   let open CCOption.Infix in
-  let field_name = Pool_message.Field.Value in
+  let field_name = Field.Value in
   let single_value =
     value
     >>= function
@@ -323,7 +324,7 @@ let single_predicate_form
       ~required:true
       ~classnames:[ "key-select" ]
       language
-      Pool_message.Field.Key
+      Field.Key
       Key.human_to_value
       key_list
       key
@@ -366,7 +367,7 @@ let predicate_type_select
     ~attributes
     ~hide_label:true
     language
-    Pool_message.Field.Predicate
+    Field.Predicate
     show_filter_label
     all_labels
     selected
@@ -474,7 +475,7 @@ let rec predicate_form
           f.title
           |> CCOption.map_or ~default:(f.id |> Pool_common.Id.value) Title.value)
         language
-        Pool_message.Field.template
+        Field.template
         (fun f -> f.id |> Pool_common.Id.value)
         template_list
         selected
@@ -596,7 +597,7 @@ let filter_form
            [ Input.csrf_element csrf ()
            ; Input.submit_element
                language
-               Pool_message.(Control.Delete (Some Field.Filter))
+               (Control.Delete (Some Field.Filter))
                ~submit_type:`Error
                ~has_icon:Icon.TrashOutline
                ()
@@ -619,18 +620,17 @@ let filter_form
       filter_query
       ()
   in
-  let title_input, _ =
+  let title_input =
     match param with
     | Template _ ->
       let open CCOption.Infix in
-      ( Input.input_element
-          ?value:(filter >>= fun filter -> filter.title >|= Title.value)
-          ~required:true
-          language
-          `Text
-          Pool_message.Field.Title
-      , [ a_user_data "hx-params" Pool_message.Field.(show Title) ] )
-    | Experiment _ -> txt "", []
+      Input.input_element
+        ?value:(filter >>= fun filter -> filter.title >|= Title.value)
+        ~required:true
+        language
+        `Text
+        Field.Title
+    | Experiment _ -> txt ""
   in
   let filter_id =
     (match param with
@@ -638,7 +638,7 @@ let filter_form
        experiment.Experiment.filter |> CCOption.map (fun f -> f.id)
      | Template f -> f |> CCOption.map (fun f -> f.Filter.id))
     |> CCOption.map_or ~default:[] (fun id ->
-      Pool_common.[ a_user_data Pool_message.Field.(show filter) (Id.value id) ])
+      Pool_common.[ a_user_data Field.(show filter) (Id.value id) ])
   in
   div
     ~a:[ a_class [ stack ] ]
@@ -668,7 +668,7 @@ let filter_form
                         ~trigger:"click"
                         ~templates_disabled
                         ())
-                Pool_message.(Control.Save None)
+                (Control.Save None)
                 ()
             ]
         ]

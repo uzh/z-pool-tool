@@ -52,7 +52,7 @@ let add_published_at_to_custom_field_options =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "custom_field_options"
     |> add_step create_custom_field_options_table
     |> add_step add_order_column_to_custom_field_options

@@ -4,22 +4,22 @@
 
 (name pool)
 
-(version 0.6.3)
+(version 0.7.1)
 
 (authors "Department of Economics, University of Zurich")
 
 (source
- (uri git+https://gitlab.uzh.ch/econ/study-coordination/pool))
+ (uri git+https://github.com/uzh/z-pool-tool))
 
 (license GPL-2.0-or-later)
 
 (maintainers "engineering@uzh.econ.ch")
 
-(homepage "https://gitlab.uzh.ch/econ/study-coordination/pool")
+(homepage "https://github.com/uzh/z-pool-tool")
 
-(bug_reports "https://gitlab.uzh.ch/econ/study-coordination/pool")
+(bug_reports "https://github.com/uzh/z-pool-tool")
 
-(documentation "https://gitlab.uzh.ch/econ/study-coordination/pool/doc")
+(documentation "https://uzh.github.io/z-pool-tool-documentation/")
 
 (package
  (name pool)

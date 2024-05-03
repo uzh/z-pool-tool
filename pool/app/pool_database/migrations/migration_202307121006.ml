@@ -17,6 +17,5 @@ let create_tracking_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
-    empty "202307121006" |> add_step create_tracking_table)
+  Database.Migration.(empty "202307121006" |> add_step create_tracking_table)
 ;;

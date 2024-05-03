@@ -14,6 +14,7 @@ type t =
   | Decline
   | Delete of Field.t option
   | Descending
+  | Details
   | Disable
   | Duplicate of Field.t option
   | Edit of Field.t option
@@ -44,6 +45,7 @@ type t =
   | Reset of Field.t option
   | ResetForm
   | ResetPlainText
+  | Resume of Field.t option
   | Save of Field.t option
   | Select
   | SelectAll of Field.t option
@@ -53,10 +55,12 @@ type t =
   | SessionDetails
   | Show
   | SignUp
+  | Start of Field.t option
   | Stop of Field.t option
   | ToggleAll
   | Unassign of Field.t option
   | Update of Field.t option
+  | UpdateAssignmentsMatchFilter
   | UpdateOrder
   | Validate
   | Verify of Field.t option

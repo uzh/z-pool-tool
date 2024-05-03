@@ -80,6 +80,13 @@ let suite =
       , Matcher_test.
           [ test_case "send invitations" `Slow create_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
+          ; test_case "matcher notifiaction" `Slow matcher_notification
+          ] )
+    ; ( "assignment job"
+      , Assignment_job_test.
+          [ test_case "initialize tests" `Slow init
+          ; test_case "update without filter" `Slow update_without_filter
+          ; test_case "exclude contact" `Slow exclude_contact
           ] )
     ; ( "contact"
       , Contact_test.
@@ -298,6 +305,10 @@ let suite =
               `Slow
               UpdateAssignments.update_assignment_manually
           ; test_case
+              "update online assignment manually"
+              `Slow
+              UpdateAssignments.update_online_assignment
+          ; test_case
               "update closed: close follow up session"
               `Slow
               UpdateAssignments.close_followup_session
@@ -331,6 +342,9 @@ let suite =
               `Slow
               Repo.find_contacts_to_remind
           ] )
+    ; ( "time window"
+      , Time_window_test.
+          [ test_case "confirm as contact" `Slow find_overlapping ] )
     ]
 ;;
 

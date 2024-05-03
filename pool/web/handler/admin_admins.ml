@@ -233,7 +233,7 @@ let grant_role req =
           ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id)
     in
     let events roles =
-      let open Cqrs_command.Guardian_command in
+      let open Cqrs_command.Admin_command in
       (* TODO: validate if role can be granted *)
       GrantRoles.handle ~tags { target = admin; roles } |> lift
     in
@@ -274,7 +274,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
        role |> Lwt_result.lift >|+ fun role -> role, uuid
      in
      let events role =
-       let open Cqrs_command.Guardian_command in
+       let open Cqrs_command.Admin_command in
        RevokeRole.handle ~tags { target = admin; role } |> Lwt_result.lift
      in
      let handle events =
@@ -306,7 +306,6 @@ end = struct
   include Helpers.Access
   module Command = Cqrs_command.Admin_command
   module Guardian = Middleware.Guardian
-  module GuardianCommand = Cqrs_command.Guardian_command
 
   let admin_effects = Guardian.id_effects Admin.Id.of_string Field.Admin
 
@@ -327,13 +326,11 @@ end = struct
   ;;
 
   let grant_role =
-    GuardianCommand.GrantRoles.effects
-    |> Middleware.Guardian.validate_admin_entity
+    Command.GrantRoles.effects |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let revoke_role =
-    GuardianCommand.RevokeRole.effects
-    |> Middleware.Guardian.validate_admin_entity
+    Command.RevokeRole.effects |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let search = index

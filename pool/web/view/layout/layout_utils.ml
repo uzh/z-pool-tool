@@ -12,7 +12,7 @@ let charset = meta ~a:[ a_charset "utf8" ] ()
 let body_tag_classnames = [ "height-100"; "flexcolumn" ]
 
 let main_tag children =
-  main [ div ~a:[ a_class [ "inset-xl"; "vertical" ] ] children ]
+  main [ div ~a:[ a_class [ "inset-xl"; "sm-inset-lg"; "vertical" ] ] children ]
 ;;
 
 let viewport =
@@ -46,7 +46,7 @@ module App = struct
     div ~a:[ a_class [ "app-title" ] ] [ a ~a:[ a_href path ] [ txt title ] ]
   ;;
 
-  let header ?(children = []) query_language title =
+  let navbar ?(children = []) query_language title =
     header
       ~a:
         [ a_class

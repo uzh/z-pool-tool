@@ -134,9 +134,9 @@ module Create : sig
     -> Experiment.t
     -> Pool_location.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Session.base
@@ -201,6 +201,156 @@ end = struct
   let effects exp_id = Session.Guard.Access.create exp_id
 end
 
+let time_window_command
+  start
+  end_at
+  internal_description
+  public_description
+  max_participants
+  : Time_window.create
+  =
+  let open Time_window in
+  { start; end_at; internal_description; public_description; max_participants }
+;;
+
+let time_window_schema =
+  Conformist.(
+    make
+      Field.
+        [ Session.Start.schema ()
+        ; Session.End.schema ()
+        ; Conformist.optional @@ Session.InternalDescription.schema ()
+        ; Conformist.optional @@ Session.PublicDescription.schema ()
+        ; Conformist.optional
+          @@ Session.ParticipantAmount.schema Pool_message.Field.MaxParticipants
+        ]
+      time_window_command)
+;;
+
+module CreateTimeWindow : sig
+  include Common.CommandSig with type t = Time_window.create
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> overlapps:Time_window.t list
+    -> ?id:Session.Id.t
+    -> Experiment.t
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Time_window.create
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ~overlapps
+    ?id
+    experiment
+    { Time_window.start
+    ; end_at
+    ; internal_description
+    ; public_description
+    ; max_participants
+    }
+    =
+    Logs.info ~src (fun m -> m "Handle command CreateTimeWindow" ~tags);
+    let open CCResult in
+    let open Session in
+    let* () =
+      Pool_model.Time.start_is_before_end
+        ~start:(Start.value start)
+        ~end_at:(End.value end_at)
+    in
+    let* () =
+      if CCList.is_empty overlapps
+      then Ok ()
+      else Error Pool_message.Error.SessionOverlap
+    in
+    let* duration = Time_window.duration ~start ~end_at in
+    let time_window =
+      Time_window.create
+        ?id
+        ?internal_description
+        ?public_description
+        ?max_participants
+        start
+        duration
+        experiment
+    in
+    Ok [ Time_window.Created time_window |> Pool_event.time_window ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate time_window_schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
+  ;;
+
+  let effects exp_id = Session.Guard.Access.create exp_id
+end
+
+module UpdateTimeWindow : sig
+  include Common.CommandSig with type t = Time_window.create
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> overlapps:Time_window.t list
+    -> Time_window.t
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Time_window.create
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ~overlapps
+    time_window
+    { Time_window.start
+    ; end_at
+    ; internal_description
+    ; public_description
+    ; max_participants
+    }
+    =
+    Logs.info ~src (fun m -> m "Handle command UpdateTimeWindow" ~tags);
+    let open CCResult in
+    let open Time_window in
+    let* () =
+      let open Session in
+      Pool_model.Time.start_is_before_end
+        ~start:(Start.value start)
+        ~end_at:(End.value end_at)
+    in
+    let* () =
+      if CCList.is_empty overlapps
+      then Ok ()
+      else Error Pool_message.Error.SessionOverlap
+    in
+    let* duration = Time_window.duration ~start ~end_at in
+    let time_window =
+      { time_window with
+        start
+      ; duration
+      ; internal_description
+      ; public_description
+      ; max_participants
+      }
+    in
+    Ok [ Time_window.Updated time_window |> Pool_event.time_window ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate time_window_schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
+  ;;
+
+  let effects exp_id = Session.Guard.Access.create exp_id
+end
+
 module Duplicate : sig
   include Common.CommandSig with type t = (string * string list) list
 
@@ -210,7 +360,7 @@ module Duplicate : sig
     -> Session.t
     -> Session.t list
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -345,7 +495,7 @@ module Update : sig
     -> Session.t
     -> Pool_location.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
@@ -434,7 +584,7 @@ module Reschedule : sig
         -> Session.Duration.t
         -> (Email.job, Pool_message.Error.t) result)
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
@@ -554,7 +704,7 @@ module Cancel : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Session.CancellationReason.t
@@ -759,9 +909,9 @@ module ResendReminders : sig
     -> Session.t
     -> Assignment.t list
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_common.MessageChannel.t
@@ -858,12 +1008,12 @@ module SendDirectMessage : sig
         -> Text_message.job)
     -> Assignment.t list
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode
     :  Pool_common.MessageChannel.t
     -> Conformist.input
-    -> (t, Conformist.error_msg) result
+    -> (t, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct

@@ -23,7 +23,13 @@ module Status : sig
 end
 
 module LastRunAt : Pool_model.Base.PtimeSig
-module ScheduledTime : Pool_model.Base.PtimeSig
+
+module ScheduledTime : sig
+  include Pool_model.Base.PtimeSig
+
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
+end
+
 module ScheduledTimeSpan : Pool_model.Base.PtimeSpanSig
 
 type scheduled_time =

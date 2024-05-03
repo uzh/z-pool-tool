@@ -44,8 +44,9 @@ let to_string = function
   | ExperimentListEmpty ->
     "Aktuell gibt es keine Experimente, an denen Sie teilnehmen können."
   | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
+  | ExperimentOnlineListPublicTitle -> "Verfügbare Onlinestudien"
   | ExperimentListTitle -> "Experimente"
-  | ExperimentMessagingSubtitle -> "Nachrichtenversand"
+  | ExperimentMessagingSubtitle -> "Identitäten"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
   | ExperimentSessionReminderHint ->
     "Dies sind Standardeinstellungen für die Sessions dieses Experiment. Diese \
@@ -64,6 +65,7 @@ let to_string = function
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
   | FilterNrOfSentInvitations -> "Anzahl bereits eingeladener Kontakte:"
   | FollowUpSessionFor -> "Folgesession für:"
+  | Help -> "Hilfe"
   | ImportConfirmationNote ->
     "Bitte geben Sie ein neues Paswort an. Ihre restlichen Angaben wurden \
      automatisch übernommen."
@@ -77,6 +79,7 @@ let to_string = function
   | InvitationsStatisticsIntro ->
     "Diese Tabelle zeigt, wie oft die Kontakte die Einladung zu diesem \
      Experiment erhalten haben."
+  | Iteration -> "Iteration"
   | JobCloneOf -> "Dieser Hintergrundjob ist eine Kopie von"
   | LocationDetails -> "Standortdetails"
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
@@ -106,6 +109,9 @@ let to_string = function
       (Locales_de.field_to_string field)
   | NoInvitationsSent -> "Es wurden noch keine Einladungen verschickt."
   | Note -> "Hinweis"
+  | NotMatchingFilter ->
+    "Der Kontakt erfüllt nicht die im Filter bestimmten Kriterien für dieses \
+     Experiment."
   | OurPartners -> "Unsere Partner"
   | Past -> "Vergangen"
   | PastSessionsTitle -> "Ihre vergangenen Sessions"
@@ -126,7 +132,6 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | RolesGranted -> "Zugewiesene Rollen"
   | SelectedTags -> "Aktuell zugewiesene Tags"
   | SelectedTagsEmpty -> "Keine Tags zugewiesen"
-  | SentInvitations -> "Versendete Einladungen"
   | SessionCloseScreen -> "Bildschirm zum Beenden der Sessions"
   | SessionDetailScreen -> "Session-Detailansicht"
   | SessionDetailTitle start ->
@@ -151,6 +156,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \
      Bitte lesen und akzeptieren Sie diese, um fortzufahren."
   | TextTemplates -> "Textelemente"
+  | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
     "Sie sind aktuell an keine kommenden Sessions angemeldet."
   | UpcomingSessionsTitle -> "Ihre nächsten Sessions"
@@ -194,6 +200,7 @@ let nav_link_to_string = function
   | Queue -> "Hintergrundjobs"
   | RolePermissions -> "Rollenberechtigungen"
   | Schedules -> "Prozesse"
+  | SentInvitations -> "Versendete Einladungen"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
   | Smtp -> "E-Mail Server (SMTP)"
@@ -201,6 +208,7 @@ let nav_link_to_string = function
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "SMS"
+  | TimeWindows -> "Zeitfenster"
   | Users -> "Benutzer"
   | WaitingList -> "Warteliste"
 ;;
@@ -223,6 +231,15 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
      anmelden."
+  | AssignmentsNotMatchingFilerSession count ->
+    Format.asprintf "%s not meet the criteria of this experiment."
+    @@
+      (match count with
+      | 1 -> "1 contact does"
+      | count -> Format.asprintf "%i contacts do" count)
+  | AssignmentWithoutSession ->
+    "Aktivieren Sie diese Option, falls die Teilnahme am Experiment nicht an \
+     eine Session gebunden ist, z.B. bei einer Onlineumfrage."
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
@@ -322,9 +339,16 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ExperimentAssignment ->
     "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
      nach Session."
-  | ExperimentContactPerson ->
-    "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
-     für alle experimentbezogenen E-Mails verwendet."
+  | ExperimentCallbackUrl ->
+    "<strong>Nur für Online-Umfragen verwenden.</strong> Teilnehmer einer \
+     Onlineumfrage sollten nach Abschluss der Umfrage auf diese URL \
+     weitergeleitet werden, damit die Teilnahme abgeschlossen werden kann. \
+     Wird diese URL nicht aufgerufen, wird die Teilnahme nicht bestätigt."
+  | ExperimentContactPerson default ->
+    Format.asprintf
+      "Diese E-Mail-Adresse wird als 'reply-to' Adresse für alle \
+       experimentbezogenen E-Mails verwendet. Die Standard-Adresse ist '%s'."
+      default
   | ExperimentLanguage ->
     "ist eine Experimentsprache definiert, werden alle Nachrichten, die dieses \
      Experiment betreffen, in dieser Sprache gesendet, ohne Rücksicht auf die \
@@ -350,6 +374,11 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
      alle verfügbaren Plätze einer Session belegt sind, wird sie nicht mehr \
      angezeigt."
+  | ExperimentSmtp default ->
+    Format.asprintf
+      "Der E-Mail-Account, über den alle experimentbezogenen E-Mails \
+       verschickt werden. Der Standardaccount is '%s'."
+      default
   | ExperimentStatisticsRegistrationPossible ->
     "Dies gilt als richtig, wenn die Registrierung nicht deaktiviert ist und \
      es zukünftige Sessions mit freien Plätzen gibt."
@@ -361,9 +390,19 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
      werden."
+  | ExperumentSurveyRedirectUrl ->
+    "<strong>Nur für Online-Umfragen verwenden.</strong> Diese URL erstellt \
+     eine Anmeldung zum Experiment und leitet den Kontakt direkt auf die URL \
+     der Onlineumfrage weiter. Alternativ kann {experimentUrl} verwendet \
+     werden, mit dem Unterschied, dass der Kontakt die Teilnahme und \
+     Weiterleitung zusätzlich bestätigen muss."
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
+  | SurveyUrl ->
+    "ine URL inkl. Protokoll. Der URL-Parameter 'callbackUrl' ist \
+     erforderlich. Z.B.: \
+     https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | FilterTemplates ->
     "Änderungen an einem dieser Filter wird auf alle Experimentfilter \
      übertragen, die dieses Template beinhalten."
@@ -381,6 +420,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
   | MailingLimit -> "Max. generierte Einladungen pro Mailing."
+  | MailingLimitExceedsMatchingContacts ->
+    "Die angegebene Limite ist grösser als die Anzahl Kontakt, die die \
+     Kriterien dieses Experiments erfüllen."
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
      zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."
@@ -408,6 +450,13 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | MessageTemplateManualSessionMessage ->
     "Diese Vorlage dient als Vorlage für manuell versendete Nachrichten im \
      Rahmen einer Session."
+  | MessageTemplateMatcherNotification ->
+    "Diese Nachricht wird versendet, um Administratoren darüber zu \
+     informieren, dass keine weiteren Kontakte gefunden wurden, die an ein \
+     Experiment eingeladen werden können."
+  | MessageTemplateMatchFilterUpdateNotification ->
+    "Diese Nachricht wird gesendet, um Admins zu informieren, wenn Kontakte \
+     nicht mehr den im Filter definierten Kriterien entsprechen."
   | MessageTemplatePasswordChange ->
     "Diese Nachricht wird gesendet, um Benutzer zu benachrichtigen, dass das \
      Kontopasswort geändert wurde."
@@ -448,6 +497,17 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | NumberIsWeeksHint -> "Anzahl Wochen"
   | NumberMax i -> error_to_string (Pool_message.Error.NumberMax i)
   | NumberMin i -> error_to_string (Pool_message.Error.NumberMin i)
+  | OnlineExperiment ->
+    Format.asprintf
+      "Anstelle von Sessions können Zeitfenster definiert werden, während \
+       deren an der Umfrage teilgenommen werden kann. Unter %s geben Sie die \
+       externe URL der Studie an, auf welche die Kontakte weitergeleitet \
+       werden sollen."
+      (Locales_de.field_to_string Pool_message.Field.SurveyUrl)
+  | OnlineExperimentParticipationDeadline end_at ->
+    Format.asprintf
+      "Sie können noch bis zum %s an diesem Experiment teilnehmen."
+      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
@@ -463,6 +523,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | PauseAccountContact ->
     "Solange Ihr Konto pausiert ist, werden Sie nicht zu weiteren Experimenten \
      eingeladen."
+  | Permissions ->
+    "Die Berechtigung <strong>manage</strong> beinhaltet alle anderen \
+     Berechtigungen."
   | PromoteContact ->
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, \
      dieser wird anschliessend nicht mehr für Experimente eingeladen und kann \
@@ -505,8 +568,9 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RolePermissionsIntro ->
-    {|Alle Berechtigungen, welche für Rollen des Tenants existieren.|}
+  | RolePermissionsModelList ->
+    "Wählen Sie das Objekt, für welches Sie die Berechtigungen anpassen wollen."
+  | RolePermissionsRoleList -> "Alle anpassparen Rollen des Teants."
   | ScheduleAt time ->
     time |> Pool_model.Time.formatted_date_time |> Format.asprintf "Am %s"
   | ScheduledIntro ->

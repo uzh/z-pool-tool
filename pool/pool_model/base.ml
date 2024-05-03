@@ -181,6 +181,7 @@ module type IntegerSig = sig
   val value : t -> int
   val of_int : int -> t
   val compare : t -> t -> int
+  val field : Pool_message.Field.t
   val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 

@@ -2,6 +2,7 @@ open CCFun
 open Tyxml.Html
 open Component.Input
 open Pool_message
+open HttpUtils.Session
 module Status = Component.UserStatus.Contact
 
 let assignment_specific_path ?suffix experiment_id session_id assignment_id =
@@ -16,8 +17,8 @@ let assignment_specific_path ?suffix experiment_id session_id assignment_id =
   suffix |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
 ;;
 
-let swap_session_modal_id session =
-  Format.asprintf "swap-session-%s" Session.(Id.value session.Session.id)
+let swap_session_modal_id session_id =
+  Format.asprintf "swap-session-%s" Session.(Id.value session_id)
 ;;
 
 let direct_message_modal_id = Format.asprintf "direct-message-modal"
@@ -30,8 +31,8 @@ module Partials = struct
     let open Component.Table in
     let hint_to_string = Utils.hint_to_string language in
     let field_to_string = Utils.field_to_string language in
-    let deleted =
-      [ ( field_to_string Field.MarkedAsDeleted
+    let not_matching_filter =
+      [ ( Utils.text_to_string language I18n.NotMatchingFilter
         , legend_color_item "bg-red-lighter" )
       ]
     in
@@ -41,10 +42,9 @@ module Partials = struct
         ; hint_to_string SessionCloseLegendParticipated, legend_text_item "P"
         ; ( field_to_string Field.ExternalDataId
           , legend_text_item Field.(ExternalDataIdAbbr |> show) )
-        ; field_to_string Field.Canceled, legend_color_item "bg-orange-lighter"
         ]
     in
-    (if hide_deleted then base else base @ deleted) |> table_legend
+    (if hide_deleted then base else base @ not_matching_filter) |> table_legend
   ;;
 
   let empty language =
@@ -121,6 +121,20 @@ module Partials = struct
                   language))
         custom_fields)
     |> div ~a:[ a_class [ "flexcolumn" ] ]
+  ;;
+
+  let status_label language { Assignment.canceled_at; marked_as_deleted; _ } =
+    let open Pool_common in
+    [ ( Assignment.MarkedAsDeleted.value marked_as_deleted
+      , Utils.field_to_string_capitalized language Field.MarkedAsDeleted )
+    ; CCOption.is_some canceled_at, Utils.text_to_string language I18n.Canceled
+    ]
+    |> CCList.filter_map (fun (condition, text) ->
+      match condition with
+      | false -> None
+      | true ->
+        Some (span ~a:[ a_class [ "tag"; "inline"; "error" ] ] [ txt text ]))
+    |> span
   ;;
 
   module ReminderModal = struct
@@ -341,7 +355,7 @@ module Partials = struct
       ~active:true
       language
       (flip Pool_common.Utils.control_to_string Control.ChangeSession)
-      (swap_session_modal_id session)
+      (swap_session_modal_id session.Session.id)
       html
   ;;
 
@@ -359,8 +373,8 @@ module Partials = struct
       let open Session in
       HttpUtils.Url.Admin.session_path
         ~suffix:"direct-message/send"
+        ~id:session.id
         experiment.Experiment.id
-        session.id
       |> Sihl.Web.externalize_path
     in
     let text_message_enabled =
@@ -509,84 +523,6 @@ module Partials = struct
       direct_message_modal_id
       html
   ;;
-
-  let print_assignments_list
-    ?(view_contact_name = false)
-    ?(view_contact_info = false)
-    Pool_context.{ language; _ }
-    experiment
-    session
-    assignments
-    =
-    let assignemnts_table_id =
-      Format.asprintf "assignments-%s" Session.(Id.value session.Session.id)
-    in
-    let swap_session_modal_id = swap_session_modal_id session in
-    match CCList.is_empty assignments with
-    | true -> p [ empty language ]
-    | false ->
-      let add_field_if check values = if check then values else [] in
-      let contact_information =
-        add_field_if
-          view_contact_name
-          [ Field.Lastname, contact_lastname
-          ; Field.Firstname, contact_firstname
-          ]
-        @ add_field_if view_contact_info [ Field.Email, contact_email ]
-        @ add_field_if view_contact_info [ Field.CellPhone, contact_cellphone ]
-        |> function
-        | [] -> [ Field.Id, assignment_id ]
-        | fields -> fields
-      in
-      let external_data_field =
-        add_field_if
-          Experiment.(external_data_required_value experiment)
-          [ Field.ExternalDataId, assignment_external_data_id ]
-      in
-      let thead =
-        let field_to_text = Component.Table.field_to_txt language in
-        let left =
-          CCList.map (fun (field, _) -> field_to_text field) contact_information
-          @ CCList.map
-              (fun (field, _) -> field_to_text field)
-              external_data_field
-        in
-        let checkboxes = [ txt "P"; txt "NS" ] in
-        let right = [ Field.CanceledAt |> field_to_text ] in
-        left @ checkboxes @ right
-      in
-      let rows =
-        CCList.map
-          (fun (assignment : Assignment.t) ->
-            CCList.map snd contact_information
-            @ CCList.map snd external_data_field
-            @ [ assignment_participated; assignment_no_show; canceled_at ]
-            |> CCList.mapi (fun i fcn ->
-              let value = fcn assignment in
-              if CCInt.equal i 0
-              then
-                div
-                  ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-                  (value :: Status.make_icons language assignment.contact `Name)
-              else value))
-          assignments
-      in
-      div
-        [ table_legend language
-        ; div
-            ~a:
-              [ a_id swap_session_modal_id
-              ; a_class [ "fullscreen-overlay"; "modal" ]
-              ]
-            []
-        ; Component.Table.horizontal_table
-            `Striped
-            ~align_last_end:true
-            ~id:assignemnts_table_id
-            ~thead
-            rows
-        ]
-  ;;
 end
 
 let data_table
@@ -597,7 +533,7 @@ let data_table
   ?(is_print = false)
   (Pool_context.{ language; csrf; user; _ } as context)
   experiment
-  session
+  (session : [ `Session of Session.t | `TimeWindow of Time_window.t ])
   text_messages_enabled
   ((assignments, custom_fields), query)
   =
@@ -605,54 +541,45 @@ let data_table
   let open Partials in
   let open Assignment in
   let url =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (experiment.Experiment.id |> Experiment.Id.value)
-      (session.Session.id |> Session.Id.value)
+    HttpUtils.Url.Admin.session_path
+      ~id:(session_id session)
+      experiment.Experiment.id
     |> Uri.of_string
   in
   let data_table =
-    Component.DataTable.create_meta
-      ?filter:Assignment.filterable_by
-      ~search:Assignment.searchable_by
-      url
-      query
-      language
+    let filter = if is_print then None else filterable_by in
+    let search = if is_print then None else Some searchable_by in
+    Component.DataTable.create_meta ?filter ?search url query language
   in
   let conditional_left_columns =
-    [ ( view_contact_name
-      , Pool_user.column_name
-      , fun { contact; _ } ->
-          Page_admin_contact.contact_lastname_firstname
-            access_contact_profiles
-            contact )
-    ; view_contact_info, Pool_user.column_email, contact_email
+    [ view_contact_info, Pool_user.column_email, contact_email
     ; view_contact_info, Contact.column_cell_phone, contact_cellphone
     ]
   in
   let conditional_right_columns =
     [ ( Experiment.(external_data_required_value experiment)
-      , column_external_data_id_abbr
+      , `column column_external_data_id_abbr
       , assignment_external_data_id )
+    ; ( true
+      , `custom (txt (Utils.field_to_string_capitalized language Field.Status))
+      , status_label language )
     ]
   in
   let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
   let cancelable m =
-    Session.assignments_cancelable session |> CCResult.is_ok
+    assignments_cancelable session
     && Assignment.is_cancellable m |> CCResult.is_ok
   in
-  let session_changeable m =
-    Assignment.session_changeable session m |> CCResult.is_ok
-  in
+  let session_changeable m = HttpUtils.Session.session_changeable session m in
   let action { Assignment.id; _ } suffix =
     assignment_specific_path
       ~suffix
       experiment.Experiment.id
-      session.Session.id
+      (session_id session)
       id
   in
   let create_reminder_modal assignment =
-    Assignment.reminder_sendable session assignment |> CCResult.is_ok
+    HttpUtils.Session.reminder_sendable session assignment
   in
   let button_form ?(style = `Primary) suffix confirmable control icon assignment
     =
@@ -662,7 +589,7 @@ let data_table
         ; a_method `Post
         ; a_user_data
             "confirmable"
-            Pool_common.(Utils.confirmable_to_string language confirmable)
+            (Utils.confirmable_to_string language confirmable)
         ]
       [ csrf_element csrf ()
       ; submit_element
@@ -721,7 +648,7 @@ let data_table
         ; a_user_data "hx-swap" "outerHTML"
         ; a_user_data
             "hx-target"
-            (Format.asprintf "#%s" (swap_session_modal_id session))
+            (Format.asprintf "#%s" (swap_session_modal_id (session_id session)))
         ]
       ~is_text:true
       ~control:(language, Control.ChangeSession)
@@ -731,8 +658,8 @@ let data_table
     let action =
       HttpUtils.Url.Admin.session_path
         ~suffix:"direct-message"
+        ~id:(session_id session)
         experiment.Experiment.id
-        session.Session.id
       |> Sihl.Web.externalize_path
     in
     link_as_button
@@ -743,7 +670,10 @@ let data_table
           ; hx_post action
           ; hx_swap "outerHTML"
           ; make_hx_vals
-              [ Field.(array_key Assignment), Id.value assignment.id ]
+              Assignment.
+                [ ( Field.(array_key Assignment)
+                  , Id.value assignment.Assignment.id )
+                ]
           ; hx_target ("#" ^ direct_message_modal_id)
           ]
       ~is_text:true
@@ -755,7 +685,7 @@ let data_table
       ~style:`Error
       "cancel"
       I18n.(
-        if session.Session.has_follow_ups
+        if has_follow_ups session
         then CancelAssignmentWithFollowUps
         else CancelAssignment)
       Control.(Cancel None)
@@ -766,7 +696,7 @@ let data_table
       ~style:`Error
       "mark-as-deleted"
       I18n.(
-        if session.Session.has_follow_ups
+        if has_follow_ups session
         then MarkAssignmentWithFollowUpsAsDeleted
         else MarkAssignmentAsDeleted)
       Control.MarkAsDeleted
@@ -774,6 +704,12 @@ let data_table
   in
   let has_custom_fields = CCList.is_empty custom_fields |> not in
   let cols =
+    let name_column =
+      match view_contact_name with
+      | true -> `column Pool_user.column_name
+      | false ->
+        `custom (txt (Utils.field_to_string_capitalized language Field.Id))
+    in
     let left =
       conditional_left_columns
       |> CCList.filter_map (fun (check, column, _) ->
@@ -783,15 +719,17 @@ let data_table
       `custom (Partials.custom_fields_header language custom_fields)
     in
     let center =
-      let base = [ `column column_participated; `column column_no_show ] in
+      let base =
+        Assignment.[ `column column_participated; `column column_no_show ]
+      in
       if has_custom_fields then custom_fields_header :: base else base
     in
     let right =
       conditional_right_columns
       |> CCList.filter_map (fun (check, column, _) ->
-        if check then Some (`column column) else None)
+        if check then Some column else None)
     in
-    let base = left @ center @ right in
+    let base = (name_column :: left) @ center @ right in
     if is_print then base else base @ [ `empty ]
   in
   let th_class =
@@ -800,17 +738,32 @@ let data_table
     if has_custom_fields then left @ [ "w-2" ] @ right else left @ right
   in
   let row (assignment : t) =
+    let name_column =
+      match view_contact_name with
+      | true ->
+        Page_admin_contact.contact_lastname_firstname
+          access_contact_profiles
+          assignment.contact
+      | false ->
+        span
+          ~a:[ a_class [ "nobr" ] ]
+          [ txt Contact.(assignment.contact |> id |> Id.value) ]
+    in
     let tr cells =
+      let open Assignment in
       let assignment_id = a_user_data "id" (Id.value assignment.id) in
-      match assignment.marked_as_deleted |> MarkedAsDeleted.value with
-      | true -> tr ~a:[ a_class [ "bg-red-lighter" ]; assignment_id ] cells
-      | false -> tr ~a:[ assignment_id ] cells
+      let classname =
+        if assignment.matches_filter |> MatchesFilter.value |> not
+        then [ "bg-red-lighter" ]
+        else []
+      in
+      tr ~a:[ a_class classname; assignment_id ] cells
     in
     let custom_fields =
       Partials.custom_field_cells
         language
         user
-        assignment.custom_fields
+        assignment.Assignment.custom_fields
         custom_fields
     in
     let left =
@@ -845,7 +798,7 @@ let data_table
       |> Component.ButtonGroup.dropdown
       |> CCList.pure
     in
-    let base = left @ center @ right in
+    let base = (name_column :: left) @ center @ right in
     (if is_print then base else base @ buttons)
     |> CCList.map (CCList.return %> td)
     |> tr
@@ -853,8 +806,8 @@ let data_table
   let modals =
     CCList.filter_map
       (fun assignment ->
-        match create_reminder_modal assignment with
-        | true ->
+        match create_reminder_modal assignment, session with
+        | true, `Session session ->
           Some
             (ReminderModal.modal
                context
@@ -862,7 +815,7 @@ let data_table
                session
                assignment
                text_messages_enabled)
-        | false -> None)
+        | false, _ | _, `TimeWindow _ -> None)
       assignments
     |> function
     | [] -> None
@@ -889,12 +842,18 @@ let edit
   let open Assignment in
   let open Component.Input in
   let open CCOption.Infix in
+  let session_id = HttpUtils.Session.session_id session in
   let action =
-    assignment_specific_path experiment.Experiment.id session.Session.id id
+    assignment_specific_path experiment.Experiment.id session_id id
     |> Sihl.Web.externalize_path
   in
   let session_data =
     let open Session in
+    let location =
+      match session with
+      | `Session { location; _ } -> Component.Location.preview location
+      | `TimeWindow _ -> txt ""
+    in
     div
       ~a:[ a_class [ "stack"; "inset"; "border"; " bg-grey-light" ] ]
       [ h3
@@ -903,8 +862,13 @@ let edit
                 Utils.field_to_string language Field.Session
                 |> CCString.capitalize_ascii)
           ]
-      ; p [ session |> Session.start_end_with_duration_human |> txt ]
-      ; Component.Location.preview session.location
+      ; p
+          [ session
+            |> HttpUtils.Session.detail_page_title
+            |> Pool_common.Utils.text_to_string language
+            |> txt
+          ]
+      ; location
       ]
   in
   [ div

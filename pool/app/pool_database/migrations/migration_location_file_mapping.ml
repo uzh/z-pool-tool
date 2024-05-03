@@ -18,6 +18,6 @@ let create_mappings_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "location_file_mapping" |> add_step create_mappings_table)
 ;;

@@ -2,6 +2,7 @@
  (name handler)
  (libraries
   assignment
+  assignment_job
   contact
   component
   cqrs_command
@@ -11,6 +12,7 @@
   http_utils
   layout
   mailing
+  matcher
   message_template
   middleware
   page

@@ -33,7 +33,7 @@ let rename_filter_column =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "filter"
     |> add_step create_filter_table
     |> add_step add_title_to_filter

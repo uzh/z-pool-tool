@@ -37,7 +37,7 @@ let delete_settings_entries =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202312201325"
     |> add_step convert_settings_terms_to_i18n_en
     |> add_step convert_settings_terms_to_i18n_de

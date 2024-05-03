@@ -4,6 +4,7 @@
  (libraries
   admin
   assignment
+  assignment_job
   contact
   custom_field
   email
@@ -23,6 +24,7 @@
   sihl
   system_event
   tags
+  time_window
   user_import
   waiting_list
   logger)

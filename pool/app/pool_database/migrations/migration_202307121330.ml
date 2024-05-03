@@ -35,7 +35,7 @@ let create_tagging_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202307121330"
     |> add_step create_tag_table
     |> add_step create_tagging_table)

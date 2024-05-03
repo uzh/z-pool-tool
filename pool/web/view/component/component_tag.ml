@@ -1,5 +1,15 @@
 open Tyxml.Html
 
+let create_chip ?(ghost = false) ?(inline = false) style text =
+  let classnames =
+    CCList.fold_left
+      (fun acc (condition, name) -> if condition then name :: acc else acc)
+      (Component_input.submit_type_to_class style :: [ "tag" ])
+      [ ghost, "ghost"; inline, "inline" ]
+  in
+  span ~a:[ a_class classnames ] [ txt text ]
+;;
+
 let create ?remove_action language tag =
   let open Tags in
   let text = tag.title |> Title.value |> txt in
@@ -29,7 +39,8 @@ let create ?remove_action language tag =
   div ~a:[ a_class classnames ] content
 ;;
 
-let tag_list ?remove_action language tags =
+let tag_list ?(tight = false) ?remove_action language tags =
+  let gap = if tight then "flex-gap-sm" else "flex-gap" in
   match tags with
   | [] ->
     p
@@ -38,7 +49,7 @@ let tag_list ?remove_action language tags =
   | tags ->
     tags
     |> CCList.map (create ?remove_action language)
-    |> div ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "align-start" ] ]
+    |> div ~a:[ a_class [ "flexrow"; "wrap"; gap; "align-start" ] ]
 ;;
 
 let tag_form ?label language remove_action tags =

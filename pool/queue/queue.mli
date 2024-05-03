@@ -6,6 +6,7 @@ end
 
 module JobName : sig
   type t =
+    | CheckMatchesFilter
     | SendEmail
     | SendTextMessage
 
@@ -56,7 +57,7 @@ module Instance : sig
   val name : t -> JobName.t
   val id : t -> Id.t
   val is_pending : t -> bool
-  val resendable : t -> (t, Pool_conformist.error_msg) result
+  val resendable : t -> (t, Pool_message.Error.t) result
   val should_run : t -> Ptime.t -> bool
   val default_error_handler : Database.Label.t -> string -> t -> unit Lwt.t
   val update_next_run_at : Ptime.span -> t -> t

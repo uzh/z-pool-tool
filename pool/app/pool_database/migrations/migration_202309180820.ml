@@ -207,7 +207,7 @@ let add_participation_tags_tags_fk_constraint =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309180820"
     |> add_step add_assignment_session_fk_constraint
     |> add_step add_assignment_contact_index
@@ -266,7 +266,7 @@ let add_tenant_logo_storage_handle_fk_constraint =
 ;;
 
 let migration_root () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202309180820"
     |> add_step add_system_event_logs_system_event_fk_constraint
     |> add_step add_tenant_logo_tenant_fk_constraint

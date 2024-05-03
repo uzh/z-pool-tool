@@ -46,7 +46,7 @@ let add_session_text_msg_reminder_lead_time =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202308210946"
     |> add_step add_unique_settings_key_constraint
     |> add_step rename_experiment_session_reminder_lead_time

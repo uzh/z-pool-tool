@@ -137,7 +137,7 @@ let add_registration_attempt_notification_sent_timestamp =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "participant"
     |> add_step create_participant_table
     |> add_step add_field_versioning

@@ -52,6 +52,15 @@ module Public = struct
       in
       [ choose ~scope:(add_key Field.Location) specific ]
     in
+    let experiment =
+      let open Handler.Contact.Experiment in
+      let online_study =
+        let open OnlineSurvey in
+        [ get (Format.asprintf "submit/%s" Field.(url_key Assignment)) submit ]
+      in
+      let specific = [ choose online_study ] in
+      [ choose ~scope:Field.(url_key Experiment) specific ]
+    in
     Handler.Public.(
       choose
         ~middlewares:
@@ -87,6 +96,12 @@ module Public = struct
             ; get "/unsubscribe" Import.unsubscribe
             ; post "/unsubscribe" Import.unsubscribe_post
             ]
+        ; choose
+            ~middlewares:
+              [ CustomMiddleware.Guardian.require_user_type_of
+                  Pool_context.UserType.[ Guest; Contact ]
+              ]
+            [ choose ~scope:"/experiments" experiment ]
         ; choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
@@ -131,8 +146,13 @@ module Contact = struct
           ; post (Session |> url_key) Assignment.create
           ]
         in
+        let specific =
+          [ get "" Experiment.show
+          ; get "start" Experiment.OnlineSurvey.redirect
+          ]
+        in
         [ get "" Experiment.index
-        ; get Field.(Experiment |> url_key) Experiment.show
+        ; choose ~scope:Field.(Experiment |> url_key) specific
         ; choose ~scope:(build_scope "waiting-list") waiting_list
         ; choose ~scope:(build_scope "sessions") sessions
         ]
@@ -375,7 +395,7 @@ module Admin = struct
             ]
           in
           let assignments =
-            let open Experiments.Assignment in
+            let open Assignments in
             let specific =
               [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
               ; post "/close" ~middlewares:[ Session.Access.close ] Close.update
@@ -406,15 +426,10 @@ module Admin = struct
               (remove_session_participation_tag, Access.update)
           in
           let direct_message =
-            [ post
-                ""
-                ~middlewares:[ Access.direct_message ]
-                DirectMessage.modal_htmx
-            ; post
-                "/send"
-                ~middlewares:[ Access.direct_message ]
-                DirectMessage.send
-            ]
+            DirectMessage.
+              [ post "" ~middlewares:[ Access.direct_message ] modal_htmx
+              ; post "/send" ~middlewares:[ Access.direct_message ] send
+              ]
           in
           [ get "" ~middlewares:[ Access.read ] show
           ; post "" ~middlewares:[ Access.update ] update
@@ -429,6 +444,10 @@ module Admin = struct
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
           ; get "/print" ~middlewares:[ Access.read ] print
+          ; post
+              "/update-matches-filter"
+              ~middlewares:[ Access.update_matches_filter ]
+              update_matches_filter
           ; get "/duplicate" ~middlewares:[ Access.create ] duplicate
           ; post "/duplicate" ~middlewares:[ Access.create ] duplicate_post_htmx
           ; get
@@ -442,7 +461,7 @@ module Admin = struct
           ; post
               "/toggle-assignments"
               ~middlewares:[ Session.Access.close ]
-              Experiments.Assignment.Close.toggle
+              Assignments.Close.toggle
           ; choose ~scope:(add_human_field Assignments) assignments
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ; choose ~scope:(ParticipationTag |> human_url) participation_tags
@@ -612,7 +631,7 @@ module Admin = struct
       let open Contacts in
       let specific =
         let field_specific =
-          [ post "/delete" ~middlewares:[ Access.delete_answer ] delete_answer ]
+          [ post "/delete" ~middlewares:[ Access.update ] delete_answer ]
         in
         let tags =
           let open Settings.Tags in
@@ -777,8 +796,20 @@ module Admin = struct
       in
       let role_permission =
         let open RolePermission in
-        [ get "" ~middlewares:[ Access.index ] show
-        ; post "remove" ~middlewares:[ Access.delete ] delete
+        let specific =
+          let target_specific =
+            [ get "edit" ~middlewares:[ Access.read ] edit_htmx
+            ; post "" ~middlewares:[ Access.read ] update
+            ]
+          in
+          [ get "" ~middlewares:[ Access.read ] show
+          ; choose
+              ~scope:(Format.asprintf "target/%s" (url_key Target))
+              target_specific
+          ]
+        in
+        [ get "" ~middlewares:[ Access.read ] index
+        ; choose ~scope:(url_key Role) specific
         ]
       in
       let smtp =

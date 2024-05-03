@@ -2,6 +2,10 @@ module I18n = Pool_common.I18n
 module Icon = Component.Icon
 module Language = Pool_common.Language
 
+type layout =
+  | Horizonal
+  | Vertical
+
 type validation =
   | AlwaysOn
   | OnChildren

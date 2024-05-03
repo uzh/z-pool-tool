@@ -34,7 +34,7 @@ let drop_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "custom_field_answer_versions"
     |> add_step create_custom_field_answer_versions_table
     |> add_step add_unique_combination_constraint

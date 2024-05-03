@@ -21,7 +21,7 @@ let add_home_title_to_welcome_text_i18n_de =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202401081554"
     |> add_step add_home_title_to_welcome_text_i18n_en
     |> add_step add_home_title_to_welcome_text_i18n_de)

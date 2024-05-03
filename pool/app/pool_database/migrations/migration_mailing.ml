@@ -19,5 +19,5 @@ let create_mailing_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(empty "mailing" |> add_step create_mailing_table)
+  Database.Migration.(empty "mailing" |> add_step create_mailing_table)
 ;;

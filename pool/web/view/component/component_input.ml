@@ -368,6 +368,7 @@ let checkbox_element
   ?(orientation = `Vertical)
   ?(required = false)
   ?(disabled = false)
+  ?(read_only = false)
   ?(value = false)
   ?(append_html = [])
   language
@@ -394,7 +395,11 @@ let checkbox_element
     else attrs
   in
   let attributes =
-    if disabled then a_disabled () :: attributes else attributes
+    [ disabled, a_disabled (); read_only, a_onclick "return false;" ]
+    |> CCList.fold_left
+         (fun attributes (condition, attr) ->
+           if condition then attr :: attributes else attributes)
+         attributes
   in
   let attributes = attributes @ additional_attributes in
   let group_class = Elements.group_class classnames orientation in
@@ -716,14 +721,16 @@ let selector
       Elements.input_label language field None required
       |> txt
       |> CCList.return
-      |> label
+      |> label ~a:[ a_label_for name ]
   in
   div
     ~a:[ a_class (Elements.group_class classnames `Vertical) ]
     ([ label
      ; div
          ~a:[ a_class [ "select" ] ]
-         [ select ~a:(a_name name :: attributes) options; hidden_field ]
+         [ select ~a:([ a_name name; a_id name ] @ attributes) options
+         ; hidden_field
+         ]
      ]
      @ help
      @ error
@@ -973,19 +980,12 @@ let admin_select
      @ help)
 ;;
 
-let custom_field_to_static_input
-  ?(force_required = false)
-  ?flash_fetcher
-  language
-  custom_field
-  =
+let custom_field_to_static_input ?flash_fetcher language custom_field =
   let open Custom_field in
   let open CCOption in
   let field = Public.to_common_field language custom_field in
   let hints = Public.help_elements language custom_field in
-  let required =
-    force_required || Public.required custom_field |> Required.value
-  in
+  let required = Public.required custom_field |> Required.value in
   let create input_type value =
     input_element
       ?flash_fetcher

@@ -21,6 +21,6 @@ let drop_person_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "person" |> add_step create_person_table |> add_step drop_person_table)
 ;;

@@ -44,8 +44,9 @@ let to_string = function
   | ExperimentListEmpty ->
     "Currently, there are no experiments you can participate in."
   | ExperimentListPublicTitle -> "Registering for experiment sessions"
+  | ExperimentOnlineListPublicTitle -> "Available online surveys"
   | ExperimentListTitle -> "Experiments"
-  | ExperimentMessagingSubtitle -> "Messaging"
+  | ExperimentMessagingSubtitle -> "Identities"
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentSessionReminderHint ->
     "These are default settings for the sessions of this experiment. These \
@@ -64,6 +65,7 @@ let to_string = function
     "Number of contacts meeting the criteria of this filter:"
   | FilterNrOfSentInvitations -> "Number of contacts already invited:"
   | FollowUpSessionFor -> "Follow-up for:"
+  | Help -> "Help"
   | ImportConfirmationNote ->
     "Please enter a new password. The rest of your data has been automatically \
      taken over."
@@ -77,6 +79,7 @@ let to_string = function
   | InvitationsStatisticsIntro ->
     "This table shows how often contacts received the invitation to this \
      experiment."
+  | Iteration -> "Iteration"
   | JobCloneOf -> "This job is a clone of"
   | LocationDetails -> "Location details"
   | LocationFileNew -> "Add file to location"
@@ -103,6 +106,9 @@ let to_string = function
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | Note -> "Note"
+  | NotMatchingFilter ->
+    "The contact does not meet the criteria specified in the filter for this \
+     experiment."
   | NoInvitationsSent -> "No invitations have been sent yet."
   | OurPartners -> "Our partners"
   | Past -> "Past"
@@ -124,7 +130,6 @@ let to_string = function
   | RolesGranted -> "Granted roles"
   | SelectedTags -> "Currently assigned tags"
   | SelectedTagsEmpty -> "No tags assigned"
-  | SentInvitations -> "Sent invitations"
   | SessionCloseScreen -> "Session close screen"
   | SessionDetailScreen -> "Session detail screen"
   | SessionDetailTitle start ->
@@ -147,6 +152,7 @@ let to_string = function
     "We have recently changed our terms and conditions. Please read and accept \
      them to continue."
   | TextTemplates -> "text templates"
+  | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
   | UpcomingSessionsTitle -> "Your upcoming sessions"
@@ -190,6 +196,7 @@ let nav_link_to_string = function
   | Queue -> "Queued jobs"
   | RolePermissions -> "Role permission"
   | Schedules -> "Schedules"
+  | SentInvitations -> "Sent invitations"
   | Sessions -> "Sessions"
   | Settings -> "Settings"
   | Smtp -> "Email Server (SMTP)"
@@ -197,6 +204,7 @@ let nav_link_to_string = function
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "Text messages"
+  | TimeWindows -> "Time windows"
   | Users -> "Users"
   | WaitingList -> "Waiting list"
 ;;
@@ -217,6 +225,15 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | AssignmentsMarkedAsClosed ->
     "These assignments have been marked as deleted. Provided that the contacts \
      still meet the experiment criteria, they can register for sessions again."
+  | AssignmentsNotMatchingFilerSession count ->
+    Format.asprintf "%s die Kriterien dieses Experiments nicht."
+    @@
+      (match count with
+      | 1 -> "1 Kontakt erfüllt"
+      | count -> Format.asprintf "%i Kontakte erfüllen" count)
+  | AssignmentWithoutSession ->
+    "Activate this option if participation in the experiment is not tied to a \
+     session, e.g. in an online survey."
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
@@ -313,9 +330,15 @@ Make sure to show links and URLs as plain text.
   | ExperimentAssignment ->
     "All assignments of contacts to sessions of this experiment, sorted by \
      session."
-  | ExperimentContactPerson ->
-    "The selected user's email address will be used as 'reply-to' address for \
-     all experiment-related emails."
+  | ExperimentCallbackUrl ->
+    "Participants in an online survey should be redirected to this URL after \
+     completing the survey so that the assignment can be completed. If the \
+     contact is not redirected, the participated flag will not be set."
+  | ExperimentContactPerson default ->
+    Format.asprintf
+      "This email address will be used as 'reply-to' address for all \
+       experiment-related emails. The default 'reply-to' address is '%s'."
+      default
   | ExperimentLanguage ->
     "If an experiment language is defined, all messages regarding this \
      experiment will be sent in this language, disregarding the contact \
@@ -344,6 +367,11 @@ By clicking on the template labels below you can open the default text message:
     "Please note: Sessions or completed experiments may no longer be \
      displayed, although listed in your email. Once all the available seats \
      are assigned, a session is no longer displayed."
+  | ExperimentSmtp default ->
+    Format.asprintf
+      "The email account that will be used to send all experiment-related \
+       emails. The default account is '%s'."
+      default
   | ExperimentStatisticsRegistrationPossible ->
     "This is considered true if registration is not disabled and there are \
      future sessions with available slots."
@@ -355,6 +383,12 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
     "Contacts that have been invited to this experiment and have placed \
      themselves on the waiting list. They have to be manually assigned to a \
      session."
+  | ExperumentSurveyRedirectUrl ->
+    "<strong>Use for online surveys only.</strong> This URL creates an \
+     assignment for the experiment and forwards the contact directly to the \
+     URL of the online survey. Alternatively, {experimentUrl} can be used, \
+     with the difference that the contact must also confirm the participation \
+     and forwarding."
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
@@ -373,6 +407,9 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
     "Locations, where experiments are conducted. Every session has to have a \
      location."
   | MailingLimit -> "Max. generated Invitations during the mailing."
+  | MailingLimitExceedsMatchingContacts ->
+    "The given limit is larger than the number of contacts meeting the \
+     criteria of this experiment."
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been \
      temporarily suspended because of too many failed login attempts."
@@ -399,6 +436,12 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MessageTemplateManualSessionMessage ->
     "This template serves as a template for manually sent messages in the \
      context of a session."
+  | MessageTemplateMatcherNotification ->
+    "This message is sent to inform administrators that no further contacts \
+     have been found who can be invited to an experiment."
+  | MessageTemplateMatchFilterUpdateNotification ->
+    "This message is sent to inform admins when contacts no longer meet the \
+     criteria defined in the filter."
   | MessageTemplatePasswordChange ->
     "This message is sent to notify users that the account password has been \
      changed."
@@ -437,6 +480,16 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | NumberIsWeeksHint -> "Nr. of weeks"
   | NumberMax i -> error_to_string (Pool_message.Error.NumberMax i)
   | NumberMin i -> error_to_string (Pool_message.Error.NumberMin i)
+  | OnlineExperiment ->
+    Format.asprintf
+      "Instead of sessions, you can define time windows in which you can take \
+       part in the survey. Under %s, enter the external URL of the survey to \
+       which the contacts should be forwarded."
+      (Locales_en.field_to_string Pool_message.Field.SurveyUrl)
+  | OnlineExperimentParticipationDeadline end_at ->
+    Format.asprintf
+      "You can participate in this experiment until %s."
+      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
@@ -452,6 +505,8 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | PauseAccountContact ->
     "As long as your account is paused, you will not be invited to any further \
      experiments."
+  | Permissions ->
+    "The permission <strong>manage</strong> includes all the other permissions."
   | PromoteContact ->
     "Attention: one-time action. The contact is promoted to an admin, who is \
      subsequently no longer invited for experiments and can no longer register \
@@ -492,8 +547,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
       "If no %s is specified, the role includes all %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RolePermissionsIntro ->
-    {|All existing permissions which are defined for roles of the tenant.|}
+  | RolePermissionsModelList ->
+    "Select the target for which you want to adjust the permissions."
+  | RolePermissionsRoleList -> "All customizable roles of the tenant."
   | ScheduleAt time ->
     time |> Pool_model.Time.formatted_date_time |> Format.asprintf "at %s"
   | ScheduledIntro ->
@@ -564,6 +620,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
     {|Changing the session will only change the session of this assignment. If follow-up assignments exists, they must be updated manually.
 
 Only sessions with open spots can be selected.|}
+  | SurveyUrl ->
+    "A URL incl. protocol. The url parameter 'callbackUrl' is required. E.g: \
+     https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | TagsIntro ->
     "The defined tags can be added to several types (e.g. contacts). The tags \
      can be used by the experiment filter to eighter include or exclude them."

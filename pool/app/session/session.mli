@@ -31,7 +31,10 @@ module Start : sig
 end
 
 module End : sig
-  type t
+  include Pool_model.Base.BaseSig
+
+  val value : t -> Ptime.t
+  val create : Ptime.t -> t
 end
 
 module Duration : sig
@@ -143,6 +146,7 @@ val create
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val is_canceled_error : Ptime.t -> ('a, Pool_message.Error.t) result
 val is_fully_booked : t -> bool
 val available_spots : t -> int
 val has_assignments : t -> bool
@@ -193,11 +197,6 @@ end
 val to_public : t -> Public.t
 
 module Calendar : sig
-  type contact_person =
-    { name : string
-    ; email : Pool_user.EmailAddress.t
-    }
-
   type location =
     { id : Pool_location.Id.t
     ; name : Pool_location.Name.t
@@ -226,6 +225,7 @@ module Calendar : sig
     { id : Id.t
     ; experiment_id : Experiment.Id.t
     ; title : Experiment.Title.t
+    ; contact_email : Pool_user.EmailAddress.t option
     ; start : Start.t
     ; end_ : End.t
     ; links : links
@@ -235,7 +235,6 @@ module Calendar : sig
     ; assignment_count : AssignmentCount.t
     ; internal_description : InternalDescription.t option
     ; location : location
-    ; contact_person : contact_person option
     }
 
   val equal : t -> t -> bool
@@ -356,6 +355,11 @@ val query_by_experiment
   -> Experiment.Id.t
   -> (t list * Query.t) Lwt.t
 
+val find_sessions_to_update_matcher
+  :  Database.Label.t
+  -> [< `Experiment of Experiment.Id.t | `Upcoming ]
+  -> t list Lwt.t
+
 val find_for_calendar_by_user
   :  Guard.Actor.t
   -> Database.Label.t
@@ -413,6 +417,10 @@ module Repo : sig
     val t : Start.t Caqti_type.t
   end
 
+  module End : sig
+    val t : End.t Caqti_type.t
+  end
+
   module Duration : sig
     val t : Duration.t Caqti_type.t
   end
@@ -424,7 +432,7 @@ module Guard : sig
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list
-      -> t
+      -> Id.t
       -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t

@@ -48,7 +48,7 @@ let replace_message_template_experiment_description_elements =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202401120946"
     |> add_step rename_experiment_description
     |> add_step add_internal_experiment_description

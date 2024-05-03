@@ -8,6 +8,6 @@ let add_unique_database_label_constraint =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202403201132" |> add_step add_unique_database_label_constraint)
 ;;

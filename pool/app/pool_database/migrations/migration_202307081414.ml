@@ -26,7 +26,7 @@ let rename_verification_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202307081414"
     |> add_step rename_phone_number_to_cell_phone
     |> add_step rename_phone_number_to_cell_phone_in_verifiaction_table

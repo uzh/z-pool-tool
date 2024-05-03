@@ -8,6 +8,6 @@ let add_external_data_id_to_assignments =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202308021016" |> add_step add_external_data_id_to_assignments)
 ;;

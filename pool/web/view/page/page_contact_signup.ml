@@ -16,11 +16,7 @@ let signup
   let txt_to_string = Utils.text_to_string language %> txt in
   let custom_fields_html =
     let to_html field =
-      Component.Input.custom_field_to_static_input
-        ~force_required:true
-        ~flash_fetcher
-        language
-        field
+      Component.Input.custom_field_to_static_input ~flash_fetcher language field
     in
     custom_fields |> CCList.map to_html
   in

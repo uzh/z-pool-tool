@@ -45,29 +45,44 @@ let list req =
   HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Session) req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
-  let chronological =
-    Sihl.Web.Request.query Field.(show Chronological) req
-    |> CCOption.map_or ~default:false (CCString.equal "true")
-  in
   let* experiment = Experiment.find database_label experiment_id in
   let flatten_sessions =
     CCList.fold_left
       (fun acc (parent, follow_ups) -> acc @ (parent :: follow_ups))
       []
   in
-  let%lwt sessions =
-    match chronological with
-    | true -> Session.query_by_experiment ~query database_label experiment_id
-    | false ->
-      Session.query_grouped_by_experiment ~query database_label experiment_id
-      ||> fun (sessions, query) -> flatten_sessions sessions, query
-  in
-  let open Page.Admin.Session in
   Lwt_result.ok
   @@
-  match HttpUtils.Htmx.is_hx_request req with
-  | true -> data_table context experiment sessions chronological |> Lwt.return
-  | false -> index context experiment sessions chronological
+  match Experiment.is_sessionless experiment with
+  | true ->
+    let to_html time_windows =
+      let open Page.Admin.TimeWindow in
+      match HttpUtils.Htmx.is_hx_request req with
+      | true -> data_table context experiment time_windows |> Lwt.return
+      | false -> index context experiment time_windows
+    in
+    Time_window.query_by_experiment ~query database_label experiment_id
+    >|> to_html
+  | false ->
+    let chronological =
+      Sihl.Web.Request.query Field.(show Chronological) req
+      |> CCOption.map_or ~default:false (CCString.equal "true")
+    in
+    let to_html sessions =
+      let open Page.Admin.Session in
+      match HttpUtils.Htmx.is_hx_request req with
+      | true ->
+        data_table context experiment sessions chronological |> Lwt.return
+      | false -> index context experiment sessions chronological
+    in
+    (match chronological with
+     | true ->
+       Session.query_by_experiment ~query database_label experiment_id
+       >|> to_html
+     | false ->
+       Session.query_grouped_by_experiment ~query database_label experiment_id
+       ||> (fun (sessions, query) -> flatten_sessions sessions, query)
+       >|> to_html)
 ;;
 
 let new_helper req page =
@@ -103,14 +118,21 @@ let new_helper req page =
              flash_fetcher
            |> Lwt_result.ok
          | `New ->
-           Page.Admin.Session.new_form
-             context
-             experiment
-             default_leadtime_settings
-             locations
-             text_messages_enabled
-             flash_fetcher
-           |> Lwt_result.ok
+           Lwt_result.ok
+           @@
+             (match
+                CCOption.is_some experiment.Experiment.online_experiment
+              with
+             | false ->
+               Page.Admin.Session.new_form
+                 context
+                 experiment
+                 default_leadtime_settings
+                 locations
+                 text_messages_enabled
+                 flash_fetcher
+             | true ->
+               Page.Admin.TimeWindow.new_form context experiment flash_fetcher)
        in
        html >>= create_layout req context >|+ Sihl.Web.Response.of_html
   in
@@ -236,15 +258,30 @@ let create req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let database_label = context.Pool_context.database_label in
-    let* location = location urlencoded database_label in
     let* experiment = Experiment.find database_label id in
+    let open Cqrs_command.Session_command in
     let* events =
-      let open CCResult.Infix in
-      let open Cqrs_command.Session_command.Create in
-      urlencoded
-      |> decode
-      >>= handle ~tags experiment location
-      |> Lwt_result.lift
+      match Experiment.is_sessionless experiment with
+      | true ->
+        let open CreateTimeWindow in
+        let open Time_window in
+        let* decoded = urlencoded |> decode |> Lwt_result.lift in
+        let%lwt overlapps =
+          Time_window.find_overlapping
+            database_label
+            experiment.Experiment.id
+            ~start:decoded.start
+            ~end_at:decoded.end_at
+        in
+        handle ~tags ~overlapps experiment decoded |> Lwt_result.lift
+      | false ->
+        let* location = location urlencoded database_label in
+        let open CCResult.Infix in
+        let open Create in
+        urlencoded
+        |> decode
+        >>= handle ~tags experiment location
+        |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
@@ -343,14 +380,70 @@ let session_page database_label req context session experiment =
     >|> create_layout
   | `Print ->
     let%lwt assignments =
-      Assignment.find_by_session database_label session.Session.id
+      Assignment.(
+        find_for_session_detail_screen
+          ~query:default_query
+          database_label
+          session_id)
     in
     Page.Admin.Session.print
       ~view_contact_name
       ~view_contact_info
       context
       experiment
-      session
+      (`Session session)
+      assignments
+    |> Lwt_result.return
+;;
+
+let time_window_page database_label req context time_window experiment =
+  let open Utils.Lwt_result.Infix in
+  let open Helpers.Guard in
+  let time_window_id = time_window.Time_window.id in
+  let experiment_id = Experiment.(experiment.id) in
+  let experiment_target_id =
+    [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
+  in
+  let view_contact_name = can_read_contact_name context experiment_target_id in
+  let view_contact_info = can_read_contact_info context experiment_target_id in
+  let flash_fetcher = flip Sihl.Web.Flash.find req in
+  let current_tags () =
+    let open Tags.ParticipationTags in
+    find_all database_label (Session (Session.Id.to_common time_window_id))
+  in
+  let create_layout = create_layout req context in
+  function
+  | `Edit ->
+    let%lwt current_tags = current_tags () in
+    let%lwt available_tags =
+      Tags.ParticipationTags.(
+        find_available
+          database_label
+          (Session (Session.Id.to_common time_window_id)))
+    in
+    let%lwt experiment_participation_tags =
+      Tags.ParticipationTags.(
+        find_all
+          database_label
+          (Experiment (Experiment.Id.to_common experiment_id)))
+    in
+    let tags = current_tags, available_tags, experiment_participation_tags in
+    Page.Admin.TimeWindow.edit context experiment time_window tags flash_fetcher
+    >|> create_layout
+  | `Print ->
+    let%lwt assignments =
+      Assignment.(
+        find_for_session_detail_screen
+          ~query:default_query
+          database_label
+          time_window_id)
+    in
+    Page.Admin.Session.print
+      ~view_contact_name
+      ~view_contact_info
+      context
+      experiment
+      (`TimeWindow time_window)
       assignments
     |> Lwt_result.return
 ;;
@@ -373,7 +466,14 @@ let show req =
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
-  let* session = Session.find database_label session_id in
+  let* session =
+    match Experiment.is_sessionless experiment with
+    | true ->
+      Time_window.find database_label session_id
+      >|+ fun time_window -> `TimeWindow time_window
+    | false ->
+      Session.find database_label session_id >|+ fun session -> `Session session
+  in
   let view_contact_name = can_read_contact_name context experiment_target_id in
   let view_contact_info = can_read_contact_info context experiment_target_id in
   let access_contact_profiles =
@@ -385,6 +485,13 @@ let show req =
   in
   match HttpUtils.Htmx.is_hx_request req with
   | false ->
+    let%lwt not_matching_filter_count =
+      match HttpUtils.Session.canceled_at session with
+      | Some _ -> Lwt.return_none
+      | None ->
+        Assignment.count_unsuitable_by database_label (`Session session_id)
+        ||> CCOption.return
+    in
     let%lwt current_tags =
       Tags.ParticipationTags.(
         find_all database_label (Session (Session.Id.to_common session_id)))
@@ -399,20 +506,40 @@ let show req =
     let%lwt send_direct_message =
       Helpers.Guard.can_send_direct_message context
     in
-    Page.Admin.Session.detail
-      ~access_contact_profiles
-      ~send_direct_message
-      ~view_contact_name
-      ~view_contact_info
-      context
-      experiment
-      session
-      current_tags
-      sys_languages
-      session_reminder_templates
-      text_messages_enabled
-      assignments
-    |> Lwt_result.ok
+    let%lwt rerun_session_filter =
+      Helpers.Guard.can_rerun_session_filter context experiment_id session_id
+    in
+    (match session with
+     | `Session session ->
+       Page.Admin.Session.detail
+         ~access_contact_profiles
+         ~not_matching_filter_count
+         ~rerun_session_filter
+         ~send_direct_message
+         ~view_contact_name
+         ~view_contact_info
+         context
+         experiment
+         session
+         current_tags
+         sys_languages
+         session_reminder_templates
+         text_messages_enabled
+         assignments
+       |> Lwt_result.ok
+     | `TimeWindow time_window ->
+       Page.Admin.TimeWindow.detail
+         ~access_contact_profiles
+         ~send_direct_message
+         ~view_contact_name
+         ~view_contact_info
+         ~text_messages_enabled
+         context
+         experiment
+         time_window
+         current_tags
+         assignments
+       |> Lwt_result.ok)
   | true ->
     Page.Admin.Assignment.(
       data_table
@@ -441,13 +568,25 @@ let detail page req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
-    let* session = Session.find database_label session_id in
     let* experiment =
       Experiment.find_of_session
         database_label
         (session_id |> Session.Id.to_common)
     in
-    session_page database_label req context session experiment page
+    (match Experiment.is_sessionless experiment with
+     | false ->
+       let* session = Session.find database_label session_id in
+       session_page database_label req context session experiment page
+     | true ->
+       let* time_window = Time_window.find database_label session_id in
+       let* page =
+         match page with
+         | `Edit -> Lwt_result.return `Edit
+         | `Print -> Lwt_result.return `Print
+         | `Reschedule | `Cancel | `Close ->
+           Lwt_result.fail (Error.Invalid Field.Action)
+       in
+       time_window_page database_label req context time_window experiment page)
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -478,31 +617,53 @@ let update_handler action req =
       , Format.asprintf "%s/%s" path error_path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
+    let sessions_data () =
+      let* session = Session.find database_label session_id in
+      let%lwt follow_ups =
+        Session.find_follow_ups database_label session.Session.id
+      in
+      let* parent =
+        match session.Session.follow_up_to with
+        | None -> Lwt_result.return None
+        | Some parent_id ->
+          parent_id |> Session.find database_label >|+ CCOption.some
+      in
+      Lwt_result.return (session, follow_ups, parent)
+    in
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
-    let%lwt follow_ups =
-      Session.find_follow_ups database_label session.Session.id
-    in
-    let* parent =
-      match session.Session.follow_up_to with
-      | None -> Lwt_result.return None
-      | Some parent_id ->
-        parent_id |> Session.find database_label >|+ CCOption.some
-    in
+    let open Cqrs_command.Session_command in
     let* events =
       match action with
       | `Update ->
-        let* location = location urlencoded database_label in
-        let open CCResult.Infix in
-        let open Cqrs_command.Session_command.Update in
-        urlencoded
-        |> decode
-        >>= handle ~tags ?parent_session:parent follow_ups session location
-        |> Lwt_result.lift
+        (match Experiment.is_sessionless experiment with
+         | true ->
+           let open UpdateTimeWindow in
+           let* time_window = Time_window.find database_label session_id in
+           let* decoded = urlencoded |> decode |> Lwt_result.lift in
+           let%lwt overlapps =
+             let open Time_window in
+             find_overlapping
+               ~exclude:session_id
+               database_label
+               experiment.Experiment.id
+               ~start:decoded.start
+               ~end_at:decoded.end_at
+           in
+           handle ~tags ~overlapps time_window decoded |> Lwt_result.lift
+         | false ->
+           let* session, follow_ups, parent = sessions_data () in
+           let* location = location urlencoded database_label in
+           let open CCResult.Infix in
+           let open Update in
+           urlencoded
+           |> decode
+           >>= handle ~tags ?parent_session:parent follow_ups session location
+           |> Lwt_result.lift)
       | `Reschedule ->
-        let open Cqrs_command.Session_command.Reschedule in
+        let open Reschedule in
+        let* session, follow_ups, parent = sessions_data () in
         let%lwt assignments =
           Assignment.find_uncanceled_by_session
             database_label
@@ -511,9 +672,6 @@ let update_handler action req =
         let system_languages =
           Pool_context.Tenant.get_tenant_languages_exn req
         in
-        let%lwt admin_contact =
-          Experiment.find_contact_person database_label experiment
-        in
         let%lwt create_message =
           Message_template.SessionReschedule.prepare
             database_label
@@ -521,7 +679,6 @@ let update_handler action req =
             experiment
             system_languages
             session
-            admin_contact
         in
         urlencoded
         |> decode
@@ -1047,6 +1204,39 @@ module DirectMessage = struct
   ;;
 end
 
+let update_matches_filter req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s"
+      (Experiment.Id.value experiment_id)
+      (Session.Id.value session_id)
+  in
+  let result { Pool_context.database_label; user; _ } =
+    let tags = Pool_context.Logger.Tags.req req in
+    Utils.Lwt_result.map_error (fun err -> err, path)
+    @@
+    let* session = Session.find database_label session_id in
+    let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
+    let* events =
+      Assignment_job.update_matches_filter
+        ~admin
+        database_label
+        (`Session session)
+      >== Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Http_utils.Htmx.htmx_redirect
+      ~actions:[ Message.set ~success:[ Success.Updated Field.Assignments ] ]
+      path
+      ()
+    |> Lwt_result.ok
+  in
+  result |> HttpUtils.Htmx.extract_happy_path ~src req
+;;
+
 module Api = struct
   let calendar_api ?actor req query =
     let result { Pool_context.database_label; guardian; _ } =
@@ -1149,8 +1339,10 @@ module Access : sig
   val cancel : Rock.Middleware.t
   val close : Rock.Middleware.t
   val direct_message : Rock.Middleware.t
+  val update_matches_filter : Rock.Middleware.t
 end = struct
   module SessionCommand = Cqrs_command.Session_command
+  module AssignmentCommand = Cqrs_command.Assignment_command
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
@@ -1158,14 +1350,14 @@ end = struct
   ;;
 
   let combined_effects fcn req =
-    let open HttpUtils in
+    let find_id = HttpUtils.find_id in
     let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
     let session_id = find_id Session.Id.of_string Field.Session req in
     fcn experiment_id session_id
   ;;
 
   let combined_with_location_effects fcn req =
-    let open HttpUtils in
+    let find_id = HttpUtils.find_id in
     let location_id = find_id Pool_location.Id.of_string Field.Location req in
     let session_id = find_id Session.Id.of_string Field.Session req in
     fcn location_id session_id
@@ -1224,5 +1416,11 @@ end = struct
 
   let direct_message =
     Contact.Guard.Access.send_direct_message |> Guardian.validate_admin_entity
+  ;;
+
+  let update_matches_filter =
+    AssignmentCommand.UpdateMatchesFilter.effects
+    |> combined_effects
+    |> Guardian.validate_generic
   ;;
 end

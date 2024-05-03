@@ -7,12 +7,15 @@ type create =
   ; public_description : PublicDescription.t option
   ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
+  ; contact_email : Pool_user.EmailAddress.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
+  ; assignment_without_session : AssignmentWithoutSession.t
+  ; survey_url : SurveyUrl.t option
   ; email_session_reminder_lead_time : int option
   ; email_session_reminder_lead_time_unit : Pool_model.Base.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option

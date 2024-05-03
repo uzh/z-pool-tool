@@ -51,7 +51,7 @@ let add_actor_permission_hint_de =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202402150942"
     |> add_step add_actor_permission_create_hint_en
     |> add_step add_actor_permission_create_hint_de

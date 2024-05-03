@@ -85,7 +85,7 @@ let assignment_confirmation _ () =
   let%lwt session = find_session () in
   let%lwt assignment = find_assignment () in
   let%lwt res =
-    AssignmentConfirmation.prepare tenant contact experiment session None
+    AssignmentConfirmation.prepare tenant contact experiment session
     ||> fun create -> create assignment |> with_sorted_entity_uuids
   in
   let expected =

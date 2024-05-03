@@ -212,7 +212,7 @@ let index ({ Pool_context.language; _ } as context) experiment mailings =
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.Mailings
+         ~active_navigation:"mailings"
          ~hint:I18n.ExperimentMailings
          context
          (NavLink I18n.Mailings)
@@ -276,6 +276,7 @@ let detail
 let form
   ?(mailing : Mailing.t option)
   ?(fully_booked = false)
+  ~matching_filter_count
   ({ Pool_context.language; csrf; _ } as context)
   (experiment : Experiment.t)
   flash_fetcher
@@ -509,17 +510,26 @@ let form
   let fully_booked_note =
     if fully_booked
     then
-      [ div
-          ~a:
-            [ a_class [ "bg-grey-light"; "border"; "border-radius"; "inset-md" ]
-            ]
-          [ Pool_common.Utils.text_to_string
-              language
-              I18n.MailingExperimentSessionFullyBooked
-            |> HttpUtils.add_line_breaks
+      div
+        ~a:
+          [ a_class [ "bg-grey-light"; "border"; "border-radius"; "inset-md" ] ]
+        [ Pool_common.Utils.text_to_string
+            language
+            I18n.MailingExperimentSessionFullyBooked
+          |> HttpUtils.add_line_breaks
+        ]
+    else txt ""
+  in
+  let matching_filter_count_note =
+    p
+      [ strong
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.FilterNrOfContacts)
+          ; txt " "
+          ; txt (CCInt.to_string matching_filter_count)
           ]
       ]
-    else []
   in
   let action, submit =
     match mailing with
@@ -534,7 +544,7 @@ let form
     let open Htmx in
     div
       ~a:[ a_class [ "stack" ] ]
-      ((notification :: fully_booked_note)
+      ([ notification; fully_booked_note; matching_filter_count_note ]
        @ [ form
              ~a:
                [ a_class [ "stack" ]
@@ -566,6 +576,10 @@ let form
                           ~suffix:"search-info"
                           experiment.Experiment.id
                         |> Sihl.Web.externalize_path)
+                   ; make_hx_vals
+                       [ ( Field.(show MatchingFilterCount)
+                         , CCInt.to_string matching_filter_count )
+                       ]
                    ]
                  [ div
                      ~a:[ a_class [ "flexcolumn" ] ]
@@ -637,38 +651,50 @@ let edit context experiment_id mailing flash_fetcher =
 
 let overlaps
   ?average_send
+  ~show_limit_warning
   (Pool_context.{ language; _ } as context)
   experiment_id
   mailings
   =
+  let notification =
+    if show_limit_warning
+    then
+      [ txt
+          Pool_common.(
+            Utils.hint_to_string
+              language
+              I18n.MailingLimitExceedsMatchingContacts)
+      ]
+      |> Component.Notification.notification language `Warning
+    else txt ""
+  in
   let average =
     match average_send with
-    | None -> []
+    | None -> txt ""
     | Some average ->
-      [ p
-          [ I18n.RateNumberPerMinutes (5, average)
-            |> Pool_common.Utils.hint_to_string language
-            |> txt
-          ]
-      ]
+      p
+        [ I18n.RateNumberPerMinutes (5, average)
+          |> Pool_common.Utils.hint_to_string language
+          |> txt
+        ]
   in
   let mailings =
     match CCList.is_empty mailings with
     | true ->
-      [ p
-          [ I18n.RateDependencyWithout
-            |> Pool_common.Utils.hint_to_string language
-            |> txt
-          ]
-      ]
+      p
+        [ I18n.RateDependencyWithout
+          |> Pool_common.Utils.hint_to_string language
+          |> txt
+        ]
     | false ->
-      [ p
-          [ I18n.RateDependencyWith
-            |> Pool_common.Utils.hint_to_string language
-            |> txt
-          ]
-      ; List.(overlapping context experiment_id mailings)
-      ]
+      div
+        [ p
+            [ I18n.RateDependencyWith
+              |> Pool_common.Utils.hint_to_string language
+              |> txt
+            ]
+        ; List.(overlapping context experiment_id mailings)
+        ]
   in
-  div ~a:[ a_class [ "stack" ] ] (average @ mailings)
+  div ~a:[ a_class [ "stack" ] ] [ notification; average; mailings ]
 ;;

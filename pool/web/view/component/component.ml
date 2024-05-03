@@ -11,7 +11,6 @@ module Input = Component_input
 module Location = Component_location
 module MessageTextElements = Component_message_text_elements
 module Modal = Component_modal
-module Navigation = Component_nav
 module Notification = Component_notification
 module Partials = Component_partials
 module Role = Component_role

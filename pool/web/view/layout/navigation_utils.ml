@@ -44,7 +44,7 @@ let filter_items ?validate ?actor ?(guardian = []) items =
 ;;
 
 let rec build_nav_links
-  ?(mobile = false)
+  ?(layout = Horizonal)
   ?active_navigation
   ?(first_level = true)
   language
@@ -76,10 +76,7 @@ let rec build_nav_links
       icon
   in
   let nav_link : [< Html_types.li_content_fun ] elt list_wrap =
-    let classnames =
-      let base = [ "nav-link" ] in
-      if is_active then "active" :: base else base
-    in
+    let classnames = [ "nav-link" ] in
     match is_active, url with
     | true, _ | false, None -> [ span ~a:[ a_class classnames ] label ]
     | _, Some url ->
@@ -92,23 +89,24 @@ let rec build_nav_links
       ]
   in
   match children with
-  | [] -> li nav_link
+  | [] ->
+    if is_active then li ~a:[ a_class [ "active" ] ] nav_link else li nav_link
   | children ->
     let parent_attrs, list_attrs =
-      if mobile
-      then [], [ a_class [ "children" ] ]
-      else (
+      match layout with
+      | Vertical -> [], [ a_class [ "children" ] ]
+      | Horizonal ->
         let parent_class =
           if first_level
           then [ "has-dropdown" ]
           else [ "has-dropdown"; "right" ]
         in
-        [ a_class parent_class ], [ a_class [ "dropdown" ] ])
+        [ a_class parent_class ], [ a_class [ "dropdown" ] ]
     in
     let build_rec =
       CCList.map
         (build_nav_links
-           ~mobile
+           ~layout
            ~first_level:false
            ?active_navigation
            language
@@ -118,100 +116,105 @@ let rec build_nav_links
     nav_link @ [ build_rec children ] |> li ~a:parent_attrs
 ;;
 
-let create_main
+let create_nav
   { Pool_context.query_language; language; guardian; _ }
   items
   ?validate
   ?actor
   ?active_navigation
-  mobile
+  layout
   =
   let nav_links =
     filter_items ?validate ?actor ~guardian items
     |> CCList.map
-         (build_nav_links ~mobile ?active_navigation language query_language)
+         (build_nav_links ~layout ?active_navigation language query_language)
   in
   let nav = [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ] in
-  Lwt.return
-  @@
-  if mobile
-  then [ div ~a:[ a_class [ "grow"; "flexcolumn"; "gap" ] ] nav ]
-  else nav
+  match layout with
+  | Vertical -> [ div ~a:[ a_class [ "grow"; "flexcolumn"; "gap" ] ] nav ]
+  | Horizonal -> nav
 ;;
 
-let i18n_links languages active_language mobile =
+let i18n_links languages active_language layout =
   let open Pool_message in
   let link_classes = [ "nav-link" ] in
   let nav_class =
-    if mobile
-    then [ "language-nav"; "gap"; "flexrow"; "flex-gap"; "justify-center" ]
-    else [ "main-nav" ]
+    match layout with
+    | Vertical ->
+      [ "language-nav"; "gap"; "flexrow"; "flex-gap"; "justify-center" ]
+    | Horizonal -> [ "main-nav" ]
   in
   let to_html =
     (fun language ->
       let lang = Language.show language in
       if Language.equal language active_language
-      then span ~a:[ a_class ("active" :: link_classes) ] [ txt lang ]
+      then
+        li
+          ~a:[ a_class [ "active" ] ]
+          [ span ~a:[ a_class link_classes ] [ txt lang ] ]
       else (
         let query_param =
           [ Field.Language, lang |> CCString.lowercase_ascii ]
         in
-        a
-          ~a:
-            [ a_href (add_field_query_params "" query_param)
-            ; a_class link_classes
-            ]
-          [ txt lang ]))
+        li
+          [ a
+              ~a:
+                [ a_href (add_field_query_params "" query_param)
+                ; a_class link_classes
+                ]
+              [ txt lang ]
+          ]))
     |> CCList.map
   in
-  languages |> to_html |> nav ~a:[ a_class nav_class ]
+  [ languages |> to_html |> ul ] |> nav ~a:[ a_class nav_class ]
 ;;
 
-let with_language_switch
+let create_nav_with_language_switch
   ({ Pool_context.language; _ } as context)
   elements
   available_languages
   ?actor:_
   ?active_navigation
-  mobile
+  layout
   =
   let language_switch = i18n_links available_languages language in
-  let%lwt main =
-    create_main ~validate:false ?active_navigation context elements mobile
+  let main =
+    create_nav ~validate:false ?active_navigation context elements layout
   in
-  main @ [ language_switch mobile ] |> Lwt.return
+  main @ [ language_switch layout ]
 ;;
 
-let create_desktop fcn =
-  let open Utils.Lwt_result.Infix in
-  fcn false ||> div ~a:[ a_class [ "desktop-nav"; "flexrow"; "flex-gap" ] ]
+let create_desktop_nav fcn =
+  fcn Horizonal |> div ~a:[ a_class [ "hidden-mobile"; "flexrow"; "flex-gap" ] ]
 ;;
 
-let create_mobile app_title navigation =
-  let open Utils.Lwt_result.Infix in
-  let id = "navigation-overlay" in
+let create_mobile_nav ?title ~toggle_id navigation =
+  let title = Option.value ~default:(txt "") title in
   let label =
     Icon.to_html
     %> CCList.pure
-    %> div ~a:[ a_user_data "modal" id; a_class [ "icon-lg" ] ]
+    %> div ~a:[ a_user_data "modal" toggle_id; a_class [ "icon-lg" ] ]
   in
   let overlay navigation =
     div
-      ~a:[ a_id id; a_class [ "fullscreen-overlay"; "mobile-nav"; "bg-white" ] ]
+      ~a:
+        [ a_id toggle_id
+        ; a_class [ "fullscreen-overlay"; "mobile-nav"; "bg-white" ]
+        ]
       [ div
           ~a:[ a_class [ "flexcolumn"; "full-height" ] ]
           [ header
               ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
-              [ app_title; label Icon.Close ]
+              [ title; div ~a:[ a_class [ "push" ] ] [ label Icon.Close ] ]
           ; div
               ~a:[ a_class [ "fade-in"; "inset"; "flexcolumn"; "grow" ] ]
               navigation
           ]
       ]
   in
-  navigation true
-  ||> fun items ->
+  navigation Vertical
+  |> fun items ->
   div
-    ~a:[ a_class [ "mobile-nav-wrapper" ] ]
+    ~a:[ a_class [ "push"; "mobile-only" ] ]
     [ label Icon.MenuOutline; overlay items ]
 ;;

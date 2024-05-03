@@ -295,7 +295,7 @@ module UpdateGtxApiKey : sig
     :  tags:Logs.Tag.set
     -> Pool_tenant.Title.t
     -> Conformist.input
-    -> (Pool_tenant.GtxApiKey.t, Conformist.error_msg) Lwt_result.t
+    -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
 
   val handle
     :  ?tags:Logs.Tag.set

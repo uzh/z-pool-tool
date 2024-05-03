@@ -35,7 +35,7 @@ let rename_subject_to_contact =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "invitation"
     |> add_step create_invitation_table
     |> add_step rename_participant_to_subject

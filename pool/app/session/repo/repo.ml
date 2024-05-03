@@ -41,6 +41,7 @@ let joins =
         ON pool_locations.uuid = pool_sessions.location_uuid
       INNER JOIN pool_experiments
         ON pool_experiments.uuid = pool_sessions.experiment_uuid
+        AND pool_experiments.assignment_without_session = 0
       %s
     |sql}
     Experiment.Repo.joins
@@ -69,6 +70,7 @@ module Sql = struct
           SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
           SUBSTR(HEX(pool_experiments.uuid), 21)
         )),
+        pool_experiments.contact_email,
         pool_sessions.start,
         pool_sessions.duration,
         pool_sessions.internal_description,
@@ -90,17 +92,13 @@ module Sql = struct
           SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
           SUBSTR(HEX(pool_locations.uuid), 21)
         )),
-        pool_locations.name,
-        user_users.given_name,
-        user_users.name,
-        user_users.email
+        pool_locations.name
       FROM pool_sessions
       INNER JOIN pool_experiments
         ON pool_sessions.experiment_uuid = pool_experiments.uuid
+        AND pool_experiments.assignment_without_session = 0
       INNER JOIN pool_locations
         ON pool_sessions.location_uuid = pool_locations.uuid
-      LEFT JOIN user_users
-        ON pool_experiments.contact_person_uuid = user_users.uuid
       WHERE
         %s
         %s
@@ -159,6 +157,9 @@ module Sql = struct
           (SELECT COUNT(pool_assignments.id) FROM pool_assignments WHERE session_uuid = pool_sessions.uuid AND marked_as_deleted = 0 AND pool_assignments.canceled_at IS NULL),
           pool_sessions.canceled_at
         FROM pool_sessions
+        INNER JOIN pool_experiments
+          ON pool_experiments.uuid = pool_sessions.experiment_uuid
+          AND pool_experiments.assignment_without_session = 0
         INNER JOIN pool_locations
           ON pool_locations.uuid = pool_sessions.location_uuid
       |sql}
@@ -569,19 +570,18 @@ module Sql = struct
     let open Caqti_request.Infix in
     Format.asprintf
       {sql|
-    WHERE
-      %s
-    AND
-      pool_sessions.canceled_at IS NULL
-    AND
-      pool_sessions.closed_at IS NULL
-    AND
-      pool_sessions.start >= NOW()
-    AND
-      pool_sessions.start <= DATE_ADD(NOW(), INTERVAL
-        COALESCE(
+        WHERE
           %s
-        ) SECOND)
+        AND
+          pool_experiments.assignment_without_session = 0
+        AND
+          pool_sessions.canceled_at IS NULL
+        AND
+          pool_sessions.closed_at IS NULL
+        AND
+          pool_sessions.start >= NOW()
+        AND
+          pool_sessions.start <= DATE_ADD(NOW(), INTERVAL COALESCE(%s) SECOND)
     |sql}
       reminder_sent_at
       lead_time
@@ -879,6 +879,38 @@ module Sql = struct
       |> (pt ->* RepoEntity.Calendar.t) ~oneshot:true
     in
     Database.collect pool request pv
+  ;;
+
+  let find_sessions_to_update_matcher_request context =
+    let base_condition =
+      {sql|
+      WHERE
+        pool_sessions.closed_at IS NULL
+        AND pool_sessions.canceled_at IS NULL
+      |sql}
+    in
+    let where =
+      match context with
+      | `Experiment _ ->
+        Format.asprintf
+          "%s AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))"
+          base_condition
+      | `Upcoming -> base_condition
+    in
+    Format.asprintf "%s HAVING assignment_count >= 0" (find_request_sql where)
+  ;;
+
+  let find_sessions_to_update_matcher pool context =
+    let open Caqti_request.Infix in
+    let request = find_sessions_to_update_matcher_request context in
+    match context with
+    | `Experiment id ->
+      Database.collect
+        pool
+        (request |> Experiment.Repo.Entity.Id.t ->* RepoEntity.t)
+        id
+    | `Upcoming ->
+      Database.collect pool (request |> Caqti_type.unit ->* RepoEntity.t) ()
   ;;
 end
 

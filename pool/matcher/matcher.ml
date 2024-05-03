@@ -140,6 +140,34 @@ let calculate_mailing_limits
   pool, limit_to_mailing
 ;;
 
+let notify_all_invited pool tenant experiment =
+  let open Experiment in
+  match MatcherNotificationSent.value experiment.matcher_notification_sent with
+  | true -> Lwt.return []
+  | false ->
+    let%lwt email_event =
+      Experiment.find_admins_to_notify_about_invitations
+        pool
+        experiment.Experiment.id
+      >|> Lwt_list.map_s (fun admin ->
+        admin
+        |> Message_template.MatcherNotification.create
+             tenant
+             Pool_common.Language.En
+             experiment)
+      ||> Email.bulksent
+      ||> Pool_event.email
+    in
+    let experiment_event =
+      Updated
+        { experiment with
+          matcher_notification_sent = MatcherNotificationSent.create true
+        }
+      |> Pool_event.experiment
+    in
+    Lwt.return [ email_event; experiment_event ]
+;;
+
 let events_of_mailings =
   let ok_or_log_error = function
     | Ok (pool, events) when CCList.is_empty events ->
@@ -160,54 +188,60 @@ let events_of_mailings =
       |> Lwt_list.map_s (fun (mailing, limit) ->
         find_contacts_by_mailing pool mailing limit
         >>= fun (experiment, contacts, use_case) ->
-        let open Cqrs_command.Invitation_command in
-        let contacts = sort_contacts contacts in
-        let%lwt create_message =
-          Message_template.ExperimentInvitation.prepare tenant experiment
-        in
-        let create_new contacts =
-          Create.(
-            handle
-              ~tags
-              { experiment
-              ; mailing = Some mailing
-              ; contacts
-              ; invited_contacts = []
-              ; create_message
-              })
-        in
-        let resend_existing invitations =
-          invitations
-          |> CCList.map (fun invitation ->
-            Resend.(
+        match contacts with
+        | [] -> notify_all_invited pool tenant experiment |> Lwt_result.ok
+        | contacts ->
+          let open Cqrs_command.Invitation_command in
+          let contacts = sort_contacts contacts in
+          let%lwt create_message =
+            Message_template.ExperimentInvitation.prepare tenant experiment
+          in
+          let create_new contacts =
+            Create.(
               handle
                 ~tags
-                ~mailing_id:mailing.Mailing.id
-                create_message
-                invitation))
-          |> CCList.all_ok
-          |> CCResult.map CCList.flatten
-        in
-        match use_case with
-        | Filter.MatchesFilter -> failwith "Invalid use case"
-        | Filter.Matcher _ -> create_new contacts |> Lwt_result.lift
-        | Filter.MatcherReset _ ->
-          contacts
-          |> Lwt_list.fold_left_s
-               (fun (invitations, contacts) contact ->
-                 contact
-                 |> Contact.id
-                 |> Invitation.find_by_contact_and_experiment_opt
-                      pool
-                      experiment.Experiment.id
-                 |> Lwt.map (function
-                   | None -> invitations, contacts @ [ contact ]
-                   | Some invitation -> invitations @ [ invitation ], contacts))
-               ([], [])
-          >|> fun (invitations, contacts) ->
-          let* resend_events = resend_existing invitations |> Lwt_result.lift in
-          let* create_events = create_new contacts |> Lwt_result.lift in
-          Lwt_result.return (create_events @ resend_events))
+                { experiment
+                ; mailing = Some mailing
+                ; contacts
+                ; invited_contacts = []
+                ; create_message
+                })
+          in
+          let resend_existing invitations =
+            invitations
+            |> CCList.map (fun invitation ->
+              Resend.(
+                handle
+                  ~tags
+                  ~mailing_id:mailing.Mailing.id
+                  create_message
+                  invitation))
+            |> CCList.all_ok
+            |> CCResult.map CCList.flatten
+          in
+          (match use_case with
+           | Filter.MatchesFilter -> failwith "Invalid use case"
+           | Filter.Matcher _ -> create_new contacts |> Lwt_result.lift
+           | Filter.MatcherReset _ ->
+             contacts
+             |> Lwt_list.fold_left_s
+                  (fun (invitations, contacts) contact ->
+                    contact
+                    |> Contact.id
+                    |> Invitation.find_by_contact_and_experiment_opt
+                         pool
+                         experiment.Experiment.id
+                    |> Lwt.map (function
+                      | None -> invitations, contacts @ [ contact ]
+                      | Some invitation ->
+                        invitations @ [ invitation ], contacts))
+                  ([], [])
+             >|> fun (invitations, contacts) ->
+             let* resend_events =
+               resend_existing invitations |> Lwt_result.lift
+             in
+             let* create_events = create_new contacts |> Lwt_result.lift in
+             Lwt_result.return (create_events @ resend_events)))
       ||> CCList.all_ok
       >|+ CCList.flatten
     in

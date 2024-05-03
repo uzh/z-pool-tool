@@ -1,0 +1,12 @@
+(library
+ (name assignment_job)
+ (libraries
+  assignment
+  experiment
+  guard
+  message_template
+  pool_common
+  session
+  utils)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_yojson_conv)))

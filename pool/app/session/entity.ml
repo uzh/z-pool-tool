@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 module Id = struct
   include Pool_common.Id
 
@@ -47,8 +49,6 @@ module Start = struct
   include Pool_model.Base.Ptime
 
   let create m = m
-  let value m = m
-  let compare = Ptime.compare
 
   let schema () =
     let decode str = CCResult.(Pool_model.Time.parse_time str >|= create) in
@@ -62,13 +62,12 @@ end
 module End = struct
   include Pool_model.Base.Ptime
 
-  let create start duration =
-    duration
-    |> Ptime.add_span start
-    |> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
-  ;;
+  let schema () = schema Pool_message.Field.End CCResult.return ()
 
-  let value m = m
+  let build start =
+    Ptime.add_span start
+    %> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
+  ;;
 end
 
 module Duration = struct
@@ -232,11 +231,11 @@ let is_fully_booked_res (m : t) =
   |> Utils.bool_to_result_not Pool_message.Error.SessionFullyBooked
 ;;
 
-let available_spots m =
+let available_spots (m : t) =
   m.max_participants + m.overbook - m.assignment_count |> CCInt.max 0
 ;;
 
-let has_assignments m = AssignmentCount.value m.assignment_count > 0
+let has_assignments (m : t) = AssignmentCount.value m.assignment_count > 0
 
 type notification_log =
   | Email of Sihl_email.t * Queue.Instance.t
@@ -261,7 +260,7 @@ let start_end_human ({ start; duration; _ } : t) =
   Utils.Ptime.format_start_end start duration
 ;;
 
-let compare_start s1 s2 = Start.compare s1.start s2.start
+let compare_start (s1 : t) (s2 : t) = Start.compare s1.start s2.start
 
 let add_follow_ups_to_parents groups (parent, session) =
   CCList.Assoc.update
@@ -425,12 +424,6 @@ let to_public
 module Calendar = struct
   open Ppx_yojson_conv_lib.Yojson_conv
 
-  type contact_person =
-    { name : string
-    ; email : Pool_user.EmailAddress.t
-    }
-  [@@deriving eq, show, yojson]
-
   type location =
     { id : Pool_location.Id.t
     ; name : Pool_location.Name.t
@@ -477,6 +470,7 @@ module Calendar = struct
     { id : Id.t
     ; experiment_id : Experiment.Id.t
     ; title : Experiment.Title.t
+    ; contact_email : Pool_user.EmailAddress.t option [@option]
     ; start : Start.t
     ; end_ : End.t
     ; links : links
@@ -486,7 +480,6 @@ module Calendar = struct
     ; assignment_count : AssignmentCount.t
     ; internal_description : InternalDescription.t option [@option]
     ; location : location
-    ; contact_person : contact_person option [@option]
     }
   [@@deriving eq, show, yojson]
 end
@@ -532,13 +525,13 @@ let public_to_email_text
   email_text language start duration location
 ;;
 
-let get_session_end session =
+let get_session_end (session : t) =
   Ptime.add_span session.start session.duration
   |> CCOption.get_exn_or "Session end not in range"
 ;;
 
-let not_canceled session =
-  match session.canceled_at with
+let not_canceled ({ canceled_at; _ } : t) =
+  match canceled_at with
   | None -> Ok ()
   | Some canceled_at -> is_canceled_error canceled_at
 ;;

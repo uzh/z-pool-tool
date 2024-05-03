@@ -10,6 +10,6 @@ let add_direct_message_permission =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202403181624" |> add_step add_direct_message_permission)
 ;;

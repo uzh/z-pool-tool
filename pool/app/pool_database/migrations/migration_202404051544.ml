@@ -75,7 +75,7 @@ let remove_status_columns_from_pool_tenant =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202404051544"
     |> add_step add_tenant_database_table
     |> add_step insert_existing_databases

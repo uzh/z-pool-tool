@@ -103,9 +103,9 @@ module AssignTagToContact : sig
     :  ?tags:Logs.Tag.set
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val validate : Tags.t -> (t, Conformist.error_msg) result
+  val validate : Tags.t -> (t, Pool_message.Error.t) result
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -140,7 +140,7 @@ module RemoveTagFromContact : sig
     :  ?tags:Logs.Tag.set
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -164,9 +164,9 @@ module AssignTagToExperiment : sig
     :  ?tags:Logs.Tag.set
     -> Experiment.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val validate : Tags.t -> (t, Conformist.error_msg) result
+  val validate : Tags.t -> (t, Pool_message.Error.t) result
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -195,7 +195,7 @@ module RemoveTagFromExperiment : sig
     :  ?tags:Logs.Tag.set
     -> Experiment.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -219,9 +219,9 @@ module AssignParticipationTagToEntity : sig
     :  ?tags:Logs.Tag.set
     -> Tags.ParticipationTags.entity
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val validate : Tags.t -> (t, Conformist.error_msg) result
+  val validate : Tags.t -> (t, Pool_message.Error.t) result
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -250,7 +250,7 @@ module RemoveParticipationTagFromEntity : sig
     :  ?tags:Logs.Tag.set
     -> Tags.ParticipationTags.entity
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct

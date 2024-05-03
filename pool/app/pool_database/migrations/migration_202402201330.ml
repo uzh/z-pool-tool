@@ -8,6 +8,6 @@ let add_show_on_session_detail_screen_flag =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202402201330" |> add_step add_show_on_session_detail_screen_flag)
 ;;

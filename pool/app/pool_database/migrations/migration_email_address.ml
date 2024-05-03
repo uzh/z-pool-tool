@@ -16,6 +16,6 @@ let create_email_address_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "email_address" |> add_step create_email_address_table)
 ;;

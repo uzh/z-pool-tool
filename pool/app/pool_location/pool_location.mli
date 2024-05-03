@@ -137,7 +137,7 @@ module Mapping : sig
     -> string
     -> Pool_common.Language.t
     -> Pool_common.File.t
-    -> (file, Pool_conformist.error_msg) result
+    -> (file, Pool_message.Error.t) result
 
   module Write : sig
     type file =
@@ -319,32 +319,22 @@ end
 module Statistics : sig
   module ExperimentCount : sig
     include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
   end
 
   module AssignmentCount : sig
     include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
   end
 
   module ShowUpCount : sig
     include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
   end
 
   module NoShowCount : sig
     include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
   end
 
   module ParticipationCount : sig
     include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
   end
 
   type t

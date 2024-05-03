@@ -5,6 +5,6 @@ let add_promoted_contacts_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202308030850" |> add_step add_promoted_contacts_table)
 ;;

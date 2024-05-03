@@ -33,7 +33,7 @@ let add_institution_to_address =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "location"
     |> add_step create_location_table
     |> add_step add_institution_to_address)

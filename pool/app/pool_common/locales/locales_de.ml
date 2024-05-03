@@ -27,11 +27,12 @@ let rec field_to_string =
   | AssignmentCount -> "Anmeldungen"
   | Assignments -> "Anmeldungen"
   | AssignmentsCreated -> "Sessionanmeldungen"
+  | AssignmentWithoutSession -> "Teilnahme ohne Session"
   | Assistants -> "Assistenten"
   | AvailableLanguages -> "Verfügbare Sprachen"
   | Building -> "Gebäude"
-  | Canceled -> "Abgesagt"
   | CanceledAt -> "Abgesagt am"
+  | CallbackUrl -> "Callback-URL"
   | CellPhone -> "Mobiltelefon"
   | Chronological -> "chronologisch"
   | City -> "Ort"
@@ -162,6 +163,7 @@ let rec field_to_string =
   | Mailing -> "Versand"
   | MainSession -> "Hauptsession"
   | MarkedAsDeleted -> "Als gelöscht markiert"
+  | MatchingFilterCount -> "Anzahl passender Kontakte"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MaxTries -> "Maximum an Versuchen"
   | Message -> "Nachricht"
@@ -176,10 +178,12 @@ let rec field_to_string =
   | NoShow -> "Nicht anwesend"
   | NoShowAbr -> "NS"
   | NoShowCount -> "Abwesende"
+  | NotMatchingFilterCount -> "unpassende"
   | NotifiedAt -> "Benachrichtigt am"
   | NotifyVia -> "Benachrichtigen via"
   | NotifyContact -> "Kontakt benachrichtigen"
   | Offset -> "Offset"
+  | OnlineExperiment -> "Onlinestudie"
   | Operator -> "Operator"
   | Operators -> "Operatoren"
   | Order -> "Reihenfolge"
@@ -194,6 +198,7 @@ let rec field_to_string =
   | Participated -> "teilgenommen"
   | ParticipatedAbr -> "P"
   | ParticipationTag -> "Teilnahmetag"
+  | ParticipationTags -> "Teilnahmetags"
   | PartnerLogos -> "Partner logos"
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
@@ -201,6 +206,11 @@ let rec field_to_string =
   | PendingContactImports -> "Pendente Kontaktimporte"
   | Period -> "Zeitraum"
   | Permission -> "Berechtigung"
+  | PermissionOn (role, target) ->
+    Format.asprintf
+      "Berechtiung %s von %s"
+      (CCString.capitalize_ascii target)
+      (CCString.capitalize_ascii role)
   | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
@@ -259,6 +269,8 @@ let rec field_to_string =
   | Street -> "Strasse"
   | Styles -> "Styles"
   | Successful -> "Erfolgreich"
+  | Survey -> "Umfrage"
+  | SurveyUrl -> "Umfrage-URL"
   | SystemEvent -> "System Event"
   | Tag -> "Tag"
   | Tags -> "Tags"
@@ -279,6 +291,7 @@ let rec field_to_string =
   | TextMessageLeadTime -> "SMS Vorlaufzeit"
   | TextMessageRemindersSentAt -> "SMS Erinnerungen verschickt am"
   | Time -> "Uhrzeit"
+  | TimeWindow -> "Zeitfenster"
   | TimeSpan -> "Zeitspanne"
   | TimeUnit -> "Zeiteinheit"
   | TimeUnitOf field -> combine TimeUnit field
@@ -431,6 +444,7 @@ let rec error_to_string =
     "Einige Anmeldungen haben Fehler. Bitte korrigieren Sie diese zuerst."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
+  | AssignmentAlreadySubmitted -> "Die Teilnahme wurde bereits abgeschlossen."
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: \
@@ -525,6 +539,7 @@ let rec error_to_string =
       ""
       (field |> field_to_string |> CCString.trim)
       "wurde als gelöscht markiert."
+  | JobCannotBeRetriggered -> "Dieser Auftrag kann nicht neu ausgelöst werden."
   | JobPending -> "Der Auftrag ist noch pendent."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
@@ -642,7 +657,11 @@ let rec error_to_string =
       "%s kleiner als %s"
       (field_to_string field1)
       (field_to_string field2)
+  | SessionOverlap -> "Dieses Zeitfenster überschneidet sich mit einem anderen."
   | SmtpException exn -> exn
+  | SmtpLoginMissingCredentials ->
+    "Der SMTP-Authentifizierungsmechanismus kann nicht auf LOGIN gesetzt \
+     werden, wenn kein Benutzername oder Passwort festgelegt ist."
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
@@ -694,6 +713,7 @@ let control_to_string =
   | Create field -> format_submit "erstellen" field
   | Decline -> format_submit "ablehnen" None
   | Delete field -> format_submit "löschen" field
+  | Details -> format_submit "details" None
   | Descending -> "absteigend"
   | Disable -> format_submit "deaktivieren" None
   | Duplicate field -> format_submit "duplizieren" field
@@ -729,6 +749,7 @@ let control_to_string =
   | Resend field -> format_submit "erneut senden" field
   | Reset field -> format_submit "zurücksetzen" field
   | ResetForm -> "Formular zurücksetzen"
+  | Resume field -> format_submit "fortsetzen" field
   | Save field -> format_submit "speichern" field
   | SessionDetails -> format_submit "Sessiondetails" None
   | Select -> format_submit "auswählen" None
@@ -738,10 +759,12 @@ let control_to_string =
   | SendResetLink -> format_submit "link senden" None
   | Show -> "anzeigen"
   | SignUp -> format_submit "anmelden" None
+  | Start field -> format_submit "starten" field
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field
   | Update field -> format_submit "aktualisieren" field
+  | UpdateAssignmentsMatchFilter -> format_submit "Filter erneut ausführen" None
   | UpdateOrder -> "Reihenfolge anpassen"
   | Validate -> "Validieren"
   | Verify field -> format_submit "verifizieren" field

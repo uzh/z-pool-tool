@@ -1,3 +1,8 @@
+type update_counters =
+  { no_show : Assignment.NoShow.t
+  ; participated : Assignment.Participated.t
+  }
+
 val update_on_invitation_sent : Contact.t -> Contact.t
 val update_on_session_signup : Contact.t -> 'a list -> Contact.t
 val update_on_assignment_from_waiting_list : Contact.t -> 'a list -> Contact.t
@@ -24,8 +29,7 @@ val update_on_assignment_deletion
 
 val update_on_assignment_update
   :  Assignment.t
-  -> Session.t
-  -> Assignment.NoShow.t
-  -> Assignment.NoShow.t
-  -> bool
+  -> current_values:update_counters
+  -> updated_values:update_counters
+  -> participated_in_other_assignments:bool
   -> Contact.t

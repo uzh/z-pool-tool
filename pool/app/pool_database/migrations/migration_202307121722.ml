@@ -46,7 +46,7 @@ let add_fk_contraint_to_smtp_auth_uuid =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202307121722"
     |> add_step add_contact_person_fk_to_experiments
     |> add_step add_fk_contraint_to_contact_person_uuid
@@ -56,6 +56,6 @@ let migration () =
 ;;
 
 let migration_root () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202306231722" |> add_step add_default_flag_to_smtp_accounts)
 ;;

@@ -48,7 +48,7 @@ let add_missing_columns_to_sessions =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202306081615"
     |> add_step create_organisational_units_table
     |> add_step add_missing_columns_to_experiments

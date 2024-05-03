@@ -48,7 +48,7 @@ let make_plain_text_not_nullable =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "pool_message"
     |> add_step create_pool_message_table
     |> add_step add_plain_text_column

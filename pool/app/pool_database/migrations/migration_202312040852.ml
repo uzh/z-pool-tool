@@ -12,6 +12,6 @@ let store_settings_timespans_in_seconds =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202312040852" |> add_step store_settings_timespans_in_seconds)
 ;;

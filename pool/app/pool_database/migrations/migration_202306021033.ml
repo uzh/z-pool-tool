@@ -32,7 +32,7 @@ let create_system_event_logs_table =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202306021033"
     |> add_step create_system_events_table
     |> add_step create_system_event_logs_table)

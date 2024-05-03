@@ -8,6 +8,6 @@ let add_external_data_required =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202308041330" |> add_step add_external_data_required)
 ;;

@@ -1,12 +1,8 @@
+open CCFun.Infix
 open Tyxml.Html
 open Component
 open Input
-open CCFun.Infix
 open Pool_message
-
-let session_title (s : Session.t) =
-  Pool_common.I18n.SessionDetailTitle (s.Session.start |> Session.Start.value)
-;;
 
 let session_counter_id = "session-counter-table"
 
@@ -89,23 +85,18 @@ module Partials = struct
       (overbook |> value)
   ;;
 
-  let detail_button language experiment_id { id; _ } =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (Experiment.Id.value experiment_id)
-      (Id.value id)
+  let detail_button language experiment_id session_id =
+    HttpUtils.Url.Admin.session_path experiment_id ~id:session_id
     |> link_as_button
          ~is_text:true
          ~icon:Icon.Eye
          ~control:(language, Control.SessionDetails)
   ;;
 
-  let delete_form
-    { Pool_context.language; csrf; _ }
-    experiment_id
-    ({ id; _ } as session : t)
-    =
-    if Session.is_deletable session |> CCResult.is_ok
+  let delete_form { Pool_context.language; csrf; _ } experiment_id session =
+    let open HttpUtils.Session in
+    let id = session_id session in
+    if deletable session
     then
       form
         ~a:
@@ -141,7 +132,7 @@ module Partials = struct
   ;;
 
   let close_button language experiment_id session =
-    if is_closable session |> CCResult.is_ok
+    if Session.is_closable session |> CCResult.is_ok
     then
       Format.asprintf
         "/admin/experiments/%s/sessions/%s/close"
@@ -160,8 +151,8 @@ module Partials = struct
     experiment_id
     session
     =
-    [ detail_button language experiment_id session |> CCOption.return
-    ; delete_form context experiment_id session |> CCOption.return
+    [ detail_button language experiment_id session.id |> CCOption.return
+    ; delete_form context experiment_id (`Session session) |> CCOption.return
     ; close_button language experiment_id session
     ]
     |> CCList.filter_map CCFun.id
@@ -597,61 +588,64 @@ let index
   chronological
   =
   let open Pool_common in
-  let hover_script =
-    match chronological with
-    | false -> txt ""
-    | true ->
-      let js =
-        {js|
-          const highlight = "highlighted";
-          const initHover = () => {
-              const table = document.getElementById("session-list");
-              const toggleClass = (e) => {
-                  const { id, parentId } = e.currentTarget.dataset;
-                  if (parentId) {
-                      table
-                          .querySelector(`[data-id='${parentId}']`)
-                          .classList.toggle(highlight);
-                  } else {
-                      table.querySelectorAll(`[data-parent-id='${id}']`).forEach((tr) => {
-                          tr.classList.toggle(highlight);
+  let html =
+    let hover_script =
+      match chronological with
+      | false -> txt ""
+      | true ->
+        let js =
+          {js|
+              const highlight = "highlighted";
+              const initHover = () => {
+                  const table = document.getElementById("session-list");
+                  const toggleClass = (e) => {
+                      const { id, parentId } = e.currentTarget.dataset;
+                      if (parentId) {
+                          table
+                              .querySelector(`[data-id='${parentId}']`)
+                              .classList.toggle(highlight);
+                      } else {
+                          table.querySelectorAll(`[data-parent-id='${id}']`).forEach((tr) => {
+                              tr.classList.toggle(highlight);
+                          });
+                      }
+                      e.currentTarget.classList.toggle(highlight);
+                  };
+                  table.querySelectorAll("tbody tr").forEach((row) => {
+                      row.addEventListener("mouseenter", (e) => {
+                          toggleClass(e);
                       });
-                  }
-                  e.currentTarget.classList.toggle(highlight);
+                      row.addEventListener("mouseleave", (e) => {
+                          toggleClass(e);
+                      });
+                  });
               };
-              table.querySelectorAll("tbody tr").forEach((row) => {
-                  row.addEventListener("mouseenter", (e) => {
-                      toggleClass(e);
-                  });
-                  row.addEventListener("mouseleave", (e) => {
-                      toggleClass(e);
-                  });
-              });
-          };
-          initHover();
-          document.addEventListener("htmx:afterSettle", () => {
               initHover();
-          })
-      |js}
-      in
-      script (Unsafe.data js)
+              document.addEventListener("htmx:afterSettle", () => {
+                  initHover();
+              })
+          |js}
+        in
+        script (Unsafe.data js)
+    in
+    let chronological_toggle =
+      if sessions |> fst |> some_session_is_followup
+      then Partials.chronological_toggle language chronological
+      else txt ""
+    in
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ chronological_toggle
+      ; Partials.table_legend language
+      ; data_table context experiment sessions chronological
+      ; hover_script
+      ]
   in
-  let chronological_toggle =
-    if sessions |> fst |> some_session_is_followup
-    then Partials.chronological_toggle language chronological
-    else txt ""
-  in
-  div
-    ~a:[ a_class [ "stack" ] ]
-    [ chronological_toggle
-    ; Partials.table_legend language
-    ; data_table context experiment sessions chronological
-    ; hover_script
-    ]
+  html
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.Sessions
+         ~active_navigation:"sessions"
          ~hint:I18n.ExperimentSessions
          context
          (NavLink I18n.Sessions)
@@ -782,7 +776,7 @@ let duplicate
         ; a
             ~a:
               [ a_href
-                  (session_path experiment.Experiment.id session.id
+                  (session_path ~id:session.id experiment.Experiment.id
                    |> Sihl.Web.externalize_path)
               ; a_target "_blank"
               ]
@@ -822,7 +816,7 @@ let duplicate
     |> Component.Notification.notification language `Warning
   in
   let subform_wrapper = "session-duplication-subforms" in
-  let session_path = session_path experiment.Experiment.id session.id in
+  let session_path = session_path ~id:session.id experiment.Experiment.id in
   let add_subform_button =
     button
       ~a:
@@ -880,6 +874,8 @@ let duplicate
 
 let detail
   ?access_contact_profiles
+  ~not_matching_filter_count
+  ?(rerun_session_filter = false)
   ?(send_direct_message = false)
   ?view_contact_name
   ?view_contact_info
@@ -895,7 +891,7 @@ let detail
   let open Pool_common in
   let open Session in
   let experiment_id = experiment.Experiment.id in
-  let session_path = session_path experiment_id session.id in
+  let session_path = session_path ~id:session.id experiment_id in
   let session_link ?style (show, url, control) =
     let style, icon =
       style |> CCOption.map_or ~default:(`Primary, None) CCFun.id
@@ -910,6 +906,16 @@ let detail
         ?icon
         (Format.asprintf "%s/%s" session_path url)
       |> CCOption.pure
+  in
+  let not_matching_filter_alert =
+    match not_matching_filter_count with
+    | None | Some 0 -> txt ""
+    | Some count ->
+      [ I18n.AssignmentsNotMatchingFilerSession count
+        |> Utils.hint_to_string language
+        |> txt
+      ]
+      |> Notification.notification language `Warning
   in
   let resend_reminders_modal =
     let open Pool_common in
@@ -1134,7 +1140,7 @@ let detail
   in
   let assignments_html =
     let open Page_admin_assignments in
-    let swap_session_modal_id = swap_session_modal_id session in
+    let swap_session_modal_id = swap_session_modal_id session.Session.id in
     let legend = Partials.table_legend language in
     let modal id =
       div ~a:[ a_id id; a_class [ "fullscreen-overlay"; "modal" ] ] []
@@ -1147,7 +1153,7 @@ let detail
         ?view_contact_info
         context
         experiment
-        session
+        (`Session session)
         text_messages_enabled
         (assignments, query)
     in
@@ -1200,8 +1206,8 @@ let detail
       let open Session in
       HttpUtils.Url.Admin.session_path
         ~suffix:"direct-message"
+        ~id:session.id
         experiment.Experiment.id
-        session.id
       |> Sihl.Web.externalize_path
     in
     let direct_messaging_buttons =
@@ -1235,6 +1241,23 @@ let detail
           ]
       else txt ""
     in
+    let refresh_fiter_button =
+      if rerun_session_filter
+      then
+        header_btn
+          Icon.RefreshOutline
+          Control.UpdateAssignmentsMatchFilter
+          Htmx.
+            [ hx_post
+                (HttpUtils.Url.Admin.session_path
+                   ~suffix:"update-matches-filter"
+                   ~id:session.id
+                   experiment_id
+                 |> Sihl.Web.externalize_path)
+            ; hx_swap "None"
+            ]
+      else txt ""
+    in
     div
       ~a:[ a_class [ "stack" ] ]
       [ div
@@ -1254,6 +1277,7 @@ let detail
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
               [ direct_messaging_buttons
+              ; refresh_fiter_button
               ; header_btn
                   Icon.PrintOutline
                   Control.(Print (Some Field.Assignments))
@@ -1277,7 +1301,8 @@ let detail
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ session_overview
+    [ not_matching_filter_alert
+    ; session_overview
     ; tags_html
     ; message_templates_html
         Message_template.Label.SessionReminder
@@ -1289,7 +1314,7 @@ let detail
        create
          ~buttons:edit_button
          context
-         (I18n (session_title session))
+         (I18n (HttpUtils.Session.session_title session))
          experiment)
 ;;
 
@@ -1301,21 +1326,85 @@ let print
   session
   assignments
   =
+  let open Page_admin_assignments in
   let assignment_list =
-    Page_admin_assignments.Partials.print_assignments_list
+    data_table
       ?view_contact_name
       ?view_contact_info
+      ~is_print:true
       context
       experiment
       session
+      false
       assignments
   in
   let title =
-    Pool_common.(Utils.text_to_string language (session_title session))
+    Pool_common.(
+      Utils.text_to_string
+        language
+        (HttpUtils.Session.detail_page_title session))
   in
-  [ div ~a:[ a_class [ "safety-margin" ] ] [ h1 [ txt title ]; assignment_list ]
+  [ div
+      ~a:[ a_class [ "safety-margin" ] ]
+      [ h1 [ txt title ]
+      ; div
+          ~a:[ a_class [ "stack-lg" ] ]
+          [ Partials.table_legend language; assignment_list ]
+      ]
   ]
   |> Layout.Print.create ~document_title:title
+;;
+
+let tags_subform
+  ({ Pool_context.language; csrf; _ } as context)
+  experiment
+  session
+  (current_tags, available_tags, experiment_tags)
+  =
+  let tags_action =
+    Format.asprintf
+      "%s/%s"
+      (session_path
+         ~suffix:Field.(human_url ParticipationTag)
+         ~id:(HttpUtils.Session.session_id session)
+         experiment.Experiment.id)
+  in
+  let remove_action (tag : Tags.t) =
+    Format.asprintf "%s/%s" Tags.(tag.id |> Id.value) "remove" |> tags_action
+  in
+  div
+    [ h3
+        ~a:[ a_class [ "heading-3" ] ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
+    ; p
+        Pool_common.
+          [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt ]
+    ; div
+        ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+        [ Tag.add_tags_form
+            context
+            ~existing:current_tags
+            available_tags
+            (tags_action "assign")
+        ; div
+            ~a:[ a_class [ "flexcolumn"; "flex-gap" ] ]
+            [ Component.Tag.tag_form
+                ~label:Pool_common.I18n.SelectedTags
+                language
+                (remove_action, csrf)
+                current_tags
+            ; div
+                ~a:[ a_class [ "border-top"; "inset"; "vertical"; "n-shape" ] ]
+                [ p
+                    [ txt
+                        "Every participant of a session of this experiment \
+                         will be tagged with the following tags by default."
+                    ]
+                ; Component.Tag.tag_list language experiment_tags
+                ]
+            ]
+        ]
+    ]
 ;;
 
 let edit
@@ -1324,21 +1413,16 @@ let edit
   default_leadtime_settings
   (session : Session.t)
   locations
-  (current_tags, available_tags, experiment_tags)
+  tags
   text_messages_enabled
   flash_fetcher
   =
-  let session_path =
-    Format.asprintf
-      "%s/%s"
-      (session_path experiment.Experiment.id session.Session.id)
-  in
   let form =
     div
       [ p
           [ txt
               (session
-               |> session_title
+               |> HttpUtils.Session.session_title
                |> Pool_common.Utils.text_to_string language)
           ]
       ; session_form
@@ -1352,48 +1436,7 @@ let edit
           ~flash_fetcher
       ]
   in
-  let tags_html =
-    let tags_action =
-      Format.asprintf "%s/%s" (session_path Field.(human_url ParticipationTag))
-    in
-    let remove_action (tag : Tags.t) =
-      Format.asprintf "%s/%s" Tags.(tag.id |> Id.value) "remove" |> tags_action
-    in
-    div
-      [ h3
-          ~a:[ a_class [ "heading-3" ] ]
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
-      ; p
-          Pool_common.
-            [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt ]
-      ; div
-          ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
-          [ Tag.add_tags_form
-              context
-              ~existing:current_tags
-              available_tags
-              (tags_action "assign")
-          ; div
-              ~a:[ a_class [ "flexcolumn"; "flex-gap" ] ]
-              [ Component.Tag.tag_form
-                  ~label:Pool_common.I18n.SelectedTags
-                  language
-                  (remove_action, csrf)
-                  current_tags
-              ; div
-                  ~a:
-                    [ a_class [ "border-top"; "inset"; "vertical"; "n-shape" ] ]
-                  [ p
-                      [ txt
-                          "Every participant of a session of this experiment \
-                           will be tagged with the following tags by default."
-                      ]
-                  ; Component.Tag.tag_list language experiment_tags
-                  ]
-              ]
-          ]
-      ]
-  in
+  let tags_html = tags_subform context experiment (`Session session) tags in
   div ~a:[ a_class [ "stack-lg" ] ] [ form; tags_html ]
   |> CCList.return
   |> Layout.Experiment.(
@@ -1416,7 +1459,7 @@ let follow_up
         [ txt
             Utils.(
               parent_session
-              |> session_title
+              |> HttpUtils.Session.session_title
               |> text_to_string language
               |> CCFormat.asprintf
                    "%s %s"
@@ -1487,7 +1530,9 @@ let close_assignment_htmx_form
     | Ok () -> None
     | Error err -> Some err
   in
-  let session_path = session_path experiment.Experiment.id session.Session.id in
+  let session_path =
+    session_path ~id:session.Session.id experiment.Experiment.id
+  in
   let action =
     Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)
     |> Sihl.Web.externalize_path
@@ -1612,7 +1657,7 @@ let close_assignments_table
     let thead =
       let form_header =
         let action =
-          session_path experiment.Experiment.id session.Session.id
+          session_path ~id:session.Session.id experiment.Experiment.id
           |> Format.asprintf "%s/toggle-assignments"
           |> Sihl.Web.externalize_path
         in
@@ -1701,7 +1746,9 @@ let close
   =
   let open Pool_common in
   let control = Control.(Close (Some Field.Session)) in
-  let session_path = session_path experiment.Experiment.id session.Session.id in
+  let session_path =
+    session_path ~id:session.Session.id experiment.Experiment.id
+  in
   let tags_html =
     let participation_tags_list =
       match participation_tags with
@@ -1761,7 +1808,12 @@ let close
       ]
   in
   [ div
-      [ p [ txt (session |> session_title |> Utils.text_to_string language) ]
+      [ p
+          [ txt
+              (session
+               |> HttpUtils.Session.session_title
+               |> Utils.text_to_string language)
+          ]
       ; tags_html
       ; h4
           ~a:[ a_class [ "heading-4" ] ]
@@ -1801,7 +1853,7 @@ let cancel
       let follow_ups =
         follow_ups
         |> CCList.map (fun session ->
-          session_title session
+          HttpUtils.Session.session_title session
           |> Utils.text_to_string language
           |> txt
           |> CCList.return

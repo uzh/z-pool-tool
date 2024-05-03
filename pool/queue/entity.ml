@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 let default_tries = 5
 let default_retry_delay = Sihl.Time.Span.minutes 1
 
@@ -8,6 +10,8 @@ module JobName = struct
     let field = Pool_message.Field.Name
 
     type t =
+      | CheckMatchesFilter [@name "check_matches_filter"]
+      [@printer Utils.ppx_printer "check_matches_filter"]
       | SendEmail [@name "send_email"] [@printer Utils.ppx_printer "send_email"]
       | SendTextMessage [@name "send_text_message"]
       [@printer Utils.ppx_printer "send_text_message"]
@@ -231,6 +235,21 @@ let schema =
 ;;
 
 open Pool_message
+
+let is_pending = Instance.status %> Status.(equal Pending)
+
+let resendable job =
+  let open CCResult in
+  let* () = if is_pending job then Error Error.JobPending else Ok () in
+  let* () =
+    let open JobName in
+    Instance.name job
+    |> function
+    | CheckMatchesFilter -> Error Error.JobCannotBeRetriggered
+    | SendEmail | SendTextMessage -> Ok ()
+  in
+  Ok job
+;;
 
 let column_job_name = (Field.Name, "queue_jobs.name") |> Query.Column.create
 

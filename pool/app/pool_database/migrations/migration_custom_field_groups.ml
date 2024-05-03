@@ -26,7 +26,7 @@ let change_position_datatype =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "custom_field_groups"
     |> add_step create_custom_field_groups_table
     |> add_step change_position_datatype)

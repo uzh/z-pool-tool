@@ -26,7 +26,7 @@ let add_email_verified_timestamp_to_existing_admins =
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(
+  Database.Migration.(
     empty "202312200952"
     |> add_step add_email_verified_column_to_admin
     |> add_step add_email_verified_timestamp_to_existing_admins)

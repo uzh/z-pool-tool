@@ -11,7 +11,7 @@ let base_path = function
   | `Root -> "/root/settings/smtp"
 ;;
 
-let list Pool_context.{ language; _ } location smtp_auth_list query =
+let list Pool_context.{ language; csrf; _ } location smtp_auth_list query =
   let url = Uri.of_string (base_path location) in
   let data_table = Component.DataTable.create_meta url query language in
   let cols =
@@ -46,7 +46,9 @@ let list Pool_context.{ language; _ } location smtp_auth_list query =
             Pool_common.(
               Utils.confirmable_to_string language I18n.DeleteSmtpServer)
         ]
-      [ submit_icon ~classnames:[ "error" ] Icon.TrashOutline ]
+      [ csrf_element csrf ()
+      ; submit_icon ~classnames:[ "error" ] Icon.TrashOutline
+      ]
   in
   let row (auth : SmtpAuth.t) =
     let open SmtpAuth in
