@@ -230,27 +230,35 @@ type kind =
   | Service
   | Worker
 
-let lifecycle ?(kind = Service) () =
-  let implementation_name, start =
-    match kind with
-    | Service -> "service", fun () -> Lwt.return_unit
-    | Worker -> "worker", start
-  in
+let lifecycle_service =
   Sihl.Container.create_lifecycle
     "Multitenant Queue"
-    ~implementation_name
+    ~implementation_name:"service"
+    ~dependencies:(fun () ->
+      [ Pool_canary.lifecycle; Pool_database.lifecycle; Schedule.lifecycle ])
+    ~stop
+;;
+
+let lifecycle_worker =
+  Sihl.Container.create_lifecycle
+    "Multitenant Queue"
+    ~implementation_name:"worker"
     ~dependencies:(fun () ->
       [ Pool_canary.lifecycle; Pool_database.lifecycle; Schedule.lifecycle ])
     ~start
     ~stop
 ;;
 
-let register ?kind ?(jobs = []) () =
+let register ?(kind = Service) ?(jobs = []) () =
   Repo.register_migration ();
   Repo.register_cleaner ();
   registered_jobs := !registered_jobs @ jobs;
   let configuration = Sihl.Configuration.make () in
-  Sihl.Container.Service.create ~configuration (lifecycle ?kind ())
+  Sihl.Container.Service.create
+    ~configuration
+    (match kind with
+     | Service -> lifecycle_service
+     | Worker -> lifecycle_worker)
 ;;
 
 module History = struct

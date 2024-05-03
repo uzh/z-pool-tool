@@ -175,7 +175,8 @@ type kind =
   | Service
   | Worker
 
-val lifecycle : ?kind:kind -> unit -> Sihl.Container.lifecycle
+val lifecycle_service : Sihl.Container.lifecycle
+val lifecycle_worker : Sihl.Container.lifecycle
 
 val register
   :  ?kind:kind
