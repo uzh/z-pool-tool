@@ -28,7 +28,7 @@ let table () =
     (Sihl.Configuration.read schema).migration_state_table
 ;;
 
-let raise_error label = Pools.raise_caqti_error ~tags:(Logger.Tags.create label)
+let raise_error = Pools.raise_caqti_error
 
 let setup label () =
   Logs.debug (fun m -> m "Setting up table if not exists");
@@ -99,13 +99,10 @@ let with_disabled_fk_check database_label f =
   let open Utils.Lwt_result.Infix in
   Service.query database_label (fun connection ->
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let%lwt () =
-      Connection.exec set_fk_check_request false ||> raise_error database_label
-    in
+    let%lwt () = Connection.exec set_fk_check_request false ||> raise_error in
     Lwt.finalize
       (fun () -> f connection)
-      (fun () ->
-        Connection.exec set_fk_check_request true ||> raise_error database_label))
+      (fun () -> Connection.exec set_fk_check_request true ||> raise_error))
 ;;
 
 let execute_steps database_label migration =

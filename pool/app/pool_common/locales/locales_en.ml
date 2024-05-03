@@ -434,6 +434,7 @@ let rec error_to_string =
   | CannotBeUpdated field ->
     Format.asprintf "%s cannot be updated." (field_to_string field)
   | CaqtiError err -> err
+  | Connection err -> [%string "Connection error: %{err}"]
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -454,6 +455,7 @@ let rec error_to_string =
   | ContactUnconfirmed -> "Participant isn't confirmed!"
   | CustomFieldNoOptions -> "At least one option must exist."
   | CustomFieldTypeChangeNotAllowed -> "Type of field cannot be changed."
+  | DatabaseAddPoolFirst -> "Unknown Pool: Please 'add_pool' first!"
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
   | DirectRegistrationIsDisabled ->
     "You cannot assign yourself to this experiment."
@@ -624,6 +626,7 @@ let rec error_to_string =
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
   | Uniqueness field ->
     field_message "" (field_to_string field) "must be unique."
+  | Unsupported text -> [%string "'%{text}' is unsupported."]
   | WriteOnlyModel -> "Write only model!"
 ;;
 

@@ -128,13 +128,6 @@ module Config : sig
   val expected_databases : int
 end
 
-val show_error_with_log
-  :  ?tags:Logs.Tag.set
-  -> ?log_level:Logs.level
-  -> ?msg_prefix:string
-  -> [< Caqti_error.t ]
-  -> string
-
 val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) Lwt_result.t
 val fetch_pool : Label.t -> status
 val add_pool : ?required:bool -> ?pool_size:int -> t -> status

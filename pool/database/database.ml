@@ -10,8 +10,6 @@ module Repo = struct
   include Repo
 end
 
-let show_error_with_log = Pools.with_log
-
 let log_start label =
   Logs.info (fun m -> m ~tags:(Logger.Tags.create label) "Start database")
 ;;

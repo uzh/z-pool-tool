@@ -443,6 +443,7 @@ let rec error_to_string =
   | CannotBeUpdated field ->
     Format.asprintf "%s kann nicht angepasst werden." (field_to_string field)
   | CaqtiError err -> err
+  | Connection err -> [%string "Verbindungsfehler: %{err}"]
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -465,6 +466,8 @@ let rec error_to_string =
   | CustomFieldNoOptions -> "Es muss mindestens eine Option existieren."
   | CustomFieldTypeChangeNotAllowed ->
     "Sie können den Typ des Feldes nicht ändern."
+  | DatabaseAddPoolFirst ->
+    "Unbekannter Pool: Bitte fügen sie diesen erst hinzu ('add_pool')."
   | Decode field ->
     field_message
       ""
@@ -663,6 +666,7 @@ let rec error_to_string =
     field_message "" (field_to_string field) "ist undefiniert."
   | Uniqueness field ->
     field_message "" (field_to_string field) "muss einzigartig sein."
+  | Unsupported text -> [%string "'%{text}' ist nicht supportet."]
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 

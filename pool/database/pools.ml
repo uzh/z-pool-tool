@@ -12,37 +12,15 @@ module LogTag = struct
   ;;
 
   let create database = Logs.Tag.(empty |> add add_label database)
-
-  let ctx_opt ?ctx () =
-    let open CCOption.Infix in
-    ctx
-    >>= CCList.assoc_opt ~eq:CCString.equal "pool"
-    >|= Label.of_string
-    >|= fun db -> Logs.Tag.(empty |> add add_label db)
-  ;;
 end
 
-let with_log ?tags ?(log_level = Logs.Error) ?(msg_prefix = "Error") err =
-  let msg = Caqti_error.show err in
-  Logs.msg ~src log_level (fun m -> m ?tags "%s: %s" msg_prefix msg);
-  msg
-;;
-
-let raise_caqti_error ?tags =
+let raise_caqti_error =
   let open Caqti_error in
   function
   | Ok resp -> resp
   | Error `Unsupported ->
-    Logs.err ~src (fun m -> m ?tags "Caqti error unsupported");
-    failwith "Caqti error unsupported"
+    raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
   | Error (#t as err) -> raise (Exn err)
-;;
-
-let get_or_raise ?ctx ?tags ?log_level ?msg_prefix () =
-  let tags = CCOption.or_ ~else_:(LogTag.ctx_opt ?ctx ()) tags in
-  function
-  | Ok result -> result
-  | Error error -> failwith (with_log ?tags ?log_level ?msg_prefix error)
 ;;
 
 module DefaultConfig : Pools_sig.ConfigSig = struct
@@ -95,11 +73,13 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     CCResult.retry retries connect
     |> function
     | Ok con -> Ok con |> CCFun.tap store_fcn
-    | Error (err :: _) when required -> failwith (with_log ~tags err)
+    | Error (err :: _) when required -> raise_caqti_error (Error err)
     | Error (err :: _) ->
       Logs.warn ~src (fun m -> m ~tags "Failed to connect: %a" pp database);
       Error err |> CCFun.tap store_fcn
-    | Error [] -> failwith "Failed to connect: empty error"
+    | Error [] ->
+      raise
+        Pool_message.Error.(Exn (Unsupported "Failed to connect: empty error"))
   ;;
 
   let add_pool ?required ?pool_size database =
@@ -152,7 +132,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
           (err |> Caqti_error.uri |> Uri.to_string |> Url.of_string)
       in
       connect (CCFun.tap (Hashtbl.replace pools database_label)) database
-    | None -> failwith "Unknown Pool: Please 'add_pool' first!"
+    | None -> raise Pool_message.Error.(Exn DatabaseAddPoolFirst)
   ;;
 
   let map_fetched database_label (fcn : 'a -> ('b, 'e) Lwt_result.t)
@@ -169,7 +149,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
   let query database_label f =
     Caqti_lwt_unix.Pool.use (fun connection -> f connection)
     |> map_fetched database_label
-    ||> raise_caqti_error ~tags:(LogTag.create database_label)
+    ||> raise_caqti_error
   ;;
 
   let collect label request input =
@@ -215,11 +195,13 @@ module Make (Config : Pools_sig.ConfigSig) = struct
 
   let rollback connection error =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
-    match%lwt Connection.rollback () with
-    | Ok () ->
-      Logs.debug (fun m -> m "Successfully rolled back transaction");
-      Lwt.fail error
-    | Error error -> Lwt.return_error error
+    let%lwt () =
+      Connection.rollback ()
+      >|+ CCFun.tap (fun _ ->
+        Logs.debug (fun m -> m "Successfully rolled back transaction"))
+      ||> raise_caqti_error
+    in
+    Lwt.fail error
   ;;
 
   let transaction
@@ -246,7 +228,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
           | Error error -> Lwt.return_error error)
         (rollback connection))
     |> map_fetched label
-    ||> raise_caqti_error ~tags:(LogTag.create label)
+    ||> raise_caqti_error
   ;;
 
   let transactions label queries =
@@ -259,6 +241,6 @@ module Make (Config : Pools_sig.ConfigSig) = struct
           Connection.commit ())
         (rollback connection))
     |> map_fetched label
-    ||> raise_caqti_error ~tags:(LogTag.create label)
+    ||> raise_caqti_error
   ;;
 end

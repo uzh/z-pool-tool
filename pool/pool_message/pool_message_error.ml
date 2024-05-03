@@ -19,6 +19,7 @@ type t =
   | CannotBeDeleted of Field.t
   | CannotBeUpdated of Field.t
   | CaqtiError of string
+  | Connection of string
   | Conformist of (Field.t * t) list
   | ConformistModuleErrorType
   | ContactDoesNotMatchFilter
@@ -28,6 +29,7 @@ type t =
   | ContactUnconfirmed
   | CustomFieldNoOptions
   | CustomFieldTypeChangeNotAllowed
+  | DatabaseAddPoolFirst
   | Decode of Field.t
   | DecodeAction
   | DefaultMustNotBeUnchecked
@@ -125,8 +127,11 @@ type t =
   | TooShort
   | Undefined of Field.t
   | Uniqueness of Field.t
+  | Unsupported of string
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
+
+exception Exn of t
 
 let error_to_exn t = Failure (show t)
 let get_or_failwith error = CCResult.(error |> map_err show |> get_or_failwith)

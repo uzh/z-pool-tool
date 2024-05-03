@@ -1,24 +1,7 @@
 exception Exception of string
 
-val with_log
-  :  ?tags:Logs.Tag.set
-  -> ?log_level:Logs.level
-  -> ?msg_prefix:string
-  -> [< Caqti_error.t ]
-  -> string
-
-val get_or_raise
-  :  ?ctx:(string * string) list
-  -> ?tags:Logs.Tag.set
-  -> ?log_level:Logs.level
-  -> ?msg_prefix:string
-  -> unit
-  -> ('a, [< Caqti_error.t ]) result
-  -> 'a
-
 val raise_caqti_error
-  :  ?tags:Logs.Tag.set
-  -> ( 'a
+  :  ( 'a
        , [< `Connect_failed of Caqti_error.connection_error
          | `Connect_rejected of Caqti_error.connection_error
          | `Decode_rejected of Caqti_error.coding_error

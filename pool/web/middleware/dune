@@ -13,4 +13,4 @@
   tyxml
   utils)
  (preprocess
-  (pps lwt_ppx ppx_deriving.show tyxml-ppx)))
+  (pps lwt_ppx ppx_deriving.show ppx_string tyxml-ppx)))
