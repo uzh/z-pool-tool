@@ -33,12 +33,13 @@ let find_assignment () =
   Assignment.find database_label assignment_id ||> get_exn
 ;;
 
-let sort_entity_uuids = CCList.sort Pool_common.Id.compare
+let sort_entity_uuids = CCList.stable_sort Pool_common.Id.compare
 
 let sort_history history =
   History.
     { history with
-      entity_uuids = CCList.sort Pool_common.Id.compare history.entity_uuids
+      entity_uuids =
+        CCList.stable_sort Pool_common.Id.compare history.entity_uuids
     }
 ;;
 

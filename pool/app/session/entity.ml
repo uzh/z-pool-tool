@@ -284,8 +284,8 @@ let group_and_sort sessions =
   in
   follow_ups
   |> CCList.fold_left add_follow_ups_to_parents parents
-  |> CCList.map (fun (_, (p, fs)) -> p, CCList.sort compare_start fs)
-  |> CCList.sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
+  |> CCList.map (fun (_, (p, fs)) -> p, CCList.stable_sort compare_start fs)
+  |> CCList.stable_sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
 ;;
 
 module Public = struct
@@ -345,8 +345,8 @@ module Public = struct
   let add_follow_ups_and_sort parents =
     let open CCFun in
     CCList.fold_left add_follow_ups_to_parents parents
-    %> CCList.map (fun (_, (p, fs)) -> p, CCList.sort compare_start fs)
-    %> CCList.sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
+    %> CCList.map (fun (_, (p, fs)) -> p, CCList.stable_sort compare_start fs)
+    %> CCList.stable_sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
   ;;
 
   (* Group follow ups into main sessions and sort by start date *)

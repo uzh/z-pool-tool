@@ -28,7 +28,7 @@ let index req =
       CCList.fold_left update I18nMap.empty translations
       |> I18nMap.to_seq
       |> CCList.of_seq
-      |> CCList.sort (fun (k1, _) (k2, _) -> I18n.Key.compare k1 k2)
+      |> CCList.stable_sort (fun (k1, _) (k2, _) -> I18n.Key.compare k1 k2)
       |> Lwt.return
     in
     let%lwt translation_list = I18n.find_all database_label () >|> sort in

@@ -1292,7 +1292,7 @@ let filter_by_tags _ () =
           (flip
              (CCList.mem ~eq:Contact.equal)
              [ contact_one; contact_two; contact_three ])
-    ||> CCList.sort Contact.compare
+    ||> CCList.stable_sort Contact.compare
   in
   let create_filter ?(not = false) operator tags =
     let query =
@@ -1338,7 +1338,7 @@ let filter_by_tags _ () =
       (list contact_testable)
       msg
       ([ contact_one; contact_two; contact_three ]
-       |> CCList.sort Contact.compare)
+       |> CCList.stable_sort Contact.compare)
       res
     |> Lwt.return
   in

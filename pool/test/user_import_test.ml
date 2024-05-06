@@ -201,7 +201,10 @@ module Repo = struct
   let database_label = Test_utils.Data.database_label
   let contact_id_1 = Contact.Id.create ()
   let contact_id_2 = Contact.Id.create ()
-  let sort_testable = CCList.sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
+
+  let sort_testable =
+    CCList.stable_sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
+  ;;
 
   let reminder_settings database_label =
     let open Settings in

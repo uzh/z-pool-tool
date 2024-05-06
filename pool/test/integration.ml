@@ -432,7 +432,7 @@ let services =
 let () =
   Lwt_main.run
     (let open Test_utils in
-     let%lwt () = setup_test ~reporter:(Logger.cli_reporter ()) () in
+     let%lwt () = setup_test () in
      let%lwt _ = Sihl.Container.start_services services in
      let%lwt () = Database.clean_all Data.database_label in
      let%lwt () = Seed.Tenant.create ~is_test:true [ Data.database_label ] () in
