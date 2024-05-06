@@ -43,15 +43,15 @@ let nav_elements experiment =
     ; Parent
         ( None
         , Invitations
-        , Set (Invitation.Guard.Access.index id)
+        , OnChildren
         , [ Single
-              (url "invitations", Filter, Set (Session.Guard.Access.index id))
+              (url "invitations", Filter, Set (Invitation.Guard.Access.index id))
           ; Single
               (url "mailings", Mailings, Set (Mailing.Guard.Access.index id))
           ; Single
               ( url "invitations/sent"
               , SentInvitations
-              , Set (Session.Guard.Access.index id) )
+              , Set (Invitation.Guard.Access.index id) )
           ] )
     ]
   in
