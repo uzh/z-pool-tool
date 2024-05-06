@@ -79,6 +79,5 @@ let () =
   Lwt_main.run
     (let%lwt () = Test_utils.setup_test () in
      let%lwt _ = Sihl.Container.start_services services in
-     let%lwt () = Database.clean_all database_label in
      Alcotest_lwt.run "pool_token_test" suite)
 ;;
