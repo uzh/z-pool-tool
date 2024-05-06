@@ -96,10 +96,10 @@ let t =
         ; m.title
         ; m.description
         ; m.url
-        ; m.status
         ; m.default_language
         ; m.created_at
         ; m.updated_at
+        ; m.status
         ; m.database_label
         ; m.styles
         ; m.icon
@@ -111,10 +111,10 @@ let t =
     , ( title
       , ( description
         , ( url
-          , ( status
-            , ( default_language
-              , ( created_at
-                , ( updated_at
+          , ( default_language
+            , ( created_at
+              , ( updated_at
+                , ( status
                   , ( database_label
                     , (styles, (icon, (text_messages_enabled, ()))) ) ) ) ) ) )
         ) ) )
@@ -142,10 +142,10 @@ let t =
       ; Title.t
       ; option Description.t
       ; Url.t
-      ; Database.Repo.Status.t
       ; Pool_common.Repo.Language.t
       ; Pool_common.Repo.CreatedAt.t
       ; Pool_common.Repo.UpdatedAt.t
+      ; Database.Repo.Status.t
       ; Database.Repo.Label.t
       ; option Styles.t
       ; option Icon.t

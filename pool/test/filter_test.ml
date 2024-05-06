@@ -811,18 +811,11 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     let%lwt id = Repo.first_experiment () ||> Experiment.(id %> Id.to_common) in
     let filter =
       let open Filter in
-      And
-        [ Pred
-            (Predicate.create
-               Key.(Hardcoded ContactLanguage)
-               equal_operator
-               (Single (Language Pool_common.Language.En)))
-        ; Pred
-            (Predicate.create
-               Key.(Hardcoded Firstname)
-               FilterHelper.contains
-               (Single (Str "firstname")))
-        ]
+      Pred
+        (Predicate.create
+           Key.(Hardcoded ContactLanguage)
+           equal_operator
+           (Single (Language Pool_common.Language.En)))
       |> create None
     in
     let%lwt () =
@@ -836,7 +829,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     in
     let order_by =
       let open Mailing.Distribution in
-      Sorted [ SortableField.InvitationCount, SortOrder.Descending ]
+      Sorted [ SortableField.InvitationCount, SortOrder.Ascending ]
       |> get_order_element
     in
     let%lwt contacts =

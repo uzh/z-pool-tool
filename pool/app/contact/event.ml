@@ -60,8 +60,8 @@ let handle_event ?tags pool : event -> unit Lwt.t =
       ; terms_accepted_at
       ; language
       } ->
+    let open Pool_common.Utils in
     let%lwt user =
-      let open Pool_common.Utils in
       let id = user_id |> Id.to_user in
       Pool_user.create_user
         pool
@@ -76,9 +76,11 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     in
     let contact = Entity.create ?terms_accepted_at ?language user in
     let%lwt () = Repo.insert pool contact in
-    Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx pool) contact
-    ||> Pool_common.Utils.get_or_failwith
-    ||> fun (_ : Guard.Target.t) -> ()
+    let%lwt (_ : Guard.Target.t) =
+      Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx pool) contact
+      ||> get_or_failwith
+    in
+    Lwt.return_unit
   | EmailUpdated (contact, email) ->
     let%lwt _ = Pool_user.update pool ~email contact.user in
     Lwt.return_unit

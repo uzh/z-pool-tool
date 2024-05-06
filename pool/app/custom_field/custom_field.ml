@@ -1,5 +1,6 @@
 include Entity
 include Event
+open Pool_message
 module Guard = Entity_guard
 
 let find_by_model = Repo.find_by_model
@@ -87,7 +88,7 @@ let create_answer is_admin entity_uuid answer new_value =
 let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
   let open Public in
   let open CCResult.Infix in
-  let no_value = Error Pool_message.Error.NoValue in
+  let no_value = Error Error.NoValue in
   (* Allow admins to reset required answers *)
   let required = Public.required m && not is_admin in
   let single_value =
@@ -128,8 +129,7 @@ let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
          CCList.find_opt
            (fun { Public.id; _ } -> Id.equal id (value |> Id.of_string))
            options
-         |> CCOption.to_result
-              Pool_message.(Error.Invalid Field.CustomFieldOption))
+         |> CCOption.to_result (Error.Invalid Field.CustomFieldOption))
        |> CCList.all_ok
        >>= validate validation
        >|= create_answer is_admin entity_uuid answer
@@ -140,7 +140,7 @@ let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
      | Some value, _ ->
        value
        |> CCInt.of_string
-       |> CCOption.to_result Pool_message.(Error.NotANumber value)
+       |> CCOption.to_result (Error.NotANumber value)
        >>= validate validation
        >|= create_answer is_admin entity_uuid answer
        >|= to_field
@@ -154,7 +154,7 @@ let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
        CCList.find_opt
          (fun option -> Id.equal option.Public.id (Id.of_string value))
          options
-       |> CCOption.to_result Pool_message.Error.InvalidOptionSelected
+       |> CCOption.to_result Error.InvalidOptionSelected
        >|= create_answer is_admin entity_uuid answer
        >|= to_field
      | None, false -> Ok (to_field None)
@@ -175,25 +175,23 @@ let validate_partial_update
   ?(is_admin = false)
   contact
   custom_field
-  (field, current_version, value)
+  (partial_field, current_version, value)
   =
   let open PartialUpdate in
   let check_version old_v t =
     let open Pool_common.Version in
     if old_v |> value > (current_version |> value)
-    then Error Pool_message.(Error.MeantimeUpdate field)
+    then Error (Error.MeantimeUpdate partial_field)
     else t |> increment_version |> CCResult.return
   in
   let entity_uuid = Contact.(contact |> id |> Id.to_common) in
   let validate schema =
     let schema = Pool_conformist.(make Field.[ schema () ] CCFun.id) in
-    Conformist.decode_and_validate
-      schema
-      [ field |> Pool_message.Field.show, value ]
-    |> CCResult.map_err Pool_message.to_conformist_error
+    Conformist.decode_and_validate schema [ partial_field |> Field.show, value ]
+    |> CCResult.map_err to_conformist_error
   in
   let open CCResult in
-  match[@warning "-4"] field with
+  match[@warning "-4"] partial_field with
   | PoolField.Firstname ->
     User.Firstname.schema
     |> validate
@@ -216,14 +214,11 @@ let validate_partial_update
     let open Utils.Lwt_result.Infix in
     let check_permission m =
       Lwt_result.lift
-      @@
-      if Public.is_disabled is_admin m
-      then Error Pool_message.Error.NotEligible
-      else Ok m
+      @@ if Public.is_disabled is_admin m then Error Error.NotEligible else Ok m
     in
     let* custom_field =
       custom_field
-      |> CCOption.to_result Pool_message.Error.InvalidHtmxRequest
+      |> CCOption.to_result Error.InvalidHtmxRequest
       |> Lwt_result.lift
       >>= check_permission
       >>= CCFun.(validate_htmx ~is_admin ~entity_uuid value %> Lwt_result.lift)

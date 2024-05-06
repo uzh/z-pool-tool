@@ -1,7 +1,7 @@
 module User = Pool_user
 
 let src = Logs.Src.create "test.database.seed.contacts"
-let defafult_range = CCList.range 0 10
+let default_range = CCList.range 0 10
 
 let create_contact i =
   let open Pool_user in
@@ -16,7 +16,7 @@ let create_contact i =
   id, first_name, last_name, email, Some lang, Some terms_accepted_at
 ;;
 
-let data = defafult_range |> CCList.map create_contact
+let data = default_range |> CCList.map create_contact
 let contact_ids = CCList.map (fun (id, _, _, _, _, _) -> id) data
 
 let create ?(contact_data = data) db_pool =
@@ -27,55 +27,43 @@ let create ?(contact_data = data) db_pool =
     |> CCOption.value ~default:"Password1!"
     |> User.Password.Plain.create
   in
-  let%lwt () =
-    Lwt_list.fold_left_s
-      (fun contacts
-        (user_id, firstname, lastname, email, language, terms_accepted_at) ->
-        match%lwt Pool_user.find_by_email_opt db_pool email with
-        | None ->
-          [ Contact.Created
-              { Contact.user_id
-              ; email
-              ; password
-              ; firstname
-              ; lastname
-              ; terms_accepted_at
-              ; language
-              }
-          ]
-          @ contacts
-          |> Lwt.return
-        | Some { Pool_user.id; _ } ->
-          Logs.debug ~src (fun m ->
-            m
-              ~tags:(Database.Logger.Tags.create db_pool)
-              "Contact already exists (%s): %s"
-              (db_pool |> Database.Label.value)
-              (id |> Pool_user.Id.value));
-          Lwt.return contacts)
-      []
+  let%lwt contact_data =
+    Lwt_list.filter_s
+      (fun (_, _, _, email, _, _) ->
+        Pool_user.find_by_email_opt db_pool email ||> CCOption.is_none)
       contact_data
-    >|> Lwt_list.iter_s (handle_event db_pool)
   in
-  Lwt_list.map_s
-    (fun (id, _, _, _, _, _) ->
-      let%lwt contact = find db_pool id in
-      match contact with
-      | Ok contact ->
-        let%lwt _ = Pool_user.confirm db_pool contact.user in
-        let contact =
-          { contact with
-            email_verified = Some (Pool_user.EmailVerified.create_now ())
-          ; terms_accepted_at = Some (User.TermsAccepted.create_now ())
-          ; verified = Some (Pool_user.Verified.create_now ())
-          }
+  let%lwt () =
+    Lwt_list.iter_s
+      (fun (user_id, firstname, lastname, email, language, terms_accepted_at) ->
+        let%lwt () =
+          Contact.Created
+            { Contact.user_id
+            ; email
+            ; password
+            ; firstname
+            ; lastname
+            ; terms_accepted_at
+            ; language
+            }
+          |> handle_event db_pool
         in
-        [ Updated contact ] |> CCOption.pure |> Lwt.return
-      | Error _ -> Lwt.return_none)
-    data
-  ||> CCList.filter_map CCFun.id
-  ||> CCList.flatten
-  >|> Lwt_list.iter_s (Contact.handle_event db_pool)
+        match%lwt find db_pool user_id with
+        | Ok contact ->
+          let%lwt user = Pool_user.confirm db_pool contact.user in
+          let contact =
+            { contact with
+              user
+            ; email_verified = Some (Pool_user.EmailVerified.create_now ())
+            ; terms_accepted_at = Some (User.TermsAccepted.create_now ())
+            ; verified = Some (Pool_user.Verified.create_now ())
+            }
+          in
+          Updated contact |> Contact.handle_event db_pool
+        | Error _ -> failwith "Seeded test contact not found!")
+      contact_data
+  in
+  Lwt.return_unit
 ;;
 
 let find_contact_by_id pool id =
