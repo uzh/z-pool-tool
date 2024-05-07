@@ -121,7 +121,9 @@ let reset_password_post req =
       |> CCOption.to_result (Error.PasswordResetInvalidData, redirect)
       |> Lwt_result.lift
     in
-    let go field = field |> Field.show |> CCFun.flip List.assoc params in
+    let go field =
+      field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params
+    in
     let token = go Field.Token in
     let password = Field.Password |> go |> Pool_user.Password.Plain.create in
     let password_confirmed =

@@ -16,7 +16,7 @@ module Report = struct
 
   let create exn req =
     let stack = Printexc.get_backtrace () in
-    let req_id = Sihl.Web.Id.find req |> Option.value ~default:"-" in
+    let req_id = Sihl.Web.Id.find req |> CCOption.value ~default:"-" in
     let req = Format.asprintf "%a" Opium.Request.pp_hum req in
     { exn; stack; req_id; req }
   ;;
@@ -29,12 +29,12 @@ module Report = struct
 end
 
 let site_error_handler req =
-  let request_id = Sihl.Web.Id.find req |> Option.value ~default:"-" in
+  let request_id = Sihl.Web.Id.find req |> CCOption.value ~default:"-" in
   Page.Utils.error request_id |> Sihl.Web.Response.of_html |> Lwt.return
 ;;
 
 let json_error_handler req =
-  let request_id = Sihl.Web.Id.find req |> Option.value ~default:"-" in
+  let request_id = Sihl.Web.Id.find req |> CCOption.value ~default:"-" in
   let msg = "Something went wrong, our administrators have been notified." in
   let body =
     [%string {|"{"errors": ["%{msg}"], "request_id": "%{request_id}"}"|}]

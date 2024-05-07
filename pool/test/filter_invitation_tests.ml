@@ -1,4 +1,4 @@
-let ( let@ ) = Result.bind
+let ( let@ ) = CCResult.( >>= )
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
 let test_db = Test_utils.Data.database_label
@@ -52,9 +52,9 @@ let contact ~prefix () =
   let* firstname = Pool_user.Firstname.create "firstname" in
   let* lastname = Pool_user.Lastname.create "lastname" in
   let terms_accepted_at =
-    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> Option.some
+    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> CCOption.some
   in
-  let language = Pool_common.Language.En |> Option.some in
+  let language = Pool_common.Language.En |> CCOption.some in
   let contact_created =
     [ Contact.created
         { user_id = invited_contact_id
@@ -111,7 +111,7 @@ let invitation ~experiment ~contacts =
                 ~subject:"subject"
                 "body"
               |> Email.create_job
-              |> Result.ok)
+              |> CCResult.return)
         ; mailing = None
         })
   in

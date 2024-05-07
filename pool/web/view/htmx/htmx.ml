@@ -146,7 +146,7 @@ let create
         ?disabled
         ()
   in
-  let default s = Option.value ~default:"" s in
+  let default = CCOption.value ~default:"" in
   let append_html = overridden_value in
   let hints =
     help

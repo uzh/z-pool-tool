@@ -146,7 +146,7 @@ let enqueue label job_instance =
 let populatable job_instances =
   let open Entity in
   job_instances
-  |> List.map (fun ({ Instance.id; _ } as j) ->
+  |> CCList.map (fun ({ Instance.id; _ } as j) ->
     { j with
       Instance.id =
         (match id |> Entity.Id.value |> Uuidm.of_string with
@@ -174,7 +174,7 @@ let enqueue_all label job_instances =
         ; "ctx"
         ]
       Repo_entity.Instance.t
-      (job_instances |> populatable |> List.rev |> Caqti_lwt.Stream.of_list)
+      (job_instances |> populatable |> CCList.rev |> Caqti_lwt.Stream.of_list)
     |> Lwt.map Caqti_error.uncongested)
 ;;
 

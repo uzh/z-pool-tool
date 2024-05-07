@@ -132,11 +132,11 @@ let update_password =
       ~old_password:created_password
       ~new_password
       ~new_password_confirmation:(new_password |> Password.to_confirmed)
-    |> Lwt.map Result.get_ok
+    |> Lwt.map CCResult.get_exn
   in
   let%lwt user =
     Pool_user.login database_label email_address new_password
-    |> Lwt.map Result.get_ok
+    |> Lwt.map CCResult.get_exn
   in
   let actual_email = user.Pool_user.email in
   Alcotest.(
@@ -249,7 +249,7 @@ module Web = struct
   let fake_token = "faketoken"
 
   let read_token (user_id : Pool_user.Id.t) (_ : Database.Label.t) token ~k =
-    if String.equal k "user_id" && String.equal token fake_token
+    if CCString.equal k "user_id" && CCString.equal token fake_token
     then Lwt.return_some user_id
     else Lwt.return_none
   ;;
@@ -312,7 +312,7 @@ module Web = struct
       |> Sihl.Web.Session.set
            [ "user_id", user.Pool_user.id |> Pool_user.Id.value ]
       |> Sihl.Web.Response.cookie "_session"
-      |> Option.get
+      |> CCOption.get_exn_or "undefined session"
     in
     let req =
       Opium.Request.get "/some/path/login"
@@ -320,7 +320,7 @@ module Web = struct
     in
     let handler req =
       let%lwt user = Pool_user.Web.user_from_session database_label req in
-      let email = Option.map (fun user -> user.Pool_user.email) user in
+      let email = CCOption.map (fun user -> user.Pool_user.email) user in
       Alcotest.(
         check
           (option testable_email)

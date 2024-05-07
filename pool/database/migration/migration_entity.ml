@@ -30,12 +30,12 @@ type t = string * steps [@@deriving eq, show]
 let to_sexp (namespace, steps) =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
-  let steps = List.map Step.to_sexp steps in
-  List (List.cons (List [ Atom "namespace"; sexp_of_string namespace ]) steps)
+  let steps = CCList.map Step.to_sexp steps in
+  List (CCList.cons (List [ Atom "namespace"; sexp_of_string namespace ]) steps)
 ;;
 
 let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
 let empty namespace = namespace, []
 
 (* Append the migration step to the list of steps *)
-let add_step step (label, steps) = label, List.concat [ steps; [ step ] ]
+let add_step step (label, steps) = label, CCList.concat [ steps; [ step ] ]

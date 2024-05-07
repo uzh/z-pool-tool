@@ -343,13 +343,12 @@ let delete_smtp_auth =
     |> Lwt_result.ok
   in
   (* get the smtp auth that was actually saved and compare it *)
-  let^ result = Email.SmtpAuth.find test_db id in
-  let error = Result.get_error result in
+  let^ res = Email.SmtpAuth.find test_db id in
   Alcotest.(
     check
-      Test_utils.error
+      (result Test_utils.smtp_auth Test_utils.error)
       "the auth record was not deleted"
-      error
-      (Error.NotFound Field.Smtp));
+      res
+      (Error (Error.NotFound Field.Smtp)));
   Lwt.return_ok ()
 ;;

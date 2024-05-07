@@ -96,7 +96,7 @@ let run_job
       (with_log_error
          ~tags
          "Exception caught while running job, this is a bug in your job \
-          handler. Don't throw exceptions there, use Result.t instead. '%s'")
+          handler. Don't throw exceptions there, use CCResult.t instead. '%s'")
   in
   match result with
   | Error msg ->

@@ -45,7 +45,7 @@ let create () =
         , "description"
         , "localhost:3017"
         , Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
-          |> Option.value
+          |> CCOption.value
                ~default:"mariadb://root@database-tenant:3306/dev_econ"
         , "econ-uzh"
         , styles.Assets.id
@@ -55,7 +55,7 @@ let create () =
         , "description"
         , "pool.zhaw.ch"
         , Sihl.Configuration.read_string "DATABASE_URL_TENANT_TWO"
-          |> Option.value
+          |> CCOption.value
                ~default:"mariadb://root@database-tenant:3306/dev_zhaw"
         , "zhaw"
         , styles.Assets.id

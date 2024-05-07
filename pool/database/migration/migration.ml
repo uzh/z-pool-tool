@@ -23,7 +23,7 @@ let schema =
 ;;
 
 let table () =
-  Option.value
+  CCOption.value
     ~default:"core_migration_state"
     (Sihl.Configuration.read schema).migration_state_table
 ;;
@@ -37,7 +37,7 @@ let setup label () =
 
 let has database_label namespace =
   Migration_repo.get database_label (table ()) ~namespace
-  |> Lwt.map Option.is_some
+  |> Lwt.map CCOption.is_some
 ;;
 
 let get database_label namespace =
@@ -329,7 +329,7 @@ let start database_label () =
   Sihl.Configuration.require schema;
   let%lwt () = setup database_label () in
   let skip_default_pool_creation =
-    Option.value
+    CCOption.value
       ~default:false
       (Sihl.Configuration.read_bool "DATABASE_SKIP_DEFAULT_POOL_CREATION")
   in

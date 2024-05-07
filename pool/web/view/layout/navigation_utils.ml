@@ -189,7 +189,7 @@ let create_desktop_nav fcn =
 ;;
 
 let create_mobile_nav ?title ~toggle_id navigation =
-  let title = Option.value ~default:(txt "") title in
+  let title = CCOption.value ~default:(txt "") title in
   let label =
     Icon.to_html
     %> CCList.pure

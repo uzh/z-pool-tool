@@ -12,6 +12,7 @@ module Model = struct
     type t =
       | Active
       | Inactive
+    [@@deriving eq]
 
     let to_string = function
       | Active -> "active"
@@ -36,7 +37,7 @@ module Model = struct
     }
 
   let t =
-    let ( let* ) = Result.bind in
+    let ( let* ) = CCResult.( >>= ) in
     let encode m =
       let status = Status.to_string m.status in
       let data = Data.to_string m.data in

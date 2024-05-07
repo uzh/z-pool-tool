@@ -9,7 +9,7 @@ let schema =
 
 let is_valid_token token =
   let open Repo.Model in
-  String.equal (Status.to_string token.status) (Status.to_string Status.Active)
+  Status.equal token.status Status.Active
   && Ptime.is_later token.expires_at ~than:(Ptime_clock.now ())
 ;;
 
@@ -17,7 +17,7 @@ let make id ?(expires_in = Sihl.Time.OneDay) ?now ?(length = 80) data =
   let open Repo.Model in
   let value = Sihl.Random.base64 length in
   let expires_in = Sihl.Time.duration_to_span expires_in in
-  let now = Option.value ~default:(Ptime_clock.now ()) now in
+  let now = CCOption.value ~default:(Ptime_clock.now ()) now in
   let expires_at =
     match Ptime.add_span now expires_in with
     | Some expires_at -> expires_at
@@ -32,7 +32,7 @@ let create ?secret:_ ?expires_in label data =
   let open Repo.Model in
   let id = Uuidm.v `V4 |> Uuidm.to_string in
   let length =
-    Option.value ~default:30 (Sihl.Configuration.read schema).token_length
+    CCOption.value ~default:30 (Sihl.Configuration.read schema).token_length
   in
   let token = make id ?expires_in ~length data in
   let%lwt () = Repo.insert label token in
@@ -47,7 +47,9 @@ let read ?secret:_ ?force label token_value ~k =
   | Some token ->
     (match is_valid_token token, force with
      | true, _ | false, Some () ->
-       (match List.find_opt (fun (key, _) -> String.equal k key) token.data with
+       (match
+          CCList.find_opt (fun (key, _) -> CCString.equal k key) token.data
+        with
         | Some (_, value) -> Lwt.return (Some value)
         | None -> Lwt.return None)
      | false, None -> Lwt.return None)

@@ -260,14 +260,14 @@ type t =
 
 let to_uri_query ?(additional_params = []) { filter; pagination; search; sort } =
   [ filter |> CCOption.map Filter.to_query_parts
-  ; pagination |> Option.map Pagination.to_query_parts
-  ; search |> Option.map Search.to_query_parts
-  ; sort |> Option.map Sort.to_query_parts
+  ; pagination |> CCOption.map Pagination.to_query_parts
+  ; search |> CCOption.map Search.to_query_parts
+  ; sort |> CCOption.map Sort.to_query_parts
   ]
-  |> List.map (Option.value ~default:[])
-  |> List.flatten
+  |> CCList.map (Option.value ~default:[])
+  |> CCList.flatten
   |> CCList.append additional_params
-  |> List.map (fun (k, v) -> Pool_message.Field.show k, [ Uri.pct_encode v ])
+  |> CCList.map (fun (k, v) -> Pool_message.Field.show k, [ Uri.pct_encode v ])
 ;;
 
 let filter { filter; _ } = filter
@@ -280,12 +280,12 @@ let create ?filter ?pagination ?search ?sort () =
 ;;
 
 let with_sort_order order t =
-  let sort = t.sort |> Option.map (fun sort -> Sort.{ sort with order }) in
+  let sort = t.sort |> CCOption.map (fun sort -> Sort.{ sort with order }) in
   { t with sort }
 ;;
 
 let with_sort_column column t =
-  let sort = t.sort |> Option.map (fun sort -> Sort.{ sort with column }) in
+  let sort = t.sort |> CCOption.map (fun sort -> Sort.{ sort with column }) in
   { t with sort }
 ;;
 

@@ -22,7 +22,7 @@ let delete label id =
 ;;
 
 let upload_base64 label ?id file base64 =
-  let blob_id = Option.value id ~default:(Uuidm.v `V4 |> Uuidm.to_string) in
+  let blob_id = CCOption.value id ~default:(Uuidm.v `V4 |> Uuidm.to_string) in
   let%lwt blob =
     match Base64.decode base64 with
     | Error (`Msg msg) ->
@@ -55,7 +55,7 @@ let update_base64 label file base64 =
 let download_data_base64_opt label file =
   let blob_id = file.Sihl.Contract.Storage.blob in
   let%lwt blob = Repo.get_blob label blob_id in
-  match Option.map Base64.encode blob with
+  match CCOption.map Base64.encode blob with
   | Some (Error (`Msg msg)) ->
     Logs.err (fun m ->
       m "Could not get base64 content of file %a" pp_stored file);
@@ -67,7 +67,7 @@ let download_data_base64_opt label file =
 let download_data_base64 label file =
   let blob_id = file.Sihl.Contract.Storage.blob in
   let%lwt blob = Repo.get_blob label blob_id in
-  match Option.map Base64.encode blob with
+  match CCOption.map Base64.encode blob with
   | Some (Error (`Msg msg)) ->
     Logs.err (fun m ->
       m "Could not get base64 content of file %a" pp_stored file);

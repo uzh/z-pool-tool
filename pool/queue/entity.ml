@@ -124,7 +124,7 @@ module Instance = struct
     =
     let next_run_at =
       match delay with
-      | Some delay -> Option.value (Ptime.add_span now delay) ~default:now
+      | Some delay -> CCOption.value (Ptime.add_span now delay) ~default:now
       | None -> now
     in
     { id
@@ -146,8 +146,8 @@ module Job = struct
   type 'a t =
     { name : JobName.t
     ; encode : 'a -> string
-    ; decode : string -> ('a, string) Result.t
-    ; handle : Database.Label.t -> 'a -> (unit, string) Result.t Lwt.t
+    ; decode : string -> ('a, string) result
+    ; handle : Database.Label.t -> 'a -> (unit, string) Lwt_result.t
     ; failed : Database.Label.t -> string -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
@@ -189,7 +189,7 @@ end
 module AnyJob = struct
   type t =
     { name : JobName.t
-    ; handle : Database.Label.t -> string -> (unit, string) Result.t Lwt.t
+    ; handle : Database.Label.t -> string -> (unit, string) Lwt_result.t
     ; failed : Database.Label.t -> string -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t

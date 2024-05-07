@@ -85,7 +85,7 @@ let list Pool_context.{ language; _ } tags query =
     in
     [ txt (Title.value tag.title)
     ; txt (CCOption.map_or ~default:"" Tags.Description.value tag.description)
-    ; txt (Model.show tag.model |> String.capitalize_ascii)
+    ; txt (Model.show tag.model |> CCString.capitalize_ascii)
     ; buttons tag
     ]
     |> CCList.map (CCList.return %> td)

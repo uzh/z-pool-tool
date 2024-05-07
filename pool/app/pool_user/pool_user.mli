@@ -121,7 +121,7 @@ module Password : sig
       -> Database.Label.t
       -> Plain.t
       -> Confirmation.t
-      -> (unit, Pool_message.Error.t) Result.t Lwt.t
+      -> (unit, Pool_message.Error.t) Lwt_result.t
 
     val register : unit -> Sihl.Container.Service.t
     val lifecycle : Sihl.Container.lifecycle

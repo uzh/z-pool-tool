@@ -24,7 +24,7 @@ let list { Pool_context.language; _ } filter_list query =
   in
   let row (filter : Filter.t) =
     let open Filter in
-    let title = Option.map Title.value filter.title in
+    let title = CCOption.map Title.value filter.title in
     [ txt (Option.get_or ~default:"" title)
     ; Format.asprintf "/admin/filter/%s/edit" (Filter.Id.value filter.id)
       |> Component.Input.edit_link

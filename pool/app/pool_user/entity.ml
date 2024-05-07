@@ -229,8 +229,8 @@ let update ?email ?lastname ?firstname ?status ?confirmed user =
     email = CCOption.value ~default:user.email email
   ; lastname = CCOption.value ~default:user.lastname lastname
   ; firstname = CCOption.value ~default:user.firstname firstname
-  ; status = Option.value ~default:user.status status
-  ; confirmed = Option.value ~default:user.confirmed confirmed
+  ; status = CCOption.value ~default:user.status status
+  ; confirmed = CCOption.value ~default:user.confirmed confirmed
   }
 ;;
 

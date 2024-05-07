@@ -740,7 +740,7 @@ let edit
           [ h3
               ~a:[ a_class [ "heading-3" ] ]
               [ Utils.field_to_string language Field.ParticipationTag
-                |> String.capitalize_ascii
+                |> CCString.capitalize_ascii
                 |> txt
               ]
           ; p
