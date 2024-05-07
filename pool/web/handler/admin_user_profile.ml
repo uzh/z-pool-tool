@@ -49,8 +49,9 @@ module MakeUserProfile (Config : module type of Config) = struct
          in
          let* events =
            let open CCResult.Infix in
-           Command.UpdatePassword.(
-             decode urlencoded >>= handle ~tags ~notification admin)
+           let open Cqrs_command.User_command.UpdatePassword in
+           decode urlencoded
+           >>= handle ~tags ~notification Admin.(admin |> id |> Id.to_user)
            |> Lwt_result.lift
          in
          let%lwt () = Pool_event.handle_events ~tags database_label events in

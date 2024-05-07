@@ -1,6 +1,3 @@
-open CCFun.Infix
-module Conformist = Pool_conformist
-
 let src = Logs.Src.create "admin.cqrs"
 
 type grant_role =
@@ -83,83 +80,11 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Pool_conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Admin.Guard.Access.create
-end
-
-module UpdatePassword : sig
-  include Common.CommandSig
-
-  type t =
-    { current_password : Pool_user.Password.Plain.t
-    ; new_password : Pool_user.Password.Plain.t
-    ; password_confirmation : Pool_user.Password.Confirmation.t
-    }
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> ?notification:Email.job
-    -> Admin.t
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
-  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
-  val effects : Admin.Id.t -> Guard.ValidationSet.t
-end = struct
-  type t =
-    { current_password : Pool_user.Password.Plain.t [@opaque]
-    ; new_password : Pool_user.Password.Plain.t [@opaque]
-    ; password_confirmation : Pool_user.Password.Confirmation.t [@opaque]
-    }
-
-  let command current_password new_password password_confirmation =
-    { current_password; new_password; password_confirmation }
-  ;;
-
-  let schema =
-    let open Pool_message.Field in
-    Conformist.(
-      make
-        Field.
-          [ Pool_user.Password.Plain.(schema ~field:CurrentPassword ())
-          ; Pool_user.Password.Plain.(schema ~field:NewPassword ())
-          ; Pool_user.Password.Confirmation.schema ()
-          ]
-        command)
-  ;;
-
-  let handle ?(tags = Logs.Tag.empty) ?notification admin command =
-    Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
-    (* NOTE use 'Pool_user.validate_current_password' in handler before this
-       command. *)
-    let open CCResult in
-    let* () =
-      Pool_user.Password.validate_confirmation
-        command.new_password
-        command.password_confirmation
-    in
-    Ok
-      ((Pool_user.PasswordUpdated
-          ( (admin |> Admin.(id %> Id.to_user))
-          , command.current_password
-          , command.new_password
-          , command.password_confirmation )
-        |> Pool_event.user)
-       :: CCOption.map_or
-            ~default:[]
-            (Email.sent %> Pool_event.email %> CCList.return)
-            notification)
-  ;;
-
-  let effects = Admin.Guard.Access.update
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_message.to_conformist_error
-  ;;
 end
 
 module Update : sig
@@ -192,7 +117,7 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Pool_conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
@@ -240,7 +165,7 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Pool_conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 

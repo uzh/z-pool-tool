@@ -241,16 +241,16 @@ let update_password () =
   in
   let contact = contact_info |> create_contact true in
   let new_password = "NewPassword2!" in
-  let confirmation_mail = confirmation_mail contact in
+  let notification = confirmation_mail contact in
   let events =
-    Contact_command.UpdatePassword.(
-      [ Field.(CurrentPassword |> show), [ password ]
-      ; Field.(NewPassword |> show), [ new_password ]
-      ; Field.(PasswordConfirmation |> show), [ new_password ]
-      ]
-      |> decode
-      |> Pool_common.Utils.get_or_failwith
-      |> handle contact confirmation_mail)
+    let open Cqrs_command.User_command.UpdatePassword in
+    [ Field.(CurrentPassword |> show), [ password ]
+    ; Field.(NewPassword |> show), [ new_password ]
+    ; Field.(PasswordConfirmation |> show), [ new_password ]
+    ]
+    |> decode
+    |> Pool_common.Utils.get_or_failwith
+    |> handle ~notification Contact.(contact |> id |> Id.to_user)
   in
   let expected =
     Ok
@@ -260,7 +260,7 @@ let update_password () =
           , new_password |> Pool_user.Password.Plain.create
           , new_password |> Pool_user.Password.Confirmation.create )
         |> Pool_event.user
-      ; Email.Sent confirmation_mail |> Pool_event.email
+      ; Email.Sent notification |> Pool_event.email
       ]
   in
   check_result expected events
@@ -336,15 +336,15 @@ let update_password_wrong_policy () =
   in
   let contact = contact_info |> create_contact true in
   let new_password = "Short1!" in
-  let confirmation_mail = confirmation_mail contact in
+  let notification = confirmation_mail contact in
   let events =
-    Contact_command.UpdatePassword.(
-      [ Field.(CurrentPassword |> show), [ password ]
-      ; Field.(NewPassword |> show), [ new_password ]
-      ; Field.(PasswordConfirmation |> show), [ new_password ]
-      ]
-      |> decode
-      >>= handle contact confirmation_mail)
+    let open Cqrs_command.User_command.UpdatePassword in
+    [ Field.(CurrentPassword |> show), [ password ]
+    ; Field.(NewPassword |> show), [ new_password ]
+    ; Field.(PasswordConfirmation |> show), [ new_password ]
+    ]
+    |> decode
+    >>= handle ~notification Contact.(contact |> id |> Id.to_user)
   in
   let expected =
     Error Error.(Conformist [ Field.NewPassword, PasswordPolicyMinLength 8 ])
@@ -359,16 +359,16 @@ let update_password_wrong_confirmation () =
   let contact = contact_info |> create_contact true in
   let new_password = "Password1?" in
   let confirmed_password = "Password1*" in
-  let confirmation_mail = confirmation_mail contact in
+  let notification = confirmation_mail contact in
   let events =
-    Contact_command.UpdatePassword.(
-      [ Field.(CurrentPassword |> show), [ password ]
-      ; Field.(NewPassword |> show), [ new_password ]
-      ; Field.(PasswordConfirmation |> show), [ confirmed_password ]
-      ]
-      |> decode
-      |> Pool_common.Utils.get_or_failwith
-      |> handle contact confirmation_mail)
+    let open Cqrs_command.User_command.UpdatePassword in
+    [ Field.(CurrentPassword |> show), [ password ]
+    ; Field.(NewPassword |> show), [ new_password ]
+    ; Field.(PasswordConfirmation |> show), [ confirmed_password ]
+    ]
+    |> decode
+    |> Pool_common.Utils.get_or_failwith
+    |> handle ~notification Contact.(contact |> id |> Id.to_user)
   in
   let expected = Error Error.PasswordConfirmationDoesNotMatch in
   check_result expected events
