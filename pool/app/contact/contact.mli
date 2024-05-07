@@ -296,6 +296,6 @@ module Guard : sig
       -> unit
       -> Guard.PermissionOnTarget.t list
 
-    val send_direct_message : Guard.ValidationSet.t
+    val send_direct_message : Pool_common.Id.t -> Guard.ValidationSet.t
   end
 end

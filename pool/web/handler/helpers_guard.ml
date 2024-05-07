@@ -58,8 +58,11 @@ let target_model_for_actor_role
   Lwt.return (role, target_model)
 ;;
 
-let can_send_direct_message { Pool_context.database_label; user; _ } =
-  has_permission database_label user Contact.Guard.Access.send_direct_message
+let can_send_direct_message id { Pool_context.database_label; user; _ } =
+  id
+  |> Experiment.Id.to_common
+  |> Contact.Guard.Access.send_direct_message
+  |> has_permission database_label user
 ;;
 
 let can_rerun_session_filter

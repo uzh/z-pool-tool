@@ -509,7 +509,7 @@ let show req =
     in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt send_direct_message =
-      Helpers.Guard.can_send_direct_message context
+      Helpers.Guard.can_send_direct_message experiment_id context
     in
     let%lwt rerun_session_filter =
       Helpers.Guard.can_rerun_session_filter context experiment_id session_id
@@ -1428,7 +1428,13 @@ end = struct
   ;;
 
   let direct_message =
-    Contact.Guard.Access.send_direct_message |> Guardian.validate_admin_entity
+    let experiment_effects fcn req =
+      let experiment_id = experiment_id req |> Experiment.Id.to_common in
+      fcn experiment_id
+    in
+    Contact.Guard.Access.send_direct_message
+    |> experiment_effects
+    |> Guardian.validate_generic
   ;;
 
   let update_matches_filter =
