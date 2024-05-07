@@ -3,10 +3,8 @@ let src = Logs.Src.create "database"
 module Logs = (val Logs.src_log src : Logs.LOG)
 
 module MariaConfigPool = struct
-  open Pools
-  include DefaultConfig
-
   let database = Entity.(create root (database_url ()))
+  let database_pool_size = 10
   let expected_databases = 5
 end
 

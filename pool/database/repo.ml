@@ -1,4 +1,6 @@
 open CCFun
+open Caqti_request.Infix
+open Utils.Lwt_result.Infix
 open Entity
 open Repo_entity
 
@@ -28,15 +30,10 @@ let sql_select_columns =
   ]
 ;;
 
-let joins = ""
-
-open Caqti_request.Infix
-open Utils.Lwt_result.Infix
-
 let find_request_sql where_fragment =
   let columns = sql_select_columns |> CCString.concat ", " in
   [%string
-    {sql|SELECT %{columns} FROM pool_tenant_databases %{joins} %{where_fragment} |sql}]
+    {sql|SELECT %{columns} FROM pool_tenant_databases %{where_fragment} |sql}]
 ;;
 
 let find_request =

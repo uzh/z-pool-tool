@@ -13,7 +13,6 @@ let register_jobs jobs =
   Lwt.return_unit
 ;;
 
-(* let stop_schedule : (unit -> unit) option ref = ref None *)
 let find = Repo.find
 let find_by = Repo.find_by
 let count_workable = Repo.count_workable

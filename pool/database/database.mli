@@ -295,7 +295,6 @@ module Root : sig
   val setup : unit -> status Lwt.t
   val start : unit -> unit Lwt.t
   val stop : unit -> unit Lwt.t
-  val test_connection : unit -> (unit, Pool_message.Error.t) result Lwt.t
 end
 
 val root : Label.t

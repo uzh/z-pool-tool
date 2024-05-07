@@ -18,5 +18,4 @@ val raise_caqti_error
        result
   -> 'a
 
-module DefaultConfig : Pools_sig.ConfigSig
 module Make : functor (_ : Pools_sig.ConfigSig) -> Pools_sig.Sig

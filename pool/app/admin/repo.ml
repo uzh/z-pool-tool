@@ -39,27 +39,27 @@ let find_request_sql ?(count = false) =
   Format.asprintf {sql|SELECT %s FROM pool_admins %s %s|sql} columns joins
 ;;
 
-let find_request caqti_type =
+let find_request =
   {sql| WHERE user_users.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
   |> find_request_sql
-  |> Id.t ->! caqti_type
+  |> Id.t ->! t
 ;;
 
 let find pool id =
   let open Lwt.Infix in
-  Database.find_opt pool (find_request t) id
+  Database.find_opt pool find_request id
   >|= CCOption.to_result Pool_message.(Error.NotFound Field.Admin)
 ;;
 
-let find_by_email_request caqti_type =
+let find_by_email_request =
   {sql| WHERE user_users.email = ? |sql}
   |> find_request_sql
-  |> Pool_user.Repo.EmailAddress.t ->! caqti_type
+  |> Pool_user.Repo.EmailAddress.t ->! t
 ;;
 
 let find_by_email pool email =
   let open Lwt.Infix in
-  Database.find_opt pool (find_by_email_request t) email
+  Database.find_opt pool find_by_email_request email
   >|= CCOption.to_result Pool_message.(Error.NotFound Field.Admin)
 ;;
 

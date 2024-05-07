@@ -12,19 +12,19 @@ end
 module NoShow = struct
   include NoShow
 
-  let t = make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  let t = Caqti_type.bool
 end
 
 module Participated = struct
   include Participated
 
-  let t = make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  let t = Caqti_type.bool
 end
 
 module MatchesFilter = struct
   include MatchesFilter
 
-  let t = make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  let t = Caqti_type.bool
 end
 
 module CanceledAt = struct
@@ -36,7 +36,7 @@ end
 module MarkedAsDeleted = struct
   include MarkedAsDeleted
 
-  let t = make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  let t = Caqti_type.bool
 end
 
 module ExternalDataId = struct

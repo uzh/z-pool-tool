@@ -90,14 +90,10 @@ let register_migration migration =
 
 let register_migrations migrations = CCList.iter register_migration migrations
 
-let set_fk_check_request =
-  let open Caqti_request.Infix in
-  "SET FOREIGN_KEY_CHECKS = ?" |> Caqti_type.(bool ->. unit)
-;;
-
 let with_disabled_fk_check database_label f =
   let open Utils.Lwt_result.Infix in
-  Service.query database_label (fun connection ->
+  let open Service in
+  query database_label (fun connection ->
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let%lwt () = Connection.exec set_fk_check_request false ||> raise_error in
     Lwt.finalize

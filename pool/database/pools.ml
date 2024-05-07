@@ -23,18 +23,6 @@ let raise_caqti_error =
   | Error (#t as err) -> raise (Exn err)
 ;;
 
-module DefaultConfig : Pools_sig.ConfigSig = struct
-  let database =
-    let open Entity in
-    create
-      (Label.of_string "main")
-      (Url.of_string "mariadb://root@database:3306/test")
-  ;;
-
-  let database_pool_size = 5
-  let expected_databases = 1
-end
-
 module Make (Config : Pools_sig.ConfigSig) = struct
   type status =
     ( (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt_unix.Pool.t

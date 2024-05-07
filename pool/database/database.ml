@@ -50,20 +50,13 @@ module Root = struct
   ;;
 
   let stop () = Lwt.return_unit
-
-  let test_connection () =
-    match%lwt database_url () |> test_connection with
-    | Ok () -> Lwt.return_ok ()
-    | Error (_ : Caqti_error.load_or_connect) ->
-      Lwt_result.fail Pool_message.(Error.NotFound Field.Database)
-  ;;
 end
 
 module Tenant = struct
   let add database =
-    let label = database |> label in
-    let tags = database |> Entity.label |> Logger.Tags.create in
-    let log_db = [%show: t] database in
+    let label = label database in
+    let tags = Logger.Tags.create label in
+    let log_db = show database in
     match add_pool ~pool_size:(pool_size ()) database with
     | Ok _ ->
       let%lwt () = Repo.update_status root label Status.Active in
@@ -82,7 +75,7 @@ module Tenant = struct
 
   let setup () =
     let start_tenant database =
-      log_start (database |> label);
+      log_start (label database);
       add database
     in
     match%lwt Repo.find_all_by_status root with
