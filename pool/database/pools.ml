@@ -219,7 +219,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     ||> raise_caqti_error
   ;;
 
-  let transactions label queries =
+  let transaction_iter label queries =
     Caqti_lwt_unix.Pool.use (fun connection ->
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       let* () = Connection.start () in

@@ -26,7 +26,7 @@ module Root = struct
   let add () =
     let database = database_url () |> create label in
     let tags = database |> Entity.label |> Logger.Tags.create in
-    let log_db = [%show: t] database in
+    let log_db = show database in
     match add_pool ~pool_size:(pool_size ()) database with
     | Ok _ as status ->
       Logs.debug (fun m -> m ~tags "Database connected: %s" log_db);

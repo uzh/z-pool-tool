@@ -1521,6 +1521,8 @@ let send_session_reminders_with_default_leat_time _ () =
   let get_exn = get_or_failwith in
   let database_label = Test_utils.Data.database_label in
   let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+  (* NOTE: disable text messages for test *)
+  let tenant = { tenant with Pool_tenant.text_messages_enabled = false } in
   let s_to_lead encode s = s |> Ptime.Span.of_int_s |> encode |> get_exn in
   let%lwt () =
     Pool_common.Reminder.

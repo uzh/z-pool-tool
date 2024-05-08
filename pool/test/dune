@@ -4,7 +4,6 @@
   integration
   filter_invitation_tests
   filter_assignment_tests
-  ; filter_test
   password_reset_test
   pool_user_test
   pool_token_test)

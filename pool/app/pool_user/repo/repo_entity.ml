@@ -13,13 +13,13 @@ module Status = Pool_common.Repo.Model.SelectorType (Entity.Status)
 module Paused = struct
   include Entity.Paused
 
-  let t = make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  let t = Caqti_type.bool
 end
 
 module Disabled = struct
   include Entity.Disabled
 
-  let t = make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  let t = Caqti_type.bool
 end
 
 module TermsAccepted = struct
@@ -37,13 +37,13 @@ end
 module ImportPending = struct
   include Entity.ImportPending
 
-  let t = make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  let t = Caqti_type.bool
 end
 
 module CellPhone = struct
   include Entity.CellPhone
 
-  let t = make_caqti_type Caqti_type.string create value
+  let t = Caqti_type.string
 end
 
 module UnverifiedCellPhone = struct
@@ -87,25 +87,25 @@ end
 module Firstname = struct
   include Entity.Firstname
 
-  let t = make_caqti_type Caqti_type.string create value
+  let t = Caqti_type.string
 end
 
 module Lastname = struct
   include Entity.Lastname
 
-  let t = make_caqti_type Caqti_type.string create value
+  let t = Caqti_type.string
 end
 
 module IsAdmin = struct
   include Entity.IsAdmin
 
-  let t = make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  let t = Caqti_type.bool
 end
 
 module Confirmed = struct
   include Entity.Confirmed
 
-  let t = make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  let t = Caqti_type.bool
 end
 
 let t =

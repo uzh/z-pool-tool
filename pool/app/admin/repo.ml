@@ -240,7 +240,7 @@ let promote_contact pool id =
   |> CCList.map (fun (request, input) connection ->
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec request input)
-  |> Database.transactions pool
+  |> Database.transaction_iter pool
 ;;
 
 let search_by_name_and_email_request ?conditions =

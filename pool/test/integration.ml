@@ -416,6 +416,8 @@ let suite =
     ; ( "time window"
       , Time_window_test.
           [ test_case "confirm as contact" `Slow find_overlapping ] )
+      (* ; "cleanup", [ test_case "clean up test database" `Slow
+         Test_seed.cleanup ] *)
     ]
 ;;
 
@@ -434,8 +436,6 @@ let () =
     (let open Test_utils in
      let%lwt () = setup_test () in
      let%lwt _ = Sihl.Container.start_services services in
-     let%lwt () = Database.clean_all Data.database_label in
-     let%lwt () = Seed.Tenant.create ~is_test:true [ Data.database_label ] () in
      let%lwt () = Test_seed.create Data.database_label () in
      Alcotest_lwt.run "integration" @@ suite)
 ;;

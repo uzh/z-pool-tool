@@ -293,7 +293,7 @@ let find_all pool () =
 
 let insert pool (tenant, database) =
   let open Database in
-  transactions
+  transaction_iter
     pool
     [ exec_query Repo.insert_request database
     ; exec_query Sql.insert_request tenant
@@ -304,7 +304,7 @@ let update = Sql.update
 
 let update_database pool (tenant, database) =
   let open Database in
-  transactions
+  transaction_iter
     pool
     [ exec_query
         Database.Repo.update_request

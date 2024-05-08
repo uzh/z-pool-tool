@@ -62,7 +62,7 @@ module type Sig = sig
     -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
     -> 'a Lwt.t
 
-  val transactions
+  val transaction_iter
     :  Entity.Label.t
     -> (Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
     -> unit Lwt.t
