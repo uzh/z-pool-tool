@@ -223,7 +223,10 @@ module Search = struct
         ()
     in
     form
-      ~a:[ a_action (action_path admin "grant-role"); a_method `Post ]
+      ~a:
+        [ a_action (action_path admin "grant-role" |> Sihl.Web.externalize_path)
+        ; a_method `Post
+        ]
       [ Component_input.csrf_element csrf ()
       ; div
           ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
