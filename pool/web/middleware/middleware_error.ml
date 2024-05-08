@@ -78,6 +78,9 @@ let issue_reporter
 
 let reporter req ({ Report.exn; _ } as excn) =
   match[@warning "-4"] exn with
+  | Scanf.Scan_failure _ ->
+    Logs.err (fun m -> m "Exception: %s" (Printexc.to_string exn));
+    Lwt.return_unit
   | Caqti_error.(Exn #load_or_connect as err)
   | Pool_message.Error.(Exn DatabaseAddPoolFirst as err)
   | Pool_message.Error.(Exn (Connection _) as err) ->
