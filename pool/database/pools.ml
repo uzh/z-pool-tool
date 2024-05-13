@@ -56,7 +56,12 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       |> url
       |> Url.to_uri
       |> Caqti_lwt_unix.connect_pool
-           ~pool_config:(Caqti_pool_config.create ~max_size:pool_size ())
+           ~pool_config:
+             (Caqti_pool_config.create
+                ~max_size:pool_size
+                ~max_idle_age:(Some Mtime.Span.hour)
+                ~max_use_count:(Some 1)
+                ())
     in
     CCResult.retry retries connect
     |> function
