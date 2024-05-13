@@ -1318,7 +1318,11 @@ let filter_by_tags _ () =
   let%lwt () =
     let%lwt res = create_filter ContainsAll [ tag_one ] |> search in
     let msg = "filtering 'ContainsAll' should contain contact one and three" in
-    check (list contact_testable) msg [ contact_one; contact_three ] res
+    check
+      (list contact_testable)
+      msg
+      ([ contact_one; contact_three ] |> CCList.stable_sort Contact.compare)
+      res
     |> Lwt.return
   in
   let%lwt () =
