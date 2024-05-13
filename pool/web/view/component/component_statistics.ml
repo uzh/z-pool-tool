@@ -1,6 +1,6 @@
 open Tyxml.Html
 open Statistics
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 type title =
   | NavLink of Pool_common.I18n.nav_link

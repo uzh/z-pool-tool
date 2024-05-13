@@ -1,141 +1,39 @@
-open Ppx_yojson_conv_lib.Yojson_conv
-module PoolError = Pool_common.Message
+open CCFun.Infix
 
-module PasswordConfirmed = struct
-  type t = string [@@deriving eq]
+module Id = struct
+  include Pool_model.Base.Id
 
-  let create m = m
-  let to_sihl m = m
-  let show m = CCString.repeat "*" @@ CCString.length m
-
-  let pp (formatter : Format.formatter) (m : t) : unit =
-    m |> show |> Format.fprintf formatter "%s"
-  ;;
-
-  let schema ?(field = PoolError.Field.PasswordConfirmation) () =
-    Pool_common.Utils.schema_decoder (fun m -> Ok (create m)) show field
-  ;;
+  let of_common = Pool_common.Id.value %> of_string
+  let to_common = value %> Pool_common.Id.of_string
 end
 
-module Password = struct
-  module Policy = struct
-    type rule =
-      | MinLength of int
-      | MustContainCapitalLetter
-      | MustContainNumber
-      | MustContainSpecialChar of char list
+module Status = struct
+  module Core = struct
+    let print = Utils.ppx_printer
+    let field = Pool_message.Field.Status
 
-    type t = rule list
-
-    let validate_min_length num p =
-      if CCString.length p < num
-      then Error (PoolError.PasswordPolicyMinLength num)
-      else Ok p
-    ;;
-
-    let validate_characters validator error p =
-      p
-      |> CCString.to_list
-      |> CCList.fold_left (fun is_ok c -> is_ok || validator c) false
-      |> function
-      | true -> Ok p
-      | false -> Error error
-    ;;
-
-    let validate_capital_letter =
-      let validate c = CCChar.to_int c >= 65 && CCChar.to_int c <= 90 in
-      validate_characters validate PoolError.PasswordPolicyCapitalLetter
-    ;;
-
-    let validate_number =
-      let validate c = CCChar.to_int c >= 48 && CCChar.to_int c <= 57 in
-      validate_characters validate PoolError.PasswordPolicyNumber
-    ;;
-
-    let validate_special_char chars p =
-      chars
-      |> CCList.fold_left (fun is_ok c -> is_ok || CCString.contains p c) false
-      |> function
-      | true -> Ok p
-      | false -> Error (PoolError.PasswordPolicySpecialChar chars)
-    ;;
-
-    let default_special_char_set =
-      [ '!'
-      ; '?'
-      ; '*'
-      ; '+'
-      ; '-'
-      ; '_'
-      ; '&'
-      ; '%'
-      ; '('
-      ; ')'
-      ; '}'
-      ; '{'
-      ; '$'
-      ; ','
-      ; '.'
-      ]
-    ;;
-
-    let default_policy =
-      [ MinLength 8
-      ; MustContainCapitalLetter
-      ; MustContainNumber
-      ; MustContainSpecialChar default_special_char_set
-      ]
-    ;;
-
-    let valdate password =
-      let open CCResult in
-      CCList.fold_left
-        (fun password rule ->
-          password
-          >>=
-          match rule with
-          | MinLength n -> validate_min_length n
-          | MustContainCapitalLetter -> validate_capital_letter
-          | MustContainNumber -> validate_number
-          | MustContainSpecialChar chars -> validate_special_char chars)
-        (Ok password)
-    ;;
+    type t =
+      | Active [@name "active"] [@printer print "active"]
+      | Inactive [@name "inactive"] [@printer print "inactive"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  type t = string [@@deriving eq]
+  include Pool_model.Base.SelectorType (Core)
+  include Core
 
-  let to_sihl m = m
-  let show m = CCString.repeat "*" @@ CCString.length m
-
-  let pp (formatter : Format.formatter) (m : t) : unit =
-    Format.fprintf formatter "%s" m
+  let to_human language =
+    let go = Pool_common.Utils.field_to_string language in
+    let open Pool_message in
+    function
+    | Active -> Field.Active |> go
+    | Inactive -> Field.Inactive |> go
   ;;
 
-  let create password =
-    (* TODO: Consider checking against old password *)
-    Policy.valdate password Policy.default_policy
-  ;;
+  let read = Utils.Json.read_variant t_of_yojson
 
-  let create_unvalidated p = Ok p
-
-  let schema ?(field = PoolError.Field.Password) create () =
-    Pool_common.Utils.schema_decoder create show field
-  ;;
-
-  let validate_current_password
-    ?(field = PoolError.Field.CurrentPassword)
-    user
-    password
-    =
-    if Sihl_user.matches_password (password |> to_sihl) user
-    then Ok ()
-    else Error PoolError.(Invalid field)
-  ;;
-
-  let validate_password_confirmation new_password password_confirmation =
-    if equal new_password (PasswordConfirmed.to_sihl password_confirmation)
-    then Ok ()
-    else Error PoolError.PasswordConfirmationDoesNotMatch
+  let of_string str =
+    try Ok (read str) with
+    | _ -> Error Pool_message.(Error.Invalid Field.Status)
   ;;
 end
 
@@ -145,13 +43,13 @@ let remove_whitespaces =
 ;;
 
 module EmailAddress = struct
-  type t = string [@@deriving eq, show, yojson]
+  include Pool_model.Base.String
 
   let validate_characters email =
     let open Mrmime in
     match Mailbox.of_string email with
     | Ok _ -> Ok email
-    | Error _ -> Error PoolError.(Invalid Field.EmailAddress)
+    | Error _ -> Error Pool_message.(Error.Invalid Field.EmailAddress)
   ;;
 
   let strip_email_suffix email =
@@ -169,7 +67,7 @@ module EmailAddress = struct
     | Some allowed_email_suffixes ->
       (match strip_email_suffix email with
        (* TODO check whether this is really the case *)
-       | None -> Error PoolError.EmailMalformed
+       | None -> Error Pool_message.Error.EmailMalformed
        | Some suffix ->
          let open CCResult in
          let* suffix = suffix |> Settings.EmailSuffix.create in
@@ -180,24 +78,22 @@ module EmailAddress = struct
          then Ok ()
          else
            Error
-             PoolError.(
+             Pool_message.Error.(
                InvalidEmailSuffix
                  (allowed_email_suffixes
                   |> CCList.map Settings.EmailSuffix.value)))
   ;;
 
   let validate = validate_suffix
-  let value m = m
   let create = CCFun.(remove_whitespaces %> validate_characters)
-  let of_string m = m
 
-  let schema () =
-    Pool_common.Utils.schema_decoder create show PoolError.Field.Email
+  let schema ?(field = Pool_message.Field.Email) =
+    schema field ~validation:create
   ;;
 end
 
 module CellPhone = struct
-  type t = string [@@deriving eq, ord, show, yojson]
+  include Pool_model.Base.String
 
   let validate str =
     let regex =
@@ -208,16 +104,11 @@ module CellPhone = struct
     in
     if Re.execp regex str
     then Ok str
-    else Error Pool_common.Message.(Invalid Field.CellPhone)
+    else Error Pool_message.(Error.Invalid Field.CellPhone)
   ;;
 
   let create = CCFun.(remove_whitespaces %> validate)
-  let of_string m = m
-  let value m = m
-
-  let schema_test_cell_phone () =
-    Pool_common.Utils.schema_decoder create show PoolError.Field.TestPhoneNumber
-  ;;
+  let schema = schema Pool_message.Field.TestPhoneNumber ~validation:create
 end
 
 module UnverifiedCellPhone = struct
@@ -234,87 +125,116 @@ module UnverifiedCellPhone = struct
 end
 
 module Firstname = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = PoolError.Field.Firstname
+  let field = Pool_message.Field.Firstname
   let schema () = schema field ()
   let of_string m = m
 end
 
 module Lastname = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = PoolError.Field.Lastname
+  let field = Pool_message.Field.Lastname
   let schema () = schema field ()
   let of_string m = m
 end
 
 module Paused = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema PoolError.Field.Paused
+  let schema = schema Pool_message.Field.Paused
 end
 
 module Disabled = struct
-  type t = bool [@@deriving eq, ord, show]
+  include Pool_model.Base.Boolean
 
-  let create m = m
-  let value m = m
+  let schema = schema Pool_message.Field.Disabled
 end
 
 module TermsAccepted = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
-  let create m = m
+  let schema = schema Pool_message.Field.TermsAccepted CCResult.return
 end
 
 module Verified = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
-  let create m = m
+  let schema = schema Pool_message.Field.Verified CCResult.return
 end
 
 module EmailVerified = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
-  let create m = m
+  let schema = schema Pool_message.Field.EmailAddressVerified CCResult.return
 end
 
 module ImportPending = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema PoolError.Field.ImportPending
+  let schema = schema Pool_message.Field.ImportPending
 end
 
-let user_firstname { Sihl_user.id; given_name; _ } =
-  given_name
-  |> CCOption.get_exn_or (Format.asprintf "User '%s' has no firstname" id)
-  |> Firstname.of_string
+module IsAdmin = struct
+  include Pool_model.Base.Boolean
+
+  let schema = schema Pool_message.Field.IsAdmin
+end
+
+module Confirmed = struct
+  include Pool_model.Base.Boolean
+
+  let schema = schema Pool_message.Field.Confirmed
+end
+
+type t =
+  { id : Id.t
+  ; email : EmailAddress.t
+  ; lastname : Lastname.t
+  ; firstname : Firstname.t
+  ; status : Status.t
+  ; admin : IsAdmin.t
+  ; confirmed : Confirmed.t
+  }
+[@@deriving eq, fields, ord, show, sexp_of, yojson]
+
+let fullname ?(reversed = false) user =
+  [ user |> firstname |> Firstname.value; user |> lastname |> Lastname.value ]
+  |> (if reversed then CCList.rev else CCFun.id)
+  |> CCString.concat " "
 ;;
 
-let user_lastname { Sihl_user.id; name; _ } =
-  name
-  |> CCOption.get_exn_or (Format.asprintf "User '%s' has no firstname" id)
-  |> Lastname.of_string
+let is_admin user = user.admin |> IsAdmin.value
+let is_confirmed user = user.confirmed |> Confirmed.value
+
+let create
+  ?(id = Id.create ())
+  ?(admin = IsAdmin.create false)
+  ?(confirmed = Confirmed.create false)
+  email
+  lastname
+  firstname
+  : (t, Pool_message.Error.t) result
+  =
+  Ok
+    { id; email; lastname; firstname; admin; confirmed; status = Status.Active }
 ;;
 
-let user_fullname user =
-  Format.asprintf
-    "%s %s"
-    (user |> user_firstname |> Firstname.value)
-    (user |> user_lastname |> Lastname.value)
+let confirm user = { user with confirmed = Confirmed.create true }
+let promote user = { user with admin = IsAdmin.create true }
+
+let update ?email ?lastname ?firstname ?status ?confirmed user =
+  { user with
+    email = CCOption.value ~default:user.email email
+  ; lastname = CCOption.value ~default:user.lastname lastname
+  ; firstname = CCOption.value ~default:user.firstname firstname
+  ; status = CCOption.value ~default:user.status status
+  ; confirmed = CCOption.value ~default:user.confirmed confirmed
+  }
 ;;
 
-let user_lastname_firstname user =
-  Format.asprintf
-    "%s %s"
-    (user |> user_lastname |> Lastname.value)
-    (user |> user_firstname |> Firstname.value)
-;;
-
-let user_email_address user = user.Sihl_user.email |> EmailAddress.of_string
-
-open Pool_common.Message
+open Pool_message
 
 let column_email = (Field.Email, "user_users.email") |> Query.Column.create
 
@@ -345,7 +265,6 @@ let searchable_and_sortable_by =
 ;;
 
 let searchable_by =
-  let open Pool_common.Message in
   ( Field.Name
   , "CONCAT_WS(' ', user_users.name, user_users.given_name, user_users.name)" )
   :: searchable_and_sortable_by
@@ -353,7 +272,6 @@ let searchable_by =
 ;;
 
 let sortable_by =
-  let open Pool_common.Message in
   column_name
   :: (searchable_and_sortable_by
       @ [ Field.CreatedAt, "pool_contacts.created_at" ]

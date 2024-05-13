@@ -222,7 +222,7 @@ let create_where
   model
   =
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logger.Tags.create pool in
+  let tags = Database.Logger.Tags.create pool in
   let log_warning =
     Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags
   in
@@ -237,10 +237,10 @@ let create_where
        |> CCOption.return
      | None -> all)
   | None, Some _ ->
-    let _ = log_warning Pool_common.Message.(Undefined Field.Actor) in
+    let _ = log_warning Pool_message.(Error.Undefined Field.Actor) in
     Lwt.return_some "FALSE"
   | Some _, None ->
-    let _ = log_warning Pool_common.Message.(Undefined Field.Permission) in
+    let _ = log_warning Pool_message.(Error.Undefined Field.Permission) in
     Lwt.return_some "FALSE"
   | None, None -> Lwt.return_none
 ;;
@@ -310,7 +310,7 @@ end
 
 module RolePermission = struct
   include RolePermission
-  open Pool_common.Message
+  open Pool_message
 
   let column_role = (Field.Role, "role_permissions.role") |> Query.Column.create
 
@@ -339,7 +339,7 @@ end
 
 module ActorPermission = struct
   include ActorPermission
-  open Pool_common.Message
+  open Pool_message
 
   let column_actor =
     (Field.Actor, "actor_permissions.actor_uuid") |> Query.Column.create

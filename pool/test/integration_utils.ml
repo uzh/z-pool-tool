@@ -13,10 +13,10 @@ module AssignmentRepo = struct
 end
 
 module ContactRepo = struct
-  let create ?id ?name ?language ?(with_terms_accepted = false) () =
+  let create ?id ?lastname ?language ?(with_terms_accepted = false) () =
     let open Utils.Lwt_result.Infix in
     let contact =
-      Model.create_contact ?id ?name ?language ~with_terms_accepted ()
+      Model.create_contact ?id ?lastname ?language ~with_terms_accepted ()
     in
     let open Contact in
     let confirm = [ Verified contact; EmailVerified contact ] in
@@ -24,10 +24,7 @@ module ContactRepo = struct
       [ Created
           { user_id = id contact
           ; email = email_address contact
-          ; password =
-              contact.user.Sihl_user.password
-              |> Pool_user.Password.create
-              |> get_or_failwith
+          ; password = Model.password
           ; firstname = firstname contact
           ; lastname = lastname contact
           ; terms_accepted_at = None
@@ -42,12 +39,13 @@ module ContactRepo = struct
 end
 
 module AdminRepo = struct
+  open Pool_user
+
   let create ?id ?email () =
-    let open Pool_user in
     let admin_id = id |> CCOption.value ~default:(Admin.Id.create ()) in
     let open Admin in
     let open Utils.Lwt_result.Infix in
-    let tags = Pool_database.Logger.Tags.create Data.database_label in
+    let tags = Database.Logger.Tags.create Data.database_label in
     let email =
       email
       |> CCOption.value
@@ -58,14 +56,13 @@ module AdminRepo = struct
       |> Pool_user.EmailAddress.of_string
     in
     let admin =
-      Admin.
-        { id = Some admin_id
-        ; lastname = Lastname.of_string "Bar"
-        ; firstname = Firstname.of_string "Foo"
-        ; password = Password.create "Password1!" |> CCResult.get_exn
-        ; email
-        ; roles = []
-        }
+      { Admin.id = Some admin_id
+      ; lastname = Lastname.of_string "Bar"
+      ; firstname = Firstname.of_string "Foo"
+      ; password = Password.Plain.create "Password1!"
+      ; email
+      ; roles = []
+      }
     in
     let%lwt () =
       [ Created admin ]

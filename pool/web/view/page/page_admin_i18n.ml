@@ -1,6 +1,6 @@
 open Tyxml.Html
 open Component.Input
-module Message = Pool_common.Message
+module Message = Pool_message
 
 let list translation_list Pool_context.{ language; csrf; _ } =
   let textarea_element ?rich_text translation =
@@ -13,7 +13,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
       ~required:true
       ~value:(translation |> I18n.content |> I18n.Content.value)
       language
-      Pool_common.Message.Field.Translation
+      Pool_message.Field.translation
   in
   let build_translations_row translation_list =
     CCList.map

@@ -9,8 +9,8 @@ type t =
   ; no_show_count : Session.NoShowCount.t
   ; participant_count : Session.ParticipantCount.t
   ; experiment : Experiment.t
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 
 val equal : t -> t -> bool
@@ -32,7 +32,7 @@ val ends_at : t -> Ptime.t
 val duration
   :  start:Session.Start.t
   -> end_at:Session.End.t
-  -> (Session.Duration.t, Pool_common.Message.error) result
+  -> (Session.Duration.t, Pool_message.Error.t) result
 
 val has_assignments : t -> bool
 val is_deletable : t -> bool
@@ -51,19 +51,19 @@ type event =
   | Created of t
   | Updated of t
 
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 
 val find
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Session.Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_overlapping
   :  ?exclude:Session.Id.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Experiment.Id.t
   -> start:Session.Start.t
   -> end_at:Session.End.t
@@ -71,11 +71,11 @@ val find_overlapping
 
 val query_by_experiment
   :  ?query:Query.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Experiment.Id.t
   -> (t list * Query.t) Lwt.t
 
 val find_current_by_experiment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Experiment.Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+  -> (t, Pool_message.Error.t) Lwt_result.t

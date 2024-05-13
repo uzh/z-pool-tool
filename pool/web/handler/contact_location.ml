@@ -1,5 +1,5 @@
 module HttpUtils = Http_utils
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.contact.location"
 let create_layout = Contact_general.create_layout
@@ -31,7 +31,6 @@ let asset req =
     Utils.Lwt_result.map_error (fun err -> err, "/not-found")
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let ctx = Pool_database.to_ctx database_label in
     let* file =
       find_location_file database_label id
       >>= fun { Mapping.file; _ } ->
@@ -39,7 +38,7 @@ let asset req =
       |> Pool_common.Id.value
       |> HttpUtils.File.get_storage_file ~tags database_label
     in
-    let%lwt content = Service.Storage.download_data_base64 ~ctx file in
+    let%lwt content = Storage.download_data_base64 database_label file in
     let mime = file.file.mime in
     let content = content |> Base64.decode_exn in
     Sihl.Web.Response.of_plain_text content

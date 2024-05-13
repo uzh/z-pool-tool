@@ -28,12 +28,12 @@ type data_table =
   (** the columns that can be searched for *)
   ; push_url : bool
   (** determines if the url of the HTMX request is pushed to the browser history. Defaults to true *)
-  ; additional_url_params : (Pool_common.Message.Field.t * string) list option
+  ; additional_url_params : (Pool_message.Field.t * string) list option
   (** additional url parameters that will be added to the dynamic parameters of the query, e.g. the language *)
   }
 
 val create_meta
-  :  ?additional_url_params:(Pool_common.Message.Field.t * string) list
+  :  ?additional_url_params:(Pool_message.Field.t * string) list
   -> ?filter:Query.Filter.human
   -> ?search:Query.Column.t list
   -> ?push_url:bool
@@ -46,7 +46,7 @@ val create_meta
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt
-  | `field of Pool_common.Message.Field.t * Query.Column.t
+  | `field of Pool_message.Field.t * Query.Column.t
   | `empty
   ]
 

@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "common.cqrs"
 
@@ -8,8 +8,8 @@ module ResetPassword : sig
   type t = Pool_user.EmailAddress.t
 
   val handle : ?tags:Logs.Tag.set -> Email.job -> (Pool_event.t list, 'a) result
-  val decode : Conformist.input -> (t, Conformist.error_msg) result
-  val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
+  val effects : Role.Target.t -> Pool_user.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_user.EmailAddress.t
 
@@ -26,12 +26,14 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects role user =
     let open Guard in
-    let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
+    let target_id =
+      user.Pool_user.id |> Guard.Uuid.target_of Pool_user.Id.value
+    in
     ValidationSet.one_of_tuple (Permission.Update, role, Some target_id)
   ;;
 end

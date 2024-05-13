@@ -11,10 +11,7 @@ module AdminComment : sig
   val pp : Format.formatter -> t -> unit
   val value : t -> string
   val create : string -> t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 type t =
@@ -22,8 +19,8 @@ type t =
   ; contact : Contact.t
   ; experiment : Experiment.t
   ; admin_comment : AdminComment.t option
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 
 val equal : t -> t -> bool
@@ -63,27 +60,27 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 
 val find
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val user_is_enlisted
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.t
   -> Experiment.Id.t
   -> bool Lwt.t
 
 val find_by_experiment
   :  ?query:Query.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Experiment.Id.t
   -> (t list * Query.t) Lwt.t
 
 val find_by_contact_and_experiment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.t
   -> Experiment.Id.t
   -> t option Lwt.t
@@ -99,7 +96,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

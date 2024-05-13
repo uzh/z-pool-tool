@@ -12,11 +12,7 @@ let terms_and_conditions_last_updated = Repo.terms_and_conditions_last_updated
 module I18nPageCache = struct
   open Hashtbl
 
-  let tbl
-    : ( Pool_tenant.Database.Label.t * Entity.Key.t * Pool_common.Language.t
-        , bool )
-        t
-    =
+  let tbl : (Database.Label.t * Entity.Key.t * Pool_common.Language.t, bool) t =
     create 5
   ;;
 

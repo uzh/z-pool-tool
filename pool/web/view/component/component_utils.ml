@@ -66,6 +66,6 @@ let format_reminder_sent_opt ?(default = "") value =
   value
   |> CCOption.map_or
        ~default
-       CCFun.(Reminder.SentAt.value %> Utils.Time.formatted_date_time)
+       CCFun.(Reminder.SentAt.value %> Pool_model.Time.formatted_date_time)
   |> txt
 ;;

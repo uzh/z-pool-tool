@@ -1,6 +1,6 @@
 open CCFun
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Database = Database
+module Dynparam = Database.Dynparam
 
 let src = Logs.Src.create "experiment.repo"
 
@@ -44,9 +44,9 @@ let joins =
 
 let joins_tags =
   {sql|
-    LEFT JOIN pool_tagging 
+    LEFT JOIN pool_tagging
       ON pool_tagging.model_uuid = pool_experiments.uuid
-	  LEFT JOIN pool_tags 
+	  LEFT JOIN pool_tags
       ON pool_tags.uuid = pool_tagging.tag_uuid
   |sql}
 ;;
@@ -76,7 +76,7 @@ let find_request_sql
 
 let participation_history_sql additional_joins ?(count = false) where_fragment =
   let is_pending_col =
-    {sql| 
+    {sql|
       EXISTS (
         SELECT
           1
@@ -93,7 +93,7 @@ let participation_history_sql additional_joins ?(count = false) where_fragment =
               a.participated IS NULL
             ELSE
               pool_sessions.closed_at IS NULL
-            END))    
+            END))
     |sql}
   in
   let columns =
@@ -201,9 +201,7 @@ module Sql = struct
         autofill_public_title
         (experiment.id, PublicTitle.placeholder)
     in
-    Utils.Database.exec_as_transaction
-      (Pool_database.Label.value pool)
-      [ insert; set_title ]
+    Database.transaction_iter pool [ insert; set_title ]
   ;;
 
   let search_select =
@@ -249,11 +247,8 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_request
-      (id |> Entity.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    Database.find_opt pool find_request (id |> Entity.Id.value)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let find_of_session =
@@ -269,11 +264,8 @@ module Sql = struct
 
   let find_of_session pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_of_session
-      (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    Database.find_opt pool find_of_session (id |> Pool_common.Id.value)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let find_of_mailing =
@@ -287,11 +279,8 @@ module Sql = struct
 
   let find_of_mailing pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_of_mailing
-      (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    Database.find_opt pool find_of_mailing (id |> Pool_common.Id.value)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let session_count_request =
@@ -303,10 +292,7 @@ module Sql = struct
   ;;
 
   let session_count pool id =
-    Utils.Database.find
-      (Pool_database.Label.value pool)
-      session_count_request
-      (id |> Pool_common.Id.value)
+    Database.find pool session_count_request (id |> Pool_common.Id.value)
   ;;
 
   let update_request =
@@ -342,9 +328,7 @@ module Sql = struct
     |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool experiment =
-    Utils.Database.exec (Database.Label.value pool) update_request experiment
-  ;;
+  let update pool = Database.exec pool update_request
 
   let delete_request =
     let open Caqti_request.Infix in
@@ -355,12 +339,7 @@ module Sql = struct
     |> Caqti_type.(string ->. unit)
   ;;
 
-  let delete pool id =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      delete_request
-      (id |> Entity.Id.value)
-  ;;
+  let delete pool id = Database.exec pool delete_request (id |> Entity.Id.value)
 
   let search_request ?conditions ?joins ~limit () =
     let default_contidion = "pool_experiments.title LIKE ?" in
@@ -390,7 +369,7 @@ module Sql = struct
     =
     let open Caqti_request.Infix in
     let exclude_ids =
-      Utils.Database.exclude_ids "pool_experiments.uuid" Entity.Id.value
+      Database.exclude_ids "pool_experiments.uuid" Entity.Id.value
     in
     let dyn = Dynparam.(dyn |> add Caqti_type.string ("%" ^ query ^ "%")) in
     let dyn, exclude =
@@ -408,7 +387,7 @@ module Sql = struct
       search_request ?conditions ?joins ~limit ()
       |> pt ->* Repo_entity.(Caqti_type.t2 Id.t Title.t)
     in
-    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+    Database.collect pool request pv
   ;;
 
   let search_multiple_by_id_request ids =
@@ -439,7 +418,7 @@ module Sql = struct
         search_multiple_by_id_request ids
         |> pt ->* Caqti_type.(Repo_entity.(t2 Repo_entity.Id.t Title.t))
       in
-      Utils.Database.collect (pool |> Database.Label.value) request pv
+      Database.collect pool request pv
   ;;
 
   let find_all_ids_of_contact_id_request =
@@ -464,8 +443,8 @@ module Sql = struct
   ;;
 
   let find_all_ids_of_contact_id pool id =
-    Utils.Database.collect
-      (pool |> Database.Label.value)
+    Database.collect
+      pool
       find_all_ids_of_contact_id_request
       (Contact.Id.to_common id)
   ;;
@@ -533,8 +512,8 @@ module Sql = struct
       let permission = CCOption.map (const Permission.Create) actor in
       create_where ?actor ?permission ~checks pool `Assignment
     in
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
+    Database.collect
+      pool
       (find_to_enroll_directly_request where)
       ("%" ^ query ^ "%", Contact.(contact |> id |> Id.to_common))
     >|> Lwt_list.map_s (fun ({ DirectEnrollment.filter; _ } as experiment) ->
@@ -563,14 +542,11 @@ module Sql = struct
           AND pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
           AND pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
-    |> Caqti_type.(t2 string string ->! bool)
+    |> Caqti_type.(t2 Repo_entity.Id.t Contact.Repo.Id.t ->! bool)
   ;;
 
   let contact_is_enrolled pool experiment_id contact_id =
-    Utils.Database.find
-      (Pool_database.Label.value pool)
-      contact_is_enrolled_request
-      (experiment_id |> Entity.Id.value, contact_id |> Contact.Id.value)
+    Database.find pool contact_is_enrolled_request (experiment_id, contact_id)
   ;;
 
   let find_targets_grantable_by_admin ?exclude database_label admin role query =
@@ -585,7 +561,7 @@ module Sql = struct
     let dyn =
       Dynparam.(
         empty
-        |> add Caqti_type.string Admin.(id admin |> Id.value)
+        |> add Admin.Repo.Id.t Admin.(id admin)
         |> add Caqti_type.string Role.Role.(show role))
     in
     search ~conditions ~joins ~dyn ?exclude database_label query
@@ -597,11 +573,11 @@ module Sql = struct
     contact_id
     =
     let joins =
-      {sql| 
-        INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid 
-        INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid 
-          AND pool_assignments.canceled_at IS NULL 
-          AND pool_assignments.marked_as_deleted = 0 
+      {sql|
+        INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
+        INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
+          AND pool_assignments.canceled_at IS NULL
+          AND pool_assignments.marked_as_deleted = 0
         |sql}
     in
     let where =
@@ -626,7 +602,7 @@ module Sql = struct
     let _ =
       Format.asprintf
         {sql|
-            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')) 
+            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
             AND(
               CASE WHEN pool_experiments.assignment_without_session = 1 THEN
                 pool_assignments.participated = 1
@@ -636,9 +612,7 @@ module Sql = struct
         |sql}
         (if only_closed then "pool_sessions.closed_at IS NOT NULL" else "TRUE")
     in
-    ( ( where
-      , dyn |> Dynparam.add Caqti_type.string (Contact.Id.value contact_id) )
-    , joins )
+    (where, dyn |> Dynparam.add Contact.Repo.Id.t contact_id), joins
   ;;
 
   let query_participation_history_by_contact ?query pool contact =
@@ -669,8 +643,8 @@ module Sql = struct
 
   let total_invitation_count_by_experiment pool experiment_id =
     let open Caqti_request.Infix in
-    Utils.Database.find
-      (pool |> Pool_database.Label.value)
+    Database.find
+      pool
       (count_invitations_request () |> Caqti_type.(string ->! int))
       (Entity.Id.value experiment_id)
   ;;

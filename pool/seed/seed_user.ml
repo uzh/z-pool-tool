@@ -83,7 +83,7 @@ let create_persons_from_file () =
 let create_persons_from_api db_label n_persons =
   let open CCList in
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logger.Tags.create db_label in
+  let tags = Database.Logger.Tags.create db_label in
   let chunk_size = 100 in
   let sum = fold_left ( + ) 0 in
   let%lwt contacts =
@@ -155,8 +155,8 @@ let admins db_label =
     ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", [ `Recruiter, None ]
     ]
   in
-  let ctx = Pool_database.to_ctx db_label in
-  let tags = Pool_database.Logger.Tags.create db_label in
+  let ctx = Database.to_ctx db_label in
+  let tags = Database.Logger.Tags.create db_label in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"Password1!"
@@ -166,18 +166,18 @@ let admins db_label =
          , name
          , email
          , (roles : (Role.Role.t * Guard.Uuid.Target.t option) list) ) ->
-      let%lwt user = Service.User.find_by_email_opt ~ctx email in
+      let email = Pool_user.EmailAddress.of_string email in
+      let%lwt user = User.find_by_email_opt db_label email in
       match user with
       | None ->
         let%lwt admin =
-          let open Pool_user in
           let id = Admin.Id.create () in
           let create =
             { Admin.id = id |> CCOption.return
-            ; email = EmailAddress.of_string email
-            ; password = Password.create password |> CCResult.get_exn
-            ; firstname = Firstname.of_string given_name
-            ; lastname = Lastname.of_string name
+            ; email
+            ; password = Pool_user.Password.Plain.create password
+            ; firstname = Pool_user.Firstname.of_string given_name
+            ; lastname = Pool_user.Lastname.of_string name
             ; roles = []
             }
           in
@@ -207,7 +207,7 @@ let admins db_label =
       | Some _ ->
         Logs.debug ~src (fun m ->
           m
-            ~tags:(Pool_database.Logger.Tags.create db_label)
+            ~tags:(Database.Logger.Tags.create db_label)
             "%s"
             "Admin user already exists");
         Lwt.return_unit)
@@ -216,9 +216,8 @@ let admins db_label =
 
 let contacts db_label =
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logger.Tags.create db_label in
+  let tags = Database.Logger.Tags.create db_label in
   let n_contacts = 200 in
-  let ctx = Pool_database.to_ctx db_label in
   let combinations =
     let open CCList in
     let languages = Pool_common.Language.[ Some En; Some De; None ] in
@@ -250,7 +249,7 @@ let contacts db_label =
       let language, terms_accepted_at, paused, disabled, verified =
         CCList.get_at_idx_exn (idx mod CCList.length combinations) combinations
       in
-      ( person.uid |> Id.of_string
+      ( person.uid |> Contact.Id.of_string
       , person.first_name |> User.Firstname.of_string
       , person.last_name |> User.Lastname.of_string
       , person.email |> User.EmailAddress.of_string
@@ -263,8 +262,7 @@ let contacts db_label =
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"Password1!"
-    |> User.Password.create
-    |> Pool_common.Utils.get_or_failwith
+    |> User.Password.Plain.create
   in
   let%lwt () =
     users
@@ -280,11 +278,7 @@ let contacts db_label =
              , _
              , _ )
            ->
-            match%lwt
-              Service.User.find_by_email_opt
-                ~ctx
-                (User.EmailAddress.value email)
-            with
+            match%lwt Pool_user.find_by_email_opt db_label email with
             | None ->
               Lwt.return_some
                 [ Contact.Created
@@ -297,12 +291,13 @@ let contacts db_label =
                     ; language
                     }
                 ]
-            | Some { Sihl_user.id; _ } ->
+            | Some { Pool_user.id; _ } ->
               Logs.debug ~src (fun m ->
                 m
                   ~tags
-                  "Contact already exists (%s): %s"
-                  (db_label |> Pool_database.Label.value)
+                  "Contact already exists (%s): %a"
+                  (db_label |> Database.Label.value)
+                  Pool_user.Id.pp
                   id);
               Lwt.return_none)
     ||> CCList.flatten

@@ -1,9 +1,9 @@
 module Id = Pool_common.Id
 
 module Name = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Pool_common.Message.Field.Name
+  let field = Pool_message.Field.Name
   let schema () = schema field ()
 end
 
@@ -15,7 +15,7 @@ type t =
 
 let create ?(id = Id.create ()) name = { id; name }
 
-open Pool_common.Message
+open Pool_message
 
 let column_name =
   (Field.Name, "pool_organisational_units.name") |> Query.Column.create

@@ -125,7 +125,11 @@ let t =
                               NoShowCount.t
                               (t2
                                  ParticipantCount.t
-                                 (t2 ptime (t2 ptime ExperimentRepo.t))))))))))))
+                                 (t2
+                                    Pool_common.Repo.CreatedAt.t
+                                    (t2
+                                       Pool_common.Repo.UpdatedAt.t
+                                       ExperimentRepo.t))))))))))))
 ;;
 
 module Write = struct
@@ -172,7 +176,9 @@ module Write = struct
               , ( m.internal_description
                 , (m.public_description, m.max_participants) ) ) ) ) )
     in
-    let decode _ = Pool_common.(Utils.failwith Message.WriteOnlyModel) in
+    let decode _ =
+      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
+    in
     Caqti_type.(
       custom
         ~encode

@@ -16,6 +16,6 @@ let handle req =
         "/login"
         ~status:`Forbidden
         ?query_language
-        ~actions:[ Message.set ~error:[ Pool_common.Message.SessionInvalid ] ])
+        ~actions:[ Message.set ~error:[ Pool_message.Error.SessionInvalid ] ])
       ()
 ;;

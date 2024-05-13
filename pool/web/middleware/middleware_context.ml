@@ -4,17 +4,13 @@ let context () =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
   let find_query_language = Http_utils.find_query_lang in
-  let tenant_database_label_of_request req =
-    match Tenant.find req with
-    | Ok { Tenant.tenant; _ } -> Lwt.return_ok tenant.Pool_tenant.database_label
-    | Error _ ->
-      Middleware_tenant.tenant_of_request req
-      >|+ fun { Pool_tenant.database_label; _ } -> database_label
-  in
   let database_label_of_request is_root req =
-    if is_root
-    then Lwt.return_ok Pool_database.root
-    else tenant_database_label_of_request req
+    let tenant_database_label_of_request req =
+      match Tenant.find req with
+      | Ok { Tenant.tenant; _ } -> Ok tenant.Pool_tenant.database_label
+      | Error _ -> Error Pool_message.(Error.Missing Field.Context)
+    in
+    if is_root then Ok Database.root else tenant_database_label_of_request req
   in
   let languages_from_request ?contact req tenant_db =
     let%lwt tenant_languages = Settings.find_languages tenant_db in
@@ -30,9 +26,10 @@ let context () =
       | None ->
         let%lwt lang =
           Http_utils.user_from_session tenant_db req
-          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
+          ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
           >>= fun user ->
-          Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+          user.Pool_user.id
+          |> Contact.(Id.of_user %> find tenant_db)
           >|+ fun p -> p.Contact.language
         in
         CCResult.get_or lang ~default:None |> Lwt.return
@@ -55,14 +52,18 @@ let context () =
     let message =
       CCOption.bind
         (Sihl.Web.Flash.find_alert req)
-        Pool_common.Message.Collection.of_string
+        Pool_message.Collection.of_string
     in
     let find_user pool =
       Http_utils.user_from_session pool req
-      >|> CCOption.map_or ~default:(Lwt.return Guest) (user_of_sihl_user pool)
+      >|> CCOption.map_or
+            ~default:(Lwt.return Guest)
+            (context_user_of_user pool)
     in
     let%lwt context =
-      let* database_label = database_label_of_request is_root req in
+      let* database_label =
+        database_label_of_request is_root req |> Lwt_result.lift
+      in
       let%lwt user = find_user database_label in
       let%lwt query_lang, language, guardian =
         let to_actor = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in

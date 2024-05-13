@@ -4,11 +4,10 @@
   conformist
   guard
   pool_common
-  pool_database
+  database
   pool_user
   settings
   sihl
-  sihl-user
   utils)
  (preprocess
   (pps
@@ -17,7 +16,9 @@
    ppx_deriving.eq
    ppx_deriving.ord
    ppx_deriving.show
+   ppx_fields_conv
    ppx_sexp_conv
+   ppx_string
    ppx_yojson_conv)))
 
 (include_subdirs unqualified)

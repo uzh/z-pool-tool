@@ -14,7 +14,7 @@ let show _ =
   let open CCFun in
   let%lwt result =
     let open Schedule in
-    let* job_count = Queue.count_workable Pool_database.root in
+    let* job_count = Queue.count_workable Database.root in
     let%lwt schedules = find_all () in
     let is_ok = CCList.(map is_ok %> for_all id) in
     (schedules

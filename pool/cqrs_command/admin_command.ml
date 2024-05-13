@@ -1,6 +1,3 @@
-module Conformist = Pool_common.Utils.PoolConformist
-module User = Pool_user
-
 let src = Logs.Src.create "admin.cqrs"
 
 type grant_role =
@@ -17,10 +14,10 @@ module CreateAdmin : sig
   include Common.CommandSig
 
   type t =
-    { email : User.EmailAddress.t
-    ; password : User.Password.t [@opaque]
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
+    { email : Pool_user.EmailAddress.t
+    ; password : Pool_user.Password.Plain.t [@opaque]
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
     }
 
   val handle
@@ -29,17 +26,15 @@ module CreateAdmin : sig
     -> ?id:Admin.Id.t
     -> ?roles:(Role.Role.t * Guard.Uuid.Target.t option) list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t =
-    { email : User.EmailAddress.t
-    ; password : User.Password.t [@opaque]
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
+    { email : Pool_user.EmailAddress.t
+    ; password : Pool_user.Password.Plain.t [@opaque]
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
     }
 
   let command email password firstname lastname =
@@ -47,13 +42,13 @@ end = struct
   ;;
 
   let schema =
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make
         Field.
-          [ User.EmailAddress.schema ()
-          ; User.Password.(schema create ())
-          ; User.Firstname.schema ()
-          ; User.Lastname.schema ()
+          [ Pool_user.EmailAddress.schema ()
+          ; Pool_user.Password.Plain.schema ()
+          ; Pool_user.Firstname.schema ()
+          ; Pool_user.Lastname.schema ()
           ]
         command)
   ;;
@@ -85,89 +80,11 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    Pool_conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Admin.Guard.Access.create
-end
-
-module UpdatePassword : sig
-  include Common.CommandSig
-
-  type t =
-    { current_password : User.Password.t
-    ; new_password : User.Password.t
-    ; password_confirmation : User.PasswordConfirmed.t
-    }
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> ?notification:Email.job
-    -> Admin.t
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
-  val effects : Admin.Id.t -> Guard.ValidationSet.t
-end = struct
-  type t =
-    { current_password : User.Password.t [@opaque]
-    ; new_password : User.Password.t [@opaque]
-    ; password_confirmation : User.PasswordConfirmed.t [@opaque]
-    }
-
-  let command current_password new_password password_confirmation =
-    { current_password; new_password; password_confirmation }
-  ;;
-
-  let schema =
-    let open Pool_common.Message.Field in
-    Conformist.(
-      make
-        Field.
-          [ User.Password.(schema ~field:CurrentPassword create_unvalidated ())
-          ; User.Password.(schema ~field:NewPassword create ())
-          ; User.PasswordConfirmed.schema ()
-          ]
-        command)
-  ;;
-
-  let handle ?(tags = Logs.Tag.empty) ?notification admin command =
-    Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
-    let open CCResult in
-    let* () =
-      User.Password.validate_current_password
-        (Admin.user admin)
-        command.current_password
-    in
-    let* () =
-      User.Password.validate_password_confirmation
-        command.new_password
-        command.password_confirmation
-    in
-    Ok
-      ((Admin.PasswordUpdated
-          ( admin
-          , command.current_password
-          , command.new_password
-          , command.password_confirmation )
-        |> Pool_event.admin)
-       :: CCOption.map_or
-            ~default:[]
-            (fun note -> Email.Sent note |> Pool_event.email |> CCList.return)
-            notification)
-  ;;
-
-  let effects = Admin.Guard.Access.update
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
-  ;;
 end
 
 module Update : sig
@@ -179,19 +96,19 @@ module Update : sig
     :  ?tags:Logs.Tag.set
     -> Admin.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = Admin.update
 
   let command firstname lastname = { Admin.firstname; lastname }
 
   let schema =
-    Pool_common.Utils.PoolConformist.(
-      make Field.[ User.Firstname.schema (); User.Lastname.schema () ] command)
+    Pool_conformist.(
+      make
+        Field.[ Pool_user.Firstname.schema (); Pool_user.Lastname.schema () ]
+        command)
   ;;
 
   let handle ?(tags = Logs.Tag.empty) admin update =
@@ -200,8 +117,8 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    Pool_conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Admin.Guard.Access.create
@@ -213,7 +130,7 @@ module UpdateSignInCount : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Admin.t
 
@@ -226,22 +143,20 @@ end
 module PromoteContact : sig
   include Common.CommandSig
 
-  type t = Pool_common.Id.t
+  type t = Pool_user.Id.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
-  type t = Pool_common.Id.t
+  type t = Pool_user.Id.t
 
   let schema =
-    let open Pool_common.Utils.PoolConformist in
-    make Field.[ Pool_common.Id.schema () ] CCFun.id
+    let open Pool_conformist in
+    make Field.[ Pool_user.Id.schema () ] CCFun.id
   ;;
 
   let handle ?(tags = Logs.Tag.empty) id =
@@ -250,8 +165,8 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    Pool_conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects =

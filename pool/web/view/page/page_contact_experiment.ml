@@ -1,9 +1,9 @@
 open CCFun
 open Tyxml.Html
 open Component.Input
+open Pool_message
 module PageSession = Page_contact_sessions
 module HttpUtils = Http_utils
-module Field = Pool_common.Message.Field
 
 let experiment_public_description =
   let open Experiment in
@@ -97,7 +97,8 @@ let index
                    query_language
                    (Format.asprintf "/experiments/%s" (Experiment.Id.value id)))
             ]
-          [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
+          [ Control.More |> Pool_common.Utils.control_to_string language |> txt
+          ]
       ]
   in
   let experiment_title exp =
@@ -229,8 +230,8 @@ let show
   let hint_to_string = Utils.hint_to_string language in
   let form_control, submit_class =
     match user_is_enlisted with
-    | true -> Message.RemoveFromWaitingList, "error"
-    | false -> Message.AddToWaitingList, "primary"
+    | true -> Control.RemoveFromWaitingList, "error"
+    | false -> Control.AddToWaitingList, "primary"
   in
   let session_list sessions =
     div
@@ -349,11 +350,10 @@ let show_online_study
     let open Pool_common in
     let open Assignment in
     let start_button assignment =
-      let field = Some Message.Field.Survey in
+      let field = Some Field.Survey in
       let control =
-        if CCOption.is_some assignment
-        then Message.Resume field
-        else Message.Start field
+        let open Control in
+        if CCOption.is_some assignment then Resume field else Start field
       in
       div
         ~a:[ a_class [ "flexcolumn" ] ]
@@ -380,7 +380,10 @@ let show_online_study
         [ strong
             [ txt (field_to_string_capitalized language Field.Participated)
             ; txt ": "
-            ; txt (Time.formatted_date_time assignment.Public.created_at)
+            ; txt
+                (assignment.Public.created_at
+                 |> CreatedAt.value
+                 |> Pool_model.Time.formatted_date_time)
             ]
         ]
     in

@@ -1,9 +1,9 @@
-module Database = Pool_database
+module Database = Database
 module Id = Pool_common.Id
 module File = Pool_common.File
 
 let src = Logs.Src.create "http_utils.file"
-let tags = Pool_database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create root)
 let import_dir = "/tmp/pool/import"
 
 let raise_if_failed msg process_result =
@@ -97,9 +97,7 @@ let file_to_storage_add pool filename =
       }
   in
   let base64 = Base64.encode_exn data in
-  let%lwt _ =
-    Service.Storage.upload_base64 ~ctx:(Pool_database.to_ctx pool) file base64
-  in
+  let%lwt _ = Storage.upload_base64 pool file base64 in
   let%lwt () = remove_imported_file filename in
   file.Sihl_storage.id |> Lwt.return_ok
 ;;
@@ -134,8 +132,7 @@ let update_files pool files req =
     | Some filename ->
       (match load_file filename with
        | Ok (filesize, mime, data) ->
-         let ctx = Pool_database.to_ctx pool in
-         let%lwt file = Service.Storage.find ~ctx id in
+         let%lwt file = Storage.find pool id in
          let updated_file =
            let open Sihl_storage in
            file
@@ -144,7 +141,7 @@ let update_files pool files req =
            |> set_mime_stored (File.Mime.to_string mime)
          in
          let base64 = Base64.encode_exn data in
-         let%lwt _ = Service.Storage.update_base64 ~ctx updated_file base64 in
+         let%lwt _ = Storage.update_base64 pool updated_file base64 in
          let%lwt () = remove_imported_file filename in
          Lwt.return_some (Ok id)
        | Error err -> Lwt.return_some (Error err))
@@ -160,8 +157,8 @@ let update_files pool files req =
 
 let get_storage_file ?tags database_label asset_id =
   let open Utils.Lwt_result.Infix in
-  Service.Storage.find_opt ~ctx:(Pool_database.to_ctx database_label) asset_id
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.File)
+  Storage.find_opt database_label asset_id
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.File)
   >|- fun err ->
   Logs.warn ~src (fun m ->
     m ?tags "A user experienced an error: File not found with id %s" asset_id);
@@ -173,7 +170,6 @@ let cleanup_upload database_label files =
   function
   | Ok resp -> Lwt.return_ok resp
   | Error err ->
-    let ctx = database_label |> Pool_database.to_ctx in
-    let%lwt () = Lwt_list.iter_s (snd %> Service.Storage.delete ~ctx) files in
+    let%lwt () = Lwt_list.iter_s (snd %> Storage.delete database_label) files in
     Lwt.return_error err
 ;;

@@ -1,6 +1,6 @@
 open CCFun
 open Utils.Lwt_result.Infix
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module HttpUtils = Http_utils
 
 let src = Logs.Src.create "handler.helper.search"

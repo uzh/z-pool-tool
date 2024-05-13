@@ -1,6 +1,6 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Reminder = Pool_common.Reminder
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 open CCFun
 
 type reschedule =
@@ -52,9 +52,9 @@ let schema =
         ; TimeUnit.named_schema Session.Duration.name ()
         ; Conformist.optional @@ Session.InternalDescription.schema ()
         ; Conformist.optional @@ Session.PublicDescription.schema ()
-        ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
-        ; Session.ParticipantAmount.schema Message.Field.MinParticipants
-        ; Session.ParticipantAmount.schema Message.Field.Overbook
+        ; Session.ParticipantAmount.schema Pool_message.Field.MaxParticipants
+        ; Session.ParticipantAmount.schema Pool_message.Field.MinParticipants
+        ; Session.ParticipantAmount.schema Pool_message.Field.Overbook
         ; Conformist.optional @@ Reminder.EmailLeadTime.integer_schema ()
         ; Conformist.optional
           @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
@@ -111,7 +111,7 @@ let validate_start follow_up_sessions parent_session start =
       follow_up_sessions
   in
   if starts_after_parent parent_session start || starts_before_followups
-  then Error Pool_common.Message.FollowUpIsEarlierThanMain
+  then Error Pool_message.Error.FollowUpIsEarlierThanMain
   else Ok ()
 ;;
 
@@ -134,9 +134,9 @@ module Create : sig
     -> Experiment.t
     -> Pool_location.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Session.base
@@ -164,10 +164,10 @@ end = struct
     let open CCResult in
     let validations =
       [ ( starts_after_parent parent_session start
-        , Pool_common.Message.FollowUpIsEarlierThanMain )
+        , Pool_message.Error.FollowUpIsEarlierThanMain )
       ; ( max_participants < min_participants
-        , Pool_common.Message.(
-            Smaller (Field.MaxParticipants, Field.MinParticipants)) )
+        , Pool_message.(
+            Error.Smaller (Field.MaxParticipants, Field.MinParticipants)) )
       ]
     in
     let* () = run_validations validations in
@@ -195,7 +195,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects exp_id = Session.Guard.Access.create exp_id
@@ -214,7 +214,6 @@ let time_window_command
 ;;
 
 let time_window_schema =
-  let open Pool_common in
   Conformist.(
     make
       Field.
@@ -223,7 +222,7 @@ let time_window_schema =
         ; Conformist.optional @@ Session.InternalDescription.schema ()
         ; Conformist.optional @@ Session.PublicDescription.schema ()
         ; Conformist.optional
-          @@ Session.ParticipantAmount.schema Message.Field.MaxParticipants
+          @@ Session.ParticipantAmount.schema Pool_message.Field.MaxParticipants
         ]
       time_window_command)
 ;;
@@ -237,9 +236,9 @@ module CreateTimeWindow : sig
     -> ?id:Session.Id.t
     -> Experiment.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Time_window.create
@@ -260,14 +259,14 @@ end = struct
     let open CCResult in
     let open Session in
     let* () =
-      Pool_common.Utils.Time.start_is_before_end
+      Pool_model.Time.start_is_before_end
         ~start:(Start.value start)
         ~end_at:(End.value end_at)
     in
     let* () =
       if CCList.is_empty overlapps
       then Ok ()
-      else Error Pool_common.Message.SessionOverlap
+      else Error Pool_message.Error.SessionOverlap
     in
     let* duration = Time_window.duration ~start ~end_at in
     let time_window =
@@ -285,7 +284,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate time_window_schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects exp_id = Session.Guard.Access.create exp_id
@@ -299,9 +298,9 @@ module UpdateTimeWindow : sig
     -> overlapps:Time_window.t list
     -> Time_window.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Time_window.create
@@ -322,14 +321,14 @@ end = struct
     let open Time_window in
     let* () =
       let open Session in
-      Pool_common.Utils.Time.start_is_before_end
+      Pool_model.Time.start_is_before_end
         ~start:(Start.value start)
         ~end_at:(End.value end_at)
     in
     let* () =
       if CCList.is_empty overlapps
       then Ok ()
-      else Error Pool_common.Message.SessionOverlap
+      else Error Pool_message.Error.SessionOverlap
     in
     let* duration = Time_window.duration ~start ~end_at in
     let time_window =
@@ -346,7 +345,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate time_window_schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects exp_id = Session.Guard.Access.create exp_id
@@ -361,7 +360,7 @@ module Duplicate : sig
     -> Session.t
     -> Session.t list
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -370,10 +369,10 @@ end = struct
   let parse_urlencoded urlencoded
     : ((int, (Session.Id.t * Session.Start.t) list) CCList.Assoc.t, 'b) Result.t
     =
-    let error = Pool_common.Message.InvalidRequest in
+    let error = Pool_message.Error.InvalidRequest in
     let open CCResult in
     let start_of_string str =
-      Pool_common.Utils.Time.parse_time str >|= Session.Start.create
+      Pool_model.Time.parse_time str >|= Session.Start.create
     in
     let parse_row id group value =
       let to_result = CCOption.to_result in
@@ -432,7 +431,7 @@ end = struct
       start
       =
       if starts_after_parent parent start
-      then Error Pool_common.Message.FollowUpIsEarlierThanMain
+      then Error Pool_message.Error.FollowUpIsEarlierThanMain
       else
         Ok
           (Session.create
@@ -450,10 +449,10 @@ end = struct
              experiment)
     in
     let find_start session_id data
-      : (Session.Start.t, Pool_common.Message.error) Result.t
+      : (Session.Start.t, Pool_message.Error.t) Result.t
       =
       CCList.find_opt (fun (id, _) -> Session.Id.equal id session_id) data
-      |> CCOption.to_result Pool_common.Message.(Missing Field.Start)
+      |> CCOption.to_result Pool_message.(Error.Missing Field.Start)
       >|= snd
     in
     let created session = Session.Created session |> Pool_event.session in
@@ -496,12 +495,9 @@ module Update : sig
     -> Session.t
     -> Pool_location.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Session.base
@@ -526,7 +522,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Session in
     let open CCResult in
-    let open Pool_common in
+    let open Pool_message in
     let* duration, email_reminder_lead_time, text_message_reminder_lead_time =
       decode_time_durations command
     in
@@ -534,21 +530,18 @@ end = struct
       match Session.has_assignments session with
       | false -> Ok ()
       | true ->
-        let error field = Error (Message.CannotBeUpdated field) in
+        let error field = Error (Error.CannotBeUpdated field) in
         let* () =
-          if Start.equal session.start start
-          then Ok ()
-          else error Message.Field.Start
+          if Start.equal session.start start then Ok () else error Field.Start
         in
         if Duration.equal session.duration duration
         then Ok ()
-        else error Message.Field.Start
+        else error Field.Start
     in
     let* () = validate_start follow_up_sessions parent_session start in
     let* () =
       if max_participants < min_participants
-      then
-        Error Message.(Smaller (Field.MaxParticipants, Field.MinParticipants))
+      then Error (Error.Smaller (Field.MaxParticipants, Field.MinParticipants))
       else Ok ()
     in
     let session =
@@ -571,7 +564,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects exp_id = Session.Guard.Access.update exp_id
@@ -589,14 +582,11 @@ module Reschedule : sig
     -> (Contact.t
         -> Session.Start.t
         -> Session.Duration.t
-        -> (Email.job, Pool_common.Message.error) result)
+        -> (Email.job, Pool_message.Error.t) result)
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = reschedule
@@ -631,7 +621,7 @@ end = struct
       if Ptime.is_earlier
            ~than:(Ptime_clock.now ())
            (start |> Session.Start.value)
-      then Error Pool_common.Message.TimeInPast
+      then Error Pool_message.Error.TimeInPast
       else Ok ()
     in
     let* emails =
@@ -652,7 +642,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects exp_id = Session.Guard.Access.update exp_id
@@ -670,7 +660,7 @@ module Delete : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -684,7 +674,7 @@ end = struct
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     if CCList.is_empty follow_ups |> not
-    then Error Pool_common.Message.SessionHasFollowUps
+    then Error Pool_message.Error.SessionHasFollowUps
     else
       let* () = Session.is_deletable session in
       let delete_template =
@@ -705,16 +695,16 @@ module Cancel : sig
     :  ?tags:Logs.Tag.set
     -> Session.t list
     -> (Contact.t * Assignment.t list) list
-    -> (t -> Contact.t -> (Email.job, Pool_common.Message.error) result)
+    -> (t -> Contact.t -> (Email.job, Pool_message.Error.t) result)
     -> (t
         -> Contact.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.job, Pool_common.Message.error) result)
+        -> (Text_message.job, Pool_message.Error.t) result)
     -> Pool_common.NotifyVia.t list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Session.CancellationReason.t
@@ -757,7 +747,7 @@ end = struct
       in
       let fallback_to_email = CCList.mem ~eq:equal Email notify_via |> not in
       match notify_via with
-      | [] -> Error Pool_common.Message.(NoOptionSelected Field.NotifyVia)
+      | [] -> Error Pool_message.(Error.NoOptionSelected Field.NotifyVia)
       | notify_via ->
         notify_via
         |> CCList.flat_map (function
@@ -789,7 +779,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects exp_id = Session.Guard.Access.update exp_id
@@ -808,7 +798,7 @@ module Close : sig
     -> Session.t
     -> Tags.t list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -844,7 +834,7 @@ end = struct
         let* () =
           validate experiment assignment
           |> CCResult.map_err
-               (CCFun.const Pool_common.Message.AssignmentsHaveErrors)
+               (CCFun.const Pool_message.Error.AssignmentsHaveErrors)
         in
         let cancel_followups =
           NoShow.value no_show || not (Participated.value participated)
@@ -886,7 +876,10 @@ end = struct
             participation_tags
             |> CCList.map (fun (tag : t) ->
               Tagged
-                Tagged.{ model_uuid = Contact.id contact; tag_uuid = tag.id }
+                Tagged.
+                  { model_uuid = Contact.id contact |> Contact.Id.to_common
+                  ; tag_uuid = tag.id
+                  }
               |> Pool_event.tags)
         in
         let contact_events =
@@ -909,16 +902,16 @@ module ResendReminders : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> (Assignment.t -> (Email.job, Pool_common.Message.error) result)
+    -> (Assignment.t -> (Email.job, Pool_message.Error.t) result)
        * (Assignment.t
           -> Pool_user.CellPhone.t
-          -> (Text_message.job, Pool_common.Message.error) result)
+          -> (Text_message.job, Pool_message.Error.t) result)
     -> Session.t
     -> Assignment.t list
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_common.MessageChannel.t
@@ -975,7 +968,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects id = Session.Guard.Access.update id
@@ -1015,12 +1008,12 @@ module SendDirectMessage : sig
         -> Text_message.job)
     -> Assignment.t list
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode
     :  Pool_common.MessageChannel.t
     -> Conformist.input
-    -> (t, Conformist.error_msg) result
+    -> (t, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -1087,7 +1080,7 @@ end = struct
 
   let email_schema =
     let open Message_template in
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make
         Field.
           [ Pool_common.Language.schema ()
@@ -1104,7 +1097,7 @@ end = struct
 
   let sms_schema =
     let open Message_template in
-    Pool_common.Utils.PoolConformist.(
+    Pool_conformist.(
       make
         Field.
           [ Pool_common.Language.schema ()
@@ -1118,7 +1111,7 @@ end = struct
   let decode channel data =
     let open Pool_common.MessageChannel in
     let open CCResult.Infix in
-    CCResult.map_err Pool_common.Message.to_conformist_error
+    CCResult.map_err Pool_message.to_conformist_error
     @@
     match channel with
     | Email -> Conformist.decode_and_validate email_schema data >|= mail

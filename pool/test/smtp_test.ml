@@ -28,7 +28,7 @@ module Data = struct
   ;;
 
   module Urlencoded = struct
-    module Field = Pool_common.Message.Field
+    open Pool_message
 
     let label = Label.value smtp_label
     let server = Server.value server
@@ -105,7 +105,7 @@ let create_missing_username () =
       >>= smtp_of_command ~id:smtp_id
       >>= handle ~event_id None)
   in
-  let expected = Error Pool_common.Message.SmtpLoginMissingCredentials in
+  let expected = Error Pool_message.Error.SmtpLoginMissingCredentials in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

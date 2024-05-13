@@ -23,14 +23,15 @@ let update_password req =
     @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
        let* events =
          let open CCResult.Infix in
-         Cqrs_command.Admin_command.UpdatePassword.(
-           decode urlencoded >>= handle ~tags admin)
+         let open Cqrs_command.User_command.UpdatePassword in
+         decode urlencoded
+         >>= handle ~tags Admin.(admin |> id |> Id.to_user)
          |> Lwt_result.lift
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        redirect_to_with_actions
          active_navigation
-         [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]
+         [ Message.set ~success:[ Pool_message.Success.PasswordChanged ] ]
        |> Lwt_result.ok
   in
   result |> extract_happy_path_with_actions ~src req

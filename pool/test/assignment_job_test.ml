@@ -7,8 +7,8 @@ let pool = Data.database_label
 let get_exn = get_or_failwith
 let contact_id_1 = Contact.Id.create ()
 let contact_id_2 = Contact.Id.create ()
-let name_1 = "foo"
-let name_2 = "bar"
+let name_1 = Pool_user.Lastname.of_string "foo"
+let name_2 = Pool_user.Lastname.of_string "bar"
 let get_contact id = Contact.find pool id ||> get_exn
 let contacts () = Lwt.both (get_contact contact_id_1) (get_contact contact_id_2)
 let experiment_id = Experiment.Id.create ()
@@ -35,8 +35,8 @@ let create_notification experiment assignments =
 
 let init _ () =
   let open ContactRepo in
-  let%lwt c1 = create ~id:contact_id_1 ~name:name_1 () in
-  let%lwt c2 = create ~id:contact_id_2 ~name:name_2 () in
+  let%lwt c1 = create ~id:contact_id_1 ~lastname:name_1 () in
+  let%lwt c2 = create ~id:contact_id_2 ~lastname:name_2 () in
   let%lwt experiment = ExperimentRepo.create ~id:experiment_id () in
   let%lwt session = SessionRepo.create ~id:session_id experiment () in
   let sign_up = AssignmentRepo.create session in
@@ -74,7 +74,7 @@ let exclude_contact _ () =
     let predicate : Predicate.t =
       let key : Key.t = Key.(Hardcoded Name) in
       let operator = Operator.(Equality Equality.NotEqual) in
-      let value = Single (Str name_1) in
+      let value = Single (Str (Pool_user.Lastname.value name_1)) in
       Predicate.{ key; operator; value }
     in
     create None (Pred predicate)

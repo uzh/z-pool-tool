@@ -1,8 +1,8 @@
 open CCFun.Infix
 open Utils.Lwt_result.Infix
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.settings_role_permission"
 let active_navigation = "/admin/settings/role-permission"
@@ -56,7 +56,7 @@ let role_from_request req =
   HttpUtils.find_id of_name Field.Role req
   >>= fun role ->
   match CCList.mem ~eq:equal role customizable with
-  | false -> Error Pool_common.Message.(Invalid Field.Role)
+  | false -> Error (Error.Invalid Field.Role)
   | true -> Ok role
 ;;
 
@@ -66,7 +66,7 @@ let target_from_request req =
   HttpUtils.find_id of_name Field.Target req
   >>= fun target ->
   match CCList.mem ~eq:equal target customizable with
-  | false -> Error Pool_common.Message.(Invalid Field.Target)
+  | false -> Error (Error.Invalid Field.Target)
   | true -> Ok target
 ;;
 
@@ -74,7 +74,7 @@ let rule_from_request req role =
   let open Guard in
   let read str =
     CCResult.map_err
-      Pool_common.Message.authorization
+      Error.authorization
       (try (Yojson.Safe.from_string %> RolePermission.of_yojson) str with
        | _ -> Error "Undefined Yojson for rule.")
   in
@@ -84,7 +84,7 @@ let rule_from_request req role =
   >== fun rule ->
   if Role.Role.equal rule.RolePermission.role role
   then Ok rule
-  else Error Pool_common.Message.AccessDenied
+  else Error Error.AccessDenied
 ;;
 
 let index req =
@@ -182,14 +182,13 @@ let update req =
     in
     let handle =
       let open HttpUtils in
-      let open Pool_common.Message in
       function
       | Ok events ->
         let%lwt () =
           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
         in
         HttpUtils.Htmx.htmx_redirect
-          ~actions:[ Message.set ~success:[ Updated Field.Permission ] ]
+          ~actions:[ Message.set ~success:[ Success.Updated Field.Permission ] ]
           (Url.Admin.role_permission_path ~role ())
           ()
         |> Lwt_result.ok
@@ -225,15 +224,13 @@ let delete req =
       Cqrs_command.Guardian_command.DeleteRolePermission.handle ~tags rule
       |> Lwt_result.lift
     in
-    let handle =
-      let open Pool_common.Message in
-      function
+    let handle = function
       | Ok events ->
         let%lwt () =
           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
         in
-        redirect [ Message.set ~success:[ Deleted Field.Rule ] ]
-      | Error _ -> redirect [ Message.set ~error:[ NotFound Field.Rule ] ]
+        redirect [ Message.set ~success:[ Success.Deleted Field.Rule ] ]
+      | Error _ -> redirect [ Message.set ~error:[ Error.NotFound Field.Rule ] ]
     in
     events |> handle |> Lwt_result.ok
   in

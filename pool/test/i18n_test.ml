@@ -21,7 +21,7 @@ let update_terms_and_conditions () =
     let open I18nCommand.Update in
     terms
     |> CCList.map (fun i18n ->
-      [ Common.Message.Field.(show Translation), [ content ] ]
+      [ Pool_message.Field.(show Translation), [ content ] ]
       |> decode
       >>= handle i18n)
     |> CCResult.flatten_l

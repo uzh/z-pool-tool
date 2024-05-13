@@ -1,6 +1,6 @@
-module Database = Pool_database
+open CCFun.Infix
 module RepoEntity = Repo_entity
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 let sql_select_columns =
   [ Session.Id.sql_select_fragment ~field:"pool_sessions.uuid"
@@ -59,11 +59,8 @@ let find_request =
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_request
-    (Session.Id.value id)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+  Database.find_opt pool find_request (Session.Id.value id)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
 ;;
 
 let find_overlapping_request exclude =
@@ -75,7 +72,7 @@ let find_overlapping_request exclude =
       {sql|
         WHERE
           pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
-          AND pool_sessions.start <= $3 
+          AND pool_sessions.start <= $3
           AND %{end_at} >= $2
       |sql}]
   in
@@ -105,7 +102,7 @@ let find_overlapping ?exclude pool experiment_id ~start ~end_at =
     | Some id -> dyn |> add Repo.Id.t id
   in
   let request = find_overlapping_request exclude |> pt ->* RepoEntity.t in
-  Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  Database.collect pool request pv
 ;;
 
 let insert_request =
@@ -133,10 +130,7 @@ let insert_request =
 ;;
 
 let insert pool m =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    insert_request
-    (RepoEntity.Write.of_entity m)
+  Database.exec pool insert_request (RepoEntity.Write.of_entity m)
 ;;
 
 let update_request =
@@ -155,11 +149,8 @@ let update_request =
   |> RepoEntity.Write.t ->. Caqti_type.unit
 ;;
 
-let update pool m =
-  Utils.Database.exec
-    (Database.Label.value pool)
-    update_request
-    (RepoEntity.Write.of_entity m)
+let update pool =
+  RepoEntity.Write.of_entity %> Database.exec pool update_request
 ;;
 
 let query_by_experiment ?query pool id =
@@ -181,7 +172,7 @@ let query_by_experiment ?query pool id =
 let find_current_by_experiment_request =
   let open Caqti_request.Infix in
   {sql|
-      WHERE 
+      WHERE
         pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))
         AND pool_sessions.start < NOW()
         AND DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW()
@@ -193,9 +184,9 @@ let find_current_by_experiment_request =
 
 let find_current_by_experiment pool experiment_id =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
+  Database.find_opt
+    pool
     find_current_by_experiment_request
     (Experiment.Id.to_common experiment_id)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.TimeWindow)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.TimeWindow)
 ;;

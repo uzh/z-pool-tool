@@ -43,18 +43,18 @@ let predicate_of_yojson key_list (yojson : Yojson.Safe.t) =
     let operator = go operator_string (Operator.of_yojson %> of_result) in
     let value = go value_string value_of_yojson_opt in
     Predicate.create_human ?key ?operator ?value () |> CCResult.return
-  | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
+  | _ -> Error Pool_message.(Error.Invalid Field.Predicate)
 ;;
 
 let rec of_yojson (key_list : Entity.Key.human list) json
-  : (t, Pool_common.Message.error) result
+  : (t, Pool_message.Error.t) result
   =
   let open CCResult in
-  let error = Pool_common.Message.(Invalid Field.Query) in
+  let error = Pool_message.(Error.Invalid Field.Query) in
   let of_yojson = of_yojson key_list in
   let not_empty l =
     match l with
-    | [] -> Error Pool_common.Message.FilterAndOrMustNotBeEmpty
+    | [] -> Error Pool_message.Error.FilterAndOrMustNotBeEmpty
     | _ -> Ok l
   in
   let of_list to_predicate queries =

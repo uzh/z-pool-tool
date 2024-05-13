@@ -1,16 +1,13 @@
 module MailingCommand = Cqrs_command.Mailing_command
-module Conformist = Pool_common.Utils.PoolConformist
-module Field = Pool_common.Message.Field
+module Conformist = Pool_conformist
+module Field = Pool_message.Field
 module Model = Test_utils.Model
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 module Data = struct
   let norm_ptime m =
-    m
-    |> Ptime.to_rfc3339
-    |> Pool_common.Utils.Time.parse_time
-    |> get_or_failwith
+    m |> Ptime.to_rfc3339 |> Pool_model.Time.parse_time |> get_or_failwith
   ;;
 
   module Mailing = struct
@@ -79,8 +76,8 @@ let create_mailing () =
     ; end_at
     ; limit
     ; distribution = Some (distribution |> Distribution.create_sorted)
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 
@@ -167,7 +164,7 @@ let create_end_before_start () =
     |> get_or_failwith
     |> handle ~id:Data.Mailing.id experiment
   in
-  let expected = Error Pool_common.Message.EndBeforeStart in
+  let expected = Error Pool_message.Error.EndBeforeStart in
   Test_utils.check_result expected events
 ;;
 

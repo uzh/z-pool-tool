@@ -37,12 +37,7 @@ let find_by_contact_request =
     AND
       pool_assignments.participated = 1
   |sql}
-  |> Caqti_type.string ->* RepoEntity.ExternalDataIdentifier.t
+  |> Contact.Repo.Id.t ->* RepoEntity.ExternalDataIdentifier.t
 ;;
 
-let find_by_contact pool contact_id =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    find_by_contact_request
-    (Contact.Id.value contact_id)
-;;
+let find_by_contact pool = Database.collect pool find_by_contact_request

@@ -1,20 +1,18 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Url = Page.Admin.CustomFields.Url
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.admin.custom_field_options"
 let create_layout req = General.create_tenant_layout req
 
 let get_option_id req =
-  HttpUtils.get_field_router_param
-    req
-    Pool_common.Message.Field.CustomFieldOption
+  HttpUtils.get_field_router_param req Pool_message.Field.CustomFieldOption
   |> Custom_field.SelectOption.Id.of_string
 ;;
 
 let get_field_id req =
-  HttpUtils.get_field_router_param req Pool_common.Message.Field.CustomField
+  HttpUtils.get_field_router_param req Pool_message.Field.CustomField
   |> Custom_field.Id.of_string
 ;;
 
@@ -88,7 +86,7 @@ let write ?id req custom_field =
     let go field =
       Admin_custom_fields.find_assocs_in_urlencoded urlencoded field
     in
-    go Message.Field.Name encode_lang
+    go Pool_message.Field.Name encode_lang
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
@@ -118,7 +116,7 @@ let write ?id req custom_field =
         Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
       in
       let success =
-        let open Pool_common.Message in
+        let open Pool_message.Success in
         if CCOption.is_some id
         then Updated Field.CustomFieldOption
         else Created Field.CustomFieldOption
@@ -160,7 +158,7 @@ let toggle_action action req =
         | `Publish -> Publish.handle ~tags option
       in
       let success =
-        let open Pool_common.Message in
+        let open Pool_message.Success in
         match action with
         | `Delete -> Deleted Field.CustomFieldOption
         | `Publish -> Published Field.CustomFieldOption

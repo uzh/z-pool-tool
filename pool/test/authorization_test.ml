@@ -6,7 +6,7 @@ let update_language_as actor =
     |> Contact_test.create_contact true
   in
   let* tenant = Pool_tenant.find_by_label Test_utils.Data.database_label in
-  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
+  let ctx = Database.to_ctx Test_utils.Data.database_label in
   let effects =
     Cqrs_command.Contact_command.Update.effects (Contact.id subject)
   in
@@ -26,41 +26,46 @@ let update_language_as actor =
   Lwt.return_ok ()
 ;;
 
-let recruiter_can_update_contact_language _ () =
+let recruiter_can_update_contact_language =
+  let database_label = Test_utils.Data.database_label in
+  Test_utils.case
+  @@ fun () ->
   let open Utils.Lwt_result.Infix in
-  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
+  let ctx = Database.to_ctx database_label in
   let%lwt actor =
     let open Guard.Persistence in
     ActorRole.find_actors_by_role ~ctx (`Recruiter, None)
-    ||> CCList.hd
-    >|> Actor.find Test_utils.Data.database_label
+    ||> (function
+           | [] -> failwith "No actors with role `Recruiter found."
+           | hd :: _ -> hd)
+    >|> Actor.find database_label
     ||> CCResult.get_or_failwith
   in
   let%lwt actual = update_language_as actor in
   Alcotest.(check (result unit Test_utils.error))
     "Admin can update a contact."
     (Ok ())
-    actual
-  |> Lwt.return
+    actual;
+  Lwt.return_ok ()
 ;;
 
 let guest_cannot_update_language _ () =
   let%lwt actual = update_language_as Guard.guest_authorizable in
   Alcotest.(check (result unit Test_utils.error))
     "Guest cannot update a contact."
-    (Error (Pool_common.Message.authorization "Failure"))
+    (Error (Pool_message.Error.authorization "Failure"))
     (CCResult.map_err
-       (fun _ -> Pool_common.Message.authorization "Failure")
+       (fun _ -> Pool_message.Error.authorization "Failure")
        actual)
   |> Lwt.return
 ;;
 
 let operator_works _ () =
-  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
+  let ctx = Database.to_ctx Test_utils.Data.database_label in
   let%lwt actual =
     let open Utils.Lwt_result.Infix in
     let open Guard in
-    let to_error = Pool_common.Message.authorization in
+    let to_error = Pool_message.Error.authorization in
     let target =
       "chris@gmail.com"
       |> Contact_test.contact_info

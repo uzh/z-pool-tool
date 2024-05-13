@@ -1,6 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.admin.contacts"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
@@ -94,12 +94,12 @@ let detail_view action req =
     @@ let* actor = Pool_context.Utils.find_authorizable database_label user in
        let* contact =
          HttpUtils.get_field_router_param req Field.Contact
-         |> Pool_common.Id.of_string
+         |> Contact.Id.of_string
          |> Contact.find database_label
        in
        let%lwt contact_tags =
          Tags.(find_all_of_entity database_label Model.Contact)
-           (Contact.id contact)
+           (Contact.id contact |> Contact.Id.to_common)
        in
        match action with
        | `Show ->
@@ -193,7 +193,7 @@ let update req =
   let result { Pool_context.database_label; _ } =
     let%lwt contact =
       HttpUtils.get_field_router_param req Field.Contact
-      |> Pool_common.Id.of_string
+      |> Contact.Id.of_string
       |> Contact.find database_label
     in
     match contact with
@@ -211,20 +211,20 @@ let promote req =
   let tags = Pool_context.Logger.Tags.req req in
   let contact_id = contact_id req in
   let error_path =
-    Format.asprintf "/admin/contacts/%s/edit" (Pool_common.Id.value contact_id)
+    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value contact_id)
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let open Cqrs_command.Admin_command.PromoteContact in
     let* contact = contact_id |> Contact.find database_label in
-    handle ~tags (Contact.id contact)
+    handle ~tags Contact.(id contact |> Id.to_user)
     |> Lwt_result.lift
     |>> Pool_event.handle_events ~tags database_label
     |>> fun () ->
     HttpUtils.redirect_to_with_actions
-      (Format.asprintf "/admin/admins/%s" (Pool_common.Id.value contact_id))
-      [ Message.set ~success:[ Pool_common.Message.ContactPromoted ] ]
+      (Format.asprintf "/admin/admins/%s" (Contact.Id.value contact_id))
+      [ Message.set ~success:[ Pool_message.Success.ContactPromoted ] ]
   in
   result |> HttpUtils.Htmx.extract_happy_path ~src req
 ;;
@@ -234,7 +234,7 @@ let delete_answer req =
   let tags = Pool_context.Logger.Tags.req req in
   let contact_id = contact_id req in
   let error_path =
-    Format.asprintf "/admin/contacts/%s/edit" (Pool_common.Id.value contact_id)
+    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value contact_id)
   in
   let result { Pool_context.database_label; user; language; _ } =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
@@ -418,7 +418,7 @@ let enroll_contact_post req =
       in
       HttpUtils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.AssignmentCreated ] ]
+        [ Message.set ~success:[ Pool_message.Success.AssignmentCreated ] ]
     in
     events |>> handle
   in

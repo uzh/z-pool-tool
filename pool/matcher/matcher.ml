@@ -2,7 +2,7 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "matcher.service"
-let tags = Pool_database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create root)
 
 type config =
   { start : bool option
@@ -77,8 +77,7 @@ let sort_contacts contacts =
   | false -> contacts
   | true ->
     CCList.stable_sort
-      (fun c1 c2 ->
-        Contact.(CCString.compare (id c1 |> Id.value) (id c2 |> Id.value)))
+      (fun c1 c2 -> Contact.(Id.compare (id c1) (id c2)))
       contacts
 ;;
 
@@ -173,12 +172,12 @@ let events_of_mailings =
   let ok_or_log_error = function
     | Ok (pool, events) when CCList.is_empty events ->
       Logs.info ~src (fun m ->
-        m ~tags:(Pool_database.Logger.Tags.create pool) "No action");
+        m ~tags:(Database.Logger.Tags.create pool) "No action");
       None
     | Ok m -> Some m
     | Error err ->
       let open Pool_common in
-      let (_ : Message.error) = Utils.with_log_error ~tags err in
+      let (_ : Pool_message.Error.t) = Utils.with_log_error ~tags err in
       None
   in
   Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
@@ -265,7 +264,7 @@ let create_invitation_events interval pools =
                  in
                  let validate = function
                    | true -> Ok status
-                   | false -> Error Pool_common.Message.SessionFullyBooked
+                   | false -> Error Pool_message.Error.SessionFullyBooked
                  in
                  mailing
                  |> find_experiment
@@ -295,7 +294,7 @@ let match_invitations interval pools =
     Lwt_list.iter_s (fun (pool, events) ->
       Logs.info ~src (fun m ->
         m
-          ~tags:(Pool_database.Logger.Tags.create pool)
+          ~tags:(Database.Logger.Tags.create pool)
           "Sending %4d intivation emails"
           (count_mails events));
       Pool_event.handle_events pool events)
@@ -308,8 +307,7 @@ let start_matcher () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s (5 * 60) in
   let periodic_fcn () =
-    Logs.debug ~src (fun m ->
-      m ~tags:Pool_database.(Logger.Tags.create root) "Run");
+    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
     Pool_tenant.find_all ()
     ||> CCList.map (fun Pool_tenant.{ database_label; _ } -> database_label)
     >|> match_invitations interval

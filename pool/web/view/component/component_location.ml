@@ -4,9 +4,7 @@ let formatted_address language address =
   let open Pool_location.Address in
   (match address with
    | Virtual ->
-     Pool_common.Utils.field_to_string
-       language
-       Pool_common.Message.Field.Virtual
+     Pool_common.Utils.field_to_string language Pool_message.Field.Virtual
      |> CCString.capitalize_ascii
      |> CCList.pure
    | Physical Mail.{ institution; room; building; street; zip; city } ->
@@ -37,7 +35,7 @@ let preview (location : Pool_location.t) =
      let url =
        Format.asprintf
          "%s/%s"
-         Pool_common.Message.Field.(human_url Location)
+         Pool_message.Field.(human_url Location)
          (Id.value location.id)
        |> Sihl.Web.externalize_path
      in

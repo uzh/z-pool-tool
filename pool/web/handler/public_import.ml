@@ -1,5 +1,5 @@
 open Utils.Lwt_result.Infix
-open Pool_common.Message
+open Pool_message
 
 let src = Logs.Src.create "handler.public.import"
 
@@ -14,19 +14,18 @@ let user_and_import_from_token database_label token =
   |> User_import.find_pending_by_token database_label
   >>= fun ({ User_import.user_uuid; _ } as import) ->
   user_uuid
-  |> Pool_common.Id.value
-  |> Service.User.find ~ctx:(Pool_database.to_ctx database_label)
-  >|> user_of_sihl_user database_label
+  |> Pool_user.find_exn database_label
+  >|> context_user_of_user database_label
   ||> fun user ->
   match user with
-  | Guest -> Error Field.(Invalid Token)
+  | Guest -> Error (Error.Invalid Field.Token)
   | Admin _ | Contact _ -> Ok (import, user)
 ;;
 
 let user_import_from_req database_label req =
   let open Utils.Lwt_result.Infix in
   Sihl.Web.Request.query Field.(show Token) req
-  |> CCOption.to_result Field.(NotFound Token)
+  |> CCOption.to_result (Error.NotFound Field.Token)
   |> Lwt_result.lift
   >== User_import.Token.create
   >>= user_and_import_from_token database_label
@@ -73,7 +72,7 @@ let import_confirmation_post req =
       ; Field.Token, token >|= User_import.Token.value
       ]
       |> CCList.filter_map (fun (key, value) -> value >|= CCPair.make key)
-      |> Pool_common.Message.add_field_query_params "/import-confirmation"
+      |> add_field_query_params "/import-confirmation"
     in
     let* ({ User_import.token; _ } as user_import), user =
       urlencoded
@@ -100,7 +99,7 @@ let import_confirmation_post req =
     Http_utils.(
       redirect_to_with_actions
         (path_with_language query_language "/login")
-        [ Message.set ~success:[ ImportCompleted ] ])
+        [ Message.set ~success:[ Success.ImportCompleted ] ])
     |> Lwt_result.ok
   in
   result |> Http_utils.extract_happy_path ~src req
@@ -127,7 +126,7 @@ let contact_import_from_req
   user_import_from_req database_label req
   >|> function
   | Error err ->
-    let (_ : error) = Pool_common.Utils.with_log_error ~src ~tags err in
+    let (_ : Error.t) = Pool_common.Utils.with_log_error ~src ~tags err in
     not_found context
   | Ok (_, Admin _) | Ok (_, Guest) -> not_found context
   | Ok ({ User_import.token; _ }, Contact contact) ->
@@ -168,9 +167,7 @@ let unsubscribe_post req =
           Http_utils.(
             redirect_to_with_actions
               (path_with_language query_language "/index")
-              [ Message.set
-                  ~success:[ Pool_common.Message.(PausedToggled true) ]
-              ]))
+              [ Message.set ~success:[ Success.PausedToggled true ] ]))
   in
   result |> Http_utils.extract_happy_path ~src req
 ;;

@@ -10,7 +10,7 @@ module Actor = struct
       (fun ({ Entity.id; _ } : t) ->
         Actor.create `System (id |> Uuid.actor_of Pool_common.Id.value))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -22,9 +22,9 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun ({ Entity.id; _ } : t) ->
-        Target.create `Tenant (id |> Uuid.target_of Pool_common.Id.value))
+        Target.create `Tenant (id |> Uuid.target_of Entity.Id.value))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

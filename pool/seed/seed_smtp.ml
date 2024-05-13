@@ -13,8 +13,7 @@ let create database_label =
     , Default.create true )
   in
   Write.create
-    (Label.create (database_label |> Pool_database.Label.value)
-     |> get_or_failwith)
+    (Label.create (database_label |> Database.Label.value) |> get_or_failwith)
     (Server.create server |> get_or_failwith)
     (Port.create port |> get_or_failwith)
     (CCOption.map CCFun.(Username.create %> get_or_failwith) username)

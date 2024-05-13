@@ -2,7 +2,6 @@ open CCFun
 open Utils.Lwt_result.Infix
 open Entity
 module History = Queue.History
-module Queue = Sihl_queue.MariaDb
 module CellPhone = Pool_user.CellPhone
 
 type message =
@@ -10,14 +9,14 @@ type message =
   | EmailJob of Email.job
 
 let src = Logs.Src.create "pool_tenant.service.text_message"
-let tags database_label = Pool_database.(Logger.Tags.create database_label)
+let tags database_label = Database.(Logger.Tags.create database_label)
 let start () = Lwt.return_unit
 let stop () = Lwt.return_unit
 
 let lifecycle =
   Sihl.Container.create_lifecycle
     "text_messages"
-    ~dependencies:(fun () -> [ Database.lifecycle ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
     ~stop
 ;;
@@ -137,7 +136,7 @@ let intercept_prepare database_label ({ message; _ } as job) =
     |> Lwt.return_ok
   | false, None ->
     Lwt.return_error
-      (Pool_common.Message.TextMessageInterceptionError
+      (Pool_message.Error.TextMessageInterceptionError
          "Sending text message intercepted! As no redirect email is specified \
           it/they wont be sent. Please define environment variable \
           'TEXT_MESSAGE_INTERCEPT_ADDRESS'.")
@@ -158,15 +157,8 @@ let send_message api_key msg =
   Lwt.return (resp, body_string)
 ;;
 
-let handle ?ctx { message; _ } =
+let handle database_label { message; _ } =
   let open Sihl.Configuration in
-  let database_label =
-    let open CCOption in
-    ctx
-    >>= CCList.assoc_opt ~eq:( = ) "pool"
-    >|= Pool_database.Label.create %> Pool_common.Utils.get_or_failwith
-    |> get_exn_or "Invalid context passed!"
-  in
   let%lwt api_key = get_api_key database_label in
   let tags = tags database_label in
   match is_production () || bypass () with
@@ -218,7 +210,7 @@ let test_api_key ~tags api_key cell_phone tenant_title =
            (response_to_string resp)
        in
        Logs.err ~src (fun m -> m ~tags "%s" error);
-       Lwt.return_error Pool_common.Message.(Invalid Field.GtxApiKey)
+       Lwt.return_error Pool_message.(Error.Invalid Field.GtxApiKey)
      | true ->
        Logs.info ~src (fun m ->
          m
@@ -229,10 +221,10 @@ let test_api_key ~tags api_key cell_phone tenant_title =
            body_string);
        Lwt.return_ok api_key)
   | false ->
-    let (_ : Pool_common.Message.error) =
+    let (_ : Pool_message.Error.t) =
       Pool_common.Utils.with_log_error
         ~level:Logs.Warning
-        (Pool_common.Message.TextMessageInterceptionError
+        (Pool_message.Error.TextMessageInterceptionError
            "Verifying API Key: Skip validation due to non production \
             environment!")
     in
@@ -243,40 +235,38 @@ module Job = struct
   let send =
     let encode = Entity.yojson_of_job %> Yojson.Safe.to_string in
     let decode = parse_job_json in
-    Sihl.Contract.Queue.create_job
+    let open Queue in
+    Job.create
       handle
       ~max_tries:10
       ~retry_delay:(Sihl.Time.Span.hours 1)
       encode
       decode
-      "send_text_message"
+      JobName.SendTextMessage
   ;;
 end
 
-let callback database_label (job_instance : Sihl_queue.instance) =
-  let job =
-    parse_job_json job_instance.Sihl_queue.input |> CCResult.get_or_failwith
-  in
-  match job.message_history with
-  | None -> Lwt.return_unit
-  | Some message_history ->
-    History.create_from_queue_instance
-      database_label
-      message_history
-      job_instance
+let callback database_label instance =
+  instance
+  |> Queue.Instance.input
+  |> parse_job_json
+  |> CCResult.get_or_failwith
+  |> Entity.job_message_history
+  |> CCOption.map_or
+       ~default:Lwt.return_unit
+       (flip (History.create_from_queue_instance database_label) instance)
 ;;
 
 let send database_label (job : Entity.job) =
-  let ctx = Pool_database.to_ctx database_label in
   let callback = callback database_label in
   Logs.debug ~src (fun m ->
     m
-      ~tags:(Pool_database.Logger.Tags.create database_label)
+      ~tags:(Database.Logger.Tags.create database_label)
       "Dispatch text message to %s"
       (Pool_user.CellPhone.value job.message.recipient));
   intercept_prepare database_label job
   ||> Pool_common.Utils.get_or_failwith
   >|> function
-  | TextMessageJob job -> Queue.dispatch ~callback ~ctx job Job.send
-  | EmailJob job -> Queue.dispatch ~ctx job Email.Service.Job.send
+  | TextMessageJob job -> Queue.dispatch ~callback database_label job Job.send
+  | EmailJob job -> Queue.dispatch database_label job Email.Service.Job.send
 ;;

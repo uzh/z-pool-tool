@@ -1,5 +1,5 @@
 module Id : sig
-  include Pool_common.Model.IdSig
+  include Pool_model.Base.IdSig
 
   val to_common : t -> Pool_common.Id.t
   val of_common : Pool_common.Id.t -> t
@@ -10,7 +10,7 @@ module Model : sig
     | Contact
     | Experiment
 
-  val field : Pool_common.Message.Field.t
+  val field : Pool_message.Field.t
   val min : int
   val max : int
   val to_enum : t -> int
@@ -22,12 +22,12 @@ module Model : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val schema : unit -> ('a, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> ('a, t) Pool_conformist.Field.t
   val all : t list
 end
 
-module Title : Pool_common.Model.StringSig
-module Description : Pool_common.Model.StringSig
+module Title : Pool_model.Base.StringSig
+module Description : Pool_model.Base.StringSig
 
 module Tagged : sig
   type t =
@@ -57,7 +57,7 @@ val create
   -> ?description:Description.t
   -> Title.t
   -> Model.t
-  -> (t, Pool_common.Message.error) result
+  -> (t, Pool_message.Error.t) result
 
 module ParticipationTags : sig
   type entity =
@@ -65,8 +65,8 @@ module ParticipationTags : sig
     | Session of Pool_common.Id.t
 
   val get_id : entity -> Pool_common.Id.t
-  val find_all : Pool_database.Label.t -> entity -> t list Lwt.t
-  val find_available : Pool_database.Label.t -> entity -> t list Lwt.t
+  val find_all : Database.Label.t -> entity -> t list Lwt.t
+  val find_available : Database.Label.t -> entity -> t list Lwt.t
 end
 
 type event =
@@ -84,47 +84,35 @@ val created : t -> event
 val updated : t -> event
 val tagged : Tagged.t -> event
 val untagged : Tagged.t -> event
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
-
-val find_multiple
-  :  Pool_database.Label.t
-  -> Id.t list
-  -> (Id.t * Title.t) list Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_multiple : Database.Label.t -> Id.t list -> (Id.t * Title.t) list Lwt.t
 
 val search_by_title
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> ?model:Model.t
   -> ?exclude:Id.t list
   -> string
   -> (Id.t * Title.t) list Lwt.t
 
-val find_by
-  :  ?query:Query.t
-  -> Pool_database.Label.t
-  -> (t list * Query.t) Lwt.t
-
-val find_all_with_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
+val find_by : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val find_all_with_model : Database.Label.t -> Model.t -> t list Lwt.t
 
 val find_all_of_entity
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Model.t
   -> Pool_common.Id.t
   -> t list Lwt.t
 
 val find_all_validated
   :  ?permission:Guard.Permission.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Guard.Actor.t
   -> t list Lwt.t
 
 val find_all_validated_with_model
   :  ?permission:Guard.Permission.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Model.t
   -> Guard.Actor.t
   -> t list Lwt.t
@@ -132,32 +120,28 @@ val find_all_validated_with_model
 val create_find_all_tag_sql : string -> string -> string
 
 val already_exists
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> ?exclude_id:Id.t
   -> Title.t
   -> Model.t
   -> bool Lwt.t
 
-val insert
-  :  Pool_database.Label.t
-  -> t
-  -> (unit, Pool_common.Message.error) result Lwt.t
-
-val update : Pool_database.Label.t -> t -> unit Lwt.t
+val insert : Database.Label.t -> t -> (unit, Pool_message.Error.t) Lwt_result.t
+val update : Database.Label.t -> t -> unit Lwt.t
 
 val insert_tagged
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Tagged.t
-  -> (unit, Pool_common.Message.error) result Lwt.t
+  -> (unit, Pool_message.Error.t) Lwt_result.t
 
-val delete_tagged : Pool_database.Label.t -> Tagged.t -> unit Lwt.t
+val delete_tagged : Database.Label.t -> Tagged.t -> unit Lwt.t
 
 module Guard : sig
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

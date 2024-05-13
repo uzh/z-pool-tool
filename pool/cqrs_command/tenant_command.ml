@@ -6,7 +6,7 @@ module GenerateStatusReport : sig
   val handle
     :  t
     -> Pool_tenant.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct

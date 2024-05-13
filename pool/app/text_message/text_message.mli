@@ -16,10 +16,10 @@ val create : Pool_user.CellPhone.t -> Pool_tenant.Title.t -> Content.t -> t
 type job =
   { message : t
   ; message_history : Queue.History.create option
-  ; resent : Pool_common.Id.t option
+  ; resent : Queue.Id.t option
   }
 
-val parse_job_json : string -> (job, Pool_common.Message.error) result
+val parse_job_json : string -> (job, Pool_message.Error.t) result
 val yojson_of_job : job -> Yojson.Safe.t
 val job_message_history : job -> Queue.History.create option
 val create_job : ?message_history:Queue.History.create -> t -> job
@@ -38,13 +38,13 @@ module Service : sig
     -> Pool_tenant.GtxApiKey.t
     -> Pool_user.CellPhone.t
     -> Pool_tenant.Title.t
-    -> (Pool_tenant.GtxApiKey.t, Pool_common.Message.error) result Lwt.t
+    -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
 
   module Job : sig
-    val send : job Sihl_queue.job
+    val send : job Queue.Job.t
   end
 
-  val send : Pool_database.Label.t -> job -> unit Lwt.t
+  val send : Database.Label.t -> job -> unit Lwt.t
 end
 
 type event =
@@ -54,6 +54,6 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val sent : job -> event
 val bulksent : job list -> event

@@ -14,7 +14,7 @@ let find_default_by_label_and_language pool language label =
         Pool_common.(
           Utils.error_to_string
             Language.En
-            Message.(NotFound Field.MessageTemplate))
+            Pool_message.(Error.NotFound Field.MessageTemplate))
 ;;
 
 let find_default_by_label = Repo.find_default_by_label
@@ -102,10 +102,10 @@ let layout_params layout =
 
 let global_params layout user =
   Pool_user.
-    [ "contactId", user.Sihl_user.id
-    ; "name", user |> user_fullname
-    ; "firstname", user |> user_firstname |> Firstname.value
-    ; "lastname", user |> user_lastname |> Lastname.value
+    [ "contactId", user.Pool_user.id |> Pool_user.Id.value
+    ; "name", user |> fullname
+    ; "firstname", user |> firstname |> Firstname.value
+    ; "lastname", user |> lastname |> Lastname.value
     ]
   @ layout_params layout
 ;;
@@ -205,11 +205,9 @@ let session_params
       in
       [ main_session; follow_ups ] |> CCString.concat "\n\n"
   in
-  let start =
-    start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
-  in
+  let start = start |> Start.value |> Pool_model.Time.formatted_date_time in
   let duration =
-    duration |> Duration.value |> Pool_common.Utils.Time.formatted_timespan
+    duration |> Duration.value |> Pool_model.Time.formatted_timespan
   in
   let description =
     session.public_description
@@ -242,7 +240,7 @@ let assignment_params { Assignment.id; external_data_id; _ } =
 ;;
 
 let user_message_history label user =
-  let entity_uuids = [ user.Sihl_user.id |> Pool_common.Id.of_string ] in
+  let entity_uuids = [ user.Pool_user.id |> Pool_user.Id.to_common ] in
   Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
 ;;
 
@@ -283,9 +281,9 @@ module AccountSuspensionNotification = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let%lwt system_languages = Settings.find_languages database_label in
-    let email = user.Sihl_user.email |> Pool_user.EmailAddress.of_string in
+    let email = user.Pool_user.email in
     let* language =
-      match user.Sihl_user.admin with
+      match Pool_user.is_admin user with
       | true -> Lwt_result.return Pool_common.Language.En
       | false ->
         email
@@ -448,7 +446,7 @@ module AssignmentSessionChange = struct
       [ experiment.Experiment.id |> Experiment.Id.to_common
       ; new_session.Session.id |> Session.Id.to_common
       ; old_session.Session.id |> Session.Id.to_common
-      ; contact |> Contact.id
+      ; contact |> Contact.id |> Contact.Id.to_common
       ]
     in
     Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
@@ -502,8 +500,7 @@ module ContactEmailChangeAttempt = struct
     global_params layout user
     @ [ "tenantUrl", Pool_tenant.Url.value tenant_url
       ; "resetUrl", reset_url
-      ; ( "emailAddress"
-        , Pool_user.EmailAddress.value (Pool_user.user_email_address user) )
+      ; "emailAddress", Pool_user.EmailAddress.value (Pool_user.email user)
       ]
   ;;
 
@@ -532,7 +529,7 @@ module ContactEmailChangeAttempt = struct
         message_language
         template
         sender
-        (Pool_user.user_email_address user)
+        (Pool_user.email user)
         layout
         (email_params layout tenant_url user)
     in
@@ -550,8 +547,7 @@ module ContactRegistrationAttempt = struct
     global_params layout user
     @ [ "tenantUrl", Pool_tenant.Url.value tenant_url
       ; "resetUrl", reset_url
-      ; ( "emailAddress"
-        , Pool_user.EmailAddress.value (Pool_user.user_email_address user) )
+      ; "emailAddress", Pool_user.EmailAddress.value (Pool_user.email user)
       ]
   ;;
 
@@ -568,7 +564,7 @@ module ContactRegistrationAttempt = struct
         message_language
         template
         sender
-        (Pool_user.user_email_address user)
+        (Pool_user.email user)
         layout
         (email_params layout tenant_url user)
     in
@@ -594,9 +590,9 @@ module EmailVerification = struct
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let validation_url =
       Pool_common.
-        [ ( Message.Field.Language
+        [ ( Pool_message.Field.Language
           , language |> Language.show |> CCString.lowercase_ascii )
-        ; Message.Field.Token, Email.Token.value token
+        ; Pool_message.Field.Token, Email.Token.value token
         ]
       |> create_public_url_with_params url "/email-verified"
     in
@@ -697,7 +693,7 @@ module ManualSessionMessage = struct
     let entity_uuids =
       [ experiment.Experiment.id |> Experiment.Id.to_common
       ; session.Session.id |> Session.Id.to_common
-      ; contact |> Contact.id
+      ; contact |> Contact.id |> Contact.Id.to_common
       ]
     in
     Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
@@ -855,7 +851,7 @@ module PasswordChange = struct
     let pool = tenant.Pool_tenant.database_label in
     let%lwt template = find_by_label_and_language_to_send pool label language in
     let layout = layout_from_tenant tenant in
-    let email_address = Pool_user.user_email_address user in
+    let email_address = Pool_user.email user in
     let%lwt sender = default_sender_of_pool pool in
     let email =
       prepare_email
@@ -881,7 +877,7 @@ module PasswordReset = struct
 
   let create pool language layout user =
     let open Utils.Lwt_result.Infix in
-    let email = Pool_user.user_email_address user in
+    let email = Pool_user.email user in
     let%lwt template =
       find_by_label_and_language_to_send pool Label.PasswordReset language
     in
@@ -889,21 +885,17 @@ module PasswordReset = struct
     let%lwt sender = default_sender_of_pool pool in
     let open Pool_common in
     let* reset_token =
-      Service.PasswordReset.create_reset_token
-        ~ctx:(Pool_database.to_ctx pool)
-        (Pool_user.EmailAddress.value email)
+      Pool_user.Password.Reset.create_token pool email
       ||> function
       | None ->
         Logs.err ~src (fun m ->
-          m
-            ~tags:(Pool_database.Logger.Tags.create pool)
-            "Reset token not found");
-        Error Message.PasswordResetFailMessage
+          m ~tags:(Database.Logger.Tags.create pool) "Reset token not found");
+        Error Pool_message.Error.PasswordResetFailMessage
       | Some token -> Ok token
     in
     let layout = create_layout layout in
     let reset_url =
-      Message.
+      Pool_message.
         [ Field.Token, reset_token
         ; Field.Language, language |> Language.show |> CCString.lowercase_ascii
         ]
@@ -1243,7 +1235,7 @@ module SessionReschedule = struct
 
   let email_params lang layout experiment session new_start new_duration contact
     =
-    let open Pool_common.Utils.Time in
+    let open Pool_model.Time in
     let open Session in
     global_params layout contact.Contact.user
     @ [ "newStart", new_start |> Start.value |> formatted_date_time
@@ -1297,9 +1289,8 @@ module SignUpVerification = struct
   let label = Label.SignUpVerification
 
   let email_params layout verification_url firstname lastname =
-    let open Pool_user in
-    let firstname = firstname |> Firstname.value in
-    let lastname = lastname |> Lastname.value in
+    let firstname = firstname |> Pool_user.Firstname.value in
+    let lastname = lastname |> Pool_user.Lastname.value in
     [ "name", Format.asprintf "%s %s" firstname lastname
     ; "firstname", firstname
     ; "lastname", lastname
@@ -1310,7 +1301,7 @@ module SignUpVerification = struct
 
   let message_history user_id =
     let open Queue.History in
-    { entity_uuids = [ user_id ]
+    { entity_uuids = [ user_id |> Contact.Id.to_common |> Id.of_common ]
     ; message_template = Label.show label |> CCOption.return
     }
   ;;
@@ -1322,9 +1313,9 @@ module SignUpVerification = struct
     let%lwt sender = default_sender_of_pool pool in
     let verification_url =
       Pool_common.
-        [ ( Message.Field.Language
+        [ ( Pool_message.Field.Language
           , language |> Language.show |> CCString.lowercase_ascii )
-        ; Message.Field.Token, Email.Token.value token
+        ; Pool_message.Field.Token, Email.Token.value token
         ]
       |> create_public_url_with_params url "/email-verified"
     in
@@ -1346,12 +1337,12 @@ end
 module UserImport = struct
   let label = Label.UserImport
 
-  let sihl_user = function
+  let to_user = function
     | `Admin admin -> Admin.user admin
     | `Contact contact -> Contact.user contact
   ;;
 
-  let message_history user = user |> sihl_user |> user_message_history label
+  let message_history user = user |> to_user |> user_message_history label
 
   let email_address = function
     | `Admin admin -> Admin.email_address admin
@@ -1365,7 +1356,7 @@ module UserImport = struct
   ;;
 
   let email_params layout confirmation_url user =
-    let user = sihl_user user in
+    let user = to_user user in
     global_params layout user @ [ "confirmationUrl", confirmation_url ]
   ;;
 
@@ -1387,9 +1378,9 @@ module UserImport = struct
     let language = language default_language user in
     let confirmation_url =
       Pool_common.
-        [ ( Message.Field.Language
+        [ ( Pool_message.Field.Language
           , language |> Language.show |> CCString.lowercase_ascii )
-        ; Message.Field.Token, token
+        ; Pool_message.Field.Token, token
         ]
       |> create_public_url_with_params url "/import-confirmation"
     in

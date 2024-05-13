@@ -7,14 +7,11 @@
   assignment_job
   caqti-driver-mariadb
   command
-  database
   guard
   pool_canary
   queue
   reminder
   routes
-  service
   sihl
   system_event
-  tenant
   text_message))

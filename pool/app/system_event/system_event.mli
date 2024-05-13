@@ -10,9 +10,10 @@ module Job : sig
     | GuardianCacheCleared
     | I18nPageUpdated
     | SmtpAccountUpdated
-    | TenantDatabaseAdded of Pool_database.Label.t
-    | TenantDatabaseUpdated of Pool_database.Label.t
-    | TenantDatabaseDeleted of Pool_database.Label.t
+    | TenantDatabaseAdded of Database.Label.t
+    | TenantDatabaseUpdated of Database.Label.t
+    | TenantDatabaseDeleted of Database.Label.t
+    | TenantDatabaseCacheCleared
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
@@ -20,7 +21,7 @@ module Job : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val read : string -> t
-  val of_string : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> (t, Pool_message.Error.t) result
   val to_string : t -> string
 end
 
@@ -38,7 +39,7 @@ val create : ?id:Id.t -> Job.t -> t
 
 module EventLog : sig
   module ServiceIdentifier : sig
-    include Pool_common.Model.StringSig
+    include Pool_model.Base.StringSig
 
     val get : identifier -> t
   end
@@ -57,7 +58,7 @@ module EventLog : sig
   end
 
   module Message : sig
-    include Pool_common.Model.StringSig
+    include Pool_model.Base.StringSig
   end
 
   type t
@@ -75,4 +76,9 @@ val handle_system_event : identifier -> t -> unit Lwt.t
 module Service : sig
   val run : identifier -> unit -> unit Lwt.t
   val register : identifier -> unit -> Sihl.Container.Service.t
+
+  module ConnectionWatcher : sig
+    val verify_tenants : unit -> unit Lwt.t
+    val register : unit -> Sihl.Container.Service.t
+  end
 end

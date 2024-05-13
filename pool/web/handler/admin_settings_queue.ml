@@ -1,12 +1,12 @@
 open Utils.Lwt_result.Infix
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Command = Cqrs_command.Queue_command
 
 let src = Logs.Src.create "handler.admin.settings_queue"
 let base_path = "/admin/settings/queue"
-let job_id = HttpUtils.find_id Pool_common.Id.of_string Field.Queue
+let job_id = HttpUtils.find_id Queue.Id.of_string Field.Queue
 
 let show req =
   HttpUtils.Htmx.handler
@@ -39,7 +39,7 @@ let detail req =
 let resend req =
   let open Utils.Lwt_result.Infix in
   let id = job_id req in
-  let path = Format.asprintf "%s/%s" base_path (Pool_common.Id.value id) in
+  let path = Format.asprintf "%s/%s" base_path (Queue.Id.value id) in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
@@ -67,7 +67,7 @@ let resend req =
     in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Pool_common.Message.(Resent Field.Message) ] ]
+      [ Message.set ~success:[ Pool_message.(Success.Resent Field.Message) ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req

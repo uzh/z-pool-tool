@@ -41,8 +41,7 @@ let address_to_html
   match location_address with
   | Virtual ->
     [ txt
-        (Pool_common.(
-           Utils.field_to_string language Pool_common.Message.Field.Virtual)
+        (Pool_common.(Utils.field_to_string language Pool_message.Field.Virtual)
          |> CCString.capitalize_ascii)
     ]
     |> fun html ->
@@ -71,7 +70,7 @@ let location_to_html ?(public = false) language (location : Pool_location.t) =
               (Format.asprintf
                  "%s: %s"
                  (Pool_common.(
-                    Utils.field_to_string language Message.Field.Status)
+                    Utils.field_to_string language Pool_message.Field.Status)
                   |> CCString.capitalize_ascii)
                  (location.status |> Status.show))
           ]
@@ -96,8 +95,8 @@ let location_to_html ?(public = false) language (location : Pool_location.t) =
 
 let form_title ?(level = `H1) language field m =
   let open Pool_common in
+  let open Pool_message.Control in
   let text =
-    let open Message in
     (if CCOption.is_none m then Create (Some field) else Update (Some field))
     |> Utils.control_to_string language
     |> txt
@@ -110,7 +109,8 @@ let form_title ?(level = `H1) language field m =
 let terms_and_conditions_label language id =
   let open Pool_common.Language in
   let terms lang =
-    Pool_common.(Utils.field_to_string lang Message.Field.TermsAndConditions)
+    Pool_common.(
+      Utils.field_to_string lang Pool_message.Field.TermsAndConditions)
     |> txt
     |> CCList.pure
     |> a ~a:[ a_href "#"; a_user_data "modal" id ]
@@ -125,7 +125,7 @@ let terms_and_conditions_label language id =
 ;;
 
 let terms_and_conditions_checkbox ?(modal_id = "terms-modal") language terms =
-  let terms_accepted_name = Pool_common.Message.Field.(show TermsAccepted) in
+  let terms_accepted_name = Pool_message.Field.(show TermsAccepted) in
   div
     [ I18n.content_to_string terms
       |> Unsafe.data
@@ -134,7 +134,7 @@ let terms_and_conditions_checkbox ?(modal_id = "terms-modal") language terms =
            CCFun.(
              flip
                Pool_common.Utils.field_to_string
-               Pool_common.Message.Field.TermsAndConditions
+               Pool_message.Field.TermsAndConditions
              %> CCString.capitalize_ascii)
            modal_id
     ; div

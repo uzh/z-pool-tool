@@ -1,5 +1,4 @@
-module PoolError = Pool_common.Message
-module Database = Pool_database
+module Database = Database
 module SmtpAuth = Entity_smtp
 module User = Pool_user
 
@@ -16,21 +15,16 @@ module Sihl_email = struct
 end
 
 module Token = struct
-  type t = string [@@deriving eq, show]
-
-  let create m = m
-  let value m = m
-end
-
-module VerifiedAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.String
 
   let create m = m
 end
+
+module VerifiedAt = Pool_model.Base.Ptime
 
 type email_unverified =
   { address : User.EmailAddress.t
-  ; user : Sihl_user.t
+  ; user : Pool_user.t
   ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -39,7 +33,7 @@ type email_unverified =
 
 type email_verified =
   { address : User.EmailAddress.t
-  ; user : Sihl_user.t
+  ; user : Pool_user.t
   ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -80,13 +74,13 @@ let show : type state. state t -> string = function
     User.EmailAddress.show address
 ;;
 
-let user_id : type state. state t -> Pool_common.Id.t = function
-  | Unverified { user; _ } | Verified { user; _ } ->
-    user.Sihl.Contract.User.id |> Pool_common.Id.of_string
+let user_id : type state. state t -> Pool_user.Id.t = function
+  | Unverified { user; _ } | Verified { user; _ } -> user.User.id
 ;;
 
 let user_is_confirmed : type state. state t -> bool = function
-  | Unverified { user; _ } | Verified { user; _ } -> user.Sihl_user.confirmed
+  | Unverified { user; _ } | Verified { user; _ } ->
+    user.Pool_user.confirmed |> Pool_user.Confirmed.value
 ;;
 
 let address : type state. state t -> User.EmailAddress.t = function
@@ -100,8 +94,8 @@ let create address user token =
     { address
     ; user
     ; token = Token.value token
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 
@@ -111,7 +105,7 @@ let verify (Unverified email) =
     ; user = email.user
     ; verified_at = VerifiedAt.create_now ()
     ; created_at = email.created_at
-    ; updated_at = Ptime_clock.now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 
@@ -133,13 +127,13 @@ type job =
   { email : email
   ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
   ; message_history : Queue.History.create option [@yojson.option]
-  ; resent : Pool_common.Id.t option [@yojson.option]
+  ; resent : Queue.Id.t option [@yojson.option]
   }
 [@@deriving eq, show, yojson]
 
 let parse_job_json str =
   try Ok (str |> Yojson.Safe.from_string |> job_of_yojson) with
-  | _ -> Error Pool_common.Message.(Invalid Field.Input)
+  | _ -> Error Pool_message.(Error.Invalid Field.Input)
 ;;
 
 let job_message_history { message_history; _ } = message_history

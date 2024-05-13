@@ -2,8 +2,8 @@ open CCFun.Infix
 open Tyxml.Html
 open Pool_common
 open Component.Input
+open Pool_message
 module Table = Component.Table
-module Message = Pool_common.Message
 module DataTable = Component.DataTable
 
 let list
@@ -33,9 +33,9 @@ let list
     in
     [ `column column_name
     ; `column column_email
-    ; `custom (to_string Message.Field.CellPhone)
+    ; `custom (to_string Field.CellPhone)
     ; `column Waiting_list.column_signed_up_at
-    ; `custom (to_string Message.Field.AdminComment)
+    ; `custom (to_string Field.AdminComment)
     ; `empty
     ]
   in
@@ -45,7 +45,7 @@ let list
     %> Format.asprintf "/admin/contacts/%s"
     %> link_as_button
          ~is_text:true
-         ~control:(language, Pool_common.Message.OpenProfile)
+         ~control:(language, Control.OpenProfile)
          ~icon:Component.Icon.PersonOutline
   in
   let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
@@ -58,7 +58,7 @@ let list
       %> Format.asprintf "%s/%s" (Uri.to_string url)
       %> link_as_button
            ~is_text:true
-           ~control:(language, Pool_common.Message.(Edit None))
+           ~control:(language, Control.Edit None)
            ~icon:Component.Icon.CreateOutline
     in
     let buttons =
@@ -75,7 +75,10 @@ let list
     ; txt
         (contact.Contact.cell_phone
          |> CCOption.map_or ~default:"" CellPhone.value)
-    ; txt (Utils.Time.formatted_date_time created_at)
+    ; txt
+        (created_at
+         |> Pool_common.CreatedAt.value
+         |> Pool_model.Time.formatted_date_time)
     ; admin_comment
       |> CCOption.map_or ~default:"" Waiting_list.AdminComment.value
       |> HttpUtils.first_n_characters
@@ -115,15 +118,12 @@ let session_row language chronological session =
   let waiting_list_radio_button language session =
     let open Pool_common in
     if Session.is_fully_booked session
-    then
-      span [ txt (Utils.error_to_string language Message.SessionFullyBooked) ]
+    then span [ txt (Utils.error_to_string language Error.SessionFullyBooked) ]
     else if is_followup
     then
       span
         [ txt
-            (Utils.error_to_string
-               language
-               Message.SessionRegistrationViaParent)
+            (Utils.error_to_string language Error.SessionRegistrationViaParent)
         ]
     else (
       match Session.assignment_creatable session |> CCResult.is_ok with
@@ -132,16 +132,15 @@ let session_row language chronological session =
         input
           ~a:
             [ a_input_type `Radio
-            ; a_name Message.Field.(show Session)
+            ; a_name Field.(show Session)
             ; a_value Session.(session.id |> Id.value)
             ]
           ())
   in
   let cells =
-    let open Message in
     [ title, Some (show_field Field.Date)
     ; ( waiting_list_radio_button language session
-      , Some Pool_common.(Utils.control_to_string language Message.Select) )
+      , Some Pool_common.(Utils.control_to_string language Control.Select) )
     ; ( txt (CCInt.to_string (session.assignment_count |> AssignmentCount.value))
       , Some (show_field Field.AssignmentCount) )
     ; txt key_figures, Some Page_admin_session.key_figures_head
@@ -156,9 +155,7 @@ let session_row language chronological session =
 ;;
 
 let session_list language chronological sessions =
-  let open Pool_common in
   let thead =
-    let open Message in
     let to_txt = Table.field_to_txt language in
     [ to_txt Field.Date
     ; txt ""
@@ -230,7 +227,7 @@ let detail
           [ csrf_element csrf ()
           ; textarea_element
               language
-              Message.Field.AdminComment
+              Field.AdminComment
               ~value:
                 (CCOption.map_or
                    ~default:""
@@ -242,7 +239,7 @@ let detail
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Save (Some Field.AdminComment))
+                  Control.(Save (Some Field.AdminComment))
                   ()
               ]
           ]
@@ -253,10 +250,7 @@ let detail
       if CCList.is_empty sessions
       then
         div
-          [ txt
-              (Utils.text_to_string
-                 language
-                 (I18n.EmtpyList Message.Field.Sessions))
+          [ txt (Utils.text_to_string language (I18n.EmtpyList Field.Sessions))
           ]
       else
         session_list language chronological sessions
@@ -278,7 +272,7 @@ let detail
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  (Message.Assign (Some Field.Contact))
+                  (Control.Assign (Some Field.Contact))
                   ()
               ]
           ]

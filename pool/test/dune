@@ -1,5 +1,12 @@
 (tests
- (names command integration filter_invitation_tests filter_assignment_tests)
+ (names
+  command
+  integration
+  filter_invitation_tests
+  filter_assignment_tests
+  password_reset_test
+  pool_user_test
+  pool_token_test)
  (libraries
   admin
   alcotest
@@ -10,6 +17,7 @@
   contact_counter
   cqrs_command
   custom_field
+  database
   experiment
   guard
   handler
@@ -23,11 +31,16 @@
   reminder
   seed
   tags
-  tenant
   user_import
   utils
   waiting_list)
  (preprocess
-  (pps ppx_string lwt_ppx ppx_deriving.eq ppx_deriving.show)))
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_string)))
 
 (include_subdirs unqualified)
+
+(env
+ (_
+  (env-vars
+   (SIHL_ENV "test")
+   (TEST_MAIL "test@econ.uzh.ch"))))

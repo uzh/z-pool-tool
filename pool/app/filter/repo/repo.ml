@@ -1,5 +1,5 @@
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Database = Database
+module Dynparam = Database.Dynparam
 open Entity
 open Repo_utils
 
@@ -37,11 +37,8 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_request
-      (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+    Database.find_opt pool find_request (id |> Pool_common.Id.value)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Filter)
   ;;
 
   let joins_experiment =
@@ -70,11 +67,8 @@ module Sql = struct
 
   let find_template pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_template_request
-      (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+    Database.find_opt pool find_template_request (id |> Pool_common.Id.value)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Filter)
   ;;
 
   let find_all_templates_request =
@@ -84,11 +78,7 @@ module Sql = struct
     |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
-  let find_all_templates pool =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_all_templates_request
-  ;;
+  let find_all_templates pool = Database.collect pool find_all_templates_request
 
   let find_templates_by query pool =
     let where = template_condition, Dynparam.empty in
@@ -126,7 +116,7 @@ module Sql = struct
       in
       let (Dynparam.Pack (pt, pv)) = dyn in
       let request = find_multiple_request ids |> pt ->* Repo_entity.t in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+      Database.collect pool request pv
   ;;
 
   let insert_sql =
@@ -148,9 +138,7 @@ module Sql = struct
     insert_sql |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -166,9 +154,7 @@ module Sql = struct
     |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Pool_database.Label.value pool) update_request
-  ;;
+  let update pool = Database.exec pool update_request
 
   let delete_request =
     let open Caqti_request.Infix in
@@ -179,9 +165,7 @@ module Sql = struct
     |> Pool_common.Repo.Id.t ->. Caqti_type.unit
   ;;
 
-  let delete pool =
-    Utils.Database.exec (Pool_database.Label.value pool) delete_request
-  ;;
+  let delete pool = Database.exec pool delete_request
 
   let find_templates_of_query tenant_db query =
     let open Utils.Lwt_result.Infix in
@@ -218,7 +202,7 @@ module Sql = struct
     in
     Lwt_list.map_s run_query queries
     |> Lwt.map CCResult.flatten_l
-    |> Lwt_result.map (fun (_ : unit list) -> ())
+    |> Lwt_result.map Utils.flat_unit
   ;;
 
   let find_participation_experiments_of_query query =
@@ -297,7 +281,7 @@ module Sql = struct
     let create_request ids =
       Format.asprintf
         {sql|
-        CREATE TEMPORARY TABLE tmp_assignments 
+        CREATE TEMPORARY TABLE tmp_assignments
         (INDEX contact_index (contact_uuid),
          INDEX experiment_index (experiment_uuid)
         )
@@ -437,13 +421,13 @@ module Sql = struct
     let Dynparam.Pack (pt, pv), prepared_request =
       sql |> where_prefix |> find_filtered_request_sql ?limit use_case dyn
     in
-    let request = prepared_request |> pt ->* Contact.Repo.Entity.t in
+    let request = prepared_request |> pt ->* Contact.Repo.t in
     let query connection =
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.collect_list request pv
     in
-    Utils.Database.find_as_transaction
-      (pool |> Pool_database.Label.value)
+    Database.transaction
+      pool
       ~setup:(drop_temp_table :: create_temp_tables filter)
       ~cleanup:[ drop_temp_table ]
       query
@@ -453,7 +437,7 @@ module Sql = struct
   let contact_matches_filter ?(default = false) pool query (contact : Contact.t)
     =
     let open Utils.Lwt_result.Infix in
-    let tags = Pool_database.Logger.Tags.create pool in
+    let tags = Database.Logger.Tags.create pool in
     let find_sql where_fragment =
       Format.asprintf
         {sql|
@@ -475,8 +459,7 @@ module Sql = struct
          ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
     |> fun (dyn, sql) ->
     let (Dynparam.Pack (pt, pv)) =
-      Dynparam.(
-        dyn |> add Caqti_type.string Contact.(contact |> id |> Id.value))
+      Dynparam.(dyn |> add Contact.Repo.Id.t Contact.(contact |> id))
     in
     let open Caqti_request.Infix in
     let request = sql |> find_sql |> pt ->? Caqti_type.int in
@@ -484,8 +467,8 @@ module Sql = struct
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.find_opt request pv
     in
-    Utils.Database.find_as_transaction
-      (pool |> Pool_database.Label.value)
+    Database.transaction
+      pool
       ~setup:(drop_temp_table :: create_temp_tables (Some query))
       ~cleanup:[ drop_temp_table ]
       matches_filter_request
@@ -527,10 +510,7 @@ module Sql = struct
   ;;
 
   let find_experiment_id_opt pool id =
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_experiment_id_opt_request
-      id
+    Database.find_opt pool find_experiment_id_opt_request id
   ;;
 
   let count_filtered_contacts ?include_invited pool use_case query =
@@ -554,8 +534,8 @@ module Sql = struct
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.find_opt request pv
     in
-    Utils.Database.find_as_transaction
-      (pool |> Pool_database.Label.value)
+    Database.transaction
+      pool
       ~setup:(drop_temp_table :: create_temp_tables filter)
       ~cleanup:[ drop_temp_table ]
       query

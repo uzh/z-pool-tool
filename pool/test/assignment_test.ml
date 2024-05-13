@@ -1,8 +1,8 @@
 open Test_utils
+open Pool_message
 module ContactCommand = Cqrs_command.Contact_command
 module AssignmentCommand = Cqrs_command.Assignment_command
 module SessionCommand = Cqrs_command.Session_command
-module Field = Pool_common.Message.Field
 
 type assignment_data =
   { session : Session.t
@@ -98,7 +98,7 @@ let create_inactive_user () =
   let { session; experiment; contact } = assignment_data () in
   let contact =
     let open Contact in
-    let user = Sihl_user.{ contact.user with status = Inactive } in
+    let user = Pool_user.{ contact.user with status = Status.Inactive } in
     { contact with user }
   in
   let confirmation_email = confirmation_email experiment in
@@ -109,7 +109,7 @@ let create_inactive_user () =
     in
     AssignmentCommand.Create.handle command confirmation_email false
   in
-  let expected = Error Pool_common.Message.ContactIsInactive in
+  let expected = Error Error.ContactIsInactive in
   check_result expected events
 ;;
 
@@ -151,8 +151,8 @@ let canceled_with_closed_session () =
   in
   let expected =
     Error
-      (Pool_common.Message.SessionAlreadyClosed
-         (Pool_common.Utils.Time.formatted_date_time closed_at))
+      (Error.SessionAlreadyClosed
+         (Pool_model.Time.formatted_date_time closed_at))
   in
   check_result expected events
 ;;
@@ -203,7 +203,7 @@ let set_invalid_attendance () =
       []
       [ assignment, IncrementParticipationCount.create false, None ]
   in
-  let expected = Error Pool_common.Message.AssignmentsHaveErrors in
+  let expected = Error Error.AssignmentsHaveErrors in
   check_result expected events
 ;;
 
@@ -224,9 +224,7 @@ let assignment_validation () =
       Model.create_assignment ~no_show:false ~participated:true ()
     in
     let res = Assignment.validate experiment assignment in
-    let expected =
-      Error Pool_common.Message.[ FieldRequired Field.ExternalDataId ]
-    in
+    let expected = Error [ Error.FieldRequired Field.ExternalDataId ] in
     check_result expected res
   in
   let mutually_exclusive () =
@@ -235,8 +233,7 @@ let assignment_validation () =
     in
     let res = Assignment.validate experiment assignment in
     let expected =
-      Error
-        Pool_common.Message.[ MutuallyExclusive Field.(NoShow, Participated) ]
+      Error [ Error.MutuallyExclusive Field.(NoShow, Participated) ]
     in
     check_result expected res
   in
@@ -264,7 +261,7 @@ let set_attendance_missing_data_id () =
       []
       [ assignment, IncrementParticipationCount.create false, None ]
   in
-  let expected = Error Pool_common.Message.AssignmentsHaveErrors in
+  let expected = Error Error.AssignmentsHaveErrors in
   check_result expected events
 ;;
 
@@ -321,7 +318,7 @@ let assign_to_fully_booked_session () =
     in
     AssignmentCommand.Create.handle command confirmation_email false
   in
-  let expected = Error Pool_common.Message.(SessionFullyBooked) in
+  let expected = Error Error.SessionFullyBooked in
   check_result expected events
 ;;
 
@@ -343,7 +340,7 @@ let assign_to_experiment_with_direct_registration_disabled () =
     in
     AssignmentCommand.Create.handle command confirmation_email false
   in
-  let expected = Error Pool_common.Message.(DirectRegistrationIsDisabled) in
+  let expected = Error Error.DirectRegistrationIsDisabled in
   check_result expected events
 ;;
 
@@ -385,7 +382,7 @@ let assign_to_session_contact_is_already_assigned () =
     in
     AssignmentCommand.Create.handle command confirmation_email already_assigned
   in
-  let expected = Error Pool_common.Message.(AlreadySignedUpForExperiment) in
+  let expected = Error Error.AlreadySignedUpForExperiment in
   check_result expected events
 ;;
 
@@ -404,9 +401,8 @@ let assign_to_canceled_session () =
   in
   let expected =
     Error
-      Pool_common.Message.(
-        SessionAlreadyCanceled
-          (Pool_common.Utils.Time.formatted_date_time canceled_at))
+      (Error.SessionAlreadyCanceled
+         (Pool_model.Time.formatted_date_time canceled_at))
   in
   Test_utils.check_result expected events
 ;;
@@ -656,9 +652,7 @@ let cancel_deleted_assignment () =
   let events =
     AssignmentCommand.Cancel.handle notification_email ([ assignment ], session)
   in
-  let expected =
-    Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
-  in
+  let expected = Error (Error.IsMarkedAsDeleted Field.Assignment) in
   check_result expected events
 ;;
 
@@ -690,12 +684,10 @@ let send_reminder_invalid () =
   in
   let res1 = handle assignment1 in
   let () =
-    check_result
-      (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment))
-      res1
+    check_result (Error (Error.IsMarkedAsDeleted Field.Assignment)) res1
   in
   let res2 = handle assignment2 in
-  let () = check_result (Error Pool_common.Message.AssignmentIsCanceled) res2 in
+  let () = check_result (Error Error.AssignmentIsCanceled) res2 in
   ()
 ;;
 
@@ -708,7 +700,7 @@ module CloseSession = struct
   let decode_invalid () =
     let urlencoded = [] in
     let res = UpdateHtmx.decode urlencoded in
-    let expected = Error Pool_common.Message.InvalidHtmxRequest in
+    let expected = Error Error.InvalidHtmxRequest in
     Alcotest.(check (result testable_update_htmx error) "succeeds") res expected
   ;;
 
@@ -789,7 +781,7 @@ module SwapSessionData = struct
   let plain_text = "Text" |> PlainText.of_string
 
   let urlencoded notify_user session_id =
-    Message.Field.
+    Field.
       [ show Session, [ Session.Id.value session_id ]
       ; show NotifyContact, [ NotifyContact.stringify notify_user ]
       ; show Language, [ Pool_common.Language.show Language.En ]

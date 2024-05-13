@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component.Input
+open Pool_message
 module DataTable = Component.DataTable
 
 let form_action ?path id =
@@ -38,7 +39,7 @@ module Partials = struct
     in
     let th_class = [ "w-2"; "w-3"; "w-2"; "w-1"; "w-2"; "w-2" ] in
     let row ({ id; contact; resent_at; send_count; created_at; _ } : t) =
-      let formatted_date = Pool_common.Utils.Time.formatted_date_time in
+      let formatted_date = Pool_model.Time.formatted_date_time in
       let resend_form =
         let open Component.Input in
         form
@@ -53,10 +54,7 @@ module Partials = struct
             ; a_class [ "flexrow"; "justify-end" ]
             ]
           [ csrf_element csrf ()
-          ; submit_element
-              language
-              Pool_common.Message.(Resend (Some Field.Invitation))
-              ()
+          ; submit_element language Control.(Resend (Some Field.Invitation)) ()
           ]
       in
       let open CCFun in
@@ -66,9 +64,9 @@ module Partials = struct
           (resent_at
            |> CCOption.map_or
                 ~default:""
-                (ResentAt.value %> Pool_common.Utils.Time.formatted_date_time))
+                (ResentAt.value %> Pool_model.Time.formatted_date_time))
       ; txt (send_count |> SendCount.value |> CCInt.to_string)
-      ; txt (formatted_date created_at)
+      ; txt (created_at |> Pool_common.CreatedAt.value |> formatted_date)
       ; resend_form
       ]
       |> CCList.map (CCList.return %> td)
@@ -94,6 +92,7 @@ module Partials = struct
     matching_filter_count
     invitation_count
     =
+    let open Pool_common in
     let filtered_contacts_form =
       match filtered_contacts with
       | None -> txt ""
@@ -104,13 +103,12 @@ module Partials = struct
           else
             CCList.map
               (fun (contact : Contact.t) ->
-                let id = Contact.id contact |> Pool_common.Id.value in
+                let id = Contact.id contact |> Contact.Id.value in
                 [ div
                     [ input
                         ~a:
                           [ a_input_type `Checkbox
-                          ; a_name
-                              Pool_common.Message.Field.(Contacts |> array_key)
+                          ; a_name Field.(Contacts |> array_key)
                           ; a_id id
                           ; a_value id
                           ]
@@ -139,7 +137,7 @@ module Partials = struct
               ; rows
               ; submit_element
                   language
-                  Pool_common.Message.(Send (Some Field.Invitation))
+                  Control.(Send (Some Field.Invitation))
                   ~submit_type:`Success
                   ()
               ]
@@ -148,14 +146,12 @@ module Partials = struct
     div
       [ h3
           ~a:[ a_class [ "heading-3" ] ]
-          [ txt
-              Pool_common.(
-                Message.(Filter (Some Field.Contacts))
-                |> Utils.control_to_string language)
+          [ Control.(Filter (Some Field.Contacts))
+            |> Utils.control_to_string language
+            |> txt
           ]
       ; Unsafe.data
-          Pool_common.(
-            Utils.text_to_string language I18n.FilterContactsDescription)
+          (Utils.text_to_string language I18n.FilterContactsDescription)
         |> Component.Collapsible.create_note language
       ; Component.Filter.(
           filter_form
@@ -200,7 +196,7 @@ module Partials = struct
       tr [ td [ txt key ]; td [ txt value ] ]
     in
     let total =
-      (field_to_string Message.Field.Total, to_string total_sent)
+      (field_to_string Field.Total, to_string total_sent)
       |> to_row ~classnames:[ "font-bold" ]
     in
     let table =

@@ -28,7 +28,7 @@ let to_string = function
   | DashboardTitle -> "Dashboard"
   | DeletedAssignments -> "Gelöschte Anmeldungen"
   | Disabled ->
-    Locales_de.field_to_string Entity_message_field.Disabled
+    Locales_de.field_to_string Pool_message.Field.Disabled
     |> CCString.capitalize_ascii
   | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
@@ -90,7 +90,7 @@ let to_string = function
   | LocationStatistics -> "Standortstatistik"
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
-    Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
+    Format.asprintf "Versand vom %s" (Pool_model.Time.formatted_date_time start)
   | MailingDistributionDescription ->
     {|<ol>
       <li>Wählen Sie aus, nach welchem Feld und in welcher Reihenfolge Sie die Kontakte sortieren möchten.</li>
@@ -135,7 +135,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SessionCloseScreen -> "Bildschirm zum Beenden der Sessions"
   | SessionDetailScreen -> "Session-Detailansicht"
   | SessionDetailTitle start ->
-    Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
+    Format.asprintf "Session am %s" (Pool_model.Time.formatted_date_time start)
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SessionReminder -> "Sessionerinnerung"
@@ -150,7 +150,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | TermsAndConditionsLastUpdated ptime ->
     Format.asprintf
       "Zuletzt angepasst: %s"
-      (Pool_common_utils.Time.formatted_date ptime)
+      (Pool_model.Time.formatted_date ptime)
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
   | TermsAndConditionsUpdated ->
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \
@@ -272,7 +272,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "Diese Option schliesst \"%s\" aus."
-      (Locales_de.field_to_string Entity_message.Field.Required
+      (Locales_de.field_to_string Pool_message.Field.Required
        |> CCString.capitalize_ascii)
   | CustomFieldAdminOverride ->
     "Erlaubt Administratoren die vom Kontakt angegebenen Anworten zu \
@@ -284,7 +284,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | CustomFieldAdminViewOnly ->
     Format.asprintf
       "Diese Option impliziert \"%s\"."
-      (Locales_de.field_to_string Entity_message.Field.AdminInputOnly
+      (Locales_de.field_to_string Pool_message.Field.AdminInputOnly
        |> CCString.capitalize_ascii)
   | CustomFieldAnsweredOnRegistration ->
     "Dieses Feld wurde vom Kontakt bereits bei der Registrierung beantwortet \
@@ -321,7 +321,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
-      (lead_time |> Utils_time.formatted_timespan)
+      (lead_time |> Pool_model.Time.formatted_timespan)
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."
@@ -384,7 +384,7 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
      es zukünftige Sessions mit freien Plätzen gibt."
   | ExperimentStatisticsSendingInvitations ->
     {|Sending: Derzeit läuft ein Mailing.
-  
+
 Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | ExperimentWaitingList ->
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
@@ -495,19 +495,19 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsWeeksHint -> "Anzahl Wochen"
-  | NumberMax i -> error_to_string (Entity_message.NumberMax i)
-  | NumberMin i -> error_to_string (Entity_message.NumberMin i)
+  | NumberMax i -> error_to_string (Pool_message.Error.NumberMax i)
+  | NumberMin i -> error_to_string (Pool_message.Error.NumberMin i)
   | OnlineExperiment ->
     Format.asprintf
       "Anstelle von Sessions können Zeitfenster definiert werden, während \
        deren an der Umfrage teilgenommen werden kann. Unter %s geben Sie die \
        externe URL der Studie an, auf welche die Kontakte weitergeleitet \
        werden sollen."
-      (Locales_de.field_to_string Entity_message_field.SurveyUrl)
+      (Locales_de.field_to_string Pool_message.Field.SurveyUrl)
   | OnlineExperimentParticipationDeadline end_at ->
     Format.asprintf
       "Sie können noch bis zum %s an diesem Experiment teilnehmen."
-      (Utils_time.formatted_date_time end_at)
+      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
@@ -562,7 +562,7 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | ResetInvitationsLastReset reset_at ->
     Format.asprintf
       "Die Einladungen wirden zuletzt am <strong>%s</strong> zurückgesetzt."
-      (Utils_time.formatted_date_time reset_at)
+      (Pool_model.Time.formatted_date_time reset_at)
   | RoleIntro (singular, plural) ->
     Format.asprintf
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
@@ -572,26 +572,22 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Wählen Sie das Objekt, für welches Sie die Berechtigungen anpassen wollen."
   | RolePermissionsRoleList -> "Alle anpassparen Rollen des Teants."
   | ScheduleAt time ->
-    time
-    |> Pool_common_utils.Time.formatted_date_time
-    |> Format.asprintf "Am %s"
+    time |> Pool_model.Time.formatted_date_time |> Format.asprintf "Am %s"
   | ScheduledIntro ->
     {|Informationen über alle periodischen Hintergrund-Prozesse.
 
     Beachte: Wenn die Applikation neugestartet wird, werden alle auf "stopped" gesetzt|}
   | ScheduleEvery sec ->
-    sec
-    |> Pool_common_utils.Time.formatted_timespan
-    |> Format.asprintf "alle %s"
+    sec |> Pool_model.Time.formatted_timespan |> Format.asprintf "alle %s"
   | SearchByFields fields ->
     Format.asprintf
       "Suche nach: %s"
       (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
   | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
   | SelectedOptionsCountMax i ->
-    error_to_string (Entity_message.SelectedOptionsCountMax i)
+    error_to_string (Pool_message.Error.SelectedOptionsCountMax i)
   | SelectedOptionsCountMin i ->
-    error_to_string (Entity_message.SelectedOptionsCountMin i)
+    error_to_string (Pool_message.Error.SelectedOptionsCountMin i)
   | SessionCancellationMessageFollowUps ->
     "Dazugehörige Folgesessions wurden evenfalls abgesagt:"
   | SessionCancellationWithFollowups ->
@@ -604,8 +600,8 @@ Die folgenden Folgesessions existieren:|}
     Format.asprintf
       {|<strong>%s</strong> und <strong>%s</strong> schliessen sich gegenseitig aus.<br>
 Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschienen ist, aber nicht teilgenommen hat.|}
-      (Locales_de.field_to_string Entity_message_field.NoShow)
-      (Locales_de.field_to_string Entity_message_field.Participated)
+      (Locales_de.field_to_string Pool_message.Field.NoShow)
+      (Locales_de.field_to_string Pool_message.Field.Participated)
   | SessionCloseLegendNoShow ->
     "Der Kontakt ist nicht an der Session erschienen"
   | SessionCloseLegendParticipated ->
@@ -666,8 +662,8 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
     "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige \
      Testnachricht schicken können, um den API Key zu verifizieren. Die Nummer \
      muss im Format +41791234567 sein."
-  | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
-  | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
+  | TextLengthMax i -> error_to_string (Pool_message.Error.TextLengthMax i)
+  | TextLengthMin i -> error_to_string (Pool_message.Error.TextLengthMin i)
   | UserImportInterval ->
     {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
 <p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}

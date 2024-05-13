@@ -11,7 +11,7 @@ module Target = struct
           `Invitation
           (id |> Pool_common.Id.value |> Uuid.Target.of_string_exn))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

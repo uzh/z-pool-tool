@@ -1,5 +1,5 @@
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Database = Database
+module Dynparam = Database.Dynparam
 
 let select_sql =
   Format.asprintf
@@ -57,7 +57,7 @@ let find_by_multiple_fields pool ids =
     let request =
       find_by_multiple_fields_request ids |> pt ->* Repo_entity.Option.t
     in
-    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+    Database.collect pool request pv
 ;;
 
 let find_by_field_request =
@@ -70,10 +70,7 @@ let find_by_field_request =
 ;;
 
 let find_by_field pool id =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    find_by_field_request
-    (Pool_common.Id.value id)
+  Database.collect pool find_by_field_request (Pool_common.Id.value id)
 ;;
 
 let find_request =
@@ -87,11 +84,8 @@ let find_request =
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_request
-    (Pool_common.Id.value id)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomFieldOption)
+  Database.find_opt pool find_request (Pool_common.Id.value id)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.CustomFieldOption)
   >|+ Repo_entity.Option.to_entity
 ;;
 
@@ -120,8 +114,8 @@ let insert_request =
 ;;
 
 let insert pool custom_field_id m =
-  Utils.Database.exec
-    (Database.Label.value pool)
+  Database.exec
+    pool
     insert_request
     (Repo_entity.Option.of_entity custom_field_id m)
 ;;
@@ -138,7 +132,7 @@ let update_request =
   |> Repo_entity.Option.Update.t ->. Caqti_type.unit
 ;;
 
-let update pool = Utils.Database.exec (Database.Label.value pool) update_request
+let update pool = Database.exec pool update_request
 
 let destroy_request =
   let open Caqti_request.Infix in
@@ -151,10 +145,7 @@ let destroy_request =
 ;;
 
 let destroy pool m =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    destroy_request
-    Entity.SelectOption.(m.id |> Id.value)
+  Database.exec pool destroy_request Entity.SelectOption.(m.id |> Id.value)
 ;;
 
 let destroy_by_custom_field_request =
@@ -168,8 +159,8 @@ let destroy_by_custom_field_request =
 ;;
 
 let destroy_by_custom_field pool field_id =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
+  Database.exec
+    pool
     destroy_by_custom_field_request
     Entity.(field_id |> Id.value)
 ;;
@@ -185,10 +176,7 @@ let publish_request =
 ;;
 
 let publish pool m =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    publish_request
-    Entity.SelectOption.(m.id |> Id.value)
+  Database.exec pool publish_request Entity.SelectOption.(m.id |> Id.value)
 ;;
 
 let publish_by_custom_field_request =
@@ -203,8 +191,8 @@ let publish_by_custom_field_request =
 ;;
 
 let publish_by_custom_field pool field_id =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
+  Database.exec
+    pool
     publish_by_custom_field_request
     Entity.(field_id |> Id.value)
 ;;
@@ -224,10 +212,7 @@ let sort_options pool ids =
   let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
-      Utils.Database.exec
-        (Database.Label.value pool)
-        update_position_request
-        (index, Entity.Id.value id))
+      Database.exec pool update_position_request (index, Entity.Id.value id))
     ids
   ||> CCFun.const ()
 ;;
@@ -290,7 +275,7 @@ module Public = struct
         find_by_multiple_fields_request ids
         |> pt ->* Repo_entity.Option.Public.t
       in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+      Database.collect pool request pv
   ;;
 
   let find_by_field_request =
@@ -303,9 +288,6 @@ module Public = struct
   ;;
 
   let find_by_field pool id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_by_field_request
-      (Pool_common.Id.value id)
+    Database.collect pool find_by_field_request (Pool_common.Id.value id)
   ;;
 end

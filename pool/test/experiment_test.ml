@@ -1,4 +1,5 @@
 open CCFun
+open Pool_message
 module ExperimentCommand = Cqrs_command.Experiment_command
 module Model = Test_utils.Model
 
@@ -6,15 +7,13 @@ let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
 
 let experiment_boolean_fields =
-  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
+  Experiment.boolean_fields |> CCList.map Field.show
 ;;
 
-let boolean_fields =
-  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
-;;
+let boolean_fields = Experiment.boolean_fields |> CCList.map Field.show
 
 module Data = struct
-  let callbackUrl = Pool_common.Message.Field.(show CallbackUrl)
+  let callbackUrl = Field.(show CallbackUrl)
   let organisational_unit = Test_utils.Model.create_organisational_unit ()
 
   let contact_person =
@@ -49,28 +48,25 @@ module Data = struct
   ;;
 
   let urlencoded =
-    Pool_common.Message.
-      [ Field.(show Title), [ title ]
-      ; Field.(show PublicTitle), [ public_title ]
-      ; Field.(show InternalDescription), [ internal_description ]
-      ; Field.(show PublicDescription), [ public_description ]
-      ; Field.(show Language), [ Pool_common.Language.show language ]
-      ; Field.(show CostCenter), [ cost_center ]
-      ; ( Field.(show DirectRegistrationDisabled)
-        , [ direct_registration_disabled ] )
-      ; Field.(show RegistrationDisabled), [ registration_disabled ]
-      ; Field.(show AllowUninvitedSignup), [ allow_uninvited_signup ]
-      ; Field.(show ExternalDataRequired), [ external_data_required ]
-      ; Field.(show ShowExteralDataIdLinks), [ show_external_data_id_links ]
-      ; Field.(show ExperimentType), [ experiment_type ]
-      ]
+    [ Field.(show Title), [ title ]
+    ; Field.(show PublicTitle), [ public_title ]
+    ; Field.(show InternalDescription), [ internal_description ]
+    ; Field.(show PublicDescription), [ public_description ]
+    ; Field.(show Language), [ Pool_common.Language.show language ]
+    ; Field.(show CostCenter), [ cost_center ]
+    ; Field.(show DirectRegistrationDisabled), [ direct_registration_disabled ]
+    ; Field.(show RegistrationDisabled), [ registration_disabled ]
+    ; Field.(show AllowUninvitedSignup), [ allow_uninvited_signup ]
+    ; Field.(show ExternalDataRequired), [ external_data_required ]
+    ; Field.(show ShowExteralDataIdLinks), [ show_external_data_id_links ]
+    ; Field.(show ExperimentType), [ experiment_type ]
+    ]
   ;;
 
   let online_experiment_urlencoded =
-    Pool_common.Message.
-      [ Field.(show AssignmentWithoutSession), [ "true" ]
-      ; Field.(show SurveyUrl), [ survey_url ]
-      ]
+    [ Field.(show AssignmentWithoutSession), [ "true" ]
+    ; Field.(show SurveyUrl), [ survey_url ]
+    ]
   ;;
 
   module Filter = struct
@@ -163,7 +159,7 @@ let create () =
 let create_without_title () =
   let events =
     let open CCResult.Infix in
-    Pool_common.Message.Field.
+    Field.
       [ Title |> show, [ "" ]
       ; PublicTitle |> show, [ "public_title" ]
       ; InternalDescription |> show, [ Data.internal_description ]
@@ -172,22 +168,17 @@ let create_without_title () =
     |> ExperimentCommand.Create.decode
     >>= ExperimentCommand.Create.handle
   in
-  let expected =
-    Error Pool_common.Message.(Conformist [ Field.Title, NoValue ])
-  in
+  let expected = Error Error.(Conformist [ Field.Title, NoValue ]) in
   Test_utils.check_result expected events
 ;;
 
 let create_survey_url () =
   let open Experiment in
-  let open Pool_common.Message in
   let survey_url = Alcotest.testable SurveyUrl.pp SurveyUrl.equal in
   let check ?(msg = "succeeds") =
     Alcotest.(check (result survey_url Test_utils.error) msg)
   in
-  let callbackUrl =
-    Format.asprintf "{%s}" Pool_common.Message.Field.(show CallbackUrl)
-  in
+  let callbackUrl = Format.asprintf "{%s}" Field.(show CallbackUrl) in
   let ok =
     [ [%string {sql|https://www.domain.com/foo?callback=%{callbackUrl}|sql}]
     ; [%string
@@ -215,10 +206,10 @@ let create_survey_url () =
   in
   let () =
     missing_callback
-    |> CCList.iter (run_test (Error (FieldRequired Field.CallbackUrl)))
+    |> CCList.iter (run_test (Error (Error.FieldRequired Field.CallbackUrl)))
   in
   let () =
-    invalid |> CCList.iter (run_test (Error (Invalid Field.SurveyUrl)))
+    invalid |> CCList.iter (run_test (Error (Error.Invalid Field.SurveyUrl)))
   in
   ()
 ;;
@@ -286,15 +277,11 @@ let update_with_existing_sessions () =
   let events =
     make_events Data.(urlencoded @ online_experiment_urlencoded) experiment
   in
-  let expected =
-    Error Pool_common.Message.(CannotBeUpdated Field.AssignmentWithoutSession)
-  in
+  let expected = Error (Error.CannotBeUpdated Field.AssignmentWithoutSession) in
   Test_utils.check_result expected events;
   (* online experiment *)
   let events = make_events Data.urlencoded online_experiment in
-  let expected =
-    Error Pool_common.Message.(CannotBeUpdated Field.AssignmentWithoutSession)
-  in
+  let expected = Error (Error.CannotBeUpdated Field.AssignmentWithoutSession) in
   Test_utils.check_result expected events;
   let events =
     make_events
@@ -344,7 +331,7 @@ let delete_with_sessions () =
         ; templates = []
         })
   in
-  let expected = Error Pool_common.Message.ExperimentSessionCountNotZero in
+  let expected = Error Error.ExperimentSessionCountNotZero in
   Test_utils.check_result expected events
 ;;
 
@@ -419,7 +406,7 @@ let autofill_public_title _ () =
 ;;
 
 module AvailableExperiments = struct
-  let contact_id = Pool_common.Id.create ()
+  let contact_id = Contact.Id.create ()
   let experiment_id = Experiment.Id.create ()
   let session_id = Session.Id.create ()
   let time_window_id = Session.Id.create ()

@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Tyxml.Html
 (* TODO: Add EmailBouncing *)
 
@@ -18,10 +19,10 @@ let status_to_icon =
 
 let status_legend_text language =
   let open Pool_common in
-  let field_to_string m =
-    m |> Utils.field_to_string language |> CCString.capitalize_ascii
+  let field_to_string =
+    Utils.field_to_string language %> CCString.capitalize_ascii
   in
-  let open Message.Field in
+  let open Pool_message.Field in
   function
   | EmailUnverified -> field_to_string EmailAddressUnverified
   | Inactive -> field_to_string Inactive
@@ -48,7 +49,7 @@ module Contact = struct
     let open Pool_user in
     function
     | EmailUnverified -> CCOption.is_none email_verified
-    | Inactive -> Service.User.(equal_status user.status Inactive)
+    | Inactive -> Pool_user.(Status.(equal user.status Inactive))
     | Paused -> Paused.value paused
     | Verified -> CCOption.is_some verified
   ;;
@@ -95,7 +96,7 @@ module Contact = struct
     let text =
       if view_contact_name
       then Contact.lastname_firstname contact
-      else Pool_common.Id.value (Contact.id contact)
+      else Contact.(id contact |> Id.value)
     in
     make_icons language contact context |> wrap_icons text
   ;;
@@ -111,7 +112,7 @@ module Admin = struct
 
   let has_status { Admin.email_verified; user; _ } = function
     | EmailUnverified -> CCOption.is_none email_verified
-    | Inactive -> Service.User.(equal_status Inactive user.status)
+    | Inactive -> Pool_user.Status.(equal Inactive user.Pool_user.status)
     | Paused | Verified -> false
   ;;
 

@@ -2,7 +2,7 @@ open Entity
 
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
-  | AnswerUpserted of Public.t * Pool_common.Id.t * Pool_context.user
+  | AnswerUpserted of Public.t * Contact.Id.t * Pool_context.user
   | AnsweredOnSignup of Public.t * Pool_common.Id.t
   | Created of t
   | Deleted of t
@@ -33,19 +33,23 @@ let handle_event pool : event -> unit Lwt.t =
       ()
   | AnswerUpserted (m, entity_uuid, user) ->
     let is_admin = Pool_context.user_is_admin user in
-    Repo_partial_update.upsert_answer pool is_admin entity_uuid m
+    Repo_partial_update.upsert_answer
+      pool
+      is_admin
+      (Contact.Id.to_common entity_uuid)
+      m
   | AnsweredOnSignup (m, entity_uuid) ->
     Repo_partial_update.upsert_answer pool false entity_uuid m
   | Created m ->
     let%lwt () = Repo.insert pool m in
-    Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) m
+    Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx pool) m
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Deleted m -> Repo.delete pool m
   | FieldsSorted m -> CCList.map (fun m -> id m) m |> Repo.sort_fields pool
   | GroupCreated m ->
     let%lwt () = Repo_group.insert pool m in
-    Entity_guard.Group.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) m
+    Entity_guard.Group.Target.to_authorizable ~ctx:(Database.to_ctx pool) m
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | GroupDestroyed m -> Repo_group.destroy pool m

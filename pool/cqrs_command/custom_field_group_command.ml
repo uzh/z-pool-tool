@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "custom_field_group.cqrs"
 
@@ -19,7 +19,7 @@ module Create : sig
     -> Pool_common.Language.t list
     -> name_command
     -> Custom_field.Model.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -45,7 +45,7 @@ module Update : sig
     -> Custom_field.Group.t
     -> name_command
     -> Custom_field.Model.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Custom_field.Group.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -68,7 +68,7 @@ module Destroy : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Custom_field.Group.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Custom_field.Group.Id.t -> Guard.ValidationSet.t
 end = struct

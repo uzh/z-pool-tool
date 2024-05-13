@@ -1,28 +1,5 @@
-module Message = Entity_message
 module I18n = Entity_i18n
-
-module Model : sig
-  module TimeUnit : module type of Entity_base_model.TimeUnit
-  module Boolean : module type of Entity_base_model.Boolean
-  module Duration : module type of Entity_base_model.Duration
-  module Integer : module type of Entity_base_model.Integer
-  module Ptime : module type of Entity_base_model.Ptime
-  module PtimeSpan : module type of Entity_base_model.PtimeSpan
-  module SelectorType : module type of Entity_base_model.SelectorType
-  module String : module type of Entity_base_model.String
-
-  module type BaseSig = Entity_base_model.BaseSig
-  module type BooleanSig = Entity_base_model.BooleanSig
-  module type DurationSig = Entity_base_model.DurationSig
-  module type IdSig = Entity_base_model.IdSig
-  module type IntegerSig = Entity_base_model.IntegerSig
-  module type PtimeSig = Entity_base_model.PtimeSig
-  module type PtimeSpanSig = Entity_base_model.PtimeSpanSig
-  module type SelectorCoreTypeSig = Entity_base_model.SelectorCoreTypeSig
-  module type StringSig = Entity_base_model.StringSig
-end
-
-module Id : Model.IdSig
+module Id : Pool_model.Base.IdSig
 
 module Language : sig
   type t =
@@ -34,70 +11,43 @@ module Language : sig
   val show : t -> string
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val create : string -> (t, Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val compare : t -> t -> int
-
-  val schema
-    :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val all : t list
   val all_codes : string list
-  val field_of_t : t -> Message.Field.t
+  val field_of_t : t -> Pool_message.Field.t
 end
 
 module Version : sig
-  type t
+  include Pool_model.Base.IntegerSig
 
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val show : t -> string
-  val value : t -> int
   val create : unit -> t
-  val of_int : int -> t
   val increment : t -> t
-  val compare : t -> t -> int
 end
 
 module CreatedAt : sig
-  type t = Ptime.t
-
-  val equal : t -> t -> bool
-  val compare : t -> t -> int
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : unit -> t
-  val value : t -> Ptime.t
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  include Pool_model.Base.PtimeSig
 end
 
 module UpdatedAt : sig
-  type t = Ptime.t
-
-  val equal : t -> t -> bool
-  val compare : t -> t -> int
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : unit -> t
-  val value : t -> Ptime.t
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  include Pool_model.Base.PtimeSig
 end
 
 module File : sig
   module Name : sig
     type t
 
-    val create : string -> (t, Message.error) result
+    val create : string -> (t, Pool_message.Error.t) result
     val value : t -> string
   end
 
   module Size : sig
     type t
 
-    val create : int -> (t, Message.error) result
+    val create : int -> (t, Pool_message.Error.t) result
     val value : t -> int
   end
 
@@ -115,9 +65,9 @@ module File : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_string : string -> (t, Message.error) result
+    val of_string : string -> (t, Pool_message.Error.t) result
     val to_string : t -> string
-    val of_filename : string -> (t, Message.error) result
+    val of_filename : string -> (t, Pool_message.Error.t) result
   end
 
   type t =
@@ -150,15 +100,11 @@ module SortOrder : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val all : t list
-  val create : string -> (t, Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val read : string -> t
   val flip : t -> t
-  val to_query_parts : t -> (Message.Field.t * string) list
-
-  val schema
-    :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
-
+  val to_query_parts : t -> (Pool_message.Field.t * string) list
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val default : t
 end
 
@@ -167,37 +113,27 @@ module MessageChannel : sig
     | Email
     | TextMessage
 
-  val schema
-    :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
   val read : string -> t
-  val create : string -> (t, Message.error) Result.t
+  val create : string -> (t, Pool_message.Error.t) Result.t
   val all : t list
   val filtered_channels : bool -> t list
 end
 
 module Reminder : sig
   module EmailLeadTime : sig
-    include Model.DurationSig
+    include Pool_model.Base.DurationSig
   end
 
   module TextMessageLeadTime : sig
-    include Model.DurationSig
+    include Pool_model.Base.DurationSig
   end
 
   module SentAt : sig
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val create : Ptime.t -> t
-    val create_now : unit -> t
-    val value : t -> Ptime.t
+    include Pool_model.Base.PtimeSig
   end
 end
 
@@ -206,10 +142,7 @@ module ExperimentType : sig
     | Lab
     | Online
 
-  val schema
-    :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
@@ -219,12 +152,8 @@ module ExperimentType : sig
 end
 
 module VerificationCode : sig
-  type t
+  include Pool_model.Base.StringSig
 
-  val value : t -> string
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val of_string : string -> t
   val create : ?length:int -> unit -> t
 end
 
@@ -233,28 +162,25 @@ module NotifyVia : sig
     | Email
     | TextMessage
 
-  val schema
-    :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
-
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
   val read : string -> t
-  val create : string -> (t, Message.error) Result.t
+  val create : string -> (t, Pool_message.Error.t) Result.t
   val all : t list
   val to_human : Language.t -> t -> string
   val checked_by_default : t -> bool
 end
 
 module NotifyContact : sig
-  include Entity_base_model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module Repo : sig
   val make_caqti_type
     :  'a Caqti_type.t
-    -> ('a -> ('b, Message.error) result)
+    -> ('a -> ('b, Pool_message.Error.t) result)
     -> ('b -> 'a)
     -> 'b Caqti_type.t
 
@@ -262,11 +188,7 @@ module Repo : sig
     module SelectorType : module type of Repo.Model.SelectorType
   end
 
-  module Id : sig
-    type t = Id.t
-
-    val t : t Caqti_type.t
-  end
+  module Id : Pool_model.Base.CaqtiSig with type t = Id.t
 
   module Ptime : sig
     type date = Ptime.date
@@ -274,112 +196,38 @@ module Repo : sig
     val date : date Caqti_type.t
   end
 
-  module Language : sig
-    type t = Language.t
-
-    val t : t Caqti_type.t
-  end
-
-  module Version : sig
-    type t = Version.t
-
-    val t : t Caqti_type.t
-  end
-
-  module CreatedAt : sig
-    type t = CreatedAt.t
-
-    val t : t Caqti_type.t
-  end
-
-  module UpdatedAt : sig
-    type t = UpdatedAt.t
-
-    val t : t Caqti_type.t
-  end
-
-  module File : sig
-    type t = File.t
-
-    val t : t Caqti_type.t
-  end
+  module Language : Pool_model.Base.CaqtiSig with type t = Language.t
+  module Version : Pool_model.Base.CaqtiSig with type t = Version.t
+  module CreatedAt : Pool_model.Base.CaqtiSig with type t = CreatedAt.t
+  module UpdatedAt : Pool_model.Base.CaqtiSig with type t = UpdatedAt.t
+  module File : Pool_model.Base.CaqtiSig with type t = File.t
 
   module Reminder : sig
-    module EmailLeadTime : sig
-      type t = Reminder.EmailLeadTime.t
+    module EmailLeadTime :
+      Pool_model.Base.CaqtiSig with type t = Reminder.EmailLeadTime.t
 
-      val t : t Caqti_type.t
-    end
+    module TextMessageLeadTime :
+      Pool_model.Base.CaqtiSig with type t = Reminder.TextMessageLeadTime.t
 
-    module TextMessageLeadTime : sig
-      type t = Reminder.TextMessageLeadTime.t
-
-      val t : t Caqti_type.t
-    end
-
-    module SentAt : sig
-      type t = Reminder.SentAt.t
-
-      val t : t Caqti_type.t
-    end
+    module SentAt : Pool_model.Base.CaqtiSig with type t = Reminder.SentAt.t
   end
 
-  module VerificationCode : sig
-    type t = VerificationCode.t
+  module VerificationCode :
+    Pool_model.Base.CaqtiSig with type t = VerificationCode.t
 
-    val t : t Caqti_type.t
-  end
-
-  module ExperimentType : sig
-    type t = ExperimentType.t
-
-    val t : t Caqti_type.t
-  end
+  module ExperimentType :
+    Pool_model.Base.CaqtiSig with type t = ExperimentType.t
 end
 
 module Utils : sig
-  module PoolConformist = Pool_common_utils.PoolConformist
-
-  module Time : sig
-    val ptime_to_sexp : Ptime.t -> Sexplib0.Sexp.t
-    val formatted_date_time : Ptime.t -> string
-    val formatted_date : Ptime.t -> string
-    val formatted_time : ?with_seconds:bool -> Ptime.t -> string
-    val formatted_timespan : Ptime.span -> string
-    val timespan_to_minutes : Ptime.span -> string
-    val parse_time : string -> (Ptime.t, Message.error) result
-    val parse_time_span : string -> (Ptime.Span.t, Message.error) result
-    val print_time_span : Ptime.Span.t -> string
-    val parse_date_from_calendar : string -> (Ptime.t, Message.error) result
-
-    val start_is_before_end
-      :  start:Ptime.t
-      -> end_at:Ptime.t
-      -> (unit, Entity_message.error) result
-  end
-
-  val schema_decoder
-    :  ?tags:Logs.Tag.set
-    -> ?default:'b
-    -> (string -> ('b, Message.error) result)
-    -> ('b -> string)
-    -> Message.Field.t
-    -> (Message.error, 'b) PoolConformist.Field.t
-
-  val schema_list_decoder
-    :  (string list -> ('a, Message.error) result)
-    -> ('a -> string list)
-    -> Message.Field.t
-    -> ('b, 'a) PoolConformist.Field.t
-
-  val to_string : Language.t -> Message.t -> string
-  val info_to_string : Language.t -> Message.info -> string
-  val success_to_string : Language.t -> Message.success -> string
-  val warning_to_string : Language.t -> Message.warning -> string
-  val error_to_string : Language.t -> Message.error -> string
-  val field_to_string : Language.t -> Message.Field.t -> string
-  val field_to_string_capitalized : Language.t -> Message.Field.t -> string
-  val control_to_string : Language.t -> Message.control -> string
+  val to_string : Language.t -> Pool_message.t -> string
+  val info_to_string : Language.t -> Pool_message.Info.t -> string
+  val success_to_string : Language.t -> Pool_message.Success.t -> string
+  val warning_to_string : Language.t -> Pool_message.Warning.t -> string
+  val error_to_string : Language.t -> Pool_message.Error.t -> string
+  val field_to_string : Language.t -> Pool_message.Field.t -> string
+  val field_to_string_capitalized : Language.t -> Pool_message.Field.t -> string
+  val control_to_string : Language.t -> Pool_message.Control.t -> string
   val confirmable_to_string : Language.t -> I18n.confirmable -> string
   val text_to_string : Language.t -> Entity_i18n.t -> string
   val nav_link_to_string : Language.t -> Entity_i18n.nav_link -> string
@@ -390,43 +238,37 @@ module Utils : sig
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.info
-    -> Message.info
+    -> Pool_message.Info.t
+    -> Pool_message.Info.t
 
   val with_log_success
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.success
-    -> Message.success
+    -> Pool_message.Success.t
+    -> Pool_message.Success.t
 
   val with_log_warning
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.warning
-    -> Message.warning
+    -> Pool_message.Warning.t
+    -> Pool_message.Warning.t
 
   val with_log_error
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
-    -> Message.error
-    -> Message.error
+    -> Pool_message.Error.t
+    -> Pool_message.Error.t
 
   val with_log_result_error
     :  ?src:Logs.Src.t
     -> ?tags:Logs.Tag.set
-    -> ('a -> Message.error)
+    -> ('a -> Pool_message.Error.t)
     -> ('b, 'a) result
     -> ('b, 'a) result
 
-  val get_or_failwith : ('a, Message.error) result -> 'a
-  val failwith : Message.error -> 'a
-
-  val handle_ppx_yojson_err
-    :  exn * Yojson.Safe.t
-    -> ('a, Entity_message.error) result
-
-  val handle_json_parse_err : string -> ('a, Entity_message.error) result
+  val get_or_failwith : ('a, Pool_message.Error.t) result -> 'a
+  val failwith : Pool_message.Error.t -> 'a
 end

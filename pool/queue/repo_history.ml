@@ -1,5 +1,5 @@
-module Dynparam = Utils.Database.Dynparam
-module Database = Pool_database
+module Dynparam = Database.Dynparam
+module Database = Database
 
 let sql_select_columns =
   [ Pool_common.Id.sql_select_fragment ~field:"pool_message_history.entity_uuid"
@@ -39,12 +39,10 @@ let insert_request =
         $3
       )
     |sql}
-  |> Caqti_type.(Repo_entity.write_caqti_type ->. unit)
+  |> Repo_entity.History.write ->. Caqti_type.unit
 ;;
 
-let insert pool t =
-  Utils.Database.exec (Pool_database.Label.value pool) insert_request t
-;;
+let insert pool t = Database.exec pool insert_request t
 
 let find_by_entity_request =
   let open Caqti_request.Infix in
@@ -53,7 +51,7 @@ let find_by_entity_request =
       entity_uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
   |> find_request_sql
-  |> Caqti_type.(t2 string string) ->? Repo_entity.t
+  |> Caqti_type.(t2 string string) ->? Repo_entity.History.read
 ;;
 
 let query_by_entity ?query pool entity_uuid =
@@ -66,7 +64,7 @@ let query_by_entity ?query pool entity_uuid =
     query
     ~select:find_request_sql
     ~where
-    Repo_entity.t
+    Repo_entity.History.read
 ;;
 
 let find_related_request entity =
@@ -80,20 +78,17 @@ let find_related_request entity =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql|
-      SELECT 
-        %s 
+      SELECT
+        %s
       FROM pool_message_history
         %s
       WHERE queue_job_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     (Pool_common.Id.sql_select_fragment ~field:"entity_uuid")
     joins
-  |> Caqti_type.(string ->? Pool_common.Repo.Id.t)
+  |> Repo_entity.Id.t ->? Pool_common.Repo.Id.t
 ;;
 
-let find_related pool { Sihl_queue.id; _ } entity =
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    (find_related_request entity)
-    id
+let find_related pool { Entity.Instance.id; _ } entity =
+  Database.find_opt pool (find_related_request entity) id
 ;;

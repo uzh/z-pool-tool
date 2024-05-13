@@ -1,7 +1,9 @@
+open Database
+
 let root =
   Command_utils.make_no_args "migrate.root" "Migrate root database" (fun () ->
-    let () = Database.Root.add () in
-    let%lwt () = Database.Root.Migration.run () in
+    let (_ : status) = Root.add () in
+    let%lwt () = Migration.execute root (Pool_database.Root.steps ()) in
     Lwt.return_some ())
 ;;
 
@@ -10,8 +12,12 @@ let tenants =
     "migrate.tenant"
     "Migrate tenant databases"
     (fun () ->
-       let () = Database.Root.add () in
-       let%lwt db_pools = Database.Tenant.setup () in
-       let%lwt () = Database.Tenant.Migration.run db_pools () in
+       let (_ : status) = Root.add () in
+       let%lwt db_pools = Tenant.setup () in
+       let%lwt () =
+         Lwt_list.iter_s
+           (CCFun.flip Migration.execute (Pool_database.Tenant.steps ()))
+           db_pools
+       in
        Lwt.return_some ())
 ;;

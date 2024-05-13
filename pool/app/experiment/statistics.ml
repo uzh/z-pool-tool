@@ -1,5 +1,5 @@
-module Field = Pool_common.Message.Field
-module Model = Pool_common.Model
+module Field = Pool_message.Field
+module Model = Pool_model.Base
 
 module SentInvitations = struct
   type sent_by_count = int * int [@@deriving eq, show]
@@ -22,7 +22,7 @@ end
 
 module SendingInvitations = struct
   module Core = struct
-    let field = Pool_common.Message.Field.SendingInvitations
+    let field = Pool_message.Field.SendingInvitations
 
     type t =
       | No [@name "no"] [@printer Utils.ppx_printer "no"]
@@ -31,12 +31,12 @@ module SendingInvitations = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let read str =
     try Ok (Utils.Json.read_variant t_of_yojson str) with
-    | _ -> Error (Pool_common.Message.Invalid field)
+    | _ -> Error (Pool_message.Error.Invalid field)
   ;;
 
   let hint = Pool_common.I18n.ExperimentStatisticsSendingInvitations

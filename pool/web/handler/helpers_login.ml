@@ -1,6 +1,7 @@
-module Label = Pool_database.Label
-module Message = Pool_common.Message
+open Pool_message
+module Label = Database.Label
 module EmailAddress = Pool_user.EmailAddress
+module Password = Pool_user.Password
 
 let src = Logs.Src.create "login helper"
 
@@ -16,7 +17,7 @@ let notify_user database_label tags email =
   | None -> Lwt.return ()
   | Some (_ : Pool_user.FailedLoginAttempt.BlockedUntil.t) ->
     let notify () =
-      Pool_user.find_active_user_by_email_opt database_label email
+      Pool_user.find_active_by_email_opt database_label email
       >|> function
       | None -> Lwt_result.return ()
       | Some user ->
@@ -30,8 +31,9 @@ let notify_user database_label tags email =
         Logs.err (fun m ->
           m
             ~tags
-            "Could not send account suspension notification to '%s': %s"
-            (email |> EmailAddress.value)
+            "Could not send account suspension notification to '%a': %s"
+            EmailAddress.pp
+            email
             Pool_common.(Utils.error_to_string Language.En err));
         err
     in
@@ -64,12 +66,11 @@ let block_until counter =
 
 let login_params urlencoded =
   let open Utils.Lwt_result.Infix in
-  let open Message in
   let* params =
     Field.[ Email; Password ]
     |> CCList.map Field.show
     |> Http_utils.urlencoded_to_params urlencoded
-    |> CCOption.to_result LoginProvideDetails
+    |> CCOption.to_result Error.LoginProvideDetails
     |> Lwt_result.lift
   in
   let* email =
@@ -79,6 +80,7 @@ let login_params urlencoded =
   in
   let password =
     CCList.assoc ~eq:String.equal Field.(Password |> show) params
+    |> Password.Plain.create
   in
   Lwt_result.return (email, password)
 ;;
@@ -88,7 +90,7 @@ let log_request = Logging_helper.log_request_with_ip ~src "Failed login attempt"
 let login req urlencoded database_label =
   let open Utils.Lwt_result.Infix in
   let open Pool_user.FailedLoginAttempt in
-  let is_root = Pool_database.is_root database_label in
+  let is_root = Database.is_root database_label in
   let tags = Pool_context.Logger.Tags.req req in
   let* email, password = login_params urlencoded in
   let handle_login login_attempts =
@@ -113,7 +115,7 @@ let login req urlencoded database_label =
       |> CCOption.map BlockedUntil.value
       |> function
       | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked)
-        -> Lwt_result.fail (Message.AccountTemporarilySuspended blocked)
+        -> Lwt_result.fail (Error.AccountTemporarilySuspended blocked)
       | None | _ -> handler ()
     in
     let handle_result = function
@@ -129,20 +131,17 @@ let login req urlencoded database_label =
         log_request req tags email;
         let%lwt { blocked_until; _ } = counter |> increment in
         let%lwt () = notify_user database_label tags email blocked_until in
-        suspension_error
-          (fun () -> err |> Message.handle_sihl_login_error |> Lwt_result.fail)
-          blocked_until
+        suspension_error (fun () -> Lwt_result.fail err) blocked_until
     in
     let login () =
-      let create_session () =
-        Pool_user.create_session database_label email ~password
-      in
+      let create_session () = Pool_user.login database_label email password in
       (match is_root with
        | true -> create_session ()
        | false ->
          User_import.find_pending_by_email_opt database_label email
          >|> (function
-          | Some _ -> Lwt.return_error `Incorrect_password
+          | Some _ ->
+            Lwt.return_error Pool_message.(Error.Invalid Field.Password)
           | None -> create_session ()))
       >|> handle_result
     in

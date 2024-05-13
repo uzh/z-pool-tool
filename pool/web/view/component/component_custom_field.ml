@@ -26,7 +26,7 @@ let answer_to_html
                         Pool_common.(
                           Utils.field_to_string
                             language
-                            Message.Field.AdminInput
+                            Pool_message.Field.AdminInput
                           |> CCString.capitalize_ascii)
                     ]
                 ]

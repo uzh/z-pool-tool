@@ -12,8 +12,8 @@ module Repo = struct
     end
   end
 
-  include Repo
   module Entity = Repo_entity
+  include Repo
 end
 
 let find = Repo.find

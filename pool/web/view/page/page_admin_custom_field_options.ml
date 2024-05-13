@@ -1,7 +1,7 @@
 open Tyxml.Html
 open Component.Input
+open Pool_message
 module Partials = Component.Partials
-module Message = Pool_common.Message
 module Url = Page_admin_custom_fields.Url
 
 let option_form
@@ -25,7 +25,7 @@ let option_form
       tenant_languages
       flash_fetcher
       custom_field_option
-      Message.Field.Name
+      Field.Name
       (fun lang o ->
          let open CCOption in
          o.SelectOption.name
@@ -46,7 +46,7 @@ let option_form
         [ submit_element
             ~classnames:[ "push" ]
             language
-            Message.(
+            Control.(
               let field = Some Field.CustomFieldOption in
               match custom_field_option with
               | None -> Create field
@@ -85,25 +85,25 @@ let field_buttons language csrf custom_field option =
      | Some published_at ->
        div
          [ txt
-             (Utils.field_to_string language Message.Field.PublishedAt
+             (Utils.field_to_string language Field.PublishedAt
               |> CCString.capitalize_ascii)
          ; txt ": "
          ; txt
              (published_at
               |> PublishedAt.value
-              |> Utils.Time.formatted_date_time)
+              |> Pool_model.Time.formatted_date_time)
          ]
      | None ->
        div
          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
          [ make_form
              (action option "delete")
-             Message.(Delete (Some Field.CustomFieldOption))
+             Control.(Delete (Some Field.CustomFieldOption))
              `Error
              I18n.DeleteCustomFieldOption
          ; make_form
              (action option "publish")
-             Pool_common.Message.(Publish (Some Field.CustomFieldOption))
+             Control.(Publish (Some Field.CustomFieldOption))
              `Success
              I18n.PublishCustomFieldOption
          ])
@@ -121,10 +121,7 @@ let detail
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ Partials.form_title
-        language
-        Message.Field.CustomFieldOption
-        custom_field_option
+    [ Partials.form_title language Field.CustomFieldOption custom_field_option
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ buttons_form

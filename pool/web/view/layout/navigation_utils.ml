@@ -28,7 +28,7 @@ let filter_items ?validate ?actor ?(guardian = []) items =
                  Persistence.PermissionOnTarget.validate_set
                    ~any_id:true
                    guardian
-                   Pool_common.Message.authorization
+                   Pool_message.Error.authorization
                    validation_set
                    actor
                in
@@ -136,7 +136,7 @@ let create_nav
 ;;
 
 let i18n_links languages active_language layout =
-  let open Pool_common.Message in
+  let open Pool_message in
   let link_classes = [ "nav-link" ] in
   let nav_class =
     match layout with
@@ -189,7 +189,7 @@ let create_desktop_nav fcn =
 ;;
 
 let create_mobile_nav ?title ~toggle_id navigation =
-  let title = Option.value ~default:(txt "") title in
+  let title = CCOption.value ~default:(txt "") title in
   let label =
     Icon.to_html
     %> CCList.pure

@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_experiments.uuid"
@@ -137,13 +137,13 @@ let find_upcoming_to_register_request experiment_type () =
     condition_is_invited
     session_condition
   |> Repo.find_request_sql
-  |> Pool_common.Repo.Id.t ->* RepoEntity.t
+  |> Contact.Repo.Id.t ->* RepoEntity.t
 ;;
 
 let find_upcoming_to_register pool contact experiment_type =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
+  Database.collect
+    pool
     (find_upcoming_to_register_request experiment_type ())
     (Contact.id contact)
   (* TODO: This has to be made superfluous by a background job (#164) *)
@@ -182,12 +182,12 @@ let find_pending_waitinglists_by_contact_request =
   in
   join
   |> select_from_experiments_sql ~distinct:true
-  |> Pool_common.Repo.Id.t ->* RepoEntity.Public.t
+  |> Contact.Repo.Id.t ->* RepoEntity.Public.t
 ;;
 
 let find_pending_waitinglists_by_contact pool contact =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
+  Database.collect
+    pool
     find_pending_waitinglists_by_contact_request
     (Contact.id contact)
 ;;
@@ -202,7 +202,7 @@ let find_past_experiments_by_contact pool contact =
     |> select_from_experiments_sql ~distinct:true
     |> pt ->! RepoEntity.Public.t
   in
-  Utils.Database.collect (Pool_database.Label.value pool) request pv
+  Database.collect pool request pv
 ;;
 
 let where_contact_can_access =
@@ -233,30 +233,24 @@ let find_request =
   let open Caqti_request.Infix in
   where_contact_can_access
   |> select_from_experiments_sql
-  |> Caqti_type.(t2 string string) ->! RepoEntity.Public.t
+  |> Caqti_type.(t2 Contact.Repo.Id.t RepoEntity.Id.t) ->! RepoEntity.Public.t
 ;;
 
 let find pool id contact =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_request
-    Pool_common.Id.(Contact.id contact |> value, id |> value)
-  ||> CCOption.to_result Pool_common.Message.(ContactExperimentNotFound)
+  Database.find_opt pool find_request (Contact.id contact, id)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
 ;;
 
 let find_full_by_contact_request =
   let open Caqti_request.Infix in
   where_contact_can_access
   |> Repo.find_request_sql
-  |> Caqti_type.(t2 string string) ->! RepoEntity.t
+  |> Caqti_type.(t2 Contact.Repo.Id.t RepoEntity.Id.t) ->! RepoEntity.t
 ;;
 
 let find_full_by_contact pool id contact =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_full_by_contact_request
-    Pool_common.Id.(Contact.id contact |> value, id |> value)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+  Database.find_opt pool find_full_by_contact_request (Contact.id contact, id)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
 ;;

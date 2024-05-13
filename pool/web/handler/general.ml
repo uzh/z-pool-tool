@@ -1,16 +1,11 @@
 let src = Logs.Src.create "handler.general"
-
-let user_from_session db_pool req : Sihl_user.t option Lwt.t =
-  let ctx = Pool_database.to_ctx db_pool in
-  Service.User.Web.user_from_session ~ctx req
-;;
+let user_from_session = Pool_user.Web.user_from_session
 
 let admin_from_session db_pool req =
   let open Utils.Lwt_result.Infix in
   user_from_session db_pool req
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-  >>= fun user ->
-  user.Sihl.Contract.User.id |> Admin.Id.of_string |> Admin.find db_pool
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
+  >>= fun user -> user.Pool_user.id |> Admin.Id.of_user |> Admin.find db_pool
 ;;
 
 let create_tenant_layout req ?active_navigation context children =

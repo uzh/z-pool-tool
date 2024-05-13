@@ -6,7 +6,7 @@ let create_layout = Contact_general.create_layout
 let show req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, id =
-    let open Pool_common.Message.Field in
+    let open Pool_message.Field in
     ( HttpUtils.find_id Experiment.Id.of_string Experiment req
     , HttpUtils.find_id Session.Id.of_string Session req )
   in
@@ -26,8 +26,7 @@ let show req =
            contact
          >|> function
          | [] -> Lwt.return_ok ()
-         | _ ->
-           Lwt.return_error Pool_common.Message.AlreadySignedUpForExperiment
+         | _ -> Lwt.return_error Pool_message.Error.AlreadySignedUpForExperiment
        in
        let* session = Session.find_public database_label id in
        let%lwt follow_ups =

@@ -33,12 +33,13 @@ let find_assignment () =
   Assignment.find database_label assignment_id ||> get_exn
 ;;
 
-let sort_entity_uuids = CCList.sort Pool_common.Id.compare
+let sort_entity_uuids = CCList.stable_sort Pool_common.Id.compare
 
 let sort_history history =
   History.
     { history with
-      entity_uuids = CCList.sort Pool_common.Id.compare history.entity_uuids
+      entity_uuids =
+        CCList.stable_sort Pool_common.Id.compare history.entity_uuids
     }
 ;;
 
@@ -292,21 +293,13 @@ module Resend = struct
 
   let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
 
-  let to_queue_job ?(status = Sihl_queue.Succeeded) name input =
-    let now = Ptime_clock.now () in
-    Sihl_queue.
-      { id = Pool_common.Id.(create () |> value)
-      ; name = Queue.JobName.show name
-      ; input = Yojson.Safe.to_string input
-      ; tries = 0
-      ; max_tries = 10
-      ; next_run_at = now
-      ; status
-      ; last_error = None
-      ; last_error_at = None
-      ; tag = None
-      ; ctx = database_label |> Pool_database.to_ctx
-      }
+  let to_queue_job ?(status = Queue.Status.Succeeded) name input =
+    Queue.Instance.create
+      ~max_tries:10
+      ~status
+      (database_label |> Database.to_ctx)
+      name
+      (Yojson.Safe.to_string input)
   ;;
 
   let email_queue_job ?status () =
@@ -331,9 +324,9 @@ module Resend = struct
   ;;
 
   let resend_pending () =
-    let email_job = email_queue_job ~status:Sihl_queue.Pending () in
+    let email_job = email_queue_job ~status:Queue.Status.Pending () in
     let events = Command.Resend.handle email_job in
-    let expected = Error Pool_common.Message.JobPending in
+    let expected = Error Pool_message.Error.JobPending in
     Alcotest.(
       check
         (result (list Test_utils.event) Test_utils.error)
@@ -349,7 +342,7 @@ module Resend = struct
       let job =
         Email.
           { (Model.create_email_job ()) with
-            resent = Some (Pool_common.Id.of_string email_job.Sihl_queue.id)
+            resent = Some (email_job |> Queue.Instance.id)
           }
       in
       Ok [ Email.(Sent job) |> Pool_event.email ]
@@ -361,8 +354,7 @@ module Resend = struct
       let job =
         Text_message.
           { (Model.create_text_message_job cell_phone) with
-            resent =
-              Some (Pool_common.Id.of_string text_message_job.Sihl_queue.id)
+            resent = Some (text_message_job |> Queue.Instance.id)
           }
       in
       Ok [ Text_message.(Sent job) |> Pool_event.text_message ]
@@ -378,17 +370,19 @@ module Resend = struct
     let contact =
       let open Contact in
       let contact = Model.create_contact () in
-      let sihl_user =
-        Sihl_user.{ (user contact) with email = updated_email_address }
+      let pool_user =
+        { (user contact) with
+          Pool_user.email = EmailAddress.of_string updated_email_address
+        }
       in
-      { contact with cell_phone = Some updated_cellphone; user = sihl_user }
+      { contact with cell_phone = Some updated_cellphone; user = pool_user }
     in
     let events = Command.Resend.handle ~contact email_job in
     let expected =
       let job =
         Email.
           { (Model.create_email_job ~recipient:updated_email_address ()) with
-            resent = Some (Pool_common.Id.of_string email_job.Sihl_queue.id)
+            resent = Some (email_job |> Queue.Instance.id)
           }
       in
       Ok [ Email.(Sent job) |> Pool_event.email ]
@@ -400,8 +394,7 @@ module Resend = struct
       let job =
         Text_message.
           { (Model.create_text_message_job updated_cellphone) with
-            resent =
-              Some (Pool_common.Id.of_string text_message_job.Sihl_queue.id)
+            resent = Some (text_message_job |> Queue.Instance.id)
           }
       in
       Ok [ Text_message.(Sent job) |> Pool_event.text_message ]
@@ -423,7 +416,7 @@ module Resend = struct
       let job =
         Email.
           { (Model.create_email_job ~smtp_auth_id:updated_smtp_auth_id ()) with
-            resent = Some (Pool_common.Id.of_string email_job.Sihl_queue.id)
+            resent = Some (email_job |> Queue.Instance.id)
           }
       in
       Ok [ Email.(Sent job) |> Pool_event.email ]

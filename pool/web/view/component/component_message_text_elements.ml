@@ -143,19 +143,13 @@ let message_template_help
       (create_assignment ())
   | ContactEmailChangeAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
-    ContactEmailChangeAttempt.email_params
-      layout
-      tenant_url
-      (create_sihl_user ())
+    ContactEmailChangeAttempt.email_params layout tenant_url (create_user ())
   | ContactRegistrationAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
-    ContactRegistrationAttempt.email_params
-      layout
-      tenant_url
-      (create_sihl_user ())
+    ContactRegistrationAttempt.email_params layout tenant_url (create_user ())
   | EmailVerification ->
     let validation_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      [ Pool_message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
     in
     EmailVerification.email_params layout validation_url (create_contact ())
@@ -174,23 +168,23 @@ let message_template_help
   | MatcherNotification ->
     MatcherNotification.email_params
       layout
-      (create_sihl_user ())
+      (create_user ())
       (create_experiment ())
   | MatchFilterUpdateNotification ->
     let session = create_session () in
     let assignment = create_assignment () in
     MatchFilterUpdateNotification.email_params
       layout
-      (create_sihl_user ())
+      (create_user ())
       (create_experiment ())
       [ session, [ assignment ] ]
-  | PasswordChange -> PasswordChange.email_params layout (create_sihl_user ())
+  | PasswordChange -> PasswordChange.email_params layout (create_user ())
   | PasswordReset ->
     let reset_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      [ Pool_message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/reset-password/"
     in
-    PasswordReset.email_params layout reset_url (create_sihl_user ())
+    PasswordReset.email_params layout reset_url (create_user ())
   | PhoneVerification ->
     let code = Pool_common.VerificationCode.create () in
     PhoneVerification.message_params code
@@ -250,7 +244,7 @@ let message_template_help
       (create_contact ())
   | SignUpVerification ->
     let verification_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      [ Pool_message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
     in
     let contact = create_contact () in
@@ -261,7 +255,7 @@ let message_template_help
       (Contact.lastname contact)
   | UserImport ->
     let confirmation_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      [ Pool_message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params
            tenant.Pool_tenant.url
            "/import-confirmation"

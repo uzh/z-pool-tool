@@ -1,5 +1,5 @@
-module Conformist = Pool_common.Utils.PoolConformist
-module Message = Pool_common.Message
+module Conformist = Pool_conformist
+module Message = Pool_message
 module BaseGuard = Guard
 open Pool_location
 
@@ -26,7 +26,7 @@ module Create : sig
   val decode
     :  Description.t option
     -> Conformist.input
-    -> (t, Message.error) result
+    -> (t, Pool_message.Error.t) result
 end = struct
   type base =
     { name : Name.t
@@ -67,8 +67,8 @@ end = struct
       ; link
       ; status = Status.Active
       ; files = []
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; updated_at = Pool_common.UpdatedAt.create_now ()
       }
     in
     Ok [ Created location |> Pool_event.pool_location ]
@@ -80,7 +80,7 @@ end = struct
     @@ let* base = Conformist.decode_and_validate schema data in
        let* address =
          match
-           CCList.assoc ~eq:( = ) Message.Field.(Virtual |> show) data
+           CCList.assoc ~eq:( = ) Pool_message.Field.(Virtual |> show) data
            |> CCList.hd
            |> CCString.equal "true"
          with
@@ -115,7 +115,7 @@ module Update : sig
   val decode
     :  Description.t option
     -> Conformist.input
-    -> (update, Message.error) result
+    -> (update, Pool_message.Error.t) result
 
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
@@ -152,7 +152,7 @@ end = struct
     @@ let* base = Conformist.decode_and_validate schema data in
        let* address_new =
          match
-           CCList.assoc ~eq:( = ) Message.Field.(Virtual |> show) data
+           CCList.assoc ~eq:( = ) Pool_message.Field.(Virtual |> show) data
            |> CCList.hd
            |> CCString.equal "true"
          with
@@ -182,7 +182,7 @@ module AddFile : sig
     -> t
     -> (Pool_event.t list, 'a) result
 
-  val decode : Conformist.input -> (t, Message.error) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
   open Mapping
@@ -197,11 +197,10 @@ end = struct
         Field.
           [ Label.schema ()
           ; Pool_common.Language.schema ()
-          ; Pool_common.(
-              Utils.schema_decoder
-                CCFun.(Id.of_string %> CCResult.return)
-                Id.value
-                Message.Field.FileMapping)
+          ; Pool_conformist.schema_decoder
+              CCFun.(Id.of_string %> CCResult.return)
+              Id.value
+              Pool_message.Field.FileMapping
           ]
         command)
   ;;
@@ -217,7 +216,7 @@ end = struct
       Mapping.Write.create
         label
         language
-        asset_id
+        (Id.to_common asset_id)
         (location.Pool_location.id
          |> Pool_location.Id.value
          |> Pool_common.Id.of_string)
@@ -241,7 +240,7 @@ end
 module DeleteFile : sig
   include Common.CommandSig with type t = Mapping.Id.t
 
-  val decode : Conformist.input -> (t, Message.error) result
+  val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Id.t -> Mapping.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   open Mapping

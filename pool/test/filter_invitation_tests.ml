@@ -1,4 +1,4 @@
-let ( let@ ) = Result.bind
+let ( let@ ) = CCResult.( >>= )
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
 let test_db = Test_utils.Data.database_label
@@ -35,20 +35,26 @@ let experiment () =
 
 let contact ~prefix () =
   let open Contact in
-  let invited_contact_id = Id.create () in
+  let invited_contact_id = Contact.Id.create () in
   let* email =
     let email =
-      Format.asprintf "%s+%s@domain.test" prefix (Id.value invited_contact_id)
+      Format.asprintf
+        "%s+%s@domain.test"
+        prefix
+        (Contact.Id.value invited_contact_id)
     in
     Pool_user.EmailAddress.create email
   in
-  let* password = Pool_user.Password.create_unvalidated "a-password" in
+  let password =
+    Pool_user.Password.Plain.(
+      create "Somepassword1!" |> validate |> Pool_common.Utils.get_or_failwith)
+  in
   let* firstname = Pool_user.Firstname.create "firstname" in
   let* lastname = Pool_user.Lastname.create "lastname" in
   let terms_accepted_at =
-    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> Option.some
+    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> CCOption.some
   in
-  let language = Pool_common.Language.En |> Option.some in
+  let language = Pool_common.Language.En |> CCOption.some in
   let contact_created =
     [ Contact.created
         { user_id = invited_contact_id
@@ -68,7 +74,7 @@ let contact ~prefix () =
   let* verification_events =
     let open Cqrs_command.User_command in
     let created_email =
-      Email.Created (email, token, invited_contact_id)
+      Email.Created (email, token, invited_contact_id |> Id.to_user)
       |> Pool_event.email_verification
     in
     let email = Email.create email contact.user token in
@@ -105,7 +111,7 @@ let invitation ~experiment ~contacts =
                 ~subject:"subject"
                 "body"
               |> Email.create_job
-              |> Result.ok)
+              |> CCResult.return)
         ; mailing = None
         })
   in
@@ -167,7 +173,7 @@ let finds_uninvited_contacts =
     CCList.filter
       (fun contact ->
         let open Contact in
-        let open Sihl_user in
+        let open Pool_user in
         contact.user.id = invited_contact.user.id
         || contact.user.id = expected_contact.user.id)
       found_contacts
@@ -239,7 +245,7 @@ let filters_out_invited_contacts =
     CCList.filter
       (fun contact ->
         let open Contact in
-        let open Sihl_user in
+        let open Pool_user in
         contact.user.id = invited_contact.user.id)
       found_contacts
   in

@@ -1,6 +1,5 @@
 open Ppx_yojson_conv_lib.Yojson_conv
-module Message = Pool_common.Message
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 
 type command =
   { time_value : int
@@ -10,20 +9,20 @@ type command =
 let update_command time_value time_unit = { time_value; time_unit }
 
 let update_duration_schema integer_schema field =
-  Pool_common.Utils.PoolConformist.(
+  Pool_conformist.(
     make Field.[ integer_schema; TimeUnit.named_schema field () ] update_command)
 ;;
 
 module ContactEmail = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Message.Field.ContactEmail
+  let field = Pool_message.Field.ContactEmail
 
   let create email =
     let open Mrmime in
     match Mailbox.of_string email with
     | Ok _ -> Ok email
-    | Error _ -> Error Pool_common.Message.(Invalid field)
+    | Error _ -> Error Pool_message.(Error.Invalid field)
   ;;
 
   let schema () = schema ~validation:create field ()
@@ -31,9 +30,9 @@ module ContactEmail = struct
 end
 
 module EmailSuffix = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Message.Field.EmailSuffix
+  let field = Pool_message.Field.EmailSuffix
   (* TODO: email address validation *)
 
   let schema () = schema field ()
@@ -43,18 +42,18 @@ end
 module InactiveUser = struct
   module DisableAfter = struct
     module Core = struct
-      let name = Pool_common.Message.Field.InactiveUserDisableAfter
+      let name = Pool_message.Field.InactiveUserDisableAfter
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
   end
 
   module Warning = struct
     module Core = struct
-      let name = Pool_common.Message.Field.InactiveUserWarning
+      let name = Pool_message.Field.InactiveUserWarning
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
   end
 end
 
@@ -62,17 +61,17 @@ module TriggerProfileUpdateAfter = struct
   module Core = struct
     type t
 
-    let name = Pool_common.Message.Field.TriggerProfileUpdateAfter
+    let name = Pool_message.Field.TriggerProfileUpdateAfter
   end
 
-  include Pool_common.Model.Duration (Core)
+  include Pool_model.Base.Duration (Core)
 end
 
 module TermsAndConditions = struct
   module Terms = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
-    let field = Message.Field.TermsAndConditions
+    let field = Pool_message.Field.TermsAndConditions
     (* TODO: email address validation *)
 
     let schema () = schema field ()
@@ -95,17 +94,17 @@ module UserImportReminder = struct
   let validate m =
     let open Ptime.Span in
     let day = 60 * 60 * 24 |> of_int_s in
-    if m >= day then Ok m else Error Pool_common.Message.TooShort
+    if m >= day then Ok m else Error Pool_message.Error.TooShort
   ;;
 
   module FirstReminderAfter = struct
     module Core = struct
       type t
 
-      let name = Pool_common.Message.Field.FirstReminder
+      let name = Pool_message.Field.FirstReminder
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
 
     let validate = validate
   end
@@ -114,10 +113,10 @@ module UserImportReminder = struct
     module Core = struct
       type t
 
-      let name = Pool_common.Message.Field.SecondReminder
+      let name = Pool_message.Field.SecondReminder
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
 
     let validate = validate
   end
@@ -197,7 +196,7 @@ let action_of_param = function
   | "update_trigger_profile_update_after" -> Ok `UpdateTriggerProfileUpdateAfter
   | "user_import_first_reminder_after" -> Ok `UserImportFirstReminderAfter
   | "user_import_second_reminder_after" -> Ok `UserImportSecondReminderAfter
-  | _ -> Error Pool_common.Message.DecodeAction
+  | _ -> Error Pool_message.Error.DecodeAction
 ;;
 
 let stringify_action = function

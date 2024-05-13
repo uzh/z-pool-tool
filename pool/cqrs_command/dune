@@ -7,7 +7,6 @@
   custom_field
   contact
   contact_counter
-  database
   email
   experiment
   filter
@@ -15,6 +14,7 @@
   i18n
   organisational_unit
   pool_common
+  pool_database
   pool_event
   pool_location
   pool_tenant
@@ -25,7 +25,6 @@
   sihl
   system_event
   tags
-  tenant
   time_window
   user_import)
  (preprocess

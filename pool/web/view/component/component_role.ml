@@ -3,7 +3,7 @@ open Tyxml.Html
 module Input = Component_input
 module Table = Component_table
 module Icon = Component_icon
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let print = Utils.ppx_printer
 
@@ -124,14 +124,20 @@ module List = struct
         CCOption.map_or
           ~default
           (Input.link_as_button
-             ~control:(language, Pool_common.Message.show)
+             ~control:(language, Pool_message.Control.Show)
              ~icon:Icon.Eye
            %> CCList.return)
           (target_path role_element)
       in
       let remove_button =
         if is_edit
-        then [ button_form "revoke-role" Message.delete `Error I18n.RevokeRole ]
+        then
+          [ button_form
+              "revoke-role"
+              Pool_message.Control.delete
+              `Error
+              I18n.RevokeRole
+          ]
         else default
       in
       target_button @ remove_button
@@ -153,7 +159,7 @@ module List = struct
     =
     let open CCList in
     let thead =
-      let open Pool_common.Message in
+      let open Pool_message in
       (Field.[ Role ] |> Table.fields_to_txt language) @ [ txt "" ]
     in
     roles
@@ -191,7 +197,7 @@ module Search = struct
 
   let role_form ?key language csrf admin role_list =
     let toggle_id = "role-search" in
-    let toggled_content = value_form language (Admin.id admin) ?key () in
+    let toggled_content = value_form language Admin.(id admin) ?key () in
     let key_selector =
       let attributes =
         Utils.htmx_attribs
@@ -219,7 +225,7 @@ module Search = struct
       Component_input.submit_element
         language
         ~classnames:[ "push"; "align-self-end" ]
-        Pool_common.Message.(Add None)
+        Pool_message.(Control.Add None)
         ()
     in
     form
@@ -310,7 +316,7 @@ module ActorPermissionSearch = struct
       Component_input.submit_element
         language
         ~classnames:[ "push"; "align-self-end" ]
-        Pool_common.Message.(Add None)
+        Pool_message.(Control.Add None)
         ()
     in
     let value_form =

@@ -2,7 +2,7 @@ let src = Logs.Src.create "invitation.cqrs"
 
 let contact_partition invited =
   CCList.partition (fun contact ->
-    CCList.mem ~eq:Pool_common.Id.equal (Contact.id contact) invited)
+    CCList.mem ~eq:Contact.Id.equal (Contact.id contact) invited)
 ;;
 
 let contact_update_on_invitation_sent contacts =
@@ -21,15 +21,14 @@ module Create : sig
     { experiment : Experiment.t
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
-    ; invited_contacts : Pool_common.Id.t list
-    ; create_message :
-        Contact.t -> (Email.job, Pool_common.Message.error) result
+    ; invited_contacts : Contact.Id.t list
+    ; create_message : Contact.t -> (Email.job, Pool_message.Error.t) result
     }
 
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -37,9 +36,8 @@ end = struct
     { experiment : Experiment.t
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
-    ; invited_contacts : Pool_common.Id.t list
-    ; create_message :
-        Contact.t -> (Email.job, Pool_common.Message.error) result
+    ; invited_contacts : Contact.Id.t list
+    ; create_message : Contact.t -> (Email.job, Pool_message.Error.t) result
     }
 
   let handle
@@ -50,10 +48,10 @@ end = struct
     let open CCResult in
     let open CCFun in
     let errors, contacts = contact_partition invited_contacts contacts in
-    let errors = CCList.map (Contact.id %> Pool_common.Id.value) errors in
+    let errors = CCList.map Contact.(id %> Id.value) errors in
     let emails = contacts |> CCList.map create_message in
     if CCList.is_empty errors |> not
-    then Error Pool_common.Message.(AlreadyInvitedToExperiment errors)
+    then Error Pool_message.(Error.AlreadyInvitedToExperiment errors)
     else (
       match CCList.all_ok emails with
       | Ok emails when CCList.is_empty emails -> Ok []
@@ -78,9 +76,9 @@ module Resend : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?mailing_id:Mailing.Id.t
-    -> (Contact.t -> (Email.job, Pool_common.Message.error) result)
+    -> (Contact.t -> (Email.job, Pool_message.Error.t) result)
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct

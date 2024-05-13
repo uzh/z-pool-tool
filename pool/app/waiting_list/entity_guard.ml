@@ -10,7 +10,7 @@ module Target = struct
       ?ctx
       (Uuid.target_of Pool_common.Id.value %> Target.create `WaitingList)
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 
   let to_authorizable ?ctx { Entity.id; _ } = decorate ?ctx id

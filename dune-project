@@ -1,4 +1,4 @@
-(lang dune 2.8)
+(lang dune 3.7)
 
 (generate_opam_files true)
 
@@ -35,27 +35,11 @@
    (and
     (>= 4.0.0)
     (< 5.0.0)))
-  (sihl-cache
-   (and
-    (>= 4.0.0)
-    (< 5.0.0)))
   (sihl-email
    (and
     (>= 4.0.0)
     (< 5.0.0)))
-  (sihl-queue
-   (and
-    (>= 4.0.0)
-    (< 5.0.0)))
   (sihl-storage
-   (and
-    (>= 4.0.0)
-    (< 5.0.0)))
-  (sihl-token
-   (and
-    (>= 4.0.0)
-    (< 5.0.0)))
-  (sihl-user
    (and
     (>= 4.0.0)
     (< 5.0.0)))
@@ -87,6 +71,8 @@
    (>= 0.14.0))
   (ppx_variants_conv
    (= v0.16.0))
+  (tyxml-ppx
+   (>= 4.6.0))
   canary
   (guardian
    (= 0.3.2))

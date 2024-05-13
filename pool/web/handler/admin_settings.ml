@@ -138,7 +138,7 @@ let update_settings req =
     let return_to_settings () =
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.SettingsUpdated ] ]
+        [ Message.set ~success:[ Pool_message.Success.SettingsUpdated ] ]
     in
     () |> events |>> handle |>> return_to_settings
   in

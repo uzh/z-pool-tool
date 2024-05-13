@@ -1,5 +1,7 @@
 open CCFun
-module Field = Pool_common.Message.Field
+open Pool_message
+module Assignment = Admin_experiments_assignments
+module Field = Field
 module FilterEntity = Filter
 module HttpUtils = Http_utils
 module Invitations = Admin_experiments_invitations
@@ -55,11 +57,11 @@ let contact_person_from_urlencoded database_label urlencoded experiment_id =
     let* () =
       id
       |> Guard.Uuid.Actor.of_string
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.ContactPerson)
+      |> CCOption.to_result (Error.NotFound Field.ContactPerson)
       |> Lwt_result.lift
       >>= (fun id ->
             Guard.Persistence.Actor.find database_label id
-            >|- Pool_common.Message.authorization)
+            >|- Error.authorization)
       >>= Guard.Persistence.validate
             database_label
             (validation_set experiment_id)
@@ -220,9 +222,7 @@ let create req =
       in
       Http_utils.redirect_to_with_actions
         "/admin/experiments"
-        [ Message.set
-            ~success:[ Pool_common.Message.(Created Field.Experiment) ]
-        ]
+        [ Message.set ~success:[ Success.Created Field.Experiment ] ]
     in
     events >|+ flip ( @ ) role_events |>> handle
   in
@@ -294,6 +294,7 @@ let detail edit req =
            database_label
            (id
             |> Experiment.Id.to_common
+            |> Contact.Id.of_common
             |> Cqrs_command.Tags_command.AssignTagToContact.effects)
            actor
          ||> CCResult.is_ok
@@ -372,9 +373,7 @@ let update req =
       in
       Http_utils.redirect_to_with_actions
         detail_path
-        [ Message.set
-            ~success:[ Pool_common.Message.(Updated Field.Experiment) ]
-        ]
+        [ Message.set ~success:[ Success.Updated Field.Experiment ] ]
     in
     events |>> handle
   in
@@ -441,9 +440,7 @@ let delete req =
       in
       Http_utils.redirect_to_with_actions
         experiments_path
-        [ Message.set
-            ~success:[ Pool_common.Message.(Created Field.Experiment) ]
-        ]
+        [ Message.set ~success:[ Success.Created Field.Experiment ] ]
     in
     events |>> handle
   in
@@ -503,8 +500,7 @@ module Filter = struct
         in
         Http_utils.redirect_to_with_actions
           redirect_path
-          [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Filter) ]
-          ]
+          [ Message.set ~success:[ Success.Deleted Field.Filter ] ]
       in
       events |>> handle
     in
@@ -553,7 +549,7 @@ module Access : sig
   val search : Rock.Middleware.t
   val message_history : Rock.Middleware.t
 end = struct
-  module Field = Pool_common.Message.Field
+  module Field = Field
   module ExperimentCommand = Cqrs_command.Experiment_command
   module Guardian = Middleware.Guardian
 

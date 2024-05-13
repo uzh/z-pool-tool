@@ -1,18 +1,20 @@
-open Entity_message
+module Ptime = Utils.Ptime
+open Pool_message
 
 let rec field_to_string =
+  let open Field in
   let combine one two =
     CCString.concat ": " [ field_to_string one; field_to_string two ]
   in
-  let open Field in
   function
   | Action -> "Aktion"
-  | Actor -> "Akteur"
+  | Active -> "Aktiv"
   | ActiveContactsCount -> "Anzahl aktive Kontakte"
+  | Actor -> "Akteur"
   | Admin -> "Administrator"
   | AdminComment -> "Adminkommentar"
-  | AdminInput -> "Admineingabe"
   | AdminHint -> "Hint für Administratoren"
+  | AdminInput -> "Admineingabe"
   | AdminInputOnly -> "Eingabe nur durch Admins"
   | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AllowUninvitedSignup -> "Einschreiben aller Kontakte erlauben"
@@ -35,6 +37,7 @@ let rec field_to_string =
   | Chronological -> "chronologisch"
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"
+  | Confirmed -> "Bestätigt"
   | ConfirmedAt -> "Bestätigt am"
   | Contact -> "Kontakt"
   | ContactCount -> "Anzahl Kontakte"
@@ -137,6 +140,7 @@ let rec field_to_string =
   | InvitationsSent -> "Gesendete Einladungen"
   | InvitationSubject -> "Einladungsbetreff"
   | InvitationText -> "Einladungstext"
+  | IsAdmin -> "Ist Administrator"
   | Key -> "Schlüssel"
   | Label -> "Label"
   | Language -> "Sprache"
@@ -298,11 +302,13 @@ let rec field_to_string =
   | Translation -> "Übersetzung"
   | Tries -> "Versuche"
   | TriggerProfileUpdateAfter -> "Aufforderung zur Kontrolle des Profils"
+  | UpdatedAt -> "aktualisiert am"
   | Url -> "Url"
   | User -> "Benutzer"
   | Validation -> "Validierung"
   | Value -> "Wert"
   | ValueOf field -> combine Value field
+  | VerificationCode -> "Verifizierungs Code"
   | Verified -> "Verifiziert"
   | Version -> "Version"
   | Virtual -> "Virtuell"
@@ -311,11 +317,15 @@ let rec field_to_string =
   | Zip -> "PLZ"
 ;;
 
-let info_to_string : info -> string = function
+let info_to_string =
+  let open Info in
+  function
   | Info s -> s
 ;;
 
-let success_to_string : success -> string = function
+let success_to_string =
+  let open Success in
+  function
   | AddedToWaitingList -> "Sie wurden der Warteliste hinzugefügt."
   | AssignmentCreated -> "Sie wurden erfolgreich angemeldet."
   | Canceled field ->
@@ -391,14 +401,18 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
     "Die Verifizierungsnachricht wurde erneut verschickt."
 ;;
 
-let warning_to_string : warning -> string = function
+let warning_to_string =
+  let open Warning in
+  function
   | Warning string -> string
 ;;
 
-let rec error_to_string = function
+let rec error_to_string =
+  let open Error in
+  function
   | AccountTemporarilySuspended ptime ->
     ptime
-    |> Utils.Ptime.formatted_date_time
+    |> Ptime.formatted_date_time
     |> Format.asprintf
          "Zu viele fehlgeschlagene Anmeldeversuche. Diese E-Mail-Adresse ist \
           gesperrt, bis %s"
@@ -442,6 +456,8 @@ let rec error_to_string = function
     Format.asprintf "%s kann nicht gelöscht werden." (field_to_string field)
   | CannotBeUpdated field ->
     Format.asprintf "%s kann nicht angepasst werden." (field_to_string field)
+  | CaqtiError err -> err
+  | Connection err -> [%string "Verbindungsfehler: %{err}"]
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -464,6 +480,8 @@ let rec error_to_string = function
   | CustomFieldNoOptions -> "Es muss mindestens eine Option existieren."
   | CustomFieldTypeChangeNotAllowed ->
     "Sie können den Typ des Feldes nicht ändern."
+  | DatabaseAddPoolFirst ->
+    "Unbekannter Pool: Bitte fügen sie diesen erst hinzu ('add_pool')."
   | Decode field ->
     field_message
       ""
@@ -512,6 +530,8 @@ let rec error_to_string = function
       (error_to_string (Invalid Field.EmailSuffix))
       (CCString.concat ", " suffixes)
   | InvalidJson exn -> Format.asprintf "Ungültiges Json: %s" exn
+  | InvalidPasswordHashingCount ->
+    "Die Anzahl der Hashwerte für das Passwort muss zwischen 4 und 31 liegen."
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidRequest | InvalidHtmxRequest -> "Ungültige Anfrage."
   | IsMarkedAsDeleted field ->
@@ -665,6 +685,7 @@ let rec error_to_string = function
     field_message "" (field_to_string field) "ist undefiniert."
   | Uniqueness field ->
     field_message "" (field_to_string field) "muss einzigartig sein."
+  | Unsupported text -> [%string "'%{text}' ist nicht supportet."]
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 
@@ -675,7 +696,9 @@ let format_submit submit field =
   field_message (field_opt_message field) submit ""
 ;;
 
-let control_to_string = function
+let control_to_string =
+  let open Control in
+  function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
@@ -684,7 +707,7 @@ let control_to_string = function
   | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
-  | ChangeSession -> format_submit "ändern" (Some Entity_message_field.Session)
+  | ChangeSession -> format_submit "ändern" (Some Field.Session)
   | Choose field -> format_submit "wählen" field
   | Close field -> format_submit "schliessen" field
   | Create field -> format_submit "erstellen" field

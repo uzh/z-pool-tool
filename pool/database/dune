@@ -1,7 +1,26 @@
 (library
  (name database)
- (libraries conformist guard logger pool_tenant service sihl utils)
+ (libraries
+  containers
+  caqti-lwt.unix
+  lwt
+  guardian.backend
+  pool.conformist
+  pool.message
+  pool.model
+  sexplib)
+ (wrapped true)
  (preprocess
-  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_yojson_conv)))
+  (pps
+   lwt_ppx
+   ppx_deriving.enum
+   ppx_deriving.eq
+   ppx_deriving.make
+   ppx_deriving.ord
+   ppx_deriving.show
+   ppx_fields_conv
+   ppx_sexp_conv
+   ppx_string
+   ppx_yojson_conv)))
 
 (include_subdirs unqualified)

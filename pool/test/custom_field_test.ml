@@ -1,10 +1,8 @@
+open Pool_message
 module CustomFieldCommand = Cqrs_command.Custom_field_command
 module CustomFieldOptionCommand = Cqrs_command.Custom_field_option_command
-module Message = Pool_common.Message
 
-let boolean_fields =
-  Custom_field.boolean_fields |> CCList.map Message.Field.show
-;;
+let boolean_fields = Custom_field.boolean_fields |> CCList.map Field.show
 
 module Data = struct
   open Custom_field
@@ -21,10 +19,9 @@ module Data = struct
   let required = false |> Required.create
 
   let data =
-    Message.
-      [ Field.(FieldType |> show), field_type |> FieldType.show
-      ; Field.(AdminHint |> show), admin_hint
-      ]
+    [ Field.(FieldType |> show), field_type |> FieldType.show
+    ; Field.(AdminHint |> show), admin_hint
+    ]
     |> CCList.map (fun (f, l) -> f, l |> CCList.pure)
   ;;
 
@@ -294,7 +291,7 @@ let create_with_missing_name () =
           Data.hint
           Data.validation_data
   in
-  let expected = Error Message.(AllLanguagesRequired Field.Name) in
+  let expected = Error (Error.AllLanguagesRequired Field.Name) in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
@@ -337,10 +334,9 @@ let update_type_of_published_field () =
   in
   let events =
     let data =
-      Message.
-        [ Field.(FieldType |> show), [ Custom_field.FieldType.(Number |> show) ]
-        ; Field.(AdminHint |> show), [ "hint" ]
-        ]
+      [ Field.(FieldType |> show), [ Custom_field.FieldType.(Number |> show) ]
+      ; Field.(AdminHint |> show), [ "hint" ]
+      ]
     in
     data
     |> Http_utils.format_request_boolean_values boolean_fields
@@ -352,7 +348,7 @@ let update_type_of_published_field () =
           Data.hint
           Data.validation_data
   in
-  let expected = Error Pool_common.Message.CustomFieldTypeChangeNotAllowed in
+  let expected = Error Error.CustomFieldTypeChangeNotAllowed in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
@@ -396,9 +392,7 @@ let delete_published_field () =
       ()
   in
   let events = Cqrs_command.Custom_field_command.Delete.handle custom_field in
-  let expected =
-    Error Pool_common.Message.(AlreadyPublished Field.CustomField)
-  in
+  let expected = Error (Error.AlreadyPublished Field.CustomField) in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
@@ -416,9 +410,7 @@ let delete_published_option () =
   let events =
     Cqrs_command.Custom_field_option_command.Destroy.handle custom_field_option
   in
-  let expected =
-    Error Pool_common.Message.(AlreadyPublished Field.CustomFieldOption)
-  in
+  let expected = Error (Error.AlreadyPublished Field.CustomFieldOption) in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
@@ -430,7 +422,7 @@ let delete_published_option () =
 let publish_field_without_options () =
   let custom_field = Data.custom_select_field () in
   let events = Cqrs_command.Custom_field_command.Publish.handle custom_field in
-  let expected = Error Pool_common.Message.CustomFieldNoOptions in
+  let expected = Error Error.CustomFieldNoOptions in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
@@ -456,7 +448,6 @@ let publish_field_with_options () =
 
 module ValidationTests = struct
   open Custom_field
-  open Pool_common
 
   let contact = Test_utils.Model.create_contact ()
   let contact_id = Contact.(contact |> id |> Id.to_common)
@@ -494,12 +485,12 @@ module ValidationTests = struct
     in
     let validate_too_short () =
       let result = validate "x" in
-      let expected = Error (Message.TextLengthMin min_length) in
+      let expected = Error (Error.TextLengthMin min_length) in
       check_result expected result
     in
     let validate_too_long () =
       let result = validate "foobar" in
-      let expected = Error (Message.TextLengthMax max_length) in
+      let expected = Error (Error.TextLengthMax max_length) in
       check_result expected result
     in
     let validate_ok () =
@@ -543,12 +534,12 @@ module ValidationTests = struct
     in
     let validate_too_small () =
       let result = validate 1 in
-      let expected = Error (Message.NumberMin min_num) in
+      let expected = Error (Error.NumberMin min_num) in
       check_result expected result
     in
     let validate_too_big () =
       let result = validate 10 in
-      let expected = Error (Message.NumberMax max_num) in
+      let expected = Error (Error.NumberMax max_num) in
       check_result expected result
     in
     let validate_ok () =
@@ -600,12 +591,12 @@ module ValidationTests = struct
     in
     let validate_too_few () =
       let result = validate (CCList.take 1 public_options) in
-      let expected = Error (Message.SelectedOptionsCountMin min_num) in
+      let expected = Error (Error.SelectedOptionsCountMin min_num) in
       check_result expected result
     in
     let validate_too_many () =
       let result = validate public_options in
-      let expected = Error (Message.SelectedOptionsCountMax max_num) in
+      let expected = Error (Error.SelectedOptionsCountMax max_num) in
       check_result expected result
     in
     let validate_ok () =

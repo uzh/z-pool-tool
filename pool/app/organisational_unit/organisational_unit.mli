@@ -1,9 +1,9 @@
 module Id : sig
-  include Pool_common.Model.IdSig
+  include Pool_model.Base.IdSig
 end
 
 module Name : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 type t =
@@ -22,7 +22,7 @@ type event =
   | Created of t
   | Updated of (t * Name.t)
 
-val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -32,7 +32,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -49,13 +49,9 @@ module Guard : sig
   end
 end
 
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
-
-val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
-val all : Pool_database.Label.t -> unit -> t list Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val all : Database.Label.t -> unit -> t list Lwt.t
 
 module Repo : sig
   val sql_select_columns : string list

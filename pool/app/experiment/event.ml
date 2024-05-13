@@ -17,10 +17,10 @@ type create =
   ; assignment_without_session : AssignmentWithoutSession.t
   ; survey_url : SurveyUrl.t option
   ; email_session_reminder_lead_time : int option
-  ; email_session_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
+  ; email_session_reminder_lead_time_unit : Pool_model.Base.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option
   ; text_message_session_reminder_lead_time_unit :
-      Pool_common.Model.TimeUnit.t option
+      Pool_model.Base.TimeUnit.t option
   }
 [@@deriving eq, show]
 
@@ -28,12 +28,12 @@ type event =
   | Created of t
   | Updated of t
   | ResetInvitations of t
-  | Deleted of Common.Id.t
+  | Deleted of Pool_common.Id.t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
-  let ctx = Pool_database.to_ctx pool in
+  let ctx = Database.to_ctx pool in
   function
   | Created t ->
     let%lwt () = Repo.insert pool t in

@@ -12,7 +12,7 @@ let reminder_settings database_label =
 
 let message_history user =
   let open Queue.History in
-  { entity_uuids = [ user.Sihl_user.id |> Pool_common.Id.of_string ]
+  { entity_uuids = [ user.Pool_user.id |> Pool_user.Id.to_common ]
   ; message_template =
       Message_template.Label.(show SignUpVerification) |> CCOption.return
   }
@@ -68,16 +68,14 @@ let run database_label =
 
 let run_all () =
   let open Utils.Lwt_result.Infix in
-  Pool_tenant.find_databases ()
-  >|> Lwt_list.iter_s (fun { Pool_database.label; _ } -> run label)
+  Database.Tenant.find_all_by_status () >|> Lwt_list.iter_s run
 ;;
 
 let start () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s interval_s in
   let periodic_fcn () =
-    Logs.debug ~src (fun m ->
-      m ~tags:Pool_database.(Logger.Tags.create root) "Run");
+    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
     run_all ()
   in
   create
@@ -93,7 +91,7 @@ let lifecycle =
   Sihl.Container.create_lifecycle
     "System events"
     ~dependencies:(fun () ->
-      [ Database.lifecycle; Email.Service.Queue.lifecycle ])
+      [ Pool_database.lifecycle; Queue.lifecycle_service ])
     ~start
     ~stop
 ;;

@@ -2,7 +2,7 @@ open CCFun
 module RepoEntity = Repo_entity
 
 module Sql = struct
-  open Pool_database
+  open Database
 
   let select_sql =
     {sql|
@@ -34,8 +34,8 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.SystemEvent)
+    Database.find_opt pool find_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.SystemEvent)
   ;;
 
   let insert_request =
@@ -56,7 +56,7 @@ module Sql = struct
     |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
-  let insert = Label.value %> flip Utils.Database.exec insert_request
+  let insert = flip Database.exec insert_request
 
   module EventLog = struct
     let select_sql =
@@ -95,9 +95,7 @@ module Sql = struct
     ;;
 
     let find_by_event_and_host pool =
-      Utils.Database.collect
-        (Pool_database.Label.value pool)
-        find_by_event_and_host_request
+      Database.collect pool find_by_event_and_host_request
     ;;
 
     let insert_request =
@@ -124,7 +122,7 @@ module Sql = struct
       |> RepoEntity.EventLog.t ->. Caqti_type.unit
     ;;
 
-    let insert = Label.value %> flip Utils.Database.exec insert_request
+    let insert = flip Database.exec insert_request
   end
 
   let find_pending_request =
@@ -148,7 +146,7 @@ module Sql = struct
 
   let find_pending identifier =
     Entity.EventLog.ServiceIdentifier.get identifier
-    |> Utils.Database.collect (Label.value root) find_pending_request
+    |> Database.collect root find_pending_request
   ;;
 end
 

@@ -1,6 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.admin.location"
 let create_layout req = General.create_tenant_layout req
@@ -90,7 +90,7 @@ let create req =
       in
       Http_utils.redirect_to_with_actions
         "/admin/locations"
-        [ Message.set ~success:[ Pool_common.Message.(Created Field.Location) ]
+        [ Message.set ~success:[ Pool_message.(Success.Created Field.Location) ]
         ]
     in
     events |>> handle
@@ -144,10 +144,7 @@ let add_file req =
       | Error err ->
         let%lwt () =
           Lwt_list.iter_s
-            (fun (_, asset_id) ->
-              asset_id
-              |> Service.Storage.delete
-                   ~ctx:(Pool_database.to_ctx database_label))
+            (fun (_, asset_id) -> asset_id |> Storage.delete database_label)
             files
         in
         Logs.err (fun m ->
@@ -170,7 +167,7 @@ let add_file req =
       Http_utils.redirect_to_with_actions
         path
         [ Message.set
-            ~success:[ Pool_common.Message.(Created Field.FileMapping) ]
+            ~success:[ Pool_message.(Success.Created Field.FileMapping) ]
         ]
     in
     events >|> finalize |>> handle
@@ -222,7 +219,7 @@ let statistics req =
         Field.Year
         CCFun.Infix.(
           CCInt.of_string
-          %> CCOption.to_result Pool_common.Message.(Invalid Field.Year))
+          %> CCOption.to_result Pool_message.(Error.Invalid Field.Year))
       |> Lwt_result.lift
     in
     let%lwt statistics = Statistics.create ~year database_label id in
@@ -276,7 +273,7 @@ let update req =
          Http_utils.redirect_to_with_actions
            detail_path
            [ Message.set
-               ~success:[ Pool_common.Message.(Updated Field.Location) ]
+               ~success:[ Pool_message.(Success.Updated Field.Location) ]
            ]
        in
        events |>> handle
@@ -307,7 +304,7 @@ let delete req =
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Pool_common.Message.(Deleted Field.File) ] ]
+      [ Message.set ~success:[ Pool_message.(Success.Deleted Field.File) ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req

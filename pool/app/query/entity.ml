@@ -1,9 +1,8 @@
 module Common = Pool_common
-module Message = Common.Message
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 module Column = struct
-  type t = Common.Message.Field.t * string [@@deriving eq, show]
+  type t = Pool_message.Field.t * string [@@deriving eq, show]
 
   let field m = fst m
   let to_sql m = snd m
@@ -11,34 +10,46 @@ module Column = struct
   let create m = m
 
   let to_query_parts (field, _value) =
-    [ Common.Message.Field.Order, Common.Message.Field.show field ]
+    [ Pool_message.Field.Order, Pool_message.Field.show field ]
   ;;
 end
 
 module Pagination = struct
   module Limit = struct
-    include Common.Model.Integer
+    include Pool_model.Base.Integer
 
     let default = 20
-    let field = Message.Field.Limit
-    let create m = if m >= 0 then Ok m else Error (Message.Invalid field)
+    let field = Pool_message.Field.Limit
+
+    let create m =
+      if m >= 0 then Ok m else Error (Pool_message.Error.Invalid field)
+    ;;
+
     let schema = schema field create
   end
 
   module Page = struct
-    include Common.Model.Integer
+    include Pool_model.Base.Integer
 
     let default = 1
-    let field = Message.Field.Page
-    let create m = if m > 0 then Ok m else Error (Message.Invalid field)
+    let field = Pool_message.Field.Page
+
+    let create m =
+      if m > 0 then Ok m else Error (Pool_message.Error.Invalid field)
+    ;;
+
     let schema = schema field create
   end
 
   module PageCount = struct
-    include Common.Model.Integer
+    include Pool_model.Base.Integer
 
-    let field = Message.Field.PageCount
-    let create m = if m >= 0 then Ok m else Error (Message.Invalid field)
+    let field = Pool_message.Field.PageCount
+
+    let create m =
+      if m >= 0 then Ok m else Error (Pool_message.Error.Invalid field)
+    ;;
+
     let schema = schema field create
   end
 
@@ -50,9 +61,9 @@ module Pagination = struct
   [@@deriving eq, show]
 
   let to_query_parts { limit; page; page_count } =
-    [ Common.Message.Field.Limit, Limit.to_string limit
-    ; Common.Message.Field.Page, Page.to_string page
-    ; Common.Message.Field.PageCount, PageCount.to_string page_count
+    [ Pool_message.Field.Limit, Limit.to_string limit
+    ; Pool_message.Field.Page, Page.to_string page
+    ; Pool_message.Field.PageCount, PageCount.to_string page_count
     ]
   ;;
 
@@ -83,9 +94,9 @@ end
 
 module Search = struct
   module Query = struct
-    include Common.Model.String
+    include Pool_model.Base.String
 
-    let field = Common.Message.Field.Search
+    let field = Pool_message.Field.Search
     let schema = schema ?validation:None field
     let of_string m = m
   end
@@ -121,7 +132,7 @@ module Search = struct
   ;;
 
   let query_string t = t.query |> Query.value
-  let to_query_parts t = [ Common.Message.Field.Search, query_string t ]
+  let to_query_parts t = [ Pool_message.Field.Search, query_string t ]
 end
 
 module Sort = struct
@@ -132,8 +143,8 @@ module Sort = struct
       let open CCFun in
       let open Pool_common in
       (function
-        | Ascending -> Message.Ascending
-        | Descending -> Message.Descending)
+        | Ascending -> Pool_message.Control.Ascending
+        | Descending -> Pool_message.Control.Descending)
       %> Utils.control_to_string lang
     ;;
   end
@@ -145,9 +156,7 @@ module Sort = struct
   [@@deriving eq, show]
 
   let create sortable_by ?(order = SortOrder.default) field =
-    CCList.find_opt
-      CCFun.(fst %> Pool_common.Message.Field.equal field)
-      sortable_by
+    CCList.find_opt CCFun.(fst %> Pool_message.Field.equal field) sortable_by
     |> CCOption.map (fun column -> { column; order })
   ;;
 
@@ -213,7 +222,7 @@ module Filter = struct
     t
     |> CCList.map (function
       | Checkbox (col, active) ->
-        Column.field col, Pool_common.Model.Boolean.stringify active
+        Column.field col, Pool_model.Base.Boolean.stringify active
       | Select (col, option) -> Column.field col, SelectOption.value option)
   ;;
 
@@ -251,14 +260,14 @@ type t =
 
 let to_uri_query ?(additional_params = []) { filter; pagination; search; sort } =
   [ filter |> CCOption.map Filter.to_query_parts
-  ; pagination |> Option.map Pagination.to_query_parts
-  ; search |> Option.map Search.to_query_parts
-  ; sort |> Option.map Sort.to_query_parts
+  ; pagination |> CCOption.map Pagination.to_query_parts
+  ; search |> CCOption.map Search.to_query_parts
+  ; sort |> CCOption.map Sort.to_query_parts
   ]
-  |> List.map (Option.value ~default:[])
-  |> List.flatten
+  |> CCList.map (Option.value ~default:[])
+  |> CCList.flatten
   |> CCList.append additional_params
-  |> List.map (fun (k, v) -> Common.Message.Field.show k, [ Uri.pct_encode v ])
+  |> CCList.map (fun (k, v) -> Pool_message.Field.show k, [ Uri.pct_encode v ])
 ;;
 
 let filter { filter; _ } = filter
@@ -271,12 +280,12 @@ let create ?filter ?pagination ?search ?sort () =
 ;;
 
 let with_sort_order order t =
-  let sort = t.sort |> Option.map (fun sort -> Sort.{ sort with order }) in
+  let sort = t.sort |> CCOption.map (fun sort -> Sort.{ sort with order }) in
   { t with sort }
 ;;
 
 let with_sort_column column t =
-  let sort = t.sort |> Option.map (fun sort -> Sort.{ sort with column }) in
+  let sort = t.sort |> CCOption.map (fun sort -> Sort.{ sort with column }) in
   { t with sort }
 ;;
 

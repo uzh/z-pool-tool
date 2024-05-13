@@ -1,9 +1,9 @@
 open Tyxml.Html
 open Component
+open Pool_message
 module HttpUtils = Http_utils
-module Message = Pool_common.Message
 
-let formatted_date_time = Pool_common.Utils.Time.formatted_date_time
+let formatted_date_time = Pool_model.Time.formatted_date_time
 let base_path = "/admin/settings/queue"
 
 let data_table_head language =
@@ -14,8 +14,8 @@ let data_table_head language =
   in
   let name = `column column_job_name in
   let status = `column column_job_status in
-  let input = `custom (field_to_string Message.Field.Input) in
-  let last_error = `custom (field_to_string Message.Field.LastError) in
+  let input = `custom (field_to_string Field.Input) in
+  let last_error = `custom (field_to_string Field.LastError) in
   let last_error_at = `column column_last_error_at in
   let next_run = `column column_next_run in
   function
@@ -38,27 +38,22 @@ let data_table Pool_context.{ language; _ } (queued_jobs, query) =
   in
   let cols = data_table_head language `settings in
   let th_class = [ "w-1"; "w-1"; "w-4"; "w-2"; "w-1"; "w-1" ] in
-  let row
-    { Sihl_queue.id
-    ; name
-    ; status
-    ; input
-    ; last_error
-    ; last_error_at
-    ; next_run_at
-    ; _
-    }
-    =
+  let row instance =
     let formatted_date_time date =
       span ~a:[ a_class [ "nobr" ] ] [ txt (formatted_date_time date) ]
     in
-    [ txt name
-    ; txt (Status.sihl_queue_to_human status)
-    ; span ~a:[ a_class [ "word-break-all" ] ] [ txt (CCString.take 80 input) ]
-    ; txt (CCOption.value ~default:"-" last_error)
-    ; last_error_at |> CCOption.map_or ~default:(txt "-") formatted_date_time
-    ; next_run_at |> formatted_date_time
-    ; Format.asprintf "/admin/settings/queue/%s" id
+    [ txt (instance |> Instance.name |> JobName.show)
+    ; txt
+        (instance |> Instance.status |> Status.show |> CCString.capitalize_ascii)
+    ; span
+        ~a:[ a_class [ "word-break-all" ] ]
+        [ txt (instance |> Instance.input |> CCString.take 80) ]
+    ; txt (instance |> Instance.last_error |> CCOption.value ~default:"-")
+    ; instance
+      |> Instance.last_error_at
+      |> CCOption.map_or ~default:(txt "-") formatted_date_time
+    ; instance |> Instance.next_run_at |> formatted_date_time
+    ; [%string "/admin/settings/queue/%{instance |> Instance.id |> Id.value}"]
       |> Component.Input.link_as_button ~icon:Component.Icon.Eye
     ]
     |> CCList.map CCFun.(CCList.return %> td)
@@ -86,7 +81,6 @@ let render_email_html html =
 
 let email_job_instance_detail { Email.email; _ } =
   let { Sihl_email.sender; recipient; subject; text; html; _ } = email in
-  let open Message in
   [ Field.Sender, txt sender
   ; Field.Recipient, txt recipient
   ; Field.EmailSubject, txt subject
@@ -101,7 +95,6 @@ let email_job_instance_detail { Email.email; _ } =
 let text_message_job_instance_detail { Text_message.message; _ } =
   let open Text_message in
   let { recipient; sender; text } = message in
-  let open Message in
   [ Field.Recipient, txt (Pool_user.CellPhone.value recipient)
   ; Field.Sender, txt (Pool_tenant.Title.value sender)
   ; Field.SmsText, Content.value text |> HttpUtils.add_line_breaks
@@ -109,22 +102,10 @@ let text_message_job_instance_detail { Text_message.message; _ } =
 ;;
 
 let matcher_job_instance_detail label =
-  [ Message.Field.Label, txt (Pool_database.Label.value label) ]
+  [ Field.Label, txt (Database.Label.value label) ]
 ;;
 
-let queue_instance_detail
-  language
-  { Sihl_queue.tries
-  ; next_run_at
-  ; max_tries
-  ; status
-  ; last_error
-  ; last_error_at
-  ; tag
-  ; _
-  }
-  job
-  =
+let queue_instance_detail language instance job =
   let default = "-" in
   let vertical_table =
     Component.Table.vertical_table
@@ -135,10 +116,9 @@ let queue_instance_detail
   in
   let clone_link =
     let link id =
-      let open Pool_common in
-      let id = Id.value id in
+      let id = Queue.Id.value id in
       div
-        [ txt (Utils.text_to_string language I18n.JobCloneOf)
+        [ txt Pool_common.(Utils.text_to_string language I18n.JobCloneOf)
         ; txt " "
         ; a
             ~a:
@@ -163,16 +143,28 @@ let queue_instance_detail
     | `TextMessageJob msg -> text_message_job_instance_detail msg
   in
   let queue_instance_detail =
-    let open Message in
-    ((Field.Status, strong [ status |> Queue.Status.sihl_queue_to_human |> txt ])
+    let open Queue in
+    (( Field.Status
+     , strong
+         [ instance
+           |> Instance.status
+           |> Queue.Status.show
+           |> CCString.capitalize_ascii
+           |> txt
+         ] )
      :: job_detail)
-    @ [ Field.Tag, tag |> CCOption.value ~default |> txt
-      ; Field.Tries, tries |> CCInt.to_string |> txt
-      ; Field.MaxTries, max_tries |> CCInt.to_string |> txt
+    @ [ Field.Tag, instance |> Instance.tag |> CCOption.value ~default |> txt
+      ; Field.Tries, instance |> Instance.tries |> CCInt.to_string |> txt
+      ; Field.MaxTries, instance |> Instance.max_tries |> CCInt.to_string |> txt
       ; ( Field.LastErrorAt
-        , last_error_at |> CCOption.map_or ~default formatted_date_time |> txt )
-      ; Field.LastError, last_error |> CCOption.value ~default |> txt
-      ; Field.NextRunAt, next_run_at |> formatted_date_time |> txt
+        , instance
+          |> Instance.last_error_at
+          |> CCOption.map_or ~default formatted_date_time
+          |> txt )
+      ; ( Field.LastError
+        , instance |> Instance.last_error |> CCOption.value ~default |> txt )
+      ; ( Field.NextRunAt
+        , instance |> Instance.next_run_at |> formatted_date_time |> txt )
       ]
     |> vertical_table
   in
@@ -193,14 +185,17 @@ let resend_form Pool_context.{ csrf; language; _ } job =
   form
     ~a:
       [ a_action
-          (Format.asprintf "%s/%s/resend" base_path job.Sihl_queue.id
+          (Format.asprintf
+             "%s/%s/resend"
+             base_path
+             (job |> Queue.Instance.id |> Queue.Id.value)
            |> Sihl.Web.externalize_path)
       ; a_method `Post
       ]
     [ Input.csrf_element csrf ()
     ; Input.submit_element
         language
-        Message.(Resend (Some Field.Message))
+        (Control.Resend (Some Field.Message))
         ~classnames:[ "small" ]
         ~has_icon:Icon.RefreshOutline
         ()
@@ -209,7 +204,7 @@ let resend_form Pool_context.{ csrf; language; _ } job =
 
 let detail Pool_context.({ language; _ } as context) instance job =
   let buttons_html =
-    if Queue.resendable instance |> CCResult.is_ok
+    if Queue.Instance.resendable instance |> CCResult.is_ok
     then
       div
         ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
@@ -222,7 +217,6 @@ let detail Pool_context.({ language; _ } as context) instance job =
       [ queue_instance_detail language instance job ]
   in
   let title =
-    let { Sihl_queue.name; last_error_at; _ } = instance in
     div
       ~a:
         [ a_class
@@ -238,8 +232,9 @@ let detail Pool_context.({ language; _ } as context) instance job =
               ~a:[ a_class [ "heading-1" ] ]
               [ Format.asprintf
                   "%s%s"
-                  name
-                  (last_error_at
+                  (instance |> Queue.Instance.name |> Queue.JobName.show)
+                  (instance
+                   |> Queue.Instance.last_error_at
                    |> CCOption.map_or
                         ~default:""
                         CCFun.(formatted_date_time %> Format.asprintf " (%s)"))

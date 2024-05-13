@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "custom_field_settings.cqrs"
 
@@ -13,7 +13,7 @@ module UpdateVisibilitySettings : sig
     -> [< `Close | `Detail ]
     -> t
     -> unit
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Guard.ValidationSet.t
 end = struct

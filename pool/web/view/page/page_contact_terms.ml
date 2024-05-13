@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component.Input
+open Pool_message
 
 let terms
   ?notification
@@ -20,7 +21,8 @@ let terms
     | None -> txt ""
   in
   let submit_url =
-    Format.asprintf "/terms-accepted/%s" user_id |> externalize
+    Format.asprintf "/terms-accepted/%s" (Pool_user.Id.show user_id)
+    |> externalize
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
@@ -34,19 +36,16 @@ let terms
         ; form
             ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
             [ csrf_element csrf ()
-            ; checkbox_element
-                language
-                Pool_common.Message.Field.TermsAccepted
-                ~required:true
+            ; checkbox_element language Field.TermsAccepted ~required:true
             ; div
                 ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
                 [ a
                     ~a:[ a_href ("/logout" |> externalize) ]
-                    [ txt (Utils.control_to_string language Message.Decline) ]
+                    [ txt (Utils.control_to_string language Control.Decline) ]
                 ; submit_element
                     ~classnames:[ "push" ]
                     language
-                    Message.(Accept (Some Field.termsandconditions))
+                    (Control.Accept (Some Field.termsandconditions))
                     ()
                 ]
             ]

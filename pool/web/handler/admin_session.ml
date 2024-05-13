@@ -1,7 +1,7 @@
 open CCFun
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.session"
 let create_layout req = General.create_tenant_layout req
@@ -9,9 +9,7 @@ let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
 
 let template_id =
-  HttpUtils.find_id
-    Message_template.Id.of_string
-    Pool_common.Message.Field.MessageTemplate
+  HttpUtils.find_id Message_template.Id.of_string Field.MessageTemplate
 ;;
 
 let session_path experiment_id session_id =
@@ -23,11 +21,10 @@ let session_path experiment_id session_id =
 
 let location urlencoded database_label =
   let open Utils.Lwt_result.Infix in
-  let open Pool_common.Message in
   Field.(Location |> show)
   |> CCList.pure
   |> HttpUtils.urlencoded_to_params urlencoded
-  |> CCOption.to_result (NotFound Field.Location)
+  |> CCOption.to_result (Error.NotFound Field.Location)
   |> Lwt_result.lift
   >|+ List.assoc Field.(Location |> show)
   >|+ Pool_location.Id.of_string
@@ -68,7 +65,7 @@ let list req =
     >|> to_html
   | false ->
     let chronological =
-      Sihl.Web.Request.query Pool_common.Message.Field.(show Chronological) req
+      Sihl.Web.Request.query Field.(show Chronological) req
       |> CCOption.map_or ~default:false (CCString.equal "true")
     in
     let to_html sessions =
@@ -195,7 +192,7 @@ let duplicate_form_htmx req =
     let* counter =
       Sihl.Web.Request.query "counter" req
       |> CCFun.flip CCOption.bind CCInt.of_string
-      |> CCOption.to_result Pool_common.(Message.InvalidHtmxRequest)
+      |> CCOption.to_result Error.InvalidHtmxRequest
       |> Lwt_result.lift
       >|+ ( + ) 1
     in
@@ -235,9 +232,7 @@ let duplicate_post_htmx req =
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     HttpUtils.Htmx.htmx_redirect
-      ~actions:
-        [ Message.set ~success:[ Pool_common.Message.(Created Field.Sessions) ]
-        ]
+      ~actions:[ Message.set ~success:[ Success.Created Field.Sessions ] ]
       sessions_path
       ()
     |> Lwt_result.ok
@@ -291,7 +286,7 @@ let create req =
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ] ]
+      [ Message.set ~success:[ Success.Created Field.Session ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
@@ -589,7 +584,7 @@ let detail page req =
          | `Edit -> Lwt_result.return `Edit
          | `Print -> Lwt_result.return `Print
          | `Reschedule | `Cancel | `Close ->
-           Lwt_result.fail Pool_common.Message.(Invalid Field.Action)
+           Lwt_result.fail (Error.Invalid Field.Action)
        in
        time_window_page database_label req context time_window experiment page)
     >|+ Sihl.Web.Response.of_html
@@ -608,10 +603,9 @@ let update_handler action req =
   let session_id = session_id req in
   let path = session_path experiment_id session_id in
   let error_path, success_msg =
-    let open Pool_common.Message in
     match action with
-    | `Update -> "edit", Updated Field.session
-    | `Reschedule -> "reschedule", Rescheduled Field.session
+    | `Update -> "edit", Success.Updated Field.session
+    | `Reschedule -> "reschedule", Success.Rescheduled Field.session
   in
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
@@ -718,8 +712,7 @@ let cancel req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.remove_empty_values
-    ||> HttpUtils.format_request_boolean_values
-          Pool_common.Message.Field.[ show Email; show SMS ]
+    ||> HttpUtils.format_request_boolean_values Field.[ show Email; show SMS ]
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
@@ -744,15 +737,12 @@ let cancel req =
     in
     let* notify_via =
       let open Pool_common in
-      Sihl.Web.Request.urlencoded_list
-        Message.Field.(NotifyVia |> array_key)
-        req
+      Sihl.Web.Request.urlencoded_list Field.(NotifyVia |> array_key) req
       ||> CCList.map NotifyVia.create
       ||> CCList.all_ok
       >|+ CCList.uniq ~eq:NotifyVia.equal
       >>= function
-      | [] ->
-        Lwt_result.fail Pool_common.Message.(NoOptionSelected Field.NotifyVia)
+      | [] -> Lwt_result.fail (Error.NoOptionSelected Field.NotifyVia)
       | notify_via -> Lwt_result.return notify_via
     in
     let* events =
@@ -792,7 +782,7 @@ let cancel req =
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       success_path
-      [ Message.set ~success:[ Pool_common.Message.(Canceled Field.Session) ] ]
+      [ Message.set ~success:[ Success.Canceled Field.Session ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
@@ -827,7 +817,7 @@ let delete req =
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       error_path
-      [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Session) ] ]
+      [ Message.set ~success:[ Success.Deleted Field.Session ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -865,7 +855,7 @@ let create_follow_up req =
       (Format.asprintf
          "/admin/experiments/%s/sessions"
          (Experiment.Id.value experiment_id))
-      [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ] ]
+      [ Message.set ~success:[ Success.Created Field.Session ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
@@ -928,7 +918,7 @@ let close_post req =
     let%lwt () = Pool_event.handle_events database_label events in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Pool_common.Message.(Closed Field.Session) ] ]
+      [ Message.set ~success:[ Success.Closed Field.Session ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -1106,7 +1096,7 @@ let resend_reminders req =
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Pool_common.Message.RemindersResent ] ]
+      [ Message.set ~success:[ Success.RemindersResent ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
@@ -1120,7 +1110,7 @@ module DirectMessage = struct
     ||> CCList.map Id.of_string
     >|> find_multiple_by_session database_label session_id
     ||> function
-    | [] -> Error Pool_common.Message.(NoOptionSelected Field.Assignment)
+    | [] -> Error (Error.NoOptionSelected Field.Assignment)
     | [ assignment ] -> Ok (`One assignment)
     | assignments -> Ok (`Multiple assignments)
   ;;
@@ -1130,7 +1120,7 @@ module DirectMessage = struct
     CCList.assoc_opt ~eq:( = ) Field.(show MessageChannel) urlencoded
     >>= CCList.head_opt
     |> function
-    | None -> Error Pool_common.Message.(Missing Field.MessageChannel)
+    | None -> Error (Error.Missing Field.MessageChannel)
     | Some channel -> Pool_common.MessageChannel.create channel
   ;;
 
@@ -1207,7 +1197,7 @@ module DirectMessage = struct
       let%lwt () = Pool_event.handle_events ~tags database_label events in
       HttpUtils.redirect_to_with_actions
         session_path
-        [ Message.set ~success:[ Pool_common.Message.(Sent Field.Message) ] ]
+        [ Message.set ~success:[ Success.Sent Field.Message ] ]
       |> Lwt_result.ok
     in
     result |> HttpUtils.extract_happy_path ~src req
@@ -1239,10 +1229,7 @@ let update_matches_filter req =
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.Htmx.htmx_redirect
-      ~actions:
-        [ Message.set
-            ~success:[ Pool_common.Message.(Updated Field.Assignments) ]
-        ]
+      ~actions:[ Message.set ~success:[ Success.Updated Field.Assignments ] ]
       path
       ()
     |> Lwt_result.ok
@@ -1258,7 +1245,7 @@ module Api = struct
       let find_param field =
         let open CCResult.Infix in
         HttpUtils.find_in_urlencoded field query_params
-        >>= Pool_common.Utils.Time.parse_date_from_calendar
+        >>= Pool_model.Time.parse_date_from_calendar
         |> Lwt_result.lift
       in
       let* start_time = find_param Field.Start in
@@ -1286,7 +1273,7 @@ module Api = struct
                      let open ValidationSet in
                      Persistence.PermissionOnTarget.validate_set
                        guardian
-                       Pool_common.Message.authorization
+                       Error.authorization
                        (one_of_tuple (Permission.Read, model, Some target))
                        actor
                      |> CCResult.is_ok

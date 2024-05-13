@@ -1,7 +1,8 @@
-module SessionC = Cqrs_command.Session_command
-module TimeUnit = Pool_common.Model.TimeUnit
 open CCFun
 open Test_utils
+open Pool_message
+module SessionC = Cqrs_command.Session_command
+module TimeUnit = Pool_model.Base.TimeUnit
 
 let check_result expected generated =
   Alcotest.(check (result (list event) error) "succeeds" expected generated)
@@ -45,14 +46,14 @@ module Data = struct
     let start1 = Raw.start1 |> Ptime.to_rfc3339 ~frac_s:12
     let start2 = Raw.start2 |> Ptime.to_rfc3339 ~frac_s:12
     let start3 = Raw.start3 |> Ptime.to_rfc3339 ~frac_s:12
-    let duration = Raw.duration |> Pool_common.Utils.Time.timespan_to_minutes
+    let duration = Raw.duration |> Pool_model.Time.timespan_to_minutes
     let duration_unit = Raw.duration_unit |> TimeUnit.show
     let internal_description = Raw.internal_description
     let public_description = Raw.public_description
     let max_participants = Raw.max_participants |> string_of_int
     let min_participants = Raw.min_participants |> string_of_int
     let overbook = Raw.overbook |> string_of_int
-    let lead_time = Raw.lead_time |> Pool_common.Utils.Time.timespan_to_minutes
+    let lead_time = Raw.lead_time |> Pool_model.Time.timespan_to_minutes
     let sent_at = Raw.sent_at |> Ptime.to_rfc3339 ~frac_s:12
     let assignment_count = Raw.assignment_count |> string_of_int
   end
@@ -123,7 +124,7 @@ module Data = struct
   end
 
   let input =
-    let open Pool_common.Message.Field in
+    let open Field in
     [ show Start, [ String.start1 ]
     ; show Duration, [ String.duration ]
     ; show (TimeUnitOf Duration), [ String.duration_unit ]
@@ -142,7 +143,7 @@ module Data = struct
   ;;
 
   let invalid_input =
-    let open Pool_common.Message.Field in
+    let open Field in
     let open Invalid in
     [ show Start, [ start ]
     ; show Duration, [ duration ]
@@ -162,12 +163,9 @@ module Data = struct
         ~eq:CCString.equal
         ~f:(function
           | None ->
-            failwith
-              (Format.asprintf
-                 "Key '%s' not found"
-                 (Pool_common.Message.Field.show k))
+            failwith (Format.asprintf "Key '%s' not found" (Field.show k))
           | Some _ -> v)
-        (Pool_common.Message.Field.show k)
+        (Field.show k)
     in
     CCList.fold_left (fun acc (k, v) -> updater k v acc) input kvs
   ;;
@@ -183,29 +181,29 @@ end
 
 let create_empty_data () =
   let open CCResult.Infix in
+  let open Error in
   let input = [] in
   let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
   let res = SessionC.Create.(input |> decode >>= handle experiment location) in
   check_result
     (Error
-       (let open Pool_common.Message in
-        let open Field in
-        Conformist
-          [ Start, NoValue
-          ; Duration, NoValue
-          ; TimeUnitOf Duration, NoValue
-          ; MaxParticipants, NoValue
-          ; MinParticipants, NoValue
-          ; Overbook, NoValue
-          ]))
+       (Conformist
+          Field.
+            [ Start, NoValue
+            ; Duration, NoValue
+            ; TimeUnitOf Duration, NoValue
+            ; MaxParticipants, NoValue
+            ; MinParticipants, NoValue
+            ; Overbook, NoValue
+            ]))
     res
 ;;
 
 let create_invalid_data () =
   let open CCResult.Infix in
-  let open Pool_common.Message in
   let open Field in
+  let open Error in
   let open Data.Invalid in
   let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
@@ -231,22 +229,19 @@ let create_invalid_data () =
 
 let create_min_gt_max () =
   let open CCResult.Infix in
-  let open Pool_common.Message in
   let open Field in
   let input =
-    let open Data in
-    let open Pool_common.Message.Field in
-    update_input [ MaxParticipants, "5"; MinParticipants, "6" ]
+    Data.update_input [ MaxParticipants, "5"; MinParticipants, "6" ]
   in
   let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
   let res = SessionC.Create.(input |> decode >>= handle experiment location) in
-  check_result (Error (Smaller (MaxParticipants, MinParticipants))) res
+  check_result (Error (Error.Smaller (MaxParticipants, MinParticipants))) res
 ;;
 
 let create_no_optional () =
   let open CCResult.Infix in
-  let open Pool_common.Message.Field in
+  let open Field in
   let session_id = Session.Id.create () in
   let input =
     let open Data in
@@ -311,9 +306,7 @@ let create_min_eq_max () =
   let open CCResult.Infix in
   let session_id = Session.Id.create () in
   let input =
-    let open Data in
-    let open Pool_common.Message.Field in
-    update_input [ MaxParticipants, "5"; MinParticipants, "5" ]
+    Data.update_input Field.[ MaxParticipants, "5"; MinParticipants, "5" ]
   in
   let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
@@ -341,14 +334,14 @@ let create_min_eq_max () =
 
 let update_empty_data () =
   let open CCResult.Infix in
+  let open Error in
   let location = Location_test.create_location () in
   let session = Model.create_session () in
   let input = [] in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
   check_result
     (Error
-       (let open Pool_common.Message in
-        let open Field in
+       (let open Field in
         Conformist
           [ Start, NoValue
           ; Duration, NoValue
@@ -364,8 +357,8 @@ let update_empty_data () =
 
 let update_invalid_data () =
   let open CCResult.Infix in
-  let open Pool_common.Message in
   let open Field in
+  let open Error in
   let open Data.Invalid in
   let location = Location_test.create_location () in
   let session = Model.create_session () in
@@ -391,32 +384,28 @@ let update_invalid_data () =
 
 let update_min_gt_max () =
   let open CCResult.Infix in
-  let open Pool_common.Message in
   let open Field in
   let input =
-    let open Data in
-    let open Pool_common.Message.Field in
-    update_input [ MaxParticipants, "5"; MinParticipants, "6" ]
+    Data.update_input Field.[ MaxParticipants, "5"; MinParticipants, "6" ]
   in
   let session = Model.create_session () in
   let location = Location_test.create_location () in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
-  check_result (Error (Smaller (MaxParticipants, MinParticipants))) res
+  check_result (Error (Error.Smaller (MaxParticipants, MinParticipants))) res
 ;;
 
 let update_no_optional () =
   let open CCResult.Infix in
-  let open Pool_common.Message.Field in
   let input =
-    let open Data in
-    delete_from_input
-      [ InternalDescription
-      ; PublicDescription
-      ; EmailLeadTime
-      ; TextMessageLeadTime
-      ; SentAt
-      ; AssignmentCount
-      ]
+    Data.delete_from_input
+      Field.
+        [ InternalDescription
+        ; PublicDescription
+        ; EmailLeadTime
+        ; TextMessageLeadTime
+        ; SentAt
+        ; AssignmentCount
+        ]
   in
   let location = Location_test.create_location () in
   let session = Model.create_session ~location () in
@@ -445,7 +434,7 @@ let update_full () =
   let session = Model.create_session ~location () in
   let input =
     let open Data in
-    update_input [ Pool_common.Message.Field.Start, String.start2 ]
+    update_input [ Field.Start, String.start2 ]
   in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
   let session =
@@ -469,9 +458,7 @@ let update_full () =
 let update_min_eq_max () =
   let open CCResult.Infix in
   let input =
-    let open Data in
-    let open Pool_common.Message.Field in
-    update_input [ MaxParticipants, "5"; MinParticipants, "5" ]
+    Data.update_input Field.[ MaxParticipants, "5"; MinParticipants, "5" ]
   in
   let location = Location_test.create_location () in
   let session = Model.create_session ~location () in
@@ -511,8 +498,8 @@ let delete_closed_session () =
   in
   check_result
     (closed_at
-     |> Pool_common.Utils.Time.formatted_date_time
-     |> Pool_common.Message.sessionalreadyclosed
+     |> Pool_model.Time.formatted_date_time
+     |> Error.sessionalreadyclosed
      |> CCResult.fail)
     res
 ;;
@@ -528,7 +515,7 @@ let delete_session_with_assignments () =
   let res =
     SessionC.Delete.(handle { session; follow_ups = []; templates = [] })
   in
-  check_result (Error Pool_common.Message.SessionHasAssignments) res
+  check_result (Error Error.SessionHasAssignments) res
 ;;
 
 let delete_session_with_follow_ups () =
@@ -539,7 +526,7 @@ let delete_session_with_follow_ups () =
     SessionC.Delete.(
       handle { session; follow_ups = [ follow_up_session ]; templates = [] })
   in
-  check_result (Error Pool_common.Message.SessionHasFollowUps) res
+  check_result (Error Error.SessionHasFollowUps) res
 ;;
 
 let create_email_job experiment email =
@@ -588,11 +575,7 @@ let cancel_no_reason () =
             create_cancellation_text_message
             [ Pool_common.NotifyVia.Email ])
   in
-  check_result
-    (Error
-       (let open Pool_common.Message in
-        Conformist [ Field.Reason, NoValue ]))
-    res
+  check_result (Error Error.(Conformist [ Field.Reason, NoValue ])) res
 ;;
 
 let cancel_no_message_channels () =
@@ -617,9 +600,7 @@ let cancel_no_message_channels () =
             create_cancellation_text_message
             [])
   in
-  check_result
-    (Error Pool_common.Message.(NoOptionSelected Field.NotifyVia))
-    res
+  check_result (Error (Error.NoOptionSelected Field.NotifyVia)) res
 ;;
 
 let cancel_in_past () =
@@ -653,7 +634,7 @@ let cancel_in_past () =
             create_cancellation_text_message
             [ Pool_common.NotifyVia.Email ])
   in
-  check_result (Error Pool_common.Message.SessionInPast) res
+  check_result (Error Error.SessionInPast) res
 ;;
 
 let cancel_already_canceled () =
@@ -683,8 +664,8 @@ let cancel_already_canceled () =
   in
   check_result
     (now
-     |> Pool_common.Utils.Time.formatted_date_time
-     |> Pool_common.Message.sessionalreadycanceled
+     |> Pool_model.Time.formatted_date_time
+     |> Error.sessionalreadycanceled
      |> CCResult.fail)
     res
 ;;
@@ -798,7 +779,7 @@ let cancel_valid_with_missing_cell_phone () =
   let messages =
     let text_msg =
       contact1.Contact.cell_phone
-      |> CCOption.to_result Pool_common.Message.(Invalid Field.CellPhone)
+      |> CCOption.to_result (Error.Invalid Field.CellPhone)
       |> Test_utils.get_or_failwith
       |> create_cancellation_text_message
            (Session.CancellationReason.of_string reason)
@@ -833,8 +814,9 @@ let cancel_valid_with_missing_cell_phone () =
     (Ok
        (messages
         @ [ Session.Canceled session |> Pool_event.session ]
-        @ contact_events))
-    res
+        @ contact_events
+        |> Test_utils.sort_events))
+    (res |> CCResult.map Test_utils.sort_events)
 ;;
 
 let cancel_with_email_and_text_notification () =
@@ -868,7 +850,7 @@ let cancel_with_email_and_text_notification () =
     in
     let text_msg contact =
       contact.Contact.cell_phone
-      |> CCOption.to_result Pool_common.Message.(Invalid Field.CellPhone)
+      |> CCOption.to_result (Error.Invalid Field.CellPhone)
       |> Test_utils.get_or_failwith
       |> create_cancellation_text_message
            (Session.CancellationReason.of_string reason)
@@ -896,8 +878,9 @@ let cancel_with_email_and_text_notification () =
     (Ok
        (messages
         @ [ Session.Canceled session |> Pool_event.session ]
-        @ contact_events))
-    res
+        @ contact_events
+        |> Test_utils.sort_events))
+    (res |> CCResult.map Test_utils.sort_events)
 ;;
 
 let close_valid () =
@@ -943,7 +926,8 @@ let close_valid_with_assignments () =
           tags
           |> CCList.map (fun (tag : t) ->
             Tagged
-              { Tagged.model_uuid = Contact.id assignment.contact
+              { Tagged.model_uuid =
+                  Contact.id assignment.contact |> Contact.Id.to_common
               ; tag_uuid = tag.id
               }
             |> Pool_event.tags)
@@ -976,9 +960,7 @@ let close_with_deleted_assignment () =
   let res =
     Cqrs_command.Session_command.Close.handle experiment session [] [ command ]
   in
-  check_result
-    (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment))
-    res
+  check_result (Error (Error.IsMarkedAsDeleted Field.Assignment)) res
 ;;
 
 let validate_invalid_participation () =
@@ -996,7 +978,7 @@ let validate_invalid_participation () =
     assignment, Assignment.IncrementParticipationCount.create false, None
   in
   let res = handle experiment session [] [ participation ] in
-  let expected = Error Pool_common.Message.AssignmentsHaveErrors in
+  let expected = Error Error.AssignmentsHaveErrors in
   check_result expected res
 ;;
 
@@ -1040,7 +1022,6 @@ let close_unparticipated_with_followup () =
 
 let create_follow_up_earlier () =
   let open CCResult.Infix in
-  let open Pool_common.Message in
   let location = Location_test.create_location () in
   let session = Test_utils.Model.create_session ~location () in
   let experiment = Model.create_experiment () in
@@ -1050,7 +1031,7 @@ let create_follow_up_earlier () =
       |> decode
       >>= handle ~parent_session:session experiment location)
   in
-  check_result (Error FollowUpIsEarlierThanMain) res
+  check_result (Error Error.FollowUpIsEarlierThanMain) res
 ;;
 
 let create_follow_up_later () =
@@ -1066,10 +1047,7 @@ let create_follow_up_later () =
     |> CCOption.get_exn_or "Invalid new start"
   in
   let input =
-    let open Data in
-    update_input
-      [ Pool_common.Message.Field.Start, Ptime.to_rfc3339 ~frac_s:12 later_start
-      ]
+    Data.update_input [ Field.Start, Ptime.to_rfc3339 ~frac_s:12 later_start ]
   in
   let res =
     SessionC.Create.(
@@ -1097,7 +1075,6 @@ let create_follow_up_later () =
 
 let update_follow_up_earlier () =
   let open CCResult.Infix in
-  let open Pool_common.Message in
   let location = Location_test.create_location () in
   let session = Test_utils.Model.create_session ~location () in
   let res =
@@ -1106,7 +1083,7 @@ let update_follow_up_earlier () =
       |> decode
       >>= handle ~parent_session:session [] session location)
   in
-  check_result (Error FollowUpIsEarlierThanMain) res
+  check_result (Error Error.FollowUpIsEarlierThanMain) res
 ;;
 
 let update_follow_up_later () =
@@ -1120,10 +1097,7 @@ let update_follow_up_later () =
     |> CCOption.get_exn_or "Invalid new start"
   in
   let input =
-    let open Data in
-    update_input
-      [ Pool_common.Message.Field.Start, Ptime.to_rfc3339 ~frac_s:12 later_start
-      ]
+    Data.update_input [ Field.Start, Ptime.to_rfc3339 ~frac_s:12 later_start ]
   in
   let res =
     SessionC.Update.(
@@ -1149,7 +1123,6 @@ let update_follow_up_later () =
 
 let update_follow_ups_earlier () =
   let open CCResult.Infix in
-  let open Pool_common.Message in
   let location = Location_test.create_location () in
   (* Valid starting setup, main session happens before two follow-ups *)
   let session =
@@ -1175,15 +1148,12 @@ let update_follow_ups_earlier () =
     |> CCOption.get_exn_or "Invalid new start"
     |> Ptime.to_rfc3339 ~frac_s:12
   in
-  let input1 =
-    let open Data in
-    update_input [ Pool_common.Message.Field.Start, later_start1 ]
-  in
+  let input1 = Data.update_input [ Field.Start, later_start1 ] in
   let res_earlier_one =
     SessionC.Update.(
       input1 |> decode >>= handle [ follow_up1; follow_up2 ] session location)
   in
-  check_result (Error FollowUpIsEarlierThanMain) res_earlier_one;
+  check_result (Error Error.FollowUpIsEarlierThanMain) res_earlier_one;
   (* Make input start after both follow-ups *)
   let later_start2 =
     Data.Validated.start3
@@ -1194,13 +1164,13 @@ let update_follow_ups_earlier () =
   in
   let input2 =
     let open Data in
-    update_input [ Pool_common.Message.Field.Start, later_start2 ]
+    update_input [ Field.Start, later_start2 ]
   in
   let res_earlier_all =
     SessionC.Update.(
       input2 |> decode >>= handle [ follow_up1; follow_up2 ] session location)
   in
-  check_result (Error FollowUpIsEarlierThanMain) res_earlier_all
+  check_result (Error Error.FollowUpIsEarlierThanMain) res_earlier_all
 ;;
 
 let update_follow_ups_later () =
@@ -1252,10 +1222,7 @@ let update_follow_ups_later () =
     |> CCOption.get_exn_or "Invalid new start"
   in
   let input =
-    let open Data in
-    update_input
-      [ Pool_common.Message.Field.Start, Ptime.to_rfc3339 ~frac_s:12 later_start
-      ]
+    Data.update_input [ Field.Start, Ptime.to_rfc3339 ~frac_s:12 later_start ]
   in
   let res_later_but_earlier =
     SessionC.Update.(
@@ -1307,7 +1274,7 @@ let reschedule_to_past () =
   let events =
     SessionC.Reschedule.handle [] session [] create_message command
   in
-  let expected = Error Pool_common.Message.TimeInPast in
+  let expected = Error Error.TimeInPast in
   Test_utils.check_result expected events
 ;;
 
@@ -1381,18 +1348,16 @@ let resend_reminders_invalid () =
   let () =
     check_result
       (Error
-         Pool_common.(
-           Message.SessionAlreadyCanceled
-             (Pool_common.Utils.Time.formatted_date_time canceled_at)))
+         (Error.SessionAlreadyCanceled
+            (Pool_model.Time.formatted_date_time canceled_at)))
       res1
   in
   let res2 = handle session2 in
   let () =
     check_result
       (Error
-         Pool_common.(
-           Message.SessionAlreadyClosed
-             (Pool_common.Utils.Time.formatted_date_time closed_at)))
+         (Error.SessionAlreadyClosed
+            (Pool_model.Time.formatted_date_time closed_at)))
       res2
   in
   ()
@@ -1556,6 +1521,8 @@ let send_session_reminders_with_default_leat_time _ () =
   let get_exn = get_or_failwith in
   let database_label = Test_utils.Data.database_label in
   let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+  (* NOTE: disable text messages for test *)
+  let tenant = { tenant with Pool_tenant.text_messages_enabled = false } in
   let s_to_lead encode s = s |> Ptime.Span.of_int_s |> encode |> get_exn in
   let%lwt () =
     Pool_common.Reminder.
@@ -1738,9 +1705,7 @@ module Duplication = struct
   let sub_timespan = handle_timespan_update Ptime.sub_span
 
   let start_to_string start =
-    start
-    |> Session.Start.value
-    |> Pool_common.Model.Ptime.date_time_to_flatpickr
+    start |> Session.Start.value |> Pool_model.Base.Ptime.date_time_to_flatpickr
   ;;
 
   let data_to_urlencded =
@@ -1822,7 +1787,7 @@ module Duplication = struct
       |> data_to_urlencded
       |> SessionC.Duplicate.handle session [ followup ]
     in
-    expect_error (Error Pool_common.Message.(Missing Field.Start)) events
+    expect_error (Error (Error.Missing Field.Start)) events
   ;;
 
   let followup_before_main () =
@@ -1843,7 +1808,7 @@ module Duplication = struct
       |> data_to_urlencded
       |> SessionC.Duplicate.handle session [ followup ]
     in
-    expect_error (Error Pool_common.Message.FollowUpIsEarlierThanMain) events
+    expect_error (Error Error.FollowUpIsEarlierThanMain) events
   ;;
 end
 
@@ -1879,15 +1844,12 @@ module DirectMessaging = struct
   let decode_and_handle assignments channel data =
     let open CCResult in
     data
-    |> Http_utils.format_request_boolean_values
-         [ Pool_common.Message.Field.(show FallbackToEmail) ]
+    |> Http_utils.format_request_boolean_values [ Field.(show FallbackToEmail) ]
     |> decode channel
     >>= handle make_email_job make_text_message_job assignments
   ;;
 
   module UrlEncoded = struct
-    open Pool_common.Message
-
     let language = Field.(show Language), [ Pool_common.Language.show language ]
     let sms_text = Field.(show SmsText), [ SmsText.value sms_text ]
     let email_text = Field.(show EmailText), [ EmailText.value email_text ]

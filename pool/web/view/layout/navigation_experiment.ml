@@ -1,6 +1,6 @@
 open Entity
 module NavUtils = Navigation_utils
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let read_entity entity =
   Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
@@ -11,7 +11,7 @@ let experiment_url id =
 ;;
 
 type title =
-  | Control of Pool_common.Message.control
+  | Control of Pool_message.Control.t
   | NavLink of I18n.nav_link
   | I18n of I18n.t
   | Text of string

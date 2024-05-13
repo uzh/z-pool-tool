@@ -2,7 +2,6 @@
  (name command)
  (libraries
   cqrs_command
-  database
   guard
   matcher
   pool_event
@@ -10,10 +9,8 @@
   queue
   reminder
   seed
-  service
   settings
   sihl
-  tenant
   utils
   user_import
   system_event

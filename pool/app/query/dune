@@ -1,6 +1,6 @@
 (library
  (name query)
- (libraries service sihl utils pool_common pool_database)
+ (libraries sihl utils pool_common database)
  (preprocess
   (pps
    lwt_ppx

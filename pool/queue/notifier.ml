@@ -1,6 +1,5 @@
 open CCFun
 open Utils.Lwt_result.Infix
-open Sihl.Contract.Queue
 
 let src = Logs.Src.create "queue.notifier"
 
@@ -10,35 +9,34 @@ let create_external_link pool_url =
 ;;
 
 let job_reporter
-  ({ id
-   ; name
-   ; tries
-   ; next_run_at
-   ; max_tries
-   ; status
-   ; last_error
-   ; last_error_at
-   ; tag
-   ; ctx
-   ; _
-   } :
-    instance)
+  { Entity.Instance.id
+  ; name
+  ; tries
+  ; next_run_at
+  ; max_tries
+  ; status
+  ; last_error
+  ; last_error_at
+  ; tag
+  ; ctx
+  ; _
+  }
   =
+  let open Entity.Status in
   match status, last_error with
   | (Failed | Pending), Some last_error when tries >= max_tries ->
-    let database_label = Pool_database.of_ctx_opt ctx in
+    let database_label = Database.of_ctx_opt ctx in
     let tags =
       CCOption.map_or
         ~default:Logs.Tag.empty
-        Pool_database.Logger.Tags.create
+        Database.Logger.Tags.create
         database_label
     in
     let%lwt link =
       let default = "Couldn't generate Link" in
-      let path = Format.asprintf "/admin/settings/queue/%s" id in
+      let path = [%string "/admin/settings/queue/%{Entity.Id.value id}"] in
       match database_label with
-      | Some database_label when Pool_database.(Label.equal root database_label)
-        ->
+      | Some database_label when Database.(Label.equal root database_label) ->
         Sihl.Configuration.read_string "PUBLIC_URL"
         |> CCOption.map_or
              ~default
@@ -60,8 +58,8 @@ let job_reporter
          Next Run At: %s\n\
          Tags: %s\n\
          Link: <%s>"
-        name
-        id
+        ([%show: Entity.JobName.t] name)
+        ([%show: Entity.Id.t] id)
         tries
         max_tries
         ([%show: Ptime.t option] last_error_at)
@@ -69,7 +67,7 @@ let job_reporter
         ([%show: string option] tag)
         link
     in
-    Pool_canary.notify ~src ~tags ~additional (Exception last_error) ""
+    Pool_canary.notify ~src ~tags ~additional (Failure last_error) ""
     |> Lwt.map (CCResult.get_or ~default:())
   | (Succeeded | Pending | Cancelled | Failed), _ -> Lwt.return_unit
 ;;

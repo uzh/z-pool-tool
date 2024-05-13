@@ -1,17 +1,11 @@
 open CCFun
 open Entity
 
-let make_caqti_type caqti_type create value =
-  let encode = value %> CCResult.return in
-  let decode =
-    create %> CCResult.map_err (Utils_to_string.error_to_string Language.En)
-  in
-  Caqti_type.(custom ~encode ~decode caqti_type)
-;;
+let make_caqti_type = Database.Repo.make_caqti_type
 
 module Model = struct
-  module SelectorType (Core : Entity_base_model.SelectorCoreTypeSig) = struct
-    include Entity_base_model.SelectorType (Core)
+  module SelectorType (Core : Pool_model.Base.SelectorCoreTypeSig) = struct
+    include Pool_model.Base.SelectorType (Core)
 
     let t = make_caqti_type Caqti_type.string create Core.show
   end
@@ -26,7 +20,7 @@ end
 module Language = Model.SelectorType (Language)
 
 module Ptime = struct
-  include Entity_base_model.Ptime
+  include Pool_model.Base.Ptime
 
   let date = make_caqti_type Caqti_type.string date_of_string date_to_string
 end

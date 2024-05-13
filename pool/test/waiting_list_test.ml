@@ -1,5 +1,5 @@
 module WaitingListCommand = Cqrs_command.Waiting_list_command
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module Model = Test_utils.Model
 
 let get_exn = Test_utils.get_or_failwith
@@ -66,14 +66,14 @@ let create_with_direct_registration_enabled () =
     let open WaitingListCommand in
     Create.handle confirmation command
   in
-  let expected = Error Pool_common.Message.NotEligible in
+  let expected = Error Pool_message.Error.NotEligible in
   Test_utils.check_result expected events
 ;;
 
 let update () =
   let waiting_list = Model.create_waiting_list () in
   let urlencoded =
-    [ Pool_common.Message.Field.(AdminComment |> show), [ "Some comment" ] ]
+    [ Pool_message.Field.(AdminComment |> show), [ "Some comment" ] ]
   in
   let events =
     let open CCResult in
@@ -94,7 +94,7 @@ let update () =
 (* Integration *)
 
 module PendingWaitingLists = struct
-  let contact_id = Pool_common.Id.create ()
+  let contact_id = Contact.Id.create ()
   let experiment_id = Experiment.Id.create ()
   let session_id = Session.Id.create ()
 

@@ -1,8 +1,8 @@
 module BaseGuard = Guard
 open Experiment
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Reminder = Pool_common.Reminder
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 
 let opt = Conformist.optional
 let src = Logs.Src.create "experiment_command.cqrs"
@@ -100,7 +100,7 @@ let create_command
 
 let update_schema command =
   let open Pool_common in
-  Utils.PoolConformist.(
+  Pool_conformist.(
     make
       Field.
         [ Title.schema ()
@@ -128,7 +128,7 @@ let update_schema command =
 
 let create_schema command =
   let open Pool_common in
-  Utils.PoolConformist.(
+  Pool_conformist.(
     make
       Field.
         [ Title.schema ()
@@ -147,11 +147,14 @@ let create_schema command =
         ; AssignmentWithoutSession.schema ()
         ; opt @@ SurveyUrl.schema ()
         ; opt
-          @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
+          @@ Pool_model.Base.Integer.schema
+               Pool_message.Field.EmailLeadTime
+               CCResult.return
+               ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
         ; opt
-          @@ Model.Integer.schema
-               Message.Field.TextMessageLeadTime
+          @@ Pool_model.Base.Integer.schema
+               Pool_message.Field.TextMessageLeadTime
                CCResult.return
                ()
         ; opt @@ TimeUnit.named_schema Reminder.TextMessageLeadTime.name ()
@@ -173,11 +176,9 @@ module Create : sig
     -> ?organisational_unit:Organisational_unit.t
     -> ?smtp_auth:Email.SmtpAuth.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = create
 
@@ -245,7 +246,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate (create_schema create_command) data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Experiment.Guard.Access.create
@@ -261,12 +262,9 @@ module Update : sig
     -> Organisational_unit.t option
     -> Email.SmtpAuth.t option
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = create
@@ -302,7 +300,7 @@ end = struct
       with
       | false when session_count > 0 ->
         Error
-          Pool_common.(Message.(CannotBeUpdated Field.AssignmentWithoutSession))
+          Pool_message.(Error.CannotBeUpdated Field.AssignmentWithoutSession)
       | true | false -> Ok ()
     in
     let experiment =
@@ -333,7 +331,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate (update_schema default_command) data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects id = Experiment.Guard.Access.update id
@@ -370,7 +368,7 @@ module Delete : sig
     :  ?tags:Logs.Tag.set
     -> ?system_event_id:System_event.Id.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
@@ -403,7 +401,7 @@ end = struct
       session_count
       > 0
       |> Utils.bool_to_result_not
-           Pool_common.Message.ExperimentSessionCountNotZero
+           Pool_message.Error.ExperimentSessionCountNotZero
     in
     let delete_mailing = Mailing.deleted %> Pool_event.mailing in
     let revoke_experimenter admin =
@@ -549,14 +547,14 @@ module CreateFilter : sig
     -> Filter.Key.human list
     -> Filter.t list
     -> Filter.query
-    -> (Filter.t, Pool_common.Message.error) result
+    -> (Filter.t, Pool_message.Error.t) result
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
     -> Assignment.event list * Email.job list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
@@ -610,14 +608,14 @@ module UpdateFilter : sig
     -> t list
     -> t
     -> Filter.query
-    -> (t, Pool_common.Message.error) result
+    -> (t, Pool_message.Error.t) result
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
     -> Assignment.event list * Email.job list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Filter.Id.t -> BaseGuard.ValidationSet.t
 end = struct
@@ -671,7 +669,7 @@ module DeleteFilter : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Id.t -> Filter.Id.t -> BaseGuard.ValidationSet.t
 end = struct

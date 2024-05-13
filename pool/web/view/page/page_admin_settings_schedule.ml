@@ -34,7 +34,7 @@ let list Pool_context.{ language; _ } schedules query =
         (schedule.last_run
          |> CCOption.map_or
               ~default:"---"
-              (LastRunAt.value %> Pool_common.Utils.Time.formatted_date_time))
+              (LastRunAt.value %> Pool_model.Time.formatted_date_time))
     ]
     |> CCList.map (CCList.return %> td)
     |> tr

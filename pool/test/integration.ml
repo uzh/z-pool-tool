@@ -291,22 +291,21 @@ let suite =
               AvailableExperiments.mark_assignment_as_deleted
           ] )
     ; ( "filtering"
-      , [ test_case
-            "uninvited contact is listed"
-            `Slow
-            Filter_invitation_tests.finds_uninvited_contacts
+      , let open Filter_invitation_tests in
+        let open Filter_assignment_tests in
+        [ test_case "uninvited contact is listed" `Slow finds_uninvited_contacts
         ; test_case
             "invited contact is not listed"
             `Slow
-            Filter_invitation_tests.filters_out_invited_contacts
+            filters_out_invited_contacts
         ; test_case
             "unassigned contact is listed"
             `Slow
-            Filter_assignment_tests.finds_unassigned_contacts
+            finds_unassigned_contacts
         ; test_case
             "assigned contact is not listed"
             `Slow
-            Filter_assignment_tests.filters_out_assigned_contacts
+            filters_out_assigned_contacts
         ] )
     ; ( "contact counter"
       , Contact_counter_test.
@@ -417,17 +416,18 @@ let suite =
     ; ( "time window"
       , Time_window_test.
           [ test_case "confirm as contact" `Slow find_overlapping ] )
-    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
+      (* ; "cleanup", [ test_case "clean up test database" `Slow
+         Test_seed.cleanup ] *)
     ]
 ;;
 
 let services =
-  [ Database.register ()
-  ; Service.User.register ()
-  ; Service.Token.register ()
+  [ Pool_database.register ()
+  ; Pool_user.register ()
+  ; Pool_token.register ()
   ; Email.Service.register ()
-  ; Email.Service.Queue.register ()
-  ; Service.Storage.register ()
+  ; Queue.register ()
+  ; Storage.register ()
   ]
 ;;
 

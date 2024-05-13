@@ -6,5 +6,5 @@ let log_request_with_ip ~src message req tags email =
     |> CCOption.value ~default:"X-Real-IP not found"
   in
   Logs.warn ~src (fun m ->
-    m "%s: %s %s" message ip (Pool_user.EmailAddress.value email) ~tags)
+    m "%s: %s %a" message ip Pool_user.EmailAddress.pp email ~tags)
 ;;

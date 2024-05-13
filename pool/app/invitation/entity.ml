@@ -1,16 +1,20 @@
 module ResentAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create = Ptime_clock.now
 end
 
 module SendCount = struct
-  open Pool_common
-  include Model.Integer
+  open Pool_message
+  include Pool_model.Base.Integer
 
-  let field = Message.Field.Count
-  let create m = if m > 0 then Ok m else Error Message.(Invalid field)
-  let of_int m = if m > 0 then m else Utils.failwith Message.(Invalid field)
+  let field = Pool_message.Field.Count
+  let create m = if m > 0 then Ok m else Error (Error.Invalid field)
+
+  let of_int m =
+    if m > 0 then m else Pool_common.Utils.failwith (Error.Invalid field)
+  ;;
+
   let init = 1
   let schema = schema field create
   let increment m = m + 1
@@ -31,8 +35,8 @@ let create ?(id = Pool_common.Id.create ()) contact =
   ; contact
   ; resent_at = None
   ; send_count = SendCount.init
-  ; created_at = Pool_common.CreatedAt.create ()
-  ; updated_at = Pool_common.UpdatedAt.create ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 
@@ -40,12 +44,12 @@ let equal_queue_entry (mail1, queue1) (mail2, queue2) =
   CCString.equal mail1.Sihl_email.recipient mail2.Sihl_email.recipient
   && CCString.equal mail1.Sihl_email.subject mail2.Sihl_email.subject
   && CCString.equal mail1.Sihl_email.text mail2.Sihl_email.text
-  && CCString.equal queue1.Sihl_queue.id queue2.Sihl_queue.id
+  && Queue.(Id.equal (Instance.id queue1) (Instance.id queue2))
 ;;
 
 type notification_history =
   { invitation : t
-  ; queue_entries : (Sihl_email.t * Sihl_queue.instance) list
+  ; queue_entries : (Sihl_email.t * Queue.Instance.t) list
        [@equal
          fun queue_entries1 queue_entries2 ->
            CCList.map2 equal_queue_entry queue_entries1 queue_entries2
@@ -62,7 +66,7 @@ let email_experiment_elements (experiment : Experiment.t) =
   ]
 ;;
 
-open Pool_common.Message
+open Pool_message
 
 let searchable_by = Contact.searchable_by
 

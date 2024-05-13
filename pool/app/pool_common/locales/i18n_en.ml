@@ -28,7 +28,7 @@ let to_string = function
   | DashboardTitle -> "Dashboard"
   | DeletedAssignments -> "Deleted assignments"
   | Disabled ->
-    Locales_en.field_to_string Entity_message_field.Disabled
+    Locales_en.field_to_string Pool_message.Field.Disabled
     |> CCString.capitalize_ascii
   | DontHaveAnAccount -> "Don't have an account?"
   | EmailConfirmationNote ->
@@ -90,7 +90,7 @@ let to_string = function
   | LocationStatistics -> "Location statistics"
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
-    Format.asprintf "Mailing at %s" (Utils_time.formatted_date_time start)
+    Format.asprintf "Mailing at %s" (Pool_model.Time.formatted_date_time start)
   | MailingDistributionDescription ->
     {|<ol>
     <li>Select by which field and in which order you want to sort the contacts.</li>
@@ -133,7 +133,7 @@ let to_string = function
   | SessionCloseScreen -> "Session close screen"
   | SessionDetailScreen -> "Session detail screen"
   | SessionDetailTitle start ->
-    Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
+    Format.asprintf "Session at %s" (Pool_model.Time.formatted_date_time start)
   | SessionIndent -> "Indentations group follow-up sessions."
   | SessionRegistrationTitle -> "Registering for this session"
   | SessionReminder -> "Session reminder"
@@ -146,9 +146,7 @@ let to_string = function
   | SwitchGrouped -> "Switch to grouped view"
   | System -> "System"
   | TermsAndConditionsLastUpdated ptime ->
-    Format.asprintf
-      "Last updated: %s"
-      (Pool_common_utils.Time.formatted_date ptime)
+    Format.asprintf "Last updated: %s" (Pool_model.Time.formatted_date ptime)
   | TermsAndConditionsTitle -> "Terms and Conditions"
   | TermsAndConditionsUpdated ->
     "We have recently changed our terms and conditions. Please read and accept \
@@ -267,7 +265,7 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "This option excludes \"%s\"."
-      (Locales_en.field_to_string Entity_message.Field.Required
+      (Locales_en.field_to_string Pool_message.Field.Required
        |> CCString.capitalize_ascii)
   | CustomFieldAdminOverride ->
     "Allows administrators to override the answers specified by the contact. \
@@ -278,7 +276,7 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | CustomFieldAdminViewOnly ->
     Format.asprintf
       "This option implies \"%s\"."
-      (Locales_en.field_to_string Entity_message.Field.AdminInputOnly
+      (Locales_en.field_to_string Pool_message.Field.AdminInputOnly
        |> CCString.capitalize_ascii)
   | CustomFieldAnsweredOnRegistration ->
     "This field has already been answered by the contact during registration \
@@ -313,7 +311,7 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "If left blank, the default lead time of %s is applied."
-      (lead_time |> Utils_time.formatted_timespan)
+      (lead_time |> Pool_model.Time.formatted_timespan)
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
      directly enroll in the experiment."
@@ -480,18 +478,18 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsWeeksHint -> "Nr. of weeks"
-  | NumberMax i -> error_to_string (Entity_message.NumberMax i)
-  | NumberMin i -> error_to_string (Entity_message.NumberMin i)
+  | NumberMax i -> error_to_string (Pool_message.Error.NumberMax i)
+  | NumberMin i -> error_to_string (Pool_message.Error.NumberMin i)
   | OnlineExperiment ->
     Format.asprintf
       "Instead of sessions, you can define time windows in which you can take \
        part in the survey. Under %s, enter the external URL of the survey to \
        which the contacts should be forwarded."
-      (Locales_en.field_to_string Entity_message_field.SurveyUrl)
+      (Locales_en.field_to_string Pool_message.Field.SurveyUrl)
   | OnlineExperimentParticipationDeadline end_at ->
     Format.asprintf
       "You can participate in this experiment until %s."
-      (Utils_time.formatted_date_time end_at)
+      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
@@ -543,7 +541,7 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | ResetInvitationsLastReset reset_at ->
     Format.asprintf
       "The invitations were last reset on <strong>%s</strong>."
-      (Utils_time.formatted_date_time reset_at)
+      (Pool_model.Time.formatted_date_time reset_at)
   | RoleIntro (singular, plural) ->
     Format.asprintf
       "If no %s is specified, the role includes all %s."
@@ -553,27 +551,23 @@ If you trigger the reminders manually now, no more automatic reminders will be s
     "Select the target for which you want to adjust the permissions."
   | RolePermissionsRoleList -> "All customizable roles of the tenant."
   | ScheduleAt time ->
-    time
-    |> Pool_common_utils.Time.formatted_date_time
-    |> Format.asprintf "at %s"
+    time |> Pool_model.Time.formatted_date_time |> Format.asprintf "at %s"
   | ScheduledIntro ->
     {|Information about all periodic background processes.
 
       Note: When the application restarts all active schedules get stopped.
       |}
   | ScheduleEvery sec ->
-    sec
-    |> Pool_common_utils.Time.formatted_timespan
-    |> Format.asprintf "every %s"
+    sec |> Pool_model.Time.formatted_timespan |> Format.asprintf "every %s"
   | SearchByFields fields ->
     Format.asprintf
       "Search by: %s"
       (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
   | SelectedDateIsPast -> "The selected date is in the past."
   | SelectedOptionsCountMax i ->
-    error_to_string (Entity_message.SelectedOptionsCountMax i)
+    error_to_string (Pool_message.Error.SelectedOptionsCountMax i)
   | SelectedOptionsCountMin i ->
-    error_to_string (Entity_message.SelectedOptionsCountMin i)
+    error_to_string (Pool_message.Error.SelectedOptionsCountMin i)
   | SessionCancellationMessageFollowUps ->
     "Associated follow-up sessions were canceled as well:"
   | SessionCancellationWithFollowups ->
@@ -586,9 +580,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
     Format.asprintf
       {|<strong>%s</strong> and <strong>%s</strong> are mutually exclusive.<br>
     If none of the two checkboxes is checked, it equals to 'show up but did not participate'|}
-      (Locales_en.field_to_string Entity_message_field.NoShow |> capitalize)
-      (Locales_en.field_to_string Entity_message_field.Participated
-       |> capitalize)
+      (Locales_en.field_to_string Pool_message.Field.NoShow |> capitalize)
+      (Locales_en.field_to_string Pool_message.Field.Participated |> capitalize)
   | SessionCloseLegendNoShow -> "the contact did not show up"
   | SessionCloseLegendParticipated ->
     "the contact participated in the experiment"
@@ -646,8 +639,8 @@ Only sessions with open spots can be selected.|}
   | TestPhoneNumber ->
     "Please provide a phone number where we can send a single test message to \
      verify the api key. The number must have the format +41791234567."
-  | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
-  | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
+  | TextLengthMax i -> error_to_string (Pool_message.Error.TextLengthMax i)
+  | TextLengthMin i -> error_to_string (Pool_message.Error.TextLengthMin i)
   | UserImportInterval ->
     {|<p>Define after how many days a reminder will be sent to contacts that have not confirmed the import yet.</p>
 <p><strong>The 'second reminder' setting defines how long after the first reminder the second reminder is sent.</strong></p>|}

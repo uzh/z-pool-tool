@@ -1,5 +1,5 @@
 module InvitationCommand = Cqrs_command.Invitation_command
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module Model = Test_utils.Model
 
 let create_invitation () = Model.create_contact () |> Invitation.create

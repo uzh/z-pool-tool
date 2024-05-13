@@ -1,27 +1,32 @@
+open CCFun.Infix
 open Login_attempt_entity
 
+let make_caqti_type = Pool_common.Repo.make_caqti_type
+
 module RepoEntity = struct
+  module Id = struct
+    include Id
+
+    let t =
+      make_caqti_type Caqti_type.string (of_string %> CCResult.return) value
+    ;;
+  end
+
   module Counter = struct
     include Counter
 
-    let t =
-      Pool_common.Repo.make_caqti_type
-        Caqti_type.int
-        CCFun.(create %> CCResult.return)
-        value
-    ;;
+    let t = make_caqti_type Caqti_type.int (create %> CCResult.return) value
   end
 
   module BlockedUntil = struct
     include BlockedUntil
 
-    let t = Caqti_type.ptime
+    let t = make_caqti_type Caqti_type.ptime create value
   end
 
   let t =
     let encode m = Ok (m.id, (m.email, (m.counter, m.blocked_until))) in
     let decode (id, (email, (counter, blocked_until))) =
-      let open CCResult in
       Ok { id; email; counter; blocked_until }
     in
     Caqti_type.(
@@ -29,10 +34,14 @@ module RepoEntity = struct
         ~encode
         ~decode
         (t2
-           Pool_common.Repo.Id.t
-           (t2 Repo_model.EmailAddress.t (t2 Counter.t (option BlockedUntil.t)))))
+           Id.t
+           (t2
+              Repo_entity.EmailAddress.t
+              (t2 Counter.t (option BlockedUntil.t)))))
   ;;
 end
+
+open Caqti_request.Infix
 
 let select_sql =
   Format.asprintf
@@ -56,23 +65,14 @@ let select_sql =
 ;;
 
 let find_opt_request =
-  let open Caqti_request.Infix in
-  {sql|
-      email = ?
-  |sql}
+  {sql| email = ? |sql}
   |> select_sql
-  |> Caqti_type.string ->! RepoEntity.t
+  |> Repo_entity.EmailAddress.t ->! RepoEntity.t
 ;;
 
-let find_opt pool email =
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_opt_request
-    (Entity.EmailAddress.value email)
-;;
+let find_opt pool = Database.find_opt pool find_opt_request
 
 let insert_request =
-  let open Caqti_request.Infix in
   {sql|
     INSERT INTO pool_failed_login_attempts (
       uuid,
@@ -92,22 +92,14 @@ let insert_request =
   |> RepoEntity.t ->. Caqti_type.unit
 ;;
 
-let insert pool =
-  Utils.Database.exec (Pool_database.Label.value pool) insert_request
-;;
+let insert pool = Database.exec pool insert_request
 
 let delete_request =
-  let open Caqti_request.Infix in
   {sql|
     DELETE FROM pool_failed_login_attempts
     WHERE email = $1
   |sql}
-  |> Caqti_type.(string ->. unit)
+  |> Repo_entity.EmailAddress.t ->. Caqti_type.unit
 ;;
 
-let delete pool t =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    delete_request
-    (t.email |> Entity.EmailAddress.value)
-;;
+let delete pool = email %> Database.exec pool delete_request

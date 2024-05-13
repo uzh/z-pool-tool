@@ -1,5 +1,7 @@
 open CCFun
 open Tyxml.Html
+open Pool_message
+open Control
 module HttpUtils = Http_utils
 module Icon = Component.Icon
 module Input = Component.Input
@@ -23,11 +25,8 @@ let edit_target_modal
   in
   let all_permissions = Guard.Permission.all in
   let title language =
-    let open Pool_common in
-    let field =
-      Message.(Field.PermissionOn (Role.show role, Target.name target))
-    in
-    Pool_common.(Utils.control_to_string language Message.(Edit (Some field)))
+    let field = Field.PermissionOn (Role.show role, Target.name target) in
+    Pool_common.(Utils.control_to_string language (Edit (Some field)))
     |> CCString.capitalize_ascii
   in
   let html =
@@ -82,7 +81,7 @@ let edit_target_modal
            @ [ Input.submit_element
                  ~has_icon:Icon.Save
                  language
-                 Pool_common.Message.(Save (Some Field.Permission))
+                 (Save (Some Field.Permission))
                  ()
              ])
       ]
@@ -115,7 +114,7 @@ let list
     ; `custom
         (txt
            Pool_common.(
-             Utils.field_to_string_capitalized language Message.Field.Permission))
+             Utils.field_to_string_capitalized language Field.Permission))
     ; `empty
     ]
   in
@@ -176,10 +175,7 @@ let show (Pool_context.{ language; _ } as context) role rules query =
 let index Pool_context.{ language; _ } roles =
   let open Role.Role in
   let table =
-    let thead =
-      let open Pool_common.Message in
-      (Field.[ Role ] |> Table.fields_to_txt language) @ [ txt "" ]
-    in
+    let thead = (Field.[ Role ] |> Table.fields_to_txt language) @ [ txt "" ] in
     let row role =
       [ txt (name role |> CCString.capitalize_ascii)
       ; Input.link_as_button ~icon:Icon.Eye (role_permission_path ~role ())

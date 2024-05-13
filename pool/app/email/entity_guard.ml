@@ -10,7 +10,7 @@ module SmtpTarget = struct
       (fun ({ Entity.SmtpAuth.id; _ } : Entity.SmtpAuth.t) ->
         Target.create `Smtp (id |> Uuid.target_of Pool_common.Id.value))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

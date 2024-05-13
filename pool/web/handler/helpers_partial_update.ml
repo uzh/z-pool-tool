@@ -1,11 +1,11 @@
-module PoolField = Pool_common.Message.Field
+open Pool_message
 module HttpUtils = Http_utils
 
 let src = Logs.Src.create "handler.helper.partial_update"
 
 let parse_urlencoded ~is_admin req database_label language urlencoded contact_id
   =
-  let open Pool_common.Message in
+  let open Error in
   let open Utils.Lwt_result.Infix in
   let find_param_list name =
     CCList.assoc_opt ~eq:CCString.equal name urlencoded
@@ -25,7 +25,7 @@ let parse_urlencoded ~is_admin req database_label language urlencoded contact_id
   let* field_str = find_param "field" InvalidHtmxRequest in
   let* field =
     let parsed =
-      try Ok (PoolField.read field_str) with
+      try Ok (Field.read field_str) with
       | _ -> Error InvalidHtmxRequest
     in
     match parsed with
@@ -43,7 +43,7 @@ let parse_urlencoded ~is_admin req database_label language urlencoded contact_id
     i
     |> CCInt.of_string
     |> CCOption.map Pool_common.Version.of_int
-    |> CCOption.to_result Pool_common.Message.(Invalid Field.Version)
+    |> CCOption.to_result (Error.Invalid Field.Version)
     |> Lwt_result.lift
   in
   let* value =
@@ -60,7 +60,6 @@ let parse_urlencoded ~is_admin req database_label language urlencoded contact_id
 
 let update ?contact req =
   let open Utils.Lwt_result.Infix in
-  let open Pool_common.Message in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
@@ -87,7 +86,7 @@ let update ?contact req =
       then
         Format.asprintf
           "/admin/contacts/%s/edit"
-          (contact |> Contact.id |> Pool_common.Id.value)
+          Contact.(contact |> id |> Id.value)
       else "/user/personal-details"
     in
     let* Pool_context.Tenant.{ tenant_languages; _ } =
@@ -141,7 +140,6 @@ let update ?contact req =
         let hx_delete =
           field_id |> CCOption.map (Htmx.admin_profile_hx_delete contact_id)
         in
-        let open Pool_common.Message in
         match partial_update with
         | Ok partial_update ->
           let open Custom_field.PartialUpdate in
@@ -203,7 +201,7 @@ let update ?contact req =
              let%lwt field =
                let open Utils.Lwt_result.Infix in
                field_id
-               |> CCOption.to_result InvalidHtmxRequest
+               |> CCOption.to_result Error.InvalidHtmxRequest
                |> Lwt_result.lift
                >>= find_by_contact ~is_admin database_label (Contact.id contact)
              in

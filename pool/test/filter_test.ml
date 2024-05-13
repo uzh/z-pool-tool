@@ -1,4 +1,5 @@
 open Test_utils
+open Pool_message
 module TestSeed = Test_seed
 module Operator = Filter.Operator
 
@@ -122,7 +123,7 @@ module CustomFieldData = struct
 
   module Birthday = struct
     let answer_value =
-      "1990-01-01" |> Pool_common.Model.Ptime.date_of_string |> get_exn
+      "1990-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn
     ;;
 
     let field = create_custom_field "Birthday" (fun a -> Custom_field.Date a)
@@ -601,7 +602,7 @@ let filter_contacts _ () =
     let res =
       filtered_contacts
       |> (CCList.subset ~eq:(fun filtered contact ->
-            Pool_common.Id.equal (Contact.id contact) (Contact.id filtered)))
+            Contact.(Id.equal (id contact) (id filtered))))
            contacts
     in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -626,7 +627,6 @@ let filter_by_email _ () =
 ;;
 
 let filter_exclude_inactive _ () =
-  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
   let%lwt contact = TestContacts.get_contact 9 in
   let%lwt experiment = Repo.first_experiment () in
   let filter =
@@ -641,9 +641,12 @@ let filter_exclude_inactive _ () =
   let%lwt () = save_filter filter experiment in
   (* Expect contact to be included *)
   let%lwt () = test_filter true contact filter experiment in
-  let%lwt (_ : Sihl_user.t) =
-    let open Service.User in
-    update ~ctx ~status:Inactive contact.Contact.user
+  let%lwt (_ : Pool_user.t) =
+    let open Pool_user in
+    update
+      Test_utils.Data.database_label
+      ~status:Status.Inactive
+      contact.Contact.user
   in
   (* Expect inactive contact to be excluded *)
   test_filter false contact filter experiment
@@ -666,7 +669,7 @@ let validate_filter_with_unknown_field _ () =
   let events =
     Cqrs_command.Filter_command.Update.handle key_list [] filter query title
   in
-  let expected = Error Pool_common.Message.(Invalid Field.Key) in
+  let expected = Error (Error.Invalid Field.Key) in
   check_result expected events |> Lwt.return
 ;;
 
@@ -684,9 +687,7 @@ let validate_filter_with_invalid_value _ () =
          (Single (Str "Not a number")))
   in
   let res = Filter.validate_query key_list [] query >|= Filter.create None in
-  let expected =
-    Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
-  in
+  let expected = Error (Error.QueryNotCompatible (Field.Value, Field.Key)) in
   Alcotest.(check (result filter error) "succeeds" res expected) |> Lwt.return
 ;;
 
@@ -841,9 +842,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
       |> Lwt.map get_exn
     in
     let get_index contact =
-      CCList.find_idx
-        (fun c -> Contact.(Pool_common.Id.equal (id c) (id contact)))
-        contacts
+      CCList.find_idx (fun c -> Contact.(Id.equal (id c) (id contact))) contacts
       |> CCOption.get_exn_or "Cannot find contact"
       |> fst
     in
@@ -857,7 +856,6 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
 ;;
 
 let create_filter_template_with_template _ () =
-  let open Pool_common in
   let open CCResult in
   let open Filter in
   let template_id = Pool_common.Id.create () in
@@ -873,11 +871,11 @@ let create_filter_template_with_template _ () =
   let filter = Template template_id in
   let events =
     let open Cqrs_command.Filter_command in
-    Message.Field.[ show Title, [ "Some title" ] ]
+    Field.[ show Title, [ "Some title" ] ]
     |> default_decode
     >>= Create.handle [] [ template ] filter
   in
-  let expected = Error Message.FilterMustNotContainTemplate in
+  let expected = Error Error.FilterMustNotContainTemplate in
   Alcotest.(check (result (list event) error) "succeeds" expected events)
   |> Lwt.return
 ;;
@@ -1095,7 +1093,9 @@ let filter_by_empty_hardcoded_value _ () =
     let%lwt contact =
       Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
     in
-    let user = Sihl_user.{ contact.user with confirmed = true } in
+    let user =
+      Pool_user.{ contact.user with confirmed = Confirmed.create true }
+    in
     { contact with language = None; user }
     |> TestContacts.persist_contact_update
   in
@@ -1223,9 +1223,7 @@ let filter_by_date_custom_field _ () =
       save () :: save_answers ~answer_value:(Some answer_value) [ contact ])
     |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
   in
-  let date =
-    "1985-01-01" |> Pool_common.Model.Ptime.date_of_string |> get_exn
-  in
+  let date = "1985-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn in
   let greater_filter =
     Birthday.filter ~date Operator.(Size.Greater |> size) ()
   in
@@ -1269,7 +1267,9 @@ let filter_by_tags _ () =
   let%lwt () =
     let create_tagged_event contact tag =
       let open Tagged in
-      { model_uuid = Contact.id contact; tag_uuid = tag.Tags.id }
+      { model_uuid = Contact.(id contact |> Id.to_common)
+      ; tag_uuid = tag.Tags.id
+      }
       |> tagged
       |> Pool_event.tags
     in
@@ -1292,7 +1292,7 @@ let filter_by_tags _ () =
           (flip
              (CCList.mem ~eq:Contact.equal)
              [ contact_one; contact_two; contact_three ])
-    ||> CCList.sort Contact.compare
+    ||> CCList.stable_sort Contact.compare
   in
   let create_filter ?(not = false) operator tags =
     let query =
@@ -1338,7 +1338,7 @@ let filter_by_tags _ () =
       (list contact_testable)
       msg
       ([ contact_one; contact_two; contact_three ]
-       |> CCList.sort Contact.compare)
+       |> CCList.stable_sort Contact.compare)
       res
     |> Lwt.return
   in

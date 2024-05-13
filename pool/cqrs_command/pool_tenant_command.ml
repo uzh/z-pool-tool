@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Id = Pool_tenant.Id
 module File = Pool_common.File
 
@@ -34,15 +34,13 @@ let system_event_from_job ?id job =
 module Create : sig
   type t = create
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Pool_database.t
+    -> Database.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -92,7 +90,7 @@ end = struct
         command.title
         command.description
         command.url
-        database
+        (database |> Database.label)
         command.styles
         command.icon
         command.default_language
@@ -108,10 +106,10 @@ end = struct
       |> CCList.flatten
     in
     Ok
-      [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
+      [ Pool_tenant.Created (tenant, database) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
-      ; Database.Migrated database |> Pool_event.database
-      ; System_event.Job.TenantDatabaseAdded database.Pool_database.label
+      ; Pool_database.Migrated database |> Pool_event.database
+      ; System_event.Job.TenantDatabaseAdded (Database.label database)
         |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
       ]
@@ -119,7 +117,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Pool_tenant.Guard.Access.create
@@ -130,7 +128,7 @@ module EditDetails : sig
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
-    ; disabled : Pool_tenant.Disabled.t
+    ; status : Database.Status.t option
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
     ; icon : Pool_tenant.Icon.Write.t option
@@ -142,19 +140,16 @@ module EditDetails : sig
     :  ?tags:Logs.Tag.set
     -> Pool_tenant.Write.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
-    ; disabled : Pool_tenant.Disabled.t
+    ; status : Database.Status.t option
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
     ; icon : Pool_tenant.Icon.Write.t option
@@ -166,7 +161,7 @@ end = struct
     title
     description
     url
-    disabled
+    status
     default_language
     styles
     icon
@@ -176,7 +171,7 @@ end = struct
     { title
     ; description
     ; url
-    ; disabled
+    ; status
     ; default_language
     ; styles
     ; icon
@@ -192,7 +187,7 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Pool_tenant.Disabled.schema ()
+          ; Conformist.optional @@ Database.Status.schema ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
@@ -213,7 +208,7 @@ end = struct
         { title = command.title
         ; description = command.description
         ; url = command.url
-        ; disabled = command.disabled
+        ; status = command.status
         ; styles = command.styles
         ; icon = command.icon
         ; default_language = command.default_language
@@ -237,15 +232,15 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Pool_tenant.Guard.Access.update
 end
 
 type database_command =
-  { database_url : Pool_database.Url.t
-  ; database_label : Pool_database.Label.t
+  { database_url : Database.Url.t
+  ; database_label : Database.Label.t
   }
 
 let database_command database_url database_label =
@@ -255,32 +250,32 @@ let database_command database_url database_label =
 let database_schema =
   Conformist.(
     make
-      Field.[ Pool_database.Url.schema (); Pool_database.Label.schema () ]
+      Field.[ Database.Url.schema (); Database.Label.schema () ]
       database_command)
 ;;
 
 let decode_database data =
   Conformist.decode_and_validate database_schema data
-  |> CCResult.map_err Pool_common.Message.to_conformist_error
+  |> CCResult.map_err Pool_message.to_conformist_error
 ;;
 
 module UpdateDatabase : sig
-  type t = Pool_database.t
+  type t = Database.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> ?system_event_id:System_event.Id.t
     -> Pool_tenant.Write.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode
     :  (string * string list) list
-    -> (database_command, Pool_common.Message.error) result
+    -> (database_command, Pool_message.Error.t) result
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Pool_database.t
+  type t = Database.t
 
   let handle
     ?(tags = Logs.Tag.empty)
@@ -291,7 +286,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateDatabase" ~tags);
     Ok
       [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
-      ; System_event.Job.TenantDatabaseUpdated database.Pool_database.label
+      ; System_event.Job.TenantDatabaseUpdated (Database.label database)
         |> system_event_from_job ?id:system_event_id
       ]
   ;;
@@ -305,7 +300,7 @@ module UpdateGtxApiKey : sig
     :  ?tags:Logs.Tag.set
     -> Pool_tenant.Write.t
     -> Pool_tenant.GtxApiKey.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -324,7 +319,7 @@ module DestroyLogo : sig
     :  ?tags:Logs.Tag.set
     -> Pool_tenant.t
     -> Pool_common.Id.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -334,28 +329,4 @@ end = struct
   ;;
 
   let effects = Pool_tenant.Guard.Access.update
-end
-
-module Destroy : sig
-  type t = Pool_tenant.t
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
-end = struct
-  type t = Pool_tenant.t
-
-  let handle ?(tags = Logs.Tag.empty) t =
-    Logs.info ~src (fun m -> m "Handle command Destroy" ~tags);
-    Ok
-      [ Pool_tenant.Destroyed t.Pool_tenant.id |> Pool_event.pool_tenant
-      ; System_event.Job.TenantDatabaseDeleted t.Pool_tenant.database_label
-        |> system_event_from_job
-      ]
-  ;;
-
-  let effects = Pool_tenant.Guard.Access.delete
 end

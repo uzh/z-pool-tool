@@ -5,23 +5,14 @@ let create_contact () =
   let open Pool_user in
   Contact.
     { user =
-        Sihl_user.
-          { id = Id.(create () |> value)
-          ; email = "jane.doe@econ.uzh.ch"
-          ; username = None
-          ; name = Some "Doe"
-          ; given_name = Some "Jane"
-          ; password =
-              "somepassword"
-              |> Sihl_user.Hashing.hash
-              |> CCResult.get_or_failwith
-          ; status =
-              Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
-          ; admin = false
-          ; confirmed = true
-          ; created_at = CreatedAt.create ()
-          ; updated_at = UpdatedAt.create ()
-          }
+        { Pool_user.id = Pool_user.Id.create ()
+        ; email = EmailAddress.of_string "jane.doe@econ.uzh.ch"
+        ; lastname = Lastname.of_string "Doe"
+        ; firstname = Firstname.of_string "Jane"
+        ; status = Status.Active
+        ; admin = IsAdmin.create false
+        ; confirmed = Confirmed.create true
+        }
     ; terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure
     ; language = Some Language.En
     ; experiment_type_preference = None
@@ -42,14 +33,12 @@ let create_contact () =
     ; language_version = Version.create ()
     ; experiment_type_preference_version = Version.create ()
     ; import_pending = Pool_user.ImportPending.create false
-    ; created_at = CreatedAt.create ()
-    ; updated_at = UpdatedAt.create ()
+    ; created_at = CreatedAt.create_now ()
+    ; updated_at = UpdatedAt.create_now ()
     }
 ;;
 
-let create_sihl_user () =
-  () |> create_contact |> fun { Contact.user; _ } -> user
-;;
+let create_user () = () |> create_contact |> fun { Contact.user; _ } -> user
 
 let location =
   let open Pool_location in
@@ -106,8 +95,8 @@ let location =
   ; link = Some link
   ; status
   ; files
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 
@@ -141,8 +130,8 @@ let create_session experiment =
     ; text_message_reminder_sent_at = None
     ; closed_at = None
     ; canceled_at = None
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     ; experiment
     }
 ;;
@@ -182,8 +171,8 @@ let create_experiment () =
   ; text_message_session_reminder_lead_time = None
   ; invitation_reset_at = None
   ; matcher_notification_sent = MatcherNotificationSent.create false
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 
@@ -200,7 +189,7 @@ let create_assignment ?contact () =
   ; external_data_id = Some (ExternalDataId.of_string "DATA_ID")
   ; reminder_manually_last_sent_at = None
   ; custom_fields = None
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;

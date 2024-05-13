@@ -2,7 +2,6 @@ module Import = Page_public_import
 open Tyxml.Html
 open Component.Input
 module HttpUtils = Http_utils
-module Message = Pool_common.Message
 
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
@@ -33,14 +32,18 @@ let login_form
     [ form
         ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]
         [ csrf_element csrf ()
-        ; input_element ?flash_fetcher language `Email Message.Field.Email
-        ; input_element language `Password Message.Field.Password
+        ; input_element ?flash_fetcher language `Email Pool_message.Field.Email
+        ; input_element language `Password Pool_message.Field.Password
         ; div
             ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
             [ div
                 ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
                 [ reset_password; sign_up ]
-            ; submit_element ~classnames:[ "push" ] language Message.Login ()
+            ; submit_element
+                ~classnames:[ "push" ]
+                language
+                Pool_message.Control.Login
+                ()
             ]
         ]
     ]
@@ -72,7 +75,7 @@ let index
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ link_as_button
-                  ~control:(language, Pool_common.Message.SignUp)
+                  ~control:(language, Pool_message.Control.SignUp)
                   (HttpUtils.path_with_language query_language "/signup")
               ]
           ]
@@ -161,13 +164,13 @@ let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element language `Text Pool_common.Message.Field.Email
+        ; input_element language `Text Pool_message.Field.Email
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Pool_common.Message.SendResetLink
+                Pool_message.Control.SendResetLink
                 ()
             ]
         ]
@@ -194,21 +197,24 @@ let reset_password
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element language `Hidden Message.Field.Token ~value:token
+        ; input_element language `Hidden Pool_message.Field.Token ~value:token
         ; input_element
             ~hints:
               Pool_common.I18n.
                 [ I18nText (password_policy |> I18n.content_to_string) ]
             language
             `Password
-            Message.Field.Password
-        ; input_element language `Password Message.Field.PasswordConfirmation
+            Pool_message.Field.Password
+        ; input_element
+            language
+            `Password
+            Pool_message.Field.PasswordConfirmation
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(Save (Some Field.password))
+                Pool_message.(Control.Save (Some Field.password))
                 ()
             ]
         ]

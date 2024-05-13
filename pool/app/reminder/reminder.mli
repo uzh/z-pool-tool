@@ -3,7 +3,7 @@ module Service : sig
     :  Pool_tenant.t
     -> Session.t list
     -> Session.t list
-    -> (Pool_event.t list, Pool_common.Message.error) result Lwt.t
+    -> (Pool_event.t list, Pool_message.Error.t) Lwt_result.t
 
   val send_tenant_reminder : Pool_tenant.t -> unit Lwt.t
   val run : unit -> unit Lwt.t
@@ -11,13 +11,13 @@ module Service : sig
 end
 
 val prepare_messages
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_tenant.t
   -> Pool_common.Language.t list
   -> Experiment.t
   -> Session.t
-  -> ((Assignment.t -> (Email.job, Pool_common.Message.error) result)
+  -> ((Assignment.t -> (Email.job, Pool_message.Error.t) result)
      * (Assignment.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.job, Pool_common.Message.error) result))
+        -> (Text_message.job, Pool_message.Error.t) result))
        Lwt.t

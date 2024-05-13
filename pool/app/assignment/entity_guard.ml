@@ -10,7 +10,7 @@ module Target = struct
       ?ctx
       (fun { Entity.id; _ } -> Target.create `Assignment (id |> target_of))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

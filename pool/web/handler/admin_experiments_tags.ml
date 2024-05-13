@@ -1,7 +1,7 @@
 open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.admin.experiments.tags"
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
@@ -39,13 +39,13 @@ let handle_tag action req =
          |> decode
          |> Lwt_result.lift
          >== handle
-         >|+ CCPair.make Pool_common.Message.TagAssigned
+         >|+ CCPair.make Pool_message.Success.TagAssigned
        in
        let handle_remove handle =
          HttpUtils.find_id Tags.Id.of_string Field.Tag req
          |> Tags.find database_label
          >== handle
-         >|+ CCPair.make Pool_common.Message.TagRemoved
+         >|+ CCPair.make Pool_message.Success.TagRemoved
        in
        let* message, events =
          let open Tags.ParticipationTags in

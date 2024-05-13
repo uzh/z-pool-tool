@@ -5,13 +5,13 @@ let src = Logs.Src.create "handler.admin.experiments_mailing"
 let create_layout req = General.create_tenant_layout req
 
 let experiment_id =
-  HttpUtils.find_id Experiment.Id.of_string Pool_common.Message.Field.Experiment
+  HttpUtils.find_id Experiment.Id.of_string Pool_message.Field.Experiment
 ;;
 
 let template_id =
   HttpUtils.find_id
     Message_template.Id.of_string
-    Pool_common.Message.Field.MessageTemplate
+    Pool_message.Field.MessageTemplate
 ;;
 
 let template_label = Admin_message_templates.template_label
@@ -142,7 +142,7 @@ module Access : sig
   val message_template : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  module Field = Pool_common.Message.Field
+  module Field = Pool_message.Field
   module Guardian = Middleware.Guardian
 
   let experiment_effects =

@@ -1,4 +1,5 @@
 open CCFun.Infix
+include Ptime
 
 (* Formatting *)
 let decimal n =
@@ -111,8 +112,6 @@ module Rfc3339 = struct
   let unwrap s = CCString.(s |> replace ~sub:char ~by:"")
 end
 
-let rfc3339_quote = "\""
-
 let yojson_of_ptime_span m =
   m
   |> Ptime.Span.to_int_s
@@ -140,3 +139,7 @@ let print_time_span span =
   (* This is only the case if span > 136 years (64bit system) *)
   |> CCOption.get_or ~default:"Session duration too long!"
 ;;
+
+let t_of_yojson = ptime_of_yojson
+let yojson_of_t = yojson_of_ptime
+let sexp_of_t = ptime_to_sexp

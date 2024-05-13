@@ -1,3 +1,5 @@
+module ConnectionWatcher = Service_connections
+
 let src = Logs.Src.create "system_event.service"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
@@ -11,8 +13,7 @@ let start_handler identifier () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s 10 in
   let periodic_fcn () =
-    Logs.debug ~src (fun m ->
-      m ~tags:Pool_database.(Logger.Tags.create root) "Run");
+    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
     run identifier ()
   in
   create

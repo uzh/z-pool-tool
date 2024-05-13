@@ -9,13 +9,7 @@ let from_root_only () =
         let open Pool_context in
         let csrf = Sihl.Web.Csrf.find_exn req in
         create
-          ( None
-          , Pool_common.Language.En
-          , Pool_database.root
-          , None
-          , csrf
-          , Guest
-          , [] )
+          (None, Pool_common.Language.En, Database.root, None, csrf, Guest, [])
       in
       Page.Utils.error_page_not_found Pool_common.Language.En ()
       |> Layout.Root.create context

@@ -20,7 +20,7 @@ let create () =
             }
         in
         let base64 = Base64.encode_exn file.body in
-        let%lwt _ = Service.Storage.upload_base64 stored_file base64 in
+        let%lwt _ = Storage.upload_base64 Database.root stored_file base64 in
         Lwt.return_unit)
       [ styles; icon; tenant_logo ]
   in
@@ -45,7 +45,7 @@ let create () =
         , "description"
         , "localhost:3017"
         , Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
-          |> Option.value
+          |> CCOption.value
                ~default:"mariadb://root@database-tenant:3306/dev_econ"
         , "econ-uzh"
         , styles.Assets.id
@@ -55,7 +55,7 @@ let create () =
         , "description"
         , "pool.zhaw.ch"
         , Sihl.Configuration.read_string "DATABASE_URL_TENANT_TWO"
-          |> Option.value
+          |> CCOption.value
                ~default:"mariadb://root@database-tenant:3306/dev_zhaw"
         , "zhaw"
         , styles.Assets.id
@@ -76,28 +76,27 @@ let create () =
              , icon
              , default_language )
            ->
+            let database =
+              let open Database in
+              let open CCResult in
+              Pool_common.Utils.get_or_failwith
+              @@ (both (Label.create database_label) (Url.create database_url)
+                  >|= CCFun.uncurry create)
+            in
             let tenant =
-              let database =
-                let open Pool_tenant.Database in
-                let open CCResult.Infix in
-                let* url = Url.create database_url in
-                let* label = Label.create database_label in
-                create label url
-              in
-              Pool_tenant.(
-                Write.create
-                  (Title.create title |> get_or_failwith)
-                  (Description.create description
-                   |> get_or_failwith
-                   |> CCOption.return)
-                  (Url.create url |> get_or_failwith)
-                  (database |> get_or_failwith)
-                  (Styles.Write.create styles
-                   |> get_or_failwith
-                   |> CCOption.return)
-                  (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
-                  (Pool_common.Language.create default_language
-                   |> get_or_failwith))
+              let open Pool_tenant in
+              Write.create
+                (Title.create title |> get_or_failwith)
+                (Description.create description
+                 |> get_or_failwith
+                 |> CCOption.return)
+                (Url.create url |> get_or_failwith)
+                (database |> Database.label)
+                (Styles.Write.create styles
+                 |> get_or_failwith
+                 |> CCOption.return)
+                (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
+                (Pool_common.Language.create default_language |> get_or_failwith)
             in
             let logo_mappings =
               let open Pool_tenant.LogoMapping in
@@ -109,10 +108,10 @@ let create () =
                 ; logo_type
                 })
             in
-            [ Pool_tenant.Created tenant
+            [ Pool_tenant.Created (tenant, database)
             ; Pool_tenant.LogosUploaded logo_mappings
             ]
-            |> Lwt_list.iter_s (Pool_tenant.handle_event Pool_database.root))
+            |> Lwt_list.iter_s (Pool_tenant.handle_event Database.root))
   in
   Lwt.return_unit
 ;;

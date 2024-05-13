@@ -1,10 +1,10 @@
 open Utils.Lwt_result.Infix
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 module File = HttpUtils.File
 module Update = Root_tenant_update
-module Database = Pool_database
+module Database = Database
 
 let src = Logs.Src.create "handler.root.tenant"
 let tenants_path = "/root/tenants"
@@ -40,12 +40,12 @@ let create req =
         let* { database_url; database_label } =
           decode_database urlencoded |> Lwt_result.lift
         in
-        Pool_database.test_and_create database_url database_label
+        Database.test_and_create database_url database_label
       in
       let* files =
         HttpUtils.File.upload_files
           Database.root
-          (CCList.map Pool_common.Message.Field.show Pool_tenant.file_fields)
+          (CCList.map Field.show Pool_tenant.file_fields)
           req
       in
       let* (decoded : create) =
@@ -57,11 +57,11 @@ let create req =
       let events = Create.handle ~tags database decoded |> Lwt_result.lift in
       events >|> HttpUtils.File.cleanup_upload Database.root files
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Pool_database.root) in
+    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path
-        [ Message.set ~success:[ Pool_common.Message.(Created Field.Tenant) ] ]
+        [ Message.set ~success:[ Success.Created Field.Tenant ] ]
     in
     () |> events |>> handle |>> return_to_overview
   in
@@ -74,7 +74,7 @@ let manage_operators req =
     Utils.Lwt_result.map_error (fun err -> err, tenants_path)
     @@
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      HttpUtils.get_field_router_param req Field.tenant
       |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
@@ -106,12 +106,12 @@ let create_operator req =
     let open CCFun in
     let tags = Pool_context.Logger.Tags.req req in
     let* tenant_db =
-      Pool_tenant.find_full tenant_id
-      >|+ fun { Pool_tenant.Write.database; _ } -> database.Database.label
+      Pool_tenant.(find_full tenant_id >|+ Write.database_label)
     in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
-      ||> CCOption.to_result Pool_common.Message.EmailAddressMissingAdmin
+      ||> CCOption.to_result Error.EmailAddressMissingAdmin
+      >== Pool_user.EmailAddress.create
       >>= HttpUtils.validate_email_existance tenant_db
     in
     let events =
@@ -129,7 +129,7 @@ let create_operator req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.Created Field.Operator ] ]
+        [ Message.set ~success:[ Success.Created Field.Operator ] ]
     in
     validate_user () >> events >>= handle |>> return_to_overview
   in
@@ -141,7 +141,7 @@ let tenant_detail req =
     Utils.Lwt_result.map_error (fun err -> err, tenants_path)
     @@
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      HttpUtils.get_field_router_param req Field.tenant
       |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in

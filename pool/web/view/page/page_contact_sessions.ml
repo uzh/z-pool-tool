@@ -1,7 +1,7 @@
 open Tyxml.Html
 open Component
-module Field = Pool_common.Message.Field
-module Time = Pool_common.Utils.Time
+module Field = Pool_message.Field
+module Time = Pool_model.Time
 
 let session_title language (s : Session.Public.t) =
   Pool_common.I18n.SessionDetailTitle
@@ -24,16 +24,21 @@ let session_item layout language (experiment : Experiment.Public.t) session =
                  (session.Public.id |> Id.value)
                |> Sihl.Web.externalize_path)
           ]
-        [ txt (Utils.control_to_string language Message.register) ]
+        [ txt (Utils.control_to_string language Pool_message.Control.Register) ]
     | false, Some _ ->
       span
         [ txt
             (Utils.error_to_string
                language
-               Message.SessionRegistrationViaParent)
+               Pool_message.Error.SessionRegistrationViaParent)
         ]
     | true, _ ->
-      span [ txt (Utils.error_to_string language Message.SessionFullyBooked) ]
+      span
+        [ txt
+            (Utils.error_to_string
+               language
+               Pool_message.Error.SessionFullyBooked)
+        ]
   in
   let attrs =
     if CCOption.is_some session.Public.follow_up_to && not (layout == `Upcoming)

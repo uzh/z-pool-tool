@@ -7,7 +7,7 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let experiment_id, id =
-    let open Pool_common.Message.Field in
+    let open Pool_message.Field in
     ( HttpUtils.find_id Experiment.Id.of_string Experiment req
     , HttpUtils.find_id Session.Id.of_string Session req )
   in
@@ -53,7 +53,7 @@ let create req =
          Http_utils.redirect_to_with_actions
            redirect_path
            [ HttpUtils.Message.set
-               ~success:[ Pool_common.Message.(AssignmentCreated) ]
+               ~success:[ Pool_message.Success.AssignmentCreated ]
            ]
        in
        events |>> handle

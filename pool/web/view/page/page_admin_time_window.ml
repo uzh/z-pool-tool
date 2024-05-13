@@ -1,7 +1,8 @@
 open Tyxml.Html
 open Component
 open Input
-module Message = Pool_common.Message
+open Pool_message
+open Control
 
 let session_path = HttpUtils.Url.Admin.session_path
 
@@ -33,10 +34,7 @@ module Partials = struct
 
   let detail_button language experiment_id time_window_id =
     HttpUtils.Url.Admin.session_path experiment_id ~id:time_window_id
-    |> link_as_button
-         ~is_text:true
-         ~icon:Icon.Eye
-         ~control:(language, Message.Details)
+    |> link_as_button ~is_text:true ~icon:Icon.Eye ~control:(language, Details)
   ;;
 
   let button_dropdown { Pool_context.language; _ } experiment_id time_window =
@@ -61,16 +59,15 @@ let time_window_form
   let open CCFun in
   let open Session in
   let open Time_window in
-  let open Pool_common in
   let value = CCFun.flip (CCOption.map_or ~default:"") time_window in
   let action, submit =
     let path ?id () =
       session_path ?id experiment.Experiment.id |> Sihl.Web.externalize_path
     in
     match time_window with
-    | None -> path (), Message.(Create (Some Field.Session))
+    | None -> path (), Create (Some Field.Session)
     | Some session ->
-      path ~id:session.Time_window.id (), Message.(Update (Some Field.Session))
+      path ~id:session.Time_window.id (), Update (Some Field.Session)
   in
   let is_past = function
     | None -> false
@@ -94,7 +91,7 @@ let time_window_form
       |> CCOption.map (fun ({ start; _ } : Time_window.t) -> Start.value start)
     in
     let read_only = is_past value in
-    date_input ~read_only Message.Field.Start value
+    date_input ~read_only Field.Start value
   in
   let end_field =
     let value = time_window |> CCOption.map Time_window.ends_at in
@@ -102,7 +99,7 @@ let time_window_form
       time_window
       |> CCOption.map (fun ({ start; _ } : Time_window.t) -> Start.value start)
     in
-    date_input ?min_value Message.Field.End value
+    date_input ?min_value Field.End value
   in
   form
     ~a:
@@ -118,7 +115,7 @@ let time_window_form
         ; end_field
         ; textarea_element
             language
-            Message.Field.InternalDescription
+            Field.InternalDescription
             ~value:
               (value (fun s ->
                  s.internal_description
@@ -126,7 +123,7 @@ let time_window_form
             ~flash_fetcher
         ; textarea_element
             language
-            Message.Field.PublicDescription
+            Field.PublicDescription
             ~value:
               (value (fun s ->
                  s.public_description
@@ -135,7 +132,7 @@ let time_window_form
         ; input_element
             language
             `Number
-            Message.Field.MaxParticipants
+            Field.MaxParticipants
             ?value:
               CCOption.(
                 bind time_window (fun s ->
@@ -158,10 +155,7 @@ let new_form
   time_window_form csrf language experiment ~flash_fetcher
   |> CCList.return
   |> Layout.Experiment.(
-       create
-         context
-         (Control Message.(Create (Some Field.TimeWindow)))
-         experiment)
+       create context (Control (Create (Some Field.TimeWindow))) experiment)
 ;;
 
 let edit
@@ -184,10 +178,7 @@ let edit
   div ~a:[ a_class [ "stack-lg" ] ] [ form; tags_html ]
   |> CCList.return
   |> Layout.Experiment.(
-       create
-         context
-         (Control Message.(Edit (Some Field.TimeWindow)))
-         experiment)
+       create context (Control (Edit (Some Field.TimeWindow))) experiment)
 ;;
 
 let data_table
@@ -210,7 +201,7 @@ let data_table
         ~style:`Success
         ~icon:Icon.Add
         ~classnames:[ "small"; "nobr" ]
-        ~control:(language, Message.(Add (Some Field.Session)))
+        ~control:(language, Add (Some Field.Session))
         (time_windows_path ~suffix:"create" ())
     in
     [ `column column_date
@@ -293,22 +284,20 @@ let detail
   participation_tags
   assignments
   =
-  let open Pool_common in
   let open Time_window in
   let session_path = session_path ~id:time_window.id experiment.Experiment.id in
   let edit_button =
     link_as_button
       ~icon:Icon.Create
       ~classnames:[ "small" ]
-      ~control:(language, Message.(Edit (Some Field.Session)))
+      ~control:(language, Edit (Some Field.Session))
       (Format.asprintf "%s/edit" session_path)
   in
   let overview =
-    let open Message in
     let open Session in
     let int_to_txt i = i |> CCInt.to_string |> txt in
     let amount amt = amt |> ParticipantAmount.value |> string_of_int in
-    let date date = Pool_common.Utils.Time.formatted_date_time date in
+    let date date = Pool_model.Time.formatted_date_time date in
     [ Field.Start, time_window.start |> Start.value |> date |> txt
     ; Field.End, ends_at time_window |> date |> txt
     ; ( Field.InternalDescription

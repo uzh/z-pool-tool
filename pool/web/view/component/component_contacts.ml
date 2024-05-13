@@ -7,7 +7,7 @@ let external_data_ids language external_data_ids =
   | external_data_ids ->
     let thead =
       let open Pool_common in
-      Message.Field.[ Experiment; Session; ExternalDataId ]
+      Pool_message.Field.[ Experiment; Session; ExternalDataId ]
       |> CCList.map CCFun.(Utils.field_to_string_capitalized language %> txt)
     in
     external_data_ids

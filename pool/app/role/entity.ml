@@ -60,7 +60,7 @@ module Role = struct
     |> CCString.capitalize_ascii
     |> Format.asprintf "`%s"
     |> of_string_res
-    |> CCResult.map_err (CCFun.const Pool_common.Message.(Invalid Field.Target))
+    |> CCResult.map_err (CCFun.const Pool_message.(Error.Invalid Field.Target))
   ;;
 
   let all =
@@ -184,7 +184,7 @@ module Target = struct
     |> CCString.capitalize_ascii
     |> Format.asprintf "`%s"
     |> of_string_res
-    |> CCResult.map_err (CCFun.const Pool_common.Message.(Invalid Field.Target))
+    |> CCResult.map_err (CCFun.const Pool_message.(Error.Invalid Field.Target))
   ;;
 
   let of_string = of_string_res %> CCResult.get_or_failwith

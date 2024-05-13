@@ -1,26 +1,47 @@
-include Entity
-module Repo = Repo
+module Logs = Logger.Logs
+module Root = Root
+module Tenant = Tenant
 
-module Logger = struct
-  module Tags = struct
-    let add (database_label : Label.t) : Logs.Tag.set -> Logs.Tag.set =
-      Logs.Tag.add Logger.tag_database (Label.value database_label)
-    ;;
+type event = Migrated of Database.t [@@deriving eq, show]
 
-    let create (database_label : Label.t) : Logs.Tag.set =
-      add database_label Logs.Tag.empty
-    ;;
-  end
-end
+let root_steps = Root.steps
+let tenant_steps = Tenant.steps
 
-let test_and_create url label =
-  let%lwt connection =
-    let uri = url |> Uri.of_string in
-    Caqti_lwt_unix.with_connection uri (fun (_ : Caqti_lwt.connection) ->
-      Lwt_result.return ())
-  in
-  match connection with
-  | Ok () -> create label url |> Lwt_result.lift
-  | Error (_ : Caqti_error.load_or_connect) ->
-    Lwt_result.fail Pool_common.Message.(Invalid Field.DatabaseUrl)
+let handle_event _ : event -> unit Lwt.t = function
+  | Migrated database ->
+    let open Database in
+    let label = database |> label in
+    Logs.info (fun m ->
+      m ~tags:(Logger.Tags.create label) "Migrating: %a" Label.pp label);
+    let (_ : status) = add_pool database in
+    (match label |> is_root with
+     | true -> root, root_steps ()
+     | false -> label, tenant_steps ())
+    |> CCFun.uncurry Database.Migration.execute
 ;;
+
+let start () =
+  let%lwt () = Database.Root.start () in
+  let%lwt () = Root.start () in
+  let%lwt () = Database.Tenant.start () in
+  let%lwt () = Tenant.start () in
+  Lwt.return_unit
+;;
+
+let stop () =
+  let%lwt () = Tenant.stop () in
+  let%lwt () = Database.Tenant.stop () in
+  let%lwt () = Root.stop () in
+  let%lwt () = Database.Root.stop () in
+  Lwt.return_unit
+;;
+
+let lifecycle =
+  Sihl.Container.create_lifecycle
+    "database"
+    ~implementation_name:"root and tenants incl. migrations"
+    ~start
+    ~stop
+;;
+
+let register () = Sihl.Container.Service.create lifecycle

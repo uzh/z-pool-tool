@@ -1,6 +1,6 @@
 open Entity
 module NavUtils = Navigation_utils
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let read_entity entity =
   Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))

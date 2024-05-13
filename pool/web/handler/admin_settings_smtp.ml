@@ -1,6 +1,6 @@
 open Utils.Lwt_result.Infix
+open Pool_message
 module Command = Cqrs_command.Smtp_command
-module Field = Pool_common.Message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module SmtpAuth = Email.SmtpAuth
@@ -8,11 +8,7 @@ module SmtpAuth = Email.SmtpAuth
 let src = Logs.Src.create "handler.admin.settings_schedule"
 let active_navigation = Page.Admin.Settings.Smtp.base_path
 let boolean_fields = Field.([ DefaultSmtpServer ] |> CCList.map show)
-
-let smtp_auth_id req =
-  let open Pool_common.Message.Field in
-  HttpUtils.find_id SmtpAuth.Id.of_string Smtp req
-;;
+let smtp_auth_id req = HttpUtils.find_id SmtpAuth.Id.of_string Field.Smtp req
 
 let settings_detail_path location req =
   active_navigation location
@@ -28,7 +24,7 @@ let email_of_urlencoded urlencoded =
   urlencoded
   |> CCList.assoc_opt ~eq:( = ) Field.(show field)
   |> CCFun.flip CCOption.bind CCList.head_opt
-  |> CCOption.to_result Pool_common.Message.(Missing field)
+  |> CCOption.to_result Error.(Missing field)
   |> Lwt_result.lift
   >== Pool_user.EmailAddress.create
 ;;
@@ -69,7 +65,7 @@ let smtp_form location req =
         >|+ show context location flash_fetcher
         >>= General.create_tenant_layout req ~active_navigation context
       | `Root ->
-        Pool_tenant.Database.root
+        Database.root
         |> SmtpAuth.find_default
         ||> CCResult.to_opt
         ||> (function
@@ -103,7 +99,7 @@ let create_post location req =
     let validate_label ({ Command.label; _ } as m : Command.create) =
       SmtpAuth.find_by_label database_label label
       ||> function
-      | Some _ -> Error (Pool_common.Message.Uniqueness Field.SmtpLabel)
+      | Some _ -> Error (Error.Uniqueness Field.SmtpLabel)
       | None -> Ok m
     in
     let%lwt default_smtp = SmtpAuth.find_default_opt database_label in
@@ -119,7 +115,7 @@ let create_post location req =
     let return_to_overview () =
       HttpUtils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.SmtpConfigurationAdded ] ]
+        [ Message.set ~success:[ Success.SmtpConfigurationAdded ] ]
     in
     urlencoded
     |> decode
@@ -179,12 +175,10 @@ let update_base location command success_message req =
 ;;
 
 let update_password =
-  update_base `Tenant `UpdatePassword Pool_common.Message.SmtpPasswordUpdated
+  update_base `Tenant `UpdatePassword Success.SmtpPasswordUpdated
 ;;
 
-let update =
-  update_base `Tenant `UpdateDetails Pool_common.Message.SmtpDetailsUpdated
-;;
+let update = update_base `Tenant `UpdateDetails Success.SmtpDetailsUpdated
 
 let new_form req =
   let location = `Tenant in
@@ -215,7 +209,7 @@ let delete_base location req =
         let%lwt () = Pool_event.handle_events ~tags database_label events in
         Http_utils.redirect_to_with_actions
           path
-          [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Smtp) ] ])
+          [ Message.set ~success:[ Success.Deleted Field.Smtp ] ])
   |> Utils.Lwt_result.map_error (fun err -> err, path)
 ;;
 
@@ -239,8 +233,7 @@ let validate location req =
     Email.Service.test_smtp_config database_label smtp email
     >|> function
     | Ok () ->
-      redirect
-        [ Message.set ~success:[ Pool_common.Message.Validated Field.Smtp ] ]
+      redirect [ Message.set ~success:[ Success.Validated Field.Smtp ] ]
     | Error err -> redirect [ Message.set ~error:[ err ] ]
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req

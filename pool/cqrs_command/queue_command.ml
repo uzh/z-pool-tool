@@ -1,5 +1,5 @@
-module Conformist = Pool_common.Utils.PoolConformist
-module Message = Pool_common.Message
+module Conformist = Pool_conformist
+module Message = Pool_message
 open CCResult.Infix
 
 let src = Logs.Src.create "queue.cqrs"
@@ -43,27 +43,26 @@ let update_text_message_job
   { job with message; resent = Some instance_id }
 ;;
 
-let parse_instance_job { Sihl_queue.name; input; _ } =
-  let open Queue.JobName in
-  (try Ok (name |> read) with
-   | _ -> Error Message.(Invalid Field.Input))
-  >>= function
+let parse_instance_job instance =
+  let open Queue in
+  let open JobName in
+  let input = Instance.input instance in
+  instance
+  |> Instance.name
+  |> function
   | CheckMatchesFilter ->
     (try
-       Ok
-         (input
-          |> Yojson.Safe.from_string
-          |> Pool_tenant.Database.Label.t_of_yojson)
+       Ok (input |> Yojson.Safe.from_string |> Database.Label.t_of_yojson)
      with
-     | _ -> Error Pool_common.Message.(Invalid Field.DatabaseLabel))
+     | _ -> Error Pool_message.(Error.Invalid Field.DatabaseLabel))
     >|= fun job -> `MatcherJob job
   | SendEmail -> Email.parse_job_json input >|= fun job -> `EmailJob job
   | SendTextMessage ->
     Text_message.parse_job_json input >|= fun job -> `TextMessageJob job
 ;;
 
-let update_job ?contact ?experiment ({ Sihl_queue.id; _ } as instance) =
-  let id = Pool_common.Id.of_string id in
+let update_job ?contact ?experiment instance =
+  let id = Queue.Instance.id instance in
   instance
   |> parse_instance_job
   >>= function
@@ -73,22 +72,22 @@ let update_job ?contact ?experiment ({ Sihl_queue.id; _ } as instance) =
   | `TextMessageJob job ->
     `TextMessageJob (job |> update_text_message_job ?contact id)
     |> CCResult.return
-  | `MatcherJob _ -> Error Pool_common.Message.JobCannotBeRetriggered
+  | `MatcherJob _ -> Error Pool_message.Error.JobCannotBeRetriggered
 ;;
 
 module Resend : sig
-  include Common.CommandSig with type t = Sihl_queue.instance
+  include Common.CommandSig with type t = Queue.Instance.t
 
   val handle
     :  ?contact:Contact.t
     -> ?experiment:Experiment.t
     -> t
-    -> (Pool_event.t list, Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
-  type t = Sihl_queue.instance
+  type t = Queue.Instance.t
 
   let handle ?contact ?experiment queue_instance =
-    let* queue_instance = Queue.resendable queue_instance in
+    let* queue_instance = Queue.Instance.resendable queue_instance in
     queue_instance
     |> update_job ?contact ?experiment
     >|= function

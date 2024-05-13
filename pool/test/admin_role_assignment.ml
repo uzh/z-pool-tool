@@ -1,9 +1,9 @@
 open CCFun
 open Utils.Lwt_result.Infix
 open Test_utils
+open Pool_message
 module AdminCommand = Cqrs_command.Admin_command
 module GuardianCommand = Cqrs_command.Guardian_command
-module Field = Pool_common.Message.Field
 
 let role_message msg (role, uuid) =
   [%show: Role.Role.t] role
@@ -117,7 +117,7 @@ let assignable_roles _ () =
       if should_success
       then Ok (), "Target has the granted role (%s)"
       else
-        ( Error Pool_common.Message.PermissionDeniedGrantRole
+        ( Error Error.PermissionDeniedGrantRole
         , "Target shouldn't has the granted role (%s)" )
     in
     handle_validated_events db target recruiter role
@@ -172,7 +172,7 @@ let grant_roles _ () =
     handle_validated_events actor role
     ||> check_result
           "Grant experimenter rights as assistant fails."
-          (Error Pool_common.Message.PermissionDeniedGrantRole)
+          (Error Error.PermissionDeniedGrantRole)
     >|> target_has_role role
     ||> Alcotest.(check bool)
           (role_message "Target shouldn't has the granted role (%s)" role)
@@ -185,7 +185,7 @@ let grant_roles _ () =
     handle_validated_events actor role
     ||> check_result
           "Grant assistant rights as assistant of other experiment fails."
-          (Error Pool_common.Message.PermissionDeniedGrantRole)
+          (Error Error.PermissionDeniedGrantRole)
     >|> target_has_role role
     ||> Alcotest.(check bool)
           (role_message "Target had permission already (%s)" role)
@@ -198,7 +198,7 @@ let grant_roles _ () =
     handle_validated_events actor role
     ||> check_result
           "Grant assistant rights as assistant of the experiment fails."
-          (Error Pool_common.Message.PermissionDeniedGrantRole)
+          (Error Error.PermissionDeniedGrantRole)
     >|> target_has_role role
     ||> Alcotest.(check bool)
           (role_message "Target has the granted role (%s)" role)

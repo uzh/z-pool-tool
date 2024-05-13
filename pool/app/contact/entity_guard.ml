@@ -11,10 +11,10 @@ module Target = struct
       (fun user ->
         Target.create
           `Contact
-          (user |> Entity.id |> Uuid.target_of Pool_common.Id.value))
+          (user |> Entity.id |> Uuid.target_of Entity.Id.value))
       t
     >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -24,11 +24,11 @@ module Actor = struct
   let decorate ?ctx encode id =
     Persistence.Actor.decorate ?ctx (encode %> Actor.create `Contact) id
     >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 
   let to_authorizable ?ctx =
-    let encode = Entity.id %> Uuid.actor_of Pool_common.Id.value in
+    let encode = Entity.id %> Uuid.actor_of Entity.Id.value in
     decorate ?ctx encode
   ;;
 end
@@ -40,7 +40,7 @@ module Access = struct
 
   let contact action uuid =
     one_of_tuple
-      (action, `Contact, Some (uuid |> Uuid.target_of Pool_common.Id.value))
+      (action, `Contact, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index_permission = Read

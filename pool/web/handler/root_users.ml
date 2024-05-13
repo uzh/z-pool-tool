@@ -1,8 +1,8 @@
 open Utils.Lwt_result.Infix
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Database = Pool_database
-module Field = Pool_common.Message.Field
+module Database = Database
 module RootCommand = Cqrs_command.Root_command
 
 let src = Logs.Src.create "handler.root.users"
@@ -11,9 +11,7 @@ let active_navigation = "/root/users"
 
 let index req =
   let context = Pool_context.find_exn req in
-  let%lwt root_list =
-    Admin.find_by ~query:Admin.default_query Pool_database.root
-  in
+  let%lwt root_list = Admin.find_by ~query:Admin.default_query Database.root in
   let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
   Page.Root.Users.list root_list context flash_fetcher
   |> General.create_root_layout ~active_navigation context
@@ -26,10 +24,11 @@ let create req =
     let tags = Pool_context.Logger.Tags.req req in
     let user () =
       HttpUtils.find_in_urlencoded
-        ~error:Pool_common.Message.EmailAddressMissingRoot
+        ~error:Error.EmailAddressMissingRoot
         Field.Email
         urlencoded
       |> Lwt_result.lift
+      >== Pool_user.EmailAddress.create
       >>= HttpUtils.validate_email_existance database_label
     in
     let events () =
@@ -42,7 +41,7 @@ let create req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path
-        [ Message.set ~success:[ Pool_common.Message.Created Field.Root ] ]
+        [ Message.set ~success:[ Success.Created Field.Root ] ]
     in
     user ()
     >== events
@@ -66,10 +65,10 @@ let toggle_status req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path
-        [ Message.set ~success:[ Pool_common.Message.(Updated Field.Root) ] ]
+        [ Message.set ~success:[ Success.Updated Field.Root ] ]
     in
     id
-    |> Admin.find Pool_database.root
+    |> Admin.find Database.root
     >>= events
     >|- (fun err -> err, active_navigation)
     |>> handle

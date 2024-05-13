@@ -1,13 +1,13 @@
 open CCFun.Infix
-module Message = Pool_common.Message
-module Ptime = Pool_common.Model.Ptime
+module Message = Pool_message
+module Ptime = Pool_model.Base.Ptime
 module Id = Pool_common.Id
 
 let printer = Utils.ppx_printer
 
 module Model = struct
   module Core = struct
-    let field = Message.Field.Model
+    let field = Pool_message.Field.Model
 
     type t =
       | Contact [@name "contact"] [@printer printer "contact"]
@@ -15,21 +15,21 @@ module Model = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 end
 
 module Title = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Message.Field.Title
+  let field = Pool_message.Field.Title
   let schema () = schema field ()
 end
 
 module Description = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Message.Field.Description
+  let field = Pool_message.Field.Description
   let schema () = schema field ()
 end
 
@@ -63,7 +63,7 @@ module Tagged = struct
   let create model_uuid tag_uuid = Ok { model_uuid; tag_uuid }
 end
 
-open Pool_common.Message
+open Pool_message
 
 let column_title = (Field.Title, "pool_tags.title") |> Query.Column.create
 let column_model = (Field.Model, "pool_tags.model") |> Query.Column.create

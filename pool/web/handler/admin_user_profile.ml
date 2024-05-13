@@ -1,7 +1,7 @@
 open Utils.Lwt_result.Infix
 module Command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 module Config = struct
   let src = Logs.Src.create "handler.admin.user_profile"
@@ -49,14 +49,15 @@ module MakeUserProfile (Config : module type of Config) = struct
          in
          let* events =
            let open CCResult.Infix in
-           Command.UpdatePassword.(
-             decode urlencoded >>= handle ~tags ~notification admin)
+           let open Cqrs_command.User_command.UpdatePassword in
+           decode urlencoded
+           >>= handle ~tags ~notification Admin.(admin |> id |> Id.to_user)
            |> Lwt_result.lift
          in
          let%lwt () = Pool_event.handle_events ~tags database_label events in
          redirect_to_with_actions
            active_navigation
-           [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]
+           [ Message.set ~success:[ Pool_message.Success.PasswordChanged ] ]
          |> Lwt_result.ok
     in
     result |> extract_happy_path_with_actions ~src req
@@ -78,7 +79,7 @@ module MakeUserProfile (Config : module type of Config) = struct
          let%lwt () = Pool_event.handle_events ~tags database_label events in
          redirect_to_with_actions
            active_navigation
-           [ Message.set ~success:[ Pool_common.Message.Updated Field.Name ] ]
+           [ Message.set ~success:[ Pool_message.Success.Updated Field.Name ] ]
          |> Lwt_result.ok
     in
     result |> extract_happy_path_with_actions ~src req

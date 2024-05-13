@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component
+open Pool_message
 
 let show { Pool_context.csrf; language; _ } contact_fields =
   let open Pool_common in
@@ -14,7 +15,7 @@ let show { Pool_context.csrf; language; _ } contact_fields =
     input
       ~a:
         ([ a_input_type `Checkbox
-         ; a_name Message.Field.(array_key CustomField)
+         ; a_name Field.(array_key CustomField)
          ; a_value (id field |> Id.value)
          ]
          @ checked)
@@ -42,7 +43,7 @@ let show { Pool_context.csrf; language; _ } contact_fields =
               [ Input.submit_element
                   ~classnames:[ "push" ]
                   language
-                  (Message.Save None)
+                  (Control.Save None)
                   ()
               ]
           ]

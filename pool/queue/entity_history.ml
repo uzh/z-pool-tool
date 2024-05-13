@@ -2,7 +2,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 
 type t =
   { entity_uuid : Pool_common.Id.t
-  ; job : Sihl_queue.instance
+  ; job : Entity.Instance.t
   ; message_template : string option
   }
 [@@deriving show, fields]
@@ -17,7 +17,7 @@ let create ?message_template ~entity_uuid job =
   { entity_uuid; job; message_template }
 ;;
 
-open Pool_common.Message
+open Pool_message
 
 let column_created_at =
   (Field.CreatedAt, "pool_message_history.created_at") |> Query.Column.create

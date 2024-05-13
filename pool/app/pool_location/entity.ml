@@ -1,7 +1,7 @@
 module Mapping = Entity_file_mapping
-module Conformist = Pool_common.Utils.PoolConformist
-module Message = Pool_common.Message
-module Field = Message.Field
+module Conformist = Pool_conformist
+module Message = Pool_message
+module Field = Pool_message.Field
 module Address = Entity_address
 
 module Id = struct
@@ -9,7 +9,7 @@ module Id = struct
 end
 
 module Name = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Field.Name
   let schema () = schema field ()
@@ -30,7 +30,7 @@ module Description = struct
   let field_name langauge =
     Format.asprintf
       "%s[%s]"
-      Message.Field.(show field)
+      Pool_message.Field.(show field)
       (Pool_common.Language.show langauge)
   ;;
 
@@ -44,19 +44,19 @@ module Description = struct
       sys_languages
     |> function
     | [] -> Ok descriptions
-    | _ -> Error Message.(AllLanguagesRequired field)
+    | _ -> Error Message.(Error.AllLanguagesRequired field)
   ;;
 
   let read yojson =
     try Ok (yojson |> Yojson.Safe.from_string |> t_of_yojson) with
-    | _ -> Error Pool_common.Message.(Invalid field)
+    | _ -> Error Pool_message.(Error.Invalid field)
   ;;
 
   let value m = m
 end
 
 module Link = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
   let field = Field.Link
   let schema () = schema field ()
@@ -66,7 +66,7 @@ module Status = struct
   let print = Utils.ppx_printer
 
   module Core = struct
-    let field = Pool_common.Message.Field.Status
+    let field = Pool_message.Field.Status
 
     type t =
       | Active [@name "active"] [@printer print "active"]
@@ -75,7 +75,7 @@ module Status = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let init = Active
@@ -122,8 +122,8 @@ let create ?(id = Id.create ()) name description address link status files =
     ; link
     ; status
     ; files
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 

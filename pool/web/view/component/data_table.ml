@@ -20,7 +20,7 @@ type data_table =
   ; filter : Query.Filter.human option
   ; search : Query.Column.t list option
   ; push_url : bool
-  ; additional_url_params : (Pool_common.Message.Field.t * string) list option
+  ; additional_url_params : (Pool_message.Field.t * string) list option
   }
 
 let create_meta
@@ -38,7 +38,7 @@ let create_meta
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt
-  | `field of Pool_common.Message.Field.t * Query.Column.t
+  | `field of Pool_message.Field.t * Query.Column.t
   | `empty
   ]
 
@@ -188,8 +188,7 @@ let pagination
   let open Query in
   let open Pool_common in
   let add_page_param page =
-    let open Message in
-    let page = [ Field.Page, CCInt.to_string page ] in
+    let page = [ Pool_message.Field.Page, CCInt.to_string page ] in
     let additional_params =
       additional_url_params
       |> CCOption.map_or ~default:page (CCList.append page)
@@ -206,7 +205,9 @@ let pagination
   in
   let arrow_classes = [ "has-icon"; "undecorated"; "pointer" ] in
   let previous =
-    let label = Utils.control_to_string language Message.PreviousPage in
+    let label =
+      Utils.control_to_string language Pool_message.Control.PreviousPage
+    in
     let icon = Icon.(to_html ~classnames:[ "icon-lg" ] PrevCircleOutline) in
     if Page.(value page > value default)
     then
@@ -218,7 +219,9 @@ let pagination
     else span ~a:[ a_class [ "has-icon" ] ] [ icon ]
   in
   let next =
-    let label = Utils.control_to_string language Message.NextPage in
+    let label =
+      Utils.control_to_string language Pool_message.Control.NextPage
+    in
     let icon = Icon.(to_html ~classnames:[ "icon-lg" ] NextCircleOutline) in
     if PageCount.value page_count > Page.value page
     then
@@ -295,7 +298,9 @@ let searchbar
   =
   let open Pool_common in
   let open Query in
-  let search_field, search_label = Message.Field.(Search, Search |> show) in
+  let search_field, search_label =
+    Pool_message.Field.(Search, Search |> show)
+  in
   let url =
     Uri.with_query
       url
@@ -341,10 +346,10 @@ let resetbar language =
     [ a
         ~a:[ a_class [ "has-icon"; "undecorated"; "color-dark" ]; a_href "?" ]
         [ Component_icon.(to_html RefreshOutline)
-        ; txt
-            (Utils.control_to_string
-               language
-               Message.(Reset (Some Field.Filter)))
+        ; Utils.control_to_string
+            language
+            Pool_message.(Control.Reset (Some Field.Filter))
+          |> txt
         ]
     ]
 ;;

@@ -15,26 +15,27 @@ let table Pool_context.{ language; _ } (admins, query) =
   in
   let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
   let row admin =
-    let open Sihl_user in
+    let open Pool_user.Status in
     let status_toggle =
-      let user = admin.user in
       let text, style =
-        match user.status with
-        | Active -> Message.Disable, "error"
-        | Inactive -> Message.Enable, "primary"
+        match admin |> user |> Pool_user.status with
+        | Active -> Pool_message.Control.Disable, "error"
+        | Inactive -> Pool_message.Control.Enable, "primary"
       in
       form
         ~a:
           [ a_action
               (Sihl.Web.externalize_path
-                 (Format.asprintf "/root/users/%s/toggle-status" user.id))
+                 (Format.asprintf
+                    "/root/users/%s/toggle-status"
+                    (admin |> id |> Admin.Id.value)))
           ; a_method `Post
           ; a_class [ "stack" ]
           ]
         [ submit_element language text ~classnames:[ style ] () ]
     in
     [ txt (Admin.email_address admin |> Pool_user.EmailAddress.value)
-    ; txt (full_name admin)
+    ; txt (Admin.fullname admin)
     ; status_toggle
     ]
     |> CCList.map CCFun.(CCList.return %> td)
@@ -45,6 +46,7 @@ let table Pool_context.{ language; _ } (admins, query) =
 
 let list root_list (Pool_context.{ language; csrf; _ } as context) flash_fetcher
   =
+  let open Pool_message in
   let root_list = table context root_list in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
@@ -54,10 +56,8 @@ let list root_list (Pool_context.{ language; csrf; _ } as context) flash_fetcher
     ; root_list
     ; h2
         ~a:[ a_class [ "heading-2" ] ]
-        [ txt
-            (Utils.control_to_string
-               language
-               Message.(Create (Some Field.Root)))
+        [ Utils.control_to_string language Control.(Create (Some Field.Root))
+          |> txt
         ]
     ; form
         ~a:
@@ -66,16 +66,16 @@ let list root_list (Pool_context.{ language; csrf; _ } as context) flash_fetcher
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element ~flash_fetcher language `Text Message.Field.Email
-        ; input_element language `Password Message.Field.Password
-        ; input_element ~flash_fetcher language `Text Message.Field.Firstname
-        ; input_element ~flash_fetcher language `Text Message.Field.Lastname
+        ; input_element ~flash_fetcher language `Text Field.Email
+        ; input_element language `Password Field.Password
+        ; input_element ~flash_fetcher language `Text Field.Firstname
+        ; input_element ~flash_fetcher language `Text Field.Lastname
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(Create None)
+                Control.(Create None)
                 ()
             ]
         ]

@@ -3,7 +3,6 @@
  (libraries
   contact
   custom_field
-  pool_database
   pool_common
   pool_tenant
   tags

@@ -1,5 +1,5 @@
 module LocationCommand = Cqrs_command.Location_command
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 module Data = struct
   module Location = struct
@@ -36,8 +36,8 @@ let create_location () =
     ; address
     ; status
     ; files
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 

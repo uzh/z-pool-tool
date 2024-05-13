@@ -1,14 +1,11 @@
 open CCFun
 module InvitationCommand = Cqrs_command.Invitation_command
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module Model = Test_utils.Model
 
 let get_or_failwith = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
-
-let sort_events =
-  CCList.stable_sort Pool_event.(fun a b -> CCString.compare (show a) (show b))
-;;
+let sort_events = Test_utils.sort_events
 
 let expected_events experiment mailing contacts create_message =
   let emails =
@@ -107,7 +104,7 @@ let create_invitations_repo _ () =
   in
   let find_events () =
     Matcher.create_invitation_events interval [ pool ]
-    ||> CCList.assoc ~eq:Pool_database.Label.equal pool
+    ||> CCList.assoc ~eq:Database.Label.equal pool
     ||> sort_events
   in
   let create_expected mailing experiment contacts =
@@ -175,7 +172,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
         |> Invitation.find_by_contact_and_experiment_opt
              database_label
              experiment.Experiment.id
-        ||> CCOption.to_result Pool_common.(Message.NotFound Field.Invitation)
+        ||> CCOption.to_result (Pool_message.Error.NotFound Field.Invitation)
         ||> get_or_failwith)
       contacts
   in
@@ -234,7 +231,10 @@ let create_invitations _ () =
   let%lwt contacts =
     Lwt_list.map_s
       (fun id ->
-        ContactRepo.create ~id ~name:(Experiment.Id.value experiment_id) ())
+        let lastname =
+          Experiment.Id.value experiment_id |> Pool_user.Lastname.of_string
+        in
+        ContactRepo.create ~id ~lastname ())
       contact_ids
     ||> Matcher.sort_contacts
   in

@@ -1,7 +1,7 @@
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 module KeyFigure = struct
-  include Pool_common.Model.Integer
+  include Pool_model.Base.Integer
 
   let create = CCResult.return
   let schema field = schema field create
@@ -127,7 +127,7 @@ type t =
   ; login_count : LoginCount.t
   ; sign_up_count : SignUpCount.t
   ; terms_accepted_count : TermsAcceptedCount.t
-  ; terms_last_changed : Pool_common.Model.Ptime.t
+  ; terms_last_changed : Pool_model.Base.Ptime.t
   ; assignments_created : AssignmentsCreated.t
   ; invitations_sent : InvitationsSent.t
   ; reminders_sent : RemindersSent.t

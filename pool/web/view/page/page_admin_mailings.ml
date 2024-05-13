@@ -1,8 +1,7 @@
 open Tyxml.Html
 open Component
 open Input
-module Message = Pool_common.Message
-module Field = Message.Field
+open Pool_message
 module I18n = Pool_common.I18n
 
 let mailing_title (s : Mailing.t) =
@@ -44,7 +43,6 @@ let table_legend language =
 let distribution_sort_select language ?field current_order =
   let open Mailing.Distribution.SortOrder in
   let select_name =
-    let open Pool_common.Message in
     match field with
     | None -> Field.(show SortOrder)
     | Some _ -> Field.(array_key Distribution)
@@ -126,9 +124,9 @@ module List = struct
        StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
      with
      | true, true ->
-       [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
+       [ button_form "stop" Control.stop `Primary I18n.StopMailing ]
      | false, true ->
-       [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
+       [ button_form "delete" Control.delete `Error I18n.DeleteMailing ]
      | _ -> [ txt "" ])
     @ [ mailing_detail_btn experiment_id mailing ]
     |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
@@ -152,7 +150,7 @@ module List = struct
         link_as_button
           ~style:`Success
           ~icon:Icon.Add
-          ~control:(language, Message.Add (Some Field.Mailing))
+          ~control:(language, Control.Add (Some Field.Mailing))
           (mailings_path ~suffix:"create" experiment_id)
       in
       [ `column Mailing.column_start
@@ -232,7 +230,6 @@ let detail
       ~a:[ a_class [ "stack" ] ]
       [ (* TODO [aerben] use better formatted date *)
         (let rows =
-           let open Message in
            [ Field.Start, mailing.start_at |> StartAt.to_human
            ; Field.End, mailing.end_at |> EndAt.to_human
            ; Field.Limit, mailing.limit |> Limit.value |> CCInt.to_string
@@ -262,7 +259,7 @@ let detail
       link_as_button
         ~icon:Icon.Create
         ~classnames:[ "small" ]
-        ~control:(language, Message.Edit (Some Field.Mailing))
+        ~control:(language, Control.Edit (Some Field.Mailing))
         (detail_mailing_path ~suffix:"edit" experiment.Experiment.id mailing)
     else txt ""
   in
@@ -395,10 +392,9 @@ let form
     in
     let field_select =
       let default_option =
-        option
-          ~a:[ a_value ""; a_disabled (); a_selected () ]
-          (Pool_common.(Utils.control_to_string language Message.PleaseSelect)
-           |> txt)
+        Pool_common.Utils.control_to_string language Control.PleaseSelect
+        |> txt
+        |> option ~a:[ a_value ""; a_disabled (); a_selected () ]
       in
       CCList.map
         (fun field ->
@@ -539,10 +535,10 @@ let form
     match mailing with
     | None ->
       ( mailings_path experiment.Experiment.id
-      , Message.Create (Some Field.Mailing) )
+      , Control.Create (Some Field.Mailing) )
     | Some m ->
       ( m |> detail_mailing_path experiment.Experiment.id
-      , Message.Save (Some Field.Mailing) )
+      , Control.Save (Some Field.Mailing) )
   in
   let html =
     let open Htmx in

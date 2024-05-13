@@ -1,13 +1,13 @@
+open CCFun
 open Tyxml.Html
 open Component.Input
+open Pool_message
+open Control
 module Button = Component.Button
 module Icon = Component.Icon
 module DataTable = Component.DataTable
 module Notification = Component.Notification
-open CCFun
 module HttpUtils = Http_utils
-module Message = Pool_common.Message
-module Field = Message.Field
 
 let build_experiment_path ?suffix experiment =
   let base =
@@ -248,7 +248,7 @@ let list Pool_context.{ language; guardian; _ } experiments query =
       link_as_button
         ~style:`Success
         ~icon:Icon.Add
-        ~control:(language, Message.(Add (Some Field.Experiment)))
+        ~control:(language, Add (Some Field.Experiment))
         "/admin/experiments/create"
     in
     [ `column Experiment.column_title
@@ -386,7 +386,7 @@ let experiment_form
       ~add_empty:true
       ~hints:[ I18n.ExperimentLanguage ]
       context_language
-      Message.Field.Language
+      Field.Language
       show
       all
       (CCOption.bind experiment language)
@@ -623,11 +623,10 @@ let experiment_form
             [ reset_form_button context_language
             ; submit_element
                 context_language
-                Message.(
-                  let field = Some Field.Experiment in
-                  match experiment with
-                  | None -> Create field
-                  | Some _ -> Update field)
+                (let field = Some Field.Experiment in
+                 match experiment with
+                 | None -> Create field
+                 | Some _ -> Update field)
                 ~submit_type:`Primary
                 ()
             ]
@@ -652,9 +651,7 @@ let create
     ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
     [ h1
         [ txt
-            (Utils.control_to_string
-               language
-               Message.(Create (Some Field.Experiment)))
+            (Utils.control_to_string language (Create (Some Field.Experiment)))
         ]
     ; experiment_form
         context
@@ -743,7 +740,7 @@ let edit
           [ h3
               ~a:[ a_class [ "heading-3" ] ]
               [ Utils.field_to_string language Field.ParticipationTag
-                |> String.capitalize_ascii
+                |> CCString.capitalize_ascii
                 |> txt
               ]
           ; p
@@ -757,10 +754,7 @@ let edit
   in
   [ div ~a:[ a_class [ "stack-lg" ] ] [ form; tags ] ]
   |> Layout.Experiment.(
-       create
-         context
-         (Control Message.(Edit (Some Field.Experiment)))
-         experiment)
+       create context (Control (Edit (Some Field.Experiment))) experiment)
 ;;
 
 let detail
@@ -797,16 +791,16 @@ let detail
         ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
         [ submit_element
             language
-            Message.(Delete (Some Field.Experiment))
+            (Delete (Some Field.Experiment))
             ~submit_type:`Disabled
             ~has_icon:Icon.TrashOutline
             ~classnames:[ "small" ]
             ()
         ; div
             ~a:[ a_class [ "grow" ] ]
-            [ txt
-                (Message.ExperimentSessionCountNotZero
-                 |> Utils.error_to_string language)
+            [ Error.ExperimentSessionCountNotZero
+              |> Utils.error_to_string language
+              |> txt
             ]
         ]
     | false ->
@@ -825,7 +819,7 @@ let detail
             [ csrf_element csrf ()
             ; submit_element
                 language
-                Message.(Delete (Some Field.Experiment))
+                (Delete (Some Field.Experiment))
                 ~classnames:[ "small" ]
                 ~submit_type:`Error
                 ~has_icon:Icon.TrashOutline
@@ -861,7 +855,7 @@ let detail
           [ csrf_element csrf ()
           ; submit_element
               language
-              Message.(Reset (Some Field.Invitations))
+              (Reset (Some Field.Invitations))
               ~classnames:[ "small" ]
               ~submit_type:`Primary
               ~has_icon:Icon.RefreshOutline
@@ -882,7 +876,7 @@ let detail
           [ h2
               ~a:[ a_class [ "heading-2" ] ]
               [ txt
-                  (field_to_string Message.Field.Settings
+                  (Utils.field_to_string language Field.Settings
                    |> CCString.capitalize_ascii)
               ]
           ; reset_invitation_form
@@ -922,81 +916,79 @@ let detail
                   ]
               ] )
       in
-      Message.
-        [ ( Field.PublicTitle
-          , experiment |> public_title |> PublicTitle.value |> txt )
-        ; ( Field.ExperimentType
-          , experiment
-            |> experiment_type
-            |> CCOption.map_or ~default ExperimentType.show
-            |> txt )
-        ; ( Field.InternalDescription
-          , experiment
-            |> internal_description
-            |> CCOption.map_or
-                 ~default:(txt "")
-                 (InternalDescription.value %> HttpUtils.add_line_breaks) )
-        ; ( Field.PublicDescription
-          , experiment
-            |> public_description
-            |> CCOption.map_or
-                 ~default:(txt "")
-                 (PublicDescription.value %> HttpUtils.add_line_breaks) )
-        ; ( Field.Language
-          , experiment
-            |> language
-            |> CCOption.map_or ~default Language.show
-            |> txt )
-        ; ( Field.CostCenter
-          , experiment
-            |> cost_center
-            |> CCOption.map_or ~default CostCenter.value
-            |> txt )
-        ; ( Field.OrganisationalUnit
-          , experiment
-            |> organisational_unit
-            |> CCOption.map_or
-                 ~default
-                 Organisational_unit.(fun ou -> ou.name |> Name.value)
-            |> txt )
-        ; ( Field.Sender
-          , experiment
-            |> contact_email
-            |> CCOption.map_or ~default Pool_user.EmailAddress.value
-            |> txt )
-        ; ( Field.Smtp
-          , smtp_account
-            |> CCOption.map_or
-                 ~default
-                 Email.SmtpAuth.(fun auth -> auth.label |> Label.value)
-            |> txt )
-        ; online_experiment
-        ; ( Field.DirectRegistrationDisabled
-          , direct_registration_disabled_value |> boolean_value )
-        ; ( Field.RegistrationDisabled
-          , registration_disabled_value |> boolean_value )
-        ; ( Field.AllowUninvitedSignup
-          , allow_uninvited_signup_value |> boolean_value )
-        ; ( Field.ExternalDataRequired
-          , external_data_required_value |> boolean_value )
-        ; ( Field.ShowExteralDataIdLinks
-          , show_external_data_id_links_value |> boolean_value )
-        ; ( Field.ExperimentEmailReminderLeadTime
-          , email_session_reminder_lead_time_value experiment
-            |> CCOption.map_or ~default:"-" Utils.Time.formatted_timespan
-            |> txt )
-        ; ( Field.ExperimentTextMessageReminderLeadTime
-          , text_message_session_reminder_lead_time_value experiment
-            |> CCOption.map_or ~default:"-" Utils.Time.formatted_timespan
-            |> txt )
-        ; ( Field.InvitationResetAt
-          , experiment
-            |> invitation_reset_at
-            |> CCOption.map_or ~default:"-" InvitationResetAt.to_human
-            |> txt )
-        ; Field.Tags, tag_list tags
-        ; Field.ParticipationTags, tag_list participation_tags
-        ]
+      [ ( Field.PublicTitle
+        , experiment |> public_title |> PublicTitle.value |> txt )
+      ; ( Field.ExperimentType
+        , experiment
+          |> experiment_type
+          |> CCOption.map_or ~default ExperimentType.show
+          |> txt )
+      ; ( Field.InternalDescription
+        , experiment
+          |> internal_description
+          |> CCOption.map_or
+               ~default:(txt "")
+               (InternalDescription.value %> HttpUtils.add_line_breaks) )
+      ; ( Field.PublicDescription
+        , experiment
+          |> public_description
+          |> CCOption.map_or
+               ~default:(txt "")
+               (PublicDescription.value %> HttpUtils.add_line_breaks) )
+      ; ( Field.Language
+        , experiment
+          |> language
+          |> CCOption.map_or ~default Language.show
+          |> txt )
+      ; ( Field.CostCenter
+        , experiment
+          |> cost_center
+          |> CCOption.map_or ~default CostCenter.value
+          |> txt )
+      ; ( Field.OrganisationalUnit
+        , experiment
+          |> organisational_unit
+          |> CCOption.map_or
+               ~default
+               Organisational_unit.(fun ou -> ou.name |> Name.value)
+          |> txt )
+      ; ( Field.Sender
+        , experiment
+          |> contact_email
+          |> CCOption.map_or ~default Pool_user.EmailAddress.value
+          |> txt )
+      ; ( Field.Smtp
+        , smtp_account
+          |> CCOption.map_or
+               ~default
+               Email.SmtpAuth.(fun auth -> auth.label |> Label.value)
+          |> txt )
+      ; online_experiment
+      ; ( Field.DirectRegistrationDisabled
+        , direct_registration_disabled_value |> boolean_value )
+      ; Field.RegistrationDisabled, registration_disabled_value |> boolean_value
+      ; ( Field.AllowUninvitedSignup
+        , allow_uninvited_signup_value |> boolean_value )
+      ; ( Field.ExternalDataRequired
+        , external_data_required_value |> boolean_value )
+      ; ( Field.ShowExteralDataIdLinks
+        , show_external_data_id_links_value |> boolean_value )
+      ; ( Field.ExperimentEmailReminderLeadTime
+        , email_session_reminder_lead_time_value experiment
+          |> CCOption.map_or ~default:"-" Pool_model.Time.formatted_timespan
+          |> txt )
+      ; ( Field.ExperimentTextMessageReminderLeadTime
+        , text_message_session_reminder_lead_time_value experiment
+          |> CCOption.map_or ~default:"-" Pool_model.Time.formatted_timespan
+          |> txt )
+      ; ( Field.InvitationResetAt
+        , experiment
+          |> invitation_reset_at
+          |> CCOption.map_or ~default:"-" InvitationResetAt.to_human
+          |> txt )
+      ; Field.Tags, tag_list tags
+      ; Field.ParticipationTags, tag_list participation_tags
+      ]
       |> vertical_table
     in
     let statistics = Statistics.make language statistics in
@@ -1043,7 +1035,7 @@ let detail
       link_as_button
         ~icon:Icon.Create
         ~classnames:[ "small" ]
-        ~control:(language, Message.(Edit (Some Field.Experiment)))
+        ~control:(language, Edit (Some Field.Experiment))
         (build_experiment_path ~suffix:"edit" experiment)
       |> CCOption.some
     else None
@@ -1113,15 +1105,11 @@ let users
   =
   let base_url field admin =
     let suffix =
-      Format.asprintf
-        "%s/%s"
-        (Field.show field)
-        (Admin.id admin |> Admin.Id.value)
+      Format.asprintf "%s/%s" (Field.show field) Admin.(id admin |> Id.value)
     in
     build_experiment_path ~suffix experiment |> Sihl.Web.externalize_path
   in
   let field =
-    let open Message in
     match role with
     | `Assistants -> Field.Assistants
     | `Experimenter -> Field.Experimenter
@@ -1140,7 +1128,7 @@ let users
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:(Pool_common.Message.Field.show field)
+         ~active_navigation:(Field.show field)
          context
          (NavLink (Pool_common.I18n.Field field))
          experiment)
@@ -1166,8 +1154,8 @@ let message_template_form
   in
   let control =
     match form_context with
-    | `Create _ -> Message.(Create None)
-    | `Update _ -> Message.(Edit None)
+    | `Create _ -> Create None
+    | `Update _ -> Edit None
   in
   let action =
     let path suffix = build_experiment_path ~suffix experiment in

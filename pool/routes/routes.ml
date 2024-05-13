@@ -1,6 +1,6 @@
 module CustomMiddleware = Middleware
 open Sihl.Web
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let session_expiration = `Max_age (60 * 60 * 4 |> CCInt64.of_int)
 
@@ -20,7 +20,7 @@ let add_human_field = CCFun.(Field.human_url %> Format.asprintf "/%s")
 
 let global_middlewares =
   [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
-  ; CustomMiddleware.Error.error ()
+  ; CustomMiddleware.Error.middleware ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
   ; Middleware.flash ()
@@ -64,7 +64,7 @@ module Public = struct
     Handler.Public.(
       choose
         ~middlewares:
-          [ CustomMiddleware.Tenant.valid_tenant ()
+          [ CustomMiddleware.Tenant.validate ()
           ; CustomMiddleware.Context.context ()
           ; CustomMiddleware.Logger.logger
           ]
@@ -183,7 +183,7 @@ module Contact = struct
   let routes =
     choose
       ~middlewares:
-        [ CustomMiddleware.Tenant.valid_tenant ()
+        [ CustomMiddleware.Tenant.validate ()
         ; CustomMiddleware.Context.context ()
         ; CustomMiddleware.Logger.logger
         ]
@@ -219,7 +219,7 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Tenant.valid_tenant ()
+    [ CustomMiddleware.Tenant.validate ()
     ; CustomMiddleware.Context.context ()
     ; CustomMiddleware.Logger.logger
     ; CustomMiddleware.Admin.require_admin ()

@@ -33,7 +33,7 @@ module Label : sig
   val yojson_of_t : t -> Yojson.Safe.t
   val read : string -> t
   val read_from_url : string -> t
-  val of_string : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> (t, Pool_message.Error.t) result
   val to_human : t -> string
   val human_url : t -> string
   val prefixed_human_url : t -> string
@@ -41,23 +41,23 @@ module Label : sig
 end
 
 module EmailSubject : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module EmailText : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module PlainText : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module SmsText : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module FallbackToEmail : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 type t =
@@ -107,44 +107,40 @@ val show_event : event -> string
 val created : t -> event
 val updated : t -> update -> event
 val deleted : t -> event
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_default_by_label_and_language
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Language.t
   -> Label.t
   -> t Lwt.t
 
-val find_default_by_label : Pool_database.Label.t -> Label.t -> t list Lwt.t
-val all_default : Pool_database.Label.t -> unit -> t list Lwt.t
+val find_default_by_label : Database.Label.t -> Label.t -> t list Lwt.t
+val all_default : Database.Label.t -> unit -> t list Lwt.t
 
 val find_all_of_entity_by_label
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> Label.t
   -> t list Lwt.t
 
 val find_by_label_and_language_to_send
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> ?entity_uuids:Pool_common.Id.t list
   -> Label.t
   -> Pool_common.Language.t
   -> t Lwt.t
 
 val find_all_by_label_to_send
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> ?entity_uuids:Pool_common.Id.t list
   -> Pool_common.Language.t list
   -> Label.t
   -> t list Lwt.t
 
 val find_entity_defaults_by_label
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> ?entity_uuids:Pool_common.Id.t list
   -> Pool_common.Language.t list
   -> Label.t
@@ -157,7 +153,7 @@ val filter_languages
   -> Pool_common.Language.t list
 
 val missing_template_languages
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
   -> Label.t
   -> ?exclude:Pool_common.Language.t list
@@ -176,7 +172,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -196,7 +192,7 @@ end
 val create_public_url_with_params
   :  Pool_tenant.Url.t
   -> string
-  -> (Pool_common.Message.Field.t * string) list
+  -> (Pool_message.Field.t * string) list
   -> string
 
 type email_layout =
@@ -210,12 +206,12 @@ val layout_from_tenant : Pool_tenant.t -> email_layout
 val template_hint : Label.t -> Pool_common.I18n.hint
 
 module AccountSuspensionNotification : sig
-  val email_params : email_layout -> Sihl_user.t -> (string * string) list
+  val email_params : email_layout -> Pool_user.t -> (string * string) list
 
   val create
     :  Pool_tenant.t
-    -> Sihl_user.t
-    -> (Email.job, Pool_common.Message.error) result Lwt.t
+    -> Pool_user.t
+    -> (Email.job, Pool_message.Error.t) Lwt_result.t
 end
 
 module AssignmentCancellation : sig
@@ -280,26 +276,26 @@ module ContactEmailChangeAttempt : sig
   val email_params
     :  email_layout
     -> Pool_tenant.Url.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> (string * string) list
 
   val create
     :  Pool_tenant.t
-    -> Sihl_user.t
-    -> (Email.job, Pool_common.Message.error) Lwt_result.t
+    -> Pool_user.t
+    -> (Email.job, Pool_message.Error.t) Lwt_result.t
 end
 
 module ContactRegistrationAttempt : sig
   val email_params
     :  email_layout
     -> Pool_tenant.Url.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> (string * string) list
 
   val create
     :  Pool_common.Language.t
     -> Pool_tenant.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> Email.job Lwt.t
 end
 
@@ -311,7 +307,7 @@ module EmailVerification : sig
     -> (string * string) list
 
   val create
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_common.Language.t
     -> layout
     -> Contact.t
@@ -332,7 +328,7 @@ module ExperimentInvitation : sig
   val prepare
     :  Pool_tenant.t
     -> Experiment.t
-    -> (Contact.t -> (Email.job, Pool_common.Message.error) result) Lwt.t
+    -> (Contact.t -> (Email.job, Pool_message.Error.t) result) Lwt.t
 end
 
 module ManualSessionMessage : sig
@@ -362,7 +358,7 @@ end
 module MatcherNotification : sig
   val email_params
     :  email_layout
-    -> Sihl_user.t
+    -> Pool_user.t
     -> Experiment.t
     -> (string * string) list
 
@@ -377,7 +373,7 @@ end
 module MatchFilterUpdateNotification : sig
   val email_params
     :  email_layout
-    -> Sihl_user.t
+    -> Pool_user.t
     -> Experiment.t
     -> (Session.t * Assignment.t list) list
     -> (string * string) list
@@ -391,12 +387,12 @@ module MatchFilterUpdateNotification : sig
 end
 
 module PasswordChange : sig
-  val email_params : email_layout -> Sihl_user.t -> (string * string) list
+  val email_params : email_layout -> Pool_user.t -> (string * string) list
 
   val create
     :  Pool_common.Language.t
     -> Pool_tenant.t
-    -> Sihl_user.t
+    -> Pool_user.t
     -> Email.job Lwt.t
 end
 
@@ -404,28 +400,28 @@ module PasswordReset : sig
   val email_params
     :  email_layout
     -> string
-    -> Sihl_user.t
+    -> Pool_user.t
     -> (string * string) list
 
   val create
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_common.Language.t
     -> layout
-    -> Sihl_user.t
-    -> (Email.job, Pool_common.Message.error) result Lwt.t
+    -> Pool_user.t
+    -> (Email.job, Pool_message.Error.t) Lwt_result.t
 end
 
 module PhoneVerification : sig
   val message_params : Pool_common.VerificationCode.t -> (string * string) list
 
   val create_text_message
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Contact.t
     -> Pool_user.CellPhone.t
     -> Pool_common.VerificationCode.t
-    -> (Text_message.job, Pool_common.Message.error) result Lwt.t
+    -> (Text_message.job, Pool_message.Error.t) Lwt_result.t
 end
 
 module ProfileUpdateTrigger : sig
@@ -436,9 +432,9 @@ module ProfileUpdateTrigger : sig
     -> (string * string) list
 
   val prepare
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_tenant.t
-    -> (Contact.t -> (Email.job, Pool_common.Message.error) result) Lwt.t
+    -> (Contact.t -> (Email.job, Pool_message.Error.t) result) Lwt.t
 end
 
 module SessionCancellation : sig
@@ -453,7 +449,7 @@ module SessionCancellation : sig
     -> (string * string) list
 
   val prepare
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_tenant.t
     -> Experiment.t
     -> Pool_common.Language.t list
@@ -461,11 +457,11 @@ module SessionCancellation : sig
     -> Session.t list
     -> (Session.CancellationReason.t
         -> Contact.t
-        -> (Email.job, Pool_common.Message.error) result)
+        -> (Email.job, Pool_message.Error.t) result)
          Lwt.t
 
   val prepare_text_message
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_tenant.t
     -> Experiment.t
     -> Pool_common.Language.t list
@@ -474,7 +470,7 @@ module SessionCancellation : sig
     -> (Session.CancellationReason.t
         -> Contact.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.job, Pool_common.Message.error) result)
+        -> (Text_message.job, Pool_message.Error.t) result)
          Lwt.t
 end
 
@@ -488,7 +484,7 @@ module SessionReminder : sig
     -> (string * string) list
 
   val create
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_tenant.t
     -> Pool_common.Language.t list
     -> Experiment.t
@@ -497,22 +493,22 @@ module SessionReminder : sig
     -> Email.job Lwt.t
 
   val prepare_emails
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_tenant.t
     -> Pool_common.Language.t list
     -> Experiment.t
     -> Session.t
-    -> (Assignment.t -> (Email.job, Pool_common.Message.error) result) Lwt.t
+    -> (Assignment.t -> (Email.job, Pool_message.Error.t) result) Lwt.t
 
   val prepare_text_messages
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_tenant.t
     -> Pool_common.Language.t list
     -> Experiment.t
     -> Session.t
     -> (Assignment.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.job, Pool_common.Message.error) result)
+        -> (Text_message.job, Pool_message.Error.t) result)
          Lwt.t
 end
 
@@ -528,7 +524,7 @@ module SessionReschedule : sig
     -> (string * string) list
 
   val prepare
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_tenant.t
     -> Experiment.t
     -> Pool_common.Language.t list
@@ -536,7 +532,7 @@ module SessionReschedule : sig
     -> (Contact.t
         -> Session.Start.t
         -> Session.Duration.t
-        -> (Email.job, Pool_common.Message.error) result)
+        -> (Email.job, Pool_message.Error.t) result)
          Lwt.t
 end
 
@@ -549,14 +545,14 @@ module SignUpVerification : sig
     -> (string * string) list
 
   val create
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Pool_user.EmailAddress.t
     -> Email.Token.t
     -> Pool_user.Firstname.t
     -> Pool_user.Lastname.t
-    -> Pool_common.Id.t
+    -> Contact.Id.t
     -> Email.job Lwt.t
 end
 
@@ -568,7 +564,7 @@ module UserImport : sig
     -> (string * string) list
 
   val prepare
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> Pool_tenant.t
     -> ([< `Admin of Admin.t | `Contact of Contact.t ] -> string -> Email.job)
          Lwt.t
@@ -585,7 +581,7 @@ module WaitingListConfirmation : sig
     :  Pool_tenant.t
     -> Contact.t
     -> Experiment.Public.t
-    -> (Email.job, Pool_common.Message.error) result Lwt.t
+    -> (Email.job, Pool_message.Error.t) Lwt_result.t
 end
 
 val sms_text_to_email : SmsText.t -> EmailText.t * PlainText.t

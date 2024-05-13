@@ -1,145 +1,126 @@
 open CCFun.Infix
+include Entity
+include Service
+module Logger = Logger
+module Caqti_encoders = Caqti_encoders
+module Migration = Migration
 
-let src = Logs.Src.create "database"
+module Repo = struct
+  include Repo_entity
+  include Repo
+end
 
-type config =
-  { url : string
-  ; pool_size : int option
-  ; skip_default_pool_creation : bool option
-  ; choose_pool : string option
-  }
-
-let config url pool_size skip_default_pool_creation choose_pool =
-  { url; pool_size; skip_default_pool_creation; choose_pool }
+let log_start label =
+  Logs.info (fun m -> m ~tags:(Logger.Tags.create label) "Start database")
 ;;
 
-let schema =
-  Conformist.(
-    make
-      Field.
-        [ string
-            ~meta:
-              "The root database connection url. This is the only string that \
-               Sihl needs to connect to a database."
-            "DATABASE_URL"
-        ; Conformist.optional
-            ~meta:
-              "The amount of connections in the database connection pool that \
-               Sihl manages. If the number is too high, the server might \
-               struggle. If the number is too low, your Sihl app performs \
-               badly. This can be configured using Pool_database_SIZE and the \
-               default is 10."
-            (int ~default:10 "Pool_database_SIZE")
-        ; Conformist.optional
-            ~meta:
-              "This value is by default set to [true] to skip the creation of \
-               the default connection pool. This is useful if an application \
-               uses multiple databases."
-            (bool ~default:true "DATABASE_SKIP_DEFAULT_POOL_CREATION")
-        ; Conformist.optional
-            ~meta:
-              "The database connection pool name that should be used by \
-               default. By default ['root'] is used for this application."
-            (string
-               ~default:Pool_database.(Label.value root)
-               "DATABASE_CHOOSE_POOL")
-        ]
-      config)
+let test_connection url =
+  let uri = url |> Url.value |> Uri.of_string in
+  Caqti_lwt_unix.with_connection uri (fun (_ : Caqti_lwt.connection) ->
+    Lwt_result.return ())
 ;;
 
 module Root = struct
-  let label = Pool_database.(Label.value root)
-
-  module Migration = Migration.Root
+  let label = root
 
   let add () =
-    let open CCResult in
-    let open Pool_database in
-    let open Pool_common.Utils in
-    let label = Label.of_string label in
-    (Sihl.Configuration.read schema).url
-    |> Url.create
-    >>= create label
-    |> get_or_failwith
-    |> add_pool
+    let database = database_url () |> create label in
+    let tags = database |> Entity.label |> Logger.Tags.create in
+    let log_db = show database in
+    match add_pool ~pool_size:(pool_size ()) database with
+    | Ok _ as status ->
+      Logs.debug (fun m -> m ~tags "Database connected: %s" log_db);
+      status
+    | Error err as status ->
+      Logs.warn (fun m ->
+        m
+          ~tags
+          "Database connection failed: [%s] [%s]"
+          log_db
+          (Caqti_error.show err));
+      status
   ;;
 
   let setup = add %> Lwt.return
+
+  let start () =
+    log_start label;
+    let%lwt (_ : status) = setup () in
+    Lwt.return_unit
+  ;;
+
+  let stop () = Lwt.return_unit
 end
 
 module Tenant = struct
-  let label = "tenant"
-
-  module Migration = Migration.Tenant
-
-  let setup_tenant ?(run_functions = []) database =
-    let open Pool_database in
-    add_pool database;
-    let%lwt () =
-      Lwt_list.iter_s
-        (fun (fcn : ?ctx:(string * string) list -> unit -> unit Lwt.t) ->
-          fcn ~ctx:(to_ctx database.label) ())
-        run_functions
-    in
-    Lwt.return database.label
+  let add database =
+    let label = label database in
+    let tags = Logger.Tags.create label in
+    let log_db = show database in
+    match add_pool ~pool_size:(pool_size ()) database with
+    | Ok _ ->
+      let%lwt () = Repo.update_status root label Status.Active in
+      Logs.debug (fun m -> m ~tags "Database connected: %s" log_db);
+      Lwt.return label
+    | Error err ->
+      let%lwt () = Repo.update_status root label Status.ConnectionIssue in
+      Logs.warn (fun m ->
+        m
+          ~tags
+          "Database connection failed: [%s] [%s]"
+          log_db
+          (Caqti_error.show err));
+      Lwt.return label
   ;;
 
-  let setup ?run_functions () =
-    match%lwt Pool_tenant.find_databases () with
+  let setup () =
+    let start_tenant database =
+      log_start (label database);
+      add database
+    in
+    match%lwt Repo.find_all_by_status root with
     | [] ->
-      let open Pool_common in
-      failwith (Message.NoTenantsRegistered |> Utils.error_to_string Language.En)
-    | tenants -> Lwt_list.map_s (setup_tenant ?run_functions) tenants
+      Logs.warn (fun m ->
+        m "%s" Pool_message.Error.(NoTenantsRegistered |> show));
+      Lwt.return []
+    | tenants -> Lwt_list.map_s start_tenant tenants
+  ;;
+
+  let find = Repo.find root
+
+  let find_all_by_status ?status () =
+    Repo.find_all_by_status ?status root |> Lwt.map (CCList.map Entity.label)
+  ;;
+
+  let find_label_by_url ?allowed_status =
+    Repo.find_label_by_url ?allowed_status root
+  ;;
+
+  let update_status = Repo.update_status root
+
+  let start () =
+    let%lwt (_ : Label.t list) = setup () in
+    Lwt.return_unit
+  ;;
+
+  let stop () = Lwt.return_unit
+
+  let test_connection database_label =
+    let open Utils.Lwt_result.Infix in
+    let* database = Repo.find root database_label in
+    match%lwt database |> url |> test_connection with
+    | Ok () -> Lwt.return_ok ()
+    | Error (_ : Caqti_error.load_or_connect) ->
+      let%lwt () =
+        Repo.update_status root (database |> label) Status.ConnectionIssue
+      in
+      Lwt_result.fail Pool_message.(Error.SessionTenantNotFound)
   ;;
 end
 
-type event = Migrated of Pool_database.t [@@deriving eq, show]
-
-let handle_event _ : event -> unit Lwt.t = function
-  | Migrated database ->
-    let open Pool_database in
-    Logs.info (fun m -> m "Migrating: %s" (Label.show database.label));
-    add_pool database;
-    (match is_root database.label with
-     | true -> Migration.Root.run ()
-     | false -> Migration.Tenant.run [ database.label ] ())
-;;
-
-let start () =
-  let tags = Pool_database.Logger.Tags.create Pool_database.root in
-  Logs.info ~src (fun m -> m ~tags "Start database %s" Root.label);
-  let ctx = [ "pool", Root.label ] in
-  let%lwt () = Root.setup () in
-  let%lwt () =
-    Service.Migration.check_migrations_status
-      ~ctx
-      ~migrations:(Root.Migration.steps ())
-      ()
-  in
-  let%lwt db_pools = Tenant.setup () in
-  Lwt_list.iter_s
-    (fun pool ->
-      Logs.info ~src (fun m ->
-        m ~tags "Start database %s" (Pool_database.Label.value pool));
-      let ctx = Pool_database.to_ctx pool in
-      Service.Migration.check_migrations_status
-        ~ctx
-        ~migrations:(Tenant.Migration.steps ())
-        ())
-    db_pools
-;;
-
-let stop () = Lwt.return_unit
-
-let lifecycle =
-  Sihl.Container.create_lifecycle
-    "database"
-    ~implementation_name:"root and tenants"
-    ~start
-    ~stop
-;;
-
-let register () =
-  let configuration = Sihl.Configuration.make ~schema () in
-  Sihl.Container.Service.create ~configuration lifecycle
+let test_and_create url label =
+  match%lwt test_connection url with
+  | Ok () -> create label url |> Lwt.return_ok
+  | Error (_ : Caqti_error.load_or_connect) ->
+    Lwt_result.fail Pool_message.(Error.Invalid Field.DatabaseUrl)
 ;;

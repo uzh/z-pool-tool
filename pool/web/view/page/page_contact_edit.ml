@@ -1,7 +1,7 @@
 open Tyxml.Html
 open Component
 open Input
-module Message = Pool_common.Message
+module Message = Pool_message
 module HttpUtils = Http_utils
 
 let contact_profile_layout language title html =
@@ -180,7 +180,7 @@ let status_form
   in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
   let control, confirmable, submit_type =
-    let open Message in
+    let open Message.Control in
     let open Pool_common in
     let confirmable_str = Utils.confirmable_to_string language in
     match contact.Contact.paused |> Pool_user.Paused.value with
@@ -194,7 +194,7 @@ let status_form
          ~a:[ a_class [ "heading-2" ] ]
          [ txt
              Pool_common.(
-               Utils.field_to_string language Message.Field.Status
+               Utils.field_to_string language Pool_message.Field.Status
                |> CCString.capitalize_ascii)
          ]
      ; div
@@ -251,6 +251,7 @@ let login_information
   password_policy
   =
   let open Contact in
+  let open Message.Control in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
   let form_attrs action =
     [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
@@ -260,9 +261,7 @@ let login_information
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           Pool_common.
-            [ Utils.control_to_string
-                language
-                Message.(Update (Some Field.email))
+            [ Utils.control_to_string language (Update (Some Field.email))
               |> txt
             ]
       ; form
@@ -271,28 +270,26 @@ let login_information
           ; input_element
               language
               `Email
-              Message.Field.Email
-              ~value:contact.user.Sihl_user.email
+              Pool_message.Field.Email
+              ~value:
+                (contact.user.Pool_user.email |> Pool_user.EmailAddress.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Update (Some Field.Email))
+                  (Update (Some Field.Email))
                   ()
               ]
           ]
       ]
   in
   let password_form =
-    let open Message in
     div
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           Pool_common.
-            [ Utils.control_to_string
-                language
-                Message.(Update (Some Field.password))
+            [ Utils.control_to_string language (Update (Some Field.password))
               |> txt
             ]
       ; form
@@ -324,7 +321,7 @@ let login_information
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Update (Some Field.password))
+                  (Update (Some Field.password))
                   ()
               ]
           ]
@@ -346,6 +343,7 @@ let contact_information
   =
   let open Contact in
   let open Pool_common in
+  let open Message.Control in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
   let form_attrs action =
     [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
@@ -387,7 +385,7 @@ let contact_information
         |> Component.Notification.notification language `Success
     in
     div
-      [ form_title Message.(Add (Some Field.CellPhone))
+      [ form_title (Add (Some Field.CellPhone))
       ; div
           ~a:[ a_class [ "stack" ] ]
           [ current_hint
@@ -401,7 +399,7 @@ let contact_information
                   [ submit_element
                       ~classnames:[ "push" ]
                       language
-                      Message.(Update (Some Field.CellPhone))
+                      (Update (Some Field.CellPhone))
                       ()
                   ]
               ]
@@ -417,7 +415,7 @@ let contact_information
   in
   let verify_form cell_phone =
     div
-      [ form_title Message.(Verify (Some Field.CellPhone))
+      [ form_title (Verify (Some Field.CellPhone))
       ; div
           ~a:[ a_class [ "stack" ] ]
           [ [ I18n.ContactEnterCellPhoneToken
@@ -432,13 +430,13 @@ let contact_information
               ; input_element (* TODO: Add 2 part input (pre and nr) *)
                   language
                   `Text
-                  Message.Field.Token
+                  Pool_message.Field.Token
               ; div
                   ~a:[ a_class [ "flexrow" ] ]
                   [ submit_element
                       ~classnames:[ "push" ]
                       language
-                      Message.(Verify (Some Field.CellPhone))
+                      (Verify (Some Field.CellPhone))
                       ()
                   ]
               ]
@@ -446,8 +444,8 @@ let contact_information
               ~a:[ a_class [ "flexrow"; "flex-gap"; "gap"; "justify-end" ] ]
               [ form_as_link
                   "/user/phone/resend-token"
-                  Message.(Resend (Some Field.Token))
-              ; form_as_link "/user/phone/reset" Message.EnterNewCellPhone
+                  (Resend (Some Field.Token))
+              ; form_as_link "/user/phone/reset" EnterNewCellPhone
               ]
           ]
       ]
@@ -471,20 +469,20 @@ let pause_account Pool_context.{ language; query_language; csrf; _ } ?token () =
     | Some token ->
       Message.add_field_query_params
         "/unsubscribe"
-        [ Message.Field.Token, User_import.Token.value token ]
+        [ Pool_message.Field.Token, User_import.Token.value token ]
       |> externalize
   in
   let open Utils in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt (control_to_string language Message.PauseAccount) ]
+    [ h1 [ txt (control_to_string language Message.Control.PauseAccount) ]
     ; p [ txt (hint_to_string language I18n.PauseAccountContact) ]
     ; p [ txt (confirmable_to_string language I18n.PauseAccount) ]
     ; form
         ~a:[ a_method `Post; a_action action ]
         Component.Input.
           [ csrf_element csrf ()
-          ; submit_element language Message.PauseAccount ()
+          ; submit_element language Message.Control.PauseAccount ()
           ]
     ]
 ;;

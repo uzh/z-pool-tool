@@ -141,8 +141,7 @@ module Update = struct
       Ok (id, (start_at, (end_at, (limit, distribution))))
     in
     let decode _ =
-      let open Pool_common in
-      failwith (Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
     in
     Caqti_type.(
       custom
@@ -176,8 +175,7 @@ module Status = struct
 
   let t =
     let encode _ =
-      let open Pool_common in
-      failwith (Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
     in
     let decode (mailing, (to_handle, last_run)) =
       let mailing = to_entity mailing in

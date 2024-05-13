@@ -26,8 +26,7 @@ let handle_event pool : event -> unit Lwt.t =
     in
     let%lwt () = Repo.insert pool write in
     write
-    |> Entity_guard.Target.to_authorizable_of_write
-         ~ctx:(Pool_database.to_ctx pool)
+    |> Entity_guard.Target.to_authorizable_of_write ~ctx:(Database.to_ctx pool)
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Updated (command, waiting_list) ->

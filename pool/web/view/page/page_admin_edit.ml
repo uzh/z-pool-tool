@@ -1,8 +1,7 @@
 open Tyxml.Html
 open Component
 open Input
-module Message = Pool_common.Message
-module Field = Message.Field
+open Pool_message
 module HttpUtils = Http_utils
 
 let control_to_string = Pool_common.Utils.control_to_string
@@ -34,12 +33,12 @@ let login_information
   let details_form =
     let firstname, lastname =
       Admin.user admin
-      |> fun user -> user.Sihl_user.given_name, user.Sihl_user.name
+      |> fun user -> user |> Pool_user.firstname, user |> Pool_user.lastname
     in
     div
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
-          [ control_to_string language Message.(Update (Some Field.Name)) |> txt
+          [ control_to_string language Control.(Update (Some Field.Name)) |> txt
           ]
       ; form
           ~a:(form_attrs "/user/update-details")
@@ -48,29 +47,28 @@ let login_information
               language
               `Text
               Field.Firstname
-              ~value:(firstname |> CCOption.value ~default:"")
+              ~value:(firstname |> Pool_user.Firstname.value)
           ; input_element
               language
               `Text
               Field.Lastname
-              ~value:(lastname |> CCOption.value ~default:"")
+              ~value:(lastname |> Pool_user.Lastname.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Update (Some Field.Name))
+                  Control.(Update (Some Field.Name))
                   ()
               ]
           ]
       ]
   in
   let password_form =
-    let open Message in
     div
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
-          [ control_to_string language Message.(Update (Some Field.password))
+          [ control_to_string language Control.(Update (Some Field.password))
             |> txt
           ]
       ; form
@@ -102,7 +100,7 @@ let login_information
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Update (Some Field.password))
+                  Control.(Update (Some Field.password))
                   ()
               ]
           ]

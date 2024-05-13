@@ -1,6 +1,6 @@
 include Repo_entity
 module RepoFileMapping = Repo_file_mapping
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 let to_entity = to_entity
 let of_entity = of_entity
@@ -99,8 +99,8 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Location)
+    Database.find_opt pool find_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Location)
   ;;
 
   let find_all_request =
@@ -110,9 +110,7 @@ module Sql = struct
     |> Caqti_type.unit ->* t
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request ()
-  ;;
+  let find_all pool = Database.collect pool find_all_request ()
 
   let insert_request =
     let open Caqti_request.Infix in
@@ -152,9 +150,7 @@ module Sql = struct
     |> t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -187,8 +183,8 @@ module Sql = struct
   ;;
 
   let update pool { Entity.id; name; description; address; link; status; _ } =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
+    Database.exec
+      pool
       update_request
       (id, (name, (description, (address, (link, status)))))
   ;;
@@ -221,7 +217,7 @@ module Sql = struct
     =
     let open Caqti_request.Infix in
     let exclude_ids =
-      Utils.Database.exclude_ids "pool_locations.uuid" Entity.Id.value
+      Database.exclude_ids "pool_locations.uuid" Entity.Id.value
     in
     let dyn = Dynparam.(dyn |> add Caqti_type.string ("%" ^ query ^ "%")) in
     let dyn, exclude =
@@ -239,7 +235,7 @@ module Sql = struct
       search_request ?joins ?conditions ~limit ()
       |> pt ->* Caqti_type.t2 Id.t Name.t
     in
-    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+    Database.collect pool request pv
   ;;
 
   let search_multiple_by_id_request ids =
@@ -270,7 +266,7 @@ module Sql = struct
         search_multiple_by_id_request ids
         |> pt ->* Caqti_type.(Repo_entity.(t2 Id.t Name.t))
       in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+      Database.collect pool request pv
   ;;
 
   let find_targets_grantable_by_admin ?exclude database_label admin query =
@@ -285,7 +281,7 @@ module Sql = struct
     let dyn =
       Dynparam.(
         empty
-        |> add Caqti_type.string Admin.(id admin |> Id.value)
+        |> add Admin.Repo.Id.t Admin.(id admin)
         |> add Caqti_type.string Role.Role.(show `LocationManager))
     in
     search ~conditions ~joins ~dyn ?exclude database_label query

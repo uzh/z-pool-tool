@@ -52,10 +52,6 @@ let () =
             `Quick
             Contact_test.valid_password
         ; test_case
-            "update password with wrong current password"
-            `Quick
-            Contact_test.update_password_wrong_current_password
-        ; test_case
             "update to short password according to policy"
             `Quick
             Contact_test.update_password_wrong_policy

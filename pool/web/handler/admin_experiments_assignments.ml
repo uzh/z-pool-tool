@@ -1,6 +1,6 @@
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 module Url = HttpUtils.Url.Admin
 
 let src = Logs.Src.create "handler.admin.experiments_assignments"
@@ -10,7 +10,7 @@ let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
 let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
 
 let ids_from_request req =
-  let open Pool_common.Message.Field in
+  let open Field in
   let find_id = HttpUtils.find_id in
   ( find_id Experiment.Id.of_string Experiment req
   , find_id Session.Id.of_string Session req
@@ -36,7 +36,7 @@ let cancel req =
         CCList.find_opt
           (fun { Assignment.id; _ } -> Assignment.Id.equal id assignment_id)
           assignments
-        |> CCOption.to_result Pool_common.(Message.NotFound Field.Assignment)
+        |> CCOption.to_result (Error.NotFound Field.Assignment)
         |> Lwt_result.lift
       in
       let%lwt follow_up_sessions =
@@ -66,9 +66,7 @@ let cancel req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set
-            ~success:[ Pool_common.Message.(Canceled Field.Assignment) ]
-        ]
+        [ Message.set ~success:[ Success.Canceled Field.Assignment ] ]
     in
     events |>> handle
   in
@@ -111,9 +109,7 @@ let mark_as_deleted req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set
-            ~success:[ Pool_common.Message.(MarkedAsDeleted Field.Assignment) ]
-        ]
+        [ Message.set ~success:[ Success.MarkedAsDeleted Field.Assignment ] ]
     in
     events |>> handle
   in
@@ -197,7 +193,7 @@ module Close = struct
         decode req
         >== fun decoded ->
         match decoded with
-        | ExternalDataId _ -> Error Pool_common.Message.InvalidHtmxRequest
+        | ExternalDataId _ -> Error Error.InvalidHtmxRequest
         | Participated _ | NoShow _ -> Ok decoded
       in
       let%lwt assignments, custom_fields =
@@ -327,9 +323,7 @@ let update req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set
-            ~success:[ Pool_common.Message.(Updated Field.Assignment) ]
-        ]
+        [ Message.set ~success:[ Success.Updated Field.Assignment ] ]
     in
     events |>> handle
   in
@@ -377,7 +371,7 @@ let remind req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.(Sent Field.Reminder) ] ]
+        [ Message.set ~success:[ Success.Sent Field.Reminder ] ]
     in
     events |>> handle
   in
@@ -420,7 +414,7 @@ let swap_session_get_helper action req =
           [ template_lang ]
           Label.AssignmentSessionChange)
       ||> CCList.head_opt
-      ||> CCOption.to_result Pool_common.Message.(NotFound Field.Template)
+      ||> CCOption.to_result (Error.NotFound Field.Template)
     in
     let text_messages_disabled =
       Pool_context.Tenant.text_messages_enabled req
@@ -534,7 +528,7 @@ let swap_session_post req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.(Updated Field.Session) ] ]
+        [ Message.set ~success:[ Success.Updated Field.Session ] ]
     in
     events |>> handle
   in

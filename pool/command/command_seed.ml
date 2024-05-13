@@ -2,7 +2,7 @@ let root_data =
   let name = "seed.root" in
   let description = "Seed development data to root database" in
   Command_utils.make_no_args name description (fun () ->
-    let%lwt () = Database.Root.setup () in
+    let%lwt (_ : Database.status) = Database.Root.setup () in
     let%lwt () = Seed.Root.create () in
     Lwt.return_some ())
 ;;
@@ -13,18 +13,14 @@ let root_data_clean =
     "Clean database and seed development data to root database"
   in
   Command_utils.make_no_args name description (fun () ->
-    let%lwt () = Database.Root.setup () in
-    let%lwt () = Utils.Database.clean_all Database.Root.label in
+    let%lwt (_ : Database.status) = Database.Root.setup () in
+    let%lwt () = Database.clean_all Database.root in
     let%lwt () = Seed.Root.create () in
     Lwt.return_some ())
 ;;
 
 let seed_tenant_clean ?is_test db_pools =
-  let%lwt () =
-    Lwt_list.iter_s
-      CCFun.(Pool_database.Label.value %> Utils.Database.clean_all)
-      db_pools
-  in
+  let%lwt () = Lwt_list.iter_s Database.clean_all db_pools in
   let%lwt () = Seed.Tenant.create ?is_test db_pools () in
   Lwt.return_some ()
 ;;

@@ -1,42 +1,41 @@
 module Label = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Pool_common.Message.Field.Label
+  let field = Pool_message.Field.Label
   let schema = schema ?validation:None field
 end
 
 module ScheduledTime = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
-  let field = Pool_common.Message.Field.ScheduledTime
   let create m = Ok m
+  let field = Pool_message.Field.ScheduledTime
   let schema = schema field create
 end
 
 module ScheduledTimeSpan = struct
-  include Pool_common.Model.PtimeSpan
+  include Pool_model.Base.PtimeSpan
 
   let create m =
     if Ptime.Span.abs m |> Ptime.Span.equal m
     then Ok m
-    else Error Pool_common.Message.NegativeAmount
+    else Error Pool_message.Error.NegativeAmount
   ;;
 
-  let field = Pool_common.Message.Field.ScheduledTimeSpan
+  let field = Pool_message.Field.ScheduledTimeSpan
   let schema = schema field create
 end
 
 module LastRunAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
-  let field = Pool_common.Message.Field.LastRunAt
-  let create m = Ok m
-  let schema = schema field create
+  let field = Pool_message.Field.LastRunAt
+  let schema = schema field CCFun.(create %> CCResult.return)
 end
 
 module Status = struct
   module Core = struct
-    let field = Pool_common.Message.Field.Status
+    let field = Pool_message.Field.Status
     let go m fmt _ = Format.pp_print_string fmt m
 
     type t =
@@ -48,7 +47,7 @@ module Status = struct
     [@@deriving enum, eq, ord, show { with_path = false }, yojson, sexp_of]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let init = Active
@@ -99,7 +98,7 @@ let is_ok ({ scheduled_time; status; last_run; _ } : public) =
     | At _, Some _ -> true
     | Every interval, Some last_run ->
       let minimum_interval =
-        let default = 10 in
+        let default = 5 in
         CCOption.(
           Ptime.Span.to_int_s interval
           >|= CCInt.(max default)
@@ -114,7 +113,7 @@ let is_ok ({ scheduled_time; status; last_run; _ } : public) =
   is_fine status || did_run ()
 ;;
 
-open Pool_common.Message
+open Pool_message
 
 let column_label = (Field.Label, "pool_schedules.label") |> Query.Column.create
 

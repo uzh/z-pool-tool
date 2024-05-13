@@ -1,7 +1,16 @@
 open CCFun
 open Entity
-module Common = Pool_common
-module Database = Pool_database
+
+module Id = struct
+  include Id
+
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.string
+      (of_string %> CCResult.return)
+      value
+  ;;
+end
 
 module Title = struct
   include Title
@@ -28,14 +37,12 @@ module Url = struct
 
   let of_pool pool =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value Database.root)
-      find_url_request
-      pool
+    Database.find_opt Database.root find_url_request pool
     ||> function
     | None ->
       Sihl.Configuration.read_string "PUBLIC_URL"
       |> CCOption.get_exn_or "PUBLIC_URL not found in configuration"
+      |> Url.of_string
     | Some url -> url
   ;;
 end
@@ -48,7 +55,8 @@ module GtxApiKey = struct
     Common.Repo.make_caqti_type
       Caqti_type.string
       (decrypt_from_string
-       %> CCResult.map_err (fun _ -> Common.Message.(Decode Field.GtxApiKey)))
+       %> CCResult.map_err (fun _ ->
+         Pool_message.(Error.Decode Field.GtxApiKey)))
       encrypt_to_string
   ;;
 end
@@ -77,57 +85,39 @@ module Icon = struct
   end
 end
 
-module Maintenance = struct
-  include Maintenance
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
-
-module Disabled = struct
-  include Disabled
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
-
 let t =
   let open Entity.Read in
-  let encode m =
+  let open Caqti_type in
+  let open Database.Caqti_encoders in
+  let encode m : ('a Data.t, string) result =
     Ok
-      ( m.Read.id
-      , ( m.title
-        , ( m.description
-          , ( Url.value m.url
-            , ( m.database_label
-              , ( m.text_messages_enabled
-                , ( m.styles
-                  , ( m.icon
-                    , ( m.maintenance
-                      , ( m.disabled
-                        , (m.default_language, (m.created_at, m.updated_at)) )
-                      ) ) ) ) ) ) ) ) )
+      Data.
+        [ m.Read.id
+        ; m.title
+        ; m.description
+        ; m.url
+        ; m.default_language
+        ; m.created_at
+        ; m.updated_at
+        ; m.status
+        ; m.database_label
+        ; m.styles
+        ; m.icon
+        ; m.text_messages_enabled
+        ]
   in
   let decode
     ( id
     , ( title
       , ( description
         , ( url
-          , ( database_label
-            , ( text_messages_enabled
-              , ( styles
-                , ( icon
-                  , ( maintenance
-                    , (disabled, (default_language, (created_at, updated_at)))
-                    ) ) ) ) ) ) ) ) )
+          , ( default_language
+            , ( created_at
+              , ( updated_at
+                , ( status
+                  , ( database_label
+                    , (styles, (icon, (text_messages_enabled, ()))) ) ) ) ) ) )
+        ) ) )
     =
     Ok
       { id
@@ -137,131 +127,94 @@ let t =
       ; database_label
       ; styles
       ; icon
-      ; maintenance
-      ; disabled
+      ; status
       ; default_language
       ; text_messages_enabled
       ; created_at
       ; updated_at
       }
   in
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (t2
-         Common.Repo.Id.t
-         (t2
-            Title.t
-            (t2
-               (option Description.t)
-               (t2
-                  Url.t
-                  (t2
-                     Database.Repo.Label.t
-                     (t2
-                        Caqti_type.bool
-                        (t2
-                           (option Styles.t)
-                           (t2
-                              (option Icon.t)
-                              (t2
-                                 Maintenance.t
-                                 (t2
-                                    Disabled.t
-                                    (t2
-                                       Pool_common.Repo.Language.t
-                                       (t2
-                                          Common.Repo.CreatedAt.t
-                                          Common.Repo.UpdatedAt.t)))))))))))))
+  custom
+    ~encode
+    ~decode
+    Schema.
+      [ Pool_common.Repo.Id.t
+      ; Title.t
+      ; option Description.t
+      ; Url.t
+      ; Pool_common.Repo.Language.t
+      ; Pool_common.Repo.CreatedAt.t
+      ; Pool_common.Repo.UpdatedAt.t
+      ; Database.Repo.Status.t
+      ; Database.Repo.Label.t
+      ; option Styles.t
+      ; option Icon.t
+      ; bool
+      ]
 ;;
 
 module Write = struct
   open Entity.Write
 
   let t =
-    let encode m =
+    let open Caqti_type in
+    let open Database.Caqti_encoders in
+    let encode m : ('a Data.t, string) result =
       Ok
-        ( m.Write.id
-        , ( m.title
-          , ( m.description
-            , ( Url.value m.url
-              , ( m.database
-                , ( m.gtx_api_key
-                  , ( m.styles
-                    , ( m.icon
-                      , ( m.maintenance
-                        , ( m.disabled
-                          , (m.default_language, (m.created_at, m.updated_at))
-                          ) ) ) ) ) ) ) ) ) )
+        Data.
+          [ m.Write.id
+          ; m.title
+          ; m.description
+          ; m.url
+          ; m.default_language
+          ; m.created_at
+          ; m.updated_at
+          ; m.database_label
+          ; m.styles
+          ; m.icon
+          ; m.gtx_api_key
+          ]
     in
     let decode
       ( id
       , ( title
         , ( description
           , ( url
-            , ( database
-              , ( gtx_api_key
-                , ( styles
-                  , ( icon
-                    , ( maintenance
-                      , (disabled, (default_language, (created_at, updated_at)))
-                      ) ) ) ) ) ) ) ) )
+            , ( default_language
+              , ( created_at
+                , ( updated_at
+                  , (database_label, (styles, (icon, (gtx_api_key, ())))) ) ) )
+            ) ) ) )
       =
       Ok
         { id
         ; title
         ; description
         ; url
-        ; database
+        ; database_label
         ; gtx_api_key
         ; styles
         ; icon
-        ; maintenance
-        ; disabled
         ; default_language
         ; created_at
         ; updated_at
         }
     in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (t2
-           Common.Repo.Id.t
-           (t2
-              Title.t
-              (t2
-                 (option Description.t)
-                 (t2
-                    Url.t
-                    (t2
-                       Database.Repo.t
-                       (t2
-                          (option GtxApiKey.t)
-                          (t2
-                             (option Styles.Write.t)
-                             (t2
-                                (option Icon.Write.t)
-                                (t2
-                                   Maintenance.t
-                                   (t2
-                                      Disabled.t
-                                      (t2
-                                         Pool_common.Repo.Language.t
-                                         (t2
-                                            Common.Repo.CreatedAt.t
-                                            Common.Repo.UpdatedAt.t)))))))))))))
-  ;;
-end
-
-module Selection = struct
-  open Entity.Selection
-
-  let t =
-    let encode m = Ok (m.Selection.url, m.database_label) in
-    let decode (url, database_label) = Ok { url; database_label } in
-    Caqti_type.(custom ~encode ~decode (t2 Url.t Database.Repo.Label.t))
+    custom
+      ~encode
+      ~decode
+      Schema.
+        [ Pool_common.Repo.Id.t
+        ; Title.t
+        ; option Description.t
+        ; Url.t
+        ; Pool_common.Repo.Language.t
+        ; Pool_common.Repo.CreatedAt.t
+        ; Pool_common.Repo.UpdatedAt.t
+        ; Database.Repo.Label.t
+        ; option Styles.Write.t
+        ; option Icon.Write.t
+        ; option GtxApiKey.t
+        ]
   ;;
 end

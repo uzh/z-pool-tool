@@ -1,6 +1,7 @@
 open CCFun
 open Tyxml.Html
 open Component
+open Pool_message
 module Status = UserStatus.Admin
 
 let list Pool_context.{ language; guardian; _ } (admins, query) =
@@ -22,7 +23,7 @@ let list Pool_context.{ language; guardian; _ } (admins, query) =
       Component.Input.link_as_button
         ~style:`Success
         ~icon:Icon.Add
-        ~control:(language, Pool_common.Message.(Add (Some Field.Admin)))
+        ~control:(language, Control.Add (Some Field.Admin))
         "/admin/admins/new"
     in
     Pool_user.
@@ -40,7 +41,7 @@ let list Pool_context.{ language; guardian; _ } (admins, query) =
       |> Format.asprintf "/admin/admins/%s"
       |> Input.link_as_button ~icon:Icon.Eye
     in
-    [ txt (full_name_reversed admin); Status.email_with_icons admin; button ]
+    [ txt (fullname_reversed admin); Status.email_with_icons admin; button ]
     |> CCList.map (CCList.return %> td)
     |> tr
   in
@@ -59,34 +60,27 @@ let static_overview ?(disable_edit = false) language admins =
       Component.Input.link_as_button
         ~style:`Success
         ~icon:Icon.Add
-        ~control:(language, Pool_common.Message.(Add (Some Field.Admin)))
+        ~control:(language, Control.Add (Some Field.Admin))
         "/admin/admins/new"
     in
     let to_txt = Component.Table.field_to_txt language in
-    let base = Pool_common.Message.Field.[ Email |> to_txt; Name |> to_txt ] in
+    let base = Field.[ Email |> to_txt; Name |> to_txt ] in
     match disable_edit with
     | false -> base @ [ add_admin ]
     | true -> base
   in
   CCList.map
     (fun admin ->
-      let open Sihl_user in
-      let default_empty o = CCOption.value ~default:"" o in
       let user = Admin.user admin in
       let base =
-        [ Status.email_with_icons admin
-        ; txt
-            (Format.asprintf
-               "%s %s"
-               (user.given_name |> default_empty)
-               (user.name |> default_empty)
-             |> CCString.trim)
-        ]
+        [ Status.email_with_icons admin; txt (Pool_user.fullname user) ]
       in
       match disable_edit with
       | false ->
         base
-        @ [ Format.asprintf "/admin/admins/%s" user.id
+        @ [ Format.asprintf
+              "/admin/admins/%s"
+              (user.Pool_user.id |> Pool_user.Id.value)
             |> Input.link_as_button ~icon:Icon.Eye
           ]
       | true -> base)
@@ -124,7 +118,7 @@ let new_form { Pool_context.language; csrf; _ } =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         Pool_common.
-          [ Message.(create (Some Field.Admin))
+          [ Control.(Create (Some Field.Admin))
             |> Utils.control_to_string language
             |> txt
           ]
@@ -138,7 +132,7 @@ let new_form { Pool_context.language; csrf; _ } =
           :: CCList.map
                (fun (field, input) ->
                  Input.input_element ~required:true language input field)
-               Pool_common.Message.Field.
+               Field.
                  [ Email, `Email
                  ; Password, `Password
                  ; Firstname, `Text
@@ -149,7 +143,7 @@ let new_form { Pool_context.language; csrf; _ } =
                [ Input.submit_element
                    ~classnames:[ "push" ]
                    language
-                   Pool_common.Message.(Create (Some Field.admin))
+                   Control.(Create (Some Field.admin))
                    ()
                ]
            ])
@@ -167,40 +161,24 @@ let index (Pool_context.{ language; _ } as context) admins =
 ;;
 
 let detail ({ Pool_context.language; _ } as context) admin granted_roles =
-  let open Sihl.Contract.User in
-  let open Pool_common in
   let user = Admin.user admin in
-  [ h1
-      ~a:[ a_class [ "heading-1" ] ]
-      [ txt
-          (Format.asprintf
-             "%s %s"
-             (user.given_name |> Option.value ~default:"")
-             (user.name |> Option.value ~default:""))
-      ]
+  [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ]
   ; Input.link_as_button
       ~icon:Icon.Create
-      ~control:(language, Message.(Edit None))
-      (Format.asprintf "/admin/admins/%s/edit" user.id)
+      ~control:(language, Control.(Edit None))
+      (Format.asprintf
+         "/admin/admins/%s/edit"
+         (user.Pool_user.id |> Pool_user.Id.value))
   ]
   @ roles_list context admin granted_roles
   |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
 ;;
 
 let edit context editable_admin granted_roles top_element =
-  let open Sihl.Contract.User in
   let user = Admin.user editable_admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    ([ h1
-         ~a:[ a_class [ "heading-1" ] ]
-         [ txt
-             (Format.asprintf
-                "%s %s"
-                (user.given_name |> Option.value ~default:"")
-                (user.name |> Option.value ~default:""))
-         ]
-     ]
+    ([ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ] ]
      @ roles_list
          ~is_edit:true
          ~top_element

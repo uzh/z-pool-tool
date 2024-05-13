@@ -19,7 +19,7 @@ type t =
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmptyListGeneric
-  | EmtpyList of Entity_message.Field.t
+  | EmtpyList of Pool_message.Field.t
   | EnrollInExperiment
   | ExperimentHistory
   | ExperimentListEmpty
@@ -59,7 +59,7 @@ type t =
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
   | MessageHistory of string
-  | NoEntries of Entity_message.Field.t
+  | NoEntries of Pool_message.Field.t
   | NoInvitationsSent
   | Note
   | NotMatchingFilter
@@ -74,7 +74,7 @@ type t =
   | ResetPasswordTitle
   | RoleApplicableToAssign
   | RoleCurrentlyAssigned
-  | RoleCurrentlyNoneAssigned of Entity_message.Field.t
+  | RoleCurrentlyNoneAssigned of Pool_message.Field.t
   | RolesGranted
   | SelectedTags
   | SelectedTagsEmpty
@@ -115,7 +115,7 @@ type nav_link =
   | Dashboard
   | Experiments
   | ExternalDataIds
-  | Field of Entity_message.Field.t
+  | Field of Pool_message.Field.t
   | Filter
   | I18n
   | Invitations
@@ -180,7 +180,7 @@ type hint =
   | CustomFieldOptionsCompleteness
   | CustomFieldPromptOnRegistration
   | CustomFieldSessionModel
-  | CustomFieldSort of Entity_message.Field.t
+  | CustomFieldSort of Pool_message.Field.t
   | CustomFieldTypeMultiSelect
   | CustomFieldTypeSelect
   | CustomFieldTypeText
@@ -259,13 +259,13 @@ type hint =
   | ResendRemindersWarning
   | ResetInvitations
   | ResetInvitationsLastReset of Ptime.t
-  | RoleIntro of Entity_message.Field.t * Entity_message.Field.t
+  | RoleIntro of Pool_message.Field.t * Pool_message.Field.t
   | RolePermissionsModelList
   | RolePermissionsRoleList
   | ScheduleAt of Ptime.t
   | ScheduledIntro
   | ScheduleEvery of Ptime.Span.t
-  | SearchByFields of Entity_message.Field.t list
+  | SearchByFields of Pool_message.Field.t list
   | SelectedDateIsPast
   | SelectedOptionsCountMax of int
   | SelectedOptionsCountMin of int

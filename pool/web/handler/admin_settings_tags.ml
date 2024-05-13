@@ -1,5 +1,5 @@
 open Utils.Lwt_result.Infix
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
@@ -54,12 +54,11 @@ let write action req =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let redirect, success =
-    let open Pool_common in
+    let open Pool_message.Success in
     match action with
-    | `Create -> Format.asprintf "%s/create" base_path, Message.Created field
+    | `Create -> Format.asprintf "%s/create" base_path, Created field
     | `Update id ->
-      ( Format.asprintf "%s/%s" base_path (Tags.Id.value id)
-      , Message.Updated field )
+      Format.asprintf "%s/%s" base_path (Tags.Id.value id), Updated field
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
@@ -70,7 +69,7 @@ let write action req =
       let open Cqrs_command.Tags_command in
       let is_existing ?exclude_id ({ title; model; _ } as data : decoded) =
         if%lwt Tags.already_exists ?exclude_id database_label title model
-        then Lwt.return_error (Pool_common.Message.AlreadyExisting Field.Tag)
+        then Lwt.return_error (Pool_message.Error.AlreadyExisting Field.Tag)
         else Lwt.return_ok data
       in
       match action with

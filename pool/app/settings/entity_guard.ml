@@ -10,7 +10,7 @@ module Target = struct
       (Guard.Uuid.target_of Pool_common.Id.value
        %> Guard.Target.create `SystemSetting)
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

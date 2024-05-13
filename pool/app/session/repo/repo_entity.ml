@@ -152,9 +152,15 @@ let t =
                                                             (t2
                                                                (option ptime)
                                                                (t2
-                                                                  ptime
+                                                                  Pool_common
+                                                                  .Repo
+                                                                  .CreatedAt
+                                                                  .t
                                                                   (t2
-                                                                     ptime
+                                                                     Pool_common
+                                                                     .Repo
+                                                                     .UpdatedAt
+                                                                     .t
                                                                      (t2
                                                                         Experiment
                                                                         .t
@@ -442,7 +448,8 @@ module Calendar = struct
   open CCResult.Infix
 
   let read_only =
-    Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+    Pool_message.Error.ReadOnlyModel
+    |> Pool_common.(Utils.error_to_string Language.En)
   ;;
 
   module Location = struct

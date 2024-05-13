@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Entity
 
 let create_public_url = Pool_tenant.create_public_url
@@ -21,18 +22,16 @@ let opt_out_link_url { link; _ } = function
     Format.asprintf
       "%s/unsubscribe?%s=%s"
       link
-      Pool_common.Message.Field.(show Token)
+      Pool_message.Field.(show Token)
       token
 ;;
 
-let create_public_url_with_params pool_url path params =
-  params
-  |> Pool_common.Message.add_field_query_params path
-  |> create_public_url pool_url
+let create_public_url_with_params pool_url path =
+  Pool_message.add_field_query_params path %> create_public_url pool_url
 ;;
 
 let prepend_root_directory pool url =
-  match Pool_database.is_root pool with
+  match Database.is_root pool with
   | true -> Format.asprintf "/root%s" url
   | false -> url
 ;;
@@ -208,15 +207,14 @@ let combine_plain_text language email_layout plain_text =
 ;;
 
 let find_template_by_language templates lang =
-  let open Pool_common in
   CCList.find_opt
-    (fun { language; _ } -> Language.equal language lang)
+    (fun { language; _ } -> Pool_common.Language.equal language lang)
     templates
   |> (function
         | None -> templates |> CCList.head_opt
         | Some template -> Some template)
   |> CCOption.map (fun ({ language; _ } as t) -> language, t)
-  |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
+  |> CCOption.to_result Pool_message.(Error.NotFound Field.MessageTemplate)
 ;;
 
 let with_default_language sys_langs language =

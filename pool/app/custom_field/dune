@@ -8,10 +8,8 @@
   pool_context
   ptime
   role
-  service
   settings
   sihl
-  sihl-user
   utils)
  (preprocess
   (pps

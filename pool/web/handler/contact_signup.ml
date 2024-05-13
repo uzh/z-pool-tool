@@ -1,3 +1,4 @@
+open Pool_message
 module Command = Cqrs_command.Contact_command
 module UserCommand = Cqrs_command.User_command
 module HttpUtils = Http_utils
@@ -26,9 +27,8 @@ let sign_up req =
 
 let sign_up_create req =
   let open Utils.Lwt_result.Infix in
-  let open Pool_common.Message in
   let terms_key = Field.(TermsAccepted |> show) in
-  let user_id = Pool_common.Id.create () in
+  let user_id = Contact.Id.create () in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.remove_empty_values
@@ -52,12 +52,12 @@ let sign_up_create req =
                req
                urlencoded
                language
-               user_id
+               (user_id |> Contact.Id.to_common)
        in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* email_address =
          Sihl.Web.Request.urlencoded Field.(Email |> show) req
-         ||> CCOption.to_result ContactSignupInvalidEmail
+         ||> CCOption.to_result Error.ContactSignupInvalidEmail
          >== Pool_user.EmailAddress.create
        in
        let log_request () =
@@ -98,9 +98,7 @@ let sign_up_create req =
          |> Lwt_result.lift
        in
        let%lwt existing_user =
-         Service.User.find_by_email_opt
-           ~ctx:(Pool_database.to_ctx database_label)
-           (Pool_user.EmailAddress.value email_address)
+         Pool_user.find_by_email_opt database_label email_address
        in
        let* events =
          match existing_user with
@@ -108,7 +106,7 @@ let sign_up_create req =
            let* events = create_contact_events () in
            log_request ();
            Lwt_result.return events
-         | Some user when Service.User.is_admin user -> Lwt_result.return []
+         | Some user when Pool_user.is_admin user -> Lwt_result.return []
          | Some _ ->
            let%lwt contact =
              email_address |> Contact.find_by_email database_label
@@ -116,7 +114,8 @@ let sign_up_create req =
            let* events =
              contact
              |> function
-             | Ok contact when contact.Contact.user.Sihl_user.confirmed ->
+             | Ok contact when contact |> Contact.user |> Pool_user.is_confirmed
+               ->
                let%lwt send_notification =
                  Contact.should_send_registration_attempt_notification
                    database_label
@@ -151,9 +150,7 @@ let sign_up_create req =
        HttpUtils.(
          redirect_to_with_actions
            "/email-confirmation"
-           [ Message.set
-               ~success:[ Pool_common.Message.EmailConfirmationMessage ]
-           ])
+           [ Message.set ~success:[ Success.EmailConfirmationMessage ] ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
@@ -163,7 +160,6 @@ let email_verification req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let result ({ Pool_context.database_label; query_language; _ } as context) =
-    let open Pool_common.Message in
     let%lwt redirect_path =
       let user =
         Pool_context.find_contact context
@@ -174,33 +170,32 @@ let email_verification req =
       | None -> "/login" |> Lwt.return
       | Some user ->
         let open Pool_context in
-        user_of_sihl_user database_label user ||> dashboard_path
+        context_user_of_user database_label user ||> dashboard_path
     in
     (let* token =
        Sihl.Web.Request.query Field.(show Token) req
        |> CCOption.map Email.Token.create
-       |> CCOption.to_result Field.(NotFound Token)
+       |> CCOption.to_result (Error.NotFound Field.Token)
        |> Lwt_result.lift
      in
-     let ctx = Pool_database.to_ctx database_label in
      let* email =
-       Service.Token.read
-         ~ctx
+       Pool_token.read
+         database_label
          (Email.Token.value token)
          ~k:Field.(Email |> show)
-       ||> CCOption.to_result TokenInvalidFormat
+       ||> CCOption.to_result Error.TokenInvalidFormat
        >== Pool_user.EmailAddress.create
        >>= Email.find_unverified_by_address database_label
-       |> Lwt_result.map_error (fun _ -> Field.(Invalid Token))
+       |> Lwt_result.map_error (fun _ -> Error.Invalid Field.Token)
      in
      let* events =
        let open UserCommand in
        let%lwt admin =
-         Admin.find
-           database_label
-           (email |> Email.user_id |> Pool_common.Id.value |> Admin.Id.of_string)
+         Admin.find database_label (email |> Email.user_id |> Admin.Id.of_user)
        in
-       let%lwt contact = Contact.find database_label (Email.user_id email) in
+       let%lwt contact =
+         Contact.find database_label (Email.user_id email |> Contact.Id.of_user)
+       in
        let verify_email user =
          VerifyEmail.(handle ~tags user email) |> Lwt_result.lift
        in
@@ -225,7 +220,7 @@ let email_verification req =
      HttpUtils.(
        redirect_to_with_actions
          (path_with_language query_language redirect_path)
-         [ Message.set ~success:[ EmailVerified ] ])
+         [ Message.set ~success:[ Success.EmailVerified ] ])
      |> Lwt_result.ok)
     >|- fun msg -> msg, redirect_path
   in
@@ -248,7 +243,7 @@ let terms req =
        in
        Page.Contact.terms
          ?notification
-         Contact.(contact |> id |> Pool_common.Id.value)
+         Contact.(contact |> id |> Id.to_user)
          terms
          context
        |> create_layout req context
@@ -264,8 +259,7 @@ let terms_accept req =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     let id =
-      Pool_common.(
-        Sihl.Web.Router.param req Message.Field.(Id |> show) |> Id.of_string)
+      Sihl.Web.Router.param req Field.(Id |> show) |> Contact.Id.of_string
     in
     let* contact = Contact.find database_label id in
     let* events =

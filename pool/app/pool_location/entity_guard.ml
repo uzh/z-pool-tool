@@ -11,7 +11,7 @@ module Target = struct
       (fun Entity.{ id; _ } ->
         Target.create `Location (id |> Uuid.target_of Entity.Id.value))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -24,7 +24,7 @@ module FileTarget = struct
       (Uuid.target_of Entity.Mapping.Id.value
        %> Guard.Target.create `LocationFile)
       id
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 
   let to_authorizable ?ctx { Entity.Mapping.id; _ } = decorate ?ctx id

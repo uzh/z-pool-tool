@@ -1,43 +1,36 @@
-module Conformist = Pool_common.Utils.PoolConformist
-module User = Pool_user
-module Id = Pool_common.Id
-
 let src = Logs.Src.create "contact.cqrs"
 
 module SignUp : sig
   include Common.CommandSig
 
   type t =
-    { email : User.EmailAddress.t
-    ; password : User.Password.t
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
+    { email : Pool_user.EmailAddress.t
+    ; password : Pool_user.Password.Plain.t
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
     }
 
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?user_id:Id.t
-    -> ?terms_accepted_at:User.TermsAccepted.t option
+    -> ?user_id:Contact.Id.t
+    -> ?terms_accepted_at:Pool_user.TermsAccepted.t option
     -> Custom_field.Public.t list
     -> Email.Token.t
-    -> User.EmailAddress.t
+    -> Pool_user.EmailAddress.t
     -> Email.job
     -> Pool_common.Language.t option
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Guard.ValidationSet.t
 end = struct
   type t =
-    { email : User.EmailAddress.t
-    ; password : User.Password.t [@opaque]
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
+    { email : Pool_user.EmailAddress.t
+    ; password : Pool_user.Password.Plain.t [@opaque]
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
     }
 
   let command email password firstname lastname =
@@ -45,13 +38,13 @@ end = struct
   ;;
 
   let schema =
-    Conformist.(
+    Pool_conformist.(
       make
         Field.
-          [ User.EmailAddress.schema ()
-          ; User.Password.(schema create ())
-          ; User.Firstname.schema ()
-          ; User.Lastname.schema ()
+          [ Pool_user.EmailAddress.schema ()
+          ; Pool_user.Password.Plain.schema ()
+          ; Pool_user.Firstname.schema ()
+          ; Pool_user.Lastname.schema ()
           ]
         command)
   ;;
@@ -59,8 +52,8 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ?allowed_email_suffixes
-    ?(user_id = Id.create ())
-    ?(terms_accepted_at = Some (User.TermsAccepted.create_now ()))
+    ?(user_id = Contact.Id.create ())
+    ?(terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ()))
     custom_fields
     token
     unverified_email
@@ -70,7 +63,9 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command SignUp" ~tags);
     let open CCResult in
-    let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
+    let* () =
+      Pool_user.EmailAddress.validate allowed_email_suffixes command.email
+    in
     let contact =
       Contact.
         { user_id
@@ -85,12 +80,12 @@ end = struct
     let custom_field_events =
       custom_fields
       |> CCList.map (fun field ->
-        Custom_field.AnsweredOnSignup (field, user_id)
+        Custom_field.AnsweredOnSignup (field, user_id |> Contact.Id.to_common)
         |> Pool_event.custom_field)
     in
     Ok
       ([ Contact.Created contact |> Pool_event.contact
-       ; Email.Created (unverified_email, token, user_id)
+       ; Email.Created (unverified_email, token, user_id |> Contact.Id.to_user)
          |> Pool_event.email_verification
        ; Email.Sent verification_email |> Pool_event.email
        ]
@@ -98,8 +93,8 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    Pool_conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects = Contact.Guard.Access.create
@@ -111,7 +106,7 @@ module UpdateSignInCount : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Contact.t
 
@@ -127,7 +122,7 @@ module DeleteUnverified : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Contact.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -137,7 +132,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) contact =
     Logs.info ~src (fun m -> m "Handle command DeleteUnverified" ~tags);
     if contact.Contact.email_verified |> CCOption.is_some
-    then Error Pool_common.Message.EmailDeleteAlreadyVerified
+    then Error Pool_message.Error.EmailDeleteAlreadyVerified
     else Ok [ Contact.UnverifiedDeleted contact |> Pool_event.contact ]
   ;;
 
@@ -154,7 +149,7 @@ module Update : sig
     -> Pool_context.user
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -180,7 +175,7 @@ module ClearAnswer : sig
     :  ?tags:Logs.Tag.set
     -> Custom_field.Public.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -189,88 +184,13 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) field contact =
     Logs.info ~src (fun m -> m "Handle command ClearAnswer" ~tags);
     Ok
-      [ Custom_field.AdminAnswerCleared (field, Contact.id contact)
+      [ Custom_field.AdminAnswerCleared
+          (field, Contact.(id contact |> Id.to_common))
         |> Pool_event.custom_field
       ]
   ;;
 
   let effects = Contact.Guard.Access.update
-end
-
-module UpdatePassword : sig
-  include Common.CommandSig
-
-  type t =
-    { current_password : User.Password.t
-    ; new_password : User.Password.t
-    ; password_confirmation : User.PasswordConfirmed.t
-    }
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Contact.t
-    -> Email.job
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
-  val effects : Contact.Id.t -> Guard.ValidationSet.t
-end = struct
-  type t =
-    { current_password : User.Password.t [@opaque]
-    ; new_password : User.Password.t [@opaque]
-    ; password_confirmation : User.PasswordConfirmed.t [@opaque]
-    }
-
-  let command current_password new_password password_confirmation =
-    { current_password; new_password; password_confirmation }
-  ;;
-
-  let schema =
-    let open Pool_common.Message.Field in
-    Conformist.(
-      make
-        Field.
-          [ User.Password.(schema ~field:CurrentPassword create_unvalidated ())
-          ; User.Password.(schema ~field:NewPassword create ())
-          ; User.PasswordConfirmed.schema ()
-          ]
-        command)
-  ;;
-
-  let handle ?(tags = Logs.Tag.empty) contact notification command =
-    Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
-    let open CCResult in
-    let* () =
-      User.Password.validate_current_password
-        contact.Contact.user
-        command.current_password
-    in
-    let* () =
-      User.Password.validate_password_confirmation
-        command.new_password
-        command.password_confirmation
-    in
-    Ok
-      [ Contact.PasswordUpdated
-          ( contact
-          , command.current_password
-          , command.new_password
-          , command.password_confirmation )
-        |> Pool_event.contact
-      ; Email.Sent notification |> Pool_event.email
-      ]
-  ;;
-
-  let effects = Contact.Guard.Access.update
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
-  ;;
 end
 
 module RequestEmailValidation : sig
@@ -285,7 +205,7 @@ module RequestEmailValidation : sig
     -> Email.job
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -301,9 +221,9 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command RequestEmailValidation" ~tags);
     let open CCResult in
-    let* () = User.EmailAddress.validate allowed_email_suffixes email in
+    let* () = Pool_user.EmailAddress.validate allowed_email_suffixes email in
     Ok
-      [ Email.Created (email, token, Contact.id contact)
+      [ Email.Created (email, token, Contact.(id contact |> Id.to_user))
         |> Pool_event.email_verification
       ; Email.Sent verification_email |> Pool_event.email
       ]
@@ -320,7 +240,7 @@ module UpdateEmail : sig
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -330,7 +250,9 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateEmail" ~tags);
     let open CCResult in
     let* () =
-      User.EmailAddress.validate allowed_email_suffixes (Email.address email)
+      Pool_user.EmailAddress.validate
+        allowed_email_suffixes
+        (Email.address email)
     in
     Ok
       [ Contact.EmailUpdated (contact, Email.address email)
@@ -348,7 +270,7 @@ module AcceptTermsAndConditions : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Contact.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -373,7 +295,7 @@ module SendProfileUpdateTrigger : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -400,7 +322,7 @@ module SendRegistrationAttemptNotifitacion : sig
     :  ?tags:Logs.Tag.set
     -> t
     -> Email.job
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -422,16 +344,17 @@ end
 module AddCellPhone : sig
   include
     Common.CommandSig
-    with type t = Contact.t * User.CellPhone.t * Pool_common.VerificationCode.t
+    with type t =
+      Contact.t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Contact.t * User.CellPhone.t * Pool_common.VerificationCode.t
+  type t = Contact.t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
 
   let handle ?(tags = Logs.Tag.empty) (contact, cell_phone, token) =
     Logs.info ~src (fun m -> m "Handle command AddCellPhone" ~tags);
@@ -445,16 +368,16 @@ end = struct
 end
 
 module VerifyCellPhone : sig
-  include Common.CommandSig with type t = Contact.t * User.CellPhone.t
+  include Common.CommandSig with type t = Contact.t * Pool_user.CellPhone.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Contact.t * User.CellPhone.t
+  type t = Contact.t * Pool_user.CellPhone.t
 
   let handle ?(tags = Logs.Tag.empty) (contact, cell_phone) =
     Logs.info ~src (fun m -> m "Handle command VerifyCellPhone" ~tags);
@@ -470,7 +393,7 @@ module ResetCellPhoneVerification : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -492,7 +415,7 @@ module TogglePaused : sig
     :  ?tags:Logs.Tag.set
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct

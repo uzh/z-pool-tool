@@ -1,5 +1,5 @@
+open Pool_message
 module HttpUtils = Http_utils
-module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.contact.assignment"
 let create_layout = Contact_general.create_layout
@@ -56,7 +56,7 @@ let show_online_study
   let experiment_id = Experiment.Public.id experiment in
   let* time_window =
     Time_window.find_current_by_experiment database_label experiment_id
-    >|- CCFun.const Pool_common.Message.(NotFound Field.Experiment)
+    >|- CCFun.const (Error.NotFound Field.Experiment)
   in
   let%lwt assignment =
     let open Utils.Lwt_result.Infix in
@@ -171,7 +171,7 @@ module OnlineSurvey = struct
         let open Public in
         experiment
         |> online_experiment
-        |> CCOption.to_result (Pool_common.Message.NotFound Field.Experiment)
+        |> CCOption.to_result (Error.NotFound Field.Experiment)
         |> Lwt_result.lift
         >|+ OnlineExperiment.survey_url
         >|+ OnlineExperiment.render_survey_url
@@ -183,7 +183,7 @@ module OnlineSurvey = struct
         Time_window.find_current_by_experiment
           database_label
           (Experiment.Public.id experiment)
-        >|- CCFun.const Pool_common.Message.(NotFound Field.Experiment)
+        >|- CCFun.const (Error.NotFound Field.Experiment)
       in
       let* events =
         Lwt_result.lift

@@ -1,4 +1,13 @@
+open CCFun.Infix
 open Entity
+
+let make_caqti_type = Pool_common.Repo.make_caqti_type
+
+module Id = struct
+  include Id
+
+  let t = make_caqti_type Caqti_type.string (of_string %> CCResult.return) value
+end
 
 module NoShow = struct
   include NoShow
@@ -21,7 +30,7 @@ end
 module CanceledAt = struct
   include CanceledAt
 
-  let t = Caqti_type.ptime
+  let t = make_caqti_type Caqti_type.ptime create value
 end
 
 module MarkedAsDeleted = struct
@@ -37,7 +46,7 @@ module ExternalDataId = struct
 end
 
 let t =
-  let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
+  let open Database.Caqti_encoders in
   let decode
     ( id
     , ( contact
@@ -47,10 +56,9 @@ let t =
             , ( canceled_at
               , ( marked_as_deleted
                 , ( external_data_id
-                  , (reminder_manually_last_sent_at, (created_at, updated_at))
-                  ) ) ) ) ) ) ) )
+                  , ( reminder_manually_last_sent_at
+                    , (created_at, (updated_at, ())) ) ) ) ) ) ) ) ) )
     =
-    let open CCResult in
     Ok
       { id
       ; contact
@@ -66,38 +74,31 @@ let t =
       ; updated_at
       }
   in
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (t2
-         Pool_common.Repo.Id.t
-         (t2
-            Contact.Repo.Entity.t
-            (t2
-               (option NoShow.t)
-               (t2
-                  (option Participated.t)
-                  (t2
-                     MatchesFilter.t
-                     (t2
-                        (option CanceledAt.t)
-                        (t2
-                           MarkedAsDeleted.t
-                           (t2
-                              (option ExternalDataId.t)
-                              (t2
-                                 (option Pool_common.Repo.Reminder.SentAt.t)
-                                 (t2
-                                    Pool_common.Repo.CreatedAt.t
-                                    Pool_common.Repo.UpdatedAt.t)))))))))))
+  let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
+  let open Schema in
+  custom
+    ~encode
+    ~decode
+    Caqti_type.
+      [ Pool_common.Repo.Id.t
+      ; Contact.Repo.t
+      ; option NoShow.t
+      ; option Participated.t
+      ; MatchesFilter.t
+      ; option CanceledAt.t
+      ; MarkedAsDeleted.t
+      ; option ExternalDataId.t
+      ; option Pool_common.Repo.Reminder.SentAt.t
+      ; Pool_common.Repo.CreatedAt.t
+      ; Pool_common.Repo.UpdatedAt.t
+      ]
 ;;
 
 module Write = struct
   type t =
     { id : Pool_common.Id.t
     ; session_id : Session.Id.t
-    ; contact_id : Pool_common.Id.t
+    ; contact_id : Contact.Id.t
     ; no_show : NoShow.t option
     ; participated : Participated.t option
     ; matches_filter : MatchesFilter.t
@@ -126,49 +127,45 @@ module Write = struct
   ;;
 
   let t =
-    let encode (m : t) =
-      Ok
-        ( m.id
-        , ( m.session_id
-          , ( m.contact_id
-            , ( m.no_show
-              , ( m.participated
-                , ( m.matches_filter
-                  , ( m.canceled_at
-                    , ( m.marked_as_deleted
-                      , ( m.external_data_id
-                        , ( m.reminder_manually_last_sent_at
-                          , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
+    let open Database.Caqti_encoders in
+    let decode _ =
+      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
     in
-    let decode _ = Pool_common.(Utils.failwith Message.WriteOnlyModel) in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (t2
-           Pool_common.Repo.Id.t
-           (t2
-              Session.Repo.Id.t
-              (t2
-                 Pool_common.Repo.Id.t
-                 (t2
-                    (option NoShow.t)
-                    (t2
-                       (option Participated.t)
-                       (t2
-                          MatchesFilter.t
-                          (t2
-                             (option CanceledAt.t)
-                             (t2
-                                MarkedAsDeleted.t
-                                (t2
-                                   (option ExternalDataId.t)
-                                   (t2
-                                      (option
-                                         Pool_common.Repo.Reminder.SentAt.t)
-                                      (t2
-                                         Pool_common.Repo.CreatedAt.t
-                                         Pool_common.Repo.UpdatedAt.t))))))))))))
+    let encode (m : t) : ('a Data.t, string) result =
+      Ok
+        Data.
+          [ m.id
+          ; m.session_id
+          ; m.contact_id
+          ; m.no_show
+          ; m.participated
+          ; m.matches_filter
+          ; m.canceled_at
+          ; m.marked_as_deleted
+          ; m.external_data_id
+          ; m.reminder_manually_last_sent_at
+          ; m.created_at
+          ; m.updated_at
+          ]
+    in
+    let open Schema in
+    custom
+      ~encode
+      ~decode
+      Caqti_type.
+        [ Pool_common.Repo.Id.t
+        ; Session.Repo.Id.t
+        ; Contact.Repo.Id.t
+        ; option NoShow.t
+        ; option Participated.t
+        ; MatchesFilter.t
+        ; option CanceledAt.t
+        ; MarkedAsDeleted.t
+        ; option ExternalDataId.t
+        ; option Pool_common.Repo.Reminder.SentAt.t
+        ; Pool_common.Repo.CreatedAt.t
+        ; Pool_common.Repo.UpdatedAt.t
+        ]
   ;;
 end
 
@@ -201,12 +198,12 @@ module ExternalDataIdentifier = struct
   open ExternalDataIdentifier
 
   let t =
-    let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
+    let open Database.Caqti_encoders in
     let decode
       ( external_data_id
       , ( experiment_id
-        , (experiment_title, (session_id, (session_start, session_duration))) )
-      )
+        , ( experiment_title
+          , (session_id, (session_start, (session_duration, ()))) ) ) )
       =
       Ok
         { external_data_id
@@ -217,24 +214,25 @@ module ExternalDataIdentifier = struct
         ; session_duration
         }
     in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (t2
-           ExternalDataId.t
-           (t2
-              Experiment.Repo.Entity.Id.t
-              (t2
-                 Experiment.Repo.Entity.Title.t
-                 (t2
-                    Session.Repo.Id.t
-                    (t2 Session.Repo.Start.t Session.Repo.Duration.t))))))
+    let encode _ =
+      Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel
+    in
+    let open Schema in
+    custom
+      ~encode
+      ~decode
+      [ ExternalDataId.t
+      ; Experiment.Repo.Entity.Id.t
+      ; Experiment.Repo.Entity.Title.t
+      ; Session.Repo.Id.t
+      ; Session.Repo.Start.t
+      ; Session.Repo.Duration.t
+      ]
   ;;
 end
 
 let with_session =
-  let encode _ = Pool_common.(Utils.failwith Message.ReadOnlyModel) in
+  let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let decode = CCResult.return in
   Caqti_type.(custom ~encode ~decode (t2 Session.Repo.t t))
 ;;

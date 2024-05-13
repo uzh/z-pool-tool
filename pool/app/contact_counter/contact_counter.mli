@@ -12,7 +12,7 @@ val update_on_session_closing
   -> Assignment.NoShow.t
   -> Assignment.Participated.t
   -> Assignment.IncrementParticipationCount.t
-  -> (Contact.t, Pool_common.Message.error) result
+  -> (Contact.t, Pool_message.Error.t) result
 
 val update_on_session_cancellation : Assignment.t list -> Contact.t -> Contact.t
 

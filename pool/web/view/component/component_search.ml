@@ -1,6 +1,6 @@
 open CCFun
 open Tyxml.Html
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module I18n = Pool_common.I18n
 
 let query_field = Field.Search
@@ -69,7 +69,7 @@ let multi_search
           ~a:
             ([ a_input_type `Checkbox
              ; a_value (to_value item)
-             ; a_name (Message.Field.array_key tag_name)
+             ; a_name (Pool_message.Field.array_key tag_name)
              ; a_checked ()
              ; a_hidden ()
              ]
@@ -92,8 +92,8 @@ let multi_search
       | None -> []
     in
     [ a_input_type `Search
-    ; a_name (Message.Field.show query_field)
-    ; a_user_data "name" (Message.Field.array_key tag_name)
+    ; a_name (Pool_message.Field.show query_field)
+    ; a_user_data "name" (Pool_message.Field.array_key tag_name)
     ]
     @ placeholder
     @ disabled
@@ -163,7 +163,7 @@ let multi_search
 let additional_filter_attributes =
   [ a_user_data
       "hx-params"
-      Pool_common.Message.Field.(
+      Pool_message.Field.(
         [ array_key Value; show Search ] |> CCString.concat ", ")
   ]
 ;;
@@ -187,7 +187,7 @@ module Experiment = struct
     multi_search
       ~disabled
       ~is_filter:true
-      ~tag_name:Pool_common.Message.Field.Value
+      ~tag_name:Pool_message.Field.Value
       language
       field
       (Dynamic dynamic_search)
@@ -199,7 +199,7 @@ module Experiment = struct
       dynamic_search
         (Format.asprintf
            "/admin/contacts/%s/experiments"
-           (Contact.id contact |> Pool_common.Id.value))
+           (Contact.id contact |> Contact.Id.value))
         `Get
     in
     multi_search
@@ -269,7 +269,7 @@ module Tag = struct
       ~disabled
       ~is_filter:true
       ~selected
-      ~tag_name:Pool_common.Message.Field.Value
+      ~tag_name:Pool_message.Field.Value
       language
   ;;
 
@@ -287,7 +287,7 @@ module RoleTarget = struct
   let additional_attributes =
     [ a_user_data
         "hx-params"
-        Pool_common.Message.Field.(
+        Pool_message.Field.(
           [ array_key Target; show Role; show Search ] |> CCString.concat ", ")
     ]
   ;;
@@ -320,22 +320,21 @@ module RoleTarget = struct
 end
 
 module Admin = struct
-  open Admin
-
   let field = Field.Admin
   let placeholder = "Search by admin name or email"
 
   let to_label admin =
     Format.asprintf
-      "%s (%s)"
-      (admin |> Admin.user |> Pool_user.user_fullname)
-      (admin |> Admin.email_address |> Pool_user.EmailAddress.value)
+      "%s (%a)"
+      (admin |> Admin.user |> Pool_user.fullname)
+      Pool_user.EmailAddress.pp
+      (admin |> Admin.email_address)
   ;;
 
-  let to_value = Admin.id %> Id.value
+  let to_value = Admin.(id %> Id.value)
 
   let hx_url admin_id =
-    Format.asprintf "/admin/admins/%s/search-role" Admin.(Id.value admin_id)
+    Format.asprintf "/admin/admins/%s/search-role" Pool_user.(Id.value admin_id)
   ;;
 
   let dynamic_search ?(selected = []) hx_url hx_method =
@@ -350,7 +349,7 @@ module Admin = struct
       ~query_field:Field.(SearchOf Admin)
       ~disabled
       ~is_filter:true
-      ~tag_name:Pool_common.Message.Field.(ValueOf Admin)
+      ~tag_name:Pool_message.Field.(ValueOf Admin)
       language
       field
       (Dynamic dynamic_search)

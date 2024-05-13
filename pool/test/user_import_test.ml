@@ -1,4 +1,5 @@
-open Pool_common.Message
+open CCFun.Infix
+open Pool_message
 
 module Data = struct
   let token = "123123"
@@ -12,8 +13,8 @@ let create_user_import ?(token = Data.token) user =
   let user_uuid =
     let open Pool_context in
     match user with
-    | Contact contact -> Contact.(id contact)
-    | Admin admin -> Admin.(id admin |> Id.value |> Pool_common.Id.of_string)
+    | Contact contact -> Contact.(id contact |> Id.to_user)
+    | Admin admin -> Admin.(id admin |> Id.to_user)
     | Guest -> failwith "Invalid user"
   in
   { user_uuid
@@ -22,8 +23,8 @@ let create_user_import ?(token = Data.token) user =
   ; notified_at = None
   ; reminder_count = ReminderCount.init
   ; last_reminded_at = None
-  ; created_at = Pool_common.CreatedAt.create ()
-  ; updated_at = Pool_common.UpdatedAt.create ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 
@@ -45,7 +46,7 @@ let confirm_without_matching_password () =
     let open Cqrs_command.User_import_command.ConfirmImport in
     urlencoded |> decode >>= handle (user_import, contact)
   in
-  let expected = Error PasswordConfirmationDoesNotMatch in
+  let expected = Error Error.PasswordConfirmationDoesNotMatch in
   Test_utils.check_result expected result
 ;;
 
@@ -68,7 +69,7 @@ let confirm_as_contact () =
   let expected =
     Ok
       [ Contact.ImportConfirmed
-          (contact, Pool_user.Password.create Data.password |> get_exn)
+          (contact, Pool_user.Password.Plain.create Data.password)
         |> Pool_event.contact
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
@@ -100,7 +101,7 @@ let confirm_as_admin () =
   let expected =
     Ok
       [ Admin.ImportConfirmed
-          (admin, Pool_user.Password.create Data.password |> get_exn)
+          (admin, Pool_user.Password.Plain.create Data.password)
         |> Pool_event.admin
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
@@ -156,23 +157,20 @@ let confirm_as_contact_integration _ () =
 module Repo = struct
   open Utils.Lwt_result.Infix
 
-  let set_contact_import_pending pool id =
+  let set_contact_import_pending pool =
     let request =
       let open Caqti_request.Infix in
       {sql|
-          UPDATE
-            pool_contacts
-          SET
-            import_pending = 1
-          WHERE
-            user_uuid = UNHEX(REPLACE($1, '-', ''))
-        |sql}
-      |> Caqti_type.(string ->. unit)
+        UPDATE
+          pool_contacts
+        SET
+          import_pending = 1
+        WHERE
+          user_uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+      |> Contact.Repo.Id.t ->. Caqti_type.unit
     in
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      request
-      (Contact.Id.value id)
+    Database.exec pool request
   ;;
 
   let set_import_timestamp_to_past pool days id =
@@ -188,10 +186,7 @@ module Repo = struct
         |sql}
       |> Caqti_type.(t2 string int ->. unit)
     in
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      request
-      (Contact.Id.value id, days)
+    Database.exec pool request (Pool_user.Id.value id, days)
   ;;
 
   type testable_import = Contact.t * User_import.t [@@deriving eq, show]
@@ -206,7 +201,10 @@ module Repo = struct
   let database_label = Test_utils.Data.database_label
   let contact_id_1 = Contact.Id.create ()
   let contact_id_2 = Contact.Id.create ()
-  let sort_testable = CCList.sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
+
+  let sort_testable =
+    CCList.stable_sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
+  ;;
 
   let reminder_settings database_label =
     let open Settings in
@@ -236,7 +234,9 @@ module Repo = struct
   let import_of_contact contact_id =
     Lwt.both
       (Contact.find database_label contact_id ||> get_exn)
-      (User_import.find_pending_by_user_id_opt database_label contact_id
+      (User_import.find_pending_by_user_id_opt
+         database_label
+         (contact_id |> Contact.Id.to_user)
        ||> CCOption.get_exn_or "Import not found")
   ;;
 
@@ -284,7 +284,8 @@ module Repo = struct
     in
     let%lwt () =
       [ contact_id_1; contact_id_2 ]
-      |> Lwt_list.iter_s (set_import_timestamp_to_past database_label 8)
+      |> Lwt_list.iter_s
+           (Contact.Id.to_user %> set_import_timestamp_to_past database_label 8)
     in
     (* Expect both imports to be returned *)
     let%lwt contacts_to_remind =

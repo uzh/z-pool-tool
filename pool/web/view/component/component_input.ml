@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module Icon = Component_icon
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 open Tyxml.Html
 
 let submit_type_to_class = function
@@ -33,8 +33,7 @@ let csrf_attibs ?id csrf =
 ;;
 
 let flatpickr_min =
-  CCFun.(
-    Pool_common.Model.Ptime.date_time_to_flatpickr %> a_user_data "min-date")
+  CCFun.(Pool_model.Base.Ptime.date_time_to_flatpickr %> a_user_data "min-date")
 ;;
 
 module Elements = struct
@@ -237,14 +236,14 @@ let flatpicker_element
 let date_picker_element ?value =
   let value =
     value
-    |> CCOption.map (fun date -> Pool_common.Model.Ptime.date_to_flatpickr date)
+    |> CCOption.map (fun date -> Pool_model.Base.Ptime.date_to_flatpickr date)
   in
   flatpicker_element `Date ?value
 ;;
 
 let date_time_picker_element ?value =
   let value =
-    value |> CCOption.map Pool_common.Model.Ptime.date_time_to_flatpickr
+    value |> CCOption.map Pool_model.Base.Ptime.date_time_to_flatpickr
   in
   flatpicker_element `DateTime ?value
 ;;
@@ -297,7 +296,7 @@ let timespan_picker
   let error = Elements.error language error in
   let input_element =
     let unit_field_name =
-      name |> TimeUnit.named_field |> Pool_common.Message.Field.show
+      name |> TimeUnit.named_field |> Pool_message.Field.show
     in
     let hidden_unit_field =
       if read_only
@@ -446,9 +445,10 @@ let input_element_file
     let placeholder =
       span
         ~a:[ a_class [ "file-placeholder" ] ]
-        [ txt
-            Pool_common.(
-              Utils.control_to_string language Message.SelectFilePlaceholder)
+        [ Pool_common.Utils.control_to_string
+            language
+            Pool_message.Control.SelectFilePlaceholder
+          |> txt
         ]
     in
     span
@@ -689,10 +689,11 @@ let selector
       in
       let attrs = if required then [ a_disabled () ] @ attrs else attrs in
       let default =
-        option
-          ~a:attrs
-          (txt
-             Pool_common.(Utils.control_to_string language Message.PleaseSelect))
+        Pool_common.Utils.control_to_string
+          language
+          Pool_message.Control.PleaseSelect
+        |> txt
+        |> option ~a:attrs
       in
       [ default ] @ options
     | false -> options
@@ -839,7 +840,10 @@ let reset_form_button language =
       ; a_user_data "reset-form" ""
       ]
     [ Icon.(to_html RefreshOutline)
-    ; txt Pool_common.(Utils.control_to_string language Message.(Reset None))
+    ; Pool_common.Utils.control_to_string
+        language
+        Pool_message.Control.(Reset None)
+      |> txt
     ]
 ;;
 
@@ -855,14 +859,14 @@ let cell_phone_input ?(required = false) () =
     [ div
         ~a:[ a_class [ "select" ] ]
         [ select
-            ~a:([ a_name Pool_common.Message.Field.(show AreaCode) ] @ attrs)
+            ~a:([ a_name Pool_message.Field.(show AreaCode) ] @ attrs)
             options
         ]
     ; div
         ~a:[ a_class [ "form-group" ] ]
         [ input
             ~a:
-              ([ a_name Pool_common.Message.Field.(show CellPhone)
+              ([ a_name Pool_message.Field.(show CellPhone)
                ; a_class [ "input" ]
                ; a_input_type `Text
                ; a_pattern {|^[1-9]\d{3,12}|}
@@ -878,11 +882,7 @@ let notify_via_selection language =
   div
     ~a:[ a_class [ "form-group" ] ]
     (label
-       [ Elements.input_label
-           language
-           Pool_common.Message.Field.NotifyVia
-           None
-           true
+       [ Elements.input_label language Pool_message.Field.NotifyVia None true
          |> txt
        ]
      :: Pool_common.(
@@ -921,8 +921,7 @@ let admin_select
   ()
   =
   let open Pool_common in
-  let open Admin in
-  let name = Message.Field.show field in
+  let name = Pool_message.Field.show field in
   let select_attrs =
     let name = [ a_name name ] in
     let attrs =
@@ -946,22 +945,25 @@ let admin_select
         | true -> a_disabled () :: attrs
         | false -> attrs
       in
-      option
-        ~a:attrs
-        (Pool_common.(Utils.control_to_string language Message.PleaseSelect)
-         |> txt)
+      Pool_common.Utils.control_to_string
+        language
+        Pool_message.Control.PleaseSelect
+      |> txt
+      |> option ~a:attrs
     in
     CCList.map
       (fun (admin : Admin.t) ->
         let is_selected =
           selected
           |> CCOption.map (fun selected ->
-            if Id.equal (id admin) selected then [ a_selected () ] else [])
+            if Admin.(Id.equal (id admin) selected)
+            then [ a_selected () ]
+            else [])
           |> CCOption.value ~default:[]
         in
         option
-          ~a:([ a_value (admin |> id |> Id.value) ] @ is_selected)
-          (txt (full_name admin)))
+          ~a:([ a_value Admin.(admin |> id |> Id.value) ] @ is_selected)
+          (txt (Admin.fullname admin)))
       options
     |> CCList.cons default_option
   in

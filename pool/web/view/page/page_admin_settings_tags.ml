@@ -3,7 +3,7 @@ open Containers
 open Tyxml.Html
 module HttpUtils = Http_utils
 module Input = Component.Input
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let tags_path ?suffix () =
   let default = "/admin/settings/tags/" in
@@ -42,7 +42,7 @@ module List = struct
       @ [ link_as_button
             ~style:`Success
             ~icon:Icon.Add
-            ~control:(language, Pool_common.Message.(Add (Some Field.Tag)))
+            ~control:(language, Pool_message.(Control.Add (Some Field.Tag)))
             (tags_path ~suffix:"create" ())
         ]
     in
@@ -65,7 +65,7 @@ let list Pool_context.{ language; _ } tags query =
       Component.Input.link_as_button
         ~style:`Success
         ~icon:Component.Icon.Add
-        ~control:(language, Pool_common.Message.(Add (Some Field.Tag)))
+        ~control:(language, Pool_message.(Control.Add (Some Field.Tag)))
         (tags_path ~suffix:"create" ())
     in
     [ `column Tags.column_title
@@ -85,7 +85,7 @@ let list Pool_context.{ language; _ } tags query =
     in
     [ txt (Title.value tag.title)
     ; txt (CCOption.map_or ~default:"" Tags.Description.value tag.description)
-    ; txt (Model.show tag.model |> String.capitalize_ascii)
+    ; txt (Model.show tag.model |> CCString.capitalize_ascii)
     ; buttons tag
     ]
     |> CCList.map (CCList.return %> td)
@@ -161,7 +161,7 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
             [ Input.reset_form_button language
             ; Input.submit_element
                 language
-                Pool_common.Message.(
+                Pool_message.Control.(
                   let field = Some Field.Tag in
                   match tag with
                   | None -> Create field

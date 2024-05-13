@@ -1,5 +1,5 @@
 module HttpUtils = Http_utils
-module Message = Pool_common.Message
+module Message = Pool_message
 module Url = Page.Admin.CustomFields.Url
 
 let src = Logs.Src.create "handler.admin.custom_field_settings"
@@ -30,7 +30,7 @@ let update setting req =
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt selected =
       Sihl.Web.Request.urlencoded_list
-        Pool_common.Message.Field.(array_key CustomField)
+        Pool_message.Field.(array_key CustomField)
         req
     in
     let%lwt contact_fields = find_by_model database_label Model.Contact in
@@ -50,7 +50,7 @@ let update setting req =
       Http_utils.redirect_to_with_actions
         settings_path
         [ HttpUtils.Message.set
-            ~success:[ Pool_common.Message.(Updated Field.CustomField) ]
+            ~success:[ Pool_message.(Success.Updated Field.CustomField) ]
         ]
     in
     events |>> handle

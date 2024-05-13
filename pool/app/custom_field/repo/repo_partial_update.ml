@@ -1,13 +1,8 @@
 open Entity
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
-let update_sihl_user pool ?firstname ?lastname contact =
-  let open CCOption in
-  let ctx = Pool_database.to_ctx pool in
-  let given_name = firstname <+> contact.Contact.user.Sihl_user.given_name in
-  let name = lastname <+> contact.Contact.user.Sihl_user.name in
-  Service.User.update ~ctx ?given_name ?name contact.Contact.user
+let update_user pool ?firstname ?lastname contact =
+  User.update pool ?firstname ?lastname contact.Contact.user
 ;;
 
 let update_sql column_fragment =
@@ -96,10 +91,7 @@ let clear_answer_request is_admin =
 ;;
 
 let clear_answer pool ~is_admin ~field_id ~entity_uuid () =
-  Utils.Database.exec
-    (Database.Label.value pool)
-    (clear_answer_request is_admin)
-    (field_id, entity_uuid)
+  Database.exec pool (clear_answer_request is_admin) (field_id, entity_uuid)
 ;;
 
 let map_or ~clear fnc = function
@@ -128,7 +120,7 @@ let upsert_answer pool is_admin entity_uuid t =
       if is_admin then upsert_admin_answer_request else upsert_answer_request
     in
     Repo_entity_answer.Write.of_entity id field_id entity_uuid value version
-    |> Utils.Database.exec (Database.Label.value pool) request
+    |> Database.exec pool request
   in
   match t with
   | Boolean (_, answer) ->
@@ -168,43 +160,28 @@ let upsert_answer pool is_admin entity_uuid t =
 let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
   let open Entity in
   let is_admin = Pool_context.user_is_admin user in
-  let base_caqti = Pool_common.Repo.Id.t in
   let dyn =
     Dynparam.empty
-    |> Dynparam.add base_caqti (contact |> Contact.id)
+    |> Dynparam.add Contact.Repo.Id.t (contact |> Contact.id)
     |> Dynparam.add Caqti_type.ptime (Ptime_clock.now ())
   in
   let update_user_table (dyn, sql) =
     let open Caqti_request.Infix in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let update_request = sql |> update_sql |> pt ->. Caqti_type.unit in
-    Utils.Database.exec (pool |> Pool_database.Label.value) update_request pv
+    Database.exec pool update_request pv
   in
   let open PartialUpdate in
   match field with
-  | Firstname (version, value) ->
-    let%lwt (_ : Sihl_user.t) =
-      update_sihl_user
-        pool
-        ~firstname:(value |> Pool_user.Firstname.value)
-        contact
-    in
+  | Firstname (version, firstname) ->
+    let%lwt (_ : Pool_user.t) = update_user pool ~firstname contact in
     ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
-    , {sql|
-        firstname_version = $3
-      |sql} )
+    , {sql| firstname_version = $3 |sql} )
     |> update_user_table
-  | Lastname (version, value) ->
-    let%lwt (_ : Sihl_user.t) =
-      update_sihl_user
-        pool
-        ~lastname:(value |> Pool_user.Lastname.value)
-        contact
-    in
+  | Lastname (version, lastname) ->
+    let%lwt (_ : Pool_user.t) = update_user pool ~lastname contact in
     ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
-    , {sql|
-        lastname_version = $3
-      |sql} )
+    , {sql| lastname_version = $3 |sql} )
     |> update_user_table
   | Language (version, value) ->
     ( dyn
@@ -215,5 +192,6 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
         language_version = $4
       |sql} )
     |> update_user_table
-  | Custom field -> (upsert_answer pool is_admin (Contact.id contact)) field
+  | Custom field ->
+    (upsert_answer pool is_admin Contact.(id contact |> Id.to_common)) field
 ;;

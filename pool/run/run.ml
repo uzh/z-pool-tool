@@ -2,11 +2,12 @@ let src = Logs.Src.create "run"
 let () = Printexc.record_backtrace true
 
 let worker_services =
-  [ Pool_canary.register ()
-  ; Database.register ()
-  ; Service.Storage.register ()
+  [ Pool_database.register ()
+  ; Pool_canary.register ()
+  ; Storage.register ()
   ; Schedule.register ()
   ; Queue.register
+      ~kind:Queue.Worker
       ~jobs:
         [ Queue.hide Email.Service.Job.send
         ; Queue.hide Text_message.Service.Job.send
@@ -21,16 +22,17 @@ let worker_services =
 ;;
 
 let services =
-  [ Pool_canary.register ()
-  ; Database.register ()
-  ; Service.User.register ~commands:[] ()
-  ; Service.Token.register ()
+  [ Pool_database.register ()
+  ; Pool_canary.register ()
+  ; Pool_user.register ()
+  ; Pool_token.register ()
+  ; Queue.register ()
   ; Email.Service.register ()
   ; Text_message.Service.register ()
-  ; Email.Service.Queue.register ()
-  ; Service.Storage.register ()
+  ; Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register `Server ()
+  ; System_event.Service.ConnectionWatcher.register ()
   ; Assignment_job.register ()
   ]
 ;;
@@ -77,7 +79,7 @@ let () =
     |> before_start (fun () ->
       (Lwt.async_exception_hook
        := fun exn ->
-            Pool_common.Message.NotHandled (Printexc.to_string exn)
+            Pool_message.Error.NotHandled (Printexc.to_string exn)
             |> Pool_common.Utils.with_log_error ~src
             |> ignore);
       Lwt.return @@ Logger.create_logs_dir ())

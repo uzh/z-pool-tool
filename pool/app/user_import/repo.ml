@@ -68,7 +68,7 @@ module RepoEntity = struct
         ~encode
         ~decode
         (t2
-           Common.Id.t
+           Pool_user.Repo.Id.t
            (t2
               Token.t
               (t2
@@ -90,16 +90,14 @@ module RepoEntity = struct
         , SecondReminderAfter.value second_reminder )
     in
     let decode _ =
-      failwith
-        Pool_common.(
-          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
     in
     Caqti_type.(custom ~encode ~decode (t2 ptime_span ptime_span))
   ;;
 
   module Write = struct
     type t =
-      { user_uuid : Pool_common.Id.t
+      { user_uuid : Pool_user.Id.t
       ; confirmed_at : ConfirmedAt.t option
       ; notified_at : NotifiedAt.t option
       ; reminder_count : ReminderCount.t
@@ -126,16 +124,14 @@ module RepoEntity = struct
             , (m.notified_at, (m.reminder_count, m.last_reminded_at)) ) )
       in
       let decode _ =
-        failwith
-          Pool_common.(
-            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+        Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
       in
       Caqti_type.(
         custom
           ~encode
           ~decode
           (t2
-             Common.Id.t
+             Pool_user.Repo.Id.t
              (t2
                 (option ConfirmedAt.t)
                 (t2
@@ -188,11 +184,8 @@ let find_pending_by_token_request =
 
 let find_pending_by_token pool token =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_pending_by_token_request
-    (Token.value token)
-  ||> CCOption.to_result Pool_common.Message.(Invalid Field.Token)
+  Database.find_opt pool find_pending_by_token_request (Token.value token)
+  ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
 ;;
 
 let find_pending_by_user_id_opt_request =
@@ -204,13 +197,11 @@ let find_pending_by_user_id_opt_request =
       WHERE pool_user_imports.user_uuid = UNHEX(REPLACE($1, '-', ''))
       AND pool_user_imports.confirmed_at IS NULL
     |sql}
-  |> Pool_common.Repo.Id.t ->! RepoEntity.t
+  |> Pool_user.Repo.Id.t ->! RepoEntity.t
 ;;
 
 let find_pending_by_user_id_opt pool =
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_pending_by_user_id_opt_request
+  Database.find_opt pool find_pending_by_user_id_opt_request
 ;;
 
 let find_pending_by_email_opt_request =
@@ -228,9 +219,7 @@ let find_pending_by_email_opt_request =
 ;;
 
 let find_pending_by_email_opt pool =
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_pending_by_email_opt_request
+  Database.find_opt pool find_pending_by_email_opt_request
 ;;
 
 let update_request =
@@ -250,10 +239,7 @@ let update_request =
 ;;
 
 let update pool t =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    update_request
-    (RepoEntity.Write.from_entity t)
+  Database.exec pool update_request (RepoEntity.Write.from_entity t)
 ;;
 
 let find_admins_request ~where limit =
@@ -288,14 +274,14 @@ let reminder_where_clause =
 
 let find_admins_to_notify pool limit =
   let open Caqti_request.Infix in
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
+  Database.collect
+    pool
     (find_admins_request
        ~where:
          {|pool_admins.import_pending = 1
           AND pool_user_imports.notification_sent_at IS NULL|}
        limit
-     |> Caqti_type.(unit ->* t2 Admin.Repo.Entity.t RepoEntity.t))
+     |> Caqti_type.(unit ->* t2 Admin.Repo.t RepoEntity.t))
 ;;
 
 let find_admins_to_remind reminder_settings pool limit () =
@@ -308,13 +294,9 @@ let find_admins_to_remind reminder_settings pool limit () =
            reminder_where_clause)
       limit
     |> Caqti_type.(
-         RepoEntity.reminder_settings_caqti
-         ->* t2 Admin.Repo.Entity.t RepoEntity.t)
+         RepoEntity.reminder_settings_caqti ->* t2 Admin.Repo.t RepoEntity.t)
   in
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    request
-    reminder_settings
+  Database.collect pool request reminder_settings
 ;;
 
 let find_contacts_request ~where limit =
@@ -339,15 +321,15 @@ let find_contacts_request ~where limit =
 
 let find_contacts_to_notify pool limit =
   let open Caqti_request.Infix in
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
+  Database.collect
+    pool
     (find_contacts_request
        ~where:
          {| pool_contacts.import_pending = 1
           AND pool_contacts.disabled = 0
           AND pool_user_imports.notification_sent_at IS NULL|}
        limit
-     |> Caqti_type.(unit ->* t2 Contact.Repo.Entity.t RepoEntity.t))
+     |> Caqti_type.(unit ->* t2 Contact.Repo.t RepoEntity.t))
 ;;
 
 let find_contacts_to_remind reminder_settings pool limit () =
@@ -362,13 +344,9 @@ let find_contacts_to_remind reminder_settings pool limit () =
            reminder_where_clause)
       limit
     |> Caqti_type.(
-         RepoEntity.reminder_settings_caqti
-         ->* t2 Contact.Repo.Entity.t RepoEntity.t)
+         RepoEntity.reminder_settings_caqti ->* t2 Contact.Repo.t RepoEntity.t)
   in
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    request
-    reminder_settings
+  Database.collect pool request reminder_settings
 ;;
 
 let insert_request =
@@ -382,12 +360,9 @@ let insert_request =
       $2
     )
   |sql}
-  |> Caqti_type.(t2 string string ->. unit)
+  |> Caqti_type.(t2 Pool_user.Repo.Id.t string ->. unit)
 ;;
 
 let insert pool t =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    insert_request
-    (t.user_uuid |> Pool_common.Id.value, t.token |> Token.value)
+  Database.exec pool insert_request (t.user_uuid, t.token |> Token.value)
 ;;

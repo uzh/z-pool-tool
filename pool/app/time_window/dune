@@ -7,7 +7,6 @@
   pool_common
   pool_location
   ptime
-  service
   session
   sihl
   utils)

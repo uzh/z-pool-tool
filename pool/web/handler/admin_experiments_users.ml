@@ -5,12 +5,10 @@ let src = Logs.Src.create "handler.admin.experiments_users"
 let create_layout req = General.create_tenant_layout req
 
 let experiment_id =
-  HttpUtils.find_id Experiment.Id.of_string Pool_common.Message.Field.Experiment
+  HttpUtils.find_id Experiment.Id.of_string Pool_message.Field.Experiment
 ;;
 
-let admin_id =
-  HttpUtils.find_id Admin.Id.of_string Pool_common.Message.Field.Admin
-;;
+let admin_id = HttpUtils.find_id Admin.Id.of_string Pool_message.Field.Admin
 
 let index role req =
   let open Utils.Lwt_result.Infix in
@@ -100,7 +98,7 @@ let toggle_role action req =
     let* experiment = Experiment.find database_label experiment_id in
     let* admin = Admin.find database_label admin_id in
     let message =
-      let open Pool_common.Message in
+      let open Pool_message.Success in
       match action with
       | `AssignAssistant | `AssignExperimenter -> RoleAssigned
       | `UnassignAssistant | `UnassignExperimenter -> RoleUnassigned
@@ -143,7 +141,7 @@ end = struct
   include Helpers.Access
   open Guard
   open Cqrs_command.Experiment_command
-  module Field = Pool_common.Message.Field
+  module Field = Pool_message.Field
 
   let experiment_effects =
     Middleware.Guardian.id_effects Experiment.Id.of_string Field.Experiment

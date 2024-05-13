@@ -11,10 +11,10 @@ module Actor = struct
     Persistence.Actor.decorate
       ?ctx
       (Entity.user
-       %> (fun { Sihl_user.id; _ } -> id |> Uuid.Actor.of_string_exn)
+       %> (fun { Pool_user.id; _ } -> id |> Uuid.actor_of Pool_user.Id.value)
        %> Actor.create `Admin)
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -25,10 +25,10 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (Entity.user
-       %> (fun { Sihl_user.id; _ } -> id |> Uuid.Target.of_string_exn)
+       %> (fun { Pool_user.id; _ } -> id |> Uuid.target_of Pool_user.Id.value)
        %> Target.create `Admin)
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

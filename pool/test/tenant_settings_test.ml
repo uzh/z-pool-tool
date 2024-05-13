@@ -1,6 +1,6 @@
-module Command = Cqrs_command.Settings_command
-module Field = Pool_common.Message.Field
+open Pool_message
 open Settings
+module Command = Cqrs_command.Settings_command
 
 let get_or_failwith = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
@@ -45,9 +45,7 @@ let check_contact_email _ () =
   let handle email = [ Field.show field, [ email ] ] |> decode >>= handle in
   let invalid_email = "email.example.com" in
   let result = handle invalid_email in
-  let expected =
-    Error Pool_common.Message.(Conformist [ field, Invalid field ])
-  in
+  let expected = Error Error.(Conformist [ field, Invalid field ]) in
   let () = check_events expected result in
   let valid_email = "pool@econ.uzh.ch" in
   let result = handle valid_email in
@@ -130,13 +128,13 @@ let check_inactive_user_disable_after _ () =
     DisableAfter.(
       Field.
         [ show field, [ CCInt.to_string nr ]
-        ; (show (TimeUnitOf field), Pool_common.Model.TimeUnit.[ show Days ])
+        ; (show (TimeUnitOf field), Pool_model.Base.TimeUnit.[ show Days ])
         ]
       |> decode
       >>= handle)
   in
   let result = handle (-1) in
-  let expected = Error Pool_common.Message.NegativeAmount in
+  let expected = Error Error.NegativeAmount in
   let () = check_events expected result in
   let valid = 365 in
   let result = handle valid in
@@ -178,13 +176,13 @@ let check_inactive_user_warning _ () =
     Warning.(
       Field.
         [ show field, [ CCInt.to_string nr ]
-        ; (show (TimeUnitOf field), Pool_common.Model.TimeUnit.[ show Days ])
+        ; (show (TimeUnitOf field), Pool_model.Base.TimeUnit.[ show Days ])
         ]
       |> decode
       >>= handle)
   in
   let result = handle (-1) in
-  let expected = Error Pool_common.Message.NegativeAmount in
+  let expected = Error Error.NegativeAmount in
   let () = check_events expected result in
   let valid = 365 in
   let result = handle valid in
@@ -238,7 +236,6 @@ let check_terms_and_conditions _ () =
 
 let login_after_terms_update _ () =
   let open Utils.Lwt_result.Infix in
-  let open Pool_common.Message in
   let%lwt user = Integration_utils.ContactRepo.create () in
   let accepted =
     let contact =
@@ -248,11 +245,11 @@ let login_after_terms_update _ () =
       let%lwt accepted = Contact.has_terms_accepted database_label contact in
       match accepted with
       | true -> Lwt.return_ok contact
-      | false -> Lwt.return_error TermsAndConditionsNotAccepted
+      | false -> Lwt.return_error Error.TermsAndConditionsNotAccepted
     in
-    contact >|- CCFun.const (NotFound Field.Contact) >>= terms_agreed
+    contact >|- CCFun.const (Error.NotFound Field.Contact) >>= terms_agreed
   in
-  let expected = Error TermsAndConditionsNotAccepted in
+  let expected = Error Error.TermsAndConditionsNotAccepted in
   accepted
   ||> fun accepted ->
   Alcotest.(
@@ -346,13 +343,12 @@ let delete_smtp_auth =
     |> Lwt_result.ok
   in
   (* get the smtp auth that was actually saved and compare it *)
-  let^ result = Email.SmtpAuth.find test_db id in
-  let error = Result.get_error result in
+  let^ res = Email.SmtpAuth.find test_db id in
   Alcotest.(
     check
-      Test_utils.error
+      (result Test_utils.smtp_auth Test_utils.error)
       "the auth record was not deleted"
-      error
-      (Pool_common.Message.NotFound Field.Smtp));
+      res
+      (Error (Error.NotFound Field.Smtp)));
   Lwt.return_ok ()
 ;;

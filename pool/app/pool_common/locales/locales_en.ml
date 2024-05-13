@@ -1,4 +1,5 @@
-open Entity_message
+module Ptime = Utils.Ptime
+open Pool_message
 
 let rec field_to_string =
   let open Field in
@@ -7,8 +8,9 @@ let rec field_to_string =
   in
   function
   | Action -> "action"
-  | Actor -> "actor"
+  | Active -> "active"
   | ActiveContactsCount -> "active contacts count"
+  | Actor -> "actor"
   | Admin -> "admin"
   | AdminComment -> "admin comment"
   | AdminInput -> "admin input"
@@ -35,6 +37,7 @@ let rec field_to_string =
   | Chronological -> "chronological"
   | City -> "city"
   | ClosedAt -> "Closed at"
+  | Confirmed -> "Confirmed"
   | ConfirmedAt -> "Confirmed at"
   | Contact -> "contact"
   | ContactCount -> "No. contacts"
@@ -136,6 +139,7 @@ let rec field_to_string =
   | InvitationSubject -> "invitation subject"
   | InvitationsSent -> "invitations sent"
   | InvitationText -> "invitation text"
+  | IsAdmin -> "is admin"
   | Key -> "key"
   | Label -> "label"
   | Language -> "language"
@@ -295,11 +299,13 @@ let rec field_to_string =
   | Translation -> "translation"
   | Tries -> "tries"
   | TriggerProfileUpdateAfter -> "request to check the profile"
+  | UpdatedAt -> "updated at"
   | Url -> "url"
   | User -> "user"
   | Validation -> "validation"
   | Value -> "value"
   | ValueOf field -> combine Value field
+  | VerificationCode -> "verification code"
   | Verified -> "verified"
   | Version -> "version"
   | Virtual -> "virtual"
@@ -308,11 +314,15 @@ let rec field_to_string =
   | Zip -> "zip code"
 ;;
 
-let info_to_string : info -> string = function
+let info_to_string =
+  let open Info in
+  function
   | Info s -> s
 ;;
 
-let success_to_string : success -> string = function
+let success_to_string =
+  let open Success in
+  function
   | AddedToWaitingList -> "You were added to the waiting list."
   | AssignmentCreated -> "You have been signed up successfully."
   | Canceled field ->
@@ -384,14 +394,18 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | VerificationMessageResent -> "The verification message has been resent."
 ;;
 
-let warning_to_string : warning -> string = function
+let warning_to_string =
+  let open Warning in
+  function
   | Warning string -> string
 ;;
 
-let rec error_to_string = function
+let rec error_to_string =
+  let open Error in
+  function
   | AccountTemporarilySuspended ptime ->
     ptime
-    |> Utils.Ptime.formatted_date_time
+    |> Ptime.formatted_date_time
     |> Format.asprintf
          "Too many failed login attempts. This email address is blocked until \
           %s"
@@ -430,6 +444,8 @@ let rec error_to_string = function
     Format.asprintf "%s cannot be deleted." (field_to_string field)
   | CannotBeUpdated field ->
     Format.asprintf "%s cannot be updated." (field_to_string field)
+  | CaqtiError err -> err
+  | Connection err -> [%string "Connection error: %{err}"]
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -450,6 +466,7 @@ let rec error_to_string = function
   | ContactUnconfirmed -> "Participant isn't confirmed!"
   | CustomFieldNoOptions -> "At least one option must exist."
   | CustomFieldTypeChangeNotAllowed -> "Type of field cannot be changed."
+  | DatabaseAddPoolFirst -> "Unknown Pool: Please 'add_pool' first!"
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
   | DirectRegistrationIsDisabled ->
     "You cannot assign yourself to this experiment."
@@ -491,6 +508,8 @@ let rec error_to_string = function
       (CCString.concat ", " suffixes)
   | InvalidJson exn -> Format.asprintf "Invalid Json: %s" exn
   | InvalidOptionSelected -> "Invalid option selected."
+  | InvalidPasswordHashingCount ->
+    "Password hashing count has to be between 4 and 31"
   | InvalidRequest | InvalidHtmxRequest -> "Invalid request."
   | IsMarkedAsDeleted field ->
     field_message
@@ -593,7 +612,7 @@ let rec error_to_string = function
   | SessionRegistrationViaParent -> "Registration via main session."
   | SessionTenantNotFound ->
     "Missing tenant: something on our side went wrong, please try again later \
-     or on multi  occurrences please contact the Administrator."
+     or on multi occurrences please contact the Administrator."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s smaller than %s"
@@ -623,6 +642,7 @@ let rec error_to_string = function
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
   | Uniqueness field ->
     field_message "" (field_to_string field) "must be unique."
+  | Unsupported text -> [%string "'%{text}' is unsupported."]
   | WriteOnlyModel -> "Write only model!"
 ;;
 
@@ -633,7 +653,9 @@ let format_submit submit field =
   field_message "" submit (field_opt_message field)
 ;;
 
-let control_to_string = function
+let control_to_string =
+  let open Control in
+  function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
@@ -642,7 +664,7 @@ let control_to_string = function
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
-  | ChangeSession -> format_submit "change" (Some Entity_message_field.Session)
+  | ChangeSession -> format_submit "change" (Some Field.Session)
   | Choose field -> format_submit "choose" field
   | Close field -> format_submit "close" field
   | Create field -> format_submit "create" field

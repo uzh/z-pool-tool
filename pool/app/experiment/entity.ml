@@ -4,95 +4,93 @@ module Id = struct
   let to_common m = m
 end
 
-module Common = Pool_common
-
 module Title = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.Title
+  let field = Pool_message.Field.Title
   let schema () = schema field ()
 end
 
 module PublicTitle = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.PublicTitle
+  let field = Pool_message.Field.PublicTitle
   let schema () = schema field ()
   let placeholder = "###"
 end
 
 module InternalDescription = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.InternalDescription
+  let field = Pool_message.Field.InternalDescription
   let schema () = schema field ()
 end
 
 module PublicDescription = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.PublicDescription
+  let field = Pool_message.Field.PublicDescription
   let schema () = schema field ()
 end
 
 module CostCenter = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.CostCenter
+  let field = Pool_message.Field.CostCenter
   let schema () = schema field ()
 end
 
 module ContactEmail = struct
   open Pool_user.EmailAddress
 
-  let field = Common.Message.Field.ContactEmail
-  let schema () = Pool_common.Utils.schema_decoder create show field
+  let field = Pool_message.Field.ContactEmail
+  let schema = schema ~field
 end
 
 module DirectRegistrationDisabled = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.DirectRegistrationDisabled
+  let schema = schema Pool_message.Field.DirectRegistrationDisabled
 end
 
 module RegistrationDisabled = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.RegistrationDisabled
+  let schema = schema Pool_message.Field.RegistrationDisabled
 end
 
 module AllowUninvitedSignup = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.AllowUninvitedSignup
+  let schema = schema Pool_message.Field.AllowUninvitedSignup
 end
 
 module ExternalDataRequired = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.ExternalDataRequired
+  let schema = schema Pool_message.Field.ExternalDataRequired
 end
 
 module ShowExternalDataIdLinks = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.ShowExteralDataIdLinks
+  let schema = schema Pool_message.Field.ShowExteralDataIdLinks
 end
 
 module AssignmentWithoutSession = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.AssignmentWithoutSession
+  let schema = schema Pool_message.Field.AssignmentWithoutSession
 end
 
 module SurveyUrl = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
+  open Pool_message
 
   let validation str =
     let open CCResult.Infix in
-    let open Pool_common.Message in
     let open Uri in
-    let invalid_error = Error (Invalid Field.SurveyUrl) in
+    let invalid_error = Error (Error.Invalid Field.SurveyUrl) in
     let trimmed = CCString.trim str in
     let uri = of_string trimmed in
     try
@@ -109,7 +107,7 @@ module SurveyUrl = struct
           values
           |> CCList.head_opt
           |> CCOption.map_or ~default:false (CCString.equal value))
-        |> CCOption.to_result (FieldRequired Field.CallbackUrl)
+        |> CCOption.to_result (Error.FieldRequired Field.CallbackUrl)
       in
       Ok trimmed
     with
@@ -117,15 +115,15 @@ module SurveyUrl = struct
   ;;
 
   let create = validation
-  let field = Common.Message.Field.SurveyUrl
+  let field = Field.SurveyUrl
   let schema () = schema ~validation field ()
 end
 
 module InvitationResetAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = Ok m
-  let schema = schema Common.Message.Field.InvitationResetAt create
+  let schema = schema Pool_message.Field.InvitationResetAt create
   let of_ptime m = m
 end
 
@@ -157,7 +155,7 @@ module OnlineExperiment = struct
 
   let url_params tenant ~experiment_id ~assignment_id =
     [ "assignmentId", Pool_common.Id.value assignment_id
-    ; ( Pool_common.Message.Field.(show CallbackUrl)
+    ; ( Pool_message.Field.(show CallbackUrl)
       , callback_url tenant ~experiment_id ~assignment_id )
     ]
   ;;
@@ -245,8 +243,8 @@ let create
     ; invitation_reset_at
     ; online_experiment
     ; matcher_notification_sent = false
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 
@@ -383,7 +381,7 @@ let show_external_data_id_links_value (m : t) =
 ;;
 
 let boolean_fields =
-  Pool_common.Message.Field.
+  Pool_message.Field.
     [ AllowUninvitedSignup
     ; AssignmentWithoutSession
     ; DirectRegistrationDisabled
@@ -393,7 +391,7 @@ let boolean_fields =
     ]
 ;;
 
-open Pool_common.Message
+open Pool_message
 
 let column_title =
   (Field.Title, "pool_experiments.title") |> Query.Column.create

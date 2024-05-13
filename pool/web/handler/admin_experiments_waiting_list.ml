@@ -1,6 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.admin.experiments_waiting_list"
 let create_layout req = General.create_tenant_layout req
@@ -60,9 +60,7 @@ let detail req =
            Start.compare s1.start s2.start
          in
          match
-           Sihl.Web.Request.query
-             Pool_common.Message.Field.(show Chronological)
-             req
+           Sihl.Web.Request.query Pool_message.Field.(show Chronological) req
          with
          | Some "true" ->
            let open CCList in
@@ -121,7 +119,7 @@ let update req =
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set
-            ~success:[ Pool_common.Message.(Updated Field.WaitingList) ]
+            ~success:[ Pool_message.(Success.Updated Field.WaitingList) ]
         ]
     in
     events |>> handle
@@ -153,12 +151,12 @@ let assign_contact req =
     let* experiment = Experiment.find database_label experiment_id in
     let* waiting_list = Waiting_list.find database_label waiting_list_id in
     let* session =
-      let open Pool_common.Message in
+      let open Pool_message in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       urlencoded
       |> CCList.assoc_opt ~eq:CCString.equal Field.(show Session)
       |> CCFun.flip CCOption.bind CCList.head_opt
-      |> CCOption.to_result NoValue
+      |> CCOption.to_result Error.NoValue
       |> Lwt_result.lift
       >>= fun id -> id |> Session.Id.of_string |> find_open database_label
     in
@@ -198,7 +196,7 @@ let assign_contact req =
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpUtils.Message.set
-            ~success:[ Pool_common.Message.(AssignmentCreated) ]
+            ~success:[ Pool_message.Success.AssignmentCreated ]
         ]
     in
     events |>> handle

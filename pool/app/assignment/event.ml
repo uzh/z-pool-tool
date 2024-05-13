@@ -20,9 +20,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created (assignment, session_id) ->
     let open Utils.Lwt_result.Infix in
     let%lwt () = Repo.insert pool session_id assignment in
-    Entity_guard.Target.to_authorizable
-      ~ctx:(Pool_database.to_ctx pool)
-      assignment
+    Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx pool) assignment
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | MarkedAsDeleted assignment -> assignment.id |> Repo.marked_as_deleted pool

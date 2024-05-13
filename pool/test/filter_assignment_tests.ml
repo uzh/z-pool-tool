@@ -1,4 +1,4 @@
-let ( let@ ) = Result.bind
+let ( let@ ) = CCResult.( >>= )
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
 let test_db = Test_utils.Data.database_label
@@ -85,18 +85,23 @@ let experiment () =
 
 let contact ~prefix () =
   let open Contact in
-  let user_id = Id.create () in
+  let user_id = Contact.Id.create () in
   let* email =
-    let email = Format.asprintf "%s+%s@domain.test" prefix (Id.value user_id) in
+    let email =
+      Format.asprintf "%s+%s@domain.test" prefix (Contact.Id.value user_id)
+    in
     Pool_user.EmailAddress.create email
   in
-  let* password = Pool_user.Password.create_unvalidated "a-password" in
+  let password =
+    Pool_user.Password.Plain.(
+      create "Somepassword1!" |> validate |> Pool_common.Utils.get_or_failwith)
+  in
   let* firstname = Pool_user.Firstname.create "firstname" in
   let* lastname = Pool_user.Lastname.create "lastname" in
   let terms_accepted_at =
-    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> Option.some
+    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> CCOption.some
   in
-  let language = Pool_common.Language.En |> Option.some in
+  let language = Pool_common.Language.En |> CCOption.some in
   let contact_created =
     [ Contact.created
         { user_id
@@ -116,7 +121,8 @@ let contact ~prefix () =
   let* verification_events =
     let open Cqrs_command.User_command in
     let created_email =
-      Email.Created (email, token, user_id) |> Pool_event.email_verification
+      Email.Created (email, token, user_id |> Id.to_user)
+      |> Pool_event.email_verification
     in
     let email = Email.create email contact.user token in
     let@ verify_events = VerifyEmail.handle (Contact contact) email in
@@ -172,7 +178,7 @@ let invitation ~experiment ~contacts =
                 ~subject:"subject"
                 "body"
               |> Email.create_job
-              |> Result.ok)
+              |> CCResult.return)
         ; mailing = None
         })
   in
@@ -240,7 +246,7 @@ let finds_unassigned_contacts =
     CCList.filter
       (fun contact ->
         let open Contact in
-        let open Sihl_user in
+        let open Pool_user in
         contact.user.id = unassigned_contact.user.id
         || contact.user.id = assigned_contact.user.id)
       found_contacts
@@ -319,7 +325,7 @@ let filters_out_assigned_contacts =
     CCList.filter
       (fun contact ->
         let open Contact in
-        let open Sihl_user in
+        let open Pool_user in
         contact.user.id = assigned_contact.user.id)
       found_contacts
   in

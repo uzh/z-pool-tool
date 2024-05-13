@@ -1,18 +1,17 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Id = Pool_common.Id
 
 let src = Logs.Src.create "filter.cqrs"
 
 let default_schema command =
-  Pool_common.Utils.PoolConformist.(
-    make Field.[ Filter.Title.schema () ] command)
+  Pool_conformist.(make Field.[ Filter.Title.schema () ] command)
 ;;
 
 let default_command = CCFun.id
 
 let default_decode data =
   Conformist.decode_and_validate (default_schema default_command) data
-  |> CCResult.map_err Pool_common.Message.to_conformist_error
+  |> CCResult.map_err Pool_message.to_conformist_error
 ;;
 
 let validate_query key_list template_list query =
@@ -20,7 +19,7 @@ let validate_query key_list template_list query =
   let* query = Filter.validate_query key_list template_list query in
   let* query =
     if Filter.contains_template query
-    then Error Pool_common.Message.FilterMustNotContainTemplate
+    then Error Pool_message.Error.FilterMustNotContainTemplate
     else Ok query
   in
   Ok query
@@ -36,7 +35,7 @@ module Create : sig
     -> Filter.t list
     -> Filter.query
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : ?experiment_id:Id.t -> unit -> Guard.ValidationSet.t
 end = struct
@@ -65,7 +64,7 @@ module Update : sig
     -> Filter.t
     -> Filter.query
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Filter.Id.t -> Guard.ValidationSet.t
 end = struct

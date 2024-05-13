@@ -1,65 +1,42 @@
 module Data = struct
-  let database_label = "econ-test" |> Pool_database.Label.of_string
+  let database_label = "econ-test" |> Database.Label.of_string
 end
 
 (* Testable *)
-let event = Alcotest.testable Pool_event.pp Pool_event.equal
+let contact = Contact.(Alcotest.testable pp equal)
+let database_label = Database.Label.(Alcotest.testable pp equal)
+let error = Pool_message.Error.(Alcotest.testable pp equal)
+let event = Pool_event.(Alcotest.testable pp equal)
+let filter = Filter.(Alcotest.testable pp equal)
+let language = Pool_common.Language.(Alcotest.testable pp equal)
+let message_template = Message_template.(Alcotest.testable pp equal)
+let partial_update = Custom_field.PartialUpdate.(Alcotest.testable pp equal)
+let password = Pool_user.Password.(Alcotest.testable pp equal)
+let password_plain = Pool_user.Password.Plain.(Alcotest.testable pp equal)
+let phone_nr = Pool_user.CellPhone.(Alcotest.testable pp equal)
+let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
+let time_window_testable = Time_window.(Alcotest.testable pp equal)
 
-let partial_update =
-  Alcotest.testable
-    Custom_field.PartialUpdate.pp
-    Custom_field.PartialUpdate.equal
+let message_history_crate =
+  Queue.History.(Alcotest.testable pp_create equal_create)
 ;;
-
-let filter = Alcotest.testable Filter.pp Filter.equal
-
-let language =
-  Alcotest.testable Pool_common.Language.pp Pool_common.Language.equal
-;;
-
-let message_template =
-  Alcotest.testable Message_template.pp Message_template.equal
-;;
-
-let tenant_smtp_auth = Alcotest.testable Email.SmtpAuth.pp Email.SmtpAuth.equal
-
-let database_label =
-  Alcotest.testable Pool_database.Label.pp Pool_database.Label.equal
-;;
-
-let error =
-  Alcotest.testable Pool_common.Message.pp_error Pool_common.Message.equal_error
-;;
-
-let contact = Alcotest.testable Contact.pp Contact.equal
-let smtp_auth = Alcotest.testable Email.SmtpAuth.pp Email.SmtpAuth.equal
 
 let check_result ?(msg = "succeeds") =
   let open Alcotest in
   check (result (list event) error) msg
 ;;
 
-let password = Alcotest.testable Pool_user.Password.pp Pool_user.Password.equal
-
-let phone_nr =
-  Alcotest.testable Pool_user.CellPhone.pp Pool_user.CellPhone.equal
-;;
-
-let message_history_crate =
-  let open Queue.History in
-  Alcotest.testable pp_create equal_create
-;;
-
-let time_window_testable = Alcotest.testable Time_window.pp Time_window.equal
-
 (* Helper functions *)
 
-let setup_test () =
+let setup_test
+  ?(log_level = Logs.Info)
+  ?(reporter = Logger.lwt_file_reporter ())
+  ()
+  =
   let open Sihl.Configuration in
-  let file_configuration = read_env_file () in
-  let () = store @@ CCOption.value file_configuration ~default:[] in
-  let () = Logs.set_level (Some Logs.Error) in
-  let () = Logs.set_reporter Sihl.Log.default_reporter in
+  let () = read_env_file () |> CCOption.value ~default:[] |> store in
+  let () = Logs.set_level (Some log_level) in
+  let () = Logs.set_reporter reporter in
   Lwt.return_unit
 ;;
 
@@ -67,6 +44,10 @@ let get_or_failwith res =
   res
   |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
   |> CCResult.get_or_failwith
+;;
+
+let sort_events =
+  CCList.stable_sort Pool_event.(fun a b -> CCString.compare (show a) (show b))
 ;;
 
 let file_to_storage file =
@@ -80,7 +61,7 @@ let file_to_storage file =
       }
   in
   let base64 = Base64.encode_exn file.body in
-  let%lwt _ = Service.Storage.upload_base64 stored_file base64 in
+  let%lwt _ = Storage.upload_base64 Data.database_label stored_file base64 in
   Lwt.return_unit
 ;;
 
@@ -95,73 +76,74 @@ let dummy_to_file (dummy : Seed.Assets.file) =
     ; name
     ; size = filesize
     ; mime_type
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 
 module Model = struct
-  let create_sihl_user
-    ?(id = Pool_common.Id.create ())
-    ?(email =
-      Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string))
-    ?(name = "Doe")
-    ()
-    =
-    let surname = name in
-    Sihl_user.
-      { id = id |> Pool_common.Id.value
-      ; email
-      ; username = None
-      ; name = Some surname
-      ; given_name = Some "Jane"
-      ; password = "somepassword" |> Sihl_user.Hashing.hash |> CCResult.get_exn
-      ; status = Sihl_user.status_of_string "active" |> CCResult.get_exn
-      ; admin = false
-      ; confirmed = true
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
-      }
+  let password =
+    Pool_user.Password.Plain.(
+      create "Somepassword1!" |> validate |> get_or_failwith)
   ;;
 
-  let create_contact ?id ?language ?name ?(with_terms_accepted = true) () =
-    let sihl_user = create_sihl_user ?id ?name () in
-    Contact.
-      { user = sihl_user
-      ; terms_accepted_at =
-          (if with_terms_accepted
-           then Pool_user.TermsAccepted.create_now () |> CCOption.return
-           else None)
-      ; language
-      ; experiment_type_preference = None
-      ; cell_phone = Some ("+41791234567" |> Pool_user.CellPhone.of_string)
-      ; paused = Pool_user.Paused.create false
-      ; disabled = Pool_user.Disabled.create false
-      ; verified = None
-      ; email_verified =
-          ()
-          |> Ptime_clock.now
-          |> Pool_user.EmailVerified.create
-          |> CCOption.return
-      ; num_invitations = NumberOfInvitations.init
-      ; num_assignments = NumberOfAssignments.init
-      ; num_show_ups = NumberOfShowUps.init
-      ; num_no_shows = NumberOfNoShows.init
-      ; num_participations = NumberOfParticipations.init
-      ; firstname_version = Pool_common.Version.create ()
-      ; lastname_version = Pool_common.Version.create ()
-      ; paused_version = Pool_common.Version.create ()
-      ; language_version = Pool_common.Version.create ()
-      ; experiment_type_preference_version = Pool_common.Version.create ()
-      ; import_pending = Pool_user.ImportPending.create false
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
-      }
+  let create_user
+    ?(id = Pool_user.Id.create ())
+    ?(email =
+      Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
+      |> Pool_user.EmailAddress.of_string)
+    ?(lastname = Pool_user.Lastname.of_string "Doe")
+    ()
+    =
+    { Pool_user.id
+    ; email
+    ; lastname
+    ; firstname = Pool_user.Firstname.of_string "Jane"
+    ; status = Pool_user.Status.Active
+    ; admin = Pool_user.IsAdmin.create false
+    ; confirmed = Pool_user.Confirmed.create true
+    }
+  ;;
+
+  let create_contact ?id ?language ?lastname ?(with_terms_accepted = true) () =
+    let user =
+      create_user ?id:(CCOption.map Contact.Id.to_user id) ?lastname ()
+    in
+    { Contact.user
+    ; terms_accepted_at =
+        (if with_terms_accepted
+         then Pool_user.TermsAccepted.create_now () |> CCOption.return
+         else None)
+    ; language
+    ; experiment_type_preference = None
+    ; cell_phone = Some ("+41791234567" |> Pool_user.CellPhone.of_string)
+    ; paused = Pool_user.Paused.create false
+    ; disabled = Pool_user.Disabled.create false
+    ; verified = None
+    ; email_verified =
+        ()
+        |> Ptime_clock.now
+        |> Pool_user.EmailVerified.create
+        |> CCOption.return
+    ; num_invitations = Contact.NumberOfInvitations.init
+    ; num_assignments = Contact.NumberOfAssignments.init
+    ; num_show_ups = Contact.NumberOfShowUps.init
+    ; num_no_shows = Contact.NumberOfNoShows.init
+    ; num_participations = Contact.NumberOfParticipations.init
+    ; firstname_version = Pool_common.Version.create ()
+    ; lastname_version = Pool_common.Version.create ()
+    ; paused_version = Pool_common.Version.create ()
+    ; language_version = Pool_common.Version.create ()
+    ; experiment_type_preference_version = Pool_common.Version.create ()
+    ; import_pending = Pool_user.ImportPending.create false
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    }
   ;;
 
   let create_admin ?id ?email () =
     ()
-    |> create_sihl_user ?id ?email
+    |> create_user ?id ?email
     |> Admin.create
          ~email_verified:(Some (Pool_user.EmailVerified.create_now ()))
     |> Pool_context.admin
@@ -176,8 +158,8 @@ module Model = struct
       ; address = Pool_location.Address.Virtual
       ; status = Pool_location.Status.Active
       ; files = []
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; updated_at = Pool_common.UpdatedAt.create_now ()
       }
   ;;
 
@@ -248,8 +230,8 @@ module Model = struct
     ; contact
     ; experiment
     ; admin_comment = None
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
   ;;
 
@@ -258,8 +240,8 @@ module Model = struct
     ; contact
     ; experiment
     ; admin_comment = None
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
   ;;
 
@@ -484,8 +466,8 @@ module Model = struct
     ; external_data_id
     ; reminder_manually_last_sent_at = None
     ; custom_fields = None
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
   ;;
 
@@ -522,6 +504,7 @@ end
 
 module FilterHelper = struct
   let equal = Filter.Operator.(Equality.Equal |> equality)
+  let contains = Filter.Operator.(ListM.ContainsAll |> list)
 end
 
 module Repo = struct
@@ -562,6 +545,34 @@ module Repo = struct
   ;;
 end
 
-let case fn (_switch : Lwt_switch.t) () : unit Lwt.t =
-  Lwt.map Pool_common.Utils.get_or_failwith (fn ())
+let truncate_tables database_label tables =
+  let open Utils.Lwt_result.Infix in
+  let open Caqti_request.Infix in
+  let query name =
+    [%string "TRUNCATE TABLE %{name}"] |> Caqti_type.(unit ->. unit)
+  in
+  Database.with_disabled_fk_check database_label (fun connection ->
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    CCList.map query tables
+    |> Lwt_list.map_s (CCFun.flip Connection.exec ())
+    ||> CCResult.flatten_l)
+  ||> Utils.flat_unit
+;;
+
+let case
+  ?(preparation : unit -> (unit, Pool_message.Error.t) Lwt_result.t =
+    fun () -> Lwt.return_ok ())
+  ?(cleanup : unit -> (unit, Pool_message.Error.t) Lwt_result.t =
+    fun () -> Lwt.return_ok ())
+  fn
+  (_switch : Lwt_switch.t)
+  ()
+  : unit Lwt.t
+  =
+  let open Utils.Lwt_result.Infix in
+  Lwt.map Pool_common.Utils.get_or_failwith
+  @@
+  let* () = preparation () in
+  let* () = fn () in
+  cleanup ()
 ;;

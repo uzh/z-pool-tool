@@ -21,7 +21,7 @@ let label_of_string = function
   | "or" -> Ok Or
   | "not" -> Ok Not
   | "pred" -> Ok Pred
-  | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
+  | _ -> Error Pool_message.(Error.Invalid Field.Predicate)
 ;;
 
 let default_filter_label = And

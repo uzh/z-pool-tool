@@ -1,6 +1,6 @@
 open Tyxml.Html
 module Input = Component.Input
-module Message = Pool_common.Message
+module Message = Pool_message
 
 let form
   Pool_context.{ language; csrf; query_language; _ }
@@ -44,7 +44,7 @@ let form
                 [ Input.submit_element
                     ~classnames:[ "push" ]
                     language
-                    Message.(Save None)
+                    Message.(Control.Save None)
                     ~submit_type:`Primary
                     ()
                 ]

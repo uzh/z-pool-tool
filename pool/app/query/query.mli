@@ -4,21 +4,21 @@ module Column : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val field : t -> Pool_common.Message.Field.t
-  val create : Pool_common.Message.Field.t * string -> t
-  val create_list : (Pool_common.Message.Field.t * string) list -> t list
+  val field : t -> Pool_message.Field.t
+  val create : Pool_message.Field.t * string -> t
+  val create_list : (Pool_message.Field.t * string) list -> t list
 end
 
 module Pagination : sig
-  module Limit : Pool_common.Model.IntegerSig
+  module Limit : Pool_model.Base.IntegerSig
 
   module Page : sig
-    include Pool_common.Model.IntegerSig
+    include Pool_model.Base.IntegerSig
 
     val default : t
   end
 
-  module PageCount : Pool_common.Model.IntegerSig
+  module PageCount : Pool_model.Base.IntegerSig
 
   type t =
     { limit : Limit.t
@@ -26,11 +26,11 @@ module Pagination : sig
     ; page_count : PageCount.t
     }
 
-  val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
+  val to_query_parts : t -> (Pool_message.Field.t * string) list
 end
 
 module Search : sig
-  module Query : Pool_common.Model.StringSig
+  module Query : Pool_model.Base.StringSig
 
   type t =
     { query : Query.t
@@ -38,7 +38,7 @@ module Search : sig
     }
 
   val query_string : t -> string
-  val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
+  val to_query_parts : t -> (Pool_message.Field.t * string) list
 end
 
 module Sort : sig
@@ -52,14 +52,11 @@ module Sort : sig
     val show : t -> string
     val to_human : Pool_common.Language.t -> t -> string
     val read : string -> t
-    val create : string -> (t, Pool_common.Message.error) result
+    val create : string -> (t, Pool_message.Error.t) result
     val all : t list
     val default : t
     val flip : t -> t
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   type t =
@@ -67,7 +64,7 @@ module Sort : sig
     ; order : SortOrder.t
     }
 
-  val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
+  val to_query_parts : t -> (Pool_message.Field.t * string) list
 end
 
 module Filter : sig
@@ -137,7 +134,7 @@ type t =
 val show : t -> string
 
 val to_uri_query
-  :  ?additional_params:(Pool_common.Message.Field.t * string) list
+  :  ?additional_params:(Pool_message.Field.t * string) list
   -> t
   -> (string * string list) list
 
@@ -163,16 +160,16 @@ val from_request
 val empty : unit -> t
 
 val append_query_to_sql
-  :  Utils.Database.Dynparam.t
+  :  Database.Dynparam.t
   -> string option
   -> t option
-  -> Utils.Database.Dynparam.t * string * string option
+  -> Database.Dynparam.t * string * string option
 
 val collect_and_count
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t option
   -> select:(?count:bool -> string -> string)
-  -> ?where:string * Utils.Database.Dynparam.t
+  -> ?where:string * Database.Dynparam.t
   -> 'a Caqti_type.t
   -> ('a list * t) Lwt.t
 

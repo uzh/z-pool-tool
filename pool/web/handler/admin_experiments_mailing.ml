@@ -1,6 +1,6 @@
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.experiments_mailing"
 let create_layout req = General.create_tenant_layout req
@@ -118,7 +118,7 @@ let create req =
       in
       Http_utils.redirect_to_with_actions
         (experiment_path ~suffix:"mailings" experiment_id)
-        [ Message.set ~success:[ Pool_common.Message.(Created Field.Mailing) ] ]
+        [ Message.set ~success:[ Success.Created Field.Mailing ] ]
     in
     events |> Lwt_result.lift |>> handle
   in
@@ -137,7 +137,7 @@ let detail edit req =
          >== fun (m, count) ->
          if edit
             && Ptime_clock.now () > Mailing.StartAt.value m.Mailing.start_at
-         then Error Pool_common.Message.AlreadyStarted
+         then Error Error.AlreadyStarted
          else Ok (m, count)
        in
        let* experiment = Experiment.find database_label experiment_id in
@@ -199,7 +199,7 @@ let update req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.(Updated Field.Mailing) ] ]
+        [ Message.set ~success:[ Success.Updated Field.Mailing ] ]
     in
     events |> Lwt_result.lift |>> handle
   in
@@ -230,7 +230,7 @@ let search_info req =
       >== fun string ->
       string
       |> CCInt.of_string
-      |> CCOption.to_result Pool_common.Message.(Invalid field)
+      |> CCOption.to_result Pool_message.Error.(Invalid field)
     in
     let show_limit_warning =
       Mailing.(mailing.limit |> Limit.value) > matching_filter_count
@@ -258,7 +258,7 @@ let add_condition req =
     let open Mailing.Distribution in
     let open CCResult in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let invalid field = Pool_common.Message.(Invalid field) in
+    let invalid field = Error.Invalid field in
     let find_in_urlencoded read field =
       urlencoded
       |> CCList.assoc_opt ~eq:CCString.equal Field.(show field)
@@ -297,23 +297,14 @@ let disabler command success_handler req =
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       redirect_path
-      [ Message.set
-          ~success:[ Pool_common.Message.(success_handler Field.Mailing) ]
-      ]
+      [ Message.set ~success:[ success_handler Field.Mailing ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let stop =
-  disabler Cqrs_command.Mailing_command.Stop.handle Pool_common.Message.stopped
-;;
-
-let delete =
-  disabler
-    Cqrs_command.Mailing_command.Delete.handle
-    Pool_common.Message.deleted
-;;
+let stop = disabler Cqrs_command.Mailing_command.Stop.handle Success.stopped
+let delete = disabler Cqrs_command.Mailing_command.Delete.handle Success.deleted
 
 module Access : sig
   include module type of Helpers.Access

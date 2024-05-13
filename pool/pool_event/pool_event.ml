@@ -6,7 +6,7 @@ type t =
   | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
   | CustomField of Custom_field.event
-  | Database of Database.event
+  | Database of Pool_database.event
   | Email of Email.event
   | EmailVerification of Email.verification_event
   | Experiment of Experiment.event
@@ -26,6 +26,7 @@ type t =
   | TextMessage of Text_message.event
   | TimeWindow of Time_window.event
   | UserImport of User_import.event
+  | User of Pool_user.event
   | WaitingList of Waiting_list.event
 [@@deriving eq, show, variants]
 
@@ -54,19 +55,21 @@ let tags events = Tags events
 let text_message events = TextMessage events
 let time_window events = TimeWindow events
 let user_import events = UserImport events
+let user events = User events
 let waiting_list events = WaitingList events
 
-let handle_event ?(tags = Logs.Tag.empty) pool event =
-  let tags = tags |> Pool_database.Logger.Tags.add pool in
-  match event with
+let handle_event ?(tags = Logs.Tag.empty) pool =
+  let info model pp event =
+    let tags = tags |> Database.Logger.Tags.add pool in
+    let src = Logs.Src.create [%string "%{model}.events"] in
+    Logs.info ~src (fun m -> m ~tags "Handle event %a" pp event)
+  in
+  function
   | Admin event ->
-    let src = Logs.Src.create "admin.events" in
-    Logs.info ~src (fun m -> m "Handle event %s" (Admin.show_event event) ~tags);
+    info "admin" Admin.pp_event event;
     Admin.handle_event ~tags pool event
   | Assignment event ->
-    let src = Logs.Src.create "assignment.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Assignment.show_event event) ~tags);
+    info "assignment" Assignment.pp_event event;
     Assignment.handle_event pool event
   | AssignmentJob event ->
     let src = Logs.Src.create "assignment.events" in
@@ -74,103 +77,65 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
       m "Handle event %s" (Assignment_job.show_event event) ~tags);
     Assignment_job.handle_event pool event
   | Contact event ->
-    let src = Logs.Src.create "contact.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Contact.show_event event) ~tags);
+    info "contact" Contact.pp_event event;
     Contact.handle_event pool event
   | CustomField event ->
-    let src = Logs.Src.create "custom_field.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Custom_field.show_event event) ~tags);
+    info "custom_field" Custom_field.pp_event event;
     Custom_field.handle_event pool event
   | Database event ->
-    let src = Logs.Src.create "database.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Database.show_event event) ~tags);
-    Database.handle_event pool event
+    info "database" Pool_database.pp_event event;
+    Pool_database.handle_event pool event
   | Email event ->
-    let src = Logs.Src.create "email.events" in
-    Logs.info ~src (fun m -> m "Handle event %s" (Email.show_event event) ~tags);
+    info "email" Email.pp_event event;
     Email.handle_event pool event
   | EmailVerification event ->
-    let src = Logs.Src.create "email_verification.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Email.verification_event_name event) ~tags);
+    info "email_verification" Email.pp_verification_event event;
     Email.handle_verification_event pool event
   | Experiment event ->
-    let src = Logs.Src.create "experiment.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Experiment.show_event event) ~tags);
+    info "experiment" Experiment.pp_event event;
     Experiment.handle_event pool event
   | Filter event ->
-    let src = Logs.Src.create "filter.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Filter.show_event event) ~tags);
+    info "Filter" Filter.pp_event event;
     Filter.handle_event pool event
   | Guard event ->
-    let src = Logs.Src.create "guard.events" in
-    Logs.info ~src (fun m -> m "Handle event %s" (Guard.show_event event) ~tags);
+    info "guard" Guard.pp_event event;
     Guard.handle_event pool event
   | I18n event ->
-    let src = Logs.Src.create "i18n.events" in
-    Logs.info ~src (fun m -> m "Handle event %s" (I18n.show_event event) ~tags);
+    info "i18n" I18n.pp_event event;
     I18n.handle_event pool event
   | Invitation event ->
-    let src = Logs.Src.create "invitation.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Invitation.show_event event) ~tags);
+    info "invitation" Invitation.pp_event event;
     Invitation.handle_event pool event
   | Mailing event ->
-    let src = Logs.Src.create "mailing.events" in
-    Logs.info ~src (fun m ->
-      (* TODO [josef] use event name *)
-      m "Handle event %s" (Mailing.show_event event) ~tags);
+    info "mailing" Mailing.pp_event event;
     Mailing.handle_event pool event
   | MessageTemplate event ->
-    let src = Logs.Src.create "mailing.events" in
-    Logs.info ~src (fun m ->
-      (* TODO [josef] use event name *)
-      m "Handle event %s" (Message_template.show_event event) ~tags);
+    info "message_template" Message_template.pp_event event;
     Message_template.handle_event pool event
   | OrganisationalUnit event ->
-    let src = Logs.Src.create "organisational_unit.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Organisational_unit.show_event event) ~tags);
+    info "organisational_unit" Organisational_unit.pp_event event;
     Organisational_unit.handle_event pool event
   | PoolLocation event ->
-    let src = Logs.Src.create "pool_location.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Pool_location.show_event event) ~tags);
+    info "pool_location" Pool_location.pp_event event;
     Pool_location.handle_event pool event
   | PoolTenant event ->
-    let src = Logs.Src.create "pool_tenant.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Pool_tenant.show_event event) ~tags);
+    info "pool_tenant" Pool_tenant.pp_event event;
     Pool_tenant.handle_event pool event
   | Session event ->
-    let src = Logs.Src.create "session.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Session.show_event event) ~tags);
+    info "session" Session.pp_event event;
     Session.handle_event pool event
   | Settings event ->
-    let src = Logs.Src.create "settings.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Settings.show_event event) ~tags);
+    info "settings" Settings.pp_event event;
     Settings.handle_event pool event
   | SystemEvent event ->
-    let src = Logs.Src.create "system_event.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (System_event.show_event event) ~tags);
+    info "system_event" System_event.pp_event event;
     (* Not passing pool, so the event can be handled with tenant events *)
     System_event.handle_event event
   | Tags event ->
-    let src = Logs.Src.create "tags.events" in
-    Logs.info ~src (fun m -> m "Handle event %s" (Tags.show_event event) ~tags);
+    info "tags" Tags.pp_event event;
     Tags.handle_event pool event
   | TextMessage event ->
-    let src = Logs.Src.create "text_message.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Text_message.show_event event) ~tags);
+    info "text_message" Text_message.pp_event event;
     Text_message.handle_event pool event
   | TimeWindow event ->
     let src = Logs.Src.create "time_window.events" in
@@ -178,14 +143,13 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
       m "Handle event %s" (Time_window.show_event event) ~tags);
     Time_window.handle_event pool event
   | UserImport event ->
-    let src = Logs.Src.create "user_import.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (User_import.show_event event) ~tags);
+    info "user_import" User_import.pp_event event;
     User_import.handle_event pool event
+  | User event ->
+    info "user" Pool_user.pp_event event;
+    Pool_user.handle_event pool event
   | WaitingList event ->
-    let src = Logs.Src.create "waiting_list.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Waiting_list.show_event event) ~tags);
+    info "waiting_list" Waiting_list.pp_event event;
     Waiting_list.handle_event pool event
 ;;
 

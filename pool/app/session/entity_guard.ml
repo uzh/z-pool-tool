@@ -10,7 +10,7 @@ module Target = struct
       (fun id ->
         Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
       id
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

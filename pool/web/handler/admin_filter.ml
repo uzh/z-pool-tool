@@ -1,7 +1,7 @@
 open CCFun
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 open HttpUtils.Filter
 
 let src = Logs.Src.create "handler.admin.filter"
@@ -33,7 +33,7 @@ let find_identifier urlencoded =
   let open CCList in
   str
   |> map CCInt.of_string
-  |> map (CCOption.to_result Pool_common.Message.(Invalid Field.Id))
+  |> map (CCOption.to_result (Error.Invalid Field.Id))
   |> all_ok
 ;;
 
@@ -153,7 +153,7 @@ let write action req =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
     in
     let success () =
-      let open Pool_common.Message in
+      let open Success in
       let field = Field.Filter in
       let redirect path msg =
         HttpUtils.Htmx.htmx_redirect
