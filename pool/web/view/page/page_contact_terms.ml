@@ -2,11 +2,7 @@ open Tyxml.Html
 open Component.Input
 open Pool_message
 
-let terms
-  ?notification
-  user_id
-  terms
-  Pool_context.{ language; query_language; csrf; _ }
+let terms ?notification terms Pool_context.{ language; query_language; csrf; _ }
   =
   let terms = terms |> I18n.content_to_string |> Unsafe.data in
   let open Pool_common in
@@ -20,10 +16,7 @@ let terms
         [ p [ txt (Utils.text_to_string language notification) ] ]
     | None -> txt ""
   in
-  let submit_url =
-    Format.asprintf "/terms-accepted/%s" (Pool_user.Id.show user_id)
-    |> externalize
-  in
+  let submit_url = "/terms-accepted" |> externalize in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
