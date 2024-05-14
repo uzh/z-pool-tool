@@ -298,7 +298,7 @@ module Sql = struct
     |> Lwt_result.lift
   ;;
 
-  let all_answered_request required =
+  let all_answered_request ~required_only =
     let open Caqti_request.Infix in
     let base =
       Format.asprintf
@@ -310,11 +310,12 @@ module Sql = struct
       AND pool_custom_fields.prompt_on_registration = 0
       AND pool_custom_fields.field_type != $3
       AND pool_custom_field_answers.value IS NULL
+      AND pool_custom_field_answers.admin_input_only = 0
       |sql}
         answers_left_join
         (base_filter_conditions false)
     in
-    (match required with
+    (match required_only with
      | false -> base
      | true -> Format.asprintf "%s AND pool_custom_fields.required = 1" base)
     |> Caqti_type.(
@@ -322,11 +323,11 @@ module Sql = struct
          ->! int)
   ;;
 
-  let all_answered required pool contact_id =
+  let all_answered ~required_only pool contact_id =
     let open Utils.Lwt_result.Infix in
     Database.find
       pool
-      (all_answered_request required)
+      (all_answered_request ~required_only)
       Entity.(contact_id, Model.Contact, FieldType.Boolean)
     ||> CCInt.equal 0
   ;;
@@ -368,6 +369,6 @@ let find_unanswered_ungrouped_required_by_contact =
 
 let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
-let all_required_answered = Sql.all_answered true
-let all_answered = Sql.all_answered false
+let all_required_answered = Sql.all_answered ~required_only:true
+let all_answered = Sql.all_answered ~required_only:false
 let all_prompted_on_registration = Sql.all_prompted_on_registration
