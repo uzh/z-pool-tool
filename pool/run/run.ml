@@ -18,6 +18,7 @@ let worker_services =
   ; System_event.Service.register `Worker ()
   ; User_import.Service.register ()
   ; Reminder.Service.register ()
+  ; Assignment_job.register ()
   ]
 ;;
 
@@ -33,7 +34,6 @@ let services =
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register `Server ()
   ; System_event.Service.ConnectionWatcher.register ()
-  ; Assignment_job.register ()
   ]
 ;;
 
