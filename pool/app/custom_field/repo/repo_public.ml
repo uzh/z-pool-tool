@@ -309,8 +309,8 @@ module Sql = struct
       %s
       AND pool_custom_fields.prompt_on_registration = 0
       AND pool_custom_fields.field_type != $3
+      AND pool_custom_fields.admin_input_only = 0
       AND pool_custom_field_answers.value IS NULL
-      AND pool_custom_field_answers.admin_input_only = 0
       |sql}
         answers_left_join
         (base_filter_conditions false)
