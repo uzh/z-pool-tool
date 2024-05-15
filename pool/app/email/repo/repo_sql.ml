@@ -20,12 +20,9 @@ let find_request_sql : type a. a carrier -> string -> string =
       user_users.email,
       user_users.name,
       user_users.given_name,
-      user_users.password,
       user_users.status,
       user_users.admin,
-      user_users.confirmed,
-      user_users.created_at,
-      user_users.updated_at
+      user_users.confirmed
     |sql}
   in
   let email_unverified = "pool_email_verifications.token" in
