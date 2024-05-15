@@ -4,6 +4,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.7.2](https://github.com/uzh/z-pool-tool/tree/0.7.2) - 2024-05-15
+
+### Added
+
+- sessionless experiments with callback for participation (used for online experiments)
+- location link to location overview text element
+
+### Changed
+
+- allow tenant databases to be unreachable and show info page
+- increase minimum of interval for service status
+
+### Fixed
+
+- UI navigation elements for invitations
+- continously check filter service registration
+- login process with unanswered custom fields
+
 ## [0.7.1](https://github.com/uzh/z-pool-tool/tree/0.7.1) - 2024-04-30
 
 ### Fixed

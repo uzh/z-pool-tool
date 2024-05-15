@@ -98,7 +98,7 @@ let is_ok ({ scheduled_time; status; last_run; _ } : public) =
     | At _, Some _ -> true
     | Every interval, Some last_run ->
       let minimum_interval =
-        let default = 5 in
+        let default = 60 in
         CCOption.(
           Ptime.Span.to_int_s interval
           >|= CCInt.(max default)
