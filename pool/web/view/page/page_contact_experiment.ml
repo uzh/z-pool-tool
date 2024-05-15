@@ -134,7 +134,7 @@ let index
     |> CCList.map experiment_item
     |> list_html
          ExperimentOnlineListPublicTitle
-         ~empty_msg:ExperimentListEmpty
+         ~empty_msg:ExperimentOnlineListEmpty
          [ "striped" ]
   in
   let past_experiments_html =
