@@ -1,6 +1,9 @@
-module Logs = Logger.Logs
 module Root = Root
 module Tenant = Tenant
+
+let src = Logs.Src.create "database"
+
+module Logs = (val Logs.src_log src : Logs.LOG)
 
 type event = Migrated of Database.t [@@deriving eq, show]
 
