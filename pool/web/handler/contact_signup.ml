@@ -231,37 +231,29 @@ let terms req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
-    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let%lwt terms =
-         I18n.find_by_key database_label I18n.Key.TermsAndConditions language
-       in
-       let notification =
-         req
-         |> Sihl.Web.Request.query "redirected"
-         |> CCOption.map
-              (CCFun.const Pool_common.I18n.TermsAndConditionsUpdated)
-       in
-       Page.Contact.terms
-         ?notification
-         Contact.(contact |> id |> Id.to_user)
-         terms
-         context
-       |> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+    @@
+    let%lwt terms =
+      I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+    in
+    let notification =
+      req
+      |> Sihl.Web.Request.query "redirected"
+      |> CCOption.map (CCFun.const Pool_common.I18n.TermsAndConditionsUpdated)
+    in
+    Page.Contact.terms ?notification terms context
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let terms_accept req =
-  let result { Pool_context.database_label; query_language; _ } =
+  let result ({ Pool_context.database_label; query_language; _ } as context) =
     Utils.Lwt_result.map_error (fun msg -> msg, "/login")
     @@
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
-    let id =
-      Sihl.Web.Router.param req Field.(Id |> show) |> Contact.Id.of_string
-    in
-    let* contact = Contact.find database_label id in
+    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let* events =
       Command.AcceptTermsAndConditions.handle ~tags contact |> Lwt_result.lift
     in

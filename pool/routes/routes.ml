@@ -206,7 +206,7 @@ module Contact = struct
             ]
           [ choose
               [ get "/termsandconditions" SignUp.terms
-              ; post "/terms-accepted/:id" SignUp.terms_accept
+              ; post "/terms-accepted" SignUp.terms_accept
               ; choose
                   ~middlewares:
                     [ CustomMiddleware.Contact.confirmed_and_terms_agreed () ]

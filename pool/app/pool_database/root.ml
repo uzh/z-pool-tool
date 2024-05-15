@@ -32,11 +32,9 @@ let steps =
 ;;
 
 let start () =
-  let label = Database.root in
-  Logger.log_migration label;
-  let%lwt () =
-    Database.Migration.check_migrations_status label ~migrations:(steps ()) ()
-  in
+  let open Database in
+  let migrations = steps () in
+  let%lwt () = Migration.check_migrations_status root ~migrations () in
   Lwt.return_unit
 ;;
 

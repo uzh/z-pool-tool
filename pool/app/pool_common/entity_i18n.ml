@@ -24,6 +24,7 @@ type t =
   | ExperimentHistory
   | ExperimentListEmpty
   | ExperimentListPublicTitle
+  | ExperimentOnlineListEmpty
   | ExperimentOnlineListPublicTitle
   | ExperimentListTitle
   | ExperimentMessagingSubtitle
