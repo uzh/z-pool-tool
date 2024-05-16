@@ -77,16 +77,23 @@ let experiment_has_bookable_spots
   { Experiment.id; online_experiment; _ }
   =
   let open Utils.Lwt_result.Infix in
+  let open Session in
   match CCOption.is_some online_experiment with
   | false ->
-    let open Session in
     find_all_for_experiment database_label id
     ||> CCList.filter (fun session ->
       CCOption.is_none session.follow_up_to && not (is_fully_booked session))
     ||> CCList.is_empty
     ||> not
   | true ->
-    Time_window.find_current_by_experiment database_label id ||> CCResult.is_ok
+    Time_window.find_current_by_experiment database_label id
+    ||> (function
+     | Error _ -> false
+     | Ok { Time_window.max_participants; assignment_count; _ } ->
+       max_participants
+       |> CCOption.map_or ~default:true (fun max_participants ->
+         ParticipantAmount.value max_participants
+         > AssignmentCount.value assignment_count))
 ;;
 
 let sort_contacts contacts =
