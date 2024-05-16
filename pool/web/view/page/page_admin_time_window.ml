@@ -208,7 +208,7 @@ let data_table
     ; `column column_no_assignments
     ; `column column_noshow_count
     ; `column column_participation_count
-    ; `custom (txt "Min")
+    ; `custom (txt "Max")
     ; `custom create_session
     ]
   in
