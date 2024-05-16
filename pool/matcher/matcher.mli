@@ -8,6 +8,11 @@ val find_contacts_by_mailing
 
 val sort_contacts : Contact.t list -> Contact.t list
 
+val experiment_has_bookable_spots
+  :  Database.Label.t
+  -> Experiment.t
+  -> bool Lwt.t
+
 val events_of_mailings
   :  (Database.Label.t * (Mailing.t * int) list) list
   -> (Database.Label.t, Pool_event.t list) CCPair.t list Lwt.t
