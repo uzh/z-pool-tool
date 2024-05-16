@@ -67,9 +67,7 @@ let new_form req =
     Utils.Lwt_result.map_error (fun err -> err, experiment_path id)
     @@ let* experiment = Experiment.find database_label id in
        let%lwt is_bookable =
-         Session.has_bookable_spots_for_experiments
-           database_label
-           experiment.Experiment.id
+         Matcher.experiment_has_bookable_spots database_label experiment
        in
        let* matching_filter_count =
          matching_filter_count database_label experiment

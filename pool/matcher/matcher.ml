@@ -72,6 +72,30 @@ let for_interval interval rate =
   CCFloat.(rate / 3600. * (interval |> Ptime.Span.to_float_s))
 ;;
 
+let experiment_has_bookable_spots
+  database_label
+  { Experiment.id; online_experiment; _ }
+  =
+  let open Utils.Lwt_result.Infix in
+  let open Session in
+  match CCOption.is_some online_experiment with
+  | false ->
+    find_all_for_experiment database_label id
+    ||> CCList.filter (fun session ->
+      CCOption.is_none session.follow_up_to && not (is_fully_booked session))
+    ||> CCList.is_empty
+    ||> not
+  | true ->
+    Time_window.find_current_by_experiment database_label id
+    ||> (function
+     | Error _ -> false
+     | Ok { Time_window.max_participants; participant_count; _ } ->
+       max_participants
+       |> CCOption.map_or ~default:true (fun max_participants ->
+         ParticipantAmount.value max_participants
+         > ParticipantCount.value participant_count))
+;;
+
 let sort_contacts contacts =
   match Sihl.Configuration.is_test () with
   | false -> contacts
@@ -259,9 +283,7 @@ let create_invitation_events interval pools =
                  let find_experiment { Mailing.id; _ } =
                    Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
                  in
-                 let has_spots { Experiment.id; _ } =
-                   Session.has_bookable_spots_for_experiments pool id
-                 in
+                 let has_spots = experiment_has_bookable_spots pool in
                  let validate = function
                    | true -> Ok status
                    | false -> Error Pool_message.Error.SessionFullyBooked

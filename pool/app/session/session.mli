@@ -383,11 +383,6 @@ val to_email_text : Pool_common.Language.t -> t -> string
 val follow_up_sessions_to_email_list : t list -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
 
-val has_bookable_spots_for_experiments
-  :  Database.Label.t
-  -> Experiment.Id.t
-  -> bool Lwt.t
-
 val find_all_to_swap_by_experiment
   :  Database.Label.t
   -> Experiment.Id.t

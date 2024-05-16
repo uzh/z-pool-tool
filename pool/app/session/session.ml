@@ -35,16 +35,6 @@ let query_grouped_by_experiment = Repo.Sql.query_grouped_by_experiment
 let query_by_experiment = Repo.Sql.query_by_experiment
 let find_sessions_to_update_matcher = Repo.Sql.find_sessions_to_update_matcher
 
-let has_bookable_spots_for_experiments tenant experiment =
-  let open Utils.Lwt_result.Infix in
-  find_all_for_experiment tenant experiment
-  ||> CCList.filter (fun session ->
-    CCOption.is_none session.Entity.follow_up_to
-    && not (Entity.is_fully_booked session))
-  ||> CCList.is_empty
-  ||> not
-;;
-
 let find_all_to_swap_by_experiment database_label experiment_id =
   let open Utils.Lwt_result.Infix in
   find_all_for_experiment database_label experiment_id
