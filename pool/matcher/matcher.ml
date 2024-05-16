@@ -89,11 +89,11 @@ let experiment_has_bookable_spots
     Time_window.find_current_by_experiment database_label id
     ||> (function
      | Error _ -> false
-     | Ok { Time_window.max_participants; assignment_count; _ } ->
+     | Ok { Time_window.max_participants; participant_count; _ } ->
        max_participants
        |> CCOption.map_or ~default:true (fun max_participants ->
          ParticipantAmount.value max_participants
-         > AssignmentCount.value assignment_count))
+         > ParticipantCount.value participant_count))
 ;;
 
 let sort_contacts contacts =
