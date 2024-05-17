@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.7.4](https://github.com/uzh/z-pool-tool/tree/0.7.4) - 2024-05-16
+
+### Fixed
+
+- matcher does not consider online experiments to be fully booked
+
 ## [0.7.3](https://github.com/uzh/z-pool-tool/tree/0.7.3) - 2024-05-15
 
 ### Fixed
