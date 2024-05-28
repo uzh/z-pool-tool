@@ -21,7 +21,7 @@ module RepoEntity = struct
   module BlockedUntil = struct
     include BlockedUntil
 
-    let t = make_caqti_type Caqti_type.ptime create value
+    let t = Caqti_type.ptime
   end
 
   let t =

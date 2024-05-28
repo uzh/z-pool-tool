@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Fixed
+
+- login with previously failed login attempt
+
 ## [0.7.4](https://github.com/uzh/z-pool-tool/tree/0.7.4) - 2024-05-16
 
 ### Fixed
