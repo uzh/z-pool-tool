@@ -89,7 +89,6 @@ type t =
   | Duration [@name "duration"] [@printer go "duration"]
   | Email [@name "email"] [@printer go "email"]
   | EmailAddress [@name "email_address"] [@printer go "email_address"]
-  [@printer go "default_language"]
   | EmailAddressUnverified [@name "email_address_unverified"]
   [@printer go "email_address_unverified"]
   | EmailAddressVerified [@name "email_address_verified"]
