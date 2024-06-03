@@ -234,6 +234,7 @@ type hint =
   | MessageTemplateSessionReminder
   | MessageTemplateSessionReschedule
   | MessageTemplateSignupVerification
+  | MessageTemplateTextTemplates
   | MessageTemplateUserImport
   | MessageTemplateWaitingListConfirmation
   | MissingMessageTemplates
