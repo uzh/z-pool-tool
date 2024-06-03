@@ -181,16 +181,11 @@ let create_survey_url () =
   let callbackUrl = Format.asprintf "{%s}" Field.(show CallbackUrl) in
   let ok =
     [ [%string {sql|https://www.domain.com/foo?callback=%{callbackUrl}|sql}]
+    ; [%string {sql|https://www.domain.com?callbackUrl=%{callbackUrl}|sql}]
     ; [%string
         {sql|https://www.domain.com/foo?contactId=123123&%callback=%{callbackUrl}|sql}]
-    ; [%string {sql|https://www.domain.com?callback=%{callbackUrl}|sql}]
-    ; [%string {sql|https://www.domain.com?callbackUrl=%{callbackUrl}|sql}]
-    ]
-  in
-  let missing_callback =
-    [ "https://www.domain.com"
-    ; "https://www.domain.com/foo?contactId=123123"
-    ; "http://www.domain.com&callback=%{callbackUrl}"
+    ; [%string
+        {sql|https://www.domain.com?assignmentId={assignmentId}&experimentId={experimentId}&callbackUrl=%{callbackUrl}|sql}]
     ]
   in
   let invalid = [ "www.domain.com"; ""; "/experiment/123123" ] in
@@ -203,10 +198,6 @@ let create_survey_url () =
     |> CCList.iter (fun url ->
       let expected = Ok (SurveyUrl.of_string url) in
       run_test expected url)
-  in
-  let () =
-    missing_callback
-    |> CCList.iter (run_test (Error (Error.FieldRequired Field.CallbackUrl)))
   in
   let () =
     invalid |> CCList.iter (run_test (Error (Error.Invalid Field.SurveyUrl)))

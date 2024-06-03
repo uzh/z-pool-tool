@@ -99,16 +99,6 @@ module SurveyUrl = struct
         | Some ("http" | "https") -> Ok ()
         | _ -> invalid_error
       in
-      let* (_ : string * string list) =
-        let value = Format.asprintf "{%s}" Field.(show CallbackUrl) in
-        uri
-        |> query
-        |> CCList.find_opt (fun (_, values) ->
-          values
-          |> CCList.head_opt
-          |> CCOption.map_or ~default:false (CCString.equal value))
-        |> CCOption.to_result (Error.FieldRequired Field.CallbackUrl)
-      in
       Ok trimmed
     with
     | _ -> invalid_error
