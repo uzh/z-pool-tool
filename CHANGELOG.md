@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.7.5](https://github.com/uzh/z-pool-tool/tree/0.7.5) - 2024-06-03
+
+### Added
+
+- additional hints for text placeholders and its example values
+
+### Changed
+
+- `callbackUrl` for online experiments is now optional
+
 ### Fixed
 
 - login with previously failed login attempt
