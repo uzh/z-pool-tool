@@ -154,7 +154,9 @@ module OnlineExperiment = struct
   ;;
 
   let url_params tenant ~experiment_id ~assignment_id =
-    [ "assignmentId", Pool_common.Id.value assignment_id
+    let open Pool_common in
+    [ "assignmentId", Id.value assignment_id
+    ; "experimentId", Id.value experiment_id
     ; ( Pool_message.Field.(show CallbackUrl)
       , callback_url tenant ~experiment_id ~assignment_id )
     ]
