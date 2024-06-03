@@ -31,6 +31,10 @@ let message_template_hints =
 
 let build_help ?(hints = []) language help =
   let open Pool_common in
+  let field_to_string field =
+    Utils.field_to_string_capitalized language field |> txt
+  in
+  let hint_to_html hint = Unsafe.data (Utils.hint_to_string language hint) in
   let title =
     Utils.text_to_string language I18n.TextTemplates
     |> CCString.capitalize_ascii
@@ -56,10 +60,7 @@ let build_help ?(hints = []) language help =
         let cell html = td [ div ~a:[ a_class [ "help" ] ] html ] in
         hints
         |> CCList.map (fun (label, hint) ->
-          tr
-            [ cell [ txt label ]
-            ; cell [ p [ Unsafe.data (Utils.hint_to_string language hint) ] ]
-            ])
+          tr [ cell [ txt label ]; cell [ p [ hint_to_html hint ] ] ])
       in
       let subtitle =
         tr
@@ -73,8 +74,23 @@ let build_help ?(hints = []) language help =
       in
       subtitle :: hints
   in
-  help @ hints
-  |> table ~a:[ a_class [ "table"; "simple"; "align-top" ] ]
+  let thead =
+    [ tr
+        [ td [ field_to_string Pool_message.Field.Placeholder ]
+        ; td [ field_to_string Pool_message.Field.ExampleValue ]
+        ]
+    ]
+    |> thead
+  in
+  let table =
+    help @ hints
+    |> table ~a:[ a_class [ "table"; "simple"; "align-top" ] ] ~thead
+  in
+  let hint =
+    [ hint_to_html I18n.MessageTemplateTextTemplates ]
+    |> Component_notification.notification language `Warning
+  in
+  div ~a:[ a_class [ "stack" ] ] [ hint; table ]
   |> Component_collapsible.create_note ~icon:None ~title language
 ;;
 

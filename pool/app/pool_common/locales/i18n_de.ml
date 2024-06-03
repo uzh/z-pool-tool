@@ -483,6 +483,10 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | MessageTemplateSignupVerification ->
     "Diese E-Mail wird verwendet, um neue E-Mail-Adressen nach der Anmeldung \
      zu verifizieren. Sie können die SMS-Texteingabe ignorieren."
+  | MessageTemplateTextTemplates ->
+    "<strong>Wichtig:</strong> Verwenden Sie nicht die Beispielwerte im Email \
+     Template, sondern die Platzhalter Elemente. Einige Werte sind nicht real \
+     sondern nur Beispielinhalte."
   | MessageTemplateUserImport ->
     "Diese Nachricht informiert importierte Kontakte über die Migration zum \
      Z-Pool-Tool und enthält das Token, das sie zum Zurücksetzen ihres \

@@ -82,6 +82,7 @@ let rec field_to_string =
   | EmailsSent -> "Insgesamt gesendete E-Mails"
   | End -> "Ende"
   | Exclude -> "Ausgenommen"
+  | ExampleValue -> "Beispielwert"
   | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
   | ExperimentCount -> "Anz. Experimente"
@@ -211,6 +212,7 @@ let rec field_to_string =
       "Berechtiung %s von %s"
       (CCString.capitalize_ascii target)
       (CCString.capitalize_ascii role)
+  | Placeholder -> "Platzhalter"
   | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"

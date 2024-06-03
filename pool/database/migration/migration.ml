@@ -88,8 +88,6 @@ let register_migration migration =
     := Map.add label (snd migration) !registered_migrations
 ;;
 
-let register_migrations migrations = CCList.iter register_migration migrations
-
 let with_disabled_fk_check database_label f =
   let open Utils.Lwt_result.Infix in
   let open Service in
@@ -352,32 +350,4 @@ let extend_migrations additional_steps () =
               (fun a b -> CCString.compare (fst a) (fst b))
               migrations)));
     []
-;;
-
-let run_pending_migrations db_pools migration_steps =
-  let%lwt status =
-    Lwt_list.map_s
-      (fun label ->
-        let%lwt m = pending_migrations label () in
-        (label, m) |> Lwt.return)
-      db_pools
-  in
-  Lwt_list.iter_s
-    (fun (label, pending_migrations) ->
-      let tags = Logger.Tags.create label in
-      let msg prefix =
-        Format.asprintf
-          "%s pending migration for database pool: %a"
-          prefix
-          Entity.Label.pp
-          label
-      in
-      if CCList.length pending_migrations > 0
-      then (
-        Logs.debug (fun m -> m ~tags "%s" @@ msg "Run");
-        execute label migration_steps)
-      else (
-        Logs.debug (fun m -> m ~tags "%s" @@ msg "No");
-        Lwt.return_unit))
-    status
 ;;

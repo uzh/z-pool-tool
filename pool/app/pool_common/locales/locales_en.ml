@@ -82,6 +82,7 @@ let rec field_to_string =
   | EmailsSent -> "total emails sent"
   | End -> "end"
   | Exclude -> "exclude"
+  | ExampleValue -> "example value"
   | ExcludeRolesOf -> "exclude roles of"
   | Experiment -> "experiment"
   | ExperimentCount -> "no. experiments"
@@ -208,6 +209,7 @@ let rec field_to_string =
   | PermissionOn (role, target) ->
     Format.asprintf "permission %s of %s" target role
   | PlainText -> "plaintext"
+  | Placeholder -> "placeholder"
   | Predicate -> "predicate"
   | PromptOnRegistration -> "promt during registration"
   | Profile -> "profile"

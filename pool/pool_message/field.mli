@@ -73,6 +73,7 @@ type t =
   | EmailSuffix
   | EmailText
   | End
+  | ExampleValue
   | Exclude
   | ExcludeRolesOf
   | Experiment
@@ -193,6 +194,7 @@ type t =
   | Period
   | Permission
   | PermissionOn of string * string
+  | Placeholder
   | PlainText
   | Predicate
   | Profile

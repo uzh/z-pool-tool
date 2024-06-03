@@ -233,10 +233,6 @@ module Migration : sig
       migration service so it can be executed with `run_all`. *)
   val register_migration : t -> unit
 
-  (** [register_migrations migrations] registers migrations [migrations] with
-      the migration service so it can be executed with `run_all`. *)
-  val register_migrations : t list -> unit
-
   (** [execute database_label migrations] runs all migrations [migrations] on the
       connection pool. *)
   val execute : Label.t -> t list -> unit Lwt.t
@@ -283,11 +279,6 @@ module Migration : sig
 
   val start : Label.t -> unit -> unit Lwt.t
   val extend_migrations : (string * steps) list -> unit -> (string * steps) list
-
-  val run_pending_migrations
-    :  Label.t list
-    -> (string * steps) list
-    -> unit Lwt.t
 end
 
 module Root : sig

@@ -467,6 +467,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MessageTemplateSignupVerification ->
     "This email is used to verify new email addresses after signing up. You \
      can ignore the SMS text input."
+  | MessageTemplateTextTemplates ->
+    "<strong>Important:</strong> Do not use the example values in the \
+     template, but the placeholder elements. Some values are not real but only \
+     sample content."
   | MessageTemplateUserImport ->
     "This message informs imported contacts about the migration to the \
      Z-Pool-Tool and contains the token they need to reset their password."
