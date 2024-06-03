@@ -3,12 +3,6 @@ $font-path: "../node_modules/@econ/frontend-framework/dist/font";
 @import "../node_modules/@econ/frontend-framework/dist/main.scss";
 @import "./admin/calendar";
 
-$green-lighter: color.adjust($green, $lightness: $color-shades-ratio * 3);
-$red-lighter: color.adjust($red, $lightness: $color-shades-ratio * 3);
-
-$green-light: color.adjust($green, $lightness: $color-shades-ratio * 2);
-$red-light: color.adjust($red, $lightness: $color-shades-ratio * 2);
-
 $orange: rgb(226, 117, 0) !default;
 
 // Typography
