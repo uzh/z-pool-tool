@@ -288,6 +288,7 @@ let rec field_to_string =
   | TermsAccepted -> "Akzeptieren"
   | TermsAcceptedCount -> "Teilnahmebedingungen akzeptiert"
   | TermsAndConditions -> "Teilnahmebedingungen"
+  | TermsAndConditionsLastAccepted -> "Teilnahmebedingungen zuletzt akzeptiert"
   | TestPhoneNumber -> "Testtelefonnummer"
   | TextMessage -> "SMS"
   | TextMessageLeadTime -> "SMS Vorlaufzeit"
