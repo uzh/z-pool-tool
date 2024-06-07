@@ -238,6 +238,8 @@ end = struct
     Ok
       [ Pool_tenant.DetailsEdited (tenant, update) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
+      ; System_event.(Job.TenantDatabaseCacheCleared |> create |> created)
+        |> Pool_event.system_event
       ]
   ;;
 

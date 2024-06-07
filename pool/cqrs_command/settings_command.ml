@@ -330,6 +330,8 @@ end = struct
     Ok
       [ Pool_tenant.GtxApiKeyUpdated (tenant, gtx_info)
         |> Pool_event.pool_tenant
+      ; System_event.(Job.TenantDatabaseCacheCleared |> create |> created)
+        |> Pool_event.system_event
       ]
   ;;
 
