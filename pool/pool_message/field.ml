@@ -336,6 +336,8 @@ type t =
   [@printer go "terms_accepted_count"]
   | TermsAndConditions [@name "terms_and_conditions"]
   [@printer go "terms_and_conditions"]
+  | TermsAndConditionsLastAccepted [@name "terms_and_conditions_last_accepted"]
+  [@printer go "terms_and_conditions_last_accepted"]
   | TestPhoneNumber [@name "test_phone_number"]
   [@printer go "test_phone_number"]
   | TextMessage [@name "text_message"] [@printer go "text_message"]

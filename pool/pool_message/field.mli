@@ -271,6 +271,7 @@ type t =
   | TermsAccepted
   | TermsAcceptedCount
   | TermsAndConditions
+  | TermsAndConditionsLastAccepted
   | TestPhoneNumber
   | TextMessage
   | TextMessageLeadTime

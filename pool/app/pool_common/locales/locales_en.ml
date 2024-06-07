@@ -286,6 +286,7 @@ let rec field_to_string =
   | TermsAccepted -> "accept"
   | TermsAcceptedCount -> "terms and conditions accepted"
   | TermsAndConditions -> "terms and conditions"
+  | TermsAndConditionsLastAccepted -> "terms and conditions last accepted at"
   | TestPhoneNumber -> "test phone number"
   | TextMessage -> "text message"
   | TextMessageLeadTime -> "text message lead time"
