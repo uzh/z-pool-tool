@@ -287,7 +287,7 @@ module Model = struct
   ;;
 
   let create_text_message
-    ?(sender = Pool_tenant.Title.of_string "UAST")
+    ?(sender = Pool_tenant.GtxSender.of_string "UAST")
     cell_phone
     =
     Text_message.render_and_create cell_phone sender ("Hello world", [])

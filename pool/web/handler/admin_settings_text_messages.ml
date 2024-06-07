@@ -35,7 +35,7 @@ let update req =
     in
     let open Command.UpdateGtxApiKey in
     let* gtx_api_key =
-      validated_gtx_api_key ~tags tenant.Write.title urlencoded
+      validated_gtx_api_key ~tags tenant.Write.gtx_sender urlencoded
     in
     let events = handle ~tags tenant gtx_api_key |> Lwt_result.lift in
     let handle events =

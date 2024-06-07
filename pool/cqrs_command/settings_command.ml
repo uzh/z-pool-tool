@@ -293,7 +293,7 @@ module UpdateGtxApiKey : sig
 
   val validated_gtx_api_key
     :  tags:Logs.Tag.set
-    -> Pool_tenant.Title.t
+    -> Pool_tenant.GtxSender.t
     -> Conformist.input
     -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
 
@@ -305,7 +305,7 @@ module UpdateGtxApiKey : sig
 end = struct
   type t = Pool_tenant.GtxApiKey.t
 
-  let validated_gtx_api_key ~tags title urlencoded =
+  let validated_gtx_api_key ~tags sender urlencoded =
     let open Utils.Lwt_result.Infix in
     let schema =
       Conformist.(
@@ -318,7 +318,7 @@ end = struct
     |> Lwt_result.lift
     >|- Pool_message.to_conformist_error
     >>= fun (api_key, phone_nr) ->
-    Text_message.Service.test_api_key ~tags api_key phone_nr title
+    Text_message.Service.test_api_key ~tags api_key phone_nr sender
   ;;
 
   let handle ?(tags = Logs.Tag.empty) tenant gtx_api_key =

@@ -7,11 +7,11 @@ end
 
 type t =
   { recipient : Pool_user.CellPhone.t
-  ; sender : Pool_tenant.Title.t
+  ; sender : Pool_tenant.GtxSender.t
   ; text : Content.t
   }
 
-val create : Pool_user.CellPhone.t -> Pool_tenant.Title.t -> Content.t -> t
+val create : Pool_user.CellPhone.t -> Pool_tenant.GtxSender.t -> Content.t -> t
 
 type job =
   { message : t
@@ -26,7 +26,7 @@ val create_job : ?message_history:Queue.History.create -> t -> job
 
 val render_and_create
   :  Pool_user.CellPhone.t
-  -> Pool_tenant.Title.t
+  -> Pool_tenant.GtxSender.t
   -> string * (string * string) list
   -> t
 
@@ -37,7 +37,7 @@ module Service : sig
     :  tags:Logs.Tag.set
     -> Pool_tenant.GtxApiKey.t
     -> Pool_user.CellPhone.t
-    -> Pool_tenant.Title.t
+    -> Pool_tenant.GtxSender.t
     -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
 
   module Job : sig

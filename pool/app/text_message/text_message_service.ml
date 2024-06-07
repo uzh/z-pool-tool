@@ -63,7 +63,7 @@ let parse_job_json str =
 ;;
 
 let request_body { recipient; text; sender } =
-  [ "from", [ Pool_tenant.Title.value sender ]
+  [ "from", [ Pool_tenant.GtxSender.value sender ]
   ; "to", [ CellPhone.value recipient ]
   ; "text", [ text ]
   ]
@@ -85,7 +85,7 @@ Text:
 %s
 -----------------------
     |}
-    (Pool_tenant.Title.value sender)
+    (Pool_tenant.GtxSender.value sender)
     (CellPhone.value recipient)
     text
 ;;
@@ -191,10 +191,10 @@ let handle database_label { message; _ } =
     |> Lwt.return_error
 ;;
 
-let test_api_key ~tags api_key cell_phone tenant_title =
+let test_api_key ~tags api_key cell_phone sender =
   let open Sihl.Configuration in
   let open Cohttp in
-  let msg = create cell_phone tenant_title "Your API Key is valid." in
+  let msg = create cell_phone sender "Your API Key is valid." in
   let () = if is_development () then print_message ~tags msg else () in
   match is_production () || bypass () with
   | true ->

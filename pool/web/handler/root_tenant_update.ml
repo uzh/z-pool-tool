@@ -87,7 +87,7 @@ let update req command success_message =
         | `ExitGtxApiKey ->
           let open UpdateGtxApiKey in
           let* gtx_api_key =
-            validated_gtx_api_key ~tags tenant_model.Write.title urlencoded
+            validated_gtx_api_key ~tags tenant_model.Write.gtx_sender urlencoded
           in
           handle ~tags tenant_model gtx_api_key |> lift
       in
