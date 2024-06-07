@@ -61,6 +61,12 @@ module GtxApiKey = struct
   ;;
 end
 
+module GtxSender = struct
+  include GtxSender
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+end
+
 module Styles = struct
   include Styles
 
@@ -97,6 +103,7 @@ let t =
         ; m.description
         ; m.url
         ; m.default_language
+        ; m.gtx_sender
         ; m.created_at
         ; m.updated_at
         ; m.status
@@ -112,12 +119,13 @@ let t =
       , ( description
         , ( url
           , ( default_language
-            , ( created_at
-              , ( updated_at
-                , ( status
-                  , ( database_label
-                    , (styles, (icon, (text_messages_enabled, ()))) ) ) ) ) ) )
-        ) ) )
+            , ( gtx_sender
+              , ( created_at
+                , ( updated_at
+                  , ( status
+                    , ( database_label
+                      , (styles, (icon, (text_messages_enabled, ()))) ) ) ) ) )
+            ) ) ) ) )
     =
     Ok
       { id
@@ -129,6 +137,7 @@ let t =
       ; icon
       ; status
       ; default_language
+      ; gtx_sender
       ; text_messages_enabled
       ; created_at
       ; updated_at
@@ -143,6 +152,7 @@ let t =
       ; option Description.t
       ; Url.t
       ; Pool_common.Repo.Language.t
+      ; GtxSender.t
       ; Pool_common.Repo.CreatedAt.t
       ; Pool_common.Repo.UpdatedAt.t
       ; Database.Repo.Status.t
@@ -167,6 +177,7 @@ module Write = struct
           ; m.description
           ; m.url
           ; m.default_language
+          ; m.gtx_sender
           ; m.created_at
           ; m.updated_at
           ; m.database_label
@@ -181,10 +192,11 @@ module Write = struct
         , ( description
           , ( url
             , ( default_language
-              , ( created_at
-                , ( updated_at
-                  , (database_label, (styles, (icon, (gtx_api_key, ())))) ) ) )
-            ) ) ) )
+              , ( gtx_sender
+                , ( created_at
+                  , ( updated_at
+                    , (database_label, (styles, (icon, (gtx_api_key, ())))) ) )
+                ) ) ) ) ) )
       =
       Ok
         { id
@@ -193,6 +205,7 @@ module Write = struct
         ; url
         ; database_label
         ; gtx_api_key
+        ; gtx_sender
         ; styles
         ; icon
         ; default_language
@@ -209,6 +222,7 @@ module Write = struct
         ; option Description.t
         ; Url.t
         ; Pool_common.Repo.Language.t
+        ; GtxSender.t
         ; Pool_common.Repo.CreatedAt.t
         ; Pool_common.Repo.UpdatedAt.t
         ; Database.Repo.Label.t

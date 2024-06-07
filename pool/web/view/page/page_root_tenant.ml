@@ -107,6 +107,15 @@ let tenant_form
         ~flash_fetcher
         ~required:true
     ; language_select
+    ; input_element
+        language
+        `Text
+        Field.GtxSender
+        ~additional_attributes:[ a_maxlength 11 ]
+        ~hints:Pool_common.I18n.[ TenantGtxSender ]
+        ~value:(value (fun t -> t.gtx_sender |> GtxSender.value))
+        ~flash_fetcher
+        ~required:true
     ; (if CCOption.is_some tenant
        then txt ""
        else database_fields tenant language flash_fetcher)

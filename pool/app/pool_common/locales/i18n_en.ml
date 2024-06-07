@@ -641,6 +641,8 @@ Only sessions with open spots can be selected.|}
   | TenantDatabaseUrl ->
     {|The database URL, according to the following scheme:
      mariadb://<user>:<pw>@<host>:<port>/<database>|}
+  | TenantGtxSender ->
+    "The displayed sender of text messages. Max. 11 characters."
   | TenantUrl -> "The URL of the tenant without protocol, e.g.: pool.uzh.ch"
   | TestPhoneNumber ->
     "Please provide a phone number where we can send a single test message to \

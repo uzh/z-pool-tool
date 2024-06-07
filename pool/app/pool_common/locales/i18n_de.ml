@@ -663,6 +663,8 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TenantDatabaseUrl ->
     {|Die Datenbank URL, nach folgendem Schema:
     mariadb://<user>:<pw>@<host>:<port>/<database>|}
+  | TenantGtxSender ->
+    "Der angezeigte Absender von Textnachrichten. Max. 11 Zeichen."
   | TenantUrl -> "Die URL des Tenants ohne Protokoll, z.B.: pool.uzh.ch"
   | TestPhoneNumber ->
     "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige \

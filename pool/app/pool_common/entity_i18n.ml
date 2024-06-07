@@ -294,6 +294,7 @@ type hint =
   | TemplateTextElementsHint
   | TenantDatabaseLabel
   | TenantDatabaseUrl
+  | TenantGtxSender
   | TenantUrl
   | TestPhoneNumber
   | TextLengthMax of int

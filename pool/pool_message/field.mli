@@ -99,6 +99,7 @@ type t =
   | FirstReminder
   | FollowUpSession
   | GtxApiKey
+  | GtxSender
   | HideCanceled
   | HideClosed
   | HideInactive

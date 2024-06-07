@@ -21,6 +21,7 @@ module Data = struct
   let title = "Econ uzh"
   let description = "description"
   let url = "pool.econ.uzh.ch"
+  let gtx_sender = "Econ"
 
   let database_url =
     Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
@@ -55,6 +56,7 @@ module Data = struct
     ; Field.DatabaseUrl, [ database_url ]
     ; Field.DatabaseLabel, [ database_label ]
     ; Field.GtxApiKey, [ gtx_api_key ]
+    ; Field.GtxSender, [ gtx_sender ]
     ; Field.Styles, [ Asset.styles ]
     ; Field.Icon, [ Asset.icon ]
     ; Field.TenantLogos, [ tenant_logo ]
@@ -153,6 +155,7 @@ module Data = struct
     let* url = url |> Url.create in
     let* database_label = Database.Label.create database_label in
     let gtx_api_key = gtx_api_key |> GtxApiKey.of_string |> CCOption.return in
+    let* gtx_sender = gtx_sender |> GtxSender.create in
     Ok
       { Write.id = Id.create ()
       ; title
@@ -160,6 +163,7 @@ module Data = struct
       ; url
       ; database_label
       ; gtx_api_key
+      ; gtx_sender
       ; styles = styles |> CCOption.return
       ; icon = icon |> CCOption.return
       ; default_language = Common.Language.En
@@ -216,6 +220,7 @@ module Data = struct
       ; title
       ; description
       ; url
+      ; gtx_sender = gtx_sender |> GtxSender.create |> get_exn
       ; database_label
       ; styles = styles |> CCResult.get_exn |> CCOption.return
       ; icon = icon |> CCOption.return
@@ -386,6 +391,7 @@ let[@warning "-4"] create_tenant () =
       in
       let* url = url |> Pool_tenant.Url.create in
       let* default_language = default_language |> Common.Language.create in
+      let* gtx_sender = gtx_sender |> Pool_tenant.GtxSender.create in
       Ok
         { Pool_tenant.Write.id = tenant_id
         ; title
@@ -393,6 +399,7 @@ let[@warning "-4"] create_tenant () =
         ; url
         ; database_label
         ; gtx_api_key = None
+        ; gtx_sender
         ; styles = styles |> CCOption.return
         ; icon = icon |> CCOption.return
         ; default_language
@@ -470,11 +477,13 @@ let[@warning "-4"] update_tenant_details () =
         description |> Description.create >|= CCOption.return
       in
       let* url = url |> Pool_tenant.Url.create in
+      let* gtx_sender = gtx_sender |> Pool_tenant.GtxSender.create in
       let* default_language = default_language |> Common.Language.create in
       let update : update =
         { title
         ; description
         ; url
+        ; gtx_sender
         ; default_language
         ; styles = Some styles
         ; icon = Some icon

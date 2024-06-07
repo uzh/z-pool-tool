@@ -7,6 +7,7 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
+  ; gtx_sender : GtxSender.t
   ; status : Database.Status.t option
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
@@ -63,6 +64,7 @@ let handle_event pool : event -> unit Lwt.t = function
     ; styles = update_t.styles <+> tenant.styles
     ; icon = update_t.icon <+> tenant.icon
     ; default_language = update_t.default_language
+    ; gtx_sender = update_t.gtx_sender
     ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
     |> Repo.update Database.root

@@ -92,6 +92,7 @@ let create () =
                  |> CCOption.return)
                 (Url.create url |> get_or_failwith)
                 (database |> Database.label)
+                (title |> CCString.take 11 |> GtxSender.of_string)
                 (Styles.Write.create styles
                  |> get_or_failwith
                  |> CCOption.return)
