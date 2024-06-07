@@ -413,6 +413,7 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
      verschickt werden."
   | GtxKeyStored ->
     "Ein GTX Api-Schlüssel ist hinterlegt. Textnachrichten werden verschickt."
+  | GtxSender -> "Der angezeigte Absender von Textnachrichten. Max. 11 Zeichen."
   | I18nText str -> str
   | LocationFiles ->
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \
@@ -663,8 +664,6 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TenantDatabaseUrl ->
     {|Die Datenbank URL, nach folgendem Schema:
     mariadb://<user>:<pw>@<host>:<port>/<database>|}
-  | TenantGtxSender ->
-    "Der angezeigte Absender von Textnachrichten. Max. 11 Zeichen."
   | TenantUrl -> "Die URL des Tenants ohne Protokoll, z.B.: pool.uzh.ch"
   | TestPhoneNumber ->
     "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige \

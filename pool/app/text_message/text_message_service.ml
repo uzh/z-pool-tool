@@ -219,7 +219,7 @@ let test_api_key ~tags api_key cell_phone sender =
            (CellPhone.value msg.recipient)
            msg.text
            body_string);
-       Lwt.return_ok api_key)
+       Lwt.return_ok (api_key, sender))
   | false ->
     let (_ : Pool_message.Error.t) =
       Pool_common.Utils.with_log_error
@@ -228,7 +228,7 @@ let test_api_key ~tags api_key cell_phone sender =
            "Verifying API Key: Skip validation due to non production \
             environment!")
     in
-    api_key |> Lwt.return_ok
+    Lwt.return_ok (api_key, sender)
 ;;
 
 module Job = struct

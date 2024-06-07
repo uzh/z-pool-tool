@@ -112,7 +112,7 @@ let tenant_form
         `Text
         Field.GtxSender
         ~additional_attributes:[ a_maxlength 11 ]
-        ~hints:Pool_common.I18n.[ TenantGtxSender ]
+        ~hints:Pool_common.I18n.[ GtxSender ]
         ~value:(value (fun t -> t.gtx_sender |> GtxSender.value))
         ~flash_fetcher
         ~required:true

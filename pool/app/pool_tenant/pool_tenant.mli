@@ -193,7 +193,7 @@ type event =
   | DatabaseEdited of Write.t * Database.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
-  | GtxApiKeyUpdated of Write.t * GtxApiKey.t
+  | GtxApiKeyUpdated of Write.t * (GtxApiKey.t * GtxSender.t)
   | GtxApiKeyRemoved of Write.t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t

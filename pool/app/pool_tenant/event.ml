@@ -25,7 +25,7 @@ type event =
   | DatabaseEdited of Write.t * Database.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
-  | GtxApiKeyUpdated of Write.t * GtxApiKey.t
+  | GtxApiKeyUpdated of Write.t * (GtxApiKey.t * GtxSender.t)
   | GtxApiKeyRemoved of Write.t
 [@@deriving eq, show]
 
@@ -79,9 +79,10 @@ let handle_event pool : event -> unit Lwt.t = function
     let open Database in
     let%lwt () = Tenant.update_status database_label Status.Active in
     Lwt.return_unit
-  | GtxApiKeyUpdated (tenant, gtx_api_key) ->
+  | GtxApiKeyUpdated (tenant, (gtx_api_key, gtx_sender)) ->
     let open Entity.Write in
-    { tenant with gtx_api_key = Some gtx_api_key } |> Repo.update Database.root
+    { tenant with gtx_api_key = Some gtx_api_key; gtx_sender }
+    |> Repo.update Database.root
   | GtxApiKeyRemoved tenant ->
     let open Entity.Write in
     { tenant with gtx_api_key = None } |> Repo.update Database.root

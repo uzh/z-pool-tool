@@ -306,25 +306,6 @@ end = struct
   let effects = Pool_tenant.Guard.Access.update
 end
 
-module UpdateGtxApiKey : sig
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Pool_tenant.Write.t
-    -> Pool_tenant.GtxApiKey.t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
-end = struct
-  let handle ?(tags = Logs.Tag.empty) (tenant : Pool_tenant.Write.t) api_key =
-    Logs.info ~src (fun m -> m "Handle command UpdateGtxApiKey" ~tags);
-    Ok
-      [ Pool_tenant.GtxApiKeyUpdated (tenant, api_key) |> Pool_event.pool_tenant
-      ]
-  ;;
-
-  let effects = Pool_tenant.Guard.Access.update
-end
-
 module DestroyLogo : sig
   val handle
     :  ?tags:Logs.Tag.set

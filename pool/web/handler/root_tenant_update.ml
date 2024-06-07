@@ -84,12 +84,6 @@ let update req command success_message =
             Database.test_and_create database_url database_label
           in
           handle ~tags tenant_model database |> lift
-        | `ExitGtxApiKey ->
-          let open UpdateGtxApiKey in
-          let* gtx_api_key =
-            validated_gtx_api_key ~tags tenant_model.Write.gtx_sender urlencoded
-          in
-          handle ~tags tenant_model gtx_api_key |> lift
       in
       let files = logo_files @ uploaded_files in
       (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
@@ -116,10 +110,6 @@ let update_detail req =
 
 let update_database req =
   update req `EditDatabase Pool_message.Success.TenantUpdateDatabase
-;;
-
-let update_gtx_api_key req =
-  update req `ExitGtxApiKey Pool_message.(Success.Updated Field.GtxApiKey)
 ;;
 
 let delete_asset req =

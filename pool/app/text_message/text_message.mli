@@ -38,7 +38,9 @@ module Service : sig
     -> Pool_tenant.GtxApiKey.t
     -> Pool_user.CellPhone.t
     -> Pool_tenant.GtxSender.t
-    -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
+    -> ( Pool_tenant.GtxApiKey.t * Pool_tenant.GtxSender.t
+         , Pool_message.Error.t )
+         Lwt_result.t
 
   module Job : sig
     val send : job Queue.Job.t

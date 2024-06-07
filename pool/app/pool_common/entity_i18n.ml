@@ -210,6 +210,7 @@ type hint =
   | FilterTemplates
   | GtxKeyMissing
   | GtxKeyStored
+  | GtxSender
   | I18nText of string
   | LocationFiles
   | LocationsIndex
@@ -294,7 +295,6 @@ type hint =
   | TemplateTextElementsHint
   | TenantDatabaseLabel
   | TenantDatabaseUrl
-  | TenantGtxSender
   | TenantUrl
   | TestPhoneNumber
   | TextLengthMax of int

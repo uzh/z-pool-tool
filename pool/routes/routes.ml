@@ -937,10 +937,6 @@ module Root = struct
             ~middlewares:[ Access.update ]
             Update.update_database
         ; post
-            "/update-gtx-api-key"
-            ~middlewares:[ Access.update ]
-            Update.update_gtx_api_key
-        ; post
             (Format.asprintf "/assets/%s/delete" (AssetId |> url_key))
             ~middlewares:[ Access.update ]
             Tenant.Update.delete_asset

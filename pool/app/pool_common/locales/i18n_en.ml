@@ -400,6 +400,7 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | GtxKeyMissing ->
     "No GTX Api key is stored, which is why no text messages are sent."
   | GtxKeyStored -> "A GTX Api key is stored. Text message service is running."
+  | GtxSender -> "The displayed sender of text messages. Max. 11 characters."
   | I18nText str -> str
   | LocationFiles ->
     "Additional information about the location, such as directions. Contacts \
@@ -641,8 +642,6 @@ Only sessions with open spots can be selected.|}
   | TenantDatabaseUrl ->
     {|The database URL, according to the following scheme:
      mariadb://<user>:<pw>@<host>:<port>/<database>|}
-  | TenantGtxSender ->
-    "The displayed sender of text messages. Max. 11 characters."
   | TenantUrl -> "The URL of the tenant without protocol, e.g.: pool.uzh.ch"
   | TestPhoneNumber ->
     "Please provide a phone number where we can send a single test message to \
