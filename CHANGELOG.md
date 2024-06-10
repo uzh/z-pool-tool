@@ -4,6 +4,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.7.6](https://github.com/uzh/z-pool-tool/tree/0.7.6) - 2024-06-10
+
+### Added
+
+- tenant database column for sms sender name
+- display 'terms last accepted at' on contact details page
+
+### Fixed
+
+- clear tenant cache after tenant details update
+
 ## [0.7.5](https://github.com/uzh/z-pool-tool/tree/0.7.5) - 2024-06-03
 
 ### Added
