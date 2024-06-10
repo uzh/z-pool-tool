@@ -210,6 +210,7 @@ type hint =
   | FilterTemplates
   | GtxKeyMissing
   | GtxKeyStored
+  | GtxSender
   | I18nText of string
   | LocationFiles
   | LocationsIndex

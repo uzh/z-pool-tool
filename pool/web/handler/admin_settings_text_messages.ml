@@ -34,9 +34,7 @@ let update req =
       Pool_context.Tenant.get_tenant_exn req |> fun { id; _ } -> find_full id
     in
     let open Command.UpdateGtxApiKey in
-    let* gtx_api_key =
-      validated_gtx_api_key ~tags tenant.Write.title urlencoded
-    in
+    let* gtx_api_key = validated_gtx_api_key ~tags urlencoded in
     let events = handle ~tags tenant gtx_api_key |> Lwt_result.lift in
     let handle events =
       let%lwt () =

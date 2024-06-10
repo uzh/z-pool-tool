@@ -400,6 +400,7 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | GtxKeyMissing ->
     "No GTX Api key is stored, which is why no text messages are sent."
   | GtxKeyStored -> "A GTX Api key is stored. Text message service is running."
+  | GtxSender -> "The displayed sender of text messages. Max. 11 characters."
   | I18nText str -> str
   | LocationFiles ->
     "Additional information about the location, such as directions. Contacts \

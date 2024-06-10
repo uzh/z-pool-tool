@@ -745,7 +745,7 @@ module ManualSessionMessage = struct
     in
     let message_history = message_history experiment session assignment in
     let content = SmsText.value message in
-    render_and_create cell_phone tenant.Pool_tenant.title (content, params)
+    render_and_create cell_phone tenant.Pool_tenant.gtx_sender (content, params)
     |> create_job ~message_history
   ;;
 end
@@ -940,7 +940,7 @@ module PhoneVerification = struct
     let message =
       render_and_create
         cell_phone
-        tenant.Pool_tenant.title
+        tenant.Pool_tenant.gtx_sender
         (sms_text, message_params token)
     in
     let message_history = message_history (Contact.user contact) in
@@ -1063,7 +1063,7 @@ module SessionCancellation = struct
     let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionCancellation
     in
-    let title = tenant.Pool_tenant.title in
+    let sender = tenant.Pool_tenant.gtx_sender in
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) cell_phone =
       let open CCResult in
@@ -1086,7 +1086,7 @@ module SessionCancellation = struct
       let message =
         Text_message.render_and_create
           cell_phone
-          title
+          sender
           (template.sms_text, params)
       in
       let message_history = message_history experiment session contact in
@@ -1205,7 +1205,7 @@ module SessionReminder = struct
         sys_langs
         Label.SessionReminder
     in
-    let title = tenant.Pool_tenant.title in
+    let sender = tenant.Pool_tenant.gtx_sender in
     let layout = layout_from_tenant tenant in
     let fnc ({ Assignment.contact; _ } as assignment) cell_phone =
       let open CCResult in
@@ -1219,7 +1219,7 @@ module SessionReminder = struct
       let message =
         Text_message.render_and_create
           cell_phone
-          title
+          sender
           (template.sms_text, params)
       in
       let message_history = message_history experiment session contact in

@@ -60,6 +60,14 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
                 ~flash_fetcher
                 ~required:true
                 ~hints:[ I18n.TestPhoneNumber ]
+            ; input_element
+                language
+                `Text
+                Field.GtxSender
+                ~value:Pool_tenant.(tenant.gtx_sender |> GtxSender.value)
+                ~flash_fetcher
+                ~required:true
+                ~hints:[ I18n.GtxSender ]
             ; submit_element
                 language
                 Pool_message.(Control.Update (Some Field.GtxApiKey))

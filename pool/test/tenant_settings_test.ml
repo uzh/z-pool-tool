@@ -352,3 +352,44 @@ let delete_smtp_auth =
       (Error (Error.NotFound Field.Smtp)));
   Lwt.return_ok ()
 ;;
+
+let update_gtx_settings _ () =
+  let testable_gtx =
+    let open Pool_tenant in
+    let equal (key1, sender1) (key2, sender2) =
+      GtxApiKey.equal key1 key2 && GtxSender.equal sender1 sender2
+    in
+    let pp fmt (key, sender) =
+      Format.fprintf fmt "(%s, %s)" (GtxApiKey.show key) (GtxSender.show sender)
+    in
+    Alcotest.testable pp equal
+  in
+  let tags = Database.Logger.Tags.create Test_utils.Data.database_label in
+  let validate =
+    Cqrs_command.Settings_command.UpdateGtxApiKey.validated_gtx_api_key ~tags
+  in
+  let phone = "+41791234567" in
+  let stringify = CCList.map (fun (field, value) -> Field.show field, value) in
+  let urlencoded =
+    [ Field.GtxApiKey, [ "api-key" ]; Field.TestPhoneNumber, [ phone ] ]
+  in
+  let%lwt res = urlencoded |> stringify |> validate in
+  let expected = Error Error.(Conformist [ Field.GtxSender, NoValue ]) in
+  let () =
+    Alcotest.(
+      check (result testable_gtx Test_utils.error) "succeeds" expected res)
+  in
+  let urlencoded =
+    [ Field.GtxApiKey, [ "api-key" ]
+    ; Field.TestPhoneNumber, [ phone ]
+    ; Field.GtxSender, [ "longerthanelevenchars" ]
+    ]
+  in
+  let%lwt res = urlencoded |> stringify |> validate in
+  let expected = Error Error.(Conformist [ Field.GtxSender, MaxLength 11 ]) in
+  let () =
+    Alcotest.(
+      check (result testable_gtx Test_utils.error) "succeeds" expected res)
+  in
+  Lwt.return_unit
+;;

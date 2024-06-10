@@ -13,7 +13,7 @@ end
 
 type t =
   { recipient : Pool_user.CellPhone.t
-  ; sender : Pool_tenant.Title.t
+  ; sender : Pool_tenant.GtxSender.t
   ; text : Content.t
   }
 [@@deriving eq, show, yojson]

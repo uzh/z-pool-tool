@@ -96,7 +96,7 @@ let text_message_job_instance_detail { Text_message.message; _ } =
   let open Text_message in
   let { recipient; sender; text } = message in
   [ Field.Recipient, txt (Pool_user.CellPhone.value recipient)
-  ; Field.Sender, txt (Pool_tenant.Title.value sender)
+  ; Field.Sender, txt (Pool_tenant.GtxSender.value sender)
   ; Field.SmsText, Content.value text |> HttpUtils.add_line_breaks
   ]
 ;;

@@ -113,6 +113,7 @@ let rec field_to_string =
   | FirstReminder -> "first reminder"
   | FollowUpSession -> "follow-up session"
   | GtxApiKey -> "GTX Api Key"
+  | GtxSender -> "GTX sender"
   | HideCanceled -> "Hide canceled"
   | HideClosed -> "Hide closed"
   | HideMakedAsDeleted -> "Hide marked as deleted"
@@ -522,6 +523,8 @@ let rec error_to_string =
   | JobCannotBeRetriggered -> "This job cannot be retriggered."
   | JobPending -> "The job is still pending."
   | LoginProvideDetails -> "Please provide email and password"
+  | MaxLength max ->
+    Format.asprintf "Must not be longer than %i characters." max
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
   | Missing field ->

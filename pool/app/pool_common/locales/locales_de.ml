@@ -114,6 +114,7 @@ let rec field_to_string =
   | FirstReminder -> "Erste Erinnerung"
   | FollowUpSession -> "Folgesession"
   | GtxApiKey -> "GTX Api Key"
+  | GtxSender -> "GTX Absender"
   | HideCanceled -> "Abgesagte ausblenden"
   | HideClosed -> "Geschlossene ausblenden"
   | HideMakedAsDeleted -> "Als gelöscht markerte ausblenden"
@@ -545,6 +546,8 @@ let rec error_to_string =
   | JobCannotBeRetriggered -> "Dieser Auftrag kann nicht neu ausgelöst werden."
   | JobPending -> "Der Auftrag ist noch pendent."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | MaxLength max ->
+    Format.asprintf "Darf nicht länger als %i Zeichen sein." max
   | MeantimeUpdate field ->
     field_message
       ""

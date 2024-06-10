@@ -289,13 +289,14 @@ end = struct
 end
 
 module UpdateGtxApiKey : sig
-  include Common.CommandSig with type t = Pool_tenant.GtxApiKey.t
+  include
+    Common.CommandSig
+    with type t = Pool_tenant.GtxApiKey.t * Pool_tenant.GtxSender.t
 
   val validated_gtx_api_key
     :  tags:Logs.Tag.set
-    -> Pool_tenant.Title.t
     -> Conformist.input
-    -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
+    -> (t, Pool_message.Error.t) Lwt_result.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -303,28 +304,31 @@ module UpdateGtxApiKey : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
-  type t = Pool_tenant.GtxApiKey.t
+  type t = Pool_tenant.GtxApiKey.t * Pool_tenant.GtxSender.t
 
-  let validated_gtx_api_key ~tags title urlencoded =
+  let validated_gtx_api_key ~tags urlencoded =
     let open Utils.Lwt_result.Infix in
     let schema =
       Conformist.(
         make
           Field.
-            [ Pool_tenant.GtxApiKey.schema (); Pool_user.CellPhone.schema () ]
-          CCPair.make)
+            [ Pool_tenant.GtxApiKey.schema ()
+            ; Pool_user.CellPhone.schema ()
+            ; Pool_tenant.GtxSender.schema ()
+            ]
+          (fun key number sender -> key, number, sender))
     in
     Conformist.decode_and_validate schema urlencoded
     |> Lwt_result.lift
     >|- Pool_message.to_conformist_error
-    >>= fun (api_key, phone_nr) ->
-    Text_message.Service.test_api_key ~tags api_key phone_nr title
+    >>= fun (api_key, phone_nr, sender) ->
+    Text_message.Service.test_api_key ~tags api_key phone_nr sender
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) tenant gtx_api_key =
+  let handle ?(tags = Logs.Tag.empty) tenant gtx_info =
     Logs.info ~src (fun m -> m "Handle command UpdateGtxApiKey" ~tags);
     Ok
-      [ Pool_tenant.GtxApiKeyUpdated (tenant, gtx_api_key)
+      [ Pool_tenant.GtxApiKeyUpdated (tenant, gtx_info)
         |> Pool_event.pool_tenant
       ]
   ;;

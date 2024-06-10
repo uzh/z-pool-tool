@@ -35,6 +35,21 @@ module GtxApiKey = struct
   let schema () = schema field ()
 end
 
+module GtxSender = struct
+  include Pool_model.Base.String
+
+  let field = Pool_message.Field.GtxSender
+
+  (* The GTX Rest API does not allow more than 11 characters *)
+  let validation str =
+    if CCString.length str > 11
+    then Error (Pool_message.Error.MaxLength 11)
+    else Ok str
+  ;;
+
+  let schema () = schema ~validation field ()
+end
+
 module Styles = struct
   type t = File.t [@@deriving eq, show, sexp_of]
 
@@ -103,6 +118,7 @@ type t =
   ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
+  ; gtx_sender : GtxSender.t
   ; styles : Styles.t option
   ; icon : Icon.t option
   ; logos : Logos.t
@@ -124,6 +140,7 @@ module Read = struct
     ; description : Description.t option
     ; url : Url.t
     ; database_label : Database.Label.t
+    ; gtx_sender : GtxSender.t
     ; styles : Styles.t option
     ; icon : Icon.t option
     ; status : Database.Status.t
@@ -142,6 +159,7 @@ module Write = struct
     ; description : Description.t option
     ; url : Url.t
     ; database_label : Database.Label.t
+    ; gtx_sender : GtxSender.t
     ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
@@ -151,13 +169,23 @@ module Write = struct
     }
   [@@deriving eq, show]
 
-  let create title description url database_label styles icon default_language =
+  let create
+    title
+    description
+    url
+    database_label
+    gtx_sender
+    styles
+    icon
+    default_language
+    =
     { id = Id.create ()
     ; title
     ; description
     ; url
     ; database_label
     ; gtx_api_key = None
+    ; gtx_sender
     ; styles
     ; icon
     ; default_language
