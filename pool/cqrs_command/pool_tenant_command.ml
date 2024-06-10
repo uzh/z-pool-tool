@@ -144,6 +144,7 @@ module EditDetails : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
     -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -209,6 +210,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    ?system_event_id
     (tenant : Pool_tenant.Write.t)
     (command : t)
     =
@@ -238,6 +240,11 @@ end = struct
     Ok
       [ Pool_tenant.DetailsEdited (tenant, update) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
+      ; System_event.(
+          Job.TenantDatabaseCacheCleared
+          |> create ?id:system_event_id
+          |> created)
+        |> Pool_event.system_event
       ]
   ;;
 
