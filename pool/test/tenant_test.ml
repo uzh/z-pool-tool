@@ -460,6 +460,7 @@ let[@warning "-4"] update_tenant_details () =
   match Data.tenant with
   | Error _ -> failwith "Failed to create tenant"
   | Ok tenant ->
+    let system_event_id = System_event.Id.create () in
     let events =
       let open CCResult.Infix in
       let open Pool_tenant_command.EditDetails in
@@ -467,7 +468,7 @@ let[@warning "-4"] update_tenant_details () =
       |> HttpUtils.format_request_boolean_values
            Field.[ TenantDisabledFlag |> show ]
       |> decode
-      >>= handle tenant
+      >>= handle ~system_event_id tenant
     in
     let expected =
       let open Pool_tenant in
@@ -497,11 +498,19 @@ let[@warning "-4"] update_tenant_details () =
         |> function
         | [ _
           ; (Pool_event.PoolTenant (Pool_tenant.LogosUploaded [ _; _ ]) as logos)
+          ; _
           ] -> logos
         | _ -> failwith "Tenant create events don't match in test."
       in
       Ok
-        [ DetailsEdited (tenant, update) |> Pool_event.pool_tenant; logo_event ]
+        [ DetailsEdited (tenant, update) |> Pool_event.pool_tenant
+        ; logo_event
+        ; System_event.(
+            Job.TenantDatabaseCacheCleared
+            |> create ~id:system_event_id
+            |> created)
+          |> Pool_event.system_event
+        ]
     in
     Alcotest.(
       check
