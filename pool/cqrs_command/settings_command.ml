@@ -300,6 +300,7 @@ module UpdateGtxApiKey : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
     -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -325,12 +326,15 @@ end = struct
     Text_message.Service.test_api_key ~tags api_key phone_nr sender
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) tenant gtx_info =
+  let handle ?(tags = Logs.Tag.empty) ?system_event_id tenant gtx_info =
     Logs.info ~src (fun m -> m "Handle command UpdateGtxApiKey" ~tags);
     Ok
       [ Pool_tenant.GtxApiKeyUpdated (tenant, gtx_info)
         |> Pool_event.pool_tenant
-      ; System_event.(Job.TenantDatabaseCacheCleared |> create |> created)
+      ; System_event.(
+          Job.TenantDatabaseCacheCleared
+          |> create ?id:system_event_id
+          |> created)
         |> Pool_event.system_event
       ]
   ;;
@@ -343,14 +347,22 @@ module RemoveGtxApiKey : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Pool_tenant.Write.t
 
-  let handle ?(tags = Logs.Tag.empty) tenant =
+  let handle ?(tags = Logs.Tag.empty) ?system_event_id tenant =
     Logs.info ~src (fun m -> m "Handle command RemoveGtxApiKey" ~tags);
-    Ok [ Pool_tenant.GtxApiKeyRemoved tenant |> Pool_event.pool_tenant ]
+    Ok
+      [ Pool_tenant.GtxApiKeyRemoved tenant |> Pool_event.pool_tenant
+      ; System_event.(
+          Job.TenantDatabaseCacheCleared
+          |> create ?id:system_event_id
+          |> created)
+        |> Pool_event.system_event
+      ]
   ;;
 
   let effects = Guard.Access.update

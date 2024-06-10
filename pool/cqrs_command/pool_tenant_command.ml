@@ -210,7 +210,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    ?(system_event_id : System_event.Id.t option)
+    ?system_event_id
     (tenant : Pool_tenant.Write.t)
     (command : t)
     =
