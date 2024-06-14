@@ -8,6 +8,10 @@ module CustomField = Navigation_custom_fields
 module Experiment = Navigation_experiment
 module Print = Layout_print
 
+let language_attribute lang =
+  Language.show lang |> CCString.lowercase_ascii |> a_lang
+;;
+
 module Tenant = struct
   let create
     ?active_navigation
@@ -104,6 +108,7 @@ module Tenant = struct
       |> Lwt.return
     in
     html
+      ~a:[ language_attribute language ]
       (head page_title head_tags)
       (body
          ~a:[ a_class body_tag_classnames ]
@@ -133,6 +138,7 @@ module Root = struct
         []
     in
     html
+      ~a:[ language_attribute language ]
       (head
          page_title
          [ charset
@@ -158,6 +164,7 @@ module Error = struct
     let page_title = title (txt title_text) in
     let content = main_tag [ children ] in
     html
+      ~a:[ language_attribute Language.En ]
       (head
          page_title
          ([ charset; viewport ] @ [ `GlobalStylesheet |> css_link_tag ]))
