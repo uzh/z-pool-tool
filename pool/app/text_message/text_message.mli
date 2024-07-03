@@ -49,6 +49,17 @@ module Service : sig
   val send : Database.Label.t -> job -> unit Lwt.t
 end
 
+module DlrMask : sig
+  type t =
+    | Delivered
+    | NonDelivered
+    | Expired
+    | Unknown
+
+  val of_int : int -> t
+  val to_human : t -> string
+end
+
 type delivery_report =
   { job_id : Queue.Id.t
   ; raw : string

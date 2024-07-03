@@ -18,7 +18,10 @@ let find_full = Repo.find_full Database.root
 let find_by_label = Repo.find_by_label Database.root
 let find_by_url = Repo.find_by_url Database.root
 let find_all = Repo.find_all Database.root
-let find_gtx_api_key_by_label = Repo.find_gtx_api_key_by_label Database.root
+
+let find_gtx_api_key_and_url_by_label =
+  Repo.find_gtx_api_key_and_url_by_label Database.root
+;;
 
 let create_public_url pool_url =
   Sihl.Web.externalize_path

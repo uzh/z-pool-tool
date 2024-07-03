@@ -147,7 +147,7 @@ module Job = struct
     { name : JobName.t
     ; encode : 'a -> string
     ; decode : string -> ('a, string) result
-    ; handle : Database.Label.t -> 'a -> (unit, string) Lwt_result.t
+    ; handle : Database.Label.t -> Id.t -> 'a -> (unit, string) Lwt_result.t
     ; failed : Database.Label.t -> string -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
@@ -189,7 +189,7 @@ end
 module AnyJob = struct
   type t =
     { name : JobName.t
-    ; handle : Database.Label.t -> string -> (unit, string) Lwt_result.t
+    ; handle : Instance.t -> (unit, string) Lwt_result.t
     ; failed : Database.Label.t -> string -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
@@ -198,9 +198,10 @@ module AnyJob = struct
 end
 
 let hide (job : 'a Job.t) : AnyJob.t =
-  let handle label input =
+  let handle { Instance.id; ctx; input; _ } =
+    let label = Database.of_ctx_exn ctx in
     match job.Job.decode input with
-    | Ok decoded -> job.Job.handle label decoded
+    | Ok decoded -> job.Job.handle label id decoded
     | Error msg -> Lwt.return_error msg
   in
   { AnyJob.name = job.Job.name

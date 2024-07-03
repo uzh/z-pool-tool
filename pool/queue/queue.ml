@@ -32,7 +32,9 @@ let dispatch ?callback ?delay label input ({ Job.name; handle; _ } as job) =
     | Some callback -> callback job_instance)
   else (
     Logs.info (fun m -> m ~tags "Skipping queue in development environment");
-    match%lwt handle label input with
+    (* TODO: How to solve the this? *)
+    let id = Id.create () in
+    match%lwt handle label id input with
     | Ok () -> Lwt.return_unit
     | Error msg ->
       Logs.err (fun m ->
@@ -58,10 +60,12 @@ let dispatch_all ?callback ?delay label inputs ({ Job.name; handle; _ } as job) 
     | Some callback -> Lwt_list.iter_s callback job_instances)
   else (
     Logs.info (fun m -> m ~tags "Skipping queue in development environment");
+    (* TODO: How to solve the this? *)
+    let id = Id.create () in
     let rec loop inputs =
       match inputs with
       | input :: inputs ->
-        Lwt.bind (handle label input) (function
+        Lwt.bind (handle label id input) (function
           | Ok () -> loop inputs
           | Error msg ->
             Logs.err (fun m ->
@@ -74,7 +78,6 @@ let dispatch_all ?callback ?delay label inputs ({ Job.name; handle; _ } as job) 
 
 let run_job
   ?tags
-  (input : string)
   { AnyJob.handle; failed; _ }
   ({ Instance.id; ctx; _ } as job_instance)
   : (unit, string) Lwt_result.t
@@ -91,7 +94,7 @@ let run_job
   in
   let%lwt result =
     Lwt.catch
-      (fun () -> handle label input)
+      (fun () -> handle job_instance)
       (with_log_error
          ~tags
          "Exception caught while running job, this is a bug in your job \
@@ -122,14 +125,14 @@ let update = Repo.update
 
 let work_job
   ({ AnyJob.retry_delay; max_tries; _ } as job)
-  ({ Instance.input; tries; ctx; _ } as job_instance)
+  ({ Instance.tries; ctx; _ } as job_instance)
   =
   let database_label = Database.of_ctx_exn ctx in
   let tags = Database.Logger.Tags.create database_label in
   let now = Ptime_clock.now () in
   if Instance.should_run job_instance now
   then (
-    let%lwt job_run_status = run_job ~tags input job job_instance in
+    let%lwt job_run_status = run_job ~tags job job_instance in
     let job_instance = job_instance |> Instance.increment_tries retry_delay in
     let job_instance =
       match job_run_status with

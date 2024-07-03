@@ -174,9 +174,9 @@ val find_by_label : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_by_url : Url.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_all : unit -> t list Lwt.t
 
-val find_gtx_api_key_by_label
+val find_gtx_api_key_and_url_by_label
   :  Database.Label.t
-  -> (GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
+  -> (GtxApiKey.t * Url.t, Pool_message.Error.t) Lwt_result.t
 
 val create_public_url : Url.t -> string -> string
 val clear_cache : unit -> unit
