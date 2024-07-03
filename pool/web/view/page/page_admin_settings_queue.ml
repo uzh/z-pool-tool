@@ -105,7 +105,22 @@ let matcher_job_instance_detail label =
   [ Field.Label, txt (Database.Label.value label) ]
 ;;
 
-let queue_instance_detail language instance job =
+let text_message_dlr_detail dlr =
+  let open Text_message in
+  [ "Dlr status", dlr.dlr_mask |> DlrMask.of_int |> DlrMask.to_human
+  ; "Error code", dlr.error_code |> CCInt.to_string
+  ; "Error message", dlr.error_message
+  ; "Submit date", dlr.submit_date |> Pool_model.Time.formatted_date_time
+  ; "Done date", dlr.done_date |> Pool_model.Time.formatted_date_time
+  ; "Plmn", dlr.plmn
+  ; "Country", dlr.country
+  ]
+  |> CCList.map (fun (k, v) ->
+    tr [ th ~a:[ a_class [ "w-2" ] ] [ txt k ]; td [ txt v ] ])
+  |> table ~a:[ a_class [ "table"; "striped"; "align-top" ] ]
+;;
+
+let queue_instance_detail language ?text_message_dlr instance job =
   let default = "-" in
   let vertical_table =
     Component.Table.vertical_table
@@ -168,7 +183,21 @@ let queue_instance_detail language instance job =
       ]
     |> vertical_table
   in
-  div ~a:[ a_class [ "stack" ] ] [ clone_link; queue_instance_detail ]
+  let dlr_html =
+    match text_message_dlr with
+    | None -> txt ""
+    | Some dlr ->
+      div
+        [ h2
+            [ txt
+                Pool_common.(
+                  Utils.field_to_string language Field.TextMessageDlrStatus
+                  |> CCString.capitalize_ascii)
+            ]
+        ; text_message_dlr_detail dlr
+        ]
+  in
+  div ~a:[ a_class [ "stack" ] ] [ clone_link; queue_instance_detail; dlr_html ]
 ;;
 
 let index (Pool_context.{ language; _ } as context) job =
@@ -202,7 +231,12 @@ let resend_form Pool_context.{ csrf; language; _ } job =
     ]
 ;;
 
-let detail Pool_context.({ language; _ } as context) instance job =
+let detail
+  Pool_context.({ language; _ } as context)
+  ?text_message_dlr
+  instance
+  job
+  =
   let buttons_html =
     if Queue.Instance.resendable instance |> CCResult.is_ok
     then
@@ -214,7 +248,7 @@ let detail Pool_context.({ language; _ } as context) instance job =
   let html =
     div
       ~a:[ a_class [ "gap-lg" ] ]
-      [ queue_instance_detail language instance job ]
+      [ queue_instance_detail language ?text_message_dlr instance job ]
   in
   let title =
     div

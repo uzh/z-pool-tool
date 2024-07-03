@@ -239,3 +239,9 @@ module History : sig
     -> [< `contact | `experiment ]
     -> Pool_common.Id.t option Lwt.t
 end
+
+module Repo : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
+end

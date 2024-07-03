@@ -98,3 +98,94 @@ end = struct
 
   let effects = Queue.Guard.Access.resend
 end
+
+module CreateTextMessageDeliveryReport : sig
+  type t = Text_message.delivery_report
+
+  val decode
+    :  (string * string list) list
+    -> Queue.Id.t
+    -> string
+    -> (t, Pool_message.Error.t) result
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+end = struct
+  type t = Text_message.delivery_report
+
+  let command
+    from
+    to_
+    message_id
+    dlr_mask
+    error_code
+    error_message
+    submit_date
+    done_date
+    plmn
+    country
+    sms_cost
+    job_id
+    raw
+    =
+    Text_message.
+      { job_id
+      ; raw
+      ; from
+      ; to_
+      ; message_id
+      ; dlr_mask
+      ; error_code
+      ; error_message
+      ; submit_date
+      ; done_date
+      ; plmn
+      ; country
+      ; sms_cost
+      }
+  ;;
+
+  let schema =
+    let ptime name =
+      let open CCResult.Infix in
+      Conformist.custom
+        (fun values ->
+          values
+          |> CCList.head_opt
+          |> CCOption.to_result Pool_message.Error.NoValue
+          >>= Pool_model.Time.parse_time)
+        (fun date -> date |> Ptime.to_rfc3339 |> CCList.return)
+        name
+    in
+    Conformist.(
+      make
+        Field.
+          [ string "from"
+          ; string "to"
+          ; string "message-id"
+          ; int "dlr-mask"
+          ; int "error-code"
+          ; string "error-message"
+          ; ptime "submit-date"
+          ; ptime "done-date"
+          ; string "plmn"
+          ; string "country"
+          ; float "sms-cost"
+          ]
+        command)
+  ;;
+
+  let decode data job_id raw =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
+    |> CCResult.map (fun cmd -> cmd job_id raw)
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) report =
+    let open Text_message in
+    Logs.info ~src (fun m -> m "Handle command TextMessageDeliveryReport" ~tags);
+    Ok [ ReportCreated report |> Pool_event.text_message ]
+  ;;
+end

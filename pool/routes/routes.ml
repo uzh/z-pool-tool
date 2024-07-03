@@ -61,6 +61,13 @@ module Public = struct
       let specific = [ choose online_study ] in
       [ choose ~scope:Field.(url_key Experiment) specific ]
     in
+    let queue =
+      let open Field in
+      let specific =
+        [ get "dlr" Handler.Admin.Settings.TextMessages.delivery_report ]
+      in
+      choose ~scope:(Queue |> url_key) specific
+    in
     Handler.Public.(
       choose
         ~middlewares:
@@ -102,6 +109,7 @@ module Public = struct
                   Pool_context.UserType.[ Guest; Contact ]
               ]
             [ choose ~scope:"/experiments" experiment ]
+        ; choose ~scope:"/admin/settings/queue" [ queue ]
         ; choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of

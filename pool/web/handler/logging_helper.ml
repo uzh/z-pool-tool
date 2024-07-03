@@ -5,6 +5,11 @@ let log_request_with_ip ~src message req tags email =
     Headers.get req.headers "X-Real-IP"
     |> CCOption.value ~default:"X-Real-IP not found"
   in
-  Logs.warn ~src (fun m ->
-    m "%s: %s %a" message ip Pool_user.EmailAddress.pp email ~tags)
+  let email =
+    email
+    |> CCOption.map_or ~default:"" (fun email ->
+      Format.asprintf " %a" Pool_user.EmailAddress.pp email)
+  in
+  let msg = Format.asprintf "%s: %s%s" message ip email in
+  Logs.warn ~src (fun m -> m "%s" msg ~tags)
 ;;
