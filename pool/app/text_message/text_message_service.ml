@@ -174,9 +174,17 @@ let handle database_label instance_id { message; _ } =
   match is_production () || bypass () with
   | true ->
     let open Cohttp in
-    let%lwt resp, body_string =
-      send_message ~dlr:(tenant_url, instance_id) api_key message
+    let dlr =
+      if is_production ()
+      then None
+      else
+        let open CCOption in
+        instance_id
+        >|= CCPair.make tenant_url
+        |> get_exn_or "Text message service: No instance id provided"
+        |> return
     in
+    let%lwt resp, body_string = send_message ?dlr api_key message in
     (match
        resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
      with

@@ -363,7 +363,7 @@ module Job = struct
   let send =
     let open CCFun in
     let open Utils.Lwt_result.Infix in
-    let handle label (_ : Queue.Id.t) { Entity.email; smtp_auth_id; _ } =
+    let handle label (_ : Queue.Id.t option) { Entity.email; smtp_auth_id; _ } =
       Lwt.catch
         (fun () -> send ?smtp_auth_id label email ||> CCResult.return)
         (Printexc.to_string %> Lwt.return_error)

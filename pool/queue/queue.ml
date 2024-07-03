@@ -32,9 +32,7 @@ let dispatch ?callback ?delay label input ({ Job.name; handle; _ } as job) =
     | Some callback -> callback job_instance)
   else (
     Logs.info (fun m -> m ~tags "Skipping queue in development environment");
-    (* TODO: How to solve the this? *)
-    let id = Id.create () in
-    match%lwt handle label id input with
+    match%lwt handle label None input with
     | Ok () -> Lwt.return_unit
     | Error msg ->
       Logs.err (fun m ->
@@ -60,12 +58,10 @@ let dispatch_all ?callback ?delay label inputs ({ Job.name; handle; _ } as job) 
     | Some callback -> Lwt_list.iter_s callback job_instances)
   else (
     Logs.info (fun m -> m ~tags "Skipping queue in development environment");
-    (* TODO: How to solve the this? *)
-    let id = Id.create () in
     let rec loop inputs =
       match inputs with
       | input :: inputs ->
-        Lwt.bind (handle label id input) (function
+        Lwt.bind (handle label None input) (function
           | Ok () -> loop inputs
           | Error msg ->
             Logs.err (fun m ->

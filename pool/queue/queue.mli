@@ -92,7 +92,7 @@ module Job : sig
   val handle
     :  'a t
     -> Database.Label.t
-    -> Id.t
+    -> Id.t option
     -> 'a
     -> (unit, string) Lwt_result.t
 
@@ -105,7 +105,7 @@ module Job : sig
     -> ?retry_delay:Ptime.span
     -> ?failed:(Database.Label.t -> string -> Instance.t -> unit Lwt.t)
     -> ?tag:string
-    -> (Database.Label.t -> Id.t -> 'a -> (unit, string) Lwt_result.t)
+    -> (Database.Label.t -> Id.t option -> 'a -> (unit, string) Lwt_result.t)
     -> ('a -> string)
     -> (string -> ('a, string) result)
     -> JobName.t
