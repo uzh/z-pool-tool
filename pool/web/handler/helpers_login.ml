@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Pool_message
 module Label = Database.Label
 module EmailAddress = Pool_user.EmailAddress
@@ -23,10 +24,9 @@ let notify_user database_label tags email =
       | Some user ->
         let* tenant = Pool_tenant.find_by_label database_label in
         Message_template.AccountSuspensionNotification.create tenant user
-        |>> (fun message ->
-              Email.Sent message
-              |> Pool_event.email
-              |> Pool_event.handle_event ~tags database_label)
+        |>> Email.sent
+            %> Pool_event.email
+            %> Pool_event.handle_event ~tags database_label
         >|- fun err ->
         Logs.err (fun m ->
           m

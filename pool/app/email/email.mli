@@ -203,23 +203,6 @@ module SmtpAuth : sig
   val sortable_by : Query.Column.t list
 end
 
-type job =
-  { email : Sihl.Contract.Email.t
-  ; smtp_auth_id : SmtpAuth.Id.t option
-  ; message_history : Queue.History.create option
-  ; resent : Queue.Id.t option
-  }
-
-val parse_job_json : string -> (job, Pool_message.Error.t) result
-val yojson_of_job : job -> Yojson.Safe.t
-val job_message_history : job -> Queue.History.create option
-
-val create_job
-  :  ?smtp_auth_id:SmtpAuth.Id.t
-  -> ?message_history:Queue.History.create
-  -> Sihl.Contract.Email.t
-  -> job
-
 module Service : sig
   module Cache : sig
     val clear : unit -> unit
@@ -246,16 +229,45 @@ module Service : sig
   end
 
   module Job : sig
-    val send : job Queue.Job.t
+    type t
+
+    val email : t -> Sihl_email.t
+    val smtp_auth_id : t -> SmtpAuth.Id.t option
+    val encode : t -> string
+    val decode : string -> (t, Pool_message.Error.t) result
+    val create : ?smtp_auth_id:SmtpAuth.Id.t -> Sihl_email.t -> t
+
+    val update
+      :  ?new_email_address:Pool_user.EmailAddress.t
+      -> ?new_smtp_auth_id:SmtpAuth.Id.t
+      -> t
+      -> t
+
+    val send : t Pool_queue.Job.t
   end
 
   val default_sender_of_pool
     :  Database.Label.t
     -> Pool_user.EmailAddress.t Lwt.t
 
-  val intercept_prepare : job -> (job, Pool_message.Error.t) result
-  val dispatch : Database.Label.t -> job -> unit Lwt.t
-  val dispatch_all : Database.Label.t -> job list -> unit Lwt.t
+  val intercept_prepare : Job.t -> (Job.t, Pool_message.Error.t) result
+
+  val dispatch
+    :  ?id:Pool_queue.Id.t
+    -> ?new_email_address:Pool_user.EmailAddress.t
+    -> ?new_smtp_auth_id:Pool_common.Id.t
+    -> ?message_template:string
+    -> ?mappings:Pool_queue.mappings
+    -> Database.Label.t
+    -> Job.t
+    -> unit Lwt.t
+
+  val dispatch_all
+    :  Database.Label.t
+    -> (Pool_queue.Id.t * Job.t * string option * Pool_queue.mappings option)
+         list
+    -> unit Lwt.t
+
   val lifecycle : Sihl.Container.lifecycle
   val register : unit -> Sihl.Container.Service.t
 
@@ -290,8 +302,28 @@ val handle_verification_event
 val equal_verification_event : verification_event -> verification_event -> bool
 val pp_verification_event : Format.formatter -> verification_event -> unit
 
+type job =
+  { job : Service.Job.t
+  ; id : Pool_queue.Id.t option
+  ; message_template : string option
+  ; mappings : Pool_queue.mappings option
+  }
+
+val yojson_of_job : job -> Yojson.Safe.t
+val job : job -> Service.Job.t
+val id : job -> Pool_queue.Id.t option
+val message_template : job -> string option
+val mappings : job -> Pool_queue.mappings option
+
+val create_job
+  :  ?id:Pool_queue.Id.t
+  -> ?message_template:string
+  -> ?mappings:Pool_queue.mappings
+  -> Service.Job.t
+  -> job
+
 type event =
-  | Sent of job
+  | Sent of (job * Pool_user.EmailAddress.t option * SmtpAuth.Id.t option)
   | BulkSent of job list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
@@ -303,5 +335,20 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val verification_event_name : verification_event -> string
-val sent : job -> event
+
+val create_sent
+  :  ?id:Pool_queue.Id.t
+  -> ?message_template:string
+  -> ?mappings:Pool_queue.mappings
+  -> ?new_email_address:Pool_user.EmailAddress.t
+  -> ?new_smtp_auth_id:SmtpAuth.Id.t
+  -> Service.Job.t
+  -> event
+
+val sent
+  :  ?new_email_address:Pool_user.EmailAddress.t
+  -> ?new_smtp_auth_id:SmtpAuth.Id.t
+  -> job
+  -> event
+
 val bulksent : job list -> event

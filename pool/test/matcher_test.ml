@@ -25,7 +25,7 @@ let expected_events experiment mailing contacts create_message =
   Ok events
 ;;
 
-let create_message ?sender (_ : Contact.t) =
+let create_message ?sender (contact : Contact.t) =
   let sender =
     sender
     |> CCOption.map_or ~default:"it@econ.uzh.ch" Pool_user.EmailAddress.value
@@ -39,7 +39,9 @@ let create_message ?sender (_ : Contact.t) =
     ; cc = []
     ; bcc = []
     }
+  |> Email.Service.Job.create
   |> Email.create_job
+       ~mappings:Pool_queue.(Create [ Contact.(contact |> id |> Id.to_common) ])
   |> CCResult.return
 ;;
 
@@ -180,7 +182,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
   |> CCList.flat_map (fun invitation ->
     [ Invitation.Resent (invitation, Some mailing.Mailing.id)
       |> Pool_event.invitation
-    ; Email.Sent
+    ; Email.sent
         (invitation_mail invitation.Invitation.contact |> get_or_failwith)
       |> Pool_event.email
     ])

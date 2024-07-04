@@ -235,11 +235,10 @@ module Sql = struct
 
   let find_upcoming_by_experiment pool id =
     let open Utils.Lwt_result.Infix in
-    let open Session in
     let* experiment = Experiment.find pool id in
-    find_sessions_to_update_matcher pool (`Experiment id)
+    Session.find_sessions_to_update_matcher pool (`Experiment id)
     >|> Lwt_list.map_s (fun session ->
-      let%lwt assignments = find_by_session pool session.id in
+      let%lwt assignments = find_by_session pool session.Session.id in
       Lwt.return (session, assignments))
     ||> CCPair.make experiment
     |> Lwt_result.ok

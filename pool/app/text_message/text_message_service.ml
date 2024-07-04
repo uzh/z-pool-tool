@@ -1,12 +1,11 @@
 open CCFun
 open Utils.Lwt_result.Infix
 open Entity
-module History = Queue.History
 module CellPhone = Pool_user.CellPhone
 
 type message =
-  | TextMessageJob of job
-  | EmailJob of Email.job
+  | TextMessageJob of t
+  | EmailJob of Email.Service.Job.t
 
 let src = Logs.Src.create "pool_tenant.service.text_message"
 let tags database_label = Database.(Logger.Tags.create database_label)
@@ -51,17 +50,6 @@ let get_api_key database_label =
   ||> Pool_common.Utils.get_or_failwith
 ;;
 
-let parse_job_json str =
-  Entity.parse_job_json str
-  |> CCResult.map_err (fun _ ->
-    Logs.err ~src (fun m ->
-      m
-        "Serialized message string was NULL, can not deserialize message. \
-         Please fix the string manually and reset the job instance. Error: %s"
-        str);
-    "Invalid serialized message string received")
-;;
-
 let request_body { recipient; text; sender } =
   [ "from", [ Pool_tenant.Title.value sender ]
   ; "to", [ CellPhone.value recipient ]
@@ -95,7 +83,7 @@ let print_message ~tags ?(log_level = Logs.Info) msg =
   Logs.msg ~src log_level (fun m -> m ~tags "%s" text_message)
 ;;
 
-let intercept_prepare database_label ({ message; _ } as job) =
+let intercept_prepare database_label message =
   let tags = tags database_label in
   let () =
     if Sihl.Configuration.is_development ()
@@ -106,7 +94,7 @@ let intercept_prepare database_label ({ message; _ } as job) =
     ( Sihl.Configuration.is_production () || bypass ()
     , incercept_text_message_address () )
   with
-  | true, _ -> Lwt.return_ok (TextMessageJob job)
+  | true, _ -> Lwt.return_ok (TextMessageJob message)
   | false, Some new_recipient ->
     Logs.info ~src (fun m ->
       m
@@ -123,16 +111,12 @@ let intercept_prepare database_label ({ message; _ } as job) =
         (CellPhone.value message.recipient)
     in
     EmailJob
-      { Email.email =
-          Sihl_email.create
-            ~sender
-            ~recipient:new_recipient
-            ~subject
-            (format_message message)
-      ; smtp_auth_id = None
-      ; message_history = None
-      ; resent = None
-      }
+      (Sihl_email.create
+         ~sender
+         ~recipient:new_recipient
+         ~subject
+         (format_message message)
+       |> Email.Service.Job.create)
     |> Lwt.return_ok
   | false, None ->
     Lwt.return_error
@@ -155,40 +139,6 @@ let send_message api_key msg =
   let%lwt body_string = Cohttp_lwt.Body.to_string body in
   let%lwt () = Cohttp_lwt.Body.drain_body body in
   Lwt.return (resp, body_string)
-;;
-
-let handle database_label { message; _ } =
-  let open Sihl.Configuration in
-  let%lwt api_key = get_api_key database_label in
-  let tags = tags database_label in
-  match is_production () || bypass () with
-  | true ->
-    let open Cohttp in
-    let%lwt resp, body_string = send_message api_key message in
-    (match
-       resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
-     with
-     | false ->
-       let error =
-         Format.asprintf
-           "Could not send text message: %s\nresponse: %s"
-           body_string
-           (response_to_string resp)
-       in
-       Logs.err ~src (fun m -> m ~tags "%s" error);
-       Lwt.return_error error
-     | true ->
-       Logs.info ~src (fun m ->
-         m
-           ~tags
-           "Send text message to %s: %s\n%s"
-           (CellPhone.value message.recipient)
-           message.text
-           body_string);
-       Lwt.return_ok ())
-  | false ->
-    "Sending text message intercepted (non production environment)."
-    |> Lwt.return_error
 ;;
 
 let test_api_key ~tags api_key cell_phone tenant_title =
@@ -232,41 +182,91 @@ let test_api_key ~tags api_key cell_phone tenant_title =
 ;;
 
 module Job = struct
+  let encode = yojson_of_t %> Yojson.Safe.to_string
+
+  let decode str =
+    try Ok (str |> Yojson.Safe.from_string |> t_of_yojson) with
+    | _ ->
+      Logs.err ~src (fun m ->
+        m
+          "Serialized email string was NULL, can not deserialize email. Please \
+           fix the string manually and reset the job instance. Error: %s"
+          str);
+      Error Pool_message.(Error.Invalid Field.Input)
+  ;;
+
+  let handle database_label message =
+    let open Sihl.Configuration in
+    let%lwt api_key = get_api_key database_label in
+    let tags = tags database_label in
+    match is_production () || bypass () with
+    | true ->
+      let open Cohttp in
+      let%lwt resp, body_string = send_message api_key message in
+      (match
+         resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
+       with
+       | false ->
+         let error =
+           Format.asprintf
+             "Could not send text message: %s\nresponse: %s"
+             body_string
+             (response_to_string resp)
+         in
+         Logs.debug ~src (fun m -> m ~tags "%s" error);
+         Pool_message.Error.TextMessageError error |> Lwt.return_error
+       | true ->
+         Logs.info ~src (fun m ->
+           m
+             ~tags
+             "Send text message to %s: %s\n%s"
+             (CellPhone.value message.recipient)
+             message.text
+             body_string);
+         Lwt.return_ok ())
+    | false ->
+      Pool_message.Error.TextMessageError
+        "Intercepted (non production environment)"
+      |> Lwt.return_error
+  ;;
+
   let send =
-    let encode = Entity.yojson_of_job %> Yojson.Safe.to_string in
-    let decode = parse_job_json in
-    let open Queue in
+    let open Pool_queue in
     Job.create
-      handle
       ~max_tries:10
       ~retry_delay:(Sihl.Time.Span.hours 1)
+      handle
       encode
       decode
       JobName.SendTextMessage
   ;;
 end
 
-let callback database_label instance =
-  instance
-  |> Queue.Instance.input
-  |> parse_job_json
-  |> CCResult.get_or_failwith
-  |> Entity.job_message_history
-  |> CCOption.map_or
-       ~default:Lwt.return_unit
-       (flip (History.create_from_queue_instance database_label) instance)
-;;
-
-let send database_label (job : Entity.job) =
-  let callback = callback database_label in
+let dispatch
+  ?id
+  ?new_recipient
+  ?message_template
+  ?(mappings = Pool_queue.mappings_create [])
+  database_label
+  message
+  =
+  let tags = Database.Logger.Tags.create database_label in
   Logs.debug ~src (fun m ->
-    m
-      ~tags:(Database.Logger.Tags.create database_label)
-      "Dispatch text message to %s"
-      (Pool_user.CellPhone.value job.message.recipient));
-  intercept_prepare database_label job
+    let open Pool_user.CellPhone in
+    m ~tags "Dispatch text message to %s" (value message.recipient));
+  message
+  |> update ?new_recipient
+  |> intercept_prepare database_label
   ||> Pool_common.Utils.get_or_failwith
   >|> function
-  | TextMessageJob job -> Queue.dispatch ~callback database_label job Job.send
-  | EmailJob job -> Queue.dispatch database_label job Email.Service.Job.send
+  | TextMessageJob job ->
+    Pool_queue.dispatch
+      ?id
+      ?message_template
+      ~mappings
+      database_label
+      job
+      Job.send
+  | EmailJob job ->
+    Email.Service.dispatch ?id ?message_template ~mappings database_label job
 ;;

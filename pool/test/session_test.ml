@@ -530,7 +530,9 @@ let delete_session_with_follow_ups () =
 ;;
 
 let create_email_job experiment email =
-  Email.create_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
+  Email.Service.Job.create
+    ?smtp_auth_id:experiment.Experiment.smtp_auth_id
+    email
 ;;
 
 let create_cancellation_message experiment reason contact =
@@ -541,7 +543,13 @@ let create_cancellation_message experiment reason contact =
   let email =
     reason |> Session.CancellationReason.value |> flip Sihl_email.set_text email
   in
-  Email.create_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
+  create_email_job experiment email
+  |> Email.create_job
+       ~mappings:
+         (Pool_queue.mappings_create
+            [ Contact.(contact |> id |> Id.to_common)
+            ; Experiment.(experiment |> id |> Id.to_common)
+            ])
   |> CCResult.return
 ;;
 
@@ -1256,6 +1264,12 @@ let reschedule_to_past () =
   let create_message _ _ _ =
     Test_utils.Model.create_email ()
     |> create_email_job experiment
+    |> Email.create_job
+         ~mappings:
+           (Pool_queue.mappings_create
+              [ Session.(session.id |> Id.to_common)
+              ; Experiment.(experiment |> id |> Id.to_common)
+              ])
     |> CCResult.return
   in
   let command =
@@ -1286,9 +1300,18 @@ let reschedule_with_experiment_smtp () =
     { experiment with Experiment.smtp_auth_id = Some smtp_auth_id }
   in
   let assignment = Test_utils.Model.create_assignment () in
+  let email_to_job =
+    Email.create_job
+      ~mappings:
+        (Pool_queue.mappings_create
+           [ Session.(session.id |> Id.to_common)
+           ; Experiment.(experiment |> id |> Id.to_common)
+           ])
+  in
   let create_message _ _ _ =
     Test_utils.Model.create_email ()
     |> create_email_job experiment
+    |> email_to_job
     |> CCResult.return
   in
   let command =
@@ -1313,9 +1336,7 @@ let reschedule_with_experiment_smtp () =
   in
   let expected =
     let email = Test_utils.Model.create_email () in
-    let job =
-      Email.create_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
-    in
+    let job = create_email_job experiment email |> email_to_job in
     Ok
       [ Session.Rescheduled (session, rescheduled command) |> Pool_event.session
       ; Email.BulkSent [ job ] |> Pool_event.email
@@ -1329,8 +1350,16 @@ let resend_reminders_invalid () =
   let open Test_utils in
   let experiment = Model.create_experiment () in
   let assignments = [] in
-  let create_email _ =
-    Model.create_email () |> create_email_job experiment |> CCResult.return
+  let create_email assignment =
+    Model.create_email ()
+    |> create_email_job experiment
+    |> Email.create_job
+         ~mappings:
+           (Pool_queue.mappings_create
+              [ Assignment.(assignment.id |> Id.to_common)
+              ; Experiment.(experiment |> id |> Id.to_common)
+              ])
+    |> CCResult.return
   in
   let create_text_message _ cell_phone =
     Ok (Model.create_text_message_job cell_phone)
@@ -1377,7 +1406,15 @@ let resend_reminders_valid () =
     |> CCList.map (fun contact -> Model.create_assignment ~contact ())
   in
   let create_email _ =
-    Model.create_email () |> create_email_job experiment |> CCResult.return
+    Model.create_email ()
+    |> create_email_job experiment
+    |> Email.create_job
+         ~mappings:
+           (Pool_queue.mappings_create
+              [ Session.(session.id |> Id.to_common)
+              ; Experiment.(experiment |> id |> Id.to_common)
+              ])
+    |> CCResult.return
   in
   let create_text_message _ cell_phone =
     Ok (Model.create_text_message_job cell_phone)
@@ -1388,10 +1425,7 @@ let resend_reminders_valid () =
   let res1 = handle MessageChannel.Email in
   let expected1 =
     let emails =
-      assignments
-      |> CCList.map (CCFun.const (create_email ()))
-      |> CCList.all_ok
-      |> get_or_failwith
+      assignments |> CCList.map create_email |> CCList.all_ok |> get_or_failwith
     in
     Ok
       [ Session.EmailReminderSent session |> Pool_event.session
@@ -1402,7 +1436,8 @@ let resend_reminders_valid () =
   let res2 = handle MessageChannel.TextMessage in
   let expected2 =
     Ok
-      [ Email.BulkSent [ create_email () |> CCResult.get_exn ]
+      [ Email.BulkSent
+          [ create_email (assignments |> CCList.hd) |> CCResult.get_exn ]
         |> Pool_event.email
       ; Text_message.BulkSent [ Model.create_text_message_job cell_phone ]
         |> Pool_event.text_message
@@ -1825,7 +1860,7 @@ module DirectMessaging = struct
   let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
 
   let contact_with_cellphone =
-    Contact.{ (Model.create_contact ()) with cell_phone = Some cell_phone }
+    { (Model.create_contact ()) with Contact.cell_phone = Some cell_phone }
   ;;
 
   let make_email_job (_ : Assignment.t) (_ : Message_template.ManualMessage.t) =

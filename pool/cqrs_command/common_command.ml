@@ -21,7 +21,7 @@ end = struct
 
   let handle ?tags reset_email =
     Logs.info ~src (fun m -> m ?tags "Handle command ResetPassword");
-    Ok [ Email.Sent reset_email |> Pool_event.email ]
+    Ok [ Email.sent reset_email |> Pool_event.email ]
   ;;
 
   let decode data =

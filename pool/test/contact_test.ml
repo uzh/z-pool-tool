@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Pool_message
 module Contact_command = Cqrs_command.Contact_command
 module Language = Pool_common.Language
@@ -30,7 +31,7 @@ let confirmation_mail contact =
   in
   let open Message_template in
   let sender = "test@econ.uzh.ch" in
-  let ({ email_subject; email_text; _ } : Message_template.t) =
+  let ({ email_subject; email_text; label; _ } : Message_template.t) =
     Test_utils.Model.create_message_template ()
   in
   Sihl_email.
@@ -42,7 +43,11 @@ let confirmation_mail contact =
     ; cc = []
     ; bcc = []
     }
+  |> Email.Service.Job.create
   |> Email.create_job
+       ~mappings:
+         (Pool_queue.mappings_create Contact.[ contact |> id |> Id.to_common ])
+       ~message_template:(Message_template.Label.show label)
 ;;
 
 let sign_up_contact contact_info =
@@ -96,7 +101,7 @@ let create_contact verified contact_info =
 let verification_email (email_address, _, _, _, _) =
   let open Message_template in
   let sender = "test@econ.uzh.ch" in
-  let ({ email_subject; email_text; _ } : Message_template.t) =
+  let ({ email_subject; email_text; label; _ } : Message_template.t) =
     Test_utils.Model.create_message_template ()
   in
   Sihl_email.
@@ -108,7 +113,8 @@ let verification_email (email_address, _, _, _, _) =
     ; cc = []
     ; bcc = []
     }
-  |> Email.create_job
+  |> Email.Service.Job.create
+  |> Email.create_job ~message_template:(Message_template.Label.show label)
 ;;
 
 let sign_up_not_allowed_suffix () =
@@ -191,7 +197,7 @@ let sign_up () =
       [ Contact.Created contact |> Pool_event.contact
       ; Email.Created (email, token, user_id |> Contact.Id.to_user)
         |> Pool_event.email_verification
-      ; Email.Sent verification_email |> Pool_event.email
+      ; Email.sent verification_email |> Pool_event.email
       ]
   in
   check_result expected events
@@ -260,7 +266,7 @@ let update_password () =
           , new_password |> Pool_user.Password.Plain.create
           , new_password |> Pool_user.Password.Confirmation.create )
         |> Pool_event.user
-      ; Email.Sent notification |> Pool_event.email
+      ; Email.sent notification |> Pool_event.email
       ]
   in
   check_result expected events
@@ -398,7 +404,7 @@ let request_email_validation () =
     Ok
       [ Email.Created (new_email, token, Contact.(id contact |> Id.to_user))
         |> Pool_event.email_verification
-      ; Email.Sent verification_email |> Pool_event.email
+      ; Email.sent verification_email |> Pool_event.email
       ]
   in
   check_result expected events
@@ -516,7 +522,7 @@ let should_not_send_registration_notification _ () =
         ; cc = []
         ; bcc = []
         }
-      |> Email.create_job
+      |> Email.(Service.Job.create %> create_job)
       |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
            contact
       |> Test_utils.get_or_failwith

@@ -19,11 +19,16 @@ let get_experiment experiment_id =
 ;;
 
 let confirmation_mail (_ : Assignment.t) =
-  Common_test.Data.create_email () |> Email.create_job
+  Common_test.Data.create_email ()
+  |> Email.Service.Job.create
+  |> Email.create_job
 ;;
 
 let invitation_mail (_ : Contact.t) =
-  Common_test.Data.create_email () |> Email.create_job |> CCResult.return
+  Common_test.Data.create_email ()
+  |> Email.Service.Job.create
+  |> Email.create_job
+  |> CCResult.return
 ;;
 
 let find_assignment_by_contact_and_session contact_id session_id =
@@ -284,7 +289,7 @@ module CancelSession = struct
         handle
           (session :: follow_ups)
           assignments
-          (fun _ _ -> Ok (Email.create_job email))
+          (fun _ _ -> Ok (Email.Service.Job.create email |> Email.create_job))
           Session_test.create_cancellation_text_message
           [ Pool_common.NotifyVia.Email ]
           reason

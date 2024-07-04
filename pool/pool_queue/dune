@@ -1,6 +1,14 @@
 (library
- (name text_message)
- (libraries email pool_common pool_tenant pool_user pool_queue utils)
+ (name pool_queue)
+ (libraries
+  canary
+  containers
+  database
+  pool_canary
+  pool_tenant
+  schedule
+  sihl
+  utils)
  (preprocess
   (pps
    lwt_ppx
@@ -10,6 +18,7 @@
    ppx_deriving.show
    ppx_fields_conv
    ppx_sexp_conv
+   ppx_string
    ppx_variants_conv
    ppx_yojson_conv)))
 

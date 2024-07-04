@@ -8,7 +8,7 @@
   pool_tenant
   pool_token
   pool_user
-  queue
+  pool_queue
   query
   sihl-email
   utils)

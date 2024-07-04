@@ -28,7 +28,7 @@ let create () =
   let expected =
     Ok
       [ Waiting_list.Created command |> Pool_event.waiting_list
-      ; Email.Sent confirmation |> Pool_event.email
+      ; Email.sent confirmation |> Pool_event.email
       ]
   in
   Test_utils.check_result expected events

@@ -155,6 +155,7 @@ let assignment ~experiment ~session ~contact =
             ~recipient:"recipient"
             ~subject:"subject"
             "body"
+          |> Email.Service.Job.create
           |> Email.create_job)
         already_enrolled)
   in
@@ -177,6 +178,7 @@ let invitation ~experiment ~contacts =
                 ~recipient:"recipient"
                 ~subject:"subject"
                 "body"
+              |> Email.Service.Job.create
               |> Email.create_job
               |> CCResult.return)
         ; mailing = None

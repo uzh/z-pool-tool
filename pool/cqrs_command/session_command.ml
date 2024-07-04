@@ -257,11 +257,10 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command CreateTimeWindow" ~tags);
     let open CCResult in
-    let open Session in
     let* () =
       Pool_model.Time.start_is_before_end
-        ~start:(Start.value start)
-        ~end_at:(End.value end_at)
+        ~start:(Session.Start.value start)
+        ~end_at:(Session.End.value end_at)
     in
     let* () =
       if CCList.is_empty overlapps

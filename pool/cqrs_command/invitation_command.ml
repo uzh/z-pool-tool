@@ -90,7 +90,7 @@ end = struct
     let* email = create_email invitation.Invitation.contact in
     Ok
       [ Invitation.Resent (invitation, mailing_id) |> Pool_event.invitation
-      ; Email.Sent email |> Pool_event.email
+      ; Email.sent email |> Pool_event.email
       ]
   ;;
 

@@ -53,7 +53,7 @@ let assignment_creation_and_confirmation_events
   in
   let main_assignment = create contact in
   let confirmation_email = confirmation_email main_assignment in
-  let email_event = Email.Sent confirmation_email |> Pool_event.email in
+  let email_event = Email.sent confirmation_email |> Pool_event.email in
   let create_events =
     Created (main_assignment, session.Session.id) :: follow_up_events
     |> CCList.map Pool_event.assignment
@@ -173,7 +173,7 @@ end = struct
     in
     Ok
       ((cancel_events @ [ decrease_assignment_count ])
-       @ [ Email.Sent notification_email |> Pool_event.email ])
+       @ [ Email.sent notification_email |> Pool_event.email ])
   ;;
 
   let effects = Assignment.Guard.Access.update

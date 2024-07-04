@@ -37,7 +37,7 @@ let update_request =
   |> Repo_entity.Instance.t ->. Caqti_type.unit
 ;;
 
-let update label job_instance = Database.exec label update_request job_instance
+let update label = Database.exec label update_request
 
 let find_request_sql ?(count = false) where_fragment =
   let columns =

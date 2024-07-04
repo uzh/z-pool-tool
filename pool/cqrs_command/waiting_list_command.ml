@@ -28,7 +28,7 @@ end = struct
     then
       Ok
         [ Waiting_list.Created command |> Pool_event.waiting_list
-        ; Email.Sent confimration_email |> Pool_event.email
+        ; Email.sent confimration_email |> Pool_event.email
         ]
     else Error Pool_message.Error.NotEligible
   ;;

@@ -37,10 +37,11 @@ let validate_email =
   @@ fun () ->
   let open Email.Service in
   let smtp_auth_id = None in
-  let { Email.email; _ } =
+  let email =
     Data.create_email ()
-    |> Email.create_job ?smtp_auth_id
+    |> Email.Service.Job.create ?smtp_auth_id
     |> intercept_prepare
+    |> CCResult.map Email.Service.Job.email
     |> Test_utils.get_or_failwith
   in
   let msg = "Missing 'TEST_EMAIL' env variable." in

@@ -6,7 +6,7 @@ module Command = Cqrs_command.Queue_command
 
 let src = Logs.Src.create "handler.admin.settings_queue"
 let base_path = "/admin/settings/queue"
-let job_id = HttpUtils.find_id Queue.Id.of_string Field.Queue
+let job_id = HttpUtils.find_id Pool_queue.Id.of_string Field.Queue
 
 let show req =
   HttpUtils.Htmx.handler
@@ -27,9 +27,8 @@ let detail req =
     Lwt_result.map_error (fun err -> err, "/admin/settings/queue")
     @@
     let id = job_id req in
-    let* queue_instance = Queue.find database_label id in
-    let* job = Command.parse_instance_job queue_instance |> Lwt_result.lift in
-    Page.Admin.Settings.Queue.detail context queue_instance job
+    let* instance = Pool_queue.find database_label id in
+    Page.Admin.Settings.Queue.detail context instance
     |> General.create_tenant_layout req ~active_navigation:base_path context
     >|+ Sihl.Web.Response.of_html
   in
@@ -39,13 +38,13 @@ let detail req =
 let resend req =
   let open Utils.Lwt_result.Infix in
   let id = job_id req in
-  let path = Format.asprintf "%s/%s" base_path (Queue.Id.value id) in
+  let path = Format.asprintf "%s/%s" base_path (Pool_queue.Id.value id) in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* job = Queue.find database_label id in
-    let find_related = Queue.History.find_related database_label job in
+    let* job = Pool_queue.find database_label id in
+    let find_related = Pool_queue.Mapping.find_related database_label job in
     let%lwt job_contact =
       match%lwt find_related `contact with
       | None -> Lwt.return_none

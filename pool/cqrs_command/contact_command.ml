@@ -87,7 +87,7 @@ end = struct
       ([ Contact.Created contact |> Pool_event.contact
        ; Email.Created (unverified_email, token, user_id |> Contact.Id.to_user)
          |> Pool_event.email_verification
-       ; Email.Sent verification_email |> Pool_event.email
+       ; Email.sent verification_email |> Pool_event.email
        ]
        @ custom_field_events)
   ;;
@@ -225,7 +225,7 @@ end = struct
     Ok
       [ Email.Created (email, token, Contact.(id contact |> Id.to_user))
         |> Pool_event.email_verification
-      ; Email.Sent verification_email |> Pool_event.email
+      ; Email.sent verification_email |> Pool_event.email
       ]
   ;;
 
@@ -332,7 +332,7 @@ end = struct
     Logs.info ~src (fun m ->
       m "Handle command SendRegistrationAttemptNotifitacion" ~tags);
     Ok
-      [ Email.Sent email |> Pool_event.email
+      [ Email.sent email |> Pool_event.email
       ; Contact.RegistrationAttemptNotificationSent contact
         |> Pool_event.contact
       ]
@@ -436,14 +436,4 @@ end = struct
   ;;
 
   let effects = Contact.Guard.Access.update
-end
-
-module Verify = struct
-  (* TODO issue #90 step 2 *)
-  (* TODO Verify the contact itself with ID/Pass *)
-end
-
-module ToggleDisable = struct
-  (* TODO issue #90 step 2 *)
-  (* TODO Toggle disable command*)
 end
