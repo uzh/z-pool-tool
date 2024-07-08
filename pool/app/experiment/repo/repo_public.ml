@@ -123,6 +123,8 @@ let find_upcoming_to_register_request experiment_type () =
         pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND
         pool_waiting_list.experiment_uuid = pool_experiments.uuid
+      AND 
+        pool_waiting_list.marked_as_deleted = 0
       )
       |sql}
   in
@@ -163,6 +165,8 @@ let find_pending_waitinglists_by_contact_request =
     INNER JOIN pool_waiting_list
     ON
       pool_waiting_list.experiment_uuid = pool_experiments.uuid
+    AND
+      pool_waiting_list.marked_as_deleted = 0
     AND
       pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
     WHERE NOT EXISTS (
@@ -212,10 +216,14 @@ let where_contact_can_access =
     LEFT OUTER JOIN pool_waiting_list
       ON pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND pool_experiments.uuid = pool_waiting_list.experiment_uuid
+      AND pool_waiting_list.marked_as_deleted = 0
   |sql}
   in
   let waiting_list_exists =
-    {sql| pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
+    {sql| 
+      (pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND pool_waiting_list.marked_as_deleted = 0)
+      |sql}
   in
   Format.asprintf
     "%s %s WHERE %s AND (%s OR %s OR (%s AND %s) OR %s)"
