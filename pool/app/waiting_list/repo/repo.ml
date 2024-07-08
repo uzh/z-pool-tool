@@ -41,7 +41,10 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE 
+        pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
+      AND
+        pool_waiting_list.marked_as_deleted = 0
     |sql}
     |> find_request_sql
     |> Caqti_type.string ->! RepoEntity.t
@@ -60,6 +63,8 @@ module Sql = struct
         contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND
         experiment_uuid = UNHEX(REPLACE($2, '-', ''))
+      AND 
+        marked_as_deleted = 0
     |sql}
     |> find_request_sql
     |> Caqti_type.(t2 Contact.Repo.Id.t Experiment.Repo.Entity.Id.t)
@@ -78,6 +83,7 @@ module Sql = struct
       let sql =
         {sql|
           pool_waiting_list.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND pool_waiting_list.marked_as_deleted = 0
           AND NOT EXISTS (
             SELECT 1
             FROM pool_assignments
@@ -100,15 +106,6 @@ module Sql = struct
       ~select:find_request_sql
       ~where
       RepoEntity.t
-  ;;
-
-  let find_binary_experiment_id_sql =
-    {sql|
-      SELECT exp.uuid
-      FROM pool_waiting_list AS wl
-      LEFT JOIN pool_experiments AS exp ON wl.experiment_uuid = exp.uuid
-      WHERE wl.uuid = ?
-    |sql}
   ;;
 
   let find_experiment_id_request =
@@ -147,7 +144,8 @@ module Sql = struct
         UNHEX(REPLACE($2, '-', '')),
         UNHEX(REPLACE($3, '-', '')),
         $4
-      )
+      ) ON DUPLICATE KEY UPDATE
+        marked_as_deleted = 0
     |sql}
     |> Caqti_type.(RepoEntity.Write.t ->. unit)
   ;;
@@ -176,9 +174,9 @@ module Sql = struct
   let delete_request =
     let open Caqti_request.Infix in
     {sql|
-      DELETE FROM pool_waiting_list
-      WHERE
-        uuid = UNHEX(REPLACE($1, '-', ''))
+      UPDATE pool_waiting_list
+      SET marked_as_deleted = 1
+      WHERE uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> Caqti_type.(string ->. unit)
   ;;
