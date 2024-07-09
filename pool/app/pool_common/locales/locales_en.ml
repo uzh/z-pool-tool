@@ -64,6 +64,7 @@ let rec field_to_string =
   | DateTime -> "date and time"
   | DefaultLanguage -> "default language"
   | DefaultSmtpServer -> "default server"
+  | DeliveryReport -> "delivery report"
   | Description -> "description"
   | DirectRegistrationDisabled -> "direct registration disabled"
   | Disabled -> "disabled"
@@ -289,6 +290,7 @@ let rec field_to_string =
   | TermsAndConditionsLastAccepted -> "terms and conditions last accepted at"
   | TestPhoneNumber -> "test phone number"
   | TextMessage -> "text message"
+  | TextMessageDlrStatus -> "text message status"
   | TextMessageLeadTime -> "text message lead time"
   | TextMessageRemindersSentAt -> "text message reminders sent at"
   | Time -> "time"
@@ -640,6 +642,8 @@ let rec error_to_string =
     Format.asprintf "Must not be shorter than %i characters." i
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
+  | TextMessageDlrAlreadyReceived ->
+    "Text message delivery report already received."
   | TimeInPast -> "Time is in the past!"
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenAlreadyUsed -> "The token was already used."

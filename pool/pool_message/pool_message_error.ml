@@ -125,6 +125,7 @@ type t =
   | TextLengthMax of int
   | TextLengthMin of int
   | TextMessageInterceptionError of string
+  | TextMessageDlrAlreadyReceived
   | TimeInPast
   | TimeSpanPositive
   | TokenAlreadyUsed

@@ -49,9 +49,42 @@ module Service : sig
   val send : Database.Label.t -> job -> unit Lwt.t
 end
 
+module DlrMask : sig
+  type t =
+    | Delivered
+    | NonDelivered
+    | Expired
+    | Unknown
+
+  val of_int : int -> t
+  val to_human : t -> string
+end
+
+type delivery_report =
+  { job_id : Queue.Id.t
+  ; raw : string
+  ; from : string
+  ; to_ : string
+  ; message_id : string
+  ; dlr_mask : int
+  ; error_code : int
+  ; error_message : string
+  ; submit_date : Pool_model.Base.Ptime.t
+  ; done_date : Pool_model.Base.Ptime.t
+  ; plmn : string
+  ; country : string
+  ; sms_cost : float
+  }
+
+val find_report_by_queue_id
+  :  Database.Label.t
+  -> Queue.Id.t
+  -> delivery_report option Lwt.t
+
 type event =
   | Sent of job
   | BulkSent of job list
+  | ReportCreated of delivery_report
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

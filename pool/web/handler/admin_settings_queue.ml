@@ -29,7 +29,17 @@ let detail req =
     let id = job_id req in
     let* queue_instance = Queue.find database_label id in
     let* job = Command.parse_instance_job queue_instance |> Lwt_result.lift in
-    Page.Admin.Settings.Queue.detail context queue_instance job
+    let%lwt text_message_dlr =
+      match job with
+      | `TextMessageJob _ ->
+        Text_message.find_report_by_queue_id database_label id
+      | `EmailJob _ | `MatcherJob _ -> Lwt.return_none
+    in
+    Page.Admin.Settings.Queue.detail
+      context
+      ?text_message_dlr
+      queue_instance
+      job
     |> General.create_tenant_layout req ~active_navigation:base_path context
     >|+ Sihl.Web.Response.of_html
   in

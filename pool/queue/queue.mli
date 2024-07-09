@@ -88,7 +88,14 @@ module Job : sig
   val retry_delay : 'a t -> Ptime.span
   val max_tries : 'a t -> int
   val failed : 'a t -> Database.Label.t -> string -> Instance.t -> unit Lwt.t
-  val handle : 'a t -> Database.Label.t -> 'a -> (unit, string) Lwt_result.t
+
+  val handle
+    :  'a t
+    -> Database.Label.t
+    -> Id.t option
+    -> 'a
+    -> (unit, string) Lwt_result.t
+
   val decode : 'a t -> string -> ('a, string) result
   val encode : 'a t -> 'a -> string
   val name : 'a t -> JobName.t
@@ -98,7 +105,7 @@ module Job : sig
     -> ?retry_delay:Ptime.span
     -> ?failed:(Database.Label.t -> string -> Instance.t -> unit Lwt.t)
     -> ?tag:string
-    -> (Database.Label.t -> 'a -> (unit, string) Lwt_result.t)
+    -> (Database.Label.t -> Id.t option -> 'a -> (unit, string) Lwt_result.t)
     -> ('a -> string)
     -> (string -> ('a, string) result)
     -> JobName.t
@@ -121,7 +128,7 @@ module AnyJob : sig
   val retry_delay : t -> Ptime.span
   val max_tries : t -> int
   val failed : t -> Database.Label.t -> string -> Instance.t -> unit Lwt.t
-  val handle : t -> Database.Label.t -> string -> (unit, string) Lwt_result.t
+  val handle : t -> Instance.t -> (unit, string) Lwt_result.t
   val name : t -> JobName.t
 end
 
@@ -238,4 +245,10 @@ module History : sig
     -> Instance.t
     -> [< `contact | `experiment ]
     -> Pool_common.Id.t option Lwt.t
+end
+
+module Repo : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
 end

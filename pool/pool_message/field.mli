@@ -56,6 +56,7 @@ type t =
   | DateTime
   | DefaultLanguage
   | DefaultSmtpServer
+  | DeliveryReport
   | Description
   | DirectRegistrationDisabled
   | Disabled
@@ -274,6 +275,7 @@ type t =
   | TermsAndConditionsLastAccepted
   | TestPhoneNumber
   | TextMessage
+  | TextMessageDlrStatus
   | TextMessageLeadTime
   | TextMessageRemindersSentAt
   | Time

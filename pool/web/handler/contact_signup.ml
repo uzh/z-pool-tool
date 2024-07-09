@@ -66,7 +66,7 @@ let sign_up_create req =
            "User registration"
            req
            tags
-           email_address
+           (Some email_address)
        in
        let create_contact_events () =
          let open Command.SignUp in

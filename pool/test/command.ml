@@ -562,6 +562,12 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
+    ; ( " queue"
+      , [ test_case
+            "create delivery report"
+            `Quick
+            Queue_test.create_text_message_dlr
+        ] )
     ; ( "time window"
       , Time_window_test.[ test_case "create" `Slow create_timewindow ] )
     ]

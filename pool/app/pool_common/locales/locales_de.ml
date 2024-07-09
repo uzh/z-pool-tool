@@ -64,6 +64,7 @@ let rec field_to_string =
   | DateTime -> "Datum und Uhrzeit"
   | DefaultLanguage -> "Standard Sprache"
   | DefaultSmtpServer -> "Standardserver"
+  | DeliveryReport -> "Übermittlungsbericht"
   | Description -> "Beschreibung"
   | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
@@ -292,6 +293,7 @@ let rec field_to_string =
   | TermsAndConditionsLastAccepted -> "Teilnahmebedingungen zuletzt akzeptiert"
   | TestPhoneNumber -> "Testtelefonnummer"
   | TextMessage -> "SMS"
+  | TextMessageDlrStatus -> "SMS Status"
   | TextMessageLeadTime -> "SMS Vorlaufzeit"
   | TextMessageRemindersSentAt -> "SMS Erinnerungen verschickt am"
   | Time -> "Uhrzeit"
@@ -682,6 +684,7 @@ let rec error_to_string =
     Format.asprintf "Darf nicht kürzer als %i Zeichen sein." i
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
+  | TextMessageDlrAlreadyReceived -> "SMS Übermittlingsbeicht bereits erhalten."
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
