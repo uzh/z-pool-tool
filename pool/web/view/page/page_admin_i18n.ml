@@ -3,17 +3,40 @@ open Component.Input
 module Message = Pool_message
 
 let list translation_list Pool_context.{ language; csrf; _ } =
-  let textarea_element ?rich_text translation =
-    textarea_element
-      ?rich_text
-      ~orientation:`Horizontal
-      ~classnames:[ "grow" ]
-      ~label_field:(Pool_common.Language.field_of_t (I18n.language translation))
-      ~identifier:(translation |> I18n.id |> Pool_common.Id.value)
-      ~required:true
-      ~value:(translation |> I18n.content |> I18n.Content.value)
-      language
-      Pool_message.Field.translation
+  let input translation input_type =
+    let orientation = `Horizontal in
+    let label_field =
+      Pool_common.Language.field_of_t (I18n.language translation)
+    in
+    let identifier = translation |> I18n.id |> Pool_common.Id.value in
+    let value = translation |> I18n.content |> I18n.Content.value in
+    let field = Pool_message.Field.translation in
+    let textarea_element rich_text =
+      textarea_element
+        ~rich_text
+        ~orientation
+        ~classnames:[ "grow" ]
+        ~label_field
+        ~identifier
+        ~required:true
+        ~value
+        language
+        field
+    in
+    match input_type with
+    | `rich_text -> textarea_element true
+    | `text_area -> textarea_element false
+    | `text_input ->
+      input_element
+        ~orientation
+        ~classnames:[ "grow" ]
+        ~label_field
+        ~identifier
+        ~required:true
+        ~value
+        language
+        `Text
+        field
   in
   let build_translations_row translation_list =
     CCList.map
@@ -27,11 +50,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
                      "/admin/i18n/%s"
                      (translation |> I18n.id |> Pool_common.Id.value))
               in
-              let text_input =
-                textarea_element
-                  ~rich_text:(I18n.Key.is_rich_text key)
-                  translation
-              in
+              let text_input = input translation (I18n.Key.input_type key) in
               form
                 ~a:
                   [ a_action action

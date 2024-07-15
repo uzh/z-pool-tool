@@ -5,6 +5,14 @@ open Pool_message
 module PageSession = Page_contact_sessions
 module HttpUtils = Http_utils
 
+type dashboard_i18n =
+  { upcoming_sessions : I18n.t
+  ; online_studies : I18n.t
+  ; experiment_registration : I18n.t
+  ; experiment_history : I18n.t
+  ; waiting_list : I18n.t
+  }
+
 let experiment_public_description =
   let open Experiment in
   Public.description
@@ -39,13 +47,12 @@ let index
   waiting_list
   past_experiments
   custom_fields_ansered
+  i18n
   Pool_context.{ language; query_language; _ }
   =
   let list_html ?empty_msg ?note title classnames list =
     div
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ txt Pool_common.(Utils.text_to_string language title) ]
+      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (I18n.content_to_string title) ]
       ; CCOption.map_or
           ~default:(txt "")
           (fun hint ->
@@ -124,7 +131,7 @@ let index
     experiment_list
     |> CCList.map experiment_item
     |> list_html
-         ExperimentListPublicTitle
+         i18n.experiment_registration
          ~note:ExperimentSessionsPublic
          ~empty_msg:ExperimentListEmpty
          [ "striped" ]
@@ -133,7 +140,7 @@ let index
     online_studies
     |> CCList.map experiment_item
     |> list_html
-         ExperimentOnlineListPublicTitle
+         i18n.online_studies
          ~empty_msg:ExperimentOnlineListEmpty
          [ "striped" ]
   in
@@ -143,7 +150,7 @@ let index
     | past_experiments ->
       past_experiments
       |> CCList.map experiment_item
-      |> list_html ExperimentHistory [ "striped" ]
+      |> list_html i18n.experiment_history [ "striped" ]
   in
   let session_html =
     let experiment_overview ((exp : Experiment.Public.t), parent, follow_ups) =
@@ -180,7 +187,7 @@ let index
     upcoming_sessions
     |> CCList.map experiment_overview
     |> list_html
-         UpcomingSessionsTitle
+         i18n.upcoming_sessions
          ~empty_msg:UpcomingSessionsListEmpty
          [ "stack-lg" ]
   in
@@ -192,7 +199,7 @@ let index
       list
       |> CCList.map experiment_item
       |> list_html
-           ContactWaitingListTitle
+           i18n.waiting_list
            ~empty_msg:ContactWaitingListEmpty
            [ "striped" ]
   in

@@ -4,6 +4,12 @@ module Key : sig
     | ActorPermissionHint
     | AssistantRoleHint
     | CreditsText
+    | DashboardUpcomingSessions
+    | DashboardOnlineStudies
+    | DashboardExperimentRegistration
+    | DashboardExperimentHistory
+    | DashboardWaitinglist
+    | ExperimentNavigationTitle
     | ExperimenterRoleHint
     | GreetingsText
     | PasswordPolicyText
@@ -16,7 +22,7 @@ module Key : sig
   val show : t -> string
   val equal : t -> t -> bool
   val compare : t -> t -> int
-  val is_rich_text : t -> bool
+  val input_type : t -> [> `rich_text | `text_area | `text_input ]
   val all : t list
   val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
@@ -65,14 +71,13 @@ val find_by_key_opt
 val find_all : Database.Label.t -> unit -> t list Lwt.t
 val terms_and_conditions_last_updated : Database.Label.t -> Ptime.t Lwt.t
 
-module I18nPageCache : sig
+module I18nCache : sig
   val clear : unit -> unit
 end
 
-val i18n_is_set
+val privacy_policy_is_set
   :  Database.Label.t
   -> Pool_common.Language.t
-  -> Key.t
   -> bool Lwt.t
 
 module Guard : sig

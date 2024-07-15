@@ -14,6 +14,19 @@ module Key = struct
       | AssistantRoleHint [@name "assistant_role_hint"]
       [@printer print "assistant_role_hint"]
       | CreditsText [@name "credits_text"] [@printer print "credits_text"]
+      | DashboardUpcomingSessions [@name "dashboard_upcoming_sessions"]
+      [@printer print "dashboard_upcoming_sessions"]
+      | DashboardOnlineStudies [@name "dashboard_online_studies"]
+      [@printer print "dashboard_online_studies"]
+      | DashboardExperimentRegistration
+      [@name "dashboard_experiment_registration"]
+      [@printer print "dashboard_experiment_registration"]
+      | DashboardExperimentHistory [@name "dashboard_experiment_history"]
+      [@printer print "dashboard_experiment_history"]
+      | DashboardWaitinglist [@name "dashboard_waiting_list"]
+      [@printer print "dashboard_waiting_list"]
+      | ExperimentNavigationTitle [@name "experiment_navigation_title"]
+      [@printer print "experiment_navigation_title"]
       | ExperimenterRoleHint [@name "experimenter_role_hint"]
       [@printer print "experimenter_role_hint"]
       | GreetingsText [@name "greetings_text"] [@printer print "greetings_text"]
@@ -30,7 +43,7 @@ module Key = struct
   include Pool_model.Base.SelectorType (Core)
   include Core
 
-  let is_rich_text = function
+  let input_type = function
     | ActorPermissionCreateHint
     | ActorPermissionHint
     | AssistantRoleHint
@@ -40,8 +53,14 @@ module Key = struct
     | PrivacyPolicy
     | SignUpCTA
     | TermsAndConditions
-    | WelcomeText -> true
-    | PasswordPolicyText -> false
+    | WelcomeText -> `rich_text
+    | PasswordPolicyText -> `text_area
+    | DashboardUpcomingSessions
+    | DashboardOnlineStudies
+    | DashboardExperimentRegistration
+    | DashboardExperimentHistory
+    | ExperimentNavigationTitle
+    | DashboardWaitinglist -> `text_input
   ;;
 end
 
