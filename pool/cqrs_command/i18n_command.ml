@@ -9,6 +9,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
     -> I18n.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -20,12 +21,15 @@ end = struct
 
   let schema = Conformist.(make Field.[ I18n.Content.schema () ] CCFun.id)
 
-  let handle ?(tags = Logs.Tag.empty) property (command : t) =
+  let handle ?(tags = Logs.Tag.empty) ?system_event_id property (command : t) =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     Ok
       [ I18n.Updated (property, command) |> Pool_event.i18n
       ; System_event.(
-          Job.I18nPageUpdated |> create |> created |> Pool_event.system_event)
+          Job.I18nPageUpdated
+          |> create ?id:system_event_id
+          |> created
+          |> Pool_event.system_event)
       ]
   ;;
 
