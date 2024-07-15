@@ -22,7 +22,7 @@ module Key : sig
   val show : t -> string
   val equal : t -> t -> bool
   val compare : t -> t -> int
-  val input_type : t -> [> `rich_text | `text_area | `text_input ]
+  val input_type : t -> [> `RichText | `TextArea | `TextInput ]
   val all : t list
   val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end

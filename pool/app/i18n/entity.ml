@@ -53,14 +53,14 @@ module Key = struct
     | PrivacyPolicy
     | SignUpCTA
     | TermsAndConditions
-    | WelcomeText -> `rich_text
-    | PasswordPolicyText -> `text_area
+    | WelcomeText -> `RichText
+    | PasswordPolicyText -> `TextArea
     | DashboardUpcomingSessions
     | DashboardOnlineStudies
     | DashboardExperimentRegistration
     | DashboardExperimentHistory
     | ExperimentNavigationTitle
-    | DashboardWaitinglist -> `text_input
+    | DashboardWaitinglist -> `TextInput
   ;;
 end
 

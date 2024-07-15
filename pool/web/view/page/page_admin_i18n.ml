@@ -24,9 +24,9 @@ let list translation_list Pool_context.{ language; csrf; _ } =
         field
     in
     match input_type with
-    | `rich_text -> textarea_element true
-    | `text_area -> textarea_element false
-    | `text_input ->
+    | `RichText -> textarea_element true
+    | `TextArea -> textarea_element false
+    | `TextInput ->
       input_element
         ~orientation
         ~classnames:[ "grow" ]
