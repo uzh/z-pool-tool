@@ -10,28 +10,36 @@ let update_terms_and_conditions () =
   let terms =
     CCList.map
       (fun lang ->
-        I18n.create
-          I18n.Key.TermsAndConditions
-          lang
-          (I18n.Content.of_string content))
+        let system_event_id = System_event.Id.create () in
+        ( I18n.create
+            I18n.Key.TermsAndConditions
+            lang
+            (I18n.Content.of_string content)
+        , system_event_id ))
       languages
   in
   let events =
     let open CCResult in
     let open I18nCommand.Update in
     terms
-    |> CCList.map (fun i18n ->
+    |> CCList.map (fun (i18n, system_event_id) ->
       [ Pool_message.Field.(show Translation), [ content ] ]
       |> decode
-      >>= handle i18n)
+      >>= handle ~system_event_id i18n)
     |> CCResult.flatten_l
     |> CCResult.map CCList.flatten
   in
   let expected =
     terms
-    |> CCList.map (fun i18n ->
+    |> CCList.map (fun (i18n, system_event_id) ->
       let content = I18n.Content.of_string content in
-      [ I18n.Updated (i18n, content) |> Pool_event.i18n ])
+      [ I18n.Updated (i18n, content) |> Pool_event.i18n
+      ; System_event.(
+          Job.I18nPageUpdated
+          |> create ~id:system_event_id
+          |> created
+          |> Pool_event.system_event)
+      ])
     |> CCList.flatten
     |> CCResult.return
   in
