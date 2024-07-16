@@ -6,6 +6,7 @@ type t =
   | AssignmentListEmpty
   | AvailableSpots
   | Canceled
+  | CanceledSessionsTitle
   | Closed
   | ContactWaitingListEmpty
   | CustomFieldsSettings

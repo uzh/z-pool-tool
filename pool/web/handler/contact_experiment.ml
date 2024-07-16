@@ -139,6 +139,10 @@ let show req =
       let* past_sessions =
         find_sessions Assignment.find_past_public_by_experiment_and_contact_opt
       in
+      let* canceled_sessions =
+        find_sessions
+          Assignment.find_canceled_public_by_experiment_and_contact_opt
+      in
       let%lwt user_is_on_waiting_list =
         Waiting_list.user_is_enlisted database_label contact id
       in
@@ -147,6 +151,7 @@ let show req =
         grouped_sessions
         upcoming_sessions
         past_sessions
+        canceled_sessions
         user_is_on_waiting_list
         contact
         context

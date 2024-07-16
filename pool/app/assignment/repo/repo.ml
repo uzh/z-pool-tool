@@ -255,7 +255,7 @@ module Sql = struct
     ||> Utils.group_tuples
   ;;
 
-  let find_public_by_experiment_and_contact_opt_request time =
+  let find_public_by_experiment_and_contact_opt_request scope =
     let open Caqti_request.Infix in
     let query joins =
       {sql|
@@ -280,16 +280,25 @@ module Sql = struct
           %s
         |sql}
     in
-    match time with
-    | `Upcoming -> "AND pool_sessions.closed_at IS NULL" |> joins |> query
-    | `Past -> "AND pool_sessions.closed_at IS NOT NULL" |> joins |> query
+    match scope with
+    | `Canceled ->
+      {sql|AND pool_assignments.canceled_at IS NOT NULL|sql} |> joins |> query
+    | `Upcoming ->
+      {sql|AND pool_sessions.closed_at IS NULL AND pool_assignments.canceled_at IS NULL|sql}
+      |> joins
+      |> query
+    | `Past ->
+      {sql|AND pool_sessions.closed_at IS NOT NULL AND pool_assignments.canceled_at IS NULL|sql}
+      |> joins
+      |> query
     | `All -> "" |> joins |> query
   ;;
 
-  let find_public_by_experiment_and_contact_opt time pool experiment_id contact =
+  let find_public_by_experiment_and_contact_opt scope pool experiment_id contact
+    =
     Database.collect
       pool
-      (find_public_by_experiment_and_contact_opt_request time)
+      (find_public_by_experiment_and_contact_opt_request scope)
       (experiment_id, Contact.id contact)
   ;;
 

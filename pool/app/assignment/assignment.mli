@@ -152,6 +152,12 @@ val find_all_public_by_experiment_and_contact_opt
   -> Contact.t
   -> Public.t list Lwt.t
 
+val find_canceled_public_by_experiment_and_contact_opt
+  :  Database.Label.t
+  -> Experiment.Id.t
+  -> Contact.t
+  -> Public.t list Lwt.t
+
 val assignment_to_experiment_exists
   :  Database.Label.t
   -> Experiment.Id.t

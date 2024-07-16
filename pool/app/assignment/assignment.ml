@@ -17,6 +17,10 @@ let find_all_public_by_experiment_and_contact_opt =
   Repo.find_public_by_experiment_and_contact_opt `All
 ;;
 
+let find_canceled_public_by_experiment_and_contact_opt =
+  Repo.find_public_by_experiment_and_contact_opt `Canceled
+;;
+
 let assignment_to_experiment_exists database_label experiment_id contact =
   let open Utils.Lwt_result.Infix in
   find_all_public_by_experiment_and_contact_opt
