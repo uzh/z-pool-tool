@@ -81,7 +81,7 @@ let show_online_study
   in
   let%lwt assignment =
     let open Utils.Lwt_result.Infix in
-    Assignment.find_all_public_by_experiment_and_contact_opt
+    Assignment.Public.find_all_by_experiment
       database_label
       experiment_id
       contact
@@ -133,15 +133,13 @@ let show req =
         ||> CCResult.flatten_l
       in
       let* upcoming_sessions =
-        find_sessions
-          Assignment.find_upcoming_public_by_experiment_and_contact_opt
+        find_sessions Assignment.Public.find_upcoming_by_experiment
       in
       let* past_sessions =
-        find_sessions Assignment.find_past_public_by_experiment_and_contact_opt
+        find_sessions Assignment.Public.find_past_by_experiment
       in
       let* canceled_sessions =
-        find_sessions
-          Assignment.find_canceled_public_by_experiment_and_contact_opt
+        find_sessions Assignment.Public.find_canceled_by_experiment
       in
       let%lwt user_is_on_waiting_list =
         Waiting_list.user_is_enlisted database_label contact id
@@ -181,7 +179,7 @@ module OnlineSurvey = struct
       in
       let%lwt assignment =
         let open Utils.Lwt_result.Infix in
-        Assignment.find_all_public_by_experiment_and_contact_opt
+        Assignment.Public.find_all_by_experiment
           database_label
           experiment_id
           contact

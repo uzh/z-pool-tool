@@ -165,7 +165,7 @@ let assign_contact req =
     in
     let%lwt already_enrolled =
       let open Utils.Lwt_result.Infix in
-      Assignment.find_all_public_by_experiment_and_contact_opt
+      Assignment.Public.find_all_by_experiment
         database_label
         experiment_id
         waiting_list.Waiting_list.contact

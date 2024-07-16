@@ -5,28 +5,29 @@ module Guard = Entity_guard
 let find = Repo.find
 let find_closed = Repo.find_closed
 
-let find_upcoming_public_by_experiment_and_contact_opt =
-  Repo.find_public_by_experiment_and_contact_opt `Upcoming
-;;
+module Public = struct
+  include Public
 
-let find_past_public_by_experiment_and_contact_opt =
-  Repo.find_public_by_experiment_and_contact_opt `Past
-;;
+  let find_upcoming_by_experiment =
+    Repo.find_public_by_experiment_and_contact_opt `Upcoming
+  ;;
 
-let find_all_public_by_experiment_and_contact_opt =
-  Repo.find_public_by_experiment_and_contact_opt `All
-;;
+  let find_past_by_experiment =
+    Repo.find_public_by_experiment_and_contact_opt `Past
+  ;;
 
-let find_canceled_public_by_experiment_and_contact_opt =
-  Repo.find_public_by_experiment_and_contact_opt `Canceled
-;;
+  let find_all_by_experiment =
+    Repo.find_public_by_experiment_and_contact_opt `All
+  ;;
+
+  let find_canceled_by_experiment =
+    Repo.find_public_by_experiment_and_contact_opt `Canceled
+  ;;
+end
 
 let assignment_to_experiment_exists database_label experiment_id contact =
   let open Utils.Lwt_result.Infix in
-  find_all_public_by_experiment_and_contact_opt
-    database_label
-    experiment_id
-    contact
+  Public.find_all_by_experiment database_label experiment_id contact
   ||> CCList.is_empty
   ||> not
 ;;
