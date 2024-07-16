@@ -69,9 +69,8 @@ let sign_up_create req =
            (Some email_address)
        in
        let create_contact_events () =
-         let open Command.SignUp in
-         let* ({ firstname; lastname; _ } as decoded) =
-           decode urlencoded |> Lwt_result.lift
+         let* ({ UserCommand.firstname; lastname; _ } as decoded) =
+           Command.SignUp.decode urlencoded |> Lwt_result.lift
          in
          let%lwt token = Email.create_token database_label email_address in
          let%lwt verification_mail =
@@ -86,7 +85,7 @@ let sign_up_create req =
              user_id
          in
          decoded
-         |> handle
+         |> Command.SignUp.handle
               ~tags
               ?allowed_email_suffixes
               ~user_id

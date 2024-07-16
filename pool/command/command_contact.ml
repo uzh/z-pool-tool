@@ -38,17 +38,17 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
        let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
        let user_id = Contact.Id.create () in
        let%lwt events =
-         let open Cqrs_command.Contact_command.SignUp in
+         let open Cqrs_command in
          let language =
            Pool_common.Language.create language |> CCResult.to_opt
          in
-         let ({ firstname; lastname; email; _ } as decoded) =
+         let ({ User_command.firstname; lastname; email; _ } as decoded) =
            [ "email", [ email ]
            ; "password", [ password ]
            ; "firstname", [ firstname ]
            ; "lastname", [ lastname ]
            ]
-           |> decode
+           |> Contact_command.SignUp.decode
            |> get_or_failwith
          in
          let%lwt token = Email.create_token pool email in
@@ -64,7 +64,13 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
              user_id
          in
          decoded
-         |> handle [] ~user_id token email verification_mail language
+         |> Contact_command.SignUp.handle
+              []
+              ~user_id
+              token
+              email
+              verification_mail
+              language
          |> get_or_failwith
          |> Lwt.return
        in

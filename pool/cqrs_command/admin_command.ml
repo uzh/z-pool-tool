@@ -13,12 +13,7 @@ type revoke_role =
 module CreateAdmin : sig
   include Common.CommandSig
 
-  type t =
-    { email : Pool_user.EmailAddress.t
-    ; password : Pool_user.Password.Plain.t [@opaque]
-    ; firstname : Pool_user.Firstname.t
-    ; lastname : Pool_user.Lastname.t
-    }
+  type t = User_command.create_user
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -30,28 +25,7 @@ module CreateAdmin : sig
 
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
-  type t =
-    { email : Pool_user.EmailAddress.t
-    ; password : Pool_user.Password.Plain.t [@opaque]
-    ; firstname : Pool_user.Firstname.t
-    ; lastname : Pool_user.Lastname.t
-    }
-
-  let command email password firstname lastname =
-    { email; password; firstname; lastname }
-  ;;
-
-  let schema =
-    Pool_conformist.(
-      make
-        Field.
-          [ Pool_user.EmailAddress.schema ()
-          ; Pool_user.Password.Plain.schema ()
-          ; Pool_user.Firstname.schema ()
-          ; Pool_user.Lastname.schema ()
-          ]
-        command)
-  ;;
+  type t = User_command.create_user
 
   let handle
     ?(tags = Logs.Tag.empty)
@@ -63,24 +37,27 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command CreateAdmin" ~tags);
     let open CCResult in
     let* () =
-      Pool_user.EmailAddress.validate allowed_email_suffixes command.email
+      Pool_user.EmailAddress.validate
+        allowed_email_suffixes
+        command.User_command.email
     in
     (* TODO: pass Id or Tenant to Admin.Created function as option to further
        pass down to permissions *)
     let admin : Admin.create =
-      { id
-      ; Admin.email = command.email
-      ; password = command.password
-      ; firstname = command.firstname
-      ; lastname = command.lastname
-      ; roles
-      }
+      User_command.
+        { id
+        ; Admin.email = command.email
+        ; password = command.password
+        ; firstname = command.firstname
+        ; lastname = command.lastname
+        ; roles
+        }
     in
     Ok [ Admin.Created admin |> Pool_event.admin ]
   ;;
 
   let decode data =
-    Pool_conformist.decode_and_validate schema data
+    Pool_conformist.decode_and_validate User_command.create_user_schema data
     |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 

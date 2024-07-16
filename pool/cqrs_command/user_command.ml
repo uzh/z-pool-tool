@@ -2,6 +2,29 @@ open CCFun.Infix
 
 let src = Logs.Src.create "user.cqrs"
 
+type create_user =
+  { email : Pool_user.EmailAddress.t
+  ; password : Pool_user.Password.Plain.t [@opaque]
+  ; firstname : Pool_user.Firstname.t
+  ; lastname : Pool_user.Lastname.t
+  }
+
+let create_user_command email password firstname lastname =
+  { email; password; firstname; lastname }
+;;
+
+let create_user_schema =
+  Pool_conformist.(
+    make
+      Field.
+        [ Pool_user.EmailAddress.schema ()
+        ; Pool_user.Password.Plain.schema ()
+        ; Pool_user.Firstname.schema ()
+        ; Pool_user.Lastname.schema ()
+        ]
+      create_user_command)
+;;
+
 type user =
   | Contact of Contact.t
   | Admin of Admin.t

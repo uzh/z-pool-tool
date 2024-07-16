@@ -120,7 +120,7 @@ let sign_up_not_allowed_suffix () =
     |> CCResult.get_exn
   in
   let contact_info = "john@bluewin.com" |> contact_info in
-  let ({ email; _ } as decoded) =
+  let ({ Cqrs_command.User_command.email; _ } as decoded) =
     contact_info |> sign_up_contact |> decode |> CCResult.get_exn
   in
   let token = Email.Token.create "testtoken" in
