@@ -229,6 +229,7 @@ let show
   grouped_sessions
   upcoming_sessions
   past_sessions
+  canceled_sessions
   user_is_enlisted
   contact
   Pool_context.{ language; query_language; csrf; _ }
@@ -323,8 +324,8 @@ let show
          :: Page_contact_sessions.public_detail language sessions)
   in
   let html =
-    match upcoming_sessions, past_sessions with
-    | [], [] ->
+    match upcoming_sessions, past_sessions, canceled_sessions with
+    | [], [], [] ->
       Experiment.(
         (match
            experiment
@@ -333,12 +334,13 @@ let show
          with
          | false -> session_list grouped_sessions
          | true -> div [ waiting_list_form () ]))
-    | upcoming_sessions, past_sessions ->
+    | upcoming_sessions, past_sessions, canceled_sessions ->
       let open Pool_common.I18n in
       div
         ~a:[ a_class [ "stack-lg" ] ]
         [ sessions_html UpcomingSessionsTitle upcoming_sessions
         ; sessions_html PastSessionsTitle past_sessions
+        ; sessions_html CanceledSessionsTitle canceled_sessions
         ]
   in
   experiment_detail_page experiment html

@@ -14,6 +14,7 @@ let to_string = function
   | AssignmentListEmpty -> "Es existieren keine Anmeldungen für diese Session."
   | AvailableSpots -> "Freie Plätze"
   | Canceled -> "Abgesagt"
+  | CanceledSessionsTitle -> "Ihre abgesagten Sessions"
   | Closed -> "Geschlossen"
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
   | CustomFieldsSettings ->
