@@ -2,6 +2,10 @@ open CCFormat
 
 let src = Logs.Src.create "pool.conformist"
 
+let conformist_hide_list =
+  Pool_message.Field.([ Password; PasswordConfirmation ] |> CCList.map show)
+;;
+
 module Error = struct
   open Pool_message.Error
 
@@ -43,7 +47,11 @@ let decode_and_validate ?tags schema input =
     let msg =
       CCList.map
         (fun (field, values, error_msg) ->
-          let values = CCString.concat ", " values in
+          let values =
+            if CCList.mem ~eq:CCString.equal field conformist_hide_list
+            then "************"
+            else CCString.concat ", " values
+          in
           asprintf "(%s, (%s), %s)" field values (Error.show_error error_msg))
         errors
       |> CCString.concat ", "
