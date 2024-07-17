@@ -299,7 +299,7 @@ module Smtp = struct
     Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
     |> function
     | Ok message ->
-      Logs.info ~src (fun m ->
+      Logs.debug ~src (fun m ->
         m
           ~tags:(Database.Logger.Tags.create database_label)
           "Send email as %s to %s"

@@ -2,7 +2,7 @@ open CCFun
 include Entity
 module Guard = Entity_guard
 
-let log_src = Logs.Src.create "queue.service"
+let log_src = Logs.Src.create "pool_queue.service"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -175,7 +175,7 @@ let run_job
 let work_job job instance =
   let database_label = Instance.database_label instance in
   let tags = Database.Logger.Tags.create database_label in
-  if Instance.should_run instance
+  if Instance.should_run ~is_polled:true instance
   then (
     let fail = fail database_label (AnyJob.retry_delay job) instance in
     let%lwt instance =
@@ -185,8 +185,7 @@ let work_job job instance =
           match%lwt run_job ~tags job instance with
           | Error msg -> fail msg
           | Ok () -> success database_label instance)
-        (fun exn ->
-          fail (Printexc.to_string exn |> Pool_message.Error.nothandled))
+        (Printexc.to_string %> Pool_message.Error.nothandled %> fail)
     in
     let%lwt () = archive instance in
     Notifier.job_reporter instance)
@@ -212,41 +211,62 @@ let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
     let%lwt instances =
       Repo.poll_n_workable database_label 50 job.AnyJob.name
     in
-    Lwt_list.iter_s (work_job job) instances
+    let () = Lwt.async (fun () -> Lwt_list.iter_s (work_job job) instances) in
+    Lwt.return_unit
 ;;
 
-let create_schedule (job : AnyJob.t) : Schedule.t =
-  let open Utils.Lwt_result.Infix in
+let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
   let open Schedule in
-  let tags = Database.Logger.Tags.create Database.root in
+  let tags = Database.Logger.Tags.create database_label in
   let interval = Every (Ptime.Span.of_int_s 1 |> ScheduledTimeSpan.of_span) in
   let periodic_fcn () =
-    let%lwt database_labels =
-      Pool_tenant.find_all ()
-      ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
-    in
-    let database_labels = Database.root :: database_labels in
     Logs.debug (fun m ->
       m
         ~tags
         "Running queue (JobName: %s) for databases: %s"
         ([%show: JobName.t] job.AnyJob.name)
-        ([%show: Database.Label.t list] database_labels));
-    Lwt_list.iter_s (work_queue job) database_labels
+        ([%show: Database.Label.t] database_label));
+    work_queue job database_label
   in
   create
-    [%string "queue: %{JobName.show job.AnyJob.name}"]
+    [%string
+      "queue [%{Database.Label.value database_label}]: %{JobName.show \
+       job.AnyJob.name}"]
     interval
     periodic_fcn
 ;;
 
 let start () =
+  let open Utils.Lwt_result.Infix in
+  let tags = Database.Logger.Tags.create Database.root in
+  let%lwt database_labels =
+    Pool_tenant.find_all ()
+    ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
+  in
+  let database_labels = Database.root :: database_labels in
+  Logs.info (fun m ->
+    m
+      ~tags
+      "Start queue for databases: %s"
+      ([%show: Database.Label.t list] database_labels));
+  let%lwt () = Lwt_list.iter_s Repo.archive_all_processed database_labels in
+  let%lwt () = Lwt_list.iter_s Repo.reset_pending_jobs database_labels in
   match !registered_jobs with
   | [] ->
-    let tags = Database.Logger.Tags.create Database.root in
     Logs.warn (fun m -> m ~tags "No jobs registered");
     Lwt.return_unit
-  | jobs -> jobs |> Lwt_list.iter_s (create_schedule %> Schedule.add_and_start)
+  | jobs ->
+    let jobs_per_database =
+      CCList.fold_product
+        (fun init db name -> (db, name) :: init)
+        []
+        database_labels
+        jobs
+    in
+    jobs_per_database
+    |> Lwt_list.iter_s (fun ((database_label, _) as job) ->
+      let tags = Database.Logger.Tags.create database_label in
+      create_schedule job |> Schedule.add_and_start ~tags)
 ;;
 
 let stop () =

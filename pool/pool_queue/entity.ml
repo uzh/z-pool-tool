@@ -94,9 +94,8 @@ module Instance = struct
     }
   [@@deriving eq, fields, show]
 
-  let is_pending { status; polled_at; _ } =
-    Status.(equal status Pending) && CCOption.is_none polled_at
-  ;;
+  let is_pending { status; _ } = Status.(equal status Pending)
+  let is_polled { polled_at; _ } = CCOption.is_none polled_at
 
   let currently_handled { polled_at; handled_at; _ } =
     match polled_at, handled_at with
@@ -106,11 +105,17 @@ module Instance = struct
       Ptime.is_later ~than:handled_at polled_at
   ;;
 
-  let should_run ({ tries; max_tries; run_at; _ } as job) =
+  let should_run
+    ?(is_polled = false)
+    ({ tries; max_tries; run_at; polled_at; _ } as job)
+    =
     let has_tries_left = tries < max_tries in
     let is_after_delay = Ptime_clock.now () |> Ptime.is_later ~than:run_at in
     let is_pending = is_pending job in
-    is_pending && has_tries_left && is_after_delay
+    is_pending
+    && has_tries_left
+    && is_after_delay
+    && CCOption.is_some polled_at == is_polled
   ;;
 
   let resendable job =

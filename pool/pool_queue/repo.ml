@@ -154,16 +154,19 @@ let poll_n_workable database_label n_instances job_name =
           Connection.collect_list find_workable_request job_name
         in
         let instances = CCList.map Entity.Instance.poll instances in
-        Lwt_list.filter_map_s
-          (fun instance ->
-            let%lwt result =
-              Connection.exec (update_request (sql_table `Current)) instance
-            in
-            if CCResult.is_ok result
-            then Lwt.return_some instance
-            else Lwt.return_none)
-          instances
-        |> Lwt_result.ok)
+        let%lwt instances =
+          Lwt_list.filter_map_s
+            (fun instance ->
+              let%lwt result =
+                Connection.exec (update_request (sql_table `Current)) instance
+              in
+              if CCResult.is_ok result
+              then Lwt.return_some instance
+              else Lwt.return_none)
+            instances
+        in
+        let* () = Connection.commit () in
+        Lwt.return_ok instances)
       (fun exn ->
         Logs.err (fun m -> m "Couldn't poll jobs: %s" (Printexc.to_string exn));
         let* () = Connection.rollback () in
@@ -260,17 +263,28 @@ let enqueue_all label = function
       |> Lwt.map Caqti_error.uncongested)
 ;;
 
+let reset_pending_request =
+  [%string
+    {sql|
+      UPDATE %{sql_table `Current}
+      SET
+        polled_at = NULL,
+        handled_at = NULL
+      WHERE status = 'pending'
+        AND (polled_at IS NOT NULL OR handled_at IS NOT NULL)
+    |sql}]
+  |> Caqti_type.(unit ->. unit)
+;;
+
+let reset_pending_jobs label = Database.exec label reset_pending_request ()
+
 let delete_request =
   [%string
     {sql|
       DELETE FROM %{sql_table `Current}
-      WHERE uuid = %{Entity.Id.sql_value_fragment "uuid"}
+      WHERE uuid = %{Entity.Id.sql_value_fragment "?"}
     |sql}]
   |> Repo_entity.Id.t ->. Caqti_type.unit
-;;
-
-let delete label (job : Entity.Instance.t) =
-  Database.exec label delete_request job.Entity.Instance.id
 ;;
 
 let archive_insert_request =
@@ -292,7 +306,41 @@ let archive { Entity.Instance.id; database_label; _ } =
     Lwt.catch
       (fun () ->
         let* () = Connection.exec archive_insert_request id in
-        Connection.exec delete_request id)
+        let* () = Connection.exec delete_request id in
+        Connection.commit ())
+      (fun exn ->
+        Logs.err (fun m -> m "Job archive failed: %s" (Printexc.to_string exn));
+        Connection.rollback ()))
+;;
+
+let find_not_pending_request =
+  [%string
+    {sql|
+      SELECT %{Entity.Id.sql_select_fragment ~field:("uuid")}
+      FROM %{sql_table `Current}
+      WHERE status != "pending"
+    |sql}]
+  |> Caqti_type.unit ->* Repo_entity.Id.t
+;;
+
+let archive_all_processed database_label =
+  let open Utils.Lwt_result.Infix in
+  Database.query database_label (fun connection ->
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    let* ids = Connection.collect_list find_not_pending_request () in
+    let* () = Connection.start () in
+    Lwt.catch
+      (fun () ->
+        let* () =
+          Lwt_list.map_s
+            (fun id ->
+              let* () = Connection.exec archive_insert_request id in
+              Connection.exec delete_request id)
+            ids
+          ||> CCResult.flatten_l
+          >|+ Utils.flat_unit
+        in
+        Connection.commit ())
       (fun exn ->
         Logs.err (fun m -> m "Job archive failed: %s" (Printexc.to_string exn));
         Connection.rollback ()))

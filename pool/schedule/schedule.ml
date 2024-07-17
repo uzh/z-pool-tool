@@ -126,16 +126,16 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
   loop ()
 ;;
 
-let start_schedule ({ label; _ } as schedule : t) =
-  Logs.info ~src (fun m -> m ~tags "Start %s" label);
+let start_schedule ?tags ({ label; _ } as schedule : t) =
+  Logs.info ~src (fun m -> m ?tags "Start %s" label);
   Lwt.ignore_result @@ run schedule;
   Lwt.return_unit
 ;;
 
-let start () =
+let start ?tags () =
   let%lwt () = Repo.stop_all_active () in
-  Logs.info ~src (fun m -> m ~tags "Start schedule");
-  Registered.iter_lwt start_schedule
+  Logs.info ~src (fun m -> m ?tags "Start schedule");
+  Registered.iter_lwt (start_schedule ?tags)
 ;;
 
 let stop = Registered.stop_all_active
@@ -153,9 +153,9 @@ let register ?(schedules = []) () =
   Sihl.Container.Service.create lifecycle
 ;;
 
-let add_and_start schedule =
+let add_and_start ?tags schedule =
   let%lwt () = Registered.add schedule in
-  start_schedule schedule
+  start_schedule ?tags schedule
 ;;
 
 let find_all = Repo.find_all
