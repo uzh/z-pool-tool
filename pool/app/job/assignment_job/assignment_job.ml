@@ -3,11 +3,11 @@ include Handler
 module Job = struct
   open CCFun
 
-  let handle _ pool =
+  let handle pool _ =
     let open Utils.Lwt_result.Infix in
     Lwt.catch
       (fun () -> update_upcoming_assignments pool ||> CCResult.return)
-      (Printexc.to_string %> Lwt.return_error)
+      (Printexc.to_string %> Pool_message.Error.unsupported %> Lwt.return_error)
   ;;
 
   let job =
@@ -17,13 +17,13 @@ module Job = struct
     let decode =
       Yojson.Safe.from_string %> Label.t_of_yojson %> CCResult.return
     in
-    Queue.Job.create
+    Pool_queue.Job.create
       handle
       ~max_tries:10
       ~retry_delay:(Sihl.Time.Span.hours 1)
       encode
       decode
-      Queue.JobName.CheckMatchesFilter
+      Pool_queue.JobName.CheckMatchesFilter
   ;;
 
   let dispatch pool =
@@ -32,7 +32,7 @@ module Job = struct
         ~tags:(Database.Logger.Tags.create pool)
         "Dispatch 'update assignments' of %s"
         (Database.Label.value pool));
-    Queue.dispatch pool pool job
+    Pool_queue.dispatch pool pool job
   ;;
 end
 
@@ -57,7 +57,7 @@ let lifecycle =
   Sihl.Container.create_lifecycle
     "System events"
     ~dependencies:(fun () ->
-      [ Pool_database.lifecycle; Queue.lifecycle_service ])
+      [ Pool_database.lifecycle; Pool_queue.lifecycle_service ])
     ~start
 ;;
 

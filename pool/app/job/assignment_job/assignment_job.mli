@@ -6,7 +6,7 @@ val update_matches_filter
 
 val dispatch_update_upcomming : Database.Label.t -> unit Lwt.t
 val register : unit -> Sihl.Container.Service.t
-val job : Database.Label.t Queue.Job.t
+val job : Database.Label.t Pool_queue.Job.t
 
 type event = Dispatched
 

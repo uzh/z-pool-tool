@@ -6,12 +6,14 @@ let worker_services =
   ; Pool_canary.register ()
   ; Storage.register ()
   ; Schedule.register ()
-  ; Queue.register ~kind:Queue.Worker ~jobs:[ Queue.hide Assignment_job.job ] ()
   ; Pool_queue.(
       register
         ~kind:Worker
         ~jobs:
-          [ hide Email.Service.Job.send; hide Text_message.Service.Job.send ]
+          [ hide Email.Service.Job.send
+          ; hide Text_message.Service.Job.send
+          ; hide Assignment_job.job
+          ]
         ())
   ; Matcher.register ()
   ; System_event.Service.register `Worker ()
