@@ -91,14 +91,23 @@ let find_request_sql ?(count = false) where_fragment =
   else query
 ;;
 
-let find_request =
-  [%string {sql| WHERE uuid = %{Entity.Id.sql_value_fragment "?"} |sql}]
+let find_request table =
+  let columns = sql_select_columns None |> CCString.concat ", " in
+  [%string
+    {sql|
+      SELECT %{columns} FROM %{sql_table table} current
+      WHERE uuid = %{Entity.Id.sql_value_fragment "?"}
+    |sql}]
   |> Repo_entity.Id.t ->? Repo_entity.Instance.t
 ;;
 
 let find label id =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt label find_request id
+  let find_in table = Database.find_opt label (find_request table) id in
+  find_in `Current
+  >|> (function
+         | Some element -> Lwt.return_some element
+         | None -> find_in `History)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Queue)
 ;;
 
