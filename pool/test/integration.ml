@@ -426,7 +426,7 @@ let services =
   ; Pool_user.register ()
   ; Pool_token.register ()
   ; Email.Service.register ()
-  ; Queue.register ()
+  ; Pool_queue.register ()
   ; Storage.register ()
   ]
 ;;

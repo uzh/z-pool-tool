@@ -2,7 +2,7 @@ type t =
   { entity_uuid : Pool_common.Id.t
   ; job : Entity.Instance.t
   }
-[@@deriving show, fields]
+[@@deriving eq, show, fields]
 
 let create job entity_uuid = { entity_uuid; job }
 

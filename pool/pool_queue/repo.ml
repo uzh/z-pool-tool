@@ -369,24 +369,37 @@ let register_cleaner () =
       ())
 ;;
 
+module type ColumnsSig = sig
+  val column_job_name : Query.Column.t
+  val column_job_status : Query.Column.t
+  val column_error : Query.Column.t
+  val column_error_at : Query.Column.t
+  val column_run_at : Query.Column.t
+  val column_input : Query.Column.t
+  val job_name_filter : Query.Filter.Condition.Human.t
+  val job_status_filter : Query.Filter.Condition.Human.t
+  val searchable_by : Query.Column.t list
+  val sortable_by : Query.Column.t list
+  val filterable_by : Query.Filter.Condition.Human.t list option
+  val default_sort : Query.Sort.t
+  val default_query : Query.t
+end
+
 module MakeColumns (Table : sig
-    val name : string
-  end) =
-struct
+    val name : string option
+  end) : ColumnsSig = struct
+  open CCFun.Infix
   open Pool_message.Field
   open Query.Column
   open Query.Filter
 
-  let column_job_name = (Name, [%string "%{Table.name}.name"]) |> create
-  let column_job_status = (Status, [%string "%{Table.name}.status"]) |> create
-  let column_error = (LastError, [%string "%{Table.name}.last_error"]) |> create
-
-  let column_error_at =
-    (LastErrorAt, [%string "%{Table.name}.last_error_at"]) |> create
-  ;;
-
-  let column_run_at = (NextRunAt, [%string "%{Table.name}.run_at"]) |> create
-  let column_input = (Input, [%string "%{Table.name}.input"]) |> create
+  let concat = CCList.cons' (CCOption.to_list Table.name) %> CCString.concat "."
+  let column_job_name = (Name, concat "name") |> create
+  let column_job_status = (Status, concat "status") |> create
+  let column_error = (LastError, concat "last_error") |> create
+  let column_error_at = (LastErrorAt, concat "error_at") |> create
+  let column_run_at = (NextRunAt, concat "run_at") |> create
+  let column_input = (Input, concat "input") |> create
 
   open Entity
   open JobName
@@ -420,11 +433,3 @@ struct
 
   let default_query = Query.create ~sort:default_sort ()
 end
-
-module Jobs = MakeColumns (struct
-    let name = sql_table `Current
-  end)
-
-module JobHistory = MakeColumns (struct
-    let name = sql_table `History
-  end)

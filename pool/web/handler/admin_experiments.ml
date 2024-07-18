@@ -515,14 +515,14 @@ let message_history req =
   in
   HttpUtils.Htmx.handler
     ~error_path
-    ~query:(module Queue.History)
+    ~query:(module Pool_queue.JobHistory)
     ~create_layout:General.create_tenant_layout
     req
   @@ fun (Pool_context.{ database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
   let%lwt messages =
-    Queue.History.query_by_entity
+    Pool_queue.Mapping.query_by_entity
       ~query
       database_label
       (Experiment.Id.to_common experiment_id)
@@ -532,7 +532,7 @@ let message_history req =
   @@
   if HttpUtils.Htmx.is_hx_request req
   then
-    MessageHistory.list
+    QueueMapping.list
       context
       (Experiments.message_history_url experiment)
       messages
@@ -614,6 +614,6 @@ end = struct
   let search = index
 
   let message_history =
-    Queue.Guard.Access.index |> Guardian.validate_admin_entity
+    Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
   ;;
 end

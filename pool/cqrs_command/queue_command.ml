@@ -46,5 +46,5 @@ end = struct
     | CheckMatchesFilter -> Error Pool_message.Error.JobCannotBeRetriggered
   ;;
 
-  let effects = Queue.Guard.Access.resend
+  let effects = Pool_queue.Guard.Access.resend
 end

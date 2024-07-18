@@ -21,6 +21,7 @@ module JobName : sig
   val sexp_of_t : t -> Sexplib0.Sexp.t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
+  val all : t list
 end
 
 module Status : sig
@@ -122,6 +123,8 @@ module Job : sig
     -> 'a
     -> 'a t
     -> Instance.t
+
+  include Repo.ColumnsSig
 end
 
 module AnyJob : sig
@@ -160,6 +163,11 @@ val find_by
   :  ?query:Query.t
   -> Database.Label.t
   -> (Instance.t list * Query.t) Lwt.t
+
+val count_workable
+  :  JobName.t
+  -> Database.Label.t
+  -> (int, Pool_message.Error.t) result Lwt.t
 
 type mappings =
   | Create of Pool_common.Id.t list
@@ -213,6 +221,7 @@ module Mapping : sig
 
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val equal : t -> t -> bool
   val job : t -> Instance.t
   val entity_uuid : t -> Pool_common.Id.t
   val create : Instance.t -> Pool_common.Id.t -> t
@@ -235,4 +244,8 @@ module Mapping : sig
     -> Instance.t
     -> [< `contact | `experiment ]
     -> Pool_common.Id.t option Lwt.t
+
+  include Repo.ColumnsSig
 end
+
+module JobHistory : Repo.ColumnsSig

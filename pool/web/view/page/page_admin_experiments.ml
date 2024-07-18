@@ -1192,7 +1192,7 @@ let message_history_url =
 let message_history context experiment messages =
   let open Pool_common in
   let html =
-    Page_admin_message_history.list
+    Page_admin_queue_mapping.list
       context
       (message_history_url experiment)
       messages

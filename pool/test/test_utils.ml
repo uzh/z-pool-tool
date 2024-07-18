@@ -17,10 +17,6 @@ let phone_nr = Pool_user.CellPhone.(Alcotest.testable pp equal)
 let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
 let time_window_testable = Time_window.(Alcotest.testable pp equal)
 
-let message_history_create =
-  Queue.History.(Alcotest.testable pp_create equal_create)
-;;
-
 let check_result ?(msg = "succeeds") =
   let open Alcotest in
   check (result (list event) error) msg

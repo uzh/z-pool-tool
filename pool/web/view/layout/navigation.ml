@@ -69,7 +69,10 @@ module NavElements = struct
             "/admin/locations"
             Locations
             (Set Pool_location.Guard.Access.index)
-        ; single "/admin/settings/queue" Queue (Set Queue.Guard.Access.index)
+        ; single
+            "/admin/settings/queue"
+            Queue
+            (Set Pool_queue.Guard.Access.index)
         ; single
             "/admin/settings"
             SystemSettings

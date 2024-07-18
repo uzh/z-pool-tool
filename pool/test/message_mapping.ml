@@ -3,7 +3,7 @@ open Utils.Lwt_result.Infix
 open Integration_utils
 open Message_template
 open Pool_queue.Status
-module History = Queue.History
+module Mapping = Pool_queue.Mapping
 
 let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
@@ -37,27 +37,11 @@ let find_assignment () =
 
 let sort_entity_uuids = CCList.stable_sort Pool_common.Id.compare
 
-let sort_history history =
-  History.
-    { history with
-      entity_uuids =
-        CCList.stable_sort Pool_common.Id.compare history.entity_uuids
-    }
-;;
-
 let check_text_message =
   let text_message_testable =
     Text_message.(Alcotest.testable pp_job equal_job)
   in
   Alcotest.(check text_message_testable "succeeds")
-;;
-
-let create_history label entity_uuids =
-  Some
-    History.
-      { message_template = Some Label.(show label)
-      ; entity_uuids = sort_entity_uuids entity_uuids
-      }
 ;;
 
 let check_message_template ?label =

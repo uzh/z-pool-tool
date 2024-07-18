@@ -5,7 +5,8 @@ let sort = CCList.stable_sort (fun a b -> CCString.compare (fst a) (fst b))
 let steps =
   let sorted =
     Migration_authorization.migration ()
-    @ [ Migration_202305261314.migration ()
+    @ [ Migration_202301010000.migration ()
+      ; Migration_202305261314.migration ()
       ; Migration_202306021033.migration ()
       ; Migration_202306261642.migration_root ()
       ; Migration_202307121722.migration_root ()
@@ -16,9 +17,11 @@ let steps =
       ; Migration_202312200952.migration ()
       ; Migration_202401081554.migration ()
       ; Migration_202401221730.migration ()
+      ; Migration_202402091434.migration ()
       ; Migration_202403201132.migration ()
       ; Migration_202404051544.migration ()
       ; Migration_202406051700.migration ()
+      ; Migration_202407171415.migration ()
       ]
     |> sort
   in

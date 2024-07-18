@@ -8,16 +8,16 @@ let base_path = "/admin/settings/queue"
 
 let data_table_head language =
   let open Pool_common in
-  let open Queue in
+  let open Pool_queue in
   let field_to_string field =
     Utils.field_to_string_capitalized language field |> txt
   in
-  let name = `column column_job_name in
-  let status = `column column_job_status in
+  let name = `column Mapping.column_job_name in
+  let status = `column Mapping.column_job_status in
   let input = `custom (field_to_string Field.Input) in
   let last_error = `custom (field_to_string Field.LastError) in
-  let last_error_at = `column column_last_error_at in
-  let next_run = `column column_next_run in
+  let last_error_at = `column Mapping.column_error_at in
+  let next_run = `column Mapping.column_run_at in
   function
   | `settings ->
     [ name; status; input; last_error; last_error_at; next_run; `empty ]
@@ -26,12 +26,12 @@ let data_table_head language =
 ;;
 
 let data_table Pool_context.{ language; _ } (queued_jobs, query) =
-  let open Queue in
+  let open Pool_queue in
   let url = Uri.of_string base_path in
   let data_table =
     Component.DataTable.create_meta
-      ?filter:filterable_by
-      ~search:searchable_by
+      ?filter:Job.filterable_by
+      ~search:Job.searchable_by
       url
       query
       language
@@ -52,7 +52,7 @@ let data_table Pool_context.{ language; _ } (queued_jobs, query) =
     ; instance
       |> Instance.last_error_at
       |> CCOption.map_or ~default:(txt "-") formatted_date_time
-    ; instance |> Instance.next_run_at |> formatted_date_time
+    ; instance |> Instance.run_at |> formatted_date_time
     ; [%string "/admin/settings/queue/%{instance |> Instance.id |> Id.value}"]
       |> Component.Input.link_as_button ~icon:Component.Icon.Eye
     ]

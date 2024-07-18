@@ -714,7 +714,7 @@ let message_history ({ Pool_context.language; _ } as context) contact messages =
                 language
                 I18n.(MessageHistory (Contact.lastname_firstname contact)))
         ]
-    ; Page_admin_message_history.list
+    ; Page_admin_queue_mapping.list
         context
         (message_history_url contact)
         messages

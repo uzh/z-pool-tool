@@ -28,7 +28,7 @@ let services =
   ; Pool_canary.register ()
   ; Pool_user.register ()
   ; Pool_token.register ()
-  ; Queue.register ()
+  ; Pool_queue.register ()
   ; Email.Service.register ()
   ; Text_message.Service.register ()
   ; Storage.register ()

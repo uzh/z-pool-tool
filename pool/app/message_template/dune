@@ -7,7 +7,6 @@
   pool_common
   pool_tenant
   pool_user
-  queue
   session
   settings
   text_message

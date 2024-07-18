@@ -10,7 +10,6 @@
   guard
   pool_canary
   pool_queue
-  queue
   reminder
   routes
   sihl

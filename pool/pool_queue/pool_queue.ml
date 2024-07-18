@@ -15,6 +15,7 @@ let register_jobs jobs =
 
 let find = Repo.find
 let find_by = Repo.find_by
+let count_workable = Repo.count_workable
 
 let update_and_return ?history database_label job =
   let%lwt () = Repo.update ?history database_label job in
@@ -242,8 +243,8 @@ let start () =
   let%lwt database_labels =
     Pool_tenant.find_all ()
     ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
+    ||> CCList.cons Database.root
   in
-  let database_labels = Database.root :: database_labels in
   Logs.info (fun m ->
     m
       ~tags
@@ -314,4 +315,20 @@ module Mapping = struct
   let query_by_entity = Repo_mapping.query_by_entity
   let query_instances_by_entity = Repo_mapping.query_instances_by_entity
   let find_related = Repo_mapping.find_related
+
+  include Repo.MakeColumns (struct
+      let name = None
+    end)
 end
+
+module Job = struct
+  include Job
+
+  include Repo.MakeColumns (struct
+      let name = Some (Repo.sql_table `Current)
+    end)
+end
+
+module JobHistory = Repo.MakeColumns (struct
+    let name = Some (Repo.sql_table `History)
+  end)

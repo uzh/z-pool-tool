@@ -13,10 +13,10 @@ let show req =
     ~active_navigation:base_path
     ~error_path:"/admin"
     ~create_layout:General.create_tenant_layout
-    ~query:(module Queue)
+    ~query:(module Pool_queue.Mapping)
     req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let%lwt queue = Queue.find_by ~query database_label in
+  let%lwt queue = Pool_queue.find_by ~query database_label in
   let open Page.Admin.Settings.Queue in
   (if HttpUtils.Htmx.is_hx_request req then data_table else index) context queue
   |> Lwt_result.return
@@ -80,7 +80,7 @@ end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let index = Queue.Guard.Access.index |> Guardian.validate_admin_entity
-  let read = Queue.Guard.Access.read |> Guardian.validate_admin_entity
+  let index = Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
+  let read = Pool_queue.Guard.Access.read |> Guardian.validate_admin_entity
   let resend = Command.Resend.effects |> Guardian.validate_admin_entity
 end
