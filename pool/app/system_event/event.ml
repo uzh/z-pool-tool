@@ -28,7 +28,7 @@ let handle_system_event identifier system_event =
     let () = Guard.Persistence.Cache.clear () in
     success_log ()
   | I18nPageUpdated ->
-    let () = I18n.I18nPageCache.clear () in
+    let () = I18n.I18nCache.clear () in
     success_log ()
   | SmtpAccountUpdated ->
     let () = Email.Service.Cache.clear () in

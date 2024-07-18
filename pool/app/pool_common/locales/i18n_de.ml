@@ -14,9 +14,9 @@ let to_string = function
   | AssignmentListEmpty -> "Es existieren keine Anmeldungen für diese Session."
   | AvailableSpots -> "Freie Plätze"
   | Canceled -> "Abgesagt"
+  | CanceledSessionsTitle -> "Ihre abgesagten Sessions"
   | Closed -> "Geschlossen"
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
-  | ContactWaitingListTitle -> "Auf der Warteliste"
   | CustomFieldsSettings ->
     "In der folgenden Liste können Sie bestimmen, in welcher Tabelle \
      zusätzlich zu den Kontaktangaben auch die individuellen Angaben angezeigt \
@@ -181,6 +181,7 @@ let nav_link_to_string = function
   | CustomFields -> "Felder"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
+  | ExperimentsCustom str -> str
   | ExternalDataIds -> "Externe Daten Identifikatoren"
   | Field field -> Locales_de.field_to_string field |> CCString.capitalize_ascii
   | Filter -> "Filter"

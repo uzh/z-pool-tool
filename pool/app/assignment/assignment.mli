@@ -93,18 +93,6 @@ val attendance_settable : t -> (unit, Pool_message.Error.t) result
 val session_changeable : Session.t -> t -> (unit, Pool_message.Error.t) result
 val reminder_sendable : Session.t -> t -> (unit, Pool_message.Error.t) result
 
-module Public : sig
-  type t =
-    { id : Id.t
-    ; participated : Participated.t option
-    ; canceled_at : CanceledAt.t option
-    ; created_at : Pool_common.CreatedAt.t
-    ; updated_at : Pool_common.UpdatedAt.t
-    }
-
-  val participated : t -> Participated.t option
-end
-
 module IncrementParticipationCount : sig
   type t
 
@@ -134,23 +122,41 @@ val find_closed
   -> Id.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_upcoming_public_by_experiment_and_contact_opt
-  :  Database.Label.t
-  -> Experiment.Id.t
-  -> Contact.t
-  -> Public.t list Lwt.t
+module Public : sig
+  type t =
+    { id : Id.t
+    ; participated : Participated.t option
+    ; canceled_at : CanceledAt.t option
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
+    }
 
-val find_past_public_by_experiment_and_contact_opt
-  :  Database.Label.t
-  -> Experiment.Id.t
-  -> Contact.t
-  -> Public.t list Lwt.t
+  val participated : t -> Participated.t option
 
-val find_all_public_by_experiment_and_contact_opt
-  :  Database.Label.t
-  -> Experiment.Id.t
-  -> Contact.t
-  -> Public.t list Lwt.t
+  val find_upcoming_by_experiment
+    :  Database.Label.t
+    -> Experiment.Id.t
+    -> Contact.t
+    -> t list Lwt.t
+
+  val find_past_by_experiment
+    :  Database.Label.t
+    -> Experiment.Id.t
+    -> Contact.t
+    -> t list Lwt.t
+
+  val find_all_by_experiment
+    :  Database.Label.t
+    -> Experiment.Id.t
+    -> Contact.t
+    -> t list Lwt.t
+
+  val find_canceled_by_experiment
+    :  Database.Label.t
+    -> Experiment.Id.t
+    -> Contact.t
+    -> t list Lwt.t
+end
 
 val assignment_to_experiment_exists
   :  Database.Label.t

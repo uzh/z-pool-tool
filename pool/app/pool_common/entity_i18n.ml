@@ -6,9 +6,9 @@ type t =
   | AssignmentListEmpty
   | AvailableSpots
   | Canceled
+  | CanceledSessionsTitle
   | Closed
   | ContactWaitingListEmpty
-  | ContactWaitingListTitle
   | CustomFieldsSettings
   | DashboardProfileCompletionText
   | DashboardProfileCompletionTitle
@@ -115,6 +115,7 @@ type nav_link =
   | CustomFields
   | Dashboard
   | Experiments
+  | ExperimentsCustom of string
   | ExternalDataIds
   | Field of Pool_message.Field.t
   | Filter

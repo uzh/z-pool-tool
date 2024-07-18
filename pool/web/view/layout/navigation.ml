@@ -1,3 +1,4 @@
+module Translations = I18n
 module I18nGuard = I18n.Guard
 module NavUtils = Navigation_utils
 open Entity
@@ -5,6 +6,17 @@ open Entity
 module NavElements = struct
   let read_entity entity =
     Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
+  ;;
+
+  let contact_experiment_title context =
+    let%lwt experiments_title =
+      Translations.find_by_key
+        context.Pool_context.database_label
+        Translations.Key.ExperimentNavigationTitle
+        context.Pool_context.language
+      |> Lwt.map Translations.content_to_string
+    in
+    Lwt.return (I18n.ExperimentsCustom experiments_title)
   ;;
 
   module Profile = struct
@@ -40,15 +52,16 @@ module NavElements = struct
   ;;
 
   let contact context =
-    let open I18n in
+    let%lwt experiments_title = contact_experiment_title context in
     let links =
-      [ Single ("/experiments", Experiments, Set Guard.ValidationSet.empty)
+      [ Single ("/experiments", experiments_title, Set Guard.ValidationSet.empty)
         |> NavElement.create
       ; Profile.nav ~contact:true ()
       ]
     in
     links @ [ NavElement.logout () ]
     |> NavUtils.create_nav_with_language_switch context
+    |> Lwt.return
   ;;
 
   let admin context =
@@ -161,12 +174,16 @@ module NavElements = struct
 
   let find_tenant_nav_links ({ Pool_context.user; _ } as context) languages =
     match user with
-    | Pool_context.Guest -> guest context languages
-    | Pool_context.Contact _ -> contact context languages
-    | Pool_context.Admin _ -> admin context
+    | Pool_context.Guest -> guest context languages |> Lwt.return
+    | Pool_context.Contact _ ->
+      let%lwt fnc = contact context in
+      fnc languages |> Lwt.return
+    | Pool_context.Admin _ -> admin context |> Lwt.return
   ;;
 
   let find_root_nav_links ({ Pool_context.user; _ } as context) languages =
+    Lwt.return
+    @@
     match user with
     | Pool_context.Guest | Pool_context.Contact _ ->
       guest ~root:true context languages
@@ -184,14 +201,14 @@ let create_main
   let%lwt actor =
     Pool_context.Utils.find_authorizable_opt database_label user
   in
-  let nav_links =
-    (match kind with
-     | `Tenant -> NavElements.find_tenant_nav_links
-     | `Root -> NavElements.find_root_nav_links)
-      context
-      tenant_languages
-      ?actor
-      ?active_navigation
+  let%lwt nav_links =
+    let make_links =
+      match kind with
+      | `Tenant -> NavElements.find_tenant_nav_links
+      | `Root -> NavElements.find_root_nav_links
+    in
+    make_links context tenant_languages
+    |> Lwt.map (fun make_links -> make_links ?actor ?active_navigation)
   in
   let desktop = NavUtils.create_desktop_nav nav_links in
   let mobile =

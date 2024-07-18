@@ -15,9 +15,9 @@ let to_string = function
   | AssignmentListEmpty -> "There are no assignments for this session."
   | AvailableSpots -> "Available spots"
   | Canceled -> "Canceled"
+  | CanceledSessionsTitle -> "Your canceled sessions"
   | Closed -> "Closed"
   | ContactWaitingListEmpty -> "You are currently not on any waiting list."
-  | ContactWaitingListTitle -> "On the waiting list"
   | CustomFieldsSettings ->
     "In the following list, you can determine in which table the custom data \
      should be displayed in addition to the contact details."
@@ -177,6 +177,7 @@ let nav_link_to_string = function
   | CustomFields -> "Fields"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experiments"
+  | ExperimentsCustom str -> str
   | ExternalDataIds -> "External data ids"
   | Field field -> Locales_en.field_to_string field |> CCString.capitalize_ascii
   | Filter -> "Filter"

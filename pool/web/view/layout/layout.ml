@@ -54,7 +54,7 @@ module Tenant = struct
     in
     let%lwt footer =
       let%lwt privacy_policy_is_set =
-        I18n.i18n_is_set database_label language I18n.Key.PrivacyPolicy
+        I18n.privacy_policy_is_set database_label language
       in
       let open Pool_common in
       let externalize path =

@@ -914,7 +914,7 @@ let cancel_assignment_with_follow_ups _ () =
   let%lwt () =
     let open Assignment in
     let%lwt assignment_id =
-      find_all_public_by_experiment_and_contact_opt
+      Public.find_all_by_experiment
         Data.database_label
         experiment.Experiment.id
         contact
@@ -933,7 +933,7 @@ let cancel_assignment_with_follow_ups _ () =
   in
   (* Expect all assigments to be canceled *)
   let%lwt res =
-    Assignment.find_all_public_by_experiment_and_contact_opt
+    Assignment.Public.find_all_by_experiment
       Data.database_label
       experiment.Experiment.id
       contact

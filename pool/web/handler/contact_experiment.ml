@@ -9,7 +9,7 @@ let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt experiment_list =
@@ -32,6 +32,26 @@ let index req =
        let%lwt waiting_list =
          Experiment.find_pending_waitinglists_by_contact database_label contact
        in
+       let%lwt i18n =
+         let find key = I18n.find_by_key database_label key language in
+         let%lwt upcoming_sessions = find I18n.Key.DashboardUpcomingSessions in
+         let%lwt online_studies = find I18n.Key.DashboardOnlineStudies in
+         let%lwt experiment_registration =
+           find I18n.Key.DashboardExperimentRegistration
+         in
+         let%lwt experiment_history =
+           find I18n.Key.DashboardExperimentHistory
+         in
+         let%lwt waiting_list = find I18n.Key.DashboardWaitinglist in
+         Lwt.return
+           Page.Contact.Experiment.
+             { upcoming_sessions
+             ; online_studies
+             ; experiment_registration
+             ; experiment_history
+             ; waiting_list
+             }
+       in
        Page.Contact.Experiment.index
          experiment_list
          online_studies
@@ -39,6 +59,7 @@ let index req =
          waiting_list
          past_experiments
          custom_fields_anwsered
+         i18n
          context
        |> create_layout ~active_navigation:"/experiments" req context
        >|+ Sihl.Web.Response.of_html
@@ -60,7 +81,7 @@ let show_online_study
   in
   let%lwt assignment =
     let open Utils.Lwt_result.Infix in
-    Assignment.find_all_public_by_experiment_and_contact_opt
+    Assignment.Public.find_all_by_experiment
       database_label
       experiment_id
       contact
@@ -112,11 +133,13 @@ let show req =
         ||> CCResult.flatten_l
       in
       let* upcoming_sessions =
-        find_sessions
-          Assignment.find_upcoming_public_by_experiment_and_contact_opt
+        find_sessions Assignment.Public.find_upcoming_by_experiment
       in
       let* past_sessions =
-        find_sessions Assignment.find_past_public_by_experiment_and_contact_opt
+        find_sessions Assignment.Public.find_past_by_experiment
+      in
+      let* canceled_sessions =
+        find_sessions Assignment.Public.find_canceled_by_experiment
       in
       let%lwt user_is_on_waiting_list =
         Waiting_list.user_is_enlisted database_label contact id
@@ -126,6 +149,7 @@ let show req =
         grouped_sessions
         upcoming_sessions
         past_sessions
+        canceled_sessions
         user_is_on_waiting_list
         contact
         context
@@ -155,7 +179,7 @@ module OnlineSurvey = struct
       in
       let%lwt assignment =
         let open Utils.Lwt_result.Infix in
-        Assignment.find_all_public_by_experiment_and_contact_opt
+        Assignment.Public.find_all_by_experiment
           database_label
           experiment_id
           contact
