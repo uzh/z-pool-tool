@@ -77,13 +77,18 @@ let update ?(history = false) label =
 ;;
 
 let find_request_sql ?(count = false) where_fragment =
-  let columns =
-    if count
-    then "COUNT(*)"
-    else sql_select_columns None |> CCString.concat ", "
+  let columns = sql_select_columns None |> CCString.concat ", " in
+  let query =
+    [%string
+      {sql|
+        SELECT %{columns} FROM %{sql_table `Current} %{where_fragment}
+        UNION ALL
+        SELECT %{columns} FROM %{sql_table `History} %{where_fragment}
+      |sql}]
   in
-  [%string
-    {sql|SELECT %{columns} FROM %{sql_table `Current}, %{sql_table `History} %{where_fragment}|sql}]
+  if count
+  then [%string {sql| SELECT COUNT(*) FROM (%{query}) x |sql}]
+  else query
 ;;
 
 let find_request =
