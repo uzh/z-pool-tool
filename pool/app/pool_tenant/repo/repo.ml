@@ -34,12 +34,13 @@ module Sql = struct
         pool_tenant.description = $3,
         pool_tenant.url = $4,
         pool_tenant.default_language = $5,
-        pool_tenant.created_at = $6,
-        pool_tenant.updated_at = $7,
-        pool_tenant.database_label = $8,
-        pool_tenant.styles = UNHEX(REPLACE($9, '-', '')),
-        pool_tenant.icon = UNHEX(REPLACE($10, '-', '')),
-        pool_tenant.gtx_api_key = $11
+        pool_tenant.gtx_sender = $6,
+        pool_tenant.created_at = $7,
+        pool_tenant.updated_at = $8,
+        pool_tenant.database_label = $9,
+        pool_tenant.styles = UNHEX(REPLACE($10, '-', '')),
+        pool_tenant.icon = UNHEX(REPLACE($11, '-', '')),
+        pool_tenant.gtx_api_key = $12
       WHERE
         pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -70,6 +71,7 @@ module Sql = struct
       ; "pool_tenant.description"
       ; "pool_tenant.url"
       ; "pool_tenant.default_language"
+      ; "pool_tenant.gtx_sender"
       ; "pool_tenant.created_at"
       ; "pool_tenant.updated_at"
       ]
@@ -182,6 +184,7 @@ module Sql = struct
           description,
           url,
           default_language,
+          gtx_sender,
           created_at,
           updated_at,
           database_label,
@@ -197,9 +200,10 @@ module Sql = struct
           $6,
           $7,
           $8,
-          %{Id.sql_value_fragment "$9"},
+          $9,
           %{Id.sql_value_fragment "$10"},
-          $11
+          %{Id.sql_value_fragment "$11"},
+          $12
         )
       |sql}]
     |> RepoEntity.Write.t ->. Caqti_type.unit
@@ -225,6 +229,7 @@ let set_logos tenant logos =
     ; description = tenant.description
     ; url = tenant.url
     ; database_label = tenant.database_label
+    ; gtx_sender = tenant.gtx_sender
     ; styles = tenant.styles
     ; icon = tenant.icon
     ; logos = tenant_logos
@@ -318,20 +323,25 @@ let update_database pool (tenant, database) =
     ]
 ;;
 
-let find_gtx_api_key_by_label_request =
+let find_gtx_api_key_and_url_by_label_request =
   {sql|
     SELECT
-      gtx_api_key
+      gtx_api_key,
+      url
     FROM
       pool_tenant
     WHERE
       pool_tenant.database_label = ?
   |sql}
-  |> Database.Repo.Label.t ->! RepoEntity.GtxApiKey.t
+  |> Database.Repo.Label.t
+     ->! Caqti_type.(t2 (option RepoEntity.GtxApiKey.t) RepoEntity.Url.t)
 ;;
 
-let find_gtx_api_key_by_label pool database_label =
+let find_gtx_api_key_and_url_by_label pool database_label =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt pool find_gtx_api_key_by_label_request database_label
-  ||> CCOption.to_result Pool_message.(Error.NotFound Field.GtxApiKey)
+  Database.find pool find_gtx_api_key_and_url_by_label_request database_label
+  ||> fun (api_key, url) ->
+  match api_key with
+  | None -> Error Pool_message.(Error.NotFound Field.GtxApiKey)
+  | Some key -> Ok (key, url)
 ;;

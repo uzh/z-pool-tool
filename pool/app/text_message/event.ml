@@ -16,6 +16,7 @@ let create_job ?id ?message_template ?mappings job =
 type event =
   | Sent of (job * Pool_user.CellPhone.t option)
   | BulkSent of job list
+  | ReportCreated of delivery_report
 [@@deriving eq, show, variants]
 
 let sent ?new_recipient job = Sent (job, new_recipient)
@@ -38,4 +39,5 @@ let handle_event pool : event -> unit Lwt.t = function
       (fun { job; id; message_template; mappings } ->
         Text_message_service.dispatch ?id ?message_template ?mappings pool job)
       jobs
+  | ReportCreated report -> Repo.insert_report pool report
 ;;

@@ -56,6 +56,7 @@ type t =
   | DateTime
   | DefaultLanguage
   | DefaultSmtpServer
+  | DeliveryReport
   | Description
   | DirectRegistrationDisabled
   | Disabled
@@ -99,6 +100,7 @@ type t =
   | FirstReminder
   | FollowUpSession
   | GtxApiKey
+  | GtxSender
   | HideCanceled
   | HideClosed
   | HideInactive
@@ -271,8 +273,10 @@ type t =
   | TermsAccepted
   | TermsAcceptedCount
   | TermsAndConditions
+  | TermsAndConditionsLastAccepted
   | TestPhoneNumber
   | TextMessage
+  | TextMessageDlrStatus
   | TextMessageLeadTime
   | TextMessageRemindersSentAt
   | Time

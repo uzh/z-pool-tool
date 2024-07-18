@@ -224,7 +224,10 @@ module Job = struct
     ; encode : 'a -> string
     ; decode : string -> ('a, Pool_message.Error.t) result
     ; handle :
-        Database.Label.t -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t
+        ?id:Id.t
+        -> Database.Label.t
+        -> 'a
+        -> (unit, Pool_message.Error.t) Lwt_result.t
     ; failed :
         Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
@@ -282,7 +285,10 @@ module AnyJob = struct
   type t =
     { name : JobName.t
     ; handle :
-        Database.Label.t -> string -> (unit, Pool_message.Error.t) Lwt_result.t
+        ?id:Id.t
+        -> Database.Label.t
+        -> string
+        -> (unit, Pool_message.Error.t) Lwt_result.t
     ; failed :
         Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
@@ -293,8 +299,8 @@ end
 
 let hide (job : 'a Job.t) : AnyJob.t =
   let open Utils.Lwt_result.Infix in
-  let handle label input =
-    job.Job.decode input |> Lwt_result.lift >>= job.Job.handle label
+  let handle ?id label input =
+    job.Job.decode input |> Lwt_result.lift >>= job.Job.handle ?id label
   in
   { AnyJob.name = job.Job.name
   ; handle

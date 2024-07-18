@@ -20,6 +20,7 @@ type create =
   ; description : Pool_tenant.Description.t option
   ; url : Pool_tenant.Url.t
   ; styles : Pool_tenant.Styles.Write.t option
+  ; gtx_sender : Pool_tenant.GtxSender.t
   ; icon : Pool_tenant.Icon.Write.t option
   ; default_language : Pool_common.Language.t
   ; tenant_logos : Pool_common.Id.t list
@@ -50,6 +51,7 @@ end = struct
     title
     description
     url
+    gtx_sender
     styles
     icon
     default_language
@@ -59,6 +61,7 @@ end = struct
     { title
     ; description
     ; url
+    ; gtx_sender
     ; styles
     ; icon
     ; default_language
@@ -74,6 +77,7 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
+          ; Pool_tenant.GtxSender.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Pool_common.Language.schema ()
@@ -91,6 +95,7 @@ end = struct
         command.description
         command.url
         (database |> Database.label)
+        command.gtx_sender
         command.styles
         command.icon
         command.default_language
@@ -128,6 +133,7 @@ module EditDetails : sig
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
+    ; gtx_sender : Pool_tenant.GtxSender.t
     ; status : Database.Status.t option
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
@@ -138,6 +144,7 @@ module EditDetails : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
     -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -149,6 +156,7 @@ end = struct
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
+    ; gtx_sender : Pool_tenant.GtxSender.t
     ; status : Database.Status.t option
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
@@ -161,6 +169,7 @@ end = struct
     title
     description
     url
+    gtx_sender
     status
     default_language
     styles
@@ -171,6 +180,7 @@ end = struct
     { title
     ; description
     ; url
+    ; gtx_sender
     ; status
     ; default_language
     ; styles
@@ -187,6 +197,7 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
+          ; Pool_tenant.GtxSender.schema ()
           ; Conformist.optional @@ Database.Status.schema ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
@@ -199,6 +210,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    ?system_event_id
     (tenant : Pool_tenant.Write.t)
     (command : t)
     =
@@ -208,6 +220,7 @@ end = struct
         { title = command.title
         ; description = command.description
         ; url = command.url
+        ; gtx_sender = command.gtx_sender
         ; status = command.status
         ; styles = command.styles
         ; icon = command.icon
@@ -227,6 +240,11 @@ end = struct
     Ok
       [ Pool_tenant.DetailsEdited (tenant, update) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
+      ; System_event.(
+          Job.TenantDatabaseCacheCleared
+          |> create ?id:system_event_id
+          |> created)
+        |> Pool_event.system_event
       ]
   ;;
 
@@ -292,25 +310,6 @@ end = struct
   ;;
 
   let decode = decode_database
-  let effects = Pool_tenant.Guard.Access.update
-end
-
-module UpdateGtxApiKey : sig
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Pool_tenant.Write.t
-    -> Pool_tenant.GtxApiKey.t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
-end = struct
-  let handle ?(tags = Logs.Tag.empty) (tenant : Pool_tenant.Write.t) api_key =
-    Logs.info ~src (fun m -> m "Handle command UpdateGtxApiKey" ~tags);
-    Ok
-      [ Pool_tenant.GtxApiKeyUpdated (tenant, api_key) |> Pool_event.pool_tenant
-      ]
-  ;;
-
   let effects = Pool_tenant.Guard.Access.update
 end
 

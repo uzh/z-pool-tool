@@ -107,6 +107,13 @@ let personal_detail
       , contact.language
         |> CCOption.map_or ~default:"" Pool_common.Language.show
         |> txt )
+    ; ( field_to_string Field.TermsAndConditionsLastAccepted
+      , contact.terms_accepted_at
+        |> CCOption.map_or
+             ~default:""
+             (Pool_user.TermsAccepted.value
+              %> Pool_model.Time.formatted_date_time)
+        |> txt )
     ]
     @ with_comment
     @ tags)

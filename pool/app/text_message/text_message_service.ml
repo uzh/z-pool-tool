@@ -44,17 +44,27 @@ module Config = struct
   ;;
 end
 
-let get_api_key database_label =
+let get_api_key_and_url database_label =
   let open Utils.Lwt_result.Infix in
-  Pool_tenant.find_gtx_api_key_by_label database_label
+  Pool_tenant.find_gtx_api_key_and_url_by_label database_label
   ||> Pool_common.Utils.get_or_failwith
 ;;
 
-let request_body { recipient; text; sender } =
-  [ "from", [ Pool_tenant.Title.value sender ]
+let dlr_url (tenant_url, instance_id) =
+  instance_id
+  |> Pool_queue.Id.value
+  |> Format.asprintf "/admin/settings/queue/%s/dlr"
+  |> Pool_tenant.create_public_url tenant_url
+  |> fun url -> [ "dlr-url", [ url ] ]
+;;
+
+let request_body ?dlr { recipient; text; sender } =
+  let dlr_url = dlr |> CCOption.map_or ~default:[] dlr_url in
+  [ "from", [ Pool_tenant.GtxSender.value sender ]
   ; "to", [ CellPhone.value recipient ]
   ; "text", [ text ]
   ]
+  @ dlr_url
 ;;
 
 let response_to_string res =
@@ -73,7 +83,7 @@ Text:
 %s
 -----------------------
     |}
-    (Pool_tenant.Title.value sender)
+    (Pool_tenant.GtxSender.value sender)
     (CellPhone.value recipient)
     text
 ;;
@@ -126,9 +136,9 @@ let intercept_prepare database_label message =
           'TEXT_MESSAGE_INTERCEPT_ADDRESS'.")
 ;;
 
-let send_message api_key msg =
+let send_message ?dlr api_key msg =
   let open Cohttp_lwt_unix in
-  let body = request_body msg |> Cohttp_lwt.Body.of_form in
+  let body = request_body ?dlr msg |> Cohttp_lwt.Body.of_form in
   let%lwt resp, body =
     api_key
     |> Pool_tenant.GtxApiKey.value
@@ -141,10 +151,10 @@ let send_message api_key msg =
   Lwt.return (resp, body_string)
 ;;
 
-let test_api_key ~tags api_key cell_phone tenant_title =
+let test_api_key ~tags api_key cell_phone sender =
   let open Sihl.Configuration in
   let open Cohttp in
-  let msg = create cell_phone tenant_title "Your API Key is valid." in
+  let msg = create cell_phone sender "Your API Key is valid." in
   let () = if is_development () then print_message ~tags msg else () in
   match is_production () || bypass () with
   | true ->
@@ -169,7 +179,7 @@ let test_api_key ~tags api_key cell_phone tenant_title =
            (CellPhone.value msg.recipient)
            msg.text
            body_string);
-       Lwt.return_ok api_key)
+       Lwt.return_ok (api_key, sender))
   | false ->
     let (_ : Pool_message.Error.t) =
       Pool_common.Utils.with_log_error
@@ -178,7 +188,7 @@ let test_api_key ~tags api_key cell_phone tenant_title =
            "Verifying API Key: Skip validation due to non production \
             environment!")
     in
-    api_key |> Lwt.return_ok
+    Lwt.return_ok (api_key, sender)
 ;;
 
 module Job = struct
@@ -195,14 +205,24 @@ module Job = struct
       Error Pool_message.(Error.Invalid Field.Input)
   ;;
 
-  let handle database_label message =
+  let handle ?id database_label message =
     let open Sihl.Configuration in
-    let%lwt api_key = get_api_key database_label in
+    let%lwt api_key, tenant_url = get_api_key_and_url database_label in
     let tags = tags database_label in
     match is_production () || bypass () with
     | true ->
       let open Cohttp in
-      let%lwt resp, body_string = send_message api_key message in
+      let dlr =
+        if is_production ()
+        then None
+        else
+          let open CCOption in
+          id
+          >|= CCPair.make tenant_url
+          |> get_exn_or "Text message service: No instance id provided"
+          |> return
+      in
+      let%lwt resp, body_string = send_message ?dlr api_key message in
       (match
          resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
        with

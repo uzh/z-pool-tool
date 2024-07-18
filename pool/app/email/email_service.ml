@@ -372,7 +372,7 @@ module Job = struct
     let open CCFun in
     let open Utils.Lwt_result.Infix in
     let open Pool_queue in
-    let handle label ({ email; smtp_auth_id } : t) =
+    let handle ?id:_ label ({ email; smtp_auth_id; _ } : t) =
       Lwt.catch
         (fun () -> send ?smtp_auth_id label email ||> CCResult.return)
         (Printexc.to_string %> Pool_message.Error.nothandled %> Lwt.return_error)

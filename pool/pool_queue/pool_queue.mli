@@ -95,6 +95,7 @@ module Job : sig
 
   val handle
     :  'a t
+    -> ?id:Id.t
     -> Database.Label.t
     -> 'a
     -> (unit, Pool_message.Error.t) Lwt_result.t
@@ -108,7 +109,10 @@ module Job : sig
     -> ?retry_delay:Ptime.span
     -> ?failed:
          (Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t)
-    -> (Database.Label.t -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t)
+    -> (?id:Id.t
+        -> Database.Label.t
+        -> 'a
+        -> (unit, Pool_message.Error.t) Lwt_result.t)
     -> ('a -> string)
     -> (string -> ('a, Pool_message.Error.t) result)
     -> JobName.t
@@ -144,6 +148,7 @@ module AnyJob : sig
 
   val handle
     :  t
+    -> ?id:Id.t
     -> Database.Label.t
     -> string
     -> (unit, Pool_message.Error.t) Lwt_result.t
@@ -249,3 +254,9 @@ module Mapping : sig
 end
 
 module JobHistory : Repo.ColumnsSig
+
+module Repo : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
+end

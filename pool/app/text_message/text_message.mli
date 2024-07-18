@@ -7,16 +7,16 @@ end
 
 type t =
   { recipient : Pool_user.CellPhone.t
-  ; sender : Pool_tenant.Title.t
+  ; sender : Pool_tenant.GtxSender.t
   ; text : Content.t
   }
 
-val create : Pool_user.CellPhone.t -> Pool_tenant.Title.t -> Content.t -> t
+val create : Pool_user.CellPhone.t -> Pool_tenant.GtxSender.t -> Content.t -> t
 val update : ?new_recipient:Pool_user.CellPhone.t -> t -> t
 
 val render_and_create
   :  Pool_user.CellPhone.t
-  -> Pool_tenant.Title.t
+  -> Pool_tenant.GtxSender.t
   -> string * (string * string) list
   -> t
 
@@ -27,15 +27,18 @@ module Service : sig
     :  tags:Logs.Tag.set
     -> Pool_tenant.GtxApiKey.t
     -> Pool_user.CellPhone.t
-    -> Pool_tenant.Title.t
-    -> (Pool_tenant.GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
+    -> Pool_tenant.GtxSender.t
+    -> ( Pool_tenant.GtxApiKey.t * Pool_tenant.GtxSender.t
+         , Pool_message.Error.t )
+         Lwt_result.t
 
   module Job : sig
     val encode : t -> string
     val decode : string -> (t, Pool_message.Error.t) result
 
     val handle
-      :  Database.Label.t
+      :  ?id:Pool_queue.Id.t
+      -> Database.Label.t
       -> t
       -> (unit, Pool_message.Error.t) result Lwt.t
 
@@ -75,9 +78,42 @@ val create_job
   -> t
   -> job
 
+module DlrMask : sig
+  type t =
+    | Delivered
+    | NonDelivered
+    | Expired
+    | Unknown
+
+  val of_int : int -> t
+  val to_human : t -> string
+end
+
+type delivery_report =
+  { job_id : Pool_queue.Id.t
+  ; raw : string
+  ; from : string
+  ; to_ : string
+  ; message_id : string
+  ; dlr_mask : int
+  ; error_code : int
+  ; error_message : string
+  ; submit_date : Pool_model.Base.Ptime.t
+  ; done_date : Pool_model.Base.Ptime.t
+  ; plmn : string
+  ; country : string
+  ; sms_cost : float
+  }
+
+val find_report_by_queue_id
+  :  Database.Label.t
+  -> Pool_queue.Id.t
+  -> delivery_report option Lwt.t
+
 type event =
   | Sent of (job * Pool_user.CellPhone.t option)
   | BulkSent of job list
+  | ReportCreated of delivery_report
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

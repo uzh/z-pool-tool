@@ -1606,7 +1606,8 @@ let send_session_reminders_with_default_leat_time _ () =
   let%lwt () =
     let open Pool_tenant in
     let%lwt write = Pool_tenant.find_full tenant.id ||> get_exn in
-    GtxApiKeyUpdated (write, GtxApiKey.of_string "api-key")
+    GtxApiKeyUpdated
+      (write, (GtxApiKey.of_string "api-key", GtxSender.of_string "sender"))
     |> handle_event tenant.database_label
   in
   let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in

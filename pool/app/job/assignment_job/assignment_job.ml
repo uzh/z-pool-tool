@@ -3,7 +3,7 @@ include Handler
 module Job = struct
   open CCFun
 
-  let handle pool _ =
+  let handle ?id:_ pool _ =
     let open Utils.Lwt_result.Infix in
     Lwt.catch
       (fun () -> update_upcoming_assignments pool ||> CCResult.return)

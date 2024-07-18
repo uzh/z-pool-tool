@@ -26,9 +26,17 @@ let detail req =
   let result ({ Pool_context.database_label; _ } as context) =
     Lwt_result.map_error (fun err -> err, "/admin/settings/queue")
     @@
+    let open Pool_queue in
+    let open JobName in
     let id = job_id req in
-    let* instance = Pool_queue.find database_label id in
-    Page.Admin.Settings.Queue.detail context instance
+    let* instance = find database_label id in
+    let%lwt text_message_dlr =
+      match Instance.name instance with
+      | SendTextMessage ->
+        Text_message.find_report_by_queue_id database_label id
+      | SendEmail | CheckMatchesFilter -> Lwt.return_none
+    in
+    Page.Admin.Settings.Queue.detail context ?text_message_dlr instance
     |> General.create_tenant_layout req ~active_navigation:base_path context
     >|+ Sihl.Web.Response.of_html
   in

@@ -1,5 +1,11 @@
 open CCFun
 include Entity
+
+module Repo = struct
+  include Repo
+  include Repo_entity
+end
+
 module Guard = Entity_guard
 
 let log_src = Logs.Src.create "pool_queue.service"

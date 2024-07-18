@@ -413,6 +413,7 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
      verschickt werden."
   | GtxKeyStored ->
     "Ein GTX Api-Schlüssel ist hinterlegt. Textnachrichten werden verschickt."
+  | GtxSender -> "Der angezeigte Absender von Textnachrichten. Max. 11 Zeichen."
   | I18nText str -> str
   | LocationFiles ->
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \

@@ -64,6 +64,7 @@ let rec field_to_string =
   | DateTime -> "Datum und Uhrzeit"
   | DefaultLanguage -> "Standard Sprache"
   | DefaultSmtpServer -> "Standardserver"
+  | DeliveryReport -> "Übermittlungsbericht"
   | Description -> "Beschreibung"
   | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
@@ -114,6 +115,7 @@ let rec field_to_string =
   | FirstReminder -> "Erste Erinnerung"
   | FollowUpSession -> "Folgesession"
   | GtxApiKey -> "GTX Api Key"
+  | GtxSender -> "GTX Absender"
   | HideCanceled -> "Abgesagte ausblenden"
   | HideClosed -> "Geschlossene ausblenden"
   | HideMakedAsDeleted -> "Als gelöscht markerte ausblenden"
@@ -289,8 +291,10 @@ let rec field_to_string =
   | TermsAccepted -> "Akzeptieren"
   | TermsAcceptedCount -> "Teilnahmebedingungen akzeptiert"
   | TermsAndConditions -> "Teilnahmebedingungen"
+  | TermsAndConditionsLastAccepted -> "Teilnahmebedingungen zuletzt akzeptiert"
   | TestPhoneNumber -> "Testtelefonnummer"
   | TextMessage -> "SMS"
+  | TextMessageDlrStatus -> "SMS Status"
   | TextMessageLeadTime -> "SMS Vorlaufzeit"
   | TextMessageRemindersSentAt -> "SMS Erinnerungen verschickt am"
   | Time -> "Uhrzeit"
@@ -545,6 +549,8 @@ let rec error_to_string =
   | JobCannotBeRetriggered -> "Dieser Auftrag kann nicht neu ausgelöst werden."
   | JobPending -> "Der Auftrag ist noch pendent."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | MaxLength max ->
+    Format.asprintf "Darf nicht länger als %i Zeichen sein." max
   | MeantimeUpdate field ->
     field_message
       ""
@@ -680,6 +686,7 @@ let rec error_to_string =
   | TextMessageError error -> Format.asprintf "Text message error: %s" error
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
+  | TextMessageDlrAlreadyReceived -> "SMS Übermittlingsbeicht bereits erhalten."
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."

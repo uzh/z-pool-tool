@@ -1,6 +1,7 @@
 module Title : Pool_model.Base.StringSig
 module Description : Pool_model.Base.StringSig
 module GtxApiKey : Pool_model.Base.StringSig
+module GtxSender : Pool_model.Base.StringSig
 
 module Id : sig
   include Pool_model.Base.IdSig
@@ -107,6 +108,7 @@ type t =
   ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
+  ; gtx_sender : GtxSender.t
   ; styles : Styles.t option
   ; icon : Icon.t option
   ; logos : Logos.t
@@ -130,6 +132,7 @@ module Write : sig
     ; description : Description.t option
     ; url : Url.t
     ; database_label : Database.Label.t
+    ; gtx_sender : GtxSender.t
     ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
@@ -143,6 +146,7 @@ module Write : sig
     -> Description.t option
     -> Url.t
     -> Database.Label.t
+    -> GtxSender.t
     -> Styles.Write.t option
     -> Icon.Write.t option
     -> Pool_common.Language.t
@@ -156,6 +160,7 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
+  ; gtx_sender : GtxSender.t
   ; status : Database.Status.t option
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
@@ -169,9 +174,9 @@ val find_by_label : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_by_url : Url.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_all : unit -> t list Lwt.t
 
-val find_gtx_api_key_by_label
+val find_gtx_api_key_and_url_by_label
   :  Database.Label.t
-  -> (GtxApiKey.t, Pool_message.Error.t) Lwt_result.t
+  -> (GtxApiKey.t * Url.t, Pool_message.Error.t) Lwt_result.t
 
 val create_public_url : Url.t -> string -> string
 val clear_cache : unit -> unit
@@ -188,7 +193,7 @@ type event =
   | DatabaseEdited of Write.t * Database.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
-  | GtxApiKeyUpdated of Write.t * GtxApiKey.t
+  | GtxApiKeyUpdated of Write.t * (GtxApiKey.t * GtxSender.t)
   | GtxApiKeyRemoved of Write.t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t

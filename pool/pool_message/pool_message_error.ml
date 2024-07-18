@@ -63,6 +63,7 @@ type t =
   | JobCannotBeRetriggered
   | JobPending
   | LoginProvideDetails
+  | MaxLength of int
   | MeantimeUpdate of Field.t
   | Missing of Field.t
   | MutuallyExclusive of (Field.t * Field.t)
@@ -125,6 +126,7 @@ type t =
   | TextLengthMin of int
   | TextMessageError of string
   | TextMessageInterceptionError of string
+  | TextMessageDlrAlreadyReceived
   | TimeInPast
   | TimeSpanPositive
   | TokenAlreadyUsed

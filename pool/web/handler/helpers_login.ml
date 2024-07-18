@@ -128,7 +128,7 @@ let login req urlencoded database_label =
         in
         Lwt_result.return user
       | Error err ->
-        log_request req tags email;
+        log_request req tags (Some email);
         let%lwt { blocked_until; _ } = counter |> increment in
         let%lwt () = notify_user database_label tags email blocked_until in
         suspension_error (fun () -> Lwt_result.fail err) blocked_until

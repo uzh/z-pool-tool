@@ -252,7 +252,8 @@ let contacts db_label =
       ( person.uid |> Contact.Id.of_string
       , person.first_name |> User.Firstname.of_string
       , person.last_name |> User.Lastname.of_string
-      , person.email |> User.EmailAddress.of_string
+      , CCFormat.asprintf "test+%i@econ.uzh.ch" idx
+        |> User.EmailAddress.of_string
       , language
       , terms_accepted_at |> CCOption.map User.TermsAccepted.create
       , paused
