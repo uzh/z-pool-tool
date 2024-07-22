@@ -28,6 +28,7 @@ let create_notification experiment assignments =
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_exn in
   Message_template.MatchFilterUpdateNotification.create
     tenant
+    Pool_common.I18n.MatchesFilterChangeReasonFilter
     admin
     experiment
     assignments
@@ -97,11 +98,15 @@ let exclude_contact _ () =
     |> Lwt_result.return
   in
   let%lwt events =
-    update_matches_filter ~admin pool (`Session session) >|+ to_events
+    update_matches_filter ~current_user:admin pool (`Session session)
+    >|+ to_events
   in
   let () = check_result expected events in
   let%lwt events =
-    update_matches_filter ~admin pool (`Experiment (experiment, Some exclude_1))
+    update_matches_filter
+      ~current_user:admin
+      pool
+      (`Experiment (experiment, Some exclude_1))
     >|+ to_events
   in
   check_result expected events |> Lwt.return

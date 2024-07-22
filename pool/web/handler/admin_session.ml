@@ -1222,7 +1222,7 @@ let update_matches_filter req =
     let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
     let* events =
       Assignment_job.update_matches_filter
-        ~admin
+        ~current_user:admin
         database_label
         (`Session session)
       >== Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
