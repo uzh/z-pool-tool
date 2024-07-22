@@ -59,6 +59,9 @@ type t =
   | MailingDistributionDescription
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
+  | MatchesFilterChangeReasonFilter
+  | MatchesFilterChangeReasonManually
+  | MatchesFilterChangeReasonWorker
   | MessageHistory of string
   | NoEntries of Pool_message.Field.t
   | NoInvitationsSent

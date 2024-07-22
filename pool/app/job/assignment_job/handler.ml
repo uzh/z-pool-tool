@@ -6,15 +6,25 @@ let src = Logs.Src.create "job.assignment_job"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 let admins_to_notify = Experiment.find_admins_to_notify_about_invitations
 
+let trigger_text =
+  let open Pool_common.I18n in
+  function
+  | `Experiment _ -> MatchesFilterChangeReasonFilter
+  | `Session _ -> MatchesFilterChangeReasonManually
+  | `Upcoming -> MatchesFilterChangeReasonWorker
+;;
+
 let make_messages
-  ?admin
+  ?current_user
+  context
   database_label
   ({ Experiment.id; _ } as experiment)
   sessions
   =
   let* tenant = Pool_tenant.find_by_label database_label in
   let make_mail assignments admin =
-    Notification.create tenant admin experiment assignments
+    let trigger = trigger_text context in
+    Notification.create tenant trigger admin experiment assignments
   in
   let remove_matching =
     let open Assignment in
@@ -31,7 +41,7 @@ let make_messages
   | [] -> Lwt_result.return []
   | sessions ->
     let%lwt admins =
-      admin
+      current_user
       |> CCOption.map_or
            ~default:(admins_to_notify database_label id)
            (CCList.return %> Lwt.return)
@@ -39,7 +49,7 @@ let make_messages
     admins |> Lwt_list.map_s (make_mail sessions) |> Lwt_result.ok
 ;;
 
-let make_events ?admin database_label experiment sessions =
+let make_events ?current_user context database_label experiment sessions =
   let open CCList in
   let open Utils.Lwt_result.Infix in
   let open Assignment in
@@ -57,7 +67,9 @@ let make_events ?admin database_label experiment sessions =
       | [] -> None
       | assignments -> Some (session, assignments))
   in
-  let* messages = make_messages ?admin database_label experiment sessions in
+  let* messages =
+    make_messages context ?current_user database_label experiment sessions
+  in
   let assignments =
     sessions
     |> flat_map snd
@@ -66,7 +78,7 @@ let make_events ?admin database_label experiment sessions =
   Lwt_result.return (assignments, messages)
 ;;
 
-let handle_update ?admin database_label =
+let handle_update ?current_user database_label context =
   let open Assignment in
   let handle experiment filter assignments =
     let matches_filter query contact =
@@ -84,9 +96,9 @@ let handle_update ?admin database_label =
             matches_filter query contact ||> CCPair.make assignment)
       in
       Lwt.return (session, assignments))
-    >|> make_events ?admin database_label experiment
+    >|> make_events ?current_user context database_label experiment
   in
-  function
+  match context with
   | `Session ({ Session.id; experiment; _ } as session) ->
     let%lwt assignments = find_all_by_session database_label id in
     handle experiment experiment.Experiment.filter [ session, assignments ]
@@ -120,10 +132,10 @@ let update_upcoming_assignments database_label =
 ;;
 
 let update_matches_filter
-  ?admin
+  ?current_user
   pool
   (context :
     [< `Experiment of Experiment.t * Filter.t option | `Session of Session.t ])
   =
-  handle_update ?admin pool context
+  handle_update ?current_user pool context
 ;;

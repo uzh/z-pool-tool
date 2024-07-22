@@ -121,7 +121,7 @@ let write action req =
         let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
         let matcher_events filter =
           Assignment_job.update_matches_filter
-            ~admin
+            ~current_user:admin
             database_label
             (`Experiment (exp, Some filter))
         in
