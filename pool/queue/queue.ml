@@ -52,7 +52,9 @@ let dispatch_all ?callback ?delay label inputs ({ Job.name; handle; _ } as job) 
     let job_instances =
       CCList.map (fun input -> Job.to_instance label input delay now job) inputs
     in
+    let () = Logs.info (fun m -> m "%s" "ENQUEUE ALL") in
     let%lwt () = Repo.enqueue_all label job_instances in
+    let () = Logs.info (fun m -> m "%s" "ENQUEUE ALL DONE") in
     match callback with
     | None -> Lwt.return_unit
     | Some callback -> Lwt_list.iter_s callback job_instances)

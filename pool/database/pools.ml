@@ -169,13 +169,13 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       Connection.find request input)
   ;;
 
-  let populate label table columns request input =
+  let populate label table columns caqti_type input =
     query label (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.populate
         ~table
         ~columns
-        request
+        caqti_type
         (Caqti_lwt.Stream.of_list input)
       |> Lwt.map Caqti_error.uncongested)
   ;;

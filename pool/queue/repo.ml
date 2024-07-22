@@ -156,26 +156,25 @@ let populatable job_instances =
 ;;
 
 let enqueue_all label job_instances =
-  Database.transaction label (fun connection ->
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    Connection.populate
-      ~table:"queue_jobs"
-      ~columns:
-        [ "uuid"
-        ; "name"
-        ; "input"
-        ; "tries"
-        ; "next_run_at"
-        ; "max_tries"
-        ; "status"
-        ; "last_error"
-        ; "last_error_at"
-        ; "tag"
-        ; "ctx"
-        ]
-      Repo_entity.Instance.t
-      (job_instances |> populatable |> CCList.rev |> Caqti_lwt.Stream.of_list)
-    |> Lwt.map Caqti_error.uncongested)
+  let () = Logs.info (fun m -> m "%s" "INSIDE ENQUEUE ALL") in
+  let columns =
+    [ "queue_jobs.uuid"
+    ; "queue_jobs.name"
+    ; "queue_jobs.input"
+    ; "queue_jobs.tries"
+    ; "queue_jobs.next_run_at"
+    ; "queue_jobs.max_tries"
+    ; "queue_jobs.status"
+    ; "queue_jobs.last_error"
+    ; "queue_jobs.last_error_at"
+    ; "queue_jobs.tag"
+    ; "queue_jobs.ctx"
+    ]
+  in
+  job_instances
+  |> populatable
+  |> CCList.rev
+  |> Database.populate label "queue_jobs" columns Repo_entity.Instance.t
 ;;
 
 let query =
