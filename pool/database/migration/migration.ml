@@ -40,8 +40,12 @@ let has database_label namespace =
   |> Lwt.map CCOption.is_some
 ;;
 
+let get_opt database_label namespace =
+  Migration_repo.get database_label (table ()) ~namespace
+;;
+
 let get database_label namespace =
-  let%lwt state = Migration_repo.get database_label (table ()) ~namespace in
+  let%lwt state = get_opt database_label namespace in
   Lwt.return
   @@
   match state with
@@ -56,22 +60,7 @@ let upsert database_label state =
   Migration_repo.upsert database_label (table ()) state
 ;;
 
-let mark_dirty database_label namespace =
-  let%lwt state = get database_label namespace in
-  let dirty_state = Migration_repo.Migration.mark_dirty state in
-  let%lwt () = upsert database_label dirty_state in
-  Lwt.return dirty_state
-;;
-
-let mark_clean database_label namespace =
-  let%lwt state = get database_label namespace in
-  let clean_state = Migration_repo.Migration.mark_clean state in
-  let%lwt () = upsert database_label clean_state in
-  Lwt.return clean_state
-;;
-
-let increment database_label namespace =
-  let%lwt state = get database_label namespace in
+let increment database_label state =
   let updated_state = Migration_repo.Migration.increment state in
   let%lwt () = upsert database_label updated_state in
   Lwt.return updated_state
@@ -99,13 +88,13 @@ let with_disabled_fk_check database_label f =
       (fun () -> Connection.exec set_fk_check_request true ||> raise_error))
 ;;
 
-let execute_steps database_label migration =
+let execute_steps database_label state steps =
   let open Caqti_request.Infix in
   let tags = Logger.Tags.create database_label in
-  let namespace, steps = migration in
-  let rec run steps =
+  let namespace = Migration_repo.Migration.namespace state in
+  let rec run steps state =
     match steps with
-    | [] -> Lwt.return ()
+    | [] -> Lwt.return state
     | { Step.label; statement; check_fk = true } :: steps ->
       Logs.debug (fun m -> m ~tags "Running %s" label);
       let query (module Connection : Caqti_lwt.CONNECTION) =
@@ -114,8 +103,8 @@ let execute_steps database_label migration =
       in
       let%lwt () = Service.query database_label query in
       Logs.debug (fun m -> m ~tags "Ran %s" label);
-      let%lwt _ = increment database_label namespace in
-      run steps
+      let%lwt state = increment database_label state in
+      run steps state
     | { Step.label; statement; check_fk = false } :: steps ->
       let%lwt () =
         with_disabled_fk_check database_label (fun connection ->
@@ -127,8 +116,8 @@ let execute_steps database_label migration =
           query connection)
       in
       Logs.debug (fun m -> m ~tags "Ran %s" label);
-      let%lwt _ = increment database_label namespace in
-      run steps
+      let%lwt state = increment database_label state in
+      run steps state
   in
   let () =
     match CCList.length steps with
@@ -137,18 +126,18 @@ let execute_steps database_label migration =
     | n ->
       Logs.debug (fun m -> m ~tags "Applying %i migrations for %s" n namespace)
   in
-  run steps
+  run steps state
 ;;
 
 let execute_migration database_label migration =
   let tags = Logger.Tags.create database_label in
-  let namespace, _ = migration in
+  let namespace, steps = migration in
   let%lwt () = setup database_label () in
-  let%lwt has_state = has database_label namespace in
-  let%lwt state =
-    if has_state
-    then (
-      let%lwt state = get database_label namespace in
+  let upsert_state = upsert database_label in
+  let%lwt existing_state = get_opt database_label namespace in
+  let%lwt state, steps_to_apply =
+    match existing_state with
+    | Some state ->
       if Migration_repo.Migration.dirty state
       then (
         Logs.err (fun m ->
@@ -162,38 +151,59 @@ let execute_migration database_label migration =
             "Set the column 'dirty' from 1/true to 0/false after you have \
              fixed the database state.");
         raise Dirty_migration)
-      else mark_dirty database_label namespace)
-    else (
+      else
+        Lwt.return
+          ( state
+          , Migration_repo.Migration.(steps_to_apply steps (version state)) )
+    | None ->
+      (* If currently no state exists, an new one will be created. If there are
+         steps to execute, it is dirty *)
       Logs.debug (fun m -> m ~tags "Setting up table for %s" namespace);
-      let state = Migration_repo.Migration.create ~namespace in
-      let%lwt () = upsert database_label state in
-      Lwt.return state)
+      let dirty = CCList.is_empty steps |> not in
+      let state = Migration_repo.Migration.create ~namespace ~dirty in
+      let%lwt () = upsert_state state in
+      Lwt.return (state, steps)
   in
-  let migration_to_apply =
-    Migration_repo.Migration.steps_to_apply migration state
+  let mark_as condition setter state =
+    if condition
+    then (
+      let updated_state = setter state in
+      let%lwt () = upsert_state updated_state in
+      Lwt.return updated_state)
+    else Lwt.return state
   in
-  let n_migrations = CCList.length (snd migration_to_apply) in
-  if n_migrations > 0
-  then
+  let mark_dirty state =
+    let open Migration_repo.Migration in
+    mark_as (state |> dirty |> not) mark_dirty state
+  in
+  let mark_clean state =
+    let open Migration_repo.Migration in
+    mark_as (state |> dirty) mark_clean state
+  in
+  match steps_to_apply with
+  | [] ->
+    Logs.info (fun m -> m ~tags "No migrations to execute for '%s'" namespace);
+    let%lwt (_ : Migration_repo.Migration.t) = mark_clean state in
+    Lwt.return ()
+  | steps_to_apply ->
     Logs.info (fun m ->
       m
         ~tags
         "Executing %d migrations for '%s'..."
-        (CCList.length (snd migration_to_apply))
-        namespace)
-  else
-    Logs.info (fun m -> m ~tags "No migrations to execute for '%s'" namespace);
-  let%lwt () =
-    Lwt.catch
-      (fun () -> execute_steps database_label migration_to_apply)
-      (fun exn ->
-        let err = Printexc.to_string exn in
-        Logs.err (fun m ->
-          m ~tags "Error while running migration '%a': %s" pp migration err);
-        raise (Exception err))
-  in
-  let%lwt _ = mark_clean database_label namespace in
-  Lwt.return ()
+        (CCList.length steps_to_apply)
+        namespace);
+    let%lwt state = mark_dirty state in
+    let%lwt state =
+      Lwt.catch
+        (fun () -> execute_steps database_label state steps_to_apply)
+        (fun exn ->
+          let err = Printexc.to_string exn in
+          Logs.err (fun m ->
+            m ~tags "Error while running migration '%a': %s" pp migration err);
+          raise (Exception err))
+    in
+    let%lwt (_ : Migration_repo.Migration.t) = mark_clean state in
+    Lwt.return ()
 ;;
 
 let execute database_label migrations =
