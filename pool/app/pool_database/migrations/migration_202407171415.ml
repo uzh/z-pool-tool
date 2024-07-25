@@ -95,7 +95,7 @@ let set_failed_for_jobs =
       SET
         status = 'failed'
       WHERE status = 'pending'
-        AND tries = max_tries
+        AND tries >= max_tries
     |sql}
 ;;
 
