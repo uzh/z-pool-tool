@@ -98,25 +98,23 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
     let%lwt () =
       Lwt.catch
         (fun () -> fcn ())
-        (fun exn ->
-          let () =
-            match exn with
-            | Caqti_error.(Exn #load_or_connect as exn) ->
-              let backtrace = Printexc.get_backtrace () in
-              Logs.err ~src (fun m ->
-                m
-                  ~tags
-                  "Caqti error caught while running schedule: %s\n%s"
-                  (Printexc.to_string exn)
-                  backtrace)
-            | _ ->
-              Logs.err ~src (fun m ->
-                m
-                  ~tags
-                  "Exception caught while running schedule: %s"
-                  (Printexc.to_string exn))
-          in
-          Lwt.return_unit)
+        (function
+          | Caqti_error.(Exn #load_or_connect as exn) ->
+            let backtrace = Printexc.get_backtrace () in
+            Logs.err ~src (fun m ->
+              m
+                ~tags
+                "Caqti error caught while running schedule: %s\n%s"
+                (Printexc.to_string exn)
+                backtrace);
+            Lwt.return_unit
+          | exn ->
+            Logs.err ~src (fun m ->
+              m
+                ~tags
+                "Exception caught while running schedule: %s"
+                (Printexc.to_string exn));
+            Lwt.return_unit)
     in
     Registered.update_run_status schedule scheduled_time
   in
