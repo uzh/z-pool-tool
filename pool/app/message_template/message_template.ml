@@ -8,7 +8,7 @@ let src = Logs.Src.create "message_template"
 
 let create_email_job ?smtp_auth_id label mapping_uuids email =
   Email.Service.Job.create ?smtp_auth_id email
-  |> Email.create_job
+  |> Email.create_dispatch
        ~message_template:(Label.show label)
        ~job_ctx:(Pool_queue.job_ctx_create mapping_uuids)
 ;;

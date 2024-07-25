@@ -2,7 +2,9 @@ val update_matches_filter
   :  ?admin:Admin.t
   -> Database.Label.t
   -> [< `Experiment of Experiment.t * Filter.t option | `Session of Session.t ]
-  -> (Assignment.event list * Email.job list, Pool_message.Error.t) Lwt_result.t
+  -> ( Assignment.event list * Email.dispatch list
+       , Pool_message.Error.t )
+       Lwt_result.t
 
 val dispatch_update_upcomming : Database.Label.t -> unit Lwt.t
 val register : unit -> Sihl.Container.Service.t

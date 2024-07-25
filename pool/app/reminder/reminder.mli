@@ -16,7 +16,7 @@ val prepare_messages
   -> Pool_common.Language.t list
   -> Experiment.t
   -> Session.t
-  -> ((Assignment.t -> (Email.job, Pool_message.Error.t) result)
+  -> ((Assignment.t -> (Email.dispatch, Pool_message.Error.t) result)
      * (Assignment.t
         -> Pool_user.CellPhone.t
         -> (Text_message.job, Pool_message.Error.t) result))

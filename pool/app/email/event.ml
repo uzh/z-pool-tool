@@ -49,7 +49,7 @@ let pp_verification_event formatter (event : verification_event) : unit =
   | EmailVerified m -> pp formatter m
 ;;
 
-type job =
+type dispatch =
   { job : Job.t
   ; id : Pool_queue.Id.t option [@yojson.option]
   ; message_template : string option [@yojson.option]
@@ -57,13 +57,13 @@ type job =
   }
 [@@deriving eq, fields, show, yojson]
 
-let create_job ?id ?message_template ?job_ctx job =
+let create_dispatch ?id ?message_template ?job_ctx job =
   { job; id; message_template; job_ctx }
 ;;
 
 type event =
-  | Sent of (job * User.EmailAddress.t option * SmtpAuth.Id.t option)
-  | BulkSent of job list
+  | Sent of (dispatch * User.EmailAddress.t option * SmtpAuth.Id.t option)
+  | BulkSent of dispatch list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpDeleted of SmtpAuth.Id.t
@@ -82,7 +82,7 @@ let create_sent
   ?new_smtp_auth_id
   job
   =
-  create_job ?id ?message_template ?job_ctx job
+  create_dispatch ?id ?message_template ?job_ctx job
   |> sent ?new_email_address ?new_smtp_auth_id
 ;;
 

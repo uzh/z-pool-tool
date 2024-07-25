@@ -7,7 +7,11 @@ module ResetPassword : sig
 
   type t = Pool_user.EmailAddress.t
 
-  val handle : ?tags:Logs.Tag.set -> Email.job -> (Pool_event.t list, 'a) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Email.dispatch
+    -> (Pool_event.t list, 'a) result
+
   val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Role.Target.t -> Pool_user.t -> Guard.ValidationSet.t
 end = struct

@@ -544,7 +544,7 @@ let create_cancellation_message experiment reason contact =
     reason |> Session.CancellationReason.value |> flip Sihl_email.set_text email
   in
   create_email_job experiment email
-  |> Email.create_job
+  |> Email.create_dispatch
        ~job_ctx:
          (Pool_queue.job_ctx_create
             [ Contact.(contact |> id |> Id.to_common)
@@ -1264,7 +1264,7 @@ let reschedule_to_past () =
   let create_message _ _ _ =
     Test_utils.Model.create_email ()
     |> create_email_job experiment
-    |> Email.create_job
+    |> Email.create_dispatch
          ~job_ctx:
            (Pool_queue.job_ctx_create
               [ Session.(session.id |> Id.to_common)
@@ -1301,7 +1301,7 @@ let reschedule_with_experiment_smtp () =
   in
   let assignment = Test_utils.Model.create_assignment () in
   let email_to_job =
-    Email.create_job
+    Email.create_dispatch
       ~job_ctx:
         (Pool_queue.job_ctx_create
            [ Session.(session.id |> Id.to_common)
@@ -1353,7 +1353,7 @@ let resend_reminders_invalid () =
   let create_email assignment =
     Model.create_email ()
     |> create_email_job experiment
-    |> Email.create_job
+    |> Email.create_dispatch
          ~job_ctx:
            (Pool_queue.job_ctx_create
               [ Assignment.(assignment.id |> Id.to_common)
@@ -1408,7 +1408,7 @@ let resend_reminders_valid () =
   let create_email _ =
     Model.create_email ()
     |> create_email_job experiment
-    |> Email.create_job
+    |> Email.create_dispatch
          ~job_ctx:
            (Pool_queue.job_ctx_create
               [ Session.(session.id |> Id.to_common)

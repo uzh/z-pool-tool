@@ -303,29 +303,29 @@ val handle_verification_event
 val equal_verification_event : verification_event -> verification_event -> bool
 val pp_verification_event : Format.formatter -> verification_event -> unit
 
-type job =
+type dispatch =
   { job : Service.Job.t
   ; id : Pool_queue.Id.t option
   ; message_template : string option
   ; job_ctx : Pool_queue.job_ctx option
   }
 
-val yojson_of_job : job -> Yojson.Safe.t
-val job : job -> Service.Job.t
-val id : job -> Pool_queue.Id.t option
-val message_template : job -> string option
-val job_ctx : job -> Pool_queue.job_ctx option
+val yojson_of_dispatch : dispatch -> Yojson.Safe.t
+val job : dispatch -> Service.Job.t
+val id : dispatch -> Pool_queue.Id.t option
+val message_template : dispatch -> string option
+val job_ctx : dispatch -> Pool_queue.job_ctx option
 
-val create_job
+val create_dispatch
   :  ?id:Pool_queue.Id.t
   -> ?message_template:string
   -> ?job_ctx:Pool_queue.job_ctx
   -> Service.Job.t
-  -> job
+  -> dispatch
 
 type event =
-  | Sent of (job * Pool_user.EmailAddress.t option * SmtpAuth.Id.t option)
-  | BulkSent of job list
+  | Sent of (dispatch * Pool_user.EmailAddress.t option * SmtpAuth.Id.t option)
+  | BulkSent of dispatch list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpDeleted of SmtpAuth.Id.t
@@ -349,7 +349,7 @@ val create_sent
 val sent
   :  ?new_email_address:Pool_user.EmailAddress.t
   -> ?new_smtp_auth_id:SmtpAuth.Id.t
-  -> job
+  -> dispatch
   -> event
 
-val bulksent : job list -> event
+val bulksent : dispatch list -> event

@@ -7,7 +7,7 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Email.job
+    -> Email.dispatch
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 

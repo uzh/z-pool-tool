@@ -44,7 +44,7 @@ let confirmation_mail contact =
     ; bcc = []
     }
   |> Email.Service.Job.create
-  |> Email.create_job
+  |> Email.create_dispatch
        ~job_ctx:
          (Pool_queue.job_ctx_create Contact.[ contact |> id |> Id.to_common ])
        ~message_template:(Message_template.Label.show label)
@@ -114,7 +114,7 @@ let verification_email (email_address, _, _, _, _) =
     ; bcc = []
     }
   |> Email.Service.Job.create
-  |> Email.create_job ~message_template:(Message_template.Label.show label)
+  |> Email.create_dispatch ~message_template:(Message_template.Label.show label)
 ;;
 
 let sign_up_not_allowed_suffix () =
@@ -522,7 +522,7 @@ let should_not_send_registration_notification _ () =
         ; cc = []
         ; bcc = []
         }
-      |> Email.(Service.Job.create %> create_job)
+      |> Email.(Service.Job.create %> create_dispatch)
       |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
            contact
       |> Test_utils.get_or_failwith

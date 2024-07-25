@@ -13,7 +13,7 @@ module SignUp : sig
     -> Custom_field.Public.t list
     -> Email.Token.t
     -> Pool_user.EmailAddress.t
-    -> Email.job
+    -> Email.dispatch
     -> Pool_common.Language.t option
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -179,7 +179,7 @@ module RequestEmailValidation : sig
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> Email.Token.t
-    -> Email.job
+    -> Email.dispatch
     -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -266,7 +266,7 @@ module SendProfileUpdateTrigger : sig
 
   type t =
     { contacts : Contact.t list
-    ; emails : Email.job list
+    ; emails : Email.dispatch list
     }
 
   val handle
@@ -278,7 +278,7 @@ module SendProfileUpdateTrigger : sig
 end = struct
   type t =
     { contacts : Contact.t list
-    ; emails : Email.job list
+    ; emails : Email.dispatch list
     }
 
   let handle ?(tags = Logs.Tag.empty) ({ contacts; emails } : t) =
@@ -298,7 +298,7 @@ module SendRegistrationAttemptNotifitacion : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> Email.job
+    -> Email.dispatch
     -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t

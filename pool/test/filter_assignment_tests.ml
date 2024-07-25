@@ -156,7 +156,7 @@ let assignment ~experiment ~session ~contact =
             ~subject:"subject"
             "body"
           |> Email.Service.Job.create
-          |> Email.create_job)
+          |> Email.create_dispatch)
         already_enrolled)
   in
   let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
@@ -179,7 +179,7 @@ let invitation ~experiment ~contacts =
                 ~subject:"subject"
                 "body"
               |> Email.Service.Job.create
-              |> Email.create_job
+              |> Email.create_dispatch
               |> CCResult.return)
         ; mailing = None
         })

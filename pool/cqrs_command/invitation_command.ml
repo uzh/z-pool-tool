@@ -22,7 +22,8 @@ module Create : sig
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
     ; invited_contacts : Contact.Id.t list
-    ; create_message : Contact.t -> (Email.job, Pool_message.Error.t) result
+    ; create_message :
+        Contact.t -> (Email.dispatch, Pool_message.Error.t) result
     }
 
   val handle
@@ -37,7 +38,8 @@ end = struct
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
     ; invited_contacts : Contact.Id.t list
-    ; create_message : Contact.t -> (Email.job, Pool_message.Error.t) result
+    ; create_message :
+        Contact.t -> (Email.dispatch, Pool_message.Error.t) result
     }
 
   let handle
@@ -76,7 +78,7 @@ module Resend : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?mailing_id:Mailing.Id.t
-    -> (Contact.t -> (Email.job, Pool_message.Error.t) result)
+    -> (Contact.t -> (Email.dispatch, Pool_message.Error.t) result)
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 

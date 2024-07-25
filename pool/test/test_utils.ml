@@ -286,7 +286,7 @@ module Model = struct
     =
     create_email ?recipient:email_address ()
     |> Email.Service.Job.create ?smtp_auth_id
-    |> Email.create_job ?job_ctx ?message_template
+    |> Email.create_dispatch ?job_ctx ?message_template
   ;;
 
   let create_text_message
