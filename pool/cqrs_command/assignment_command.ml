@@ -53,7 +53,7 @@ let assignment_creation_and_confirmation_events
   in
   let main_assignment = create contact in
   let confirmation_email = confirmation_email main_assignment in
-  let email_event = Email.Sent confirmation_email |> Pool_event.email in
+  let email_event = Email.sent confirmation_email |> Pool_event.email in
   let create_events =
     Created (main_assignment, session.Session.id) :: follow_up_events
     |> CCList.map Pool_event.assignment
@@ -75,7 +75,7 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> ?direct_enrollment_by_admin:bool
     -> t
-    -> (Assignment.t -> Email.job)
+    -> (Assignment.t -> Email.dispatch)
     -> bool
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -138,7 +138,7 @@ module Cancel : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Email.job
+    -> Email.dispatch
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -173,7 +173,7 @@ end = struct
     in
     Ok
       ((cancel_events @ [ decrease_assignment_count ])
-       @ [ Email.Sent notification_email |> Pool_event.email ])
+       @ [ Email.sent notification_email |> Pool_event.email ])
   ;;
 
   let effects = Assignment.Guard.Access.update
@@ -192,7 +192,7 @@ module CreateFromWaitingList : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Assignment.t -> Email.job)
+    -> (Assignment.t -> Email.dispatch)
     -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
@@ -433,7 +433,7 @@ module SendReminder : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> (Assignment.t -> (Email.job, Pool_message.Error.t) result)
+    -> (Assignment.t -> (Email.dispatch, Pool_message.Error.t) result)
        * (Assignment.t
           -> Pool_user.CellPhone.t
           -> (Text_message.job, Pool_message.Error.t) result)
@@ -517,7 +517,7 @@ module SwapSession : sig
     -> current_session:Session.t
     -> new_session:Session.t
     -> Assignment.t
-    -> Email.job option
+    -> Email.dispatch option
     -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode
@@ -590,7 +590,8 @@ end = struct
 end
 
 module UpdateMatchesFilter : sig
-  include Common.CommandSig with type t = Assignment.event list * Email.job list
+  include
+    Common.CommandSig with type t = Assignment.event list * Email.dispatch list
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -599,7 +600,7 @@ module UpdateMatchesFilter : sig
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Assignment.event list * Email.job list
+  type t = Assignment.event list * Email.dispatch list
 
   let handle ?(tags = Logs.Tag.empty) (assignment_events, emails) =
     Logs.info ~src (fun m -> m "Handle command UpdateMatchesFilter" ~tags);

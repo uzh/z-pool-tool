@@ -236,6 +236,7 @@ let rec field_to_string =
   | Room -> "room"
   | Root -> "root"
   | Rule -> "rule"
+  | RunAt -> "run at"
   | ScheduledTime -> "scheduled time"
   | ScheduledTimeSpan -> "scheduled interval"
   | Search -> "search"
@@ -640,6 +641,7 @@ let rec error_to_string =
     Format.asprintf "Must not be longer than %i characters." i
   | TextLengthMin i ->
     Format.asprintf "Must not be shorter than %i characters." i
+  | TextMessageError error -> Format.asprintf "Text message error: %s" error
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
   | TextMessageDlrAlreadyReceived ->

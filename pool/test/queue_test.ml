@@ -44,7 +44,7 @@ let create_text_message_dlr () =
   let open CCResult.Infix in
   let open DlrData in
   let raw = "raw request" in
-  let job_id = Queue.Id.create () in
+  let job_id = Pool_queue.Id.create () in
   let events = decode urlencoded job_id raw >>= handle in
   let expected =
     let open Text_message in

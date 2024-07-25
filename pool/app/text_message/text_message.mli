@@ -12,17 +12,7 @@ type t =
   }
 
 val create : Pool_user.CellPhone.t -> Pool_tenant.GtxSender.t -> Content.t -> t
-
-type job =
-  { message : t
-  ; message_history : Queue.History.create option
-  ; resent : Queue.Id.t option
-  }
-
-val parse_job_json : string -> (job, Pool_message.Error.t) result
-val yojson_of_job : job -> Yojson.Safe.t
-val job_message_history : job -> Queue.History.create option
-val create_job : ?message_history:Queue.History.create -> t -> job
+val update : ?new_recipient:Pool_user.CellPhone.t -> t -> t
 
 val render_and_create
   :  Pool_user.CellPhone.t
@@ -43,11 +33,51 @@ module Service : sig
          Lwt_result.t
 
   module Job : sig
-    val send : job Queue.Job.t
+    val encode : t -> string
+    val decode : string -> (t, Pool_message.Error.t) result
+    val show_recipient : Pool_queue.Instance.t -> string
+
+    val handle
+      :  ?id:Pool_queue.Id.t
+      -> Database.Label.t
+      -> t
+      -> (unit, Pool_message.Error.t) result Lwt.t
+
+    val send : t Pool_queue.Job.t
   end
 
-  val send : Database.Label.t -> job -> unit Lwt.t
+  val dispatch
+    :  ?id:Pool_queue.Id.t
+    -> ?new_recipient:Pool_user.CellPhone.t
+    -> ?message_template:string
+    -> ?job_ctx:Pool_queue.job_ctx
+    -> Database.Label.t
+    -> t
+    -> unit Lwt.t
 end
+
+type job =
+  { job : t
+  ; id : Pool_queue.Id.t option
+  ; message_template : string option
+  ; job_ctx : Pool_queue.job_ctx option
+  }
+
+val equal_job : job -> job -> bool
+val pp_job : Format.formatter -> job -> unit
+val show_job : job -> string
+val yojson_of_job : job -> Yojson.Safe.t
+val job : job -> t
+val id : job -> Pool_queue.Id.t option
+val message_template : job -> string option
+val job_ctx : job -> Pool_queue.job_ctx option
+
+val create_job
+  :  ?id:Pool_queue.Id.t
+  -> ?message_template:string
+  -> ?job_ctx:Pool_queue.job_ctx
+  -> t
+  -> job
 
 module DlrMask : sig
   type t =
@@ -61,7 +91,7 @@ module DlrMask : sig
 end
 
 type delivery_report =
-  { job_id : Queue.Id.t
+  { job_id : Pool_queue.Id.t
   ; raw : string
   ; from : string
   ; to_ : string
@@ -78,11 +108,11 @@ type delivery_report =
 
 val find_report_by_queue_id
   :  Database.Label.t
-  -> Queue.Id.t
+  -> Pool_queue.Id.t
   -> delivery_report option Lwt.t
 
 type event =
-  | Sent of job
+  | Sent of (job * Pool_user.CellPhone.t option)
   | BulkSent of job list
   | ReportCreated of delivery_report
 
@@ -90,5 +120,13 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Database.Label.t -> event -> unit Lwt.t
-val sent : job -> event
-val bulksent : job list -> event
+
+val create_sent
+  :  ?id:Pool_queue.Id.t
+  -> ?message_template:string
+  -> ?job_ctx:Pool_queue.job_ctx
+  -> ?new_recipient:Pool_user.CellPhone.t
+  -> t
+  -> event
+
+val sent : ?new_recipient:Pool_user.CellPhone.t -> job -> event

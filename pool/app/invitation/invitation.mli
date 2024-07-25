@@ -30,7 +30,7 @@ val create : ?id:Pool_common.Id.t -> Contact.t -> t
 
 type notification_history =
   { invitation : t
-  ; queue_entries : (Sihl_email.t * Queue.Instance.t) list
+  ; queue_entries : (Sihl_email.t * Pool_queue.Instance.t) list
   }
 
 val equal_notification_history

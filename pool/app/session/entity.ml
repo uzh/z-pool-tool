@@ -238,13 +238,13 @@ let available_spots (m : t) =
 let has_assignments (m : t) = AssignmentCount.value m.assignment_count > 0
 
 type notification_log =
-  | Email of Sihl_email.t * Queue.Instance.t
-  | SMS of string * Queue.Instance.t
+  | Email of Sihl_email.t * Pool_queue.Instance.t
+  | SMS of string * Pool_queue.Instance.t
 (* TODO: update notification history with types, add equal and pp functions *)
 
 type notification_history =
   { session : t
-  ; queue_entries : (Sihl_email.t * Queue.Instance.t) list
+  ; queue_entries : (Sihl_email.t * Pool_queue.Instance.t) list
        [@equal fun _ _ -> true]
   }
 

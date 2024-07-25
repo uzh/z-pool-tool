@@ -12,7 +12,6 @@
   mailing
   message_template
   pool_common
-  queue
   schedule
   sihl
   waiting_list)

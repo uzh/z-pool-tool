@@ -13,7 +13,7 @@ module SignUp : sig
     -> Custom_field.Public.t list
     -> Email.Token.t
     -> Pool_user.EmailAddress.t
-    -> Email.job
+    -> Email.dispatch
     -> Pool_common.Language.t option
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -64,7 +64,7 @@ end = struct
       ([ Contact.Created contact |> Pool_event.contact
        ; Email.Created (unverified_email, token, user_id |> Contact.Id.to_user)
          |> Pool_event.email_verification
-       ; Email.Sent verification_email |> Pool_event.email
+       ; Email.sent verification_email |> Pool_event.email
        ]
        @ custom_field_events)
   ;;
@@ -179,7 +179,7 @@ module RequestEmailValidation : sig
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> Email.Token.t
-    -> Email.job
+    -> Email.dispatch
     -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -202,7 +202,7 @@ end = struct
     Ok
       [ Email.Created (email, token, Contact.(id contact |> Id.to_user))
         |> Pool_event.email_verification
-      ; Email.Sent verification_email |> Pool_event.email
+      ; Email.sent verification_email |> Pool_event.email
       ]
   ;;
 
@@ -266,7 +266,7 @@ module SendProfileUpdateTrigger : sig
 
   type t =
     { contacts : Contact.t list
-    ; emails : Email.job list
+    ; emails : Email.dispatch list
     }
 
   val handle
@@ -278,7 +278,7 @@ module SendProfileUpdateTrigger : sig
 end = struct
   type t =
     { contacts : Contact.t list
-    ; emails : Email.job list
+    ; emails : Email.dispatch list
     }
 
   let handle ?(tags = Logs.Tag.empty) ({ contacts; emails } : t) =
@@ -298,7 +298,7 @@ module SendRegistrationAttemptNotifitacion : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> Email.job
+    -> Email.dispatch
     -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
@@ -309,7 +309,7 @@ end = struct
     Logs.info ~src (fun m ->
       m "Handle command SendRegistrationAttemptNotifitacion" ~tags);
     Ok
-      [ Email.Sent email |> Pool_event.email
+      [ Email.sent email |> Pool_event.email
       ; Contact.RegistrationAttemptNotificationSent contact
         |> Pool_event.contact
       ]
@@ -413,14 +413,4 @@ end = struct
   ;;
 
   let effects = Contact.Guard.Access.update
-end
-
-module Verify = struct
-  (* TODO issue #90 step 2 *)
-  (* TODO Verify the contact itself with ID/Pass *)
-end
-
-module ToggleDisable = struct
-  (* TODO issue #90 step 2 *)
-  (* TODO Toggle disable command*)
 end

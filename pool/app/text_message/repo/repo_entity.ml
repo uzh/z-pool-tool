@@ -53,7 +53,7 @@ let delivery_report =
     ~encode
     ~decode
     Schema.
-      [ Queue.Repo.Id.t
+      [ Pool_queue.Repo.Id.t
       ; string
       ; string
       ; string

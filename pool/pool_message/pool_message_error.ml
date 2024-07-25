@@ -124,6 +124,7 @@ type t =
   | TermsAndConditionsNotAccepted
   | TextLengthMax of int
   | TextLengthMin of int
+  | TextMessageError of string
   | TextMessageInterceptionError of string
   | TextMessageDlrAlreadyReceived
   | TimeInPast

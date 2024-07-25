@@ -14,7 +14,24 @@ let show _ =
   let open CCFun in
   let%lwt result =
     let open Schedule in
-    let* job_count = Queue.count_workable Database.root in
+    let%lwt databases =
+      Pool_tenant.find_all ()
+      ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
+      ||> CCList.cons Database.root
+    in
+    let* job_count =
+      Lwt_list.fold_left_s
+        (fun init label ->
+          let* count =
+            Lwt_list.map_s
+              (flip Pool_queue.count_workable label)
+              Pool_queue.JobName.all
+            ||> CCResult.flatten_l
+          in
+          init |> Lwt_result.lift >|+ CCList.fold_right ( + ) count)
+        (Ok 0)
+        databases
+    in
     let%lwt schedules = find_all () in
     let is_ok = CCList.(map is_ok %> for_all id) in
     (schedules

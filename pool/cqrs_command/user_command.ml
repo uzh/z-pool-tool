@@ -119,7 +119,7 @@ module UpdatePassword : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> ?notification:Email.job
+    -> ?notification:Email.dispatch
     -> Pool_user.Id.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result

@@ -10,14 +10,6 @@ let reminder_settings database_label =
     (find_user_import_second_reminder_after database_label)
 ;;
 
-let message_history user =
-  let open Queue.History in
-  { entity_uuids = [ user.Pool_user.id |> Pool_user.Id.to_common ]
-  ; message_template =
-      Message_template.Label.(show SignUpVerification) |> CCOption.return
-  }
-;;
-
 let run database_label =
   let open Utils.Lwt_result.Infix in
   let%lwt import_message =
@@ -91,7 +83,7 @@ let lifecycle =
   Sihl.Container.create_lifecycle
     "System events"
     ~dependencies:(fun () ->
-      [ Pool_database.lifecycle; Queue.lifecycle_service ])
+      [ Pool_database.lifecycle; Pool_queue.lifecycle_service ])
     ~start
     ~stop
 ;;

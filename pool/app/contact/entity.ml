@@ -77,7 +77,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show, ord]
+[@@deriving eq, fields, show, ord]
 
 let user { user; _ } = user
 let id m : Id.t = m.user.Pool_user.id |> Id.of_user

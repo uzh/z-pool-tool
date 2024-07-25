@@ -6,7 +6,6 @@
   message_template
   pool_common
   pool_tenant
-  queue
   schedule
   utils)
  (preprocess

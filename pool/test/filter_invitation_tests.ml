@@ -110,7 +110,8 @@ let invitation ~experiment ~contacts =
                 ~recipient:"recipient"
                 ~subject:"subject"
                 "body"
-              |> Email.create_job
+              |> Email.Service.Job.create
+              |> Email.create_dispatch
               |> CCResult.return)
         ; mailing = None
         })

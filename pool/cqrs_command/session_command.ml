@@ -257,11 +257,10 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command CreateTimeWindow" ~tags);
     let open CCResult in
-    let open Session in
     let* () =
       Pool_model.Time.start_is_before_end
-        ~start:(Start.value start)
-        ~end_at:(End.value end_at)
+        ~start:(Session.Start.value start)
+        ~end_at:(Session.End.value end_at)
     in
     let* () =
       if CCList.is_empty overlapps
@@ -582,7 +581,7 @@ module Reschedule : sig
     -> (Contact.t
         -> Session.Start.t
         -> Session.Duration.t
-        -> (Email.job, Pool_message.Error.t) result)
+        -> (Email.dispatch, Pool_message.Error.t) result)
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -695,7 +694,7 @@ module Cancel : sig
     :  ?tags:Logs.Tag.set
     -> Session.t list
     -> (Contact.t * Assignment.t list) list
-    -> (t -> Contact.t -> (Email.job, Pool_message.Error.t) result)
+    -> (t -> Contact.t -> (Email.dispatch, Pool_message.Error.t) result)
     -> (t
         -> Contact.t
         -> Pool_user.CellPhone.t
@@ -902,7 +901,7 @@ module ResendReminders : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> (Assignment.t -> (Email.job, Pool_message.Error.t) result)
+    -> (Assignment.t -> (Email.dispatch, Pool_message.Error.t) result)
        * (Assignment.t
           -> Pool_user.CellPhone.t
           -> (Text_message.job, Pool_message.Error.t) result)
@@ -1000,7 +999,7 @@ module SendDirectMessage : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> (Assignment.t -> Message_template.ManualMessage.t -> Email.job)
+    -> (Assignment.t -> Message_template.ManualMessage.t -> Email.dispatch)
     -> (Pool_common.Language.t
         -> Assignment.t
         -> Message_template.SmsText.t

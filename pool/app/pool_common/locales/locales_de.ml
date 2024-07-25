@@ -239,6 +239,7 @@ let rec field_to_string =
   | Room -> "Raum"
   | Root -> "Root"
   | Rule -> "Regel"
+  | RunAt -> "Läuft um"
   | ScheduledTime -> "Geplante Zeit"
   | ScheduledTimeSpan -> "Wiederholungs Interval"
   | Search -> "Suche"
@@ -682,6 +683,7 @@ let rec error_to_string =
     Format.asprintf "Darf nicht länger als %i Zeichen sein." i
   | TextLengthMin i ->
     Format.asprintf "Darf nicht kürzer als %i Zeichen sein." i
+  | TextMessageError error -> Format.asprintf "Text message error: %s" error
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
   | TextMessageDlrAlreadyReceived -> "SMS Übermittlingsbeicht bereits erhalten."

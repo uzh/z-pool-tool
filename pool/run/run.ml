@@ -6,14 +6,15 @@ let worker_services =
   ; Pool_canary.register ()
   ; Storage.register ()
   ; Schedule.register ()
-  ; Queue.register
-      ~kind:Queue.Worker
-      ~jobs:
-        [ Queue.hide Email.Service.Job.send
-        ; Queue.hide Text_message.Service.Job.send
-        ; Queue.hide Assignment_job.job
-        ]
-      ()
+  ; Pool_queue.(
+      register
+        ~kind:Worker
+        ~jobs:
+          [ hide Email.Service.Job.send
+          ; hide Text_message.Service.Job.send
+          ; hide Assignment_job.job
+          ]
+        ())
   ; Matcher.register ()
   ; System_event.Service.register `Worker ()
   ; User_import.Service.register ()
@@ -27,7 +28,7 @@ let services =
   ; Pool_canary.register ()
   ; Pool_user.register ()
   ; Pool_token.register ()
-  ; Queue.register ()
+  ; Pool_queue.register ()
   ; Email.Service.register ()
   ; Text_message.Service.register ()
   ; Storage.register ()

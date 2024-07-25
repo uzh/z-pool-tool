@@ -432,22 +432,21 @@ let message_history req =
   in
   HttpUtils.Htmx.handler
     ~error_path
-    ~query:(module Queue.History)
+    ~query:(module Pool_queue)
     ~create_layout:General.create_tenant_layout
     req
   @@ fun (Pool_context.{ database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Contact.find database_label contact_id in
   let%lwt messages =
-    Queue.History.query_by_entity
+    Pool_queue.find_instances_by_entity
       ~query
       database_label
       (Contact.Id.to_common contact_id)
   in
   let open Page.Admin in
   (if HttpUtils.Htmx.is_hx_request req
-   then
-     MessageHistory.list context (Contact.message_history_url contact) messages
+   then Queue.list context (Contact.message_history_url contact) messages
    else Contact.message_history context contact messages)
   |> Lwt_result.return
 ;;
@@ -510,6 +509,6 @@ end = struct
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
 
   let message_history =
-    Queue.Guard.Access.index |> Guardian.validate_admin_entity
+    Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
   ;;
 end
