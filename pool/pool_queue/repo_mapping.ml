@@ -1,4 +1,5 @@
 open CCFun.Infix
+open Utils.Lwt_result.Infix
 module Dynparam = Database.Dynparam
 
 let sql_select_columns =
@@ -8,26 +9,6 @@ let sql_select_columns =
 ;;
 
 let sql_write_columns = [ "queue_uuid"; "entity_uuid" ]
-
-let joins =
-  {sql|
-    LEFT JOIN pool_queue_jobs
-      ON pool_queue_jobs_mapping.queue_job_uuid = queue_jobs.uuid
-    LEFT JOIN pool_queue_jobs_history
-      ON pool_queue_jobs_mapping.queue_job_uuid = queue_jobs.uuid
-  |sql}
-;;
-
-let find_request_sql ?(count = false) where_fragment =
-  let columns =
-    if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-  in
-  Format.asprintf
-    {sql|SELECT %s FROM pool_queue_jobs_mapping %s %s|sql}
-    columns
-    joins
-    where_fragment
-;;
 
 let insert_request =
   let open Caqti_request.Infix in
@@ -73,7 +54,7 @@ let find_all_by_queue_request =
   let open Caqti_request.Infix in
   [%string
     {sql|
-      SELECT entity_uuid
+      SELECT %{Entity.Id.sql_select_fragment ~field:"entity_uuid"}
       FROM pool_queue_job_mapping
       WHERE queue_uuid = %{Entity.Id.sql_value_fragment "$1"}
     |sql}]
@@ -81,12 +62,11 @@ let find_all_by_queue_request =
 ;;
 
 let duplicate_for_new_job label queue_uuid =
-  let open Utils.Lwt_result.Infix in
   Database.query label (fun connection ->
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let* () = Connection.start () in
     Lwt.catch
-      (fun () : (unit, Caqti_error.t) result Lwt.t ->
+      (fun () ->
         let%lwt mappings =
           Connection.collect_list find_all_by_queue_request queue_uuid
           >|- Caqti_error.show
@@ -102,45 +82,42 @@ let duplicate_for_new_job label queue_uuid =
           |> Lwt.map Caqti_error.uncongested
         in
         Connection.commit ())
-      (fun exn : (unit, Caqti_error.t) result Lwt.t ->
+      (fun exn ->
         Logs.err (fun m ->
           m "Job mapping duplication failed: %s" (Printexc.to_string exn));
         Connection.rollback ()))
 ;;
 
-let query_by_entity ?query pool entity_uuid =
-  let where =
-    ( "pool_queue_jobs_mapping.entity_uuid = UNHEX(REPLACE(?, '-', ''))"
-    , Dynparam.(empty |> add Pool_common.Repo.Id.t entity_uuid) )
+let find_combined_request_sql ?(count = false) where_fragment =
+  let columns ?(count = false) ?decode () =
+    if count
+    then "COUNT(*)"
+    else Repo.sql_select_columns ?decode None |> CCString.concat ", "
   in
-  Query.collect_and_count
-    pool
-    query
-    ~select:find_request_sql
-    ~where
-    Repo_entity.Mapping.t
+  [%string
+    {sql|
+      SELECT %{columns ~count ()} FROM (
+        SELECT %{columns ~decode:false ()}, entity_uuid FROM %{Repo.sql_table `History}
+          JOIN pool_queue_jobs_mapping ON pool_queue_jobs_mapping.queue_uuid = uuid
+        UNION ALL
+        SELECT %{columns ~decode:false ()}, entity_uuid FROM %{Repo.sql_table `Current}
+          JOIN pool_queue_jobs_mapping ON pool_queue_jobs_mapping.queue_uuid = uuid
+        ) mapping
+        %{where_fragment}
+    |sql}]
 ;;
 
-let query_instances_by_entity ?query pool entity_uuid =
-  let find_request_sql ?(count = false) =
-    let columns =
-      if count
-      then "COUNT(*)"
-      else CCString.concat ", " (Repo.sql_select_columns None)
-    in
-    Format.asprintf
-      {sql|SELECT %s FROM pool_queue_jobs_mapping %s %s|sql}
-      columns
-      joins
-  in
+let find_instances_by_entity ?query pool entity_uuid =
   let where =
-    ( "pool_queue_jobs_mapping.entity_uuid = UNHEX(REPLACE(?, '-', ''))"
-    , Dynparam.(empty |> add Pool_common.Repo.Id.t entity_uuid) )
+    let open Pool_common.Repo in
+    ( [%string
+        {sql| entity_uuid = %{Pool_common.Id.sql_value_fragment "?"} |sql}]
+    , Dynparam.(empty |> add Id.t entity_uuid) )
   in
   Query.collect_and_count
     pool
     query
-    ~select:find_request_sql
+    ~select:find_combined_request_sql
     ~where
     Repo_entity.Instance.t
 ;;
@@ -148,22 +125,19 @@ let query_instances_by_entity ?query pool entity_uuid =
 let find_related_request entity =
   let joins =
     match entity with
-    | `contact ->
+    | `Contact ->
       {sql| INNER JOIN pool_contacts ON entity_uuid = pool_contacts.user_uuid |sql}
-    | `experiment ->
+    | `Experiment ->
       {sql| INNER JOIN pool_experiments ON entity_uuid = pool_experiments.uuid |sql}
   in
   let open Caqti_request.Infix in
-  Format.asprintf
+  [%string
     {sql|
-      SELECT
-        %s
+      SELECT %{Pool_common.Id.sql_select_fragment ~field:"entity_uuid"}
       FROM pool_queue_jobs_mapping
-        %s
-      WHERE queue_job_uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
-    (Pool_common.Id.sql_select_fragment ~field:"entity_uuid")
-    joins
+      %{joins}
+      WHERE queue_job_uuid = %{Entity.Id.sql_value_fragment "?"}
+    |sql}]
   |> Repo_entity.Id.t ->? Pool_common.Repo.Id.t
 ;;
 

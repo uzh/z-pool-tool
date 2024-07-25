@@ -1,5 +1,4 @@
 open CCFun
-open Ppx_yojson_conv_lib.Yojson_conv
 module JobName = Pool_common.Repo.Model.SelectorType (Entity.JobName)
 module Status = Pool_common.Repo.Model.SelectorType (Entity.Status)
 
@@ -46,17 +45,6 @@ end
 
 module Instance = struct
   include Entity.Instance
-
-  type ctx = (string * string) list [@@deriving yojson]
-
-  let ctx =
-    let encode = yojson_of_ctx %> Yojson.Safe.to_string %> CCResult.return in
-    let decode m =
-      try Yojson.Safe.from_string m |> ctx_of_yojson |> CCResult.return with
-      | _ -> Error (Format.sprintf "failed to decode ctx %s" m)
-    in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
 
   let t =
     let open Database.Caqti_encoders in

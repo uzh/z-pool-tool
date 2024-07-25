@@ -38,6 +38,7 @@ module Status : sig
   val sexp_of_t : t -> Sexplib0.Sexp.t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
+  val all : t list
 end
 
 module Instance : sig
@@ -127,8 +128,6 @@ module Job : sig
     -> 'a
     -> 'a t
     -> Instance.t
-
-  include Repo.ColumnsSig
 end
 
 module AnyJob : sig
@@ -156,9 +155,6 @@ module AnyJob : sig
   val name : t -> JobName.t
 end
 
-val hide : 'a Job.t -> AnyJob.t
-val register_jobs : AnyJob.t list -> unit Lwt.t
-
 val find
   :  Database.Label.t
   -> Id.t
@@ -169,28 +165,46 @@ val find_by
   -> Database.Label.t
   -> (Instance.t list * Query.t) Lwt.t
 
+val find_instances_by_entity
+  :  ?query:Query.t
+  -> Database.Label.t
+  -> Pool_common.Id.t
+  -> (Instance.t list * Query.t) Lwt.t
+
+val find_related
+  :  Database.Label.t
+  -> Instance.t
+  -> [< `Contact | `Experiment ]
+  -> Pool_common.Id.t option Lwt.t
+
 val count_workable
   :  JobName.t
   -> Database.Label.t
   -> (int, Pool_message.Error.t) result Lwt.t
 
-type mappings =
+val count_all_workable
+  :  Database.Label.t
+  -> (int, Pool_message.Error.t) result Lwt.t
+
+include Repo.ColumnsSig
+
+type job_ctx =
   | Create of Pool_common.Id.t list
   | Clone of Id.t
 
-val equal_mappings : mappings -> mappings -> bool
-val pp_mappings : Format.formatter -> mappings -> unit
-val show_mappings : mappings -> string
-val mappings_of_yojson : Yojson.Safe.t -> mappings
-val yojson_of_mappings : mappings -> Yojson.Safe.t
-val mappings_create : Pool_common.Id.t list -> mappings
-val mappings_clone : Id.t -> mappings
+val equal_job_ctx : job_ctx -> job_ctx -> bool
+val pp_job_ctx : Format.formatter -> job_ctx -> unit
+val show_job_ctx : job_ctx -> string
+val job_ctx_of_yojson : Yojson.Safe.t -> job_ctx
+val yojson_of_job_ctx : job_ctx -> Yojson.Safe.t
+val job_ctx_create : Pool_common.Id.t list -> job_ctx
+val job_ctx_clone : Id.t -> job_ctx
 
 val dispatch
   :  ?id:Id.t
   -> ?callback:(Instance.t -> unit Lwt.t)
   -> ?message_template:string
-  -> ?mappings:mappings
+  -> ?job_ctx:job_ctx
   -> ?run_at:run_at
   -> Database.Label.t
   -> 'a
@@ -201,7 +215,7 @@ val dispatch_all
   :  ?callback:(Instance.t -> unit Lwt.t)
   -> ?run_at:run_at
   -> Database.Label.t
-  -> (Id.t * 'a * string option * mappings) list
+  -> (Id.t * 'a * string option * job_ctx) list
   -> 'a Job.t
   -> unit Lwt.t
 
@@ -211,49 +225,14 @@ type kind =
 
 val lifecycle_service : Sihl.Container.lifecycle
 val lifecycle_worker : Sihl.Container.lifecycle
+val hide : 'a Job.t -> AnyJob.t
+val register_jobs : AnyJob.t list -> unit Lwt.t
 
 val register
   :  ?kind:kind
   -> ?jobs:AnyJob.t list
   -> unit
   -> Sihl.Container.Service.t
-
-module Mapping : sig
-  type t =
-    { entity_uuid : Pool_common.Id.t
-    ; job : Instance.t
-    }
-
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val equal : t -> t -> bool
-  val job : t -> Instance.t
-  val entity_uuid : t -> Pool_common.Id.t
-  val create : Instance.t -> Pool_common.Id.t -> t
-  val column_created_at : Query.Column.t
-
-  val query_by_entity
-    :  ?query:Query.t
-    -> Database.Label.t
-    -> Pool_common.Id.t
-    -> (t list * Query.t) Lwt.t
-
-  val query_instances_by_entity
-    :  ?query:Query.t
-    -> Database.Label.t
-    -> Pool_common.Id.t
-    -> (Entity.Instance.t list * Query.t) Lwt.t
-
-  val find_related
-    :  Database.Label.t
-    -> Instance.t
-    -> [< `contact | `experiment ]
-    -> Pool_common.Id.t option Lwt.t
-
-  include Repo.ColumnsSig
-end
-
-module JobHistory : Repo.ColumnsSig
 
 module Repo : sig
   module Id : sig

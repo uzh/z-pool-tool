@@ -10,13 +10,13 @@ let create_email_job ?smtp_auth_id label mapping_uuids email =
   Email.Service.Job.create ?smtp_auth_id email
   |> Email.create_job
        ~message_template:(Label.show label)
-       ~mappings:(Pool_queue.mappings_create mapping_uuids)
+       ~job_ctx:(Pool_queue.job_ctx_create mapping_uuids)
 ;;
 
 let create_text_message_job ?message_template ?(entity_uuids = []) =
   Text_message.create_job
     ?message_template:(CCOption.map Label.show message_template)
-    ~mappings:(Pool_queue.mappings_create entity_uuids)
+    ~job_ctx:(Pool_queue.job_ctx_create entity_uuids)
 ;;
 
 let find = Repo.find

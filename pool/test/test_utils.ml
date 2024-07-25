@@ -278,7 +278,7 @@ module Model = struct
   ;;
 
   let create_email_job
-    ?mappings
+    ?job_ctx
     ?message_template
     ?email_address
     ?smtp_auth_id
@@ -286,7 +286,7 @@ module Model = struct
     =
     create_email ?recipient:email_address ()
     |> Email.Service.Job.create ?smtp_auth_id
-    |> Email.create_job ?mappings ?message_template
+    |> Email.create_job ?job_ctx ?message_template
   ;;
 
   let create_text_message
@@ -296,9 +296,9 @@ module Model = struct
     Text_message.render_and_create cell_phone sender ("Hello world", [])
   ;;
 
-  let create_text_message_job ?sender ?message_template ?mappings cell_phone =
+  let create_text_message_job ?sender ?message_template ?job_ctx cell_phone =
     create_text_message ?sender cell_phone
-    |> Text_message.create_job ?message_template ?mappings
+    |> Text_message.create_job ?message_template ?job_ctx
   ;;
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)

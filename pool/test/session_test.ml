@@ -545,8 +545,8 @@ let create_cancellation_message experiment reason contact =
   in
   create_email_job experiment email
   |> Email.create_job
-       ~mappings:
-         (Pool_queue.mappings_create
+       ~job_ctx:
+         (Pool_queue.job_ctx_create
             [ Contact.(contact |> id |> Id.to_common)
             ; Experiment.(experiment |> id |> Id.to_common)
             ])
@@ -1265,8 +1265,8 @@ let reschedule_to_past () =
     Test_utils.Model.create_email ()
     |> create_email_job experiment
     |> Email.create_job
-         ~mappings:
-           (Pool_queue.mappings_create
+         ~job_ctx:
+           (Pool_queue.job_ctx_create
               [ Session.(session.id |> Id.to_common)
               ; Experiment.(experiment |> id |> Id.to_common)
               ])
@@ -1302,8 +1302,8 @@ let reschedule_with_experiment_smtp () =
   let assignment = Test_utils.Model.create_assignment () in
   let email_to_job =
     Email.create_job
-      ~mappings:
-        (Pool_queue.mappings_create
+      ~job_ctx:
+        (Pool_queue.job_ctx_create
            [ Session.(session.id |> Id.to_common)
            ; Experiment.(experiment |> id |> Id.to_common)
            ])
@@ -1354,8 +1354,8 @@ let resend_reminders_invalid () =
     Model.create_email ()
     |> create_email_job experiment
     |> Email.create_job
-         ~mappings:
-           (Pool_queue.mappings_create
+         ~job_ctx:
+           (Pool_queue.job_ctx_create
               [ Assignment.(assignment.id |> Id.to_common)
               ; Experiment.(experiment |> id |> Id.to_common)
               ])
@@ -1409,8 +1409,8 @@ let resend_reminders_valid () =
     Model.create_email ()
     |> create_email_job experiment
     |> Email.create_job
-         ~mappings:
-           (Pool_queue.mappings_create
+         ~job_ctx:
+           (Pool_queue.job_ctx_create
               [ Session.(session.id |> Id.to_common)
               ; Experiment.(experiment |> id |> Id.to_common)
               ])

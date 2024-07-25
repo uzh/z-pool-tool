@@ -13,19 +13,21 @@ module Resend : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
-  type t = Pool_queue.Instance.t
+  open Pool_queue
+
+  type t = Instance.t
 
   let handle ?contact ?experiment queue_instance =
-    let open Pool_queue.Instance in
-    let open Pool_queue.JobName in
-    let* instance = Pool_queue.Instance.resendable queue_instance in
+    let open Instance in
+    let open JobName in
+    let* instance = Instance.resendable queue_instance in
     match name queue_instance with
     | SendTextMessage ->
       let* message = Text_message.Service.Job.decode (input instance) in
       message
       |> Text_message.create_job
            ?message_template:(message_template instance)
-           ~mappings:(Pool_queue.Clone (id instance))
+           ~job_ctx:(job_ctx_clone (id instance))
       |> Text_message.sent
            ?new_recipient:(CCOption.bind contact Contact.cell_phone)
       |> Pool_event.text_message
@@ -36,7 +38,7 @@ end = struct
       let* message = decode (input instance) in
       message
       |> Email.create_sent
-           ~mappings:(Pool_queue.Clone (id instance))
+           ~job_ctx:(job_ctx_clone (id instance))
            ?message_template:(message_template instance)
            ?new_email_address:(CCOption.map Contact.email_address contact)
            ?new_smtp_auth_id:(CCOption.bind experiment Experiment.smtp_auth_id)
@@ -46,7 +48,7 @@ end = struct
     | CheckMatchesFilter -> Error Pool_message.Error.JobCannotBeRetriggered
   ;;
 
-  let effects = Pool_queue.Guard.Access.resend
+  let effects = Guard.Access.resend
 end
 
 module CreateTextMessageDeliveryReport : sig

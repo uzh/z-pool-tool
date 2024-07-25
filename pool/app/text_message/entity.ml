@@ -16,7 +16,7 @@ type t =
   ; sender : Pool_tenant.GtxSender.t
   ; text : Content.t
   }
-[@@deriving eq, show, yojson]
+[@@deriving eq, show, yojson] [@@yojson.allow_extra_fields]
 
 let update ?new_recipient message =
   { message with

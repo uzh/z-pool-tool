@@ -123,7 +123,7 @@ module Job = struct
     { email : Sihl_email.t
     ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
     }
-  [@@deriving eq, fields, show, yojson]
+  [@@deriving eq, fields, show, yojson] [@@yojson.allow_extra_fields]
 
   let create ?smtp_auth_id email = { email; smtp_auth_id }
 

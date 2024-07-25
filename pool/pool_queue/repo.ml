@@ -1,4 +1,5 @@
 open Caqti_request.Infix
+open Utils.Lwt_result.Infix
 module Dynparam = Database.Dynparam
 
 (* MariaDB expects uuid to be bytes, since we can't unhex when using caqti's
@@ -16,13 +17,16 @@ let sql_table = function
 
 let tablename history = sql_table (if history then `History else `Current)
 
-let sql_select_columns table =
+let sql_select_columns ?(decode = true) table =
   let go field =
     table
     |> CCOption.map_or ~default:field (fun tablename ->
       CCString.concat "." [ tablename; field ])
   in
-  [ Entity.Id.sql_select_fragment ~field:(go "uuid")
+  let go_binary field =
+    if decode then Entity.Id.sql_select_fragment ~field:(go field) else field
+  in
+  [ go_binary "uuid"
   ; go "name"
   ; go "input"
   ; go "message_template"
@@ -36,7 +40,7 @@ let sql_select_columns table =
   ; go "last_error"
   ; go "last_error_at"
   ; go "database_label"
-  ; Entity.Id.sql_select_fragment ~field:(go "clone_of")
+  ; go_binary "clone_of"
   ]
 ;;
 
@@ -76,47 +80,59 @@ let update ?(history = false) label =
   Database.exec label (tablename history |> update_request)
 ;;
 
-let find_request_sql ?(count = false) where_fragment =
-  let columns = sql_select_columns None |> CCString.concat ", " in
-  let query =
-    [%string
-      {sql|
-        SELECT %{columns} FROM %{sql_table `Current} %{where_fragment}
-        UNION ALL
-        SELECT %{columns} FROM %{sql_table `History} %{where_fragment}
-      |sql}]
-  in
-  if count
-  then [%string {sql| SELECT COUNT(*) FROM (%{query}) x |sql}]
-  else query
-;;
-
 let find_request table =
-  let columns = sql_select_columns None |> CCString.concat ", " in
+  let columns =
+    Some (sql_table table) |> sql_select_columns |> CCString.concat ", "
+  in
   [%string
     {sql|
-      SELECT %{columns} FROM %{sql_table table} current
+      SELECT %{columns} FROM %{sql_table table}
       WHERE uuid = %{Entity.Id.sql_value_fragment "?"}
     |sql}]
   |> Repo_entity.Id.t ->? Repo_entity.Instance.t
 ;;
 
 let find label id =
-  let open Utils.Lwt_result.Infix in
   let find_in table = Database.find_opt label (find_request table) id in
-  find_in `Current
+  find_in `History
   >|> (function
          | Some element -> Lwt.return_some element
-         | None -> find_in `History)
+         | None -> find_in `Current)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Queue)
+;;
+
+let find_combined_request_sql ?(count = false) where_fragment =
+  let columns ?(count = false) ?decode () =
+    if count
+    then "COUNT(*)"
+    else sql_select_columns ?decode None |> CCString.concat ", "
+  in
+  [%string
+    {sql|
+      SELECT %{columns ~count ()} FROM (
+        SELECT %{columns ~decode:false ()} FROM %{sql_table `History}
+        UNION ALL
+        SELECT %{columns ~decode:false ()} FROM %{sql_table `Current}
+        ) queue
+      %{where_fragment}
+    |sql}]
 ;;
 
 let find_by ?query pool =
   Query.collect_and_count
     pool
     query
-    ~select:(fun ?count m -> find_request_sql ?count m)
+    ~select:find_combined_request_sql
     Repo_entity.Instance.t
+;;
+
+let workable_where =
+  {sql|
+    status = "pending"
+    AND polled_at IS NULL
+    AND run_at <= NOW()
+    AND tries < max_tries
+  |sql}
 ;;
 
 let find_workable_query ?(count = false) ?limit () =
@@ -127,11 +143,7 @@ let find_workable_query ?(count = false) ?limit () =
   [%string
     {sql|
       SELECT %{columns} FROM %{sql_table `Current}
-      WHERE status = "pending"
-        AND name = ?
-        AND polled_at IS NULL
-        AND run_at <= NOW()
-        AND tries < max_tries
+      WHERE name = ? AND %{workable_where}
       ORDER BY run_at ASC
       %{limit}
     |sql}]
@@ -143,18 +155,31 @@ let find_workable_request =
 
 let find_workable job label = Database.collect label find_workable_request job
 
+let count_all_workable_request =
+  [%string
+    {sql|
+      SELECT COUNT(*) FROM %{sql_table `Current}
+      WHERE %{workable_where}
+    |sql}]
+  |> Caqti_type.(unit ->! int)
+;;
+
+let count_all_workable label =
+  Database.find_opt label count_all_workable_request ()
+  ||> CCOption.get_or ~default:0
+  ||> CCResult.return
+;;
+
 let count_workable_request =
   find_workable_query ~count:true () |> Repo_entity.JobName.t ->? Caqti_type.int
 ;;
 
 let count_workable job_name label =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt label count_workable_request job_name
   ||> CCOption.to_result Pool_message.Error.NoValue
 ;;
 
 let poll_n_workable database_label n_instances job_name =
-  let open Lwt_result.Syntax in
   let find_workable_request =
     find_workable_query ~limit:n_instances ()
     |> Repo_entity.(JobName.t ->* Instance.t)
@@ -167,17 +192,13 @@ let poll_n_workable database_label n_instances job_name =
         let* instances =
           Connection.collect_list find_workable_request job_name
         in
-        let instances = CCList.map Entity.Instance.poll instances in
         let%lwt instances =
-          Lwt_list.filter_map_s
-            (fun instance ->
-              let%lwt result =
-                Connection.exec (update_request (sql_table `Current)) instance
-              in
-              if CCResult.is_ok result
-              then Lwt.return_some instance
-              else Lwt.return_none)
-            instances
+          CCList.map Entity.Instance.poll instances
+          |> Lwt_list.filter_map_s (fun instance ->
+            Connection.exec (update_request (sql_table `Current)) instance
+            ||> function
+            | Ok () -> Some instance
+            | Error _ -> None)
         in
         let* () = Connection.commit () in
         Lwt.return_ok instances)
@@ -229,10 +250,7 @@ let insert_request table =
 ;;
 
 let enqueue_request = insert_request `Current
-
-let enqueue label job_instance =
-  Database.exec label enqueue_request job_instance
-;;
+let enqueue label = Database.exec label enqueue_request
 
 let populatable =
   let open Entity in
@@ -244,37 +262,19 @@ let populatable =
     })
 ;;
 
-let columns =
-  [ "uuid"
-  ; "name"
-  ; "input"
-  ; "message_template"
-  ; "tries"
-  ; "max_tries"
-  ; "run_at"
-  ; "status"
-  ; "persisted_at"
-  ; "polled_at"
-  ; "handled_at"
-  ; "last_error"
-  ; "last_error_at"
-  ; "database_label"
-  ; "clone_of"
-  ]
-;;
-
 let enqueue_all label = function
   | [] -> Lwt.return_unit
   | instances ->
-    (* Lwt_list.iter_s (enqueue label) instances *)
+    let table = sql_table `Current in
+    let columns = sql_select_columns ~decode:false (Some table) in
     Database.query label (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.populate
-        ~table:(sql_table `Current)
+        ~table
         ~columns
         Repo_entity.Instance.t
         (instances |> populatable |> CCList.rev |> Caqti_lwt.Stream.of_list)
-      |> Lwt.map Caqti_error.uncongested)
+      ||> Caqti_error.uncongested)
 ;;
 
 let reset_pending_request =
@@ -302,7 +302,7 @@ let delete_request =
 ;;
 
 let archive_insert_request =
-  let columns = columns |> CCString.concat "," in
+  let columns = sql_select_columns ~decode:false None |> CCString.concat "," in
   [%string
     {sql|
       INSERT INTO %{sql_table `History} (%{columns})
@@ -327,7 +327,7 @@ let archive { Entity.Instance.id; database_label; _ } =
         Connection.rollback ()))
 ;;
 
-let find_not_pending_request =
+let find_archivable_request =
   [%string
     {sql|
       SELECT %{Entity.Id.sql_select_fragment ~field:("uuid")}
@@ -338,10 +338,9 @@ let find_not_pending_request =
 ;;
 
 let archive_all_processed database_label =
-  let open Utils.Lwt_result.Infix in
   Database.query database_label (fun connection ->
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
-    let* ids = Connection.collect_list find_not_pending_request () in
+    let* ids = Connection.collect_list find_archivable_request () in
     let* () = Connection.start () in
     Lwt.catch
       (fun () ->
@@ -358,29 +357,6 @@ let archive_all_processed database_label =
       (fun exn ->
         Logs.err (fun m -> m "Job archive failed: %s" (Printexc.to_string exn));
         Connection.rollback ()))
-;;
-
-let clean_request = "TRUNCATE TABLE queue_jobs" |> Caqti_type.(unit ->. unit)
-let clean label () = Database.exec label clean_request ()
-let filter_fragment = {sql| WHERE tag LIKE $1 |sql}
-
-let search_query =
-  [%string
-    {sql|
-      SELECT
-        COUNT(*) OVER() as total,
-        %{sql_select_columns None |> CCString.concat ", "}
-      FROM %{sql_table `Current}, %{sql_table `History}
-    |sql}]
-;;
-
-let register_cleaner () =
-  Sihl.Cleaner.register_cleaner (fun ?ctx () ->
-    clean
-      CCOption.(
-        map Database.of_ctx_exn ctx
-        |> get_exn_or Pool_message.(Error.(NotFound Field.Context |> show)))
-      ())
 ;;
 
 module type ColumnsSig = sig
@@ -411,7 +387,7 @@ module MakeColumns (Table : sig
   let column_job_name = (Name, concat "name") |> create
   let column_job_status = (Status, concat "status") |> create
   let column_error = (LastError, concat "last_error") |> create
-  let column_error_at = (LastErrorAt, concat "error_at") |> create
+  let column_error_at = (LastErrorAt, concat "last_error_at") |> create
   let column_run_at = (NextRunAt, concat "run_at") |> create
   let column_input = (Input, concat "input") |> create
 
@@ -424,6 +400,7 @@ module MakeColumns (Table : sig
   ;;
 
   let job_status_filter =
+    let open Status in
     let options = build_options all show in
     Condition.Human.Select (column_job_status, options)
   ;;

@@ -270,16 +270,16 @@ module Job = struct
   ;;
 end
 
-type mappings =
+type job_ctx =
   | Create of Pool_common.Id.t list
   | Clone of Id.t
 [@@deriving eq, show, yojson]
 
-let mappings_create ids =
+let job_ctx_create ids =
   Create (ids |> CCList.stable_sort Pool_common.Id.compare)
 ;;
 
-let mappings_clone id = Clone id
+let job_ctx_clone id = Clone id
 
 module AnyJob = struct
   type t =
@@ -313,9 +313,12 @@ let hide (job : 'a Job.t) : AnyJob.t =
 type config =
   { force_async : bool
   ; process_queue : bool
+  ; batch_size : int
   }
 
-let config force_async process_queue = { force_async; process_queue }
+let config force_async process_queue batch_size =
+  { force_async; process_queue; batch_size }
+;;
 
 let schema =
   let open Conformist in
@@ -329,6 +332,10 @@ let schema =
           ~meta:"If set to false, jobs can be dispatched but won't be handled."
           ~default:true
           "QUEUE_PROCESS"
+      ; int
+          ~meta:"Number of jobs which are pulled and handled at once."
+          ~default:50
+          "QUEUE_BATCH_SIZE"
       ]
     config
 ;;

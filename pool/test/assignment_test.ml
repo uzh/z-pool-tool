@@ -43,8 +43,8 @@ let confirmation_email experiment (session : Session.t) assignment =
     email
   |> Email.create_job
        ~message_template:(Label.show label)
-       ~mappings:
-         (Pool_queue.mappings_create
+       ~job_ctx:
+         (Pool_queue.job_ctx_create
             [ Contact.(contact |> id |> Id.to_common)
             ; Session.(session.id |> Id.to_common)
             ; Experiment.(experiment |> id |> Id.to_common)

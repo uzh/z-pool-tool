@@ -45,8 +45,8 @@ let confirmation_mail contact =
     }
   |> Email.Service.Job.create
   |> Email.create_job
-       ~mappings:
-         (Pool_queue.mappings_create Contact.[ contact |> id |> Id.to_common ])
+       ~job_ctx:
+         (Pool_queue.job_ctx_create Contact.[ contact |> id |> Id.to_common ])
        ~message_template:(Message_template.Label.show label)
 ;;
 

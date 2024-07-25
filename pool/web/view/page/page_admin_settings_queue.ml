@@ -5,68 +5,7 @@ module HttpUtils = Http_utils
 
 let formatted_date_time = Pool_model.Time.formatted_date_time
 let base_path = "/admin/settings/queue"
-
-let data_table_head language =
-  let open Pool_common in
-  let open Pool_queue in
-  let field_to_string field =
-    Utils.field_to_string_capitalized language field |> txt
-  in
-  let name = `column Mapping.column_job_name in
-  let status = `column Mapping.column_job_status in
-  let input = `custom (field_to_string Field.Input) in
-  let last_error = `custom (field_to_string Field.LastError) in
-  let last_error_at = `column Mapping.column_error_at in
-  let next_run = `column Mapping.column_run_at in
-  function
-  | `settings ->
-    [ name; status; input; last_error; last_error_at; next_run; `empty ]
-  | `history ->
-    [ name; `empty; status; last_error; last_error_at; next_run; `empty ]
-;;
-
-let data_table Pool_context.{ language; _ } (queued_jobs, query) =
-  let open Pool_queue in
-  let url = Uri.of_string base_path in
-  let data_table =
-    Component.DataTable.create_meta
-      ?filter:Job.filterable_by
-      ~search:Job.searchable_by
-      url
-      query
-      language
-  in
-  let cols = data_table_head language `settings in
-  let th_class = [ "w-1"; "w-1"; "w-4"; "w-2"; "w-1"; "w-1" ] in
-  let row instance =
-    let formatted_date_time date =
-      span ~a:[ a_class [ "nobr" ] ] [ txt (formatted_date_time date) ]
-    in
-    [ txt (instance |> Instance.name |> JobName.show)
-    ; txt
-        (instance |> Instance.status |> Status.show |> CCString.capitalize_ascii)
-    ; span
-        ~a:[ a_class [ "word-break-all" ] ]
-        [ txt (instance |> Instance.input |> CCString.take 80) ]
-    ; txt (instance |> Instance.last_error |> CCOption.value ~default:"-")
-    ; instance
-      |> Instance.last_error_at
-      |> CCOption.map_or ~default:(txt "-") formatted_date_time
-    ; instance |> Instance.run_at |> formatted_date_time
-    ; [%string "/admin/settings/queue/%{instance |> Instance.id |> Id.value}"]
-      |> Component.Input.link_as_button ~icon:Component.Icon.Eye
-    ]
-    |> CCList.map CCFun.(CCList.return %> td)
-    |> tr
-  in
-  Component.DataTable.make
-    ~target_id:"queue-ob-list"
-    ~th_class
-    ~cols
-    ~row
-    data_table
-    queued_jobs
-;;
+let list context = Page_admin_queue.list context (Uri.of_string base_path)
 
 let render_email_html html =
   let style = "<style>section { word-break: break-all; } </style>" in
@@ -210,8 +149,9 @@ let index (Pool_context.{ language; _ } as context) job =
       ~a:[ a_class [ "heading-1" ] ]
       [ txt Pool_common.(Utils.nav_link_to_string language I18n.Queue) ]
   in
-  let html = data_table context job in
-  div ~a:[ a_class [ "gap-lg"; "trim"; "safety-margin" ] ] [ title; html ]
+  div
+    ~a:[ a_class [ "gap-lg"; "trim"; "safety-margin" ] ]
+    [ title; list context job ]
 ;;
 
 let resend_form Pool_context.{ csrf; language; _ } job =

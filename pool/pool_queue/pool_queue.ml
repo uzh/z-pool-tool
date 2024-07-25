@@ -19,9 +19,16 @@ let register_jobs jobs =
   Lwt.return_unit
 ;;
 
+include Repo.MakeColumns (struct
+    let name = None
+  end)
+
 let find = Repo.find
 let find_by = Repo.find_by
 let count_workable = Repo.count_workable
+let count_all_workable = Repo.count_all_workable
+let find_instances_by_entity = Repo_mapping.find_instances_by_entity
+let find_related = Repo_mapping.find_related
 
 let update_and_return ?history database_label job =
   let%lwt () = Repo.update ?history database_label job in
@@ -67,7 +74,7 @@ let dispatch
   ?(id = Id.create ())
   ?(callback = fun (_ : 'a) -> Lwt.return_unit)
   ?message_template
-  ?mappings
+  ?job_ctx
   ?run_at
   label
   input
@@ -81,7 +88,7 @@ let dispatch
       (function
         | Clone id -> Some id
         | Create _ -> None)
-      mappings
+      job_ctx
   in
   let instance =
     Job.to_instance ~id ?message_template ?run_at ?clone_of label input job
@@ -100,7 +107,7 @@ let dispatch
               (Entity_mapping.(create instance %> to_write)
                %> Repo_mapping.insert label)
               entity_uuids)
-        mappings
+        job_ctx
     in
     callback instance)
   else dev_dispatch ~callback ~tags job instance
@@ -118,11 +125,11 @@ let dispatch_all
   let instances, create, clone =
     CCList.fold_left
       (fun (init_instances, init_create, init_clone)
-        (id, input, message_template, mappings) ->
+        (id, input, message_template, job_ctx) ->
         let instance =
           Job.to_instance ~id ?message_template ?run_at label input job
         in
-        match mappings with
+        match job_ctx with
         | Create uuids ->
           ( CCList.cons' init_instances instance
           , init_create @ CCList.map (Entity_mapping.create instance) uuids
@@ -205,6 +212,7 @@ let work_job job instance =
 let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
   let tags = Database.Logger.Tags.create database_label in
   let msg_prefix = [%string "Queue %{JobName.show job.AnyJob.name}"] in
+  let config = Sihl.Configuration.read schema in
   match%lwt Repo.count_workable job.AnyJob.name database_label with
   | Error msg ->
     let msg = Pool_message.Error.show msg in
@@ -216,7 +224,7 @@ let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
   | Ok count ->
     Logs.debug (fun m -> m ~tags "%s count: %d" msg_prefix count);
     let%lwt instances =
-      Repo.poll_n_workable database_label 50 job.AnyJob.name
+      Repo.poll_n_workable database_label config.batch_size job.AnyJob.name
     in
     let () = Lwt.async (fun () -> Lwt_list.iter_s (work_job job) instances) in
     Lwt.return_unit
@@ -305,7 +313,6 @@ let lifecycle_worker =
 ;;
 
 let register ?(kind = Service) ?(jobs = []) () =
-  Repo.register_cleaner ();
   registered_jobs := !registered_jobs @ jobs;
   let configuration = Sihl.Configuration.make () in
   Sihl.Container.Service.create
@@ -314,27 +321,3 @@ let register ?(kind = Service) ?(jobs = []) () =
      | Service -> lifecycle_service
      | Worker -> lifecycle_worker)
 ;;
-
-module Mapping = struct
-  include Entity_mapping
-
-  let query_by_entity = Repo_mapping.query_by_entity
-  let query_instances_by_entity = Repo_mapping.query_instances_by_entity
-  let find_related = Repo_mapping.find_related
-
-  include Repo.MakeColumns (struct
-      let name = None
-    end)
-end
-
-module Job = struct
-  include Job
-
-  include Repo.MakeColumns (struct
-      let name = Some (Repo.sql_table `Current)
-    end)
-end
-
-module JobHistory = Repo.MakeColumns (struct
-    let name = Some (Repo.sql_table `History)
-  end)

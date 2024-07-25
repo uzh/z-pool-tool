@@ -235,6 +235,7 @@ module Service : sig
     val smtp_auth_id : t -> SmtpAuth.Id.t option
     val encode : t -> string
     val decode : string -> (t, Pool_message.Error.t) result
+    val show_recipient : Pool_queue.Instance.t -> string
     val create : ?smtp_auth_id:SmtpAuth.Id.t -> Sihl_email.t -> t
 
     val update
@@ -257,14 +258,14 @@ module Service : sig
     -> ?new_email_address:Pool_user.EmailAddress.t
     -> ?new_smtp_auth_id:Pool_common.Id.t
     -> ?message_template:string
-    -> ?mappings:Pool_queue.mappings
+    -> ?job_ctx:Pool_queue.job_ctx
     -> Database.Label.t
     -> Job.t
     -> unit Lwt.t
 
   val dispatch_all
     :  Database.Label.t
-    -> (Pool_queue.Id.t * Job.t * string option * Pool_queue.mappings option)
+    -> (Pool_queue.Id.t * Job.t * string option * Pool_queue.job_ctx option)
          list
     -> unit Lwt.t
 
@@ -306,19 +307,19 @@ type job =
   { job : Service.Job.t
   ; id : Pool_queue.Id.t option
   ; message_template : string option
-  ; mappings : Pool_queue.mappings option
+  ; job_ctx : Pool_queue.job_ctx option
   }
 
 val yojson_of_job : job -> Yojson.Safe.t
 val job : job -> Service.Job.t
 val id : job -> Pool_queue.Id.t option
 val message_template : job -> string option
-val mappings : job -> Pool_queue.mappings option
+val job_ctx : job -> Pool_queue.job_ctx option
 
 val create_job
   :  ?id:Pool_queue.Id.t
   -> ?message_template:string
-  -> ?mappings:Pool_queue.mappings
+  -> ?job_ctx:Pool_queue.job_ctx
   -> Service.Job.t
   -> job
 
@@ -339,7 +340,7 @@ val verification_event_name : verification_event -> string
 val create_sent
   :  ?id:Pool_queue.Id.t
   -> ?message_template:string
-  -> ?mappings:Pool_queue.mappings
+  -> ?job_ctx:Pool_queue.job_ctx
   -> ?new_email_address:Pool_user.EmailAddress.t
   -> ?new_smtp_auth_id:SmtpAuth.Id.t
   -> Service.Job.t

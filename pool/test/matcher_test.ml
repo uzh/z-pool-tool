@@ -41,7 +41,8 @@ let create_message ?sender (contact : Contact.t) =
     }
   |> Email.Service.Job.create
   |> Email.create_job
-       ~mappings:Pool_queue.(Create [ Contact.(contact |> id |> Id.to_common) ])
+       ~job_ctx:
+         Pool_queue.(job_ctx_create [ Contact.(contact |> id |> Id.to_common) ])
   |> CCResult.return
 ;;
 

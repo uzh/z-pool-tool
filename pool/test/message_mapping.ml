@@ -3,7 +3,6 @@ open Utils.Lwt_result.Infix
 open Integration_utils
 open Message_template
 open Pool_queue.Status
-module Mapping = Pool_queue.Mapping
 
 let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
@@ -56,7 +55,7 @@ let check_message_template ?label =
 let check_mapped_uuids expected =
   let open Alcotest in
   let valid_id = Pool_common.Id.(Alcotest.testable pp equal) in
-  Email.mappings
+  Email.job_ctx
   %> function
   | Some (Pool_queue.Create mapping_uuids) ->
     check
@@ -235,7 +234,7 @@ let phone_verification _ () =
   let expected =
     Text_message.create_job
       ~message_template:Label.(show PhoneVerification)
-      ~mappings:(Pool_queue.mappings_create [ Contact.Id.to_common contact_id ])
+      ~job_ctx:(Pool_queue.job_ctx_create [ Contact.Id.to_common contact_id ])
       (res |> Text_message.job)
   in
   let () = check_text_message expected res in
@@ -275,7 +274,7 @@ let session_reminder _ () =
   let expected =
     Text_message.create_job
       ~message_template:Label.(show expected_label)
-      ~mappings:(Pool_queue.mappings_create expected_uuids)
+      ~job_ctx:(Pool_queue.job_ctx_create expected_uuids)
       (text_msg_res |> Text_message.job)
   in
   let () = check_message_template ~label:expected_label email_res in
@@ -333,7 +332,7 @@ module Resend = struct
     let expected =
       Ok
         [ Model.create_email_job
-            ~mappings:Pool_queue.(mappings_clone (email_job |> Instance.id))
+            ~job_ctx:Pool_queue.(job_ctx_clone (email_job |> Instance.id))
             ()
           |> Email.sent
           |> Pool_event.email
@@ -345,7 +344,7 @@ module Resend = struct
     let expected =
       Ok
         [ Model.create_text_message_job
-            ~mappings:Pool_queue.(Clone (text_message_job |> Instance.id))
+            ~job_ctx:Pool_queue.(Clone (text_message_job |> Instance.id))
             cell_phone
           |> Text_message.sent
           |> Pool_event.text_message
@@ -371,7 +370,7 @@ module Resend = struct
     let expected =
       Ok
         [ Model.create_email_job
-            ~mappings:(Pool_queue.Clone (email_job |> Pool_queue.Instance.id))
+            ~job_ctx:(Pool_queue.Clone (email_job |> Pool_queue.Instance.id))
             ()
           |> Email.sent ~new_email_address
           |> Pool_event.email
@@ -383,7 +382,7 @@ module Resend = struct
     let expected =
       Ok
         [ Model.create_text_message_job
-            ~mappings:Pool_queue.(Clone (text_message_job |> Instance.id))
+            ~job_ctx:Pool_queue.(Clone (text_message_job |> Instance.id))
             cell_phone
           |> Text_message.sent ~new_recipient:new_cellphone
           |> Pool_event.text_message
@@ -405,7 +404,7 @@ module Resend = struct
     let expected =
       Ok
         [ Model.create_email_job
-            ~mappings:(Pool_queue.Clone (email_job |> Pool_queue.Instance.id))
+            ~job_ctx:(Pool_queue.Clone (email_job |> Pool_queue.Instance.id))
             ()
           |> Email.sent ~new_smtp_auth_id
           |> Pool_event.email

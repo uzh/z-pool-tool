@@ -368,6 +368,14 @@ module Job = struct
     intercept_prepare %> Pool_common.Utils.get_or_failwith
   ;;
 
+  let show_recipient =
+    Pool_queue.Instance.input
+    %> decode
+    %> CCResult.map_or
+         ~default:"error"
+         (email %> fun x -> x.Sihl_email.recipient)
+  ;;
+
   let send =
     let open CCFun in
     let open Utils.Lwt_result.Infix in
@@ -392,7 +400,7 @@ let dispatch
   ?new_email_address
   ?new_smtp_auth_id
   ?message_template
-  ?(mappings = Pool_queue.mappings_create [])
+  ?(job_ctx = Pool_queue.job_ctx_create [])
   database_label
   ({ Entity.Job.email; _ } as job)
   =
@@ -403,7 +411,7 @@ let dispatch
   Pool_queue.dispatch
     ?id
     ?message_template
-    ~mappings
+    ~job_ctx
     database_label
     (job |> Job.intercept_prepare_of_event)
     Job.send
@@ -419,7 +427,7 @@ let dispatch_all database_label jobs =
            , ( id
              , job |> Job.intercept_prepare_of_event
              , message_template
-             , CCOption.get_or ~default:(Pool_queue.mappings_create []) mappings
+             , CCOption.get_or ~default:(Pool_queue.job_ctx_create []) mappings
              )
              :: jobs ))
          ([], [])

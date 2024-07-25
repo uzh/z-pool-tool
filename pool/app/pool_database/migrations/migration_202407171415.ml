@@ -14,13 +14,13 @@ let archive_queue_jobs =
         max_tries,
         next_run_at,
         status,
-        created_at,
+        LEAST(last_error_at, next_run_at),
         last_error_at,
         last_error,
         IF(last_error IS NULL, NULL, last_error_at),
         SUBSTRING_INDEX(SUBSTRING_INDEX(`ctx`, '["pool","', - 1), '"]', 1),
-        created_at,
-        updated_at
+        LEAST(last_error_at, next_run_at),
+        GREATEST(last_error_at, next_run_at)
       FROM queue_jobs
       LEFT JOIN pool_message_history hist ON hist.queue_job_uuid = queue_jobs.uuid
       GROUP BY `uuid`

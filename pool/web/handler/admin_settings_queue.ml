@@ -13,12 +13,12 @@ let show req =
     ~active_navigation:base_path
     ~error_path:"/admin"
     ~create_layout:General.create_tenant_layout
-    ~query:(module Pool_queue.Mapping)
+    ~query:(module Pool_queue)
     req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let%lwt queue = Pool_queue.find_by ~query database_label in
   let open Page.Admin.Settings.Queue in
-  (if HttpUtils.Htmx.is_hx_request req then data_table else index) context queue
+  (if HttpUtils.Htmx.is_hx_request req then list else index) context queue
   |> Lwt_result.return
 ;;
 
@@ -52,20 +52,18 @@ let resend req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* job = Pool_queue.find database_label id in
-    let find_related = Pool_queue.Mapping.find_related database_label job in
+    let find_related = Pool_queue.find_related database_label job in
     let%lwt job_contact =
-      match%lwt find_related `contact with
-      | None -> Lwt.return_none
-      | Some contact_id ->
+      find_related `Contact
+      >|> CCOption.map_or ~default:Lwt.return_none (fun contact_id ->
         let open Contact in
-        contact_id |> Id.of_common |> find database_label ||> CCResult.to_opt
+        contact_id |> Id.of_common |> find database_label ||> CCResult.to_opt)
     in
     let%lwt job_experiment =
-      match%lwt find_related `experiment with
-      | None -> Lwt.return_none
-      | Some experiment_id ->
+      find_related `Experiment
+      >|> CCOption.map_or ~default:Lwt.return_none (fun experiment_id ->
         let open Experiment in
-        experiment_id |> Id.of_common |> find database_label ||> CCResult.to_opt
+        experiment_id |> Id.of_common |> find database_label ||> CCResult.to_opt)
     in
     let* () =
       Command.Resend.handle ?contact:job_contact ?experiment:job_experiment job

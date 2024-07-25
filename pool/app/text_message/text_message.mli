@@ -35,6 +35,7 @@ module Service : sig
   module Job : sig
     val encode : t -> string
     val decode : string -> (t, Pool_message.Error.t) result
+    val show_recipient : Pool_queue.Instance.t -> string
 
     val handle
       :  ?id:Pool_queue.Id.t
@@ -49,7 +50,7 @@ module Service : sig
     :  ?id:Pool_queue.Id.t
     -> ?new_recipient:Pool_user.CellPhone.t
     -> ?message_template:string
-    -> ?mappings:Pool_queue.mappings
+    -> ?job_ctx:Pool_queue.job_ctx
     -> Database.Label.t
     -> t
     -> unit Lwt.t
@@ -59,7 +60,7 @@ type job =
   { job : t
   ; id : Pool_queue.Id.t option
   ; message_template : string option
-  ; mappings : Pool_queue.mappings option
+  ; job_ctx : Pool_queue.job_ctx option
   }
 
 val equal_job : job -> job -> bool
@@ -69,12 +70,12 @@ val yojson_of_job : job -> Yojson.Safe.t
 val job : job -> t
 val id : job -> Pool_queue.Id.t option
 val message_template : job -> string option
-val mappings : job -> Pool_queue.mappings option
+val job_ctx : job -> Pool_queue.job_ctx option
 
 val create_job
   :  ?id:Pool_queue.Id.t
   -> ?message_template:string
-  -> ?mappings:Pool_queue.mappings
+  -> ?job_ctx:Pool_queue.job_ctx
   -> t
   -> job
 
@@ -123,7 +124,7 @@ val handle_event : Database.Label.t -> event -> unit Lwt.t
 val create_sent
   :  ?id:Pool_queue.Id.t
   -> ?message_template:string
-  -> ?mappings:Pool_queue.mappings
+  -> ?job_ctx:Pool_queue.job_ctx
   -> ?new_recipient:Pool_user.CellPhone.t
   -> t
   -> event

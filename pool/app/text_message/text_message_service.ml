@@ -205,6 +205,13 @@ module Job = struct
       Error Pool_message.(Error.Invalid Field.Input)
   ;;
 
+  let show_recipient =
+    Pool_queue.Instance.input
+    %> decode
+    %> CCResult.map_or ~default:"error" (fun { recipient; _ } ->
+      Pool_user.CellPhone.show recipient)
+  ;;
+
   let handle ?id database_label message =
     let open Sihl.Configuration in
     let%lwt api_key, tenant_url = get_api_key_and_url database_label in
@@ -266,7 +273,7 @@ let dispatch
   ?id
   ?new_recipient
   ?message_template
-  ?(mappings = Pool_queue.mappings_create [])
+  ?(job_ctx = Pool_queue.job_ctx_create [])
   database_label
   message
   =
@@ -283,10 +290,10 @@ let dispatch
     Pool_queue.dispatch
       ?id
       ?message_template
-      ~mappings
+      ~job_ctx
       database_label
       job
       Job.send
   | EmailJob job ->
-    Email.Service.dispatch ?id ?message_template ~mappings database_label job
+    Email.Service.dispatch ?id ?message_template ~job_ctx database_label job
 ;;
