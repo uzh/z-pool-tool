@@ -8,11 +8,11 @@ module Migration : sig
   val show : t -> string
   val version : t -> int
   val namespace : t -> string
-  val create : namespace:string -> t
+  val create : namespace:string -> dirty:bool -> t
   val mark_dirty : t -> t
   val mark_clean : t -> t
   val increment : t -> t
-  val steps_to_apply : 'a * 'b list -> t -> 'a * 'b list
+  val steps_to_apply : 'a list -> int -> 'a list
   val dirty : t -> bool
   val t : t Caqti_type.t
 end = struct
@@ -23,14 +23,11 @@ end = struct
     }
   [@@deriving fields, eq, show]
 
-  let create ~namespace = { namespace; version = 0; dirty = true }
+  let create ~namespace ~dirty = { namespace; version = 0; dirty }
   let mark_dirty state = { state with dirty = true }
   let mark_clean state = { state with dirty = false }
   let increment state = { state with version = state.version + 1 }
-
-  let steps_to_apply (namespace, steps) { version; _ } =
-    namespace, CCList.drop version steps
-  ;;
+  let steps_to_apply steps version = CCList.drop version steps
 
   let t =
     let open Caqti_encoders in

@@ -81,7 +81,12 @@ let reporter req ({ Report.exn; _ } as excn) =
   | Scanf.Scan_failure _ ->
     Logs.err (fun m -> m "Exception: %s" (Printexc.to_string exn));
     Lwt.return_unit
-  | Caqti_error.(Exn #load_or_connect as err)
+  | Caqti_error.(Exn #load_or_connect as err) ->
+    let%lwt () = System_event.Service.ConnectionWatcher.verify_tenants () in
+    let trace = Printexc.get_backtrace () in
+    Logs.err (fun m ->
+      m "Caqti load or connection error: %s\n%s" (Printexc.to_string err) trace)
+    |> Lwt.return
   | Pool_message.Error.(Exn DatabaseAddPoolFirst as err)
   | Pool_message.Error.(Exn (Connection _) as err) ->
     let%lwt () = System_event.Service.ConnectionWatcher.verify_tenants () in
