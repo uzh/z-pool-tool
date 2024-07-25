@@ -34,7 +34,7 @@ let list Pool_context.{ language; _ } url (queued_jobs, query) =
       language
   in
   let cols = data_table_head language in
-  let th_class = [ "w-1"; "w-1"; "w-4"; "w-2"; "w-1"; "w-1" ] in
+  let th_class = [ "w-2"; "w-2"; "w-3"; "w-3"; "w-2"; "w-2" ] in
   let row instance =
     let recipient =
       match instance |> Instance.name with
