@@ -57,7 +57,8 @@ module Status : sig
     | ConnectionIssue
     | Disabled
     | Maintenance
-    | OpenMigrations
+    | MigrationsPending
+    | MigrationsFailed
 
   val create : string -> (t, Pool_message.Error.t) result
   val all : t list
@@ -303,6 +304,7 @@ module Tenant : sig
     -> (Label.t, Pool_message.Error.t) Lwt_result.t
 
   val update_status : Label.t -> Status.t -> unit Lwt.t
+  val set_migration_pending : Label.t list -> unit Lwt.t
   val start : unit -> unit Lwt.t
   val stop : unit -> unit Lwt.t
   val test_connection : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t

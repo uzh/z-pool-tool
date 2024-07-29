@@ -97,6 +97,7 @@ module Tenant = struct
   ;;
 
   let update_status = Repo.update_status root
+  let set_migration_pending = Repo.set_migration_pending
 
   let start () =
     let%lwt (_ : Label.t list) = setup () in

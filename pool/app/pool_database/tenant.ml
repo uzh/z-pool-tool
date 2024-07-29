@@ -98,16 +98,16 @@ let start () =
   let open Status in
   let%lwt db_pools =
     Tenant.find_all_by_status
-      ~status:[ Active; ConnectionIssue; OpenMigrations ]
+      ~status:[ Active; ConnectionIssue; MigrationsPending; MigrationsFailed ]
       ()
   in
   let check_migration_status pool =
     let open Migration in
     let%lwt () =
-      let%lwt uptodate = pending_migrations pool () ||> CCList.is_empty in
+      let%lwt up_to_date = pending_migrations pool () ||> CCList.is_empty in
       Tenant.update_status
         pool
-        (if not uptodate then OpenMigrations else Active)
+        (if not up_to_date then MigrationsPending else Active)
     in
     check_migrations_status pool ~migrations:(steps ()) ()
   in

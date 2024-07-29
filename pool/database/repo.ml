@@ -8,7 +8,7 @@ let sql_select_label = "pool_tenant_databases.label"
 
 let sql_database_join_on_label
   ?(join_prefix = "")
-  ?(status = `List Status.[ Active; ConnectionIssue; OpenMigrations ])
+  ?(status = `List Status.[ Active; ConnectionIssue; MigrationsPending ])
   label_column
   =
   match status with
@@ -60,7 +60,7 @@ let find_all_by_status_request ?(status = []) pt =
 ;;
 
 let find_all_by_status
-  ?(status = Status.[ Active; ConnectionIssue; OpenMigrations ])
+  ?(status = Status.[ Active; ConnectionIssue; MigrationsPending ])
   label
   =
   let open Dynparam in
@@ -141,3 +141,29 @@ let update_status_request =
 ;;
 
 let update_status pool = curry @@ Service.exec pool update_status_request
+
+let set_migration_pending db_labels =
+  match db_labels with
+  | [] -> Lwt.return_unit
+  | db_labels ->
+    let open Dynparam in
+    let (Pack (pt, pv)) =
+      db_labels
+      |> List.fold_left
+           (fun dyn label -> dyn |> add Caqti_type.string label)
+           (empty |> add Status.t Status.MigrationsPending)
+    in
+    let request =
+      Format.asprintf
+        {sql|
+          UPDATE pool_tenant_databases
+          SET status = $1
+          WHERE label IN (%s)
+        |sql}
+        (db_labels
+         |> List.mapi (fun i _ -> Format.asprintf "$%n" (i + 2))
+         |> String.concat ",")
+      |> pt ->. Caqti_type.unit
+    in
+    Service.exec root request pv
+;;
