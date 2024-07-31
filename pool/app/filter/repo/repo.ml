@@ -233,7 +233,7 @@ module Sql = struct
       | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
   ;;
 
-  let create_temporary_invitation_table query =
+  let create_temporary_invitation_table template_queries query =
     let open Dynparam in
     let open Caqti_request.Infix in
     let create_request ids =
@@ -255,27 +255,32 @@ module Sql = struct
            ids
          |> CCString.concat ",")
     in
-    let open CCOption in
     let fnc connection =
-      query
-      >|= Repo_utils.find_experiments_by_key Key.Invitation
-      |> function
-      | None | Some [] -> Lwt_result.return ()
-      | Some ids ->
-        let (Pack (pt, pv)) =
-          CCList.fold_left
-            (fun dyn id -> dyn |> add Caqti_type.string id)
-            empty
-            ids
-        in
-        let (module Connection : Caqti_lwt.CONNECTION) = connection in
-        let request = create_request ids |> pt ->. Caqti_type.unit in
-        Connection.exec request pv
+      match query with
+      | None -> Lwt_result.return ()
+      | Some query ->
+        query :: template_queries
+        |> CCList.fold_left
+             (fun acc cur ->
+               acc @ Repo_utils.find_experiments_by_key Key.Participation cur)
+             []
+        |> (function
+         | [] -> Lwt_result.return ()
+         | ids ->
+           let (Pack (pt, pv)) =
+             CCList.fold_left
+               (fun dyn id -> dyn |> add Caqti_type.string id)
+               empty
+               ids
+           in
+           let (module Connection : Caqti_lwt.CONNECTION) = connection in
+           let request = create_request ids |> pt ->. Caqti_type.unit in
+           Connection.exec request pv)
     in
     fnc
   ;;
 
-  let create_temporary_assignments_table query =
+  let create_temporary_assignments_table template_queries query =
     let open Dynparam in
     let open Caqti_request.Infix in
     let create_request ids =
@@ -298,27 +303,32 @@ module Sql = struct
            ids
          |> CCString.concat ",")
     in
-    let open CCOption in
     let fnc connection =
-      query
-      >|= Repo_utils.find_experiments_by_key Key.Assignment
-      |> function
-      | None | Some [] -> Lwt_result.return ()
-      | Some ids ->
-        let (Pack (pt, pv)) =
-          CCList.fold_left
-            (fun dyn id -> dyn |> add Caqti_type.string id)
-            empty
-            ids
-        in
-        let (module Connection : Caqti_lwt.CONNECTION) = connection in
-        let request = create_request ids |> pt ->. Caqti_type.unit in
-        Connection.exec request pv
+      match query with
+      | None -> Lwt_result.return ()
+      | Some query ->
+        query :: template_queries
+        |> CCList.fold_left
+             (fun acc cur ->
+               acc @ Repo_utils.find_experiments_by_key Key.Participation cur)
+             []
+        |> (function
+         | [] -> Lwt_result.return ()
+         | ids ->
+           let (Pack (pt, pv)) =
+             CCList.fold_left
+               (fun dyn id -> dyn |> add Caqti_type.string id)
+               empty
+               ids
+           in
+           let (module Connection : Caqti_lwt.CONNECTION) = connection in
+           let request = create_request ids |> pt ->. Caqti_type.unit in
+           Connection.exec request pv)
     in
     fnc
   ;;
 
-  let create_temporary_participation_table query =
+  let create_temporary_participation_table template_queries query =
     let open Dynparam in
     let open Caqti_request.Infix in
     let create_request ids =
@@ -344,30 +354,36 @@ module Sql = struct
            ids
          |> CCString.concat ",")
     in
-    let open CCOption in
     let fnc connection =
-      query
-      >|= Repo_utils.find_experiments_by_key Key.Participation
-      |> function
-      | None | Some [] -> Lwt_result.return ()
-      | Some ids ->
-        let (Pack (pt, pv)) =
-          CCList.fold_left
-            (fun dyn id -> dyn |> add Caqti_type.string id)
-            empty
-            ids
-        in
-        let (module Connection : Caqti_lwt.CONNECTION) = connection in
-        let request = create_request ids |> pt ->. Caqti_type.unit in
-        Connection.exec request pv
+      match query with
+      | None -> Lwt_result.return ()
+      | Some query ->
+        query :: template_queries
+        |> CCList.fold_left
+             (fun acc cur ->
+               acc @ Repo_utils.find_experiments_by_key Key.Participation cur)
+             []
+        |> (function
+         | [] -> Lwt_result.return ()
+         | ids ->
+           let (Pack (pt, pv)) =
+             CCList.fold_left
+               (fun dyn id -> dyn |> add Caqti_type.string id)
+               empty
+               ids
+           in
+           let (module Connection : Caqti_lwt.CONNECTION) = connection in
+           let request = create_request ids |> pt ->. Caqti_type.unit in
+           Connection.exec request pv)
     in
     fnc
   ;;
 
-  let create_temp_tables filter =
-    [ create_temporary_participation_table filter
-    ; create_temporary_invitation_table filter
-    ; create_temporary_assignments_table filter
+  let create_temp_tables templates filter =
+    let template_queries = CCList.map (fun f -> f.query) templates in
+    [ create_temporary_participation_table template_queries filter
+    ; create_temporary_invitation_table template_queries filter
+    ; create_temporary_assignments_table template_queries filter
     ]
   ;;
 
@@ -428,7 +444,7 @@ module Sql = struct
     in
     Database.transaction
       pool
-      ~setup:(drop_temp_table :: create_temp_tables filter)
+      ~setup:(drop_temp_table :: create_temp_tables template_list filter)
       ~cleanup:[ drop_temp_table ]
       query
     ||> CCResult.return
@@ -469,7 +485,7 @@ module Sql = struct
     in
     Database.transaction
       pool
-      ~setup:(drop_temp_table :: create_temp_tables (Some query))
+      ~setup:(drop_temp_table :: create_temp_tables template_list (Some query))
       ~cleanup:[ drop_temp_table ]
       matches_filter_request
     ||> CCOption.map_or ~default (CCInt.equal 1)
@@ -536,7 +552,7 @@ module Sql = struct
     in
     Database.transaction
       pool
-      ~setup:(drop_temp_table :: create_temp_tables filter)
+      ~setup:(drop_temp_table :: create_temp_tables template_list filter)
       ~cleanup:[ drop_temp_table ]
       query
     ||> CCOption.value ~default:0
