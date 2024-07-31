@@ -213,9 +213,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       Lwt.catch
         (fun () ->
           let* () = exec_each connection setup in
-          let%lwt result = f connection in
+          let* result = f connection in
           let* () = exec_each connection cleanup in
-          let result = result |> CCResult.get_exn in
           match%lwt Connection.commit () with
           | Ok () -> Lwt.return_ok result
           | Error error -> Lwt.return_error error)
