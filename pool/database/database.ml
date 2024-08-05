@@ -59,7 +59,6 @@ module Tenant = struct
     let log_db = show database in
     match add_pool ~pool_size:(pool_size ()) database with
     | Ok _ ->
-      let%lwt () = Repo.update_status root label Status.Active in
       Logs.debug (fun m -> m ~tags "Database connected: %s" log_db);
       Lwt.return label
     | Error err ->
@@ -97,6 +96,7 @@ module Tenant = struct
   ;;
 
   let update_status = Repo.update_status root
+  let set_migration_pending = Repo.set_migration_pending
 
   let start () =
     let%lwt (_ : Label.t list) = setup () in

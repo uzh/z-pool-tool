@@ -6,22 +6,16 @@ module LogoMapping = Entity_logo_mapping
 module LogoMappingRepo = Repo_logo_mapping
 
 module Cache : sig
-  val lru_find_by_url
-    : (Database.Label.t * Entity.Url.t, Entity.t option Lwt.t) CCCache.t
-
+  val add : string -> Entity.t -> unit
+  val find_by_url : string -> Entity.t option
   val clear : unit -> unit
 end = struct
-  open CCCache
+  open Hashtbl
 
-  let equal_find_by_url (label1, (url1 : Entity.Url.t)) (label2, url2) =
-    Database.Label.equal label1 label2 && Entity.Url.equal url1 url2
-  ;;
-
-  let lru_find_by_url =
-    lru ~eq:equal_find_by_url Database.Config.expected_databases
-  ;;
-
-  let clear () = clear lru_find_by_url
+  let tbl : (Entity.Url.t, Entity.t) t = create 10
+  let add = add tbl
+  let find_by_url = find_opt tbl
+  let clear () = clear tbl
 end
 
 module Sql = struct
@@ -258,30 +252,33 @@ let find_by_label pool label =
 
 let find_by_url pool url =
   let open Utils.Lwt_result.Infix in
-  let cb ~in_cache _ _ =
-    if in_cache
-    then (
-      let tags = Database.Logger.Tags.create pool in
-      Logs.debug (fun m ->
-        m ~tags "Found in cache: Tenant %s" ([%show: Entity.Url.t] url)))
-    else ()
+  let tags = Database.Logger.Tags.create pool in
+  let should_cache { Entity.status; _ } =
+    let open Database.Status in
+    match status with
+    | Active | Disabled | Maintenance | MigrationsFailed -> true
+    | ConnectionIssue | MigrationsPending -> false
   in
-  let find_by_url' (pool, url) : Entity.t option Lwt.t =
-    Database.query pool (fun connection ->
-      let (module Connection : Caqti_lwt.CONNECTION) = connection in
-      let combine = function
-        | Some ({ Entity.Read.id; _ } as tenant) ->
-          id
-          |> Connection.collect_list Repo_logo_mapping.Sql.find_request
-          ||> CCResult.to_opt
-          ||> CCOption.map (set_logos tenant)
-        | None -> Lwt.return_none
-      in
-      Connection.find_opt Sql.find_by_url_request url |>> combine)
-  in
-  (pool, url)
-  |> CCCache.(with_cache ~cb Cache.lru_find_by_url find_by_url')
-  ||> CCOption.to_result Pool_message.Error.SessionTenantNotFound
+  Cache.find_by_url url
+  |> function
+  | Some tenant ->
+    Logs.debug (fun m ->
+      m ~tags "Found in cache: Tenant %s" ([%show: Entity.Url.t] url));
+    Lwt_result.return tenant
+  | None ->
+    let combine ({ Entity.Read.id; _ } as tenant) =
+      Database.collect pool Repo_logo_mapping.Sql.find_request id
+      ||> set_logos tenant
+    in
+    let%lwt tenant =
+      Database.find_opt pool Sql.find_by_url_request url
+      >|> CCOption.map_or ~default:Lwt.return_none (fun tenant ->
+        let%lwt tenant = combine tenant in
+        let () = if should_cache tenant then Cache.add url tenant else () in
+        Lwt.return_some tenant)
+      ||> CCOption.to_result Pool_message.Error.SessionTenantNotFound
+    in
+    Lwt.return tenant
 ;;
 
 let find_full = Sql.find_full

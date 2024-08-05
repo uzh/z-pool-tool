@@ -37,7 +37,7 @@ let verify_tenants () =
           let%lwt () = clear_cache_event () in
           add_database_event label)
       , fun _ _ -> Lwt.return_unit )
-    | OpenMigrations | Disabled | Maintenance ->
+    | MigrationsPending | MigrationsFailed | Disabled | Maintenance ->
       failwith
         "Database watcher not defined for OpenMigrations, Disabled, and \
          Maintenance"
