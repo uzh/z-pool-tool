@@ -98,7 +98,7 @@ let start () =
   let open Status in
   let%lwt db_pools =
     Tenant.find_all_by_status
-      ~status:[ Active; ConnectionIssue; MigrationsPending; MigrationsFailed ]
+      ~status:[ Active; ConnectionIssue; MigrationsPending ]
       ()
   in
   let check_migration_status pool =
