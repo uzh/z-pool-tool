@@ -104,7 +104,9 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
             Logs.err ~src (fun m ->
               m
                 ~tags
-                "Caqti error caught while running schedule: %s\n%s"
+                "Caqti error caught while running schedule of %s: %s, \
+                 Backtrace: %s"
+                label
                 (Printexc.to_string exn)
                 backtrace);
             Lwt.return_unit
