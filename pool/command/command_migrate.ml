@@ -9,6 +9,46 @@ let root =
 ;;
 
 let migrate_tenants db_labels =
+  let notification db_label =
+    let open Sihl_email in
+    let read_config = Sihl.Configuration.read_string in
+    let sender = read_config "SMTP_SENDER" in
+    let recipient = read_config "SMTP_SENDER" in
+    match sender, recipient with
+    | Some sender, Some recipient ->
+      let text =
+        Format.asprintf
+          {|Migrations on the tenant %s could not be executed successfully.
+
+        Please take the necessary actions.|}
+          (Database.Label.value db_label)
+      in
+      let email =
+        { sender
+        ; recipient
+        ; subject = "Tenant migration failed"
+        ; text
+        ; html = None
+        ; cc = []
+        ; bcc = []
+        }
+      in
+      let%lwt { Email.Service.Smtp.sender
+              ; reply_to
+              ; recipients
+              ; subject
+              ; body
+              ; config
+              }
+        =
+        Email.Service.Smtp.prepare Database.root email
+      in
+      Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
+      |> (function
+       | Ok message -> Letters.send ~config ~sender ~recipients ~message
+       | Error msg -> raise (Sihl.Contract.Email.Exception msg))
+    | _, _ -> Lwt.return_unit
+  in
   let run db_label =
     let set_status = Database.Tenant.update_status db_label in
     Lwt.catch
@@ -18,7 +58,7 @@ let migrate_tenants db_labels =
         in
         set_status Status.Active)
       (fun _ ->
-        (* TODO: Notify admins *)
+        let%lwt () = notification db_label in
         let%lwt () = set_status Status.MigrationsFailed in
         Lwt.return_unit)
   in
