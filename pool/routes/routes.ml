@@ -84,6 +84,7 @@ module Public = struct
             ; get "/custom/assets/index.css" index_css
             ; get "/credits" credits
             ; get "/privacy-policy" privacy_policy
+            ; get "/terms-and-conditions" terms_and_conditions
             ; choose ~scope:Field.(Location |> human_url) locations
             ]
         ; choose
@@ -213,7 +214,7 @@ module Contact = struct
                 Pool_context.UserType.[ Contact ]
             ]
           [ choose
-              [ get "/termsandconditions" SignUp.terms
+              [ get "/accept-terms" SignUp.terms
               ; post "/terms-accepted" SignUp.terms_accept
               ; choose
                   ~middlewares:

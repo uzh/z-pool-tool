@@ -220,3 +220,25 @@ let reset_password
         ]
     ]
 ;;
+
+let terms_and_conditions language terms terms_last_updated =
+  let terms = terms |> I18n.content |> I18n.Content.value in
+  let title =
+    Pool_common.(
+      Utils.field_to_string_capitalized
+        language
+        Pool_message.Field.TermsAndConditions)
+  in
+  let last_updated =
+    Pool_common.(
+      Utils.text_to_string
+        language
+        (I18n.TermsAndConditionsLastUpdated terms_last_updated))
+  in
+  div
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt title ]
+    ; p [ txt last_updated ]
+    ; p [ Unsafe.data terms ]
+    ]
+;;
