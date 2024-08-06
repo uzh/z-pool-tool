@@ -84,6 +84,7 @@ module Public = struct
             ; get "/custom/assets/index.css" index_css
             ; get "/credits" credits
             ; get "/privacy-policy" privacy_policy
+            ; get "/terms-and-conditions" terms_and_conditions
             ; choose ~scope:Field.(Location |> human_url) locations
             ]
         ; choose
