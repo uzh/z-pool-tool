@@ -123,3 +123,47 @@ let create
           ]
       ]
 ;;
+
+module ExperimentFilter = struct
+  open ExperimentFilter
+
+  let create
+    language
+    experiment
+    { contacts_meeting_criteria
+    ; invitation_count
+    ; assigned_contacts_not_matching
+    }
+    =
+    let open Pool_common in
+    let to_string = Utils.text_to_string language in
+    table
+      ~a:[ a_class [ "table"; "simple"; "width-auto" ] ]
+      [ tr
+          [ th [ txt (to_string I18n.FilterNrOfContacts) ]
+          ; td
+              [ span
+                  ~a:
+                    [ a_id "contact-counter"
+                    ; a_user_data
+                        "action"
+                        (experiment.Experiment.id
+                         |> Experiment.Id.value
+                         |> Format.asprintf
+                              "/admin/experiments/%s/contact-count"
+                         |> Sihl.Web.externalize_path)
+                    ]
+                  [ txt (CCInt.to_string contacts_meeting_criteria) ]
+              ]
+          ]
+      ; tr
+          [ th [ txt (to_string I18n.FilterNrOfSentInvitations) ]
+          ; td [ txt (CCInt.to_string invitation_count) ]
+          ]
+      ; tr
+          [ th [ txt (to_string I18n.FilterNrOfUnsuitableAssignments) ]
+          ; td [ txt (CCInt.to_string assigned_contacts_not_matching) ]
+          ]
+      ]
+  ;;
+end

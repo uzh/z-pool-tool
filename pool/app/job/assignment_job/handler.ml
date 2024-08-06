@@ -9,7 +9,6 @@ let admins_to_notify = Experiment.find_admins_to_notify_about_invitations
 let trigger_text =
   let open Pool_common.I18n in
   function
-  | `Experiment _ -> MatchesFilterChangeReasonFilter
   | `Session _ -> MatchesFilterChangeReasonManually
   | `Upcoming -> MatchesFilterChangeReasonWorker
 ;;
@@ -102,22 +101,18 @@ let handle_update ?current_user database_label context =
   | `Session ({ Session.id; experiment; _ } as session) ->
     let%lwt assignments = find_all_by_session database_label id in
     handle experiment experiment.Experiment.filter [ session, assignments ]
-  | `Experiment (experiment, filter) ->
-    find_upcoming_by_experiment database_label experiment.Experiment.id
-    >>= fun (experiment, sessions) -> handle experiment filter sessions
   | `Upcoming ->
-    let%lwt data = find_upcoming database_label in
-    data
-    |> Lwt_list.fold_left_s
-         (fun acc (experiment, assignments) ->
-           let filter = Experiment.filter experiment in
-           match acc with
-           | Error err -> Lwt_result.fail err
-           | Ok acc ->
-             handle experiment filter assignments
-             >|+ fun (assignments, emails) ->
-             fst acc @ assignments, snd acc @ emails)
-         (Ok ([], []))
+    find_upcoming database_label
+    >|> Lwt_list.fold_left_s
+          (fun acc (experiment, assignments) ->
+            let filter = Experiment.filter experiment in
+            match acc with
+            | Error err -> Lwt_result.fail err
+            | Ok acc ->
+              handle experiment filter assignments
+              >|+ fun (assignments, emails) ->
+              fst acc @ assignments, snd acc @ emails)
+          (Ok ([], []))
 ;;
 
 let update_upcoming_assignments database_label =

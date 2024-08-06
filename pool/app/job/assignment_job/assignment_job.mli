@@ -1,7 +1,7 @@
 val update_matches_filter
   :  ?current_user:Admin.t
   -> Database.Label.t
-  -> [< `Experiment of Experiment.t * Filter.t option | `Session of Session.t ]
+  -> [< `Session of Session.t ]
   -> ( Assignment.event list * Email.dispatch list
        , Pool_message.Error.t )
        Lwt_result.t

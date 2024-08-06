@@ -101,7 +101,7 @@ let new_form = form false
 let write action req =
   let open Utils.Lwt_result.Infix in
   let open Cqrs_command in
-  let result { Pool_context.database_label; user; _ } =
+  let result { Pool_context.database_label; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* query =
@@ -118,27 +118,18 @@ let write action req =
       let lift = Lwt_result.lift in
       match action with
       | Experiment exp ->
-        let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
-        let matcher_events filter =
-          Assignment_job.update_matches_filter
-            ~current_user:admin
-            database_label
-            (`Experiment (exp, Some filter))
-        in
         let open Experiment_command in
         (match exp.Experiment.filter with
          | None ->
            let open CreateFilter in
            let* filter = create_filter key_list template_list query |> lift in
-           let* matcher_events = matcher_events filter in
-           handle ~tags exp matcher_events filter |> lift
+           handle ~tags exp filter |> lift
          | Some filter ->
            let open UpdateFilter in
            let* filter =
              create_filter key_list template_list filter query |> lift
            in
-           let* matcher_events = matcher_events filter in
-           handle ~tags exp matcher_events filter |> lift)
+           handle ~tags exp filter |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in

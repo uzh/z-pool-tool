@@ -254,6 +254,37 @@ module Sql = struct
     ||> Utils.group_tuples
   ;;
 
+  let find_assigned_contacts_by_experiment_request =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      {sql|
+        SELECT 
+          %s
+        FROM pool_assignments
+          %s
+          %s
+        WHERE
+          pool_sessions.closed_at IS NULL
+          AND pool_sessions.canceled_at IS NULL
+          AND pool_assignments.marked_as_deleted = 0
+          AND pool_assignments.canceled_at IS NULL
+          AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+    	  GROUP BY
+		      pool_assignments.contact_uuid    
+      |sql}
+      (Contact.Repo.sql_select_columns |> CCString.concat ",")
+      joins
+      joins_session
+    |> Experiment.Repo.Entity.Id.t ->* Contact.Repo.t
+  ;;
+
+  let find_assigned_contacts_by_experiment pool experiment_id =
+    Database.collect
+      pool
+      find_assigned_contacts_by_experiment_request
+      experiment_id
+  ;;
+
   let find_public_by_experiment_and_contact_opt_request scope =
     let open Caqti_request.Infix in
     let query joins =

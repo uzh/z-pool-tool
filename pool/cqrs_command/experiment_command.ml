@@ -552,7 +552,6 @@ module CreateFilter : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Assignment.event list * Email.dispatch list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -566,12 +565,7 @@ end = struct
     Filter.create ~id None query |> return
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    experiment
-    (assignment_events, emails)
-    (filter : Filter.t)
-    =
+  let handle ?(tags = Logs.Tag.empty) experiment (filter : Filter.t) =
     Logs.info ~src (fun m -> m "Handle command CreateFilter" ~tags);
     let open CCResult in
     let experiment =
@@ -580,16 +574,10 @@ end = struct
       ; matcher_notification_sent = MatcherNotificationSent.create false
       }
     in
-    let assignment_events =
-      assignment_events |> CCList.map Pool_event.assignment
-    in
-    let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
-      ([ Filter.Created filter |> Pool_event.filter
-       ; Experiment.Updated experiment |> Pool_event.experiment
-       ]
-       @ assignment_events
-       @ [ email_event ])
+      [ Filter.Created filter |> Pool_event.filter
+      ; Experiment.Updated experiment |> Pool_event.experiment
+      ]
   ;;
 
   let effects id =
@@ -613,7 +601,6 @@ module UpdateFilter : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Assignment.event list * Email.dispatch list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -627,29 +614,18 @@ end = struct
     Ok Filter.{ filter with query }
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    experiment
-    (assignment_events, emails)
-    filter
-    =
+  let handle ?(tags = Logs.Tag.empty) experiment filter =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
-    let assignment_events =
-      assignment_events |> CCList.map Pool_event.assignment
-    in
-    let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
-      ([ Experiment.(
-           Updated
-             { experiment with
-               matcher_notification_sent = MatcherNotificationSent.create false
-             })
-         |> Pool_event.experiment
-       ; Filter.Updated filter |> Pool_event.filter
-       ; email_event
-       ]
-       @ assignment_events)
+      [ Experiment.(
+          Updated
+            { experiment with
+              matcher_notification_sent = MatcherNotificationSent.create false
+            })
+        |> Pool_event.experiment
+      ; Filter.Updated filter |> Pool_event.filter
+      ]
   ;;
 
   let effects experiment_id filter_id =

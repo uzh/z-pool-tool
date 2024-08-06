@@ -508,36 +508,8 @@ let rec predicate_form
     ]
 ;;
 
-let counts_table language experiment (matching_filter_count, invitation_count) =
-  let open Pool_common in
-  let to_string = Utils.text_to_string language in
-  table
-    ~a:[ a_class [ "table"; "simple"; "width-auto" ] ]
-    [ tr
-        [ th [ txt (to_string I18n.FilterNrOfContacts) ]
-        ; td
-            [ span
-                ~a:
-                  [ a_id "contact-counter"
-                  ; a_user_data
-                      "action"
-                      (experiment.Experiment.id
-                       |> Experiment.Id.value
-                       |> Format.asprintf "/admin/experiments/%s/contact-count"
-                       |> Sihl.Web.externalize_path)
-                  ]
-                [ txt (CCInt.to_string matching_filter_count) ]
-            ]
-        ]
-    ; tr
-        [ th [ txt (to_string I18n.FilterNrOfSentInvitations) ]
-        ; td [ txt (CCInt.to_string invitation_count) ]
-        ]
-    ]
-;;
-
 let filter_form
-  ?counts
+  ?statistics
   csrf
   language
   param
@@ -569,7 +541,10 @@ let filter_form
     match param with
     | Template _ -> default
     | Experiment experiment ->
-      counts |> CCOption.map_or ~default (counts_table language experiment)
+      statistics
+      |> CCOption.map_or
+           ~default
+           (Component_statistics.ExperimentFilter.create language experiment)
   in
   let delete_form =
     match param with

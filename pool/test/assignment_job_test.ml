@@ -53,17 +53,9 @@ let to_events (assignment_events, emails) =
 ;;
 
 let update_without_filter _ () =
-  let%lwt experiment = get_experiment () in
   let%lwt session = get_session () in
   let%lwt events =
     update_matches_filter pool (`Session session) >|+ to_events
-  in
-  let () = check_result (Ok []) events in
-  let%lwt events =
-    update_matches_filter
-      pool
-      (`Experiment (experiment, experiment.Experiment.filter))
-    >|+ to_events
   in
   check_result (Ok []) events |> Lwt.return
 ;;
@@ -99,14 +91,6 @@ let exclude_contact _ () =
   in
   let%lwt events =
     update_matches_filter ~current_user:admin pool (`Session session)
-    >|+ to_events
-  in
-  let () = check_result expected events in
-  let%lwt events =
-    update_matches_filter
-      ~current_user:admin
-      pool
-      (`Experiment (experiment, Some exclude_1))
     >|+ to_events
   in
   check_result expected events |> Lwt.return

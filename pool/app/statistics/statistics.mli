@@ -80,6 +80,20 @@ type t =
 val create : Database.Label.t -> ?period:period -> unit -> t Lwt.t
 val yojson_of_t : t -> Yojson.Safe.t
 
+module ExperimentFilter : sig
+  type t =
+    { contacts_meeting_criteria : int
+    ; invitation_count : int
+    ; assigned_contacts_not_matching : int
+    }
+
+  val create
+    :  Database.Label.t
+    -> Experiment.t
+    -> Filter.t option
+    -> (t, Pool_message.Error.t) Lwt_result.t
+end
+
 module Guard : sig
   module Access : sig
     val read : Guard.ValidationSet.t

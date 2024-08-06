@@ -222,6 +222,11 @@ val find_upcoming_by_experiment
        , Pool_message.Error.t )
        Lwt_result.t
 
+val find_assigned_contacts_by_experiment
+  :  Database.Label.t
+  -> Experiment.Id.t
+  -> Contact.t list Lwt.t
+
 val find_upcoming
   :  Database.Label.t
   -> (Experiment.t * (Session.t * t list) list) list Lwt.t

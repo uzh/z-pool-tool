@@ -36,6 +36,7 @@ type t =
   | FilterContactsDescription
   | FilterNrOfContacts
   | FilterNrOfSentInvitations
+  | FilterNrOfUnsuitableAssignments
   | FollowUpSessionFor
   | Help
   | ImportConfirmationNote
