@@ -142,7 +142,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SessionReminder -> "Sessionerinnerung"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
-  | SignUpTitle -> "Anmeldung"
+  | SignUpTitle -> "Registrierung"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwapSessionsListEmpty ->
     "Es wurden keine Sessions gefunden, der Sie diesen Kontakt zuweisen können."

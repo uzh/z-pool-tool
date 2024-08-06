@@ -25,7 +25,10 @@ let login_form
     else
       a
         ~a:[ a_href (externalize "/signup") ]
-        (txt_to_string language I18n.SignUpTitle)
+        [ txt
+            Pool_common.(
+              Utils.control_to_string language Pool_message.Control.SignUp)
+        ]
   in
   div
     ~a:[ a_class [ "stack" ] ]
