@@ -90,7 +90,7 @@ module ExperimentFilter : sig
   val create
     :  Database.Label.t
     -> Experiment.t
-    -> Filter.t option
+    -> Filter.query option
     -> (t, Pool_message.Error.t) Lwt_result.t
 end
 

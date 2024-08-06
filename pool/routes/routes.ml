@@ -574,9 +574,9 @@ module Admin = struct
               ~middlewares:[ Access.update ]
               Invitations.reset
           ; post
-              "/contact-count"
+              "/filter-statistics"
               ~middlewares:[ Access.read ]
-              Handler.Admin.Filter.count_contacts
+              Handler.Admin.Filter.filter_statistics
           ; get
               "/messages"
               ~middlewares:[ Access.message_history ]

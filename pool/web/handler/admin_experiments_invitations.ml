@@ -44,10 +44,11 @@ let index req =
            >|+ CCOption.pure
        in
        let* statistics =
-         Statistics.ExperimentFilter.create
-           database_label
-           experiment
+         let query =
            experiment.Experiment.filter
+           |> CCOption.map (fun f -> f.Filter.query)
+         in
+         Statistics.ExperimentFilter.create database_label experiment query
        in
        Page.Admin.Experiments.invitations
          experiment

@@ -542,9 +542,18 @@ let filter_form
     | Template _ -> default
     | Experiment experiment ->
       statistics
-      |> CCOption.map_or
-           ~default
-           (Component_statistics.ExperimentFilter.create language experiment)
+      |> CCOption.map_or ~default (fun statistics ->
+        div
+          ~a:
+            [ a_id "invitation-statistics"
+            ; a_user_data
+                "action"
+                (experiment.Experiment.id
+                 |> Experiment.Id.value
+                 |> Format.asprintf "/admin/experiments/%s/filter-statistics"
+                 |> Sihl.Web.externalize_path)
+            ]
+          [ Component_statistics.ExperimentFilter.create language statistics ])
   in
   let delete_form =
     match param with
