@@ -213,7 +213,7 @@ module Contact = struct
                 Pool_context.UserType.[ Contact ]
             ]
           [ choose
-              [ get "/termsandconditions" SignUp.terms
+              [ get "/accept-terms" SignUp.terms
               ; post "/terms-accepted" SignUp.terms_accept
               ; choose
                   ~middlewares:
