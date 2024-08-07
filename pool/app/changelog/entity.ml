@@ -14,12 +14,20 @@ module T (R : RecordSig) = struct
     let rec compare (json_before : Yojson.Safe.t) (json_after : Yojson.Safe.t)
       : t option
       =
+      let eq = CCString.equal in
       match json_before, json_after with
       | `Assoc l1, `Assoc l2 ->
-        l1
-        |> List.filter_map (fun (key, value_before) ->
-          (* TODO: assoc opt *)
-          let value_after = List.assoc key l2 in
+        let keys =
+          let get = CCList.map fst in
+          get l1 @ get l2 |> CCList.uniq ~eq
+        in
+        keys
+        |> List.filter_map (fun key ->
+          let assoc list =
+            CCList.assoc_opt ~eq key list |> CCOption.value ~default:`Null
+          in
+          let value_before = assoc l1 in
+          let value_after = assoc l2 in
           compare value_before value_after
           |> CCOption.map (fun value -> key, value))
         |> (function
