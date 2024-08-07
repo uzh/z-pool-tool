@@ -106,9 +106,6 @@ let to_string = function
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
      Füge zusätzliche Sessions zum Experiment hinzu."
   | MailingNewTitle -> "Neuen Versand erstellen"
-  | MatchesFilterChangeReasonFilter ->
-    "Diese Meldung wurde durch eine Aktualisierung des Experimentierfilters \
-     ausgelöst."
   | MatchesFilterChangeReasonManually ->
     "Diese Nachricht wurde manuell ausgelöst."
   | MatchesFilterChangeReasonWorker ->

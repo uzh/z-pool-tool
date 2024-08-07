@@ -106,8 +106,6 @@ let to_string = function
      if mailings are active at the moment).\n\n\
      Add additional sessions to the experiment."
   | MailingNewTitle -> "Create new mailing"
-  | MatchesFilterChangeReasonFilter ->
-    "This message was triggered by an update to the experiment filter."
   | MatchesFilterChangeReasonManually -> "The message was manually triggered."
   | MatchesFilterChangeReasonWorker ->
     "This message was triggered by a background job that repeatedly checks if \
