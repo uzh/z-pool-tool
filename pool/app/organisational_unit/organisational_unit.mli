@@ -14,6 +14,8 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val t_of_yojson : Yojson.Safe.t -> t
+val yojson_of_t : t -> Yojson.Safe.t
 val create : ?id:Id.t -> Name.t -> t
 val id : t -> Id.t
 val name : t -> Name.t
@@ -68,3 +70,7 @@ val default_query : Query.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+
+module Changelog : sig
+  include Changelog.TSig with type record = t
+end

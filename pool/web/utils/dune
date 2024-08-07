@@ -1,6 +1,7 @@
 (library
  (name http_utils)
  (libraries
+  changelog
   contact
   experiment
   logger

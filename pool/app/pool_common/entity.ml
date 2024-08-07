@@ -89,7 +89,7 @@ module File = struct
       | Png
       | Svg
       | Webp
-    [@@deriving eq, show, sexp_of]
+    [@@deriving eq, show, sexp_of, yojson]
 
     let of_string = function
       | "application/pdf" -> Ok Pdf
@@ -136,7 +136,7 @@ module File = struct
     ; created_at : CreatedAt.t
     ; updated_at : UpdatedAt.t
     }
-  [@@deriving show, eq, sexp_of]
+  [@@deriving show, eq, sexp_of, yojson]
 
   let id m = m.id
   let size m = m.size

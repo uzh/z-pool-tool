@@ -87,6 +87,8 @@ module File : sig
   val path : t -> string
   val externalized_path : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val t_of_yojson : Yojson.Safe.t -> t
 end
 
 module SortOrder : sig

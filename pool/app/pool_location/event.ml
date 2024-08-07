@@ -43,7 +43,7 @@ let handle_event pool : event -> unit Lwt.t =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Updated (location, m) ->
-    let%lwt () =
+    let updated =
       { location with
         name = m.name
       ; description = m.description
@@ -51,9 +51,13 @@ let handle_event pool : event -> unit Lwt.t =
       ; link = m.link
       ; status = m.status
       }
-      |> Repo.update pool
     in
-    Lwt.return_unit
+    let changelog = Version_history.create location updated in
+    let json = Version_history.to_json changelog in
+    let () = Logs.info (fun m -> m "%s" "===================") in
+    let () = Logs.info (fun m -> m "%s" (Yojson.Safe.to_string json)) in
+    let () = Logs.info (fun m -> m "%s" "===================") in
+    Repo.update pool updated
   | FileDeleted id ->
     let%lwt () = Repo_file_mapping.delete pool id in
     Lwt.return_unit
