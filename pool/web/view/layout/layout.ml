@@ -71,6 +71,13 @@ module Tenant = struct
           [ a
               ~a:[ a_href (externalize "/credits") ]
               [ txt (Utils.nav_link_to_string language I18n.Credits) ]
+          ; a
+              ~a:[ a_href (externalize "/terms-and-conditions") ]
+              [ txt
+                  (Utils.field_to_string_capitalized
+                     language
+                     Pool_message.Field.TermsAndConditions)
+              ]
           ]
         in
         let nav_links =

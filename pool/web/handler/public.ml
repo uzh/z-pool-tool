@@ -214,3 +214,23 @@ let privacy_policy req =
   in
   result |> Http_utils.extract_happy_path ~src req
 ;;
+
+let terms_and_conditions req =
+  let result
+    ({ Pool_context.language; query_language; database_label; _ } as context)
+    =
+    let redirect_path = Http_utils.path_with_language query_language "/" in
+    let open Utils.Lwt_result.Infix in
+    let%lwt terms =
+      I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+    in
+    let%lwt terms_last_updated =
+      I18n.terms_and_conditions_last_updated database_label
+    in
+    Page.Public.terms_and_conditions language terms terms_last_updated
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
+    >|- fun err -> err, redirect_path
+  in
+  result |> Http_utils.extract_happy_path ~src req
+;;
