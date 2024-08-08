@@ -19,7 +19,7 @@ let rec format_changes changes =
   | Assoc assocs -> format_assoc_list [] assocs |> div
   | Change (before, after) ->
     let format json = span [ Yojson.Safe.pretty_to_string json |> txt ] in
-    span [ format before; txt " => "; format after ]
+    span [ format before; txt " → "; format after ]
 ;;
 
 (* TODO: Make HTMX table, handler as well. Async call to get changelog? *)
