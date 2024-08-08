@@ -17,16 +17,32 @@ module type RecordSig = sig
   val yojson_of_t : t -> Yojson.Safe.t
 end
 
-module T : functor (R : RecordSig) -> sig
-  type record = R.t
-
-  val model : Pool_message.Field.t
-  val create : ?id:Id.t -> user_uuid:Pool_common.Id.t -> R.t -> R.t -> t
-end
-
 module type TSig = sig
   type record
 
   val model : Pool_message.Field.t
-  val create : ?id:Id.t -> user_uuid:Pool_common.Id.t -> record -> record -> t
+
+  val create
+    :  Database.Label.t
+    -> ?id:Id.t
+    -> user_uuid:Pool_common.Id.t
+    -> before:record
+    -> after:record
+    -> unit
+    -> unit Lwt.t
+end
+
+module T : functor (R : RecordSig) -> sig
+  type record = R.t
+
+  val model : Pool_message.Field.t
+
+  val create
+    :  Database.Label.t
+    -> ?id:Id.t
+    -> user_uuid:Pool_common.Id.t
+    -> before:record
+    -> after:record
+    -> unit
+    -> unit Lwt.t
 end

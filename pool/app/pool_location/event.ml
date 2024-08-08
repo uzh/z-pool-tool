@@ -52,7 +52,9 @@ let handle_event pool : event -> unit Lwt.t =
       ; status = m.status
       }
     in
-    let _ = Version_history.create ~user_uuid location updated in
+    let%lwt () =
+      Version_history.create pool ~user_uuid ~before:location ~after:updated ()
+    in
     Repo.update pool updated
   | FileDeleted id ->
     let%lwt () = Repo_file_mapping.delete pool id in
