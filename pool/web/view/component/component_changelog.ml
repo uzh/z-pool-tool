@@ -5,16 +5,18 @@ let rec format_changes changes =
   let open Changes in
   let format_change (key, value) =
     let changes = format_changes value in
-    span [ txt key; txt " : "; changes ]
+    div
+      ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+      [ div [ txt key; txt " : " ]; changes ]
   in
   let rec format_assoc_list acc = function
     | [] -> acc
     | hd :: tl ->
-      let acc = acc @ [ format_change hd; br () ] in
+      let acc = acc @ [ format_change hd ] in
       format_assoc_list acc tl
   in
   match changes with
-  | Assoc assocs -> format_assoc_list [] assocs |> span
+  | Assoc assocs -> format_assoc_list [] assocs |> div
   | Change (before, after) ->
     let format json = span [ Yojson.Safe.pretty_to_string json |> txt ] in
     span [ format before; txt " => "; format after ]
