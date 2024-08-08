@@ -19,14 +19,24 @@ end
 let t =
   let open Database.Caqti_encoders in
   let encode m : ('a Data.t, string) result =
-    Ok Data.[ m.id; m.model; m.user_uuid; m.changes; m.created_at ]
+    Ok
+      Data.
+        [ m.id; m.model; m.entity_uuid; m.user_uuid; m.changes; m.created_at ]
   in
-  let decode (id, (model, (user_uuid, (changes, (created_at, ()))))) =
-    Ok { id; model; user_uuid; changes; created_at }
+  let decode
+    (id, (model, (entity_uuid, (user_uuid, (changes, (created_at, ()))))))
+    =
+    Ok { id; model; entity_uuid; user_uuid; changes; created_at }
   in
   custom
     ~encode
     ~decode
     Schema.
-      [ RepoId.t; Field.t; RepoId.t; Changes.t; Pool_common.Repo.CreatedAt.t ]
+      [ RepoId.t
+      ; Field.t
+      ; RepoId.t
+      ; RepoId.t
+      ; Changes.t
+      ; Pool_common.Repo.CreatedAt.t
+      ]
 ;;

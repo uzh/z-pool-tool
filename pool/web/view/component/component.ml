@@ -1,6 +1,7 @@
 module Button = Button
 module ButtonGroup = Component_button_group
 module Calendar = Component_calendar
+module Changelog = Component_changelog
 module Collapsible = Component_collapsible
 module Contacts = Component_contacts
 module CustomField = Component_custom_field

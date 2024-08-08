@@ -53,7 +53,13 @@ let handle_event pool : event -> unit Lwt.t =
       }
     in
     let%lwt () =
-      Version_history.create pool ~user_uuid ~before:location ~after:updated ()
+      Version_history.create
+        pool
+        ~entity_uuid:(Id.to_common location.id)
+        ~user_uuid
+        ~before:location
+        ~after:updated
+        ()
     in
     Repo.update pool updated
   | FileDeleted id ->

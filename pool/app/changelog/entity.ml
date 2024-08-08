@@ -6,6 +6,7 @@ type t =
   { id : Id.t
   ; changes : Yojson.Safe.t
   ; model : Pool_message.Field.t
+  ; entity_uuid : Pool_common.Id.t
   ; user_uuid : Pool_common.Id.t
   ; created_at : Pool_common.CreatedAt.t
   }
@@ -25,11 +26,16 @@ module type TSig = sig
   val create
     :  Database.Label.t
     -> ?id:Id.t
+    -> entity_uuid:Pool_common.Id.t
     -> user_uuid:Pool_common.Id.t
     -> before:record
     -> after:record
     -> unit
     -> unit Lwt.t
 
-  val find_all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+  val all_by_entity
+    :  ?query:Query.t
+    -> Database.Label.t
+    -> Pool_common.Id.t
+    -> (t list * Query.t) Lwt.t
 end

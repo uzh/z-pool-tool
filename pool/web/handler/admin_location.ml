@@ -186,6 +186,9 @@ let detail edit req =
     @@
     let id = id req Field.Location Id.of_string in
     let* location = find database_label id in
+    let%lwt changelogs, _ =
+      Changelog.all_by_entity database_label (Id.to_common location.id)
+    in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let states = Status.all in
     Page.Admin.Location.(
@@ -193,7 +196,8 @@ let detail edit req =
       | false ->
         let%lwt statistics = Statistics.create database_label id in
         let%lwt statistics_year_range = Statistics.year_select database_label in
-        detail location statistics statistics_year_range context |> Lwt.return
+        detail location statistics changelogs statistics_year_range context
+        |> Lwt.return
       | true ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
         form ~location ~states context tenant_languages flash_fetcher

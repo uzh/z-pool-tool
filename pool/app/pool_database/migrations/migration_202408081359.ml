@@ -6,13 +6,13 @@ let create_changelog_table =
         `id` BIGINT UNSIGNED AUTO_INCREMENT,
         `uuid` BINARY(16) NOT NULL,
         `model` VARCHAR(128) NOT NULL,
+        `entity_uuid` BINARY(16) NOT NULL,
         `user_uuid` BINARY(16) NOT NULL,
         `changes` TEXT NOT NULL DEFAULT '',
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
-      CONSTRAINT unique_uuid UNIQUE KEY (uuid),
-      FOREIGN KEY (user_uuid) REFERENCES user_users (`uuid`)
+      CONSTRAINT unique_uuid UNIQUE KEY (uuid)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     |sql}
 ;;

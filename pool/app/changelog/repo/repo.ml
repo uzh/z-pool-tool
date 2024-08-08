@@ -4,6 +4,7 @@ module Dynparam = Database.Dynparam
 let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_change_log.uuid"
   ; "pool_change_log.model"
+  ; Entity.Id.sql_select_fragment ~field:"pool_change_log.entity_uuid"
   ; Entity.Id.sql_select_fragment ~field:"pool_change_log.user_uuid"
   ; "pool_change_log.changes"
   ; "pool_change_log.created_at"
@@ -18,17 +19,17 @@ let find_request_sql ?(count = false) =
   Format.asprintf {sql|SELECT %s FROM pool_change_log %s |sql} columns
 ;;
 
-let find_by_model ?query pool field =
+let find_by_model ?query pool field entity_uuid =
+  let open Repo_entity in
   let where =
-    ( "pool_change_log.model = ?"
-    , Dynparam.(empty |> add Repo_entity.Field.t field) )
+    ( {sql| 
+        pool_change_log.model = $1 
+          AND 
+        pool_change_log.entity_uuid = UNHEX(REPLACE($2, '-', ''))
+      |sql}
+    , Dynparam.(empty |> add Field.t field |> add RepoId.t entity_uuid) )
   in
-  Query.collect_and_count
-    pool
-    query
-    ~select:find_request_sql
-    ~where
-    Repo_entity.t
+  Query.collect_and_count pool query ~select:find_request_sql ~where t
 ;;
 
 let insert_request =
@@ -36,6 +37,7 @@ let insert_request =
     INSERT INTO pool_change_log (
       uuid,
       model,
+      entity_uuid,
       user_uuid,
       changes,
       created_at
@@ -43,8 +45,9 @@ let insert_request =
       UNHEX(REPLACE($1, '-', '')),
       $2,
       UNHEX(REPLACE($3, '-', '')),
-      $4,
-      $5
+      UNHEX(REPLACE($4, '-', '')),
+      $5,
+      $6
     )
   |sql}
   |> Repo_entity.t ->. Caqti_type.unit

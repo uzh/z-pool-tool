@@ -164,6 +164,8 @@ end
 
 module Id : sig
   include Pool_model.Base.IdSig
+
+  val to_common : t -> Pool_common.Id.t
 end
 
 module Name : sig

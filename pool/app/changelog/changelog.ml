@@ -5,7 +5,16 @@ module T (R : RecordSig) = struct
 
   let model = R.model
 
-  let make ?(id = Id.create ()) ~user_uuid (before : R.t) (after : R.t) =
+  let make
+    ?(id = Id.create ())
+    ~entity_uuid
+    ~user_uuid
+    (before : R.t)
+    (after : R.t)
+    =
+    (*** the entity_uuid could also be part of the Reord module, as a function.
+      This would probably require us to create a Record module for each model,
+      but provide more flexibility *)
     let rec compare json_before json_after =
       let eq = CCString.equal in
       match json_before, json_after with
@@ -38,14 +47,18 @@ module T (R : RecordSig) = struct
     { id
     ; changes
     ; model
+    ; entity_uuid
     ; user_uuid
     ; created_at = Pool_common.CreatedAt.create_now ()
     }
   ;;
 
-  let create pool ?(id = Id.create ()) ~user_uuid ~before ~after () =
-    make ~id ~user_uuid before after |> Repo.insert pool
+  let create pool ?(id = Id.create ()) ~entity_uuid ~user_uuid ~before ~after ()
+    =
+    make ~id ~entity_uuid ~user_uuid before after |> Repo.insert pool
   ;;
 
-  let find_all ?query pool = Repo.find_by_model ?query pool model
+  let all_by_entity ?query pool entity_uuid =
+    Repo.find_by_model ?query pool model entity_uuid
+  ;;
 end
