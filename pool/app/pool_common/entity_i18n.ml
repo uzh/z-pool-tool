@@ -36,6 +36,7 @@ type t =
   | FilterContactsDescription
   | FilterNrOfContacts
   | FilterNrOfSentInvitations
+  | FilterNrOfUnsuitableAssignments
   | FollowUpSessionFor
   | Help
   | ImportConfirmationNote
@@ -59,6 +60,8 @@ type t =
   | MailingDistributionDescription
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
+  | MatchesFilterChangeReasonManually
+  | MatchesFilterChangeReasonWorker
   | MessageHistory of string
   | NoEntries of Pool_message.Field.t
   | NoInvitationsSent

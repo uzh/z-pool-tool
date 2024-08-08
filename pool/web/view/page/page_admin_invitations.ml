@@ -89,8 +89,7 @@ module Partials = struct
     query_experiments
     query_tags
     filtered_contacts
-    matching_filter_count
-    invitation_count
+    statistics
     =
     let open Pool_common in
     let filtered_contacts_form =
@@ -155,7 +154,7 @@ module Partials = struct
         |> Component.Collapsible.create_note language
       ; Component.Filter.(
           filter_form
-            ~counts:(matching_filter_count, invitation_count)
+            ~statistics
             csrf
             language
             (Http_utils.Filter.Experiment experiment)

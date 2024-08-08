@@ -532,10 +532,7 @@ let update_filter _ () =
     { (Model.create_experiment ()) with Experiment.filter = Some filter }
   in
   let events =
-    Cqrs_command.Experiment_command.UpdateFilter.handle
-      experiment
-      ([], [])
-      filter
+    Cqrs_command.Experiment_command.UpdateFilter.handle experiment filter
   in
   let expected =
     Ok
@@ -547,7 +544,6 @@ let update_filter _ () =
           }
         |> Pool_event.experiment
       ; Filter.Updated filter |> Pool_event.filter
-      ; Email.BulkSent [] |> Pool_event.email
       ]
   in
   check_result expected events |> Lwt.return
