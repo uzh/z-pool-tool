@@ -769,7 +769,7 @@ let control_to_string =
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | Show -> "anzeigen"
-  | SignUp -> format_submit "anmelden" None
+  | SignUp -> format_submit "registrieren" None
   | Start field -> format_submit "starten" field
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
