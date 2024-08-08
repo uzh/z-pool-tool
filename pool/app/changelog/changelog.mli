@@ -2,9 +2,23 @@ module Id : sig
   include Pool_model.Base.IdSig
 end
 
+module Change : sig
+  type t = Yojson.Safe.t * Yojson.Safe.t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+end
+
+module Changes : sig
+  type t =
+    | Assoc of (string * t) list
+    | Change of Change.t
+end
+
 type t =
   { id : Id.t
-  ; changes : Yojson.Safe.t
+  ; changes : Changes.t
   ; model : Pool_message.Field.t
   ; entity_uuid : Pool_common.Id.t
   ; user_uuid : Pool_common.Id.t

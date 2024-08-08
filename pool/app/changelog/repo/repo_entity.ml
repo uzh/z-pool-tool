@@ -5,9 +5,10 @@ module RepoId = Pool_common.Repo.Id
 let make_type = Pool_common.Repo.make_caqti_type
 
 module Changes = struct
-  open Yojson.Safe
-
-  let t = make_type Caqti_type.string (from_string %> CCResult.return) to_string
+  let t =
+    let open Changes in
+    make_type Caqti_type.string (of_string %> CCResult.return) to_string
+  ;;
 end
 
 module Field = struct

@@ -5,19 +5,11 @@ module T (R : RecordSig) = struct
 
   let model = R.model
 
-  let make
-    ?(id = Id.create ())
-    ~entity_uuid
-    ~user_uuid
-    (before : R.t)
-    (after : R.t)
-    =
-    (*** the entity_uuid could also be part of the Reord module, as a function.
-      This would probably require us to create a Record module for each model,
-      but provide more flexibility *)
+  let make_changes before after : Changes.t option =
+    let open Changes in
     let rec compare json_before json_after =
       let eq = CCString.equal in
-      match json_before, json_after with
+      match (json_before : Yojson.Safe.t), (json_after : Yojson.Safe.t) with
       | `Assoc l1, `Assoc l2 ->
         let keys =
           let get = CCList.map fst in
@@ -34,28 +26,49 @@ module T (R : RecordSig) = struct
           |> CCOption.map (fun value -> key, value))
         |> (function
          | [] -> None
-         | assoc -> Some (`Assoc assoc))
+         | assoc -> Some (Assoc assoc))
+      (* Catching equal variants *)
+      | `Tuple [ `String key1; val1 ], `Tuple [ `String key2; val2 ]
+      | `List [ `String key1; val1 ], `List [ `String key2; val2 ] ->
+        if eq key1 key2
+        then compare val1 val2
+        else Some (Change (json_before, json_after))
       | _ ->
         (match Yojson.Safe.equal json_before json_after with
          | true -> None
-         | false -> Some (`Tuple [ json_before; json_after ]))
+         | false ->
+           (* This is triggered on the highest level, nested changes are not
+              considered *)
+           Some (Change (json_before, json_after)))
     in
-    let changes =
-      compare (R.yojson_of_t before) (R.yojson_of_t after)
-      |> CCOption.value ~default:`Null
-    in
-    { id
-    ; changes
-    ; model
-    ; entity_uuid
-    ; user_uuid
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    }
+    compare (R.yojson_of_t before) (R.yojson_of_t after)
+  ;;
+
+  let make
+    ?(id = Id.create ())
+    ~entity_uuid
+    ~user_uuid
+    (before : R.t)
+    (after : R.t)
+    =
+    (*** the entity_uuid could also be part of the Reord module, as a function.
+      This would probably require us to create a Record module for each model,
+      but provide more flexibility *)
+    make_changes before after
+    |> CCOption.map (fun changes ->
+      { id
+      ; changes
+      ; model
+      ; entity_uuid
+      ; user_uuid
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      })
   ;;
 
   let create pool ?(id = Id.create ()) ~entity_uuid ~user_uuid ~before ~after ()
     =
-    make ~id ~entity_uuid ~user_uuid before after |> Repo.insert pool
+    make ~id ~entity_uuid ~user_uuid before after
+    |> CCOption.map_or ~default:Lwt.return_unit (Repo.insert pool)
   ;;
 
   let all_by_entity ?query pool entity_uuid =
