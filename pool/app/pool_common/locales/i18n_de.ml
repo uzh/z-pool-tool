@@ -21,6 +21,12 @@ let to_string = function
     "In der folgenden Liste können Sie bestimmen, in welcher Tabelle \
      zusätzlich zu den Kontaktangaben auch die individuellen Angaben angezeigt \
      werden sollen."
+  | CustomFieldsSettingsCloseScreen ->
+    "Diese Ansicht wird beim beenden einer Session angezeigt. User, mit der \
+     Berechtigung, eine Session zu beenden, können diese Angaben sehen."
+  | CustomFieldsSettingsDetailScreen ->
+    "Diese Angaben werden auf der Detailseite aller Sessions angezeigt. User, \
+     mit Leseberechtigung einer Session, können diese Angaben sehen."
   | DashboardProfileCompletionText ->
     "Ihr Profil ist unvollständig. Um zu mehr Experimenten eingeladen zu \
      werden, vervollständigen Sie Ihr Profil."

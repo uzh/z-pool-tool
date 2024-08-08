@@ -27,9 +27,10 @@ let show { Pool_context.csrf; language; _ } contact_fields =
       [ name_value language field |> txt; checkbox getter field ])
     |> Table.horizontal_table `Striped
   in
-  let build_form setting_url title getter =
+  let build_form setting_url title hint getter =
     div
       [ h2 [ txt (Utils.text_to_string language title) ]
+      ; p [ txt Utils.(text_to_string language hint) ]
       ; form
           ~a:
             [ a_method `Post
@@ -58,10 +59,12 @@ let show { Pool_context.csrf; language; _ } contact_fields =
         [ build_form
             "session-close"
             I18n.SessionCloseScreen
+            I18n.CustomFieldsSettingsCloseScreen
             show_on_session_close_page
         ; build_form
             "session-detail"
             I18n.SessionDetailScreen
+            I18n.CustomFieldsSettingsDetailScreen
             show_on_session_detail_page
         ]
     ]
