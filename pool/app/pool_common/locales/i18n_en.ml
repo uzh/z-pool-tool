@@ -699,9 +699,9 @@ let confirmable_to_string confirmable =
          "The contact will no longer be invited for experiments and can no \
           longer register for them." )
    | PublishCustomField ->
-     ( "field an all associated options"
+     ( "field and all associated options"
      , "publish"
-     , Some "You will not be able to delete it field anymore." )
+     , Some "You will not be able to delete the field anymore." )
    | PublishCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
    | ReactivateAccount -> "account", "reactivate", None
