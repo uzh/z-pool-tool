@@ -46,4 +46,6 @@ module T (R : RecordSig) = struct
   let create pool ?(id = Id.create ()) ~user_uuid ~before ~after () =
     make ~id ~user_uuid before after |> Repo.insert pool
   ;;
+
+  let find_all ?query pool = Repo.find_by_model ?query pool model
 end

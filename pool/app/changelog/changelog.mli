@@ -30,6 +30,8 @@ module type TSig = sig
     -> after:record
     -> unit
     -> unit Lwt.t
+
+  val find_all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 end
 
 module T : functor (R : RecordSig) -> sig
@@ -45,4 +47,6 @@ module T : functor (R : RecordSig) -> sig
     -> after:record
     -> unit
     -> unit Lwt.t
+
+  val find_all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 end
