@@ -4,6 +4,8 @@ module Message = Pool_message
 module Field = Pool_message.Field
 module Address = Entity_address
 
+let model = Pool_message.Field.Location
+
 module Id = struct
   include Pool_common.Id
 end

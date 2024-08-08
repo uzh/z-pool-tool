@@ -1,6 +1,6 @@
 (library
  (name changelog)
- (libraries pool_common ptime sihl utils)
+ (libraries pool_common pool_message ptime sihl utils)
  (preprocess
   (pps
    lwt_ppx

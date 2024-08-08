@@ -1,3 +1,5 @@
+let model = Pool_message.Field.OrganisationalUnit
+
 module Id = Pool_common.Id
 
 module Name = struct

@@ -250,12 +250,12 @@ val show_update : update -> string
 type event =
   | Created of t
   | FileUploaded of Mapping.Write.file
-  | Updated of t * update
+  | Updated of t * update * Pool_common.Id.t
   | FileDeleted of Mapping.Id.t
 
 val created : t -> event
 val fileuploaded : Mapping.Write.file -> event
-val updated : t -> update -> event
+val updated : t -> update -> Pool_common.Id.t -> event
 val filedeleted : Mapping.Id.t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

@@ -239,7 +239,7 @@ let statistics req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let id = id req Field.Location Pool_location.Id.of_string in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
@@ -259,12 +259,12 @@ let update req =
        in
        let tags = Pool_context.Logger.Tags.req req in
        let events =
+         Lwt_result.lift
+         @@
          let open CCResult.Infix in
          let open Cqrs_command.Location_command.Update in
-         urlencoded
-         |> decode description
-         >>= handle ~tags location
-         |> Lwt_result.lift
+         let* admin = Pool_context.get_admin_user user in
+         urlencoded |> decode description >>= handle ~tags admin location
        in
        let handle events =
          let%lwt () =

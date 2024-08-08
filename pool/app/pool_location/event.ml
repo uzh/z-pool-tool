@@ -12,7 +12,7 @@ type update =
 type event =
   | Created of t
   | FileUploaded of Mapping.Write.file
-  | Updated of t * update
+  | Updated of t * update * Pool_common.Id.t
   | FileDeleted of Mapping.Id.t
 [@@deriving eq, show, variants]
 
@@ -42,7 +42,7 @@ let handle_event pool : event -> unit Lwt.t =
       file
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
-  | Updated (location, m) ->
+  | Updated (location, m, user_id) ->
     let updated =
       { location with
         name = m.name
@@ -52,8 +52,8 @@ let handle_event pool : event -> unit Lwt.t =
       ; status = m.status
       }
     in
-    let changelog = Version_history.create location updated in
-    let json = Version_history.to_json changelog in
+    let changelog = Version_history.create ~user_id location updated in
+    let json = changelog.Version_history.changes in
     let () = Logs.info (fun m -> m "%s" "===================") in
     let () = Logs.info (fun m -> m "%s" (Yojson.Safe.to_string json)) in
     let () = Logs.info (fun m -> m "%s" "===================") in
