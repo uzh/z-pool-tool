@@ -1,3 +1,15 @@
+module Id = struct
+  include Pool_common.Id
+end
+
+type t =
+  { id : Id.t
+  ; changes : Yojson.Safe.t
+  ; model : Pool_message.Field.t
+  ; user_uuid : Pool_common.Id.t
+  ; created_at : Pool_common.CreatedAt.t
+  }
+
 module type RecordSig = sig
   type t
 
@@ -6,17 +18,11 @@ module type RecordSig = sig
 end
 
 module T (R : RecordSig) = struct
-  type t =
-    { changes : Yojson.Safe.t
-    ; model : Pool_message.Field.t
-    ; user_id : Pool_common.Id.t
-    }
-
   type record = R.t
 
   let model = R.model
 
-  let create ~user_id (before : R.t) (after : R.t) =
+  let create ?(id = Id.create ()) ~user_uuid (before : R.t) (after : R.t) =
     let rec compare json_before json_after =
       let eq = CCString.equal in
       match json_before, json_after with
@@ -46,14 +52,18 @@ module T (R : RecordSig) = struct
       compare (R.yojson_of_t before) (R.yojson_of_t after)
       |> CCOption.value ~default:`Null
     in
-    { changes; model; user_id }
+    { id
+    ; changes
+    ; model
+    ; user_uuid
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    }
   ;;
 end
 
 module type TSig = sig
-  type t
   type record
 
   val model : Pool_message.Field.t
-  val create : user_id:Pool_common.Id.t -> record -> record -> t
+  val create : ?id:Id.t -> user_uuid:Pool_common.Id.t -> record -> record -> t
 end
