@@ -164,6 +164,8 @@ end
 
 module Id : sig
   include Pool_model.Base.IdSig
+
+  val to_common : t -> Pool_common.Id.t
 end
 
 module Name : sig
@@ -250,12 +252,12 @@ val show_update : update -> string
 type event =
   | Created of t
   | FileUploaded of Mapping.Write.file
-  | Updated of t * update
+  | Updated of t * update * Pool_common.Id.t
   | FileDeleted of Mapping.Id.t
 
 val created : t -> event
 val fileuploaded : Mapping.Write.file -> event
-val updated : t -> update -> event
+val updated : t -> update -> Pool_common.Id.t -> event
 val filedeleted : Mapping.Id.t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -398,3 +400,7 @@ val default_query : Query.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+
+module Changelog : sig
+  include Changelog.TSig with type record = t
+end

@@ -108,6 +108,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Admin.t
     -> Pool_location.t
     -> update
     -> (Pool_event.t list, 'a) result
@@ -141,9 +142,10 @@ end = struct
         command_base)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) location update =
+  let handle ?(tags = Logs.Tag.empty) admin location update =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    Ok [ Updated (location, update) |> Pool_event.pool_location ]
+    let user_id = Admin.id admin |> Admin.Id.to_common in
+    Ok [ Updated (location, update, user_id) |> Pool_event.pool_location ]
   ;;
 
   let decode description data =
