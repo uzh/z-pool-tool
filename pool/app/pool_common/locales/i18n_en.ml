@@ -21,6 +21,12 @@ let to_string = function
   | CustomFieldsSettings ->
     "In the following list, you can determine in which table the custom data \
      should be displayed in addition to the contact details."
+  | CustomFieldsSettingsCloseScreen ->
+    "This view is displayed when a session is closed. Users with the \
+     authorization to end a session can see this information."
+  | CustomFieldsSettingsDetailScreen ->
+    "This information is displayed on the details page of all sessions. Users \
+     with read permission for a session can see this information."
   | DashboardProfileCompletionText ->
     "Your profile is incomplete. To be invited to more experiments, fulfill \
      your profile."
@@ -699,9 +705,9 @@ let confirmable_to_string confirmable =
          "The contact will no longer be invited for experiments and can no \
           longer register for them." )
    | PublishCustomField ->
-     ( "field an all associated options"
+     ( "field and all associated options"
      , "publish"
-     , Some "You will not be able to delete it field anymore." )
+     , Some "You will not be able to delete the field anymore." )
    | PublishCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
    | ReactivateAccount -> "account", "reactivate", None

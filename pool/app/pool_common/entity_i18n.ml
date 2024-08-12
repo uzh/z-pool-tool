@@ -10,6 +10,8 @@ type t =
   | Closed
   | ContactWaitingListEmpty
   | CustomFieldsSettings
+  | CustomFieldsSettingsCloseScreen
+  | CustomFieldsSettingsDetailScreen
   | DashboardProfileCompletionText
   | DashboardProfileCompletionTitle
   | DashboardTitle
