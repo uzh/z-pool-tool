@@ -19,15 +19,14 @@ end
 
 let t =
   let open Database.Caqti_encoders in
-  let encode m : ('a Data.t, string) result =
-    Ok
-      Data.
-        [ m.id; m.model; m.entity_uuid; m.user_uuid; m.changes; m.created_at ]
-  in
+  let encode _ = failwith "Read only model" in
   let decode
-    (id, (model, (entity_uuid, (user_uuid, (changes, (created_at, ()))))))
+    ( id
+    , ( model
+      , (entity_uuid, (user_uuid, (user_email, (changes, (created_at, ()))))) )
+    )
     =
-    Ok { id; model; entity_uuid; user_uuid; changes; created_at }
+    Ok { id; model; entity_uuid; user_uuid; user_email; changes; created_at }
   in
   custom
     ~encode
@@ -37,7 +36,38 @@ let t =
       ; Field.t
       ; RepoId.t
       ; RepoId.t
+      ; Pool_user.Repo.EmailAddress.t
       ; Changes.t
       ; Pool_common.Repo.CreatedAt.t
       ]
 ;;
+
+module Write = struct
+  let t =
+    let open Database.Caqti_encoders in
+    let encode m : ('a Data.t, string) result =
+      let open Write in
+      Ok
+        Data.
+          [ m.Write.id
+          ; m.model
+          ; m.entity_uuid
+          ; m.user_uuid
+          ; m.changes
+          ; m.created_at
+          ]
+    in
+    let decode _ = failwith "Write only model" in
+    custom
+      ~encode
+      ~decode
+      Schema.
+        [ RepoId.t
+        ; Field.t
+        ; RepoId.t
+        ; RepoId.t
+        ; Changes.t
+        ; Pool_common.Repo.CreatedAt.t
+        ]
+  ;;
+end

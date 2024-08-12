@@ -72,13 +72,14 @@ module T (R : RecordSig) = struct
       but provide more flexibility *)
     make_changes before after
     |> CCOption.map (fun changes ->
-      { id
-      ; changes
-      ; model
-      ; entity_uuid
-      ; user_uuid
-      ; created_at = Pool_common.CreatedAt.create_now ()
-      })
+      Write.
+        { id
+        ; changes
+        ; model
+        ; entity_uuid
+        ; user_uuid
+        ; created_at = Pool_common.CreatedAt.create_now ()
+        })
   ;;
 
   let create pool ?(id = Id.create ()) ~entity_uuid ~user_uuid ~before ~after ()

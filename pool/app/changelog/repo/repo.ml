@@ -6,17 +6,21 @@ let sql_select_columns =
   ; "pool_change_log.model"
   ; Entity.Id.sql_select_fragment ~field:"pool_change_log.entity_uuid"
   ; Entity.Id.sql_select_fragment ~field:"pool_change_log.user_uuid"
+  ; "user_users.email"
   ; "pool_change_log.changes"
   ; "pool_change_log.created_at"
-  ; "pool_change_log.updated_at"
   ]
+;;
+
+let joins =
+  {sql| INNER JOIN user_users ON pool_change_log.user_uuid = user_users.uuid |sql}
 ;;
 
 let find_request_sql ?(count = false) =
   let columns =
     if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
   in
-  Format.asprintf {sql|SELECT %s FROM pool_change_log %s |sql} columns
+  Format.asprintf {sql|SELECT %s FROM pool_change_log %s %s |sql} columns joins
 ;;
 
 let find_by_model ?query pool field entity_uuid =
@@ -50,7 +54,7 @@ let insert_request =
       $6
     )
   |sql}
-  |> Repo_entity.t ->. Caqti_type.unit
+  |> Repo_entity.Write.t ->. Caqti_type.unit
 ;;
 
 let insert pool = Database.exec pool insert_request

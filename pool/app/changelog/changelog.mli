@@ -22,8 +22,20 @@ type t =
   ; model : Pool_message.Field.t
   ; entity_uuid : Pool_common.Id.t
   ; user_uuid : Pool_common.Id.t
+  ; user_email : Pool_user.EmailAddress.t
   ; created_at : Pool_common.CreatedAt.t
   }
+
+module Write : sig
+  type t =
+    { id : Id.t
+    ; changes : Changes.t
+    ; model : Pool_message.Field.t
+    ; entity_uuid : Pool_common.Id.t
+    ; user_uuid : Pool_common.Id.t
+    ; created_at : Pool_common.CreatedAt.t
+    }
+end
 
 module type RecordSig = sig
   type t

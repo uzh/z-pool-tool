@@ -36,8 +36,15 @@ let list Pool_context.{ language; _ } url (changelogs, query) =
       ]
   in
   let th_class = [ "w-3"; "w-7"; "w-2" ] in
-  let row ({ user_uuid; changes; created_at; _ } : t) =
-    [ Id.value user_uuid |> txt
+  let row ({ user_uuid; user_email; changes; created_at; _ } : t) =
+    [ a
+        ~a:
+          [ a_href
+              (Http_utils.Url.Admin.admin_path
+                 ~id:(Admin.Id.of_common user_uuid)
+                 ())
+          ]
+        [ txt (Pool_user.EmailAddress.value user_email) ]
     ; changes |> format_changes
     ; txt (created_at |> CreatedAt.value |> Pool_model.Time.formatted_date_time)
     ]
