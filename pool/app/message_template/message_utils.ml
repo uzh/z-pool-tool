@@ -152,7 +152,9 @@ let combine_html ?optout_link language layout html_title =
           ]
       ]
   in
-  let logo_style = [ "display: block" ] |> CCString.concat ";" in
+  let logo_style =
+    [ "display: block"; "width: 300px"; "height: auto" ] |> CCString.concat ";"
+  in
   let email_body =
     body
       ~a:[ a_style "margin:0; padding:0;" ]
@@ -165,12 +167,7 @@ let combine_html ?optout_link language layout html_title =
                   [ img
                       ~src:"{logoSrc}"
                       ~alt:"{logoAlt}"
-                      ~a:
-                        [ a_style logo_style
-                        ; a_width 300
-                        ; a_height 200
-                        ; a_title "{logoAlt}"
-                        ]
+                      ~a:[ a_style logo_style; a_title "{logoAlt}" ]
                       ()
                   ]
               ]
