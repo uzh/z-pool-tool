@@ -499,7 +499,7 @@ let rec error_to_string =
   | DefaultMustNotBeUnchecked -> "'Standard' kann nicht deaktiviert werden."
   | DeleteContactUpcomingSessions ->
     "Kontakt kann nicht gelöscht werden. Dieser Kontakt ist an kommenden \
-     Sessions angemeldet."
+     Sessions angemeldet. Diese Anmeldungen müssen zuerst gelöscht werden."
   | DirectRegistrationIsDisabled ->
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->

@@ -481,7 +481,8 @@ let rec error_to_string =
   | DecodeAction -> "Cannot decode action."
   | DefaultMustNotBeUnchecked -> "'Default' must not be unchecked."
   | DeleteContactUpcomingSessions ->
-    "Contact cannot be deleted. This contact is signed up to upcoming sessions."
+    "Contact cannot be deleted. This contact is signed up to upcoming \
+     sessions. These assignments have to be deleted first."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingAdmin -> "Please provide admin email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
