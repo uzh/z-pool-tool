@@ -51,6 +51,11 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     database
     =
     let tags = database |> label |> LogTag.create in
+    let max_idle_age =
+      Mtime.Span.of_float_ns (5. *. 60.)
+      |> CCOption.get_exn_or "Invalid max_idle_age provided"
+      |> CCOption.return
+    in
     let connect () =
       database
       |> url
@@ -59,7 +64,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
            ~pool_config:
              (Caqti_pool_config.create
                 ~max_size:pool_size
-                ~max_idle_age:(Some Mtime.Span.hour)
+                ~max_idle_age
                 ~max_use_count:(Some 1)
                 ())
     in
