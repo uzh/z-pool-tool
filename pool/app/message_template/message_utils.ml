@@ -152,14 +152,7 @@ let combine_html ?optout_link language layout html_title =
           ]
       ]
   in
-  let logo_style =
-    [ "display: block"
-    ; "width: 300px"
-    ; "object-fit: contain"
-    ; "max-width: 100%"
-    ]
-    |> CCString.concat ";"
-  in
+  let logo_style = [ "display: block" ] |> CCString.concat ";" in
   let email_body =
     body
       ~a:[ a_style "margin:0; padding:0;" ]
