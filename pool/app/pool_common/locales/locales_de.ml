@@ -340,6 +340,7 @@ let success_to_string =
   | Closed field ->
     field_message "" (field_to_string field) "wurde erfolgreich geschlossen."
   | ContactPromoted -> "Der Kontakt wurde erfolgreich zum Admin befördert."
+  | ContactMarkedAsDeleted -> "Der Kontakt wurde erfolgreich gelöscht."
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | Deleted field ->

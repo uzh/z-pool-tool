@@ -315,6 +315,9 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     Format.asprintf
       "If left blank, the default lead time of %s is applied."
       (lead_time |> Pool_model.Time.formatted_timespan)
+  | DeleteContact ->
+    "The user is marked as deleted and can no longer log in. This action \
+     cannot be undone."
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
      directly enroll in the experiment."
@@ -666,6 +669,7 @@ let confirmable_to_string confirmable =
      , Some "Assignments to follow-up sessions will be canceled as well." )
    | CancelSession -> "session", "cancel", None
    | CloseSession -> "session", "close", Some "This action cannot be undone."
+   | DeleteContact -> "contact", "delete", Some "This action cannot be undone."
    | DeleteCustomField -> "field", "delete", None
    | DeleteCustomFieldOption -> "option", "delete", None
    | DeleteEmailSuffix -> "email suffix", "delete", None

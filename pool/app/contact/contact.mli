@@ -168,7 +168,7 @@ type event =
   | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
-  | Disabled of t
+  | MarkedAsDeleted of t
   | UnverifiedDeleted of t
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
