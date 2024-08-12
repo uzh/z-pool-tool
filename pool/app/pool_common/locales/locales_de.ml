@@ -497,6 +497,9 @@ let rec error_to_string =
       "konnte nicht entschlüsselt werden."
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | DefaultMustNotBeUnchecked -> "'Standard' kann nicht deaktiviert werden."
+  | DeleteContactUpcomingSessions ->
+    "Kontakt kann nicht gelöscht werden. Dieser Kontakt ist an kommenden \
+     Sessions angemeldet."
   | DirectRegistrationIsDisabled ->
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->

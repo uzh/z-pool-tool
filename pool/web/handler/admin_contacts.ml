@@ -301,6 +301,12 @@ let mark_as_deleted req =
     Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let* contact = Contact.find database_label id in
+    let* () =
+      Session.find_upcoming_public_by_contact database_label id
+      >== function
+      | [] -> Ok ()
+      | _ -> Error Pool_message.Error.DeleteContactUpcomingSessions
+    in
     let open Cqrs_command.Contact_command in
     MarkAsDeleted.handle ~tags contact
     |> Lwt_result.lift
