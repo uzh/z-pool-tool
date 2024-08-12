@@ -34,6 +34,7 @@ let rec field_to_string =
   | CanceledAt -> "Abgesagt am"
   | CallbackUrl -> "Callback-URL"
   | CellPhone -> "Mobiltelefon"
+  | Changes -> "Änderungen"
   | Chronological -> "chronologisch"
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"

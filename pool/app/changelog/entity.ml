@@ -2,14 +2,6 @@ open Ppx_yojson_conv_lib.Yojson_conv
 
 exception Exception of string
 
-(* module Json = struct include Yojson.Safe
-
-   let yojson_of_t change = `Tuple let t_of_yojson = CCFun.const let to_yojson =
-   CCFun.const end *)
-(* module Yojson = struct include Yojson.Safe
-
-   let yojson_of_t = CCFun.const let t_of_yojson = CCFun.const end *)
-
 module Id = struct
   include Pool_common.Id
 end
@@ -58,6 +50,10 @@ module type TSig = sig
   type record
 
   val model : Pool_message.Field.t
+  val default_query : Query.t
+  val filterable_by : Query.Filter.human option
+  val searchable_by : Query.Column.t list
+  val sortable_by : Query.Column.t list
 
   val create
     :  Database.Label.t

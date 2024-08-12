@@ -26,6 +26,7 @@ type t =
   | CallbackUrl
   | CanceledAt
   | CellPhone
+  | Changes
   | Chronological
   | City
   | ClosedAt

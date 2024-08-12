@@ -5,6 +5,22 @@ module T (R : RecordSig) = struct
 
   let model = R.model
 
+  let column_created_at =
+    (Pool_message.Field.CreatedAt, "pool_change_log.created_at")
+    |> Query.Column.create
+  ;;
+
+  let searchable_by = []
+  let sortable_by = []
+  let filterable_by = None
+
+  let default_sort =
+    let open Query in
+    Sort.{ column = column_created_at; order = SortOrder.Descending }
+  ;;
+
+  let default_query = Query.create ~sort:default_sort ()
+
   let make_changes before after : Changes.t option =
     let open Changes in
     let rec compare json_before json_after =

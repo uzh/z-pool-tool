@@ -278,6 +278,7 @@ module Admin = struct
       let specific =
         [ get "" ~middlewares:[ Access.index ] show
         ; get "/statistics" ~middlewares:[ Access.index ] statistics
+        ; get "/changelog" ~middlewares:[ Access.index ] changelog
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
         ; choose ~scope:"/files" files

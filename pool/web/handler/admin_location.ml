@@ -186,8 +186,10 @@ let detail edit req =
     @@
     let id = id req Field.Location Id.of_string in
     let* location = find database_label id in
-    let%lwt changelogs, _ =
-      Changelog.all_by_entity database_label (Id.to_common location.id)
+    let%lwt changelogs =
+      let open Changelog in
+      let query = Query.from_request ~default:default_query req in
+      all_by_entity ~query database_label (Id.to_common location.id)
     in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let states = Status.all in
@@ -207,6 +209,26 @@ let detail edit req =
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let changelog req =
+  let open Pool_location in
+  HttpUtils.Htmx.handler
+    ~active_navigation:"/admin/locations"
+    ~error_path:"/admin/locations"
+    ~create_layout
+    ~query:(module Changelog)
+    req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let id = id req Field.Location Id.of_string in
+  let%lwt changelogs =
+    Changelog.all_by_entity ~query database_label (Id.to_common id)
+  in
+  let url =
+    HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id ()
+    |> Uri.of_string
+  in
+  Component.Changelog.list context url changelogs |> Lwt_result.return
 ;;
 
 let show = detail false

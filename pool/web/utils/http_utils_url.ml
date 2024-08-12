@@ -25,6 +25,12 @@ module Admin = struct
     |> append_opt Session.(map Id.value id)
     |> append_opt suffix
   ;;
+
+  let location_path ?suffix ?id () =
+    "/admin/locations/"
+    |> append_opt Pool_location.(map Id.value id)
+    |> append_opt suffix
+  ;;
 end
 
 module Contact = struct
