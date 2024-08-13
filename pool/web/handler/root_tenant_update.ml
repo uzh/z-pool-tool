@@ -56,6 +56,7 @@ let update req command success_message =
           CCOption.
             [ tenant_model.Write.styles >|= Styles.Write.value, Styles
             ; tenant_model.Write.icon >|= Icon.Write.value, Icon
+            ; tenant_model.Write.email_logo >|= EmailLogo.Write.value, EmailLogo
             ]
       in
       let* (_ : string list) = File.update_files Database.root updates req in

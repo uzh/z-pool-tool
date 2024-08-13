@@ -50,16 +50,18 @@ let tenant_form
     selector language Field.Language show all None ()
   in
   let file_uploads =
+    let open CCOption.Infix in
     [ ( Field.Styles
-      , CCOption.bind tenant (fun t -> t.styles |> CCOption.map Styles.value)
+      , (tenant >>= fun t -> t.styles >|= Styles.value)
       , false
       , false )
-    ; ( Field.Icon
-      , CCOption.bind tenant (fun t -> t.icon |> CCOption.map Icon.value)
-      , false
-      , false )
+    ; Field.Icon, (tenant >>= fun t -> t.icon >|= Icon.value), false, false
     ; Field.TenantLogos, None, true, true
     ; Field.PartnerLogos, None, false, true
+    ; ( Field.EmailLogo
+      , (tenant >>= fun t -> t.email_logo >|= EmailLogo.value)
+      , false
+      , false )
     ]
     |> CCList.map (fun (field, file, required, allow_multiple) ->
       let required = if CCOption.is_some tenant then false else required in
