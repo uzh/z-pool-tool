@@ -39,12 +39,14 @@ let prepend_root_directory pool url =
 let layout_from_tenant (tenant : Pool_tenant.t) =
   let open Pool_tenant in
   let logo_src =
-    tenant.logos
-    |> Logos.value
-    |> CCList.head_opt
-    |> CCOption.map_or
-         ~default:""
-         CCFun.(Pool_common.File.path %> create_public_url tenant.url)
+    let file_url = Pool_common.File.path %> create_public_url tenant.url in
+    match tenant.email_logo with
+    | Some logo -> EmailLogo.value logo |> file_url
+    | None ->
+      tenant.logos
+      |> Logos.value
+      |> CCList.head_opt
+      |> CCOption.map_or ~default:"" file_url
   in
   let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
   let link = tenant.url |> Url.value |> Format.asprintf "https://%s" in
