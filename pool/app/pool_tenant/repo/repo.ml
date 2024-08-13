@@ -194,6 +194,7 @@ module Sql = struct
           database_label,
           styles,
           icon,
+          email_logo,
           gtx_api_key
         ) VALUES (
           %{Id.sql_value_fragment "$1"},
@@ -207,7 +208,8 @@ module Sql = struct
           $9,
           %{Id.sql_value_fragment "$10"},
           %{Id.sql_value_fragment "$11"},
-          $12
+          %{Id.sql_value_fragment "$12"},
+          $13
         )
       |sql}]
     |> RepoEntity.Write.t ->. Caqti_type.unit
