@@ -473,13 +473,21 @@ let input_element_file
     | true -> attributes @ [ a_required () ]
     | false -> attributes
   in
+  let help =
+    Elements.hints language
+    @@
+    match accept with
+    | [] -> None
+    | accept -> Some [ Pool_common.I18n.FileUploadAcceptMime accept ]
+  in
   div
     ~a:[ a_class (Elements.group_class [] orientation) ]
-    [ label ~a:[ a_label_for name ] [ txt input_label ]
-    ; label
-        ~a:[ a_label_for name; a_class [ "file-input" ] ]
-        [ input ~a:input_attributes (); visible_part ]
-    ]
+    ([ label ~a:[ a_label_for name ] [ txt input_label ]
+     ; label
+         ~a:[ a_label_for name; a_class [ "file-input" ] ]
+         [ input ~a:input_attributes (); visible_part ]
+     ]
+     @ help)
 ;;
 
 let textarea_element

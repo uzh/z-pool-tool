@@ -64,6 +64,18 @@ let tenant_form
       , false )
     ]
     |> CCList.map (fun (field, file, required, allow_multiple) ->
+      let accept =
+        let open Field in
+        let open File in
+        CCList.map Mime.to_string
+        @@
+        match[@warning "-4"] field with
+        | Styles -> Mime.[ Css ]
+        | Icon -> Mime.[ Ico; Jpeg; Png; Svg ]
+        | TenantLogos | PartnerLogos -> Mime.[ Jpeg; Png; Svg; Webp ]
+        | EmailLogo -> Mime.[ Jpeg; Png ]
+        | _ -> []
+      in
       let required = if CCOption.is_some tenant then false else required in
       let download =
         match file with
@@ -74,7 +86,7 @@ let tenant_form
             [ a ~a:[ a_href (File.externalized_path file) ] [ txt "Download" ] ]
       in
       div
-        [ input_element_file language field ~allow_multiple ~required
+        [ input_element_file ~accept language field ~allow_multiple ~required
         ; download
         ])
   in

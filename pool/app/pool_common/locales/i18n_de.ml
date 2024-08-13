@@ -409,6 +409,10 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | FilterTemplates ->
     "Änderungen an einem dieser Filter wird auf alle Experimentfilter \
      übertragen, die dieses Template beinhalten."
+  | FileUploadAcceptMime types ->
+    types
+    |> CCString.concat ", "
+    |> Format.asprintf "Zugelassen sind foldende Dateitypen: %s"
   | GtxKeyMissing ->
     "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten \
      verschickt werden."
