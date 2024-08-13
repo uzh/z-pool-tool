@@ -436,6 +436,7 @@ let input_element_file
   ?(allow_multiple = false)
   ?(required = false)
   ?label_field
+  ?(accept = [])
   language
   field
   =
@@ -459,7 +460,12 @@ let input_element_file
       ]
   in
   let input_attributes =
-    let attributes = [ a_input_type `File; a_id name; a_name name ] in
+    let accept =
+      match accept with
+      | [] -> []
+      | accept -> [ a_accept accept ]
+    in
+    let attributes = [ a_input_type `File; a_id name; a_name name ] @ accept in
     let attributes =
       if allow_multiple then a_multiple () :: attributes else attributes
     in
