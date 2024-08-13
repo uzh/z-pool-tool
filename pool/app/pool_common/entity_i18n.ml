@@ -190,6 +190,7 @@ type hint =
   | CustomFieldTypeText
   | CustomHtmx of string
   | DefaultReminderLeadTime of Ptime.Span.t
+  | DeleteContact
   | DirectRegistrationDisbled
   | Distribution
   | DuplicateSession
@@ -311,6 +312,7 @@ type confirmable =
   | CancelAssignmentWithFollowUps
   | CancelSession
   | CloseSession
+  | DeleteContact
   | DeleteCustomField
   | DeleteCustomFieldOption
   | DeleteEmailSuffix

@@ -35,7 +35,7 @@ type event =
   | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
-  | Disabled of t
+  | MarkedAsDeleted of t
   | UnverifiedDeleted of t
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
@@ -101,7 +101,8 @@ let handle_event ?tags pool : event -> unit Lwt.t =
       { contact with
         terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ())
       }
-  | Disabled contact ->
+  | MarkedAsDeleted contact ->
+    let%lwt () = Repo.set_inactive pool contact in
     Repo.update pool { contact with disabled = Pool_user.Disabled.create true }
   | UnverifiedDeleted contact ->
     contact |> Entity.id |> Repo.delete_unverified pool

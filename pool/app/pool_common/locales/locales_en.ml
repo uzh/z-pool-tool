@@ -336,6 +336,7 @@ let success_to_string =
     field_message "" (field_to_string field) "was successfully canceled."
   | Closed field ->
     field_message "" (field_to_string field) "was successfully closed."
+  | ContactMarkedAsDeleted -> "The contact was successfully deleted."
   | ContactPromoted -> "The contact was successfully promoted to an admin."
   | Created field ->
     field_message "" (field_to_string field) "was successfully created."
@@ -479,6 +480,9 @@ let rec error_to_string =
     "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
   | DefaultMustNotBeUnchecked -> "'Default' must not be unchecked."
+  | DeleteContactUpcomingSessions ->
+    "Contact cannot be deleted. This contact is signed up to upcoming \
+     sessions. These assignments have to be deleted first."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingAdmin -> "Please provide admin email address."
   | EmailAddressMissingRoot -> "Please provide root email address."

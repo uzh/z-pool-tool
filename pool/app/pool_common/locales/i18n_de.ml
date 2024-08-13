@@ -331,6 +331,9 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     Format.asprintf
       "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
       (lead_time |> Pool_model.Time.formatted_timespan)
+  | DeleteContact ->
+    "Der Benutzer wird als gelöscht markiert und kann sich nicht mehr \
+     anmelden. Diese Aktion kann nicht rückgängig gemacht werden."
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."
@@ -698,6 +701,10 @@ let confirmable_to_string confirmable =
    | CloseSession ->
      ( "die Session"
      , "schliessen"
+     , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
+   | DeleteContact ->
+     ( "den Kontakt"
+     , "löschen"
      , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
    | DeleteCustomField -> "das Feld", "löschen", None
    | DeleteCustomFieldOption -> "das Option", "löschen", None
