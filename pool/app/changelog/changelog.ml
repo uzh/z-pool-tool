@@ -32,7 +32,7 @@ module T (R : RecordSig) = struct
       in
       let list_to_assoc (json_list : Yojson.Safe.t list) =
         let rec check acc = function
-          | [] -> Some acc
+          | [] -> Some (`Assoc acc)
           | `List [ key; value ] :: tl ->
             check (acc @ [ Yojson.Safe.to_string key, value ]) tl
           | _ -> None
@@ -67,20 +67,7 @@ module T (R : RecordSig) = struct
       | `List l1, `List l2 ->
         (match list_to_assoc l1, list_to_assoc l2 with
          | Some assoc_before, Some assoc_after ->
-           let assoc_opt = CCList.assoc_opt ~eq in
-           let keys = CCList.Assoc.keys in
-           let compare_key key =
-             match assoc_opt key assoc_before, assoc_opt key assoc_after with
-             | Some before, Some after ->
-               compare before after |> CCOption.map (fun change -> key, change)
-             | _, _ -> None
-           in
-           keys assoc_before @ keys assoc_after
-           |> CCList.uniq ~eq
-           |> CCList.filter_map compare_key
-           |> (function
-            | [] -> None
-            | assoc -> Some (Assoc assoc))
+           compare assoc_before assoc_after
          | _, _ -> compare_json json_before json_after)
       | _ -> compare_json json_before json_after
     in
