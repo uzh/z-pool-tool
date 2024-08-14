@@ -336,6 +336,16 @@ table.width-auto {
     }
 }
 
+// Changelog
+.changelog-key {
+    width: 8rem;
+    -ms-hyphens: auto;
+    -moz-hyphens: auto;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+}
+
+
 // Copy to clipboard
 [data-clipboard] {
     cursor: copy;

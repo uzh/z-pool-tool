@@ -1,13 +1,22 @@
 open Tyxml.Html
 open Changelog
 
+let yojson_to_string (json : Yojson.Safe.t) =
+  match json with
+  | `Bool bool -> Utils.Bool.to_string bool
+  | `Int int -> CCInt.to_string int
+  | `Float float -> CCFloat.to_string float
+  | `String s -> s
+  | _ -> Yojson.Safe.pretty_to_string json
+;;
+
 let rec format_changes changes =
   let open Changes in
   let format_change (key, value) =
     let changes = format_changes value in
     div
       ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-      [ div [ txt key; txt " : " ]; changes ]
+      [ div ~a:[ a_class [ "changelog-key" ] ] [ txt key; txt ": " ]; changes ]
   in
   let rec format_assoc_list acc = function
     | [] -> acc
@@ -18,8 +27,8 @@ let rec format_changes changes =
   match changes with
   | Assoc assocs -> format_assoc_list [] assocs |> div
   | Change (before, after) ->
-    let format json = span [ Yojson.Safe.pretty_to_string json |> txt ] in
-    span [ format before; txt " → "; format after ]
+    let format json = span [ yojson_to_string json |> txt ] in
+    span [ strong [ format before; txt " → "; format after ] ]
 ;;
 
 let list Pool_context.{ language; _ } url (changelogs, query) =
@@ -52,6 +61,7 @@ let list Pool_context.{ language; _ } url (changelogs, query) =
     |> tr
   in
   Data_table.make
+    ~align_top:true
     ~target_id:"location-changelog"
     ~th_class
     ~cols
