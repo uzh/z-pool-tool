@@ -332,7 +332,7 @@ let find_archivable_request =
     {sql|
       SELECT %{Entity.Id.sql_select_fragment ~field:("uuid")}
       FROM %{sql_table `Current}
-      WHERE status != "pending"
+      WHERE status != 'pending'
     |sql}]
   |> Caqti_type.unit ->* Repo_entity.Id.t
 ;;

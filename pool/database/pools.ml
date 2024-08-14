@@ -51,11 +51,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     database
     =
     let tags = database |> label |> LogTag.create in
-    let max_idle_age =
-      Mtime.Span.of_float_ns (5. *. 60.)
-      |> CCOption.get_exn_or "Invalid max_idle_age provided"
-      |> CCOption.return
-    in
+    let max_idle_age = Some Mtime.Span.(5 * min) in
     let connect () =
       database
       |> url
