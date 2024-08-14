@@ -61,7 +61,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
              (Caqti_pool_config.create
                 ~max_size:pool_size
                 ~max_idle_age
-                ~max_use_count:(Some 1)
+                ~max_use_count:(Some 10)
                 ())
     in
     CCResult.retry retries connect
