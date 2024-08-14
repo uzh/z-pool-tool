@@ -124,7 +124,11 @@ let start () =
             let regex =
               seq [ char '<'; group (rep1 any); str ">:" ] |> compile
             in
-            exec regex text |> CCFun.flip Group.get_opt 1
+            let substring =
+              try Some (exec regex text) with
+              | Not_found -> None
+            in
+            CCOption.bind substring (CCFun.flip Group.get_opt 1)
           in
           let%lwt (_ : (unit, Pool_message.Error.t) result) =
             Lwt_result.map_error Pool_common.Utils.with_log_error
