@@ -6,11 +6,7 @@ let tenant_specific_session_reminder =
     "Send session reminders of specified tenant"
     (fun pool ->
        let open Utils.Lwt_result.Infix in
-       pool
-       |> Pool_tenant.find_by_label
-       ||> get_or_failwith
-       >|> Reminder.Service.send_tenant_reminder
-       ||> CCOption.some)
+       Reminder.Service.send_tenant_reminder pool ||> CCOption.some)
 ;;
 
 let all_tenants_session_reminder =

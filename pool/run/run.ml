@@ -10,7 +10,7 @@ let worker_services =
       register
         ~kind:Worker
         ~jobs:
-          [ hide Email.Service.Job.send
+          [ hide ~execute_on_root:true Email.Service.Job.send
           ; hide Text_message.Service.Job.send
           ; hide Assignment_job.job
           ]
