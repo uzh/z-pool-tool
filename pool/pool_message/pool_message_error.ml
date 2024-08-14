@@ -34,6 +34,7 @@ type t =
   | Decode of Field.t
   | DecodeAction
   | DefaultMustNotBeUnchecked
+  | DeleteContactUpcomingSessions
   | DirectRegistrationIsDisabled
   | Disabled of Field.t
   | EmailAddressMissingAdmin

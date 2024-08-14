@@ -21,6 +21,12 @@ let to_string = function
     "In der folgenden Liste können Sie bestimmen, in welcher Tabelle \
      zusätzlich zu den Kontaktangaben auch die individuellen Angaben angezeigt \
      werden sollen."
+  | CustomFieldsSettingsCloseScreen ->
+    "Diese Ansicht wird beim beenden einer Session angezeigt. User, mit der \
+     Berechtigung, eine Session zu beenden, können diese Angaben sehen."
+  | CustomFieldsSettingsDetailScreen ->
+    "Diese Angaben werden auf der Detailseite aller Sessions angezeigt. User, \
+     mit Leseberechtigung einer Session, können diese Angaben sehen."
   | DashboardProfileCompletionText ->
     "Ihr Profil ist unvollständig. Um zu mehr Experimenten eingeladen zu \
      werden, vervollständigen Sie Ihr Profil."
@@ -325,6 +331,9 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     Format.asprintf
       "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
       (lead_time |> Pool_model.Time.formatted_timespan)
+  | DeleteContact ->
+    "Der Benutzer wird als gelöscht markiert und kann sich nicht mehr \
+     anmelden. Diese Aktion kann nicht rückgängig gemacht werden."
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."
@@ -696,6 +705,10 @@ let confirmable_to_string confirmable =
    | CloseSession ->
      ( "die Session"
      , "schliessen"
+     , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
+   | DeleteContact ->
+     ( "den Kontakt"
+     , "löschen"
      , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
    | DeleteCustomField -> "das Feld", "löschen", None
    | DeleteCustomFieldOption -> "das Option", "löschen", None

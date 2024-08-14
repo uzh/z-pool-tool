@@ -328,8 +328,10 @@ let contacts db_label =
             then
               [ Contact.(
                   Updated
-                    { contact with paused = Pool_user.Paused.create paused })
-              ; Contact.Disabled contact
+                    { contact with
+                      paused = Pool_user.Paused.create paused
+                    ; disabled = Pool_user.Disabled.create true
+                    })
               ]
             else [] @ if verified then [ Contact.EmailVerified contact ] else []
           in

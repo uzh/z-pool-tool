@@ -546,3 +546,18 @@ let update_sign_in_count_request =
 let update_sign_in_count pool =
   Entity.id %> Database.exec pool update_sign_in_count_request
 ;;
+
+let set_inactive_request =
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE
+      user_users
+    SET
+      status = "inactive"
+    WHERE
+      uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Id.t ->. Caqti_type.unit
+;;
+
+let set_inactive pool = Entity.id %> Database.exec pool set_inactive_request

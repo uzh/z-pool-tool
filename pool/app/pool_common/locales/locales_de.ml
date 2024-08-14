@@ -341,6 +341,7 @@ let success_to_string =
   | Closed field ->
     field_message "" (field_to_string field) "wurde erfolgreich geschlossen."
   | ContactPromoted -> "Der Kontakt wurde erfolgreich zum Admin befördert."
+  | ContactMarkedAsDeleted -> "Der Kontakt wurde erfolgreich gelöscht."
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | Deleted field ->
@@ -497,6 +498,9 @@ let rec error_to_string =
       "konnte nicht entschlüsselt werden."
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | DefaultMustNotBeUnchecked -> "'Standard' kann nicht deaktiviert werden."
+  | DeleteContactUpcomingSessions ->
+    "Kontakt kann nicht gelöscht werden. Dieser Kontakt ist an kommenden \
+     Sessions angemeldet. Diese Anmeldungen müssen zuerst gelöscht werden."
   | DirectRegistrationIsDisabled ->
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->
