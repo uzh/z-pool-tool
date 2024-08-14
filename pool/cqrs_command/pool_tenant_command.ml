@@ -133,7 +133,7 @@ end = struct
   let effects = Pool_tenant.Guard.Access.create
 end
 
-type edit_detailts =
+type edit_details =
   { title : Pool_tenant.Title.t
   ; description : Pool_tenant.Description.t option
   ; url : Pool_tenant.Url.t
@@ -148,7 +148,7 @@ type edit_detailts =
   }
 
 module EditDetails : sig
-  type t = edit_detailts
+  type t = edit_details
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -160,7 +160,7 @@ module EditDetails : sig
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = edit_detailts
+  type t = edit_details
 
   let command
     title
