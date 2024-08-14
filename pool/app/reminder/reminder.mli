@@ -5,7 +5,7 @@ module Service : sig
     -> Session.t list
     -> (Pool_event.t list, Pool_message.Error.t) Lwt_result.t
 
-  val send_tenant_reminder : Pool_tenant.t -> unit Lwt.t
+  val send_tenant_reminder : Database.Label.t -> unit Lwt.t
   val run : unit -> unit Lwt.t
   val register : unit -> Sihl.Container.Service.t
 end

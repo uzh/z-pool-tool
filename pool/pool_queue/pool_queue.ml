@@ -252,11 +252,8 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
 ;;
 
 let start () =
-  let open Utils.Lwt_result.Infix in
   let tags = Database.Logger.Tags.create Database.root in
-  let%lwt database_labels =
-    Database.Tenant.find_all_by_status () ||> CCList.cons Database.root
-  in
+  let%lwt database_labels = Database.Tenant.find_all_by_status () in
   Logs.info (fun m ->
     m
       ~tags
@@ -270,10 +267,17 @@ let start () =
     Lwt.return_unit
   | jobs ->
     let jobs_per_database =
-      CCList.fold_product
-        (fun init db name -> (db, name) :: init)
+      let open CCList in
+      fold_left
+        (fun jobs_per_db job ->
+          let database_labels =
+            match job.AnyJob.execute_on_root with
+            | false -> database_labels
+            | true -> Database.root :: database_labels
+          in
+          fold_left (fun acc label -> acc @ [ label, job ]) [] database_labels
+          |> append jobs_per_db)
         []
-        database_labels
         jobs
     in
     jobs_per_database

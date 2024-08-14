@@ -293,11 +293,12 @@ module AnyJob = struct
         Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
+    ; execute_on_root : bool
     }
   [@@deriving fields, show]
 end
 
-let hide (job : 'a Job.t) : AnyJob.t =
+let hide ?(execute_on_root = false) (job : 'a Job.t) : AnyJob.t =
   let open Utils.Lwt_result.Infix in
   let handle ?id label input =
     job.Job.decode input |> Lwt_result.lift >>= job.Job.handle ?id label
@@ -307,6 +308,7 @@ let hide (job : 'a Job.t) : AnyJob.t =
   ; failed = job.Job.failed
   ; max_tries = job.Job.max_tries
   ; retry_delay = job.Job.retry_delay
+  ; execute_on_root
   }
 ;;
 
