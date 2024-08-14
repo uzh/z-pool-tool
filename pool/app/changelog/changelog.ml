@@ -25,6 +25,20 @@ module T (R : RecordSig) = struct
     let open Changes in
     let rec compare json_before json_after =
       let eq = CCString.equal in
+      let compare_json before after =
+        match Yojson.Safe.equal before after with
+        | true -> None
+        | false -> Some (Change (before, after))
+      in
+      let list_to_assoc (json_list : Yojson.Safe.t list) =
+        let rec check acc = function
+          | [] -> Some acc
+          | `List [ key; value ] :: tl ->
+            check (acc @ [ Yojson.Safe.to_string key, value ]) tl
+          | _ -> None
+        in
+        check [] json_list
+      in
       match (json_before : Yojson.Safe.t), (json_after : Yojson.Safe.t) with
       | `Assoc l1, `Assoc l2 ->
         let keys =
@@ -49,13 +63,26 @@ module T (R : RecordSig) = struct
         if eq key1 key2
         then compare val1 val2
         else Some (Change (json_before, json_after))
-      | _ ->
-        (match Yojson.Safe.equal json_before json_after with
-         | true -> None
-         | false ->
-           (* This is triggered on the highest level, nested changes are not
-              considered *)
-           Some (Change (json_before, json_after)))
+      (* Catching equal assoc lists *)
+      | `List l1, `List l2 ->
+        (match list_to_assoc l1, list_to_assoc l2 with
+         | Some assoc_before, Some assoc_after ->
+           let assoc_opt = CCList.assoc_opt ~eq in
+           let keys = CCList.Assoc.keys in
+           let compare_key key =
+             match assoc_opt key assoc_before, assoc_opt key assoc_after with
+             | Some before, Some after ->
+               compare before after |> CCOption.map (fun change -> key, change)
+             | _, _ -> None
+           in
+           keys assoc_before @ keys assoc_after
+           |> CCList.uniq ~eq
+           |> CCList.filter_map compare_key
+           |> (function
+            | [] -> None
+            | assoc -> Some (Assoc assoc))
+         | _, _ -> compare_json json_before json_after)
+      | _ -> compare_json json_before json_after
     in
     compare (R.yojson_of_t before) (R.yojson_of_t after)
   ;;
