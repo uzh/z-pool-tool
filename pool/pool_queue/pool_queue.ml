@@ -255,9 +255,7 @@ let start () =
   let open Utils.Lwt_result.Infix in
   let tags = Database.Logger.Tags.create Database.root in
   let%lwt database_labels =
-    Pool_tenant.find_all ()
-    ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
-    ||> CCList.cons Database.root
+    Database.Tenant.find_all_by_status () ||> CCList.cons Database.root
   in
   Logs.info (fun m ->
     m
