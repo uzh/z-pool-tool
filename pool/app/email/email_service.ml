@@ -386,6 +386,7 @@ module Job = struct
         (Printexc.to_string %> Pool_message.Error.nothandled %> Lwt.return_error)
     in
     Job.create
+      ~execute_on_root:true
       ~max_tries:10
       ~retry_delay:(Sihl.Time.Span.hours 1)
       handle

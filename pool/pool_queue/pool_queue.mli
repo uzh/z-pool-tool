@@ -110,6 +110,7 @@ module Job : sig
     -> ?retry_delay:Ptime.span
     -> ?failed:
          (Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t)
+    -> ?execute_on_root:bool
     -> (?id:Id.t
         -> Database.Label.t
         -> 'a

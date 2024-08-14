@@ -232,6 +232,7 @@ module Job = struct
         Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
+    ; execute_on_root : bool
     }
   [@@deriving fields, show]
 
@@ -241,12 +242,21 @@ module Job = struct
     ?(max_tries = default_tries)
     ?(retry_delay = default_retry_delay)
     ?(failed = Instance.default_error_handler)
+    ?(execute_on_root = false)
     handle
     encode
     decode
     name
     =
-    { name; handle; failed; max_tries; retry_delay; encode; decode }
+    { name
+    ; handle
+    ; failed
+    ; max_tries
+    ; retry_delay
+    ; encode
+    ; decode
+    ; execute_on_root
+    }
   ;;
 
   let to_instance
@@ -293,6 +303,7 @@ module AnyJob = struct
         Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
+    ; execute_on_root : bool
     }
   [@@deriving fields, show]
 end
@@ -307,6 +318,7 @@ let hide (job : 'a Job.t) : AnyJob.t =
   ; failed = job.Job.failed
   ; max_tries = job.Job.max_tries
   ; retry_delay = job.Job.retry_delay
+  ; execute_on_root = job.Job.execute_on_root
   }
 ;;
 
