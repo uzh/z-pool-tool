@@ -280,13 +280,6 @@ let start () =
         []
         jobs
     in
-    let _ =
-      CCList.fold_product
-        (fun init db name -> (db, name) :: init)
-        []
-        database_labels
-        jobs
-    in
     jobs_per_database
     |> Lwt_list.iter_s (fun ((database_label, _) as job) ->
       let tags = Database.Logger.Tags.create database_label in

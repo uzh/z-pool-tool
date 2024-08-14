@@ -110,7 +110,6 @@ module Job : sig
     -> ?retry_delay:Ptime.span
     -> ?failed:
          (Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t)
-    -> ?execute_on_root:bool
     -> (?id:Id.t
         -> Database.Label.t
         -> 'a
@@ -226,7 +225,7 @@ type kind =
 
 val lifecycle_service : Sihl.Container.lifecycle
 val lifecycle_worker : Sihl.Container.lifecycle
-val hide : 'a Job.t -> AnyJob.t
+val hide : ?execute_on_root:bool -> 'a Job.t -> AnyJob.t
 val register_jobs : AnyJob.t list -> unit Lwt.t
 
 val register
