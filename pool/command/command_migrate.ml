@@ -13,8 +13,8 @@ let root =
     Lwt.return_some ())
 ;;
 
-let migrate_tenants db_labels =
-  let notification db_label error =
+let notify_about_failure db_label error =
+  let send () =
     let open Sihl_email in
     let read_config = Sihl.Configuration.read_string in
     let sender = read_config "SMTP_SENDER" in
@@ -57,17 +57,26 @@ Please take the necessary actions.|}
        | Error msg -> raise (Sihl.Contract.Email.Exception msg))
     | _, _ -> Lwt.return_unit
   in
+  Lwt.catch
+    (fun () ->
+      if Sihl.Configuration.is_development ()
+      then Logs.err (fun m -> m "%s" error) |> Lwt.return
+      else send ())
+    (fun exn ->
+      let err = Printexc.to_string exn in
+      let error_message =
+        Format.asprintf "Error while notifying about failed migration '%s'" err
+      in
+      Logs.err (fun m -> m "%s" error_message) |> Lwt.return)
+;;
+
+let migrate_tenants db_labels =
   let run db_label =
     let set_status = Database.Tenant.update_status db_label in
     let handle_error err =
       let err = Pool_common.(Utils.error_to_string Language.En err) in
       let%lwt () = set_status Status.MigrationsFailed in
-      if Sihl.Configuration.is_development ()
-      then Logs.err (fun m -> m "%s" err) |> Lwt.return
-      else (
-        (* TODO: Do we need another catch here? *)
-        let%lwt () = notification db_label err in
-        Lwt.return_unit)
+      notify_about_failure db_label err
     in
     Lwt.catch
       (fun () ->
