@@ -17,13 +17,18 @@ let create_changelog_table =
     |sql}
 ;;
 
-(* let add_fk_contraint_to_users = Database.Migration.Step.create ~label:"add fk
-   contraint to users" {sql| ALTER TABLE pool_change_log ADD CONSTRAINT
-   fk_pool_changelog_user_users FOREIGN KEY (user_uuid) REFERENCES
-   user_users(uuid) |sql} ;; *)
+let add_fk_contraint_to_users =
+  Database.Migration.Step.create
+    ~label:"add fk contraint to users"
+    {sql| 
+      ALTER TABLE pool_change_log ADD CONSTRAINT `fk_pool_changelog_user_users` 
+        FOREIGN KEY (user_uuid) REFERENCES user_users (uuid)
+    |sql}
+;;
 
 let migration () =
   Database.Migration.(
-    empty "202408081359" |> add_step create_changelog_table
-    (* |> add_step add_fk_contraint_to_users *))
+    empty "202408081359"
+    |> add_step create_changelog_table
+    |> add_step add_fk_contraint_to_users)
 ;;

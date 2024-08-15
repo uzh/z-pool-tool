@@ -71,6 +71,4 @@ val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 
-module Changelog : sig
-  include Changelog.TSig with type record = t
-end
+module Changelog : Changelog.TSig with type record = t
