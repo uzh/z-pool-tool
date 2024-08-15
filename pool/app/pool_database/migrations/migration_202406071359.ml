@@ -9,7 +9,7 @@ let add_gtx_sender_column =
 
 let fill_gtx_sender_column_with_title =
   Database.Migration.Step.create
-    ~label:"add text gtx_sender to pool_tenants"
+    ~label:"autofill gtx sender"
     {sql|
       UPDATE
         pool_tenant

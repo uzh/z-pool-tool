@@ -76,6 +76,7 @@ let rec field_to_string =
   | EmailAddressUnverified -> "Unverifizierte E-Mail-Adresse"
   | EmailAddressVerified -> "Verifizierte E-Mail-Adresse"
   | EmailLeadTime -> "Email Vorlaufzeit"
+  | EmailLogo -> "Email Logo"
   | EmailRemindersSentAt -> "Email Erinnerungen verschickt am"
   | EmailSubject -> "E-Mail Betreff"
   | EmailSuffix -> "E-Mail Endung"

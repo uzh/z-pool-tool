@@ -211,6 +211,7 @@ type hint =
   | ExperimentWaitingList
   | ExperumentSurveyRedirectUrl
   | ExternalDataRequired
+  | FileUploadAcceptMime of string list
   | FilterTemplates
   | GtxKeyMissing
   | GtxKeyStored

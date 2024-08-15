@@ -50,18 +50,32 @@ let tenant_form
     selector language Field.Language show all None ()
   in
   let file_uploads =
+    let open CCOption.Infix in
     [ ( Field.Styles
-      , CCOption.bind tenant (fun t -> t.styles |> CCOption.map Styles.value)
+      , (tenant >>= fun t -> t.styles >|= Styles.value)
       , false
       , false )
-    ; ( Field.Icon
-      , CCOption.bind tenant (fun t -> t.icon |> CCOption.map Icon.value)
-      , false
-      , false )
+    ; Field.Icon, (tenant >>= fun t -> t.icon >|= Icon.value), false, false
     ; Field.TenantLogos, None, true, true
     ; Field.PartnerLogos, None, false, true
+    ; ( Field.EmailLogo
+      , (tenant >>= fun t -> t.email_logo >|= EmailLogo.value)
+      , false
+      , false )
     ]
     |> CCList.map (fun (field, file, required, allow_multiple) ->
+      let accept =
+        let open Field in
+        let open File in
+        CCList.map Mime.to_string
+        @@
+        match[@warning "-4"] field with
+        | Styles -> Mime.[ Css ]
+        | Icon -> Mime.[ Ico; Jpeg; Png; Svg ]
+        | TenantLogos | PartnerLogos -> Mime.[ Jpeg; Png; Svg; Webp ]
+        | EmailLogo -> Mime.[ Jpeg; Png ]
+        | _ -> []
+      in
       let required = if CCOption.is_some tenant then false else required in
       let download =
         match file with
@@ -72,7 +86,7 @@ let tenant_form
             [ a ~a:[ a_href (File.externalized_path file) ] [ txt "Download" ] ]
       in
       div
-        [ input_element_file language field ~allow_multiple ~required
+        [ input_element_file ~accept language field ~allow_multiple ~required
         ; download
         ])
   in
