@@ -459,13 +459,16 @@ let input_element_file
       ; placeholder
       ]
   in
+  let accept_attr, accept_hint =
+    match accept with
+    | [] -> [], None
+    | accept ->
+      [ a_accept accept ], Some [ Pool_common.I18n.FileUploadAcceptMime accept ]
+  in
   let input_attributes =
-    let accept =
-      match accept with
-      | [] -> []
-      | accept -> [ a_accept accept ]
+    let attributes =
+      [ a_input_type `File; a_id name; a_name name ] @ accept_attr
     in
-    let attributes = [ a_input_type `File; a_id name; a_name name ] @ accept in
     let attributes =
       if allow_multiple then a_multiple () :: attributes else attributes
     in
@@ -473,13 +476,7 @@ let input_element_file
     | true -> attributes @ [ a_required () ]
     | false -> attributes
   in
-  let help =
-    Elements.hints language
-    @@
-    match accept with
-    | [] -> None
-    | accept -> Some [ Pool_common.I18n.FileUploadAcceptMime accept ]
-  in
+  let help = Elements.hints language accept_hint in
   div
     ~a:[ a_class (Elements.group_class [] orientation) ]
     ([ label ~a:[ a_label_for name ] [ txt input_label ]
