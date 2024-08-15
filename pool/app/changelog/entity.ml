@@ -7,20 +7,23 @@ module Id = struct
 end
 
 module Change = struct
+  (*** Currently, the @to_yojson/@of_joyson is working for record types but not
+    for variants:
+    https://github.com/ocaml-ppx/ppx_deriving_yojson?tab=readme-ov-file#to_yojson--of_yojson
+
+    If this is fixed, this module is superfluous *)
   type t = Yojson.Safe.t * Yojson.Safe.t [@@deriving eq, show]
 
   let t_of_yojson (json : Yojson.Safe.t) : t =
     match json with
     | `Tuple [ a; b ] -> a, b
-    | _ -> raise (Exception "TODO")
+    | _ -> raise (Yojson.Json_error "Invalid Change.t yojson")
   ;;
 
   let yojson_of_t (a, b) = `Tuple [ a; b ]
 end
 
 module Changes = struct
-  (* TODO: There has to be a better way *)
-
   type t =
     | Assoc of (string * t) list
     | Change of Change.t

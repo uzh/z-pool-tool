@@ -46,7 +46,7 @@ module T (R : RecordSig) = struct
           get l1 @ get l2 |> CCList.uniq ~eq
         in
         keys
-        |> List.filter_map (fun key ->
+        |> CCList.filter_map (fun key ->
           let assoc list =
             CCList.assoc_opt ~eq key list |> CCOption.value ~default:`Null
           in
@@ -102,7 +102,5 @@ module T (R : RecordSig) = struct
     |> CCOption.map_or ~default:Lwt.return_unit (Repo.insert pool)
   ;;
 
-  let all_by_entity ?query pool entity_uuid =
-    Repo.find_by_model ?query pool model entity_uuid
-  ;;
+  let all_by_entity = Repo.find_by_model model
 end

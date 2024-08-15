@@ -23,7 +23,7 @@ let find_request_sql ?(count = false) =
   Format.asprintf {sql|SELECT %s FROM pool_change_log %s %s |sql} columns joins
 ;;
 
-let find_by_model ?query pool field entity_uuid =
+let find_by_model field ?query pool entity_uuid =
   let open Repo_entity in
   let where =
     ( {sql| 

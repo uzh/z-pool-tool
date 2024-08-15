@@ -19,7 +19,7 @@ end
 
 let t =
   let open Database.Caqti_encoders in
-  let encode _ = failwith "Read only model" in
+  let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let decode
     ( id
     , ( model
@@ -57,7 +57,9 @@ module Write = struct
           ; m.created_at
           ]
     in
-    let decode _ = failwith "Write only model" in
+    let decode _ =
+      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
+    in
     custom
       ~encode
       ~decode
