@@ -1,15 +1,20 @@
 open Database
+open Utils.Lwt_result.Infix
 
 let root =
   Command_utils.make_no_args "migrate.root" "Migrate root database" (fun () ->
     let (_ : status) = Root.add () in
-    let%lwt () = Migration.execute root (Pool_database.Root.steps ()) in
-    let () = exit 0 in
+    let%lwt () =
+      Migration.execute root (Pool_database.Root.steps ())
+      ||> function
+      | Ok () -> exit 0
+      | Error _ -> exit 1
+    in
     Lwt.return_some ())
 ;;
 
 let migrate_tenants db_labels =
-  let notification db_label =
+  let notification db_label error =
     let open Sihl_email in
     let read_config = Sihl.Configuration.read_string in
     let sender = read_config "SMTP_SENDER" in
@@ -19,9 +24,12 @@ let migrate_tenants db_labels =
       let text =
         Format.asprintf
           {|Migrations on the tenant %s could not be executed successfully.
+          
+Error: %s
 
-        Please take the necessary actions.|}
+Please take the necessary actions.|}
           (Database.Label.value db_label)
+          error
       in
       let email =
         { sender
@@ -51,16 +59,27 @@ let migrate_tenants db_labels =
   in
   let run db_label =
     let set_status = Database.Tenant.update_status db_label in
+    let handle_error err =
+      let err = Pool_common.(Utils.error_to_string Language.En err) in
+      let%lwt () = set_status Status.MigrationsFailed in
+      if Sihl.Configuration.is_development ()
+      then Logs.err (fun m -> m "%s" err) |> Lwt.return
+      else (
+        (* TODO: Do we need another catch here? *)
+        let%lwt () = notification db_label err in
+        Lwt.return_unit)
+    in
     Lwt.catch
       (fun () ->
-        let%lwt () =
-          Migration.execute db_label (Pool_database.Tenant.steps ())
-        in
-        set_status Status.Active)
-      (fun _ ->
-        let%lwt () = notification db_label in
-        let%lwt () = set_status Status.MigrationsFailed in
-        Lwt.return_unit)
+        Migration.execute db_label (Pool_database.Tenant.steps ())
+        |>> (fun () -> set_status Status.Active)
+        >|> function
+        | Ok () -> Lwt.return ()
+        | Error err -> handle_error err)
+      (fun exn ->
+        let exn = Printexc.to_string exn in
+        let err = Pool_message.Error.MigrationFailed exn in
+        handle_error err)
   in
   let%lwt () = Database.Tenant.set_migration_pending db_labels in
   db_labels |> Lwt_list.iter_s run

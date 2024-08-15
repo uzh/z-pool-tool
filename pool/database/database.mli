@@ -236,11 +236,11 @@ module Migration : sig
 
   (** [execute database_label migrations] runs all migrations [migrations] on the
       connection pool. *)
-  val execute : Label.t -> t list -> unit Lwt.t
+  val execute : Label.t -> t list -> (unit, Pool_message.Error.t) Lwt_result.t
 
   (** [run_all database_label ()] runs all migrations that have been registered on the
       connection pool. *)
-  val run_all : Label.t -> unit -> unit Lwt.t
+  val run_all : Label.t -> unit -> (unit, Pool_message.Error.t) Lwt_result.t
 
   (** [migrations_status database_label ?migrations ()] returns a list of migration
       namespaces and the number of their unapplied migrations.

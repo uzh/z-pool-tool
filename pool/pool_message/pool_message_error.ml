@@ -65,6 +65,7 @@ type t =
   | LoginProvideDetails
   | MaxLength of int
   | MeantimeUpdate of Field.t
+  | MigrationFailed of string
   | Missing of Field.t
   | MutuallyExclusive of (Field.t * Field.t)
   | NegativeAmount

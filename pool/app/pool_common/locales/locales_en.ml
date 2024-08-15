@@ -529,6 +529,7 @@ let rec error_to_string =
     Format.asprintf "Must not be longer than %i characters." max
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
+  | MigrationFailed exn -> Format.asprintf "Migration failed: %s" exn
   | Missing field ->
     field_message
       "The field"
