@@ -1,6 +1,6 @@
 let add_marked_as_deleted_to_waitinglist =
   Database.Migration.Step.create
-    ~label:"add text gtx_sender to pool_tenants"
+    ~label:"add marked_as_deleted flat to pool_waiting_list"
     {sql|
       ALTER TABLE pool_waiting_list
         ADD COLUMN marked_as_deleted boolean DEFAULT 0 AFTER comment
