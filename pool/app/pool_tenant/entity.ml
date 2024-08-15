@@ -105,11 +105,24 @@ module PartnerLogos = struct
   let schema () =
     Pool_conformist.schema_list_decoder
       create
-      (fun l -> l |> CCList.map Common.Id.value)
+      (CCList.map Common.Id.value)
       Pool_message.Field.PartnerLogos
   ;;
 
   let of_files lst = lst
+end
+
+module EmailLogo = struct
+  type t = File.t [@@deriving eq, show, sexp_of]
+
+  let value m = m
+
+  module Write = struct
+    include Pool_model.Base.String
+
+    let field = Pool_message.Field.EmailLogo
+    let schema () = schema field ()
+  end
 end
 
 type t =
@@ -123,6 +136,7 @@ type t =
   ; icon : Icon.t option
   ; logos : Logos.t
   ; partner_logo : PartnerLogos.t
+  ; email_logo : EmailLogo.t option
   ; status : Database.Status.t
   ; default_language : Common.Language.t
   ; text_messages_enabled : bool
@@ -143,6 +157,7 @@ module Read = struct
     ; gtx_sender : GtxSender.t
     ; styles : Styles.t option
     ; icon : Icon.t option
+    ; email_logo : EmailLogo.t option
     ; status : Database.Status.t
     ; default_language : Common.Language.t
     ; text_messages_enabled : bool
@@ -162,6 +177,7 @@ module Write = struct
     ; gtx_sender : GtxSender.t
     ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
+    ; email_logo : EmailLogo.Write.t option
     ; icon : Icon.Write.t option
     ; default_language : Common.Language.t
     ; created_at : CreatedAt.t
@@ -177,6 +193,7 @@ module Write = struct
     gtx_sender
     styles
     icon
+    email_logo
     default_language
     =
     { id = Id.create ()
@@ -188,6 +205,7 @@ module Write = struct
     ; gtx_sender
     ; styles
     ; icon
+    ; email_logo
     ; default_language
     ; created_at = CreatedAt.create_now ()
     ; updated_at = UpdatedAt.create_now ()
@@ -198,5 +216,6 @@ module Write = struct
 end
 
 let file_fields =
-  Pool_message.Field.([ Styles; Icon ] @ LogoMapping.LogoType.all_fields)
+  Pool_message.Field.(
+    [ Styles; Icon; EmailLogo ] @ LogoMapping.LogoType.all_fields)
 ;;

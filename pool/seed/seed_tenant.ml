@@ -97,6 +97,7 @@ let create () =
                  |> get_or_failwith
                  |> CCOption.return)
                 (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
+                None
                 (Pool_common.Language.create default_language |> get_or_failwith)
             in
             let logo_mappings =

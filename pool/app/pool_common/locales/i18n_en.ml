@@ -404,6 +404,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
+  | FileUploadAcceptMime types ->
+    types
+    |> CCString.concat ", "
+    |> Format.asprintf "The following mime types are accepted: %s"
   | FilterTemplates ->
     "Changes to one of these filters will affect all experiment filters that \
      contain this template."
