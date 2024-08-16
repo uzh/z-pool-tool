@@ -19,7 +19,7 @@ let raise_caqti_error =
   function
   | Ok resp -> resp
   | Error `Unsupported ->
-    raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
+    raise Pool_message.Error.(PoolExn (Unsupported "Caqti error"))
   | Error (#t as err) -> raise (Exn err)
 ;;
 
@@ -73,7 +73,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       Error err |> CCFun.tap store_fcn
     | Error [] ->
       raise
-        Pool_message.Error.(Exn (Unsupported "Failed to connect: empty error"))
+        Pool_message.Error.(
+          PoolExn (Unsupported "Failed to connect: empty error"))
   ;;
 
   let add_pool ?required ?pool_size database =
@@ -126,8 +127,11 @@ module Make (Config : Pools_sig.ConfigSig) = struct
           (err |> Caqti_error.uri |> Uri.to_string |> Url.of_string)
       in
       connect (CCFun.tap (Hashtbl.replace pools database_label)) database
-    | None -> raise Pool_message.Error.(Exn DatabaseAddPoolFirst)
+    | None -> raise Pool_message.Error.(PoolExn DatabaseAddPoolFirst)
   ;;
+
+  (* raise (Exception (Format.asprintf "Unknown Pool: Please add pool '%s'
+     first!" database_label)) *)
 
   let map_fetched database_label (fcn : 'a -> ('b, 'e) Lwt_result.t)
     : ('b, 'e) Lwt_result.t

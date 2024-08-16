@@ -139,7 +139,7 @@ type t =
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
 
-exception Exn of t
+exception PoolExn of t
 
 let error_to_exn t = Failure (show t)
 let get_or_failwith error = CCResult.(error |> map_err show |> get_or_failwith)

@@ -87,8 +87,8 @@ let reporter req ({ Report.exn; _ } as excn) =
     Logs.err (fun m ->
       m "Caqti load or connection error: %s\n%s" (Printexc.to_string err) trace)
     |> Lwt.return
-  | Pool_message.Error.(Exn DatabaseAddPoolFirst as err)
-  | Pool_message.Error.(Exn (Connection _) as err) ->
+  | Pool_message.Error.(PoolExn DatabaseAddPoolFirst as err)
+  | Pool_message.Error.(PoolExn (Connection _) as err) ->
     let%lwt () = System_event.Service.ConnectionWatcher.verify_tenants () in
     Logs.err (fun m -> m "Try again later: %s" (Printexc.to_string err))
     |> Lwt.return
