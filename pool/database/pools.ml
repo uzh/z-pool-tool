@@ -131,9 +131,6 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       raise Pool_message.Error.(PoolExn (DatabaseAddPoolFirst database_label))
   ;;
 
-  (* raise (Exception (Format.asprintf "Unknown Pool: Please add pool '%s'
-     first!" database_label)) *)
-
   let map_fetched database_label (fcn : 'a -> ('b, 'e) Lwt_result.t)
     : ('b, 'e) Lwt_result.t
     =
