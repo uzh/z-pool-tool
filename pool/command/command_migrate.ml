@@ -112,5 +112,6 @@ let tenant_migration_pending =
        let (_ : status) = Root.add () in
        let%lwt db_pools = Tenant.setup () in
        let%lwt () = Database.Tenant.set_migration_pending db_pools in
+       let%lwt () = exit 0 in
        Lwt.return_some ())
 ;;
