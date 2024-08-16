@@ -90,7 +90,6 @@ let migrate_tenants db_labels =
         let err = Pool_message.Error.MigrationFailed exn in
         handle_error err)
   in
-  let%lwt () = Database.Tenant.set_migration_pending db_labels in
   db_labels |> Lwt_list.iter_s run
 ;;
 
@@ -102,5 +101,16 @@ let tenants =
        let (_ : status) = Root.add () in
        let%lwt db_pools = Tenant.setup () in
        let%lwt () = migrate_tenants db_pools in
+       Lwt.return_some ())
+;;
+
+let tenant_migration_pending =
+  Command_utils.make_no_args
+    "migrate.tenant_migrations_pending"
+    "Set tenant database status to migration pending"
+    (fun () ->
+       let (_ : status) = Root.add () in
+       let%lwt db_pools = Tenant.setup () in
+       let%lwt () = Database.Tenant.set_migration_pending db_pools in
        Lwt.return_some ())
 ;;
