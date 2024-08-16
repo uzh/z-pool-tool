@@ -206,3 +206,23 @@ let reporter =
 let create_logs_dir () =
   if not (Sys.file_exists (logs_dir ())) then Sys.mkdir (logs_dir ()) 0x640
 ;;
+
+let log_exception ?prefix ~src ~tags =
+  let backtrace = Printexc.get_backtrace () in
+  let prefix = CCOption.map_or ~default:"" (Format.asprintf "%s: ") prefix in
+  let print ?(error_type = "Exception") error_name =
+    Logs.err ~src (fun m ->
+      m
+        ~tags
+        "%s%s caught: %s, Backtrace: %s"
+        prefix
+        error_type
+        error_name
+        backtrace)
+  in
+  function
+  | Caqti_error.(Exn #load_or_connect as exn) ->
+    print ~error_type:"Caqti error" (Printexc.to_string exn)
+  | Pool_message.Error.(PoolExn exn) -> print (Pool_message.Error.show exn)
+  | exn -> print (Printexc.to_string exn)
+;;

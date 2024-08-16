@@ -99,28 +99,9 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
       Lwt.catch
         (fun () -> fcn ())
         (fun exn ->
-          let log_exception error_type error_name =
-            let backtrace = Printexc.get_backtrace () in
-            Logs.err ~src (fun m ->
-              m
-                ~tags
-                "%s caught while running schedule of %s: %s, Backtrace: %s"
-                error_type
-                label
-                error_name
-                backtrace)
-          in
-          match exn with
-          | Caqti_error.(Exn #load_or_connect as exn) ->
-            log_exception "Caqti error" (Printexc.to_string exn);
-            Lwt.return_unit
-          | Pool_message.Error.PoolExn exn ->
-            let name = Pool_common.(Utils.error_to_string Language.En exn) in
-            log_exception "Exception" name;
-            Lwt.return_unit
-          | exn ->
-            log_exception "Exception" (Printexc.to_string exn);
-            Lwt.return_unit)
+          let prefix = Format.asprintf "Running schedule %s" label in
+          Logger.log_exception ~prefix ~tags ~src exn;
+          Lwt.return_unit)
     in
     Registered.update_run_status schedule scheduled_time
   in
