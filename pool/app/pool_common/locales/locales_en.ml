@@ -475,7 +475,8 @@ let rec error_to_string =
   | ContactUnconfirmed -> "Participant isn't confirmed!"
   | CustomFieldNoOptions -> "At least one option must exist."
   | CustomFieldTypeChangeNotAllowed -> "Type of field cannot be changed."
-  | DatabaseAddPoolFirst -> "Unknown Pool: Please 'add_pool' first!"
+  | DatabaseAddPoolFirst pool ->
+    Format.asprintf "Unknown Pool '%s': Please 'add_pool' first!" pool
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
   | DirectRegistrationIsDisabled ->
     "You cannot assign yourself to this experiment."

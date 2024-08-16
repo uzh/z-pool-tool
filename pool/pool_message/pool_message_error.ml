@@ -30,7 +30,7 @@ type t =
   | ContactUnconfirmed
   | CustomFieldNoOptions
   | CustomFieldTypeChangeNotAllowed
-  | DatabaseAddPoolFirst
+  | DatabaseAddPoolFirst of string
   | Decode of Field.t
   | DecodeAction
   | DefaultMustNotBeUnchecked

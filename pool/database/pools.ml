@@ -127,7 +127,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
           (err |> Caqti_error.uri |> Uri.to_string |> Url.of_string)
       in
       connect (CCFun.tap (Hashtbl.replace pools database_label)) database
-    | None -> raise Pool_message.Error.(PoolExn DatabaseAddPoolFirst)
+    | None ->
+      raise Pool_message.Error.(PoolExn (DatabaseAddPoolFirst database_label))
   ;;
 
   (* raise (Exception (Format.asprintf "Unknown Pool: Please add pool '%s'
