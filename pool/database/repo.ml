@@ -149,7 +149,7 @@ let set_migration_pending db_labels =
     let open Dynparam in
     let (Pack (pt, pv)) =
       db_labels
-      |> List.fold_left
+      |> CCList.fold_left
            (fun dyn label -> dyn |> add Caqti_type.string label)
            (empty |> add Status.t Status.MigrationsPending)
     in
@@ -161,8 +161,8 @@ let set_migration_pending db_labels =
           WHERE label IN (%s)
         |sql}
         (db_labels
-         |> List.mapi (fun i _ -> Format.asprintf "$%n" (i + 2))
-         |> String.concat ",")
+         |> CCList.mapi (fun i _ -> Format.asprintf "$%n" (i + 2))
+         |> CCString.concat ",")
       |> pt ->. Caqti_type.unit
     in
     Service.exec root request pv
