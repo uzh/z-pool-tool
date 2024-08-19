@@ -22,7 +22,9 @@ module Data = struct
 end
 
 let check_root_database _ () =
-  let (_ : status) = fetch_pool root in
+  let%lwt (_ : (unit, Pool_message.Error.t) result) =
+    connect root |> Lwt_result.map_error Pool_common.Utils.with_log_error
+  in
   Lwt.return_unit
 ;;
 

@@ -7,15 +7,10 @@ end
 module type Sig = sig
   module Config : ConfigSig
 
-  type status =
-    ( (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt_unix.Pool.t
-      , Caqti_error.load )
-      result
-
   val initialize : ?additinal_pools:Entity.t list -> unit -> unit
-  val fetch_pool : Entity.Label.t -> status
-  val add_pool : ?required:bool -> ?pool_size:int -> Entity.t -> status
+  val add_pool : ?required:bool -> Entity.t -> unit
   val drop_pool : Entity.Label.t -> unit Lwt.t
+  val connect : Entity.Label.t -> (unit, Pool_message.Error.t) result
 
   val query
     :  Entity.Label.t

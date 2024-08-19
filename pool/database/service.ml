@@ -115,11 +115,11 @@ let clean_all database_label =
     |> Lwt_result.map Utils.flat_unit)
 ;;
 
-let add_pool ?required ?(pool_size = 10) (model : Entity.t) =
-  let status = add_pool ?required ~pool_size model in
+let add_pool ?required (model : Entity.t) =
+  let status = add_pool ?required model in
   let () =
     Guard.add_pool
-      ~pool_size
+      ~pool_size:Config.database_pool_size
       Entity.(label model |> Label.value)
       Entity.(url model |> Url.value)
   in
@@ -131,3 +131,5 @@ let drop_pool label =
   let%lwt () = Guard.drop_pool (Entity.Label.value label) in
   Lwt.return_unit
 ;;
+
+let connect label = connect label |> Lwt.return
