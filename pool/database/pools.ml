@@ -126,7 +126,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
           (err |> Caqti_error.uri |> Uri.to_string |> Url.of_string)
       in
       connect (CCFun.tap (Hashtbl.replace pools database_label)) database
-    | None -> raise Pool_message.Error.(Exn DatabaseAddPoolFirst)
+    | None ->
+      raise Pool_message.Error.(Exn (DatabaseAddPoolFirst database_label))
   ;;
 
   let map_fetched database_label (fcn : 'a -> ('b, 'e) Lwt_result.t)
