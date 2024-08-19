@@ -19,7 +19,7 @@ Example: test.mail admin@mail.com contact@mail.com
       let message = "Hi! \n\n This is a test message." in
       let subject = "Test subject" in
       let email = Sihl_email.create ~sender ~recipient ~subject message in
-      let job = Email.create_job email in
+      let job = Email.Service.Job.create email in
       let%lwt () = Email.Service.dispatch Database.root job in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)

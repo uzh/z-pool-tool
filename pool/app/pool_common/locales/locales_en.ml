@@ -76,6 +76,7 @@ let rec field_to_string =
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
   | EmailLeadTime -> "email lead time"
+  | EmailLogo -> "email logo"
   | EmailRemindersSentAt -> "email reminders sent at"
   | EmailSubject -> "email subject"
   | EmailSuffix -> "email suffix"
@@ -236,6 +237,7 @@ let rec field_to_string =
   | Room -> "room"
   | Root -> "root"
   | Rule -> "rule"
+  | RunAt -> "run at"
   | ScheduledTime -> "scheduled time"
   | ScheduledTimeSpan -> "scheduled interval"
   | Search -> "search"
@@ -335,6 +337,7 @@ let success_to_string =
     field_message "" (field_to_string field) "was successfully canceled."
   | Closed field ->
     field_message "" (field_to_string field) "was successfully closed."
+  | ContactMarkedAsDeleted -> "The contact was successfully deleted."
   | ContactPromoted -> "The contact was successfully promoted to an admin."
   | Created field ->
     field_message "" (field_to_string field) "was successfully created."
@@ -478,6 +481,9 @@ let rec error_to_string =
     "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
   | DefaultMustNotBeUnchecked -> "'Default' must not be unchecked."
+  | DeleteContactUpcomingSessions ->
+    "Contact cannot be deleted. This contact is signed up to upcoming \
+     sessions. These assignments have to be deleted first."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingAdmin -> "Please provide admin email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
@@ -641,6 +647,7 @@ let rec error_to_string =
     Format.asprintf "Must not be longer than %i characters." i
   | TextLengthMin i ->
     Format.asprintf "Must not be shorter than %i characters." i
+  | TextMessageError error -> Format.asprintf "Text message error: %s" error
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
   | TextMessageDlrAlreadyReceived ->

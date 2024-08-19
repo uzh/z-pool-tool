@@ -16,24 +16,12 @@ type t =
   ; sender : Pool_tenant.GtxSender.t
   ; text : Content.t
   }
-[@@deriving eq, show, yojson]
+[@@deriving eq, show, yojson] [@@yojson.allow_extra_fields]
 
-type job =
-  { message : t
-  ; message_history : Queue.History.create option [@yojson.option]
-  ; resent : Queue.Id.t option
+let update ?new_recipient message =
+  { message with
+    recipient = CCOption.get_or ~default:message.recipient new_recipient
   }
-[@@deriving eq, show, yojson]
-
-let parse_job_json str =
-  try Ok (str |> Yojson.Safe.from_string |> job_of_yojson) with
-  | _ -> Error Pool_message.(Error.Invalid Field.Input)
-;;
-
-let job_message_history { message_history; _ } = message_history
-
-let create_job ?message_history message =
-  { message; message_history; resent = None }
 ;;
 
 let create recipient sender text = { recipient; sender; text }
@@ -69,7 +57,7 @@ module DlrMask = struct
 end
 
 type delivery_report =
-  { job_id : Queue.Id.t
+  { job_id : Pool_queue.Id.t
   ; raw : string
   ; from : string
   ; to_ : string

@@ -1192,10 +1192,7 @@ let message_history_url =
 let message_history context experiment messages =
   let open Pool_common in
   let html =
-    Page_admin_message_history.list
-      context
-      (message_history_url experiment)
-      messages
+    Page_admin_queue.list context (message_history_url experiment) messages
   in
   Layout.Experiment.(
     create

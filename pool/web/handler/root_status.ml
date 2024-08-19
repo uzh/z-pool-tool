@@ -14,21 +14,87 @@ let show _ =
   let open CCFun in
   let%lwt result =
     let open Schedule in
-    let* job_count = Queue.count_workable Database.root in
+    let create_entry ?database_label label value =
+      ( CCOption.map_or
+          ~default:label
+          (Database.Label.value %> Format.asprintf "%s [%s]" label)
+          database_label
+      , value )
+    in
+    let%lwt databases = Pool_tenant.find_all () in
+    let default = "" in
+    let%lwt root_job_count =
+      let label = Database.root in
+      Pool_queue.count_all_workable label
+      ||> CCResult.map_or CCInt.to_string ~default
+      ||> fun count -> label, count
+    in
+    let%lwt tenant_job_count =
+      Lwt_list.map_s
+        (fun { Pool_tenant.database_label; status; _ } ->
+          let open Database.Status in
+          let%lwt count =
+            match status with
+            | Active ->
+              Pool_queue.count_all_workable database_label
+              >|+ CCInt.to_string
+              ||> CCResult.to_opt
+            | ConnectionIssue | Disabled | Maintenance | OpenMigrations ->
+              Lwt.return_none
+          in
+          Lwt.return (database_label, CCOption.get_or ~default count))
+        databases
+    in
     let%lwt schedules = find_all () in
+    let schedules_of_database_label database_label =
+      schedules
+      |> CCList.filter_map (fun ({ label; _ } as schedule : public) ->
+        let contains_label =
+          let sub =
+            database_label |> Database.Label.value |> Format.asprintf "[%s]"
+          in
+          CCString.mem ~sub (Schedule.Label.value label)
+        in
+        if contains_label then Some (is_ok schedule) else None)
+      |> CCList.for_all id
+    in
     let is_ok = CCList.(map is_ok %> for_all id) in
-    (schedules
-     |> CCList.map (fun ({ label; last_run; _ } : public) ->
-       ( Label.value label
-       , CCOption.map_or ~default:"unknown" LastRunAt.show last_run )))
-    @ [ "job_count", CCInt.to_string job_count
-      ; ("ok", if is_ok schedules then "true" else "false")
-      ]
+    let list_schedules =
+      schedules
+      |> CCList.map (fun ({ label; last_run; _ } : public) ->
+        ( Label.value label
+        , CCOption.map_or ~default:"unknown" LastRunAt.show last_run ))
+    in
+    let list_database_status =
+      databases
+      |> CCList.map (fun { Pool_tenant.database_label; status; _ } ->
+        create_entry
+          ~database_label
+          Pool_message.Field.(Status |> show)
+          (Database.Status.show status))
+    in
+    let list_job_counts =
+      root_job_count :: tenant_job_count
+      |> CCList.map (fun (database_label, count) ->
+        create_entry ~database_label "job_count" count)
+    in
+    let list_ok =
+      (databases
+       |> CCList.map (fun { Pool_tenant.database_label; _ } ->
+         create_entry
+           ~database_label
+           "ok"
+           (schedules_of_database_label database_label |> Utils.Bool.to_string))
+      )
+      @ [ "ok", is_ok schedules |> Utils.Bool.to_string ]
+    in
+    list_schedules @ list_database_status @ list_job_counts @ list_ok
     |> CCList.map (fun (k, v) -> k, `String v)
     |> Lwt.return_ok
   in
+  let sort = CCList.stable_sort (fun a b -> CCString.compare (fst a) (fst b)) in
   match result with
-  | Ok result -> yojson_response (`Assoc result)
+  | Ok result -> yojson_response (`Assoc (sort result))
   | Error _ -> Rock.Response.make ~status:`No_content () |> Lwt.return
 ;;
 

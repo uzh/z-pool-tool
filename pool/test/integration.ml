@@ -198,44 +198,44 @@ let suite =
               `Slow
               assignment_creation_with_sender
           ] )
-    ; Message_history.(
-        ( "message_history"
-        , [ test_case "initialize message history data" `Slow initialize
+    ; Message_mapping.(
+        ( "message_mappings"
+        , [ test_case "initialize message mapping data" `Slow initialize
           ; test_case
-              "account suspension message history"
+              "account suspension message mapping"
               `Slow
               account_suspension_notification
           ; test_case
-              "assignment confirmation message history"
+              "assignment confirmation message mapping"
               `Slow
               assignment_confirmation
           ; test_case
-              "assignment session change message history"
+              "assignment session change message mapping"
               `Slow
               assignment_session_change
           ; test_case
-              "contact email change attempt message history"
+              "contact email change attempt message mapping"
               `Slow
               contact_email_change_attempt
           ; test_case
-              "contact registration attempt message history"
+              "contact registration attempt message mapping"
               `Slow
               contact_registration_attempt
           ; test_case
-              "email verification attempt message history"
+              "email verification attempt message mapping"
               `Slow
               email_verification
           ; test_case
-              "experiment invitation message history"
+              "experiment invitation message mapping"
               `Slow
               experiment_invitation
-          ; test_case "password change message history" `Slow password_change
-          ; test_case "password reset message history" `Slow password_reset
+          ; test_case "password change message mapping" `Slow password_change
+          ; test_case "password reset message mapping" `Slow password_reset
           ; test_case
-              "phone verification message history"
+              "phone verification message mapping"
               `Slow
               phone_verification
-          ; test_case "session reminder message history" `Slow session_reminder
+          ; test_case "session reminder message mapping" `Slow session_reminder
           ] ))
     ; ( "assignment"
       , Assignment_test.
@@ -427,7 +427,7 @@ let services =
   ; Pool_user.register ()
   ; Pool_token.register ()
   ; Email.Service.register ()
-  ; Queue.register ()
+  ; Pool_queue.register ()
   ; Storage.register ()
   ]
 ;;

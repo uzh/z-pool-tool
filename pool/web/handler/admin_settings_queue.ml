@@ -6,19 +6,19 @@ module Command = Cqrs_command.Queue_command
 
 let src = Logs.Src.create "handler.admin.settings_queue"
 let base_path = "/admin/settings/queue"
-let job_id = HttpUtils.find_id Queue.Id.of_string Field.Queue
+let job_id = HttpUtils.find_id Pool_queue.Id.of_string Field.Queue
 
 let show req =
   HttpUtils.Htmx.handler
     ~active_navigation:base_path
     ~error_path:"/admin"
     ~create_layout:General.create_tenant_layout
-    ~query:(module Queue)
+    ~query:(module Pool_queue)
     req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let%lwt queue = Queue.find_by ~query database_label in
+  let%lwt queue = Pool_queue.find_by ~query database_label in
   let open Page.Admin.Settings.Queue in
-  (if HttpUtils.Htmx.is_hx_request req then data_table else index) context queue
+  (if HttpUtils.Htmx.is_hx_request req then list else index) context queue
   |> Lwt_result.return
 ;;
 
@@ -26,20 +26,17 @@ let detail req =
   let result ({ Pool_context.database_label; _ } as context) =
     Lwt_result.map_error (fun err -> err, "/admin/settings/queue")
     @@
+    let open Pool_queue in
+    let open JobName in
     let id = job_id req in
-    let* queue_instance = Queue.find database_label id in
-    let* job = Command.parse_instance_job queue_instance |> Lwt_result.lift in
+    let* instance = find database_label id in
     let%lwt text_message_dlr =
-      match job with
-      | `TextMessageJob _ ->
+      match Instance.name instance with
+      | SendTextMessage ->
         Text_message.find_report_by_queue_id database_label id
-      | `EmailJob _ | `MatcherJob _ -> Lwt.return_none
+      | SendEmail | CheckMatchesFilter -> Lwt.return_none
     in
-    Page.Admin.Settings.Queue.detail
-      context
-      ?text_message_dlr
-      queue_instance
-      job
+    Page.Admin.Settings.Queue.detail context ?text_message_dlr instance
     |> General.create_tenant_layout req ~active_navigation:base_path context
     >|+ Sihl.Web.Response.of_html
   in
@@ -49,26 +46,24 @@ let detail req =
 let resend req =
   let open Utils.Lwt_result.Infix in
   let id = job_id req in
-  let path = Format.asprintf "%s/%s" base_path (Queue.Id.value id) in
+  let path = Format.asprintf "%s/%s" base_path (Pool_queue.Id.value id) in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* job = Queue.find database_label id in
-    let find_related = Queue.History.find_related database_label job in
+    let* job = Pool_queue.find database_label id in
+    let find_related = Pool_queue.find_related database_label job in
     let%lwt job_contact =
-      match%lwt find_related `contact with
-      | None -> Lwt.return_none
-      | Some contact_id ->
+      find_related `Contact
+      >|> CCOption.map_or ~default:Lwt.return_none (fun contact_id ->
         let open Contact in
-        contact_id |> Id.of_common |> find database_label ||> CCResult.to_opt
+        contact_id |> Id.of_common |> find database_label ||> CCResult.to_opt)
     in
     let%lwt job_experiment =
-      match%lwt find_related `experiment with
-      | None -> Lwt.return_none
-      | Some experiment_id ->
+      find_related `Experiment
+      >|> CCOption.map_or ~default:Lwt.return_none (fun experiment_id ->
         let open Experiment in
-        experiment_id |> Id.of_common |> find database_label ||> CCResult.to_opt
+        experiment_id |> Id.of_common |> find database_label ||> CCResult.to_opt)
     in
     let* () =
       Command.Resend.handle ?contact:job_contact ?experiment:job_experiment job
@@ -91,7 +86,7 @@ end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let index = Queue.Guard.Access.index |> Guardian.validate_admin_entity
-  let read = Queue.Guard.Access.read |> Guardian.validate_admin_entity
+  let index = Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
+  let read = Pool_queue.Guard.Access.read |> Guardian.validate_admin_entity
   let resend = Command.Resend.effects |> Guardian.validate_admin_entity
 end

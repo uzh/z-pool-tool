@@ -267,7 +267,7 @@ let to_uri_query ?(additional_params = []) { filter; pagination; search; sort } 
   |> CCList.map (Option.value ~default:[])
   |> CCList.flatten
   |> CCList.append additional_params
-  |> CCList.map (fun (k, v) -> Pool_message.Field.show k, [ Uri.pct_encode v ])
+  |> CCList.map (fun (k, v) -> Pool_message.Field.show k, [ v ])
 ;;
 
 let filter { filter; _ } = filter

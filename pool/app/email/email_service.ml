@@ -1,5 +1,5 @@
+open CCFun
 module SmtpAuth = Entity.SmtpAuth
-module History = Queue.History
 
 module Cache = struct
   open Hashtbl
@@ -74,18 +74,6 @@ let console () =
     (Sihl.Configuration.read_bool "EMAIL_CONSOLE")
 ;;
 
-let parse_job_json str =
-  Entity.parse_job_json str
-  |> CCResult.map_err (fun _ ->
-    Logs.err ~src (fun m ->
-      m
-        ~tags
-        "Serialized email string was NULL, can not deserialize email. Please \
-         fix the string manually and reset the job instance. Error: %s"
-        str);
-    "Invalid serialized email string received")
-;;
-
 let redirected_email
   new_recipient
   (Sihl_email.{ recipient; subject; cc; bcc; text; _ } as email)
@@ -112,7 +100,7 @@ let redirected_email
     }
 ;;
 
-let intercept_prepare ({ Entity.email; _ } as job) =
+let intercept_prepare ({ Entity.Job.email; _ } as job) =
   let () = if console () then print ~log_level:Logs.Info email else () in
   match Sihl.Configuration.is_production (), intercept_email_address () with
   | true, _ -> Ok job
@@ -123,7 +111,7 @@ let intercept_prepare ({ Entity.email; _ } as job) =
         "Sending email intercepted. Sending email to new recipient ('%s')"
         new_recipient);
     let email = email |> redirected_email new_recipient in
-    Ok Entity.{ job with email }
+    Ok { job with Entity.Job.email }
   | false, None ->
     Error
       (Pool_message.Error.EmailInterceptionError
@@ -311,7 +299,7 @@ module Smtp = struct
     Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
     |> function
     | Ok message ->
-      Logs.info ~src (fun m ->
+      Logs.debug ~src (fun m ->
         m
           ~tags:(Database.Logger.Tags.create database_label)
           "Send email as %s to %s"
@@ -360,64 +348,88 @@ let register () =
 ;;
 
 module Job = struct
+  include Entity.Job
+
+  let encode = yojson_of_t %> Yojson.Safe.to_string
+
+  let decode str =
+    try Ok (str |> Yojson.Safe.from_string |> t_of_yojson) with
+    | _ ->
+      Logs.err ~src (fun m ->
+        m
+          ~tags
+          "Serialized email string was NULL, can not deserialize email. Please \
+           fix the string manually and reset the job instance. Error: %s"
+          str);
+      Error Pool_message.(Error.Invalid Field.Input)
+  ;;
+
+  let intercept_prepare_of_event =
+    intercept_prepare %> Pool_common.Utils.get_or_failwith
+  ;;
+
+  let show_recipient =
+    Pool_queue.Instance.input
+    %> decode
+    %> CCResult.map_or
+         ~default:"error"
+         (email %> fun x -> x.Sihl_email.recipient)
+  ;;
+
   let send =
     let open CCFun in
     let open Utils.Lwt_result.Infix in
-    let handle label (_ : Queue.Id.t option) { Entity.email; smtp_auth_id; _ } =
+    let open Pool_queue in
+    let handle ?id:_ label ({ email; smtp_auth_id; _ } : t) =
       Lwt.catch
         (fun () -> send ?smtp_auth_id label email ||> CCResult.return)
-        (Printexc.to_string %> Lwt.return_error)
+        (Printexc.to_string %> Pool_message.Error.nothandled %> Lwt.return_error)
     in
-    let encode = Entity.yojson_of_job %> Yojson.Safe.to_string in
-    let decode = parse_job_json in
-    let open Queue in
     Job.create
-      handle
       ~max_tries:10
       ~retry_delay:(Sihl.Time.Span.hours 1)
+      handle
       encode
       decode
       JobName.SendEmail
   ;;
 end
 
-let callback database_label instance =
-  let job =
-    instance
-    |> Queue.Instance.input
-    |> parse_job_json
-    |> CCResult.get_or_failwith
-  in
-  match job.Entity.message_history with
-  | None -> Lwt.return_unit
-  | Some message_history ->
-    History.create_from_queue_instance database_label message_history instance
-;;
-
-let dispatch database_label ({ Entity.email; _ } as job) =
-  let callback = callback database_label in
+let dispatch
+  ?id
+  ?new_email_address
+  ?new_smtp_auth_id
+  ?message_template
+  ?(job_ctx = Pool_queue.job_ctx_create [])
+  database_label
+  ({ Entity.Job.email; _ } as job)
+  =
+  let tags = Database.Logger.Tags.create database_label in
   Logs.debug ~src (fun m ->
-    m
-      ~tags:(Database.Logger.Tags.create database_label)
-      "Dispatch email to %s"
-      email.Sihl_email.recipient);
-  Queue.dispatch
-    ~callback
+    m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
+  let job = job |> Job.update ?new_email_address ?new_smtp_auth_id in
+  Pool_queue.dispatch
+    ?id
+    ?message_template
+    ~job_ctx
     database_label
-    (job |> intercept_prepare |> Pool_common.Utils.get_or_failwith)
+    (job |> Job.intercept_prepare_of_event)
     Job.send
 ;;
 
-let dispatch_all database_label (jobs : Entity.job list) =
-  let callback = callback database_label in
+let dispatch_all database_label jobs =
   let recipients, jobs =
     jobs
     |> CCList.fold_left
-         (fun (recipients, jobs) ({ Entity.email; _ } as job) ->
-           let job =
-             job |> intercept_prepare |> Pool_common.Utils.get_or_failwith
-           in
-           email.Sihl_email.recipient :: recipients, job :: jobs)
+         (fun (recipients, jobs)
+           (id, ({ Entity.Job.email; _ } as job), message_template, mappings) ->
+           ( email.Sihl_email.recipient :: recipients
+           , ( id
+             , job |> Job.intercept_prepare_of_event
+             , message_template
+             , CCOption.get_or ~default:(Pool_queue.job_ctx_create []) mappings
+             )
+             :: jobs ))
          ([], [])
   in
   Logs.debug ~src (fun m ->
@@ -425,5 +437,5 @@ let dispatch_all database_label (jobs : Entity.job list) =
       ~tags:(Database.Logger.Tags.create database_label)
       "Dispatch email to %s"
       ([%show: string list] recipients));
-  Queue.dispatch_all ~callback database_label jobs Job.send
+  Pool_queue.dispatch_all database_label jobs Job.send
 ;;

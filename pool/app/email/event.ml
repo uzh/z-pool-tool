@@ -1,3 +1,4 @@
+open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 open Entity
 module User = Pool_user
 
@@ -48,18 +49,67 @@ let pp_verification_event formatter (event : verification_event) : unit =
   | EmailVerified m -> pp formatter m
 ;;
 
+type dispatch =
+  { job : Job.t
+  ; id : Pool_queue.Id.t option [@yojson.option]
+  ; message_template : string option [@yojson.option]
+  ; job_ctx : Pool_queue.job_ctx option [@yojson.option]
+  }
+[@@deriving eq, fields, show, yojson]
+
+let create_dispatch ?id ?message_template ?job_ctx job =
+  { job; id; message_template; job_ctx }
+;;
+
 type event =
-  | Sent of job
-  | BulkSent of job list
+  | Sent of (dispatch * User.EmailAddress.t option * SmtpAuth.Id.t option)
+  | BulkSent of dispatch list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpDeleted of SmtpAuth.Id.t
   | SmtpPasswordEdited of SmtpAuth.update_password
 [@@deriving eq, show, variants]
 
+let sent ?new_email_address ?new_smtp_auth_id job =
+  Sent (job, new_email_address, new_smtp_auth_id)
+;;
+
+let create_sent
+  ?id
+  ?message_template
+  ?job_ctx
+  ?new_email_address
+  ?new_smtp_auth_id
+  job
+  =
+  create_dispatch ?id ?message_template ?job_ctx job
+  |> sent ?new_email_address ?new_smtp_auth_id
+;;
+
 let handle_event pool : event -> unit Lwt.t = function
-  | Sent job -> Email_service.dispatch pool job
-  | BulkSent jobs -> Email_service.dispatch_all pool jobs
+  | Sent
+      ( { job; id; message_template; job_ctx }
+      , new_email_address
+      , new_smtp_auth_id ) ->
+    Email_service.dispatch
+      ?id
+      ?new_email_address
+      ?new_smtp_auth_id
+      ?message_template
+      ?job_ctx
+      pool
+      job
+  | BulkSent jobs ->
+    let jobs =
+      CCList.map
+        (fun { job; id; message_template; job_ctx } ->
+          ( CCOption.get_or ~default:(Pool_queue.Id.create ()) id
+          , job
+          , message_template
+          , job_ctx ))
+        jobs
+    in
+    Email_service.dispatch_all pool jobs
   | SmtpCreated ({ SmtpAuth.Write.id; _ } as created) ->
     let open Utils.Lwt_result.Infix in
     let ctx = Database.to_ctx pool in

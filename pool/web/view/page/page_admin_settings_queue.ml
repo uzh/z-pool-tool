@@ -5,68 +5,7 @@ module HttpUtils = Http_utils
 
 let formatted_date_time = Pool_model.Time.formatted_date_time
 let base_path = "/admin/settings/queue"
-
-let data_table_head language =
-  let open Pool_common in
-  let open Queue in
-  let field_to_string field =
-    Utils.field_to_string_capitalized language field |> txt
-  in
-  let name = `column column_job_name in
-  let status = `column column_job_status in
-  let input = `custom (field_to_string Field.Input) in
-  let last_error = `custom (field_to_string Field.LastError) in
-  let last_error_at = `column column_last_error_at in
-  let next_run = `column column_next_run in
-  function
-  | `settings ->
-    [ name; status; input; last_error; last_error_at; next_run; `empty ]
-  | `history ->
-    [ name; `empty; status; last_error; last_error_at; next_run; `empty ]
-;;
-
-let data_table Pool_context.{ language; _ } (queued_jobs, query) =
-  let open Queue in
-  let url = Uri.of_string base_path in
-  let data_table =
-    Component.DataTable.create_meta
-      ?filter:filterable_by
-      ~search:searchable_by
-      url
-      query
-      language
-  in
-  let cols = data_table_head language `settings in
-  let th_class = [ "w-1"; "w-1"; "w-4"; "w-2"; "w-1"; "w-1" ] in
-  let row instance =
-    let formatted_date_time date =
-      span ~a:[ a_class [ "nobr" ] ] [ txt (formatted_date_time date) ]
-    in
-    [ txt (instance |> Instance.name |> JobName.show)
-    ; txt
-        (instance |> Instance.status |> Status.show |> CCString.capitalize_ascii)
-    ; span
-        ~a:[ a_class [ "word-break-all" ] ]
-        [ txt (instance |> Instance.input |> CCString.take 80) ]
-    ; txt (instance |> Instance.last_error |> CCOption.value ~default:"-")
-    ; instance
-      |> Instance.last_error_at
-      |> CCOption.map_or ~default:(txt "-") formatted_date_time
-    ; instance |> Instance.next_run_at |> formatted_date_time
-    ; [%string "/admin/settings/queue/%{instance |> Instance.id |> Id.value}"]
-      |> Component.Input.link_as_button ~icon:Component.Icon.Eye
-    ]
-    |> CCList.map CCFun.(CCList.return %> td)
-    |> tr
-  in
-  Component.DataTable.make
-    ~target_id:"queue-ob-list"
-    ~th_class
-    ~cols
-    ~row
-    data_table
-    queued_jobs
-;;
+let list context = Page_admin_queue.list context (Uri.of_string base_path)
 
 let render_email_html html =
   let style = "<style>section { word-break: break-all; } </style>" in
@@ -79,26 +18,31 @@ let render_email_html html =
   div ~a:[ a_class [ "border" ] ] Unsafe.[ data html ]
 ;;
 
-let email_job_instance_detail { Email.email; _ } =
-  let { Sihl_email.sender; recipient; subject; text; html; _ } = email in
-  [ Field.Sender, txt sender
-  ; Field.Recipient, txt recipient
-  ; Field.EmailSubject, txt subject
-  ; Field.EmailText, html |> CCOption.map_or ~default:(txt "") render_email_html
-  ; ( Field.PlainText
-    , div
-        ~a:[ a_class [ "word-wrap-break" ] ]
-        [ HttpUtils.add_line_breaks text ] )
-  ]
+let email_job_instance_detail instance =
+  let open Email.Service.Job in
+  decode (Pool_queue.Instance.input instance)
+  |> CCResult.map_or ~default:[] (fun job ->
+    let { Sihl_email.sender; recipient; subject; text; html; _ } = email job in
+    [ Field.Sender, txt sender
+    ; Field.Recipient, txt recipient
+    ; Field.EmailSubject, txt subject
+    ; ( Field.EmailText
+      , html |> CCOption.map_or ~default:(txt "") render_email_html )
+    ; ( Field.PlainText
+      , div
+          ~a:[ a_class [ "word-wrap-break" ] ]
+          [ HttpUtils.add_line_breaks text ] )
+    ])
 ;;
 
-let text_message_job_instance_detail { Text_message.message; _ } =
+let text_message_job_instance_detail instance =
   let open Text_message in
-  let { recipient; sender; text } = message in
-  [ Field.Recipient, txt (Pool_user.CellPhone.value recipient)
-  ; Field.Sender, txt (Pool_tenant.GtxSender.value sender)
-  ; Field.SmsText, Content.value text |> HttpUtils.add_line_breaks
-  ]
+  Service.Job.decode (Pool_queue.Instance.input instance)
+  |> CCResult.map_or ~default:[] (fun { recipient; sender; text } ->
+    [ Field.Recipient, txt (Pool_user.CellPhone.value recipient)
+    ; Field.Sender, txt (Pool_tenant.GtxSender.value sender)
+    ; Field.SmsText, Content.value text |> HttpUtils.add_line_breaks
+    ])
 ;;
 
 let matcher_job_instance_detail label =
@@ -120,7 +64,8 @@ let text_message_dlr_detail dlr =
   |> table ~a:[ a_class [ "table"; "striped"; "align-top" ] ]
 ;;
 
-let queue_instance_detail language ?text_message_dlr instance job =
+let queue_instance_detail language ?text_message_dlr instance =
+  let open Pool_queue.JobName in
   let default = "-" in
   let vertical_table =
     Component.Table.vertical_table
@@ -129,9 +74,9 @@ let queue_instance_detail language ?text_message_dlr instance job =
       `Striped
       language
   in
-  let clone_link =
+  let clone_link, job_detail =
     let link id =
-      let id = Queue.Id.value id in
+      let id = Pool_queue.Id.value id in
       div
         [ txt Pool_common.(Utils.text_to_string language I18n.JobCloneOf)
         ; txt " "
@@ -144,32 +89,30 @@ let queue_instance_detail language ?text_message_dlr instance job =
             [ txt id ]
         ]
     in
-    CCOption.map_or ~default:(txt "") link
-    @@
-    match job with
-    | `MatcherJob _ -> None
-    | `EmailJob { Email.resent; _ } -> resent
-    | `TextMessageJob { Text_message.resent; _ } -> resent
-  in
-  let job_detail =
-    match job with
-    | `MatcherJob database_label -> matcher_job_instance_detail database_label
-    | `EmailJob email -> email_job_instance_detail email
-    | `TextMessageJob msg -> text_message_job_instance_detail msg
+    let link =
+      let open CCOption in
+      instance |> Pool_queue.Instance.clone_of |> map_or ~default:(txt "") link
+    in
+    match Pool_queue.Instance.name instance with
+    | CheckMatchesFilter ->
+      ( txt ""
+      , matcher_job_instance_detail
+          (Pool_queue.Instance.database_label instance) )
+    | SendEmail -> link, email_job_instance_detail instance
+    | SendTextMessage -> link, text_message_job_instance_detail instance
   in
   let queue_instance_detail =
-    let open Queue in
+    let open Pool_queue in
     (( Field.Status
      , strong
          [ instance
            |> Instance.status
-           |> Queue.Status.show
+           |> Pool_queue.Status.show
            |> CCString.capitalize_ascii
            |> txt
          ] )
      :: job_detail)
-    @ [ Field.Tag, instance |> Instance.tag |> CCOption.value ~default |> txt
-      ; Field.Tries, instance |> Instance.tries |> CCInt.to_string |> txt
+    @ [ Field.Tries, instance |> Instance.tries |> CCInt.to_string |> txt
       ; Field.MaxTries, instance |> Instance.max_tries |> CCInt.to_string |> txt
       ; ( Field.LastErrorAt
         , instance
@@ -179,7 +122,7 @@ let queue_instance_detail language ?text_message_dlr instance job =
       ; ( Field.LastError
         , instance |> Instance.last_error |> CCOption.value ~default |> txt )
       ; ( Field.NextRunAt
-        , instance |> Instance.next_run_at |> formatted_date_time |> txt )
+        , instance |> Instance.run_at |> formatted_date_time |> txt )
       ]
     |> vertical_table
   in
@@ -206,8 +149,9 @@ let index (Pool_context.{ language; _ } as context) job =
       ~a:[ a_class [ "heading-1" ] ]
       [ txt Pool_common.(Utils.nav_link_to_string language I18n.Queue) ]
   in
-  let html = data_table context job in
-  div ~a:[ a_class [ "gap-lg"; "trim"; "safety-margin" ] ] [ title; html ]
+  div
+    ~a:[ a_class [ "gap-lg"; "trim"; "safety-margin" ] ]
+    [ title; list context job ]
 ;;
 
 let resend_form Pool_context.{ csrf; language; _ } job =
@@ -217,7 +161,7 @@ let resend_form Pool_context.{ csrf; language; _ } job =
           (Format.asprintf
              "%s/%s/resend"
              base_path
-             (job |> Queue.Instance.id |> Queue.Id.value)
+             (job |> Pool_queue.Instance.id |> Pool_queue.Id.value)
            |> Sihl.Web.externalize_path)
       ; a_method `Post
       ]
@@ -231,14 +175,10 @@ let resend_form Pool_context.{ csrf; language; _ } job =
     ]
 ;;
 
-let detail
-  Pool_context.({ language; _ } as context)
-  ?text_message_dlr
-  instance
-  job
-  =
+let detail Pool_context.({ language; _ } as context) ?text_message_dlr instance =
+  let open Pool_queue in
   let buttons_html =
-    if Queue.Instance.resendable instance |> CCResult.is_ok
+    if Instance.resendable instance |> CCResult.is_ok
     then
       div
         ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
@@ -248,7 +188,7 @@ let detail
   let html =
     div
       ~a:[ a_class [ "gap-lg" ] ]
-      [ queue_instance_detail language ?text_message_dlr instance job ]
+      [ queue_instance_detail language ?text_message_dlr instance ]
   in
   let title =
     div
@@ -266,9 +206,9 @@ let detail
               ~a:[ a_class [ "heading-1" ] ]
               [ Format.asprintf
                   "%s%s"
-                  (instance |> Queue.Instance.name |> Queue.JobName.show)
+                  (instance |> Instance.name |> JobName.show)
                   (instance
-                   |> Queue.Instance.last_error_at
+                   |> Instance.last_error_at
                    |> CCOption.map_or
                         ~default:""
                         CCFun.(formatted_date_time %> Format.asprintf " (%s)"))

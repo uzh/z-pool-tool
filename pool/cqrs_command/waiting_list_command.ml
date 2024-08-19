@@ -7,7 +7,7 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Email.job
+    -> Email.dispatch
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -28,7 +28,7 @@ end = struct
     then
       Ok
         [ Waiting_list.Created command |> Pool_event.waiting_list
-        ; Email.Sent confimration_email |> Pool_event.email
+        ; Email.sent confimration_email |> Pool_event.email
         ]
     else Error Pool_message.Error.NotEligible
   ;;

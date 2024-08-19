@@ -107,9 +107,10 @@ let create_reminder_events
   Lwt_result.return (email_events @ text_msg_events)
 ;;
 
-let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
+let send_tenant_reminder database_label =
   let open Utils.Lwt_result.Infix in
   let run () =
+    let* tenant = Pool_tenant.find_by_label database_label in
     let* email_reminders, text_message_reminders =
       Session.find_sessions_to_remind tenant
     in
@@ -148,7 +149,9 @@ let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
 
 let run () =
   let open Utils.Lwt_result.Infix in
-  () |> Pool_tenant.find_all >|> Lwt_list.iter_s send_tenant_reminder
+  ()
+  |> Database.Tenant.find_all_by_status
+  >|> Lwt_list.iter_s send_tenant_reminder
 ;;
 
 let start_handler () =

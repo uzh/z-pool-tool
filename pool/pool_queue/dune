@@ -1,5 +1,5 @@
 (library
- (name queue)
+ (name pool_queue)
  (libraries
   canary
   containers

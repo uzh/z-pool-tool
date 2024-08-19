@@ -10,6 +10,8 @@ type t =
   | Closed
   | ContactWaitingListEmpty
   | CustomFieldsSettings
+  | CustomFieldsSettingsCloseScreen
+  | CustomFieldsSettingsDetailScreen
   | DashboardProfileCompletionText
   | DashboardProfileCompletionTitle
   | DashboardTitle
@@ -190,6 +192,7 @@ type hint =
   | CustomFieldTypeText
   | CustomHtmx of string
   | DefaultReminderLeadTime of Ptime.Span.t
+  | DeleteContact
   | DirectRegistrationDisbled
   | Distribution
   | DuplicateSession
@@ -210,6 +213,7 @@ type hint =
   | ExperimentWaitingList
   | ExperumentSurveyRedirectUrl
   | ExternalDataRequired
+  | FileUploadAcceptMime of string list
   | FilterTemplates
   | GtxKeyMissing
   | GtxKeyStored
@@ -311,6 +315,7 @@ type confirmable =
   | CancelAssignmentWithFollowUps
   | CancelSession
   | CloseSession
+  | DeleteContact
   | DeleteCustomField
   | DeleteCustomFieldOption
   | DeleteEmailSuffix

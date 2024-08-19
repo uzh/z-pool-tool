@@ -252,7 +252,8 @@ let contacts db_label =
       ( person.uid |> Contact.Id.of_string
       , person.first_name |> User.Firstname.of_string
       , person.last_name |> User.Lastname.of_string
-      , person.email |> User.EmailAddress.of_string
+      , CCFormat.asprintf "test+%i@econ.uzh.ch" idx
+        |> User.EmailAddress.of_string
       , language
       , terms_accepted_at |> CCOption.map User.TermsAccepted.create
       , paused
@@ -327,8 +328,10 @@ let contacts db_label =
             then
               [ Contact.(
                   Updated
-                    { contact with paused = Pool_user.Paused.create paused })
-              ; Contact.Disabled contact
+                    { contact with
+                      paused = Pool_user.Paused.create paused
+                    ; disabled = Pool_user.Disabled.create true
+                    })
               ]
             else [] @ if verified then [ Contact.EmailVerified contact ] else []
           in

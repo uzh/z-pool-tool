@@ -9,7 +9,7 @@
   command
   guard
   pool_canary
-  queue
+  pool_queue
   reminder
   routes
   sihl

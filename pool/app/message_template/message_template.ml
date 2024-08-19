@@ -5,6 +5,20 @@ include Message_utils
 module Guard = Entity_guard
 
 let src = Logs.Src.create "message_template"
+
+let create_email_job ?smtp_auth_id label mapping_uuids email =
+  Email.Service.Job.create ?smtp_auth_id email
+  |> Email.create_dispatch
+       ~message_template:(Label.show label)
+       ~job_ctx:(Pool_queue.job_ctx_create mapping_uuids)
+;;
+
+let create_text_message_job ?message_template ?(entity_uuids = []) =
+  Text_message.create_job
+    ?message_template:(CCOption.map Label.show message_template)
+    ~job_ctx:(Pool_queue.job_ctx_create entity_uuids)
+;;
+
 let find = Repo.find
 
 let find_default_by_label_and_language pool language label =
@@ -239,43 +253,30 @@ let assignment_params { Assignment.id; external_data_id; _ } =
   [ "assignmentId", assignment_id; "externalDataId", external_data_id ]
 ;;
 
-let user_message_history label user =
-  let entity_uuids = [ user.Pool_user.id |> Pool_user.Id.to_common ] in
-  Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
+let user_message_uuids user = [ user.Pool_user.id |> Pool_user.Id.to_common ]
+
+let experiment_message_uuids experiment contact =
+  [ Contact.(id contact |> Id.to_common)
+  ; Experiment.(experiment.Experiment.id |> Id.to_common)
+  ]
 ;;
 
-let experiment_message_history label experiment contact =
-  let entity_uuids =
-    [ Contact.(id contact |> Id.to_common)
-    ; Experiment.(experiment.Experiment.id |> Id.to_common)
-    ]
-  in
-  Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
+let public_experiment_message_uuids experiment contact =
+  [ Contact.(id contact |> Id.to_common)
+  ; Experiment.(experiment |> Public.id |> Id.to_common)
+  ]
 ;;
 
-let public_experiment_message_history label experiment contact =
-  let entity_uuids =
-    [ Contact.(id contact |> Id.to_common)
-    ; Experiment.(experiment |> Public.id |> Id.to_common)
-    ]
-  in
-  Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
-;;
-
-let session_message_history label experiment session contact =
-  let entity_uuids =
-    [ Contact.(id contact |> Id.to_common)
-    ; Session.(session.Session.id |> Id.to_common)
-    ; Experiment.(experiment.Experiment.id |> Id.to_common)
-    ]
-  in
-  Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
+let session_message_uuids experiment session contact =
+  [ Contact.(id contact |> Id.to_common)
+  ; Session.(session.Session.id |> Id.to_common)
+  ; Experiment.(experiment.Experiment.id |> Id.to_common)
+  ]
 ;;
 
 module AccountSuspensionNotification = struct
   let email_params = global_params
   let label = Label.AccountSuspensionNotification
-  let message_history = user_message_history label
 
   let create ({ Pool_tenant.database_label; _ } as tenant) user =
     let open Message_utils in
@@ -297,8 +298,7 @@ module AccountSuspensionNotification = struct
     let layout = layout_from_tenant tenant in
     let params = email_params layout user in
     let email = prepare_email language template sender email layout params in
-    let message_history = message_history user in
-    Email.create_job ~message_history email |> Lwt_result.return
+    create_email_job label (user_message_uuids user) email |> Lwt_result.return
   ;;
 end
 
@@ -306,7 +306,6 @@ module AssignmentCancellation = struct
   open Assignment
 
   let label = Label.AssignmentCancellation
-  let message_history = session_message_history label
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params
@@ -360,10 +359,10 @@ module AssignmentCancellation = struct
     let email =
       prepare_email language template sender email_address layout params
     in
-    let message_history =
-      message_history experiment session assignment.contact
+    let entity_uuids =
+      session_message_uuids experiment session assignment.contact
     in
-    Email.create_job ~message_history ?smtp_auth_id email |> Lwt.return
+    create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return
   ;;
 end
 
@@ -371,7 +370,6 @@ module AssignmentConfirmation = struct
   open Assignment
 
   let label = Label.AssignmentConfirmation
-  let message_history = session_message_history label
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params
@@ -424,10 +422,10 @@ module AssignmentConfirmation = struct
       let email =
         prepare_email language template sender email_address layout params
       in
-      let message_history =
-        message_history experiment session assignment.contact
+      let entity_uuids =
+        session_message_uuids experiment session assignment.contact
       in
-      Email.create_job ~message_history ?smtp_auth_id email
+      create_email_job ?smtp_auth_id label entity_uuids email
     in
     Lwt.return fnc
   ;;
@@ -436,20 +434,13 @@ end
 module AssignmentSessionChange = struct
   let label = Label.AssignmentSessionChange
 
-  let message_history
-    experiment
-    new_session
-    old_session
-    { Assignment.contact; _ }
+  let message_uuids experiment new_session old_session { Assignment.contact; _ }
     =
-    let entity_uuids =
-      [ experiment.Experiment.id |> Experiment.Id.to_common
-      ; new_session.Session.id |> Session.Id.to_common
-      ; old_session.Session.id |> Session.Id.to_common
-      ; contact |> Contact.id |> Contact.Id.to_common
-      ]
-    in
-    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
+    [ experiment.Experiment.id |> Experiment.Id.to_common
+    ; new_session.Session.id |> Session.Id.to_common
+    ; old_session.Session.id |> Session.Id.to_common
+    ; contact |> Contact.id |> Contact.Id.to_common
+    ]
   ;;
 
   let base_params layout contact = contact.Contact.user |> global_params layout
@@ -484,16 +475,15 @@ module AssignmentSessionChange = struct
         assignment
     in
     let email = prepare_manual_email message layout params sender in
-    let message_history =
-      message_history experiment new_session old_session assignment
+    let entity_uuids =
+      message_uuids experiment new_session old_session assignment
     in
-    Email.create_job ?smtp_auth_id ~message_history email |> Lwt.return
+    create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return
   ;;
 end
 
 module ContactEmailChangeAttempt = struct
   let label = Label.ContactEmailChangeAttempt
-  let message_history = user_message_history label
 
   let email_params layout tenant_url user =
     let reset_url = create_public_url tenant_url "/request-reset-password" in
@@ -533,14 +523,13 @@ module ContactEmailChangeAttempt = struct
         layout
         (email_params layout tenant_url user)
     in
-    let message_history = message_history user in
-    Email.create_job ~message_history email |> Lwt_result.return
+    let entity_uuids = user_message_uuids user in
+    create_email_job label entity_uuids email |> Lwt.return_ok
   ;;
 end
 
 module ContactRegistrationAttempt = struct
   let label = Label.ContactRegistrationAttempt
-  let message_history = user_message_history label
 
   let email_params layout tenant_url user =
     let reset_url = create_public_url tenant_url "/request-reset-password" in
@@ -568,14 +557,13 @@ module ContactRegistrationAttempt = struct
         layout
         (email_params layout tenant_url user)
     in
-    let message_history = message_history user in
-    Email.create_job ~message_history email |> Lwt.return
+    let entity_uuids = user_message_uuids user in
+    create_email_job label entity_uuids email |> Lwt.return
   ;;
 end
 
 module EmailVerification = struct
   let label = Label.EmailVerification
-  let message_history = user_message_history label
 
   let email_params layout validation_url contact =
     global_params layout contact.Contact.user
@@ -606,14 +594,13 @@ module EmailVerification = struct
         layout
         (email_params layout validation_url contact)
     in
-    let message_history = message_history (Contact.user contact) in
-    Email.create_job ~message_history email |> Lwt.return
+    let entity_uuids = user_message_uuids (Contact.user contact) in
+    create_email_job label entity_uuids email |> Lwt.return
   ;;
 end
 
 module ExperimentInvitation = struct
   let label = Label.ExperimentInvitation
-  let message_history = experiment_message_history label
   let optout_link = Verified
 
   let email_params layout experiment contact =
@@ -654,8 +641,8 @@ module ExperimentInvitation = struct
           layout
           params
       in
-      let message_history = message_history experiment contact in
-      Email.create_job ?smtp_auth_id ~message_history email |> CCResult.return
+      let entity_uuids = experiment_message_uuids experiment contact in
+      Ok (create_email_job ?smtp_auth_id label entity_uuids email)
     in
     Lwt.return fnc
   ;;
@@ -681,24 +668,13 @@ module ExperimentInvitation = struct
         layout
         params
     in
-    let message_history = message_history experiment contact in
-    Email.create_job ~message_history ?smtp_auth_id email |> Lwt.return
+    let entity_uuids = experiment_message_uuids experiment contact in
+    create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return
   ;;
 end
 
 module ManualSessionMessage = struct
   let label = Label.ManualSessionMessage
-
-  let message_history experiment session { Assignment.contact; _ } =
-    let entity_uuids =
-      [ experiment.Experiment.id |> Experiment.Id.to_common
-      ; session.Session.id |> Session.Id.to_common
-      ; contact |> Contact.id |> Contact.Id.to_common
-      ]
-    in
-    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
-  ;;
-
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params language layout experiment session assignment =
@@ -725,8 +701,10 @@ module ManualSessionMessage = struct
         assignment
     in
     let email = prepare_manual_email message layout params sender in
-    let message_history = message_history experiment session assignment in
-    Email.create_job ?smtp_auth_id ~message_history email
+    let entity_uuids =
+      session_message_uuids experiment session assignment.Assignment.contact
+    in
+    create_email_job ?smtp_auth_id label entity_uuids email
   ;;
 
   let prepare_text_message
@@ -743,22 +721,17 @@ module ManualSessionMessage = struct
       let layout = layout_from_tenant tenant in
       email_params language layout experiment session assignment
     in
-    let message_history = message_history experiment session assignment in
     let content = SmsText.value message in
+    let entity_uuids =
+      session_message_uuids experiment session assignment.Assignment.contact
+    in
     render_and_create cell_phone tenant.Pool_tenant.gtx_sender (content, params)
-    |> create_job ~message_history
+    |> create_text_message_job ~entity_uuids ~message_template:label
   ;;
 end
 
 module MatcherNotification = struct
   let label = Label.MatcherNotification
-
-  let message_history experiment =
-    let entity_uuids =
-      [ experiment.Experiment.id |> Experiment.Id.to_common ]
-    in
-    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
-  ;;
 
   let email_params layout user experiment =
     global_params layout user @ experiment_params layout experiment
@@ -774,24 +747,21 @@ module MatcherNotification = struct
     let email =
       prepare_email language template sender email_address layout params
     in
-    let message_history = message_history experiment in
-    Email.create_job ~message_history email |> Lwt.return
+    let entity_uuids = Experiment.[ experiment.id |> Id.to_common ] in
+    create_email_job label entity_uuids email |> Lwt.return
   ;;
 end
 
 module MatchFilterUpdateNotification = struct
   let label = Label.MatchFilterUpdateNotification
 
-  let message_history experiment sessions admin =
-    let entity_uuids =
-      [ experiment.Experiment.id |> Experiment.Id.to_common
-      ; Admin.id admin |> Admin.Id.to_common
-      ]
-      @ (sessions
-         |> CCList.map (fun (session, _) ->
-           Session.Id.to_common session.Session.id))
-    in
-    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
+  let message_uuids experiment sessions admin =
+    [ experiment.Experiment.id |> Experiment.Id.to_common
+    ; Admin.(id admin |> Id.to_common)
+    ]
+    @ (sessions
+       |> CCList.map (fun (session, _) ->
+         Session.Id.to_common session.Session.id))
   ;;
 
   let assignment_list assignments =
@@ -837,15 +807,14 @@ module MatchFilterUpdateNotification = struct
         layout
         params
     in
-    let message_history = message_history experiment assignments admin in
-    Email.create_job ~message_history email |> Lwt.return
+    let entity_uuids = message_uuids experiment assignments admin in
+    create_email_job label entity_uuids email |> Lwt.return
   ;;
 end
 
 module PasswordChange = struct
   let email_params = global_params
   let label = Label.PasswordChange
-  let message_history = user_message_history label
 
   let create language tenant user =
     let pool = tenant.Pool_tenant.database_label in
@@ -862,14 +831,13 @@ module PasswordChange = struct
         layout
         (email_params layout user)
     in
-    let message_history = message_history user in
-    Email.create_job ~message_history email |> Lwt.return
+    let entity_uuids = user_message_uuids user in
+    create_email_job label entity_uuids email |> Lwt.return
   ;;
 end
 
 module PasswordReset = struct
   let label = Label.PasswordReset
-  let message_history = user_message_history label
 
   let email_params layout reset_url user =
     global_params layout user @ [ "resetUrl", reset_url ]
@@ -912,14 +880,13 @@ module PasswordReset = struct
         layout
         (email_params layout reset_url user)
     in
-    let message_history = message_history user in
-    Email.create_job ~message_history email |> Lwt_result.return
+    let entity_uuids = user_message_uuids user in
+    create_email_job label entity_uuids email |> Lwt.return_ok
   ;;
 end
 
 module PhoneVerification = struct
   let label = Label.PhoneVerification
-  let message_history = user_message_history label
 
   let message_params token =
     [ "token", Pool_common.VerificationCode.value token ]
@@ -943,14 +910,14 @@ module PhoneVerification = struct
         tenant.Pool_tenant.gtx_sender
         (sms_text, message_params token)
     in
-    let message_history = message_history (Contact.user contact) in
-    Text_message.create_job ~message_history message |> Lwt_result.return
+    let entity_uuids = user_message_uuids (Contact.user contact) in
+    create_text_message_job ~entity_uuids ~message_template:label message
+    |> Lwt_result.return
   ;;
 end
 
 module ProfileUpdateTrigger = struct
   let label = Label.ProfileUpdateTrigger
-  let message_history = user_message_history label
 
   let email_params layout tenant_url contact =
     let profile_url = create_public_url tenant_url "/user/personal-details" in
@@ -981,8 +948,8 @@ module ProfileUpdateTrigger = struct
           layout
           (email_params layout url contact)
       in
-      let message_history = message_history (Contact.user contact) in
-      Email.create_job ~message_history email |> CCResult.return
+      let entity_uuids = user_message_uuids (Contact.user contact) in
+      Ok (create_email_job label entity_uuids email)
     in
     Lwt.return fnc
   ;;
@@ -990,7 +957,6 @@ end
 
 module SessionCancellation = struct
   let label = Label.SessionCancellation
-  let message_history = session_message_history label
 
   let email_params
     language
@@ -1045,8 +1011,8 @@ module SessionCancellation = struct
           params
       in
       let smtp_auth_id = experiment.Experiment.smtp_auth_id in
-      let message_history = message_history experiment session contact in
-      Email.create_job ~message_history ?smtp_auth_id email |> CCResult.return
+      let entity_uuids = session_message_uuids experiment session contact in
+      Ok (create_email_job ?smtp_auth_id label entity_uuids email)
     in
     Lwt.return fnc
   ;;
@@ -1089,8 +1055,9 @@ module SessionCancellation = struct
           sender
           (template.sms_text, params)
       in
-      let message_history = message_history experiment session contact in
-      Text_message.create_job ~message_history message |> CCResult.return
+      let entity_uuids = session_message_uuids experiment session contact in
+      create_text_message_job ~entity_uuids ~message_template:label message
+      |> CCResult.return
     in
     Lwt.return fnc
   ;;
@@ -1098,7 +1065,6 @@ end
 
 module SessionReminder = struct
   let label = Label.SessionReminder
-  let message_history = session_message_history label
 
   let email_params lang layout experiment session assignment =
     global_params layout assignment.Assignment.contact.Contact.user
@@ -1143,9 +1109,9 @@ module SessionReminder = struct
         layout
         params
     in
-    let message_history = message_history experiment session contact in
+    let entity_uuids = session_message_uuids experiment session contact in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
-    Email.create_job ~message_history ?smtp_auth_id email |> Lwt.return
+    create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return
   ;;
 
   let prepare_emails pool tenant sys_langs experiment session =
@@ -1180,9 +1146,9 @@ module SessionReminder = struct
           layout
           params
       in
-      let message_history = message_history experiment session contact in
+      let entity_uuids = session_message_uuids experiment session contact in
       let smtp_auth_id = experiment.Experiment.smtp_auth_id in
-      Email.create_job ~message_history ?smtp_auth_id email |> CCResult.return
+      Ok (create_email_job ?smtp_auth_id label entity_uuids email)
     in
     Lwt.return fnc
   ;;
@@ -1222,8 +1188,11 @@ module SessionReminder = struct
           sender
           (template.sms_text, params)
       in
-      let message_history = message_history experiment session contact in
-      Text_message.create_job ~message_history message |> CCResult.return
+      let entity_uuids =
+        session_message_uuids experiment session assignment.Assignment.contact
+      in
+      create_text_message_job ~entity_uuids ~message_template:label message
+      |> CCResult.return
     in
     Lwt.return fnc
   ;;
@@ -1231,7 +1200,6 @@ end
 
 module SessionReschedule = struct
   let label = Label.SessionReschedule
-  let message_history = session_message_history label
 
   let email_params lang layout experiment session new_start new_duration contact
     =
@@ -1277,9 +1245,9 @@ module SessionReschedule = struct
           layout
           params
       in
-      let message_history = message_history experiment session contact in
+      let entity_uuids = session_message_uuids experiment session contact in
       let smtp_auth_id = experiment.Experiment.smtp_auth_id in
-      Email.create_job ~message_history ?smtp_auth_id email |> CCResult.return
+      Ok (create_email_job ?smtp_auth_id label entity_uuids email)
     in
     Lwt.return fnc
   ;;
@@ -1299,13 +1267,6 @@ module SignUpVerification = struct
     @ layout_params layout
   ;;
 
-  let message_history user_id =
-    let open Queue.History in
-    { entity_uuids = [ user_id |> Contact.Id.to_common |> Id.of_common ]
-    ; message_template = Label.show label |> CCOption.return
-    }
-  ;;
-
   let create pool language tenant email_address token firstname lastname user_id
     =
     let%lwt template = find_by_label_and_language_to_send pool label language in
@@ -1320,7 +1281,7 @@ module SignUpVerification = struct
       |> create_public_url_with_params url "/email-verified"
     in
     let layout = layout_from_tenant tenant in
-    let message_history = message_history user_id in
+    let entity_uuids = [ user_id |> Contact.Id.to_common |> Id.of_common ] in
     let email =
       prepare_email
         language
@@ -1330,7 +1291,7 @@ module SignUpVerification = struct
         layout
         (email_params layout verification_url firstname lastname)
     in
-    Email.create_job ~message_history email |> Lwt.return
+    create_email_job label entity_uuids email |> Lwt.return
   ;;
 end
 
@@ -1341,8 +1302,6 @@ module UserImport = struct
     | `Admin admin -> Admin.user admin
     | `Contact contact -> Contact.user contact
   ;;
-
-  let message_history user = user |> to_user |> user_message_history label
 
   let email_address = function
     | `Admin admin -> Admin.email_address admin
@@ -1400,14 +1359,13 @@ module UserImport = struct
         layout
         (email_params layout confirmation_url user)
     in
-    let message_history = message_history user in
-    Email.create_job ~message_history email
+    let entity_uuids = user_message_uuids (to_user user) in
+    create_email_job label entity_uuids email
   ;;
 end
 
 module WaitingListConfirmation = struct
   let label = Label.WaitingListConfirmation
-  let message_history = public_experiment_message_history label
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params layout contact experiment =
@@ -1435,9 +1393,9 @@ module WaitingListConfirmation = struct
     let email =
       prepare_email language template sender email_address layout params
     in
-    let message_history = message_history experiment contact in
+    let entity_uuids = public_experiment_message_uuids experiment contact in
     let smtp_auth_id = Experiment.Public.smtp_auth_id experiment in
-    Email.create_job ~message_history ?smtp_auth_id email |> Lwt_result.return
+    create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return_ok
   ;;
 end
 

@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Pool_message
 module Command = Cqrs_command.Contact_command
 module HttpUtils = Http_utils
@@ -151,14 +152,14 @@ let update_email req =
            (match%lwt Admin.user_is_admin database_label user with
             | true ->
               let* notification = change_attempt_notification () in
-              Lwt_result.return [ Email.Sent notification |> Pool_event.email ]
+              Lwt_result.return [ Email.sent notification |> Pool_event.email ]
             | false ->
               let* contact = Contact.find_by_user database_label user in
               (match contact.Contact.email_verified with
                | Some _ ->
                  let* notification = change_attempt_notification () in
                  Lwt_result.return
-                   [ Email.Sent notification |> Pool_event.email ]
+                   [ Email.sent notification |> Pool_event.email ]
                | None -> send_verification_mail (Some contact)))
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
@@ -245,7 +246,7 @@ let update_cell_phone req =
            contact
            cell_phone
            token
-         |>> Text_message.Service.send database_label
+         |>> Text_message.sent %> Text_message.handle_event database_label
        in
        let* events =
          Command.AddCellPhone.handle ~tags (contact, cell_phone, token)
@@ -339,7 +340,7 @@ let resend_token req =
            contact
            cell_phone
            verification_code
-         |>> Text_message.Service.send database_label
+         |>> Text_message.sent %> Text_message.handle_event database_label
        in
        HttpUtils.(
          redirect_to_with_actions

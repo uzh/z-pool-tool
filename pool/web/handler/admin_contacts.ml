@@ -290,6 +290,35 @@ let toggle_paused req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let mark_as_deleted req =
+  let open Utils.Lwt_result.Infix in
+  let id = contact_id req in
+  let redirect_path =
+    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id)
+  in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result { Pool_context.database_label; _ } =
+    Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let* contact = Contact.find database_label id in
+    let* () =
+      Session.find_upcoming_public_by_contact database_label id
+      >== function
+      | [] -> Ok ()
+      | _ -> Error Pool_message.Error.DeleteContactUpcomingSessions
+    in
+    let open Cqrs_command.Contact_command in
+    MarkAsDeleted.handle ~tags contact
+    |> Lwt_result.lift
+    |>> Pool_event.handle_events database_label
+    |>> fun () ->
+    HttpUtils.redirect_to_with_actions
+      (Format.asprintf "/admin/contacts")
+      [ Message.set ~success:[ Pool_message.Success.ContactMarkedAsDeleted ] ]
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
 let external_data_ids req =
   let open Utils.Lwt_result.Infix in
   let contact_id = contact_id req in
@@ -432,22 +461,21 @@ let message_history req =
   in
   HttpUtils.Htmx.handler
     ~error_path
-    ~query:(module Queue.History)
+    ~query:(module Pool_queue)
     ~create_layout:General.create_tenant_layout
     req
   @@ fun (Pool_context.{ database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Contact.find database_label contact_id in
   let%lwt messages =
-    Queue.History.query_by_entity
+    Pool_queue.find_instances_by_entity
       ~query
       database_label
       (Contact.Id.to_common contact_id)
   in
   let open Page.Admin in
   (if HttpUtils.Htmx.is_hx_request req
-   then
-     MessageHistory.list context (Contact.message_history_url contact) messages
+   then Queue.list context (Contact.message_history_url contact) messages
    else Contact.message_history context contact messages)
   |> Lwt_result.return
 ;;
@@ -510,6 +538,6 @@ end = struct
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
 
   let message_history =
-    Queue.Guard.Access.index |> Guardian.validate_admin_entity
+    Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
   ;;
 end

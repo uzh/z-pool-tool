@@ -81,7 +81,7 @@ let nav_elements experiment =
               , Field Field.Experimenter
               , Set (Experimenter.read ~target_uuid ()) )
           ] )
-    ; Single (url "messages", MessageHistory, Set Queue.Guard.Access.index)
+    ; Single (url "messages", MessageHistory, Set Pool_queue.Guard.Access.index)
     ]
   in
   left @ waiting_list_nav @ right |> CCList.map NavElement.create

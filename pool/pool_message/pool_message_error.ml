@@ -34,6 +34,7 @@ type t =
   | Decode of Field.t
   | DecodeAction
   | DefaultMustNotBeUnchecked
+  | DeleteContactUpcomingSessions
   | DirectRegistrationIsDisabled
   | Disabled of Field.t
   | EmailAddressMissingAdmin
@@ -125,6 +126,7 @@ type t =
   | TermsAndConditionsNotAccepted
   | TextLengthMax of int
   | TextLengthMin of int
+  | TextMessageError of string
   | TextMessageInterceptionError of string
   | TextMessageDlrAlreadyReceived
   | TimeInPast

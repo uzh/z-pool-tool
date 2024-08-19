@@ -79,7 +79,7 @@ let resend () =
     let open CCResult in
     Ok
       [ Invitation.(Resent (invitation, None)) |> Pool_event.invitation
-      ; Email.Sent email |> Pool_event.email
+      ; Email.sent email |> Pool_event.email
       ]
   in
   Test_utils.check_result expected events

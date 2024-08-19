@@ -17,14 +17,14 @@ let assignment_data () =
   { session; experiment; contact }
 ;;
 
-let confirmation_email experiment assignment =
+let confirmation_email experiment (session : Session.t) assignment =
   let contact = assignment.Assignment.contact in
   let email =
     Contact.(contact |> email_address |> Pool_user.EmailAddress.value)
   in
   let open Message_template in
   let sender = "test@econ.uzh.ch" in
-  let ({ email_subject; email_text; _ } : Message_template.t) =
+  let ({ email_subject; email_text; label; _ } : Message_template.t) =
     Model.create_message_template ()
   in
   let email =
@@ -38,7 +38,17 @@ let confirmation_email experiment assignment =
       ; bcc = []
       }
   in
-  Email.create_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
+  Email.Service.Job.create
+    ?smtp_auth_id:experiment.Experiment.smtp_auth_id
+    email
+  |> Email.create_dispatch
+       ~message_template:(Label.show label)
+       ~job_ctx:
+         (Pool_queue.job_ctx_create
+            [ Contact.(contact |> id |> Id.to_common)
+            ; Session.(session.id |> Id.to_common)
+            ; Experiment.(experiment |> id |> Id.to_common)
+            ])
 ;;
 
 let update_assignment_count_event ~step contact =
@@ -48,7 +58,7 @@ let update_assignment_count_event ~step contact =
 
 let create () =
   let { session; experiment; contact } = assignment_data () in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let assignment = Assignment.create contact in
   let events =
     let command =
@@ -59,7 +69,7 @@ let create () =
   in
   let expected =
     Ok
-      [ Email.(Sent (confirmation_email assignment)) |> Pool_event.email
+      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
       ; Assignment.(Created (create contact, session.Session.id))
         |> Pool_event.assignment
       ; update_assignment_count_event ~step:1 contact
@@ -75,7 +85,7 @@ let create_with_experiment_smtp () =
   let experiment =
     { experiment with Experiment.smtp_auth_id = Some smtp_auth_id }
   in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let events =
     let command =
       AssignmentCommand.Create.
@@ -85,7 +95,7 @@ let create_with_experiment_smtp () =
   in
   let expected =
     Ok
-      [ Email.(Sent (confirmation_email assignment)) |> Pool_event.email
+      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
       ; Assignment.(Created (create contact, session.Session.id))
         |> Pool_event.assignment
       ; update_assignment_count_event ~step:1 contact
@@ -101,7 +111,7 @@ let create_inactive_user () =
     let user = Pool_user.{ contact.user with status = Status.Inactive } in
     { contact with user }
   in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let events =
     let command =
       AssignmentCommand.Create.
@@ -124,7 +134,7 @@ let canceled () =
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
       ; update_assignment_count_event ~step:(-1) assignment.Assignment.contact
-      ; Email.Sent notification_email |> Pool_event.email
+      ; Email.sent notification_email |> Pool_event.email
       ]
   in
   check_result expected events
@@ -309,7 +319,7 @@ let set_attendance_with_data_id () =
 
 let assign_to_fully_booked_session () =
   let { session; experiment; contact } = assignment_data () in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let session = session |> Model.fully_book_session in
   let events =
     let command =
@@ -324,7 +334,7 @@ let assign_to_fully_booked_session () =
 
 let assign_to_experiment_with_direct_registration_disabled () =
   let { session; experiment; contact } = assignment_data () in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let session = session |> Model.fully_book_session in
   let experiment =
     Experiment.
@@ -346,7 +356,7 @@ let assign_to_experiment_with_direct_registration_disabled () =
 
 let assign_to_experiment_with_direct_registration_disabled_as_admin () =
   let { session; experiment; contact } = assignment_data () in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let assignment = Assignment.create contact in
   let experiment =
     Experiment.
@@ -362,7 +372,7 @@ let assign_to_experiment_with_direct_registration_disabled_as_admin () =
   in
   let expected =
     Ok
-      [ Email.(Sent (confirmation_email assignment)) |> Pool_event.email
+      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
       ; Assignment.Created (assignment, session.Session.id)
         |> Pool_event.assignment
       ; update_assignment_count_event ~step:1 contact
@@ -373,7 +383,7 @@ let assign_to_experiment_with_direct_registration_disabled_as_admin () =
 
 let assign_to_session_contact_is_already_assigned () =
   let { session; experiment; contact } = assignment_data () in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let already_assigned = true in
   let events =
     let command =
@@ -388,7 +398,7 @@ let assign_to_session_contact_is_already_assigned () =
 
 let assign_to_canceled_session () =
   let { session; experiment; contact } = assignment_data () in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let already_assigned = false in
   let canceled_at = Ptime_clock.now () in
   let session = Session.{ session with canceled_at = Some canceled_at } in
@@ -414,7 +424,7 @@ let assign_contact_from_waiting_list () =
   let already_enrolled = false in
   let contact = waiting_list.Waiting_list.contact in
   let assignment = Assignment.create contact in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let events =
     let command =
       AssignmentCommand.CreateFromWaitingList.
@@ -427,7 +437,7 @@ let assign_contact_from_waiting_list () =
       Assignment.(create waiting_list.Waiting_list.contact, session.Session.id)
     in
     Ok
-      [ Email.(Sent (confirmation_email assignment)) |> Pool_event.email
+      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
       ; Assignment.Created create |> Pool_event.assignment
       ; update_assignment_count_event ~step:1 contact
       ]
@@ -443,7 +453,7 @@ let assign_contact_from_waiting_list_with_follow_ups () =
   let already_enrolled = false in
   let contact = waiting_list.Waiting_list.contact in
   let assignment = Assignment.create contact in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let events =
     let command =
       AssignmentCommand.CreateFromWaitingList.
@@ -466,7 +476,7 @@ let assign_contact_from_waiting_list_with_follow_ups () =
         Assignment.Created create |> Pool_event.assignment)
     in
     Ok
-      (((Email.(Sent (confirmation_email assignment)) |> Pool_event.email)
+      (((Email.(sent (confirmation_email assignment)) |> Pool_event.email)
         :: create_events)
        @ [ update_assignment_count_event ~step:2 contact ])
   in
@@ -487,7 +497,7 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
   let contact = waiting_list.Waiting_list.contact in
   let already_enrolled = false in
   let assignment = Assignment.create contact in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let events =
     let command =
       AssignmentCommand.CreateFromWaitingList.
@@ -504,7 +514,7 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
       Assignment.Created create |> Pool_event.assignment
     in
     Ok
-      [ Email.(Sent (confirmation_email assignment)) |> Pool_event.email
+      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
       ; create_event
       ; update_assignment_count_event ~step:1 contact
       ]
@@ -515,7 +525,7 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
 let assign_to_session_with_follow_ups () =
   let { session; experiment; contact } = assignment_data () in
   let assignment = Assignment.create contact in
-  let confirmation_email = confirmation_email experiment in
+  let confirmation_email = confirmation_email experiment session in
   let follow_up =
     let base = Model.(create_session ~start:(in_an_hour ())) () in
     Session.
@@ -543,7 +553,7 @@ let assign_to_session_with_follow_ups () =
       update_assignment_count_event ~step:(CCList.length sessions) contact
     in
     let email_event =
-      [ Email.Sent (confirmation_email assignment) |> Pool_event.email ]
+      [ Email.sent (confirmation_email assignment) |> Pool_event.email ]
     in
     email_event @ create_events @ [ increase_num_events ] |> CCResult.return
   in
@@ -827,7 +837,7 @@ let swap_session_with_notification () =
       [ MarkedAsDeleted assignment |> Pool_event.assignment
       ; Created ({ assignment with id = assignment_id }, new_session.Session.id)
         |> Pool_event.assignment
-      ; Email.Sent msg |> Pool_event.email
+      ; Email.sent msg |> Pool_event.email
       ]
     |> CCResult.return
   in

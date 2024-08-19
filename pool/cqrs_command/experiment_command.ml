@@ -552,7 +552,7 @@ module CreateFilter : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Assignment.event list * Email.job list
+    -> Assignment.event list * Email.dispatch list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -613,7 +613,7 @@ module UpdateFilter : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Assignment.event list * Email.job list
+    -> Assignment.event list * Email.dispatch list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 

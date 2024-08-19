@@ -76,6 +76,7 @@ let rec field_to_string =
   | EmailAddressUnverified -> "Unverifizierte E-Mail-Adresse"
   | EmailAddressVerified -> "Verifizierte E-Mail-Adresse"
   | EmailLeadTime -> "Email Vorlaufzeit"
+  | EmailLogo -> "Email Logo"
   | EmailRemindersSentAt -> "Email Erinnerungen verschickt am"
   | EmailSubject -> "E-Mail Betreff"
   | EmailSuffix -> "E-Mail Endung"
@@ -239,6 +240,7 @@ let rec field_to_string =
   | Room -> "Raum"
   | Root -> "Root"
   | Rule -> "Regel"
+  | RunAt -> "Läuft um"
   | ScheduledTime -> "Geplante Zeit"
   | ScheduledTimeSpan -> "Wiederholungs Interval"
   | Search -> "Suche"
@@ -339,6 +341,7 @@ let success_to_string =
   | Closed field ->
     field_message "" (field_to_string field) "wurde erfolgreich geschlossen."
   | ContactPromoted -> "Der Kontakt wurde erfolgreich zum Admin befördert."
+  | ContactMarkedAsDeleted -> "Der Kontakt wurde erfolgreich gelöscht."
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | Deleted field ->
@@ -495,6 +498,9 @@ let rec error_to_string =
       "konnte nicht entschlüsselt werden."
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | DefaultMustNotBeUnchecked -> "'Standard' kann nicht deaktiviert werden."
+  | DeleteContactUpcomingSessions ->
+    "Kontakt kann nicht gelöscht werden. Dieser Kontakt ist an kommenden \
+     Sessions angemeldet. Diese Anmeldungen müssen zuerst gelöscht werden."
   | DirectRegistrationIsDisabled ->
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->
@@ -684,6 +690,7 @@ let rec error_to_string =
     Format.asprintf "Darf nicht länger als %i Zeichen sein." i
   | TextLengthMin i ->
     Format.asprintf "Darf nicht kürzer als %i Zeichen sein." i
+  | TextMessageError error -> Format.asprintf "Text message error: %s" error
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
   | TextMessageDlrAlreadyReceived -> "SMS Übermittlingsbeicht bereits erhalten."
@@ -769,7 +776,7 @@ let control_to_string =
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | Show -> "anzeigen"
-  | SignUp -> format_submit "anmelden" None
+  | SignUp -> format_submit "registrieren" None
   | Start field -> format_submit "starten" field
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"

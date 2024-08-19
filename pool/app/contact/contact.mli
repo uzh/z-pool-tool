@@ -93,6 +93,7 @@ val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
 val lastname_firstname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
+val cell_phone : t -> Pool_user.CellPhone.t option
 val is_inactive : t -> bool
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val show : t -> string
@@ -167,7 +168,7 @@ type event =
   | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
-  | Disabled of t
+  | MarkedAsDeleted of t
   | UnverifiedDeleted of t
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
   | CellPhoneVerified of t * Pool_user.CellPhone.t

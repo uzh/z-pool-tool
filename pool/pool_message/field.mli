@@ -68,6 +68,7 @@ type t =
   | EmailAddressUnverified
   | EmailAddressVerified
   | EmailLeadTime
+  | EmailLogo
   | EmailRemindersSentAt
   | EmailsSent
   | EmailSubject
@@ -221,6 +222,7 @@ type t =
   | Room
   | Root
   | Rule
+  | RunAt
   | ScheduledTime
   | ScheduledTimeSpan
   | Search
@@ -519,6 +521,7 @@ val role : t
 val room : t
 val root : t
 val rule : t
+val runat : t
 val scheduledtime : t
 val scheduledtimespan : t
 val search : t

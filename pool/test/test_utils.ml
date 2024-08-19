@@ -17,10 +17,6 @@ let phone_nr = Pool_user.CellPhone.(Alcotest.testable pp equal)
 let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
 let time_window_testable = Time_window.(Alcotest.testable pp equal)
 
-let message_history_crate =
-  Queue.History.(Alcotest.testable pp_create equal_create)
-;;
-
 let check_result ?(msg = "succeeds") =
   let open Alcotest in
   check (result (list event) error) msg
@@ -281,9 +277,16 @@ module Model = struct
       "Hello"
   ;;
 
-  let create_email_job ?recipient ?smtp_auth_id ?message_history () =
-    let email = create_email ?recipient () in
-    Email.create_job ?smtp_auth_id ?message_history email
+  let create_email_job
+    ?job_ctx
+    ?message_template
+    ?email_address
+    ?smtp_auth_id
+    ()
+    =
+    create_email ?recipient:email_address ()
+    |> Email.Service.Job.create ?smtp_auth_id
+    |> Email.create_dispatch ?job_ctx ?message_template
   ;;
 
   let create_text_message
@@ -293,9 +296,9 @@ module Model = struct
     Text_message.render_and_create cell_phone sender ("Hello world", [])
   ;;
 
-  let create_text_message_job ?sender ?message_history cell_phone =
-    let message = create_text_message ?sender cell_phone in
-    Text_message.create_job ?message_history message
+  let create_text_message_job ?sender ?message_template ?job_ctx cell_phone =
+    create_text_message ?sender cell_phone
+    |> Text_message.create_job ?message_template ?job_ctx
   ;;
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)

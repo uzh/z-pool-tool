@@ -3,7 +3,8 @@ module Database = Database
 open Caqti_request.Infix
 
 let sql_select_columns =
-  [ Queue.Id.sql_select_fragment ~field:"pool_text_message_dlr.queue_job_uuid"
+  [ Pool_queue.Id.sql_select_fragment
+      ~field:"pool_text_message_dlr.queue_job_uuid"
   ; "pool_text_message_dlr.raw"
   ; "pool_text_message_dlr.from"
   ; "pool_text_message_dlr.to"
@@ -35,7 +36,7 @@ let find_report_by_queue_id_request =
       WHERE pool_text_message_dlr.queue_job_uuid = UNHEX(REPLACE(?, '-', ''))
   |sql}
   |> find_request_sql
-  |> Queue.Repo.Id.t ->! RepoEntity.delivery_report
+  |> Pool_queue.Repo.Id.t ->! RepoEntity.delivery_report
 ;;
 
 let find_report_by_queue_id pool =

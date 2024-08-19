@@ -1,4 +1,4 @@
-module Database = Database
+open CCFun.Infix
 module SmtpAuth = Entity_smtp
 module User = Pool_user
 
@@ -11,6 +11,15 @@ module Sihl_email = struct
     && equal e1.recipient e2.recipient
     && equal e1.subject e2.subject
     && equal e1.text e2.text
+  ;;
+
+  let yojson_of_t = Sihl.Contract.Email.to_yojson
+
+  let t_of_yojson =
+    of_yojson
+    %> function
+    | Some email -> email
+    | None -> Yojson.json_error "Invalid serialized email string received"
   ;;
 end
 
@@ -109,35 +118,23 @@ let verify (Unverified email) =
     }
 ;;
 
-type email = Sihl.Contract.Email.t
+module Job = struct
+  type t =
+    { email : Sihl_email.t
+    ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
+    }
+  [@@deriving eq, fields, show, yojson] [@@yojson.allow_extra_fields]
 
-let email_of_yojson =
-  CCFun.(
-    Sihl.Contract.Email.of_yojson
-    %> function
-    | Some email -> email
-    | None -> Yojson.json_error "Invalid serialized email string received")
-;;
+  let create ?smtp_auth_id email = { email; smtp_auth_id }
 
-let yojson_of_email = Sihl.Contract.Email.to_yojson
-let equal_email = Sihl.Contract.Email.equal
-let pp_email = Sihl.Contract.Email.pp
-
-type job =
-  { email : email
-  ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
-  ; message_history : Queue.History.create option [@yojson.option]
-  ; resent : Queue.Id.t option [@yojson.option]
-  }
-[@@deriving eq, show, yojson]
-
-let parse_job_json str =
-  try Ok (str |> Yojson.Safe.from_string |> job_of_yojson) with
-  | _ -> Error Pool_message.(Error.Invalid Field.Input)
-;;
-
-let job_message_history { message_history; _ } = message_history
-
-let create_job ?smtp_auth_id ?message_history email =
-  { email; smtp_auth_id; message_history; resent = None }
-;;
+  let update ?new_email_address ?new_smtp_auth_id { email; smtp_auth_id } =
+    let open CCOption in
+    let email =
+      let email_address = map Pool_user.EmailAddress.value new_email_address in
+      Sihl.Contract.Email.
+        { email with recipient = value ~default:email.recipient email_address }
+    in
+    let smtp_auth_id = new_smtp_auth_id <+> smtp_auth_id in
+    { email; smtp_auth_id }
+  ;;
+end

@@ -161,8 +161,8 @@ let total_emails_sent_request period =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql|
-      SELECT COUNT(*) FROM queue_jobs
-      WHERE last_error_at >= (NOW() - INTERVAL %s)
+      SELECT COUNT(*) FROM pool_queue_jobs_history
+      WHERE handled_at >= (NOW() - INTERVAL %s)
     |sql}
     (Entity.period_to_sql period)
   |> Caqti_type.(unit ->! int)

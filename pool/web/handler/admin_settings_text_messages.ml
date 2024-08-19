@@ -103,15 +103,15 @@ let delivery_report req =
     let* job_id =
       Lwt_result.lift
       @@
-      try Ok (HttpUtils.find_id Queue.Id.of_string Field.Queue req) with
+      try Ok (HttpUtils.find_id Pool_queue.Id.of_string Field.Queue req) with
       | _ ->
         log_request_with_ip "invalid queue job id provided";
         Error Pool_message.(Error.Invalid Field.Id)
     in
-    let* (_ : Queue.Instance.t) =
-      Queue.find database_label job_id
+    let* (_ : Pool_queue.Instance.t) =
+      Pool_queue.find database_label job_id
       >|- fun err ->
-      Format.asprintf "queue job %s not found" (Queue.Id.value job_id)
+      Format.asprintf "queue job %s not found" (Pool_queue.Id.value job_id)
       |> log_request_with_ip;
       err
     in
@@ -122,7 +122,7 @@ let delivery_report req =
       | Some (_ : delivery_report) ->
         Format.asprintf
           "delivery report for queue job %s already received"
-          (Queue.Id.value job_id)
+          (Pool_queue.Id.value job_id)
         |> log_request_with_ip;
         Error Pool_message.Error.TextMessageDlrAlreadyReceived
       | None -> Ok ()

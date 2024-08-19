@@ -1,4 +1,5 @@
 module TemplateCommand = Cqrs_command.Message_template_command
+open CCFun.Infix
 open Pool_message
 
 module Data = struct
@@ -303,6 +304,10 @@ module ExperimentSenderData = struct
   ;;
 end
 
+let sender_of_job =
+  Email.job %> Email.Service.Job.email %> fun email -> email.Sihl_email.sender
+;;
+
 let experiment_invitation_with_sender _ () =
   let open Utils.Lwt_result.Infix in
   let open ExperimentSenderData in
@@ -332,7 +337,7 @@ let experiment_invitation_with_sender _ () =
       | [ Pool_event.Invitation _
         ; Pool_event.Email (Email.BulkSent [ job ])
         ; Pool_event.Contact _
-        ] -> job.Email.email.Sihl_email.sender
+        ] -> sender_of_job job
       | _ -> failwith "Event missmatch"
     in
     Alcotest.(check string "succeeds" admin_email res);
@@ -362,11 +367,7 @@ let assignment_creation_with_sender _ () =
       ||> fun fnc -> fnc (Assignment.create contact)
     in
     Alcotest.(
-      check
-        string
-        "succeeds"
-        admin_email
-        confirmation_email.Email.email.Sihl_email.sender)
+      check string "succeeds" admin_email (sender_of_job confirmation_email))
     |> Lwt.return
   in
   Lwt.return_unit

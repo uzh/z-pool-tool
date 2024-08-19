@@ -91,6 +91,18 @@ module Icon = struct
   end
 end
 
+module EmailLogo = struct
+  include EmailLogo
+
+  let t = Common.Repo.File.t
+
+  module Write = struct
+    include Write
+
+    let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+  end
+end
+
 let t =
   let open Entity.Read in
   let open Caqti_type in
@@ -109,6 +121,7 @@ let t =
         ; m.status
         ; m.database_label
         ; m.styles
+        ; m.email_logo
         ; m.icon
         ; m.text_messages_enabled
         ]
@@ -124,8 +137,9 @@ let t =
                 , ( updated_at
                   , ( status
                     , ( database_label
-                      , (styles, (icon, (text_messages_enabled, ()))) ) ) ) ) )
-            ) ) ) ) )
+                      , ( styles
+                        , (icon, (email_logo, (text_messages_enabled, ()))) ) )
+                    ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -136,6 +150,7 @@ let t =
       ; styles
       ; icon
       ; status
+      ; email_logo
       ; default_language
       ; gtx_sender
       ; text_messages_enabled
@@ -159,6 +174,7 @@ let t =
       ; Database.Repo.Label.t
       ; option Styles.t
       ; option Icon.t
+      ; option EmailLogo.t
       ; bool
       ]
 ;;
@@ -183,6 +199,7 @@ module Write = struct
           ; m.database_label
           ; m.styles
           ; m.icon
+          ; m.email_logo
           ; m.gtx_api_key
           ]
     in
@@ -195,7 +212,8 @@ module Write = struct
               , ( gtx_sender
                 , ( created_at
                   , ( updated_at
-                    , (database_label, (styles, (icon, (gtx_api_key, ())))) ) )
+                    , ( database_label
+                      , (styles, (icon, (email_logo, (gtx_api_key, ())))) ) ) )
                 ) ) ) ) ) )
       =
       Ok
@@ -208,6 +226,7 @@ module Write = struct
         ; gtx_sender
         ; styles
         ; icon
+        ; email_logo
         ; default_language
         ; created_at
         ; updated_at
@@ -228,6 +247,7 @@ module Write = struct
         ; Database.Repo.Label.t
         ; option Styles.Write.t
         ; option Icon.Write.t
+        ; option EmailLogo.Write.t
         ; option GtxApiKey.t
         ]
   ;;

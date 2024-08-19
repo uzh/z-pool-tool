@@ -51,6 +51,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     database
     =
     let tags = database |> label |> LogTag.create in
+    let max_idle_age = Some Mtime.Span.(5 * min) in
     let connect () =
       database
       |> url
@@ -59,8 +60,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
            ~pool_config:
              (Caqti_pool_config.create
                 ~max_size:pool_size
-                ~max_idle_age:(Some Mtime.Span.hour)
-                ~max_use_count:(Some 1)
+                ~max_idle_age
+                ~max_use_count:(Some 2)
                 ())
     in
     CCResult.retry retries connect
@@ -213,9 +214,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       Lwt.catch
         (fun () ->
           let* () = exec_each connection setup in
-          let%lwt result = f connection in
+          let* result = f connection in
           let* () = exec_each connection cleanup in
-          let result = result |> CCResult.get_exn in
           match%lwt Connection.commit () with
           | Ok () -> Lwt.return_ok result
           | Error error -> Lwt.return_error error)

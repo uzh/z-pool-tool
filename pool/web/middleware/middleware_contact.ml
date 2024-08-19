@@ -51,7 +51,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       invalid_session_redirect req query_lang
     | Error TermsAndConditionsNotAccepted ->
       redirect_to_with_actions
-        (path_with_language query_lang "/termsandconditions?redirected=true")
+        (path_with_language query_lang "/accept-terms?redirected=true")
         []
     | Error ContactUnconfirmed ->
       redirect_to (path_with_language query_lang "/email-confirmation")

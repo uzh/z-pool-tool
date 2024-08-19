@@ -512,7 +512,7 @@ let () =
             Message_template_test.delete_without_entity
         ] )
     ; ( "queue"
-      , Message_history.Resend.
+      , Message_mapping.Resend.
           [ test_case "resend pending job" `Quick resend_pending
           ; test_case "resend unchanged" `Quick resend_unchanged
           ; test_case "resend updated recipient" `Quick resend_updated_recipient

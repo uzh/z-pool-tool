@@ -35,7 +35,6 @@ module ScheduledTimeSpan : Pool_model.Base.PtimeSpanSig
 type scheduled_time =
   | Every of ScheduledTimeSpan.t
   | At of ScheduledTime.t
-[@@deriving eq, show]
 
 type t =
   { label : Label.t
@@ -54,7 +53,7 @@ type public =
   ; last_run : LastRunAt.t option
   }
 
-val add_and_start : t -> unit Lwt.t
+val add_and_start : ?tags:Logs.Tag.set -> t -> unit Lwt.t
 val stop : unit -> unit Lwt.t
 val lifecycle : Sihl.Container.lifecycle
 val register : ?schedules:t list -> unit -> Sihl.Container.Service.t

@@ -6,7 +6,6 @@
   matcher
   pool_event
   pool_user
-  queue
   reminder
   seed
   settings
