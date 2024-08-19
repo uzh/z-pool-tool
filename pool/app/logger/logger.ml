@@ -223,6 +223,6 @@ let log_exception ?prefix ~src ~tags =
   function
   | Caqti_error.(Exn #load_or_connect as exn) ->
     print ~error_type:"Caqti error" (Printexc.to_string exn)
-  | Pool_message.Error.(PoolExn exn) -> print (Pool_message.Error.show exn)
+  | Pool_message.Error.(Exn exn) -> print (Pool_message.Error.show exn)
   | exn -> print (Printexc.to_string exn)
 ;;
