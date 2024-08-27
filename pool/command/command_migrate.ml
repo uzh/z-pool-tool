@@ -67,7 +67,7 @@ let create_failure_notification db_label error =
     let text =
       Format.asprintf
         {|Migrations on the tenant %s could not be executed successfully.
-          
+
 Error: %s
 
 Please take the necessary actions.|}
@@ -129,7 +129,7 @@ let tenant_migration_pending =
     "migrate.tenant_migrations_pending"
     "Set tenant database status to migration pending"
     (fun () ->
-       let (_ : status) = Root.add () in
+       let () = Root.add () in
        let%lwt db_pools = Tenant.setup () in
        let%lwt () = Database.Tenant.set_migration_pending db_pools in
        let%lwt () = exit 0 in
