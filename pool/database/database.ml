@@ -25,28 +25,14 @@ module Root = struct
 
   let add () =
     let database = database_url () |> create label in
-    let tags = database |> Entity.label |> Logger.Tags.create in
-    let log_db = show database in
-    match add_pool ~pool_size:(pool_size ()) database with
-    | Ok _ as status ->
-      Logs.debug (fun m -> m ~tags "Database connected: %s" log_db);
-      status
-    | Error err as status ->
-      Logs.warn (fun m ->
-        m
-          ~tags
-          "Database connection failed: [%s] [%s]"
-          log_db
-          (Caqti_error.show err));
-      status
+    add_pool database
   ;;
 
   let setup = add %> Lwt.return
 
   let start () =
     log_start label;
-    let%lwt (_ : status) = setup () in
-    Lwt.return_unit
+    setup ()
   ;;
 
   let stop () = Lwt.return_unit
@@ -54,22 +40,8 @@ end
 
 module Tenant = struct
   let add database =
-    let label = label database in
-    let tags = Logger.Tags.create label in
-    let log_db = show database in
-    match add_pool ~pool_size:(pool_size ()) database with
-    | Ok _ ->
-      Logs.debug (fun m -> m ~tags "Database connected: %s" log_db);
-      Lwt.return label
-    | Error err ->
-      let%lwt () = Repo.update_status root label Status.ConnectionIssue in
-      Logs.warn (fun m ->
-        m
-          ~tags
-          "Database connection failed: [%s] [%s]"
-          log_db
-          (Caqti_error.show err));
-      Lwt.return label
+    let () = add_pool database in
+    label database |> Lwt.return
   ;;
 
   let setup () =

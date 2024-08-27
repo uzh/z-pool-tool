@@ -259,8 +259,21 @@ let start () =
       ~tags
       "Start queue for databases: %s"
       ([%show: Database.Label.t list] database_labels));
-  let%lwt () = Lwt_list.iter_s Repo.archive_all_processed database_labels in
-  let%lwt () = Lwt_list.iter_s Repo.reset_pending_jobs database_labels in
+  let archive_and_reset database_label =
+    let%lwt () = Repo.archive_all_processed database_label in
+    Repo.reset_pending_jobs database_label
+  in
+  let handle fcn database_label =
+    try%lwt fcn database_label with
+    | Caqti_error.(Exn #load_or_connect) ->
+      Logs.warn (fun m ->
+        m
+          "Could not archive and reset jobs for database: %s"
+          (Database.Label.show database_label));
+      Lwt.return_unit
+    | err -> raise err
+  in
+  let%lwt () = Lwt_list.iter_s (handle archive_and_reset) database_labels in
   match !registered_jobs with
   | [] ->
     Logs.warn (fun m -> m ~tags "No jobs registered");

@@ -1,6 +1,6 @@
 (library
  (name schedule)
- (libraries containers guard pool_database pool_model sihl)
+ (libraries containers guard logger pool_database pool_model sihl)
  (preprocess
   (pps
    lwt_ppx

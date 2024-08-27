@@ -47,7 +47,7 @@ end
 
 let root =
   Command_utils.make_no_args "migrate.root" "Migrate root database" (fun () ->
-    let (_ : status) = Root.add () in
+    let%lwt () = Root.setup () in
     let%lwt () =
       Migration.execute root (Pool_database.Root.steps ())
       ||> function
@@ -118,7 +118,7 @@ let tenants =
     "migrate.tenant"
     "Migrate tenant databases"
     (fun () ->
-       let (_ : status) = Root.add () in
+       let%lwt () = Root.setup () in
        let%lwt db_pools = Tenant.setup () in
        let%lwt () = migrate_tenants db_pools in
        Lwt.return_some ())

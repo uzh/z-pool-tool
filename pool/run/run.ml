@@ -34,7 +34,6 @@ let services =
   ; Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register `Server ()
-  ; System_event.Service.ConnectionWatcher.register ()
   ]
 ;;
 

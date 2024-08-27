@@ -489,8 +489,10 @@ let rec error_to_string =
   | CustomFieldNoOptions -> "Es muss mindestens eine Option existieren."
   | CustomFieldTypeChangeNotAllowed ->
     "Sie können den Typ des Feldes nicht ändern."
-  | DatabaseAddPoolFirst ->
-    "Unbekannter Pool: Bitte fügen sie diesen erst hinzu ('add_pool')."
+  | DatabaseAddPoolFirst pool ->
+    Format.asprintf
+      "Unbekannter Pool '%s': Bitte fügen sie den pool erst hinzu ('add_pool')."
+      pool
   | Decode field ->
     field_message
       ""

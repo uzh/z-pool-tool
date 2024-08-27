@@ -15,9 +15,9 @@ let handle_event _ : event -> unit Lwt.t = function
   | Migrated database ->
     let open Database in
     let label = database |> label in
-    let tags = Logger.Tags.create label in
-    Logs.info (fun m -> m ~tags "Migrating: %a" Label.pp label);
-    let (_ : status) = add_pool database in
+    Logs.info (fun m ->
+      m ~tags:(Logger.Tags.create label) "Migrating: %a" Label.pp label);
+    let () = add_pool database in
     (match label |> is_root with
      | true -> root, root_steps ()
      | false -> label, tenant_steps ())
