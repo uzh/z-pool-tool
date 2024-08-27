@@ -14,20 +14,13 @@ module LogTag = struct
   let create database = Logs.Tag.(empty |> add add_label database)
 end
 
-let raise_caqti_error =
-  let open Caqti_error in
-  function
-  | Ok resp -> resp
-  | Error `Unsupported ->
-    raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
-  | Error (#t as err) -> raise (Exn err)
-;;
-
 module Make (Config : Pools_sig.ConfigSig) = struct
+  module Config = Config
+
   type connection =
-    | Init
-    | Pool of (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt_unix.Pool.t
-    | Fail of Caqti_error.load
+    | Close
+    | Open of (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt_unix.Pool.t
+    | Fail of Caqti_error.t
 
   module Pool = struct
     type t =
@@ -42,7 +35,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     let database_url { database; _ } = database |> url
 
     let create ?(required = false) database =
-      { database; required; connection = Init; n_retries = 0 }
+      { database; required; connection = Close; n_retries = 0 }
     ;;
 
     let reset_retry pool = { pool with n_retries = 0 }
@@ -63,7 +56,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
               raise
                 Pool_message.Error.(
                   Exn (Unsupported "Failed to connect: empty error"))
-            | Error (err :: _) when required -> raise_caqti_error (Error err)
+            | Error (err :: _) when required -> raise (Caqti_error.Exn err)
             | Error (err :: _ as errors) ->
               Logs.warn ~src (fun m ->
                 m
@@ -72,12 +65,10 @@ module Make (Config : Pools_sig.ConfigSig) = struct
                   (Entity.show database)
                   ([%show: Caqti_error.t list] errors));
               Fail err
-            | Ok con -> Pool con)
+            | Ok con -> Open con)
       |> fun connection -> { pool with connection }
     ;;
   end
-
-  module Config = Config
 
   module Cache = struct
     module Hashtbl = CCHashtbl.Make (Label)
@@ -95,20 +86,19 @@ module Make (Config : Pools_sig.ConfigSig) = struct
   let print_pool_usage ?tags =
     Pool.connection
     %> function
-    | Pool pool ->
+    | Open pool ->
       let n_connections = Caqti_lwt_unix.Pool.size pool in
-      let max_connections = Config.database_pool_size in
       Logs.debug ~src (fun m ->
-        m ?tags "Pool usage: %i/%i" n_connections max_connections)
-    | Init | Fail _ ->
+        m ?tags "Pool usage: %i/%i" n_connections Config.database_pool_size)
+    | Close | Fail _ ->
       Logs.debug ~src (fun m -> m ?tags "Pool usage: No connection found")
   ;;
 
   let drain_opt =
     Pool.connection
     %> function
-    | Pool pool -> Caqti_lwt_unix.Pool.drain pool
-    | Init | Fail _ -> Lwt.return_unit
+    | Open pool -> Caqti_lwt_unix.Pool.drain pool
+    | Close | Fail _ -> Lwt.return_unit
   ;;
 
   let add_pool ?required database =
@@ -116,7 +106,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     match Cache.find_opt label with
     | Some _ ->
       let msg =
-        [%string "Failed to add pool: Pool already exists %{Label.show label}"]
+        [%string "Failed to add pool: Pool already exists %{Label.value label}"]
       in
       Logs.err ~src (fun m -> m ~tags:(label |> LogTag.create) "%s" msg);
       failwith msg
@@ -128,7 +118,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     | None ->
       let msg =
         [%string
-          "Failed to drop pool: connection to '%{Label.show name}' doesn't \
+          "Failed to drop pool: connection to '%{Label.value name}' doesn't \
            exist"]
       in
       Logs.info ~src (fun m -> m ~tags:(LogTag.create name) "%s" msg);
@@ -152,45 +142,81 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         match pool.Pool.connection with
         | Fail err ->
           Error (Pool_message.Error.CaqtiError (Caqti_error.show err))
-        | Init -> Pool.connect pool |> connect
-        | Pool _ -> Ok ()
+        | Close -> Pool.connect pool |> connect
+        | Open _ -> Ok ()
       in
       connect pool
     | None -> Error Pool_message.(Error.NotFound Field.Database)
   ;;
 
-  let map_fetched ?(retries = 2) database_label =
-    let rec run (fcn : 'a -> ('b, 'e) Lwt_result.t) =
-      match Cache.find_opt database_label with
-      | Some pool ->
-        (match Pool.connection pool with
-         | Fail err when pool.Pool.n_retries >= retries ->
-           raise_caqti_error (Error err)
-         | Fail _ ->
-           let () =
-             Pool.connect pool |> Pool.increment_retry |> Cache.replace
-           in
-           run fcn
-         | Init ->
-           let () = Pool.connect pool |> Cache.replace in
-           run fcn
-         | Pool connection when pool.Pool.n_retries > 0 ->
-           let () = Pool.reset_retry pool |> Cache.replace in
-           print_pool_usage pool;
-           fcn connection
-         | Pool connection ->
-           print_pool_usage pool;
-           fcn connection)
-      | None ->
-        raise Pool_message.Error.(Exn (DatabaseAddPoolFirst database_label))
+  let disconnect ?error =
+    Cache.find_opt
+    %> function
+    | Some pool ->
+      let%lwt () = drain_opt pool in
+      Cache.replace
+        { pool with
+          Pool.connection =
+            CCOption.map_or ~default:Close (fun err -> Fail err) error
+        }
+      |> Lwt.return
+    | None -> Lwt.return_unit
+  ;;
+
+  let raise_caqti_error (label : Entity.Label.t) input =
+    let open Caqti_error in
+    match%lwt input with
+    | Ok resp -> Lwt.return resp
+    | Error `Unsupported ->
+      raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
+    | Error (#load_or_connect as err) ->
+      Logs.info (fun m -> m "ERROR load or connect");
+      let%lwt () = disconnect ~error:err label in
+      let () =
+        Logs.info (fun m ->
+          m "%s" ([%show: Pool.t list] (Cache.Hashtbl.values_list Cache.pools)))
+      in
+      raise (Exn err)
+    | Error (#t as err) -> raise (Exn err)
+  ;;
+
+  let rec fetch_pool ?(retries = 2) database_label =
+    let () =
+      Logs.debug (fun m ->
+        m "%s" ([%show: Pool.t list] (Cache.Hashtbl.values_list Cache.pools)))
     in
-    run
+    match Cache.find_opt database_label with
+    | Some pool ->
+      (match Pool.connection pool with
+       | Fail err when pool.Pool.n_retries >= retries ->
+         raise_caqti_error
+           (Pool.database_label pool)
+           (Error err |> Lwt_result.lift)
+       | Fail _ ->
+         let () = Pool.connect pool |> Pool.increment_retry |> Cache.replace in
+         fetch_pool ~retries database_label
+       | Close ->
+         let () = Pool.connect pool |> Cache.replace in
+         fetch_pool ~retries database_label
+       | Open connection when pool.Pool.n_retries > 0 ->
+         let () = Pool.reset_retry pool |> Cache.replace in
+         print_pool_usage pool;
+         Lwt.return connection
+       | Open connection ->
+         print_pool_usage pool;
+         Lwt.return connection)
+    | None ->
+      raise Pool_message.Error.(Exn (DatabaseAddPoolFirst database_label))
+  ;;
+
+  let map_fetched ?retries database_label (fcn : 'a -> ('b, 'e) Lwt_result.t) =
+    let%lwt connection = fetch_pool ?retries database_label in
+    fcn connection |> raise_caqti_error database_label
   ;;
 
   let query database_label f =
     Caqti_lwt_unix.Pool.use (fun connection -> f connection)
     |> map_fetched database_label
-    ||> raise_caqti_error
   ;;
 
   let collect label request input =
@@ -234,13 +260,13 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     %> Lwt_result.map Utils.flat_unit
   ;;
 
-  let rollback connection error =
+  let rollback label connection error =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let%lwt () =
       Connection.rollback ()
       >|+ CCFun.tap (fun _ ->
         Logs.debug (fun m -> m "Successfully rolled back transaction"))
-      ||> raise_caqti_error
+      |> raise_caqti_error label
     in
     Lwt.fail error
   ;;
@@ -266,9 +292,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
           match%lwt Connection.commit () with
           | Ok () -> Lwt.return_ok result
           | Error error -> Lwt.return_error error)
-        (rollback connection))
+        (rollback label connection))
     |> map_fetched label
-    ||> raise_caqti_error
   ;;
 
   let transaction_iter label queries =
@@ -279,8 +304,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         (fun () ->
           let* () = exec_each connection queries in
           Connection.commit ())
-        (rollback connection))
+        (rollback label connection))
     |> map_fetched label
-    ||> raise_caqti_error
   ;;
 end

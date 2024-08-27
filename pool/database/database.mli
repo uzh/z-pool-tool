@@ -125,6 +125,7 @@ end
 
 val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) Lwt_result.t
 val connect : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
+val disconnect : ?error:Caqti_error.t -> Entity.Label.t -> unit Lwt.t
 val add_pool : ?required:bool -> t -> unit
 val drop_pool : Label.t -> unit Lwt.t
 
