@@ -89,8 +89,9 @@ end
 let run ({ label; scheduled_time; status; _ } as schedule : t) =
   let open Utils.Lwt_result.Infix in
   let delay = run_in scheduled_time in
-  let paused () =
-    Logs.debug ~src (fun m -> m ~tags "%s: Run is paused" label);
+  let notify status =
+    Logs.debug ~src (fun m ->
+      m ~tags "%s: Run is %s" label (Status.show status));
     Lwt.return_unit
   in
   let run ({ label; scheduled_time; fcn; _ } as schedule) =
@@ -116,7 +117,7 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
     | At time, Active when Ptime.is_later ~than:(Ptime_clock.now ()) time ->
       let%lwt () = Registered.update_status Status.Running schedule in
       process schedule
-    | (Every _ | At _), Paused -> paused ()
+    | (Every _ | At _), ((Paused | Failed) as status) -> notify status
     | (Every _ | At _), (Active | Finished | Running | Stopped) ->
       Lwt.return_unit
   in

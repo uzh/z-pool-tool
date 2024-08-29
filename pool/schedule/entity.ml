@@ -40,6 +40,7 @@ module Status = struct
 
     type t =
       | Active [@name "active"] [@printer go "active"]
+      | Failed [@name "failed"] [@printer go "failed"]
       | Finished [@name "finished"] [@printer go "finished"]
       | Paused [@name "paused"] [@printer go "paused"]
       | Running [@name "running"] [@printer go "running"]
@@ -89,8 +90,8 @@ type public =
 let is_ok ({ scheduled_time; status; last_run; _ } : public) =
   let open Status in
   let is_fine = function
-    | Finished | Paused -> true
-    | Active | Running | Stopped -> false
+    | Finished | Paused | Stopped -> true
+    | Active | Running | Failed -> false
   in
   let did_run () =
     match scheduled_time, last_run with

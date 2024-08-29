@@ -5,6 +5,7 @@ end
 module Status : sig
   type t =
     | Active
+    | Failed
     | Finished
     | Paused
     | Running
