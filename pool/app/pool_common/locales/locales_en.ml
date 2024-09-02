@@ -125,6 +125,7 @@ let rec field_to_string =
   | HidePast -> "Hide past"
   | HideUnverified -> "Hide unverified"
   | Hint -> "hint"
+  | History -> "history"
   | Host -> "host"
   | I18n -> "translation"
   | Icon -> "icon"

@@ -1,7 +1,5 @@
 val htmx_handler
-  :  changelog:(module Http_utils.Queryable)
-  -> active_navigation:string
-  -> error_path:string
+  :  changelog:(module Changelog.TSig)
   -> url:string
   -> Pool_common.Id.t
   -> Rock.Request.t

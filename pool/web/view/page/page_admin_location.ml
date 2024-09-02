@@ -604,7 +604,6 @@ end
 let detail
   (location : Pool_location.t)
   statistics
-  changelogs
   statistics_year_range
   (Pool_context.{ csrf; language; _ } as context)
   =
@@ -693,7 +692,7 @@ let detail
             ; FileList.create csrf language location
             ]
         ; Component.Calendar.(create (Location location.Pool_location.id))
-        ; Component.Changelog.list context changelog_url changelogs
+        ; Component.Changelog.list context changelog_url None
         ]
     ]
 ;;

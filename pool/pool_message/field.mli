@@ -111,6 +111,7 @@ type t =
   | HidePaused
   | HideUnverified
   | Hint
+  | History
   | Host
   | I18n
   | Icon

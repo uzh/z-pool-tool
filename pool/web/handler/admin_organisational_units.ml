@@ -96,14 +96,7 @@ let show action req =
          | `New -> View.create context |> Lwt_result.return
          | `Edit ->
            let* ou = req |> id |> Organisational_unit.find database_label in
-           let%lwt changelogs =
-             let open Organisational_unit in
-             let query =
-               Query.from_request ~default:Changelog.default_query req
-             in
-             Changelog.all_by_entity ~query database_label (Id.to_common ou.id)
-           in
-           View.detail context ou changelogs |> Lwt_result.return
+           View.detail context ou None |> Lwt_result.return
        in
        html
        |> create_layout ~active_navigation:base_path req context
@@ -113,25 +106,19 @@ let show action req =
 ;;
 
 let changelog req =
-  HttpUtils.Htmx.handler
-    ~active_navigation:"/admin/organisational-unit"
-    ~error_path:"/admin/organisational-unit"
-    ~create_layout
-    ~query:(module Organisational_unit.Changelog)
-    req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let id = id req in
-  let%lwt changelogs =
-    Organisational_unit.Changelog.all_by_entity
-      ~query
-      database_label
-      (Organisational_unit.Id.to_common id)
-  in
+  let ou_id = id req in
   let url =
-    HttpUtils.Url.Admin.organisational_unit_path ~suffix:"changelog" ~id ()
-    |> Uri.of_string
+    HttpUtils.Url.Admin.organisational_unit_path
+      ~suffix:"changelog"
+      ~id:ou_id
+      ()
   in
-  Component.Changelog.list context url changelogs |> Lwt_result.return
+  let open Organisational_unit in
+  Helpers.Changelog.htmx_handler
+    ~changelog:(module Changelog)
+    ~url
+    (Id.to_common ou_id)
+    req
 ;;
 
 let new_form = show `New

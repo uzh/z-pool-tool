@@ -31,41 +31,57 @@ let rec format_changes changes =
     span [ strong [ format before; txt " → "; format after ] ]
 ;;
 
-let list Pool_context.{ language; _ } url (changelogs, query) =
+let list Pool_context.{ language; _ } url changelog =
   let open Pool_common in
+  let target_id = "changelog-datatable" in
   let field_to_string field =
     Utils.field_to_string_capitalized language field |> txt
   in
-  let data_table = Data_table.create_meta ~push_url:false url query language in
-  let cols =
-    Pool_message.
-      [ `custom (field_to_string Field.User)
-      ; `custom (field_to_string Field.Changes)
-      ; `custom (field_to_string Field.CreatedAt)
+  match changelog with
+  | None ->
+    let trigger_onload =
+      let url = url |> Uri.to_string |> Sihl.Web.externalize_path in
+      [ a_id target_id; a_user_data "hx-trigger" "load" ]
+      @ Data_table.hx_get ~url ~target_id ~push_url:false
+    in
+    div
+      [ h2 [ field_to_string Pool_message.Field.History ]
+      ; div ~a:trigger_onload []
       ]
-  in
-  let th_class = [ "w-3"; "w-7"; "w-2" ] in
-  let row ({ user_uuid; user_email; changes; created_at; _ } : t) =
-    [ a
-        ~a:
-          [ a_href
-              (Http_utils.Url.Admin.admin_path
-                 ~id:(Admin.Id.of_common user_uuid)
-                 ())
-          ]
-        [ txt (Pool_user.EmailAddress.value user_email) ]
-    ; changes |> format_changes
-    ; txt (created_at |> CreatedAt.value |> Pool_model.Time.formatted_date_time)
-    ]
-    |> CCList.map (fun value -> td [ value ])
-    |> tr
-  in
-  Data_table.make
-    ~align_top:true
-    ~target_id:"location-changelog"
-    ~th_class
-    ~cols
-    ~row
-    data_table
-    changelogs
+  | Some (changelogs, query) ->
+    let data_table =
+      Data_table.create_meta ~push_url:false url query language
+    in
+    let cols =
+      Pool_message.
+        [ `custom (field_to_string Field.User)
+        ; `custom (field_to_string Field.Changes)
+        ; `custom (field_to_string Field.CreatedAt)
+        ]
+    in
+    let th_class = [ "w-3"; "w-7"; "w-2" ] in
+    let row ({ user_uuid; user_email; changes; created_at; _ } : t) =
+      [ a
+          ~a:
+            [ a_href
+                (Http_utils.Url.Admin.admin_path
+                   ~id:(Admin.Id.of_common user_uuid)
+                   ())
+            ]
+          [ txt (Pool_user.EmailAddress.value user_email) ]
+      ; changes |> format_changes
+      ; txt
+          (created_at |> CreatedAt.value |> Pool_model.Time.formatted_date_time)
+      ]
+      |> CCList.map (fun value -> td [ value ])
+      |> tr
+    in
+    Data_table.make
+      ~align_top:true
+      ~target_id
+      ~th_class
+      ~cols
+      ~row
+      data_table
+      changelogs
 ;;

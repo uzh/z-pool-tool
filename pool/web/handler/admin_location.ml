@@ -186,11 +186,6 @@ let detail edit req =
     @@
     let id = id req Field.Location Id.of_string in
     let* location = find database_label id in
-    let%lwt changelogs =
-      let open Changelog in
-      let query = Query.from_request ~default:default_query req in
-      all_by_entity ~query database_label (Id.to_common location.id)
-    in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let states = Status.all in
     Page.Admin.Location.(
@@ -198,8 +193,7 @@ let detail edit req =
       | false ->
         let%lwt statistics = Statistics.create database_label id in
         let%lwt statistics_year_range = Statistics.year_select database_label in
-        detail location statistics changelogs statistics_year_range context
-        |> Lwt.return
+        detail location statistics statistics_year_range context |> Lwt.return
       | true ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
         form ~location ~states context tenant_languages flash_fetcher
@@ -213,22 +207,13 @@ let detail edit req =
 
 let changelog req =
   let open Pool_location in
-  HttpUtils.Htmx.handler
-    ~active_navigation:"/admin/locations"
-    ~error_path:"/admin/locations"
-    ~create_layout
-    ~query:(module Changelog)
-    req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let id = id req Field.Location Id.of_string in
-  let%lwt changelogs =
-    Changelog.all_by_entity ~query database_label (Id.to_common id)
-  in
-  let url =
-    HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id ()
-    |> Uri.of_string
-  in
-  Component.Changelog.list context url changelogs |> Lwt_result.return
+  let url = HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id () in
+  Helpers.Changelog.htmx_handler
+    ~changelog:(module Changelog)
+    ~url
+    (Id.to_common id)
+    req
 ;;
 
 let show = detail false
