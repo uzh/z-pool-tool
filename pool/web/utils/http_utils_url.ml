@@ -35,6 +35,13 @@ module Admin = struct
     |> append_opt Pool_location.(map Id.value id)
     |> append_opt suffix
   ;;
+
+  let organisational_unit_path ?suffix ?id () =
+    "/admin/organisational-unit"
+    |> append_opt (map Organisational_unit.Id.value id)
+    |> append_opt suffix
+  ;;
+
 end
 
 module Contact = struct

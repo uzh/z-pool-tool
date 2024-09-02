@@ -17,7 +17,7 @@ let ou_path ?suffix ?id () =
   CCOption.map_or ~default (Format.asprintf "%s/%s" default) suffix
 ;;
 
-let form { Pool_context.language; csrf; _ } organisational_unit =
+let form { Pool_context.language; csrf; _ } organisational_unit changelogs =
   let open Organisational_unit in
   let open Pool_common in
   let action, control =
