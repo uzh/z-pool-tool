@@ -10,7 +10,7 @@ let worker_services =
       register
         ~kind:Worker
         ~jobs:
-          [ hide Email.Service.Job.send
+          [ hide ~execute_on_root:true Email.Service.Job.send
           ; hide Text_message.Service.Job.send
           ; hide Assignment_job.job
           ]
@@ -34,7 +34,6 @@ let services =
   ; Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register `Server ()
-  ; System_event.Service.ConnectionWatcher.register ()
   ]
 ;;
 

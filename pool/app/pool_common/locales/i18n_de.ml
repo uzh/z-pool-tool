@@ -21,6 +21,12 @@ let to_string = function
     "In der folgenden Liste können Sie bestimmen, in welcher Tabelle \
      zusätzlich zu den Kontaktangaben auch die individuellen Angaben angezeigt \
      werden sollen."
+  | CustomFieldsSettingsCloseScreen ->
+    "Diese Ansicht wird beim beenden einer Session angezeigt. User, mit der \
+     Berechtigung, eine Session zu beenden, können diese Angaben sehen."
+  | CustomFieldsSettingsDetailScreen ->
+    "Diese Angaben werden auf der Detailseite aller Sessions angezeigt. User, \
+     mit Leseberechtigung einer Session, können diese Angaben sehen."
   | DashboardProfileCompletionText ->
     "Ihr Profil ist unvollständig. Um zu mehr Experimenten eingeladen zu \
      werden, vervollständigen Sie Ihr Profil."
@@ -142,7 +148,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SessionReminder -> "Sessionerinnerung"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
-  | SignUpTitle -> "Anmeldung"
+  | SignUpTitle -> "Registrierung"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwapSessionsListEmpty ->
     "Es wurden keine Sessions gefunden, der Sie diesen Kontakt zuweisen können."
@@ -325,6 +331,9 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     Format.asprintf
       "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
       (lead_time |> Pool_model.Time.formatted_timespan)
+  | DeleteContact ->
+    "Der Benutzer wird als gelöscht markiert und kann sich nicht mehr \
+     anmelden. Diese Aktion kann nicht rückgängig gemacht werden."
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."
@@ -409,6 +418,10 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | FilterTemplates ->
     "Änderungen an einem dieser Filter wird auf alle Experimentfilter \
      übertragen, die dieses Template beinhalten."
+  | FileUploadAcceptMime types ->
+    types
+    |> CCString.concat ", "
+    |> Format.asprintf "Zugelassen sind foldende Dateitypen: %s"
   | GtxKeyMissing ->
     "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten \
      verschickt werden."
@@ -692,6 +705,10 @@ let confirmable_to_string confirmable =
    | CloseSession ->
      ( "die Session"
      , "schliessen"
+     , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
+   | DeleteContact ->
+     ( "den Kontakt"
+     , "löschen"
      , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
    | DeleteCustomField -> "das Feld", "löschen", None
    | DeleteCustomFieldOption -> "das Option", "löschen", None

@@ -21,6 +21,12 @@ let to_string = function
   | CustomFieldsSettings ->
     "In the following list, you can determine in which table the custom data \
      should be displayed in addition to the contact details."
+  | CustomFieldsSettingsCloseScreen ->
+    "This view is displayed when a session is closed. Users with the \
+     authorization to end a session can see this information."
+  | CustomFieldsSettingsDetailScreen ->
+    "This information is displayed on the details page of all sessions. Users \
+     with read permission for a session can see this information."
   | DashboardProfileCompletionText ->
     "Your profile is incomplete. To be invited to more experiments, fulfill \
      your profile."
@@ -315,6 +321,9 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     Format.asprintf
       "If left blank, the default lead time of %s is applied."
       (lead_time |> Pool_model.Time.formatted_timespan)
+  | DeleteContact ->
+    "The user is marked as deleted and can no longer log in. This action \
+     cannot be undone."
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
      directly enroll in the experiment."
@@ -395,6 +404,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
+  | FileUploadAcceptMime types ->
+    types
+    |> CCString.concat ", "
+    |> Format.asprintf "The following mime types are accepted: %s"
   | FilterTemplates ->
     "Changes to one of these filters will affect all experiment filters that \
      contain this template."
@@ -666,6 +679,7 @@ let confirmable_to_string confirmable =
      , Some "Assignments to follow-up sessions will be canceled as well." )
    | CancelSession -> "session", "cancel", None
    | CloseSession -> "session", "close", Some "This action cannot be undone."
+   | DeleteContact -> "contact", "delete", Some "This action cannot be undone."
    | DeleteCustomField -> "field", "delete", None
    | DeleteCustomFieldOption -> "option", "delete", None
    | DeleteEmailSuffix -> "email suffix", "delete", None
@@ -699,9 +713,9 @@ let confirmable_to_string confirmable =
          "The contact will no longer be invited for experiments and can no \
           longer register for them." )
    | PublishCustomField ->
-     ( "field an all associated options"
+     ( "field and all associated options"
      , "publish"
-     , Some "You will not be able to delete it field anymore." )
+     , Some "You will not be able to delete the field anymore." )
    | PublishCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
    | ReactivateAccount -> "account", "reactivate", None

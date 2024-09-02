@@ -59,5 +59,9 @@ let find_statistics_starting_year_request =
 ;;
 
 let find_statistics_starting_year pool =
-  Database.find pool find_statistics_starting_year_request ()
+  let open Utils.Lwt_result.Infix in
+  Database.find_opt pool find_statistics_starting_year_request ()
+  ||> function
+  | Some year -> year
+  | None -> Ptime_clock.now () |> Ptime.to_year
 ;;

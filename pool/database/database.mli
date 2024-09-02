@@ -1,10 +1,5 @@
 module Guard : Guardian_backend.Pools.Sig
 
-type status =
-  ( (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt_unix.Pool.t
-    , Caqti_error.load )
-    result
-
 module Caqti_encoders : sig
   module Data : sig
     type _ t =
@@ -129,8 +124,9 @@ module Config : sig
 end
 
 val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) Lwt_result.t
-val fetch_pool : Label.t -> status
-val add_pool : ?required:bool -> ?pool_size:int -> t -> status
+val connect : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
+val disconnect : ?error:Caqti_error.t -> Entity.Label.t -> unit Lwt.t
+val add_pool : ?required:bool -> t -> unit
 val drop_pool : Label.t -> unit Lwt.t
 
 val query
@@ -282,8 +278,8 @@ module Migration : sig
 end
 
 module Root : sig
-  val add : unit -> status
-  val setup : unit -> status Lwt.t
+  val add : unit -> unit
+  val setup : unit -> unit Lwt.t
   val start : unit -> unit Lwt.t
   val stop : unit -> unit Lwt.t
 end

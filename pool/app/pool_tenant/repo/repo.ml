@@ -40,7 +40,8 @@ module Sql = struct
         pool_tenant.database_label = $9,
         pool_tenant.styles = UNHEX(REPLACE($10, '-', '')),
         pool_tenant.icon = UNHEX(REPLACE($11, '-', '')),
-        pool_tenant.gtx_api_key = $12
+        pool_tenant.email_logo = UNHEX(REPLACE($12, '-', '')),
+        pool_tenant.gtx_api_key = $13
       WHERE
         pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -95,6 +96,8 @@ module Sql = struct
           ON pool_tenant.styles = styles.uuid
         LEFT JOIN storage_handles icon
           ON pool_tenant.icon = icon.uuid
+        LEFT JOIN storage_handles email_logo
+          ON pool_tenant.email_logo = email_logo.uuid
       |sql}]
   ;;
 
@@ -110,6 +113,7 @@ module Sql = struct
       @ [ Database.Repo.sql_select_label ]
       @ sql_select_storage_handle_columns ~alias:"styles" kind
       @ sql_select_storage_handle_columns ~alias:"icon" kind
+      @ sql_select_storage_handle_columns ~alias:"email_logo" kind
       @ [ api_key ]
       |> CCString.concat ",\n"
     in
@@ -190,6 +194,7 @@ module Sql = struct
           database_label,
           styles,
           icon,
+          email_logo,
           gtx_api_key
         ) VALUES (
           %{Id.sql_value_fragment "$1"},
@@ -203,7 +208,8 @@ module Sql = struct
           $9,
           %{Id.sql_value_fragment "$10"},
           %{Id.sql_value_fragment "$11"},
-          $12
+          %{Id.sql_value_fragment "$12"},
+          $13
         )
       |sql}]
     |> RepoEntity.Write.t ->. Caqti_type.unit
@@ -234,6 +240,7 @@ let set_logos tenant logos =
     ; icon = tenant.icon
     ; logos = tenant_logos
     ; partner_logo
+    ; email_logo = tenant.email_logo
     ; status = tenant.status
     ; default_language = tenant.default_language
     ; text_messages_enabled = tenant.text_messages_enabled

@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 let src = Logs.Src.create "database"
 
 module Logs = (val Logs.src_log src : Logs.LOG)
@@ -8,16 +10,7 @@ module MariaConfigPool = struct
   let expected_databases = 5
 end
 
-module MariaConfig = struct
-  open Guardian_backend.Pools
-  include DefaultConfig
-
-  let database =
-    MultiPools Entity.[ root |> Label.value, database_url () |> Url.value ]
-  ;;
-end
-
-module Guard = Guardian_backend.Pools.Make (MariaConfig)
+module Guard = Pools_guardian.Make (MariaConfigPool)
 include Pools.Make (MariaConfigPool)
 
 let exec_query request input (module Connection : Caqti_lwt.CONNECTION) =
@@ -115,11 +108,10 @@ let clean_all database_label =
     |> Lwt_result.map Utils.flat_unit)
 ;;
 
-let add_pool ?required ?(pool_size = 10) (model : Entity.t) =
-  let status = add_pool ?required ~pool_size model in
+let add_pool ?required (model : Entity.t) =
+  let status = add_pool ?required model in
   let () =
     Guard.add_pool
-      ~pool_size
       Entity.(label model |> Label.value)
       Entity.(url model |> Url.value)
   in
@@ -131,3 +123,5 @@ let drop_pool label =
   let%lwt () = Guard.drop_pool (Entity.Label.value label) in
   Lwt.return_unit
 ;;
+
+let connect = connect %> Lwt.return

@@ -69,6 +69,7 @@ type t =
   | EmailAddressUnverified
   | EmailAddressVerified
   | EmailLeadTime
+  | EmailLogo
   | EmailRemindersSentAt
   | EmailsSent
   | EmailSubject

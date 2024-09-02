@@ -163,6 +163,45 @@ let personal_details_form
     ]
 ;;
 
+let toggle_status_form
+  csrf
+  language
+  query_language
+  ?has_icon
+  ~action
+  ~hint
+  ~confirmable
+  ~submit_type
+  ~control
+  ()
+  =
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let confirmable =
+    Pool_common.Utils.confirmable_to_string language confirmable
+  in
+  div
+    ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+    [ form
+        ~a:
+          [ a_method `Post
+          ; a_action (externalize action)
+          ; a_user_data "confirmable" confirmable
+          ]
+        [ csrf_element csrf ()
+        ; submit_element
+            ?has_icon
+            ~classnames:[ "nobr" ]
+            ~submit_type
+            language
+            control
+            ()
+        ]
+    ; div
+        ~a:[ a_class [ "grow" ] ]
+        [ txt Pool_common.(Utils.hint_to_string language hint) ]
+    ]
+;;
+
 let status_form
   ?(additional = [])
   csrf
@@ -178,15 +217,12 @@ let status_form
     | `Admin ->
       Htmx.admin_profile_hx_post (Contact.id contact), I18n.PauseAccountAdmin
   in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
   let control, confirmable, submit_type =
     let open Message.Control in
     let open Pool_common in
-    let confirmable_str = Utils.confirmable_to_string language in
     match contact.Contact.paused |> Pool_user.Paused.value with
-    | true ->
-      ReactivateAccount, confirmable_str I18n.ReactivateAccount, `Success
-    | false -> PauseAccount, confirmable_str I18n.PauseAccount, `Error
+    | true -> ReactivateAccount, I18n.ReactivateAccount, `Success
+    | false -> PauseAccount, I18n.PauseAccount, `Error
   in
   div
     ~a:[ a_class [ "stack-md" ] ]
@@ -197,26 +233,17 @@ let status_form
                Utils.field_to_string language Pool_message.Field.Status
                |> CCString.capitalize_ascii)
          ]
-     ; div
-         ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-         [ form
-             ~a:
-               [ a_method `Post
-               ; a_action (externalize (Format.asprintf "%s/pause" action))
-               ; a_user_data "confirmable" confirmable
-               ]
-             [ csrf_element csrf ()
-             ; submit_element
-                 ~classnames:[ "nobr" ]
-                 ~submit_type
-                 language
-                 control
-                 ()
-             ]
-         ; div
-             ~a:[ a_class [ "grow" ] ]
-             [ txt Pool_common.(Utils.hint_to_string language hint) ]
-         ]
+     ; toggle_status_form
+         csrf
+         language
+         query_language
+         ~action:(Format.asprintf "%s/pause" action)
+         ~has_icon:Component.Icon.NotificationsOffOutline
+         ~hint
+         ~confirmable
+         ~submit_type
+         ~control
+         ()
      ]
      @ additional)
 ;;

@@ -658,6 +658,7 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
+        ; post "delete" ~middlewares:[ Access.update ] mark_as_deleted
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
         ; get

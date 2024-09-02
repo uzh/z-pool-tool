@@ -252,30 +252,45 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
 ;;
 
 let start () =
-  let open Utils.Lwt_result.Infix in
   let tags = Database.Logger.Tags.create Database.root in
-  let%lwt database_labels =
-    Pool_tenant.find_all ()
-    ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
-    ||> CCList.cons Database.root
-  in
+  let%lwt database_labels = Database.Tenant.find_all_by_status () in
   Logs.info (fun m ->
     m
       ~tags
       "Start queue for databases: %s"
       ([%show: Database.Label.t list] database_labels));
-  let%lwt () = Lwt_list.iter_s Repo.archive_all_processed database_labels in
-  let%lwt () = Lwt_list.iter_s Repo.reset_pending_jobs database_labels in
+  let archive_and_reset database_label =
+    let%lwt () = Repo.archive_all_processed database_label in
+    Repo.reset_pending_jobs database_label
+  in
+  let handle fcn database_label =
+    try%lwt fcn database_label with
+    | Caqti_error.(Exn #load_or_connect) ->
+      Logs.warn (fun m ->
+        m
+          "Could not archive and reset jobs for database: %s"
+          (Database.Label.show database_label));
+      Lwt.return_unit
+    | err -> raise err
+  in
+  let%lwt () = Lwt_list.iter_s (handle archive_and_reset) database_labels in
   match !registered_jobs with
   | [] ->
     Logs.warn (fun m -> m ~tags "No jobs registered");
     Lwt.return_unit
   | jobs ->
     let jobs_per_database =
-      CCList.fold_product
-        (fun init db name -> (db, name) :: init)
+      let open CCList in
+      fold_left
+        (fun jobs_per_db job ->
+          let database_labels =
+            match job.AnyJob.execute_on_root with
+            | false -> database_labels
+            | true -> Database.root :: database_labels
+          in
+          fold_left (fun acc label -> acc @ [ label, job ]) [] database_labels
+          |> append jobs_per_db)
         []
-        database_labels
         jobs
     in
     jobs_per_database

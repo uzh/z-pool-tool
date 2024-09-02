@@ -96,6 +96,7 @@ type t =
   | EmailAddressVerified [@name "email_address_verified"]
   [@printer go "email_address_verified"]
   | EmailLeadTime [@name "email_lead_time"] [@printer go "email_lead_time"]
+  | EmailLogo [@name "email_logo"] [@printer go "email_logo"]
   | EmailRemindersSentAt [@name "email_reminders_sent_at"]
   [@printer go "email_reminders_sent_at"]
   | EmailsSent [@name "emails_sent"] [@printer go "emails_sent"]

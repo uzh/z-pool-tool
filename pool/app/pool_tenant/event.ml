@@ -12,6 +12,7 @@ type update =
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
   ; icon : Icon.Write.t option
+  ; email_logo : EmailLogo.Write.t option
   }
 [@@deriving eq, show]
 
@@ -63,6 +64,7 @@ let handle_event pool : event -> unit Lwt.t = function
     ; url = update_t.url
     ; styles = update_t.styles <+> tenant.styles
     ; icon = update_t.icon <+> tenant.icon
+    ; email_logo = update_t.email_logo <+> tenant.email_logo
     ; default_language = update_t.default_language
     ; gtx_sender = update_t.gtx_sender
     ; updated_at = Pool_common.UpdatedAt.create_now ()

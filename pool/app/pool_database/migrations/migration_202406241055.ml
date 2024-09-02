@@ -1,6 +1,6 @@
 let create_text_message_dlr_table =
   Database.Migration.Step.create
-    ~label:"add text gtx_sender to pool_tenants"
+    ~label:"create pool message dlr table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_text_message_dlr (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,

@@ -130,7 +130,7 @@ Example: admin.root.create example@mail.com securePassword Max Muster
     ~help
     (function
     | [ email; password; given_name; name ] ->
-      let%lwt (_ : Database.status) = Database.Root.setup () in
+      let%lwt () = Database.Root.setup () in
       create_exn email password given_name name
     | _ -> Command_utils.failwith_missmatch help)
 ;;
