@@ -51,7 +51,7 @@ let write action req =
       ( Format.asprintf "%s/%s/edit" base_path (Organisational_unit.Id.value id)
       , Updated field )
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -62,8 +62,10 @@ let write action req =
       | `Create ->
         Create.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags)
       | `Update id ->
+        let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
         let* ou = Organisational_unit.find database_label id in
-        Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags ou)
+        Update.(
+          urlencoded |> decode |> Lwt_result.lift >== handle ~tags admin ou)
     in
     let handle events =
       let%lwt () =
@@ -91,15 +93,17 @@ let show action req =
     Utils.Lwt_result.map_error (fun err -> err, base_path)
     @@ let* html =
          match action with
-         | `New -> View.form context None |> Lwt_result.return
+         | `New -> View.create context |> Lwt_result.return
          | `Edit ->
-           let* ou =
-             req
-             |> id
-             |> Organisational_unit.find database_label
-             >|+ CCOption.return
+           let* ou = req |> id |> Organisational_unit.find database_label in
+           let%lwt changelogs =
+             let open Organisational_unit in
+             let query =
+               Query.from_request ~default:Changelog.default_query req
+             in
+             Changelog.all_by_entity ~query database_label (Id.to_common ou.id)
            in
-           View.form context ou |> Lwt_result.return
+           View.detail context ou changelogs |> Lwt_result.return
        in
        html
        |> create_layout ~active_navigation:base_path req context
@@ -107,6 +111,15 @@ let show action req =
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
+
+(* let changelog req = let open Pool_location in HttpUtils.Htmx.handler
+   ~active_navigation:"/admin/locations" ~error_path:"/admin/locations"
+   ~create_layout ~query:(module Changelog) req @@ fun ({
+   Pool_context.database_label; _ } as context) query -> let id = id req
+   Field.Location Id.of_string in let%lwt changelogs = Changelog.all_by_entity
+   ~query database_label (Id.to_common id) in let url =
+   HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id () |> Uri.of_string
+   in Component.Changelog.list context url changelogs |> Lwt_result.return ;; *)
 
 let new_form = show `New
 let edit = show `Edit

@@ -17,7 +17,7 @@ let ou_path ?suffix ?id () =
   CCOption.map_or ~default (Format.asprintf "%s/%s" default) suffix
 ;;
 
-let form { Pool_context.language; csrf; _ } organisational_unit changelogs =
+let form { Pool_context.language; csrf; _ } organisational_unit =
   let open Organisational_unit in
   let open Pool_common in
   let action, control =
@@ -44,6 +44,28 @@ let form { Pool_context.language; csrf; _ } organisational_unit changelogs =
             ~a:[ a_class [ "flexrow" ] ]
             [ Input.submit_element ~classnames:[ "push" ] language control () ]
         ]
+    ]
+;;
+
+let create context =
+  div ~a:[ a_class [ "trim"; "safety-margin" ] ] [ form context None ]
+;;
+
+let detail context ou changelogs =
+  let open Organisational_unit in
+  let url =
+    Http_utils.Url.Admin.organisational_unit_path
+      ~suffix:"changelog"
+      ~id:ou.id
+      ()
+    |> Uri.of_string
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ form context None
+    ; div
+        ~a:[ a_class [ "gap-lg" ] ]
+        [ Component.Changelog.list context url changelogs ]
     ]
 ;;
 

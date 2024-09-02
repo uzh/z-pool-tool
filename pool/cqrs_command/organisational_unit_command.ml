@@ -38,6 +38,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Admin.t
     -> Organisational_unit.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -46,10 +47,12 @@ module Update : sig
 end = struct
   type t = Organisational_unit.Name.t
 
-  let handle ?(tags = Logs.Tag.empty) ou name =
+  let handle ?(tags = Logs.Tag.empty) admin ou name =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+    let user_id = Admin.(admin |> id |> Id.to_common) in
     Ok
-      [ Organisational_unit.Updated (ou, name) |> Pool_event.organisational_unit
+      [ Organisational_unit.Updated (ou, name, user_id)
+        |> Pool_event.organisational_unit
       ]
   ;;
 

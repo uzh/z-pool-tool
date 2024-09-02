@@ -1,5 +1,7 @@
 module Id : sig
   include Pool_model.Base.IdSig
+
+  val to_common : t -> Pool_common.Id.t
 end
 
 module Name : sig
@@ -22,7 +24,7 @@ val name : t -> Name.t
 
 type event =
   | Created of t
-  | Updated of (t * Name.t)
+  | Updated of (t * Name.t * Pool_common.Id.t)
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
