@@ -112,14 +112,27 @@ let show action req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-(* let changelog req = let open Pool_location in HttpUtils.Htmx.handler
-   ~active_navigation:"/admin/locations" ~error_path:"/admin/locations"
-   ~create_layout ~query:(module Changelog) req @@ fun ({
-   Pool_context.database_label; _ } as context) query -> let id = id req
-   Field.Location Id.of_string in let%lwt changelogs = Changelog.all_by_entity
-   ~query database_label (Id.to_common id) in let url =
-   HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id () |> Uri.of_string
-   in Component.Changelog.list context url changelogs |> Lwt_result.return ;; *)
+let changelog req =
+  HttpUtils.Htmx.handler
+    ~active_navigation:"/admin/organisational-unit"
+    ~error_path:"/admin/organisational-unit"
+    ~create_layout
+    ~query:(module Organisational_unit.Changelog)
+    req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let id = id req in
+  let%lwt changelogs =
+    Organisational_unit.Changelog.all_by_entity
+      ~query
+      database_label
+      (Organisational_unit.Id.to_common id)
+  in
+  let url =
+    HttpUtils.Url.Admin.organisational_unit_path ~suffix:"changelog" ~id ()
+    |> Uri.of_string
+  in
+  Component.Changelog.list context url changelogs |> Lwt_result.return
+;;
 
 let new_form = show `New
 let edit = show `Edit

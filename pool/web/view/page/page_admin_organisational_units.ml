@@ -26,7 +26,6 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
     | Some ou -> ou_path ~id:ou.id (), Update (Some Field.OrganisationalUnit)
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "haeding-1" ] ]
         [ Utils.control_to_string language control |> txt ]
@@ -62,7 +61,7 @@ let detail context ou changelogs =
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ form context None
+    [ form context (Some ou)
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         [ Component.Changelog.list context url changelogs ]
