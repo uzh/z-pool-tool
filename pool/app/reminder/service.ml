@@ -150,7 +150,7 @@ let send_tenant_reminder database_label =
 let run () =
   let open Utils.Lwt_result.Infix in
   ()
-  |> Database.Tenant.find_all_by_status
+  |> Database.(Tenant.find_all_by_status ~status:[ Status.Active ])
   >|> Lwt_list.iter_s send_tenant_reminder
 ;;
 
@@ -164,6 +164,7 @@ let start_handler () =
   create
     "session_reminder"
     (Every (interval |> ScheduledTimeSpan.of_span))
+    None
     periodic_fcn
   |> Schedule.add_and_start
 ;;

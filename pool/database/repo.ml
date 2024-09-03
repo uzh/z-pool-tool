@@ -167,3 +167,14 @@ let set_migration_pending db_labels =
     in
     Service.exec root request pv
 ;;
+
+let database_status_by_label_request =
+  {sql|
+    SELECT status FROM pool_tenant_databases WHERE label = ?
+  |sql}
+  |> Label.t ->! Status.t
+;;
+
+let database_status_by_label db_label =
+  Service.find root database_status_by_label_request db_label
+;;

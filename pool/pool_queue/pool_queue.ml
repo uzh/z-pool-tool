@@ -248,6 +248,7 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
       "queue [%{Database.Label.value database_label}]: %{JobName.show \
        job.AnyJob.name}"]
     interval
+    (Some database_label)
     periodic_fcn
 ;;
 

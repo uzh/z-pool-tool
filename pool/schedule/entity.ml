@@ -61,6 +61,7 @@ type scheduled_time =
 
 type t =
   { label : Label.t
+  ; database_label : Database.Label.t option
   ; scheduled_time : scheduled_time
   ; status : Status.t
   ; last_run : LastRunAt.t option
@@ -68,8 +69,14 @@ type t =
   }
 [@@deriving eq, show]
 
-let create label scheduled_time fcn =
-  { label; scheduled_time; status = Status.init; last_run = None; fcn }
+let create label scheduled_time database_label fcn =
+  { label
+  ; database_label
+  ; scheduled_time
+  ; status = Status.init
+  ; last_run = None
+  ; fcn
+  }
 ;;
 
 let run_in = function

@@ -63,7 +63,7 @@ let start () =
     |> Ptime.Span.of_int_s
     |> ScheduledTimeSpan.of_span
   in
-  let schedule = create name (Every interval) verify_tenants in
+  let schedule = create name (Every interval) None verify_tenants in
   add_and_start schedule
 ;;
 

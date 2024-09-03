@@ -293,6 +293,7 @@ module Tenant : sig
   val setup : unit -> Label.t list Lwt.t
   val find : Label.t -> (t, Pool_message.Error.t) Lwt_result.t
   val find_all_by_status : ?status:Status.t list -> unit -> Label.t list Lwt.t
+  val database_status_by_label : Label.t -> Status.t Lwt.t
 
   val find_label_by_url
     :  ?allowed_status:Status.t list
