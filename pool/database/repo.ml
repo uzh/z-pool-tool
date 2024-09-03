@@ -176,5 +176,5 @@ let database_status_by_label_request =
 ;;
 
 let database_status_by_label db_label =
-  Service.find root database_status_by_label_request db_label
+  Service.find_opt root database_status_by_label_request db_label
 ;;

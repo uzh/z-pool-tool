@@ -114,7 +114,9 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
       let%lwt database_status =
         match schedule.database_label with
         | None -> Lwt.return Status.Active
-        | Some label -> Tenant.database_status_by_label label
+        | Some label ->
+          Tenant.database_status_by_label label
+          |> Lwt.map (CCOption.value ~default:Status.Active)
       in
       let open Status in
       match database_status with
