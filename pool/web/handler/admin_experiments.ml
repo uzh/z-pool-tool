@@ -509,6 +509,7 @@ module Filter = struct
 end
 
 let message_history req =
+  let queue_table = `History in
   let experiment_id = experiment_id req in
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
@@ -523,7 +524,7 @@ let message_history req =
   let* experiment = Experiment.find database_label experiment_id in
   let%lwt messages =
     Pool_queue.find_instances_by_entity
-      `History
+      queue_table
       ~query
       database_label
       (Experiment.Id.to_common experiment_id)
@@ -533,7 +534,11 @@ let message_history req =
   @@
   if HttpUtils.Htmx.is_hx_request req
   then
-    Queue.list context (Experiments.message_history_url experiment) messages
+    Queue.list
+      queue_table
+      context
+      (Experiments.message_history_url experiment)
+      messages
     |> Lwt.return
   else Experiments.message_history context experiment messages
 ;;

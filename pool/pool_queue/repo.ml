@@ -362,10 +362,17 @@ module type ColumnsSig = sig
   val column_run_at : Query.Column.t
   val column_input : Query.Column.t
   val job_name_filter : Query.Filter.Condition.Human.t
-  val job_status_filter : Query.Filter.Condition.Human.t
+
+  val job_status_filter
+    :  ?history:bool
+    -> unit
+    -> Query.Filter.Condition.Human.t
+
   val searchable_by : Query.Column.t list
   val sortable_by : Query.Column.t list
   val filterable_by : Query.Filter.Condition.Human.t list option
+  val current_filterable_by : Query.Filter.Condition.Human.t list option
+  val history_filterable_by : Query.Filter.Condition.Human.t list option
   val default_sort : Query.Sort.t
   val default_query : Query.t
 end
@@ -394,9 +401,10 @@ module MakeColumns (Table : sig
     Condition.Human.Select (column_job_name, options)
   ;;
 
-  let job_status_filter =
+  let job_status_filter ?(history = false) () =
     let open Status in
-    let options = build_options all show in
+    let options = if history then [ Succeeded; Failed; Cancelled ] else all in
+    let options = build_options options show in
     Condition.Human.Select (column_job_status, options)
   ;;
 
@@ -411,7 +419,13 @@ module MakeColumns (Table : sig
     ]
   ;;
 
-  let filterable_by = Some [ job_name_filter; job_status_filter ]
+  let filterable_by = Some [ job_name_filter; job_status_filter () ]
+
+  let history_filterable_by =
+    Some [ job_name_filter; job_status_filter ~history:true () ]
+  ;;
+
+  let current_filterable_by = Some [ job_name_filter ]
 
   let default_sort =
     Query.Sort.{ column = column_run_at; order = SortOrder.Descending }

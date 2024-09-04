@@ -455,6 +455,7 @@ let enroll_contact_post req =
 ;;
 
 let message_history req =
+  let queue_table = `History in
   let contact_id = contact_id req in
   let error_path =
     Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id)
@@ -469,14 +470,19 @@ let message_history req =
   let* contact = Contact.find database_label contact_id in
   let%lwt messages =
     Pool_queue.find_instances_by_entity
-      `History
+      queue_table
       ~query
       database_label
       (Contact.Id.to_common contact_id)
   in
   let open Page.Admin in
   (if HttpUtils.Htmx.is_hx_request req
-   then Queue.list context (Contact.message_history_url contact) messages
+   then
+     Queue.list
+       queue_table
+       context
+       (Contact.message_history_url contact)
+       messages
    else Contact.message_history context contact messages)
   |> Lwt_result.return
 ;;
