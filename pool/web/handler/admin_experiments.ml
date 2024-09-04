@@ -535,12 +535,12 @@ let message_history req =
   if HttpUtils.Htmx.is_hx_request req
   then
     Queue.list
-      queue_table
       context
+      queue_table
       (Experiments.message_history_url experiment)
       messages
     |> Lwt.return
-  else Experiments.message_history context experiment messages
+  else Experiments.message_history context queue_table experiment messages
 ;;
 
 module Tags = Admin_experiments_tags

@@ -23,7 +23,7 @@ let data_table_head language =
   [ name; status; message_template; recipient; last_error_at; run_at; `empty ]
 ;;
 
-let list queue_table Pool_context.{ language; _ } url (queued_jobs, query) =
+let list Pool_context.{ language; _ } queue_table url (queued_jobs, query) =
   let open Pool_queue in
   let filterable_by =
     match queue_table with

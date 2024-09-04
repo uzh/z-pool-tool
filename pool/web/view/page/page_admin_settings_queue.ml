@@ -8,8 +8,8 @@ let base_path = "/admin/settings/queue"
 
 let list queue_table context =
   Page_admin_queue.list
-    queue_table
     context
+    queue_table
     (HttpUtils.Url.Admin.Settings.queue_list_path queue_table |> Uri.of_string)
 ;;
 

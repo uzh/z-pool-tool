@@ -479,11 +479,11 @@ let message_history req =
   (if HttpUtils.Htmx.is_hx_request req
    then
      Queue.list
-       queue_table
        context
+       queue_table
        (Contact.message_history_url contact)
        messages
-   else Contact.message_history context contact messages)
+   else Contact.message_history context queue_table contact messages)
   |> Lwt_result.return
 ;;
 
