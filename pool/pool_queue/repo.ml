@@ -101,7 +101,7 @@ let find label id =
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Queue)
 ;;
 
-let find_combined_request_sql table ?(count = false) where_fragment =
+let find_all_request table ?(joins = "") ?(count = false) where_fragment =
   let columns =
     if count
     then "COUNT(*)"
@@ -109,7 +109,7 @@ let find_combined_request_sql table ?(count = false) where_fragment =
   in
   [%string
     {sql|
-      SELECT %{columns} FROM %{sql_table table} %{where_fragment}
+      SELECT %{columns} FROM %{sql_table table} %{joins} %{where_fragment}
     |sql}]
 ;;
 
@@ -117,7 +117,7 @@ let find_by table ?query pool =
   Query.collect_and_count
     pool
     query
-    ~select:(find_combined_request_sql table)
+    ~select:(find_all_request ?joins:None table)
     Repo_entity.Instance.t
 ;;
 

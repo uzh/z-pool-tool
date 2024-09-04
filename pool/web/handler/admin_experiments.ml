@@ -523,6 +523,7 @@ let message_history req =
   let* experiment = Experiment.find database_label experiment_id in
   let%lwt messages =
     Pool_queue.find_instances_by_entity
+      `History
       ~query
       database_label
       (Experiment.Id.to_common experiment_id)

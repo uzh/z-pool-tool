@@ -88,36 +88,20 @@ let duplicate_for_new_job label queue_uuid =
         Connection.rollback ()))
 ;;
 
-let find_combined_request_sql ?(count = false) where_fragment =
-  let columns ?(count = false) ?decode () =
-    if count
-    then "COUNT(*)"
-    else Repo.sql_select_columns ?decode None |> CCString.concat ", "
-  in
-  [%string
-    {sql|
-      SELECT %{columns ~count ()} FROM (
-        SELECT %{columns ~decode:false ()}, entity_uuid FROM %{Repo.sql_table `History}
-          JOIN pool_queue_jobs_mapping ON pool_queue_jobs_mapping.queue_uuid = uuid
-        UNION ALL
-        SELECT %{columns ~decode:false ()}, entity_uuid FROM %{Repo.sql_table `Current}
-          JOIN pool_queue_jobs_mapping ON pool_queue_jobs_mapping.queue_uuid = uuid
-        ) mapping
-        %{where_fragment}
-    |sql}]
-;;
-
-let find_instances_by_entity ?query pool entity_uuid =
+let find_instances_by_entity queue_table ?query pool entity_uuid =
   let where =
     let open Pool_common.Repo in
     ( [%string
         {sql| entity_uuid = %{Pool_common.Id.sql_value_fragment "?"} |sql}]
     , Dynparam.(empty |> add Id.t entity_uuid) )
   in
+  let joins =
+    "JOIN pool_queue_jobs_mapping ON pool_queue_jobs_mapping.queue_uuid = uuid"
+  in
   Query.collect_and_count
     pool
     query
-    ~select:find_combined_request_sql
+    ~select:(Repo.find_all_request queue_table ~joins)
     ~where
     Repo_entity.Instance.t
 ;;

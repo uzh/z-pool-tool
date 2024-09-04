@@ -469,6 +469,7 @@ let message_history req =
   let* contact = Contact.find database_label contact_id in
   let%lwt messages =
     Pool_queue.find_instances_by_entity
+      `History
       ~query
       database_label
       (Contact.Id.to_common contact_id)
