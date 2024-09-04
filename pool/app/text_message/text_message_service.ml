@@ -192,17 +192,30 @@ let test_api_key ~tags api_key cell_phone sender =
 ;;
 
 module Job = struct
+  module Compatibility = struct
+    type old_job = { message : t }
+    [@@deriving yojson] [@@yojson.allow_extra_fields]
+
+    let to_job { message; _ } = message
+    let decode = Yojson.Safe.from_string %> old_job_of_yojson %> to_job
+  end
+
   let encode = yojson_of_t %> Yojson.Safe.to_string
 
   let decode str =
-    try Ok (str |> Yojson.Safe.from_string |> t_of_yojson) with
-    | _ ->
+    let serialization_failed str =
       Logs.err ~src (fun m ->
         m
-          "Serialized email string was NULL, can not deserialize email. Please \
-           fix the string manually and reset the job instance. Error: %s"
+          "Serialized text message string was NULL, can not deserialize text \
+           message. Please fix the string manually and reset the job instance. \
+           Error: %s"
           str);
       Error Pool_message.(Error.Invalid Field.Input)
+    in
+    try Ok (str |> Yojson.Safe.from_string |> t_of_yojson) with
+    | _ ->
+      (try Ok (Compatibility.decode str) with
+       | _ -> serialization_failed str)
   ;;
 
   let show_recipient =
