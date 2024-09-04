@@ -55,23 +55,3 @@ let verify_tenants () =
   in
   Lwt_list.iter_s check_status Status.[ ConnectionIssue; Active ]
 ;;
-
-let start () =
-  let open Schedule in
-  let interval =
-    (if Sihl.Configuration.is_production () then 10 * 60 else 10)
-    |> Ptime.Span.of_int_s
-    |> ScheduledTimeSpan.of_span
-  in
-  let schedule = create name (Every interval) None verify_tenants in
-  add_and_start schedule
-;;
-
-let lifecycle =
-  Sihl.Container.create_lifecycle
-    name
-    ~dependencies:(fun () -> [ Schedule.lifecycle ])
-    ~start
-;;
-
-let register () = Sihl.Container.Service.create lifecycle
