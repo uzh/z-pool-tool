@@ -1,6 +1,42 @@
-let archive_queue_jobs =
-  Database.Migration.Step.create
-    ~label:"archive sihl job queue"
+let chunked name count_from query =
+  [%string
+    {sql|
+      CREATE PROCEDURE %{name}(IN chunk_size INT)
+      DETERMINISTIC
+      BEGIN
+          DECLARE offset_value INT DEFAULT 0;
+          DECLARE total_rows INT DEFAULT 0;
+
+          SELECT COUNT(*) INTO total_rows FROM %{count_from};
+
+          WHILE offset_value < total_rows DO
+              %{query}
+              LIMIT chunk_size OFFSET offset_value;
+
+              SET offset_value = offset_value + chunk_size;
+          END WHILE;
+      END
+    |sql}]
+;;
+
+let call ?(chunk_size = 10000) name =
+  [%string {sql|CALL %{name}(%{CCInt.to_string chunk_size});|sql}]
+;;
+
+let drop name = [%string {sql|DROP PROCEDURE IF EXISTS %{name}|sql}]
+let archive_jobs_name = "CopyRowsArchiveJobs"
+
+let archive_queue_jobs_fcn =
+  let count_from =
+    {sql|
+      (SELECT uuid FROM queue_jobs
+      LEFT JOIN pool_message_history hist ON hist.queue_job_uuid = queue_jobs.uuid
+      GROUP BY `uuid`) as queued_jobs
+    |sql}
+  in
+  chunked
+    archive_jobs_name
+    count_from
     {sql|
       INSERT INTO pool_queue_jobs_history
         (uuid, name, input, message_template, tries, max_tries, run_at, status,
@@ -25,11 +61,16 @@ let archive_queue_jobs =
       LEFT JOIN pool_message_history hist ON hist.queue_job_uuid = queue_jobs.uuid
       GROUP BY `uuid`
     |sql}
+  |> Database.Migration.Step.create
+       ~label:"define function to archive sihl job queue"
 ;;
 
-let archive_queue_history_mappings =
-  Database.Migration.Step.create
-    ~label:"archive sihl job queue"
+let archive_history_name = "CopyRowsArchiveHistory"
+
+let archive_queue_history_mappings_fcn =
+  chunked
+    archive_history_name
+    "pool_message_history"
     {sql|
       INSERT INTO pool_queue_jobs_mapping (entity_uuid, queue_uuid, created_at, updated_at)
       SELECT
@@ -39,6 +80,20 @@ let archive_queue_history_mappings =
         updated_at
       FROM pool_message_history
     |sql}
+  |> Database.Migration.Step.create
+       ~label:"define function to archive sihl job mappings"
+;;
+
+let archive_queue_jobs_call name =
+  Database.Migration.Step.create
+    ~label:[%string "call function with %{name}"]
+    (call name)
+;;
+
+let archive_queue_jobs_drop name =
+  Database.Migration.Step.create
+    ~label:[%string "drop function with %{name}"]
+    (drop name)
 ;;
 
 let drop_message_history_table =
@@ -102,8 +157,12 @@ let set_failed_for_jobs =
 let migration () =
   Database.Migration.(
     empty "202407171415"
-    |> add_step archive_queue_jobs
-    |> add_step archive_queue_history_mappings
+    |> add_step archive_queue_jobs_fcn
+    |> add_step (archive_queue_jobs_call archive_jobs_name)
+    |> add_step (archive_queue_jobs_drop archive_jobs_name)
+    |> add_step archive_queue_history_mappings_fcn
+    |> add_step (archive_queue_jobs_call archive_history_name)
+    |> add_step (archive_queue_jobs_drop archive_history_name)
     |> add_step drop_message_history_table
     |> add_step drop_queue_jobs_table
     |> add_step drop_migration_state_from_sihl_queue
