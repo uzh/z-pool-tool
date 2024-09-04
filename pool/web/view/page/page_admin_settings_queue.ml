@@ -5,7 +5,12 @@ module HttpUtils = Http_utils
 
 let formatted_date_time = Pool_model.Time.formatted_date_time
 let base_path = "/admin/settings/queue"
-let list context = Page_admin_queue.list context (Uri.of_string base_path)
+
+let list queue_table context =
+  Page_admin_queue.list
+    context
+    (HttpUtils.Url.Admin.Settings.queue_list_path queue_table |> Uri.of_string)
+;;
 
 let render_email_html html =
   let style = "<style>section { word-break: break-all; } </style>" in
@@ -143,15 +148,41 @@ let queue_instance_detail language ?text_message_dlr instance =
   div ~a:[ a_class [ "stack" ] ] [ clone_link; queue_instance_detail; dlr_html ]
 ;;
 
-let index (Pool_context.{ language; _ } as context) job =
+let index queue_table (Pool_context.{ language; _ } as context) job =
   let title =
+    let open Pool_common in
+    let i18n =
+      match queue_table with
+      | `History -> I18n.QueueHistory
+      | `Current -> I18n.Queue
+    in
     h1
       ~a:[ a_class [ "heading-1" ] ]
-      [ txt Pool_common.(Utils.nav_link_to_string language I18n.Queue) ]
+      [ txt Pool_common.(Utils.nav_link_to_string language i18n) ]
+  in
+  let switch_table =
+    (fun (path_table, label) ->
+      div
+        [ a
+            ~a:
+              [ a_href
+                  (HttpUtils.Url.Admin.Settings.queue_list_path path_table
+                   |> Sihl.Web.externalize_path)
+              ]
+            [ txt (Format.asprintf "Go to %s jobs" label) ]
+        ])
+    @@
+    match queue_table with
+    | `Current -> `History, "executed"
+    | `History -> `Current, "queued"
   in
   div
     ~a:[ a_class [ "gap-lg"; "trim"; "safety-margin" ] ]
-    [ title; list context job ]
+    [ title
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ switch_table; list queue_table context job ]
+    ]
 ;;
 
 let resend_form Pool_context.{ csrf; language; _ } job =

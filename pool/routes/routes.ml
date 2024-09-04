@@ -789,6 +789,7 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index ] show
+        ; get "/archive" ~middlewares:[ Access.index ] show_archive
         ; choose ~scope:(Queue |> url_key) specific
         ]
       in

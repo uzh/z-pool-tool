@@ -61,7 +61,7 @@ let list Pool_context.{ language; _ } url (queued_jobs, query) =
       |> Instance.last_error_at
       |> CCOption.map_or ~default:(txt "") formatted_date_time
     ; instance |> Instance.run_at |> formatted_date_time
-    ; [%string "/admin/settings/queue/%{instance |> Instance.id |> Id.value}"]
+    ; Http_utils.Url.Admin.Settings.queue_path ~id:(Instance.id instance) ()
       |> Component.Input.link_as_button ~icon:Component.Icon.Eye
     ]
     |> CCList.map CCFun.(CCList.return %> td)

@@ -101,28 +101,23 @@ let find label id =
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Queue)
 ;;
 
-let find_combined_request_sql ?(count = false) where_fragment =
-  let columns ?(count = false) ?decode () =
+let find_combined_request_sql table ?(count = false) where_fragment =
+  let columns =
     if count
     then "COUNT(*)"
-    else sql_select_columns ?decode None |> CCString.concat ", "
+    else sql_select_columns ~decode:true None |> CCString.concat ", "
   in
   [%string
     {sql|
-      SELECT %{columns ~count ()} FROM (
-        SELECT %{columns ~decode:false ()} FROM %{sql_table `History}
-        UNION ALL
-        SELECT %{columns ~decode:false ()} FROM %{sql_table `Current}
-        ) queue
-      %{where_fragment}
+      SELECT %{columns} FROM %{sql_table table} %{where_fragment}
     |sql}]
 ;;
 
-let find_by ?query pool =
+let find_by table ?query pool =
   Query.collect_and_count
     pool
     query
-    ~select:find_combined_request_sql
+    ~select:(find_combined_request_sql table)
     Repo_entity.Instance.t
 ;;
 

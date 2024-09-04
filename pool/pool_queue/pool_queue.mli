@@ -161,7 +161,8 @@ val find
   -> (Instance.t, Pool_message.Error.t) Lwt_result.t
 
 val find_by
-  :  ?query:Query.t
+  :  [< `Current | `History ]
+  -> ?query:Query.t
   -> Database.Label.t
   -> (Instance.t list * Query.t) Lwt.t
 

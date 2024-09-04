@@ -137,6 +137,7 @@ type nav_link =
   | PrivacyPolicy
   | Profile
   | Queue
+  | QueueHistory
   | RolePermissions
   | Schedules
   | SentInvitations
