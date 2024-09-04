@@ -11,7 +11,8 @@ let chunked name count_from query =
 
           WHILE offset_value < total_rows DO
               %{query}
-              LIMIT chunk_size OFFSET offset_value;
+              LIMIT chunk_size OFFSET offset_value
+              ON DUPLICATE KEY UPDATE updated_at = NOW();
 
               SET offset_value = offset_value + chunk_size;
           END WHILE;
