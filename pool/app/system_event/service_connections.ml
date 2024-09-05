@@ -37,10 +37,9 @@ let verify_tenants () =
           let%lwt () = clear_cache_event () in
           add_database_event label)
       , fun _ _ -> Lwt.return_unit )
-    | MigrationsPending | MigrationsFailed | Disabled | Maintenance ->
-      failwith
-        "Database watcher not defined for MigrationsPending, MigrationsFailed, \
-         Disabled, and Maintenance"
+    | (MigrationsPending | MigrationsFailed | Disabled | Maintenance) as status
+      ->
+      failwith [%string "Database handling for status '%{Status.show status}'"]
   in
   let check_status status =
     let%lwt pools = Tenant.find_all_by_status ~status:[ status ] () in
