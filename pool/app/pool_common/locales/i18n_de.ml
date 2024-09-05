@@ -209,6 +209,7 @@ let nav_link_to_string = function
   | PrivacyPolicy -> "Datenschutzerklärung"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
+  | QueueHistory -> "ausgeführte Hintergrundjobs"
   | RolePermissions -> "Rollenberechtigungen"
   | Schedules -> "Prozesse"
   | SentInvitations -> "Versendete Einladungen"

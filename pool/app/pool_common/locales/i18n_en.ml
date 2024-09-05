@@ -205,6 +205,7 @@ let nav_link_to_string = function
   | PrivacyPolicy -> "Privacy policy"
   | Profile -> "Profile"
   | Queue -> "Queued jobs"
+  | QueueHistory -> "Job history"
   | RolePermissions -> "Role permission"
   | Schedules -> "Schedules"
   | SentInvitations -> "Sent invitations"
