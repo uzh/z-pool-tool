@@ -159,6 +159,8 @@ let to_string = function
   | TermsAndConditionsUpdated ->
     "We have recently changed our terms and conditions. Please read and accept \
      them to continue."
+  | TenantMaintenanceText -> "Please try again shortly."
+  | TenantMaintenanceTitle -> "Maintenance"
   | TextTemplates -> "text templates"
   | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->

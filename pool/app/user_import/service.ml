@@ -60,7 +60,8 @@ let run database_label =
 
 let run_all () =
   let open Utils.Lwt_result.Infix in
-  Database.Tenant.find_all_by_status () >|> Lwt_list.iter_s run
+  Database.(Tenant.find_all_by_status ~status:Status.[ Active ] ())
+  >|> Lwt_list.iter_s run
 ;;
 
 let start () =
@@ -73,6 +74,7 @@ let start () =
   create
     "import_notifications"
     (Every (interval |> ScheduledTimeSpan.of_span))
+    None
     periodic_fcn
   |> Schedule.add_and_start
 ;;

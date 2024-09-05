@@ -248,12 +248,15 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
       "queue [%{Database.Label.value database_label}]: %{JobName.show \
        job.AnyJob.name}"]
     interval
+    (Some database_label)
     periodic_fcn
 ;;
 
 let start () =
   let tags = Database.Logger.Tags.create Database.root in
-  let%lwt database_labels = Database.Tenant.find_all_by_status () in
+  let%lwt database_labels =
+    Database.(Tenant.find_all_by_status ~status:[ Status.Active ] ())
+  in
   Logs.info (fun m ->
     m
       ~tags

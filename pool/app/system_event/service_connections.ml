@@ -37,10 +37,9 @@ let verify_tenants () =
           let%lwt () = clear_cache_event () in
           add_database_event label)
       , fun _ _ -> Lwt.return_unit )
-    | OpenMigrations | Disabled | Maintenance ->
-      failwith
-        "Database watcher not defined for OpenMigrations, Disabled, and \
-         Maintenance"
+    | (MigrationsPending | MigrationsFailed | Disabled | Maintenance) as status
+      ->
+      failwith [%string "Database handling for status '%{Status.show status}'"]
   in
   let check_status status =
     let%lwt pools = Tenant.find_all_by_status ~status:[ status ] () in
@@ -55,23 +54,3 @@ let verify_tenants () =
   in
   Lwt_list.iter_s check_status Status.[ ConnectionIssue; Active ]
 ;;
-
-let start () =
-  let open Schedule in
-  let interval =
-    (if Sihl.Configuration.is_production () then 10 * 60 else 10)
-    |> Ptime.Span.of_int_s
-    |> ScheduledTimeSpan.of_span
-  in
-  let schedule = create name (Every interval) verify_tenants in
-  add_and_start schedule
-;;
-
-let lifecycle =
-  Sihl.Container.create_lifecycle
-    name
-    ~dependencies:(fun () -> [ Schedule.lifecycle ])
-    ~start
-;;
-
-let register () = Sihl.Container.Service.create lifecycle

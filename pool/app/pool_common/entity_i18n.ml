@@ -97,6 +97,8 @@ type t =
   | TermsAndConditionsLastUpdated of Ptime.t
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated
+  | TenantMaintenanceText
+  | TenantMaintenanceTitle
   | TextTemplates
   | TimeWindowDetailTitle of string
   | UpcomingSessionsListEmpty

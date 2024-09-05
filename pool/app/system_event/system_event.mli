@@ -79,6 +79,5 @@ module Service : sig
 
   module ConnectionWatcher : sig
     val verify_tenants : unit -> unit Lwt.t
-    val register : unit -> Sihl.Container.Service.t
   end
 end
