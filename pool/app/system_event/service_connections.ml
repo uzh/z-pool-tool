@@ -39,8 +39,8 @@ let verify_tenants () =
       , fun _ _ -> Lwt.return_unit )
     | MigrationsPending | MigrationsFailed | Disabled | Maintenance ->
       failwith
-        "Database watcher not defined for OpenMigrations, Disabled, and \
-         Maintenance"
+        "Database watcher not defined for MigrationsPending, MigrationsFailed, \
+         Disabled, and Maintenance"
   in
   let check_status status =
     let%lwt pools = Tenant.find_all_by_status ~status:[ status ] () in

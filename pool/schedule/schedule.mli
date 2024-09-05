@@ -66,7 +66,11 @@ val lifecycle : Sihl.Container.lifecycle
 val register : ?schedules:t list -> unit -> Sihl.Container.Service.t
 val is_ok : public -> bool
 val find_all : unit -> public list Lwt.t
-val find_by : Query.t -> (public list * Query.t) Lwt.t
+
+val find_by_db_label
+  :  Database.Label.t
+  -> Query.t
+  -> (public list * Query.t) Lwt.t
 
 module Guard : sig
   module Access : sig

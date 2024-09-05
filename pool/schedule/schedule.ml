@@ -108,7 +108,7 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
     Registered.update_run_status schedule scheduled_time
   in
   let rec loop () : unit Lwt.t =
-    let delay_rerun () = Lwt_unix.sleep delay >|> loop in
+    let rerun () = Lwt_unix.sleep delay >|> loop in
     let database_ok () =
       let open Database in
       let%lwt database_status =
@@ -130,7 +130,7 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
     let run_schedule () =
       let process schedule =
         let%lwt () = run schedule in
-        delay_rerun ()
+        rerun ()
       in
       let open Status in
       match scheduled_time, status with
@@ -144,7 +144,7 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
     in
     match%lwt database_ok () with
     | true -> run_schedule ()
-    | false -> delay_rerun ()
+    | false -> rerun ()
   in
   loop ()
 ;;
@@ -182,4 +182,4 @@ let add_and_start ?tags schedule =
 ;;
 
 let find_all = Repo.find_all
-let find_by = Repo.find_by
+let find_by_db_label = Repo.find_by_db_label
