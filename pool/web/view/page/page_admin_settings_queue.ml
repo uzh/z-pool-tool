@@ -150,8 +150,8 @@ let queue_instance_detail language ?text_message_dlr instance =
 ;;
 
 let index queue_table (Pool_context.{ language; _ } as context) job =
+  let open Pool_common in
   let title =
-    let open Pool_common in
     let i18n =
       match queue_table with
       | `History -> I18n.QueueHistory
@@ -159,10 +159,10 @@ let index queue_table (Pool_context.{ language; _ } as context) job =
     in
     h1
       ~a:[ a_class [ "heading-1" ] ]
-      [ txt Pool_common.(Utils.nav_link_to_string language i18n) ]
+      [ txt (Utils.nav_link_to_string language i18n) ]
   in
   let switch_table =
-    (fun (path_table, label) ->
+    (fun (path_table, i18n) ->
       div
         [ a
             ~a:
@@ -170,12 +170,17 @@ let index queue_table (Pool_context.{ language; _ } as context) job =
                   (HttpUtils.Url.Admin.Settings.queue_list_path path_table
                    |> Sihl.Web.externalize_path)
               ]
-            [ txt (Format.asprintf "Go to %s jobs" label) ]
+            [ txt
+                (i18n
+                 |> Utils.nav_link_to_string language
+                 |> CCString.lowercase_ascii
+                 |> Format.asprintf "Go to %s")
+            ]
         ])
     @@
     match queue_table with
-    | `Current -> `History, "executed"
-    | `History -> `Current, "queued"
+    | `Current -> `History, I18n.QueueHistory
+    | `History -> `Current, I18n.Queue
   in
   div
     ~a:[ a_class [ "gap-lg"; "trim"; "safety-margin" ] ]
