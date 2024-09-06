@@ -41,7 +41,6 @@ module Admin = struct
     |> append_opt (map Organisational_unit.Id.value id)
     |> append_opt suffix
   ;;
-
 end
 
 module Contact = struct

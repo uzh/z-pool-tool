@@ -86,8 +86,6 @@ end
 module Files = struct
   type t = Mapping.file list [@@deriving show]
 
-  let t_of_yojson _ = failwith "TODO"
-
   let yojson_of_t files : Yojson.Safe.t =
     let open Mapping in
     `List (CCList.map (fun t -> `String (Id.value t.id)) files)
@@ -105,7 +103,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving show, yojson]
+[@@deriving show, yojson_of]
 
 let to_string language location =
   let address =
