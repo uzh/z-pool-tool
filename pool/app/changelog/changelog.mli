@@ -26,6 +26,10 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   }
 
+val equal : t -> t -> bool
+val show : t -> string
+val pp : Format.formatter -> t -> unit
+
 module Write : sig
   type t =
     { id : Id.t
@@ -35,6 +39,10 @@ module Write : sig
     ; user_uuid : Pool_common.Id.t
     ; created_at : Pool_common.CreatedAt.t
     }
+
+  val equal : t -> t -> bool
+  val show : t -> string
+  val pp : Format.formatter -> t -> unit
 end
 
 module type RecordSig = sig

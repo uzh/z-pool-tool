@@ -42,6 +42,7 @@ type t =
   ; user_email : Pool_user.EmailAddress.t
   ; created_at : Pool_common.CreatedAt.t
   }
+[@@deriving eq, show]
 
 module Write = struct
   type t =
