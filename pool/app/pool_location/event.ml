@@ -12,7 +12,7 @@ type update =
 type event =
   | Created of t
   | FileUploaded of Mapping.Write.file
-  | Updated of t * update * Pool_common.Id.t
+  | Updated of t
   | FileDeleted of Mapping.Id.t
 [@@deriving eq, show, variants]
 
@@ -42,26 +42,7 @@ let handle_event pool : event -> unit Lwt.t =
       file
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
-  | Updated (location, m, user_uuid) ->
-    let updated =
-      { location with
-        name = m.name
-      ; description = m.description
-      ; address = m.address
-      ; link = m.link
-      ; status = m.status
-      }
-    in
-    let%lwt () =
-      Version_history.create
-        pool
-        ~entity_uuid:(Id.to_common location.id)
-        ~user_uuid
-        ~before:location
-        ~after:updated
-        ()
-    in
-    Repo.update pool updated
+  | Updated location -> Repo.update pool location
   | FileDeleted id ->
     let%lwt () = Repo_file_mapping.delete pool id in
     Lwt.return_unit

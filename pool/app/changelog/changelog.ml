@@ -1,4 +1,5 @@
 include Entity
+include Event
 
 module T (R : RecordSig) = struct
   type record = R.t
@@ -96,10 +97,8 @@ module T (R : RecordSig) = struct
         })
   ;;
 
-  let create pool ?(id = Id.create ()) ~entity_uuid ~user_uuid ~before ~after ()
-    =
+  let create ?(id = Id.create ()) ~entity_uuid ~user_uuid ~before ~after () =
     make ~id ~entity_uuid ~user_uuid before after
-    |> CCOption.map_or ~default:Lwt.return_unit (Repo.insert pool)
   ;;
 
   let all_by_entity = Repo.find_by_model model

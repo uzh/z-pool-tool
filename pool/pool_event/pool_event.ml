@@ -4,6 +4,7 @@ type t =
   | Admin of Admin.event
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
+  | Changelog of Changelog.event
   | Contact of Contact.event
   | CustomField of Custom_field.event
   | Database of Pool_database.event
@@ -33,6 +34,7 @@ type t =
 let admin events = Admin events
 let assignment events = Assignment events
 let assignmentjob events = AssignmentJob events
+let changelog events = Changelog events
 let contact events = Contact events
 let custom_field events = CustomField events
 let database events = Database events
@@ -76,6 +78,9 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Logs.info ~src (fun m ->
       m "Handle event %s" (Assignment_job.show_event event) ~tags);
     Assignment_job.handle_event pool event
+  | Changelog event ->
+    info "changelog" Changelog.pp_event event;
+    Changelog.handle_event pool event
   | Contact event ->
     info "contact" Contact.pp_event event;
     Contact.handle_event pool event

@@ -252,12 +252,12 @@ val show_update : update -> string
 type event =
   | Created of t
   | FileUploaded of Mapping.Write.file
-  | Updated of t * update * Pool_common.Id.t
+  | Updated of t
   | FileDeleted of Mapping.Id.t
 
 val created : t -> event
 val fileuploaded : Mapping.Write.file -> event
-val updated : t -> update -> Pool_common.Id.t -> event
+val updated : t -> event
 val filedeleted : Mapping.Id.t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -401,4 +401,4 @@ val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 
-module Changelog : Changelog.TSig with type record = t
+module VersionHistory : Changelog.TSig with type record = t

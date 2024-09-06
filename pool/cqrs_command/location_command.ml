@@ -108,6 +108,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?changelog_id:Changelog.Id.t
     -> Admin.t
     -> Pool_location.t
     -> update
@@ -142,10 +143,36 @@ end = struct
         command_base)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) admin location update =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?changelog_id
+    admin
+    location
+    (command : update)
+    =
+    let open Pool_location in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let user_id = Admin.id admin |> Admin.Id.to_common in
-    Ok [ Updated (location, update, user_id) |> Pool_event.pool_location ]
+    let updated : t =
+      { location with
+        name = command.name
+      ; description = command.description
+      ; address = command.address
+      ; link = command.link
+      ; status = command.status
+      }
+    in
+    let changelog =
+      VersionHistory.create
+        ?id:changelog_id
+        ~entity_uuid:(Id.to_common location.id)
+        ~user_uuid:user_id
+        ~before:location
+        ~after:updated
+        ()
+      |> Common.changelog_event
+    in
+    Ok ([ Updated updated |> Pool_event.pool_location ] @ changelog)
   ;;
 
   let decode description data =

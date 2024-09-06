@@ -210,7 +210,7 @@ let changelog req =
   let id = id req Field.Location Id.of_string in
   let url = HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id () in
   Helpers.Changelog.htmx_handler
-    ~changelog:(module Changelog)
+    ~version_history:(module VersionHistory)
     ~url
     (Id.to_common id)
     req

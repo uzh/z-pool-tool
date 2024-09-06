@@ -56,3 +56,51 @@ let create () =
   in
   Test_utils.check_result expected events
 ;;
+
+let update () =
+  let open LocationCommand.Update in
+  let open Pool_location in
+  let admin =
+    Test_utils.Model.create_admin ()
+    |> Pool_context.get_admin_user
+    |> Test_utils.get_or_failwith
+  in
+  let location = create_location () in
+  let handle_update ?changelog_id urlencoded =
+    urlencoded
+    |> Http_utils.remove_empty_values
+    |> decode None
+    |> Pool_common.Utils.get_or_failwith
+    |> handle ?changelog_id admin location
+  in
+  (* Update without change *)
+  let events = Data.Location.create |> handle_update in
+  let expected = Ok [ Updated location |> Pool_event.pool_location ] in
+  let () = Test_utils.check_result expected events in
+  (* Update with changed name *)
+  let new_name = "new name" in
+  let changelog_id = Changelog.Id.create () in
+  let events =
+    Data.Location.create
+    |> CCList.Assoc.set ~eq:CCString.equal Field.(show Name) [ new_name ]
+    |> handle_update ~changelog_id
+  in
+  let after = { location with name = Name.of_string new_name } in
+  let changelog =
+    VersionHistory.create
+      ~id:changelog_id
+      ~entity_uuid:(Id.to_common location.id)
+      ~user_uuid:Admin.(admin |> id |> Id.to_common)
+      ~before:location
+      ~after
+      ()
+    |> CCOption.get_exn_or "Invalid changelog"
+  in
+  let expected =
+    Ok
+      [ Updated after |> Pool_event.pool_location
+      ; Changelog.(changelog |> created |> Pool_event.changelog)
+      ]
+  in
+  Test_utils.check_result expected events
+;;

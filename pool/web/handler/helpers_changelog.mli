@@ -1,5 +1,5 @@
 val htmx_handler
-  :  changelog:(module Changelog.TSig)
+  :  version_history:(module Changelog.TSig)
   -> url:string
   -> Pool_common.Id.t
   -> Rock.Request.t

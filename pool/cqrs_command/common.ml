@@ -13,3 +13,8 @@ let guardian_cache_cleared_event ?id () =
   System_event.(
     Job.GuardianCacheCleared |> create ?id |> created |> Pool_event.system_event)
 ;;
+
+let changelog_event =
+  CCOption.map_or ~default:[] (fun log ->
+    [ Changelog.created log |> Pool_event.changelog ])
+;;

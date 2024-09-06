@@ -276,7 +276,10 @@ let () =
             `Quick
             User_test.validate_email_adress
         ] )
-    ; "location", [ test_case "create location" `Quick Location_test.create ]
+    ; ( "location"
+      , [ test_case "create location" `Quick Location_test.create
+        ; test_case "update location" `Quick Location_test.update
+        ] )
     ; ( "mailing"
       , [ test_case "create mailing" `Quick Mailing_test.create
         ; test_case

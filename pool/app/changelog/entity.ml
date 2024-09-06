@@ -52,6 +52,7 @@ module Write = struct
     ; user_uuid : Pool_common.Id.t
     ; created_at : Pool_common.CreatedAt.t
     }
+  [@@deriving eq, show]
 end
 
 module type RecordSig = sig
@@ -71,14 +72,13 @@ module type TSig = sig
   val sortable_by : Query.Column.t list
 
   val create
-    :  Database.Label.t
-    -> ?id:Id.t
+    :  ?id:Id.t
     -> entity_uuid:Pool_common.Id.t
     -> user_uuid:Pool_common.Id.t
     -> before:record
     -> after:record
     -> unit
-    -> unit Lwt.t
+    -> Write.t option
 
   val all_by_entity
     :  ?query:Query.t

@@ -16,4 +16,4 @@ module Repo = struct
   let t = Repo.t
 end
 
-module Changelog = Changelog.T (Entity)
+module VersionHistory = Changelog.T (Entity)

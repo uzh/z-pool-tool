@@ -47,13 +47,23 @@ module Update : sig
 end = struct
   type t = Organisational_unit.Name.t
 
-  let handle ?(tags = Logs.Tag.empty) admin ou name =
+  let handle ?(tags = Logs.Tag.empty) admin ou command =
+    let open Organisational_unit in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+    let updated = { ou with name = command } in
     let user_id = Admin.(admin |> id |> Id.to_common) in
+    let changelog =
+      VersionHistory.create
+        ~entity_uuid:(Id.to_common ou.id)
+        ~user_uuid:user_id
+        ~before:ou
+        ~after:updated
+        ()
+      |> Common.changelog_event
+    in
     Ok
-      [ Organisational_unit.Updated (ou, name, user_id)
-        |> Pool_event.organisational_unit
-      ]
+      ([ Organisational_unit.Updated updated |> Pool_event.organisational_unit ]
+       @ changelog)
   ;;
 
   let effects = Organisational_unit.Guard.Access.update

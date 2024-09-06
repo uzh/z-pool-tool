@@ -3,7 +3,7 @@ include Event
 include Default
 module Repo = Repo
 module Guard = Entity_guard
-module Changelog = Version_history
+module VersionHistory = Version_history
 
 let find = Repo.find
 let find_all = Repo.find_all

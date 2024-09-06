@@ -1,10 +1,10 @@
 let src = Logs.Src.create "helpers.changelog"
 
 let htmx_handler
-  :  changelog:(module Changelog.TSig) -> url:string -> Pool_common.Id.t
+  :  version_history:(module Changelog.TSig) -> url:string -> Pool_common.Id.t
   -> Rock.Request.t -> Rock.Response.t Lwt.t
   =
-  fun ~changelog:(module Q) ~url entity_id req ->
+  fun ~version_history:(module Q) ~url entity_id req ->
   Http_utils.Htmx.handle_error_message ~src ~error_as_notification:true req
   @@ fun ({ Pool_context.database_label; _ } as context) ->
   let query =

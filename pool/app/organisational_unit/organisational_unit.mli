@@ -24,7 +24,7 @@ val name : t -> Name.t
 
 type event =
   | Created of t
-  | Updated of (t * Name.t * Pool_common.Id.t)
+  | Updated of t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -73,4 +73,4 @@ val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 
-module Changelog : Changelog.TSig with type record = t
+module VersionHistory : Changelog.TSig with type record = t

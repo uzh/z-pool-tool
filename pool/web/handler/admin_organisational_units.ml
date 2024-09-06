@@ -115,7 +115,7 @@ let changelog req =
   in
   let open Organisational_unit in
   Helpers.Changelog.htmx_handler
-    ~changelog:(module Changelog)
+    ~version_history:(module VersionHistory)
     ~url
     (Id.to_common ou_id)
     req
