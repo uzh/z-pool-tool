@@ -70,29 +70,7 @@ module type TSig = sig
 end
 
 module T : functor (R : RecordSig) -> sig
-  (* include TSig with type record = R.t *)
-  type record = R.t
-
-  val model : Pool_message.Field.t
-  val default_query : Query.t
-  val filterable_by : Query.Filter.human option
-  val searchable_by : Query.Column.t list
-  val sortable_by : Query.Column.t list
-
-  val create
-    :  ?id:Id.t
-    -> entity_uuid:Pool_common.Id.t
-    -> user_uuid:Pool_common.Id.t
-    -> before:record
-    -> after:record
-    -> unit
-    -> Write.t option
-
-  val all_by_entity
-    :  ?query:Query.t
-    -> Database.Label.t
-    -> Pool_common.Id.t
-    -> (t list * Query.t) Lwt.t
+  include TSig with type record = R.t
 end
 
 type event = Created of Entity.Write.t
