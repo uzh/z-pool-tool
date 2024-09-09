@@ -9,6 +9,12 @@ let contact_email_address = "jane.doe@email.com"
 let lang = Pool_common.Language.En
 let tenant = Tenant_test.Data.full_tenant
 
+let admin =
+  Model.create_admin ()
+  |> Pool_context.get_admin_user
+  |> Test_utils.get_or_failwith
+;;
+
 let allowed_email_suffixes =
   [ "mail.com" ]
   |> CCList.map Settings.EmailSuffix.create
@@ -324,7 +330,9 @@ module CustomFieldData = struct
     CCList.map
       (fun contact ->
         let user =
-          admin |> CCOption.value ~default:(Pool_context.Contact contact)
+          admin
+          |> CCOption.map_or ~default:(Pool_context.Contact contact) (fun a ->
+            Pool_context.Admin a)
         in
         Custom_field.AnswerUpserted
           ( admin_override_nr_field_public (CCOption.is_some admin) answer_value
@@ -526,28 +534,45 @@ let save_filter filter experiment =
 
 let update_filter _ () =
   let open Test_utils in
-  let query = firstname "Foo" in
-  let filter = Filter.create None query in
+  let changelog_id = Changelog.Id.create () in
+  let filter = firstname "Foo" |> Filter.create None in
+  (* DOES THIS REALLY UPDATE ANYTHING?? *)
   let experiment =
     { (Model.create_experiment ()) with Experiment.filter = Some filter }
   in
+  let updated_filter = firstname "Bar" |> Filter.create None in
   let events =
     Cqrs_command.Experiment_command.UpdateFilter.handle
+      ~changelog_id
+      admin
       experiment
       ([], [])
-      filter
+      ~before:filter
+      ~after:updated_filter
+  in
+  let changelog =
+    let open Filter in
+    VersionHistory.create
+      ~id:changelog_id
+      ~entity_uuid:(Id.to_common filter.Filter.id)
+      ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
+      ~before:filter
+      ~after:updated_filter
+      ()
+    |> CCOption.get_exn_or "Invalid changelog"
   in
   let expected =
     Ok
       [ Experiment.updated
           { experiment with
-            Experiment.filter = Some filter
+            Experiment.filter = Some updated_filter
           ; matcher_notification_sent =
               Experiment.MatcherNotificationSent.create false
           }
         |> Pool_event.experiment
       ; Filter.Updated filter |> Pool_event.filter
       ; Email.BulkSent [] |> Pool_event.email
+      ; Changelog.Created changelog |> Pool_event.changelog
       ]
   in
   check_result expected events |> Lwt.return
@@ -560,18 +585,36 @@ let create_and_update_filter_template _ () =
     |> Pool_event.handle_event Data.database_label
   in
   let%lwt key_list = Filter.all_keys Data.database_label in
-  let title = "has siblings" |> Filter.Title.of_string in
+  let make_title = Filter.Title.of_string in
+  let title = make_title "has siblings" in
   let id = Filter.Id.create () in
   let query = nr_of_siblings_filter () in
   let events = Create.handle ~id key_list [] query title in
   let filter = Filter.create ~id (Some title) query in
   let expected = Ok [ Filter.Created filter |> Pool_event.filter ] in
   check_result expected events;
-  let events = Update.handle key_list [] filter query title in
+  let changelog_id = Changelog.Id.create () in
+  let new_title = make_title "has no siblings" in
+  let events =
+    Update.handle ~changelog_id admin key_list [] filter query new_title
+  in
+  let after = Filter.{ filter with title = Some new_title } in
   let expected =
+    let changelog =
+      let open Filter in
+      VersionHistory.create
+        ~id:changelog_id
+        ~entity_uuid:(Id.to_common filter.id)
+        ~user_uuid:Admin.(admin |> id |> Id.to_common)
+        ~before:filter
+        ~after
+        ()
+      |> CCOption.get_exn_or "Invalid changelog"
+    in
     Ok
-      [ Filter.(Updated filter) |> Pool_event.filter
+      [ Filter.(Updated after) |> Pool_event.filter
       ; Assignment_job.Dispatched |> Pool_event.assignmentjob
+      ; Changelog.Created changelog |> Pool_event.changelog
       ]
   in
   check_result expected events |> Lwt.return
@@ -667,7 +710,13 @@ let validate_filter_with_unknown_field _ () =
   let filter = Filter.create None query in
   let title = Filter.Title.of_string "Title" in
   let events =
-    Cqrs_command.Filter_command.Update.handle key_list [] filter query title
+    Cqrs_command.Filter_command.Update.handle
+      admin
+      key_list
+      []
+      filter
+      query
+      title
   in
   let expected = Error (Error.Invalid Field.Key) in
   check_result expected events |> Lwt.return
@@ -888,7 +937,6 @@ let filter_with_admin_value _ () =
       ||> fun { Experiment.id; _ } -> id |> Experiment.Id.to_common
     in
     let%lwt contact = TestContacts.get_contact 0 in
-    let admin = Model.create_admin () in
     let%lwt () =
       CustomFieldData.(
         create_admin_override_nr_field ()

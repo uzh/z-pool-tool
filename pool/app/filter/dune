@@ -1,6 +1,7 @@
 (library
  (name filter)
  (libraries
+  changelog
   contact
   custom_field
   pool_common

@@ -59,6 +59,8 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?changelog_id:Changelog.Id.t
+    -> Admin.t
     -> Filter.Key.human list
     -> Filter.t list
     -> Filter.t
@@ -70,15 +72,36 @@ module Update : sig
 end = struct
   type t = Filter.Title.t
 
-  let handle ?(tags = Logs.Tag.empty) key_list template_list filter query title =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?changelog_id
+    admin
+    key_list
+    template_list
+    filter
+    query
+    title
+    =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
+    let open Filter in
     let* query = validate_query key_list template_list query in
+    let after = { filter with query; title = Some title } in
+    let changelog =
+      VersionHistory.create
+        ?id:changelog_id
+        ~entity_uuid:(Id.to_common filter.id)
+        ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
+        ~before:filter
+        ~after
+        ()
+      |> Common.changelog_event
+    in
     Ok
-      [ Filter.(Updated { filter with query; title = Some title })
-        |> Pool_event.filter
-      ; Assignment_job.Dispatched |> Pool_event.assignmentjob
-      ]
+      ([ Updated after |> Pool_event.filter
+       ; Assignment_job.Dispatched |> Pool_event.assignmentjob
+       ]
+       @ changelog)
   ;;
 
   let effects = Filter.Guard.Access.update

@@ -81,8 +81,18 @@ module Partials = struct
       invitations
   ;;
 
+  let changelog_html context experiment =
+    let changelog_url =
+      HttpUtils.Url.Admin.invitations_path
+        ~suffix:"changelog"
+        Experiment.(id experiment)
+      |> Uri.of_string
+    in
+    Component.Changelog.list context changelog_url None
+  ;;
+
   let send_invitation
-    Pool_context.{ csrf; language; _ }
+    Pool_context.({ csrf; language; _ } as context)
     experiment
     key_list
     template_list
@@ -144,15 +154,18 @@ module Partials = struct
           ]
     in
     div
-      [ h3
-          ~a:[ a_class [ "heading-3" ] ]
-          [ Control.(Filter (Some Field.Contacts))
-            |> Utils.control_to_string language
-            |> txt
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ div
+          [ h3
+              ~a:[ a_class [ "heading-3" ] ]
+              [ Control.(Filter (Some Field.Contacts))
+                |> Utils.control_to_string language
+                |> txt
+              ]
+          ; Unsafe.data
+              (Utils.text_to_string language I18n.FilterContactsDescription)
+            |> Component.Collapsible.create_note language
           ]
-      ; Unsafe.data
-          (Utils.text_to_string language I18n.FilterContactsDescription)
-        |> Component.Collapsible.create_note language
       ; Component.Filter.(
           filter_form
             ~counts:(matching_filter_count, invitation_count)
@@ -163,7 +176,8 @@ module Partials = struct
             template_list
             query_experiments
             query_tags)
-      ; div ~a:[ a_class [ "gap-lg" ] ] [ filtered_contacts_form ]
+      ; changelog_html context experiment
+      ; div [ filtered_contacts_form ]
       ]
   ;;
 

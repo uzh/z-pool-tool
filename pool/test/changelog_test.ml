@@ -1,3 +1,9 @@
+(***
+TODO: Add testcases for
+- lists
+- filter
+- assoc lists (e.g. custom field names)
+*)
 module Field = Pool_message.Field
 
 let testable_changelog = Changelog.Write.(Alcotest.testable pp equal)

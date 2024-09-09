@@ -7,6 +7,7 @@ let htmx_handler
   fun ~version_history:(module Q) ~url entity_id req ->
   Http_utils.Htmx.handle_error_message ~src ~error_as_notification:true req
   @@ fun ({ Pool_context.database_label; _ } as context) ->
+  let () = Logs.info (fun m -> m "Changelog handler") in
   let query =
     Query.from_request
       ?filterable_by:Q.filterable_by

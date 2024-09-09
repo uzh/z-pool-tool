@@ -98,6 +98,32 @@ let sent_invitations req =
     sent_invitations context experiment invitations statistics |> Lwt_result.ok
 ;;
 
+let changelog req =
+  let open Filter in
+  let open Utils.Lwt_result.Infix in
+  let id = experiment_id req in
+  let { Pool_context.database_label; _ } = Pool_context.find_exn req in
+  let%lwt filter =
+    Experiment.find database_label id
+    ||> CCResult.to_opt
+    ||> function
+    | Some experiment -> experiment.Experiment.filter
+    | None -> None
+  in
+  match filter with
+  | None ->
+    Tyxml_html.txt ""
+    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Lwt.return
+  | Some filter ->
+    let url = HttpUtils.Url.Admin.invitations_path ~suffix:"changelog" id in
+    Helpers.Changelog.htmx_handler
+      ~version_history:(module VersionHistory)
+      ~url
+      (Filter.Id.to_common filter.id)
+      req
+;;
+
 let create req =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in

@@ -59,15 +59,23 @@ let index ({ Pool_context.language; _ } as context) filter_list query =
     ]
 ;;
 
+let changelog_html context filter =
+  let changelog_url =
+    Http_utils.Url.Admin.filter_path ~suffix:"changelog" ~id:filter.Filter.id ()
+    |> Uri.of_string
+  in
+  Component.Changelog.list context changelog_url None
+;;
+
 let edit
-  { Pool_context.language; csrf; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   filter
   key_list
   query_experiments
   query_tags
   =
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ Component.Partials.form_title language Pool_message.Field.Filter filter
     ; Component.Filter.(
         filter_form
@@ -78,5 +86,6 @@ let edit
           []
           query_experiments
           query_tags)
+    ; filter |> CCOption.map_or ~default:(txt "") (changelog_html context)
     ]
 ;;

@@ -81,7 +81,7 @@ module T : functor (R : RecordSig) -> sig
   include TSig with type record = R.t
 end
 
-type event = Created of Entity.Write.t
+type event = Created of Write.t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

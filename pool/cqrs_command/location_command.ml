@@ -152,7 +152,6 @@ end = struct
     =
     let open Pool_location in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    let user_id = Admin.id admin |> Admin.Id.to_common in
     let updated : t =
       { location with
         name = command.name
@@ -166,7 +165,7 @@ end = struct
       VersionHistory.create
         ?id:changelog_id
         ~entity_uuid:(Id.to_common location.id)
-        ~user_uuid:user_id
+        ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
         ~before:location
         ~after:updated
         ()

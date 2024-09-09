@@ -309,6 +309,7 @@ module Admin = struct
           ; post "" update_template
           ; choose
               (filter_form (toggle_key, toggle_predicate_type, add_predicate))
+          ; get "/changelog" changelog
           ]
       in
       Create.
@@ -381,6 +382,7 @@ module Admin = struct
           [ get "" ~middlewares:[ Access.index ] index
           ; post "" ~middlewares:[ Access.create ] create
           ; get "sent" ~middlewares:[ Access.index ] sent_invitations
+          ; get "/changelog" ~middlewares:[ Access.index ] changelog
           ; post
               (add_key ~suffix:"resend" Invitation)
               ~middlewares:[ Access.resend ]

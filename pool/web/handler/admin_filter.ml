@@ -115,10 +115,10 @@ let write action req =
       Filter.find_templates_of_query database_label query
     in
     let events =
+      let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
       let lift = Lwt_result.lift in
       match action with
       | Experiment exp ->
-        let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
         let matcher_events filter =
           Assignment_job.update_matches_filter
             ~admin
@@ -134,11 +134,11 @@ let write action req =
            handle ~tags exp matcher_events filter |> lift
          | Some filter ->
            let open UpdateFilter in
-           let* filter =
+           let* after =
              create_filter key_list template_list filter query |> lift
            in
-           let* matcher_events = matcher_events filter in
-           handle ~tags exp matcher_events filter |> lift)
+           let* matcher_events = matcher_events after in
+           handle ~tags admin exp matcher_events ~before:filter ~after |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
@@ -146,7 +146,7 @@ let write action req =
          | None ->
            Create.handle ~tags key_list template_list query decoded |> lift
          | Some filter ->
-           Update.handle ~tags key_list template_list filter query decoded
+           Update.handle ~tags admin key_list template_list filter query decoded
            |> lift)
     in
     let handle events =
@@ -348,6 +348,17 @@ module Update = struct
   let add_predicate = handler handle_add_predicate
   let toggle_predicate_type = handler handle_toggle_predicate_type
   let toggle_key = handler handle_toggle_key
+
+  let changelog req =
+    let open Filter in
+    let id = template_id req in
+    let url = HttpUtils.Url.Admin.filter_path ~suffix:"changelog" ~id () in
+    Helpers.Changelog.htmx_handler
+      ~version_history:(module VersionHistory)
+      ~url
+      id
+      req
+  ;;
 end
 
 module Access : module type of Helpers.Access = struct

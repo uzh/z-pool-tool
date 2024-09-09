@@ -9,6 +9,10 @@ module Admin = struct
     "/admin/admins" |> append_opt (map Admin.Id.value id) |> append_opt suffix
   ;;
 
+  let filter_path ?suffix ?id () =
+    "/admin/filter/" |> append_opt Filter.(map Id.value id) |> append_opt suffix
+  ;;
+
   let role_permission_path ?suffix ?role () =
     "/admin/settings/role-permission"
     |> append_opt (map Role.Role.name role)
@@ -22,12 +26,24 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
-  let session_path ?suffix ?id experiment_id =
-    Format.asprintf
-      "/admin/experiments/%s/sessions"
-      Experiment.(Id.value experiment_id)
-    |> append_opt Session.(map Id.value id)
+  let experiment_path ?suffix ?id () =
+    "/admin/experiments"
+    |> append_opt (map Experiment.Id.value id)
     |> append_opt suffix
+  ;;
+
+  let invitations_path ?suffix experiment_id =
+    let suffix = Format.asprintf "/invitations" |> append_opt suffix in
+    experiment_path ~suffix ~id:experiment_id ()
+  ;;
+
+  let session_path ?suffix ?id experiment_id =
+    let suffix =
+      Format.asprintf "/sessions"
+      |> append_opt Session.(map Id.value id)
+      |> append_opt suffix
+    in
+    experiment_path ~suffix ~id:experiment_id ()
   ;;
 
   let location_path ?suffix ?id () =

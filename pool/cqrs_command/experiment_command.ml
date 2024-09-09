@@ -612,9 +612,12 @@ module UpdateFilter : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?changelog_id:Changelog.Id.t
+    -> Admin.t
     -> Experiment.t
     -> Assignment.event list * Email.dispatch list
-    -> t
+    -> before:t
+    -> after:t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Filter.Id.t -> BaseGuard.ValidationSet.t
@@ -629,9 +632,12 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    ?changelog_id
+    admin
     experiment
     (assignment_events, emails)
-    filter
+    ~before
+    ~after
     =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
@@ -639,6 +645,17 @@ end = struct
       assignment_events |> CCList.map Pool_event.assignment
     in
     let email_event = Email.BulkSent emails |> Pool_event.email in
+    let changelog =
+      let open Filter in
+      VersionHistory.create
+        ?id:changelog_id
+        ~entity_uuid:(Id.to_common before.Filter.id)
+        ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
+        ~before
+        ~after
+        ()
+      |> Common.changelog_event
+    in
     Ok
       ([ Experiment.(
            Updated
@@ -646,10 +663,11 @@ end = struct
                matcher_notification_sent = MatcherNotificationSent.create false
              })
          |> Pool_event.experiment
-       ; Filter.Updated filter |> Pool_event.filter
+       ; Filter.Updated after |> Pool_event.filter
        ; email_event
        ]
-       @ assignment_events)
+       @ assignment_events
+       @ changelog)
   ;;
 
   let effects experiment_id filter_id =

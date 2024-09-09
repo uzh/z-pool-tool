@@ -1,3 +1,5 @@
+let model = Pool_message.Field.Filter
+
 module Id = Pool_common.Id
 
 module Helper = struct
@@ -689,11 +691,11 @@ let query_of_string str = str |> Yojson.Safe.from_string |> query_of_yojson
 type t =
   { id : Pool_common.Id.t
   ; query : query
-  ; title : Title.t option
+  ; title : Title.t option [@yojson.option]
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson_of]
 
 let create ?(id = Pool_common.Id.create ()) title query =
   { id
