@@ -535,12 +535,12 @@ let save_filter filter experiment =
 let update_filter _ () =
   let open Test_utils in
   let changelog_id = Changelog.Id.create () in
-  let filter = firstname "Foo" |> Filter.create None in
-  (* DOES THIS REALLY UPDATE ANYTHING?? *)
+  let filer_id = Filter.Id.create () in
+  let filter = firstname "Foo" |> Filter.create ~id:filer_id None in
   let experiment =
     { (Model.create_experiment ()) with Experiment.filter = Some filter }
   in
-  let updated_filter = firstname "Bar" |> Filter.create None in
+  let updated_filter = firstname "Bar" |> Filter.create ~id:filer_id None in
   let events =
     Cqrs_command.Experiment_command.UpdateFilter.handle
       ~changelog_id
@@ -570,7 +570,7 @@ let update_filter _ () =
               Experiment.MatcherNotificationSent.create false
           }
         |> Pool_event.experiment
-      ; Filter.Updated filter |> Pool_event.filter
+      ; Filter.Updated updated_filter |> Pool_event.filter
       ; Email.BulkSent [] |> Pool_event.email
       ; Changelog.Created changelog |> Pool_event.changelog
       ]
