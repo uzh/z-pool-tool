@@ -411,6 +411,12 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
      der Onlineumfrage weiter. Alternativ kann {experimentUrl} verwendet \
      werden, mit dem Unterschied, dass der Kontakt die Teilnahme und \
      Weiterleitung zusätzlich bestätigen muss."
+  | ExperimentSurveyUrl ->
+    "<strong>Nur für Online-Umfragen verwenden.</strong> Die externe URL der \
+     Onlineumfrage. Wird die URL der Umfrage in der Einladung verschickt, \
+     können eingeladene Kontakte diese starten, ohne dass eine Anmeldung \
+     erstellt wird. Sie können im Pool nicht einsehen, wer an der Umfrage \
+     teilgenommen hat."
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
