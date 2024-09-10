@@ -85,8 +85,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: node:lts
-      env:
-        ECON_PACKAGE_REGISTRY_READ_TOKEN: ${{ secrets.ECON_PACKAGE_REGISTRY_READ_TOKEN }}
 
     steps:
       - name: Checkout code
