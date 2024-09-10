@@ -727,7 +727,12 @@ let message_history_url contact =
        Contact.(contact |> id |> Id.value))
 ;;
 
-let message_history ({ Pool_context.language; _ } as context) contact messages =
+let message_history
+  ({ Pool_context.language; _ } as context)
+  queue_table
+  contact
+  messages
+  =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
@@ -738,6 +743,10 @@ let message_history ({ Pool_context.language; _ } as context) contact messages =
                 language
                 I18n.(MessageHistory (Contact.lastname_firstname contact)))
         ]
-    ; Page_admin_queue.list context (message_history_url contact) messages
+    ; Page_admin_queue.list
+        context
+        queue_table
+        (message_history_url contact)
+        messages
     ]
 ;;

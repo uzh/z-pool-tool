@@ -41,6 +41,7 @@ let commands =
   let open Command in
   [ Migrate.root
   ; Migrate.tenants
+  ; Migrate.tenant_migration_pending
   ; Seed.root_data
   ; Seed.root_data_clean
   ; Seed.tenant_data

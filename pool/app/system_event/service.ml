@@ -19,6 +19,7 @@ let start_handler identifier () =
   create
     "system_events"
     (Every (interval |> ScheduledTimeSpan.of_span))
+    None
     periodic_fcn
   |> Schedule.add_and_start
 ;;

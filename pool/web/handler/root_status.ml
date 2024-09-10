@@ -39,8 +39,11 @@ let show _ =
               Pool_queue.count_all_workable database_label
               >|+ CCInt.to_string
               ||> CCResult.to_opt
-            | ConnectionIssue | Disabled | Maintenance | OpenMigrations ->
-              Lwt.return_none
+            | ConnectionIssue
+            | Disabled
+            | Maintenance
+            | MigrationsFailed
+            | MigrationsPending -> Lwt.return_none
           in
           Lwt.return (database_label, CCOption.get_or ~default count))
         databases

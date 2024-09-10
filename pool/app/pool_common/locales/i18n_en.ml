@@ -159,6 +159,8 @@ let to_string = function
   | TermsAndConditionsUpdated ->
     "We have recently changed our terms and conditions. Please read and accept \
      them to continue."
+  | TenantMaintenanceText -> "Please try again shortly."
+  | TenantMaintenanceTitle -> "Maintenance"
   | TextTemplates -> "text templates"
   | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
@@ -203,6 +205,7 @@ let nav_link_to_string = function
   | PrivacyPolicy -> "Privacy policy"
   | Profile -> "Profile"
   | Queue -> "Queued jobs"
+  | QueueHistory -> "Job history"
   | RolePermissions -> "Role permission"
   | Schedules -> "Schedules"
   | SentInvitations -> "Sent invitations"
@@ -401,6 +404,11 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
      URL of the online survey. Alternatively, {experimentUrl} can be used, \
      with the difference that the contact must also confirm the participation \
      and forwarding."
+  | ExperimentSurveyUrl ->
+    "<strong>Use for online surveys only.</strong> The external URL of the \
+     online survey. If the URL of the survey is sent in the invitation, \
+     invited contacts can start it without creating an assignment. You cannot \
+     see who participated in the survey in the assignment overview."
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
