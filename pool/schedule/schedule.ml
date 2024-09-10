@@ -89,8 +89,9 @@ end
 let run ({ label; scheduled_time; status; _ } as schedule : t) =
   let open Utils.Lwt_result.Infix in
   let delay = run_in scheduled_time in
-  let paused () =
-    Logs.debug ~src (fun m -> m ~tags "%s: Run is paused" label);
+  let notify status =
+    Logs.debug ~src (fun m ->
+      m ~tags "%s: Run is %s" label (Status.show status));
     Lwt.return_unit
   in
   let run ({ label; scheduled_time; fcn; _ } as schedule) =
@@ -100,25 +101,50 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
         (fun () -> fcn ())
         (fun exn ->
           let prefix = Format.asprintf "Running schedule %s" label in
+          let%lwt () = Registered.update_status Status.Failed schedule in
           Logger.log_exception ~prefix ~tags ~src exn;
           Lwt.return_unit)
     in
     Registered.update_run_status schedule scheduled_time
   in
   let rec loop () : unit Lwt.t =
-    let process schedule =
-      let%lwt () = run schedule in
-      Lwt_unix.sleep delay >|> loop
+    let rerun () = Lwt_unix.sleep delay >|> loop in
+    let database_ok () =
+      let open Database in
+      let%lwt database_status =
+        match schedule.database_label with
+        | None -> Lwt.return Status.Active
+        | Some label ->
+          Tenant.database_status_by_label label
+          |> Lwt.map (CCOption.value ~default:Status.Active)
+      in
+      let open Status in
+      match database_status with
+      | Active -> Lwt.return true
+      | ConnectionIssue
+      | Disabled
+      | Maintenance
+      | MigrationsPending
+      | MigrationsFailed -> Lwt.return false
     in
-    let open Status in
-    match scheduled_time, status with
-    | Every _, Active -> process schedule
-    | At time, Active when Ptime.is_later ~than:(Ptime_clock.now ()) time ->
-      let%lwt () = Registered.update_status Status.Running schedule in
-      process schedule
-    | (Every _ | At _), Paused -> paused ()
-    | (Every _ | At _), (Active | Finished | Running | Stopped) ->
-      Lwt.return_unit
+    let run_schedule () =
+      let process schedule =
+        let%lwt () = run schedule in
+        rerun ()
+      in
+      let open Status in
+      match scheduled_time, status with
+      | Every _, Active -> process schedule
+      | At time, Active when Ptime.is_later ~than:(Ptime_clock.now ()) time ->
+        let%lwt () = Registered.update_status Status.Running schedule in
+        process schedule
+      | (Every _ | At _), ((Paused | Failed) as status) -> notify status
+      | (Every _ | At _), (Active | Finished | Running | Stopped) ->
+        Lwt.return_unit
+    in
+    match%lwt database_ok () with
+    | true -> run_schedule ()
+    | false -> rerun ()
   in
   loop ()
 ;;
@@ -156,4 +182,4 @@ let add_and_start ?tags schedule =
 ;;
 
 let find_all = Repo.find_all
-let find_by = Repo.find_by
+let find_by_db_label = Repo.find_by_db_label

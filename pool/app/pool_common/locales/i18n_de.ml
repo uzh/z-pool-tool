@@ -163,6 +163,8 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | TermsAndConditionsUpdated ->
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \
      Bitte lesen und akzeptieren Sie diese, um fortzufahren."
+  | TenantMaintenanceText -> "Bitte versuchen Sie es in Kürze erneut."
+  | TenantMaintenanceTitle -> "Wartungsarbeiten"
   | TextTemplates -> "Textelemente"
   | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
@@ -207,6 +209,7 @@ let nav_link_to_string = function
   | PrivacyPolicy -> "Datenschutzerklärung"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
+  | QueueHistory -> "ausgeführte Hintergrundjobs"
   | RolePermissions -> "Rollenberechtigungen"
   | Schedules -> "Prozesse"
   | SentInvitations -> "Versendete Einladungen"

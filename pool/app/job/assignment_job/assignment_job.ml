@@ -38,7 +38,7 @@ end
 
 let run_all () =
   let open Utils.Lwt_result.Infix in
-  Database.Tenant.find_all_by_status ~status:[ Database.Status.Active ] ()
+  Database.(Tenant.find_all_by_status ~status:Status.[ Active ] ())
   >|> Lwt_list.iter_s update_upcoming_assignments
 ;;
 
@@ -49,7 +49,7 @@ let start () =
     Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
     run_all ()
   in
-  create "upcoming_assignments_match_filter" (Every interval) periodic_fcn
+  create "upcoming_assignments_match_filter" (Every interval) None periodic_fcn
   |> Schedule.add_and_start
 ;;
 

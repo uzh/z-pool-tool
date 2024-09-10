@@ -6,6 +6,7 @@
   logger
   pool_common
   pool_context
+  pool_queue
   session
   sexplib
   sihl-storage

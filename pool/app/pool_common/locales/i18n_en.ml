@@ -159,6 +159,8 @@ let to_string = function
   | TermsAndConditionsUpdated ->
     "We have recently changed our terms and conditions. Please read and accept \
      them to continue."
+  | TenantMaintenanceText -> "Please try again shortly."
+  | TenantMaintenanceTitle -> "Maintenance"
   | TextTemplates -> "text templates"
   | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
@@ -203,6 +205,7 @@ let nav_link_to_string = function
   | PrivacyPolicy -> "Privacy policy"
   | Profile -> "Profile"
   | Queue -> "Queued jobs"
+  | QueueHistory -> "Job history"
   | RolePermissions -> "Role permission"
   | Schedules -> "Schedules"
   | SentInvitations -> "Sent invitations"

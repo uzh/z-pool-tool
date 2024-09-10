@@ -52,7 +52,8 @@ module Status : sig
     | ConnectionIssue
     | Disabled
     | Maintenance
-    | OpenMigrations
+    | MigrationsPending
+    | MigrationsFailed
 
   val create : string -> (t, Pool_message.Error.t) result
   val all : t list
@@ -231,11 +232,11 @@ module Migration : sig
 
   (** [execute database_label migrations] runs all migrations [migrations] on the
       connection pool. *)
-  val execute : Label.t -> t list -> unit Lwt.t
+  val execute : Label.t -> t list -> (unit, Pool_message.Error.t) Lwt_result.t
 
   (** [run_all database_label ()] runs all migrations that have been registered on the
       connection pool. *)
-  val run_all : Label.t -> unit -> unit Lwt.t
+  val run_all : Label.t -> unit -> (unit, Pool_message.Error.t) Lwt_result.t
 
   (** [migrations_status database_label ?migrations ()] returns a list of migration
       namespaces and the number of their unapplied migrations.
@@ -292,6 +293,7 @@ module Tenant : sig
   val setup : unit -> Label.t list Lwt.t
   val find : Label.t -> (t, Pool_message.Error.t) Lwt_result.t
   val find_all_by_status : ?status:Status.t list -> unit -> Label.t list Lwt.t
+  val database_status_by_label : Label.t -> Status.t option Lwt.t
 
   val find_label_by_url
     :  ?allowed_status:Status.t list
@@ -299,6 +301,7 @@ module Tenant : sig
     -> (Label.t, Pool_message.Error.t) Lwt_result.t
 
   val update_status : Label.t -> Status.t -> unit Lwt.t
+  val set_migration_pending : Label.t list -> unit Lwt.t
   val start : unit -> unit Lwt.t
   val stop : unit -> unit Lwt.t
   val test_connection : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
