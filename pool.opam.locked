@@ -28,7 +28,7 @@ depends: [
   "ca-certs" {= "0.2.3"}
   "camlp-streams" {= "5.0.1"}
   "canary" {= "0.0.3"}
-  "caqti" {= "2.1.1"}
+  "caqti" {= "2.1.2"}
   "caqti-driver-mariadb" {= "2.1.1"}
   "caqti-lwt" {= "2.1.1"}
   "cmdliner" {= "1.3.0"}
@@ -51,7 +51,7 @@ depends: [
   "conformist" {= "0.8.1"}
   "containers" {= "3.13.1"}
   "containers-data" {= "3.13.1"}
-  "cppo" {= "1.6.9"}
+  "cppo" {= "1.7.0"}
   "csexp" {= "1.5.2"}
   "cstruct" {= "6.2.0"}
   "ctypes" {= "0.20.2"}
@@ -115,7 +115,7 @@ depends: [
   "ocaml-base-compiler" {= "4.14.2"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-syntax-shims" {= "1.0.0"}
-  "ocaml-version" {= "3.6.7"}
+  "ocaml-version" {= "3.6.8"}
   "ocamlbuild" {= "0.15.0"}
   "ocamlfind" {= "1.9.6"}
   "ocamlformat" {= "0.26.2"}
@@ -148,7 +148,7 @@ depends: [
   "ppxlib" {= "0.33.0"}
   "prettym" {= "0.0.3"}
   "ptime" {= "1.1.0"}
-  "re" {= "1.11.0"}
+  "re" {= "1.12.0"}
   "result" {= "1.5"}
   "rock" {= "0.20.0"}
   "rosetta" {= "0.3.0"}
@@ -215,7 +215,7 @@ pin-depends: [
   ]
   [
     "guardian.0.3.2"
-    "git+https://github.com/uzh/guardian.git#87214e65f5e50f2ad9209ef9d407ec28a7004498"
+    "git+https://github.com/uzh/guardian.git#287bab9baf9b346efe47999e8b7f456bfefe8c13"
   ]
   ["canary.0.0.3" "git+https://github.com/uzh/canary.git#0.0.3"]
   [
