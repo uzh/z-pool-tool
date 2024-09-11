@@ -74,7 +74,11 @@ end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let index = Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
+  let index =
+    Pool_queue.Guard.Access.index ()
+    |> Guardian.validate_admin_entity ~any_id:true
+  ;;
+
   let read = Pool_queue.Guard.Access.read |> Guardian.validate_admin_entity
   let resend = Command.Resend.effects |> Guardian.validate_admin_entity
 end

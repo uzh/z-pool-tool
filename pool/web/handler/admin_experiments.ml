@@ -617,6 +617,11 @@ end = struct
   let search = index
 
   let message_history =
-    Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
+    (fun id ->
+      Pool_queue.Guard.Access.index
+        ~id:(Guard.Uuid.target_of Experiment.Id.value id)
+        ())
+    |> experiment_effects
+    |> Guardian.validate_generic
   ;;
 end
