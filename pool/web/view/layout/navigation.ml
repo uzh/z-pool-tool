@@ -85,7 +85,7 @@ module NavElements = struct
         ; single
             "/admin/settings/queue"
             Queue
-            (Set Pool_queue.Guard.Access.index)
+            (Set (Pool_queue.Guard.Access.index ()))
         ; single
             "/admin/settings"
             SystemSettings

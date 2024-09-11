@@ -123,7 +123,8 @@ module Access : module type of Helpers.Access = struct
   ;;
 
   let index =
-    Organisational_unit.Guard.Access.index |> Guardian.validate_admin_entity
+    Organisational_unit.Guard.Access.index
+    |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let create = Command.Create.effects |> Guardian.validate_admin_entity
