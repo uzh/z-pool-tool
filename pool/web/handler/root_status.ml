@@ -47,27 +47,22 @@ let show _ =
           Lwt.return (database_label, CCOption.get_or ~default count))
         databases
     in
-    let%lwt schedules = find_all () in
-    let schedules_of_database_label database_label =
-      schedules
-      |> CCList.filter_map (fun ({ label; _ } as schedule : public) ->
-        let contains_label =
-          let sub =
-            database_label |> Database.Label.value |> Format.asprintf "[%s]"
-          in
-          CCString.mem ~sub (Schedule.Label.value label)
-        in
-        if contains_label then Some (is_ok schedule) else None)
-      |> CCList.for_all CCFun.id
+    let is_ok =
+      let open CCFun in
+      CCList.(map is_ok %> for_all id)
     in
-    let is_ok schedules =
-      schedules |> CCList.map is_ok |> CCList.for_all CCFun.id
+    let schedules_of database_label =
+      Schedule.find_by_db_label database_label (Query.empty ())
+      ||> fst
+      ||> is_ok
     in
-    let list_schedules =
-      schedules
-      |> CCList.map (fun ({ label; last_run; _ } : public) ->
-        ( Label.value label
-        , CCOption.map_or ~default:"unknown" LastRunAt.show last_run ))
+    let%lwt list_schedules =
+      let%lwt schedules = find_all () in
+      create_entry
+        "schedules"
+        (`List (schedules |> CCList.map yojson_of_public))
+      |> CCList.return
+      |> Lwt.return
     in
     let list_database_status =
       databases
@@ -82,18 +77,19 @@ let show _ =
       |> CCList.map (fun (database_label, count) ->
         create_entry ~database_label "job_count" count)
     in
-    let list_ok =
-      (databases
-       |> CCList.map (fun { Pool_tenant.database_label; _ } ->
-         create_entry
-           ~database_label
-           "ok"
-           (schedules_of_database_label database_label |> Utils.Bool.to_string))
-      )
-      @ [ "ok", is_ok schedules |> Utils.Bool.to_string ]
+    let%lwt ok_tenants =
+      databases
+      |> Lwt_list.map_s (fun { Pool_tenant.database_label; _ } ->
+        schedules_of database_label
+        ||> Utils.Bool.to_string
+        ||> create_entry ~database_label "ok")
     in
-    list_schedules @ list_database_status @ list_job_counts @ list_ok
+    let%lwt ok_root =
+      schedules_of Database.root ||> Utils.Bool.to_string ||> create_entry "ok"
+    in
+    (ok_root :: ok_tenants) @ list_database_status @ list_job_counts
     |> CCList.map (fun (k, v) -> k, `String v)
+    |> CCList.append list_schedules
     |> Lwt.return_ok
   in
   let sort = CCList.stable_sort (fun a b -> CCString.compare (fst a) (fst b)) in

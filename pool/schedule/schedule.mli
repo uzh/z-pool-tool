@@ -60,6 +60,7 @@ type public =
   ; last_run : LastRunAt.t option
   }
 
+val yojson_of_public : public -> Yojson.Safe.t
 val add_and_start : ?tags:Logs.Tag.set -> t -> unit Lwt.t
 val stop : unit -> unit Lwt.t
 val lifecycle : Sihl.Container.lifecycle
