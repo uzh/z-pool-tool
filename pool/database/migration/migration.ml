@@ -280,8 +280,8 @@ let migrations_status ?migrations database_label () =
        namespaces_to_check
 ;;
 
-let pending_migrations database_label () =
-  let%lwt unapplied = migrations_status database_label () in
+let pending_migrations ?migrations database_label () =
+  let%lwt unapplied = migrations_status ?migrations database_label () in
   let rec find_pending result = function
     | (namespace, Some n) :: xs ->
       if n > 0

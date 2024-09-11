@@ -272,7 +272,11 @@ module Migration : sig
 
       An empty list means that there are no pending migrations and that the
       database schema is up-to-date. *)
-  val pending_migrations : Label.t -> unit -> (string * int) list Lwt.t
+  val pending_migrations
+    :  ?migrations:t list
+    -> Label.t
+    -> unit
+    -> (string * int) list Lwt.t
 
   val start : Label.t -> unit -> unit Lwt.t
   val extend_migrations : (string * steps) list -> unit -> (string * steps) list

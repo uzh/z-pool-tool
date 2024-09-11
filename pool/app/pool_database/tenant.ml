@@ -107,10 +107,12 @@ let start () =
   let check_migration_status pool =
     let open Migration in
     let%lwt () =
-      let%lwt up_to_date = pending_migrations pool () ||> CCList.is_empty in
+      let%lwt up_to_date =
+        pending_migrations pool ~migrations:(steps ()) () ||> CCList.is_empty
+      in
       Tenant.update_status
         pool
-        (if not up_to_date then MigrationsPending else Active)
+        (if up_to_date then Active else MigrationsPending)
     in
     check_migrations_status pool ~migrations:(steps ()) ()
   in
