@@ -31,6 +31,28 @@ let invitation_mail (_ : Contact.t) =
   |> CCResult.return
 ;;
 
+let create_changelog admin ~before ~after =
+  let open Assignment in
+  let open VersionHistory in
+  create
+    ~entity_uuid:(Id.to_common before.id)
+    ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
+    ~before:(before |> to_record)
+    ~after:(after |> to_record)
+    ()
+  (* |> CCOption.get_exn_or "Invalid changelog" *)
+  |> (function
+        | None ->
+          failwith
+            (Format.asprintf
+               "%s  %s"
+               (Assignment.show before)
+               (Assignment.show after))
+        | Some changelog -> changelog)
+  |> Changelog.created
+  |> Pool_event.changelog
+;;
+
 let find_assignment_by_contact_and_session contact_id session_id =
   let open Assignment in
   find_uncanceled_by_session database_label session_id
@@ -98,7 +120,7 @@ let close_session
   |> Pool_event.handle_events database_label
 ;;
 
-let delete_assignment experiment_id contact assignments =
+let delete_assignment admin experiment_id contact assignments =
   let open Assignment_command in
   let%lwt decrement_num_participations =
     Assignment.(
@@ -112,7 +134,7 @@ let delete_assignment experiment_id contact assignments =
       ||> get_exn)
   in
   (contact, assignments, decrement_num_participations)
-  |> MarkAsDeleted.handle
+  |> MarkAsDeleted.handle admin
   |> get_exn
   |> Pool_event.handle_events database_label
 ;;
@@ -427,11 +449,12 @@ module DeleteAttended = struct
   let followup_session_id = AttendAll.followup_session_id
 
   let delete_follow_up _ () =
+    let%lwt admin = Integration_utils.AdminRepo.create () in
     let%lwt follow_up =
       find_assignment_by_contact_and_session contact_id followup_session_id
     in
     let%lwt contact = get_contact contact_id in
-    let%lwt () = delete_assignment experiment_id contact [ follow_up ] in
+    let%lwt () = delete_assignment admin experiment_id contact [ follow_up ] in
     let contact =
       Contact.(
         contact
@@ -444,11 +467,12 @@ module DeleteAttended = struct
   ;;
 
   let delete_main _ () =
+    let%lwt admin = Integration_utils.AdminRepo.create () in
     let%lwt session =
       find_assignment_by_contact_and_session contact_id session_id
     in
     let%lwt contact = get_contact contact_id in
-    let%lwt () = delete_assignment experiment_id contact [ session ] in
+    let%lwt () = delete_assignment admin experiment_id contact [ session ] in
     let contact =
       Contact.(
         contact
@@ -505,12 +529,13 @@ module DeleteUnattended = struct
   ;;
 
   let delete_main _ () =
+    let%lwt admin = Integration_utils.AdminRepo.create () in
     let%lwt contact = get_contact contact_id in
     let%lwt assignments =
       [ session_id; followup_session_id ]
       |> Lwt_list.map_s (find_assignment_by_contact_and_session contact_id)
     in
-    let%lwt () = delete_assignment experiment_id contact assignments in
+    let%lwt () = delete_assignment admin experiment_id contact assignments in
     let%lwt res = get_contact contact_id in
     let expected =
       Contact.
@@ -532,6 +557,7 @@ module UpdateAssignments = struct
   open CCResult
   open Contact
 
+  let admin_id = Admin.Id.create ()
   let contact_id = Contact.Id.create ()
   let session_id = Session.Id.create ()
   let followup_session_id = Session.Id.create ()
@@ -579,6 +605,7 @@ module UpdateAssignments = struct
   let update_unclosed _ () =
     let open Update in
     let%lwt contact, experiment, session, _ = initialize () in
+    let%lwt admin = Integration_utils.AdminRepo.create () in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt assignment =
       find_assignment_by_contact_and_session contact_id session_id
@@ -588,21 +615,24 @@ module UpdateAssignments = struct
       to_urlencoded ~no_show:true ~participated:false ()
       |> decode
       >>= handle
+            admin
             experiment
             (`Session session)
             assignment
             participated_in_other_sessions
     in
     let expected =
-      Assignment.(
-        Updated
-          { assignment with
-            no_show = Some (NoShow.create true)
-          ; participated = Some (Participated.create false)
-          })
-      |> Pool_event.assignment
-      |> CCList.return
-      |> CCResult.return
+      let open Assignment in
+      let updated =
+        { assignment with
+          no_show = Some (NoShow.create true)
+        ; participated = Some (Participated.create false)
+        }
+      in
+      Ok
+        [ Updated updated |> Pool_event.assignment
+        ; create_changelog admin ~before:assignment ~after:updated
+        ]
     in
     let () =
       check_result
@@ -640,6 +670,7 @@ module UpdateAssignments = struct
 
   let update_assignment_manually _ () =
     let%lwt contact, experiment, session, _ = get_entities () in
+    let%lwt admin = Integration_utils.AdminRepo.create () in
     let participated_in_other_sessions assignments =
       Assignment.(
         contact_participation_in_other_assignments
@@ -657,6 +688,7 @@ module UpdateAssignments = struct
       urlencoded
       |> decode
       >>= handle
+            admin
             experiment
             (`Session session)
             assignment
@@ -709,6 +741,7 @@ module UpdateAssignments = struct
     let%lwt contact, experiment, time_window =
       initialize_online_survey contact_id experiment_id timewindow_id ()
     in
+    let%lwt admin = Integration_utils.AdminRepo.create () in
     let contact =
       { contact with
         num_assignments = initial_assignments
@@ -719,7 +752,7 @@ module UpdateAssignments = struct
     in
     let assignment = create contact in
     let handle assignment =
-      Update.handle experiment (`TimeWindow time_window) assignment false
+      Update.handle admin experiment (`TimeWindow time_window) assignment false
     in
     let update ~no_show ~participated =
       { external_data_id = None
@@ -730,13 +763,15 @@ module UpdateAssignments = struct
     let () =
       let update = update ~no_show:false ~participated:true in
       let expected =
+        let updated =
+          { assignment with
+            no_show = Some update.no_show
+          ; participated = Some update.participated
+          }
+        in
         Ok
-          [ Updated
-              { assignment with
-                no_show = Some update.no_show
-              ; participated = Some update.participated
-              }
-            |> Pool_event.assignment
+          [ Updated updated |> Pool_event.assignment
+          ; create_changelog admin ~before:assignment ~after:updated
           ]
       in
       check_result
@@ -753,13 +788,15 @@ module UpdateAssignments = struct
     let () =
       let update = update ~no_show:false ~participated:true in
       let expected =
+        let updated =
+          { assignment with
+            no_show = Some update.no_show
+          ; participated = Some update.participated
+          }
+        in
+        (* Do not expect changelog event, as nothing changed *)
         Ok
-          [ Updated
-              { assignment with
-                no_show = Some update.no_show
-              ; participated = Some update.participated
-              }
-            |> Pool_event.assignment
+          [ Updated updated |> Pool_event.assignment
           ; Contact.Updated contact |> Pool_event.contact
           ]
       in
@@ -771,19 +808,21 @@ module UpdateAssignments = struct
     let () =
       let update = update ~no_show:true ~participated:false in
       let expected =
+        let updated =
+          { assignment with
+            no_show = Some update.no_show
+          ; participated = Some update.participated
+          }
+        in
         Ok
-          [ Updated
-              { assignment with
-                no_show = Some update.no_show
-              ; participated = Some update.participated
-              }
-            |> Pool_event.assignment
+          [ Updated updated |> Pool_event.assignment
           ; Contact.Updated
               (contact
                |> update_num_show_ups ~step:(-1)
                |> update_num_no_shows ~step:1
                |> update_num_participations ~step:(-1))
             |> Pool_event.contact
+          ; create_changelog admin ~before:assignment ~after:updated
           ]
       in
       check_result
@@ -817,6 +856,7 @@ module UpdateAssignments = struct
 
   let update_follow_up_assignment_manually _ () =
     let%lwt _, experiment, _, followup_session = get_entities () in
+    let%lwt admin = Integration_utils.AdminRepo.create () in
     let participated_in_other_sessions assignments =
       Assignment.(
         contact_participation_in_other_assignments
@@ -834,6 +874,7 @@ module UpdateAssignments = struct
       urlencoded
       |> decode
       >>= handle
+            admin
             experiment
             (`Session followup_session)
             assignment

@@ -540,7 +540,7 @@ let update_filter _ () =
   let experiment =
     { (Model.create_experiment ()) with Experiment.filter = Some filter }
   in
-  let updated_filter = firstname "Bar" |> Filter.create ~id:filer_id None in
+  let updated_filter = Filter.{ filter with query = firstname "Bar" } in
   let events =
     Cqrs_command.Experiment_command.UpdateFilter.handle
       ~changelog_id

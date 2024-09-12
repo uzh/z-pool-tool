@@ -138,6 +138,7 @@ module Cancel : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Admin.t
     -> Email.dispatch
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -146,24 +147,42 @@ module Cancel : sig
 end = struct
   type t = Assignment.t list * Session.t
 
-  let handle ?(tags = Logs.Tag.empty) notification_email (assignments, session)
+  let handle
+    ?(tags = Logs.Tag.empty)
+    admin
+    notification_email
+    (assignments, session)
     : (Pool_event.t list, Pool_message.Error.t) result
     =
     let open CCResult in
+    let open Assignment in
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let contact =
-      assignments
-      |> CCList.hd
-      |> fun ({ Assignment.contact; _ } : Assignment.t) -> contact
+      assignments |> CCList.hd |> fun ({ contact; _ } : t) -> contact
     in
     let* (_ : unit list) =
       let* () = Session.assignments_cancelable session in
-      CCList.map Assignment.is_cancellable assignments |> CCList.all_ok
+      CCList.map is_cancellable assignments |> CCList.all_ok
     in
     let cancel_events =
-      CCList.map
-        (fun assignment ->
-          Assignment.Canceled assignment |> Pool_event.assignment)
+      CCList.fold_left
+        (fun acc assignment ->
+          let changelog =
+            let open VersionHistory in
+            create
+              ~entity_uuid:(Id.to_common assignment.id)
+              ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
+              ~before:(assignment |> to_record)
+              ~after:
+                ({ assignment with
+                   canceled_at = Some (CanceledAt.create_now ())
+                 }
+                 |> to_record)
+              ()
+            |> Common.changelog_event
+          in
+          acc @ [ Canceled assignment |> Pool_event.assignment ] @ changelog)
+        []
         assignments
     in
     let decrease_assignment_count =
@@ -172,7 +191,8 @@ end = struct
       |> Pool_event.contact
     in
     Ok
-      ((cancel_events @ [ decrease_assignment_count ])
+      (cancel_events
+       @ [ decrease_assignment_count ]
        @ [ Email.sent notification_email |> Pool_event.email ])
   ;;
 
@@ -248,6 +268,12 @@ module MarkAsDeleted : sig
     with type t =
       Contact.t * Assignment.t list * Assignment.IncrementParticipationCount.t
 
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Admin.t
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
   val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
@@ -255,6 +281,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    admin
     (contact, assignments, decrement_participation_count)
     : (Pool_event.t list, Pool_message.Error.t) result
     =
@@ -265,7 +292,27 @@ end = struct
       CCList.map is_deletable assignments |> CCList.all_ok
     in
     let mark_as_deleted =
-      CCList.map (markedasdeleted %> Pool_event.assignment) assignments
+      CCList.fold_left
+        (fun acc assignment ->
+          let changelog =
+            let open VersionHistory in
+            create
+              ~entity_uuid:(Id.to_common assignment.id)
+              ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
+              ~before:(assignment |> to_record)
+              ~after:
+                ({ assignment with
+                   marked_as_deleted = MarkedAsDeleted.create true
+                 }
+                 |> to_record)
+              ()
+            |> Common.changelog_event
+          in
+          acc
+          @ [ assignment |> markedasdeleted |> Pool_event.assignment ]
+          @ changelog)
+        []
+        assignments
     in
     let contact_updated =
       Contact_counter.update_on_assignment_deletion
@@ -286,6 +333,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Admin.t
     -> Experiment.t
     -> [ `Session of Session.t | `TimeWindow of Time_window.t ]
     -> Assignment.t
@@ -299,6 +347,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    admin
     (experiment : Experiment.t)
     session
     ({ Assignment.no_show; participated; _ } as assignment)
@@ -340,22 +389,33 @@ end = struct
         |> CCList.return
       | _ -> []
     in
-    let updated_assignment =
+    let updated =
       { assignment with
         no_show = Some command.no_show
       ; participated = Some command.participated
       ; external_data_id = command.external_data_id
       }
     in
+    let changelog =
+      let open VersionHistory in
+      create
+        ~entity_uuid:(Id.to_common assignment.id)
+        ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
+        ~before:(assignment |> to_record)
+        ~after:(updated |> to_record)
+        ()
+      |> Common.changelog_event
+    in
     let* () =
-      validate experiment updated_assignment
+      validate experiment updated
       |> function
       | Ok () | Error [] -> Ok ()
       | Error (hd :: _) -> Error hd
     in
     Ok
-      ((Assignment.Updated updated_assignment |> Pool_event.assignment)
-       :: contact_counters)
+      (((Assignment.Updated updated |> Pool_event.assignment)
+        :: contact_counters)
+       @ changelog)
   ;;
 
   let decode data =

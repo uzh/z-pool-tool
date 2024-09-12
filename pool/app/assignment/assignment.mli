@@ -287,3 +287,13 @@ module Guard : sig
     val delete : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
   end
 end
+
+module VersionHistory : sig
+  module Record : sig
+    type t
+  end
+
+  val to_record : t -> Record.t
+
+  include Changelog.TSig with type record = Record.t
+end

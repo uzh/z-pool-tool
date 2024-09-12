@@ -839,13 +839,26 @@ let edit
   session
   { Assignment.id; no_show; participated; external_data_id; contact; _ }
   =
-  let open Assignment in
   let open Component.Input in
   let open CCOption.Infix in
   let session_id = HttpUtils.Session.session_id session in
   let action =
     assignment_specific_path experiment.Experiment.id session_id id
     |> Sihl.Web.externalize_path
+  in
+  let changelog_url =
+    let session_id : Session.Id.t =
+      match session with
+      | `TimeWindow { Time_window.id; _ } -> id
+      | `Session { Session.id; _ } -> id
+    in
+    HttpUtils.Url.Admin.assignment_path
+      experiment.Experiment.id
+      session_id
+      ~suffix:"changelog"
+      ~id
+      ()
+    |> Uri.of_string
   in
   let session_data =
     let open Session in
@@ -871,49 +884,56 @@ let edit
       ; location
       ]
   in
+  let open Assignment in
   [ div
-      ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+      ~a:[ a_class [ "stack-lg" ] ]
       [ div
-          ~a:[ a_class [ "stack" ] ]
-          [ Component.Notification.notification
-              language
-              `Warning
-              [ txt
-                  Pool_common.(
-                    Utils.text_to_string language I18n.AssignmentEditTagsWarning)
-              ]
-          ; p
-              [ Unsafe.data
-                  Pool_common.(
-                    Utils.hint_to_string language I18n.SessionCloseHints)
-              ]
-          ; form
-              ~a:[ a_action action; a_method `Post ]
-              [ csrf_element csrf ()
-              ; div
-                  ~a:[ a_class [ "flexcolumn"; "stack" ] ]
-                  [ checkbox_element
-                      ?value:(no_show >|= NoShow.value)
-                      language
-                      Field.NoShow
-                  ; checkbox_element
-                      ?value:(participated >|= Participated.value)
-                      language
-                      Field.Participated
-                  ; input_element
-                      ?value:(external_data_id >|= ExternalDataId.value)
-                      language
-                      `Text
-                      Field.ExternalDataId
-                  ; submit_element
-                      language
-                      ~classnames:[ "align-self-end" ]
-                      (Control.Save None)
-                      ()
+          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+          [ div
+              ~a:[ a_class [ "stack" ] ]
+              [ Component.Notification.notification
+                  language
+                  `Warning
+                  [ txt
+                      Pool_common.(
+                        Utils.text_to_string
+                          language
+                          I18n.AssignmentEditTagsWarning)
+                  ]
+              ; p
+                  [ Unsafe.data
+                      Pool_common.(
+                        Utils.hint_to_string language I18n.SessionCloseHints)
+                  ]
+              ; form
+                  ~a:[ a_action action; a_method `Post ]
+                  [ csrf_element csrf ()
+                  ; div
+                      ~a:[ a_class [ "flexcolumn"; "stack" ] ]
+                      [ checkbox_element
+                          ?value:(no_show >|= NoShow.value)
+                          language
+                          Field.NoShow
+                      ; checkbox_element
+                          ?value:(participated >|= Participated.value)
+                          language
+                          Field.Participated
+                      ; input_element
+                          ?value:(external_data_id >|= ExternalDataId.value)
+                          language
+                          `Text
+                          Field.ExternalDataId
+                      ; submit_element
+                          language
+                          ~classnames:[ "align-self-end" ]
+                          (Control.Save None)
+                          ()
+                      ]
                   ]
               ]
+          ; session_data
           ]
-      ; session_data
+      ; Component.Changelog.list context changelog_url None
       ]
   ]
   |> Layout.Experiment.(

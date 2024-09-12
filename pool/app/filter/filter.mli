@@ -134,6 +134,8 @@ module Predicate : sig
     }
 
   val create : Key.t -> Operator.t -> value -> t
+  val show : t -> string
+  val pp : Format.formatter -> t -> unit
 end
 
 type query =

@@ -17,6 +17,24 @@ let assignment_data () =
   { session; experiment; contact }
 ;;
 
+let admin =
+  Model.create_admin () |> Pool_context.get_admin_user |> get_or_failwith
+;;
+
+let create_changelog ~before ~after =
+  let open Assignment in
+  let open VersionHistory in
+  create
+    ~entity_uuid:(Id.to_common before.id)
+    ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
+    ~before:(before |> to_record)
+    ~after:(after |> to_record)
+    ()
+  |> CCOption.get_exn_or "Invalid changelog"
+  |> Changelog.created
+  |> Pool_event.changelog
+;;
+
 let confirmation_email experiment (session : Session.t) assignment =
   let contact = assignment.Assignment.contact in
   let email =
@@ -124,16 +142,24 @@ let create_inactive_user () =
 ;;
 
 let canceled () =
+  let open Assignment in
   let session = Model.create_session () in
   let assignment = Model.create_assignment () in
   let notification_email = Model.create_email_job () in
   let events =
-    AssignmentCommand.Cancel.handle notification_email ([ assignment ], session)
+    AssignmentCommand.Cancel.handle
+      admin
+      notification_email
+      ([ assignment ], session)
   in
   let expected =
     Ok
-      [ Assignment.Canceled assignment |> Pool_event.assignment
-      ; update_assignment_count_event ~step:(-1) assignment.Assignment.contact
+      [ Canceled assignment |> Pool_event.assignment
+      ; create_changelog
+          ~before:assignment
+          ~after:
+            { assignment with canceled_at = Some (CanceledAt.create_now ()) }
+      ; update_assignment_count_event ~step:(-1) assignment.contact
       ; Email.sent notification_email |> Pool_event.email
       ]
   in
@@ -157,7 +183,10 @@ let canceled_with_closed_session () =
   in
   let assignment = Model.create_assignment () in
   let events =
-    AssignmentCommand.Cancel.handle notification_email ([ assignment ], session)
+    AssignmentCommand.Cancel.handle
+      admin
+      notification_email
+      ([ assignment ], session)
   in
   let expected =
     Error
@@ -566,6 +595,7 @@ let mark_uncanceled_as_deleted () =
   let assignment = { assignment with canceled_at = None } in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
+      admin
       ( assignment.contact
       , [ assignment ]
       , IncrementParticipationCount.create false )
@@ -579,6 +609,10 @@ let mark_uncanceled_as_deleted () =
     Ok
       [ Contact.Updated { contact with num_assignments } |> Pool_event.contact
       ; MarkedAsDeleted assignment |> Pool_event.assignment
+      ; create_changelog
+          ~before:assignment
+          ~after:
+            { assignment with marked_as_deleted = MarkedAsDeleted.create true }
       ]
   in
   check_result expected events
@@ -592,6 +626,7 @@ let marked_canceled_as_deleted () =
   in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
+      admin
       ( assignment.contact
       , [ assignment ]
       , IncrementParticipationCount.create false )
@@ -600,6 +635,10 @@ let marked_canceled_as_deleted () =
     Ok
       [ Contact.Updated assignment.contact |> Pool_event.contact
       ; MarkedAsDeleted assignment |> Pool_event.assignment
+      ; create_changelog
+          ~before:assignment
+          ~after:
+            { assignment with marked_as_deleted = MarkedAsDeleted.create true }
       ]
   in
   check_result expected events
@@ -628,6 +667,7 @@ let marked_closed_with_followups_as_deleted () =
   in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
+      admin
       ( contact
       , [ assignment; follow_up ]
       , IncrementParticipationCount.create true )
@@ -645,7 +685,15 @@ let marked_closed_with_followups_as_deleted () =
     Ok
       [ Contact.Updated contact |> Pool_event.contact
       ; MarkedAsDeleted assignment |> Pool_event.assignment
+      ; create_changelog
+          ~before:assignment
+          ~after:
+            { assignment with marked_as_deleted = MarkedAsDeleted.create true }
       ; MarkedAsDeleted follow_up |> Pool_event.assignment
+      ; create_changelog
+          ~before:follow_up
+          ~after:
+            { follow_up with marked_as_deleted = MarkedAsDeleted.create true }
       ]
   in
   check_result expected events
@@ -660,7 +708,10 @@ let cancel_deleted_assignment () =
       { assignment with marked_as_deleted = MarkedAsDeleted.create true }
   in
   let events =
-    AssignmentCommand.Cancel.handle notification_email ([ assignment ], session)
+    AssignmentCommand.Cancel.handle
+      admin
+      notification_email
+      ([ assignment ], session)
   in
   let expected = Error (Error.IsMarkedAsDeleted Field.Assignment) in
   check_result expected events
@@ -872,6 +923,7 @@ let cancel_assignment_with_follow_ups _ () =
   let%lwt contact =
     Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
   in
+  let%lwt admin = Integration_utils.AdminRepo.create () in
   let%lwt location = Repo.first_location () in
   (* Save sessions in Database *)
   let create_session ?parent_id start =
@@ -926,6 +978,7 @@ let cancel_assignment_with_follow_ups _ () =
     in
     let notification_email = Model.create_email_job () in
     AssignmentCommand.Cancel.handle
+      admin
       notification_email
       (assignments, parent_session)
     |> get_or_failwith

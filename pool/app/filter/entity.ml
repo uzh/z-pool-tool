@@ -581,7 +581,10 @@ module Predicate = struct
     ; operator : Operator.t
     ; value : value
     }
-  [@@deriving eq]
+  [@@deriving eq, show]
+
+  (* WORKAROUND: Check why equality is not working *)
+  let equal a b = CCString.equal (show a) (show b)
 
   type human =
     { key : Key.human option

@@ -10,12 +10,7 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t = function
   | Canceled assignment ->
-    let%lwt () =
-      (* TODO: Check timestamps? Issue #126 *)
-      (* TODO: Notification to user? *)
-      { assignment with canceled_at = Some (CanceledAt.create_now ()) }
-      |> Repo.update pool
-    in
+    let%lwt () = Repo.update pool assignment in
     Lwt.return_unit
   | Created (assignment, session_id) ->
     let open Utils.Lwt_result.Infix in

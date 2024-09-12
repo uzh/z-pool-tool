@@ -413,6 +413,7 @@ module Admin = struct
               ; post "/close" ~middlewares:[ Session.Access.close ] Close.update
               ; get "/edit" ~middlewares:[ Access.update ] edit
               ; post "" ~middlewares:[ Access.update ] update
+              ; get "/changelog" ~middlewares:[ Access.update ] changelog
               ; post "/remind" ~middlewares:[ Access.update ] remind
               ; post
                   "/mark-as-deleted"

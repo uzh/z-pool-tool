@@ -46,6 +46,13 @@ module Admin = struct
     experiment_path ~suffix ~id:experiment_id ()
   ;;
 
+  let assignment_path ?suffix experiment_id session_id ?id () =
+    session_path ~id:session_id experiment_id
+    |> Format.asprintf "%s/assignments"
+    |> append_opt Assignment.(map Id.value id)
+    |> append_opt suffix
+  ;;
+
   let location_path ?suffix ?id () =
     "/admin/locations/"
     |> append_opt Pool_location.(map Id.value id)

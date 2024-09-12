@@ -21,11 +21,12 @@ let cancel req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Url.session_path ~id:session_id experiment_id in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let%lwt assignments =
@@ -56,6 +57,7 @@ let cancel req =
     let events =
       Cqrs_command.Assignment_command.Cancel.handle
         ~tags
+        admin
         cancellation_notification
         (assignments, session)
       |> Lwt.return
@@ -77,10 +79,11 @@ let mark_as_deleted req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Url.session_path ~id:session_id experiment_id in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
     let%lwt assignments =
       Assignment.find_with_follow_ups database_label assignment_id
     in
@@ -100,6 +103,7 @@ let mark_as_deleted req =
         in
         Cqrs_command.Assignment_command.MarkAsDeleted.handle
           ~tags
+          admin
           (hd.Assignment.contact, assignments, decrement_num_participations)
         |> Lwt.return
     in
@@ -273,6 +277,24 @@ let edit req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let changelog req =
+  let open Assignment in
+  let experiment_id, session_id, id = ids_from_request req in
+  let url =
+    HttpUtils.Url.Admin.assignment_path
+      experiment_id
+      session_id
+      ~suffix:"changelog"
+      ~id
+      ()
+  in
+  Helpers.Changelog.htmx_handler
+    ~version_history:(module VersionHistory)
+    ~url
+    (Id.to_common id)
+    req
+;;
+
 let update req =
   let open Utils.Lwt_result.Infix in
   let open Assignment in
@@ -284,10 +306,11 @@ let update req =
       session_id
       assignment_id
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
     let boolean_fields = boolean_fields |> CCList.map Field.show in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
@@ -311,6 +334,7 @@ let update req =
       |> decode
       >>= handle
             ~tags
+            admin
             experiment
             session
             assignment
