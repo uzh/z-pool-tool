@@ -35,7 +35,7 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
       , notification I18n.GtxKeyStored `Success )
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 [ txt (Utils.field_to_string language Field.GtxApiKey) ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]

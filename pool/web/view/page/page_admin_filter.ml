@@ -47,7 +47,7 @@ let index ({ Pool_context.language; _ } as context) filter_list query =
     |> Component.Notification.notification language `Warning
   in
   div
-    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ Pool_common.Utils.field_to_string language Pool_message.Field.Filter

@@ -349,5 +349,9 @@ let show
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Settings" ]; body_html ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Settings) ]
+    ; body_html
+    ]
 ;;
