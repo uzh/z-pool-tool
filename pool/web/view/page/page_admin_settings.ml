@@ -40,6 +40,15 @@ let show
     ; a_user_data "detect-unsaved-changes" ""
     ]
   in
+  let make_columns title ?hint columns =
+    div
+      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt title ]
+      ; hint |> CCOption.map_or ~default:(txt "") (fun hint -> p [ txt hint ])
+      ; div
+          ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
+          (columns |> CCList.map (fun column -> div [ column ]))
+      ]
+  in
   let languages_html =
     let all_languages =
       [ tenant_languages |> CCList.map (fun k -> k, true)
@@ -69,34 +78,31 @@ let show
         all_languages
       |> Component.Sortable.create_sortable
     in
-    div
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Languages" ]
-      ; p
-          [ txt
-              "You have to add Terms and Condidions before you can activate a \
-               new language."
-          ]
-      ; form
-          ~a:(form_attrs `UpdateLanguages)
-          ([ csrf_element csrf (); field_elements ] @ [ submit () ])
-      ]
+    let form =
+      form
+        ~a:(form_attrs `UpdateLanguages)
+        ([ csrf_element csrf (); field_elements ] @ [ submit () ])
+    in
+    let hint =
+      "You have to add Terms and Condidions before you can activate a new \
+       language."
+    in
+    "Languages", [ form ], Some hint
   in
   let email_suffixes_html =
+    let control_to_string control =
+      h4 [ txt Pool_common.(Utils.control_to_string language control) ]
+    in
     let create_form =
       div
-        [ h3
-            [ txt
-                Pool_common.(
-                  Utils.control_to_string
-                    language
-                    Message.(Control.Add (Some Field.EmailSuffix)))
-            ]
+        [ control_to_string Message.(Control.Add (Some Field.EmailSuffix))
         ; form
             ~a:(form_attrs `CreateEmailSuffix)
             [ csrf_element csrf ()
             ; div
                 ~a:[ a_class [ "stack" ] ]
                 [ input_element
+                    ~hide_label:true
                     language
                     `Text
                     Pool_message.Field.EmailSuffix
@@ -162,102 +168,94 @@ let show
             ]
         ]
     in
-    let suffix_rows suffixes =
-      div
-        ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-        [ update_forms suffixes; delete_forms suffixes ]
-    in
-    div
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Email Suffixes" ]
-      ; div
-          ~a:[ a_class [ "stack"; "flexcolumn" ] ]
-          [ (match email_suffixes with
-             | [] ->
-               div
-                 [ txt
-                     Pool_common.(
-                       Utils.hint_to_string
-                         language
-                         I18n.SettingsNoEmailSuffixes)
-                 ]
-             | suffixes -> suffix_rows suffixes)
-          ; create_form
+    let suffix_rows = function
+      | [] ->
+        div
+          [ txt
+              Pool_common.(
+                Utils.hint_to_string language I18n.SettingsNoEmailSuffixes)
           ]
-      ]
+      | suffixes ->
+        div
+          [ control_to_string Message.(Control.Update (Some Field.EmailSuffix))
+          ; div
+              ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+              [ update_forms suffixes; delete_forms suffixes ]
+          ]
+    in
+    let title = "Email Suffixes" in
+    let columns = [ suffix_rows email_suffixes; create_form ] in
+    title, columns, None
   in
   let contact_email_html =
-    div
-      [ h2 [ txt "Contact Email" ]
-      ; form
-          ~a:(form_attrs `UpdateContactEmail)
-          [ csrf_element csrf ()
-          ; input_element
-              language
-              `Text
-              Pool_message.Field.ContactEmail
-              ~value:(contact_email |> Settings.ContactEmail.value)
-              ~required:true
-          ; submit ~control:Message.(Control.Add None) ()
-          ]
-      ]
+    let form =
+      form
+        ~a:(form_attrs `UpdateContactEmail)
+        [ csrf_element csrf ()
+        ; input_element
+            language
+            `Text
+            Pool_message.Field.ContactEmail
+            ~value:(contact_email |> Settings.ContactEmail.value)
+            ~required:true
+        ; submit ~control:Message.(Control.Add None) ()
+        ]
+    in
+    "Contact Email", [ form ], None
   in
   let inactive_user_html =
     let open Settings.InactiveUser in
-    div
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Inactive Users" ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ form
-              ~a:(form_attrs `UpdateInactiveUserDisableAfter)
-              [ csrf_element csrf ()
-              ; timespan_picker
-                  ~required:true
-                  language
-                  Pool_message.Field.InactiveUserDisableAfter
-                  ~value:(inactive_user_disable_after |> DisableAfter.value)
-              ; submit ()
-              ]
-          ; form
-              ~a:(form_attrs `UpdateInactiveUserWarning)
-              [ csrf_element csrf ()
-              ; timespan_picker
-                  ~required:true
-                  language
-                  Pool_message.Field.InactiveUserWarning
-                  ~value:(inactive_user_warning |> Warning.value)
-              ; submit ()
-              ]
-          ]
-      ]
+    let disable_after_form =
+      form
+        ~a:(form_attrs `UpdateInactiveUserDisableAfter)
+        [ csrf_element csrf ()
+        ; timespan_picker
+            ~required:true
+            language
+            Pool_message.Field.InactiveUserDisableAfter
+            ~value:(inactive_user_disable_after |> DisableAfter.value)
+        ; submit ()
+        ]
+    in
+    let warn_after_form =
+      form
+        ~a:(form_attrs `UpdateInactiveUserWarning)
+        [ csrf_element csrf ()
+        ; timespan_picker
+            ~required:true
+            language
+            Pool_message.Field.InactiveUserWarning
+            ~value:(inactive_user_warning |> Warning.value)
+        ; submit ()
+        ]
+    in
+    "Inactive Users", [ disable_after_form; warn_after_form ], None
   in
   let trigger_profile_update_after_html =
     let open Settings.TriggerProfileUpdateAfter in
-    div
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ Pool_common.(
-              Utils.field_to_string
-                language
-                Pool_message.Field.TriggerProfileUpdateAfter)
-            |> CCString.capitalize_ascii
-            |> txt
-          ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ form
-              ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
-              [ csrf_element csrf ()
-              ; timespan_picker
-                  ~required:true
-                  language
-                  Pool_message.Field.TriggerProfileUpdateAfter
-                  ~value:(trigger_profile_update_after |> value)
-              ; submit ()
-              ]
-          ]
-      ]
+    let title =
+      Pool_common.(
+        Utils.field_to_string
+          language
+          Pool_message.Field.TriggerProfileUpdateAfter)
+      |> CCString.capitalize_ascii
+    in
+    let form =
+      form
+        ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
+        [ csrf_element csrf ()
+        ; timespan_picker
+            ~required:true
+            language
+            Pool_message.Field.TriggerProfileUpdateAfter
+            ~value:(trigger_profile_update_after |> value)
+        ; submit ()
+        ]
+    in
+    title, [ form ], None
   in
   let default_lead_time =
+    let title = "Reminder lead time" in
     let lead_time_form action field value encode =
       form
         ~a:(form_attrs action)
@@ -270,6 +268,13 @@ let show
             field
         ; submit ()
         ]
+    in
+    let email_lead_time =
+      lead_time_form
+        `UpdateDefaultLeadTime
+        Pool_message.Field.EmailLeadTime
+        default_reminder_lead_time
+        Pool_common.Reminder.EmailLeadTime.value
     in
     let text_message_lead_time =
       let input_el =
@@ -293,23 +298,7 @@ let show
           ; input_el
           ]
     in
-    div
-      [ h2 [ txt "Reminder lead time" ]
-      ; p
-          [ txt
-              Pool_common.(
-                Utils.hint_to_string language I18n.SessionReminderLeadTime)
-          ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ lead_time_form
-              `UpdateDefaultLeadTime
-              Pool_message.Field.EmailLeadTime
-              default_reminder_lead_time
-              Pool_common.Reminder.EmailLeadTime.value
-          ; text_message_lead_time
-          ]
-      ]
+    title, [ email_lead_time; text_message_lead_time ], None
   in
   let user_import_reminder =
     let open Settings.UserImportReminder in
@@ -323,45 +312,46 @@ let show
         field
         ~value
     in
-    div
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "User import" ]
-      ; div
-          [ Pool_common.(Utils.hint_to_string language I18n.UserImportInterval)
-            |> Unsafe.data
+    let title = "User import" in
+    let columns =
+      [ form
+          ~a:(form_attrs `UserImportFirstReminderAfter)
+          [ csrf_element csrf ()
+          ; timespan_picker
+              Pool_message.Field.FirstReminder
+              (user_import_first_reminder |> FirstReminderAfter.value)
+          ; submit ()
           ]
-      ; div
-          ~a:[ a_class [ "stack"; "gap" ] ]
-          [ form
-              ~a:(form_attrs `UserImportFirstReminderAfter)
-              [ csrf_element csrf ()
-              ; timespan_picker
-                  Pool_message.Field.FirstReminder
-                  (user_import_first_reminder |> FirstReminderAfter.value)
-              ; submit ()
-              ]
-          ; form
-              ~a:(form_attrs `UserImportSecondReminderAfter)
-              [ csrf_element csrf ()
-              ; timespan_picker
-                  Pool_message.Field.SecondReminder
-                  (user_import_second_reminder |> SecondReminderAfter.value)
-              ; submit ()
-              ]
+      ; form
+          ~a:(form_attrs `UserImportSecondReminderAfter)
+          [ csrf_element csrf ()
+          ; timespan_picker
+              Pool_message.Field.SecondReminder
+              (user_import_second_reminder |> SecondReminderAfter.value)
+          ; submit ()
           ]
       ]
+    in
+    title, columns, None
+  in
+  let body_html =
+    [ languages_html
+    ; email_suffixes_html
+    ; contact_email_html
+    ; inactive_user_html
+    ; trigger_profile_update_after_html
+    ; default_lead_time
+    ; user_import_reminder
+    ]
+    |> CCList.map (fun (title, columns, hint) ->
+      make_columns title ?hint columns)
+    |> div ~a:[ a_class [ "stack" ] ]
   in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Settings" ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ languages_html
-        ; email_suffixes_html
-        ; contact_email_html
-        ; inactive_user_html
-        ; trigger_profile_update_after_html
-        ; default_lead_time
-        ; user_import_reminder
-        ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Settings) ]
+    ; body_html
     ]
 ;;

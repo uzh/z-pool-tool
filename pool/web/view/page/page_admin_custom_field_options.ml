@@ -120,7 +120,7 @@ let detail
     field_buttons language csrf custom_field custom_field_option
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ Partials.form_title language Field.CustomFieldOption custom_field_option
     ; div
         ~a:[ a_class [ "stack" ] ]
