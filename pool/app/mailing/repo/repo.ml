@@ -250,6 +250,13 @@ module Sql = struct
     ;;
 
     let find_current pool interval =
+      let () =
+        Caqti_request.make_pp_with_param
+          ()
+          Format.std_formatter
+          (find_current_request, interval)
+      in
+      print_endline "";
       Database.collect pool find_current_request interval
     ;;
   end

@@ -350,9 +350,9 @@ let show_online_study
   (experiment : Experiment.Public.t)
   { Pool_context.language; _ }
   (argument :
-    [< `Participated of Assignment.Public.t
-    | `Pending of Assignment.Public.t * Time_window.t
-    | `Upcoming of Time_window.t
+    [> `Active of Time_window.t * Assignment.Public.t option
+    | `Participated of Assignment.Public.t
+    | `Upcoming of Time_window.t option
     ])
   =
   let html =
@@ -376,33 +376,43 @@ let show_online_study
     in
     let end_at_hint time_window =
       p
-        ~a:[ a_class [ "font-italic" ] ]
-        [ txt
-            (I18n.OnlineExperimentParticipationDeadline
-               (Time_window.ends_at time_window)
-             |> Utils.hint_to_string language)
+        [ strong
+            [ txt
+                (I18n.ExperimentOnlineParticipationDeadline
+                   (Time_window.ends_at time_window)
+                 |> Utils.text_to_string language)
+            ]
         ]
     in
-    let participated assignment =
+    let upcoming_hint time_window =
+      let open Time_window in
+      let hint =
+        match time_window with
+        | None -> I18n.ExperimentOnlineParticipationNoUpcoming
+        | Some (time_window : t) ->
+          I18n.ExperimentOnlineParticipationUpcoming
+            (time_window.start |> Session.Start.value)
+      in
+      p [ strong [ txt (Utils.text_to_string language hint) ] ]
+    in
+    let participated_hint assignment =
       let open Utils in
       p
         [ strong
-            [ txt (field_to_string_capitalized language Field.Participated)
-            ; txt ": "
-            ; txt
-                (assignment.Public.created_at
-                 |> CreatedAt.value
-                 |> Pool_model.Time.formatted_date_time)
+            [ I18n.ExperimentOnlineParticiated
+                (CreatedAt.value assignment.Public.created_at)
+              |> text_to_string language
+              |> txt
             ]
         ]
     in
     div ~a:[ a_class [ "stack"; "flexcolumn" ] ]
     @@
     match argument with
-    | `Pending (assignment, time_window) ->
+    | `Active (time_window, assignment) ->
       [ start_button (Some assignment); end_at_hint time_window ]
-    | `Participated assignment -> [ participated assignment ]
-    | `Upcoming time_window -> [ start_button None; end_at_hint time_window ]
+    | `Participated assignment -> [ participated_hint assignment ]
+    | `Upcoming time_window -> [ upcoming_hint time_window ]
   in
   experiment_detail_page experiment html
 ;;

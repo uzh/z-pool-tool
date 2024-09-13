@@ -75,10 +75,6 @@ let show_online_study
   =
   let open Utils.Lwt_result.Infix in
   let experiment_id = Experiment.Public.id experiment in
-  let* time_window =
-    Time_window.find_current_by_experiment database_label experiment_id
-    >|- CCFun.const (Error.NotFound Field.Experiment)
-  in
   let%lwt assignment =
     let open Utils.Lwt_result.Infix in
     Assignment.Public.find_all_by_experiment
@@ -87,11 +83,26 @@ let show_online_study
       contact
     ||> CCList.head_opt
   in
+  let%lwt current_time_window =
+    Time_window.find_current_by_experiment database_label experiment_id
+  in
+  let () =
+    match current_time_window with
+    | None -> Logs.info (fun m -> m "%s" "NO CURRENT")
+    | Some _ -> Logs.info (fun m -> m "%s" "SOME CURRENT")
+  in
+  let%lwt upcoming_time_window =
+    Time_window.find_upcoming_by_experiment database_label experiment_id
+  in
+  let () =
+    match current_time_window with
+    | None -> Logs.info (fun m -> m "%s" "NO UPCOMING")
+    | Some _ -> Logs.info (fun m -> m "%s" "SOME UPCOMING")
+  in
   let argument =
     let open CCOption in
     let open Assignment in
     match assignment with
-    | None -> `Upcoming time_window
     | Some assignment ->
       assignment
       |> Public.participated
@@ -99,7 +110,14 @@ let show_online_study
       |> value ~default:false
       |> (function
        | true -> `Participated assignment
-       | false -> `Pending (assignment, time_window))
+       | false ->
+         (match current_time_window with
+          | Some time_window -> `Active (time_window, Some assignment)
+          | None -> `Upcoming upcoming_time_window))
+    | None ->
+      (match current_time_window with
+       | Some time_window -> `Active (time_window, None)
+       | None -> `Upcoming upcoming_time_window)
   in
   Page.Contact.Experiment.show_online_study experiment context argument
   |> Lwt.return_ok
@@ -207,7 +225,7 @@ module OnlineSurvey = struct
         Time_window.find_current_by_experiment
           database_label
           (Experiment.Public.id experiment)
-        >|- CCFun.const (Error.NotFound Field.Experiment)
+        ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
       in
       let* events =
         Lwt_result.lift

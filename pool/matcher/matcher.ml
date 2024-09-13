@@ -86,10 +86,10 @@ let experiment_has_bookable_spots
     ||> CCList.is_empty
     ||> not
   | true ->
-    Time_window.find_current_by_experiment database_label id
+    Time_window.find_upcoming_by_experiment database_label id
     ||> (function
-     | Error _ -> false
-     | Ok { Time_window.max_participants; participant_count; _ } ->
+     | None -> false
+     | Some { Time_window.max_participants; participant_count; _ } ->
        max_participants
        |> CCOption.map_or ~default:true (fun max_participants ->
          ParticipantAmount.value max_participants
@@ -345,7 +345,7 @@ let start_matcher () =
 
 let start () =
   Sihl.Configuration.require schema;
-  if read_bool Run then start_matcher () else Lwt.return_unit
+  if read_bool Run then start_matcher () else start_matcher ()
 ;;
 
 let stop () = Lwt.return_unit

@@ -53,6 +53,21 @@ let to_string = function
   | ExperimentOnlineListEmpty ->
     "Currently, there are no online surveys you can participate in."
   | ExperimentOnlineListPublicTitle -> "Available online surveys"
+  | ExperimentOnlineParticiated submitted ->
+    Format.asprintf
+      "You completed this survey on %s."
+      (Utils.Ptime.formatted_date submitted)
+  | ExperimentOnlineParticipationDeadline end_at ->
+    Format.asprintf
+      "You can participate in this experiment until %s."
+      (Pool_model.Time.formatted_date_time end_at)
+  | ExperimentOnlineParticipationUpcoming start_at ->
+    Format.asprintf
+      "The next window for participation in this survey begins on %s."
+      (Pool_model.Time.formatted_date_time start_at)
+  | ExperimentOnlineParticipationNoUpcoming ->
+    "There are currently no further time windows for participation in this \
+     survey are planned."
   | ExperimentListTitle -> "Experiments"
   | ExperimentMessagingSubtitle -> "Identities"
   | ExperimentNewTitle -> "Create new experiment"
@@ -515,10 +530,6 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
        part in the survey. Under %s, enter the external URL of the survey to \
        which the contacts should be forwarded."
       (Locales_en.field_to_string Pool_message.Field.SurveyUrl)
-  | OnlineExperimentParticipationDeadline end_at ->
-    Format.asprintf
-      "You can participate in this experiment until %s."
-      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."

@@ -169,24 +169,48 @@ let query_by_experiment ?query pool id =
     Repo_entity.t
 ;;
 
-let find_current_by_experiment_request =
+let find_by_experiment_and_time_request time =
   let open Caqti_request.Infix in
-  {sql|
-      WHERE
-        pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))
-        AND pool_sessions.start < NOW()
-        AND DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW()
-        AND pool_sessions.canceled_at IS NULL
-    |sql}
-  |> find_request_sql
+  let where, limit =
+    match time with
+    | `Current ->
+      let where =
+        {sql|
+          pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))
+          AND pool_sessions.start < NOW()
+          AND DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW()
+          AND pool_sessions.canceled_at IS NULL
+        |sql}
+      in
+      where, ""
+    | `Upcoming ->
+      let where =
+        {sql|
+          pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))
+          AND DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW()
+          AND pool_sessions.canceled_at IS NULL
+        |sql}
+      in
+      let limit =
+        {sql|
+          ORDER BY pool_sessions.start ASC
+          LIMIT 1 
+        |sql}
+      in
+      where, limit
+  in
+  Format.asprintf
+    "SELECT %s FROM pool_sessions %s WHERE %s GROUP BY pool_sessions.uuid %s"
+    (CCString.concat ", " sql_select_columns)
+    joins
+    where
+    limit
   |> Pool_common.Repo.Id.t ->! RepoEntity.t
 ;;
 
-let find_current_by_experiment pool experiment_id =
-  let open Utils.Lwt_result.Infix in
+let find_by_experiment_and_time time pool experiment_id =
   Database.find_opt
     pool
-    find_current_by_experiment_request
+    (find_by_experiment_and_time_request time)
     (Experiment.Id.to_common experiment_id)
-  ||> CCOption.to_result Pool_message.(Error.NotFound Field.TimeWindow)
 ;;
