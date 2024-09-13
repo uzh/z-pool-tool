@@ -408,7 +408,9 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
     "<strong>Use for online surveys only.</strong> The external URL of the \
      online survey. If the URL of the survey is sent in the invitation, \
      invited contacts can start it without creating an assignment. You cannot \
-     see who participated in the survey in the assignment overview."
+     see who participated in the survey in the assignment \
+     overview.<br/>Dynamic URL parameters in your survey URL, like the \
+     <code>callbackUrl</code>, will not be replaced by actual values."
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."

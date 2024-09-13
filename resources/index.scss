@@ -11,6 +11,10 @@ h1,
     word-wrap: break-word;
 }
 
+code {
+    font-size: inherit;
+}
+
 @include mobile {
     *+h1, h1+*, *+h2, *+.heading-1, .heading-1+*, *+.heading-2{
         margin-top: $space-md;
