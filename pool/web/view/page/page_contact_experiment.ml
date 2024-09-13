@@ -410,7 +410,7 @@ let show_online_study
     @@
     match argument with
     | `Active (time_window, assignment) ->
-      [ start_button (Some assignment); end_at_hint time_window ]
+      [ start_button assignment; end_at_hint time_window ]
     | `Participated assignment -> [ participated_hint assignment ]
     | `Upcoming time_window -> [ upcoming_hint time_window ]
   in
