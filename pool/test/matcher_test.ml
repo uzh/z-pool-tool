@@ -87,7 +87,7 @@ let create_invitations_repo _ () =
       Start.StartNow
       (Ptime_clock.now ()
        |> flip Ptime.add_span (Ptime.Span.of_int_s 3600)
-       |> CCOption.get_exn_or "Invalid end time of\n   mailing"
+       |> CCOption.get_exn_or "Invalid end time of mailing"
        |> EndAt.create
        |> get_or_failwith)
       limit
@@ -143,7 +143,7 @@ let create_invitations_repo _ () =
     let%lwt () = Pool_event.handle_events pool events in
     let%lwt after_reset = find_invitation_count experiment in
     let () =
-      let msg = "count generated\n   invitations -> equal to before reset" in
+      let msg = "count generated invitations -> equal to before reset" in
       Alcotest.(check int msg after after_reset)
     in
     Lwt.return_unit)
