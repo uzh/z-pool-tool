@@ -11,13 +11,12 @@ let yojson_response ?status json =
 ;;
 
 let show _ =
-  let open CCFun in
   let%lwt result =
     let open Schedule in
     let create_entry ?database_label label value =
       ( CCOption.map_or
           ~default:label
-          (Database.Label.value %> Format.asprintf "%s [%s]" label)
+          CCFun.(Database.Label.value %> Format.asprintf "%s [%s]" label)
           database_label
       , value )
     in
@@ -59,9 +58,11 @@ let show _ =
           CCString.mem ~sub (Schedule.Label.value label)
         in
         if contains_label then Some (is_ok schedule) else None)
-      |> CCList.for_all id
+      |> CCList.for_all CCFun.id
     in
-    let is_ok = CCList.(map is_ok %> for_all id) in
+    let is_ok schedules =
+      schedules |> CCList.map is_ok |> CCList.for_all CCFun.id
+    in
     let list_schedules =
       schedules
       |> CCList.map (fun ({ label; last_run; _ } : public) ->
