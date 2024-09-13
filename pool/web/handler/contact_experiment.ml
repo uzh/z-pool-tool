@@ -86,18 +86,8 @@ let show_online_study
   let%lwt current_time_window =
     Time_window.find_current_by_experiment database_label experiment_id
   in
-  let () =
-    match current_time_window with
-    | None -> Logs.info (fun m -> m "%s" "NO CURRENT")
-    | Some _ -> Logs.info (fun m -> m "%s" "SOME CURRENT")
-  in
   let%lwt upcoming_time_window =
     Time_window.find_upcoming_by_experiment database_label experiment_id
-  in
-  let () =
-    match current_time_window with
-    | None -> Logs.info (fun m -> m "%s" "NO UPCOMING")
-    | Some _ -> Logs.info (fun m -> m "%s" "SOME UPCOMING")
   in
   let argument =
     let open CCOption in
