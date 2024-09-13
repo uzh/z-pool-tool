@@ -111,6 +111,7 @@ let input_element
   ?(orientation = `Vertical)
   ?(classnames = [])
   ?label_field
+  ?(hide_label = false)
   ?hints
   ?identifier
   ?(required = false)
@@ -146,12 +147,14 @@ let input_element
     let help = Elements.hints language hints in
     let error = Elements.error language error in
     let input_element = Elements.apply_orientation attributes orientation in
+    let label =
+      if hide_label
+      then txt ""
+      else label ~a:[ a_label_for id ] [ txt input_label ]
+    in
     div
       ~a:[ a_class group_class ]
-      ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
-       @ help
-       @ error
-       @ append_html)
+      ([ label; input_element ] @ help @ error @ append_html)
 ;;
 
 let flatpicker_element

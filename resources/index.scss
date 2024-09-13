@@ -557,6 +557,7 @@ table.simple {
     }
 }
 
+// WORKAROUND: Could be added to the framework
 // Width base classes
 $i: 1;
 $n: 12;
@@ -577,4 +578,8 @@ $n: 12;
 
 [class*='grid-col-'].stretch-only-child  > *:only-child{
     grid-column: 1 / -1;
+}
+
+.break-grid {
+    grid-column: 1;
 }

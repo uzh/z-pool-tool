@@ -58,7 +58,6 @@ end
 
 let model_subtitle language model =
   div
-    ~a:[ a_class [ "large-font-size" ] ]
     [ strong
         [ txt
             (Format.asprintf
