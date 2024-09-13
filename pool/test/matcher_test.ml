@@ -409,17 +409,32 @@ let create_invitations_for_online_experiment _ () =
   let%lwt () = run_test `Empty "no time window exists" in
   let duration = Session.Duration.create Model.two_hours |> get_or_failwith in
   (* Future time window *)
-  let%lwt (_ : Time_window.t) =
+  let%lwt upcoming =
     let start = Model.in_two_hours () in
     TimeWindowRepo.create start duration experiment ()
   in
   (* TODO: Delete this future time window *)
   let%lwt () = run_test `Events "future time window exists" in
+  let%lwt () =
+    let open Pool_event in
+    Time_window.Deleted upcoming |> time_window |> handle_event database_label
+  in
   (* Current time window *)
-  let%lwt (_ : Time_window.t) =
+  let%lwt current =
     let start = Model.an_hour_ago () in
     TimeWindowRepo.create start duration experiment ()
   in
   let%lwt () = run_test `Events "current time window exists" in
+  (* Current time window without any open spots *)
+  let%lwt () =
+    let open Pool_event in
+    let max_participants =
+      Session.ParticipantAmount.create 0 |> get_or_failwith |> CCOption.return
+    in
+    Time_window.(Updated { current with max_participants })
+    |> time_window
+    |> handle_event database_label
+  in
+  let%lwt () = run_test `Empty "current time window without any open spots" in
   Lwt.return_unit
 ;;

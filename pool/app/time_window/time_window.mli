@@ -50,6 +50,7 @@ type create =
 type event =
   | Created of t
   | Updated of t
+  | Deleted of t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

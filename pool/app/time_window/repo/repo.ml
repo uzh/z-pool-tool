@@ -153,6 +153,19 @@ let update pool =
   RepoEntity.Write.of_entity %> Database.exec pool update_request
 ;;
 
+let delete_request =
+  let open Caqti_request.Infix in
+  {sql|
+      DELETE FROM pool_sessions
+      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
+  |> Session.Repo.Id.t ->. Caqti_type.unit
+;;
+
+let delete pool time_window =
+  Database.exec pool delete_request time_window.Entity.id
+;;
+
 let query_by_experiment ?query pool id =
   let where =
     let sql =

@@ -562,7 +562,7 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
-    ; ( " queue"
+    ; ( "queue"
       , [ test_case
             "create delivery report"
             `Quick
