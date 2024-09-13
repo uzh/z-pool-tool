@@ -405,7 +405,7 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
      werden."
-  | ExperumentSurveyRedirectUrl ->
+  | ExperimentSurveyRedirectUrl ->
     "<strong>Nur für Online-Umfragen verwenden.</strong> Diese URL erstellt \
      eine Anmeldung zum Experiment und leitet den Kontakt direkt auf die URL \
      der Onlineumfrage weiter. Alternativ kann {experimentUrl} verwendet \

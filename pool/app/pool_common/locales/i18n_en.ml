@@ -398,7 +398,7 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
     "Contacts that have been invited to this experiment and have placed \
      themselves on the waiting list. They have to be manually assigned to a \
      session."
-  | ExperumentSurveyRedirectUrl ->
+  | ExperimentSurveyRedirectUrl ->
     "<strong>Use for online surveys only.</strong> This URL creates an \
      assignment for the experiment and forwards the contact directly to the \
      URL of the online survey. Alternatively, {experimentUrl} can be used, \
