@@ -103,7 +103,6 @@ let create_operator req =
     Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/operator" redirect_path)
     @@
-    let open CCFun in
     let tags = Pool_context.Logger.Tags.req req in
     let* tenant_db =
       Pool_tenant.(find_full tenant_id >|+ Write.database_label)
@@ -123,8 +122,10 @@ let create_operator req =
       >>= handle ~roles:[ `Operator, None ] ~tags
       |> Lwt_result.lift
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) %> Lwt_result.ok
+    let handle events =
+      events
+      |> Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db)
+      |> Lwt_result.ok
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions

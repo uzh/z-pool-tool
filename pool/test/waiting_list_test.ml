@@ -116,8 +116,9 @@ module PendingWaitingLists = struct
       Experiment.find_pending_waitinglists_by_contact
         Test_utils.Data.database_label
         contact
-      ||> CCList.find_opt (Experiment.Public.equal experiment)
-          %> CCOption.is_some
+      |> Lwt.map
+           (CCList.find_opt (Experiment.Public.equal experiment)
+            %> CCOption.is_some)
     in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
@@ -141,9 +142,10 @@ module PendingWaitingLists = struct
       find_pending_waitinglists_by_contact
         Test_utils.Data.database_label
         contact
-      ||> CCList.find_opt (fun public ->
-            Id.equal (Public.id public) experiment_id)
-          %> CCOption.is_none
+      |> Lwt.map
+           (CCList.find_opt (fun public ->
+              Id.equal (Public.id public) experiment_id)
+            %> CCOption.is_none)
     in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
@@ -168,8 +170,9 @@ module PendingWaitingLists = struct
       Experiment.find_pending_waitinglists_by_contact
         Test_utils.Data.database_label
         contact
-      ||> CCList.find_opt (Experiment.Public.equal experiment)
-          %> CCOption.is_some
+      |> Lwt.map
+           (CCList.find_opt (Experiment.Public.equal experiment)
+            %> CCOption.is_some)
     in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
