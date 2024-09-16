@@ -421,7 +421,7 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
      werden."
-  | ExperumentSurveyRedirectUrl ->
+  | ExperimentSurveyRedirectUrl ->
     "<strong>Nur für Online-Umfragen verwenden.</strong> Diese URL erstellt \
      eine Anmeldung zum Experiment und leitet den Kontakt direkt auf die URL \
      der Onlineumfrage weiter. Alternativ kann {experimentUrl} verwendet \
@@ -432,7 +432,8 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
      Onlineumfrage. Wird die URL der Umfrage in der Einladung verschickt, \
      können eingeladene Kontakte diese starten, ohne dass eine Anmeldung \
      erstellt wird. Sie können im Pool nicht einsehen, wer an der Umfrage \
-     teilgenommen hat."
+     teilgenommen hat.<br/>Dynamische URL Parameter, wie die \
+     <code>callbackUrl</code>, werden nicht mit effektiven Werten ersetzt."
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
