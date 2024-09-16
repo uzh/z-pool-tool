@@ -153,12 +153,12 @@ let canceled () =
       ([ assignment ], session)
   in
   let expected =
+    let updated =
+      { assignment with canceled_at = Some (CanceledAt.create_now ()) }
+    in
     Ok
-      [ Canceled assignment |> Pool_event.assignment
-      ; create_changelog
-          ~before:assignment
-          ~after:
-            { assignment with canceled_at = Some (CanceledAt.create_now ()) }
+      [ Canceled updated |> Pool_event.assignment
+      ; create_changelog ~before:assignment ~after:updated
       ; update_assignment_count_event ~step:(-1) assignment.contact
       ; Email.sent notification_email |> Pool_event.email
       ]
@@ -994,6 +994,13 @@ let cancel_assignment_with_follow_ups _ () =
       CCOption.is_none canceled_at)
     ||> CCList.is_empty
   in
-  let () = Alcotest.(check bool "succeeds" true res) in
+  let () =
+    Alcotest.(
+      check
+        bool
+        "expect both main and follow up assignment to be canceled"
+        true
+        res)
+  in
   Lwt.return_unit
 ;;

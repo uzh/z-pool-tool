@@ -167,21 +167,20 @@ end = struct
     let cancel_events =
       CCList.fold_left
         (fun acc assignment ->
+          let updated =
+            { assignment with canceled_at = Some (CanceledAt.create_now ()) }
+          in
           let changelog =
             let open VersionHistory in
             create
               ~entity_uuid:(Id.to_common assignment.id)
               ~user_uuid:(Admin.id admin |> Admin.Id.to_common)
               ~before:(assignment |> to_record)
-              ~after:
-                ({ assignment with
-                   canceled_at = Some (CanceledAt.create_now ())
-                 }
-                 |> to_record)
+              ~after:(updated |> to_record)
               ()
             |> Common.changelog_event
           in
-          acc @ [ Canceled assignment |> Pool_event.assignment ] @ changelog)
+          acc @ [ Canceled updated |> Pool_event.assignment ] @ changelog)
         []
         assignments
     in

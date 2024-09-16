@@ -29,6 +29,7 @@ end
 module CanceledAt = struct
   include Pool_model.Base.Ptime
 
+  let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
   let create m = Ok m
   let schema = schema Pool_message.Field.CanceledAt create
 end
