@@ -150,7 +150,7 @@ end = struct
   let index_effects
     (validation_set : ?target_uuid:Uuid.Target.t -> unit -> ValidationSet.t)
     =
-    Middleware.Guardian.validate_generic_result
+    Middleware.Guardian.validate_generic
     @@ fun req ->
     req
     |> HttpUtils.find_id Uuid.Target.of_string Field.Experiment

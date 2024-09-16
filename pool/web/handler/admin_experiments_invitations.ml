@@ -255,7 +255,7 @@ end = struct
   let combined_effects validation_set =
     let open CCResult.Infix in
     let find = HttpUtils.find_id in
-    Guardian.validate_generic_result
+    Guardian.validate_generic
     @@ fun req ->
     let* experiment_id = find Experiment.Id.validate Field.Experiment req in
     let* invitation_id = find Pool_common.Id.validate Field.Invitation req in

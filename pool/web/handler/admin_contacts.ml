@@ -528,7 +528,7 @@ end = struct
           |> CCList.map one_of_tuple)
       |> or_
       |> Lwt.return_ok)
-    |> Guardian.validate_generic_lwt_result
+    |> Guardian.validate_generic_lwt
   ;;
 
   let read =

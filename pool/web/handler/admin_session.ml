@@ -1353,7 +1353,7 @@ end = struct
   ;;
 
   let combined_effects validation_set =
-    Guardian.validate_generic_result
+    Guardian.validate_generic
     @@ fun req ->
     let* experiment_id = find_id Experiment.Id.validate Field.Experiment req in
     let* session_id = find_id Session.Id.validate Field.Session req in
@@ -1361,7 +1361,7 @@ end = struct
   ;;
 
   let combined_with_location_effects validation_set =
-    Guardian.validate_generic_result
+    Guardian.validate_generic
     @@ fun req ->
     let* location_id = find_id Pool_location.Id.validate Field.Location req in
     let* session_id = find_id Session.Id.validate Field.Session req in

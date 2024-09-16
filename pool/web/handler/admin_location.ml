@@ -335,7 +335,7 @@ end = struct
   let combined_effects validation_set =
     let open CCResult.Infix in
     let find = HttpUtils.find_id in
-    Guardian.validate_generic_result
+    Guardian.validate_generic
     @@ fun req ->
     let* location_id = find Pool_location.Id.validate Field.Location req in
     let* file_id = find Pool_location.Mapping.Id.validate Field.File req in

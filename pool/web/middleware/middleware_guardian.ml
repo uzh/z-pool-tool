@@ -126,11 +126,11 @@ let validate_admin_entity ?any_id effects =
   |> validate_admin_entity_base
 ;;
 
-let validate_generic_result ?any_id =
+let validate_generic ?any_id =
   validate_access_request_dependent ?any_id %> validate_admin_entity_base
 ;;
 
-let validate_generic_lwt_result ?any_id =
+let validate_generic_lwt ?any_id =
   validate_access_request_dependent_lwt ?any_id %> validate_admin_entity_base
 ;;
 
@@ -142,7 +142,7 @@ let id_effects encode field make_set =
     | _ -> Error Error.(NotFound field)
   in
   (fun req -> find_router_param encode field req >|= make_set)
-  |> validate_generic_result
+  |> validate_generic
 ;;
 
 let denied =
