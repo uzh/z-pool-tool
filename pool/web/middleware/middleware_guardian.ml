@@ -126,12 +126,6 @@ let validate_admin_entity ?any_id effects =
   |> validate_admin_entity_base
 ;;
 
-let validate_generic ?any_id generic_fcn =
-  generic_fcn %> CCResult.return
-  |> validate_access_request_dependent ?any_id
-  |> validate_admin_entity_base
-;;
-
 let validate_generic_result ?any_id =
   validate_access_request_dependent ?any_id %> validate_admin_entity_base
 ;;

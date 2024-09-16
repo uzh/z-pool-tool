@@ -147,25 +147,23 @@ end = struct
     Middleware.Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  (* TODO: Make sure they don't throw exceptions *)
-  let index_assistants =
-    Middleware.Guardian.validate_generic (fun req ->
-      let target_uuid =
-        HttpUtils.find_id Uuid.Target.of_string Field.Experiment req
-      in
-      Access.Role.Assignment.Assistant.read ?target_uuid ())
+  let index_effects
+    (validation_set : ?target_uuid:Uuid.Target.t -> unit -> ValidationSet.t)
+    =
+    Middleware.Guardian.validate_generic_result
+    @@ fun req ->
+    req
+    |> HttpUtils.find_id Uuid.Target.of_string Field.Experiment
+    |> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
+    |> CCResult.map (fun target_uuid -> validation_set ~target_uuid ())
   ;;
 
+  let index_assistants = index_effects Access.Role.Assignment.Assistant.read
   let assign_assistant = experiment_effects AssignAssistant.effects
   let unassign_assistant = experiment_effects UnassignAssistant.effects
 
   let index_experimenter =
-    (fun req ->
-      let target_uuid =
-        HttpUtils.find_id Uuid.Target.of_string Field.Experiment req
-      in
-      Access.Role.Assignment.Experimenter.read ?target_uuid ())
-    |> Middleware.Guardian.validate_generic
+    index_effects Access.Role.Assignment.Experimenter.read
   ;;
 
   let assign_experimenter = experiment_effects AssignExperimenter.effects
