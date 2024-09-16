@@ -27,6 +27,13 @@ let select_from_experiments_sql ?(distinct = false) where_fragment =
   Format.asprintf "%s %s" select_from where_fragment
 ;;
 
+let pool_sessions_inner_join =
+  {sql|
+    INNER JOIN pool_sessions 
+    ON pool_sessions.experiment_uuid = pool_experiments.uuid
+  |sql}
+;;
+
 let pool_invitations_left_join =
   {sql|
       LEFT OUTER JOIN pool_invitations
@@ -40,10 +47,9 @@ let condition_registration_not_disabled =
 ;;
 
 let condition_allow_uninvited_signup =
-  Format.asprintf
-    {sql|
-      pool_experiments.allow_uninvited_signup = 1
-    |sql}
+  {sql|
+    pool_experiments.allow_uninvited_signup = 1
+  |sql}
 ;;
 
 let assignments_base_condition ~require_participated =
@@ -82,36 +88,31 @@ let find_upcoming_to_register_request experiment_type () =
   let open Caqti_request.Infix in
   let onsite_session_exists =
     {sql|
-      AND EXISTS (SELECT
-        1
-      FROM
-        pool_sessions
-      WHERE
-        pool_sessions.experiment_uuid = pool_experiments.uuid
-      AND pool_sessions.start > NOW())
+      (pool_sessions.start > NOW()
+        AND
+      pool_sessions.canceled_at IS NULL)
     |sql}
   in
   let timewindow_exists =
     {sql|
-      AND EXISTS (
-        SELECT
-          1
-        FROM
-          pool_sessions
-        WHERE
-          pool_sessions.experiment_uuid = pool_experiments.uuid
-          AND pool_sessions.start < NOW()
-          AND DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW())
-      |sql}
+      (DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW()
+        AND 
+      pool_sessions.canceled_at IS NULL)
+    |sql}
   in
-  let experiment_type, session_condition, assignment_condition =
+  let experiment_type, session_condition, assignment_condition, order_by =
     let type_condition =
       Format.asprintf
         {sql| pool_experiments.assignment_without_session = %s |sql}
     in
     match experiment_type with
-    | `Online -> type_condition "1", timewindow_exists, condition_participated
-    | `OnSite -> type_condition "0", onsite_session_exists, condition_assigned
+    | `Online ->
+      ( type_condition "1"
+      , timewindow_exists
+      , condition_participated
+      , "ORDER BY pool_sessions.start" )
+    | `OnSite ->
+      type_condition "0", onsite_session_exists, condition_assigned, ""
   in
   let not_on_waitinglist =
     {sql|
@@ -128,8 +129,11 @@ let find_upcoming_to_register_request experiment_type () =
       )
       |sql}
   in
+  (* TODO: make those subqueries joins *)
   Format.asprintf
-    "%s WHERE %s AND %s AND %s AND %s AND (%s OR %s) %s"
+    "%s %s WHERE %s AND %s AND %s AND %s AND (%s OR %s) AND %s GROUP BY \
+     pool_experiments.uuid %s"
+    pool_sessions_inner_join
     pool_invitations_left_join
     experiment_type
     ("NOT " ^ assignment_condition)
@@ -138,6 +142,7 @@ let find_upcoming_to_register_request experiment_type () =
     condition_allow_uninvited_signup
     condition_is_invited
     session_condition
+    order_by
   |> Repo.find_request_sql
   |> Contact.Repo.Id.t ->* RepoEntity.t
 ;;
