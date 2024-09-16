@@ -345,7 +345,7 @@ let start_matcher () =
 
 let start () =
   Sihl.Configuration.require schema;
-  if read_bool Run then start_matcher () else start_matcher ()
+  if read_bool Run then start_matcher () else Lwt.return_unit
 ;;
 
 let stop () = Lwt.return_unit
