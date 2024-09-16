@@ -319,38 +319,22 @@ end = struct
     Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  (* TODO: Make sure combined effects do not throw exception *)
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
-    let mailing_id = find_id Mailing.Id.of_string Field.Mailing req in
-    fcn experiment_id mailing_id
+  let combined_effects fcn =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic_result
+    @@ fun req ->
+    let* experiment_id = find Experiment.Id.validate Field.Experiment req in
+    let* mailing_id = find Mailing.Id.validate Field.Mailing req in
+    fcn experiment_id mailing_id |> CCResult.return
   ;;
 
   let index = experiment_effects Mailing.Guard.Access.index
   let create = experiment_effects MailingCommand.Create.effects
-
-  let read =
-    Mailing.Guard.Access.read |> combined_effects |> Guardian.validate_generic
-  ;;
-
-  let update =
-    MailingCommand.Update.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    MailingCommand.Delete.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
+  let read = combined_effects Mailing.Guard.Access.read
+  let update = combined_effects MailingCommand.Update.effects
+  let delete = combined_effects MailingCommand.Delete.effects
   let add_condition = experiment_effects Experiment.Guard.Access.update
-
-  let stop =
-    MailingCommand.Stop.effects |> combined_effects |> Guardian.validate_generic
-  ;;
-
+  let stop = combined_effects MailingCommand.Stop.effects
   let search_info = experiment_effects MailingCommand.Overlaps.effects
 end

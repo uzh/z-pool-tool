@@ -147,6 +147,7 @@ end = struct
     Middleware.Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
+  (* TODO: Make sure they don't throw exceptions *)
   let index_assistants =
     Middleware.Guardian.validate_generic (fun req ->
       let target_uuid =

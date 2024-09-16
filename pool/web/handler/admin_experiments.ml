@@ -575,26 +575,19 @@ end = struct
   module Filter = struct
     include Helpers.Access
 
-    let combined_effects effects req =
-      let open HttpUtils in
-      let filter_id = find_id FilterEntity.Id.of_string Field.Filter req in
-      let id = find_id Experiment.Id.of_string Field.Experiment req in
-      effects id filter_id
+    let combined_effects validation_set =
+      let open CCResult.Infix in
+      let find = HttpUtils.find_id in
+      Guardian.validate_generic_result
+      @@ fun req ->
+      let* filter_id = find FilterEntity.Id.validate Field.Filter req in
+      let* id = find Experiment.Id.validate Field.Experiment req in
+      validation_set id filter_id |> CCResult.return
     ;;
 
     let create = experiment_effects ExperimentCommand.CreateFilter.effects
-
-    let update =
-      ExperimentCommand.UpdateFilter.effects
-      |> combined_effects
-      |> Guardian.validate_generic
-    ;;
-
-    let delete =
-      ExperimentCommand.DeleteFilter.effects
-      |> combined_effects
-      |> Guardian.validate_generic
-    ;;
+    let update = combined_effects ExperimentCommand.UpdateFilter.effects
+    let delete = combined_effects ExperimentCommand.DeleteFilter.effects
   end
 
   let search = index

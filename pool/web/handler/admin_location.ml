@@ -332,11 +332,14 @@ end = struct
     Guardian.id_effects Pool_location.Id.validate Field.Location
   ;;
 
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let location_id = find_id Pool_location.Id.of_string Field.Location req in
-    let file_id = find_id Pool_location.Mapping.Id.of_string Field.File req in
-    fcn location_id file_id
+  let combined_effects validation_set =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic_result
+    @@ fun req ->
+    let* location_id = find Pool_location.Id.validate Field.Location req in
+    let* file_id = find Pool_location.Mapping.Id.validate Field.File req in
+    validation_set location_id file_id |> CCResult.return
   ;;
 
   let index =
@@ -349,12 +352,6 @@ end = struct
   let read = location_effects Pool_location.Guard.Access.read
   let read_file = file_effects Pool_location.Guard.Access.File.read
   let update = location_effects LocationCommand.Update.effects
-
-  let delete_file =
-    LocationCommand.DeleteFile.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
+  let delete_file = combined_effects LocationCommand.DeleteFile.effects
   let search = index
 end

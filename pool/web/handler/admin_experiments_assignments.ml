@@ -545,34 +545,18 @@ end = struct
   module AssignmentCommand = Cqrs_command.Assignment_command
   module Guardian = Middleware.Guardian
 
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
-    let assignment_id = find_id Assignment.Id.of_string Field.Assignment req in
-    fcn experiment_id assignment_id
+  let combined_effects validation_set =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic_result
+    @@ fun req ->
+    let* experiment_id = find Experiment.Id.validate Field.Experiment req in
+    let* assignment_id = find Assignment.Id.validate Field.Assignment req in
+    validation_set experiment_id assignment_id |> CCResult.return
   ;;
 
-  let delete =
-    Assignment.Guard.Access.delete
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let cancel =
-    AssignmentCommand.Cancel.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let mark_as_deleted =
-    AssignmentCommand.MarkAsDeleted.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let update =
-    Assignment.Guard.Access.update
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
+  let delete = combined_effects Assignment.Guard.Access.delete
+  let cancel = combined_effects AssignmentCommand.Cancel.effects
+  let mark_as_deleted = combined_effects AssignmentCommand.MarkAsDeleted.effects
+  let update = combined_effects Assignment.Guard.Access.update
 end
