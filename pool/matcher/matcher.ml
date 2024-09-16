@@ -80,7 +80,7 @@ let experiment_has_bookable_spots
   let open Session in
   match CCOption.is_some online_experiment with
   | false ->
-    find_all_for_experiment database_label id
+    find_upcoming_for_experiment database_label id
     ||> CCList.filter (fun session ->
       CCOption.is_none session.follow_up_to && not (is_fully_booked session))
     ||> CCList.is_empty

@@ -281,6 +281,11 @@ val find_all_for_experiment
   -> Experiment.Id.t
   -> t list Lwt.t
 
+val find_upcoming_for_experiment
+  :  Database.Label.t
+  -> Experiment.Id.t
+  -> t list Lwt.t
+
 val find_all_to_assign_from_waitinglist
   :  Database.Label.t
   -> Experiment.Id.t

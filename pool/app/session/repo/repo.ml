@@ -248,11 +248,13 @@ module Sql = struct
     >|> find_multiple pool
   ;;
 
-  let find_all_for_experiment_request =
+  let find_all_for_experiment_request ?(where = "") () =
     let open Caqti_request.Infix in
-    {sql|
-      WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
+    Format.asprintf
+      {sql|
+        WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) %s
+      |sql}
+      where
     |> find_request_sql
     |> order_by_start
     |> Caqti_type.string ->* RepoEntity.t
@@ -261,7 +263,15 @@ module Sql = struct
   let find_all_for_experiment pool id =
     Database.collect
       pool
-      find_all_for_experiment_request
+      (find_all_for_experiment_request ())
+      (Experiment.Id.value id)
+  ;;
+
+  let find_upcoming_for_experiment pool id =
+    let where = {sql| AND pool_sessions.start > NOW() |sql} in
+    Database.collect
+      pool
+      (find_all_for_experiment_request ~where ())
       (Experiment.Id.value id)
   ;;
 
