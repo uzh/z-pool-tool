@@ -214,7 +214,7 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
   let combined_effects fcn req =
@@ -224,17 +224,8 @@ end = struct
     fcn experiment_id id
   ;;
 
-  let index =
-    Waiting_list.Guard.Access.index
-    |> experiment_effects
-    |> Guardian.validate_generic ~any_id:true
-  ;;
-
-  let create =
-    WaitingListCommand.Create.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let index = experiment_effects Waiting_list.Guard.Access.index
+  let create = experiment_effects WaitingListCommand.Create.effects
 
   let read =
     Waiting_list.Guard.Access.read

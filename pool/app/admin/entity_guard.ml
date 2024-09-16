@@ -4,11 +4,6 @@ open Guard
 
 let target_of = Uuid.target_of Entity.Id.value
 
-let target_of_res string =
-  try Ok (Uuid.target_of Entity.Id.value string) with
-  | _ -> Error Pool_message.(Error.Invalid Field.Id)
-;;
-
 module Actor = struct
   type t = Entity.t [@@deriving eq, show]
 
@@ -40,18 +35,9 @@ end
 module Access = struct
   open ValidationSet
   open Permission
-  open CCResult.Infix
 
   let index = one_of_tuple (Read, `Admin, None)
   let create = one_of_tuple (Create, `Admin, None)
   let read id = one_of_tuple (Read, `Admin, Some (target_of id))
   let update id = one_of_tuple (Update, `Admin, Some (target_of id))
-
-  let read_res id =
-    target_of_res id >|= fun id -> one_of_tuple (Read, `Admin, Some id)
-  ;;
-
-  let update_res id =
-    target_of_res id >|= fun id -> one_of_tuple (Update, `Admin, Some id)
-  ;;
 end

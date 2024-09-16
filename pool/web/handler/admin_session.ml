@@ -1346,7 +1346,7 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
   let combined_effects fcn req =
@@ -1363,16 +1363,8 @@ end = struct
     fcn location_id session_id
   ;;
 
-  let index =
-    let read id = Session.Guard.Access.index id in
-    read |> experiment_effects |> Guardian.validate_generic ~any_id:true
-  ;;
-
-  let create =
-    SessionCommand.Create.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let index = experiment_effects Session.Guard.Access.index
+  let create = experiment_effects SessionCommand.Create.effects
 
   let read =
     let read id = Session.Guard.Access.read id in

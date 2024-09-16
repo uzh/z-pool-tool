@@ -316,9 +316,10 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
+  (* TODO: Make sure combined effects do not throw exception *)
   let combined_effects fcn req =
     let open HttpUtils in
     let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
@@ -326,17 +327,8 @@ end = struct
     fcn experiment_id mailing_id
   ;;
 
-  let index =
-    Mailing.Guard.Access.index
-    |> experiment_effects
-    |> Guardian.validate_generic ~any_id:true
-  ;;
-
-  let create =
-    MailingCommand.Create.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let index = experiment_effects Mailing.Guard.Access.index
+  let create = experiment_effects MailingCommand.Create.effects
 
   let read =
     Mailing.Guard.Access.read |> combined_effects |> Guardian.validate_generic
@@ -354,19 +346,11 @@ end = struct
     |> Guardian.validate_generic
   ;;
 
-  let add_condition =
-    Experiment.Guard.Access.update
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let add_condition = experiment_effects Experiment.Guard.Access.update
 
   let stop =
     MailingCommand.Stop.effects |> combined_effects |> Guardian.validate_generic
   ;;
 
-  let search_info =
-    MailingCommand.Overlaps.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let search_info = experiment_effects MailingCommand.Overlaps.effects
 end

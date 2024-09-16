@@ -261,14 +261,12 @@ module Access : module type of Helpers.Access = struct
   module Guardian = Middleware.Guardian
 
   let template_effects =
-    Guardian.id_effects Message_template.Id.of_string Field.MessageTemplate
+    Guardian.id_effects Message_template.Id.validate Field.MessageTemplate
   ;;
 
   let index =
     Message_template.Guard.Access.index |> Guardian.validate_admin_entity
   ;;
 
-  let update =
-    Command.Update.effects |> template_effects |> Guardian.validate_generic
-  ;;
+  let update = template_effects Command.Update.effects
 end

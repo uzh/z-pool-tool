@@ -188,7 +188,7 @@ end = struct
   module CustomFieldCommand = Cqrs_command.Custom_field_option_command
 
   let custom_field_effects =
-    Middleware.Guardian.id_effects Custom_field.Id.of_string Field.CustomField
+    Middleware.Guardian.id_effects Custom_field.Id.validate Field.CustomField
   ;;
 
   let create =
@@ -196,21 +196,7 @@ end = struct
     |> Middleware.Guardian.validate_admin_entity
   ;;
 
-  let update =
-    CustomFieldCommand.Update.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let publish =
-    CustomFieldCommand.Publish.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let delete =
-    CustomFieldCommand.Destroy.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
+  let update = custom_field_effects CustomFieldCommand.Update.effects
+  let publish = custom_field_effects CustomFieldCommand.Publish.effects
+  let delete = custom_field_effects CustomFieldCommand.Destroy.effects
 end

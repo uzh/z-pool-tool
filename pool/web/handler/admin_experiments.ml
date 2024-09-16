@@ -557,7 +557,7 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
   let index =
@@ -568,22 +568,9 @@ end = struct
     ExperimentCommand.Create.effects |> Guardian.validate_admin_entity
   ;;
 
-  let read =
-    let read id = Experiment.Guard.Access.read id in
-    read |> experiment_effects |> Guardian.validate_generic
-  ;;
-
-  let update =
-    ExperimentCommand.Update.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    ExperimentCommand.Delete.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let read = experiment_effects Experiment.Guard.Access.read
+  let update = experiment_effects ExperimentCommand.Update.effects
+  let delete = experiment_effects ExperimentCommand.Delete.effects
 
   module Filter = struct
     include Helpers.Access
@@ -595,11 +582,7 @@ end = struct
       effects id filter_id
     ;;
 
-    let create =
-      ExperimentCommand.CreateFilter.effects
-      |> experiment_effects
-      |> Guardian.validate_generic
-    ;;
+    let create = experiment_effects ExperimentCommand.CreateFilter.effects
 
     let update =
       ExperimentCommand.UpdateFilter.effects
@@ -617,11 +600,9 @@ end = struct
   let search = index
 
   let message_history =
-    (fun id ->
+    experiment_effects (fun id ->
       Pool_queue.Guard.Access.index
         ~id:(Guard.Uuid.target_of Experiment.Id.value id)
         ())
-    |> experiment_effects
-    |> Guardian.validate_generic
   ;;
 end
