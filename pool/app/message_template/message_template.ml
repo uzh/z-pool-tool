@@ -136,7 +136,7 @@ let public_experiment_params layout experiment =
     |> Public.online_experiment
     |> function
     | Some online ->
-      [ "experumentSurveyRedirectUrl", experiment_url ^ "/start"
+      [ "experimentSurveyRedirectUrl", experiment_url ^ "/start"
       ; "experimentSurveyUrl", SurveyUrl.value online.survey_url
       ]
     | None -> []

@@ -212,7 +212,7 @@ type hint =
   | ExperimentStatisticsRegistrationPossible
   | ExperimentStatisticsSendingInvitations
   | ExperimentWaitingList
-  | ExperumentSurveyRedirectUrl
+  | ExperimentSurveyRedirectUrl
   | ExperimentSurveyUrl
   | ExternalDataRequired
   | FileUploadAcceptMime of string list
