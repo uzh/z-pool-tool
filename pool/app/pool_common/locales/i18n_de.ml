@@ -163,6 +163,8 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | TermsAndConditionsUpdated ->
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \
      Bitte lesen und akzeptieren Sie diese, um fortzufahren."
+  | TenantMaintenanceText -> "Bitte versuchen Sie es in Kürze erneut."
+  | TenantMaintenanceTitle -> "Wartungsarbeiten"
   | TextTemplates -> "Textelemente"
   | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
@@ -207,6 +209,7 @@ let nav_link_to_string = function
   | PrivacyPolicy -> "Datenschutzerklärung"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
+  | QueueHistory -> "ausgeführte Hintergrundjobs"
   | RolePermissions -> "Rollenberechtigungen"
   | Schedules -> "Prozesse"
   | SentInvitations -> "Versendete Einladungen"
@@ -402,12 +405,19 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
      werden."
-  | ExperumentSurveyRedirectUrl ->
+  | ExperimentSurveyRedirectUrl ->
     "<strong>Nur für Online-Umfragen verwenden.</strong> Diese URL erstellt \
      eine Anmeldung zum Experiment und leitet den Kontakt direkt auf die URL \
      der Onlineumfrage weiter. Alternativ kann {experimentUrl} verwendet \
      werden, mit dem Unterschied, dass der Kontakt die Teilnahme und \
      Weiterleitung zusätzlich bestätigen muss."
+  | ExperimentSurveyUrl ->
+    "<strong>Nur für Online-Umfragen verwenden.</strong> Die externe URL der \
+     Onlineumfrage. Wird die URL der Umfrage in der Einladung verschickt, \
+     können eingeladene Kontakte diese starten, ohne dass eine Anmeldung \
+     erstellt wird. Sie können im Pool nicht einsehen, wer an der Umfrage \
+     teilgenommen hat.<br/>Dynamische URL Parameter, wie die \
+     <code>callbackUrl</code>, werden nicht mit effektiven Werten ersetzt."
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."

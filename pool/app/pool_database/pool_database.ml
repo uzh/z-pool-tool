@@ -1,5 +1,6 @@
 module Root = Root
 module Tenant = Tenant
+open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "database"
 
@@ -14,13 +15,17 @@ let handle_event _ : event -> unit Lwt.t = function
   | Migrated database ->
     let open Database in
     let label = database |> label in
-    Logs.info (fun m ->
-      m ~tags:(Logger.Tags.create label) "Migrating: %a" Label.pp label);
+    let tags = Logger.Tags.create label in
+    Logs.info (fun m -> m ~tags "Migrating: %a" Label.pp label);
     let () = add_pool database in
     (match label |> is_root with
      | true -> root, root_steps ()
      | false -> label, tenant_steps ())
     |> CCFun.uncurry Database.Migration.execute
+    >|- Pool_common.Utils.with_log_error ~src ~tags
+    ||> (function
+     | Ok () -> ()
+     | Error err -> Pool_common.Utils.failwith err)
 ;;
 
 let start () =

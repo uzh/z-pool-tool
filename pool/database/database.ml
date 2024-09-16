@@ -63,11 +63,14 @@ module Tenant = struct
     Repo.find_all_by_status ?status root |> Lwt.map (CCList.map Entity.label)
   ;;
 
+  let database_status_by_label = Repo.database_status_by_label
+
   let find_label_by_url ?allowed_status =
     Repo.find_label_by_url ?allowed_status root
   ;;
 
   let update_status = Repo.update_status root
+  let set_migration_pending = Repo.set_migration_pending
 
   let start () =
     let%lwt (_ : Label.t list) = setup () in

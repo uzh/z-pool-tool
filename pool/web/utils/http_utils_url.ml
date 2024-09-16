@@ -64,6 +64,23 @@ module Admin = struct
     |> append_opt (map Organisational_unit.Id.value id)
     |> append_opt suffix
   ;;
+
+  module Settings = struct
+    let queue_list_path ?suffix table =
+      let table =
+        match table with
+        | `Current -> ""
+        | `History -> "/archive"
+      in
+      Format.asprintf "/admin/settings/queue%s" table |> append_opt suffix
+    ;;
+
+    let queue_path ?suffix ?id () =
+      Format.asprintf "/admin/settings/queue"
+      |> append_opt Pool_queue.(map Id.value id)
+      |> append_opt suffix
+    ;;
+  end
 end
 
 module Contact = struct

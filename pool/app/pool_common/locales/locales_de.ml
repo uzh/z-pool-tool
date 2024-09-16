@@ -565,6 +565,8 @@ let rec error_to_string =
       ""
       (field_to_string field)
       "wurde in der Zwischenzeit bearbeitet!"
+  | MigrationFailed exn ->
+    Format.asprintf "Migration ist fehlgeschlagen: %s" exn
   | Missing field ->
     field_message
       "Das Feld"

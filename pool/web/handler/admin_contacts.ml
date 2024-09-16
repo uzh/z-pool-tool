@@ -455,6 +455,7 @@ let enroll_contact_post req =
 ;;
 
 let message_history req =
+  let queue_table = `History in
   let contact_id = contact_id req in
   let error_path =
     Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id)
@@ -469,14 +470,20 @@ let message_history req =
   let* contact = Contact.find database_label contact_id in
   let%lwt messages =
     Pool_queue.find_instances_by_entity
+      queue_table
       ~query
       database_label
       (Contact.Id.to_common contact_id)
   in
   let open Page.Admin in
   (if HttpUtils.Htmx.is_hx_request req
-   then Queue.list context (Contact.message_history_url contact) messages
-   else Contact.message_history context contact messages)
+   then
+     Queue.list
+       context
+       queue_table
+       (Contact.message_history_url contact)
+       messages
+   else Contact.message_history context queue_table contact messages)
   |> Lwt_result.return
 ;;
 
@@ -491,6 +498,8 @@ module Access : sig
 end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
+
+  let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
 
   let index =
     Contact.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
@@ -538,6 +547,11 @@ end = struct
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
 
   let message_history =
-    Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
+    (fun id ->
+      Pool_queue.Guard.Access.index
+        ~id:(Guard.Uuid.target_of Contact.Id.value id)
+        ())
+    |> contact_effects
+    |> Guardian.validate_generic
   ;;
 end

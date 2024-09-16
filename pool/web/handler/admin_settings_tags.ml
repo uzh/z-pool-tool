@@ -126,7 +126,11 @@ end = struct
   ;;
 
   let tag_effects = Guardian.id_effects Tags.Id.of_string Field.Tag
-  let index = Tags.Guard.Access.index |> Guardian.validate_admin_entity
+
+  let index =
+    Tags.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
+  ;;
+
   let create = Command.Create.effects |> Guardian.validate_admin_entity
   let read = Tags.Guard.Access.read |> tag_effects |> Guardian.validate_generic
 

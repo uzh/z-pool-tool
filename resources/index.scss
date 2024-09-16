@@ -11,6 +11,10 @@ h1,
     word-wrap: break-word;
 }
 
+code {
+    font-size: inherit;
+}
+
 @include mobile {
     *+h1, h1+*, *+h2, *+.heading-1, .heading-1+*, *+.heading-2{
         margin-top: $space-md;
@@ -563,6 +567,7 @@ table.simple {
     }
 }
 
+// WORKAROUND: Could be added to the framework
 // Width base classes
 $i: 1;
 $n: 12;
@@ -583,4 +588,8 @@ $n: 12;
 
 [class*='grid-col-'].stretch-only-child  > *:only-child{
     grid-column: 1 / -1;
+}
+
+.break-grid {
+    grid-column: 1;
 }

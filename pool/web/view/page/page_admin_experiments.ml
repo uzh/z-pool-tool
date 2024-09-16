@@ -1189,10 +1189,14 @@ let message_history_url =
   build_experiment_path ~suffix:"messages" %> Uri.of_string
 ;;
 
-let message_history context experiment messages =
+let message_history context queue_table experiment messages =
   let open Pool_common in
   let html =
-    Page_admin_queue.list context (message_history_url experiment) messages
+    Page_admin_queue.list
+      context
+      queue_table
+      (message_history_url experiment)
+      messages
   in
   Layout.Experiment.(
     create

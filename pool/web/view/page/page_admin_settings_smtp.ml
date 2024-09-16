@@ -90,13 +90,74 @@ let index
     ]
 ;;
 
-let show
-  Pool_context.{ language; csrf; _ }
-  location
-  flash_fetcher
-  ({ SmtpAuth.server; port; username; mechanism; protocol; default; _ } as
-   smtp_auth)
-  =
+let smtp_form_inputs language flash_fetcher (smtp_auth : SmtpAuth.t option) =
+  let open SmtpAuth in
+  let input_element_root
+    ?(break = false)
+    ?(required = false)
+    ?(field_type = `Text)
+    field
+    decode_fcn
+    =
+    input_element
+      ~classnames:(if break then [ "break-grid" ] else [])
+      ~required
+      ~value:(smtp_auth |> CCOption.map_or ~default:"" decode_fcn)
+      ~flash_fetcher
+      language
+      field_type
+      field
+  in
+  let password =
+    match smtp_auth with
+    | Some _ -> txt ""
+    | None ->
+      input_element_root
+        ~field_type:`Password
+        Field.SmtpPassword
+        (CCFun.const "")
+  in
+  div
+    ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
+    [ input_element_root ~required:true Field.SmtpLabel (fun smtp ->
+        smtp.label |> Label.value)
+    ; input_element_root ~required:true Field.SmtpServer (fun smtp ->
+        smtp.server |> Server.value)
+    ; input_element_root
+        ~required:true
+        ~field_type:`Number
+        Field.SmtpPort
+        (fun smtp -> smtp.port |> Port.value |> CCInt.to_string)
+    ; selector
+        ~required:true
+        language
+        Field.SmtpMechanism
+        Mechanism.show
+        Mechanism.all
+        (smtp_auth |> CCOption.map (fun smtp -> smtp.mechanism))
+        ()
+    ; selector
+        ~required:true
+        language
+        Field.SmtpProtocol
+        Protocol.show
+        Protocol.all
+        (smtp_auth |> CCOption.map (fun smtp -> smtp.protocol))
+        ()
+    ; input_element_root ~break:true Field.SmtpUsername (fun smtp ->
+        smtp.username |> CCOption.map_or ~default:"" Username.value)
+    ; password
+    ; checkbox_element
+        ~classnames:[ "break-grid" ]
+        ?value:
+          (smtp_auth |> CCOption.map (fun smtp -> smtp.default |> Default.value))
+        ~hints:[ Pool_common.I18n.SmtpSettingsDefaultFlag ]
+        language
+        Field.DefaultSmtpServer
+    ]
+;;
+
+let show Pool_context.{ language; csrf; _ } location flash_fetcher smtp_auth =
   let open SmtpAuth in
   let action_path sub =
     Sihl.Web.externalize_path
@@ -130,59 +191,12 @@ let show
     ; a_user_data "detect-unsaved-changes" ""
     ]
   in
-  let input_element_root
-    ?(required = true)
-    ?(field_type = `Text)
-    field
-    decode_fcn
-    value
-    =
-    input_element
-      ~required
-      ~value:(value |> decode_fcn)
-      ~flash_fetcher
-      language
-      field_type
-      field
-  in
   let smtp_details =
     div
       [ form
           ~a:(action_path "" |> form_attrs)
           [ csrf_element csrf ()
-          ; input_element_root Field.SmtpLabel Label.value (smtp_auth |> label)
-          ; input_element_root Field.SmtpServer Server.value server
-          ; input_element_root
-              ~field_type:`Number
-              Field.SmtpPort
-              (Port.value %> CCInt.to_string)
-              port
-          ; input_element
-              ?value:(CCOption.map Username.value username)
-              language
-              `Text
-              Field.SmtpUsername
-          ; selector
-              ~required:true
-              language
-              Field.SmtpMechanism
-              Mechanism.show
-              Mechanism.all
-              (Some mechanism)
-              ()
-          ; selector
-              ~required:true
-              language
-              Field.SmtpProtocol
-              Protocol.show
-              Protocol.all
-              (Some protocol)
-              ()
-          ; checkbox_element
-              ~value:(Default.value default)
-              ~hints:[ Pool_common.I18n.SmtpSettingsDefaultFlag ]
-              language
-              Field.DefaultSmtpServer
+          ; smtp_form_inputs language flash_fetcher (Some smtp_auth)
           ; submit ()
           ]
       ]
@@ -234,7 +248,7 @@ let show
       ]
   in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Email Server Settings (SMTP)" ]
     ; p
         [ Pool_common.(Utils.hint_to_string language I18n.SmtpSettingsIntro)
@@ -266,8 +280,6 @@ let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
       ]
   in
   let create_form =
-    let open SmtpAuth in
-    let required = true in
     form
       ~a:
         [ a_method `Post
@@ -275,50 +287,24 @@ let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
         ; a_class [ "stack" ]
         ; a_user_data "detect-unsaved-changes" ""
         ]
-      [ csrf_element csrf ()
-      ; input_element ~required ~flash_fetcher language `Text Field.SmtpLabel
-      ; input_element ~required ~flash_fetcher language `Text Field.SmtpServer
-      ; input_element ~required ~flash_fetcher language `Number Field.SmtpPort
-      ; input_element ~flash_fetcher language `Text Field.SmtpUsername
-      ; input_element language `Password Field.SmtpPassword
-      ; selector
-          ~required
-          ~flash_fetcher
-          language
-          Field.SmtpMechanism
-          Mechanism.show
-          Mechanism.all
-          None
-          ()
-      ; selector
-          ~required
-          ~flash_fetcher
-          language
-          Field.SmtpProtocol
-          Protocol.show
-          Protocol.all
-          None
-          ()
-      ; checkbox_element
-          ~flash_fetcher
-          ~hints:[ Pool_common.I18n.SmtpSettingsDefaultFlag ]
-          language
-          Field.DefaultSmtpServer
-      ; h3 [ txt Pool_common.(Utils.text_to_string language I18n.Validation) ]
-      ; p
-          [ txt Pool_common.(Utils.hint_to_string language I18n.SmtpValidation)
-          ]
-      ; input_element
-          ~flash_fetcher
-          ~required:true
-          language
-          `Email
-          Field.EmailAddress
-      ; submit ()
-      ]
+      ([ csrf_element csrf (); smtp_form_inputs language flash_fetcher None ]
+       @ [ h3
+             [ txt Pool_common.(Utils.text_to_string language I18n.Validation) ]
+         ; p
+             [ txt
+                 Pool_common.(Utils.hint_to_string language I18n.SmtpValidation)
+             ]
+         ; input_element
+             ~flash_fetcher
+             ~required:true
+             language
+             `Email
+             Field.EmailAddress
+         ; submit ()
+         ])
   in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Configure Email Server (SMTP)" ]
     ; p
         [ Pool_common.(Utils.hint_to_string language I18n.SmtpSettingsIntro)

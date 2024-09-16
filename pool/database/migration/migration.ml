@@ -132,6 +132,7 @@ let execute_steps database_label state steps =
 ;;
 
 let execute_migration database_label migration =
+  let open Utils.Lwt_result.Infix in
   let tags = Logger.Tags.create database_label in
   let namespace, steps = migration in
   let%lwt () = setup database_label () in
@@ -186,7 +187,7 @@ let execute_migration database_label migration =
   | [] ->
     Logs.info (fun m -> m ~tags "No migrations to execute for '%s'" namespace);
     let%lwt (_ : Migration_repo.Migration.t) = mark_clean state in
-    Lwt.return ()
+    Lwt_result.return ()
   | steps_to_apply ->
     Logs.info (fun m ->
       m
@@ -195,20 +196,26 @@ let execute_migration database_label migration =
         (CCList.length steps_to_apply)
         namespace);
     let%lwt state = mark_dirty state in
-    let%lwt state =
-      Lwt.catch
-        (fun () -> execute_steps database_label state steps_to_apply)
-        (fun exn ->
-          let err = Printexc.to_string exn in
-          Logs.err (fun m ->
-            m ~tags "Error while running migration '%a': %s" pp migration err);
-          raise (Exception err))
-    in
-    let%lwt (_ : Migration_repo.Migration.t) = mark_clean state in
-    Lwt.return ()
+    Lwt.catch
+      (fun () ->
+        execute_steps database_label state steps_to_apply
+        >|> mark_clean
+        ||> CCFun.const (CCResult.return ()))
+      (fun exn ->
+        let err = Printexc.to_string exn in
+        let error_message =
+          Format.asprintf
+            "Error while running migration '%a': %s"
+            pp
+            migration
+            err
+        in
+        Logs.err (fun m -> m ~tags "%s" error_message);
+        Lwt_result.fail (Pool_message.Error.MigrationFailed error_message))
 ;;
 
 let execute database_label migrations =
+  let open Utils.Lwt_result.Infix in
   let tags = Logger.Tags.create database_label in
   let n = CCList.length migrations in
   if n > 0
@@ -218,10 +225,9 @@ let execute database_label migrations =
   else Logs.info (fun m -> m ~tags "No migrations to execute");
   let rec run migrations =
     match migrations with
-    | [] -> Lwt.return ()
+    | [] -> Lwt_result.return ()
     | migration :: migrations ->
-      let%lwt () = execute_migration database_label migration in
-      run migrations
+      execute_migration database_label migration >>= fun () -> run migrations
   in
   run migrations
 ;;
@@ -274,8 +280,8 @@ let migrations_status ?migrations database_label () =
        namespaces_to_check
 ;;
 
-let pending_migrations database_label () =
-  let%lwt unapplied = migrations_status database_label () in
+let pending_migrations ?migrations database_label () =
+  let%lwt unapplied = migrations_status ?migrations database_label () in
   let rec find_pending result = function
     | (namespace, Some n) :: xs ->
       if n > 0

@@ -509,6 +509,7 @@ module Filter = struct
 end
 
 let message_history req =
+  let queue_table = `History in
   let experiment_id = experiment_id req in
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
@@ -523,6 +524,7 @@ let message_history req =
   let* experiment = Experiment.find database_label experiment_id in
   let%lwt messages =
     Pool_queue.find_instances_by_entity
+      queue_table
       ~query
       database_label
       (Experiment.Id.to_common experiment_id)
@@ -532,9 +534,13 @@ let message_history req =
   @@
   if HttpUtils.Htmx.is_hx_request req
   then
-    Queue.list context (Experiments.message_history_url experiment) messages
+    Queue.list
+      context
+      queue_table
+      (Experiments.message_history_url experiment)
+      messages
     |> Lwt.return
-  else Experiments.message_history context experiment messages
+  else Experiments.message_history context queue_table experiment messages
 ;;
 
 module Tags = Admin_experiments_tags
@@ -611,6 +617,11 @@ end = struct
   let search = index
 
   let message_history =
-    Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
+    (fun id ->
+      Pool_queue.Guard.Access.index
+        ~id:(Guard.Uuid.target_of Experiment.Id.value id)
+        ())
+    |> experiment_effects
+    |> Guardian.validate_generic
   ;;
 end

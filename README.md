@@ -12,7 +12,6 @@ locally](#running-locally-with-Esy), you can do that with [esy][esy].
 
 The project executable can be run via command line `make sihl` and shows the information of the executable.
 
-1. Create a `.env` file and set the environment variable `ECON_PACKAGE_REGISTRY_READ_TOKEN`to the value stored in 1Password or in the GitLab CI/CD variables.
 1. Migrate root database with `make sihl migrate.root`
 1. Seed root database `make sihl seed.root`
 1. Migrate tenant database with `make sihl migrate.tenant`

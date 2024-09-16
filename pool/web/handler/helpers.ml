@@ -5,6 +5,7 @@ module PartialUpdate = Helpers_partial_update
 module Guard = Helpers_guard
 module Search = Helpers_search
 module MessageTemplates = Helpers_message_templates
+module QueueJobs = Helpers_queue_jobs
 
 module Access : sig
   val index : Rock.Middleware.t

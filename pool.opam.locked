@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.7.6"
+version: "0.8.0"
 synopsis: "The Z-Pool tool"
 description: """
 
@@ -49,8 +49,8 @@ depends: [
   "conf-mariadb" {= "2"}
   "conf-pkg-config" {= "3"}
   "conformist" {= "0.8.1"}
-  "containers" {= "3.13.1"}
-  "containers-data" {= "3.13.1"}
+  "containers" {= "3.14"}
+  "containers-data" {= "3.14"}
   "cppo" {= "1.6.9"}
   "csexp" {= "1.5.2"}
   "cstruct" {= "6.2.0"}
@@ -115,7 +115,7 @@ depends: [
   "ocaml-base-compiler" {= "4.14.2"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-syntax-shims" {= "1.0.0"}
-  "ocaml-version" {= "3.6.7"}
+  "ocaml-version" {= "3.6.8"}
   "ocamlbuild" {= "0.15.0"}
   "ocamlfind" {= "1.9.6"}
   "ocamlformat" {= "0.26.2"}
@@ -215,7 +215,7 @@ pin-depends: [
   ]
   [
     "guardian.0.3.2"
-    "git+https://github.com/uzh/guardian.git#87214e65f5e50f2ad9209ef9d407ec28a7004498"
+    "git+https://github.com/uzh/guardian.git#287bab9baf9b346efe47999e8b7f456bfefe8c13"
   ]
   ["canary.0.0.3" "git+https://github.com/uzh/canary.git#0.0.3"]
   [

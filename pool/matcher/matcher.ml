@@ -330,14 +330,14 @@ let start_matcher () =
   let interval = Ptime.Span.of_int_s (5 * 60) in
   let periodic_fcn () =
     Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
-    Pool_tenant.find_all ()
-    ||> CCList.map (fun Pool_tenant.{ database_label; _ } -> database_label)
+    Database.(Tenant.find_all_by_status ~status:Status.[ Active ] ())
     >|> match_invitations interval
   in
   let schedule =
     create
       "matcher"
       (Every (interval |> ScheduledTimeSpan.of_span))
+      None
       periodic_fcn
   in
   Schedule.add_and_start schedule

@@ -114,7 +114,7 @@ let roles_list
 
 let new_form { Pool_context.language; csrf; _ } =
   div
-    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         Pool_common.
@@ -128,16 +128,19 @@ let new_form { Pool_context.language; csrf; _ } =
           ; a_method `Post
           ; a_class [ "stack" ]
           ]
-        ((Input.csrf_element csrf ()
-          :: CCList.map
-               (fun (field, input) ->
-                 Input.input_element ~required:true language input field)
-               Field.
-                 [ Email, `Email
-                 ; Password, `Password
-                 ; Firstname, `Text
-                 ; Lastname, `Text
-                 ])
+        ([ Input.csrf_element csrf ()
+         ; div
+             ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
+             (CCList.map
+                (fun (field, input) ->
+                  Input.input_element ~required:true language input field)
+                Field.
+                  [ Email, `Email
+                  ; Password, `Password
+                  ; Firstname, `Text
+                  ; Lastname, `Text
+                  ])
+         ]
          @ [ div
                ~a:[ a_class [ "flexrow" ] ]
                [ Input.submit_element

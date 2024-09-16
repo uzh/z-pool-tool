@@ -1289,7 +1289,6 @@ let filter_by_date_custom_field _ () =
 
 let filter_by_tags _ () =
   let open Utils.Lwt_result.Infix in
-  let open CCFun in
   let open Tags in
   let open Operator.ListM in
   let open Alcotest in
@@ -1337,7 +1336,7 @@ let filter_by_tags _ () =
     find (Some filter)
     ||> get_exn
     ||> CCList.filter
-          (flip
+          (CCFun.flip
              (CCList.mem ~eq:Contact.equal)
              [ contact_one; contact_two; contact_three ])
     ||> CCList.stable_sort Contact.compare

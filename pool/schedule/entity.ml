@@ -40,6 +40,7 @@ module Status = struct
 
     type t =
       | Active [@name "active"] [@printer go "active"]
+      | Failed [@name "failed"] [@printer go "failed"]
       | Finished [@name "finished"] [@printer go "finished"]
       | Paused [@name "paused"] [@printer go "paused"]
       | Running [@name "running"] [@printer go "running"]
@@ -60,6 +61,7 @@ type scheduled_time =
 
 type t =
   { label : Label.t
+  ; database_label : Database.Label.t option
   ; scheduled_time : scheduled_time
   ; status : Status.t
   ; last_run : LastRunAt.t option
@@ -67,8 +69,14 @@ type t =
   }
 [@@deriving eq, show]
 
-let create label scheduled_time fcn =
-  { label; scheduled_time; status = Status.init; last_run = None; fcn }
+let create label scheduled_time database_label fcn =
+  { label
+  ; database_label
+  ; scheduled_time
+  ; status = Status.init
+  ; last_run = None
+  ; fcn
+  }
 ;;
 
 let run_in = function
@@ -89,8 +97,8 @@ type public =
 let is_ok ({ scheduled_time; status; last_run; _ } : public) =
   let open Status in
   let is_fine = function
-    | Finished | Paused -> true
-    | Active | Running | Stopped -> false
+    | Finished | Paused | Stopped -> true
+    | Active | Running | Failed -> false
   in
   let did_run () =
     match scheduled_time, last_run with

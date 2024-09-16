@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Ppx_yojson_conv_lib.Yojson_conv
 
 module Content = struct
@@ -48,11 +49,10 @@ module DlrMask = struct
     | _ -> Unknown
   ;;
 
-  let to_human m =
-    m
-    |> show
-    |> CCString.replace ~which:`All ~sub:"-" ~by:""
-    |> CCString.capitalize_ascii
+  let to_human =
+    show
+    %> CCString.replace ~which:`All ~sub:"-" ~by:""
+    %> CCString.capitalize_ascii
   ;;
 end
 

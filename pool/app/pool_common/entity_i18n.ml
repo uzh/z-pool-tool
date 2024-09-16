@@ -97,6 +97,8 @@ type t =
   | TermsAndConditionsLastUpdated of Ptime.t
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated
+  | TenantMaintenanceText
+  | TenantMaintenanceTitle
   | TextTemplates
   | TimeWindowDetailTitle of string
   | UpcomingSessionsListEmpty
@@ -137,6 +139,7 @@ type nav_link =
   | PrivacyPolicy
   | Profile
   | Queue
+  | QueueHistory
   | RolePermissions
   | Schedules
   | SentInvitations
@@ -209,7 +212,8 @@ type hint =
   | ExperimentStatisticsRegistrationPossible
   | ExperimentStatisticsSendingInvitations
   | ExperimentWaitingList
-  | ExperumentSurveyRedirectUrl
+  | ExperimentSurveyRedirectUrl
+  | ExperimentSurveyUrl
   | ExternalDataRequired
   | FileUploadAcceptMime of string list
   | FilterTemplates

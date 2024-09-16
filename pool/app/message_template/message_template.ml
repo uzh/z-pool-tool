@@ -131,12 +131,15 @@ let public_experiment_params layout experiment =
     Format.asprintf "experiments/%s" experiment_id |> to_absolute_path layout
   in
   let online_experiment_params =
+    let open OnlineExperiment in
     experiment
     |> Public.online_experiment
-    |> CCOption.is_some
     |> function
-    | true -> [ "experumentSurveyRedirectUrl", experiment_url ^ "/start" ]
-    | false -> []
+    | Some online ->
+      [ "experimentSurveyRedirectUrl", experiment_url ^ "/start"
+      ; "experimentSurveyUrl", SurveyUrl.value online.survey_url
+      ]
+    | None -> []
   in
   [ "experimentId", experiment_id
   ; ( "experimentPublicTitle"
