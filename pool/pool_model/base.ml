@@ -7,6 +7,14 @@ module Id = struct
 
   let create () = Uuidm.v `V4 |> Uuidm.to_string
   let of_string m = m
+
+  let validate m =
+    m
+    |> Uuidm.of_string
+    |> CCOption.to_result Pool_message.Error.(Invalid Pool_message.Field.Id)
+    |> CCResult.map Uuidm.to_string
+  ;;
+
   let value m = m
   let to_common m = m
   let of_common m = m
@@ -47,6 +55,7 @@ module type IdSig = sig
   val yojson_of_t : t -> Yojson.Safe.t
   val create : unit -> t
   val of_string : string -> t
+  val validate : string -> (t, Pool_message.Error.t) result
   val value : t -> string
   val to_common : t -> t
   val of_common : t -> t

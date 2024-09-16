@@ -148,3 +148,25 @@ let denied =
   Rock.Middleware.create ~name:"guardian.denied" ~filter:(fun _ _ ->
     Http_utils.redirect_to "/denied")
 ;;
+
+let validate_generic_res
+  ?any_id
+  (generic_fcn :
+    Rock.Request.t -> (Guard.ValidationSet.t, Pool_message.Error.t) result)
+  : Rock.Middleware.t
+  =
+  generic_fcn
+  |> validate_access_request_dependent ?any_id
+  |> validate_admin_entity_base
+;;
+
+let id_effects_res encode field make_set =
+  let open CCResult.Infix in
+  let find_router_param encode field req =
+    let open Pool_message in
+    try Sihl.Web.Router.param req @@ Field.show field |> encode with
+    | _ -> Error Error.(NotFound field)
+  in
+  (fun req -> find_router_param encode field req >>= make_set)
+  |> validate_generic_res
+;;

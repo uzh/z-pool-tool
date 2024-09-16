@@ -136,6 +136,11 @@ module Guard : sig
     val create : Guard.ValidationSet.t
     val read : Id.t -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
+    val read_res : Id.t -> (Guard.ValidationSet.t, Pool_message.Error.t) result
+
+    val update_res
+      :  Id.t
+      -> (Guard.ValidationSet.t, Pool_message.Error.t) result
   end
 end
 

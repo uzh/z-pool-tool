@@ -307,23 +307,15 @@ end = struct
   module Command = Cqrs_command.Admin_command
   module Guardian = Middleware.Guardian
 
-  let admin_effects = Guardian.id_effects Admin.Id.of_string Field.Admin
+  let admin_effects = Guardian.id_effects_res Admin.Id.validate Field.Admin
 
   let index =
     Admin.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let create = Command.CreateAdmin.effects |> Guardian.validate_admin_entity
-
-  let read =
-    Admin.Guard.Access.read |> admin_effects |> Guardian.validate_generic
-  ;;
-
-  let update =
-    Admin.Guard.Access.update
-    |> admin_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
+  let read = admin_effects Admin.Guard.Access.read_res
+  let update = admin_effects Admin.Guard.Access.update_res
 
   let grant_role =
     Command.GrantRoles.effects |> Middleware.Guardian.validate_admin_entity
