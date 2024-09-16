@@ -214,49 +214,27 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
-    let id = find_id Pool_common.Id.of_string Field.WaitingList req in
-    fcn experiment_id id
+  let combined_effects validation_set =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic
+    @@ fun req ->
+    let* experiment_id = find Experiment.Id.validate Field.Experiment req in
+    let* id = find Pool_common.Id.validate Field.WaitingList req in
+    validation_set experiment_id id |> CCResult.return
   ;;
 
-  let index =
-    Waiting_list.Guard.Access.index
-    |> experiment_effects
-    |> Guardian.validate_generic ~any_id:true
-  ;;
-
-  let create =
-    WaitingListCommand.Create.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let read =
-    Waiting_list.Guard.Access.read
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let update =
-    WaitingListCommand.Update.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    WaitingListCommand.Destroy.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
+  let index = experiment_effects Waiting_list.Guard.Access.index
+  let create = experiment_effects WaitingListCommand.Create.effects
+  let read = combined_effects Waiting_list.Guard.Access.read
+  let update = combined_effects WaitingListCommand.Update.effects
+  let delete = combined_effects WaitingListCommand.Destroy.effects
 
   let assign =
-    Cqrs_command.Assignment_command.CreateFromWaitingList.effects
-    |> combined_effects
-    |> Guardian.validate_generic
+    combined_effects
+      Cqrs_command.Assignment_command.CreateFromWaitingList.effects
   ;;
 end

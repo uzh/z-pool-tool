@@ -249,37 +249,21 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
-    let invitation_id = find_id Pool_common.Id.of_string Field.Invitation req in
-    fcn experiment_id invitation_id
+  let combined_effects validation_set =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic
+    @@ fun req ->
+    let* experiment_id = find Experiment.Id.validate Field.Experiment req in
+    let* invitation_id = find Pool_common.Id.validate Field.Invitation req in
+    validation_set experiment_id invitation_id |> CCResult.return
   ;;
 
-  let index =
-    Invitation.Guard.Access.index
-    |> experiment_effects
-    |> Guardian.validate_generic ~any_id:true
-  ;;
-
-  let create =
-    InvitationCommand.Create.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let read =
-    Invitation.Guard.Access.read
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let resend =
-    InvitationCommand.Resend.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
+  let index = experiment_effects Invitation.Guard.Access.index
+  let create = experiment_effects InvitationCommand.Create.effects
+  let read = combined_effects Invitation.Guard.Access.read
+  let resend = combined_effects InvitationCommand.Resend.effects
 end

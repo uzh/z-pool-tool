@@ -198,31 +198,20 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let custom_field_group_effects =
-    Guardian.id_effects Custom_field.Group.Id.of_string Field.CustomFieldGroup
+    Guardian.id_effects Custom_field.Group.Id.validate Field.CustomFieldGroup
   ;;
 
   let create = Command.Create.effects |> Guardian.validate_admin_entity
-
-  let update =
-    Command.Update.effects
-    |> custom_field_group_effects
-    |> Guardian.validate_generic
-  ;;
-
+  let update = custom_field_group_effects Command.Update.effects
   let sort = Command.Sort.effects |> Guardian.validate_admin_entity
 
   let sort_fields =
-    (fun req ->
+    custom_field_group_effects (fun goup_id ->
       Guard.ValidationSet.And
         [ Cqrs_command.Custom_field_command.Sort.effects
-        ; custom_field_group_effects Custom_field.Guard.Access.Group.update req
+        ; Custom_field.Guard.Access.Group.update goup_id
         ])
-    |> Guardian.validate_generic
   ;;
 
-  let delete =
-    Command.Destroy.effects
-    |> custom_field_group_effects
-    |> Guardian.validate_generic
-  ;;
+  let delete = custom_field_group_effects Command.Destroy.effects
 end

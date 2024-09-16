@@ -76,10 +76,7 @@ module Access : module type of Helpers.Access = struct
   module I18nCommand = Cqrs_command.I18n_command
   module Guardian = Middleware.Guardian
 
-  let i18n_effects = Guardian.id_effects Pool_common.Id.of_string Field.I18n
+  let i18n_effects = Guardian.id_effects Pool_common.Id.validate Field.I18n
   let index = I18n.Guard.Access.index |> Guardian.validate_admin_entity
-
-  let update =
-    I18nCommand.Update.effects |> i18n_effects |> Guardian.validate_generic
-  ;;
+  let update = i18n_effects I18nCommand.Update.effects
 end

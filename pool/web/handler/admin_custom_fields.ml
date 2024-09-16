@@ -340,7 +340,7 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let custom_field_effects =
-    Guardian.id_effects Custom_field.Id.of_string Field.CustomField
+    Guardian.id_effects Custom_field.Id.validate Field.CustomField
   ;;
 
   let index =
@@ -352,23 +352,8 @@ end = struct
     CustomFieldCommand.Create.effects |> Guardian.validate_admin_entity
   ;;
 
-  let update =
-    CustomFieldCommand.Update.effects
-    |> custom_field_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    CustomFieldCommand.Delete.effects
-    |> custom_field_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let publish =
-    CustomFieldCommand.Publish.effects
-    |> custom_field_effects
-    |> Guardian.validate_generic
-  ;;
-
+  let update = custom_field_effects CustomFieldCommand.Update.effects
+  let delete = custom_field_effects CustomFieldCommand.Delete.effects
+  let publish = custom_field_effects CustomFieldCommand.Publish.effects
   let sort = CustomFieldCommand.Sort.effects |> Guardian.validate_admin_entity
 end

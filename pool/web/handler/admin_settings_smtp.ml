@@ -249,21 +249,11 @@ end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let smtp_effects = Guardian.id_effects Email.SmtpAuth.Id.of_string Field.Smtp
+  let smtp_effects = Guardian.id_effects Email.SmtpAuth.Id.validate Field.Smtp
   let index = Email.Guard.Access.Smtp.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity Command.Create.effects
-
-  let read =
-    Email.Guard.Access.Smtp.read |> smtp_effects |> Guardian.validate_generic
-  ;;
-
-  let update =
-    Command.Update.effects |> smtp_effects |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    Email.Guard.Access.Smtp.delete |> smtp_effects |> Guardian.validate_generic
-  ;;
-
+  let read = smtp_effects Email.Guard.Access.Smtp.read
+  let update = smtp_effects Command.Update.effects
+  let delete = smtp_effects Email.Guard.Access.Smtp.delete
   let validate = create
 end
