@@ -120,7 +120,7 @@ let find_related_request entity =
       SELECT %{Pool_common.Id.sql_select_fragment ~field:"entity_uuid"}
       FROM pool_queue_jobs_mapping
       %{joins}
-      WHERE queue_job_uuid = %{Entity.Id.sql_value_fragment "?"}
+      WHERE queue_uuid = %{Entity.Id.sql_value_fragment "?"}
     |sql}]
   |> Repo_entity.Id.t ->? Pool_common.Repo.Id.t
 ;;
