@@ -140,11 +140,6 @@ let validate_generic_lwt_result ?any_id =
   validate_access_request_dependent_lwt ?any_id %> validate_admin_entity_base
 ;;
 
-let denied =
-  Rock.Middleware.create ~name:"guardian.denied" ~filter:(fun _ _ ->
-    Http_utils.redirect_to "/denied")
-;;
-
 let id_effects encode field make_set =
   let open CCResult.Infix in
   let find_router_param encode field req =
@@ -154,4 +149,9 @@ let id_effects encode field make_set =
   in
   (fun req -> find_router_param encode field req >|= make_set)
   |> validate_generic_result
+;;
+
+let denied =
+  Rock.Middleware.create ~name:"guardian.denied" ~filter:(fun _ _ ->
+    Http_utils.redirect_to "/denied")
 ;;
