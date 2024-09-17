@@ -30,6 +30,7 @@ type t =
   | WaitingList of Waiting_list.event
 [@@deriving eq, show, variants]
 
+(* TODO: Consider using variants, instead of custom functions *)
 let admin events = Admin events
 let assignment events = Assignment events
 let assignmentjob events = AssignmentJob events
@@ -58,7 +59,7 @@ let user_import events = UserImport events
 let user events = User events
 let waiting_list events = WaitingList events
 
-let handle_event ?(tags = Logs.Tag.empty) pool =
+let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   let info model pp event =
     let tags = tags |> Database.Logger.Tags.add pool in
     let src = Logs.Src.create [%string "%{model}.events"] in
@@ -117,7 +118,7 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Organisational_unit.handle_event pool event
   | PoolLocation event ->
     info "pool_location" Pool_location.pp_event event;
-    Pool_location.handle_event pool event
+    Pool_location.handle_event ?user_uuid pool event
   | PoolTenant event ->
     info "pool_tenant" Pool_tenant.pp_event event;
     Pool_tenant.handle_event pool event
@@ -153,4 +154,23 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Waiting_list.handle_event pool event
 ;;
 
-let handle_events ?tags pool = Lwt_list.iter_s (handle_event ?tags pool)
+let user_uuid =
+  let open Pool_context in
+  function
+  | Guest -> None
+  | Contact contact -> Contact.(id contact |> Id.to_common) |> Option.some
+  | Admin admin -> Admin.(id admin |> Id.to_common) |> Option.some
+;;
+
+let handle_event ?tags pool user event =
+  let user_uuid = user_uuid user in
+  handle ?tags ?user_uuid pool event
+;;
+
+let handle_events ?tags pool user events =
+  let user_uuid = user_uuid user in
+  Lwt_list.iter_s (handle ?tags ?user_uuid pool) events
+;;
+
+let handle_system_event ?tags pool event = handle ?tags pool event
+let handle_system_events ?tags pool = Lwt_list.iter_s (handle ?tags pool)

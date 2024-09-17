@@ -4,6 +4,7 @@ module Model = Test_utils.Model
 
 let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
+let current_user = Model.create_admin ()
 
 let create () =
   let open Waiting_list in
@@ -163,7 +164,7 @@ module PendingWaitingLists = struct
     let%lwt () =
       Session.Canceled session
       |> Pool_event.session
-      |> Pool_event.handle_event database_label
+      |> Pool_event.handle_event database_label current_user
     in
     let%lwt res =
       let open CCFun in

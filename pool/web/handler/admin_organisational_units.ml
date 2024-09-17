@@ -51,7 +51,7 @@ let write action req =
       ( Format.asprintf "%s/%s/edit" base_path (Organisational_unit.Id.value id)
       , Updated field )
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -66,9 +66,7 @@ let write action req =
         Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags ou)
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         base_path
         [ HttpUtils.Message.set ~success:[ success ] ]

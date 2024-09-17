@@ -28,7 +28,7 @@ let update_password req =
          >>= handle ~tags Admin.(admin |> id |> Id.to_user)
          |> Lwt_result.lift
        in
-       let%lwt () = Pool_event.handle_events ~tags database_label events in
+       let%lwt () = Pool_event.handle_events ~tags database_label user events in
        redirect_to_with_actions
          active_navigation
          [ Message.set ~success:[ Pool_message.Success.PasswordChanged ] ]

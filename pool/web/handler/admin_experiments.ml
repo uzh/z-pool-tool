@@ -217,9 +217,7 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         "/admin/experiments"
         [ Message.set ~success:[ Success.Created Field.Experiment ] ]
@@ -337,7 +335,7 @@ let edit = detail true
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let id = experiment_id req in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
@@ -368,9 +366,7 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         detail_path
         [ Message.set ~success:[ Success.Updated Field.Experiment ] ]
@@ -382,7 +378,7 @@ let update req =
 
 let delete req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let experiment_id = experiment_id req in
     let experiments_path = "/admin/experiments" in
     Utils.Lwt_result.map_error (fun err ->
@@ -435,9 +431,7 @@ let delete req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         experiments_path
         [ Message.set ~success:[ Success.Created Field.Experiment ] ]
@@ -477,7 +471,7 @@ module Filter = struct
   let update = handler Admin_filter.write
 
   let delete req =
-    let result { Pool_context.database_label; _ } =
+    let result { Pool_context.database_label; user; _ } =
       let experiment_id =
         HttpUtils.find_id Experiment.Id.of_string Field.Experiment req
       in
@@ -496,7 +490,7 @@ module Filter = struct
       in
       let handle events =
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         Http_utils.redirect_to_with_actions
           redirect_path

@@ -4,6 +4,8 @@ open Pool_message
 module SessionC = Cqrs_command.Session_command
 module TimeUnit = Pool_model.Base.TimeUnit
 
+let current_user = Model.create_admin ()
+
 let check_result expected generated =
   Alcotest.(check (result (list event) error) "succeeds" expected generated)
 ;;
@@ -1517,7 +1519,7 @@ let close_session_check_contact_figures _ () =
       ])
     |> flatten
     |> cons (Session.Closed session |> Pool_event.session)
-    |> Pool_event.handle_events Data.database_label
+    |> Pool_event.handle_events Data.database_label current_user
   in
   let%lwt res =
     contacts

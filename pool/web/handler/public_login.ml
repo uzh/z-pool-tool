@@ -16,7 +16,7 @@ let increase_sign_in_count ~tags database_label user =
     | Contact contact -> Contact_command.UpdateSignInCount.handle ~tags contact
     | Guest -> Ok []
   in
-  events |> Lwt_result.lift |>> Pool_event.handle_events database_label
+  events |> Lwt_result.lift |>> Pool_event.handle_events database_label user
 ;;
 
 let login_get req =
@@ -182,7 +182,10 @@ let request_reset_password_post req =
           (Tenant tenant)
           user
         >== handle ~tags
-        |>> Pool_event.handle_events ~tags database_label
+        |>> Pool_event.handle_events
+              ~tags
+              database_label
+              context.Pool_context.user
     in
     redirect_to_with_actions
       redirect_path
@@ -220,7 +223,7 @@ let reset_password_get req =
 
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.database_label; query_language; _ } =
+  let result { Pool_context.database_label; query_language; user; _ } =
     let open Utils.Lwt_result.Infix in
     let open Pool_message in
     let redirect = "/reset-password/" in
@@ -280,7 +283,9 @@ let reset_password_post req =
     match reset with
     | Ok () ->
       let%lwt () = Pool_token.deactivate database_label token in
-      let%lwt () = import_events |> Pool_event.handle_events database_label in
+      let%lwt () =
+        import_events |> Pool_event.handle_events database_label user
+      in
       HttpUtils.(
         redirect_to_with_actions
           (path_with_language query_language "/login")

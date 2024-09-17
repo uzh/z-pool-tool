@@ -4,6 +4,7 @@ open Utils.Lwt_result.Infix
 open Pool_message
 
 let database_label = Data.database_label
+let current_user = Model.create_admin ()
 let get_exn = get_or_failwith
 
 let get_contact contact_id =
@@ -46,7 +47,7 @@ let set_sessions_to_past session_ids =
   >|+ CCList.map (fun (session : t) ->
     let session = { session with start = Model.an_hour_ago () } in
     Updated session |> Pool_event.session)
-  |>> Pool_event.handle_events database_label
+  |>> Pool_event.handle_events database_label current_user
   ||> get_exn
 ;;
 
@@ -60,7 +61,7 @@ let sign_up_for_session experiment contact session_id =
     confirmation_mail
     false
   |> get_exn
-  |> Pool_event.handle_events database_label
+  |> Pool_event.handle_events database_label current_user
 ;;
 
 let close_session
@@ -95,7 +96,7 @@ let close_session
   |> CCList.pure
   |> Close.handle experiment session []
   |> get_exn
-  |> Pool_event.handle_events database_label
+  |> Pool_event.handle_events database_label current_user
 ;;
 
 let delete_assignment experiment_id contact assignments =
@@ -114,7 +115,7 @@ let delete_assignment experiment_id contact assignments =
   (contact, assignments, decrement_num_participations)
   |> MarkAsDeleted.handle
   |> get_exn
-  |> Pool_event.handle_events database_label
+  |> Pool_event.handle_events database_label current_user
 ;;
 
 let initialize contact_id experiment_id session_id ?followup_session_id () =
@@ -174,7 +175,7 @@ module InviteContact = struct
           ; create_message = invitation_mail
           })
       |> get_exn
-      |> Pool_event.handle_events database_label
+      |> Pool_event.handle_events database_label current_user
     in
     let%lwt res = get_contact contact_id in
     let expected = contact |> Contact.update_num_invitations ~step:1 in
@@ -295,7 +296,7 @@ module CancelSession = struct
           [ Pool_common.NotifyVia.Email ]
           reason
         |> get_exn
-        |> Pool_event.handle_events database_label
+        |> Pool_event.handle_events database_label current_user
       in
       test_result expected_nr_assignments)
   ;;
@@ -488,7 +489,7 @@ module DeleteUnattended = struct
     let%lwt () =
       Contact.Updated contact
       |> Pool_event.contact
-      |> Pool_event.handle_event database_label
+      |> Pool_event.handle_event database_label current_user
     in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt res = get_contact contact_id in
@@ -662,7 +663,7 @@ module UpdateAssignments = struct
             assignment
             participated_in_other_sessions
       |> get_exn
-      |> Pool_event.handle_events database_label
+      |> Pool_event.handle_events database_label current_user
     in
     let%lwt () =
       let%lwt assignment =
@@ -839,7 +840,7 @@ module UpdateAssignments = struct
             assignment
             participated_in_other_sessions
       |> get_exn
-      |> Pool_event.handle_events database_label
+      |> Pool_event.handle_events database_label current_user
     in
     let%lwt assignment =
       find_assignment_by_contact_and_session contact_id followup_session_id

@@ -40,7 +40,7 @@ let update req command success_message =
   let redirect_path =
     Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
   in
-  let result (_ : Pool_context.t) =
+  let result { Pool_context.user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -92,9 +92,7 @@ let update req command success_message =
       |> events_list
       >|> HttpUtils.File.cleanup_upload Database.root files
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
-    in
+    let handle = Pool_event.handle_events ~tags Database.root user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         redirect_path
@@ -122,7 +120,7 @@ let delete_asset req =
   let redirect_path =
     Format.asprintf "root/tenants/%s" (Pool_tenant.Id.value tenant_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
@@ -130,7 +128,7 @@ let delete_asset req =
       Cqrs_command.Pool_tenant_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
+    let handle = Pool_event.handle_events Database.root user in
     let destroy_file () =
       Storage.delete database_label (Common.Id.value asset_id)
     in

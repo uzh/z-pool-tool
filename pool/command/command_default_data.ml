@@ -24,7 +24,7 @@ Example: seed.default guardian_role_permission
       let%lwt () =
         Command_utils.setup_databases ()
         ||> CCList.cons Database.root
-        >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
+        >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_system_events events)
       in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)

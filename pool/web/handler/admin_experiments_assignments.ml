@@ -21,7 +21,7 @@ let cancel req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Url.session_path ~id:session_id experiment_id in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -61,9 +61,7 @@ let cancel req =
       |> Lwt.return
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Canceled Field.Assignment ] ]
@@ -77,7 +75,7 @@ let mark_as_deleted req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Url.session_path ~id:session_id experiment_id in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -104,9 +102,7 @@ let mark_as_deleted req =
         |> Lwt.return
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.MarkedAsDeleted Field.Assignment ] ]
@@ -155,7 +151,7 @@ module Close = struct
   let update req =
     let tags = Pool_context.Logger.Tags.req req in
     let assignment_id = assignment_id req in
-    let result ({ Pool_context.database_label; language; _ } as context) =
+    let result ({ Pool_context.database_label; language; user; _ } as context) =
       let* experiment, session = router_params req database_label in
       let* assignment = find database_label assignment_id in
       let* updated = decode req >|+ UpdateHtmx.handle assignment in
@@ -163,6 +159,7 @@ module Close = struct
         Pool_event.handle_event
           ~tags
           database_label
+          user
           (Updated updated |> Pool_event.assignment)
       in
       let%lwt counters =
@@ -187,7 +184,7 @@ module Close = struct
 
   let toggle req =
     let tags = Pool_context.Logger.Tags.req req in
-    let result ({ Pool_context.database_label; language; _ } as context) =
+    let result ({ Pool_context.database_label; language; user; _ } as context) =
       let* experiment, session = router_params req database_label in
       let* decoded =
         decode req
@@ -209,7 +206,7 @@ module Close = struct
                , assignments @ [ updated, Some updated_fields ] ))
              ([], [])
       in
-      let%lwt () = Pool_event.handle_events ~tags database_label events in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       let%lwt counters =
         counters_of_session database_label session.Session.id
       in
@@ -284,7 +281,7 @@ let update req =
       session_id
       assignment_id
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -318,9 +315,7 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Updated Field.Assignment ] ]
@@ -337,7 +332,7 @@ let remind req =
   let redirect_path =
     Page.Admin.Session.session_path ~id:session_id experiment_id
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -366,9 +361,7 @@ let remind req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Sent Field.Reminder ] ]
@@ -480,7 +473,7 @@ let swap_session_post req =
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values Field.[ show NotifyContact ]
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -523,9 +516,7 @@ let swap_session_post req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Updated Field.Session ] ]

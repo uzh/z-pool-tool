@@ -6,6 +6,7 @@ module Model = Test_utils.Model
 let get_or_failwith = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
 let sort_events = Test_utils.sort_events
+let current_user = Model.create_admin ()
 
 let expected_events experiment mailing contacts create_message =
   let emails =
@@ -122,7 +123,7 @@ let create_invitations_repo _ () =
     let%lwt events = find_events () in
     let () = Test_utils.check_result expected (Ok events) in
     let%lwt before = find_invitation_count experiment in
-    let%lwt () = Pool_event.handle_events pool events in
+    let%lwt () = Pool_event.handle_events pool current_user events in
     let%lwt after = find_invitation_count experiment in
     let () =
       let msg = "count generated invitations -> smaller or equal limit" in
@@ -139,7 +140,7 @@ let create_invitations_repo _ () =
     let%lwt expected = create_expected mailing experiment contacts in
     let%lwt events = find_events () in
     let () = Test_utils.check_result expected (Ok events) in
-    let%lwt () = Pool_event.handle_events pool events in
+    let%lwt () = Pool_event.handle_events pool current_user events in
     let%lwt after_reset = find_invitation_count experiment in
     let () =
       let msg = "count generated invitations -> equal to before reset" in
@@ -212,7 +213,7 @@ let store_filter experiment new_filter =
     ; Experiment.(Updated { experiment with filter = Some new_filter })
       |> Pool_event.experiment
     ]
-    |> Pool_event.handle_events database_label
+    |> Pool_event.handle_events database_label current_user
   in
   Experiment.find database_label experiment.Experiment.id ||> get_or_failwith
 ;;
@@ -255,7 +256,7 @@ let create_invitations _ () =
   let () =
     Alcotest.(check (list Test_utils.event) "succeeds" expected events)
   in
-  let%lwt () = Pool_event.handle_events database_label expected in
+  let%lwt () = Pool_event.handle_events database_label current_user expected in
   Lwt.return_unit
 ;;
 
@@ -293,7 +294,7 @@ let reset_invitations _ () =
   let () =
     Alcotest.(check (list Test_utils.event) "succeeds" expected events)
   in
-  let%lwt () = Pool_event.handle_events database_label events in
+  let%lwt () = Pool_event.handle_events database_label current_user events in
   Lwt.return_unit
 ;;
 
@@ -343,7 +344,7 @@ let matcher_notification _ () =
   let () =
     Alcotest.(check (list Test_utils.event) "succeeds" expected events)
   in
-  let%lwt () = Pool_event.handle_events database_label events in
+  let%lwt () = Pool_event.handle_events database_label current_user events in
   (* Expect notification not to be sent again *)
   let%lwt events =
     matcher_events ()

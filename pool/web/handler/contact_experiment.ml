@@ -166,7 +166,7 @@ module OnlineSurvey = struct
   let redirect req =
     let open Utils.Lwt_result.Infix in
     let error_path = "/experiments" in
-    let result ({ Pool_context.database_label; _ } as context) =
+    let result ({ Pool_context.database_label; user; _ } as context) =
       Utils.Lwt_result.map_error (fun err -> err, error_path)
       @@
       let open Experiment in
@@ -220,7 +220,7 @@ module OnlineSurvey = struct
       in
       let handle events =
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         Sihl.Web.Response.redirect_to survey_url |> Lwt_result.return
       in
@@ -232,7 +232,7 @@ module OnlineSurvey = struct
   let submit req =
     let open Utils.Lwt_result.Infix in
     let error_path = "/" in
-    let result ({ Pool_context.database_label; _ } as context) =
+    let result ({ Pool_context.database_label; user; _ } as context) =
       Utils.Lwt_result.map_error (fun err -> err, error_path)
       @@
       let tags = Pool_context.Logger.Tags.req req in
@@ -251,7 +251,7 @@ module OnlineSurvey = struct
         let open CCResult.Infix in
         query |> decode >>= handle ~tags assignment |> Lwt_result.lift
       in
-      let handle = Pool_event.handle_events ~tags database_label in
+      let handle = Pool_event.handle_events ~tags database_label user in
       let return () =
         Page.Contact.Experiment.online_study_completition experiment context
         |> Lwt.return_ok

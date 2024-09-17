@@ -3,6 +3,8 @@ open Pool_message
 module Contact_command = Cqrs_command.Contact_command
 module Language = Pool_common.Language
 
+let current_user = Test_utils.Model.create_admin ()
+
 let check_result expected generated =
   Alcotest.(
     check
@@ -526,7 +528,7 @@ let should_not_send_registration_notification _ () =
       |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
            contact
       |> Test_utils.get_or_failwith
-      |> Lwt_list.iter_s (Pool_event.handle_event database_label)
+      |> Pool_event.handle_events database_label current_user
     in
     let%lwt res =
       Contact.should_send_registration_attempt_notification

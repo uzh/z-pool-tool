@@ -74,7 +74,7 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
          |> get_or_failwith
          |> Lwt.return
        in
-       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event pool) events in
+       let%lwt () = Pool_event.handle_system_events pool events in
        Lwt.return_some ()
      | _ -> Command_utils.failwith_missmatch help)
 ;;
@@ -98,7 +98,7 @@ let trigger_profile_update_by_tenant pool =
       { contacts; emails }
       |> handle
       |> Lwt_result.lift
-      |>> Pool_event.handle_events pool)
+      |>> Pool_event.handle_system_events pool)
 ;;
 
 let tenant_specific_profile_update_trigger =

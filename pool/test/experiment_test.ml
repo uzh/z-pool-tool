@@ -5,6 +5,7 @@ module Model = Test_utils.Model
 
 let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
+let current_user = Model.create_admin ()
 
 let experiment_boolean_fields =
   Experiment.boolean_fields |> CCList.map Field.show
@@ -371,7 +372,7 @@ let autofill_public_title _ () =
   let%lwt () =
     [ without_title; with_title ]
     |> CCList.map (created %> Pool_event.experiment)
-    |> Pool_event.handle_events database_label
+    |> Pool_event.handle_events database_label current_user
   in
   let find id = Experiment.find database_label id ||> get_exn in
   let%lwt without_title_persisted = find without_title.id in
@@ -432,7 +433,7 @@ module AvailableExperiments = struct
       in
       [ on_site_experiment; online_experiment ]
       |> CCList.map invitation
-      |> Pool_event.handle_events database_label
+      |> Pool_event.handle_events database_label current_user
     in
     let find_experiment experiment experiment_type =
       let public = experiment |> Experiment.to_public in
@@ -501,7 +502,7 @@ module AvailableExperiments = struct
     let%lwt () =
       Session.Canceled session
       |> Pool_event.session
-      |> Pool_event.handle_event database_label
+      |> Pool_event.handle_event database_label current_user
     in
     let%lwt experiment_available =
       (* Expect the experiment not to be found after session cancellation to
@@ -538,7 +539,7 @@ module AvailableExperiments = struct
       find_not_deleted_by_session database_label session_id
       ||> CCList.map (fun assignment ->
         Assignment.MarkedAsDeleted assignment |> Pool_event.assignment)
-      >|> Pool_event.handle_events database_label
+      >|> Pool_event.handle_events database_label current_user
     in
     let%lwt experiment_available =
       (* Expect the experiment not to be found after session cancellation to

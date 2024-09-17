@@ -2,6 +2,8 @@ module TemplateCommand = Cqrs_command.Message_template_command
 open CCFun.Infix
 open Pool_message
 
+let current_user = Test_utils.Model.create_admin ()
+
 module Data = struct
   let urlencoded =
     Field.
@@ -90,7 +92,7 @@ let create_experiment () =
   let experiment = Test_utils.Model.create_experiment () in
   let%lwt () =
     [ Experiment.Created experiment |> Pool_event.experiment ]
-    |> Pool_event.handle_events database_label
+    |> Pool_event.handle_events database_label current_user
   in
   Lwt.return experiment
 ;;
@@ -103,7 +105,7 @@ let create_invitation language ?entity_uuid () =
   in
   let%lwt () =
     [ Message_template.Created template |> Pool_event.message_template ]
-    |> Pool_event.handle_events database_label
+    |> Pool_event.handle_events database_label current_user
   in
   Lwt.return template
 ;;
@@ -341,7 +343,7 @@ let experiment_invitation_with_sender _ () =
       | _ -> failwith "Event missmatch"
     in
     Alcotest.(check string "succeeds" admin_email res);
-    events |> Pool_event.handle_events database_label
+    Pool_event.handle_events database_label current_user events
   in
   Lwt.return_unit
 ;;

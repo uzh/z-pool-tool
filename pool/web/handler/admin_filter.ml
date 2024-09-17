@@ -150,7 +150,7 @@ let write action req =
            |> lift)
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      Pool_event.handle_events ~tags database_label user events
     in
     let success () =
       let open Success in

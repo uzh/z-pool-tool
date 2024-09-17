@@ -62,7 +62,7 @@ let write ?id req model =
     let go = Admin_custom_fields.find_assocs_in_urlencoded urlencoded in
     go Field.Name encode_lang
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -82,9 +82,7 @@ let write ?id req model =
           |> Lwt_result.lift)
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       let success =
         let open Success in
         if CCOption.is_some id
@@ -111,7 +109,7 @@ let delete req =
   let handler req model =
     let tags = Pool_context.Logger.Tags.req req in
     let id = req |> get_group_id in
-    let result { Pool_context.database_label; _ } =
+    let result { Pool_context.database_label; user; _ } =
       let redirect_path = Url.Group.edit_path (model, id) in
       Utils.Lwt_result.map_error (fun err -> err, redirect_path)
       @@
@@ -123,7 +121,7 @@ let delete req =
         >>= Cqrs_command.Custom_field_group_command.Destroy.handle ~tags
             %> Lwt_result.lift
       in
-      let%lwt () = Pool_event.handle_events database_label events in
+      let%lwt () = Pool_event.handle_events database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpUtils.Message.set
@@ -140,7 +138,7 @@ let sort req =
   let handler req model =
     let open Utils.Lwt_result.Infix in
     let redirect_path = Url.index_path model in
-    let result { Pool_context.database_label; _ } =
+    let result { Pool_context.database_label; user; _ } =
       Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
       @@
       let tags = Pool_context.Logger.Tags.req req in
@@ -167,7 +165,7 @@ let sort req =
       in
       let handle events =
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         Http_utils.redirect_to_with_actions
           redirect_path

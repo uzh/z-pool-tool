@@ -319,7 +319,7 @@ let match_invitations interval pools =
           ~tags:(Database.Logger.Tags.create pool)
           "Sending %4d intivation emails"
           (count_mails events));
-      Pool_event.handle_events pool events)
+      Pool_event.handle_system_events pool events)
   in
   create_invitation_events interval pools >|> handle_events
 ;;

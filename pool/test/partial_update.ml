@@ -1,6 +1,7 @@
 open Pool_message
 module Language = Pool_common.Language
 
+let current_user = Test_utils.Model.create_admin ()
 let database_label = Test_utils.Data.database_label
 
 let save_custom_fields custom_field contact =
@@ -17,7 +18,7 @@ let save_custom_fields custom_field contact =
       |> Pool_event.custom_field
     ]
   in
-  Lwt_list.iter_s (Pool_event.handle_event database_label) events
+  Pool_event.handle_events database_label current_user events
 ;;
 
 let update_with_old_version _ () =
