@@ -115,7 +115,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Message_template.handle_event pool event
   | OrganisationalUnit event ->
     info "organisational_unit" Organisational_unit.pp_event event;
-    Organisational_unit.handle_event pool event
+    Organisational_unit.handle_event ?user_uuid pool event
   | PoolLocation event ->
     info "pool_location" Pool_location.pp_event event;
     Pool_location.handle_event ?user_uuid pool event

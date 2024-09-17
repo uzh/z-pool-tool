@@ -19,6 +19,12 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let organisational_unit_path ?suffix ?id () =
+    "/admin/organisational-unit"
+    |> append_opt (map Organisational_unit.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let role_permission_path ?suffix ?role () =
     "/admin/settings/role-permission"
     |> append_opt (map Role.Role.name role)

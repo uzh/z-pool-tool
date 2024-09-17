@@ -1,3 +1,5 @@
+let model = Pool_message.Field.OrganisationalUnit
+
 module Id = Pool_common.Id
 
 module Name = struct
@@ -11,7 +13,7 @@ type t =
   { id : Id.t
   ; name : Name.t
   }
-[@@deriving eq, show, fields ~getters]
+[@@deriving eq, show, yojson, fields ~getters]
 
 let create ?(id = Id.create ()) name = { id; name }
 

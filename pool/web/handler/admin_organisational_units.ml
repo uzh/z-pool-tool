@@ -89,21 +89,32 @@ let show action req =
     Utils.Lwt_result.map_error (fun err -> err, base_path)
     @@ let* html =
          match action with
-         | `New -> View.form context None |> Lwt_result.return
+         | `New -> View.create context |> Lwt_result.return
          | `Edit ->
-           let* ou =
-             req
-             |> id
-             |> Organisational_unit.find database_label
-             >|+ CCOption.return
-           in
-           View.form context ou |> Lwt_result.return
+           let* ou = req |> id |> Organisational_unit.find database_label in
+           View.detail context ou |> Lwt_result.return
        in
        html
        |> create_layout ~active_navigation:base_path req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let changelog req =
+  let ou_id = id req in
+  let url =
+    HttpUtils.Url.Admin.organisational_unit_path
+      ~suffix:"changelog"
+      ~id:ou_id
+      ()
+  in
+  let open Organisational_unit in
+  Helpers.Changelog.htmx_handler
+    ~version_history:(module VersionHistory)
+    ~url
+    (Id.to_common ou_id)
+    req
 ;;
 
 let new_form = show `New

@@ -1,6 +1,7 @@
 include Entity
 include Event
 module Guard = Entity_guard
+module VersionHistory = Changelog.T (Entity)
 
 let find = Repo.find
 let all = Repo.all
