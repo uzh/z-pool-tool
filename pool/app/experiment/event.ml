@@ -1,6 +1,6 @@
 open Entity
 
-type create =
+type command =
   { title : Title.t
   ; public_title : PublicTitle.t
   ; internal_description : InternalDescription.t option
@@ -23,6 +23,19 @@ type create =
       Pool_model.Base.TimeUnit.t option
   }
 [@@deriving eq, show]
+
+let create_changelog pool ?user_uuid before after =
+  let open Version_history in
+  user_uuid
+  |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
+    insert
+      pool
+      ~entity_uuid:(Entity.Id.to_common before.id)
+      ~user_uuid
+      ~before
+      ~after
+      ())
+;;
 
 type event =
   | Created of t

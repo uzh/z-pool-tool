@@ -203,7 +203,7 @@ val create
   -> ShowExternalDataIdLinks.t
   -> (t, Pool_message.Error.t) result
 
-type create =
+type command =
   { title : Title.t
   ; public_title : PublicTitle.t
   ; internal_description : InternalDescription.t option
@@ -226,9 +226,9 @@ type create =
       Pool_model.Base.TimeUnit.t option
   }
 
-val equal_create : create -> create -> bool
-val pp_create : Format.formatter -> create -> unit
-val show_create : create -> string
+val equal_command : command -> command -> bool
+val pp_command : Format.formatter -> command -> unit
+val show_command : command -> string
 
 module Public : sig
   type t
@@ -557,3 +557,5 @@ val default_query : Query.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+
+module VersionHistory : Changelog.TSig with type record = t

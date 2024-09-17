@@ -333,6 +333,19 @@ let detail edit req =
 let show = detail false
 let edit = detail true
 
+let changelog req =
+  let experiment_id = experiment_id req in
+  let url =
+    HttpUtils.Url.Admin.experiment_path ~suffix:"changelog" ~id:experiment_id ()
+  in
+  let open Experiment in
+  Helpers.Changelog.htmx_handler
+    ~version_history:(module VersionHistory)
+    ~url
+    (Id.to_common experiment_id)
+    req
+;;
+
 let update req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =

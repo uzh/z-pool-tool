@@ -9,6 +9,12 @@ module Admin = struct
     "/admin/admins" |> append_opt (map Admin.Id.value id) |> append_opt suffix
   ;;
 
+  let experiment_path ?suffix ?id () =
+    "/admin/experiments"
+    |> append_opt (map Experiment.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let filter_path ?suffix ?id () =
     "/admin/filter/" |> append_opt Filter.(map Id.value id) |> append_opt suffix
   ;;

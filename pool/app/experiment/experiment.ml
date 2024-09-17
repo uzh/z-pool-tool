@@ -2,6 +2,7 @@ include Entity
 include Event
 module Guardian = Guard
 module Guard = Entity_guard
+module VersionHistory = Version_history
 
 module Repo = struct
   module Public = struct

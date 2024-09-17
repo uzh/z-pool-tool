@@ -33,7 +33,7 @@ let default_command
   email_session_reminder_lead_time_unit
   text_message_session_reminder_lead_time
   text_message_session_reminder_lead_time_unit
-  : create
+  : command
   =
   { title
   ; public_title
@@ -168,7 +168,7 @@ type update_role =
   }
 
 module Create : sig
-  include Common.CommandSig with type t = create
+  include Common.CommandSig with type t = command
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -180,7 +180,7 @@ module Create : sig
 
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
-  type t = create
+  type t = command
 
   let handle
     ?(tags = Logs.Tag.empty)
@@ -253,7 +253,7 @@ end = struct
 end
 
 module Update : sig
-  include Common.CommandSig with type t = create
+  include Common.CommandSig with type t = command
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -267,7 +267,7 @@ module Update : sig
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
-  type t = create
+  type t = command
 
   let handle
     ?(tags = Logs.Tag.empty)
