@@ -1,16 +1,6 @@
 (library
- ; Cannot just be named as "location" because there is a module location
- (name pool_location)
- (libraries
-  admin
-  changelog
-  guard
-  pool_common
-  pool_tenant
-  storage
-  query
-  sihl
-  utils)
+ (name changelog)
+ (libraries pool_common pool_user pool_message ptime sihl utils query)
  (preprocess
   (pps
    lwt_ppx

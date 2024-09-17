@@ -4,7 +4,13 @@ let () =
   let open Alcotest in
   run
     "cqrs commands"
-    [ ( "contact"
+    [ ( "changelog"
+      , Changelog_test.
+          [ test_case "create unchanged" `Quick create_unchanged
+          ; test_case "create" `Quick create
+          ; test_case "create with nested changes" `Quick create_nested
+          ] )
+    ; ( "contact"
       , [ test_case
             "sign up not allowed suffix"
             `Quick

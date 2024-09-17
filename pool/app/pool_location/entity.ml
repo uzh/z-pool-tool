@@ -4,6 +4,8 @@ module Message = Pool_message
 module Field = Pool_message.Field
 module Address = Entity_address
 
+let model = Pool_message.Field.Location
+
 module Id = struct
   include Pool_common.Id
 end
@@ -81,18 +83,27 @@ module Status = struct
   let init = Active
 end
 
+module Files = struct
+  type t = Mapping.file list [@@deriving show]
+
+  let yojson_of_t files : Yojson.Safe.t =
+    let open Mapping in
+    `List (CCList.map (fun t -> `String (Id.value t.id)) files)
+  ;;
+end
+
 type t =
   { id : Id.t
   ; name : Name.t
-  ; description : Description.t option
+  ; description : Description.t option [@yojson.option]
   ; address : Address.t
-  ; link : Link.t option
+  ; link : Link.t option [@yojson.option]
   ; status : Status.t
-  ; files : Mapping.file list
+  ; files : Files.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving show]
+[@@deriving show, yojson_of]
 
 let to_string language location =
   let address =
