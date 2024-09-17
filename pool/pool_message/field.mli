@@ -26,6 +26,7 @@ type t =
   | CallbackUrl
   | CanceledAt
   | CellPhone
+  | Changes
   | Chronological
   | City
   | ClosedAt
@@ -110,6 +111,7 @@ type t =
   | HidePaused
   | HideUnverified
   | Hint
+  | History
   | Host
   | I18n
   | Icon

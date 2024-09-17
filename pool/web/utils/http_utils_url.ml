@@ -5,6 +5,20 @@ let append_opt suffix path =
 ;;
 
 module Admin = struct
+  let admin_path ?suffix ?id () =
+    "/admin/admins" |> append_opt (map Admin.Id.value id) |> append_opt suffix
+  ;;
+
+  let filter_path ?suffix ?id () =
+    "/admin/filter/" |> append_opt Filter.(map Id.value id) |> append_opt suffix
+  ;;
+
+  let location_path ?suffix ?id () =
+    "/admin/locations/"
+    |> append_opt Pool_location.(map Id.value id)
+    |> append_opt suffix
+  ;;
+
   let role_permission_path ?suffix ?role () =
     "/admin/settings/role-permission"
     |> append_opt (map Role.Role.name role)
