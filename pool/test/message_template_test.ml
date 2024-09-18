@@ -299,9 +299,10 @@ module ExperimentSenderData = struct
     let%lwt (_ : Contact.t) = ContactRepo.create ~id:contact_id () in
     let open Experiment in
     Updated
-      { experiment with
-        contact_email = Some (Pool_user.EmailAddress.of_string admin_email)
-      }
+      ( experiment
+      , { experiment with
+          contact_email = Some (Pool_user.EmailAddress.of_string admin_email)
+        } )
     |> handle_event database_label
   ;;
 end

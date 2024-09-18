@@ -6,7 +6,10 @@ module Model = Test_utils.Model
 let get_or_failwith = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
 let sort_events = Test_utils.sort_events
-let current_user = Model.create_admin ()
+
+let current_user () =
+  Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+;;
 
 let expected_events experiment mailing contacts create_message =
   let emails =
@@ -70,6 +73,7 @@ let create_invitations_model () =
 
 let create_invitations_repo _ () =
   let open Utils.Lwt_result.Infix in
+  let%lwt current_user = current_user () in
   let pool = Test_utils.Data.database_label in
   let find_invitation_count { Experiment.id; _ } =
     Invitation.find_by_experiment pool id ||> fst ||> CCList.length
@@ -207,10 +211,11 @@ let contact_name_filter name =
   |> create None
 ;;
 
-let store_filter experiment new_filter =
+let store_filter current_user experiment new_filter =
   let%lwt () =
     [ Filter.Created new_filter |> Pool_event.filter
-    ; Experiment.(Updated { experiment with filter = Some new_filter })
+    ; Experiment.(
+        Updated (experiment, { experiment with filter = Some new_filter }))
       |> Pool_event.experiment
     ]
     |> Pool_event.handle_events database_label current_user
@@ -224,13 +229,14 @@ let create_invitations _ () =
   let%lwt tenant =
     Pool_tenant.find_by_label database_label ||> get_or_failwith
   in
+  let%lwt current_user = current_user () in
   let%lwt experiment =
     ExperimentRepo.create ~id:experiment_id ~title:"Matcher experiment" ()
   in
   let%lwt experiment =
     Experiment.Id.value experiment_id
     |> contact_name_filter
-    |> store_filter experiment
+    |> store_filter current_user experiment
   in
   let%lwt contacts =
     Lwt_list.map_s
@@ -264,17 +270,21 @@ let reset_invitations _ () =
   let%lwt tenant =
     Pool_tenant.find_by_label database_label ||> get_or_failwith
   in
+  let%lwt current_user = current_user () in
   let%lwt experiment =
+    Experiment.find database_label experiment_id ||> get_or_failwith
+  in
+  let experiment =
     let open Experiment in
     let invitation_reset_at =
       Ptime.sub_span (Ptime_clock.now ()) (Ptime.Span.of_int_s 3600)
       |> CCOption.map InvitationResetAt.of_ptime
     in
-    find database_label experiment_id
-    ||> get_or_failwith
-    ||> fun experiment -> { experiment with invitation_reset_at }
+    { experiment with invitation_reset_at }
   in
-  let%lwt () = Experiment.(Updated experiment |> handle_event database_label) in
+  let%lwt () =
+    Experiment.(Updated (experiment, experiment) |> handle_event database_label)
+  in
   let%lwt contacts =
     Lwt_list.map_s
       (fun id -> Contact.find database_label id ||> get_or_failwith)
@@ -302,13 +312,14 @@ let matcher_notification _ () =
   let%lwt tenant =
     Pool_tenant.find_by_label database_label ||> get_or_failwith
   in
+  let%lwt current_user = current_user () in
   let%lwt experiment =
     Experiment.find database_label experiment_id ||> get_or_failwith
   in
   let%lwt experiment =
     "that name surely does not exist"
     |> contact_name_filter
-    |> store_filter experiment
+    |> store_filter current_user experiment
   in
   let email_event () =
     Experiment.find_admins_to_notify_about_invitations
@@ -329,13 +340,14 @@ let matcher_notification _ () =
   in
   let%lwt events = matcher_events () ||> CCList.hd ||> snd in
   let%lwt expected =
+    let updated =
+      Experiment.
+        { experiment with
+          matcher_notification_sent = MatcherNotificationSent.create true
+        }
+    in
     let experiment =
-      Experiment.(
-        Updated
-          { experiment with
-            matcher_notification_sent = MatcherNotificationSent.create true
-          })
-      |> Pool_event.experiment
+      Experiment.Updated (experiment, updated) |> Pool_event.experiment
     in
     let%lwt emails = email_event () in
     Lwt.return [ emails; experiment ]

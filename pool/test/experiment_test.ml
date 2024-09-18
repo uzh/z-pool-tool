@@ -160,13 +160,14 @@ let create () =
 let create_without_title () =
   let events =
     let open CCResult.Infix in
+    let default_public_title = Experiment.PublicTitle.of_string "#42" in
     Field.
       [ Title |> show, [ "" ]
       ; PublicTitle |> show, [ "public_title" ]
       ; InternalDescription |> show, [ Data.internal_description ]
       ]
     |> Http_utils.format_request_boolean_values experiment_boolean_fields
-    |> ExperimentCommand.Create.decode
+    |> ExperimentCommand.Create.decode default_public_title
     >>= ExperimentCommand.Create.handle
   in
   let expected = Error Error.(Conformist [ Field.Title, NoValue ]) in
@@ -216,7 +217,7 @@ let update () =
     >>= handle_update ~session_count:0 experiment
   in
   let expected =
-    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
+    Ok [ Experiment.Updated (experiment, experiment) |> Pool_event.experiment ]
   in
   Test_utils.check_result expected events
 ;;
@@ -237,9 +238,10 @@ let update_add_ou_and_contact_person () =
     Ok
       Experiment.
         [ Updated
-            { experiment with
-              organisational_unit = Some Data.organisational_unit
-            }
+            ( experiment
+            , { experiment with
+                organisational_unit = Some Data.organisational_unit
+              } )
           |> Pool_event.experiment
         ]
   in
@@ -263,27 +265,40 @@ let update_with_existing_sessions () =
   (* offline experiment *)
   let events = make_events Data.urlencoded experiment in
   let expected =
-    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
+    Ok [ Experiment.Updated (experiment, experiment) |> Pool_event.experiment ]
   in
-  Test_utils.check_result expected events;
+  Test_utils.check_result ~msg:"update offline experiment" expected events;
+  (* update offline experiment to be online *)
   let events =
     make_events Data.(urlencoded @ online_experiment_urlencoded) experiment
   in
   let expected = Error (Error.CannotBeUpdated Field.AssignmentWithoutSession) in
-  Test_utils.check_result expected events;
+  Test_utils.check_result
+    ~msg:"update offline experiment to be online"
+    expected
+    events;
   (* online experiment *)
   let events = make_events Data.urlencoded online_experiment in
   let expected = Error (Error.CannotBeUpdated Field.AssignmentWithoutSession) in
-  Test_utils.check_result expected events;
+  Test_utils.check_result
+    ~msg:"update online experiment to be offline"
+    expected
+    events;
   let events =
     make_events
       Data.(urlencoded @ online_experiment_urlencoded)
       online_experiment
   in
   let expected =
-    Ok [ Experiment.Updated online_experiment |> Pool_event.experiment ]
+    Ok
+      [ Experiment.Updated (online_experiment, online_experiment)
+        |> Pool_event.experiment
+      ]
   in
-  Test_utils.check_result expected events
+  Test_utils.check_result
+    ~msg:"update survey data of online experiment"
+    expected
+    events
 ;;
 
 let update_remove_ou () =
@@ -302,7 +317,7 @@ let update_remove_ou () =
   let expected =
     Ok
       Experiment.
-        [ Updated { experiment with organisational_unit = None }
+        [ Updated (experiment, { experiment with organisational_unit = None })
           |> Pool_event.experiment
         ]
   in

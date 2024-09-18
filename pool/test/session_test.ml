@@ -531,7 +531,7 @@ let delete_session_with_follow_ups () =
   check_result (Error Error.SessionHasFollowUps) res
 ;;
 
-let create_email_job experiment email =
+let create_email_job (experiment : Experiment.t) email =
   Email.Service.Job.create
     ?smtp_auth_id:experiment.Experiment.smtp_auth_id
     email

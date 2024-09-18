@@ -1,28 +1,5 @@
 open Entity
-
-type command =
-  { title : Title.t
-  ; public_title : PublicTitle.t
-  ; internal_description : InternalDescription.t option
-  ; public_description : PublicDescription.t option
-  ; language : Pool_common.Language.t option
-  ; cost_center : CostCenter.t option
-  ; contact_email : Pool_user.EmailAddress.t option
-  ; direct_registration_disabled : DirectRegistrationDisabled.t
-  ; registration_disabled : RegistrationDisabled.t
-  ; allow_uninvited_signup : AllowUninvitedSignup.t
-  ; external_data_required : ExternalDataRequired.t
-  ; show_external_data_id_links : ShowExternalDataIdLinks.t
-  ; experiment_type : Pool_common.ExperimentType.t option
-  ; assignment_without_session : AssignmentWithoutSession.t
-  ; survey_url : SurveyUrl.t option
-  ; email_session_reminder_lead_time : int option
-  ; email_session_reminder_lead_time_unit : Pool_model.Base.TimeUnit.t option
-  ; text_message_session_reminder_lead_time : int option
-  ; text_message_session_reminder_lead_time_unit :
-      Pool_model.Base.TimeUnit.t option
-  }
-[@@deriving eq, show]
+module Reminder = Pool_common.Reminder
 
 let create_changelog pool ?user_uuid before after =
   let open Version_history in
@@ -39,12 +16,12 @@ let create_changelog pool ?user_uuid before after =
 
 type event =
   | Created of t
-  | Updated of t
+  | Updated of t * t
   | ResetInvitations of t
   | Deleted of Pool_common.Id.t
 [@@deriving eq, show, variants]
 
-let handle_event pool : event -> unit Lwt.t =
+let handle_event ?user_uuid pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   let ctx = Database.to_ctx pool in
   function
@@ -53,7 +30,9 @@ let handle_event pool : event -> unit Lwt.t =
     Entity_guard.Target.to_authorizable ~ctx t
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
-  | Updated t -> Repo.update pool t
+  | Updated (experiment, updated) ->
+    let%lwt () = create_changelog pool ?user_uuid experiment updated in
+    Repo.update pool updated
   | ResetInvitations t ->
     let%lwt experiment =
       Repo.find pool t.id ||> Pool_common.Utils.get_or_failwith

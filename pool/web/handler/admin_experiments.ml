@@ -211,8 +211,11 @@ let create req =
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Create in
+      let%lwt default_public_title =
+        Experiment.get_default_public_title database_label
+      in
       urlencoded
-      |> decode
+      |> decode default_public_title
       >>= handle ~tags ~id ?organisational_unit ?smtp_auth
       |> Lwt_result.lift
     in

@@ -182,12 +182,13 @@ let notify_all_invited pool tenant experiment =
       ||> Email.bulksent
       ||> Pool_event.email
     in
+    let updated =
+      { experiment with
+        matcher_notification_sent = MatcherNotificationSent.create true
+      }
+    in
     let experiment_event =
-      Updated
-        { experiment with
-          matcher_notification_sent = MatcherNotificationSent.create true
-        }
-      |> Pool_event.experiment
+      Updated (experiment, updated) |> Pool_event.experiment
     in
     Lwt.return [ email_event; experiment_event ]
 ;;
