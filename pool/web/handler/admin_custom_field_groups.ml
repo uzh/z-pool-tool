@@ -185,6 +185,28 @@ let sort_fields req =
   Admin_custom_fields.sort_fields req ~group ()
 ;;
 
+let changelog req =
+  let result (_ : Pool_context.t) =
+    let open Utils.Lwt_result.Infix in
+    let* model = Admin_custom_fields.model_from_router req |> Lwt_result.lift in
+    let group_id = get_group_id req in
+    let url =
+      HttpUtils.Url.Admin.custom_field_groups_path
+        model
+        ~suffix:"changelog"
+        ~id:group_id
+        ()
+    in
+    Lwt_result.ok
+    @@ Helpers.Changelog.htmx_handler
+         ~version_history:(module Custom_field.GroupVersionHistory)
+         ~url
+         (Custom_field.Group.Id.to_common group_id)
+         req
+  in
+  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+;;
+
 module Access : sig
   include module type of Helpers.Access
 

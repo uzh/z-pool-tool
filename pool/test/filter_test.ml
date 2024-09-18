@@ -977,7 +977,8 @@ let filter_ignore_admin_value _ () =
           Number { field with admin_override = AdminOverride.create false }
         | _ -> failwith "Invalid field type"
       in
-      (Updated override_field |> Pool_event.custom_field)
+      (Updated (admin_override_nr_field, override_field)
+       |> Pool_event.custom_field)
       :: answer_admin_override_nr_field ~answer_value [ contact ]
       |> Pool_event.handle_events Data.database_label current_user
     in

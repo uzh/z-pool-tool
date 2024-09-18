@@ -140,7 +140,7 @@ module Validation = struct
   type 'a t =
     (('a -> ('a, Pool_message.Error.t) result) * raw
     [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
-  [@@deriving show, eq]
+  [@@deriving show, eq, yojson]
 
   let read_key key_of_yojson m =
     try Some (Utils.Json.read_variant key_of_yojson m) with
@@ -368,6 +368,8 @@ module Validation = struct
 end
 
 module SelectOption = struct
+  let model = Pool_message.Field.CustomFieldOption
+
   module Id = struct
     include Pool_common.Id
   end
@@ -608,6 +610,8 @@ module Public = struct
 end
 
 module Group = struct
+  let model = Pool_message.Field.CustomFieldGroup
+
   module Id = struct
     include Pool_common.Id
 
@@ -619,7 +623,7 @@ module Group = struct
     ; model : Model.t
     ; name : Name.t
     }
-  [@@deriving eq, show]
+  [@@deriving eq, show, yojson]
 
   let create ?(id = Id.create ()) model name = { id; model; name }
 
@@ -663,7 +667,7 @@ type 'a custom_field =
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 type t =
   | Boolean of bool custom_field
@@ -672,7 +676,7 @@ type t =
   | MultiSelect of SelectOption.t list custom_field * SelectOption.t list
   | Select of SelectOption.t custom_field * SelectOption.t list
   | Text of string custom_field
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 let create
   ?(id = Pool_common.Id.create ())
@@ -894,6 +898,17 @@ let published_at = function
   | MultiSelect ({ published_at; _ }, _)
   | Select ({ published_at; _ }, _)
   | Text { published_at; _ } -> published_at
+;;
+
+let set_published_at =
+  let published_at = Some (PublishedAt.create_now ()) in
+  function
+  | Boolean m -> Boolean { m with published_at }
+  | Date m -> Date { m with published_at }
+  | Number m -> Number { m with published_at }
+  | MultiSelect (m, options) -> MultiSelect ({ m with published_at }, options)
+  | Select (m, options) -> Select ({ m with published_at }, options)
+  | Text m -> Text { m with published_at }
 ;;
 
 let group_id = function

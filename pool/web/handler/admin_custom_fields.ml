@@ -325,6 +325,29 @@ let sort_fields req ?group () =
 
 let sort_ungrouped_fields req = sort_fields req ()
 
+let changelog req =
+  let response req model =
+    let custom_field_id =
+      HttpUtils.get_field_router_param req Field.CustomField
+      |> Custom_field.Id.of_string
+    in
+    let url =
+      HttpUtils.Url.Admin.custom_fields_path
+        model
+        ~suffix:"changelog"
+        ~id:custom_field_id
+        ()
+    in
+    let open Custom_field in
+    Helpers.Changelog.htmx_handler
+      ~version_history:(module VersionHistory)
+      ~url
+      (custom_field_id |> Id.to_common)
+      req
+  in
+  get_model response req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 

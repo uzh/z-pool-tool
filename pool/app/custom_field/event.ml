@@ -10,19 +10,43 @@ type event =
   | GroupCreated of Group.t
   | GroupDestroyed of Group.t
   | GroupsSorted of Group.t list
-  | GroupUpdated of Group.t
+  | GroupUpdated of (Group.t * Group.t)
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
   | OptionPublished of SelectOption.t
   | OptionsSorted of SelectOption.t list
-  | OptionUpdated of SelectOption.t
+  | OptionUpdated of (SelectOption.t * SelectOption.t)
   | PartialUpdate of PartialUpdate.t * Contact.t * Pool_context.user
   | Published of t
-  | Updated of t
+  | Updated of t * t
 [@@deriving eq, show, variants]
 
-let handle_event pool : event -> unit Lwt.t =
+let handle_event ?user_uuid pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
+  let create_changelog before after =
+    let open Version_history in
+    user_uuid
+    |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
+      insert pool ~entity_uuid:(id before) ~user_uuid ~before ~after ())
+  in
+  let create_option_changelog before after =
+    let open Version_history.OptionVersionHistory in
+    user_uuid
+    |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
+      insert
+        pool
+        ~entity_uuid:before.SelectOption.id
+        ~user_uuid
+        ~before
+        ~after
+        ())
+  in
+  let create_group_changelog before after =
+    let open Version_history.GroupVersionHistory in
+    user_uuid
+    |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
+      insert pool ~entity_uuid:before.Group.id ~user_uuid ~before ~after ())
+  in
   function
   | AdminAnswerCleared (m, entity_uuid) ->
     Repo_partial_update.clear_answer
@@ -55,15 +79,23 @@ let handle_event pool : event -> unit Lwt.t =
   | GroupDestroyed m -> Repo_group.destroy pool m
   | GroupsSorted m ->
     CCList.map (fun m -> m.Group.id) m |> Repo_group.sort_groups pool
-  | GroupUpdated m -> Repo_group.update pool m
+  | GroupUpdated (m, updated) ->
+    let%lwt () = create_group_changelog m updated in
+    Repo_group.update pool updated
   | OptionCreated (field_id, m) -> Repo_option.insert pool field_id m
   | OptionDestroyed m -> Repo_option.destroy pool m
   | OptionPublished m -> Repo_option.publish pool m
   | OptionsSorted m ->
     CCList.map (fun m -> m.SelectOption.id) m |> Repo_option.sort_options pool
-  | OptionUpdated m -> Repo_option.update pool m
+  | OptionUpdated (m, updated) ->
+    let%lwt () = create_option_changelog m updated in
+    Repo_option.update pool updated
   | PartialUpdate (update, contact, user) ->
     Repo_partial_update.update pool user update contact
-  | Published m -> Repo.publish pool m
-  | Updated m -> Repo.update pool m
+  | Published m ->
+    let%lwt () = create_changelog m (set_published_at m) in
+    Repo.publish pool m
+  | Updated (t, updated) ->
+    let%lwt () = create_changelog t updated in
+    Repo.update pool updated
 ;;

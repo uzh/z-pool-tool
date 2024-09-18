@@ -82,7 +82,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Contact.handle_event pool event
   | CustomField event ->
     info "custom_field" Custom_field.pp_event event;
-    Custom_field.handle_event pool event
+    Custom_field.handle_event ?user_uuid pool event
   | Database event ->
     info "database" Pool_database.pp_event event;
     Pool_database.handle_event pool event

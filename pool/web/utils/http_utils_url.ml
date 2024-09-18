@@ -1,4 +1,5 @@
 let map = CCOption.map
+let append suffix path = Format.asprintf "%s/%s" path suffix
 
 let append_opt suffix path =
   suffix |> CCOption.map_or ~default:path (Format.asprintf "%s/%s" path)
@@ -7,6 +8,29 @@ let append_opt suffix path =
 module Admin = struct
   let admin_path ?suffix ?id () =
     "/admin/admins" |> append_opt (map Admin.Id.value id) |> append_opt suffix
+  ;;
+
+  let custom_fields_path model ?suffix ?id () =
+    "/admin/custom-fields"
+    |> append (Custom_field.Model.show model)
+    |> append "field"
+    |> append_opt (map Custom_field.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let custom_field_option_path model field_id ?suffix ?id () =
+    custom_fields_path model ~id:field_id ()
+    |> append "options"
+    |> append_opt (map Custom_field.SelectOption.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let custom_field_groups_path model ?suffix ?id () =
+    "/admin/custom-fields"
+    |> append (Custom_field.Model.show model)
+    |> append "group"
+    |> append_opt (map Custom_field.Group.Id.value id)
+    |> append_opt suffix
   ;;
 
   let experiment_path ?suffix ?id () =

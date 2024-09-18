@@ -242,6 +242,8 @@ module Ptime = struct
   let sexp_of_t = Time.ptime_to_sexp
   let t_of_yojson = Utils.Ptime.ptime_of_yojson
   let yojson_of_t = Utils.Ptime.yojson_of_ptime
+  let date_of_yojson = Utils.Ptime.ptime_date_of_yojson
+  let yojson_of_date = Utils.Ptime.yojson_of_ptime_date
   let value m = m
   let create m = m
   let create_now = Ptime_clock.now
@@ -286,6 +288,8 @@ module type PtimeSig = sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
+  val date_of_yojson : Yojson.Safe.t -> Ptime.date
+  val yojson_of_date : Ptime.date -> Yojson.Safe.t
   val value : t -> Ptime.t
   val create : Ptime.t -> t
   val create_now : unit -> t

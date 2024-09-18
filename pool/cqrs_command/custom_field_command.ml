@@ -195,7 +195,7 @@ end = struct
         admin_input_only
         prompt_on_registration
     in
-    Ok [ Custom_field.Updated t |> Pool_event.custom_field ]
+    Ok [ Custom_field.Updated (custom_field, t) |> Pool_event.custom_field ]
   ;;
 
   let effects = Custom_field.Guard.Access.update

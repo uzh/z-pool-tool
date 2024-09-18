@@ -698,6 +698,7 @@ module Admin = struct
             ; post "" ~middlewares:[ Access.update ] update
             ; post "/delete" ~middlewares:[ Access.delete ] delete
             ; post "/publish" ~middlewares:[ Access.publish ] publish
+            ; get "/changelog" ~middlewares:[ Access.update ] changelog
             ]
           in
           [ get "/new" ~middlewares:[ Access.create ] new_form
@@ -710,6 +711,7 @@ module Admin = struct
         ; post "/publish" ~middlewares:[ Access.publish ] publish
         ; post "/delete" ~middlewares:[ Access.delete ] delete
         ; post "/sort-options" ~middlewares:[ Access.update ] sort_options
+        ; get "/changelog" ~middlewares:[ Access.update ] changelog
         ; choose ~scope:"options" options
         ]
       in
@@ -726,6 +728,7 @@ module Admin = struct
           ; post "" ~middlewares:[ Access.update ] update
           ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; post "sort-fields" ~middlewares:[ Access.sort_fields ] sort_fields
+          ; get "/changelog" ~middlewares:[ Access.update ] changelog
           ]
         in
         [ get "/new" ~middlewares:[ Access.create ] new_form

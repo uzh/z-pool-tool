@@ -179,6 +179,31 @@ let toggle_action action req =
 let delete = toggle_action `Delete
 let publish = toggle_action `Publish
 
+let changelog req =
+  let result (_ : Pool_context.t) =
+    let open Utils.Lwt_result.Infix in
+    let* model = Admin_custom_fields.model_from_router req |> Lwt_result.lift in
+    let field_id = get_field_id req in
+    let option_id = get_option_id req in
+    let url =
+      HttpUtils.Url.Admin.custom_field_option_path
+        model
+        field_id
+        ~suffix:"changelog"
+        ~id:option_id
+        ()
+    in
+    let open Custom_field in
+    Lwt_result.ok
+    @@ Helpers.Changelog.htmx_handler
+         ~version_history:(module OptionVersionHistory)
+         ~url
+         (SelectOption.Id.to_common option_id)
+         req
+  in
+  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+;;
+
 module Access : sig
   include module type of Helpers.Access
 

@@ -1,6 +1,7 @@
 (library
  (name custom_field)
  (libraries
+  changelog
   contact
   guardian
   guard

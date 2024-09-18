@@ -1,10 +1,13 @@
 open Pool_message
 module Language = Pool_common.Language
 
-let current_user = Test_utils.Model.create_admin ()
+let current_user () =
+  Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+;;
+
 let database_label = Test_utils.Data.database_label
 
-let save_custom_fields custom_field contact =
+let save_custom_fields current_user custom_field contact =
   let public =
     Custom_field_test.Data.to_public
       Contact.(contact |> id |> Id.to_common)
@@ -54,6 +57,7 @@ let update_custom_field _ () =
   let%lwt () =
     let open CCResult in
     let open Custom_field in
+    let%lwt current_user = current_user () in
     let contact = Test_utils.Model.create_contact () in
     let custom_field = Custom_field_test.Data.custom_text_field () in
     let public =
@@ -61,7 +65,7 @@ let update_custom_field _ () =
         Contact.(id contact |> Id.to_common)
         custom_field
     in
-    let%lwt () = save_custom_fields custom_field contact in
+    let%lwt () = save_custom_fields current_user custom_field contact in
     let language = Pool_common.Language.En in
     let field = Public.to_common_field language public in
     let new_value = "new value" in
@@ -105,13 +109,14 @@ let partial_update_exec
   =
   let%lwt () =
     let open Custom_field in
+    let%lwt current_user = current_user () in
     let contact = Test_utils.Model.create_contact () in
     let public =
       Custom_field_test.Data.to_public
         Contact.(id contact |> Id.to_common)
         custom_field
     in
-    let%lwt () = save_custom_fields custom_field contact in
+    let%lwt () = save_custom_fields current_user custom_field contact in
     let language = Pool_common.Language.En in
     let field = Public.to_common_field language public in
     let%lwt partial_update =
