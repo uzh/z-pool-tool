@@ -7,7 +7,7 @@ let create_changelog_table =
         `uuid` BINARY(16) NOT NULL,
         `model` VARCHAR(128) NOT NULL,
         `entity_uuid` BINARY(16) NOT NULL,
-        `user_uuid` BINARY(16) NOT NULL,
+        `user_uuid` BINARY(16),
         `changes` TEXT NOT NULL DEFAULT '',
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

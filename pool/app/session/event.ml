@@ -37,9 +37,7 @@ type event =
 let handle_event ?user_uuid pool =
   let create_changelog before after =
     let open Version_history in
-    user_uuid
-    |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
-      insert pool ~entity_uuid:before.id ~user_uuid ~before ~after ())
+    insert pool ?user_uuid ~entity_uuid:before.id ~before ~after ()
   in
   let open Utils.Lwt_result.Infix in
   function

@@ -3,6 +3,7 @@ open CCFun.Infix
 module RepoId = Pool_common.Repo.Id
 
 let make_type = Pool_common.Repo.make_caqti_type
+let option = Caqti_type.option
 
 module Changes = struct
   let t =
@@ -26,7 +27,13 @@ let t =
       , (entity_uuid, (user_uuid, (user_email, (changes, (created_at, ()))))) )
     )
     =
-    Ok { id; model; entity_uuid; user_uuid; user_email; changes; created_at }
+    let user =
+      match user_uuid, user_email with
+      | Some user_uuid, Some user_email ->
+        Some { uuid = user_uuid; email = user_email }
+      | _ -> None
+    in
+    Ok { id; model; entity_uuid; user; changes; created_at }
   in
   custom
     ~encode
@@ -35,8 +42,8 @@ let t =
       [ RepoId.t
       ; Field.t
       ; RepoId.t
-      ; RepoId.t
-      ; Pool_user.Repo.EmailAddress.t
+      ; option RepoId.t
+      ; option Pool_user.Repo.EmailAddress.t
       ; Changes.t
       ; Pool_common.Repo.CreatedAt.t
       ]
@@ -67,7 +74,7 @@ module Write = struct
         [ RepoId.t
         ; Field.t
         ; RepoId.t
-        ; RepoId.t
+        ; option RepoId.t
         ; Changes.t
         ; Pool_common.Repo.CreatedAt.t
         ]

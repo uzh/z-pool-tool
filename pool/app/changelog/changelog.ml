@@ -77,8 +77,8 @@ module T (R : RecordSig) = struct
 
   let make_write
     ?(id = Id.create ())
+    ?user_uuid
     ~entity_uuid
-    ~user_uuid
     (before : R.t)
     (after : R.t)
     =
@@ -97,12 +97,12 @@ module T (R : RecordSig) = struct
         })
   ;;
 
-  let create ?(id = Id.create ()) ~entity_uuid ~user_uuid ~before ~after () =
-    make_write ~id ~entity_uuid ~user_uuid before after
+  let create ?(id = Id.create ()) ?user_uuid ~entity_uuid ~before ~after () =
+    make_write ~id ~entity_uuid ?user_uuid before after
   ;;
 
-  let insert pool ~entity_uuid ~user_uuid ~before ~after () =
-    create ~entity_uuid ~user_uuid ~before ~after ()
+  let insert pool ?user_uuid ~entity_uuid ~before ~after () =
+    create ~entity_uuid ?user_uuid ~before ~after ()
     |> function
     | Some changelog -> Repo.insert pool changelog
     | None -> Lwt.return_unit

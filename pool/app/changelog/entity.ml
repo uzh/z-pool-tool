@@ -30,13 +30,18 @@ module Changes = struct
   let to_string t = t |> yojson_of_t |> Yojson.Safe.to_string
 end
 
+type user =
+  { uuid : Pool_common.Id.t
+  ; email : Pool_user.EmailAddress.t
+  }
+[@@deriving eq, show]
+
 type t =
   { id : Id.t
   ; changes : Changes.t
   ; model : Pool_message.Field.t
   ; entity_uuid : Pool_common.Id.t
-  ; user_uuid : Pool_common.Id.t
-  ; user_email : Pool_user.EmailAddress.t
+  ; user : user option
   ; created_at : Pool_common.CreatedAt.t
   }
 [@@deriving eq, show]
@@ -47,7 +52,7 @@ module Write = struct
     ; changes : Changes.t
     ; model : Pool_message.Field.t
     ; entity_uuid : Pool_common.Id.t
-    ; user_uuid : Pool_common.Id.t
+    ; user_uuid : Pool_common.Id.t option
     ; created_at : Pool_common.CreatedAt.t
     }
   [@@deriving eq, show]
@@ -71,8 +76,8 @@ module type TSig = sig
 
   val create
     :  ?id:Id.t
+    -> ?user_uuid:Pool_common.Id.t
     -> entity_uuid:Pool_common.Id.t
-    -> user_uuid:Pool_common.Id.t
     -> before:record
     -> after:record
     -> unit
@@ -80,8 +85,8 @@ module type TSig = sig
 
   val insert
     :  Database.Label.t
+    -> ?user_uuid:Pool_common.Id.t
     -> entity_uuid:Pool_common.Id.t
-    -> user_uuid:Pool_common.Id.t
     -> before:record
     -> after:record
     -> unit

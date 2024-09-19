@@ -16,22 +16,13 @@ type event =
   | FileDeleted of Mapping.Id.t
 [@@deriving eq, show, variants]
 
-let create_changelog pool ?user_uuid before after =
-  let open Version_history in
-  user_uuid
-  |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
-    insert
-      pool
-      ~entity_uuid:(Entity.Id.to_common before.id)
-      ~user_uuid
-      ~before
-      ~after
-      ())
-;;
-
 let handle_event ?user_uuid pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   let ctx = Database.to_ctx pool in
+  let create_changelog before after =
+    let open Version_history in
+    insert pool ?user_uuid ~entity_uuid:before.id ~before ~after ()
+  in
   function
   | Created ({ files; _ } as location) ->
     let%lwt () =
@@ -65,7 +56,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
       ; status = m.status
       }
     in
-    let%lwt () = create_changelog pool ?user_uuid location updated in
+    let%lwt () = create_changelog location updated in
     updated |> Repo.update pool
   | FileDeleted id ->
     let%lwt () = Repo_file_mapping.delete pool id in

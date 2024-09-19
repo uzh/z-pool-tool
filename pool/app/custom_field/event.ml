@@ -25,27 +25,15 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   let create_changelog before after =
     let open Version_history in
-    user_uuid
-    |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
-      insert pool ~entity_uuid:(id before) ~user_uuid ~before ~after ())
+    insert pool ?user_uuid ~entity_uuid:(id before) ~before ~after ()
   in
   let create_option_changelog before after =
     let open Version_history.OptionVersionHistory in
-    user_uuid
-    |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
-      insert
-        pool
-        ~entity_uuid:before.SelectOption.id
-        ~user_uuid
-        ~before
-        ~after
-        ())
+    insert pool ?user_uuid ~entity_uuid:before.SelectOption.id ~before ~after ()
   in
   let create_group_changelog before after =
     let open Version_history.GroupVersionHistory in
-    user_uuid
-    |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
-      insert pool ~entity_uuid:before.Group.id ~user_uuid ~before ~after ())
+    insert pool ?user_uuid ~entity_uuid:before.Group.id ~before ~after ()
   in
   function
   | AdminAnswerCleared (m, entity_uuid) ->

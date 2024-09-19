@@ -30,7 +30,7 @@ let create_changelog changes =
   ; changes
   ; model
   ; entity_uuid = Pool_location.(Id.to_common location.id)
-  ; user_uuid
+  ; user_uuid = Some user_uuid
   ; created_at = Pool_common.CreatedAt.create_now ()
   }
 ;;
