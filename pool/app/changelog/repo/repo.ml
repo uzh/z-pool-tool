@@ -13,7 +13,7 @@ let sql_select_columns =
 ;;
 
 let joins =
-  {sql| INNER JOIN user_users ON pool_change_log.user_uuid = user_users.uuid |sql}
+  {sql| LEFT JOIN user_users ON pool_change_log.user_uuid = user_users.uuid |sql}
 ;;
 
 let find_request_sql ?(count = false) =
