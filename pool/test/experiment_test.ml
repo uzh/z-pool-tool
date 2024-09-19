@@ -512,6 +512,9 @@ module AvailableExperiments = struct
 
   let cancel_session _ () =
     let open Utils.Lwt_result.Infix in
+    let%lwt current_user =
+      Integration_utils.AdminRepo.create () ||> Pool_context.admin
+    in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session = Session.find database_label session_id ||> get_exn in
     let%lwt () =

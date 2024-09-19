@@ -4,7 +4,11 @@ open Utils.Lwt_result.Infix
 open Pool_message
 
 let database_label = Data.database_label
-let current_user = Model.create_admin ()
+
+let current_user () =
+  Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+;;
+
 let get_exn = get_or_failwith
 
 let get_contact contact_id =
@@ -41,17 +45,19 @@ let find_assignment_by_contact_and_session contact_id session_id =
 
 let set_sessions_to_past session_ids =
   let open Session in
+  let%lwt current_user = current_user () in
   session_ids
   |> Lwt_list.map_s (fun id -> find database_label id)
   ||> CCResult.flatten_l
   >|+ CCList.map (fun (session : t) ->
-    let session = { session with start = Model.an_hour_ago () } in
-    Updated session |> Pool_event.session)
+    let updated = { session with start = Model.an_hour_ago () } in
+    Updated (session, updated) |> Pool_event.session)
   |>> Pool_event.handle_events database_label current_user
   ||> get_exn
 ;;
 
 let sign_up_for_session experiment contact session_id =
+  let%lwt current_user = current_user () in
   let%lwt session = Session.find_open database_label session_id ||> get_exn in
   let%lwt follow_up_sessions =
     Session.find_follow_ups database_label session_id
@@ -73,6 +79,7 @@ let close_session
   =
   let open Assignment in
   let open Session_command in
+  let%lwt current_user = current_user () in
   let%lwt assignment =
     find_assignment_by_contact_and_session contact_id session.Session.id
   in
@@ -101,6 +108,7 @@ let close_session
 
 let delete_assignment experiment_id contact assignments =
   let open Assignment_command in
+  let%lwt current_user = current_user () in
   let%lwt decrement_num_participations =
     Assignment.(
       contact_participation_in_other_assignments
@@ -120,6 +128,7 @@ let delete_assignment experiment_id contact assignments =
 
 let initialize contact_id experiment_id session_id ?followup_session_id () =
   let open Integration_utils in
+  let%lwt admin = current_user () in
   let%lwt contact =
     ContactRepo.create ~id:contact_id ~with_terms_accepted:true ()
   in
@@ -131,7 +140,7 @@ let initialize contact_id experiment_id session_id ?followup_session_id () =
       SessionRepo.create ~id ~follow_up_to:session_id experiment ()
       |> Lwt.map CCOption.return)
   in
-  Lwt.return (contact, experiment, session, follow_up_session)
+  Lwt.return (contact, experiment, session, follow_up_session, admin)
 ;;
 
 let initialize_online_survey contact_id experiment_id time_window_id () =
@@ -164,7 +173,7 @@ module InviteContact = struct
   let initialize = initialize contact_id experiment_id session_id
 
   let invite _ () =
-    let%lwt contact, experiment, _, _ = initialize () in
+    let%lwt contact, experiment, _, _, current_user = initialize () in
     let%lwt () =
       Invitation_command.Create.(
         handle
@@ -202,7 +211,7 @@ module AttendAll = struct
   ;;
 
   let register_for_session _ () =
-    let%lwt contact, experiment, _, _ = initialize () in
+    let%lwt contact, experiment, _, _, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt res = get_contact contact_id in
     let%lwt expected =
@@ -255,6 +264,7 @@ module CancelSession = struct
 
   let test_cancellation contact_id initial_nr_assignments test_cases =
     let%lwt contact = get_contact contact_id in
+    let%lwt current_user = current_user () in
     let test_result expected_nr_assignments =
       let%lwt res = get_contact contact_id in
       let contact =
@@ -302,13 +312,13 @@ module CancelSession = struct
   ;;
 
   let without_followups _ () =
-    let%lwt contact, experiment, session, _ = initialize () in
+    let%lwt contact, experiment, session, _, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session.Session.id in
     test_cancellation (Contact.id contact) 1 [ session, 0 ]
   ;;
 
   let follow_up _ () =
-    let%lwt contact, experiment, session, followup_session =
+    let%lwt contact, experiment, session, followup_session, _ =
       initialize ~followup_session_id:(Session.Id.create ()) ()
     in
     let followup_session =
@@ -319,7 +329,7 @@ module CancelSession = struct
   ;;
 
   let main_with_follow_up _ () =
-    let%lwt contact, experiment, session, _ =
+    let%lwt contact, experiment, session, _, _ =
       initialize ~followup_session_id:(Session.Id.create ()) ()
     in
     let%lwt () = sign_up_for_session experiment contact session.Session.id in
@@ -339,7 +349,7 @@ module DoNotAttend = struct
   let initialize = initialize contact_id experiment_id session_id
 
   let register_for_session _ () =
-    let%lwt contact, experiment, _, _ = initialize () in
+    let%lwt contact, experiment, _, _, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt res = get_contact contact_id in
     let%lwt expected =
@@ -383,7 +393,7 @@ module NoShow = struct
   let initialize = initialize contact_id experiment_id session_id
 
   let register_for_session _ () =
-    let%lwt contact, experiment, _, _ = initialize () in
+    let%lwt contact, experiment, _, _, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt res = get_contact contact_id in
     let%lwt expected =
@@ -476,7 +486,7 @@ module DeleteUnattended = struct
   let num_assignments = 4
 
   let register_for_session _ () =
-    let%lwt contact, experiment, _, _ = initialize () in
+    let%lwt contact, experiment, _, _, current_user = initialize () in
     let contact =
       Contact.
         { contact with
@@ -544,7 +554,7 @@ module UpdateAssignments = struct
 
   let initialize () =
     initialize contact_id experiment_id session_id ~followup_session_id ()
-    >|> fun (contact, session, experiment, follow_ups) ->
+    >|> fun (contact, session, experiment, follow_ups, _) ->
     let contact =
       { contact with
         num_assignments = initial_assignments
@@ -640,6 +650,7 @@ module UpdateAssignments = struct
   ;;
 
   let update_assignment_manually _ () =
+    let%lwt current_user = current_user () in
     let%lwt contact, experiment, session, _ = get_entities () in
     let participated_in_other_sessions assignments =
       Assignment.(
@@ -817,6 +828,7 @@ module UpdateAssignments = struct
   ;;
 
   let update_follow_up_assignment_manually _ () =
+    let%lwt current_user = current_user () in
     let%lwt _, experiment, _, followup_session = get_entities () in
     let participated_in_other_sessions assignments =
       Assignment.(

@@ -124,7 +124,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Pool_tenant.handle_event pool event
   | Session event ->
     info "session" Session.pp_event event;
-    Session.handle_event pool event
+    Session.handle_event ?user_uuid pool event
   | Settings event ->
     info "settings" Settings.pp_event event;
     Settings.handle_event pool event

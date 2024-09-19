@@ -543,7 +543,7 @@ end = struct
       then Error (Error.Smaller (Field.MaxParticipants, Field.MinParticipants))
       else Ok ()
     in
-    let session =
+    let updated =
       Session.
         { session with
           start
@@ -558,7 +558,7 @@ end = struct
         ; text_message_reminder_lead_time
         }
     in
-    Ok [ Session.Updated session |> Pool_event.session ]
+    Ok [ Session.Updated (session, updated) |> Pool_event.session ]
   ;;
 
   let decode data =

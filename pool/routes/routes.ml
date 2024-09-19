@@ -454,6 +454,7 @@ module Admin = struct
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
           ; get "/print" ~middlewares:[ Access.read ] print
+          ; get "/changelog" ~middlewares:[ Access.read ] changelog
           ; post
               "/update-matches-filter"
               ~middlewares:[ Access.update_matches_filter ]

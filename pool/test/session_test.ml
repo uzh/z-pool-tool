@@ -4,7 +4,9 @@ open Pool_message
 module SessionC = Cqrs_command.Session_command
 module TimeUnit = Pool_model.Base.TimeUnit
 
-let current_user = Model.create_admin ()
+let current_user () =
+  Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+;;
 
 let check_result expected generated =
   Alcotest.(check (result (list event) error) "succeeds" expected generated)
@@ -412,7 +414,7 @@ let update_no_optional () =
   let location = Location_test.create_location () in
   let session = Model.create_session ~location () in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
-  let session =
+  let updated =
     let open Data.Validated in
     Session.
       { session with
@@ -427,7 +429,9 @@ let update_no_optional () =
       ; text_message_reminder_lead_time = None
       }
   in
-  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res
+  check_result
+    (Ok [ Pool_event.Session (Session.Updated (session, updated)) ])
+    res
 ;;
 
 let update_full () =
@@ -439,7 +443,7 @@ let update_full () =
     update_input [ Field.Start, String.start2 ]
   in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
-  let session =
+  let updated =
     let open Data.Validated in
     Session.
       { session with
@@ -454,7 +458,9 @@ let update_full () =
       ; text_message_reminder_lead_time = Some text_message_reminder_lead_time
       }
   in
-  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res
+  check_result
+    (Ok [ Pool_event.Session (Session.Updated (session, updated)) ])
+    res
 ;;
 
 let update_min_eq_max () =
@@ -465,7 +471,7 @@ let update_min_eq_max () =
   let location = Location_test.create_location () in
   let session = Model.create_session ~location () in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
-  let session =
+  let updated =
     let open Data.Validated in
     Session.
       { session with
@@ -480,7 +486,9 @@ let update_min_eq_max () =
       ; text_message_reminder_lead_time = Some text_message_reminder_lead_time
       }
   in
-  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res
+  check_result
+    (Ok [ Pool_event.Session (Session.Updated (session, updated)) ])
+    res
 ;;
 
 let delete () =
@@ -1113,7 +1121,7 @@ let update_follow_up_later () =
     SessionC.Update.(
       input |> decode >>= handle ~parent_session:session [] session location)
   in
-  let session =
+  let updated =
     let open Data.Validated in
     Session.
       { session with
@@ -1128,7 +1136,9 @@ let update_follow_up_later () =
       ; text_message_reminder_lead_time = Some text_message_reminder_lead_time
       }
   in
-  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res
+  check_result
+    (Ok [ Pool_event.Session (Session.Updated (session, updated)) ])
+    res
 ;;
 
 let update_follow_ups_earlier () =
@@ -1208,7 +1218,7 @@ let update_follow_ups_later () =
       |> decode
       >>= handle [ follow_up1; follow_up2 ] session location)
   in
-  let session =
+  let updated =
     let open Data.Validated in
     Session.
       { session with
@@ -1223,7 +1233,9 @@ let update_follow_ups_later () =
       ; text_message_reminder_lead_time = Some text_message_reminder_lead_time
       }
   in
-  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res_normal;
+  check_result
+    (Ok [ Pool_event.Session (Session.Updated (session, updated)) ])
+    res_normal;
   (* Make input start later, but before both follow-ups *)
   let later_start =
     Data.Validated.start1
@@ -1238,25 +1250,23 @@ let update_follow_ups_later () =
     SessionC.Update.(
       input |> decode >>= handle [ follow_up1; follow_up2 ] session location)
   in
+  let updated =
+    let open Data.Validated in
+    Session.
+      { session with
+        start = Start.create later_start
+      ; duration
+      ; internal_description = Some internal_description
+      ; public_description = Some public_description
+      ; max_participants
+      ; min_participants
+      ; overbook
+      ; email_reminder_lead_time = Some email_reminder_lead_time
+      ; text_message_reminder_lead_time = Some text_message_reminder_lead_time
+      }
+  in
   check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Updated
-              (let open Data.Validated in
-               Session.
-                 { session with
-                   start = Start.create later_start
-                 ; duration
-                 ; internal_description = Some internal_description
-                 ; public_description = Some public_description
-                 ; max_participants
-                 ; min_participants
-                 ; overbook
-                 ; email_reminder_lead_time = Some email_reminder_lead_time
-                 ; text_message_reminder_lead_time =
-                     Some text_message_reminder_lead_time
-                 }))
-       ])
+    (Ok [ Pool_event.Session (Session.Updated (session, updated)) ])
     res_later_but_earlier
 ;;
 
@@ -1454,6 +1464,7 @@ let close_session_check_contact_figures _ () =
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in
   let open Test_utils in
+  let%lwt current_user = current_user () in
   let%lwt experiment = Repo.first_experiment () in
   let%lwt session =
     SessionRepo.create ~start:(Model.an_hour_ago ()) experiment ()

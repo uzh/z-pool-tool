@@ -250,6 +250,9 @@ module Ptime = struct
   let to_human = Utils.Ptime.formatted_date_time
   let date_time_to_flatpickr = Ptime.to_rfc3339
   let compare = Ptime.compare
+  let to_rfc3339 = Ptime.to_rfc3339
+  let add_span = Ptime.add_span
+  let is_later = Ptime.is_later
 
   (* Date *)
   let equal_date (y1, m1, d1) (y2, m2, d2) =

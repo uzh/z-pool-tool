@@ -1,6 +1,14 @@
 (library
  (name session)
- (libraries containers experiment pool_common pool_location ptime sihl utils)
+ (libraries
+  containers
+  changelog
+  experiment
+  pool_common
+  pool_location
+  ptime
+  sihl
+  utils)
  (preprocess
   (pps
    lwt_ppx

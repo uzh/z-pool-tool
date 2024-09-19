@@ -1,4 +1,5 @@
 open Entity
+module SentAt = Pool_common.Reminder.SentAt
 
 type base =
   { start : Start.t
@@ -27,13 +28,19 @@ type event =
   | Canceled of t
   | Closed of t
   | Deleted of t
-  | Updated of t
+  | Updated of (t * t)
   | EmailReminderSent of t
   | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 [@@deriving eq, show]
 
-let handle_event pool =
+let handle_event ?user_uuid pool =
+  let create_changelog before after =
+    let open Version_history in
+    user_uuid
+    |> CCOption.map_or ~default:Lwt.return_unit (fun user_uuid ->
+      insert pool ~entity_uuid:before.id ~user_uuid ~before ~after ())
+  in
   let open Utils.Lwt_result.Infix in
   function
   | Created session ->
@@ -42,24 +49,35 @@ let handle_event pool =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Canceled session ->
-    (* TODO: Check timestamps? Issue #126 *)
-    { session with canceled_at = Some (Ptime_clock.now ()) } |> Repo.update pool
+    let updated =
+      { session with canceled_at = Some (CanceledAt.create_now ()) }
+    in
+    let%lwt () = create_changelog session updated in
+    Repo.update pool updated
   | Closed session ->
-    (* TODO: Check timestamps? Issue #126 *)
-    { session with closed_at = Some (Ptime_clock.now ()) } |> Repo.update pool
+    let updated = { session with closed_at = Some (Ptime_clock.now ()) } in
+    let%lwt () = create_changelog session updated in
+    Repo.update pool updated
   | Deleted session -> Repo.delete pool session.id
-  | Updated session -> Repo.update pool session
+  | Updated (session, updated) ->
+    let%lwt () = create_changelog session updated in
+    Repo.update pool updated
   | EmailReminderSent session ->
-    { session with
-      email_reminder_sent_at = Some (Pool_common.Reminder.SentAt.create_now ())
-    }
-    |> Repo.update pool
+    let updated =
+      { session with email_reminder_sent_at = Some (SentAt.create_now ()) }
+    in
+    let%lwt () = create_changelog session updated in
+    Repo.update pool updated
   | TextMsgReminderSent session ->
-    { session with
-      text_message_reminder_sent_at =
-        Some (Pool_common.Reminder.SentAt.create_now ())
-    }
-    |> Repo.update pool
+    let updated =
+      { session with
+        text_message_reminder_sent_at = Some (SentAt.create_now ())
+      }
+    in
+    let%lwt () = create_changelog session updated in
+    Repo.update pool updated
   | Rescheduled (session, { start; duration }) ->
-    { session with start; duration } |> Repo.update pool
+    let updated = { session with start; duration } in
+    let%lwt () = create_changelog session updated in
+    Repo.update pool updated
 ;;

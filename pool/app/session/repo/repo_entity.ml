@@ -174,7 +174,7 @@ module Write = struct
     { id : Id.t
     ; follow_up_to : Id.t option
     ; start : Start.t
-    ; duration : Ptime.Span.t
+    ; duration : PtimeSpan.t
     ; internal_description : InternalDescription.t option
     ; public_description : PublicDescription.t option
     ; location_id : Pool_location.Id.t
@@ -341,7 +341,7 @@ module Public = struct
     { id : Entity.Id.t
     ; follow_up_to : Entity.Id.t option
     ; start : Entity.Start.t
-    ; duration : Ptime.Span.t
+    ; duration : PtimeSpan.t
     ; description : Entity.PublicDescription.t option
     ; location_id : Pool_location.Id.t
     ; max_participants : Entity.ParticipantAmount.t

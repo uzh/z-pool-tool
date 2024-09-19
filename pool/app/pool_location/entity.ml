@@ -90,6 +90,8 @@ module Files = struct
     let open Mapping in
     `List (CCList.map (fun t -> `String (Id.value t.id)) files)
   ;;
+
+  let t_of_yojson _ = failwith "Not implemented"
 end
 
 type t =
@@ -103,7 +105,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving show, yojson_of]
+[@@deriving show, yojson]
 
 let to_string language location =
   let address =

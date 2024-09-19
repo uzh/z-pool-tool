@@ -1101,6 +1101,20 @@ let resend_reminders req =
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
+let changelog req =
+  let open Session in
+  let experiment_id = experiment_id req in
+  let id = session_id req in
+  let url =
+    HttpUtils.Url.Admin.session_path ~suffix:"changelog" ~id experiment_id
+  in
+  Helpers.Changelog.htmx_handler
+    ~version_history:(module VersionHistory)
+    ~url
+    (Id.to_common id)
+    req
+;;
+
 module DirectMessage = struct
   let assignments_from_requeset req database_label session_id =
     let open Utils.Lwt_result.Infix in

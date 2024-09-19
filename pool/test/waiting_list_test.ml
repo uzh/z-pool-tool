@@ -4,7 +4,10 @@ module Model = Test_utils.Model
 
 let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
-let current_user = Model.create_admin ()
+
+let current_user () =
+  Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+;;
 
 let create () =
   let open Waiting_list in
@@ -154,6 +157,7 @@ module PendingWaitingLists = struct
 
   let include_after_session_cancellation _ () =
     let open Utils.Lwt_result.Infix in
+    let%lwt current_user = current_user () in
     let%lwt experiment =
       Experiment.find database_label experiment_id
       ||> get_exn

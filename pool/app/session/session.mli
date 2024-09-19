@@ -159,12 +159,17 @@ type event =
   | Canceled of t
   | Closed of t
   | Deleted of t
-  | Updated of t
+  | Updated of (t * t)
   | EmailReminderSent of t
   | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -473,3 +478,5 @@ module Guard : sig
     val close : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
   end
 end
+
+module VersionHistory : Changelog.TSig with type record = t
