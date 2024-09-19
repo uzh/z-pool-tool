@@ -6,6 +6,13 @@ let model = Pool_message.Field.Session
 module Ptime = Pool_model.Base.Ptime
 module PtimeSpan = Pool_model.Base.PtimeSpan
 
+module Pool_location = struct
+  include Pool_location
+
+  let t_of_yojson _ = failwith "Not implemented"
+  let yojson_of_t { Pool_location.id; _ } = `String (Id.value id)
+end
+
 module Experiment = struct
   include Experiment
 
