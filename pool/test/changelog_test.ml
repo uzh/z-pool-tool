@@ -112,3 +112,66 @@ let create_nested () =
     changelog
     expected
 ;;
+
+let update_filter () =
+  let open Filter in
+  let equal = Operator.(Equality Equality.Equal) in
+  let filter_id = Id.create () in
+  let changelog_id = Changelog.Id.create () in
+  let firstname name =
+    Pred (Predicate.create Key.(Hardcoded Firstname) equal (Single (Str name)))
+  in
+  let before =
+    And [ firstname "one"; firstname "two" ] |> create ~id:filter_id None
+  in
+  let after =
+    And [ firstname "one"; firstname "three" ] |> create ~id:filter_id None
+  in
+  let changelog =
+    VersionHistory.create
+      ~id:changelog_id
+      ~entity_uuid:(Id.to_common before.id)
+      ~before
+      ~after
+      ()
+  in
+  let expected =
+    let open Changelog in
+    let changes =
+      let open Changes in
+      Assoc
+        [ ( "query"
+          , Assoc
+              [ ( "and"
+                , Assoc
+                    [ ( "1"
+                      , Assoc
+                          [ ( "pred"
+                            , Assoc
+                                [ ( "value"
+                                  , Assoc
+                                      [ ( "str"
+                                        , Change (`String "two", `String "three")
+                                        )
+                                      ] )
+                                ] )
+                          ] )
+                    ] )
+              ] )
+        ]
+    in
+    Write.
+      { id = changelog_id
+      ; changes
+      ; model = Pool_message.Field.Filter
+      ; entity_uuid = Filter.Id.to_common before.id
+      ; user_uuid = None
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      }
+    |> CCOption.return
+  in
+  Alcotest.(check (option testable_changelog))
+    "changelog contains name"
+    changelog
+    expected
+;;

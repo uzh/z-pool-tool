@@ -9,6 +9,7 @@ let () =
           [ test_case "create unchanged" `Quick create_unchanged
           ; test_case "create" `Quick create
           ; test_case "create with nested changes" `Quick create_nested
+          ; test_case "create filter changelog" `Quick update_filter
           ] )
     ; ( "contact"
       , [ test_case
