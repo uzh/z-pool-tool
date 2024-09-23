@@ -5,7 +5,7 @@ module Message = HttpUtils.Message
 open HttpUtils.Filter
 
 let src = Logs.Src.create "handler.admin.filter"
-let template_id = HttpUtils.find_id Filter.Id.of_string Field.Filter
+let filter_id = HttpUtils.find_id Filter.Id.of_string Field.Filter
 
 let templates_disabled urlencoded =
   let open CCOption in
@@ -134,11 +134,9 @@ let write action req =
            handle ~tags exp matcher_events filter |> lift
          | Some filter ->
            let open UpdateFilter in
-           let* filter =
-             create_filter key_list template_list filter query |> lift
-           in
            let* matcher_events = matcher_events filter in
-           handle ~tags exp matcher_events filter |> lift)
+           handle ~tags exp matcher_events key_list template_list query filter
+           |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
@@ -331,7 +329,7 @@ end
 module Update = struct
   let handler fnc req =
     let open Utils.Lwt_result.Infix in
-    let id = template_id req in
+    let id = filter_id req in
     req
     |> database_label_from_req
     >>= flip Filter.find id
@@ -349,6 +347,17 @@ module Update = struct
   let toggle_predicate_type = handler handle_toggle_predicate_type
   let toggle_key = handler handle_toggle_key
 end
+
+let changelog req =
+  let open Filter in
+  let id = filter_id req in
+  let url = HttpUtils.Url.Admin.filter_path ~suffix:"changelog" ~id () in
+  Helpers.Changelog.htmx_handler
+    ~version_history:(module VersionHistory)
+    ~url
+    (Id.to_common id)
+    req
+;;
 
 module Access : module type of Helpers.Access = struct
   include Helpers.Access

@@ -1068,6 +1068,19 @@ let invitations
   filtered_contacts
   ({ Pool_context.language; _ } as context)
   =
+  let changelog =
+    match experiment.Experiment.filter with
+    | None -> txt ""
+    | Some filter ->
+      let url =
+        Http_utils.Url.Admin.filter_path
+          ~suffix:"changelog"
+          ~id:filter.Filter.id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
+  in
   let open Pool_common in
   [ div
       ~a:[ a_class [ "stack" ] ]
@@ -1090,6 +1103,7 @@ let invitations
           filtered_contacts
           matching_filter_count
           invitation_count
+      ; changelog
       ]
   ]
   |> Layout.Experiment.(

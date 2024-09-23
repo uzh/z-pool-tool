@@ -97,7 +97,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Experiment.handle_event ?user_uuid pool event
   | Filter event ->
     info "Filter" Filter.pp_event event;
-    Filter.handle_event pool event
+    Filter.handle_event ?user_uuid pool event
   | Guard event ->
     info "guard" Guard.pp_event event;
     Guard.handle_event pool event

@@ -608,6 +608,9 @@ module UpdateFilter : sig
     :  ?tags:Logs.Tag.set
     -> Experiment.t
     -> Assignment.event list * Email.dispatch list
+    -> Filter.Key.human list
+    -> t list
+    -> Filter.query
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -625,22 +628,27 @@ end = struct
     ?(tags = Logs.Tag.empty)
     experiment
     (assignment_events, emails)
+    key_list
+    template_list
+    query
     filter
     =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
+    let* updated = create_filter key_list template_list filter query in
     let assignment_events =
       assignment_events |> CCList.map Pool_event.assignment
     in
     let email_event = Email.BulkSent emails |> Pool_event.email in
-    let updated =
+    let updated_experiiment =
       { experiment with
         matcher_notification_sent = MatcherNotificationSent.create false
       }
     in
     Ok
-      ([ Experiment.Updated (experiment, updated) |> Pool_event.experiment
-       ; Filter.Updated filter |> Pool_event.filter
+      ([ Experiment.Updated (experiment, updated_experiiment)
+         |> Pool_event.experiment
+       ; Filter.Updated (filter, updated) |> Pool_event.filter
        ; email_event
        ]
        @ assignment_events)

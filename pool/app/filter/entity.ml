@@ -1,4 +1,7 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 module Id = Pool_common.Id
+
+let model = Pool_message.Field.Filter
 
 module Helper = struct
   let key_string = "key"
@@ -693,7 +696,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson_of]
 
 let create ?(id = Pool_common.Id.create ()) title query =
   { id

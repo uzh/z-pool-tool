@@ -307,6 +307,7 @@ module Admin = struct
         Update.
           [ get "/edit" edit
           ; post "" update_template
+          ; get "changelog" changelog
           ; choose
               (filter_form (toggle_key, toggle_predicate_type, add_predicate))
           ]

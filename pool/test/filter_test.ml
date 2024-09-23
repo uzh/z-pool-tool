@@ -540,6 +540,9 @@ let update_filter _ () =
     Cqrs_command.Experiment_command.UpdateFilter.handle
       experiment
       ([], [])
+      Filter.[ Key.(Hardcoded Firstname) ]
+      []
+      query
       filter
   in
   let expected =
@@ -553,7 +556,7 @@ let update_filter _ () =
     Ok
       [ Experiment.updated experiment updated_experiment
         |> Pool_event.experiment
-      ; Filter.Updated filter |> Pool_event.filter
+      ; Filter.Updated (filter, filter) |> Pool_event.filter
       ; Email.BulkSent [] |> Pool_event.email
       ]
   in
@@ -578,7 +581,8 @@ let create_and_update_filter_template _ () =
   let events = Update.handle key_list [] filter query title in
   let expected =
     Ok
-      [ Filter.(Updated filter) |> Pool_event.filter
+      [ Filter.(Updated (filter, { filter with title = Some title }))
+        |> Pool_event.filter
       ; Assignment_job.Dispatched |> Pool_event.assignmentjob
       ]
   in
