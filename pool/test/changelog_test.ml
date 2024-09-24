@@ -146,14 +146,10 @@ let update_filter () =
                 , Assoc
                     [ ( "1"
                       , Assoc
-                          [ ( "pred"
+                          [ ( "first_name"
                             , Assoc
                                 [ ( "value"
-                                  , Assoc
-                                      [ ( "str"
-                                        , Change (`String "two", `String "three")
-                                        )
-                                      ] )
+                                  , Change (`String "two", `String "three") )
                                 ] )
                           ] )
                     ] )

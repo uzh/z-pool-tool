@@ -80,7 +80,8 @@ module T (R : RecordSig) = struct
              |> CCList.foldi
                   (fun acc i before_json ->
                     Hashtbl.find_opt after i
-                    >>= compare before_json
+                    |> CCOption.value ~default:`Null
+                    |> compare before_json
                     >|= CCPair.make (CCInt.to_string i)
                     |> fun change ->
                     let () = Hashtbl.remove after i in
