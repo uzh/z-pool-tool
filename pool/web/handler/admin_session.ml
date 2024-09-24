@@ -1344,83 +1344,49 @@ end = struct
   module SessionCommand = Cqrs_command.Session_command
   module AssignmentCommand = Cqrs_command.Assignment_command
   module Guardian = Middleware.Guardian
+  open CCResult.Infix
+
+  let find_id = HttpUtils.find_id
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  let combined_effects fcn req =
-    let find_id = HttpUtils.find_id in
-    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
-    let session_id = find_id Session.Id.of_string Field.Session req in
-    fcn experiment_id session_id
+  let combined_effects validation_set =
+    Guardian.validate_generic
+    @@ fun req ->
+    let* experiment_id = find_id Experiment.Id.validate Field.Experiment req in
+    let* session_id = find_id Session.Id.validate Field.Session req in
+    validation_set experiment_id session_id |> CCResult.return
   ;;
 
-  let combined_with_location_effects fcn req =
-    let find_id = HttpUtils.find_id in
-    let location_id = find_id Pool_location.Id.of_string Field.Location req in
-    let session_id = find_id Session.Id.of_string Field.Session req in
-    fcn location_id session_id
+  let combined_with_location_effects validation_set =
+    Guardian.validate_generic
+    @@ fun req ->
+    let* location_id = find_id Pool_location.Id.validate Field.Location req in
+    let* session_id = find_id Session.Id.validate Field.Session req in
+    validation_set location_id session_id |> CCResult.return
   ;;
 
-  let index =
-    let read id = Session.Guard.Access.index id in
-    read |> experiment_effects |> Guardian.validate_generic ~any_id:true
-  ;;
-
-  let create =
-    SessionCommand.Create.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let read =
-    let read id = Session.Guard.Access.read id in
-    read |> combined_effects |> Guardian.validate_generic
-  ;;
+  let index = experiment_effects Session.Guard.Access.index
+  let create = experiment_effects SessionCommand.Create.effects
+  let read = combined_effects Session.Guard.Access.read
 
   let read_by_location =
-    let read id = Session.Guard.Access.read_by_location id in
-    read |> combined_with_location_effects |> Guardian.validate_generic
+    combined_with_location_effects Session.Guard.Access.read_by_location
   ;;
 
-  let update =
-    SessionCommand.Update.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    SessionCommand.Delete.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let reschedule =
-    SessionCommand.Reschedule.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let cancel =
-    SessionCommand.Cancel.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let close =
-    SessionCommand.Close.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
+  let update = combined_effects SessionCommand.Update.effects
+  let delete = combined_effects SessionCommand.Delete.effects
+  let reschedule = combined_effects SessionCommand.Reschedule.effects
+  let cancel = combined_effects SessionCommand.Cancel.effects
+  let close = combined_effects SessionCommand.Close.effects
 
   let direct_message =
     Contact.Guard.Access.send_direct_message |> Guardian.validate_admin_entity
   ;;
 
   let update_matches_filter =
-    AssignmentCommand.UpdateMatchesFilter.effects
-    |> combined_effects
-    |> Guardian.validate_generic
+    combined_effects AssignmentCommand.UpdateMatchesFilter.effects
   ;;
 end

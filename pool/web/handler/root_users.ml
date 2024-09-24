@@ -86,13 +86,10 @@ end = struct
   module Command = Cqrs_command.Root_command
   module Guardian = Middleware.Guardian
 
-  let root_effects = Guardian.id_effects Admin.Id.of_string Field.Root
+  let root_effects = Guardian.id_effects Admin.Id.validate Field.Root
   let index = Admin.Guard.Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity Command.Create.effects
-
-  let read =
-    Admin.Guard.Access.read |> root_effects |> Guardian.validate_generic
-  ;;
+  let read = root_effects Admin.Guard.Access.read
 
   let toggle_status =
     Command.ToggleStatus.effects |> Guardian.validate_admin_entity

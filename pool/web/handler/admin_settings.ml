@@ -173,7 +173,7 @@ module Access : module type of Helpers.Access = struct
     flip Sihl.Web.Router.param "action"
     %> Settings.action_of_param
     %> CCResult.map find_effects
-    |> Guardian.validate_generic_result
+    |> Guardian.validate_generic
   ;;
 
   let index = Settings.Guard.Access.index |> Guardian.validate_admin_entity

@@ -355,15 +355,12 @@ module Access : module type of Helpers.Access = struct
   module Command = Cqrs_command.Filter_command
   module Guardian = Middleware.Guardian
 
-  let filter_effects = Guardian.id_effects Filter.Id.of_string Field.Filter
+  let filter_effects = Guardian.id_effects Filter.Id.validate Field.Filter
 
   let index =
     Filter.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let create = Command.Create.effects () |> Guardian.validate_admin_entity
-
-  let update =
-    Command.Update.effects |> filter_effects |> Guardian.validate_generic
-  ;;
+  let update = filter_effects Command.Update.effects
 end

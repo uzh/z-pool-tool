@@ -146,12 +146,8 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  let message_template =
-    Experiment.Guard.Access.update
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let message_template = experiment_effects Experiment.Guard.Access.update
 end

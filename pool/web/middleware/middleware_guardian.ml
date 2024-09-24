@@ -126,22 +126,23 @@ let validate_admin_entity ?any_id effects =
   |> validate_admin_entity_base
 ;;
 
-let validate_generic ?any_id generic_fcn =
-  generic_fcn %> CCResult.return
-  |> validate_access_request_dependent ?any_id
-  |> validate_admin_entity_base
-;;
-
-let validate_generic_result ?any_id =
+let validate_generic ?any_id =
   validate_access_request_dependent ?any_id %> validate_admin_entity_base
 ;;
 
-let validate_generic_lwt_result ?any_id =
+let validate_generic_lwt ?any_id =
   validate_access_request_dependent_lwt ?any_id %> validate_admin_entity_base
 ;;
 
-let id_effects encode field effect_set =
-  Http_utils.find_id encode field %> effect_set
+let id_effects encode field make_set =
+  let open CCResult.Infix in
+  let find_router_param encode field req =
+    let open Pool_message in
+    try Sihl.Web.Router.param req @@ Field.show field |> encode with
+    | _ -> Error Error.(NotFound field)
+  in
+  (fun req -> find_router_param encode field req >|= make_set)
+  |> validate_generic
 ;;
 
 let denied =

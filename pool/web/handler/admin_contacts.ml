@@ -499,7 +499,7 @@ end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
+  let contact_effects = Guardian.id_effects Contact.Id.validate Field.Contact
 
   let index =
     Contact.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
@@ -528,7 +528,7 @@ end = struct
           |> CCList.map one_of_tuple)
       |> or_
       |> Lwt.return_ok)
-    |> Guardian.validate_generic_lwt_result
+    |> Guardian.validate_generic_lwt
   ;;
 
   let read =
@@ -547,11 +547,9 @@ end = struct
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
 
   let message_history =
-    (fun id ->
+    contact_effects (fun id ->
       Pool_queue.Guard.Access.index
         ~id:(Guard.Uuid.target_of Contact.Id.value id)
         ())
-    |> contact_effects
-    |> Guardian.validate_generic
   ;;
 end

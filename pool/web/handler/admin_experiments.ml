@@ -557,7 +557,7 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
   let index =
@@ -568,60 +568,34 @@ end = struct
     ExperimentCommand.Create.effects |> Guardian.validate_admin_entity
   ;;
 
-  let read =
-    let read id = Experiment.Guard.Access.read id in
-    read |> experiment_effects |> Guardian.validate_generic
-  ;;
-
-  let update =
-    ExperimentCommand.Update.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    ExperimentCommand.Delete.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let read = experiment_effects Experiment.Guard.Access.read
+  let update = experiment_effects ExperimentCommand.Update.effects
+  let delete = experiment_effects ExperimentCommand.Delete.effects
 
   module Filter = struct
     include Helpers.Access
 
-    let combined_effects effects req =
-      let open HttpUtils in
-      let filter_id = find_id FilterEntity.Id.of_string Field.Filter req in
-      let id = find_id Experiment.Id.of_string Field.Experiment req in
-      effects id filter_id
+    let combined_effects validation_set =
+      let open CCResult.Infix in
+      let find = HttpUtils.find_id in
+      Guardian.validate_generic
+      @@ fun req ->
+      let* filter_id = find FilterEntity.Id.validate Field.Filter req in
+      let* id = find Experiment.Id.validate Field.Experiment req in
+      validation_set id filter_id |> CCResult.return
     ;;
 
-    let create =
-      ExperimentCommand.CreateFilter.effects
-      |> experiment_effects
-      |> Guardian.validate_generic
-    ;;
-
-    let update =
-      ExperimentCommand.UpdateFilter.effects
-      |> combined_effects
-      |> Guardian.validate_generic
-    ;;
-
-    let delete =
-      ExperimentCommand.DeleteFilter.effects
-      |> combined_effects
-      |> Guardian.validate_generic
-    ;;
+    let create = experiment_effects ExperimentCommand.CreateFilter.effects
+    let update = combined_effects ExperimentCommand.UpdateFilter.effects
+    let delete = combined_effects ExperimentCommand.DeleteFilter.effects
   end
 
   let search = index
 
   let message_history =
-    (fun id ->
+    experiment_effects (fun id ->
       Pool_queue.Guard.Access.index
         ~id:(Guard.Uuid.target_of Experiment.Id.value id)
         ())
-    |> experiment_effects
-    |> Guardian.validate_generic
   ;;
 end

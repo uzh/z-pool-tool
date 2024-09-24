@@ -166,17 +166,11 @@ end = struct
   module Guardian = Middleware.Guardian
   module TenantCommand = Cqrs_command.Pool_tenant_command
 
-  let tenant_effects = Guardian.id_effects Pool_tenant.Id.of_string Field.Tenant
+  let tenant_effects = Guardian.id_effects Pool_tenant.Id.validate Field.Tenant
   let index = Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity TenantCommand.Create.effects
-  let read = Access.read |> tenant_effects |> Guardian.validate_generic
-
-  let update =
-    TenantCommand.EditDetails.effects
-    |> tenant_effects
-    |> Guardian.validate_generic
-  ;;
-
+  let read = tenant_effects Access.read
+  let update = tenant_effects TenantCommand.EditDetails.effects
   let read_operator = Admin.Guard.Access.index |> Guardian.validate_admin_entity
 
   let create_operator =

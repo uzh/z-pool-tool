@@ -117,19 +117,15 @@ module Access : module type of Helpers.Access = struct
   module Guardian = Middleware.Guardian
 
   let organisational_units =
-    Guardian.id_effects
-      Organisational_unit.Id.of_string
-      Field.OrganisationalUnit
+    Guardian.id_effects Organisational_unit.Id.validate Field.OrganisationalUnit
   ;;
 
   let index =
-    Organisational_unit.Guard.Access.index
-    |> Guardian.validate_admin_entity ~any_id:true
+    Guardian.validate_admin_entity
+      ~any_id:true
+      Organisational_unit.Guard.Access.index
   ;;
 
-  let create = Command.Create.effects |> Guardian.validate_admin_entity
-
-  let update =
-    Command.Update.effects |> organisational_units |> Guardian.validate_generic
-  ;;
+  let create = Guardian.validate_admin_entity Command.Create.effects
+  let update = organisational_units Command.Update.effects
 end
