@@ -1,9 +1,5 @@
-(** TODO: Add testcases for
-    - lists
-    - filter
-    - assoc lists (e.g. custom field names) *)
-
 module Field = Pool_message.Field
+module SelectOption = Custom_field.SelectOption
 
 let testable_changelog = Changelog.Write.(Alcotest.testable pp equal)
 let id = Changelog.Id.create ()
@@ -170,4 +166,88 @@ let update_filter () =
     "changelog contains name"
     changelog
     expected
+;;
+
+let update_list_value () =
+  let open Filter in
+  let option_id = SelectOption.Id.create in
+  let filter_id = Id.create () in
+  let changelog_id = Changelog.Id.create () in
+  let custom_field_id = Custom_field.Id.create () in
+  let operator = Operator.(List ListM.ContainsSome) in
+  let make_filter options =
+    let options = List.map (fun option -> Option option) options in
+    let query =
+      Pred
+        (Predicate.create
+           Key.(CustomField custom_field_id)
+           operator
+           (Lst options))
+    in
+    create ~id:filter_id None query
+  in
+  let opt1 = option_id () in
+  let opt2 = option_id () in
+  let opt3 = option_id () in
+  let before = make_filter [ opt1; opt2 ] in
+  let make_changelog after =
+    VersionHistory.create
+      ~id:changelog_id
+      ~entity_uuid:(Id.to_common filter_id)
+      ~before
+      ~after
+      ()
+  in
+  let make_expected expected_changes =
+    let open Changelog in
+    let changes =
+      let open Changes in
+      Assoc
+        [ ( "query"
+          , Assoc
+              [ ( Custom_field.Id.value custom_field_id
+                , Assoc [ "value", expected_changes ] )
+              ] )
+        ]
+    in
+    Write.
+      { id = changelog_id
+      ; changes
+      ; model = Pool_message.Field.Filter
+      ; entity_uuid = Filter.Id.to_common before.id
+      ; user_uuid = None
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      }
+    |> CCOption.return
+  in
+  let run_test msg options expected_changes =
+    let changelog = options |> make_filter |> make_changelog in
+    let expected = expected_changes |> make_expected in
+    Alcotest.(check (option testable_changelog)) msg changelog expected
+  in
+  (* Add one option *)
+  let options = [ opt1; opt2; opt3 ] in
+  let expected_changes =
+    let open Changelog.Changes in
+    Assoc [ "2", Change (`Null, `String (SelectOption.Id.value opt3)) ]
+  in
+  let () = run_test "add an option" options expected_changes in
+  (* Remove one option *)
+  let options = [ opt1 ] in
+  let expected_changes =
+    let open Changelog.Changes in
+    Assoc [ "1", Change (`String (SelectOption.Id.value opt2), `Null) ]
+  in
+  let () = run_test "remove an option" options expected_changes in
+  (* Add and remove an option *)
+  (* TODO: This change is catched by the variant comparison. Should the index be
+     stored as well? *)
+  let options = [ opt1; opt3 ] in
+  let expected_changes =
+    let open Changelog.Changes in
+    Change
+      ( `String (SelectOption.Id.value opt2)
+      , `String (SelectOption.Id.value opt3) )
+  in
+  run_test "add and remove an option" options expected_changes
 ;;

@@ -10,6 +10,7 @@ let () =
           ; test_case "create" `Quick create
           ; test_case "create with nested changes" `Quick create_nested
           ; test_case "create filter changelog" `Quick update_filter
+          ; test_case "create changelog with list" `Quick update_list_value
           ] )
     ; ( "contact"
       , [ test_case
