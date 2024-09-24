@@ -116,6 +116,23 @@ let detail
   sys_languages
   flash_fetcher
   =
+  let changelog_html =
+    let open Custom_field in
+    match custom_field_option with
+    | None -> txt ""
+    | Some option ->
+      let model = model custom_field in
+      let url =
+        HttpUtils.Url.Admin.custom_field_option_path
+          model
+          (id custom_field)
+          ~suffix:"changelog"
+          ~id:option.SelectOption.id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
+  in
   let buttons_form =
     field_buttons language csrf custom_field custom_field_option
   in
@@ -123,7 +140,7 @@ let detail
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ Partials.form_title language Field.CustomFieldOption custom_field_option
     ; div
-        ~a:[ a_class [ "stack" ] ]
+        ~a:[ a_class [ "stack-lg" ] ]
         [ buttons_form
         ; option_form
             ?custom_field_option
@@ -131,6 +148,7 @@ let detail
             context
             sys_languages
             flash_fetcher
+        ; changelog_html
         ]
     ]
 ;;

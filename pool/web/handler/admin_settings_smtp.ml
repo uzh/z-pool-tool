@@ -90,7 +90,7 @@ let create_post location req =
     ||> HttpUtils.format_request_boolean_values boolean_fields
     ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , Format.asprintf "%s/new" redirect_path
@@ -109,9 +109,7 @@ let create_post location req =
       Lwt_result.return smtp_auth
     in
     let events = handle ~tags default_smtp in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
-    in
+    let handle = Pool_event.handle_events ~tags database_label user in
     let return_to_overview () =
       HttpUtils.redirect_to_with_actions
         redirect_path
@@ -135,7 +133,7 @@ let create = create_post `Tenant
 let update_base location command success_message req =
   let tags = Pool_context.Logger.Tags.req req in
   let redirect_path = settings_detail_path location req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let%lwt urlencoded =
@@ -156,9 +154,7 @@ let update_base location command success_message req =
         Command.UpdatePassword.(decode urlencoded >>= handle ~tags smtp_auth)
         |> Lwt_result.lift
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
-    in
+    let handle = Pool_event.handle_events ~tags database_label user in
     let return_to_overview () =
       HttpUtils.redirect_to_with_actions
         redirect_path
@@ -199,14 +195,16 @@ let delete_base location req =
   let tags = Pool_context.Logger.Tags.req req in
   let path = active_navigation location in
   HttpUtils.extract_happy_path ~src req
-  @@ fun Pool_context.{ database_label; _ } ->
+  @@ fun Pool_context.{ database_label; user; _ } ->
   let smtp_id =
     Sihl.Web.Router.param req (Field.show Field.Smtp) |> SmtpAuth.Id.of_string
   in
   Cqrs_command.Smtp_command.Delete.handle ~tags smtp_id
   |> Lwt_result.lift
   |>> (fun events ->
-        let%lwt () = Pool_event.handle_events ~tags database_label events in
+        let%lwt () =
+          Pool_event.handle_events ~tags database_label user events
+        in
         Http_utils.redirect_to_with_actions
           path
           [ Message.set ~success:[ Success.Deleted Field.Smtp ] ])

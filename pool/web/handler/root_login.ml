@@ -67,7 +67,7 @@ let request_reset_password_post req =
   let open HttpUtils in
   let open Cqrs_command.Common_command.ResetPassword in
   let open Message_template in
-  let result { Pool_context.database_label; language; _ } =
+  let result { Pool_context.database_label; language; user; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     let redirect_path = "/root/request-reset-password" in
@@ -78,7 +78,7 @@ let request_reset_password_post req =
           ||> CCOption.to_result Error.PasswordResetFailMessage)
     >>= PasswordReset.create database_label language Root
     >>= CCFun.(handle ~tags %> Lwt_result.lift)
-    |>> Pool_event.handle_events ~tags database_label
+    |>> Pool_event.handle_events ~tags database_label user
     >|> function
     | Ok () | Error (_ : Error.t) ->
       redirect_to_with_actions

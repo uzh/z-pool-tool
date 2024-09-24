@@ -605,7 +605,7 @@ let detail
   (location : Pool_location.t)
   statistics
   statistics_year_range
-  Pool_context.{ csrf; language; _ }
+  Pool_context.({ csrf; language; _ } as context)
   =
   let open Pool_location in
   let location_details =
@@ -630,6 +630,10 @@ let detail
       ~classnames:[ "small" ]
       ~control:(language, Pool_message.(Control.Edit (Some Field.Location)))
       (location_specific_path ~suffix:"edit" location.Pool_location.id)
+  in
+  let changelog_url =
+    HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id:location.id ()
+    |> Uri.of_string
   in
   let public_page_link =
     p
@@ -688,6 +692,7 @@ let detail
             ; FileList.create csrf language location
             ]
         ; Component.Calendar.(create (Location location.Pool_location.id))
+        ; Component.Changelog.list context changelog_url None
         ]
     ]
 ;;

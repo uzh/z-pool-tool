@@ -2,6 +2,9 @@ include Entity
 include Event
 open Pool_message
 module Guard = Entity_guard
+module VersionHistory = Version_history
+module OptionVersionHistory = Version_history.OptionVersionHistory
+module GroupVersionHistory = Version_history.GroupVersionHistory
 
 let find_by_model = Repo.find_by_model
 let find_by_group = Repo.find_by_group

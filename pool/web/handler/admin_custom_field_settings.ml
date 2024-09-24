@@ -23,7 +23,7 @@ let index req =
 
 let update setting req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/custom-fields")
     @@
     let open Custom_field in
@@ -44,9 +44,7 @@ let update setting req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         settings_path
         [ HttpUtils.Message.set

@@ -535,7 +535,7 @@ end = struct
         in
         if Duration.equal session.duration duration
         then Ok ()
-        else error Field.Start
+        else error Field.Duration
     in
     let* () = validate_start follow_up_sessions parent_session start in
     let* () =
@@ -543,7 +543,7 @@ end = struct
       then Error (Error.Smaller (Field.MaxParticipants, Field.MinParticipants))
       else Ok ()
     in
-    let session =
+    let updated =
       Session.
         { session with
           start
@@ -558,7 +558,7 @@ end = struct
         ; text_message_reminder_lead_time
         }
     in
-    Ok [ Session.Updated session |> Pool_event.session ]
+    Ok [ Session.Updated (session, updated) |> Pool_event.session ]
   ;;
 
   let decode data =

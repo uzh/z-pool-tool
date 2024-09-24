@@ -54,7 +54,9 @@ module MakeUserProfile (Config : module type of Config) = struct
            >>= handle ~tags ~notification Admin.(admin |> id |> Id.to_user)
            |> Lwt_result.lift
          in
-         let%lwt () = Pool_event.handle_events ~tags database_label events in
+         let%lwt () =
+           Pool_event.handle_events ~tags database_label user events
+         in
          redirect_to_with_actions
            active_navigation
            [ Message.set ~success:[ Pool_message.Success.PasswordChanged ] ]
@@ -76,7 +78,9 @@ module MakeUserProfile (Config : module type of Config) = struct
            Command.Update.(decode urlencoded >>= handle ~tags admin)
            |> Lwt_result.lift
          in
-         let%lwt () = Pool_event.handle_events ~tags database_label events in
+         let%lwt () =
+           Pool_event.handle_events ~tags database_label user events
+         in
          redirect_to_with_actions
            active_navigation
            [ Message.set ~success:[ Pool_message.Success.Updated Field.Name ] ]

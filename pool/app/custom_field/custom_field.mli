@@ -1,6 +1,8 @@
 module Answer : sig
   module Id : sig
     include Pool_model.Base.IdSig
+
+    val to_common : t -> Pool_common.Id.t
   end
 
   type 'a t =
@@ -28,6 +30,8 @@ end
 
 module Id : sig
   include Pool_model.Base.IdSig
+
+  val to_common : t -> Pool_common.Id.t
 end
 
 module Model : sig
@@ -194,6 +198,8 @@ end
 module SelectOption : sig
   module Id : sig
     include Pool_model.Base.IdSig
+
+    val to_common : t -> Pool_common.Id.t
   end
 
   type t =
@@ -293,6 +299,7 @@ module Group : sig
   module Id : sig
     include Pool_model.Base.IdSig
 
+    val to_common : t -> Pool_common.Id.t
     val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
@@ -434,20 +441,26 @@ type event =
   | GroupCreated of Group.t
   | GroupDestroyed of Group.t
   | GroupsSorted of Group.t list
-  | GroupUpdated of Group.t
+  | GroupUpdated of (Group.t * Group.t)
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
   | OptionPublished of SelectOption.t
   | OptionsSorted of SelectOption.t list
-  | OptionUpdated of SelectOption.t
+  | OptionUpdated of (SelectOption.t * SelectOption.t)
   | PartialUpdate of PartialUpdate.t * Contact.t * Pool_context.user
   | Published of t
-  | Updated of t
+  | Updated of t * t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val find_by_model : Database.Label.t -> Model.t -> t list Lwt.t
 val find_by_group : Database.Label.t -> Group.Id.t -> t list Lwt.t
 val find_ungrouped_by_model : Database.Label.t -> Model.t -> t list Lwt.t
@@ -587,3 +600,7 @@ module Guard : sig
     end
   end
 end
+
+module VersionHistory : Changelog.TSig with type record = t
+module OptionVersionHistory : Changelog.TSig with type record = SelectOption.t
+module GroupVersionHistory : Changelog.TSig with type record = Group.t

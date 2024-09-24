@@ -95,7 +95,9 @@ let import_confirmation_post req =
       |> Lwt_result.lift
       >|- fun err -> err, error_path (Some token)
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    (* TODO: This takes the imported user as argument, but there is no logged in
+       user *)
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.(
       redirect_to_with_actions
         (path_with_language query_language "/login")
@@ -152,7 +154,9 @@ let unsubscribe req =
 let unsubscribe_post req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; query_language; user; _ } as context)
+    =
     let redirect_path = Http_utils.path_with_language query_language "/error" in
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ (contact_import_from_req context req
@@ -163,7 +167,9 @@ let unsubscribe_post req =
           Cqrs_command.Contact_command.TogglePaused.handle ~tags contact paused
           |> Lwt_result.lift
           |>> fun events ->
-          let%lwt () = Pool_event.handle_events ~tags database_label events in
+          let%lwt () =
+            Pool_event.handle_events ~tags database_label user events
+          in
           Http_utils.(
             redirect_to_with_actions
               (path_with_language query_language "/index")

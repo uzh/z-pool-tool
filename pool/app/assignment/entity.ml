@@ -21,10 +21,8 @@ module Participated = struct
 end
 
 module MatchesFilter = struct
-  type t = bool [@@deriving eq, show]
+  include Pool_model.Base.Boolean
 
-  let create m = m
-  let value m = m
   let init = false
 end
 

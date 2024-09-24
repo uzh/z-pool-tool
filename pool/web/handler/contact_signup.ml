@@ -34,7 +34,7 @@ let sign_up_create req =
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
-  let result { Pool_context.database_label; query_language; language; _ } =
+  let result { Pool_context.database_label; query_language; language; user; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     Utils.Lwt_result.map_error (fun msg ->
@@ -145,7 +145,7 @@ let sign_up_create req =
            log_request ();
            Lwt_result.return events
        in
-       let%lwt () = Pool_event.handle_events ~tags database_label events in
+       let%lwt () = Pool_event.handle_events ~tags database_label user events in
        HttpUtils.(
          redirect_to_with_actions
            "/email-confirmation"
@@ -158,7 +158,9 @@ let sign_up_create req =
 let email_verification req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; query_language; user; _ } as context)
+    =
     let%lwt redirect_path =
       let user =
         Pool_context.find_contact context
@@ -215,7 +217,7 @@ let email_verification req =
              ([%show: Pool_context.t] context));
          Lwt.return_ok []
      in
-     let%lwt () = Pool_event.handle_events ~tags database_label events in
+     let%lwt () = Pool_event.handle_events ~tags database_label user events in
      HttpUtils.(
        redirect_to_with_actions
          (path_with_language query_language redirect_path)
@@ -247,7 +249,9 @@ let terms req =
 ;;
 
 let terms_accept req =
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; query_language; user; _ } as context)
+    =
     Utils.Lwt_result.map_error (fun msg -> msg, "/login")
     @@
     let open Utils.Lwt_result.Infix in
@@ -256,7 +260,7 @@ let terms_accept req =
     let* events =
       Command.AcceptTermsAndConditions.handle ~tags contact |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
     HttpUtils.(redirect_to (path_with_language query_language "/experiments"))
     |> Lwt_result.ok
   in

@@ -4,6 +4,8 @@ module ContactCommand = Cqrs_command.Contact_command
 module AssignmentCommand = Cqrs_command.Assignment_command
 module SessionCommand = Cqrs_command.Session_command
 
+let current_user = Model.create_admin ()
+
 type assignment_data =
   { session : Session.t
   ; experiment : Experiment.t
@@ -868,7 +870,7 @@ let swap_session_to_past_session () =
 
 let cancel_assignment_with_follow_ups _ () =
   let open Utils.Lwt_result.Infix in
-  let%lwt experiment = Repo.create_experiment () in
+  let%lwt experiment = Integration_utils.ExperimentRepo.create () in
   let%lwt contact =
     Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
   in
@@ -881,7 +883,7 @@ let cancel_assignment_with_follow_ups _ () =
     in
     Session.Created session
     |> Pool_event.session
-    |> Pool_event.handle_event Data.database_label
+    |> Pool_event.handle_event Data.database_label current_user
   in
   let%lwt parent_session =
     let%lwt () = create_session (Model.in_an_hour ()) in
@@ -908,7 +910,7 @@ let cancel_assignment_with_follow_ups _ () =
     |> CCList.map (fun session ->
       Assignment.(Created (create contact, session.Session.Public.id))
       |> Pool_event.assignment)
-    |> Pool_event.handle_events Data.database_label
+    |> Pool_event.handle_events Data.database_label current_user
   in
   (* Cancel assignments *)
   let%lwt () =
@@ -929,7 +931,7 @@ let cancel_assignment_with_follow_ups _ () =
       notification_email
       (assignments, parent_session)
     |> get_or_failwith
-    |> Pool_event.handle_events Data.database_label
+    |> Pool_event.handle_events Data.database_label current_user
   in
   (* Expect all assigments to be canceled *)
   let%lwt res =

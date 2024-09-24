@@ -36,14 +36,13 @@ end = struct
               selected_id |> Id.of_string |> Id.equal (id field))
             selected
           |> function
-          | Some (_ : string) when not active -> `Left (setter true field)
-          | None when active -> `Right (setter false field)
+          | Some (_ : string) when not active ->
+            `Left (Updated (field, setter true field))
+          | None when active -> `Right (Updated (field, setter false field))
           | Some (_ : string) | None -> `Drop)
         fields
     in
-    active @ inactive
-    |> CCList.map (fun field -> Updated field |> Pool_event.custom_field)
-    |> CCResult.return
+    active @ inactive |> CCList.map Pool_event.custom_field |> CCResult.return
   ;;
 
   let effects = Custom_field.Guard.Access.create

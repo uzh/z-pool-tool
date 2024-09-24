@@ -64,14 +64,14 @@ module Mail = struct
   end
 
   type t =
-    { institution : Institution.t option
-    ; room : Room.t option
-    ; building : Building.t option
+    { institution : Institution.t option [@yojson.option]
+    ; room : Room.t option [@yojson.option]
+    ; building : Building.t option [@yojson.option]
     ; street : Street.t
     ; zip : Zip.t
     ; city : City.t
     }
-  [@@deriving eq, show]
+  [@@deriving eq, show, yojson]
 
   let create institution room building street zip city =
     let open CCResult in
@@ -110,7 +110,7 @@ end
 type t =
   | Virtual
   | Physical of Mail.t
-[@@deriving eq, show, variants]
+[@@deriving eq, show, variants, yojson]
 
 let virtual_detail language =
   Pool_common.Utils.field_to_string language Field.Virtual

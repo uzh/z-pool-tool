@@ -14,7 +14,7 @@ let create req =
   let redirect_path =
     Format.asprintf "/experiments/%s" (experiment_id |> Experiment.Id.value)
   in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* experiment =
@@ -48,7 +48,7 @@ let create req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+           Pool_event.handle_events ~tags database_label user events
          in
          Http_utils.redirect_to_with_actions
            redirect_path

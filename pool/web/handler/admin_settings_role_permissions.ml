@@ -160,7 +160,7 @@ let edit_htmx req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     let open Cqrs_command.Guardian_command in
     let open Guard in
     let tags = Pool_context.Logger.Tags.req req in
@@ -185,7 +185,7 @@ let update req =
       function
       | Ok events ->
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         HttpUtils.Htmx.htmx_redirect
           ~actions:[ Message.set ~success:[ Success.Updated Field.Permission ] ]
@@ -210,7 +210,7 @@ let update req =
 ;;
 
 let delete req =
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err -> err, error_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -227,7 +227,7 @@ let delete req =
     let handle = function
       | Ok events ->
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         redirect [ Message.set ~success:[ Success.Deleted Field.Rule ] ]
       | Error _ -> redirect [ Message.set ~error:[ Error.NotFound Field.Rule ] ]

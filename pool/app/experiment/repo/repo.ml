@@ -204,6 +204,26 @@ module Sql = struct
     Database.transaction_iter pool [ insert; set_title ]
   ;;
 
+  let get_default_public_title pool =
+    let request =
+      let open Caqti_request.Infix in
+      {sql|
+        SELECT
+          id
+        FROM
+          pool_experiments
+        ORDER BY
+          id DESC
+        LIMIT 1
+      |sql}
+      |> Caqti_type.(unit ->! int)
+    in
+    let open Utils.Lwt_result.Infix in
+    Database.find_opt pool request ()
+    ||> CCOption.value ~default:0
+    ||> fun max_id -> Format.asprintf "#%i" (max_id + 1)
+  ;;
+
   let search_select =
     {sql|
         SELECT

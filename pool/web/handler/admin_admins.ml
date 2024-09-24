@@ -78,7 +78,7 @@ let new_form req =
 
 let create_admin req =
   let redirect_path = Format.asprintf "/admin/admins" in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/new" redirect_path)
     @@
@@ -95,8 +95,7 @@ let create_admin req =
       Sihl.Web.Request.to_urlencoded req ||> decode >== handle ~id ~tags
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      |> Lwt_result.ok
+      Pool_event.handle_events ~tags database_label user events |> Lwt_result.ok
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
@@ -188,7 +187,7 @@ let grant_role req =
   let redirect_path =
     Format.asprintf "/admin/admins/%s/edit" (Admin.Id.value admin_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -237,9 +236,7 @@ let grant_role req =
       (* TODO: validate if role can be granted *)
       GrantRoles.handle ~tags { target = admin; roles } |> lift
     in
-    let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-    in
+    let handle = Pool_event.handle_events ~tags database_label user in
     let* () = expand_targets >>= events |>> handle in
     Lwt_result.ok
       (Http_utils.redirect_to_with_actions
@@ -254,7 +251,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
   let edit_route =
     CCString.replace ~which:`Right ~sub:"/revoke-role" ~by:"/edit" target
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     (let tags = Pool_context.Logger.Tags.req req in
      let* admin =
        HttpUtils.find_id Admin.Id.of_string Field.Admin req
@@ -278,9 +275,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
        RevokeRole.handle ~tags { target = admin; role } |> Lwt_result.lift
      in
      let handle events =
-       let%lwt () =
-         Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-       in
+       let%lwt () = Pool_event.handle_events ~tags database_label user events in
        Http_utils.redirect_to_with_actions
          ~skip_externalize:true
          edit_route

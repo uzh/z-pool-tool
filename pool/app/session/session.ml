@@ -1,6 +1,7 @@
 include Entity
 include Event
 module Guard = Entity_guard
+module VersionHistory = Version_history
 
 let find_all_for_experiment = Repo.find_all_for_experiment
 

@@ -19,10 +19,10 @@ let index req =
 ;;
 
 let create req =
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let tags = Pool_context.Logger.Tags.req req in
-    let user () =
+    let create_user () =
       HttpUtils.find_in_urlencoded
         ~error:Error.EmailAddressMissingRoot
         Field.Email
@@ -35,15 +35,13 @@ let create req =
       let open CCResult.Infix in
       RootCommand.Create.(urlencoded |> decode >>= handle ~tags)
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
-    in
+    let handle = Pool_event.handle_events ~tags Database.root user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path
         [ Message.set ~success:[ Success.Created Field.Root ] ]
     in
-    user ()
+    create_user ()
     >== events
     >|- (fun err ->
           err, active_navigation, [ HttpUtils.urlencoded_to_flash urlencoded ])
@@ -54,14 +52,12 @@ let create req =
 ;;
 
 let toggle_status req =
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let open CCFun in
     let tags = Pool_context.Logger.Tags.req req in
     let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     let events = RootCommand.ToggleStatus.handle ~tags %> Lwt_result.lift in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
-    in
+    let handle = Pool_event.handle_events ~tags database_label user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path
