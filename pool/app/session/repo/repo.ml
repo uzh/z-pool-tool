@@ -250,11 +250,10 @@ module Sql = struct
 
   let find_all_for_experiment_request ?(where = "") () =
     let open Caqti_request.Infix in
-    Format.asprintf
+    [%string
       {sql|
-        WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) %s
-      |sql}
-      where
+      WHERE pool_sessions.experiment_uuid = %{Entity.Id.sql_value_fragment "?"} %{where}
+    |sql}]
     |> find_request_sql
     |> order_by_start
     |> Caqti_type.string ->* RepoEntity.t

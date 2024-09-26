@@ -129,7 +129,7 @@ let find_upcoming_to_register_request experiment_type () =
       )
       |sql}
   in
-  (* TODO: make those subqueries joins *)
+  (* TODO: make those subqueries joins (#2248) *)
   Format.asprintf
     "%s %s WHERE %s AND %s AND %s AND %s AND (%s OR %s) AND %s GROUP BY \
      pool_experiments.uuid %s"

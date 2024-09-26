@@ -413,7 +413,6 @@ let create_invitations_for_online_experiment _ () =
     let start = Model.in_two_hours () in
     TimeWindowRepo.create start duration experiment ()
   in
-  (* TODO: Delete this future time window *)
   let%lwt () = run_test `Events "future time window exists" in
   let%lwt () =
     let open Pool_event in
