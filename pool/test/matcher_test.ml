@@ -67,7 +67,6 @@ let create_invitations_model () =
   Test_utils.check_result expected events
 ;;
 
-(* TODO: Remove, this function is unused *)
 let create_invitations_repo _ () =
   let open Utils.Lwt_result.Infix in
   let pool = Test_utils.Data.database_label in
