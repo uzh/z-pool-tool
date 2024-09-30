@@ -53,6 +53,22 @@ let to_string = function
   | ExperimentOnlineListEmpty ->
     "Aktuell gibt es keine Onlinestudien, an denen Sie teilnehmen können."
   | ExperimentOnlineListPublicTitle -> "Verfügbare Onlinestudien"
+  | ExperimentOnlineParticipationDeadline end_at ->
+    Format.asprintf
+      "Sie können noch bis zum %s an diesem Experiment teilnehmen."
+      (Pool_model.Time.formatted_date_time end_at)
+  | ExperimentOnlineParticiated submitted ->
+    Format.asprintf
+      "Sie haben diese Umfrage am %s abgeschlossen."
+      (Utils.Ptime.formatted_date submitted)
+  | ExperimentOnlineParticipationUpcoming start_at ->
+    Format.asprintf
+      "Das nächste Zeitfenster für die Teilnahme an dieser Umfrage beginnt am \
+       %s."
+      (Pool_model.Time.formatted_date_time start_at)
+  | ExperimentOnlineParticipationNoUpcoming ->
+    "Es sind zur Zeit keine weiteren Zeitfenster für die Teilnahme an dieser \
+     Umfrage geplant."
   | ExperimentListTitle -> "Experimente"
   | ExperimentMessagingSubtitle -> "Identitäten"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
@@ -535,10 +551,6 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
        externe URL der Studie an, auf welche die Kontakte weitergeleitet \
        werden sollen."
       (Locales_de.field_to_string Pool_message.Field.SurveyUrl)
-  | OnlineExperimentParticipationDeadline end_at ->
-    Format.asprintf
-      "Sie können noch bis zum %s an diesem Experiment teilnehmen."
-      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."

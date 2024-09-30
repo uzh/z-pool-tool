@@ -80,16 +80,16 @@ let experiment_has_bookable_spots
   let open Session in
   match CCOption.is_some online_experiment with
   | false ->
-    find_all_for_experiment database_label id
+    find_upcoming_for_experiment database_label id
     ||> CCList.filter (fun session ->
       CCOption.is_none session.follow_up_to && not (is_fully_booked session))
     ||> CCList.is_empty
     ||> not
   | true ->
-    Time_window.find_current_by_experiment database_label id
+    Time_window.find_upcoming_by_experiment database_label id
     ||> (function
-     | Error _ -> false
-     | Ok { Time_window.max_participants; participant_count; _ } ->
+     | None -> false
+     | Some { Time_window.max_participants; participant_count; _ } ->
        max_participants
        |> CCOption.map_or ~default:true (fun max_participants ->
          ParticipantAmount.value max_participants

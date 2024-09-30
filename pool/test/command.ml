@@ -503,7 +503,7 @@ let () =
             `Quick
             Message_template_test.create_with_unavailable_language
         ; test_case
-            "delete  with entity uuid"
+            "delete with entity uuid"
             `Quick
             Message_template_test.delete_valid
         ; test_case
@@ -511,7 +511,7 @@ let () =
             `Quick
             Message_template_test.delete_without_entity
         ] )
-    ; ( "queue"
+    ; ( "queue: message mappings"
       , Message_mapping.Resend.
           [ test_case "resend pending job" `Quick resend_pending
           ; test_case "resend unchanged" `Quick resend_unchanged
@@ -562,7 +562,7 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
-    ; ( " queue"
+    ; ( "queue"
       , [ test_case
             "create delivery report"
             `Quick

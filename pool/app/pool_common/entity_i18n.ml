@@ -28,6 +28,10 @@ type t =
   | ExperimentListPublicTitle
   | ExperimentOnlineListEmpty
   | ExperimentOnlineListPublicTitle
+  | ExperimentOnlineParticiated of Ptime.t
+  | ExperimentOnlineParticipationDeadline of Ptime.t
+  | ExperimentOnlineParticipationNoUpcoming
+  | ExperimentOnlineParticipationUpcoming of Ptime.t
   | ExperimentListTitle
   | ExperimentMessagingSubtitle
   | ExperimentNewTitle
@@ -254,7 +258,6 @@ type hint =
   | NumberMax of int
   | NumberMin of int
   | OnlineExperiment
-  | OnlineExperimentParticipationDeadline of Ptime.t
   | Overbook
   | PartialUpdate
   | ParticipationTagsHint
