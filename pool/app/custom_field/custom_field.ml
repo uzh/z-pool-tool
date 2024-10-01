@@ -66,6 +66,7 @@ let find_options_by_field pool id =
 
 let find_group = Repo_group.find
 let find_groups_by_model = Repo_group.find_by_model
+let find_names = Repo_version_history.find_names
 
 module Repo = struct
   module Id = struct

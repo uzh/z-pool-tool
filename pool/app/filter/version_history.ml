@@ -49,3 +49,63 @@ module Record = struct
 end
 
 include Changelog.T (Record)
+
+let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
+  let open Changelog.Changes in
+  let id_of_string = CCFun.(Custom_field.Id.validate %> CCOption.of_result) in
+  let yojson_id = function
+    | `String id -> id_of_string id
+    | _ -> None
+  in
+  let rec collect_uuids acc = function
+    | Assoc lst ->
+      List.fold_left
+        (fun acc (key, v) ->
+          let uuids =
+            id_of_string key
+            |> function
+            | None -> acc
+            | Some uuid -> uuid :: acc
+          in
+          collect_uuids uuids v)
+        acc
+        lst
+    | Change (before, after) ->
+      CCList.filter_map yojson_id [ before; after ] @ acc
+  in
+  let get_or = CCOption.get_or in
+  let uuids = collect_uuids [] changes in
+  let%lwt names = Custom_field.find_names pool uuids in
+  let tbl = Hashtbl.create (CCList.length names) in
+  let () =
+    CCList.iter
+      (fun (id, name) ->
+        let name =
+          let open Custom_field.Name in
+          find_opt language name
+          |> CCOption.value ~default:(get_hd name)
+          |> value_name
+        in
+        Hashtbl.add tbl (Pool_common.Id.value id) name)
+      names
+  in
+  let rec replace_names = function
+    | Assoc lst ->
+      Assoc
+        (CCList.map
+           (fun (key, changes) ->
+             let key = Hashtbl.find_opt tbl key |> get_or ~default:key in
+             let changes = replace_names changes in
+             key, changes)
+           lst)
+    | Change (before, after) ->
+      let replace = function
+        | `String str ->
+          `String (Hashtbl.find_opt tbl str |> get_or ~default:str)
+        | change -> change
+      in
+      Change (replace before, replace after)
+  in
+  let changes = replace_names changes in
+  Lwt.return Changelog.{ changelog with changes }
+;;

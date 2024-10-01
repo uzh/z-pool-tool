@@ -67,6 +67,7 @@ module Name : sig
   val yojson_of_t : t -> Yojson.Safe.t
   val find_opt : Pool_common.Language.t -> t -> name option
   val find_opt_or : Pool_common.Language.t -> string -> t -> string
+  val get_hd : t -> name
 
   val create
     :  Pool_common.Language.t list
@@ -536,6 +537,11 @@ val find_group
   -> (Group.t, Pool_message.Error.t) Lwt_result.t
 
 val find_groups_by_model : Database.Label.t -> Model.t -> Group.t list Lwt.t
+
+val find_names
+  :  Database.Label.t
+  -> Id.t list
+  -> (Pool_common.Id.t * Name.t) list Lwt.t
 
 module Repo : sig
   module Id : sig

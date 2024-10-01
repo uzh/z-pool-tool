@@ -328,4 +328,12 @@ val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 
-module VersionHistory : Changelog.TSig with type record = t
+module VersionHistory : sig
+  include Changelog.TSig with type record = t
+
+  val changelog_to_human
+    :  Database.Label.t
+    -> Pool_common.Language.t
+    -> Changelog.t
+    -> Changelog.t Lwt.t
+end
