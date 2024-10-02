@@ -1,4 +1,5 @@
 open Entity_answer
+module Base = Repo_entity_base
 module Common = Pool_common
 module Repo = Common.Repo
 
@@ -32,5 +33,61 @@ module Write = struct
         ~encode
         ~decode
         (t2 Repo.Id.t (t2 Repo.Id.t (t2 Repo.Id.t (t2 Value.t Repo.Version.t)))))
+  ;;
+end
+
+module VersionHistory = struct
+  module FieldType = Entity.FieldType
+  module SelectOption = Entity.SelectOption
+
+  type repo = string t
+
+  open Version_history.AnswerRecord
+
+  let t =
+    let ( %> ) = CCFun.( %> ) in
+    let encode _ =
+      Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel
+    in
+    let decode (field_type, id, entity_uuid, value, admin_value) =
+      let make_anwer decode =
+        let decode_opt value = CCOption.bind value decode in
+        let value = decode_opt value in
+        let admin_value = decode_opt admin_value in
+        { id; entity_uuid; value; admin_value }
+      in
+      CCResult.return
+      @@
+      match field_type with
+      | FieldType.Boolean ->
+        make_anwer (Utils.Bool.of_string %> CCOption.return) |> boolean
+      | FieldType.Date ->
+        make_anwer (Entity.Ptime.date_of_string %> CCResult.to_opt) |> date
+      | FieldType.Number -> make_anwer CCInt.of_string |> number
+      | FieldType.Select ->
+        make_anwer (SelectOption.Id.of_string %> CCOption.return) |> select
+      | FieldType.MultiSelect ->
+        let decode value =
+          try
+            value
+            |> Yojson.Safe.from_string
+            |> Base.multi_select_answer_of_yojson
+            |> CCOption.return
+          with
+          | _ -> None
+        in
+        make_anwer decode |> multiselect
+      | FieldType.Text -> make_anwer CCOption.return |> text
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (t5
+           Base.FieldType.t
+           Repo.Id.t
+           Repo.Id.t
+           (option Value.t)
+           (option Value.t)))
   ;;
 end

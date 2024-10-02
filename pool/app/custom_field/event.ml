@@ -35,6 +35,17 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     let open Version_history.GroupVersionHistory in
     insert pool ?user_uuid ~entity_uuid:before.Group.id ~before ~after ()
   in
+  let create_custom_field_answer_changelog _ contact public =
+    (* TODO: Handle options, and differ between admin and nonadmin values *)
+    let open Version_history.AnswerVersionHistory in
+    let contact_id = Contact.id contact in
+    let field_id = Public.id public in
+    let%lwt before =
+      Repo_version_history.find_answer_opt pool contact_id field_id
+    in
+    let after = Version_history.AnswerRecord.from_public public in
+    insert pool ?user_uuid ~entity_uuid:(Public.id public) ~before ~after ()
+  in
   function
   | AdminAnswerCleared (m, entity_uuid) ->
     Repo_partial_update.clear_answer
@@ -79,6 +90,13 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     let%lwt () = create_option_changelog m updated in
     Repo_option.update pool updated
   | PartialUpdate (update, contact, user) ->
+    let%lwt () =
+      (* TODO: handle hardcoded cases *)
+      match[@warning "-4"] update with
+      | PartialUpdate.Custom public ->
+        create_custom_field_answer_changelog false contact public
+      | _ -> Lwt.return_unit
+    in
     Repo_partial_update.update pool user update contact
   | Published m ->
     let%lwt () = create_changelog m (set_published_at m) in
