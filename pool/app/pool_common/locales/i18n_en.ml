@@ -120,6 +120,13 @@ let to_string = function
     <li>Press the 'add' button to add the sorting parameter.</li>
     <li>Repeat that to add more parameters. You can sort them by dragging and dropping them.</li>
   </ol>|}
+  | MailingExperimentNoUpcomingSession ->
+    "There are no sessions to which contacts can sign up. No invitations will \
+     be sent. Create new sessions before you start the mailing."
+  | MailingExperimentNoUpcomingTimewindow ->
+    "There is no active or future time window during which participants can \
+     answer the survey. No invitations will be sent. Create a time window \
+     first."
   | MailingExperimentSessionFullyBooked ->
     "All sessions are fully booked. No invitations will be sent (independent \
      if mailings are active at the moment).\n\n\

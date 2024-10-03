@@ -63,6 +63,8 @@ type t =
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingDistributionDescription
+  | MailingExperimentNoUpcomingSession
+  | MailingExperimentNoUpcomingTimewindow
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
   | MessageHistory of string
