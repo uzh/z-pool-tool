@@ -213,6 +213,7 @@ type hint =
   | ExperimentMailingsRegistrationDisabled
   | ExperimentMessageTemplates
   | ExperimentSessions
+  | ExperimentSessionsCancelDelete
   | ExperimentSessionsPublic
   | ExperimentSmtp of string
   | ExperimentStatisticsRegistrationPossible

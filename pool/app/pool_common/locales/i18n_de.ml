@@ -408,6 +408,9 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
   | ExperimentSessions ->
     {|Alle existierenden Session dieses Experiments.
   Sobald sich jemand angemeldet hat, kann die Session nicht mehr gelöscht werden.|}
+  | ExperimentSessionsCancelDelete ->
+    {|Wird eine Sessionanmeldung abgesagt, wird der Kontakt darüber informiert und kann sich anschliessend nicht mehr für dieses Experiment anmelden.
+Wird eine Sessionanmeldung als gelöscht markiert, wird der Kontkt nicht darüber informiert, kann sich jedoch wieder für dieses Experiment anmelden.|}
   | ExperimentSessionsPublic ->
     "Hinweis: Möglicherweise werden einzelne Sessions oder komplette \
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \

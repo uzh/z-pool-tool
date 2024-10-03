@@ -400,6 +400,9 @@ By clicking on the template labels below you can open the default text message:
     {|All existing session of this experiment.
       Once someone has registered for the session, it can no longer be deleted.
     |}
+  | ExperimentSessionsCancelDelete ->
+    {|Canceling an assignment will inform the contact. The concat will be able to sign up for this experiment again.
+  Marking an assignment as deleted will not inform the contact. The contact will not be able to sign up for this experiment again.|}
   | ExperimentSessionsPublic ->
     "Please note: Sessions or completed experiments may no longer be \
      displayed, although listed in your email. Once all the available seats \

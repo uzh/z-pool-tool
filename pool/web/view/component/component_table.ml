@@ -42,13 +42,19 @@ let legend_icon_item icon =
 
 let legend_text_item text = div ~a:[ a_class [ "legend-item" ] ] [ txt text ]
 
-let table_legend items =
+let table_legend ?hint items =
+  let hint =
+    match hint with
+    | None -> txt ""
+    | Some hint -> p ~a:[ a_class [ "gap-lg" ] ] [ hint ]
+  in
   items
   |> CCList.map (fun (label, item) ->
     div
       ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
       [ item; span [ label |> txt ] ])
-  |> div ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ]
+  |> fun legend ->
+  div ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ] (legend @ [ hint ])
 ;;
 
 let horizontal_table
