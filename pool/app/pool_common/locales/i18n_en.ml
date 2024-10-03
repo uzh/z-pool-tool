@@ -670,7 +670,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
 
 Only sessions with open spots can be selected.|}
   | SurveyUrl ->
-    "A URL incl. protocol. The url parameter 'callbackUrl' is required. E.g: \
+    "A URL incl. protocol. You can pass information to your survey by adding \
+     query parameters. E.g: \
      https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | TagsIntro ->
     "The defined tags can be added to several types (e.g. contacts). The tags \

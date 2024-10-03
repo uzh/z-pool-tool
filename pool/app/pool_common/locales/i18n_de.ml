@@ -446,8 +446,8 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
   | SurveyUrl ->
-    "ine URL inkl. Protokoll. Der URL-Parameter 'callbackUrl' ist \
-     erforderlich. Z.B.: \
+    "ine URL inkl. Protokoll. Sie können Informationen an Ihre Umfrage \
+     übermitteln, indem Sie Query-Parameter zu Ihrere URL hinzufügen. Z.B.: \
      https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | FilterTemplates ->
     "Änderungen an einem dieser Filter wird auf alle Experimentfilter \
