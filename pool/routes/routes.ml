@@ -1022,12 +1022,32 @@ module Root = struct
   ;;
 end
 
+module Api = struct
+  open Handler_api
+
+  let organisational_unit =
+    let open Organisational_unit in
+    choose ~scope:"organisational-unit" [ get "" index ]
+  ;;
+
+  let routes =
+    choose
+      ~middlewares:
+        [ CustomMiddleware.Tenant.validate ()
+        ; CustomMiddleware.Context.context ()
+        ; CustomMiddleware.Logger.logger
+        ]
+      [ organisational_unit ]
+  ;;
+end
+
 let router =
   choose
     [ Public.routes
     ; Contact.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
+    ; choose ~scope:"/api" [ Api.routes ]
     ; Public.global_routes
     ; get
         "/**"

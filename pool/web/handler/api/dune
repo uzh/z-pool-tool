@@ -1,5 +1,5 @@
 (library
- (name handler)
+ (name handler_api)
  (libraries
   assignment
   assignment_job
@@ -16,7 +16,6 @@
   message_template
   middleware
   organisational_unit
-  page
   pool_common
   reminder
   schedule
