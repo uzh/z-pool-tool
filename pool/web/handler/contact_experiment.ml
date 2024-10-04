@@ -210,6 +210,7 @@ module OnlineSurvey = struct
               tenant
               ~experiment_id
               ~assignment_id:(Assignment.Id.to_common assignment_id)
+              ~contact_id:Contact.(id contact |> Id.to_common)
       in
       let* time_window =
         Time_window.find_current_by_experiment

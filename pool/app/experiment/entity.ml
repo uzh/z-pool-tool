@@ -143,17 +143,24 @@ module OnlineExperiment = struct
     |> Pool_tenant.(create_public_url tenant.url)
   ;;
 
-  let url_params tenant ~experiment_id ~assignment_id =
+  let url_params tenant ~experiment_id ~assignment_id ~contact_id =
     let open Pool_common in
     [ "assignmentId", Id.value assignment_id
-    ; "experimentId", Id.value experiment_id
+    ; "contactId", Id.value assignment_id
+    ; "experimentId", Id.value contact_id
     ; ( Pool_message.Field.(show CallbackUrl)
       , callback_url tenant ~experiment_id ~assignment_id )
     ]
   ;;
 
-  let render_survey_url tenant ~experiment_id ~assignment_id survey_url =
-    let params = url_params tenant ~experiment_id ~assignment_id in
+  let render_survey_url
+    tenant
+    ~experiment_id
+    ~assignment_id
+    ~contact_id
+    survey_url
+    =
+    let params = url_params tenant ~experiment_id ~assignment_id ~contact_id in
     Utils.Message.render_params params survey_url
   ;;
 end

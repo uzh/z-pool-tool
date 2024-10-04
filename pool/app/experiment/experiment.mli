@@ -92,12 +92,14 @@ module OnlineExperiment : sig
     :  Pool_tenant.t
     -> experiment_id:Id.t
     -> assignment_id:Pool_common.Id.t
+    -> contact_id:Pool_common.Id.t
     -> (string * string) list
 
   val render_survey_url
     :  Pool_tenant.t
     -> experiment_id:Id.t
     -> assignment_id:Pool_common.Id.t
+    -> contact_id:Pool_common.Id.t
     -> SurveyUrl.t
     -> string
 end
