@@ -236,6 +236,7 @@ let rec field_to_string =
   | RemindersSent -> "Gesendete reminders"
   | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
+  | Resource -> "Ressource"
   | Role -> "Rolle"
   | Room -> "Raum"
   | Root -> "Root"

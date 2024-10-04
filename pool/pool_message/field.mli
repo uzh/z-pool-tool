@@ -218,6 +218,7 @@ type t =
   | RemindersSent
   | Required
   | ResentAt
+  | Resource
   | Role
   | Room
   | Root

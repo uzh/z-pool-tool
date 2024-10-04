@@ -66,6 +66,21 @@ module Tenant : sig
   val text_messages_enabled : Rock.Request.t -> bool
 end
 
+module Api : sig
+  type t =
+    { database_label : Database.Label.t
+    ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
+    }
+
+  val key : t Rock.Context.key
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val create : Database.Label.t -> Guard.PermissionOnTarget.t list -> t
+  val find : Rock.Request.t -> (t, Pool_message.Error.t) result
+  val set : Rock.Request.t -> t -> Rock.Request.t
+end
+
 val sexp_of_t : t -> Sexplib.Sexp.t
 val is_from_root : t -> bool
 val user_is_admin : user -> bool

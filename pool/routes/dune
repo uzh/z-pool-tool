@@ -1,3 +1,3 @@
 (library
  (name routes)
- (libraries handler handler_api message_template middleware page sihl))
+ (libraries handler api message_template middleware page sihl))

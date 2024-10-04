@@ -1,5 +1,5 @@
 (library
- (name handler_api)
+ (name api)
  (libraries
   assignment
   assignment_job

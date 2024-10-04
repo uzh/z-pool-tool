@@ -276,6 +276,7 @@ type t =
   | RemindersSent [@name "reminders_sent"] [@printer go "reminders_sent"]
   | Required [@name "required"] [@printer go "required"]
   | ResentAt [@name "resent_at"] [@printer go "resent_at"]
+  | Resource [@name "resource"] [@printer go "resource"]
   | Role [@name "role"] [@printer go "role"]
   | Room [@name "room"] [@printer go "room"]
   | Root [@name "root"] [@printer go "root"]

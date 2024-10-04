@@ -1023,21 +1023,24 @@ module Root = struct
 end
 
 module Api = struct
-  open Handler_api
+  open Api
+
+  let global_middlewares =
+    [ CustomMiddleware.Api.context (); CustomMiddleware.Logger.logger ]
+  ;;
 
   let organisational_unit =
-    let open Organisational_unit in
+    let open OrganisationalUnit in
     choose ~scope:"organisational-unit" [ get "" index ]
   ;;
 
   let routes =
     choose
       ~middlewares:
-        [ CustomMiddleware.Api.validate_tenant ()
-        ; CustomMiddleware.Context.context ()
-        ; CustomMiddleware.Logger.logger
-        ]
-      [ organisational_unit ]
+        (CustomMiddleware.Api.validate_tenant () :: global_middlewares)
+      [ organisational_unit
+      ; get "/**" ~middlewares:global_middlewares not_found
+      ]
   ;;
 end
 

@@ -1,17 +1,19 @@
 open CCFun
 
+let database_label_of_request is_root req =
+  let open Pool_context in
+  let tenant_database_label_of_request req =
+    match Tenant.find req with
+    | Ok { Tenant.tenant; _ } -> Ok tenant.Pool_tenant.database_label
+    | Error _ -> Error Pool_message.(Error.Missing Field.Context)
+  in
+  if is_root then Ok Database.root else tenant_database_label_of_request req
+;;
+
 let context () =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
   let find_query_language = Http_utils.find_query_lang in
-  let database_label_of_request is_root req =
-    let tenant_database_label_of_request req =
-      match Tenant.find req with
-      | Ok { Tenant.tenant; _ } -> Ok tenant.Pool_tenant.database_label
-      | Error _ -> Error Pool_message.(Error.Missing Field.Context)
-    in
-    if is_root then Ok Database.root else tenant_database_label_of_request req
-  in
   let languages_from_request ?contact req tenant_db =
     let%lwt tenant_languages = Settings.find_languages tenant_db in
     let query_language = find_query_language req in

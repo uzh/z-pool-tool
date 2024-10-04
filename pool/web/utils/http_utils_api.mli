@@ -7,5 +7,5 @@ val respond_error
 val respond
   :  ?src:Logs.src
   -> Rock.Request.t
-  -> (Pool_context.t -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
+  -> (Pool_context.Api.t -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
   -> Rock.Response.t Lwt.t

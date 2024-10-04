@@ -13,7 +13,7 @@ let respond_error
 
 let respond ?(src = src) req result =
   let tags = Pool_context.Logger.Tags.req req in
-  let context = Pool_context.find req in
+  let context = Pool_context.Api.find req in
   match context with
   | Ok context ->
     result context
