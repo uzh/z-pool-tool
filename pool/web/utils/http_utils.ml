@@ -1,5 +1,6 @@
 open CCFun
 open Ppx_yojson_conv_lib.Yojson_conv
+module Api = Http_utils_api
 module File = Http_utils_file
 module Filter = Http_utils_filter
 module Message = Http_utils_message

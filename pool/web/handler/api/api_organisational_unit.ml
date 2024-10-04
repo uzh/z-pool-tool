@@ -1,4 +1,5 @@
 open Utils.Lwt_result.Infix
+module ApiUtils = Http_utils.Api
 
 let src = Logs.Src.create "handler.api.organisational_unit"
 
@@ -9,5 +10,5 @@ let index req =
     ||> (fun json -> `List json)
     |> Lwt_result.ok
   in
-  result |> Api_utils.respond req
+  result |> ApiUtils.respond req
 ;;
