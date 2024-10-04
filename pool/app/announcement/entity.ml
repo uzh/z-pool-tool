@@ -65,6 +65,8 @@ let create ?(id = Id.create ()) tet start_at end_at =
   }
 ;;
 
+type admin = t * Pool_tenant.t list [@@deriving eq, show]
+
 open Pool_message
 
 let filterable_by = None

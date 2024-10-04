@@ -45,12 +45,20 @@ val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
 val create : ?id:Id.t -> Text.t -> StartAt.t option -> EndAt.t option -> t
 
+type admin = t * Pool_tenant.t list
+
 val find
   :  Database.Label.t
   -> Id.t
   -> (t, Pool_message__Pool_message_error.t) result Lwt.t
 
 val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+
+val find_admin
+  :  Database.Label.t
+  -> Id.t
+  -> (admin, Pool_message.Error.t) Lwt_result.t
+
 val column_start : Query.Column.t
 val column_end : Query.Column.t
 val filterable_by : Query.Filter.human option
@@ -60,8 +68,8 @@ val default_sort : Query.Sort.t
 val default_query : Query.t
 
 type event =
-  | Created of t
-  | Updated of (t * t)
+  | Created of (t * Pool_tenant.Id.t list)
+  | Updated of (t * Pool_tenant.Id.t list)
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

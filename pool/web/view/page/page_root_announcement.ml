@@ -63,11 +63,17 @@ let form
   { Pool_context.csrf; language; _ }
   ?announcement
   ?(flash_fetcher : (string -> string option) option)
+  available_tenants
   system_languages
   =
   let open Component in
   let open Announcement in
   let open CCOption.Infix in
+  let announcement, tenants =
+    match announcement with
+    | Some (announcement, tenants) -> Some announcement, Some tenants
+    | None -> None, None
+  in
   let action =
     match announcement with
     | None -> announcement_path ()
@@ -109,6 +115,39 @@ let form
             (txt (CCOption.value value ~default:""))
         ])
   in
+  let tenant_select =
+    let open Pool_tenant in
+    let name = Field.(array_key Tenant) in
+    let checkboxes =
+      available_tenants
+      |> CCList.map (fun { id; title; _ } ->
+        let checked =
+          let open CCOption in
+          tenants
+          >|= CCList.find_opt (fun tenant ->
+            Pool_tenant.Id.equal id tenant.Pool_tenant.id)
+          |> map_or ~default:false is_some
+        in
+        let id = Id.value id in
+        div
+          [ input
+              ~a:
+                ([ a_name name; a_id id; a_value id; a_input_type `Checkbox ]
+                 @ if checked then [ a_checked () ] else [])
+              ()
+          ; label ~a:[ a_label_for id ] [ txt (Title.value title) ]
+          ])
+    in
+    div
+      ~a:[ a_class [ "form-group" ] ]
+      [ p
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.AnnouncementsTenantSelect)
+          ]
+      ; div ~a:[ a_class [ "input-group" ] ] checkboxes
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 [ txt (Pool_common.Utils.control_to_string language title) ]
@@ -135,6 +174,7 @@ let form
                   [ h2 [ txt (field_to_string language Field.Text) ]
                   ; div ~a:[ a_class [ "stack" ] ] text_inputs
                   ]
+              ; tenant_select
               ; div
                   ~a:[ a_class [ "full-width"; "flexrow"; "justify-end" ] ]
                   [ submit_element language title () ]

@@ -8,6 +8,8 @@ let to_string = function
   | Address -> "address"
   | AdminComment -> "admin comment"
   | AnnouncementsListTitle -> "Announcements"
+  | AnnouncementsTenantSelect ->
+    "Select on which tenants the announcement should be displayed."
   | AssignmentEditTagsWarning ->
     "Please note that editing the assignment does not assign or remove any \
      tags from the contact that may have been assigned by participating in \

@@ -42,6 +42,7 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> ?id:Announcement.Id.t
     -> (Pool_common.Language.t * string) list
+    -> Pool_tenant.Id.t list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -49,13 +50,19 @@ module Create : sig
 end = struct
   type t = command
 
-  let handle ?(tags = Logs.Tag.empty) ?id text ({ start_at; end_at } : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?id
+    text
+    tenant_ids
+    ({ start_at; end_at } : t)
+    =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let* () = validate_start_end ~start_at ~end_at in
     let* text = Text.create text in
     let announcement = create ?id text start_at end_at in
-    Ok [ Created announcement |> Pool_event.announcement ]
+    Ok [ Created (announcement, tenant_ids) |> Pool_event.announcement ]
   ;;
 
   let decode data =
@@ -75,6 +82,7 @@ module Update : sig
     :  ?tags:Logs.Tag.set
     -> Announcement.t
     -> (Pool_common.Language.t * string) list
+    -> Pool_tenant.Id.t list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -87,6 +95,7 @@ end = struct
     ?(tags = Logs.Tag.empty)
     announcement
     text
+    tenant_ids
     ({ start_at; end_at } : t)
     =
     let open CCResult in
@@ -94,7 +103,7 @@ end = struct
     let* () = validate_start_end ~start_at ~end_at in
     let* text = Text.create text in
     let updated = { announcement with text; start_at; end_at } in
-    Ok [ Updated (announcement, updated) |> Pool_event.announcement ]
+    Ok [ Updated (updated, tenant_ids) |> Pool_event.announcement ]
   ;;
 
   let decode data =

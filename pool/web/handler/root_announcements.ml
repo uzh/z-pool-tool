@@ -25,6 +25,19 @@ let text_from_urlencoded urlencoded =
     >|= fun text -> lang, text)
 ;;
 
+let selected_tenants_from_urlencoded req =
+  let open CCList in
+  let open Pool_tenant in
+  let%lwt tenants = find_all () in
+  let%lwt selected_tenants =
+    Sihl.Web.Request.urlencoded_list Field.(array_key Tenant) req
+  in
+  tenants
+  |> filter_map (fun { id; _ } ->
+    if mem (Id.value id) selected_tenants then Some id else None)
+  |> Lwt.return
+;;
+
 let index req =
   let create_layout (_ : Rock.Request.t) ?active_navigation context children =
     General.create_root_layout ?active_navigation context children
@@ -51,19 +64,21 @@ let form case req =
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let sys_languages = Pool_common.Language.all in
+    let%lwt tenants = Pool_tenant.find_all () in
     let* announcement =
       match case with
       | `New -> Lwt_result.return None
       | `Edit ->
         announcement_id req
-        |> Announcement.find database_label
+        |> Announcement.find_admin database_label
         >|+ CCOption.return
     in
     Page.Root.Announcement.form
       context
+      tenants
+      sys_languages
       ~flash_fetcher
       ?announcement
-      sys_languages
     |> create_layout ~active_navigation context
     ||> Sihl.Web.Response.of_html
     ||> CCResult.return
@@ -89,9 +104,10 @@ let create req =
       let open CCResult in
       let open Cqrs_command.Announcement_command.Create in
       let texts = text_from_urlencoded urlencoded in
+      let%lwt tenant_ids = selected_tenants_from_urlencoded req in
       urlencoded
       |> decode
-      >>= handle ~tags:Logs.Tag.empty texts
+      >>= handle ~tags:Logs.Tag.empty texts tenant_ids
       |> Lwt_result.lift
     in
     let handle events =
@@ -125,9 +141,10 @@ let update req =
       let open CCResult in
       let open Cqrs_command.Announcement_command.Update in
       let texts = text_from_urlencoded urlencoded in
+      let%lwt tenant_ids = selected_tenants_from_urlencoded req in
       urlencoded
       |> decode
-      >>= handle ~tags:Logs.Tag.empty announcement texts
+      >>= handle ~tags:Logs.Tag.empty announcement texts tenant_ids
       |> Lwt_result.lift
     in
     let handle events =

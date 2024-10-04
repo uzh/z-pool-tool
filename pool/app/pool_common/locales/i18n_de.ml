@@ -7,6 +7,8 @@ let to_string = function
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
   | AnnouncementsListTitle -> "Ankündigungen"
+  | AnnouncementsTenantSelect ->
+    "Wählen Sie, auf welchen Tenants die Ankündigung angezeigt werden soll."
   | AssignmentEditTagsWarning ->
     "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
      zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \

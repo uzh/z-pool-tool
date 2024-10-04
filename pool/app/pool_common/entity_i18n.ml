@@ -3,6 +3,7 @@ type t =
   | Address
   | AdminComment
   | AnnouncementsListTitle
+  | AnnouncementsTenantSelect
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
   | AvailableSpots
