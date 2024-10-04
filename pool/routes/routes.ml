@@ -1033,7 +1033,7 @@ module Api = struct
   let routes =
     choose
       ~middlewares:
-        [ CustomMiddleware.Tenant.validate ()
+        [ CustomMiddleware.Api.validate_tenant ()
         ; CustomMiddleware.Context.context ()
         ; CustomMiddleware.Logger.logger
         ]

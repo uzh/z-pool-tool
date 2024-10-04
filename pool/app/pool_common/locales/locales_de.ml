@@ -556,6 +556,7 @@ let rec error_to_string =
   | JobCannotBeRetriggered -> "Dieser Auftrag kann nicht neu ausgelöst werden."
   | JobPending -> "Der Auftrag ist noch pendent."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | MaintenancePending -> "Es sind Wartungsarbeiten im Gange."
   | MaxLength max ->
     Format.asprintf "Darf nicht länger als %i Zeichen sein." max
   | MeantimeUpdate field ->
@@ -658,6 +659,7 @@ let rec error_to_string =
       if i == 1 then "muss", "Option" else "müssen", "Optionen"
     in
     Format.asprintf "Es %s mindestens %i %s ausgewählt werden." verb i noun
+  | ServiceUnavailable -> "Service zur Zeit nicht verfügbar"
   | SessionRegistrationViaParent -> "Einschreibung via Hauptsession."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \

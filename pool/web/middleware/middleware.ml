@@ -1,4 +1,5 @@
 module Admin = Middleware_admin
+module Api = Middleware_api
 module Contact = Middleware_contact
 module Context = Middleware_context
 module Error = Middleware_error
