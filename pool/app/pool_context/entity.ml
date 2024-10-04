@@ -120,7 +120,6 @@ module Tenant = struct
 end
 
 module Api = struct
-  (* TODO: Add API Key to context *)
   type t =
     { api_key : string
     ; database_label : Database.Label.t
