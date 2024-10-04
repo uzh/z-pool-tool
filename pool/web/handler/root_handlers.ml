@@ -1,3 +1,4 @@
+module Announcement = Root_announcements
 module Login = Root_login
 module Profile = Root_user_profile
 module Settings = Root_settings

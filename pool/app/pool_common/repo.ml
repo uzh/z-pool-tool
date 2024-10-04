@@ -2,6 +2,16 @@ open CCFun
 open Entity
 
 let make_caqti_type = Database.Repo.make_caqti_type
+let encode_yojson of_t t = t |> of_t |> Yojson.Safe.to_string |> CCResult.return
+
+let decode_yojson t_of_yojson field t =
+  let read s = s |> Yojson.Safe.from_string |> t_of_yojson in
+  try Ok (read t) with
+  | _ ->
+    Error
+      (Pool_message.(Error.Invalid field)
+       |> Utils_to_string.error_to_string Language.En)
+;;
 
 module Model = struct
   module SelectorType (Core : Pool_model.Base.SelectorCoreTypeSig) = struct

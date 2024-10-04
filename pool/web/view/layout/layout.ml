@@ -159,6 +159,7 @@ module Root = struct
          ; main_tag [ message; content ]
          ; App.root_footer
          ; js_script_tag `IndexJs
+         ; js_script_tag `AdminJs
          ])
     |> Lwt.return
   ;;

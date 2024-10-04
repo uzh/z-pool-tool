@@ -2,6 +2,7 @@ type t =
   | Activity
   | Address
   | AdminComment
+  | AnnouncementsListTitle
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
   | AvailableSpots
@@ -116,6 +117,7 @@ type t =
 type nav_link =
   | ActorPermissions
   | Admins
+  | Announcements
   | Assignments
   | ContactInformation
   | Contacts

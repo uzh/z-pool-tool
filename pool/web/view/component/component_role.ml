@@ -31,6 +31,7 @@ let create_target_path ?uuid =
     | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
     | `Filter -> Some (build "filter" uuid)
     | `Tag -> Some (build "settings/tags" uuid)
+    | `Announcement
     | `Assignment
     | `ContactInfo
     | `ContactDirectMessage

@@ -10,6 +10,7 @@ type t =
   | AdminInputOnly
   | AdminViewOnly
   | AllowUninvitedSignup
+  | Announcement
   | Answer
   | AreaCode
   | Argument
@@ -276,6 +277,7 @@ type t =
   | TermsAndConditions
   | TermsAndConditionsLastAccepted
   | TestPhoneNumber
+  | Text
   | TextMessage
   | TextMessageDlrStatus
   | TextMessageLeadTime

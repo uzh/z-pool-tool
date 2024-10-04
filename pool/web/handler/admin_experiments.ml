@@ -552,7 +552,6 @@ module Access : sig
   val search : Rock.Middleware.t
   val message_history : Rock.Middleware.t
 end = struct
-  module Field = Field
   module ExperimentCommand = Cqrs_command.Experiment_command
   module Guardian = Middleware.Guardian
 

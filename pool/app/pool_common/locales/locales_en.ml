@@ -18,6 +18,7 @@ let rec field_to_string =
   | AdminInputOnly -> "input only by admins"
   | AdminViewOnly -> "only visible for admins"
   | AllowUninvitedSignup -> "Allow registration of all contacts"
+  | Announcement -> "announcement"
   | Answer -> "answer"
   | AreaCode -> "area code"
   | Argument -> "argument"
@@ -291,6 +292,7 @@ let rec field_to_string =
   | TermsAndConditions -> "terms and conditions"
   | TermsAndConditionsLastAccepted -> "terms and conditions last accepted at"
   | TestPhoneNumber -> "test phone number"
+  | Text -> "text"
   | TextMessage -> "text message"
   | TextMessageDlrStatus -> "text message status"
   | TextMessageLeadTime -> "text message lead time"
@@ -439,6 +441,12 @@ let rec error_to_string =
     "Some assignments have errors. Please resolve them first."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | AssignmentAlreadySubmitted -> "This assignment was already submitted."
+  | AtLeastOneLanguageRequired field ->
+    field
+    |> field_to_string
+    |> CCString.trim
+    |> Format.asprintf "%s has to be provided in at least one language."
+    |> CCString.capitalize_ascii
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"

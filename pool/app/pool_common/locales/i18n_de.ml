@@ -6,6 +6,7 @@ let to_string = function
   | Activity -> "Aktivität"
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
+  | AnnouncementsListTitle -> "Ankündigungen"
   | AssignmentEditTagsWarning ->
     "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
      zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \
@@ -198,6 +199,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
 let nav_link_to_string = function
   | ActorPermissions -> "Persönliche Berechtigungen"
   | Admins -> "Administratoren"
+  | Announcements -> "Ankündigungen"
   | Assignments -> "Anmeldungen"
   | ContactInformation -> "Kontaktangaben"
   | Contacts -> "Kontakte"

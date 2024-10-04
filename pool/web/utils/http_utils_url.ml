@@ -1,3 +1,5 @@
+module Field = Pool_message.Field
+
 let map = CCOption.map
 
 let append_opt suffix path =
@@ -49,5 +51,16 @@ module Contact = struct
     "/experiments"
     |> append_opt (map Experiment.Id.value id)
     |> append_opt suffix
+  ;;
+end
+
+module Root = struct
+  let with_root = Format.asprintf "/root%s"
+
+  let announcement_path ?suffix ?id () =
+    ("/" ^ Field.(show Announcement))
+    |> append_opt (map Announcement.Id.value id)
+    |> append_opt suffix
+    |> with_root
   ;;
 end

@@ -18,6 +18,7 @@ let rec field_to_string =
   | AdminInputOnly -> "Eingabe nur durch Admins"
   | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AllowUninvitedSignup -> "Einschreiben aller Kontakte erlauben"
+  | Announcement -> "Ankündigung"
   | Answer -> "Antwort"
   | AreaCode -> "Vorwahl"
   | Argument -> "Argument"
@@ -294,6 +295,7 @@ let rec field_to_string =
   | TermsAndConditions -> "Teilnahmebedingungen"
   | TermsAndConditionsLastAccepted -> "Teilnahmebedingungen zuletzt akzeptiert"
   | TestPhoneNumber -> "Testtelefonnummer"
+  | Text -> "Text"
   | TextMessage -> "SMS"
   | TextMessageDlrStatus -> "SMS Status"
   | TextMessageLeadTime -> "SMS Vorlaufzeit"
@@ -454,6 +456,12 @@ let rec error_to_string =
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AssignmentAlreadySubmitted -> "Die Teilnahme wurde bereits abgeschlossen."
+  | AtLeastOneLanguageRequired field ->
+    field
+    |> field_to_string
+    |> CCString.trim
+    |> Format.asprintf "%s muss in mindestens einer Sprache angegeben werden."
+    |> CCString.capitalize_ascii
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: \

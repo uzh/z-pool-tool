@@ -95,6 +95,7 @@ let add_default_guardian_role_permission_root =
     {sql|
     INSERT INTO `guardian_role_permissions` (`role`, `permission`, `target_model`) VALUES
     ('`Operator', 'manage', '`Admin'),
+    ('`Operator', 'manage', '`Announcement'),
     ('`Operator', 'manage', '`Assignment'),
     ('`Operator', 'manage', '`Contact'),
     ('`Operator', 'manage', '`ContactInfo'),
