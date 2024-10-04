@@ -68,7 +68,8 @@ end
 
 module Api : sig
   type t =
-    { database_label : Database.Label.t
+    { api_key : string
+    ; database_label : Database.Label.t
     ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
     }
 
@@ -76,7 +77,13 @@ module Api : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val create : Database.Label.t -> Guard.PermissionOnTarget.t list -> t
+
+  val create
+    :  string
+    -> Database.Label.t
+    -> Guard.PermissionOnTarget.t list
+    -> t
+
   val find : Rock.Request.t -> (t, Pool_message.Error.t) result
   val set : Rock.Request.t -> t -> Rock.Request.t
 end

@@ -122,7 +122,8 @@ end
 module Api = struct
   (* TODO: Add API Key to context *)
   type t =
-    { database_label : Database.Label.t
+    { api_key : string
+    ; database_label : Database.Label.t
     ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
     }
   [@@deriving show, sexp_of]
@@ -131,7 +132,10 @@ module Api = struct
     Opium.Context.Key.create ("api context", sexp_of_t)
   ;;
 
-  let create database_label guardian = { database_label; guardian }
+  let create api_key database_label guardian =
+    { api_key; database_label; guardian }
+  ;;
+
   let find = find_context key
   let set = set_context key
 end
