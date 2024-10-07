@@ -26,13 +26,12 @@ let context () =
   let open Utils.Lwt_result.Infix in
   let denied = Pool_message.Error.AccessDenied in
   let find_api_key database_label req =
+    let open CCOption in
     let open Opium in
     let key = "X-AUTH-TOKEN" in
     Headers.get req.Request.headers key
-    |> (function
-          | None -> Lwt.return None
-          | Some token -> Api_key.find_by_token database_label token)
-    ||> CCOption.to_result denied
+    |> map_or ~default:(Lwt.return None) (Api_key.find_by_token database_label)
+    ||> to_result denied
   in
   let filter handler req =
     let is_root = Http_utils.is_req_from_root_host req in
