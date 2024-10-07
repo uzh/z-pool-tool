@@ -35,7 +35,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     let open Version_history.GroupVersionHistory in
     insert pool ?user_uuid ~entity_uuid:before.Group.id ~before ~after ()
   in
-  let create_custom_field_answer_changelog _ contact public =
+  let create_custom_field_answer_changelog contact public =
     (* TODO: Handle options, and differ between admin and nonadmin values *)
     let open Version_history.AnswerVersionHistory in
     let contact_id = Contact.id contact in
@@ -102,7 +102,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
       (* TODO: handle hardcoded cases *)
       match[@warning "-4"] update with
       | PartialUpdate.Custom public ->
-        create_custom_field_answer_changelog false contact public
+        create_custom_field_answer_changelog contact public
       | _ -> Lwt.return_unit
     in
     Repo_partial_update.update pool user update contact
