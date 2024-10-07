@@ -43,8 +43,16 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     let%lwt before =
       Repo_version_history.find_answer_opt pool contact_id field_id
     in
-    let after = Version_history.AnswerRecord.from_public public in
-    insert pool ?user_uuid ~entity_uuid:(Public.id public) ~before ~after ()
+    let after =
+      Version_history.AnswerRecord.from_public public |> CCOption.return
+    in
+    insert
+      pool
+      ?user_uuid
+      ~entity_uuid:(Contact.Id.to_common contact_id)
+      ~before
+      ~after
+      ()
   in
   function
   | AdminAnswerCleared (m, entity_uuid) ->

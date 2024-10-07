@@ -3,8 +3,7 @@ module Dynparam = Database.Dynparam
 
 let answer_sql_select_columns =
   [ "pool_custom_fields.field_type"
-  ; Entity.Id.sql_select_fragment ~field:"pool_custom_field_answers.uuid"
-  ; Entity.Id.sql_select_fragment ~field:"pool_custom_field_answers.entity_uuid"
+  ; Entity.Id.sql_select_fragment ~field:"pool_custom_fields.uuid"
   ; "pool_custom_field_answers.value"
   ; "pool_custom_field_answers.admin_value"
   ]

@@ -49,12 +49,12 @@ module VersionHistory = struct
     let encode _ =
       Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel
     in
-    let decode (field_type, id, entity_uuid, value, admin_value) =
+    let decode (field_type, custom_field_uuid, value, admin_value) =
       let make_anwer decode =
         let decode_opt value = CCOption.bind value decode in
         let value = decode_opt value in
         let admin_value = decode_opt admin_value in
-        { id; entity_uuid; value; admin_value }
+        { custom_field_uuid; value; admin_value }
       in
       CCResult.return
       @@
@@ -83,11 +83,6 @@ module VersionHistory = struct
       custom
         ~encode
         ~decode
-        (t5
-           Base.FieldType.t
-           Repo.Id.t
-           Repo.Id.t
-           (option Value.t)
-           (option Value.t)))
+        (t4 Base.FieldType.t Repo.Id.t (option Value.t) (option Value.t)))
   ;;
 end

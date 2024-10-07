@@ -69,10 +69,6 @@ module type TSig = sig
   type record
 
   val model : Pool_message.Field.t
-  val default_query : Query.t
-  val filterable_by : Query.Filter.human option
-  val searchable_by : Query.Column.t list
-  val sortable_by : Query.Column.t list
 
   val create
     :  ?id:Id.t
@@ -91,10 +87,20 @@ module type TSig = sig
     -> after:record
     -> unit
     -> unit Lwt.t
-
-  val all_by_entity
-    :  ?query:Query.t
-    -> Database.Label.t
-    -> Pool_common.Id.t
-    -> (t list * Query.t) Lwt.t
 end
+
+let column_created_at =
+  (Pool_message.Field.CreatedAt, "pool_change_log.created_at")
+  |> Query.Column.create
+;;
+
+let searchable_by = []
+let sortable_by = []
+let filterable_by = None
+
+let default_sort =
+  let open Query in
+  Sort.{ column = column_created_at; order = SortOrder.Descending }
+;;
+
+let default_query = Query.create ~sort:default_sort ()

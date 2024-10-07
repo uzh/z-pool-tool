@@ -1108,11 +1108,7 @@ let changelog req =
   let url =
     HttpUtils.Url.Admin.session_path ~suffix:"changelog" ~id experiment_id
   in
-  Helpers.Changelog.htmx_handler
-    ~version_history:(module VersionHistory)
-    ~url
-    (Id.to_common id)
-    req
+  Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
 ;;
 
 module DirectMessage = struct
