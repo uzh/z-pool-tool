@@ -33,6 +33,7 @@ val find
   -> Id.t
   -> (t, Pool_message__Pool_message_error.t) result Lwt.t
 
+val find_by_token : Database.Label.t -> string -> t option Lwt.t
 val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 
 type event =

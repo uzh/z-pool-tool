@@ -68,7 +68,7 @@ end
 
 module Api : sig
   type t =
-    { api_key : string
+    { api_key : Api_key.Id.t
     ; database_label : Database.Label.t
     ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
     }
@@ -79,7 +79,7 @@ module Api : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
   val create
-    :  string
+    :  Api_key.Id.t
     -> Database.Label.t
     -> Guard.PermissionOnTarget.t list
     -> t

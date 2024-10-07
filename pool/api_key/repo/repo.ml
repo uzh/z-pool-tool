@@ -68,6 +68,19 @@ let find pool id =
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.ApiKey)
 ;;
 
+let find_by_token_request =
+  let open Caqti_request.Infix in
+  {sql|
+    WHERE pool_api_keys.token = $1
+  |sql}
+  |> find_request_sql
+  |> Repo_entity.Token.t ->! Repo_entity.t
+;;
+
+let find_by_token pool token =
+  Database.find_opt pool find_by_token_request token
+;;
+
 let all ?query pool =
   Query.collect_and_count pool query ~select:find_request_sql Repo_entity.t
 ;;
