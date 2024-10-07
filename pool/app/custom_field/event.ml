@@ -36,7 +36,6 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     insert pool ?user_uuid ~entity_uuid:before.Group.id ~before ~after ()
   in
   let create_custom_field_answer_changelog contact public =
-    (* TODO: Handle options, and differ between admin and nonadmin values *)
     let open Version_history.AnswerVersionHistory in
     let contact_id = Contact.id contact in
     let field_id = Public.id public in
@@ -50,6 +49,17 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
       pool
       ?user_uuid
       ~entity_uuid:(Contact.Id.to_common contact_id)
+      ~before
+      ~after
+      ()
+  in
+  let create_contact_changelog before after =
+    let open Contact in
+    let contact_id = id before in
+    VersionHistory.insert
+      pool
+      ?user_uuid
+      ~entity_uuid:(Id.to_common contact_id)
       ~before
       ~after
       ()
@@ -97,15 +107,20 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
   | OptionUpdated (m, updated) ->
     let%lwt () = create_option_changelog m updated in
     Repo_option.update pool updated
-  | PartialUpdate (update, contact, user) ->
+  | PartialUpdate (update, contact, current_user) ->
+    let open Contact in
+    let open PartialUpdate in
     let%lwt () =
-      (* TODO: handle hardcoded cases *)
-      match[@warning "-4"] update with
-      | PartialUpdate.Custom public ->
-        create_custom_field_answer_changelog contact public
-      | _ -> Lwt.return_unit
+      match update with
+      | Custom public -> create_custom_field_answer_changelog contact public
+      | Firstname (_, firstname) ->
+        create_contact_changelog contact (set_firstname contact firstname)
+      | Lastname (_, lastname) ->
+        create_contact_changelog contact (set_lastname contact lastname)
+      | Language (_, language) ->
+        create_contact_changelog contact (set_language contact language)
     in
-    Repo_partial_update.update pool user update contact
+    Repo_partial_update.update pool current_user update contact
   | Published m ->
     let%lwt () = create_changelog m (set_published_at m) in
     Repo.publish pool m
