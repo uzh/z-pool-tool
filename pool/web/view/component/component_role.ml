@@ -32,6 +32,7 @@ let create_target_path ?uuid =
     | `Filter -> Some (build "filter" uuid)
     | `Tag -> Some (build "settings/tags" uuid)
     | `Assignment
+    | `ApiKey
     | `ContactInfo
     | `ContactDirectMessage
     | `ContactName

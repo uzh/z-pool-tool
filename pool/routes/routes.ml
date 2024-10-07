@@ -823,6 +823,20 @@ module Admin = struct
         ; choose ~scope:(url_key Role) specific
         ]
       in
+      let api_key =
+        let open ApiKey in
+        let specific =
+          [ get "" ~middlewares:[ Access.read ] show
+          ; get "edit" ~middlewares:[ Access.update ] edit
+          ; post "" ~middlewares:[ Access.update ] update
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index ] index
+        ; post "" ~middlewares:[ Access.create ] create
+        ; get "/new" ~middlewares:[ Access.create ] new_form
+        ; choose ~scope:(ApiKey |> url_key) specific
+        ]
+      in
       let smtp =
         let open Smtp in
         let specific =
@@ -864,6 +878,7 @@ module Admin = struct
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/actor-permission" actor_permission
       ; choose ~scope:"/role-permission" role_permission
+      ; choose ~scope:Field.(human_url ApiKey) api_key
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
       ; choose ~scope:"/text-messages" text_messages

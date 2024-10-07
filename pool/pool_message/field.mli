@@ -11,6 +11,7 @@ type t =
   | AdminViewOnly
   | AllowUninvitedSignup
   | Answer
+  | ApiKey
   | AreaCode
   | Argument
   | AssetId

@@ -2,6 +2,7 @@
 
 type t =
   | Admin of Admin.event
+  | ApiKey of Api_key.event
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
@@ -31,6 +32,7 @@ type t =
 [@@deriving eq, show, variants]
 
 let admin events = Admin events
+let api_key events = ApiKey events
 let assignment events = Assignment events
 let assignmentjob events = AssignmentJob events
 let contact events = Contact events
@@ -68,6 +70,9 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
   | Admin event ->
     info "admin" Admin.pp_event event;
     Admin.handle_event ~tags pool event
+  | ApiKey event ->
+    info "api_key" Api_key.pp_event event;
+    Api_key.handle_event pool event
   | Assignment event ->
     info "assignment" Assignment.pp_event event;
     Assignment.handle_event pool event

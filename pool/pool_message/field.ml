@@ -27,6 +27,7 @@ type t =
   | AllowUninvitedSignup [@name "allow_uninvited_signup"]
   [@printer go "allow_uninvited_signup"]
   | Answer [@name "answer"] [@printer go "answer"]
+  | ApiKey [@name "api_key"] [@printer go "api_key"]
   | AreaCode [@name "area_code"] [@printer go "area_code"]
   | Argument [@name "argument"] [@printer go "argument"]
   | AssetId [@name "asset_id"] [@printer go "asset_id"]

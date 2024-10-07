@@ -20,6 +20,7 @@ let rec field_to_string =
   | AllowUninvitedSignup -> "Einschreiben aller Kontakte erlauben"
   | Answer -> "Antwort"
   | AreaCode -> "Vorwahl"
+  | ApiKey -> "API Key"
   | Argument -> "Argument"
   | AssetId -> "Anlagen Identifier"
   | AssignableRole -> "zuweisbare Rolle"

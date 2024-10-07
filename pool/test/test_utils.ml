@@ -78,6 +78,12 @@ let dummy_to_file (dummy : Seed.Assets.file) =
 ;;
 
 module Model = struct
+  let create_api_key ?id ?token () =
+    let open Api_key in
+    let name = Name.of_string "Name" in
+    create ?id ?token name
+  ;;
+
   let password =
     Pool_user.Password.Plain.(
       create "Somepassword1!" |> validate |> get_or_failwith)
