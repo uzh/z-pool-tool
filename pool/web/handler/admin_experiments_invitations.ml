@@ -16,18 +16,17 @@ let index req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = id |> Experiment.find database_label in
-       let open Experiment in
-       let common_exp_id = experiment |> id |> Id.to_common in
+       let common_exp_id = Experiment.(experiment |> id |> Id.to_common) in
        let%lwt key_list = Filter.all_keys database_label in
        let%lwt template_list = Filter.find_all_templates database_label () in
        let%lwt query_experiments, query_tags =
-         match experiment |> filter with
+         match experiment |> Experiment.filter with
          | None -> Lwt.return ([], [])
          | Some filter ->
            Lwt.both
              (filter
               |> Filter.all_query_experiments
-              |> search_multiple_by_id database_label)
+              |> Experiment.search_multiple_by_id database_label)
              (filter
               |> Filter.all_query_tags
               |> Tags.find_multiple database_label)
@@ -41,20 +40,15 @@ let index req =
                ~limit:50
                database_label
                (Matcher common_exp_id)
-               (experiment |> filter))
+               (experiment |> Experiment.filter))
            >|+ CCOption.pure
        in
-       let* matching_filter_count =
-         let open Filter in
-         count_filtered_contacts
-           database_label
-           (Matcher common_exp_id)
-           (experiment
-            |> filter
-            |> CCOption.map (fun { Filter.query; _ } -> query))
-       in
-       let%lwt invitation_count =
-         experiment |> id |> Experiment.invitation_count database_label
+       let* statistics =
+         let query =
+           experiment.Experiment.filter
+           |> CCOption.map (fun f -> f.Filter.query)
+         in
+         Statistics.ExperimentFilter.create database_label experiment query
        in
        Page.Admin.Experiments.invitations
          experiment
@@ -62,8 +56,7 @@ let index req =
          template_list
          query_experiments
          query_tags
-         matching_filter_count
-         invitation_count
+         statistics
          filtered_contacts
          context
        >|> create_layout req context
