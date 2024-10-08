@@ -829,6 +829,13 @@ module Admin = struct
           [ get "" ~middlewares:[ Access.read ] show
           ; get "edit" ~middlewares:[ Access.update ] edit
           ; post "" ~middlewares:[ Access.update ] update
+          ; post "/toggle-role" ~middlewares:[ Access.read ] handle_toggle_role
+          ; post
+              "/search-role"
+              ~middlewares:[ Access.grant_role ]
+              search_role_entities
+          ; post "/grant-role" ~middlewares:[ Access.grant_role ] grant_role
+          ; post "/revoke-role" ~middlewares:[ Access.revoke_role ] revoke_role
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index

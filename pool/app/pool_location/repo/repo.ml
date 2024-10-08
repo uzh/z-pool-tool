@@ -269,7 +269,7 @@ module Sql = struct
       Database.collect pool request pv
   ;;
 
-  let find_targets_grantable_by_admin ?exclude database_label admin query =
+  let find_targets_grantable_by_target ?exclude database_label target_id query =
     let joins =
       {sql|
       LEFT JOIN guardian_actor_role_targets t ON t.target_uuid = pool_locations.uuid
@@ -279,9 +279,10 @@ module Sql = struct
     in
     let conditions = "t.role IS NULL" in
     let dyn =
+      let open Pool_common in
       Dynparam.(
         empty
-        |> add Admin.Repo.Id.t Admin.(id admin)
+        |> add Repo.Id.t (Guard.Uuid.Target.to_string target_id |> Id.of_string)
         |> add Caqti_type.string Role.Role.(show `LocationManager))
     in
     search ~conditions ~joins ~dyn ?exclude database_label query
@@ -320,4 +321,4 @@ let insert pool location files =
 let update = Sql.update
 let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
-let find_targets_grantable_by_admin = Sql.find_targets_grantable_by_admin
+let find_targets_grantable_by_target = Sql.find_targets_grantable_by_target

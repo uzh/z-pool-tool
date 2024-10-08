@@ -72,7 +72,7 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Admin.handle_event ~tags pool event
   | ApiKey event ->
     info "api_key" Api_key.pp_event event;
-    Api_key.handle_event pool event
+    Api_key.handle_event ~tags pool event
   | Assignment event ->
     info "assignment" Assignment.pp_event event;
     Assignment.handle_event pool event

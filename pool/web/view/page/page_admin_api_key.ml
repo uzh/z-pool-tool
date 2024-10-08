@@ -6,6 +6,24 @@ module Icon = Component.Icon
 let api_key_path = Http_utils.Url.Admin.api_key_path
 let field_to_string = Pool_common.Utils.field_to_string_capitalized
 
+module Partials = struct
+  let roles_list
+    ?is_edit
+    ?top_element
+    ({ Pool_context.language; _ } as context)
+    target_id
+    =
+    let open Component.Role in
+    List.create
+      ?is_edit
+      ~path:(Http_utils.Url.Admin.api_key_path ())
+      context
+      target_id
+    %> CCList.return
+    %> roles_section ?top_element language
+  ;;
+end
+
 let list { Pool_context.language; _ } (api_keys, query) =
   let open Api_key in
   let make_btn = Component.Input.link_as_button in
@@ -56,7 +74,7 @@ let index (Pool_context.{ language; _ } as context) api_keys =
     ]
 ;;
 
-let form { Pool_context.csrf; language; _ } ?flash_fetcher ?api_key () =
+let form { Pool_context.csrf; language; _ } ?flash_fetcher ~control ?api_key () =
   let open Component in
   let open Api_key in
   let open CCOption.Infix in
@@ -65,43 +83,76 @@ let form { Pool_context.csrf; language; _ } ?flash_fetcher ?api_key () =
     | None -> api_key_path ()
     | Some api_key -> api_key_path ~id:api_key.id ()
   in
-  let title =
-    let field = Some Field.ApiKey in
-    match CCOption.is_some api_key with
-    | false -> Control.Create field
-    | true -> Control.Update field
-  in
+  form
+    ~a:
+      [ a_method `Post
+      ; a_action (Sihl.Web.externalize_path action)
+      ; a_class [ "stack" ]
+      ; a_user_data "detect-unsaved-changes" ""
+      ]
+    Input.
+      [ csrf_element csrf ()
+      ; div
+          ~a:[ a_class [ "grid-col-2" ] ]
+          [ input_element
+              ?flash_fetcher
+              ?value:(api_key >|= fun { name; _ } -> Name.value name)
+              language
+              `Text
+              Field.Name
+          ; div
+              ~a:[ a_class [ "full-width"; "flexrow"; "justify-end" ] ]
+              [ submit_element language control () ]
+          ]
+      ]
+;;
+
+let create ({ Pool_context.language; _ } as context) ?flash_fetcher ?api_key () =
+  let control = Control.Create (Some Field.ApiKey) in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt (Pool_common.Utils.control_to_string language title) ]
-    ; form
-        ~a:
-          [ a_method `Post
-          ; a_action (Sihl.Web.externalize_path action)
-          ; a_class [ "stack" ]
-          ; a_user_data "detect-unsaved-changes" ""
-          ]
-        Input.
-          [ csrf_element csrf ()
-          ; div
-              ~a:[ a_class [ "grid-col-2" ] ]
-              [ input_element
-                  ?flash_fetcher
-                  ?value:(api_key >|= fun { name; _ } -> Name.value name)
-                  language
-                  `Text
-                  Field.Name
-              ; div
-                  ~a:[ a_class [ "full-width"; "flexrow"; "justify-end" ] ]
-                  [ submit_element language title () ]
-              ]
-          ]
+    [ h1 [ txt (Pool_common.Utils.control_to_string language control) ]
+    ; form context ?flash_fetcher ~control ?api_key ()
+    ]
+;;
+
+let edit
+  ({ Pool_context.language; csrf; _ } as context)
+  ?flash_fetcher
+  api_key
+  target_id
+  available_roles
+  granted_roles
+  =
+  let open Api_key in
+  let control = Control.Edit (Some Field.ApiKey) in
+  let roles_form =
+    Component.Role.Search.input_form
+      ~path:(Http_utils.Url.Admin.api_key_path ())
+      csrf
+      language
+      (Guard.Uuid.target_of Id.value api_key.id)
+      available_roles
+      ()
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
+    [ h1 [ txt (Pool_common.Utils.control_to_string language control) ]
+    ; form context ?flash_fetcher ~control ~api_key ()
+    ; Partials.roles_list
+        ~is_edit:true
+        ~top_element:[ roles_form ]
+        context
+        target_id
+        granted_roles
     ]
 ;;
 
 let show
-  { Pool_context.language; _ }
+  ({ Pool_context.language; _ } as context)
   { Api_key.name; token; created_at; updated_at; _ }
+  target_id
+  granted_roles
   =
   let open Api_key in
   let format_ptime = Utils.Ptime.formatted_date_time in
@@ -114,6 +165,9 @@ let show
     |> Component.Table.vertical_table `Striped language
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt (Name.value name) ]; details ]
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
+    [ h1 [ txt (Name.value name) ]
+    ; details
+    ; Partials.roles_list ~is_edit:false context target_id granted_roles
+    ]
 ;;

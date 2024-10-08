@@ -1,3 +1,19 @@
+module Actor = struct
+  open Guard
+  open Utils.Lwt_result.Infix
+
+  type t = Entity.t [@@deriving eq, show]
+
+  let to_authorizable ?ctx t =
+    Persistence.Actor.decorate
+      ?ctx
+      (fun { Entity.id; _ } ->
+        id |> Uuid.actor_of Entity.Id.value |> Actor.create `ApiKey)
+      t
+    >|- Pool_message.Error.authorization
+  ;;
+end
+
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 

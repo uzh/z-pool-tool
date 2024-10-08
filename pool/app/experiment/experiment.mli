@@ -378,10 +378,10 @@ val find_to_enroll_directly
 
 val contact_is_enrolled : Database.Label.t -> Id.t -> Contact.Id.t -> bool Lwt.t
 
-val find_targets_grantable_by_admin
+val find_targets_grantable_by_target
   :  ?exclude:Id.t list
   -> Database.Label.t
-  -> Admin.t
+  -> Guard.Uuid.Target.t
   -> Role.Role.t
   -> string
   -> (Id.t * Title.t) list Lwt.t

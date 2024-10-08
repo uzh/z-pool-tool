@@ -41,7 +41,7 @@ type event =
   | Updated of (t * t)
   | Destroyed of t
 
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val filterable_by : 'a option
