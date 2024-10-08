@@ -63,6 +63,8 @@ type t =
   | CreatedAt [@name "created_at"] [@printer go "created_at"]
   | CurrentPassword [@name "current_password"] [@printer go "current_password"]
   | CustomField [@name "custom_field"] [@printer go "custom_field"]
+  | CustomFieldAnswer [@name "custom_field_answer"]
+  [@printer go "custom_field_answer"]
   | CustomFieldGroup [@name "custom_field_group"]
   [@printer go "custom_field_group"]
   | CustomFieldGroups [@name "custom_field_groups"]

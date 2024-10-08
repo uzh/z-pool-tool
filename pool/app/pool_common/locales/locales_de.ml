@@ -52,6 +52,7 @@ let rec field_to_string =
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | CustomField -> "Feld"
+  | CustomFieldAnswer -> "Antwort"
   | CustomFieldGroup -> "Gruppe"
   | CustomFieldGroups -> "Gruppen"
   | CustomFieldOption -> "Option"

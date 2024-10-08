@@ -339,11 +339,7 @@ let changelog req =
         ()
     in
     let open Custom_field in
-    Helpers.Changelog.htmx_handler
-      ~version_history:(module VersionHistory)
-      ~url
-      (custom_field_id |> Id.to_common)
-      req
+    Helpers.Changelog.htmx_handler ~url (custom_field_id |> Id.to_common) req
   in
   get_model response req
 ;;

@@ -23,15 +23,13 @@ let find_request_sql ?(count = false) =
   Format.asprintf {sql|SELECT %s FROM pool_change_log %s %s |sql} columns joins
 ;;
 
-let find_by_model field ?query pool entity_uuid =
+let find_by_model ?query pool entity_uuid =
   let open Repo_entity in
   let where =
     ( {sql| 
-        pool_change_log.model = $1 
-          AND 
-        pool_change_log.entity_uuid = UNHEX(REPLACE($2, '-', ''))
+        pool_change_log.entity_uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
-    , Dynparam.(empty |> add Field.t field |> add RepoId.t entity_uuid) )
+    , Dynparam.(empty |> add RepoId.t entity_uuid) )
   in
   Query.collect_and_count pool query ~select:find_request_sql ~where t
 ;;

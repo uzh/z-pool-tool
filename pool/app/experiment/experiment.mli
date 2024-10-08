@@ -16,8 +16,6 @@ module PublicTitle : sig
     :  ?default:t
     -> unit
     -> (Pool_message.Error.t, t) Pool_conformist.Field.t
-
-  val placeholder : t
 end
 
 module InternalDescription : sig

@@ -342,11 +342,7 @@ let changelog req =
     HttpUtils.Url.Admin.experiment_path ~suffix:"changelog" ~id:experiment_id ()
   in
   let open Experiment in
-  Helpers.Changelog.htmx_handler
-    ~version_history:(module VersionHistory)
-    ~url
-    (Id.to_common experiment_id)
-    req
+  Helpers.Changelog.htmx_handler ~url (Id.to_common experiment_id) req
 ;;
 
 let update req =

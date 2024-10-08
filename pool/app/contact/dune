@@ -1,6 +1,7 @@
 (library
  (name contact)
  (libraries
+  changelog
   i18n
   guard
   pool_common

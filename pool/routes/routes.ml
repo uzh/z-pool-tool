@@ -664,6 +664,7 @@ module Admin = struct
         ; post "delete" ~middlewares:[ Access.update ] mark_as_deleted
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
+        ; get "/changelog" ~middlewares:[ Access.changelog ] changelog
         ; get
             "/past-experiments"
             ~middlewares:[ Access.read ]

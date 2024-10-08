@@ -44,6 +44,7 @@ type t =
   | CreatedAt
   | CurrentPassword
   | CustomField
+  | CustomFieldAnswer
   | CustomFieldGroup
   | CustomFieldGroups
   | CustomFieldOption

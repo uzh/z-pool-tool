@@ -205,11 +205,7 @@ let changelog req =
   let open Pool_location in
   let id = id req Field.Location Id.of_string in
   let url = HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id () in
-  Helpers.Changelog.htmx_handler
-    ~version_history:(module VersionHistory)
-    ~url
-    (Id.to_common id)
-    req
+  Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
 ;;
 
 let show = detail false
