@@ -58,3 +58,11 @@ let context () =
   in
   Rock.Middleware.create ~name:"api.context" ~filter
 ;;
+
+let api_request () =
+  let filter handler req =
+    Opium.Request.add_header (Http_utils.Api.api_request_header, "true") req
+    |> handler
+  in
+  Rock.Middleware.create ~name:"api.request" ~filter
+;;

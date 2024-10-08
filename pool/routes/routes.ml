@@ -1048,7 +1048,7 @@ module Api = struct
   open Api
 
   let global_middlewares =
-    [ CustomMiddleware.Api.context (); CustomMiddleware.Logger.logger ]
+    CustomMiddleware.[ Api.api_request (); Api.context (); Logger.logger ]
   ;;
 
   let experiment =
