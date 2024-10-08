@@ -1051,6 +1051,14 @@ module Api = struct
     [ CustomMiddleware.Api.context (); CustomMiddleware.Logger.logger ]
   ;;
 
+  let experiment =
+    let open Experiment in
+    let specific = [ get "" ~middlewares:[ Access.read ] show ] in
+    choose
+      ~scope:Field.(human_url Experiment)
+      [ choose ~scope:Field.(url_key Experiment) specific ]
+  ;;
+
   let organisational_unit =
     let open OrganisationalUnit in
     choose ~scope:"organisational-unit" [ get "" index ]
@@ -1060,7 +1068,8 @@ module Api = struct
     choose
       ~middlewares:
         (CustomMiddleware.Api.validate_tenant () :: global_middlewares)
-      [ organisational_unit
+      [ experiment
+      ; organisational_unit
       ; get "/**" ~middlewares:global_middlewares not_found
       ]
   ;;

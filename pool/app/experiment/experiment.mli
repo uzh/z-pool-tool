@@ -148,6 +148,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val yojson_of_t : t -> Yojson.Safe.t
 val id : t -> Id.t
 val title : t -> Title.t
 val public_title : t -> PublicTitle.t

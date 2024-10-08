@@ -1,3 +1,9 @@
+val find_id
+  :  (string -> ('a, Pool_message.Error.t) Result.t)
+  -> Pool_message.Field.t
+  -> Rock.Request.t
+  -> ('a, Pool_message.Error.t) Result.t
+
 val respond_error
   :  ?status:Opium.Status.t
   -> ?language:Pool_common.Language.t

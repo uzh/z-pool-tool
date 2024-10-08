@@ -2,6 +2,11 @@ open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "api.api_utils"
 
+let find_id validate_and_encode field req =
+  Sihl.Web.Router.param req @@ Pool_message.Field.show field
+  |> validate_and_encode
+;;
+
 let respond_error
   ?(status = `Bad_request)
   ?(language = Pool_common.Language.En)

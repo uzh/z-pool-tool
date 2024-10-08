@@ -45,8 +45,11 @@ let context () =
       let* api_key =
         find_api_key database_label req ||> with_status `Unauthorized
       in
-      (* TODO *)
-      let guardian = [] in
+      let%lwt guardian =
+        api_key.Api_key.id
+        |> Guard.Uuid.actor_of Api_key.Id.value
+        |> Guard.Persistence.ActorRole.permissions_of_actor database_label
+      in
       create api_key.Api_key.id database_label guardian |> Lwt_result.return
     in
     match context with
