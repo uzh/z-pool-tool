@@ -10,6 +10,26 @@ let yojson_response ?status json =
   json |> Sihl.Web.Response.of_json ?status ~headers |> Lwt.return
 ;;
 
+let schedule_to_json
+  ({ Schedule.label; scheduled_time; status; last_run; _ } : Schedule.public)
+  =
+  let open Schedule in
+  let label = Label.value label in
+  let scheduled_time =
+    match scheduled_time with
+    | Every span -> Format.asprintf "Every %s" (ScheduledTimeSpan.show span)
+    | At time -> Format.asprintf "At %s" (ScheduledTime.show time)
+  in
+  let status = Status.show status in
+  let last_run = last_run |> CCOption.map_or ~default:"" LastRunAt.show in
+  `Assoc
+    [ "label", `String label
+    ; "scheduled_time", `String scheduled_time
+    ; "status", `String status
+    ; "last_run", `String last_run
+    ]
+;;
+
 let show _ =
   let%lwt result =
     let open Schedule in
@@ -60,7 +80,7 @@ let show _ =
       let%lwt schedules = find_all () in
       create_entry
         "schedules"
-        (`List (schedules |> CCList.map yojson_of_public))
+        (`List (schedules |> CCList.map schedule_to_json))
       |> CCList.return
       |> Lwt.return
     in

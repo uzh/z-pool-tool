@@ -1,5 +1,3 @@
-open Ppx_yojson_conv_lib.Yojson_conv
-
 module Label = struct
   include Pool_model.Base.String
 
@@ -59,7 +57,7 @@ end
 type scheduled_time =
   | Every of ScheduledTimeSpan.t
   | At of ScheduledTime.t
-[@@deriving eq, show, yojson]
+[@@deriving eq, show]
 
 type t =
   { label : Label.t
@@ -94,7 +92,7 @@ type public =
   ; status : Status.t
   ; last_run : LastRunAt.t option
   }
-[@@deriving eq, show, yojson]
+[@@deriving eq, show]
 
 let is_ok ({ scheduled_time; status; last_run; _ } : public) =
   let open Status in
