@@ -29,11 +29,35 @@ module EndAt : sig
   val create : Ptime.t -> t
 end
 
+module ShowToAdmins : sig
+  include Pool_model.Base.BooleanSig
+
+  val schema
+    :  ?default:t
+    -> unit
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+
+  val init : t
+end
+
+module ShowToContacts : sig
+  include Pool_model.Base.BooleanSig
+
+  val schema
+    :  ?default:t
+    -> unit
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+
+  val init : t
+end
+
 type t =
   { id : Id.t
   ; text : Text.t
   ; start_at : StartAt.t option
   ; end_at : EndAt.t option
+  ; show_to_admins : ShowToAdmins.t
+  ; show_to_contacts : ShowToContacts.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -43,7 +67,15 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
-val create : ?id:Id.t -> Text.t -> StartAt.t option -> EndAt.t option -> t
+
+val create
+  :  ?id:Id.t
+  -> Text.t
+  -> StartAt.t option
+  -> EndAt.t option
+  -> ShowToAdmins.t
+  -> ShowToContacts.t
+  -> t
 
 type admin = t * Pool_tenant.t list
 

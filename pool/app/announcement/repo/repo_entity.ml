@@ -14,8 +14,24 @@ module Text = struct
 end
 
 let t =
-  let decode (id, (text, (start_at, (end_at, (created_at, (updated_at, ())))))) =
-    Ok { id; text; start_at; end_at; created_at; updated_at }
+  let decode
+    ( id
+    , ( text
+      , ( start_at
+        , ( end_at
+          , (show_to_admins, (show_to_contacts, (created_at, (updated_at, ()))))
+          ) ) ) )
+    =
+    Ok
+      { id
+      ; text
+      ; start_at
+      ; end_at
+      ; show_to_admins
+      ; show_to_contacts
+      ; created_at
+      ; updated_at
+      }
   in
   let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let open Schema in
@@ -27,6 +43,8 @@ let t =
       ; Text.t
       ; option ptime
       ; option ptime
+      ; bool
+      ; bool
       ; Pool_common.Repo.CreatedAt.t
       ; Pool_common.Repo.UpdatedAt.t
       ]
@@ -38,12 +56,27 @@ module Write = struct
       Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
     in
     let encode m : ('a Data.t, string) result =
-      Ok Data.[ m.id; m.text; m.start_at; m.end_at ]
+      Ok
+        Data.
+          [ m.id
+          ; m.text
+          ; m.start_at
+          ; m.end_at
+          ; m.show_to_admins
+          ; m.show_to_contacts
+          ]
     in
     let open Schema in
     custom
       ~encode
       ~decode
-      Caqti_type.[ Pool_common.Repo.Id.t; Text.t; option ptime; option ptime ]
+      Caqti_type.
+        [ Pool_common.Repo.Id.t
+        ; Text.t
+        ; option ptime
+        ; option ptime
+        ; bool
+        ; bool
+        ]
   ;;
 end

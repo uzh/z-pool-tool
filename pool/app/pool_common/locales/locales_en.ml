@@ -253,6 +253,8 @@ let rec field_to_string =
   | Setting -> "setting"
   | Settings -> "settings"
   | ShowUpCount -> "show ups"
+  | ShowToAdmins -> "Show to admins"
+  | ShowToContacts -> "Show to contacts"
   | ShowExteralDataIdLinks -> "show links to external data identifiers"
   | SignedUpAt -> "signed up at"
   | SignUpCount -> "new sign ups"
@@ -447,6 +449,11 @@ let rec error_to_string =
     |> CCString.trim
     |> Format.asprintf "%s has to be provided in at least one language."
     |> CCString.capitalize_ascii
+  | AtLeastOneSelected (field1, field2) ->
+    Format.asprintf
+      "At least one of the fields '%s' or '%s' has to be selected."
+      (field_to_string field1)
+      (field_to_string field2)
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"

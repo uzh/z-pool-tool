@@ -17,14 +17,19 @@ let list { Pool_context.language; _ } (annoucements, query) =
          ~icon:Icon.Add
          ~control:(language, Control.Add None)
   in
+  let custom field = `custom (txt (field_to_string language field)) in
   let cols =
-    [ `custom (txt (field_to_string language Field.Text))
+    [ custom Field.Text
     ; `column column_start
     ; `column column_end
+    ; custom Field.ShowToAdmins
+    ; custom Field.ShowToContacts
     ; `custom create_btn
     ]
   in
-  let row ({ id; start_at; end_at; text; _ } : t) =
+  let row
+    ({ id; start_at; end_at; text; show_to_admins; show_to_contacts; _ } : t)
+    =
     let open CCOption in
     let edit_btn =
       let open Component in
@@ -32,9 +37,17 @@ let list { Pool_context.language; _ } (annoucements, query) =
       |> Input.link_as_button ~style:`Primary ~icon:Icon.Create
     in
     let format_time = Utils.Ptime.formatted_date_time in
+    let bool_icon =
+      let open Component.Icon in
+      function
+      | true -> to_html Checkmark
+      | false -> to_html Close
+    in
     [ Text.find language text |> Unsafe.data
     ; start_at |> map_or ~default:"" (StartAt.value %> format_time) |> txt
     ; end_at |> map_or ~default:"" (EndAt.value %> format_time) |> txt
+    ; show_to_admins |> ShowToAdmins.value |> bool_icon
+    ; show_to_contacts |> ShowToContacts.value |> bool_icon
     ; edit_btn
     ]
     |> CCList.map (CCList.return %> td)
@@ -148,6 +161,26 @@ let form
       ; div ~a:[ a_class [ "input-group" ] ] checkboxes
       ]
   in
+  let show_to_html =
+    div
+      [ Input.checkbox_element
+          ?flash_fetcher
+          ?value:
+            (announcement
+             >|= fun { show_to_admins; _ } -> ShowToAdmins.value show_to_admins
+            )
+          language
+          Field.ShowToAdmins
+      ; Input.checkbox_element
+          ?flash_fetcher
+          ?value:
+            (announcement
+             >|= fun { show_to_contacts; _ } ->
+             ShowToContacts.value show_to_contacts)
+          language
+          Field.ShowToContacts
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 [ txt (Pool_common.Utils.control_to_string language title) ]
@@ -175,6 +208,7 @@ let form
                   ; div ~a:[ a_class [ "stack" ] ] text_inputs
                   ]
               ; tenant_select
+              ; show_to_html
               ; div
                   ~a:[ a_class [ "full-width"; "flexrow"; "justify-end" ] ]
                   [ submit_element language title () ]

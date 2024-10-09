@@ -8,6 +8,8 @@ let create_pool_announcements_table =
         `text` text,
         start_at timestamp,
         end_at timestamp,
+        show_to_admins BOOLEAN NOT NULL DEFAULT FALSE,
+        show_to_contacts BOOLEAN NOT NULL DEFAULT FALSE,
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id),

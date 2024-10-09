@@ -239,6 +239,8 @@ type t =
   | Settings
   | ShowExteralDataIdLinks
   | ShowUpCount
+  | ShowToAdmins
+  | ShowToContacts
   | SignedUpAt
   | SignUpCount
   | SMS

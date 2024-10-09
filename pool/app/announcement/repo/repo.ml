@@ -5,6 +5,8 @@ let sql_select_columns =
   ; "pool_announcements.text"
   ; "pool_announcements.start_at"
   ; "pool_announcements.end_at"
+  ; "pool_announcements.show_to_admins"
+  ; "pool_announcements.show_to_contacts"
   ; "pool_announcements.created_at"
   ; "pool_announcements.updated_at"
   ]
@@ -104,12 +106,16 @@ let insert_request =
       uuid,
       text,
       start_at,
-      end_at
+      end_at,
+      show_to_admins,
+      show_to_contacts
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
       $2,
       $3,
-      $4
+      $4,
+      $5,
+      $6
     )
   |sql}
   |> Repo_entity.Write.t ->. Caqti_type.unit
@@ -127,7 +133,9 @@ let update_request =
     SET
       text = $2,
       start_at = $3,
-      end_at = $4
+      end_at = $4,
+      show_to_admins = $5,
+      show_to_contacts = $6
     WHERE
       uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}

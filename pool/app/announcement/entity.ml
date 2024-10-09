@@ -45,21 +45,48 @@ module EndAt = struct
   let schema () = ptime_schema Pool_message.Field.End
 end
 
+module ShowToAdmins = struct
+  include Pool_model.Base.Boolean
+
+  let init = false
+  let field = Pool_message.Field.ShowToAdmins
+  let schema ?default = schema ?default field
+end
+
+module ShowToContacts = struct
+  include Pool_model.Base.Boolean
+
+  let init = false
+  let field = Pool_message.Field.ShowToContacts
+  let schema ?default = schema ?default field
+end
+
 type t =
   { id : Id.t
   ; text : Text.t
   ; start_at : StartAt.t option
   ; end_at : EndAt.t option
+  ; show_to_admins : ShowToAdmins.t
+  ; show_to_contacts : ShowToContacts.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show, yojson]
 
-let create ?(id = Id.create ()) tet start_at end_at =
+let create
+  ?(id = Id.create ())
+  tet
+  start_at
+  end_at
+  show_to_admins
+  show_to_contacts
+  =
   { id
   ; text = tet
   ; start_at
   ; end_at
+  ; show_to_admins
+  ; show_to_contacts
   ; created_at = Pool_common.CreatedAt.create_now ()
   ; updated_at = Pool_common.UpdatedAt.create_now ()
   }

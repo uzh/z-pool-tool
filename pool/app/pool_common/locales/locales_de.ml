@@ -256,6 +256,8 @@ let rec field_to_string =
   | Setting -> "Einstellung"
   | Settings -> "Einstellungen"
   | ShowUpCount -> "Anwesende"
+  | ShowToAdmins -> "Den Administratoren anzeigen"
+  | ShowToContacts -> "Den Kontakten anzeigen"
   | ShowExteralDataIdLinks -> "Link zu externen Datenidentifikatoren anzeigen"
   | SignedUpAt -> "Eingeschrieben am"
   | SignUpCount -> "Neuregistrierungen"
@@ -462,6 +464,11 @@ let rec error_to_string =
     |> CCString.trim
     |> Format.asprintf "%s muss in mindestens einer Sprache angegeben werden."
     |> CCString.capitalize_ascii
+  | AtLeastOneSelected (field1, field2) ->
+    Format.asprintf
+      "Mindestens eines der Felder '%s' oder '%s' muss ausgewählt werden."
+      (field_to_string field1)
+      (field_to_string field2)
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: \

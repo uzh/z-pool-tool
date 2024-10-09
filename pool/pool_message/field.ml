@@ -300,6 +300,8 @@ type t =
   | ShowExteralDataIdLinks [@name "show_external_data_id_links"]
   [@printer go "show_external_data_id_links"]
   | ShowUpCount [@name "show_up_count"] [@printer go "show_up_count"]
+  | ShowToAdmins [@name "show_to_admins"] [@printer go "show_to_admins"]
+  | ShowToContacts [@name "show_to_contacts"] [@printer go "show_to_contacts"]
   | SignedUpAt [@name "signed_up_at"] [@printer go "signed_up_at"]
   | SignUpCount [@name "sign_up_count"] [@printer go "sign_up_count"]
   | SMS [@name "sms"] [@printer go "sms"]
