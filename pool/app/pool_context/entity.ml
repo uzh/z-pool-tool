@@ -121,7 +121,7 @@ end
 
 module Api = struct
   type t =
-    { api_key : Api_key.Id.t
+    { api_key : Api_key.t
     ; database_label : Database.Label.t
     ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
     }

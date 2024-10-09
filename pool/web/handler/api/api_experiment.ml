@@ -19,6 +19,6 @@ module Access = struct
   open Experiment
   module Guardian = Middleware.Guardian
 
-  let experiment_effects = Guardian.id_effects Id.validate Field.Experiment
+  let experiment_effects = Guardian.api_id_effects Id.validate Field.Experiment
   let read = experiment_effects Guard.Access.read
 end

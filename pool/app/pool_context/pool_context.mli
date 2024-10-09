@@ -68,7 +68,7 @@ end
 
 module Api : sig
   type t =
-    { api_key : Api_key.Id.t
+    { api_key : Api_key.t
     ; database_label : Database.Label.t
     ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
     }
@@ -79,7 +79,7 @@ module Api : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
   val create
-    :  Api_key.Id.t
+    :  Api_key.t
     -> Database.Label.t
     -> Guard.PermissionOnTarget.t list
     -> t
@@ -111,5 +111,12 @@ module Logger : sig
   module Tags : sig
     val req : Sihl.Web.Request.t -> Logs.Tag.set
     val context : t -> Logs.Tag.set
+  end
+
+  module Api : sig
+    module Tags : sig
+      val req : Sihl.Web.Request.t -> Logs.Tag.set
+      val context : Api.t -> Logs.Tag.set
+    end
   end
 end

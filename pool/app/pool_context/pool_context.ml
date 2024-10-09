@@ -72,4 +72,38 @@ module Logger = struct
       |> add Logger.tag_user (user |> show_log_user)
     ;;
   end
+
+  module Api = struct
+    open Api
+
+    module Tags = struct
+      let req (req : Sihl.Web.Request.t) : Logs.Tag.set =
+        let open CCOption in
+        let default = "undefined" in
+        let id = Sihl.Web.Id.find req |> value ~default in
+        let ip = Opium.Request.header "X-Real-IP" req |> value ~default in
+        let database_label, api_key =
+          find req
+          |> of_result
+          >|= (fun { database_label; api_key; _ } ->
+                ( database_label |> Database.Label.value
+                , Api_key.(Id.value api_key.id) ))
+          |> value ~default:(default, default)
+        in
+        let open Logs.Tag in
+        empty
+        |> add Logger.tag_req id
+        |> add Logger.tag_database database_label
+        |> add Logger.tag_api_key api_key
+        |> add Logger.tag_ip ip
+      ;;
+
+      let context { database_label; api_key; _ } : Logs.Tag.set =
+        let open Logs.Tag in
+        empty
+        |> add Logger.tag_database (database_label |> Database.Label.value)
+        |> add Logger.tag_api_key Api_key.(Id.value api_key.id)
+      ;;
+    end
+  end
 end

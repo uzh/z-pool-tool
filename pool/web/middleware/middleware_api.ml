@@ -50,7 +50,7 @@ let context () =
         |> Guard.Uuid.actor_of Api_key.Id.value
         |> Guard.Persistence.ActorRole.permissions_of_actor database_label
       in
-      create api_key.Api_key.id database_label guardian |> Lwt_result.return
+      create api_key database_label guardian |> Lwt_result.return
     in
     match context with
     | Ok context -> context |> set req |> handler

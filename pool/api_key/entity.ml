@@ -34,11 +34,13 @@ end
 type t =
   { id : Id.t
   ; name : Name.t
-  ; token : Token.t
+  ; token : Token.t [@opaque]
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show, yojson]
+
+let sexp_of_t { id; _ } = Id.sexp_of_t id
 
 let create ?(id = Id.create ()) ?(token = Token.generate ()) name =
   { id

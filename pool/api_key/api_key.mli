@@ -24,6 +24,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val sexp_of_t : t -> Sexplib0.Sexp.t
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
 val create : ?id:Id.t -> ?token:Token.t -> Name.t -> t
@@ -57,4 +58,17 @@ module Access : sig
   val create : Guard.ValidationSet.t
   val read : Id.t -> Guard.ValidationSet.t
   val update : Id.t -> Guard.ValidationSet.t
+end
+
+module Actor : sig
+  val to_authorizable
+    :  ?ctx:(string * string) list
+    -> t
+    -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
+
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
 end
