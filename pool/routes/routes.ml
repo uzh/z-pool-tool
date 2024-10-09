@@ -23,14 +23,18 @@ let global_middlewares =
   ; CustomMiddleware.Error.middleware ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
-  ; Middleware.flash ()
+  ; Opium.Middleware.content_length
+  ; Opium.Middleware.etag
+  ; Opium.Middleware.method_override
+  ]
+;;
+
+let web_middlewares =
+  [ Middleware.flash ()
   ; Middleware.csrf
       ~not_allowed_handler:CustomMiddleware.NotAllowed.handle
       ~expires:session_expiration
       ()
-  ; Opium.Middleware.content_length
-  ; Opium.Middleware.etag
-  ; Opium.Middleware.method_override
   ]
 ;;
 
@@ -40,6 +44,14 @@ module Public = struct
       [ get "/" Handler.Public.root_redirect
       ; get "/custom/assets/:id/:filename" Handler.Public.asset
       ; get "/error" Handler.Public.error
+      ]
+  ;;
+
+  let middlewares =
+    web_middlewares
+    @ [ CustomMiddleware.Tenant.validate ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
       ]
   ;;
 
@@ -70,11 +82,7 @@ module Public = struct
     in
     Handler.Public.(
       choose
-        ~middlewares:
-          [ CustomMiddleware.Tenant.validate ()
-          ; CustomMiddleware.Context.context ()
-          ; CustomMiddleware.Logger.logger
-          ]
+        ~middlewares
         [ choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
@@ -189,13 +197,17 @@ module Contact = struct
     ]
   ;;
 
+  let middlewares =
+    web_middlewares
+    @ [ CustomMiddleware.Tenant.validate ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
+      ]
+  ;;
+
   let routes =
     choose
-      ~middlewares:
-        [ CustomMiddleware.Tenant.validate ()
-        ; CustomMiddleware.Context.context ()
-        ; CustomMiddleware.Logger.logger
-        ]
+      ~middlewares
       [ choose
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
@@ -228,11 +240,12 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Tenant.validate ()
-    ; CustomMiddleware.Context.context ()
-    ; CustomMiddleware.Logger.logger
-    ; CustomMiddleware.Admin.require_admin ()
-    ]
+    web_middlewares
+    @ [ CustomMiddleware.Tenant.validate ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
+      ; CustomMiddleware.Admin.require_admin ()
+      ]
   ;;
 
   let routes =
