@@ -942,10 +942,11 @@ end
 
 module Root = struct
   let middlewares =
-    [ CustomMiddleware.Root.from_root_only ()
-    ; CustomMiddleware.Context.context ()
-    ; CustomMiddleware.Logger.logger
-    ]
+    web_middlewares
+    @ [ CustomMiddleware.Root.from_root_only ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
+      ]
   ;;
 
   let public_routes =

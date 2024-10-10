@@ -12,10 +12,6 @@ let tag_user : string Logs.Tag.def =
   Logs.Tag.def "user" ~doc:"User / Administrator email" CCString.pp
 ;;
 
-let tag_api_key : string Logs.Tag.def =
-  Logs.Tag.def "api_key" ~doc:"API Key" CCString.pp
-;;
-
 let empty : Logs.Tag.set = Logs.Tag.empty
 let app_style = `Cyan
 let err_style = `Red

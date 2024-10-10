@@ -94,7 +94,7 @@ module Logger = struct
         empty
         |> add Logger.tag_req id
         |> add Logger.tag_database database_label
-        |> add Logger.tag_api_key api_key
+        |> add Logger.tag_user api_key
         |> add Logger.tag_ip ip
       ;;
 
@@ -102,7 +102,7 @@ module Logger = struct
         let open Logs.Tag in
         empty
         |> add Logger.tag_database (database_label |> Database.Label.value)
-        |> add Logger.tag_api_key Api_key.(Id.value api_key.id)
+        |> add Logger.tag_user Api_key.(Id.value api_key.id)
       ;;
     end
   end
