@@ -20,6 +20,7 @@ module Tenant = struct
      ; query_language
      ; message
      ; user
+     ; csrf
      ; announcement
      ; _
      } as context)
@@ -46,7 +47,7 @@ module Tenant = struct
       div ~a:[ a_id Http_utils.Htmx.notification_id ] []
     in
     let announcement =
-      CCOption.map (Component.Announcement.make language) announcement
+      CCOption.map (Component.Announcement.make language csrf) announcement
     in
     let children = div ~a:[ a_class [ "stack" ] ] [ children ] in
     let content =

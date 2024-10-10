@@ -583,3 +583,23 @@ $n: 12;
 .break-grid {
     grid-column: 1;
 }
+
+
+// ANNOUNCEMENT
+.announcement {
+    .close {
+        float: right;
+        margin-left: $space-sm;
+    }
+
+    @include mobile {
+        display: flex;
+        flex-direction: column-reverse;
+
+        .close {
+            margin-left: 0;
+            margin-top: $space-sm;
+            float: none;
+        }
+    }
+}

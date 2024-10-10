@@ -92,7 +92,11 @@ val find_admin
   -> Id.t
   -> (admin, Pool_message.Error.t) Lwt_result.t
 
-val find_by_user : Database.Label.t -> [< `Admin | `Contact ] -> t option Lwt.t
+val find_by_user
+  :  Database.Label.t
+  -> [< `Admin | `Contact ] * Pool_common.Id.t
+  -> t option Lwt.t
+
 val column_start : Query.Column.t
 val column_end : Query.Column.t
 val filterable_by : Query.Filter.human option
@@ -104,6 +108,7 @@ val default_query : Query.t
 type event =
   | Created of (t * Pool_tenant.Id.t list)
   | Updated of (t * Pool_tenant.Id.t list)
+  | Hidden of (t * Pool_common.Id.t)
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

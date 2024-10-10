@@ -757,6 +757,7 @@ let control_to_string =
   | Enroll -> format_submit "einschreiben" None
   | EnterNewCellPhone -> "eine andere Nummer eingeben"
   | Filter field -> format_submit "filtern" field
+  | Hide field -> format_submit "verbergen" field
   | Login -> format_submit "login" None
   | LoadDefaultTemplate -> format_submit "Standardtemplate laden" None
   | Manage field -> format_submit "manage" (Some field)

@@ -86,8 +86,9 @@ let context () =
         | false ->
           let context =
             match user with
-            | Admin _ -> Some `Admin
-            | Contact _ -> Some `Contact
+            | Admin admin -> Some (`Admin, Admin.(admin |> id |> Id.to_common))
+            | Contact contact ->
+              Some (`Contact, Contact.(contact |> id |> Id.to_common))
             | Guest -> None
           in
           context

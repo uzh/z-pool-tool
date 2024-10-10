@@ -1,5 +1,8 @@
 module Dynparam = Database.Dynparam
 
+let caqti_id = Pool_common.Repo.Id.t
+let caqti_tenant_id = Pool_tenant.Repo.Id.t
+
 let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_announcements.uuid"
   ; "pool_announcements.text"
@@ -14,9 +17,6 @@ let sql_select_columns =
 
 module TenantMapping = struct
   open Caqti_request.Infix
-
-  let caqti_id = Pool_common.Repo.Id.t
-  let caqti_tenant_id = Pool_tenant.Repo.Id.t
 
   let delete_existing_request tenant_ids =
     CCList.mapi
@@ -194,6 +194,8 @@ let find_by_user_request context =
     {sql|
     INNER JOIN pool_announcement_tenants ON pool_announcements.uuid = pool_announcement_tenants.pool_announcement_uuid
     INNER JOIN pool_tenant ON pool_announcement_tenants.pool_tenant_uuid = pool_tenant.uuid
+    LEFT JOIN pool_announcement_users_hide ON pool_announcements.uuid = pool_announcement_users_hide.pool_announcement_uuid
+		  AND pool_announcement_users_hide.user_users_uuid = UNHEX(REPLACE($2, '-', ''))
     WHERE 
       pool_tenant.database_label = $1
     AND %s
@@ -201,12 +203,36 @@ let find_by_user_request context =
       OR pool_announcements.start_at IS NULL)
     AND(pool_announcements.end_at > NOW()
       OR pool_announcements.end_at IS NULL)
+    AND pool_announcement_users_hide.user_users_uuid IS NULL
   |sql}
     where
   |> find_request_sql
-  |> Database.Repo.Label.t ->! Repo_entity.t
+  |> Caqti_type.(t2 Database.Repo.Label.t Pool_common.Repo.Id.t)
+     ->! Repo_entity.t
 ;;
 
-let find_by_user database_label context =
-  Database.find_opt Database.root (find_by_user_request context) database_label
+let find_by_user database_label (context, user_id) =
+  Database.find_opt
+    Database.root
+    (find_by_user_request context)
+    (database_label, user_id)
+;;
+
+let hide_requeset =
+  let open Caqti_request.Infix in
+  {sql|
+    INSERT INTO pool_announcement_users_hide (
+      pool_announcement_uuid,
+      user_users_uuid
+    ) VALUES (
+      UNHEX(REPLACE($1, '-', '')),
+      UNHEX(REPLACE($2, '-', ''))
+    ) ON DUPLICATE KEY UPDATE
+      updated_at = NOW()
+  |sql}
+  |> Caqti_type.(t2 caqti_id caqti_id ->. Caqti_type.unit)
+;;
+
+let hide user_id annoucement =
+  Database.exec Database.root hide_requeset (annoucement.Entity.id, user_id)
 ;;

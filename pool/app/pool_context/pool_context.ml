@@ -12,6 +12,12 @@ let get_admin_user = function
   | Admin admin -> Ok admin
 ;;
 
+let get_user_id = function
+  | Guest -> None
+  | Contact contact -> Some (Contact.id contact |> Contact.Id.to_common)
+  | Admin admin -> Some (Admin.id admin |> Admin.Id.to_common)
+;;
+
 module Utils = struct
   let find_authorizable_opt ?(admin_only = false) database_label user =
     let open Utils.Lwt_result.Infix in

@@ -3,6 +3,7 @@ open Entity
 type event =
   | Created of (t * Pool_tenant.Id.t list)
   | Updated of (t * Pool_tenant.Id.t list)
+  | Hidden of (t * Pool_common.Id.t)
 [@@deriving eq, show]
 
 let handle_event pool =
@@ -17,4 +18,5 @@ let handle_event pool =
     in
     Lwt.return_unit
   | Updated m -> Repo.update pool m
+  | Hidden (m, user_id) -> Repo.hide user_id m
 ;;

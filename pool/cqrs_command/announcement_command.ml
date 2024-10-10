@@ -137,3 +137,26 @@ end = struct
 
   let effects = Access.update
 end
+
+type hide = Pool_context.user * Announcement.t
+
+module Hide : sig
+  type t = hide
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+end = struct
+  type t = hide
+
+  let handle ?(tags = Logs.Tag.empty) (user, announcement) =
+    let open CCResult in
+    Logs.info ~src (fun m -> m "Handle command Hide" ~tags);
+    let* user_id =
+      Pool_context.get_user_id user
+      |> CCOption.to_result Pool_message.(Error.NotFound Field.User)
+    in
+    Ok [ Hidden (announcement, user_id) |> Pool_event.announcement ]
+  ;;
+end
