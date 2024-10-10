@@ -27,6 +27,7 @@ type t =
   ; csrf : string
   ; user : user
   ; guardian : Guard.PermissionOnTarget.t list
+  ; announcement : Announcement.t option
   }
 
 val show : t -> string
@@ -46,6 +47,7 @@ val create
      * string
      * user
      * Guard.PermissionOnTarget.t list
+     * Announcement.t option
   -> t
 
 module Tenant : sig

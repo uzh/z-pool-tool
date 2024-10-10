@@ -73,6 +73,8 @@ type t =
   }
 [@@deriving eq, show, yojson]
 
+let sexp_of_t { id; _ } = Id.sexp_of_t id
+
 let create
   ?(id = Id.create ())
   tet

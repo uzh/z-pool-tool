@@ -1,6 +1,7 @@
 open Tyxml.Html
 open CCFun.Infix
 open Pool_message
+module Input = Component.Input
 
 let announcement_path = Http_utils.Url.Root.announcement_path
 let field_to_string = Pool_common.Utils.field_to_string_capitalized
@@ -79,7 +80,6 @@ let form
   available_tenants
   system_languages
   =
-  let open Component in
   let open Announcement in
   let open CCOption.Infix in
   let announcement, tenants =

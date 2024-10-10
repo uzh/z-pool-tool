@@ -67,6 +67,7 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
+val sexp_of_t : t -> Sexplib.Sexp.t
 
 val create
   :  ?id:Id.t
@@ -91,6 +92,7 @@ val find_admin
   -> Id.t
   -> (admin, Pool_message.Error.t) Lwt_result.t
 
+val find_by_user : Database.Label.t -> [< `Admin | `Contact ] -> t option Lwt.t
 val column_start : Query.Column.t
 val column_end : Query.Column.t
 val filterable_by : Query.Filter.human option

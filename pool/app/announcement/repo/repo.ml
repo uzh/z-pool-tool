@@ -182,3 +182,31 @@ let find_admin pool id =
   let* tenants = TenantMapping.find_tenants_by_announcement pool id in
   Lwt_result.return (announcement, tenants)
 ;;
+
+let find_by_user_request context =
+  let open Caqti_request.Infix in
+  let where =
+    match context with
+    | `Admin -> "pool_announcements.show_to_admins = 1"
+    | `Contact -> "pool_announcements.show_to_contacts = 1"
+  in
+  Format.asprintf
+    {sql|
+    INNER JOIN pool_announcement_tenants ON pool_announcements.uuid = pool_announcement_tenants.pool_announcement_uuid
+    INNER JOIN pool_tenant ON pool_announcement_tenants.pool_tenant_uuid = pool_tenant.uuid
+    WHERE 
+      pool_tenant.database_label = $1
+    AND %s
+    AND(pool_announcements.start_at < NOW()
+      OR pool_announcements.start_at IS NULL)
+    AND(pool_announcements.end_at > NOW()
+      OR pool_announcements.end_at IS NULL)
+  |sql}
+    where
+  |> find_request_sql
+  |> Database.Repo.Label.t ->! Repo_entity.t
+;;
+
+let find_by_user database_label context =
+  Database.find_opt Database.root (find_by_user_request context) database_label
+;;

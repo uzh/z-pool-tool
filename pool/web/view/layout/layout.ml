@@ -15,8 +15,14 @@ let language_attribute lang =
 module Tenant = struct
   let create
     ?active_navigation
-    ({ Pool_context.database_label; language; query_language; message; user; _ }
-     as context)
+    ({ Pool_context.database_label
+     ; language
+     ; query_language
+     ; message
+     ; user
+     ; announcement
+     ; _
+     } as context)
     Pool_context.Tenant.{ tenant_languages; tenant }
     children
     =
@@ -39,7 +45,13 @@ module Tenant = struct
     let htmx_notification =
       div ~a:[ a_id Http_utils.Htmx.notification_id ] []
     in
-    let content = main_tag [ message; htmx_notification; children ] in
+    let announcement =
+      CCOption.map (Component.Announcement.make language) announcement
+    in
+    let children = div ~a:[ a_class [ "stack" ] ] [ children ] in
+    let content =
+      main_tag ?announcement [ message; htmx_notification; children ]
+    in
     let head_tags =
       let favicon =
         tenant.icon
