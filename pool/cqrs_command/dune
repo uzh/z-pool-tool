@@ -2,6 +2,7 @@
  (name cqrs_command)
  (libraries
   admin
+  api_key
   assignment_job
   conformist
   custom_field

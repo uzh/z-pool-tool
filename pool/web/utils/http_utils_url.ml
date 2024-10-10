@@ -1,3 +1,5 @@
+open Pool_message.Field
+
 let map = CCOption.map
 
 let append_opt suffix path =
@@ -5,8 +7,17 @@ let append_opt suffix path =
 ;;
 
 module Admin = struct
+  let settings_path = Format.asprintf "/admin/settings/%s"
+
+  let api_key_path ?suffix ?id () =
+    human_url ApiKey
+    |> settings_path
+    |> append_opt (map Api_key.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let role_permission_path ?suffix ?role () =
-    "/admin/settings/role-permission"
+    settings_path "role-permission"
     |> append_opt (map Role.Role.name role)
     |> append_opt suffix
   ;;

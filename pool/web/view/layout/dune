@@ -1,6 +1,7 @@
 (library
  (name layout)
  (libraries
+  api_key
   assignment
   contact
   component

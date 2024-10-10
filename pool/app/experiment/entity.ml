@@ -1,3 +1,5 @@
+open Ppx_yojson_conv_lib.Yojson_conv
+
 module Id = struct
   include Pool_common.Id
 
@@ -45,6 +47,13 @@ module ContactEmail = struct
 
   let field = Pool_message.Field.ContactEmail
   let schema = schema ~field
+end
+
+module Filter = struct
+  include Filter
+
+  let yojson_of_t { Filter.id; _ } = `String (Id.value id)
+  let t_of_yojson _ = failwith "decode only"
 end
 
 module DirectRegistrationDisabled = struct
@@ -118,14 +127,15 @@ module InvitationResetAt = struct
 end
 
 module MatcherNotificationSent = struct
-  type t = bool [@@deriving show, eq]
+  type t = bool [@@deriving show, eq, yojson]
 
   let value t = t
   let create t = t
 end
 
 module OnlineExperiment = struct
-  type t = { survey_url : SurveyUrl.t } [@@deriving eq, fields ~getters, show]
+  type t = { survey_url : SurveyUrl.t }
+  [@@deriving eq, fields ~getters, show, yojson]
 
   let create ~survey_url = { survey_url }
 
@@ -186,7 +196,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, fields ~getters, show]
+[@@deriving eq, fields ~getters, show, yojson]
 
 let create
   ?id

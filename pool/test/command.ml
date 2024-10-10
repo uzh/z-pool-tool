@@ -4,7 +4,11 @@ let () =
   let open Alcotest in
   run
     "cqrs commands"
-    [ ( "contact"
+    [ ( "api_key"
+      , [ test_case "create API key" `Quick Api_key_test.create
+        ; test_case "update API key" `Quick Api_key_test.update
+        ] )
+    ; ( "contact"
       , [ test_case
             "sign up not allowed suffix"
             `Quick

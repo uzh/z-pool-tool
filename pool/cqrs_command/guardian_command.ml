@@ -1,5 +1,61 @@
 let src = Logs.Src.create "guardian.cqrs"
 
+type grant_role =
+  { target_id : Guard.Uuid.Actor.t
+  ; roles : (Role.Role.t * Guard.Uuid.Target.t option) list
+  }
+
+type revoke_role =
+  { target_id : Guard.Uuid.Actor.t
+  ; role : Role.Role.t * Guard.Uuid.Target.t option
+  }
+
+module GrantRoles : sig
+  include Common.CommandSig with type t = grant_role
+end = struct
+  open Guard
+
+  type t = grant_role
+
+  let handle ?(tags = Logs.Tag.empty) { target_id; roles } =
+    Logs.info ~src (fun m -> m "Handle command GrantRoles" ~tags);
+    let actor_roles =
+      CCList.map
+        (fun (role, target_uuid) ->
+          Guard.ActorRole.create ?target_uuid target_id role)
+        roles
+    in
+    Ok
+      [ Guard.RolesGranted actor_roles |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
+      ]
+  ;;
+
+  let effects = Guard.Access.Role.create
+end
+
+module RevokeRole : sig
+  include Common.CommandSig with type t = revoke_role
+end = struct
+  open Guard
+
+  type t = revoke_role
+
+  let handle ?(tags = Logs.Tag.empty) { target_id; role } =
+    Logs.info ~src (fun m -> m ~tags "Handle command RevokeRole");
+    let actor_roles =
+      let role, target_uuid = role in
+      Guard.ActorRole.create ?target_uuid target_id role
+    in
+    Ok
+      [ Guard.RolesRevoked [ actor_roles ] |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
+      ]
+  ;;
+
+  let effects = Guard.Access.Role.delete
+end
+
 module CreateRolePermission : sig
   include Common.CommandSig with type t = Guard.RolePermission.t
 

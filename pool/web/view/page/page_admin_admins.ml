@@ -93,21 +93,14 @@ let static_overview ?(disable_edit = false) language admins =
     ]
 ;;
 
-let roles_section ?(top_element = []) language children =
-  let open Pool_common in
-  h2
-    ~a:[ a_class [ "heading-2" ] ]
-    [ Utils.text_to_string language I18n.RolesGranted |> txt ]
-  :: (top_element @ children)
-;;
-
 let roles_list
   ?is_edit
   ?top_element
   ({ Pool_context.language; _ } as context)
-  admin
+  target_id
   =
-  Component.Role.List.create ?is_edit context admin
+  let open Component.Role in
+  List.create ?is_edit ~path:"/admin/admins" context target_id
   %> CCList.return
   %> roles_section ?top_element language
 ;;
@@ -163,7 +156,12 @@ let index (Pool_context.{ language; _ } as context) admins =
     ]
 ;;
 
-let detail ({ Pool_context.language; _ } as context) admin granted_roles =
+let detail
+  ({ Pool_context.language; _ } as context)
+  admin
+  target_id
+  granted_roles
+  =
   let user = Admin.user admin in
   [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ]
   ; Input.link_as_button
@@ -172,20 +170,16 @@ let detail ({ Pool_context.language; _ } as context) admin granted_roles =
       (Format.asprintf
          "/admin/admins/%s/edit"
          (user.Pool_user.id |> Pool_user.Id.value))
+  ; roles_list context target_id granted_roles
   ]
-  @ roles_list context admin granted_roles
-  |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
+  |> div ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
 ;;
 
-let edit context editable_admin granted_roles top_element =
+let edit context editable_admin target_id granted_roles top_element =
   let user = Admin.user editable_admin in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    ([ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ] ]
-     @ roles_list
-         ~is_edit:true
-         ~top_element
-         context
-         editable_admin
-         granted_roles)
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ]
+    ; roles_list ~is_edit:true ~top_element context target_id granted_roles
+    ]
 ;;

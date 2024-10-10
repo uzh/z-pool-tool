@@ -301,10 +301,10 @@ val search_multiple_by_id
   -> Id.t list
   -> (Id.t * Name.t) list Lwt.t
 
-val find_targets_grantable_by_admin
+val find_targets_grantable_by_target
   :  ?exclude:Id.t list
   -> Database.Label.t
-  -> Admin.t
+  -> Guard.Uuid.Target.t
   -> string
   -> (Id.t * Name.t) list Lwt.t
 

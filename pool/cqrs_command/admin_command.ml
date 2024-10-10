@@ -1,12 +1,12 @@
 let src = Logs.Src.create "admin.cqrs"
 
 type grant_role =
-  { target : Admin.t
+  { target_id : Guard.Uuid.Actor.t
   ; roles : (Role.Role.t * Guard.Uuid.Target.t option) list
   }
 
 type revoke_role =
-  { target : Admin.t
+  { target_id : Guard.Uuid.Actor.t
   ; role : Role.Role.t * Guard.Uuid.Target.t option
   }
 
@@ -154,56 +154,4 @@ end = struct
       ; Admin.Guard.Access.create
       ]
   ;;
-end
-
-module GrantRoles : sig
-  include Common.CommandSig with type t = grant_role
-end = struct
-  open Guard
-
-  type t = grant_role
-
-  let handle ?(tags = Logs.Tag.empty) { target; roles } =
-    Logs.info ~src (fun m -> m "Handle command GrantRoles" ~tags);
-    let actor_roles =
-      let to_id admin =
-        admin |> Admin.id |> Guard.Uuid.actor_of Admin.Id.value
-      in
-      CCList.map
-        (fun (role, target_uuid) ->
-          Guard.ActorRole.create ?target_uuid (target |> to_id) role)
-        roles
-    in
-    Ok
-      [ Guard.RolesGranted actor_roles |> Pool_event.guard
-      ; Common.guardian_cache_cleared_event ()
-      ]
-  ;;
-
-  let effects = Guard.Access.Role.create
-end
-
-module RevokeRole : sig
-  include Common.CommandSig with type t = revoke_role
-end = struct
-  open Guard
-
-  type t = revoke_role
-
-  let handle ?(tags = Logs.Tag.empty) { target; role } =
-    Logs.info ~src (fun m -> m ~tags "Handle command RevokeRole");
-    let actor_roles =
-      let role, target_uuid = role in
-      let to_id admin =
-        admin |> Admin.id |> Guard.Uuid.actor_of Admin.Id.value
-      in
-      Guard.ActorRole.create ?target_uuid (target |> to_id) role
-    in
-    Ok
-      [ Guard.RolesRevoked [ actor_roles ] |> Pool_event.guard
-      ; Common.guardian_cache_cleared_event ()
-      ]
-  ;;
-
-  let effects = Guard.Access.Role.delete
 end

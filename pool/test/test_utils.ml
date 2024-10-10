@@ -3,6 +3,7 @@ module Data = struct
 end
 
 (* Testable *)
+let api_key = Api_key.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let database_label = Database.Label.(Alcotest.testable pp equal)
 let error = Pool_message.Error.(Alcotest.testable pp equal)
@@ -78,6 +79,17 @@ let dummy_to_file (dummy : Seed.Assets.file) =
 ;;
 
 module Model = struct
+  let create_api_key
+    ?id
+    ?token
+    ?(expires_at = Api_key.ExpiresAt.create_now ())
+    ()
+    =
+    let open Api_key in
+    let name = Name.of_string "Name" in
+    create ?id ?token name expires_at
+  ;;
+
   let password =
     Pool_user.Password.Plain.(
       create "Somepassword1!" |> validate |> get_or_failwith)

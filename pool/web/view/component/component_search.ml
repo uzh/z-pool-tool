@@ -280,8 +280,11 @@ module Tag = struct
 end
 
 module RoleTarget = struct
-  let hx_url admin_id =
-    Format.asprintf "/admin/admins/%s/search-role" Admin.(Id.value admin_id)
+  let hx_url base_path target_id =
+    Format.asprintf
+      "%s/%s/search-role"
+      base_path
+      (Guard.Uuid.Target.to_string target_id)
   ;;
 
   let additional_attributes =
@@ -292,7 +295,7 @@ module RoleTarget = struct
     ]
   ;;
 
-  let experiments ?hints language admin_id =
+  let experiments ?hints ~path language target_id =
     let open Experiment in
     multi_search
       ~additional_attributes
@@ -301,11 +304,11 @@ module RoleTarget = struct
       ~placeholder
       language
       field
-      (Dynamic (dynamic_search (hx_url admin_id) `Post))
+      (Dynamic (dynamic_search (hx_url path target_id) `Post))
       ()
   ;;
 
-  let locations ?hints language admin_id =
+  let locations ?hints ~path language target_id =
     let open Location in
     multi_search
       ~additional_attributes
@@ -314,7 +317,7 @@ module RoleTarget = struct
       ~placeholder
       language
       field
-      (Dynamic (dynamic_search (hx_url admin_id) `Post))
+      (Dynamic (dynamic_search (hx_url path target_id) `Post))
       ()
   ;;
 end

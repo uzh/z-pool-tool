@@ -23,32 +23,46 @@ let validate_tenant () =
 
 let context () =
   let open Pool_context.Api in
-  let api_key = "super_safe_api_key" in
-  let find_api_key req =
+  let open Utils.Lwt_result.Infix in
+  let denied = Pool_message.Error.AccessDenied in
+  let find_api_key database_label req =
+    let open CCOption in
     let open Opium in
-    let open CCOption.Infix in
     let key = "X-AUTH-TOKEN" in
     Headers.get req.Request.headers key
-    >>= (fun token -> if token = api_key then Some token else None)
-    |> CCOption.to_result Pool_message.Error.AccessDenied
+    |> map_or ~default:(Lwt.return None) (Api_key.find_by_token database_label)
+    ||> to_result denied
   in
   let filter handler req =
     let is_root = Http_utils.is_req_from_root_host req in
-    let context =
-      let open CCResult in
-      let with_status status = map_err (fun err -> err, status) in
+    let%lwt context =
+      let with_status status = CCResult.map_err (fun err -> err, status) in
       let* database_label =
         Middleware_context.database_label_of_request is_root req
         |> with_status `Internal_server_error
+        |> Lwt_result.lift
       in
-      let* api_key = find_api_key req |> with_status `Unauthorized in
-      (* TODO *)
-      let guardian = [] in
-      create api_key database_label guardian |> return
+      let* api_key =
+        find_api_key database_label req ||> with_status `Unauthorized
+      in
+      let%lwt guardian =
+        api_key.Api_key.id
+        |> Guard.Uuid.actor_of Api_key.Id.value
+        |> Guard.Persistence.ActorRole.permissions_of_actor database_label
+      in
+      create api_key database_label guardian |> Lwt_result.return
     in
     match context with
     | Ok context -> context |> set req |> handler
     | Error (err, status) -> respond_error status err
   in
   Rock.Middleware.create ~name:"api.context" ~filter
+;;
+
+let api_request () =
+  let filter handler req =
+    Opium.Request.add_header (Http_utils.Api.api_request_header, "true") req
+    |> handler
+  in
+  Rock.Middleware.create ~name:"api.request" ~filter
 ;;

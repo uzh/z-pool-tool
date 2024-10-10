@@ -6,6 +6,7 @@ let src = Logs.Src.create "role.entity"
 module Actor = struct
   type t =
     [ `Admin
+    | `ApiKey
     | `Contact
     | `Guest
     | `System
@@ -18,6 +19,7 @@ module Actor = struct
     Guardian.Utils.decompose_variant_string
     %> function
     | "admin", [] -> Ok `Admin
+    | "apikey", [] -> Ok `ApiKey
     | "contact", [] -> Ok `Contact
     | "guest", [] -> Ok `Guest
     | "system", [] -> Ok `System
@@ -92,6 +94,7 @@ end
 module Target = struct
   type t =
     [ `Admin
+    | `ApiKey
     | `Assignment
     | `Contact
     | `ContactInfo
@@ -139,6 +142,7 @@ module Target = struct
     Guardian.Utils.decompose_variant_string
     %> function
     | "admin", [] -> Ok `Admin
+    | "apikey", [] -> Ok `ApiKey
     | "assignment", [] -> Ok `Assignment
     | "contact", [] -> Ok `Contact
     | "contactinfo", [] -> Ok `ContactInfo

@@ -149,6 +149,8 @@ module ExperimentType : sig
   val compare : t -> t -> int
   val read : string -> t
   val all : t list
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
 end
 
 module VerificationCode : sig

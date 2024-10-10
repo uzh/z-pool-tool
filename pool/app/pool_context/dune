@@ -1,6 +1,6 @@
 (library
  (name pool_context)
- (libraries admin contact logger pool_common pool_tenant sihl utils)
+ (libraries admin api_key contact logger pool_common pool_tenant sihl utils)
  (preprocess
   (pps
    lwt_ppx
