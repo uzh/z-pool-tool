@@ -118,6 +118,7 @@ type t =
   [@name "experiment_text_message_lead_time"]
   [@printer go "experiment_text_message_lead_time"]
   | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
+  | ExpiresAt [@name "expires_at"] [@printer go "expires_at"]
   | ExternalDataId [@name "external_data_id"] [@printer go "external_data_id"]
   | ExternalDataIdAbbr [@name "edi"] [@printer go "edi"]
   | ExternalDataRequired [@name "external_data_required"]

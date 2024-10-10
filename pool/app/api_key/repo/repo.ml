@@ -4,6 +4,7 @@ let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_api_keys.uuid"
   ; "pool_api_keys.name"
   ; "pool_api_keys.token"
+  ; "pool_api_keys.expires_at"
   ; "pool_api_keys.created_at"
   ; "pool_api_keys.updated_at"
   ]
@@ -15,11 +16,13 @@ let insert_request =
     INSERT INTO pool_api_keys (
       uuid,
       name,
-      token
+      token,
+      expires_at
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
       $2,
-      $3
+      $3,
+      $4
     )
   |sql}
   |> Repo_entity.Write.t ->. Caqti_type.unit
@@ -72,6 +75,7 @@ let find_by_token_request =
   let open Caqti_request.Infix in
   {sql|
     WHERE pool_api_keys.token = $1
+    AND pool_api_keys.expires_at > NOW()
   |sql}
   |> find_request_sql
   |> Repo_entity.Token.t ->! Repo_entity.t

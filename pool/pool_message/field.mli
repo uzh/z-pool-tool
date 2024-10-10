@@ -86,6 +86,7 @@ type t =
   | Experiments
   | ExperimentTextMessageReminderLeadTime
   | ExperimentType
+  | ExpiresAt
   | ExternalDataId
   | ExternalDataIdAbbr
   | ExternalDataRequired

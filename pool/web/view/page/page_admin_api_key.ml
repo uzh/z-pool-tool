@@ -2,6 +2,7 @@ open Tyxml.Html
 open CCFun.Infix
 open Pool_message
 module Icon = Component.Icon
+module Input = Component.Input
 
 let api_key_path = Http_utils.Url.Admin.api_key_path
 let field_to_string = Pool_common.Utils.field_to_string_capitalized
@@ -37,9 +38,13 @@ let list { Pool_context.language; _ } (api_keys, query) =
          ~control:(language, Control.Add None)
   in
   let cols =
-    [ `column column_name; `column column_created_at; `custom create_btn ]
+    [ `column column_name
+    ; `custom (txt Pool_common.(Utils.field_to_string language Field.ExpiresAt))
+    ; `column column_created_at
+    ; `custom create_btn
+    ]
   in
-  let row ({ id; name; created_at; _ } : t) =
+  let row ({ id; name; expires_at; created_at; _ } : t) =
     let detai_btn = api_key_path ~id () |> make_btn ~icon:Icon.Eye in
     let edit_btn =
       api_key_path ~id ~suffix:"edit" ()
@@ -47,6 +52,7 @@ let list { Pool_context.language; _ } (api_keys, query) =
     in
     let format_time = Utils.Ptime.formatted_date_time in
     [ Name.value name |> txt
+    ; ExpiresAt.value expires_at |> Utils.Ptime.formatted_date_time |> txt
     ; created_at |> Pool_common.CreatedAt.value |> format_time |> txt
     ; div
         ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ]
@@ -75,13 +81,32 @@ let index (Pool_context.{ language; _ } as context) api_keys =
 ;;
 
 let form { Pool_context.csrf; language; _ } ?flash_fetcher ~control ?api_key () =
-  let open Component in
   let open Api_key in
   let open CCOption.Infix in
   let action =
     match api_key with
     | None -> api_key_path ()
     | Some api_key -> api_key_path ~id:api_key.id ()
+  in
+  let expires_at =
+    match api_key with
+    | None ->
+      Input.date_time_picker_element
+        ~disable_past:true
+        ~required:true
+        language
+        Field.ExpiresAt
+    | Some { expires_at; _ } ->
+      div
+        ~a:[ a_class [ "form-group" ] ]
+        [ label [ txt (field_to_string language Field.ExpiresAt) ]
+        ; p
+            [ txt
+                (expires_at
+                 |> ExpiresAt.value
+                 |> Utils.Ptime.formatted_date_time)
+            ]
+        ]
   in
   form
     ~a:
@@ -100,6 +125,7 @@ let form { Pool_context.csrf; language; _ } ?flash_fetcher ~control ?api_key () 
               language
               `Text
               Field.Name
+          ; expires_at
           ; div
               ~a:[ a_class [ "full-width"; "flexrow"; "justify-end" ] ]
               [ submit_element language control () ]
@@ -150,7 +176,7 @@ let edit
 
 let show
   ({ Pool_context.language; _ } as context)
-  { Api_key.name; token; created_at; updated_at; _ }
+  { Api_key.name; token; expires_at; created_at; updated_at; _ }
   target_id
   granted_roles
   =
@@ -159,6 +185,7 @@ let show
   let details =
     let open Pool_common in
     [ Field.Token, Token.value token |> txt
+    ; Field.ExpiresAt, ExpiresAt.value expires_at |> format_ptime |> txt
     ; Field.CreatedAt, CreatedAt.value created_at |> format_ptime |> txt
     ; Field.UpdatedAt, UpdatedAt.value updated_at |> format_ptime |> txt
     ]

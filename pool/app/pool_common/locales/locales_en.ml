@@ -99,6 +99,7 @@ let rec field_to_string =
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
   | ExternalDataIdAbbr -> "EID"
+  | ExpiresAt -> "Expires at"
   | ExternalDataId -> "external data identifier"
   | ExternalDataRequired -> "external data is required"
   | Failed -> "failed"

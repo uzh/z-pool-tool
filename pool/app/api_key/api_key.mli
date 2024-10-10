@@ -13,10 +13,15 @@ module Token : sig
   val value : t -> string
 end
 
+module ExpiresAt : sig
+  include Pool_model.Base.PtimeSig
+end
+
 type t =
   { id : Id.t
   ; name : Name.t
   ; token : Token.t
+  ; expires_at : ExpiresAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -27,7 +32,7 @@ val show : t -> string
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
-val create : ?id:Id.t -> ?token:Token.t -> Name.t -> t
+val create : ?id:Id.t -> ?token:Token.t -> Name.t -> ExpiresAt.t -> t
 
 val find
   :  Database.Label.t

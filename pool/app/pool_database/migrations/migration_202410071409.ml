@@ -7,6 +7,7 @@ let create_api_keys_table =
         uuid BINARY(16) NOT NULL,
         name VARCHAR(255) NOT NULL,
         token VARCHAR(255) NOT NULL,
+        expires_at timestamp NOT NULL,
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id),

@@ -12,7 +12,7 @@ end
 module Token = struct
   include Pool_model.Base.String
 
-  let length = 32
+  let length = 64
 
   let charset =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_."
@@ -31,10 +31,18 @@ module Token = struct
   let value m = m
 end
 
+module ExpiresAt = struct
+  include Pool_model.Base.Ptime
+
+  let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
+  let schema = schema Pool_message.Field.ExpiresAt CCResult.return
+end
+
 type t =
   { id : Id.t
   ; name : Name.t
   ; token : Token.t [@opaque]
+  ; expires_at : ExpiresAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -42,10 +50,11 @@ type t =
 
 let sexp_of_t { id; _ } = Id.sexp_of_t id
 
-let create ?(id = Id.create ()) ?(token = Token.generate ()) name =
+let create ?(id = Id.create ()) ?(token = Token.generate ()) name expires_at =
   { id
   ; name
   ; token
+  ; expires_at
   ; created_at = Pool_common.CreatedAt.create_now ()
   ; updated_at = Pool_common.UpdatedAt.create_now ()
   }

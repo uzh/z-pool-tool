@@ -79,8 +79,6 @@ let can_rerun_session_filter
        session_id)
 ;;
 
-(* TODO: Make sure to differ between actor and target *)
-
 let grant_role ~redirect_path ~target_id database_label req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
