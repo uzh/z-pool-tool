@@ -665,3 +665,12 @@ let default_filter =
 
 let default_query = Query.create ~sort:default_sort ~filter:default_filter ()
 let incomplete_default_query = Query.create ~sort:default_sort ()
+
+let participation_history_sort =
+  let open Query in
+  Sort.{ column = column_date; order = SortOrder.Descending }
+;;
+
+let participation_default_query =
+  Query.create ~sort:participation_history_sort ()
+;;
