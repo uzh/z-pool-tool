@@ -8,6 +8,8 @@ let ptime_schema field =
     field
 ;;
 
+let equal_ptime a b = Sihl.Configuration.is_test () || Ptime.equal a b
+
 module Id = struct
   include Pool_common.Id
 end
@@ -29,6 +31,11 @@ module Text = struct
     | [] -> Error Pool_message.(Error.AtLeastOneLanguageRequired Field.Text)
     | names -> Ok names
   ;;
+
+  let equal a b =
+    let sort = CCList.sort (fun (a, _) (b, _) -> Language.compare a b) in
+    if Sihl.Configuration.is_test () then equal (sort a) (sort b) else equal a b
+  ;;
 end
 
 module StartAt = struct
@@ -36,6 +43,7 @@ module StartAt = struct
 
   let create m = m
   let schema () = ptime_schema Pool_message.Field.Start
+  let equal = equal_ptime
 end
 
 module EndAt = struct
@@ -43,6 +51,7 @@ module EndAt = struct
 
   let create m = m
   let schema () = ptime_schema Pool_message.Field.End
+  let equal = equal_ptime
 end
 
 module ShowToAdmins = struct
@@ -77,14 +86,14 @@ let sexp_of_t { id; _ } = Id.sexp_of_t id
 
 let create
   ?(id = Id.create ())
-  tet
+  text
   start_at
   end_at
   show_to_admins
   show_to_contacts
   =
   { id
-  ; text = tet
+  ; text
   ; start_at
   ; end_at
   ; show_to_admins

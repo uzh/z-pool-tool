@@ -4,7 +4,8 @@ let () =
   let open Alcotest in
   run
     "cqrs commands"
-    [ ( "contact"
+    [ ("announcement", Announcement_test.[ test_case "create" `Quick create ])
+    ; ( "contact"
       , [ test_case
             "sign up not allowed suffix"
             `Quick

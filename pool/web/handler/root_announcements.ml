@@ -5,6 +5,7 @@ let src = Logs.Src.create "handler.root.announcements"
 let active_navigation = "/root/announcements"
 let create_layout = General.create_root_layout
 let announcement_path = Http_utils.Url.Root.announcement_path
+let boolean_fields = Field.[ show ShowToAdmins; show ShowToContacts ]
 
 let announcement_id req =
   Http_utils.get_field_router_param req Field.Announcement
@@ -103,11 +104,11 @@ let create req =
     let events =
       let open CCResult in
       let open Cqrs_command.Announcement_command.Create in
-      let texts = text_from_urlencoded urlencoded in
       let%lwt tenant_ids = selected_tenants_from_urlencoded req in
       urlencoded
+      |> Http_utils.format_request_boolean_values boolean_fields
       |> decode
-      >>= handle ~tags:Logs.Tag.empty texts tenant_ids
+      >>= handle ~tags:Logs.Tag.empty tenant_ids
       |> Lwt_result.lift
     in
     let handle events =
@@ -140,11 +141,11 @@ let update req =
     let events =
       let open CCResult in
       let open Cqrs_command.Announcement_command.Update in
-      let texts = text_from_urlencoded urlencoded in
       let%lwt tenant_ids = selected_tenants_from_urlencoded req in
       urlencoded
+      |> Http_utils.format_request_boolean_values boolean_fields
       |> decode
-      >>= handle ~tags:Logs.Tag.empty announcement texts tenant_ids
+      >>= handle ~tags:Logs.Tag.empty announcement tenant_ids
       |> Lwt_result.lift
     in
     let handle events =

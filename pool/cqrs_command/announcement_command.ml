@@ -4,17 +4,18 @@ open Announcement
 let src = Logs.Src.create "announcement.cqrs"
 
 type command =
-  { start_at : StartAt.t option
+  { text : (Pool_common.Language.t * string) list
+  ; start_at : StartAt.t option
   ; end_at : EndAt.t option
   ; show_to_admins : ShowToAdmins.t
   ; show_to_contacts : ShowToContacts.t
   }
 
-let command start_at end_at show_to_admins show_to_contacts =
-  { start_at; end_at; show_to_admins; show_to_contacts }
+let command text start_at end_at show_to_admins show_to_contacts =
+  { text; start_at; end_at; show_to_admins; show_to_contacts }
 ;;
 
-let schema =
+let schema texts =
   Pool_conformist.(
     make
       Field.
@@ -23,7 +24,21 @@ let schema =
         ; ShowToAdmins.(schema ~default:init ())
         ; ShowToContacts.(schema ~default:init ())
         ]
-      command)
+      (command texts))
+;;
+
+let text_from_urlencoded urlencoded =
+  let open CCOption.Infix in
+  let open Pool_common.Language in
+  let sys_languages = all in
+  sys_languages
+  |> CCList.filter_map (fun lang ->
+    let field language =
+      Format.asprintf "%s[%s]" Pool_message.Field.(show Text) (show language)
+    in
+    CCList.assoc_opt ~eq:CCString.equal (field lang) urlencoded
+    >>= CCList.head_opt
+    >|= fun text -> lang, text)
 ;;
 
 let validate_start_end ~start_at ~end_at =
@@ -53,7 +68,6 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?id:Announcement.Id.t
-    -> (Pool_common.Language.t * string) list
     -> Pool_tenant.Id.t list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -65,9 +79,8 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ?id
-    text
     tenant_ids
-    ({ start_at; end_at; show_to_admins; show_to_contacts } : t)
+    ({ text; start_at; end_at; show_to_admins; show_to_contacts } : t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
@@ -81,7 +94,8 @@ end = struct
   ;;
 
   let decode data =
-    Pool_conformist.decode_and_validate schema data
+    let texts = text_from_urlencoded data in
+    Pool_conformist.decode_and_validate (schema texts) data
     |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
@@ -96,7 +110,6 @@ module Update : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Announcement.t
-    -> (Pool_common.Language.t * string) list
     -> Pool_tenant.Id.t list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -108,10 +121,9 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    announcement
-    text
+    (announcement : Announcement.t)
     tenant_ids
-    ({ start_at; end_at; show_to_admins; show_to_contacts } : t)
+    ({ text; start_at; end_at; show_to_admins; show_to_contacts } : t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
@@ -131,7 +143,8 @@ end = struct
   ;;
 
   let decode data =
-    Pool_conformist.decode_and_validate schema data
+    let text = text_from_urlencoded data in
+    Pool_conformist.decode_and_validate (schema text) data
     |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
