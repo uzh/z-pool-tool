@@ -65,6 +65,8 @@ type t =
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingDistributionDescription
+  | MailingExperimentNoUpcomingSession
+  | MailingExperimentNoUpcomingTimewindow
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
   | MessageHistory of string
@@ -214,6 +216,7 @@ type hint =
   | ExperimentMailingsRegistrationDisabled
   | ExperimentMessageTemplates
   | ExperimentSessions
+  | ExperimentSessionsCancelDelete
   | ExperimentSessionsPublic
   | ExperimentSmtp of string
   | ExperimentStatisticsRegistrationPossible

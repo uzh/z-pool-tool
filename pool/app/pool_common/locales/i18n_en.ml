@@ -123,6 +123,13 @@ let to_string = function
     <li>Press the 'add' button to add the sorting parameter.</li>
     <li>Repeat that to add more parameters. You can sort them by dragging and dropping them.</li>
   </ol>|}
+  | MailingExperimentNoUpcomingSession ->
+    "There are no sessions to which contacts can sign up. No invitations will \
+     be sent. Create new sessions before you start the mailing."
+  | MailingExperimentNoUpcomingTimewindow ->
+    "There is no active or future time window during which participants can \
+     answer the survey. No invitations will be sent. Create a time window \
+     first."
   | MailingExperimentSessionFullyBooked ->
     "All sessions are fully booked. No invitations will be sent (independent \
      if mailings are active at the moment).\n\n\
@@ -397,6 +404,9 @@ By clicking on the template labels below you can open the default text message:
     {|All existing session of this experiment.
       Once someone has registered for the session, it can no longer be deleted.
     |}
+  | ExperimentSessionsCancelDelete ->
+    {|Canceling an assignment will inform the contact. The concat will be able to sign up for this experiment again.
+  Marking an assignment as deleted will not inform the contact. The contact will not be able to sign up for this experiment again.|}
   | ExperimentSessionsPublic ->
     "Please note: Sessions or completed experiments may no longer be \
      displayed, although listed in your email. Once all the available seats \
@@ -667,7 +677,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
 
 Only sessions with open spots can be selected.|}
   | SurveyUrl ->
-    "A URL incl. protocol. The url parameter 'callbackUrl' is required. E.g: \
+    "A URL incl. protocol. You can pass information to your survey by adding \
+     query parameters. E.g: \
      https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | TagsIntro ->
     "The defined tags can be added to several types (e.g. contacts). The tags \
