@@ -244,13 +244,13 @@ let terms_and_conditions req =
 
 let hide_announcement req =
   let open Http_utils in
-  let result { Pool_context.user; _ } =
+  let result { Pool_context.user; database_label; _ } =
     let open Utils.Lwt_result.Infix in
     let open Announcement in
     let* announcement =
       find_id Id.validate Field.Announcement req
       |> Lwt_result.lift
-      >>= find Database.root
+      >>= find_of_tenant database_label
     in
     let* () =
       Cqrs_command.Announcement_command.Hide.handle (user, announcement)

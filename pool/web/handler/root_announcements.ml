@@ -60,7 +60,7 @@ let index req =
 ;;
 
 let form case req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Lwt_result.map_error (fun err -> err, announcement_path ())
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
@@ -70,9 +70,7 @@ let form case req =
       match case with
       | `New -> Lwt_result.return None
       | `Edit ->
-        announcement_id req
-        |> Announcement.find_admin database_label
-        >|+ CCOption.return
+        announcement_id req |> Announcement.find_admin >|+ CCOption.return
     in
     Page.Root.Announcement.form
       context
@@ -137,7 +135,7 @@ let update req =
       , announcement_path ~id ~suffix:"edit" ()
       , [ Http_utils.urlencoded_to_flash urlencoded ] ))
     @@
-    let* announcement = Announcement.find database_label id in
+    let* announcement = Announcement.find id in
     let events =
       let open CCResult in
       let open Cqrs_command.Announcement_command.Update in

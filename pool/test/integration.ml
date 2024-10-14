@@ -52,6 +52,8 @@ let suite =
               `Slow
               Admin_role_assignment.grant_roles
           ] )
+    ; ( "announcement"
+      , Announcement_test.[ test_case "find current" `Slow find_current ] )
     ; ( "partial_update"
       , Partial_update.
           [ test_case "update with old version" `Slow update_with_old_version

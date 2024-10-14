@@ -166,9 +166,9 @@ let find_request =
   |> Pool_common.Repo.Id.t ->! Repo_entity.t
 ;;
 
-let find pool id =
+let find id =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt pool find_request id
+  Database.find_opt Database.root find_request id
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Announcement)
 ;;
 
@@ -176,11 +176,33 @@ let all ?query pool =
   Query.collect_and_count pool query ~select:find_request_sql Repo_entity.t
 ;;
 
-let find_admin pool id =
+let find_admin id =
   let open Utils.Lwt_result.Infix in
-  let* announcement = find pool id in
+  let pool = Database.root in
+  let* announcement = find id in
   let* tenants = TenantMapping.find_tenants_by_announcement pool id in
   Lwt_result.return (announcement, tenants)
+;;
+
+let find_on_tenant_request =
+  let open Caqti_request.Infix in
+  {sql|
+    INNER JOIN pool_announcement_tenants ON pool_announcements.uuid = pool_announcement_tenants.pool_announcement_uuid
+    INNER JOIN pool_tenant ON pool_announcement_tenants.pool_tenant_uuid = pool_tenant.uuid
+    WHERE 
+      pool_tenant.database_label = $1
+    AND
+      pool_announcements.uuid = UNHEX(REPLACE($2, '-', ''))
+  |sql}
+  |> find_request_sql
+  |> Caqti_type.(t2 Database.Repo.Label.t Pool_common.Repo.Id.t)
+     ->! Repo_entity.t
+;;
+
+let find_of_tenant database_label id =
+  let open Utils.Lwt_result.Infix in
+  Database.find_opt Database.root find_on_tenant_request (database_label, id)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Announcement)
 ;;
 
 let find_by_user_request context =
@@ -204,6 +226,8 @@ let find_by_user_request context =
     AND(pool_announcements.end_at > NOW()
       OR pool_announcements.end_at IS NULL)
     AND pool_announcement_users_hide.user_users_uuid IS NULL
+    ORDER BY pool_announcements.start_at ASC
+    LIMIT 1
   |sql}
     where
   |> find_request_sql

@@ -80,22 +80,19 @@ val create
 
 type admin = t * Pool_tenant.t list
 
-val find
-  :  Database.Label.t
-  -> Id.t
-  -> (t, Pool_message__Pool_message_error.t) result Lwt.t
-
+val find : Id.t -> (t, Pool_message__Pool_message_error.t) Lwt_result.t
 val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
-
-val find_admin
-  :  Database.Label.t
-  -> Id.t
-  -> (admin, Pool_message.Error.t) Lwt_result.t
+val find_admin : Id.t -> (admin, Pool_message.Error.t) Lwt_result.t
 
 val find_by_user
   :  Database.Label.t
   -> [< `Admin | `Contact ] * Pool_common.Id.t
   -> t option Lwt.t
+
+val find_of_tenant
+  :  Database.Label.t
+  -> Id.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
 val column_start : Query.Column.t
 val column_end : Query.Column.t

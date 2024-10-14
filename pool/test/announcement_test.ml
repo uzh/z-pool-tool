@@ -114,3 +114,103 @@ let create () =
   in
   ()
 ;;
+
+let find_current _ () =
+  let open Utils.Lwt_result.Infix in
+  let open Integration_utils in
+  let pool = Database.root in
+  let%lwt tenant =
+    Pool_tenant.find_by_label Test_utils.Data.database_label ||> get_exn
+  in
+  let tenand_db = tenant.Pool_tenant.database_label in
+  let%lwt as_contat =
+    let open Contact in
+    ContactRepo.create () ||> id ||> Id.to_common ||> CCPair.make `Contact
+  in
+  let%lwt as_admin =
+    let open Admin in
+    AdminRepo.create () ||> id ||> Id.to_common ||> CCPair.make `Admin
+  in
+  let tenant_id = tenant.Pool_tenant.id in
+  let id = Id.create () in
+  let%lwt announcement = AnnouncementRepo.create ~id [ tenant_id ] in
+  let run_test ?(tenants = [ tenant_id ]) announcement context found msg =
+    let%lwt () = Updated (announcement, tenants) |> handle_event pool in
+    let%lwt expected =
+      match found with
+      | false -> Lwt.return_none
+      | true -> find_of_tenant tenand_db id ||> get_exn ||> CCOption.return
+    in
+    let%lwt res = find_by_user tenand_db context in
+    Alcotest.(check (option Test_utils.annoncement) msg expected res)
+    |> Lwt.return
+  in
+  (* GET WITHOUT START / END *)
+  let%lwt () = run_test announcement as_admin true "get without start / end" in
+  let%lwt () =
+    let m =
+      { announcement with
+        show_to_admins = ShowToAdmins.create false
+      ; show_to_contacts = ShowToContacts.create true
+      }
+    in
+    let msg = Format.asprintf "no start/end, hidden from admins, as %s" in
+    let%lwt () = run_test m as_admin false (msg "contact") in
+    let%lwt () = run_test m as_contat true (msg "admin") in
+    Lwt.return_unit
+  in
+  (* GET WITH PAST START *)
+  let%lwt () =
+    let start_at = StartAt.create Data.Time.two_hours_ago in
+    let m = { announcement with start_at = Some start_at } in
+    let msg = "get with past start" in
+    let%lwt () = run_test m as_admin true msg in
+    let%lwt () = run_test m as_contat true msg in
+    Lwt.return_unit
+  in
+  (* GET WITH FUTURE START *)
+  let%lwt () =
+    let start_at = StartAt.create Data.Time.in_two_hours in
+    let m = { announcement with start_at = Some start_at } in
+    let msg = "get with future start" in
+    let%lwt () = run_test m as_admin false msg in
+    let%lwt () = run_test m as_contat false msg in
+    Lwt.return_unit
+  in
+  (* GET WITH START AND END *)
+  let%lwt () =
+    let start_at = StartAt.create Data.Time.two_hours_ago in
+    let end_at = EndAt.create Data.Time.in_an_hour in
+    let m =
+      { announcement with start_at = Some start_at; end_at = Some end_at }
+    in
+    let msg = Format.asprintf "get with past start and future end, as %s" in
+    let%lwt () = run_test m as_admin true (msg "admin") in
+    let%lwt () = run_test m as_contat true (msg "user") in
+    Lwt.return_unit
+  in
+  (* ON DIFFERENT TENANT *)
+  let%lwt () =
+    let msg = Format.asprintf "on different tenant, as %s" in
+    let%lwt () =
+      run_test ~tenants:[] announcement as_admin false (msg "admin")
+    in
+    let%lwt () =
+      run_test ~tenants:[] announcement as_contat false (msg "contact")
+    in
+    Lwt.return_unit
+  in
+  (* MARK AS READ *)
+  let%lwt () =
+    let msg = "mark as read" in
+    let%lwt () =
+      [ snd as_admin; snd as_contat ]
+      |> CCList.map (fun id -> Hidden (announcement, id))
+      |> Lwt_list.iter_s (handle_event pool)
+    in
+    let%lwt () = run_test announcement as_admin false msg in
+    let%lwt () = run_test announcement as_contat false msg in
+    Lwt.return_unit
+  in
+  Lwt.return_unit
+;;
