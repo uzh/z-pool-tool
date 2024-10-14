@@ -70,9 +70,8 @@ let list Pool_context.{ language; _ } url changelog =
           a
             ~a:
               [ a_href
-                  (Http_utils.Url.Admin.admin_path
-                     ~id:(Admin.Id.of_common uuid)
-                     ())
+                  (Http_utils.Url.Admin.user_redirect_path ~id:uuid
+                   |> Sihl.Web.externalize_path)
               ]
             [ txt (Pool_user.EmailAddress.value email) ]
       in

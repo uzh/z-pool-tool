@@ -82,6 +82,10 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let user_redirect_path ~id =
+    Pool_common.Id.value id |> Format.asprintf "/admin/users/%s"
+  ;;
+
   module Settings = struct
     let queue_list_path ?suffix table =
       let table =
