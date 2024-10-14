@@ -238,9 +238,10 @@ let validate_partial_update
 let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
   let open Changelog.Changes in
   let id_of_string = CCFun.(Id.validate %> CCOption.of_result) in
-  let yojson_id = function
-    | `String id -> id_of_string id
-    | _ -> None
+  let rec yojson_id = function
+    | `String id -> id_of_string id |> CCOption.map_or ~default:[] CCList.return
+    | `List lst -> CCList.fold_left (fun acc str -> acc @ yojson_id str) [] lst
+    | _ -> []
   in
   let rec collect_uuids acc = function
     | Assoc lst ->
@@ -256,7 +257,8 @@ let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
         acc
         lst
     | Change (before, after) ->
-      CCList.filter_map yojson_id [ before; after ] @ acc
+      CCList.fold_left (fun acc cur -> acc @ yojson_id cur) [] [ before; after ]
+      @ acc
   in
   let get_or = CCOption.get_or in
   let uuids = collect_uuids [] changes in
@@ -284,9 +286,10 @@ let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
              key, changes)
            lst)
     | Change (before, after) ->
-      let replace = function
+      let rec replace = function
         | `String str ->
           `String (Hashtbl.find_opt tbl str |> get_or ~default:str)
+        | `List lst -> `List (CCList.map replace lst)
         | change -> change
       in
       Change (replace before, replace after)

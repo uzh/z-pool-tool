@@ -36,16 +36,15 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     insert pool ?user_uuid ~entity_uuid:before.Group.id ~before ~after ()
   in
   let create_custom_field_answer_changelog contact public =
-    let open Version_history.AnswerVersionHistory in
+    let open Version_history in
     let contact_id = Contact.id contact in
     let field_id = Public.id public in
+    let after = AnswerRecord.from_public public in
     let%lwt before =
       Repo_version_history.find_answer_opt pool contact_id field_id
+      ||> CCOption.value ~default:(AnswerRecord.default_record after)
     in
-    let after =
-      Version_history.AnswerRecord.from_public public |> CCOption.return
-    in
-    insert
+    AnswerVersionHistory.insert
       pool
       ?user_uuid
       ~entity_uuid:(Contact.Id.to_common contact_id)
