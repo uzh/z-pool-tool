@@ -404,6 +404,7 @@ val default_filter : Query.Filter.t
 val default_sort : Query.Sort.t
 val default_query : Query.t
 val incomplete_default_query : Query.t
+val participation_default_query : Query.t
 
 module Repo : sig
   val sql_select_columns : string list
