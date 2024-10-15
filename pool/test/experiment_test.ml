@@ -412,7 +412,7 @@ module AvailableExperiments = struct
     let%lwt online_experiment =
       ExperimentRepo.create ~online_experiment:Data.online_experiment ()
     in
-    let%lwt _ =
+    let%lwt (_ : Session.t) =
       Integration_utils.SessionRepo.create ~id:session_id on_site_experiment ()
     in
     let%lwt (_ : Time_window.t) =
@@ -496,6 +496,9 @@ module AvailableExperiments = struct
 
   let cancel_session _ () =
     let open Utils.Lwt_result.Infix in
+    let%lwt experiment =
+      Experiment.find database_label experiment_id ||> get_exn
+    in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session = Session.find database_label session_id ||> get_exn in
     let%lwt () =
@@ -503,13 +506,17 @@ module AvailableExperiments = struct
       |> Pool_event.session
       |> Pool_event.handle_event database_label
     in
-    let%lwt experiment_available =
-      (* Expect the experiment not to be found after session cancellation to
-         enable reregistration of contact *)
+    let find_available_experiment () =
+      (* Expect the experiment not to be found after session cancellation as
+         there is no upcoming uncanceled session *)
       let open Experiment in
       find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
+    in
+    let%lwt experiment_available = find_available_experiment () in
+    let () =
+      Alcotest.(check bool "not listed as available" false experiment_available)
     in
     let%lwt upcoming_session_found =
       (* Expect the session to be listed among the upcoming sessions, but to be
@@ -524,8 +531,18 @@ module AvailableExperiments = struct
           && CCOption.is_some upcoming.Public.canceled_at))
       ||> CCOption.is_some
     in
-    let res = experiment_available && upcoming_session_found in
-    let () = Alcotest.(check bool "succeeds" true res) in
+    let () =
+      Alcotest.(check bool "canceled session found" true upcoming_session_found)
+    in
+    (* Expect the experiment to be listed as available, as an upcoming session
+       exists *)
+    let%lwt (_ : Session.t) =
+      Integration_utils.SessionRepo.create experiment ()
+    in
+    let%lwt experiment_available = find_available_experiment () in
+    let () =
+      Alcotest.(check bool "listed as available" true experiment_available)
+    in
     Lwt.return_unit
   ;;
 
@@ -541,8 +558,8 @@ module AvailableExperiments = struct
       >|> Pool_event.handle_events database_label
     in
     let%lwt experiment_available =
-      (* Expect the experiment not to be found after session cancellation to
-         enable reregistration of contact *)
+      (* Expect the experiment not to be found after marking the assignment as
+         deleted *)
       let open Experiment in
       find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)

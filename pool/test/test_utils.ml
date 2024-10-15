@@ -241,15 +241,21 @@ module Model = struct
     }
   ;;
 
-  let create_mailing ?id ?(limit = Mailing.Limit.default) () =
+  let create_mailing ?id ?start ?(limit = Mailing.Limit.default) () =
     let open Mailing in
     let start =
-      Ptime.add_span
-        (Ptime_clock.now ())
-        Sihl.Time.(OneSecond |> duration_to_span)
-      |> CCOption.get_exn_or "Time calculation failed!"
-      |> StartAt.create
-      |> get_or_failwith
+      let default () =
+        let start_at =
+          Ptime.add_span
+            (Ptime_clock.now ())
+            Sihl.Time.(OneSecond |> duration_to_span)
+          |> CCOption.get_exn_or "Time calculation failed!"
+          |> StartAt.create
+          |> get_or_failwith
+        in
+        Start.StartAt start_at
+      in
+      CCOption.value ~default:(default ()) start
     in
     let deadline =
       Ptime.add_span
@@ -259,7 +265,7 @@ module Model = struct
       |> EndAt.create
       |> get_or_failwith
     in
-    create ?id Start.(StartAt start) deadline limit None |> get_or_failwith
+    create ?id start deadline limit None |> get_or_failwith
   ;;
 
   let create_email

@@ -575,10 +575,11 @@ module Sql = struct
     let joins =
       {sql|
         INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
+          AND pool_sessions.canceled_at IS NULL
         INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
           AND pool_assignments.canceled_at IS NULL
           AND pool_assignments.marked_as_deleted = 0
-        |sql}
+      |sql}
     in
     let where =
       let only_closed_condition =
@@ -599,20 +600,7 @@ module Sql = struct
          then Format.asprintf "AND (%s)" only_closed_condition
          else "")
     in
-    let _ =
-      Format.asprintf
-        {sql|
-            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
-            AND(
-              CASE WHEN pool_experiments.assignment_without_session = 1 THEN
-                pool_assignments.participated = 1
-              ELSE
-                %s
-              END)
-        |sql}
-        (if only_closed then "pool_sessions.closed_at IS NOT NULL" else "TRUE")
-    in
-    (where, dyn |> Dynparam.add Contact.Repo.Id.t contact_id), joins
+    Dynparam.(where, dyn |> add Contact.Repo.Id.t contact_id), joins
   ;;
 
   let query_participation_history_by_contact ?query pool contact =

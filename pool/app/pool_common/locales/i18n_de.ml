@@ -53,6 +53,22 @@ let to_string = function
   | ExperimentOnlineListEmpty ->
     "Aktuell gibt es keine Onlinestudien, an denen Sie teilnehmen können."
   | ExperimentOnlineListPublicTitle -> "Verfügbare Onlinestudien"
+  | ExperimentOnlineParticipationDeadline end_at ->
+    Format.asprintf
+      "Sie können noch bis zum %s an diesem Experiment teilnehmen."
+      (Pool_model.Time.formatted_date_time end_at)
+  | ExperimentOnlineParticiated submitted ->
+    Format.asprintf
+      "Sie haben diese Umfrage am %s abgeschlossen."
+      (Utils.Ptime.formatted_date submitted)
+  | ExperimentOnlineParticipationUpcoming start_at ->
+    Format.asprintf
+      "Das nächste Zeitfenster für die Teilnahme an dieser Umfrage beginnt am \
+       %s."
+      (Pool_model.Time.formatted_date_time start_at)
+  | ExperimentOnlineParticipationNoUpcoming ->
+    "Es sind zur Zeit keine weiteren Zeitfenster für die Teilnahme an dieser \
+     Umfrage geplant."
   | ExperimentListTitle -> "Experimente"
   | ExperimentMessagingSubtitle -> "Identitäten"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
@@ -105,6 +121,14 @@ let to_string = function
       <li>Drücken Sie die Schaltfläche "Hinzufügen", um den Sortierparameter hinzuzufügen.</li>
       <li>Wiederholen Sie diesen Vorgang, um weitere Parameter hinzuzufügen. Sie können sie durch "drag and drop" sortieren.</li>
     </ol>|}
+  | MailingExperimentNoUpcomingSession ->
+    "Es gibt keine Sessions, an die sich Kontakte anmelden können. Es werden \
+     keine Einladungen versendet. Legen Sie neue Sessions an, bevor Sie das \
+     Mailing starten."
+  | MailingExperimentNoUpcomingTimewindow ->
+    "Es gibt kein aktives oder zukünftiges Zeitfenster, während dem die \
+     Teilnehmer die Umfrage beantworten können. Es werden keine Einladungen \
+     versendet. Legen Sie zuerst ein Zeitfenster an."
   | MailingExperimentSessionFullyBooked ->
     "Alle Sessions sind ausgebucht. Es werden keine Einladungen versendet \
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
@@ -384,6 +408,9 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
   | ExperimentSessions ->
     {|Alle existierenden Session dieses Experiments.
   Sobald sich jemand angemeldet hat, kann die Session nicht mehr gelöscht werden.|}
+  | ExperimentSessionsCancelDelete ->
+    {|Wird eine Sessionanmeldung abgesagt, wird der Kontakt darüber informiert und kann sich anschliessend nicht mehr für dieses Experiment anmelden.
+Wird eine Sessionanmeldung als gelöscht markiert, wird der Kontkt nicht darüber informiert, kann sich jedoch wieder für dieses Experiment anmelden.|}
   | ExperimentSessionsPublic ->
     "Hinweis: Möglicherweise werden einzelne Sessions oder komplette \
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
@@ -423,8 +450,8 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
   | SurveyUrl ->
-    "ine URL inkl. Protokoll. Der URL-Parameter 'callbackUrl' ist \
-     erforderlich. Z.B.: \
+    "ine URL inkl. Protokoll. Sie können Informationen an Ihre Umfrage \
+     übermitteln, indem Sie Query-Parameter zu Ihrere URL hinzufügen. Z.B.: \
      https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | FilterTemplates ->
     "Änderungen an einem dieser Filter wird auf alle Experimentfilter \
@@ -536,10 +563,6 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
        externe URL der Studie an, auf welche die Kontakte weitergeleitet \
        werden sollen."
       (Locales_de.field_to_string Pool_message.Field.SurveyUrl)
-  | OnlineExperimentParticipationDeadline end_at ->
-    Format.asprintf
-      "Sie können noch bis zum %s an diesem Experiment teilnehmen."
-      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."

@@ -153,6 +153,10 @@ let suite =
           [ test_case "send invitations" `Slow create_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
           ; test_case "matcher notifiaction" `Slow matcher_notification
+          ; test_case
+              "online experiment matcher"
+              `Slow
+              create_invitations_for_online_experiment
           ] )
     ; ( "assignment job"
       , Assignment_job_test.
@@ -417,8 +421,7 @@ let suite =
     ; ( "time window"
       , Time_window_test.
           [ test_case "confirm as contact" `Slow find_overlapping ] )
-      (* ; "cleanup", [ test_case "clean up test database" `Slow
-         Test_seed.cleanup ] *)
+    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;
 

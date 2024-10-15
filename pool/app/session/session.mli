@@ -281,6 +281,11 @@ val find_all_for_experiment
   -> Experiment.Id.t
   -> t list Lwt.t
 
+val find_upcoming_for_experiment
+  :  Database.Label.t
+  -> Experiment.Id.t
+  -> t list Lwt.t
+
 val find_all_to_assign_from_waitinglist
   :  Database.Label.t
   -> Experiment.Id.t
@@ -399,6 +404,7 @@ val default_filter : Query.Filter.t
 val default_sort : Query.Sort.t
 val default_query : Query.t
 val incomplete_default_query : Query.t
+val participation_default_query : Query.t
 
 module Repo : sig
   val sql_select_columns : string list

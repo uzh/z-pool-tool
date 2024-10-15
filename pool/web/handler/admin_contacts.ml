@@ -40,7 +40,7 @@ let experiments_query_from_req req =
   let open Experiment in
   Query.from_request
     ~sortable_by
-    ~default:default_query
+    ~default:Session.participation_default_query
     ~searchable_by
     ?filterable_by
     req
