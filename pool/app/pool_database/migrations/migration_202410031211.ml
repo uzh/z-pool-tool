@@ -53,10 +53,21 @@ let create_pool_announcement_users_hide_table =
     |sql}
 ;;
 
+let add_guardian_role_permission =
+  Database.Migration.Step.create
+    ~label:"add default guardian role permissions"
+    {sql|
+    INSERT INTO `guardian_role_permissions` (`role`, `permission`, `target_model`) VALUES
+    ('`Operator', 'manage', '`Announcement')
+    ON DUPLICATE KEY UPDATE updated_at=updated_at
+    |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202410031211"
     |> add_step create_pool_announcements_table
     |> add_step create_pool_announcement_tenants_table
-    |> add_step create_pool_announcement_users_hide_table)
+    |> add_step create_pool_announcement_users_hide_table
+    |> add_step add_guardian_role_permission)
 ;;
