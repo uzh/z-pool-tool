@@ -13,6 +13,8 @@ val respond_error
   -> Pool_message.Error.t
   -> Rock.Response.t
 
+val not_found : Rock.Request.t -> Rock.Response.t Lwt.t
+
 val respond
   :  ?src:Logs.src
   -> Rock.Request.t

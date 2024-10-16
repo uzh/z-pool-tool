@@ -1,28 +1,7 @@
 (library
  (name api)
- (libraries
-  assignment
-  assignment_job
-  contact
-  component
-  cqrs_command
-  email
-  guard
-  htmx
-  http_utils
-  layout
-  mailing
-  matcher
-  message_template
-  middleware
-  organisational_unit
-  pool_common
-  reminder
-  schedule
-  sihl
-  statistics
-  tags
-  user_import
-  waiting_list)
+ (libraries experiment http_utils middleware organisational_unit pool_common)
  (preprocess
   (pps lwt_ppx ppx_deriving.show)))
+
+(include_subdirs unqualified)

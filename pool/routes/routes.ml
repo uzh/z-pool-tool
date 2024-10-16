@@ -1065,25 +1065,36 @@ module Api = struct
     CustomMiddleware.[ Api.api_request (); Api.context (); Logger.logger ]
   ;;
 
-  let experiment =
-    let open Experiment in
-    let specific = [ get "" ~middlewares:[ Access.read ] show ] in
-    choose
-      ~scope:Field.(human_url Experiment)
-      [ choose ~scope:Field.(url_key Experiment) specific ]
-  ;;
+  module V1 = struct
+    open V1
 
-  let organisational_unit =
-    let open OrganisationalUnit in
-    choose ~scope:Field.(human_url OrganisationalUnit) [ get "" index ]
-  ;;
+    let experiment =
+      let open Experiment in
+      let specific = [ get "" ~middlewares:[ Access.read ] show ] in
+      choose
+        ~scope:Field.(human_url Experiment)
+        [ choose ~scope:Field.(url_key Experiment) specific ]
+    ;;
+
+    let organisational_unit =
+      let open OrganisationalUnit in
+      choose ~scope:Field.(human_url OrganisationalUnit) [ get "" index ]
+    ;;
+
+    let routes =
+      choose
+        [ experiment
+        ; organisational_unit
+        ; get "/**" ~middlewares:global_middlewares not_found
+        ]
+    ;;
+  end
 
   let routes =
     choose
       ~middlewares:
         (CustomMiddleware.Api.validate_tenant () :: global_middlewares)
-      [ experiment
-      ; organisational_unit
+      [ choose ~scope:"/v1" [ V1.routes ]
       ; get "/**" ~middlewares:global_middlewares not_found
       ]
   ;;

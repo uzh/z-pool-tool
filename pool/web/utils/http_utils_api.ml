@@ -27,6 +27,11 @@ let respond_error
   `Assoc [ "error", `String error ] |> response_with_headers ~status
 ;;
 
+let not_found (_ : Rock.Request.t) =
+  respond_error ~status:`Not_found Pool_message.(Error.NotFound Field.Resource)
+  |> Lwt.return
+;;
+
 let respond ?(src = src) req result =
   let tags = Pool_context.Logger.Tags.req req in
   let context = Pool_context.Api.find req in

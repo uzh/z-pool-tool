@@ -1,8 +1,8 @@
-open Utils.Lwt_result.Infix
 module ApiUtils = Http_utils.Api
 module Field = Pool_message.Field
+open Utils.Lwt_result.Infix
 
-let src = Logs.Src.create "handler.api.experiment"
+let src = Logs.Src.create "handler.api.v1.experiment"
 
 let show req =
   let open Experiment in
@@ -12,7 +12,7 @@ let show req =
     >>= find database_label
     >|+ yojson_of_t
   in
-  result |> ApiUtils.respond req
+  result |> ApiUtils.respond ~src req
 ;;
 
 module Access = struct
