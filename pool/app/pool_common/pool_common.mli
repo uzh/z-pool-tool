@@ -19,6 +19,7 @@ module Language : sig
   val all : t list
   val all_codes : string list
   val field_of_t : t -> Pool_message.Field.t
+  val read_opt : string -> t option
 end
 
 module Version : sig

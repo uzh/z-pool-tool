@@ -37,7 +37,7 @@ let grouped_custom_fields_form language custom_fields to_html =
 let personal_details_form
   csrf
   language
-  query_language
+  query_parameters
   form_context
   tenant_languages
   contact
@@ -49,7 +49,7 @@ let personal_details_form
     | `Contact -> Htmx.contact_profile_hx_post, false
     | `Admin -> Htmx.admin_profile_hx_post (Contact.id contact), true
   in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let htmx_action = externalize action in
   let form_attrs =
     [ a_method `Post; a_action htmx_action; a_class [ "stack" ] ]
@@ -166,7 +166,7 @@ let personal_details_form
 let toggle_status_form
   csrf
   language
-  query_language
+  query_parameters
   ?has_icon
   ~action
   ~hint
@@ -175,7 +175,7 @@ let toggle_status_form
   ~control
   ()
   =
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let confirmable =
     Pool_common.Utils.confirmable_to_string language confirmable
   in
@@ -252,7 +252,7 @@ let personal_details
   contact
   custom_fields
   tenant_languages
-  Pool_context.{ language; query_language; csrf; _ }
+  Pool_context.{ language; query_parameters; csrf; _ }
   =
   let form_context = `Contact in
   div
@@ -261,12 +261,12 @@ let personal_details
         [ personal_details_form
             csrf
             language
-            query_language
+            query_parameters
             form_context
             tenant_languages
             contact
             custom_fields
-        ; status_form csrf language query_language contact form_context
+        ; status_form csrf language query_parameters contact form_context
         ]
     ]
   |> contact_profile_layout language Pool_common.I18n.PersonalDetails
@@ -274,12 +274,12 @@ let personal_details
 
 let login_information
   (contact : Contact.t)
-  Pool_context.{ language; query_language; csrf; _ }
+  Pool_context.{ language; query_parameters; csrf; _ }
   password_policy
   =
   let open Contact in
   let open Message.Control in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let form_attrs action =
     [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
   in
@@ -364,14 +364,14 @@ let login_information
 
 let contact_information
   contact
-  Pool_context.{ language; query_language; csrf; _ }
+  Pool_context.{ language; query_parameters; csrf; _ }
   (verification : Pool_user.UnverifiedCellPhone.t option)
   was_reset
   =
   let open Contact in
   let open Pool_common in
   let open Message.Control in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let form_attrs action =
     [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
   in
@@ -380,7 +380,7 @@ let contact_information
   in
   let email_hint =
     let link =
-      HttpUtils.path_with_language query_language "/user/login-information"
+      HttpUtils.url_with_field_params query_parameters "/user/login-information"
     in
     [ txt
         Pool_common.(
@@ -487,9 +487,10 @@ let contact_information
   |> contact_profile_layout language Pool_common.I18n.ContactInformation
 ;;
 
-let pause_account Pool_context.{ language; query_language; csrf; _ } ?token () =
+let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token ()
+  =
   let open Pool_common in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let action =
     match token with
     | None -> "/user/update/pause" |> externalize

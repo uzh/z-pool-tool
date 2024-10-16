@@ -41,6 +41,29 @@ module Utils = struct
     find_authorizable_opt ?admin_only database_label
     %> Lwt.map (CCOption.to_result (Error.NotFound field))
   ;;
+
+  let query_language tenant_languages query_parameters =
+    let open Pool_message in
+    let open CCOption.Infix in
+    CCList.assoc_opt ~eq:Field.equal Field.Language query_parameters
+    >>= Pool_common.Language.read_opt
+    >>= fun lang ->
+    CCList.find_opt (Pool_common.Language.equal lang) tenant_languages
+  ;;
+
+  let url_parameters_by_user req =
+    let open Pool_message in
+    let filter_params allow_list =
+      allow_list
+      |> CCList.filter_map (fun field ->
+        Opium.Request.query Field.(human_url field) req
+        |> CCOption.map (CCPair.make field))
+    in
+    function
+    | Admin _ -> []
+    | Contact _ -> filter_params Field.[ Language ]
+    | Guest -> filter_params Field.[ Language; Location; SignUpCode ]
+  ;;
 end
 
 module Logger = struct

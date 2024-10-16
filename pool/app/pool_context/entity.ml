@@ -22,7 +22,7 @@ module UserType = struct
 end
 
 type t =
-  { query_language : Pool_common.Language.t option
+  { query_parameters : (Pool_message.Field.t * string) list
   ; language : Pool_common.Language.t
   ; database_label : Database.Label.t
   ; message : Pool_message.Collection.t option
@@ -33,9 +33,9 @@ type t =
 [@@deriving show, sexp_of]
 
 let create
-  (query_language, language, database_label, message, csrf, user, guardian)
+  (query_parameters, language, database_label, message, csrf, user, guardian)
   =
-  { query_language; language; database_label; message; csrf; user; guardian }
+  { query_parameters; language; database_label; message; csrf; user; guardian }
 ;;
 
 let find_context key req =

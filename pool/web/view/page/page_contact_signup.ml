@@ -5,15 +5,13 @@ module Field = Pool_message.Field
 let signup
   terms
   custom_fields
-  Pool_context.{ language; query_language; csrf; _ }
+  Pool_context.{ language; query_parameters; csrf; _ }
   flash_fetcher
   =
   let open Component.Input in
   let open Pool_common in
   let submit_url =
-    Http_utils.externalize_path_with_lang
-      query_language
-      "/signup?signup-code=herbst24"
+    Http_utils.externalize_path_with_params query_parameters "/signup"
   in
   let txt_to_string = Utils.text_to_string language %> txt in
   let custom_fields_html =
