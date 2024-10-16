@@ -130,7 +130,6 @@ let grant_role ~redirect_path ~actor ~target_id database_label req =
   in
   let events roles =
     let open Command in
-    (* TODO: validate if role can be granted *)
     GrantRoles.handle ~tags { target_id; roles } |> lift
   in
   let handle events =
