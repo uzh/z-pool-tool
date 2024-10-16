@@ -73,6 +73,12 @@ let sign_up_create req =
            Command.SignUp.decode urlencoded |> Lwt_result.lift
          in
          let%lwt token = Email.create_token database_label email_address in
+         let signup_code =
+           let open CCOption.Infix in
+           let open Signup_code in
+           Sihl.Web.Request.query url_key req
+           >>= CCFun.(Code.create %> CCOption.of_result)
+         in
          let%lwt verification_mail =
            Message_template.SignUpVerification.create
              database_label
@@ -89,6 +95,7 @@ let sign_up_create req =
               ~tags
               ?allowed_email_suffixes
               ~user_id
+              ?signup_code
               answered_custom_fields
               token
               email_address

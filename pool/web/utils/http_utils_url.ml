@@ -27,20 +27,24 @@ module Admin = struct
   ;;
 
   module Settings = struct
+    let base = "/admin/settings"
+
     let queue_list_path ?suffix table =
       let table =
         match table with
         | `Current -> ""
         | `History -> "/archive"
       in
-      Format.asprintf "/admin/settings/queue%s" table |> append_opt suffix
+      Format.asprintf "%s/queue%s" base table |> append_opt suffix
     ;;
 
     let queue_path ?suffix ?id () =
-      Format.asprintf "/admin/settings/queue"
+      Format.asprintf "%s/queue" base
       |> append_opt Pool_queue.(map Id.value id)
       |> append_opt suffix
     ;;
+
+    let signup_codes_path = Format.asprintf "%s/signup-codes" base
   end
 end
 

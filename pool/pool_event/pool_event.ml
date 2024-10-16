@@ -21,6 +21,7 @@ type t =
   | PoolTenant of Pool_tenant.event
   | Session of Session.event
   | Settings of Settings.event
+  | SignupCode of Signup_code.event
   | SystemEvent of System_event.event
   | Tags of Tags.event
   | TextMessage of Text_message.event
@@ -50,6 +51,7 @@ let pool_location events = PoolLocation events
 let pool_tenant events = PoolTenant events
 let session events = Session events
 let settings events = Settings events
+let signupcode events = SignupCode events
 let system_event events = SystemEvent events
 let tags events = Tags events
 let text_message events = TextMessage events
@@ -127,6 +129,9 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
   | Settings event ->
     info "settings" Settings.pp_event event;
     Settings.handle_event pool event
+  | SignupCode event ->
+    info "signup_code" Signup_code.pp_event event;
+    Signup_code.handle_event pool event
   | SystemEvent event ->
     info "system_event" System_event.pp_event event;
     (* Not passing pool, so the event can be handled with tenant events *)

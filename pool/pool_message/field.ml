@@ -48,6 +48,7 @@ type t =
   | Chronological [@name "chronological"] [@printer go "chronological"]
   | City [@name "city"] [@printer go "city"]
   | ClosedAt [@name "closed_at"] [@printer go "closed_at"]
+  | Code [@name "code"] [@printer go "code"]
   | Confirmed [@name "confirmed"] [@printer go "confirmed"]
   | ConfirmedAt [@name "confirmed_at"] [@printer go "confirmed_at"]
   | Contact [@name "contact"] [@printer go "contact"]

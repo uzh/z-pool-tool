@@ -29,6 +29,7 @@ type t =
   | Chronological
   | City
   | ClosedAt
+  | Code
   | Confirmed
   | ConfirmedAt
   | Contact

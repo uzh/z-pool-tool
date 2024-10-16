@@ -11,7 +11,9 @@ let signup
   let open Component.Input in
   let open Pool_common in
   let submit_url =
-    Http_utils.externalize_path_with_lang query_language "/signup"
+    Http_utils.externalize_path_with_lang
+      query_language
+      "/signup?signup-code=herbst24"
   in
   let txt_to_string = Utils.text_to_string language %> txt in
   let custom_fields_html =

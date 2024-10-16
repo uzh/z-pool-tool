@@ -152,6 +152,7 @@ type nav_link =
   | Sessions
   | Settings
   | Smtp
+  | SignupCodes
   | SystemSettings
   | Tags
   | Tenants
