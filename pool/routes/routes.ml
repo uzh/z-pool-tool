@@ -871,7 +871,7 @@ module Admin = struct
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
       ; choose ~scope:"/text-messages" text_messages
-      ; choose ~scope:"/signup-codes" signup_codes
+      ; choose ~scope:Field.(human_url SignUpCode) signup_codes
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]

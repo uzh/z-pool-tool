@@ -1,4 +1,4 @@
-val url_key : string
+val url_key : Pool_message.Field.t
 
 module Id : sig
   include module type of Pool_common.Id

@@ -1,3 +1,5 @@
+module Field = Pool_message.Field
+
 let map = CCOption.map
 
 let append_opt suffix path =
@@ -27,7 +29,7 @@ module Admin = struct
   ;;
 
   module Settings = struct
-    let base = "/admin/settings"
+    let with_settings = Format.asprintf "/admin/settings/%s"
 
     let queue_list_path ?suffix table =
       let table =
@@ -35,16 +37,17 @@ module Admin = struct
         | `Current -> ""
         | `History -> "/archive"
       in
-      Format.asprintf "%s/queue%s" base table |> append_opt suffix
+      Format.asprintf "queue%s" table |> with_settings |> append_opt suffix
     ;;
 
     let queue_path ?suffix ?id () =
-      Format.asprintf "%s/queue" base
+      Format.asprintf "queue"
+      |> with_settings
       |> append_opt Pool_queue.(map Id.value id)
       |> append_opt suffix
     ;;
 
-    let signup_codes_path = Format.asprintf "%s/signup-codes" base
+    let signup_codes_path = Field.(human_url SignUpCode) |> with_settings
   end
 end
 

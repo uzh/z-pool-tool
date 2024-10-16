@@ -76,7 +76,7 @@ let sign_up_create req =
          let signup_code =
            let open CCOption.Infix in
            let open Signup_code in
-           Sihl.Web.Request.query url_key req
+           Sihl.Web.Request.query (Field.show url_key) req
            >>= CCFun.(Code.create %> CCOption.of_result)
          in
          let%lwt verification_mail =

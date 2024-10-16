@@ -258,6 +258,7 @@ let rec field_to_string =
   | ShowUpCount -> "Anwesende"
   | ShowExteralDataIdLinks -> "Link zu externen Datenidentifikatoren anzeigen"
   | SignedUpAt -> "Eingeschrieben am"
+  | SignUpCode -> "Registrierungscode"
   | SignUpCount -> "Neuregistrierungen"
   | SMS -> "SMS"
   | SmsText -> "SMS Text"

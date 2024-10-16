@@ -255,6 +255,7 @@ let rec field_to_string =
   | ShowUpCount -> "show ups"
   | ShowExteralDataIdLinks -> "show links to external data identifiers"
   | SignedUpAt -> "signed up at"
+  | SignUpCode -> "signup code"
   | SignUpCount -> "new sign ups"
   | SMS -> "SMS"
   | SmsText -> "SMS text"

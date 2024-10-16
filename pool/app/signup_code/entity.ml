@@ -1,4 +1,4 @@
-let url_key = "signup-code"
+let url_key = Pool_message.Field.SignUpCode
 
 module Field = Pool_message.Field
 

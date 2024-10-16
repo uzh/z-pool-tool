@@ -240,6 +240,7 @@ type t =
   | ShowExteralDataIdLinks
   | ShowUpCount
   | SignedUpAt
+  | SignUpCode
   | SignUpCount
   | SMS
   | SmsText

@@ -301,6 +301,7 @@ type t =
   [@printer go "show_external_data_id_links"]
   | ShowUpCount [@name "show_up_count"] [@printer go "show_up_count"]
   | SignedUpAt [@name "signed_up_at"] [@printer go "signed_up_at"]
+  | SignUpCode [@name "signup_code"] [@printer go "signup_code"]
   | SignUpCount [@name "sign_up_count"] [@printer go "sign_up_count"]
   | SMS [@name "sms"] [@printer go "sms"]
   | SmsText [@name "sms_text"] [@printer go "sms_text"]
