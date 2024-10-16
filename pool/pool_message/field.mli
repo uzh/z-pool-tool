@@ -11,6 +11,7 @@ type t =
   | AdminViewOnly
   | AllowUninvitedSignup
   | Answer
+  | ApiKey
   | AreaCode
   | Argument
   | AssetId
@@ -85,6 +86,7 @@ type t =
   | Experiments
   | ExperimentTextMessageReminderLeadTime
   | ExperimentType
+  | ExpiresAt
   | ExternalDataId
   | ExternalDataIdAbbr
   | ExternalDataRequired

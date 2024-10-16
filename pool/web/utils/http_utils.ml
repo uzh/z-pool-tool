@@ -323,6 +323,12 @@ let find_id encode field req =
   Sihl.Web.Router.param req @@ Pool_message.Field.show field |> encode
 ;;
 
+let find_id_save encode field req =
+  let open Pool_message in
+  try find_id encode field req with
+  | _ -> Error Error.(NotFound field)
+;;
+
 let id_in_url req field =
   try find_id Pool_common.Id.of_string field req |> const true with
   | Not_found -> false

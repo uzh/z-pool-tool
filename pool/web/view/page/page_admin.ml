@@ -1,4 +1,5 @@
 module Admins = Page_admin_admins
+module ApiKey = Page_admin_api_key
 module Assignment = Page_admin_assignments
 module Contact = Page_admin_contact
 module CustomFields = Page_admin_custom_fields

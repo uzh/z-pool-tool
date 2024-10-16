@@ -8,6 +8,8 @@ let suite =
           ; test_case "find tenants" `Slow check_find_tenant_database
           ; test_case "access tenant" `Slow check_tenant_database
           ] )
+    ; ( "api_key"
+      , Api_key_test.[ test_case "get current api_key" `Slow get_current ] )
     ; ( "settings"
       , Tenant_settings_test.
           [ test_case "read contact email" `Slow check_contact_email
