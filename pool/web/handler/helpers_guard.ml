@@ -79,7 +79,7 @@ let can_rerun_session_filter
        session_id)
 ;;
 
-let grant_role ~redirect_path ~target_id database_label req =
+let grant_role ~redirect_path ~actor ~target_id database_label req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
   let tags = Pool_context.Logger.Tags.req req in
@@ -96,7 +96,7 @@ let grant_role ~redirect_path ~target_id database_label req =
            %> CCOption.to_result (Error.Decode Field.Id))
     ||> CCResult.flatten_l
   in
-  let expand_targets =
+  let* expand_targets =
     let open Guard.Uuid.Target in
     if role_target |> CCList.is_empty
     then Lwt.return_ok [ role, None ]
@@ -122,6 +122,12 @@ let grant_role ~redirect_path ~target_id database_label req =
         Lwt.return_error (Error.NotFound Field.Role)
         ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id)
   in
+  let roles =
+    expand_targets
+    |> Lwt_list.map_s
+         (Guard.Persistence.Actor.validate_assign_role database_label actor)
+    ||> CCList.all_ok
+  in
   let events roles =
     let open Command in
     (* TODO: validate if role can be granted *)
@@ -130,7 +136,7 @@ let grant_role ~redirect_path ~target_id database_label req =
   let handle events =
     Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
   in
-  let* () = expand_targets >>= events |>> handle in
+  let* () = roles >>= events |>> handle in
   Lwt_result.ok
     (Http_utils.redirect_to_with_actions
        redirect_path

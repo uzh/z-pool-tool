@@ -37,6 +37,7 @@ val can_rerun_session_filter
 
 val grant_role
   :  redirect_path:string
+  -> actor:Guard.Actor.t
   -> target_id:Guard.Uuid.Actor.t
   -> Database.Label.t
   -> Rock.Request.t

@@ -39,13 +39,6 @@ let admin_detail req is_edit =
         database_label
         user
     in
-    let%lwt available_roles =
-      CCOption.map_or
-        ~default:(Lwt.return [])
-        (Guard.Persistence.Actor.can_assign_roles database_label)
-        actor
-      ||> CCList.map fst
-    in
     Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
     @@
     let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
@@ -62,6 +55,13 @@ let admin_detail req is_edit =
     in
     (match is_edit with
      | true ->
+       let%lwt available_roles =
+         CCOption.map_or
+           ~default:(Lwt.return [])
+           (Guard.Persistence.Actor.can_assign_roles database_label)
+           actor
+         ||> CCList.map fst
+       in
        Component.Role.Search.input_form
          ~path:"/admin/admins"
          csrf
@@ -71,8 +71,10 @@ let admin_detail req is_edit =
          ()
        |> CCList.return
        |> Page.Admin.Admins.edit context admin target_id roles
-     | false -> Page.Admin.Admins.detail context admin target_id roles)
-    |> create_layout req context
+       |> Lwt.return
+     | false ->
+       Page.Admin.Admins.detail context admin target_id roles |> Lwt.return)
+    >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
   result |> extract_happy_path req
@@ -151,12 +153,15 @@ let grant_role req =
   let redirect_path =
     Format.asprintf "/admin/admins/%s/edit" (Admin.Id.value admin_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
+    let* actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    in
     let* admin = Admin.find database_label admin_id in
     let target_id = to_guardian_id admin in
-    Helpers.Guard.grant_role ~redirect_path ~target_id database_label req
+    Helpers.Guard.grant_role ~redirect_path ~actor ~target_id database_label req
   in
   result |> extract_happy_path req
 ;;

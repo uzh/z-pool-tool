@@ -192,12 +192,15 @@ let grant_role req =
   let redirect_path =
     Http_utils.Url.Admin.api_key_path ~suffix:"edit" ~id:key_id ()
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
+    let* actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    in
     let* api_key = find database_label key_id in
     let target_id = Guard.Uuid.actor_of Id.value api_key.id in
-    Helpers.Guard.grant_role ~redirect_path ~target_id database_label req
+    Helpers.Guard.grant_role ~redirect_path ~actor ~target_id database_label req
   in
   result |> extract_happy_path req
 ;;
