@@ -10,6 +10,12 @@ module Admin = struct
     "/admin/admins" |> append_opt (map Admin.Id.value id) |> append_opt suffix
   ;;
 
+  let contact_path ?suffix ?id () =
+    "/admin/contacts"
+    |> append_opt (map Contact.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let custom_fields_path model ?suffix ?id () =
     "/admin/custom-fields"
     |> append (Custom_field.Model.show model)
@@ -74,6 +80,10 @@ module Admin = struct
       Experiment.(Id.value experiment_id)
     |> append_opt Session.(map Id.value id)
     |> append_opt suffix
+  ;;
+
+  let user_redirect_path ~id =
+    Pool_common.Id.value id |> Format.asprintf "/admin/users/%s"
   ;;
 
   module Settings = struct

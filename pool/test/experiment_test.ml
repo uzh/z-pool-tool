@@ -379,35 +379,45 @@ let delete_with_filter () =
 let autofill_public_title _ () =
   let open Utils.Lwt_result.Infix in
   let open Experiment in
-  let without_title =
-    let experiment = Model.create_experiment () in
-    { experiment with public_title = PublicTitle.placeholder }
+  let check msg res expected =
+    let tesetable = PublicTitle.(Alcotest.testable pp equal) in
+    Alcotest.(check tesetable msg res expected)
   in
-  let with_title = Model.create_experiment () in
-  let%lwt () =
-    [ without_title; with_title ]
-    |> CCList.map (created %> Pool_event.experiment)
-    |> Pool_event.handle_events database_label current_user
+  (* Create with public title *)
+  let%lwt default_public_title =
+    Experiment.get_default_public_title database_label
   in
-  let find id = Experiment.find database_label id ||> get_exn in
-  let%lwt without_title_persisted = find without_title.id in
-  let%lwt with_title_persisted = find with_title.id in
+  let get_result urlencoded =
+    let open CCResult in
+    let open ExperimentCommand.Create in
+    let id = Experiment.Id.create () in
+    let%lwt () =
+      urlencoded
+      |> Http_utils.format_request_boolean_values experiment_boolean_fields
+      |> decode default_public_title
+      >>= handle ~id
+      |> get_exn
+      |> Lwt_list.iter_s (Pool_event.handle_event database_label current_user)
+    in
+    let%lwt experiment = Experiment.find database_label id ||> get_exn in
+    Lwt.return experiment.Experiment.public_title
+  in
+  let%lwt result = get_result Data.urlencoded in
   let () =
-    Alcotest.(
-      check
-        bool
-        "succeeds"
-        false
-        PublicTitle.(equal without_title_persisted.public_title placeholder))
+    check
+      "public title equals urlencoded public title"
+      result
+      (PublicTitle.of_string Data.public_title)
   in
+  let urlencoded =
+    CCList.remove_assoc
+      ~eq:CCString.equal
+      Field.(show PublicTitle)
+      Data.urlencoded
+  in
+  let%lwt result = get_result urlencoded in
   let () =
-    Alcotest.(
-      check
-        bool
-        "succeeds"
-        true
-        PublicTitle.(
-          equal with_title_persisted.public_title with_title.public_title))
+    check "public title equals default public title" result default_public_title
   in
   Lwt.return_unit
 ;;

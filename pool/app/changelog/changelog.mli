@@ -60,10 +60,6 @@ module type TSig = sig
   type record
 
   val model : Pool_message.Field.t
-  val default_query : Query.t
-  val filterable_by : Query.Filter.human option
-  val searchable_by : Query.Column.t list
-  val sortable_by : Query.Column.t list
 
   val create
     :  ?id:Id.t
@@ -82,14 +78,19 @@ module type TSig = sig
     -> after:record
     -> unit
     -> unit Lwt.t
-
-  val all_by_entity
-    :  ?query:Query.t
-    -> Database.Label.t
-    -> Pool_common.Id.t
-    -> (t list * Query.t) Lwt.t
 end
 
 module T : functor (R : RecordSig) -> sig
   include TSig with type record = R.t
 end
+
+val default_query : Query.t
+val filterable_by : Query.Filter.human option
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list
+
+val all_by_entity
+  :  ?query:Query.t
+  -> Database.Label.t
+  -> Pool_common.Id.t
+  -> (t list * Query.t) Lwt.t

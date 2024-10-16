@@ -110,11 +110,7 @@ let changelog req =
       ()
   in
   let open Organisational_unit in
-  Helpers.Changelog.htmx_handler
-    ~version_history:(module VersionHistory)
-    ~url
-    (Id.to_common ou_id)
-    req
+  Helpers.Changelog.htmx_handler ~url (Id.to_common ou_id) req
 ;;
 
 let new_form = show `New

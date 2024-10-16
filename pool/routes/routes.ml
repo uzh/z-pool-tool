@@ -664,6 +664,7 @@ module Admin = struct
         ; post "delete" ~middlewares:[ Access.update ] mark_as_deleted
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
+        ; get "/changelog" ~middlewares:[ Access.changelog ] changelog
         ; get
             "/past-experiments"
             ~middlewares:[ Access.read ]
@@ -689,6 +690,11 @@ module Admin = struct
       [ get "" ~middlewares:[ Access.index ] index
       ; choose ~scope:(Contact |> url_key) specific
       ]
+    in
+    let users =
+      let open Handler.Admin.Users in
+      let specific = [ get "" redirect ] in
+      [ choose ~scope:(User |> url_key) specific ]
     in
     let custom_fields =
       let open CustomField in
@@ -905,6 +911,7 @@ module Admin = struct
       ; choose ~scope:"/locations" location
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
+      ; choose ~scope:"/users" users
       ; choose ~scope:"/custom-fields" custom_fields
       ; choose ~scope:(add_human_field Field.Sessions) sessions
       ; choose ~scope:(add_human_field OrganisationalUnit) organisational_units

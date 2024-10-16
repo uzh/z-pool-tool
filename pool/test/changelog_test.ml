@@ -240,8 +240,6 @@ let update_list_value () =
   in
   let () = run_test "remove an option" options expected_changes in
   (* Add and remove an option *)
-  (* TODO: This change is catched by the variant comparison. Should the index be
-     stored as well? *)
   let options = [ opt1; opt3 ] in
   let expected_changes =
     let open Changelog.Changes in

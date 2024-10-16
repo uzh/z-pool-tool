@@ -487,6 +487,15 @@ let message_history req =
   |> Lwt_result.return
 ;;
 
+let changelog req =
+  let id = contact_id req in
+  let url = HttpUtils.Url.Admin.contact_path ~suffix:"changelog" ~id () in
+  let to_human { Pool_context.database_label; language; _ } =
+    Custom_field.changelog_to_human database_label language
+  in
+  Helpers.Changelog.htmx_handler ~to_human ~url (Contact.Id.to_common id) req
+;;
+
 module Tags = Admin_contacts_tags
 
 module Access : sig
@@ -495,6 +504,7 @@ module Access : sig
   val external_data_ids : Rock.Middleware.t
   val promote : Rock.Middleware.t
   val message_history : Rock.Middleware.t
+  val changelog : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
@@ -552,4 +562,6 @@ end = struct
         ~id:(Guard.Uuid.target_of Contact.Id.value id)
         ())
   ;;
+
+  let changelog = read
 end

@@ -23,9 +23,6 @@ module PublicTitle = struct
   let schema ?default () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
     Pool_conformist.schema_decoder ?default create value field
   ;;
-
-  (* TODO: Remove *)
-  let placeholder = "###"
 end
 
 module InternalDescription = struct

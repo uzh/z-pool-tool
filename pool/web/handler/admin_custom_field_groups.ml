@@ -199,7 +199,6 @@ let changelog req =
     in
     Lwt_result.ok
     @@ Helpers.Changelog.htmx_handler
-         ~version_history:(module Custom_field.GroupVersionHistory)
          ~url
          (Custom_field.Group.Id.to_common group_id)
          req

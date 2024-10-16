@@ -353,14 +353,9 @@ let changelog req =
   let id = filter_id req in
   let url = HttpUtils.Url.Admin.filter_path ~suffix:"changelog" ~id () in
   let to_human { Pool_context.database_label; language; _ } =
-    VersionHistory.changelog_to_human database_label language
+    Custom_field.changelog_to_human database_label language
   in
-  Helpers.Changelog.htmx_handler
-    ~version_history:(module VersionHistory)
-    ~to_human
-    ~url
-    (Id.to_common id)
-    req
+  Helpers.Changelog.htmx_handler ~to_human ~url (Id.to_common id) req
 ;;
 
 module Access : module type of Helpers.Access = struct

@@ -196,7 +196,6 @@ let changelog req =
     let open Custom_field in
     Lwt_result.ok
     @@ Helpers.Changelog.htmx_handler
-         ~version_history:(module OptionVersionHistory)
          ~url
          (SelectOption.Id.to_common option_id)
          req

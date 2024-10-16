@@ -432,6 +432,12 @@ val validate_partial_update
   -> Pool_message.Field.t * Pool_common.Version.t * string list
   -> (PartialUpdate.t, Pool_message.Error.t) Lwt_result.t
 
+val changelog_to_human
+  :  Database.Label.t
+  -> Pool_common.Language.t
+  -> Changelog.t
+  -> Changelog.t Lwt.t
+
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
   | AnswerUpserted of Public.t * Contact.Id.t * Pool_context.user
@@ -610,3 +616,9 @@ end
 module VersionHistory : Changelog.TSig with type record = t
 module OptionVersionHistory : Changelog.TSig with type record = SelectOption.t
 module GroupVersionHistory : Changelog.TSig with type record = Group.t
+
+module AnswerRecord : sig
+  type t
+end
+
+module AnswerVersionHistory : Changelog.TSig with type record = AnswerRecord.t
