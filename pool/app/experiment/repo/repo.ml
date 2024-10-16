@@ -563,7 +563,7 @@ module Sql = struct
         AND t.role = ?
     |sql}
     in
-    let conditions = "t.role IS NULL" in
+    let conditions = "(t.role IS NULL OR t.mark_as_deleted IS NOT NULL)" in
     let dyn =
       let open Pool_common in
       Dynparam.(
