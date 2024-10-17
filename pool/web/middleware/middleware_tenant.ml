@@ -19,14 +19,16 @@ let validate () =
   let filter handler req =
     let open Pool_context in
     match%lwt tenant_of_request req with
-    | Ok tenant ->
+    | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
       let open Database.Status in
-      (match tenant.Pool_tenant.status with
-       | Active ->
-         Settings.find_languages tenant.Pool_tenant.database_label
-         ||> Tenant.create tenant
-         ||> Tenant.set req
-         >|> handler
+      let handle_request =
+        Settings.find_languages database_label
+        ||> Tenant.create tenant
+        ||> Tenant.set req
+        >|> handler
+      in
+      (match status with
+       | Active -> handle_request
        | Maintenance | MigrationsPending | MigrationsFailed ->
          let open Pool_common in
          let language = Language.En in
@@ -37,7 +39,13 @@ let validate () =
          |> Layout.Error.create
          |> Sihl.Web.Response.of_html
          |> Lwt.return
-       | ConnectionIssue | Disabled -> Http_utils.redirect_to "/error")
+       | ConnectionIssue ->
+         (match%lwt Database.connect database_label with
+          | Ok () ->
+            let%lwt () = Database.Tenant.update_status database_label Active in
+            handle_request
+          | Error _ -> Http_utils.redirect_to "/error")
+       | Disabled -> Http_utils.redirect_to "/error")
     | Error err ->
       let (_ : Pool_message.Error.t) =
         Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err
