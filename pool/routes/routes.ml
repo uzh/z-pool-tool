@@ -21,7 +21,7 @@ let add_human_field = CCFun.(Field.human_url %> Format.asprintf "/%s")
 let global_middlewares =
   [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
   ; CustomMiddleware.Error.middleware ()
-  ; Middleware.trailing_slash ()
+  ; CustomMiddleware.TrailingSlash.middleware ()
   ; Middleware.static_file ()
   ; Middleware.flash ()
   ; Middleware.csrf

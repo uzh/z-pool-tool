@@ -81,11 +81,8 @@ let find_field_router_param_opt req field =
 ;;
 
 let retain_url_params req url =
-  let open CCList in
   let open Uri in
-  Opium.Request.query_list req
-  |> filter_map (fun (k, v) -> v |> head_opt |> CCOption.map (CCPair.make k))
-  |> add_query_params' (of_string url)
+  req.Opium.Request.target |> of_string |> query |> with_query (of_string url)
 ;;
 
 let find_query_lang req =

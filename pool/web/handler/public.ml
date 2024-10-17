@@ -9,7 +9,8 @@ let src = Logs.Src.create "handler.public"
 let create_layout req = General.create_tenant_layout req
 
 let root_redirect req =
-  Http_utils.redirect_to
+  let open Http_utils in
+  (fun path -> retain_url_params req path |> Uri.to_string |> redirect_to)
   @@
   match Http_utils.is_req_from_root_host req with
   | true -> "/root"
