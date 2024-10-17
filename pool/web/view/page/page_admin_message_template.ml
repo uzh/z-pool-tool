@@ -299,7 +299,7 @@ let template_inputs
 ;;
 
 let template_form
-  ({ Pool_context.language; query_language; csrf; _ } as context)
+  ({ Pool_context.language; query_parameters; csrf; _ } as context)
   ?entity
   ?(hide_text_message_input = false)
   ?languages
@@ -311,7 +311,7 @@ let template_form
   flash_fetcher
   =
   let open Message_template in
-  let externalize = Http_utils.externalize_path_with_lang query_language in
+  let externalize = Http_utils.externalize_path_with_params query_parameters in
   let submit, template =
     let open Pool_message.Control in
     let field = Field.MessageTemplate |> CCOption.pure in

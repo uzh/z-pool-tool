@@ -55,6 +55,7 @@ let create_target_path ?uuid =
     | `Schedule
     | `Session
     | `SessionClose
+    | `SignupCode
     | `Smtp
     | `Statistics
     | `System

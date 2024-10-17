@@ -37,6 +37,7 @@ let rec field_to_string =
   | Chronological -> "chronologisch"
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"
+  | Code -> "Code"
   | Confirmed -> "Bestätigt"
   | ConfirmedAt -> "Bestätigt am"
   | Contact -> "Kontakt"
@@ -257,6 +258,7 @@ let rec field_to_string =
   | ShowUpCount -> "Anwesende"
   | ShowExteralDataIdLinks -> "Link zu externen Datenidentifikatoren anzeigen"
   | SignedUpAt -> "Eingeschrieben am"
+  | SignUpCode -> "Registrierungscode"
   | SignUpCount -> "Neuregistrierungen"
   | SMS -> "SMS"
   | SmsText -> "SMS Text"
@@ -317,6 +319,7 @@ let rec field_to_string =
   | Value -> "Wert"
   | ValueOf field -> combine Value field
   | VerificationCode -> "Verifizierungs Code"
+  | VerificationCount -> "Anz. Verifizierungen"
   | Verified -> "Verifiziert"
   | Version -> "Version"
   | Virtual -> "Virtuell"

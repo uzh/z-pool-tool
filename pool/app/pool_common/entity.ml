@@ -29,6 +29,12 @@ module Language = struct
     | En -> LanguageEn
     | De -> LanguageDe
   ;;
+
+  let read_opt str =
+    let str = CCString.uppercase_ascii str in
+    try Some (Utils.Json.read_variant t_of_yojson str) with
+    | _ -> None
+  ;;
 end
 
 module Version = struct

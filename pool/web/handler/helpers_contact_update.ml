@@ -2,7 +2,7 @@ let tags = Pool_context.Logger.Tags.req
 let src = Logs.Src.create "handler.contact.helpers_contact_update"
 
 let toggle_paused
-  { Pool_context.database_label; query_language; _ }
+  { Pool_context.database_label; query_parameters; _ }
   redirect_path
   contact
   tags
@@ -27,5 +27,5 @@ let toggle_paused
   |>> handle
   |>> redirect
   |> Utils.Lwt_result.map_error (fun err ->
-    Http_utils.(err, path_with_language query_language redirect_path))
+    Http_utils.(err, url_with_field_params query_parameters redirect_path))
 ;;

@@ -2,6 +2,7 @@ include Entity
 include Event
 module Guard = Entity_guard
 
+(* TODO: Caching *)
 let[@warning "-4"] find_languages pool =
   let open Utils.Lwt_result.Infix in
   Repo.find_languages pool

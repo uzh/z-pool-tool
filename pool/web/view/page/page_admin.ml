@@ -17,6 +17,7 @@ module OrganisationalUnit = Page_admin_organisational_units
 module Queue = Page_admin_queue
 module Session = Page_admin_session
 module Settings = Page_admin_settings
+module SignupCodes = Page_admin_signup_codes
 module TimeWindow = Page_admin_time_window
 module WaitingList = Page_admin_waiting_list
 include Page_admin_edit

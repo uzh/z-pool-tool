@@ -29,6 +29,7 @@ type t =
   | Chronological
   | City
   | ClosedAt
+  | Code
   | Confirmed
   | ConfirmedAt
   | Contact
@@ -239,6 +240,7 @@ type t =
   | ShowExteralDataIdLinks
   | ShowUpCount
   | SignedUpAt
+  | SignUpCode
   | SignUpCount
   | SMS
   | SmsText
@@ -299,6 +301,7 @@ type t =
   | Value
   | ValueOf of t
   | VerificationCode
+  | VerificationCount
   | Verified
   | Version
   | Virtual

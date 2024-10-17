@@ -241,6 +241,7 @@ let nav_link_to_string = function
   | Settings -> "Einstellungen"
   | Smtp -> "E-Mail Server (SMTP)"
   | SystemSettings -> "Systemeinstellungen"
+  | SignupCodes -> "Registrierungscodes"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "SMS"

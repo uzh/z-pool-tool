@@ -235,6 +235,7 @@ let nav_link_to_string = function
   | Settings -> "Settings"
   | Smtp -> "Email Server (SMTP)"
   | SystemSettings -> "System settings"
+  | SignupCodes -> "Signup Codes"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "Text messages"

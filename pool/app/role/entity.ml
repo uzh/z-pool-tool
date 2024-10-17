@@ -122,6 +122,7 @@ module Target = struct
     | `Schedule
     | `Session
     | `SessionClose
+    | `SignupCode
     | `Smtp
     | `Statistics
     | `System
@@ -169,6 +170,7 @@ module Target = struct
     | "schedule", [] -> Ok `Schedule
     | "session", [] -> Ok `Session
     | "sessionclose", [] -> Ok `SessionClose
+    | "signupcode", [] -> Ok `SignupCode
     | "smtp", [] -> Ok `Smtp
     | "statistics", [] -> Ok `Statistics
     | "system", [] -> Ok `System
