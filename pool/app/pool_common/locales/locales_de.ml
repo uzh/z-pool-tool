@@ -319,6 +319,7 @@ let rec field_to_string =
   | Value -> "Wert"
   | ValueOf field -> combine Value field
   | VerificationCode -> "Verifizierungs Code"
+  | VerificationCount -> "Anz. Verifizierungen"
   | Verified -> "Verifiziert"
   | Version -> "Version"
   | Virtual -> "Virtuell"

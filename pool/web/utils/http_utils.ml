@@ -97,17 +97,17 @@ let find_query_lang req =
       %> CCOption.of_result
 ;;
 
-let find_query_param req field decode =
-  let open CCResult.Infix in
-  Sihl.Web.Request.query (Pool_message.Field.show field) req
-  |> CCOption.to_result Pool_message.Error.(NotFound field)
-  >>= decode
+let find_query_param_opt req field decode =
+  let open CCOption.Infix in
+  let open Pool_message in
+  Sihl.Web.Request.query (Field.url_key field) req
+  >>= CCFun.(decode %> CCOption.of_result)
 ;;
 
-(* let path_with_language lang path = let open Pool_common in let open
-   Pool_message in lang |> CCOption.map (fun lang -> add_field_query_params path
-   [ Field.Language, lang |> Language.show |> CCString.lowercase_ascii ]) |>
-   CCOption.value ~default:path ;; *)
+let find_query_param req field decode =
+  find_query_param_opt req field decode
+  |> CCOption.to_result (Pool_message.Error.NotFound field)
+;;
 
 let redirect_to_with_actions ?(skip_externalize = false) path actions =
   let externalize_path path =

@@ -9,25 +9,32 @@ module Code : sig
 end
 
 module Count : sig
-  include Pool_model.Base.IntegerSig
+  type t
+
+  val value : t -> int
 end
 
 type t =
   { id : Id.t
   ; code : Code.t
-  ; count : Count.t
+  ; signup_count : Count.t
+  ; verification_count : Count.t
   }
 
-type event = Updated of Code.t
+type event =
+  | SignedUp of Code.t
+  | Verified of Code.t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Database.Label.t -> event -> unit Lwt.t
-val insert : Database.Label.t -> string -> unit Lwt.t
+val signedup : string -> event
+val verified : string -> event
 val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 val column_code : Query.Column.t
-val column_count : Query.Column.t
+val column_signup_count : Query.Column.t
+val column_verification_count : Query.Column.t
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val filterable_by : Query.Filter.human option

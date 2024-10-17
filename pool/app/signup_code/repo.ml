@@ -2,37 +2,46 @@ open Entity
 
 let t =
   let open Database.Caqti_encoders in
-  let decode (id, (code, (count, ()))) = Ok { id; code; count } in
+  let decode (id, (code, (signup_count, (verification_count, ())))) =
+    Ok { id; code; signup_count; verification_count }
+  in
   let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let open Schema in
-  custom ~encode ~decode Caqti_type.[ string; string; int ]
+  custom ~encode ~decode Caqti_type.[ string; string; int; int ]
 ;;
 
-let insert_request =
+let insert_request column =
   let open Caqti_request.Infix in
-  {sql|
-    INSERT INTO pool_signup_codes (
-      uuid,
-      code,
-      count
-    ) VALUES (
-      UNHEX(REPLACE(UUID(), '-', '')),
-      $1,
-      1
-    ) ON DUPLICATE KEY UPDATE
-        count = count + 1
-  |sql}
+  let column =
+    match column with
+    | `Signup -> "signup_count"
+    | `Verification -> "verification_count"
+  in
+  [%string
+    {sql|
+      INSERT INTO pool_signup_codes (
+        uuid,
+        code,
+        %{column}
+      ) VALUES (
+        UNHEX(REPLACE(UUID(), '-', '')),
+        $1,
+        1
+      ) ON DUPLICATE KEY UPDATE
+          %{column} = %{column} + 1
+    |sql}]
   |> Caqti_type.string ->. Caqti_type.unit
 ;;
 
 let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_signup_codes.uuid"
   ; "pool_signup_codes.code"
-  ; "pool_signup_codes.count"
+  ; "pool_signup_codes.signup_count"
+  ; "pool_signup_codes.verification_count"
   ]
 ;;
 
-let insert pool = Database.exec pool insert_request
+let insert pool column = Database.exec pool (insert_request column)
 
 let find_request_sql ?(count = false) where_fragment =
   let columns =

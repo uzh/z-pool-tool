@@ -6,9 +6,17 @@ let list Pool_context.{ language; _ } (admins, query) =
   let data_table =
     Component.DataTable.create_meta ~search:searchable_by url query language
   in
-  let cols = [ `column column_code; `column column_count ] in
-  let row { code; count; _ } =
-    [ Code.value code; Count.value count |> CCInt.to_string ]
+  let cols =
+    [ `column column_code
+    ; `column column_signup_count
+    ; `column column_verification_count
+    ]
+  in
+  let row { code; signup_count; verification_count; _ } =
+    [ Code.value code
+    ; Count.value signup_count |> CCInt.to_string
+    ; Count.value verification_count |> CCInt.to_string
+    ]
     |> CCList.map (fun x -> td [ txt x ])
     |> tr
   in

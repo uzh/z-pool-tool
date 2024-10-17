@@ -77,16 +77,17 @@ let sign_up_create req =
          in
          let%lwt token = Email.create_token database_label email_address in
          let signup_code =
-           let open CCOption.Infix in
            let open Signup_code in
-           Sihl.Web.Request.query (Field.show url_key) req
-           >>= CCFun.(Code.create %> CCOption.of_result)
+           let open CCOption.Infix in
+           Pool_context.Utils.find_query_param query_parameters url_key
+           >>= CCFun.(Code.create %> CCResult.to_opt)
          in
          let query_language =
            Pool_context.Utils.query_language tenant_languages query_parameters
          in
          let%lwt verification_mail =
            Message_template.SignUpVerification.create
+             ?signup_code
              database_label
              (CCOption.value ~default:language query_language)
              tenant
@@ -202,20 +203,26 @@ let email_verification req =
      in
      let* events =
        let open UserCommand in
+       let signup_code =
+         let open Signup_code in
+         let open CCOption.Infix in
+         Pool_context.Utils.find_query_param query_parameters url_key
+         >>= CCFun.(Code.create %> CCResult.to_opt)
+       in
        let%lwt admin =
          Admin.find database_label (email |> Email.user_id |> Admin.Id.of_user)
        in
        let%lwt contact =
          Contact.find database_label (Email.user_id email |> Contact.Id.of_user)
        in
-       let verify_email user =
-         VerifyEmail.(handle ~tags user email) |> Lwt_result.lift
+       let verify_email ?signup_code user =
+         VerifyEmail.(handle ~tags ?signup_code user email) |> Lwt_result.lift
        in
        let update_email user =
          UpdateEmail.(handle ~tags user email) |> Lwt_result.lift
        in
        match email |> Email.user_is_confirmed, contact, admin with
-       | false, Ok contact, _ -> verify_email (Contact contact)
+       | false, Ok contact, _ -> verify_email ?signup_code (Contact contact)
        | true, Ok contact, _ -> update_email (Contact contact)
        | false, Error _, Ok admin -> verify_email (Admin admin)
        | true, _, Ok admin -> update_email (Admin admin)

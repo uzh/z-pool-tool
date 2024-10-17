@@ -373,6 +373,8 @@ type t =
   | ValueOf of t [@name "value_of"] [@printer nested "value_of" show]
   | VerificationCode [@name "verification_code"]
   [@printer go "verification_code"]
+  | VerificationCount [@name "verification_count"]
+  [@printer go "verification_count"]
   | Verified [@name "verified"] [@printer go "verified"]
   | Version [@name "version"] [@printer go "version"]
   | Virtual [@name "virtual"] [@printer go "virtual"]

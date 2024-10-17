@@ -42,6 +42,10 @@ module Utils = struct
     %> Lwt.map (CCOption.to_result (Error.NotFound field))
   ;;
 
+  let find_query_param params field =
+    CCList.assoc_opt ~eq:Pool_message.Field.equal field params
+  ;;
+
   let query_language tenant_languages query_parameters =
     let open Pool_message in
     let open CCOption.Infix in

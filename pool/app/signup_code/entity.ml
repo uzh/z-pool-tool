@@ -14,28 +14,35 @@ module Code = struct
 end
 
 module Count = struct
-  include Pool_model.Base.Integer
+  type t = int
 
-  let create = CCResult.return
-  let field = Field.Count
-  let schema = schema field create
+  let value m = m
 end
 
 type t =
   { id : Id.t
   ; code : Code.t
-  ; count : Count.t
+  ; signup_count : Count.t
+  ; verification_count : Count.t
   }
 
 let column_code = (Code.field, "pool_signup_codes.code") |> Query.Column.create
 
-let column_count =
-  (Count.field, "pool_signup_codes.count") |> Query.Column.create
+let column_signup_count =
+  (Field.SignUpCount, "pool_signup_codes.signup_count") |> Query.Column.create
+;;
+
+let column_verification_count =
+  (Field.VerificationCount, "pool_signup_codes.verification_count")
+  |> Query.Column.create
 ;;
 
 let filterable_by = None
 let searchable_by = [ column_code ]
-let sortable_by = [ column_code; column_count ]
+
+let sortable_by =
+  [ column_code; column_signup_count; column_verification_count ]
+;;
 
 let default_sort =
   Query.Sort.{ column = column_code; order = SortOrder.Descending }

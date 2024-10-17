@@ -65,7 +65,7 @@ end = struct
     let signup_code_event =
       signup_code
       |> CCOption.map_or ~default:[] (fun code ->
-        Signup_code.Updated code |> Pool_event.signupcode |> CCList.return)
+        Signup_code.SignedUp code |> Pool_event.signupcode |> CCList.return)
     in
     Ok
       ([ Contact.Created contact |> Pool_event.contact

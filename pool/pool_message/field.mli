@@ -301,6 +301,7 @@ type t =
   | Value
   | ValueOf of t
   | VerificationCode
+  | VerificationCount
   | Verified
   | Version
   | Virtual
