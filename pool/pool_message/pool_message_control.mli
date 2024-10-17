@@ -22,6 +22,7 @@ type t =
   | Enroll
   | EnterNewCellPhone
   | Filter of Field.t option
+  | Generate
   | LoadDefaultTemplate
   | Login
   | Manage of Field.t
