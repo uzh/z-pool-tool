@@ -46,6 +46,10 @@ module Utils = struct
     CCList.assoc_opt ~eq:Pool_message.Field.equal field params
   ;;
 
+  let remove_query_param params field =
+    CCList.remove_assoc ~eq:Pool_message.Field.equal field params
+  ;;
+
   let query_language tenant_languages query_parameters =
     let open Pool_message in
     let open CCOption.Infix in
@@ -65,8 +69,9 @@ module Utils = struct
     in
     function
     | Admin _ -> []
-    | Contact _ -> filter_params Field.[ Language ]
-    | Guest -> filter_params Field.[ Language; Location; SignUpCode ]
+    | Contact _ -> filter_params Field.[ Redirected; Language ]
+    | Guest ->
+      filter_params Field.[ Redirected; Language; Location; SignUpCode ]
   ;;
 end
 

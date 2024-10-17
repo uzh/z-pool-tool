@@ -212,6 +212,7 @@ type t =
   | Reason
   | Recipient
   | Redirect
+  | Redirected
   | RegistrationDisabled
   | RegistrationPossible
   | Reminder

@@ -248,15 +248,16 @@ let email_verification req =
 
 let terms req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; language; query_parameters; _ } as context)
+    =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@
     let%lwt terms =
       I18n.find_by_key database_label I18n.Key.TermsAndConditions language
     in
     let notification =
-      req
-      |> Sihl.Web.Request.query "redirected"
+      Pool_context.Utils.find_query_param query_parameters Field.Redirected
       |> CCOption.map (CCFun.const Pool_common.I18n.TermsAndConditionsUpdated)
     in
     Page.Contact.terms ?notification terms context

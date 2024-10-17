@@ -47,9 +47,8 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
        | Error TermsAndConditionsNotAccepted ->
          redirect_to_with_actions
            (url_with_field_params
-              query_parameters
-              "/accept-terms?redirected=true")
-           (* TODO: Should this also be a field? *)
+              ((Pool_message.Field.Redirected, "true") :: query_parameters)
+              "/accept-terms")
            []
        | Error ContactUnconfirmed ->
          redirect_to

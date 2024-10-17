@@ -268,6 +268,7 @@ type t =
   | Reason [@name "reason"] [@printer go "reason"]
   | Recipient [@name "recipient"] [@printer go "recipient"]
   | Redirect [@name "redirect"] [@printer go "redirect"]
+  | Redirected [@name "redirected"] [@printer go "redirected"]
   | RegistrationDisabled [@name "registration_disabled"]
   [@printer go "registration_disabled"]
   | RegistrationPossible [@name "registration_possible"]

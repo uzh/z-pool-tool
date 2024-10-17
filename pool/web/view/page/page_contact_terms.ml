@@ -9,7 +9,10 @@ let terms
   =
   let terms = terms |> I18n.content_to_string |> Unsafe.data in
   let open Pool_common in
-  let externalize = Http_utils.externalize_path_with_params query_parameters in
+  let externalize =
+    Http_utils.externalize_path_with_params
+      (Pool_context.Utils.remove_query_param query_parameters Field.Redirected)
+  in
   let notifiaction =
     match notification with
     | Some notification ->

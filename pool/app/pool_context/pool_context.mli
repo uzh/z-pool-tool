@@ -84,6 +84,11 @@ module Utils : sig
     -> user
     -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
 
+  val remove_query_param
+    :  (Pool_message.Field.t * string) list
+    -> Pool_message.Field.t
+    -> (Pool_message.Field.t * string) list
+
   val find_query_param
     :  (Pool_message.Field.t * string) list
     -> Pool_message.Field.t
