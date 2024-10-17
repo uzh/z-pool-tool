@@ -88,7 +88,6 @@ let retain_url_params req url =
   |> add_query_params' (of_string url)
 ;;
 
-(* TODO: Remove?*)
 let find_query_lang req =
   let open CCOption.Infix in
   Sihl.Web.Request.query Pool_message.Field.(Language |> show) req
@@ -97,16 +96,11 @@ let find_query_lang req =
       %> CCOption.of_result
 ;;
 
-let find_query_param_opt req field decode =
-  let open CCOption.Infix in
-  let open Pool_message in
-  Sihl.Web.Request.query (Field.url_key field) req
-  >>= CCFun.(decode %> CCOption.of_result)
-;;
-
 let find_query_param req field decode =
-  find_query_param_opt req field decode
-  |> CCOption.to_result (Pool_message.Error.NotFound field)
+  let open CCResult.Infix in
+  Sihl.Web.Request.query (Pool_message.Field.show field) req
+  |> CCOption.to_result Pool_message.Error.(NotFound field)
+  >>= decode
 ;;
 
 let redirect_to_with_actions ?(skip_externalize = false) path actions =
