@@ -447,8 +447,9 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
      Onlineumfrage. Wird die URL der Umfrage in der Einladung verschickt, \
      können eingeladene Kontakte diese starten, ohne dass eine Anmeldung \
      erstellt wird. Sie können im Pool nicht einsehen, wer an der Umfrage \
-     teilgenommen hat.<br/>Dynamische URL Parameter, wie die \
-     <code>callbackUrl</code>, werden nicht mit effektiven Werten ersetzt."
+     teilgenommen hat.<br/><strong>Dynamische URL Parameter, wie die \
+     <code>callbackUrl</code>, werden nicht mit effektiven Werten \
+     ersetzt.</strong>"
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
