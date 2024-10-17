@@ -7,6 +7,9 @@ let to_string = function
   | Activity -> "activity"
   | Address -> "address"
   | AdminComment -> "admin comment"
+  | AnnouncementsListTitle -> "Announcements"
+  | AnnouncementsTenantSelect ->
+    "Select on which tenants the announcement should be displayed."
   | AssignmentEditTagsWarning ->
     "Please note that editing the assignment does not assign or remove any \
      tags from the contact that may have been assigned by participating in \
@@ -200,6 +203,7 @@ let to_string = function
 let nav_link_to_string = function
   | ActorPermissions -> "Personal Permissions"
   | Admins -> "Admins"
+  | Announcements -> "Announcements"
   | Assignments -> "Assignments"
   | ContactInformation -> "Contact information"
   | Contacts -> "Contacts"

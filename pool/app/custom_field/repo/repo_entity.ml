@@ -3,16 +3,8 @@ open Entity
 open Ppx_yojson_conv_lib.Yojson_conv
 module Answer = Repo_entity_answer
 
-let encode_yojson of_t t = t |> of_t |> Yojson.Safe.to_string |> CCResult.return
-
-let decode_yojson t_of_yojson field t =
-  let read s = s |> Yojson.Safe.from_string |> t_of_yojson in
-  try Ok (read t) with
-  | _ ->
-    Error
-      (Pool_message.(Error.Invalid field)
-       |> Pool_common.Utils.error_to_string Language.En)
-;;
+let encode_yojson = Pool_common.Repo.encode_yojson
+let decode_yojson = Pool_common.Repo.decode_yojson
 
 type multi_select_answer = SelectOption.Id.t list [@@deriving yojson]
 

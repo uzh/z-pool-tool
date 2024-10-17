@@ -18,6 +18,7 @@ let rec field_to_string =
   | AdminInputOnly -> "input only by admins"
   | AdminViewOnly -> "only visible for admins"
   | AllowUninvitedSignup -> "Allow registration of all contacts"
+  | Announcement -> "announcement"
   | Answer -> "answer"
   | AreaCode -> "area code"
   | Argument -> "argument"
@@ -252,6 +253,8 @@ let rec field_to_string =
   | Setting -> "setting"
   | Settings -> "settings"
   | ShowUpCount -> "show ups"
+  | ShowToAdmins -> "Show to admins"
+  | ShowToContacts -> "Show to contacts"
   | ShowExteralDataIdLinks -> "show links to external data identifiers"
   | SignedUpAt -> "signed up at"
   | SignUpCount -> "new sign ups"
@@ -291,6 +294,7 @@ let rec field_to_string =
   | TermsAndConditions -> "terms and conditions"
   | TermsAndConditionsLastAccepted -> "terms and conditions last accepted at"
   | TestPhoneNumber -> "test phone number"
+  | Text -> "text"
   | TextMessage -> "text message"
   | TextMessageDlrStatus -> "text message status"
   | TextMessageLeadTime -> "text message lead time"
@@ -439,6 +443,17 @@ let rec error_to_string =
     "Some assignments have errors. Please resolve them first."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | AssignmentAlreadySubmitted -> "This assignment was already submitted."
+  | AtLeastOneLanguageRequired field ->
+    field
+    |> field_to_string
+    |> CCString.trim
+    |> Format.asprintf "%s has to be provided in at least one language."
+    |> CCString.capitalize_ascii
+  | AtLeastOneSelected (field1, field2) ->
+    Format.asprintf
+      "At least one of the fields '%s' or '%s' has to be selected."
+      (field_to_string field1)
+      (field_to_string field2)
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"
@@ -698,6 +713,7 @@ let control_to_string =
   | Enroll -> format_submit "enroll" None
   | EnterNewCellPhone -> "Enter a different number"
   | Filter field -> format_submit "filter" field
+  | Hide field -> format_submit "hide" field
   | Login -> format_submit "login" None
   | LoadDefaultTemplate -> format_submit "load default template" None
   | Manage field -> format_submit "manage" (Some field)

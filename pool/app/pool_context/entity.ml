@@ -29,13 +29,29 @@ type t =
   ; csrf : string
   ; user : user
   ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
+  ; announcement : Announcement.t option
   }
 [@@deriving show, sexp_of]
 
 let create
-  (query_language, language, database_label, message, csrf, user, guardian)
+  ( query_language
+  , language
+  , database_label
+  , message
+  , csrf
+  , user
+  , guardian
+  , announcement )
   =
-  { query_language; language; database_label; message; csrf; user; guardian }
+  { query_language
+  ; language
+  ; database_label
+  ; message
+  ; csrf
+  ; user
+  ; guardian
+  ; announcement
+  }
 ;;
 
 let find_context key req =

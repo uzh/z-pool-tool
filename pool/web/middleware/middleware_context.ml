@@ -80,8 +80,31 @@ let context () =
           in
           Lwt.return (query_lang, language, [])
       in
+      let%lwt announcement =
+        match is_root with
+        | true -> Lwt.return_none
+        | false ->
+          let context =
+            match user with
+            | Admin admin -> Some (`Admin, Admin.(admin |> id |> Id.to_common))
+            | Contact contact ->
+              Some (`Contact, Contact.(contact |> id |> Id.to_common))
+            | Guest -> None
+          in
+          context
+          |> CCOption.map_or
+               ~default:Lwt.return_none
+               (Announcement.find_by_user database_label)
+      in
       create
-        (query_lang, language, database_label, message, csrf, user, guardian)
+        ( query_lang
+        , language
+        , database_label
+        , message
+        , csrf
+        , user
+        , guardian
+        , announcement )
       |> Lwt.return_ok
     in
     match context with

@@ -184,6 +184,14 @@ module Repo : sig
     -> ('b -> 'a)
     -> 'b Caqti_type.t
 
+  val encode_yojson : ('a -> Yojson.Safe.t) -> 'a -> (string, 'b) result
+
+  val decode_yojson
+    :  (Yojson.Safe.t -> 'a)
+    -> Pool_message.Field.t
+    -> string
+    -> ('a, string) result
+
   module Model : sig
     module SelectorType : module type of Repo.Model.SelectorType
   end

@@ -1,3 +1,4 @@
+module Announcement = Component_announcement
 module Button = Button
 module ButtonGroup = Component_button_group
 module Calendar = Component_calendar

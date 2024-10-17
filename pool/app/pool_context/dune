@@ -1,6 +1,14 @@
 (library
  (name pool_context)
- (libraries admin contact logger pool_common pool_tenant sihl utils)
+ (libraries
+  admin
+  announcement
+  contact
+  logger
+  pool_common
+  pool_tenant
+  sihl
+  utils)
  (preprocess
   (pps
    lwt_ppx
