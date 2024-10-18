@@ -3,6 +3,7 @@
  (name pool_event)
  (libraries
   admin
+  announcement
   assignment
   assignment_job
   contact

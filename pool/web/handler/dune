@@ -1,6 +1,7 @@
 (library
  (name handler)
  (libraries
+  announcement
   assignment
   assignment_job
   contact

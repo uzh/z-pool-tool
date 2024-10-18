@@ -11,8 +11,11 @@ let assets = function
 let charset = meta ~a:[ a_charset "utf8" ] ()
 let body_tag_classnames = [ "height-100"; "flexcolumn" ]
 
-let main_tag children =
-  main [ div ~a:[ a_class [ "inset-xl"; "sm-inset-lg"; "vertical" ] ] children ]
+let main_tag ?(announcement = txt "") children =
+  main
+    [ announcement
+    ; div ~a:[ a_class [ "inset-xl"; "sm-inset-lg"; "vertical" ] ] children
+    ]
 ;;
 
 let viewport =

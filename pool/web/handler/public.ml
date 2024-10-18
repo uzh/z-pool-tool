@@ -133,7 +133,14 @@ let denied req =
          let open Pool_context in
          let csrf = Sihl.Web.Csrf.find_exn req in
          create
-           ([], Pool_common.Language.En, database_label, None, csrf, Guest, [])
+           ( []
+           , Pool_common.Language.En
+           , database_label
+           , None
+           , csrf
+           , Guest
+           , []
+           , None )
        in
        Layout.Root.create context html)
     ||> Sihl.Web.Response.of_html
@@ -238,4 +245,24 @@ let terms_and_conditions req =
     >|- fun err -> err, redirect_path
   in
   result |> Http_utils.extract_happy_path ~src req
+;;
+
+let hide_announcement req =
+  let open Http_utils in
+  let result { Pool_context.user; database_label; _ } =
+    let open Utils.Lwt_result.Infix in
+    let open Announcement in
+    let* announcement =
+      find_id Id.validate Field.Announcement req
+      |> Lwt_result.lift
+      >>= find_of_tenant database_label
+    in
+    let* () =
+      Cqrs_command.Announcement_command.Hide.handle (user, announcement)
+      |> Lwt_result.lift
+      |>> Pool_event.handle_events Database.root
+    in
+    Tyxml.Html.txt "" |> Htmx.html_to_plain_text_response |> Lwt_result.return
+  in
+  result |> Htmx.handle_error_message ~src req
 ;;

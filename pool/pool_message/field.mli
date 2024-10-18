@@ -10,6 +10,7 @@ type t =
   | AdminInputOnly
   | AdminViewOnly
   | AllowUninvitedSignup
+  | Announcement
   | Answer
   | AreaCode
   | Argument
@@ -240,6 +241,8 @@ type t =
   | Settings
   | ShowExteralDataIdLinks
   | ShowUpCount
+  | ShowToAdmins
+  | ShowToContacts
   | SignedUpAt
   | SignUpCode
   | SignUpCount
@@ -279,6 +282,7 @@ type t =
   | TermsAndConditions
   | TermsAndConditionsLastAccepted
   | TestPhoneNumber
+  | Text
   | TextMessage
   | TextMessageDlrStatus
   | TextMessageLeadTime
