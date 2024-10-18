@@ -63,6 +63,7 @@ type t =
   | Stop of Field.t option
   | ToggleAll
   | Unassign of Field.t option
+  | Unverify
   | Update of Field.t option
   | UpdateAssignmentsMatchFilter
   | UpdateOrder

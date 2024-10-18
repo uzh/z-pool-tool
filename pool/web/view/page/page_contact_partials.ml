@@ -6,7 +6,7 @@ let toggle_status_form
   query_language
   ?has_icon
   ~action
-  ~confirmable
+  ?confirmable
   ~submit_type
   ~control
   ()
@@ -14,14 +14,15 @@ let toggle_status_form
   let open Component.Input in
   let externalize = Http_utils.externalize_path_with_lang query_language in
   let confirmable =
-    Pool_common.Utils.confirmable_to_string language confirmable
+    confirmable
+    |> CCOption.map_or ~default:[] (fun confirmable ->
+      [ a_user_data
+          "confirmable"
+          (Pool_common.Utils.confirmable_to_string language confirmable)
+      ])
   in
   form
-    ~a:
-      [ a_method `Post
-      ; a_action (externalize action)
-      ; a_user_data "confirmable" confirmable
-      ]
+    ~a:([ a_method `Post; a_action (externalize action) ] @ confirmable)
     [ csrf_element csrf ()
     ; submit_element
         ?has_icon
@@ -109,6 +110,33 @@ let pause_form csrf language query_language contact form_context =
       ()
   in
   form, hint
+;;
+
+let verify_form csrf language query_language contact =
+  let open Pool_common in
+  let action =
+    Http_utils.Url.Admin.contact_path
+      ~suffix:"verify"
+      ~id:(Contact.id contact)
+      ()
+  in
+  let control, submit_type =
+    match contact.Contact.verified with
+    | None -> Pool_message.Control.(Verify None), `Success
+    | Some _ -> Pool_message.Control.Unverify, `Error
+  in
+  let form =
+    toggle_status_form
+      csrf
+      language
+      query_language
+      ~has_icon:Component.Icon.CheckmarkCircleOutline
+      ~action
+      ~submit_type
+      ~control
+      ()
+  in
+  form, I18n.VerifyContact
 ;;
 
 let status_form_table language forms =

@@ -799,6 +799,7 @@ let control_to_string =
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field
+  | Unverify -> "Als unverifiziert markieren"
   | Update field -> format_submit "aktualisieren" field
   | UpdateAssignmentsMatchFilter -> format_submit "Filter erneut ausführen" None
   | UpdateOrder -> "Reihenfolge anpassen"

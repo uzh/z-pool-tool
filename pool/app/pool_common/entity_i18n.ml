@@ -318,6 +318,7 @@ type hint =
   | TextLengthMax of int
   | TextLengthMin of int
   | UserImportInterval
+  | VerifyContact
   | WaitingListPhoneMissingContact
 [@@deriving variants]
 

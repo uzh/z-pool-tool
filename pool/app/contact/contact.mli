@@ -165,7 +165,6 @@ type session_participation =
 type event =
   | Created of create
   | EmailUpdated of t * Pool_user.EmailAddress.t
-  | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
   | MarkedAsDeleted of t

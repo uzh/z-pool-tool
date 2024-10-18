@@ -435,7 +435,7 @@ end = struct
   let effects = Contact.Guard.Access.update
 end
 
-module Verify : sig
+module ToggleVerified : sig
   type t = Contact.t
 
   val handle
@@ -448,8 +448,14 @@ end = struct
   type t = Contact.t
 
   let handle ?(tags = Logs.Tag.empty) contact =
-    Logs.info ~src (fun m -> m "Handle command Verify" ~tags);
-    Ok [ Contact.Verified contact |> Pool_event.contact ]
+    Logs.info ~src (fun m -> m "Handle command ToggleVerified" ~tags);
+    let open Contact in
+    let verified =
+      match contact.verified with
+      | None -> Some (Pool_user.Verified.create_now ())
+      | Some _ -> None
+    in
+    Ok [ Contact.Updated { contact with verified } |> Pool_event.contact ]
   ;;
 
   let effects = Contact.Guard.Access.update

@@ -755,6 +755,7 @@ let control_to_string =
   | Stop field -> format_submit "stop" field
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field
+  | Unverify -> "Mark as unverified"
   | Update field -> format_submit "update" field
   | UpdateAssignmentsMatchFilter -> format_submit "rerun filter" None
   | UpdateOrder -> format_submit "update order" None

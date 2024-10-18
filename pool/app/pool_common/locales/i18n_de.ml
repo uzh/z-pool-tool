@@ -726,6 +726,7 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | UserImportInterval ->
     {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
 <p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}
+  | VerifyContact -> "Den Kontakt als verifiziert markieren."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
      Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \

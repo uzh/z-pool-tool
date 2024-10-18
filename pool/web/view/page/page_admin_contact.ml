@@ -623,8 +623,9 @@ let edit
     then Some (promote_form csrf language query_language contact)
     else None
   in
+  let verify_form = verify_form csrf language query_language contact in
   let status_forms =
-    [ Some pause_form; promote_form; delete_form ]
+    [ promote_form; Some verify_form; Some pause_form; delete_form ]
     |> CCList.filter_map CCFun.id
     |> status_form_table language
   in
