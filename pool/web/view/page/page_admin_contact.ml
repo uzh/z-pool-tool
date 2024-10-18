@@ -574,51 +574,6 @@ let tag_form
   Component.Tag.add_tags_form ?existing context available action
 ;;
 
-let promote_form csrf language query_language contact =
-  let open Pool_common in
-  let action =
-    Format.asprintf
-      "/admin/contacts/%s/promote"
-      Contact.(contact |> id |> Id.value)
-    |> Http_utils.externalize_path_with_lang query_language
-  in
-  let hint : I18n.hint = I18n.PromoteContact in
-  let confirmable : I18n.confirmable = I18n.PromoteContact in
-  Page_contact_edit.toggle_status_form
-    csrf
-    language
-    query_language
-    ~action
-    ~hint
-    ~confirmable
-    ~submit_type:`Success
-    ~control:Pool_message.Control.PromoteContact
-    ()
-;;
-
-let mark_as_deleted_form csrf language query_language contact =
-  let open Pool_common in
-  let action =
-    Format.asprintf
-      "/admin/contacts/%s/delete"
-      Contact.(contact |> id |> Id.value)
-    |> Http_utils.externalize_path_with_lang query_language
-  in
-  let hint : I18n.hint = I18n.DeleteContact in
-  let confirmable : I18n.confirmable = I18n.DeleteContact in
-  Page_contact_edit.toggle_status_form
-    csrf
-    language
-    query_language
-    ~has_icon:Component.Icon.TrashOutline
-    ~action
-    ~hint
-    ~confirmable
-    ~submit_type:`Error
-    ~control:Pool_message.(Control.Delete (Some Pool_message.Field.Contact))
-    ()
-;;
-
 let edit
   ?(allowed_to_assign = false)
   ?(allowed_to_promote = false)
@@ -629,6 +584,7 @@ let edit
   tags
   available_tags
   =
+  let open Page_contact_partials in
   let base_action = Htmx.admin_profile_hx_post (Contact.id contact) in
   let assign_tags =
     if allowed_to_assign
@@ -656,6 +612,7 @@ let edit
         ])
     else txt ""
   in
+  let pause_form = pause_form csrf language query_language contact `Admin in
   let delete_form =
     match Pool_user.Disabled.value contact.Contact.disabled with
     | true -> None
@@ -665,6 +622,11 @@ let edit
     if allowed_to_promote
     then Some (promote_form csrf language query_language contact)
     else None
+  in
+  let status_forms =
+    [ Some pause_form; promote_form; delete_form ]
+    |> CCList.filter_map CCFun.id
+    |> status_form_table language
   in
   let form_context = `Admin in
   div
@@ -681,28 +643,7 @@ let edit
             contact
             custom_fields
         ; assign_tags
-        ; Page_contact_edit.status_form
-            ~additional:
-              ([ promote_form; delete_form ] |> CCList.filter_map CCFun.id)
-            csrf
-            language
-            query_language
-            contact
-            form_context
-        ; p
-            [ a
-                ~a:
-                  [ a_href
-                      (Sihl.Web.externalize_path
-                         (Format.asprintf
-                            "/admin/contacts/%s"
-                            Contact.(contact |> id |> Id.value)))
-                  ]
-                [ Pool_message.Control.Back
-                  |> Pool_common.Utils.control_to_string language
-                  |> txt
-                ]
-            ]
+        ; status_forms
         ]
     ]
 ;;

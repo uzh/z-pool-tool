@@ -163,91 +163,6 @@ let personal_details_form
     ]
 ;;
 
-let toggle_status_form
-  csrf
-  language
-  query_language
-  ?has_icon
-  ~action
-  ~hint
-  ~confirmable
-  ~submit_type
-  ~control
-  ()
-  =
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let confirmable =
-    Pool_common.Utils.confirmable_to_string language confirmable
-  in
-  div
-    ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-    [ form
-        ~a:
-          [ a_method `Post
-          ; a_action (externalize action)
-          ; a_user_data "confirmable" confirmable
-          ]
-        [ csrf_element csrf ()
-        ; submit_element
-            ?has_icon
-            ~classnames:[ "nobr" ]
-            ~submit_type
-            language
-            control
-            ()
-        ]
-    ; div
-        ~a:[ a_class [ "grow" ] ]
-        [ txt Pool_common.(Utils.hint_to_string language hint) ]
-    ]
-;;
-
-let status_form
-  ?(additional = [])
-  csrf
-  language
-  query_language
-  contact
-  form_context
-  =
-  let open Pool_common in
-  let action, hint =
-    match form_context with
-    | `Contact -> Htmx.contact_profile_hx_post, I18n.PauseAccountContact
-    | `Admin ->
-      Htmx.admin_profile_hx_post (Contact.id contact), I18n.PauseAccountAdmin
-  in
-  let control, confirmable, submit_type =
-    let open Message.Control in
-    let open Pool_common in
-    match contact.Contact.paused |> Pool_user.Paused.value with
-    | true -> ReactivateAccount, I18n.ReactivateAccount, `Success
-    | false -> PauseAccount, I18n.PauseAccount, `Error
-  in
-  div
-    ~a:[ a_class [ "stack-md" ] ]
-    ([ h2
-         ~a:[ a_class [ "heading-2" ] ]
-         [ txt
-             Pool_common.(
-               Utils.field_to_string language Pool_message.Field.Status
-               |> CCString.capitalize_ascii)
-         ]
-     ; toggle_status_form
-         csrf
-         language
-         query_language
-         ~action:(Format.asprintf "%s/pause" action)
-         ~has_icon:Component.Icon.NotificationsOffOutline
-         ~hint
-         ~confirmable
-         ~submit_type
-         ~control
-         ()
-     ]
-     @ additional)
-;;
-
 let personal_details
   contact
   custom_fields
@@ -255,6 +170,12 @@ let personal_details
   Pool_context.{ language; query_language; csrf; _ }
   =
   let form_context = `Contact in
+  let pause_form =
+    let open Page_contact_partials in
+    pause_form csrf language query_language contact form_context
+    |> CCList.return
+    |> status_form_table language
+  in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
@@ -266,7 +187,7 @@ let personal_details
             tenant_languages
             contact
             custom_fields
-        ; status_form csrf language query_language contact form_context
+        ; pause_form
         ]
     ]
   |> contact_profile_layout language Pool_common.I18n.PersonalDetails

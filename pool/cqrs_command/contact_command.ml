@@ -434,3 +434,23 @@ end = struct
 
   let effects = Contact.Guard.Access.update
 end
+
+module Verify : sig
+  type t = Contact.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Contact.t
+
+  let handle ?(tags = Logs.Tag.empty) contact =
+    Logs.info ~src (fun m -> m "Handle command Verify" ~tags);
+    Ok [ Contact.Verified contact |> Pool_event.contact ]
+  ;;
+
+  let effects = Contact.Guard.Access.update
+end
