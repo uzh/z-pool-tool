@@ -558,14 +558,14 @@ let detail
 ;;
 
 let tag_form
-  (Pool_context.{ query_language; _ } as context)
+  (Pool_context.{ query_parameters; _ } as context)
   ?existing
   available
   contact
   =
   let action =
-    Http_utils.externalize_path_with_lang
-      query_language
+    Http_utils.externalize_path_with_params
+      query_parameters
       (Format.asprintf
          "%s/%s/assign"
          (contact |> path)
@@ -574,20 +574,20 @@ let tag_form
   Component.Tag.add_tags_form ?existing context available action
 ;;
 
-let promote_form csrf language query_language contact =
+let promote_form csrf language query_parameters contact =
   let open Pool_common in
   let action =
     Format.asprintf
       "/admin/contacts/%s/promote"
       Contact.(contact |> id |> Id.value)
-    |> Http_utils.externalize_path_with_lang query_language
+    |> Http_utils.externalize_path_with_params query_parameters
   in
   let hint : I18n.hint = I18n.PromoteContact in
   let confirmable : I18n.confirmable = I18n.PromoteContact in
   Page_contact_edit.toggle_status_form
     csrf
     language
-    query_language
+    query_parameters
     ~action
     ~hint
     ~confirmable
@@ -596,20 +596,20 @@ let promote_form csrf language query_language contact =
     ()
 ;;
 
-let mark_as_deleted_form csrf language query_language contact =
+let mark_as_deleted_form csrf language query_parameters contact =
   let open Pool_common in
   let action =
     Format.asprintf
       "/admin/contacts/%s/delete"
       Contact.(contact |> id |> Id.value)
-    |> Http_utils.externalize_path_with_lang query_language
+    |> Http_utils.externalize_path_with_params query_parameters
   in
   let hint : I18n.hint = I18n.DeleteContact in
   let confirmable : I18n.confirmable = I18n.DeleteContact in
   Page_contact_edit.toggle_status_form
     csrf
     language
-    query_language
+    query_parameters
     ~has_icon:Component.Icon.TrashOutline
     ~action
     ~hint
@@ -622,7 +622,7 @@ let mark_as_deleted_form csrf language query_language contact =
 let edit
   ?(allowed_to_assign = false)
   ?(allowed_to_promote = false)
-  (Pool_context.{ language; csrf; query_language; _ } as context)
+  (Pool_context.{ language; csrf; query_parameters; _ } as context)
   tenant_languages
   contact
   custom_fields
@@ -659,11 +659,12 @@ let edit
   let delete_form =
     match Pool_user.Disabled.value contact.Contact.disabled with
     | true -> None
-    | false -> Some (mark_as_deleted_form csrf language query_language contact)
+    | false ->
+      Some (mark_as_deleted_form csrf language query_parameters contact)
   in
   let promote_form =
     if allowed_to_promote
-    then Some (promote_form csrf language query_language contact)
+    then Some (promote_form csrf language query_parameters contact)
     else None
   in
   let form_context = `Admin in
@@ -675,7 +676,7 @@ let edit
         [ Page_contact_edit.personal_details_form
             csrf
             language
-            query_language
+            query_parameters
             form_context
             tenant_languages
             contact
@@ -686,7 +687,7 @@ let edit
               ([ promote_form; delete_form ] |> CCList.filter_map CCFun.id)
             csrf
             language
-            query_language
+            query_parameters
             contact
             form_context
         ; p

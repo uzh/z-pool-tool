@@ -20,7 +20,7 @@ module UserType : sig
 end
 
 type t =
-  { query_language : Pool_common.Language.t option
+  { query_parameters : (Pool_message.Field.t * string) list
   ; language : Pool_common.Language.t
   ; database_label : Database.Label.t
   ; message : Pool_message.Collection.t option
@@ -40,7 +40,7 @@ val context_user_of_user : Database.Label.t -> Pool_user.t -> user Lwt.t
 val dashboard_path : ?guest:string -> user -> string
 
 val create
-  :  Pool_common.Language.t option
+  :  (Pool_message.Field.t * string) list
      * Pool_common.Language.t
      * Database.Label.t
      * Pool_message.Collection.t option
@@ -86,6 +86,26 @@ module Utils : sig
     -> Database.Label.t
     -> user
     -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
+
+  val remove_query_param
+    :  (Pool_message.Field.t * string) list
+    -> Pool_message.Field.t
+    -> (Pool_message.Field.t * string) list
+
+  val find_query_param
+    :  (Pool_message.Field.t * string) list
+    -> Pool_message.Field.t
+    -> string option
+
+  val query_language
+    :  Pool_common.Language.t list
+    -> (Pool_message.Field.t * string) list
+    -> Pool_common.Language.t option
+
+  val url_parameters_by_user
+    :  Rock.Request.t
+    -> user
+    -> (Pool_message.Field.t * string) list
 end
 
 module Logger : sig

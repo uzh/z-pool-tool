@@ -21,7 +21,7 @@ let add_human_field = CCFun.(Field.human_url %> Format.asprintf "/%s")
 let global_middlewares =
   [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
   ; CustomMiddleware.Error.middleware ()
-  ; Middleware.trailing_slash ()
+  ; CustomMiddleware.TrailingSlash.middleware ()
   ; Middleware.static_file ()
   ; Middleware.flash ()
   ; Middleware.csrf
@@ -867,6 +867,10 @@ module Admin = struct
         ; post "delete" ~middlewares:[ Access.delete ] delete
         ]
       in
+      let signup_codes =
+        let open SignupCodes in
+        [ get "" ~middlewares:[ Access.index ] index ]
+      in
       [ get "" ~middlewares:[ Access.index ] show
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/actor-permission" actor_permission
@@ -874,6 +878,7 @@ module Admin = struct
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
       ; choose ~scope:"/text-messages" text_messages
+      ; choose ~scope:Field.(human_url SignUpCode) signup_codes
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]

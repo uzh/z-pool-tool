@@ -9,7 +9,7 @@ let from_root_only () =
         let open Pool_context in
         let csrf = Sihl.Web.Csrf.find_exn req in
         create
-          ( None
+          ( []
           , Pool_common.Language.En
           , Database.root
           , None
@@ -30,7 +30,7 @@ let require_root () =
     Http_utils.invalid_session_redirect
       ~login_path:(CCFun.flip Http_utils.intended_of_request "/root/login")
       req
-      None
+      []
   in
   let filter handler req =
     let context = Pool_context.find req in

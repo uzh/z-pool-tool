@@ -38,6 +38,7 @@ let rec field_to_string =
   | Chronological -> "chronological"
   | City -> "city"
   | ClosedAt -> "Closed at"
+  | Code -> "Code"
   | Confirmed -> "Confirmed"
   | ConfirmedAt -> "Confirmed at"
   | Contact -> "contact"
@@ -226,6 +227,7 @@ let rec field_to_string =
   | Reason -> "reason"
   | Recipient -> "recipient"
   | Redirect -> "redirect"
+  | Redirected -> "redirected"
   | Reminder -> "reminder"
   | RegistrationDisabled -> "registration disabled"
   | RegistrationPossible -> "registration possible"
@@ -257,6 +259,7 @@ let rec field_to_string =
   | ShowToContacts -> "Show to contacts"
   | ShowExteralDataIdLinks -> "show links to external data identifiers"
   | SignedUpAt -> "signed up at"
+  | SignUpCode -> "signup code"
   | SignUpCount -> "new sign ups"
   | SMS -> "SMS"
   | SmsText -> "SMS text"
@@ -318,6 +321,7 @@ let rec field_to_string =
   | Value -> "value"
   | ValueOf field -> combine Value field
   | VerificationCode -> "verification code"
+  | VerificationCount -> "no. verifications"
   | Verified -> "verified"
   | Version -> "version"
   | Virtual -> "virtual"
@@ -713,6 +717,7 @@ let control_to_string =
   | Enroll -> format_submit "enroll" None
   | EnterNewCellPhone -> "Enter a different number"
   | Filter field -> format_submit "filter" field
+  | Generate -> format_submit "generate" None
   | Hide field -> format_submit "hide" field
   | Login -> format_submit "login" None
   | LoadDefaultTemplate -> format_submit "load default template" None

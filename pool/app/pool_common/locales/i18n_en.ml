@@ -239,6 +239,7 @@ let nav_link_to_string = function
   | Settings -> "Settings"
   | Smtp -> "Email Server (SMTP)"
   | SystemSettings -> "System settings"
+  | SignupCodes -> "Signup Codes"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "Text messages"
@@ -658,6 +659,13 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SettingsNoEmailSuffixes ->
     "There are no email suffixes defined that are allowed. This means that all \
      email suffixes are allowed."
+  | SignUpCodeHint ->
+    Format.asprintf
+      "URLs with codes can be sent to track the channels through which \
+       contacts register with the pool. The codes can be freely selected, but \
+       must be sent as URL parameters with the key '%s'. You can use the form \
+       below to build a URL you can send to new contacts."
+      Pool_message.Field.(human_url SignUpCode)
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."

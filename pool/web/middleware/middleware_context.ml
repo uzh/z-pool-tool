@@ -3,7 +3,6 @@ open CCFun
 let context () =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
-  let find_query_language = Http_utils.find_query_lang in
   let database_label_of_request is_root req =
     let tenant_database_label_of_request req =
       match Tenant.find req with
@@ -12,39 +11,30 @@ let context () =
     in
     if is_root then Ok Database.root else tenant_database_label_of_request req
   in
-  let languages_from_request ?contact req tenant_db =
+  let find_query_language parameters =
+    let open Pool_message.Field in
+    let open CCOption.Infix in
+    CCList.assoc_opt ~eq:equal Language parameters
+    >>= Pool_common.Language.read_opt
+  in
+  let contact_language = function
+    | None -> None
+    | Some (p : Contact.t) -> p.Contact.language
+  in
+  let request_language url_parameters tenant_db contact =
     let%lwt tenant_languages = Settings.find_languages tenant_db in
-    let query_language = find_query_language req in
     let bind_valid =
       flip CCOption.bind (fun lang ->
         if CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages
         then Some lang
         else None)
     in
-    let user_language = function
-      | Some (p : Contact.t) -> p.Contact.language |> Lwt.return
-      | None ->
-        let%lwt lang =
-          Http_utils.user_from_session tenant_db req
-          ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
-          >>= fun user ->
-          user.Pool_user.id
-          |> Contact.(Id.of_user %> find tenant_db)
-          >|+ fun p -> p.Contact.language
-        in
-        CCResult.get_or lang ~default:None |> Lwt.return
-    in
-    (match query_language |> bind_valid with
-     | Some language -> Lwt.return language
-     | None ->
-       user_language contact
-       ||> bind_valid
-       ||> CCOption.value
-             ~default:
-               (CCOption.get_exn_or
-                  "Cannot determine language"
-                  (CCList.head_opt tenant_languages)))
-    ||> fun lang -> query_language, lang
+    match find_query_language url_parameters |> bind_valid with
+    | Some language -> Lwt.return language
+    | None ->
+      (match contact_language contact |> bind_valid with
+       | Some language -> Lwt.return language
+       | None -> CCList.hd tenant_languages |> Lwt.return)
   in
   let filter handler req =
     let is_root = Http_utils.is_req_from_root_host req in
@@ -65,20 +55,23 @@ let context () =
         database_label_of_request is_root req |> Lwt_result.lift
       in
       let%lwt user = find_user database_label in
-      let%lwt query_lang, language, guardian =
+      let url_parameters = Utils.url_parameters_by_user req user in
+      let%lwt language, guardian =
         let to_actor = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
-        let combine roles = Lwt.return (None, Pool_common.Language.En, roles) in
+        let combine roles = Lwt.return (Pool_common.Language.En, roles) in
+        let request_language = request_language url_parameters database_label in
         match user with
         | Admin admin ->
           to_actor admin
           |> Guard.Persistence.ActorRole.permissions_of_actor database_label
           >|> combine
         | (Guest | Contact _) when is_root -> combine []
-        | Contact _ | Guest ->
-          let%lwt query_lang, language =
-            languages_from_request req database_label
-          in
-          Lwt.return (query_lang, language, [])
+        | Contact contact ->
+          let%lwt language = request_language (Some contact) in
+          Lwt.return (language, [])
+        | Guest ->
+          let%lwt language = request_language None in
+          Lwt.return (language, [])
       in
       let%lwt announcement =
         match is_root with
@@ -97,7 +90,7 @@ let context () =
                (Announcement.find_by_user database_label)
       in
       create
-        ( query_lang
+        ( url_parameters
         , language
         , database_label
         , message
@@ -111,7 +104,8 @@ let context () =
     | Ok context -> context |> set req |> handler
     | Error _ ->
       let open Http_utils in
-      path_with_language (find_query_language req) "/error" |> redirect_to
+      let query_parameters = Utils.url_parameters_by_user req Guest in
+      url_with_field_params query_parameters "/error" |> redirect_to
   in
   Rock.Middleware.create ~name:"tenant.context" ~filter
 ;;

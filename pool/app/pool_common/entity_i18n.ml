@@ -155,6 +155,7 @@ type nav_link =
   | Sessions
   | Settings
   | Smtp
+  | SignupCodes
   | SystemSettings
   | Tags
   | Tenants
@@ -303,6 +304,7 @@ type hint =
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
   | SettingsNoEmailSuffixes
+  | SignUpCodeHint
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro

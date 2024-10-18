@@ -245,6 +245,7 @@ let nav_link_to_string = function
   | Settings -> "Einstellungen"
   | Smtp -> "E-Mail Server (SMTP)"
   | SystemSettings -> "Systemeinstellungen"
+  | SignupCodes -> "Registrierungscodes"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "SMS"
@@ -685,6 +686,14 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SettingsNoEmailSuffixes ->
     "Es sind keine Email-Endungen definiert, die zugelassen sind. Das \
      bedeutet, dass alle Email-Endungen erlaubt sind."
+  | SignUpCodeHint ->
+    Format.asprintf
+      "Um zu verfolgen, über welche Kanäle sich Kontakte beim Pool \
+       registrieren, können URLs mit Codes verschickt werden. Die Codes können \
+       frei gewählt werden, müssen aber als URL Parameter mit dem Key '%s' \
+       verschickt werden. Sie können das Formular unten, um eine URL zu \
+       erstellen, die Sie an neue Kontakte senden können"
+      Pool_message.Field.(human_url SignUpCode)
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."

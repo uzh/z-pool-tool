@@ -38,6 +38,7 @@ let rec field_to_string =
   | Chronological -> "chronologisch"
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"
+  | Code -> "Code"
   | Confirmed -> "Bestätigt"
   | ConfirmedAt -> "Bestätigt am"
   | Contact -> "Kontakt"
@@ -230,6 +231,7 @@ let rec field_to_string =
   | Reason -> "Grund"
   | Recipient -> "Empfänger"
   | Redirect -> "Weiterleitung"
+  | Redirected -> "Weitergeleitet"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | RegistrationPossible -> "Registrierung möglich"
   | Reminder -> "Erinnerung"
@@ -260,6 +262,7 @@ let rec field_to_string =
   | ShowToContacts -> "Den Kontakten anzeigen"
   | ShowExteralDataIdLinks -> "Link zu externen Datenidentifikatoren anzeigen"
   | SignedUpAt -> "Eingeschrieben am"
+  | SignUpCode -> "Registrierungscode"
   | SignUpCount -> "Neuregistrierungen"
   | SMS -> "SMS"
   | SmsText -> "SMS Text"
@@ -321,6 +324,7 @@ let rec field_to_string =
   | Value -> "Wert"
   | ValueOf field -> combine Value field
   | VerificationCode -> "Verifizierungs Code"
+  | VerificationCount -> "Anz. Verifizierungen"
   | Verified -> "Verifiziert"
   | Version -> "Version"
   | Virtual -> "Virtuell"
@@ -759,6 +763,7 @@ let control_to_string =
   | Filter field -> format_submit "filtern" field
   | Hide field -> format_submit "verbergen" field
   | Login -> format_submit "login" None
+  | Generate -> format_submit "generieren" None
   | LoadDefaultTemplate -> format_submit "Standardtemplate laden" None
   | Manage field -> format_submit "manage" (Some field)
   | MarkAsDeleted -> format_submit "als gelöscht markieren" None
