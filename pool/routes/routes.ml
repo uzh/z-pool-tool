@@ -883,6 +883,11 @@ module Admin = struct
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
     in
+    let versions =
+      let open Version in
+      let specific = [ get "" show ] in
+      [ get "" index; choose ~scope:Field.(url_key Version) specific ]
+    in
     let profile =
       let open Profile in
       [ get "/login-information" show
@@ -913,6 +918,7 @@ module Admin = struct
       ; choose ~scope:(add_human_field Field.Sessions) sessions
       ; choose ~scope:(add_human_field OrganisationalUnit) organisational_units
       ; choose ~scope:(add_human_field MessageTemplate) message_templates
+      ; choose ~scope:(add_human_field Version) versions
       ]
   ;;
 end

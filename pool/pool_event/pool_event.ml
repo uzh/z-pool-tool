@@ -132,7 +132,7 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Pool_tenant.handle_event pool event
   | PoolVersion event ->
     info "pool_version" Pool_version.pp_event event;
-    Pool_version.handle_event pool event
+    Pool_version.handle_event event
   | Session event ->
     info "session" Session.pp_event event;
     Session.handle_event pool event

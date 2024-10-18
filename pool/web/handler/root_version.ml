@@ -22,8 +22,8 @@ let index req =
     ~query:(module Pool_version)
     ~create_layout
     req
-  @@ fun (Pool_context.{ database_label; _ } as context) query ->
-  let%lwt versions = Pool_version.all ~query database_label in
+  @@ fun context query ->
+  let%lwt versions = Pool_version.all ~query () in
   let open Page.Root.Version in
   (if Http_utils.Htmx.is_hx_request req then list else index) context versions
   |> Lwt_result.return

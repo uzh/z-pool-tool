@@ -6,7 +6,7 @@ module Input = Component.Input
 let version_path = Http_utils.Url.Root.version_path
 let field_to_string = Pool_common.Utils.field_to_string_capitalized
 
-let list { Pool_context.language; _ } (annoucements, query) =
+let list { Pool_context.language; _ } (versions, query) =
   let open Pool_version in
   let url = version_path () |> Uri.of_string in
   let data_table = Component.DataTable.create_meta url query language in
@@ -49,7 +49,7 @@ let list { Pool_context.language; _ } (annoucements, query) =
     ~cols
     ~row
     data_table
-    annoucements
+    versions
 ;;
 
 let index (Pool_context.{ language; _ } as context) versions =

@@ -6,18 +6,18 @@ type event =
   | Published of t
 [@@deriving eq, show]
 
-let handle_event pool =
+let handle_event =
   let open Utils.Lwt_result.Infix in
   function
   | Created m ->
-    let%lwt () = Repo.insert pool m in
+    let%lwt () = Repo.insert m in
     let%lwt () =
-      Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx pool) m
+      Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx Database.root) m
       ||> Pool_common.Utils.get_or_failwith
       ||> fun (_ : Guard.Target.t) -> ()
     in
     Lwt.return_unit
-  | Updated m -> Repo.update pool m
+  | Updated m -> Repo.update m
   | Published m ->
-    Repo.update pool { m with published_at = Some (PublishedAt.create_now ()) }
+    Repo.update { m with published_at = Some (PublishedAt.create_now ()) }
 ;;

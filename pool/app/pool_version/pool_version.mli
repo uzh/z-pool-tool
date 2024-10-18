@@ -35,7 +35,8 @@ val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
 val create : ?id:Id.t -> Version.t -> Text.t -> t
 val find : Id.t -> (t, Pool_message__Pool_message_error.t) Lwt_result.t
-val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val all : ?query:Query.t -> unit -> (t list * Query.t) Lwt.t
+val all_on_tenant : ?query:Query.t -> unit -> (t list * Query.t) Lwt.t
 val column_version : Query.Column.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
@@ -48,7 +49,7 @@ type event =
   | Updated of t
   | Published of t
 
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 

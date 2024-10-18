@@ -12,6 +12,12 @@ let announcement_path ?suffix ?id () =
   |> append_opt suffix
 ;;
 
+let version_path ?suffix ?id () =
+  ("/" ^ Field.(show Version))
+  |> append_opt (map Pool_version.Id.value id)
+  |> append_opt suffix
+;;
+
 module Admin = struct
   let role_permission_path ?suffix ?role () =
     "/admin/settings/role-permission"
@@ -32,6 +38,10 @@ module Admin = struct
       Experiment.(Id.value experiment_id)
     |> append_opt Session.(map Id.value id)
     |> append_opt suffix
+  ;;
+
+  let version_path ?suffix ?id () =
+    version_path ?suffix ?id () |> Format.asprintf "/admin/%s"
   ;;
 
   module Settings = struct
@@ -72,10 +82,5 @@ module Root = struct
     announcement_path ?suffix ?id () |> with_root
   ;;
 
-  let version_path ?suffix ?id () =
-    ("/" ^ Field.(show Version))
-    |> append_opt (map Pool_version.Id.value id)
-    |> append_opt suffix
-    |> with_root
-  ;;
+  let version_path ?suffix ?id () = version_path ?suffix ?id () |> with_root
 end

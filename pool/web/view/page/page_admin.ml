@@ -19,5 +19,6 @@ module Session = Page_admin_session
 module Settings = Page_admin_settings
 module SignupCodes = Page_admin_signup_codes
 module TimeWindow = Page_admin_time_window
+module Version = Page_admin_version
 module WaitingList = Page_admin_waiting_list
 include Page_admin_edit
