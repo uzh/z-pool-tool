@@ -15,6 +15,7 @@ let partial_update = Custom_field.PartialUpdate.(Alcotest.testable pp equal)
 let password = Pool_user.Password.(Alcotest.testable pp equal)
 let password_plain = Pool_user.Password.Plain.(Alcotest.testable pp equal)
 let phone_nr = Pool_user.CellPhone.(Alcotest.testable pp equal)
+let pool_version = Pool_version.(Alcotest.testable pp equal)
 let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
 let time_window_testable = Time_window.(Alcotest.testable pp equal)
 

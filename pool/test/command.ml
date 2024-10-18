@@ -563,6 +563,12 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
+    ; ( "pool_version"
+      , Pool_version_test.
+          [ test_case "create tag" `Quick create_version_tag
+          ; test_case "create" `Quick create
+          ; test_case "update" `Quick update
+          ] )
     ; ( "queue"
       , [ test_case
             "create delivery report"

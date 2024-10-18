@@ -115,6 +115,7 @@ type t =
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
   | Validation
+  | VersionsListTitle
   | WaitingListIsDisabled
 
 type nav_link =
@@ -163,6 +164,7 @@ type nav_link =
   | TimeWindows
   | Users
   | WaitingList
+  | Versions
 [@@deriving eq]
 
 type hint =

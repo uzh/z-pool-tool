@@ -130,6 +130,7 @@ module Target = struct
     | `SystemSetting
     | `Tag
     | `Tenant
+    | `Version
     | `WaitingList
     ]
   [@@deriving show, eq, enum, ord, yojson, sexp_of]
@@ -179,6 +180,7 @@ module Target = struct
     | "systemsetting", [] -> Ok `SystemSetting
     | "tag", [] -> Ok `Tag
     | "tenant", [] -> Ok `Tenant
+    | "version", [] -> Ok `Version
     | "waitinglist", [] -> Ok `WaitingList
     | role -> Error (Guardian.Utils.invalid_role role)
   ;;

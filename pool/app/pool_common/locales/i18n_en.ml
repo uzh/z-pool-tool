@@ -197,6 +197,7 @@ let to_string = function
     "You paused all notifications for your user! (Click 'edit' to update this \
      setting)"
   | Validation -> "Validation"
+  | VersionsListTitle -> "Versions"
   | WaitingListIsDisabled -> "The waiting list is disabled."
 ;;
 
@@ -246,6 +247,7 @@ let nav_link_to_string = function
   | TimeWindows -> "Time windows"
   | Users -> "Users"
   | WaitingList -> "Waiting list"
+  | Versions -> "Versions"
 ;;
 
 let rec hint_to_string = function

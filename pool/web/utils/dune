@@ -8,6 +8,7 @@
   pool_common
   pool_context
   pool_queue
+  pool_version
   session
   sexplib
   sihl-storage

@@ -71,4 +71,11 @@ module Root = struct
   let announcement_path ?suffix ?id () =
     announcement_path ?suffix ?id () |> with_root
   ;;
+
+  let version_path ?suffix ?id () =
+    ("/" ^ Field.(show Version))
+    |> append_opt (map Pool_version.Id.value id)
+    |> append_opt suffix
+    |> with_root
+  ;;
 end
