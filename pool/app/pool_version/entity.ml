@@ -6,10 +6,10 @@ module Id = struct
   include Pool_common.Id
 end
 
-module Version = struct
+module Tag = struct
   include Pool_model.Base.String
 
-  let field = Pool_message.Field.Version
+  let field = Pool_message.Field.Tag
 
   let create m =
     match CCString.split_on_char '.' m with
@@ -17,7 +17,7 @@ module Version = struct
     | _ -> Error Pool_message.Error.(Invalid field)
   ;;
 
-  let schema = schema ~validation:create Pool_message.Field.Version
+  let schema = schema ~validation:create field
 end
 
 module Text = struct
@@ -37,7 +37,7 @@ end
 
 type t =
   { id : Id.t
-  ; version : Version.t
+  ; tag : Tag.t
   ; text : Text.t
   ; published_at : PublishedAt.t option
   ; created_at : Pool_common.CreatedAt.t
@@ -45,9 +45,9 @@ type t =
   }
 [@@deriving eq, show, yojson]
 
-let create ?(id = Id.create ()) version text =
+let create ?(id = Id.create ()) tag text =
   { id
-  ; version
+  ; tag
   ; text
   ; published_at = None
   ; created_at = Pool_common.CreatedAt.create_now ()
@@ -58,16 +58,12 @@ let create ?(id = Id.create ()) version text =
 open Pool_message
 
 let filterable_by = None
-
-let column_version =
-  (Field.Version, "pool_versions.version") |> Query.Column.create
-;;
-
-let searchable_by = [ column_version ]
-let sortable_by = [ column_version ]
+let column_tag = (Field.Tag, "pool_versions.tag") |> Query.Column.create
+let searchable_by = [ column_tag ]
+let sortable_by = [ column_tag ]
 
 let default_sort =
-  Query.Sort.{ column = column_version; order = SortOrder.Descending }
+  Query.Sort.{ column = column_tag; order = SortOrder.Descending }
 ;;
 
 let default_query = Query.create ~sort:default_sort ()

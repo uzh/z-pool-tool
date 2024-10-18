@@ -5,13 +5,13 @@ let create_versions_table =
       CREATE TABLE IF NOT EXISTS pool_versions (
         id BIGINT UNSIGNED AUTO_INCREMENT,
         uuid BINARY(16) NOT NULL,
-        version VARCHAR(128) NOT NULL,
+        tag VARCHAR(128) NOT NULL,
         `text` TEXT NOT NULL,
         published_at timestamp NULL,
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
-        CONSTRAINT unique_version UNIQUE KEY (version)
+        CONSTRAINT unique_tag UNIQUE KEY (tag)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   |sql}
 ;;

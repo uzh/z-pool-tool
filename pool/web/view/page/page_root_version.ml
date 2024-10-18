@@ -9,7 +9,9 @@ let field_to_string = Pool_common.Utils.field_to_string_capitalized
 let list { Pool_context.language; _ } (versions, query) =
   let open Pool_version in
   let url = version_path () |> Uri.of_string in
-  let data_table = Component.DataTable.create_meta url query language in
+  let data_table =
+    Component.DataTable.create_meta ~search:searchable_by url query language
+  in
   let create_btn =
     let open Component in
     version_path ~suffix:"new" ()
@@ -20,13 +22,13 @@ let list { Pool_context.language; _ } (versions, query) =
   in
   let custom field = `custom (txt (field_to_string language field)) in
   let cols =
-    [ `column column_version
+    [ `column column_tag
     ; custom Field.PublishedAt
     ; custom Field.CreatedAt
     ; `custom create_btn
     ]
   in
-  let row ({ id; version; published_at; created_at; _ } : t) =
+  let row ({ id; tag; published_at; created_at; _ } : t) =
     let open CCOption in
     let edit_btn =
       let open Component in
@@ -34,7 +36,7 @@ let list { Pool_context.language; _ } (versions, query) =
       |> Input.link_as_button ~style:`Primary ~icon:Icon.Create
     in
     let format_time = Utils.Ptime.formatted_date_time in
-    [ txt (Version.value version)
+    [ txt (Tag.value tag)
     ; published_at
       |> map_or ~default:"" CCFun.(PublishedAt.value %> format_time)
       |> txt
@@ -81,18 +83,13 @@ let form { Pool_context.csrf; language; _ } ?version ?flash_fetcher () =
     let to_string = Pool_common.Utils.control_to_string language in
     match version with
     | None -> to_string control
-    | Some { version; _ } ->
-      Format.asprintf "%s %s" (to_string control) (Version.value version)
+    | Some { tag; _ } ->
+      Format.asprintf "%s %s" (to_string control) (Tag.value tag)
   in
   let version_input =
     match version with
     | None ->
-      Input.input_element
-        ?flash_fetcher
-        ~required:true
-        language
-        `Text
-        Field.Version
+      Input.input_element ?flash_fetcher ~required:true language `Text Field.Tag
     | Some _ -> txt ""
   in
   div

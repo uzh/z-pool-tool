@@ -9,17 +9,19 @@ let field_to_string = Pool_common.Utils.field_to_string_capitalized
 let list { Pool_context.language; _ } (versions, query) =
   let open Pool_version in
   let url = version_path () |> Uri.of_string in
-  let data_table = Component.DataTable.create_meta url query language in
+  let data_table =
+    Component.DataTable.create_meta ~search:searchable_by url query language
+  in
   let custom field = `custom (txt (field_to_string language field)) in
-  let cols = [ `column column_version; custom Field.CreatedAt; `empty ] in
-  let row ({ id; version; published_at; _ } : t) =
+  let cols = [ `column column_tag; custom Field.CreatedAt; `empty ] in
+  let row ({ id; tag; published_at; _ } : t) =
     let open CCOption in
     let show_btn =
       let open Component in
       version_path ~id () |> Input.link_as_button ~style:`Primary ~icon:Icon.Eye
     in
     let format_time = Utils.Ptime.formatted_date_time in
-    [ txt (Version.value version)
+    [ txt (Tag.value tag)
     ; published_at
       |> map_or ~default:"" CCFun.(PublishedAt.value %> format_time)
       |> txt
@@ -47,7 +49,7 @@ let index (Pool_context.{ language; _ } as context) versions =
     ]
 ;;
 
-let show { Pool_context.language; _ } { Pool_version.version; text; _ } =
+let show { Pool_context.language; _ } { Pool_version.tag; text; _ } =
   let open Pool_version in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -59,7 +61,7 @@ let show { Pool_context.language; _ } { Pool_version.version; text; _ } =
                (Pool_common.Utils.field_to_string_capitalized
                   language
                   Field.Version)
-               (Version.value version))
+               (Tag.value tag))
         ]
     ; div [ Unsafe.data (Text.value text) ]
     ]

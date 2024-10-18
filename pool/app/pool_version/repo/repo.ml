@@ -5,7 +5,7 @@ let caqti_tenant_id = Pool_tenant.Repo.Id.t
 
 let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_versions.uuid"
-  ; "pool_versions.version"
+  ; "pool_versions.tag"
   ; "pool_versions.text"
   ; "pool_versions.published_at"
   ; "pool_versions.created_at"
@@ -18,7 +18,7 @@ let insert_request =
   {sql|
     INSERT INTO pool_versions (
       uuid,
-      version,
+      tag,
       text,
       published_at
     ) VALUES (
@@ -38,7 +38,7 @@ let update_request =
   {sql|
     UPDATE pool_versions
     SET
-      version = $2,
+      tag = $2,
       text = $3,
       published_at = $4
     WHERE

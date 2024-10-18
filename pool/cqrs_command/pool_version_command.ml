@@ -4,14 +4,14 @@ open Pool_version
 let src = Logs.Src.create "pool_version.cqrs"
 
 type command =
-  { version : Version.t
+  { tag : Tag.t
   ; text : Text.t
   }
 
-let command version text = { version; text }
+let command tag text = { tag; text }
 
 let create_schema =
-  Pool_conformist.(make Field.[ Version.schema (); Text.schema () ] command)
+  Pool_conformist.(make Field.[ Tag.schema (); Text.schema () ] command)
 ;;
 
 let update_schema = Pool_conformist.(make Field.[ Text.schema () ] CCFun.id)
@@ -31,10 +31,10 @@ module Create : sig
 end = struct
   type t = command
 
-  let handle ?(tags = Logs.Tag.empty) ?id ({ version; text } : t) =
+  let handle ?(tags = Logs.Tag.empty) ?id ({ tag; text } : t) =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    let version = create ?id version text in
+    let version = create ?id tag text in
     Ok [ Created version |> Pool_event.pool_version ]
   ;;
 

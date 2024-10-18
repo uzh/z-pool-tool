@@ -4,7 +4,7 @@ module Id : sig
   val to_common : t -> Pool_common.Id.t
 end
 
-module Version : sig
+module Tag : sig
   include Pool_model.Base.StringSig
 end
 
@@ -21,7 +21,7 @@ end
 
 type t =
   { id : Id.t
-  ; version : Version.t
+  ; tag : Tag.t
   ; text : Text.t
   ; published_at : PublishedAt.t option
   ; created_at : Pool_common.CreatedAt.t
@@ -33,11 +33,11 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
-val create : ?id:Id.t -> Version.t -> Text.t -> t
+val create : ?id:Id.t -> Tag.t -> Text.t -> t
 val find : Id.t -> (t, Pool_message__Pool_message_error.t) Lwt_result.t
 val all : ?query:Query.t -> unit -> (t list * Query.t) Lwt.t
 val all_on_tenant : ?query:Query.t -> unit -> (t list * Query.t) Lwt.t
-val column_version : Query.Column.t
+val column_tag : Query.Column.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
