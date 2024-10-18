@@ -415,6 +415,10 @@ module Admin = struct
             let specific =
               [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
               ; post "/close" ~middlewares:[ Session.Access.close ] Close.update
+              ; post
+                  "/verify"
+                  ~middlewares:[ Session.Access.close ]
+                  Close.verify_contact
               ; get "/edit" ~middlewares:[ Access.update ] edit
               ; post "" ~middlewares:[ Access.update ] update
               ; post "/remind" ~middlewares:[ Access.update ] remind

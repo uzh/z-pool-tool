@@ -1533,11 +1533,11 @@ let close_assignment_htmx_form
   let session_path =
     session_path ~id:session.Session.id experiment.Experiment.id
   in
-  let action =
-    Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)
+  let action suffix =
+    Format.asprintf "%s/assignments/%s/%s" session_path (Id.value id) suffix
     |> Sihl.Web.externalize_path
   in
-  let hx_attribs field =
+  let hx_attribs field action =
     Htmx.
       [ hx_post action
       ; hx_trigger "change"
@@ -1546,7 +1546,7 @@ let close_assignment_htmx_form
       ; hx_params (Field.show field)
       ]
   in
-  let checkbox_element field value =
+  let checkbox_element field suffix value =
     let checked = if value then [ a_checked () ] else [] in
     let classnames =
       if CCList.mem ~eq:Field.equal field updated_fields
@@ -1562,7 +1562,7 @@ let close_assignment_htmx_form
                 ([ a_input_type `Checkbox; a_name (Field.show field) ]
                  @ checked
                  @ classnames
-                 @ hx_attribs field)
+                 @ hx_attribs field (action suffix))
               ()
           ]
       ]
@@ -1603,7 +1603,7 @@ let close_assignment_htmx_form
                    (field_to_string language field |> CCString.capitalize_ascii)
                ]
                @ classnames
-               @ hx_attribs field)
+               @ hx_attribs field "close")
             ()
         ]
   in
@@ -1628,9 +1628,17 @@ let close_assignment_htmx_form
         ; div
             ~a:[ a_class [ "session-close-checkboxes" ] ]
             [ checkbox_element
+                Field.Verified
+                "verify"
+                (CCOption.is_some assignment.contact.Contact.verified)
+            ; checkbox_element
                 Field.Participated
+                "close"
                 (default_bool Participated.value participated)
-            ; checkbox_element Field.NoShow (default_bool NoShow.value no_show)
+            ; checkbox_element
+                Field.NoShow
+                "close"
+                (default_bool NoShow.value no_show)
             ]
         ]
     ; errors
@@ -1675,7 +1683,8 @@ let close_assignments_table
           ~a:[ a_class [ "flexrow"; "w-4" ] ]
           [ div
               ~a:[ a_class [ "session-close-checkboxes" ] ]
-              [ div ~a:(attributes Field.Participated) [ strong [ txt "P" ] ]
+              [ div ~a:(attributes Field.Verified) [ strong [ txt "V" ] ]
+              ; div ~a:(attributes Field.Participated) [ strong [ txt "P" ] ]
               ; div ~a:(attributes Field.NoShow) [ strong [ txt "NS" ] ]
               ]
           ]

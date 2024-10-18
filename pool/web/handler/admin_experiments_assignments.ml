@@ -185,6 +185,38 @@ module Close = struct
     |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
   ;;
 
+  let verify_contact req =
+    let tags = Pool_context.Logger.Tags.req req in
+    let assignment_id = assignment_id req in
+    let result ({ Pool_context.database_label; language; _ } as context) =
+      let* experiment, session = router_params req database_label in
+      let* assignment = find database_label assignment_id in
+      let* events =
+        Cqrs_command.Contact_command.ToggleVerified.handle assignment.contact
+        |> Lwt_result.lift
+      in
+      let%lwt () = Pool_event.handle_events ~tags database_label events in
+      let updated_fields = [ Pool_message.Field.Verified ] in
+      let* updated = find database_label assignment_id in
+      let%lwt counters =
+        counters_of_session database_label session.Session.id
+      in
+      Page.Admin.Session.
+        [ close_assignment_htmx_form
+            ~updated_fields
+            context
+            experiment
+            session
+            updated
+        ; session_counters language counters
+        ]
+      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Lwt_result.return
+    in
+    result
+    |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  ;;
+
   let toggle req =
     let tags = Pool_context.Logger.Tags.req req in
     let result ({ Pool_context.database_label; language; _ } as context) =

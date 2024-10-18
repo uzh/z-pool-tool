@@ -296,6 +296,7 @@ type hint =
   | SessionCloseHints
   | SessionCloseLegendNoShow
   | SessionCloseLegendParticipated
+  | SessionCloseLegendVerified
   | SessionCloseNoParticipationTagsSelected
   | SessionCloseParticipationTagsSelected
   | SessionRegistrationFollowUpHint

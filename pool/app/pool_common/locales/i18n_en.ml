@@ -641,6 +641,7 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SessionCloseLegendNoShow -> "the contact did not show up"
   | SessionCloseLegendParticipated ->
     "the contact participated in the experiment"
+  | SessionCloseLegendVerified -> "the contact was verified"
   | SessionCloseNoParticipationTagsSelected ->
     "No tags were selected to be assigned to the participants who participated \
      in this experiment."

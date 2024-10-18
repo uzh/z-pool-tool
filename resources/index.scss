@@ -374,17 +374,20 @@ table.simple {
 }
 
 .session-close-checkboxes {
-    @extend .flexrow;
-    @extend .flex-gap;
-    width: 5rem;
-    align-items: flex-start;
+    display: flex;
+    width: 7.5rem;
+    justify-content: flex-end;
     padding-top: $space-xs;
     margin-left: auto;
     &>* {
-        flex-basis: 50%;
+        flex-basis: 2.5rem;
         display: flex;
         justify-content: center;
     }
+}
+
+.session-close-box {
+    width: 3rem;
 }
 
 #session-close-table .custom-data {

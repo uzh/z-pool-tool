@@ -665,6 +665,7 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     "Der Kontakt ist nicht an der Session erschienen"
   | SessionCloseLegendParticipated ->
     "Der Kontakt hat am Experiment teilgenommen"
+  | SessionCloseLegendVerified -> "Der Kontakt wurde verifiziert"
   | SessionCloseNoParticipationTagsSelected ->
     "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
      werden, die an diesem Experiment teilgenommen haben."
