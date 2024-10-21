@@ -568,6 +568,7 @@ let () =
           [ test_case "create tag" `Quick create_version_tag
           ; test_case "create" `Quick create
           ; test_case "update" `Quick update
+          ; test_case "publish" `Quick publish
           ] )
     ; ( "queue"
       , [ test_case

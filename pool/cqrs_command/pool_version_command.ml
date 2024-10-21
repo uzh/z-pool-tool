@@ -76,3 +76,36 @@ end = struct
 
   let effects = Access.update
 end
+
+module Publish : sig
+  type t = Pool_version.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?announcement_id:Announcement.Id.t
+    -> Pool_tenant.Id.t list
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val effects : Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Pool_version.t
+
+  let handle ?(tags = Logs.Tag.empty) ?announcement_id tenant_ids version =
+    let open CCResult in
+    Logs.info ~src (fun m -> m "Handle command Publish" ~tags);
+    let* () =
+      if Option.is_some version.published_at
+      then Error Pool_message.(Error.AlreadyPublished Field.Version)
+      else Ok ()
+    in
+    let* announcemet = announcement ?id:announcement_id version in
+    Ok
+      Pool_event.
+        [ Published version |> pool_version
+        ; Announcement.Created (announcemet, tenant_ids) |> announcement
+        ]
+  ;;
+
+  let effects = Access.update
+end

@@ -601,3 +601,8 @@ $n: 12;
         }
     }
 }
+
+.notification.error a,
+.notification.success a {
+    color: $white;
+}

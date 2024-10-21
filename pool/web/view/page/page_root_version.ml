@@ -68,23 +68,50 @@ let index (Pool_context.{ language; _ } as context) versions =
 let form { Pool_context.csrf; language; _ } ?version ?flash_fetcher () =
   let open Pool_version in
   let open CCOption.Infix in
+  let field = Some Field.Version in
   let action =
     match version with
     | None -> version_path ()
     | Some version -> version_path ~id:version.id ()
   in
   let control =
-    let field = Some Field.Version in
     match CCOption.is_some version with
     | false -> Control.Create field
     | true -> Control.Update field
   in
+  let publish_form { id; _ } =
+    let open CCOption in
+    match
+      version
+      |> map_or ~default:false (fun { published_at; _ } -> is_some published_at)
+    with
+    | true -> txt ""
+    | false ->
+      form
+        ~a:
+          [ a_method `Post
+          ; a_action (version_path ~id ~suffix:"publish" ())
+          ; a_class [ "no-gap" ]
+          ]
+        [ Input.csrf_element csrf ()
+        ; Input.submit_element
+            ~submit_type:`Success
+            language
+            (Control.Publish field)
+            ()
+        ]
+  in
   let title =
     let to_string = Pool_common.Utils.control_to_string language in
     match version with
-    | None -> to_string control
-    | Some { tag; _ } ->
-      Format.asprintf "%s %s" (to_string control) (Tag.value tag)
+    | None -> h1 [ txt (to_string control) ]
+    | Some version ->
+      let title =
+        Format.asprintf "%s %s" (to_string control) (Tag.value version.tag)
+      in
+      div
+        ~a:[ a_class [ "flexrow"; "justify-between" ] ]
+        [ h1 [ txt title ]; publish_form version ]
   in
   let version_input =
     match version with
@@ -94,12 +121,12 @@ let form { Pool_context.csrf; language; _ } ?version ?flash_fetcher () =
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt title ]
+    [ title
     ; form
         ~a:
           [ a_method `Post
           ; a_action (Sihl.Web.externalize_path action)
-          ; a_class [ "stack" ]
+          ; a_class [ "stack"; "gap-lg" ]
           ; a_user_data "detect-unsaved-changes" ""
           ]
         Input.

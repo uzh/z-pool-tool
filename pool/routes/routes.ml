@@ -1001,7 +1001,9 @@ module Root = struct
     in
     let versions =
       let open Version in
-      let specific = [ post "" update; get "edit" edit ] in
+      let specific =
+        [ post "" update; get "edit" edit; post "publish" publish ]
+      in
       [ get "" index
       ; post "" create
       ; get "new" new_form

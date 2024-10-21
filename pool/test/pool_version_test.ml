@@ -93,3 +93,43 @@ let update () =
   in
   ()
 ;;
+
+let publish () =
+  let announcement_id = Announcement.Id.create () in
+  let version =
+    Pool_version.create (Tag.of_string "1.1.1") (Text.of_string "text")
+  in
+  let tenant_ids = [ Pool_tenant.Id.create () ] in
+  let run_test version expected msg =
+    let result =
+      let open Command.Publish in
+      handle ~announcement_id tenant_ids version
+    in
+    Test_utils.check_result ~msg expected result
+  in
+  let () =
+    let expected =
+      let announcement =
+        Pool_version.announcement ~id:announcement_id version
+        |> Test_utils.get_or_failwith
+      in
+      Ok
+        [ Published version |> Pool_event.pool_version
+        ; Announcement.Created (announcement, tenant_ids)
+          |> Pool_event.announcement
+        ]
+    in
+    run_test version expected "publish version succeeds"
+  in
+  let () =
+    let expected = Error Pool_message.(Error.AlreadyPublished Field.Version) in
+    let version =
+      Pool_version.
+        { version with
+          published_at = Some (PublishedAt.create (Ptime_clock.now ()))
+        }
+    in
+    run_test version expected "pushish published version fails"
+  in
+  ()
+;;

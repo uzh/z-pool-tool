@@ -53,6 +53,11 @@ val handle_event : event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 
+val announcement
+  :  ?id:Announcement.Id.t
+  -> t
+  -> (Announcement.t, Pool_message.Error.t) result
+
 module Target : sig
   val to_authorizable
     :  ?ctx:(string * string) list

@@ -113,6 +113,34 @@ let update req =
   result |> Http_utils.extract_happy_path_with_actions ~src req
 ;;
 
+let publish req =
+  let tags = Pool_context.Logger.Tags.req req in
+  let id = version_id req in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err ->
+      err, version_path ~id ~suffix:"edit" ())
+    @@
+    let* version = Pool_version.find id in
+    let%lwt tenant_ids =
+      Pool_tenant.find_all () ||> CCList.map (fun { Pool_tenant.id; _ } -> id)
+    in
+    let events =
+      let open Cqrs_command.Pool_version_command.Publish in
+      handle ~tags:Logs.Tag.empty tenant_ids version |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        (version_path ())
+        [ Http_utils.Message.set ~success:[ Success.Published Field.Version ] ]
+    in
+    events |>> handle
+  in
+  result |> Http_utils.extract_happy_path ~src req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 end = struct
