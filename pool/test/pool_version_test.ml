@@ -4,7 +4,7 @@ open Pool_message
 
 let create_version_tag () =
   let testable_tag = Tag.(Alcotest.testable pp equal) in
-  let invalid_tags = [ ""; "invalid"; "1"; "1.1"; "1.1.1.1" ] in
+  let invalid_tags = [ ""; "invalid"; "a.b.c"; "1"; "1.1"; "1.1.1.1" ] in
   let valid_tags = [ "1.1.1"; "0.1.2"; "10.1.0" ] in
   let test msg expected tag =
     let res = Tag.create tag in

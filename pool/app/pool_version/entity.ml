@@ -12,9 +12,14 @@ module Tag = struct
   let field = Pool_message.Field.Tag
 
   let create m =
+    let error = Pool_message.Error.(Invalid field) in
     match CCString.split_on_char '.' m with
-    | [ _; _; _ ] -> Ok m
-    | _ -> Error Pool_message.Error.(Invalid field)
+    | [ major; minor; patch ] ->
+      [ major; minor; patch ]
+      |> CCList.map CCFun.(CCInt.of_string %> CCOption.to_result error)
+      |> CCList.all_ok
+      |> CCResult.map (CCFun.const m)
+    | _ -> Error error
   ;;
 
   let schema = schema ~validation:create field
