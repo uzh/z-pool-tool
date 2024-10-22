@@ -171,6 +171,7 @@ module Close = struct
       let updated_fields = updated_fields assignment updated in
       Page.Admin.Session.
         [ close_assignment_htmx_form
+            ~is_htmx_request:true
             ~updated_fields
             context
             experiment
@@ -203,6 +204,7 @@ module Close = struct
       in
       Page.Admin.Session.
         [ close_assignment_htmx_form
+            ~is_htmx_request:true
             ~updated_fields
             context
             experiment
@@ -252,6 +254,7 @@ module Close = struct
       in
       Page.Admin.Session.
         [ close_assignments_table
+            ~is_htmx_request:true
             context
             view_contact_name
             experiment

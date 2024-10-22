@@ -1516,6 +1516,7 @@ let session_counters
 ;;
 
 let close_assignment_htmx_form
+  ~is_htmx_request
   { Pool_context.language; csrf; _ }
   (experiment : Experiment.t)
   ?(updated_fields = [])
@@ -1546,12 +1547,17 @@ let close_assignment_htmx_form
       ; hx_params (Field.show field)
       ]
   in
-  let checkbox_element field suffix value =
+  let checkbox_element ?(disabled = false) field suffix value =
     let checked = if value then [ a_checked () ] else [] in
     let classnames =
       if CCList.mem ~eq:Field.equal field updated_fields
       then [ a_class [ "is-valid" ] ]
       else []
+    in
+    let attributes =
+      match disabled with
+      | true -> [ a_disabled () ]
+      | false -> hx_attribs field (action suffix)
     in
     div
       ~a:[ a_class [ "form-group" ] ]
@@ -1562,7 +1568,7 @@ let close_assignment_htmx_form
                 ([ a_input_type `Checkbox; a_name (Field.show field) ]
                  @ checked
                  @ classnames
-                 @ hx_attribs field (action suffix))
+                 @ attributes)
               ()
           ]
       ]
@@ -1628,6 +1634,9 @@ let close_assignment_htmx_form
         ; div
             ~a:[ a_class [ "session-close-checkboxes" ] ]
             [ checkbox_element
+                ~disabled:
+                  ((not is_htmx_request)
+                   && CCOption.is_some assignment.contact.Contact.verified)
                 Field.Verified
                 "verify"
                 (CCOption.is_some assignment.contact.Contact.verified)
@@ -1647,6 +1656,7 @@ let close_assignment_htmx_form
 
 let close_assignments_table
   ({ Pool_context.language; user; _ } as context)
+  ~is_htmx_request
   view_contact_name
   experiment
   session
@@ -1683,7 +1693,7 @@ let close_assignments_table
           ~a:[ a_class [ "flexrow"; "w-4" ] ]
           [ div
               ~a:[ a_class [ "session-close-checkboxes" ] ]
-              [ div ~a:(attributes Field.Verified) [ strong [ txt "V" ] ]
+              [ div [ strong [ txt "V" ] ]
               ; div ~a:(attributes Field.Participated) [ strong [ txt "P" ] ]
               ; div ~a:(attributes Field.NoShow) [ strong [ txt "NS" ] ]
               ]
@@ -1725,6 +1735,7 @@ let close_assignments_table
         [ div ~a:[ a_class [ identity_width ] ] [ strong [ txt identity ] ]
         ; custom_field_cells
         ; close_assignment_htmx_form
+            ~is_htmx_request
             ?updated_fields
             context
             experiment
@@ -1790,6 +1801,7 @@ let close
     div
       [ close_assignments_table
           context
+          ~is_htmx_request:false
           view_contact_name
           experiment
           session
