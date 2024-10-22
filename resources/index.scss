@@ -600,3 +600,8 @@ $n: 12;
         }
     }
 }
+
+input[type="checkbox"][readonly] {
+    filter: grayscale(1);
+    opacity: 0.8;
+}

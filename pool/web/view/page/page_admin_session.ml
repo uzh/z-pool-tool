@@ -1515,8 +1515,82 @@ let session_counters
     ]
 ;;
 
+module CloseScreen = struct
+  open Assignment
+
+  let action experiment session { Assignment.id; _ } suffix =
+    let session_path =
+      session_path ~id:session.Session.id experiment.Experiment.id
+    in
+    Format.asprintf "%s/assignments/%s/%s" session_path (Id.value id) suffix
+    |> Sihl.Web.externalize_path
+  ;;
+
+  let hx_attribs experiment session assignment ~name ~suffix =
+    Htmx.
+      [ hx_post (action experiment session assignment suffix)
+      ; hx_trigger "change"
+      ; hx_swap "outerHTML"
+      ; hx_target
+          (Format.asprintf "[data-assignment=\"%s\"]" (Id.value assignment.id))
+      ; hx_params
+          ([ name; Field.(array_key Verified) ]
+           |> CCList.uniq ~eq:CCString.equal
+           |> CCString.concat ",")
+      ]
+  ;;
+
+  let checkbox_element
+    experiment
+    session
+    assignment
+    ?(updated_fields = [])
+    ?(disabled = false)
+    ?(id_value = false)
+    name
+    suffix
+    value
+    =
+    let checked = if value then [ a_checked () ] else [] in
+    let classnames =
+      if CCList.mem
+           ~eq:CCString.equal
+           name
+           (CCList.map Field.show updated_fields)
+      then [ a_class [ "is-valid" ] ]
+      else []
+    in
+    let value =
+      (* If the field is disabled, add its id as the value to include it in the
+         htmx request *)
+      match id_value && disabled with
+      | true -> [ a_value (Id.value assignment.id) ]
+      | false -> []
+    in
+    let attributes =
+      match disabled with
+      | true -> [ a_readonly (); a_onclick "return false;" ]
+      | false -> hx_attribs experiment session assignment ~name ~suffix
+    in
+    div
+      ~a:[ a_class [ "form-group" ] ]
+      [ div
+          ~a:[ a_class [ "flexrow"; "justify-center" ] ]
+          [ input
+              ~a:
+                ([ a_input_type `Checkbox; a_name name ]
+                 @ checked
+                 @ classnames
+                 @ attributes
+                 @ value)
+              ()
+          ]
+      ]
+  ;;
+end
+
 let close_assignment_htmx_form
-  ~is_htmx_request
+  ~disable_verified
   { Pool_context.language; csrf; _ }
   (experiment : Experiment.t)
   ?(updated_fields = [])
@@ -1531,47 +1605,8 @@ let close_assignment_htmx_form
     | Ok () -> None
     | Error err -> Some err
   in
-  let session_path =
-    session_path ~id:session.Session.id experiment.Experiment.id
-  in
-  let action suffix =
-    Format.asprintf "%s/assignments/%s/%s" session_path (Id.value id) suffix
-    |> Sihl.Web.externalize_path
-  in
-  let hx_attribs field action =
-    Htmx.
-      [ hx_post action
-      ; hx_trigger "change"
-      ; hx_swap "outerHTML"
-      ; hx_target (Format.asprintf "[data-assignment=\"%s\"]" (Id.value id))
-      ; hx_params (Field.show field)
-      ]
-  in
-  let checkbox_element ?(disabled = false) field suffix value =
-    let checked = if value then [ a_checked () ] else [] in
-    let classnames =
-      if CCList.mem ~eq:Field.equal field updated_fields
-      then [ a_class [ "is-valid" ] ]
-      else []
-    in
-    let attributes =
-      match disabled with
-      | true -> [ a_disabled () ]
-      | false -> hx_attribs field (action suffix)
-    in
-    div
-      ~a:[ a_class [ "form-group" ] ]
-      [ div
-          ~a:[ a_class [ "flexrow"; "justify-center" ] ]
-          [ input
-              ~a:
-                ([ a_input_type `Checkbox; a_name (Field.show field) ]
-                 @ checked
-                 @ classnames
-                 @ attributes)
-              ()
-          ]
-      ]
+  let checkbox_element =
+    CloseScreen.checkbox_element experiment session assignment
   in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
   let external_data_field =
@@ -1598,18 +1633,24 @@ let close_assignment_htmx_form
         then [ a_class [ "is-valid" ] ]
         else []
       in
+      let name = Field.(show field) in
       div
         ~a:[ a_class [ "form-group"; "grow" ] ]
         [ input
             ~a:
               ([ a_input_type `Text
                ; a_value value
-               ; a_name Field.(show field)
+               ; a_name name
                ; a_placeholder
                    (field_to_string language field |> CCString.capitalize_ascii)
                ]
                @ classnames
-               @ hx_attribs field "close")
+               @ CloseScreen.hx_attribs
+                   experiment
+                   session
+                   assignment
+                   ~name
+                   ~suffix:"close")
             ()
         ]
   in
@@ -1635,17 +1676,18 @@ let close_assignment_htmx_form
             ~a:[ a_class [ "session-close-checkboxes" ] ]
             [ checkbox_element
                 ~disabled:
-                  ((not is_htmx_request)
+                  (disable_verified
                    && CCOption.is_some assignment.contact.Contact.verified)
-                Field.Verified
+                ~id_value:true
+                Field.(array_key Verified)
                 "verify"
                 (CCOption.is_some assignment.contact.Contact.verified)
             ; checkbox_element
-                Field.Participated
+                Field.(show Participated)
                 "close"
                 (default_bool Participated.value participated)
             ; checkbox_element
-                Field.NoShow
+                Field.(show NoShow)
                 "close"
                 (default_bool NoShow.value no_show)
             ]
@@ -1656,12 +1698,12 @@ let close_assignment_htmx_form
 
 let close_assignments_table
   ({ Pool_context.language; user; _ } as context)
-  ~is_htmx_request
   view_contact_name
   experiment
   session
   assignments
   custom_fields
+  disabled_verified
   =
   match assignments with
   | [] ->
@@ -1682,6 +1724,7 @@ let close_assignments_table
         let attributes field =
           Htmx.
             [ a_class [ "pointer" ]
+            ; a_user_data "toggle" "all"
             ; hx_post action
             ; hx_target ("#" ^ form_id)
             ; hx_swap "outerHTML"
@@ -1733,10 +1776,13 @@ let close_assignments_table
             contact
             (Assignment.Id.to_common id)
         in
+        let disable_verified =
+          CCList.mem ~eq:Assignment.Id.equal id disabled_verified
+        in
         [ div ~a:[ a_class [ identity_width ] ] [ strong [ txt identity ] ]
         ; custom_field_cells
         ; close_assignment_htmx_form
-            ~is_htmx_request
+            ~disable_verified
             ?updated_fields
             context
             experiment
@@ -1797,19 +1843,53 @@ let close
       ; participation_tags_list
       ]
   in
+  let disabled_verified =
+    CCList.filter_map
+      (fun { Assignment.id; contact; _ } ->
+        match contact.Contact.verified with
+        | None -> None
+        | Some _ -> Some id)
+      assignments
+  in
   let assignments = CCList.map (CCFun.flip CCPair.make None) assignments in
   let table =
     div
       [ close_assignments_table
           context
-          ~is_htmx_request:false
           view_contact_name
           experiment
           session
           assignments
           custom_fields
+          disabled_verified
       ; session_counters language counters
       ]
+  in
+  let htmx_script =
+    {js|
+      const formId = "session-close-table"
+      const verifiedName = "verified[]";
+
+      const initHtmxListener = (target) => {
+          const targetEl = target || document.getElementById(formId);
+          const toggles = targetEl.querySelectorAll('[data-toggle="all"]');
+          toggles.forEach(toggle => {
+              toggle.addEventListener('htmx:configRequest', (e) => {
+                  const verified = [...targetEl.querySelectorAll(`[name="${verifiedName}"]:checked`)];
+                  const values = verified.map((el) => el.value).join(',');
+                  e.detail.parameters[verifiedName] = values;
+              });
+          })
+      }
+
+      const handleSwap = (e) => {
+          initHtmxListener(e.target); 
+      }
+
+      initHtmxListener();
+      const form = document.getElementById(formId);
+      form.parentElement.addEventListener('htmx:afterSwap', handleSwap);  
+    |js}
   in
   let submit_session_close =
     form
@@ -1849,6 +1929,7 @@ let close
           ]
       ; table
       ; submit_session_close
+      ; script (Unsafe.data htmx_script)
       ]
   ]
   |> Layout.Experiment.(create context (Control control) experiment)
