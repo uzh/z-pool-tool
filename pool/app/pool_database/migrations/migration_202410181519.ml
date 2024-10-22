@@ -1,6 +1,6 @@
 let create_versions_table =
   Database.Migration.Step.create
-    ~label:"create sign_up codes table"
+    ~label:"create pool versions table"
     {sql|
       CREATE TABLE IF NOT EXISTS pool_versions (
         id BIGINT UNSIGNED AUTO_INCREMENT,
