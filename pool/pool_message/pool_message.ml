@@ -79,7 +79,7 @@ let to_conformist_error error_list =
 let add_field_query_params url params =
   let open CCList in
   let open Uri in
-  map (CCPair.map_fst Field.show) params
+  map (CCPair.map_fst Field.human_url) params
   |> add_query_params' (of_string url)
   |> fun uri ->
   with_query uri (query uri |> rev |> uniq ~eq:Utils.equal_key |> rev)

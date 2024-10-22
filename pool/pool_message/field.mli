@@ -30,6 +30,7 @@ type t =
   | Chronological
   | City
   | ClosedAt
+  | Code
   | Confirmed
   | ConfirmedAt
   | Contact
@@ -212,6 +213,7 @@ type t =
   | Reason
   | Recipient
   | Redirect
+  | Redirected
   | RegistrationDisabled
   | RegistrationPossible
   | Reminder
@@ -242,6 +244,7 @@ type t =
   | ShowToAdmins
   | ShowToContacts
   | SignedUpAt
+  | SignUpCode
   | SignUpCount
   | SMS
   | SmsText
@@ -303,6 +306,7 @@ type t =
   | Value
   | ValueOf of t
   | VerificationCode
+  | VerificationCount
   | Verified
   | Version
   | Virtual

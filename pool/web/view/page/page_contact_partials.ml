@@ -3,7 +3,7 @@ open Tyxml.Html
 let toggle_status_form
   csrf
   language
-  query_language
+  query_params
   ?has_icon
   ~action
   ?confirmable
@@ -12,7 +12,7 @@ let toggle_status_form
   ()
   =
   let open Component.Input in
-  let externalize = Http_utils.externalize_path_with_lang query_language in
+  let externalize = Http_utils.externalize_path_with_params query_params in
   let confirmable =
     confirmable
     |> CCOption.map_or ~default:[] (fun confirmable ->

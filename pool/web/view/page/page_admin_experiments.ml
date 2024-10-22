@@ -670,7 +670,7 @@ let edit
   ?(allowed_to_assign = false)
   ~session_count
   experiment
-  ({ Pool_context.language; csrf; query_language; _ } as context)
+  ({ Pool_context.language; csrf; query_parameters; _ } as context)
   tenant
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
@@ -714,7 +714,7 @@ let edit
             ~suffix:(Format.asprintf "%s/assign" Field.(field |> human_url))
             experiment
         in
-        Http_utils.externalize_path_with_lang query_language path
+        Http_utils.externalize_path_with_params query_parameters path
       in
       div
         ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]

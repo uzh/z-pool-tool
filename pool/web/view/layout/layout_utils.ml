@@ -41,15 +41,15 @@ let css_link_tag (file : [ `GlobalStylesheet | `TenantStylesheet ]) =
 module App = struct
   let app_name = "Z-Pool-Tool"
 
-  let create_title query_language title =
+  let create_title query_parameters title =
     let path =
-      Http_utils.path_with_language query_language "/index"
+      Http_utils.url_with_field_params query_parameters "/index"
       |> Sihl.Web.externalize_path
     in
     div ~a:[ a_class [ "app-title" ] ] [ a ~a:[ a_href path ] [ txt title ] ]
   ;;
 
-  let navbar ?(children = []) query_language title =
+  let navbar ?(children = []) query_parameters title =
     header
       ~a:
         [ a_class
@@ -61,7 +61,7 @@ module App = struct
             ; "border-bottom"
             ]
         ]
-      [ create_title query_language title; div children ]
+      [ create_title query_parameters title; div children ]
   ;;
 
   let version = Format.asprintf "Z-Pool-Tool %s" Version.to_string

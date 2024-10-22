@@ -2,11 +2,17 @@ open Tyxml.Html
 open Component.Input
 open Pool_message
 
-let terms ?notification terms Pool_context.{ language; query_language; csrf; _ }
+let terms
+  ?notification
+  terms
+  Pool_context.{ language; query_parameters; csrf; _ }
   =
   let terms = terms |> I18n.content_to_string |> Unsafe.data in
   let open Pool_common in
-  let externalize = Http_utils.externalize_path_with_lang query_language in
+  let externalize =
+    Http_utils.externalize_path_with_params
+      (Pool_context.Utils.remove_query_param query_parameters Field.Redirected)
+  in
   let notifiaction =
     match notification with
     | Some notification ->
