@@ -70,6 +70,7 @@ let () =
             Contact_test.request_email_validation_wrong_suffix
         ; test_case "update email" `Quick Contact_test.update_email
         ; test_case "verify email" `Quick Contact_test.verify_email
+        ; test_case "toggle verified" `Quick Contact_test.toggle_verified
         ; test_case
             "accept terms and condition"
             `Quick
