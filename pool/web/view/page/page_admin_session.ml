@@ -1624,7 +1624,7 @@ let close_assignment_htmx_form
   in
   form
     ~a:
-      [ a_class [ "flexcolumn"; "stack-sm"; "w-4" ]
+      [ a_class [ "flexcolumn"; "stack-sm"; "w-5" ]
       ; a_user_data "assignment" (Id.value id)
       ]
     [ csrf_element csrf ()
@@ -1670,7 +1670,7 @@ let close_assignments_table
       ]
   | assignments ->
     let identity_width = "w-3" in
-    let custom_data_width = "w-5" in
+    let custom_data_width = "w-4" in
     let form_id = "session-close-table" in
     let thead =
       let form_header =
@@ -1690,7 +1690,7 @@ let close_assignments_table
             ]
         in
         div
-          ~a:[ a_class [ "flexrow"; "w-4" ] ]
+          ~a:[ a_class [ "flexrow"; "w-5" ] ]
           [ div
               ~a:[ a_class [ "session-close-checkboxes" ] ]
               [ div [ strong [ txt "V" ] ]
@@ -1700,10 +1700,9 @@ let close_assignments_table
           ]
       in
       [ div ~a:[ a_class [ identity_width ] ] []
-      ; custom_fields
-        |> CCList.map (fun field ->
-          div [ txt (Custom_field.name_value language field) ])
-        |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
+      ; (if CCList.is_empty custom_fields
+         then txt ""
+         else div ~a:[ a_class [ custom_data_width ] ] [])
       ]
       @ [ form_header ]
     in
@@ -1711,20 +1710,22 @@ let close_assignments_table
       (fun (({ Assignment.id; contact; _ } as assignment), updated_fields) ->
         let custom_data = assignment.Assignment.custom_fields in
         let custom_field_cells =
+          let map_or = CCOption.map_or in
           let open Custom_field in
-          custom_data
-          |> CCOption.map_or ~default:[] (fun custom_data ->
-            CCList.map
-              (fun field ->
-                CCList.find_opt (Public.id %> Id.equal (id field)) custom_data
-                |> CCOption.map_or
-                     ~default:(div [ txt "" ])
-                     (Component.CustomField.answer_to_html
-                        ~add_data_label:true
-                        user
-                        language))
-              custom_fields)
-          |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
+          match custom_data with
+          | None -> div []
+          | Some custom_data ->
+            let answer_html =
+              Component.CustomField.answer_to_html
+                ~add_data_label:true
+                user
+                language
+            in
+            custom_fields
+            |> CCList.map (fun field ->
+              CCList.find_opt (Public.id %> Id.equal (id field)) custom_data
+              |> map_or ~default:(div [ txt "" ]) answer_html)
+            |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
         in
         let identity =
           Component.UserStatus.Contact.identity

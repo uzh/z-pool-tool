@@ -375,12 +375,12 @@ table.simple {
 
 .session-close-checkboxes {
     display: flex;
-    width: 7.5rem;
+    width: 9rem;
     justify-content: flex-end;
     padding-top: $space-xs;
     margin-left: auto;
     &>* {
-        flex-basis: 2.5rem;
+        flex-basis: 3rem;
         display: flex;
         justify-content: center;
     }
@@ -392,8 +392,22 @@ table.simple {
 
 #session-close-table .custom-data {
     display: flex;
+    flex-direction: column;
+    align-self: flex-start;
+
     & > * {
+        flex-direction: row;
         flex-basis: 100%;
+    }
+
+    & > * + * {
+        margin-top: $space-xs;
+    }
+
+    [data-label]:before {
+        content: attr(data-label);
+        width: 50%;
+        font-weight: 600;
     }
 }
 
@@ -413,24 +427,6 @@ table.simple {
 
         & > * > * {
             width: 100%;
-        }
-    }
-
-    .custom-data {
-        flex-direction: column;
-        
-        & > * + * {
-            margin-top: $space-xs;
-        }
-        
-        & > * {
-            flex-direction: row;
-        }
-
-        [data-label]:before {
-            content: attr(data-label);
-            width: 30%;
-            font-weight: $font-weight-bold;    
         }
     }
 }
