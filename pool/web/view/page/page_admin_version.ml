@@ -6,6 +6,15 @@ module Input = Component.Input
 let version_path = Http_utils.Url.Admin.version_path
 let field_to_string = Pool_common.Utils.field_to_string_capitalized
 
+let changelog_hint language =
+  let changelog_url = Version.changelog_url in
+  p
+    [ Unsafe.data
+        Pool_common.(
+          Utils.hint_to_string language I18n.(ReleaseNotesHint changelog_url))
+    ]
+;;
+
 let list { Pool_context.language; _ } (versions, query) =
   let open Pool_version in
   let url = version_path () |> Uri.of_string in
@@ -45,6 +54,7 @@ let index (Pool_context.{ language; _ } as context) versions =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.VersionsListTitle) ]
+    ; changelog_hint language
     ; list context versions
     ]
 ;;
@@ -63,6 +73,7 @@ let show { Pool_context.language; _ } { Pool_version.tag; text; _ } =
                   Field.Version)
                (Tag.value tag))
         ]
+    ; changelog_hint language
     ; div [ Unsafe.data (Text.value text) ]
     ]
 ;;

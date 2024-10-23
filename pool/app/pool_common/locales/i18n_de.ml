@@ -630,6 +630,12 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
+  | ReleaseNotesHint repo_url ->
+    Format.asprintf
+      "Hier finden Sie die für Sie relevaten Änderungen pro Version des Tools. \
+       Den vollständigen Changelog finden Sie auf <a href=\"%s\" \
+       target=\"_blank\">github.com</a>."
+      repo_url
   | RolePermissionsModelList ->
     "Wählen Sie das Objekt, für welches Sie die Berechtigungen anpassen wollen."
   | RolePermissionsRoleList -> "Alle anpassparen Rollen des Teants."

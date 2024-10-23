@@ -283,6 +283,7 @@ type hint =
   | ResendRemindersWarning
   | ResetInvitations
   | ResetInvitationsLastReset of Ptime.t
+  | ReleaseNotesHint of string
   | RoleIntro of Pool_message.Field.t * Pool_message.Field.t
   | RolePermissionsModelList
   | RolePermissionsRoleList
