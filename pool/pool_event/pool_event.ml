@@ -2,6 +2,7 @@
 
 type t =
   | Admin of Admin.event
+  | Announcement of Announcement.event
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
@@ -21,6 +22,7 @@ type t =
   | PoolTenant of Pool_tenant.event
   | Session of Session.event
   | Settings of Settings.event
+  | SignupCode of Signup_code.event
   | SystemEvent of System_event.event
   | Tags of Tags.event
   | TextMessage of Text_message.event
@@ -32,6 +34,7 @@ type t =
 
 (* TODO: Consider using variants, instead of custom functions *)
 let admin events = Admin events
+let announcement events = Announcement events
 let assignment events = Assignment events
 let assignmentjob events = AssignmentJob events
 let contact events = Contact events
@@ -51,6 +54,7 @@ let pool_location events = PoolLocation events
 let pool_tenant events = PoolTenant events
 let session events = Session events
 let settings events = Settings events
+let signupcode events = SignupCode events
 let system_event events = SystemEvent events
 let tags events = Tags events
 let text_message events = TextMessage events
@@ -69,6 +73,9 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   | Admin event ->
     info "admin" Admin.pp_event event;
     Admin.handle_event ~tags pool event
+  | Announcement event ->
+    info "announcement" Announcement.pp_event event;
+    Announcement.handle_event pool event
   | Assignment event ->
     info "assignment" Assignment.pp_event event;
     Assignment.handle_event pool event
@@ -128,6 +135,9 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   | Settings event ->
     info "settings" Settings.pp_event event;
     Settings.handle_event pool event
+  | SignupCode event ->
+    info "signup_code" Signup_code.pp_event event;
+    Signup_code.handle_event pool event
   | SystemEvent event ->
     info "system_event" System_event.pp_event event;
     (* Not passing pool, so the event can be handled with tenant events *)

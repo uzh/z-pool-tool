@@ -9,6 +9,7 @@
   pool_user
   session
   settings
+  signup_code
   text_message
   utils)
  (preprocess

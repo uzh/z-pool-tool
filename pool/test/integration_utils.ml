@@ -2,6 +2,34 @@ open Test_utils
 
 let default_current_user = Model.create_admin ()
 
+module AnnouncementRepo = struct
+  let create
+    ?(current_user = default_current_user)
+    ?id
+    ?start_at
+    ?end_at
+    ?show_to_admins
+    ?show_to_contacts
+    tenant_ids
+    =
+    let announcement =
+      Test_utils.Model.create_announcement
+        ?id
+        ?start_at
+        ?end_at
+        ?show_to_admins
+        ?show_to_contacts
+        ()
+    in
+    let%lwt () =
+      Announcement.Created (announcement, tenant_ids)
+      |> Pool_event.announcement
+      |> Pool_event.handle_event Database.root current_user
+    in
+    Lwt.return announcement
+  ;;
+end
+
 module AssignmentRepo = struct
   let create ?(current_user = default_current_user) ?id session contact =
     let assignment = Assignment.create ?id contact in
@@ -28,7 +56,7 @@ module ContactRepo = struct
       Model.create_contact ?id ?lastname ?language ~with_terms_accepted ()
     in
     let open Contact in
-    let confirm = [ Verified contact; EmailVerified contact ] in
+    let confirm = [ EmailVerified contact ] in
     let%lwt () =
       [ Created
           { user_id = id contact
@@ -117,8 +145,8 @@ module LocationRepo = struct
 end
 
 module MailingRepo = struct
-  let create ?(id = Mailing.Id.create ()) ?limit experiment_id =
-    let mailing = Model.create_mailing ~id ?limit () in
+  let create ?(id = Mailing.Id.create ()) ?start ?limit experiment_id =
+    let mailing = Model.create_mailing ~id ?start ?limit () in
     let%lwt () =
       Mailing.(
         Created (mailing, experiment_id) |> handle_event Data.database_label)

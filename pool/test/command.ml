@@ -4,7 +4,8 @@ let () =
   let open Alcotest in
   run
     "cqrs commands"
-    [ ( "changelog"
+    [ ("announcement", Announcement_test.[ test_case "create" `Quick create ])
+    ; ( "changelog"
       , Changelog_test.
           [ test_case "create unchanged" `Quick create_unchanged
           ; test_case "create" `Quick create
@@ -77,6 +78,7 @@ let () =
             Contact_test.request_email_validation_wrong_suffix
         ; test_case "update email" `Quick Contact_test.update_email
         ; test_case "verify email" `Quick Contact_test.verify_email
+        ; test_case "toggle verified" `Quick Contact_test.toggle_verified
         ; test_case
             "accept terms and condition"
             `Quick
@@ -511,7 +513,7 @@ let () =
             `Quick
             Message_template_test.create_with_unavailable_language
         ; test_case
-            "delete  with entity uuid"
+            "delete with entity uuid"
             `Quick
             Message_template_test.delete_valid
         ; test_case
@@ -519,7 +521,7 @@ let () =
             `Quick
             Message_template_test.delete_without_entity
         ] )
-    ; ( "queue"
+    ; ( "queue: message mappings"
       , Message_mapping.Resend.
           [ test_case "resend pending job" `Quick resend_pending
           ; test_case "resend unchanged" `Quick resend_unchanged
@@ -570,7 +572,7 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
-    ; ( " queue"
+    ; ( "queue"
       , [ test_case
             "create delivery report"
             `Quick

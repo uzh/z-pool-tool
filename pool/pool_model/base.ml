@@ -90,8 +90,11 @@ module Boolean = struct
     | _ -> false
   ;;
 
-  let schema field () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
+  let schema ?default field ()
+    : (Pool_message.Error.t, t) Pool_conformist.Field.t
+    =
     Pool_conformist.schema_decoder
+      ?default
       (fun m ->
         m
         |> bool_of_string_opt

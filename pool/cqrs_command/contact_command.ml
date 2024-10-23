@@ -10,6 +10,7 @@ module SignUp : sig
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?user_id:Contact.Id.t
     -> ?terms_accepted_at:Pool_user.TermsAccepted.t option
+    -> ?signup_code:Signup_code.Code.t
     -> Custom_field.Public.t list
     -> Email.Token.t
     -> Pool_user.EmailAddress.t
@@ -28,6 +29,7 @@ end = struct
     ?allowed_email_suffixes
     ?(user_id = Contact.Id.create ())
     ?(terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ()))
+    ?signup_code
     custom_fields
     token
     unverified_email
@@ -60,13 +62,19 @@ end = struct
         Custom_field.AnsweredOnSignup (field, user_id |> Contact.Id.to_common)
         |> Pool_event.custom_field)
     in
+    let signup_code_event =
+      signup_code
+      |> CCOption.map_or ~default:[] (fun code ->
+        Signup_code.SignedUp code |> Pool_event.signupcode |> CCList.return)
+    in
     Ok
       ([ Contact.Created contact |> Pool_event.contact
        ; Email.Created (unverified_email, token, user_id |> Contact.Id.to_user)
          |> Pool_event.email_verification
        ; Email.sent verification_email |> Pool_event.email
        ]
-       @ custom_field_events)
+       @ custom_field_events
+       @ signup_code_event)
   ;;
 
   let decode data =
@@ -430,6 +438,32 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) contact =
     Logs.info ~src (fun m -> m "Handle command MarkAsDeleted" ~tags);
     Ok [ Contact.MarkedAsDeleted contact |> Pool_event.contact ]
+  ;;
+
+  let effects = Contact.Guard.Access.update
+end
+
+module ToggleVerified : sig
+  type t = Contact.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Contact.t
+
+  let handle ?(tags = Logs.Tag.empty) contact =
+    Logs.info ~src (fun m -> m "Handle command ToggleVerified" ~tags);
+    let open Contact in
+    let verified =
+      match contact.verified with
+      | None -> Some (Pool_user.Verified.create_now ())
+      | Some _ -> None
+    in
+    Ok [ Contact.Updated { contact with verified } |> Pool_event.contact ]
   ;;
 
   let effects = Contact.Guard.Access.update

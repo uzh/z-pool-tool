@@ -1,5 +1,6 @@
 type t =
   | Admin of Admin.event
+  | Announcement of Announcement.event
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
@@ -19,6 +20,7 @@ type t =
   | PoolTenant of Pool_tenant.event
   | Session of Session.event
   | Settings of Settings.event
+  | SignupCode of Signup_code.event
   | SystemEvent of System_event.event
   | Tags of Tags.event
   | TextMessage of Text_message.event
@@ -31,6 +33,7 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val admin : Admin.event -> t
+val announcement : Announcement.event -> t
 val assignment : Assignment.event -> t
 val assignmentjob : Assignment_job.event -> t
 val contact : Contact.event -> t
@@ -50,6 +53,7 @@ val pool_location : Pool_location.event -> t
 val pool_tenant : Pool_tenant.event -> t
 val session : Session.event -> t
 val settings : Settings.event -> t
+val signupcode : Signup_code.event -> t
 val system_event : System_event.event -> t
 val tags : Tags.event -> t
 val text_message : Text_message.event -> t

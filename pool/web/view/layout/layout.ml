@@ -15,8 +15,15 @@ let language_attribute lang =
 module Tenant = struct
   let create
     ?active_navigation
-    ({ Pool_context.database_label; language; query_language; message; user; _ }
-     as context)
+    ({ Pool_context.database_label
+     ; csrf
+     ; language
+     ; query_parameters
+     ; message
+     ; user
+     ; announcement
+     ; _
+     } as context)
     Pool_context.Tenant.{ tenant_languages; tenant }
     children
     =
@@ -39,7 +46,13 @@ module Tenant = struct
     let htmx_notification =
       div ~a:[ a_id Http_utils.Htmx.notification_id ] []
     in
-    let content = main_tag [ message; htmx_notification; children ] in
+    let announcement =
+      CCOption.map (Component.Announcement.make language csrf) announcement
+    in
+    let children = div ~a:[ a_class [ "stack" ] ] [ children ] in
+    let content =
+      main_tag ?announcement [ message; htmx_notification; children ]
+    in
     let head_tags =
       let favicon =
         tenant.icon
@@ -49,7 +62,7 @@ module Tenant = struct
       [ charset; viewport ] @ stylesheets @ favicon
     in
     let%lwt navbar_content =
-      let title = App.create_title query_language title_text in
+      let title = App.create_title query_parameters title_text in
       Navigation.create_main ?active_navigation context title tenant_languages
     in
     let%lwt footer =
@@ -59,7 +72,7 @@ module Tenant = struct
       let open Pool_common in
       let externalize path =
         path
-        |> Http_utils.path_with_language query_language
+        |> Http_utils.url_with_field_params query_parameters
         |> Sihl.Web.externalize_path
       in
       let text_fragments =
@@ -119,7 +132,7 @@ module Tenant = struct
       (head page_title head_tags)
       (body
          ~a:[ a_class body_tag_classnames ]
-         ([ App.navbar ~children:navbar_content query_language title_text
+         ([ App.navbar ~children:navbar_content query_parameters title_text
           ; content
           ; footer
           ]
@@ -129,7 +142,10 @@ module Tenant = struct
 end
 
 module Root = struct
-  let create ?active_navigation ({ Pool_context.message; _ } as context) content
+  let create
+    ?active_navigation
+    ({ Pool_context.message; query_parameters; _ } as context)
+    content
     =
     let open Layout_utils in
     let language = Language.En in
@@ -137,7 +153,7 @@ module Root = struct
     let page_title = title (txt title_text) in
     let message = Message.create message language () in
     let%lwt navbar_content =
-      let title = App.create_title None title_text in
+      let title = App.create_title query_parameters title_text in
       Navigation.create_root
         ?active_navigation
         Pool_context.{ context with language }
@@ -155,10 +171,11 @@ module Root = struct
          ])
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ App.navbar ~children:navbar_content None title_text
+         [ App.navbar ~children:navbar_content query_parameters title_text
          ; main_tag [ message; content ]
          ; App.root_footer
          ; js_script_tag `IndexJs
+         ; js_script_tag `AdminJs
          ])
     |> Lwt.return
   ;;
@@ -177,7 +194,7 @@ module Error = struct
          ([ charset; viewport ] @ [ `GlobalStylesheet |> css_link_tag ]))
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ App.navbar None title_text
+         [ App.navbar [] title_text
          ; content
          ; App.root_footer
          ; js_script_tag `IndexJs

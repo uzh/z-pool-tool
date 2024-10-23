@@ -6,6 +6,9 @@ let to_string = function
   | Activity -> "Aktivität"
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
+  | AnnouncementsListTitle -> "Ankündigungen"
+  | AnnouncementsTenantSelect ->
+    "Wählen Sie, auf welchen Tenants die Ankündigung angezeigt werden soll."
   | AssignmentEditTagsWarning ->
     "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
      zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \
@@ -53,6 +56,22 @@ let to_string = function
   | ExperimentOnlineListEmpty ->
     "Aktuell gibt es keine Onlinestudien, an denen Sie teilnehmen können."
   | ExperimentOnlineListPublicTitle -> "Verfügbare Onlinestudien"
+  | ExperimentOnlineParticipationDeadline end_at ->
+    Format.asprintf
+      "Sie können noch bis zum %s an diesem Experiment teilnehmen."
+      (Pool_model.Time.formatted_date_time end_at)
+  | ExperimentOnlineParticiated submitted ->
+    Format.asprintf
+      "Sie haben diese Umfrage am %s abgeschlossen."
+      (Utils.Ptime.formatted_date submitted)
+  | ExperimentOnlineParticipationUpcoming start_at ->
+    Format.asprintf
+      "Das nächste Zeitfenster für die Teilnahme an dieser Umfrage beginnt am \
+       %s."
+      (Pool_model.Time.formatted_date_time start_at)
+  | ExperimentOnlineParticipationNoUpcoming ->
+    "Es sind zur Zeit keine weiteren Zeitfenster für die Teilnahme an dieser \
+     Umfrage geplant."
   | ExperimentListTitle -> "Experimente"
   | ExperimentMessagingSubtitle -> "Identitäten"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
@@ -105,6 +124,14 @@ let to_string = function
       <li>Drücken Sie die Schaltfläche "Hinzufügen", um den Sortierparameter hinzuzufügen.</li>
       <li>Wiederholen Sie diesen Vorgang, um weitere Parameter hinzuzufügen. Sie können sie durch "drag and drop" sortieren.</li>
     </ol>|}
+  | MailingExperimentNoUpcomingSession ->
+    "Es gibt keine Sessions, an die sich Kontakte anmelden können. Es werden \
+     keine Einladungen versendet. Legen Sie neue Sessions an, bevor Sie das \
+     Mailing starten."
+  | MailingExperimentNoUpcomingTimewindow ->
+    "Es gibt kein aktives oder zukünftiges Zeitfenster, während dem die \
+     Teilnehmer die Umfrage beantworten können. Es werden keine Einladungen \
+     versendet. Legen Sie zuerst ein Zeitfenster an."
   | MailingExperimentSessionFullyBooked ->
     "Alle Sessions sind ausgebucht. Es werden keine Einladungen versendet \
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
@@ -182,6 +209,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
 let nav_link_to_string = function
   | ActorPermissions -> "Persönliche Berechtigungen"
   | Admins -> "Administratoren"
+  | Announcements -> "Ankündigungen"
   | Assignments -> "Anmeldungen"
   | ContactInformation -> "Kontaktangaben"
   | Contacts -> "Kontakte"
@@ -217,6 +245,7 @@ let nav_link_to_string = function
   | Settings -> "Einstellungen"
   | Smtp -> "E-Mail Server (SMTP)"
   | SystemSettings -> "Systemeinstellungen"
+  | SignupCodes -> "Registrierungscodes"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "SMS"
@@ -384,6 +413,9 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
   | ExperimentSessions ->
     {|Alle existierenden Session dieses Experiments.
   Sobald sich jemand angemeldet hat, kann die Session nicht mehr gelöscht werden.|}
+  | ExperimentSessionsCancelDelete ->
+    {|Wird eine Sessionanmeldung abgesagt, wird der Kontakt darüber informiert und kann sich anschliessend nicht mehr für dieses Experiment anmelden.
+Wird eine Sessionanmeldung als gelöscht markiert, wird der Kontkt nicht darüber informiert, kann sich jedoch wieder für dieses Experiment anmelden.|}
   | ExperimentSessionsPublic ->
     "Hinweis: Möglicherweise werden einzelne Sessions oder komplette \
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
@@ -416,14 +448,15 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
      Onlineumfrage. Wird die URL der Umfrage in der Einladung verschickt, \
      können eingeladene Kontakte diese starten, ohne dass eine Anmeldung \
      erstellt wird. Sie können im Pool nicht einsehen, wer an der Umfrage \
-     teilgenommen hat.<br/>Dynamische URL Parameter, wie die \
-     <code>callbackUrl</code>, werden nicht mit effektiven Werten ersetzt."
+     teilgenommen hat.<br/><strong>Dynamische URL Parameter, wie die \
+     <code>callbackUrl</code>, werden nicht mit effektiven Werten \
+     ersetzt.</strong>"
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
   | SurveyUrl ->
-    "ine URL inkl. Protokoll. Der URL-Parameter 'callbackUrl' ist \
-     erforderlich. Z.B.: \
+    "ine URL inkl. Protokoll. Sie können Informationen an Ihre Umfrage \
+     übermitteln, indem Sie Query-Parameter zu Ihrere URL hinzufügen. Z.B.: \
      https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | FilterTemplates ->
     "Änderungen an einem dieser Filter wird auf alle Experimentfilter \
@@ -535,10 +568,6 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
        externe URL der Studie an, auf welche die Kontakte weitergeleitet \
        werden sollen."
       (Locales_de.field_to_string Pool_message.Field.SurveyUrl)
-  | OnlineExperimentParticipationDeadline end_at ->
-    Format.asprintf
-      "Sie können noch bis zum %s an diesem Experiment teilnehmen."
-      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
@@ -637,6 +666,7 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     "Der Kontakt ist nicht an der Session erschienen"
   | SessionCloseLegendParticipated ->
     "Der Kontakt hat am Experiment teilgenommen"
+  | SessionCloseLegendVerified -> "Der Kontakt wurde verifiziert"
   | SessionCloseNoParticipationTagsSelected ->
     "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
      werden, die an diesem Experiment teilgenommen haben."
@@ -657,6 +687,14 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SettingsNoEmailSuffixes ->
     "Es sind keine Email-Endungen definiert, die zugelassen sind. Das \
      bedeutet, dass alle Email-Endungen erlaubt sind."
+  | SignUpCodeHint ->
+    Format.asprintf
+      "Um zu verfolgen, über welche Kanäle sich Kontakte beim Pool \
+       registrieren, können URLs mit Codes verschickt werden. Die Codes können \
+       frei gewählt werden, müssen aber als URL Parameter mit dem Key '%s' \
+       verschickt werden. Sie können das Formular unten, um eine URL zu \
+       erstellen, die Sie an neue Kontakte senden können"
+      Pool_message.Field.(human_url SignUpCode)
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
@@ -698,6 +736,7 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | UserImportInterval ->
     {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
 <p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}
+  | VerifyContact -> "Den Kontakt als verifiziert markieren."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
      Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \

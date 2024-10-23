@@ -33,9 +33,11 @@ let user_import_from_req database_label req =
 
 let import_confirmation req =
   let result
-    ({ Pool_context.database_label; language; query_language; _ } as context)
+    ({ Pool_context.database_label; language; query_parameters; _ } as context)
     =
-    let error_path = Http_utils.path_with_language query_language "/index" in
+    let error_path =
+      Http_utils.url_with_field_params query_parameters "/index"
+    in
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* ({ User_import.token; _ }, _) : User_import.t * Pool_context.user =
          user_import_from_req database_label req
@@ -59,7 +61,7 @@ let import_confirmation req =
 
 let import_confirmation_post req =
   let tags = Pool_context.Logger.Tags.req req in
-  let result { Pool_context.database_label; query_language; _ } =
+  let result { Pool_context.database_label; query_parameters; _ } =
     let%lwt urlencoded =
       let open Http_utils in
       Sihl.Web.Request.to_urlencoded req
@@ -68,10 +70,9 @@ let import_confirmation_post req =
     in
     let error_path token =
       let open CCOption.Infix in
-      [ Field.Language, query_language >|= Pool_common.Language.show
-      ; Field.Token, token >|= User_import.Token.value
-      ]
+      [ Field.Token, token >|= User_import.Token.value ]
       |> CCList.filter_map (fun (key, value) -> value >|= CCPair.make key)
+      |> CCList.append query_parameters
       |> add_field_query_params "/import-confirmation"
     in
     let* ({ User_import.token; _ } as user_import), user =
@@ -100,7 +101,7 @@ let import_confirmation_post req =
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.(
       redirect_to_with_actions
-        (path_with_language query_language "/login")
+        (url_with_field_params query_parameters "/login")
         [ Message.set ~success:[ Success.ImportCompleted ] ])
     |> Lwt_result.ok
   in
@@ -137,8 +138,8 @@ let contact_import_from_req
 
 let unsubscribe req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.query_language; _ } as context) =
-    let error_path = Http_utils.path_with_language query_language "" in
+  let result ({ Pool_context.query_parameters; _ } as context) =
+    let error_path = Http_utils.url_with_field_params query_parameters "" in
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ (contact_import_from_req context req
         >|> function
@@ -155,9 +156,11 @@ let unsubscribe_post req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let result
-    ({ Pool_context.database_label; query_language; user; _ } as context)
+    ({ Pool_context.database_label; query_parameters; user; _ } as context)
     =
-    let redirect_path = Http_utils.path_with_language query_language "/error" in
+    let redirect_path =
+      Http_utils.url_with_field_params query_parameters "/error"
+    in
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ (contact_import_from_req context req
         >|> function
@@ -172,7 +175,7 @@ let unsubscribe_post req =
           in
           Http_utils.(
             redirect_to_with_actions
-              (path_with_language query_language "/index")
+              (url_with_field_params query_parameters "/index")
               [ Message.set ~success:[ Success.PausedToggled true ] ]))
   in
   result |> Http_utils.extract_happy_path ~src req

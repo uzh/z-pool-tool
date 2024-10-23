@@ -374,23 +374,40 @@ table.simple {
 }
 
 .session-close-checkboxes {
-    @extend .flexrow;
-    @extend .flex-gap;
-    width: 5rem;
-    align-items: flex-start;
+    display: flex;
+    width: 9rem;
+    justify-content: flex-end;
     padding-top: $space-xs;
     margin-left: auto;
     &>* {
-        flex-basis: 50%;
+        flex-basis: 3rem;
         display: flex;
         justify-content: center;
     }
 }
 
+.session-close-box {
+    width: 3rem;
+}
+
 #session-close-table .custom-data {
     display: flex;
+    flex-direction: column;
+    align-self: flex-start;
+
     & > * {
+        flex-direction: row;
         flex-basis: 100%;
+    }
+
+    & > * + * {
+        margin-top: $space-xs;
+    }
+
+    [data-label]:before {
+        content: attr(data-label);
+        width: 50%;
+        font-weight: 600;
     }
 }
 
@@ -410,24 +427,6 @@ table.simple {
 
         & > * > * {
             width: 100%;
-        }
-    }
-
-    .custom-data {
-        flex-direction: column;
-        
-        & > * + * {
-            margin-top: $space-xs;
-        }
-        
-        & > * {
-            flex-direction: row;
-        }
-
-        [data-label]:before {
-            content: attr(data-label);
-            width: 30%;
-            font-weight: $font-weight-bold;    
         }
     }
 }
@@ -582,4 +581,27 @@ $n: 12;
 
 .break-grid {
     grid-column: 1;
+}
+
+.announcement {
+    .close {
+        float: right;
+        margin-left: $space-sm;
+    }
+
+    @include mobile {
+        display: flex;
+        flex-direction: column-reverse;
+
+        .close {
+            margin-left: 0;
+            margin-top: $space-sm;
+            float: none;
+        }
+    }
+}
+
+input[type="checkbox"][readonly] {
+    filter: grayscale(1);
+    opacity: 0.8;
 }

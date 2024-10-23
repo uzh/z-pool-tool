@@ -12,6 +12,12 @@ let get_admin_user = function
   | Admin admin -> Ok admin
 ;;
 
+let get_user_id = function
+  | Guest -> None
+  | Contact contact -> Some (Contact.id contact |> Contact.Id.to_common)
+  | Admin admin -> Some (Admin.id admin |> Admin.Id.to_common)
+;;
+
 module Utils = struct
   let find_authorizable_opt ?(admin_only = false) database_label user =
     let open Utils.Lwt_result.Infix in
@@ -40,6 +46,38 @@ module Utils = struct
     in
     find_authorizable_opt ?admin_only database_label
     %> Lwt.map (CCOption.to_result (Error.NotFound field))
+  ;;
+
+  let find_query_param params field =
+    CCList.assoc_opt ~eq:Pool_message.Field.equal field params
+  ;;
+
+  let remove_query_param params field =
+    CCList.remove_assoc ~eq:Pool_message.Field.equal field params
+  ;;
+
+  let query_language tenant_languages query_parameters =
+    let open Pool_message in
+    let open CCOption.Infix in
+    CCList.assoc_opt ~eq:Field.equal Field.Language query_parameters
+    >>= Pool_common.Language.read_opt
+    >>= fun lang ->
+    CCList.find_opt (Pool_common.Language.equal lang) tenant_languages
+  ;;
+
+  let url_parameters_by_user req =
+    let open Pool_message in
+    let filter_params allow_list =
+      allow_list
+      |> CCList.filter_map (fun field ->
+        Opium.Request.query Field.(human_url field) req
+        |> CCOption.map (CCPair.make field))
+    in
+    function
+    | Admin _ -> []
+    | Contact _ -> filter_params Field.[ Redirected; Language ]
+    | Guest ->
+      filter_params Field.[ Redirected; Language; Location; SignUpCode ]
   ;;
 end
 

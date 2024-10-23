@@ -2,6 +2,8 @@ type t =
   | Activity
   | Address
   | AdminComment
+  | AnnouncementsListTitle
+  | AnnouncementsTenantSelect
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
   | AvailableSpots
@@ -28,6 +30,10 @@ type t =
   | ExperimentListPublicTitle
   | ExperimentOnlineListEmpty
   | ExperimentOnlineListPublicTitle
+  | ExperimentOnlineParticiated of Ptime.t
+  | ExperimentOnlineParticipationDeadline of Ptime.t
+  | ExperimentOnlineParticipationNoUpcoming
+  | ExperimentOnlineParticipationUpcoming of Ptime.t
   | ExperimentListTitle
   | ExperimentMessagingSubtitle
   | ExperimentNewTitle
@@ -59,6 +65,8 @@ type t =
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingDistributionDescription
+  | MailingExperimentNoUpcomingSession
+  | MailingExperimentNoUpcomingTimewindow
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
   | MessageHistory of string
@@ -112,6 +120,7 @@ type t =
 type nav_link =
   | ActorPermissions
   | Admins
+  | Announcements
   | Assignments
   | ContactInformation
   | Contacts
@@ -146,6 +155,7 @@ type nav_link =
   | Sessions
   | Settings
   | Smtp
+  | SignupCodes
   | SystemSettings
   | Tags
   | Tenants
@@ -207,6 +217,7 @@ type hint =
   | ExperimentMailingsRegistrationDisabled
   | ExperimentMessageTemplates
   | ExperimentSessions
+  | ExperimentSessionsCancelDelete
   | ExperimentSessionsPublic
   | ExperimentSmtp of string
   | ExperimentStatisticsRegistrationPossible
@@ -254,7 +265,6 @@ type hint =
   | NumberMax of int
   | NumberMin of int
   | OnlineExperiment
-  | OnlineExperimentParticipationDeadline of Ptime.t
   | Overbook
   | PartialUpdate
   | ParticipationTagsHint
@@ -287,6 +297,7 @@ type hint =
   | SessionCloseHints
   | SessionCloseLegendNoShow
   | SessionCloseLegendParticipated
+  | SessionCloseLegendVerified
   | SessionCloseNoParticipationTagsSelected
   | SessionCloseParticipationTagsSelected
   | SessionRegistrationFollowUpHint
@@ -294,6 +305,7 @@ type hint =
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
   | SettingsNoEmailSuffixes
+  | SignUpCodeHint
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
@@ -309,6 +321,7 @@ type hint =
   | TextLengthMax of int
   | TextLengthMin of int
   | UserImportInterval
+  | VerifyContact
   | WaitingListPhoneMissingContact
 [@@deriving variants]
 

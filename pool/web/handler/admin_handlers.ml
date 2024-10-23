@@ -16,4 +16,5 @@ module OrganisationalUnit = Admin_organisational_units
 module Profile = Admin_user_profile
 module Session = Admin_session
 module Settings = Admin_settings
+module SignupCodes = Admin_signup_codes
 module Users = Admin_users

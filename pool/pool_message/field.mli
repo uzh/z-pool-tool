@@ -10,6 +10,7 @@ type t =
   | AdminInputOnly
   | AdminViewOnly
   | AllowUninvitedSignup
+  | Announcement
   | Answer
   | AreaCode
   | Argument
@@ -30,6 +31,7 @@ type t =
   | Chronological
   | City
   | ClosedAt
+  | Code
   | Confirmed
   | ConfirmedAt
   | Contact
@@ -214,6 +216,7 @@ type t =
   | Reason
   | Recipient
   | Redirect
+  | Redirected
   | RegistrationDisabled
   | RegistrationPossible
   | Reminder
@@ -241,7 +244,10 @@ type t =
   | Settings
   | ShowExteralDataIdLinks
   | ShowUpCount
+  | ShowToAdmins
+  | ShowToContacts
   | SignedUpAt
+  | SignUpCode
   | SignUpCount
   | SMS
   | SmsText
@@ -279,6 +285,7 @@ type t =
   | TermsAndConditions
   | TermsAndConditionsLastAccepted
   | TestPhoneNumber
+  | Text
   | TextMessage
   | TextMessageDlrStatus
   | TextMessageLeadTime
@@ -302,6 +309,7 @@ type t =
   | Value
   | ValueOf of t
   | VerificationCode
+  | VerificationCount
   | Verified
   | Version
   | Virtual

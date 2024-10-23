@@ -7,6 +7,9 @@ let to_string = function
   | Activity -> "activity"
   | Address -> "address"
   | AdminComment -> "admin comment"
+  | AnnouncementsListTitle -> "Announcements"
+  | AnnouncementsTenantSelect ->
+    "Select on which tenants the announcement should be displayed."
   | AssignmentEditTagsWarning ->
     "Please note that editing the assignment does not assign or remove any \
      tags from the contact that may have been assigned by participating in \
@@ -53,6 +56,21 @@ let to_string = function
   | ExperimentOnlineListEmpty ->
     "Currently, there are no online surveys you can participate in."
   | ExperimentOnlineListPublicTitle -> "Available online surveys"
+  | ExperimentOnlineParticiated submitted ->
+    Format.asprintf
+      "You completed this survey on %s."
+      (Utils.Ptime.formatted_date submitted)
+  | ExperimentOnlineParticipationDeadline end_at ->
+    Format.asprintf
+      "You can participate in this experiment until %s."
+      (Pool_model.Time.formatted_date_time end_at)
+  | ExperimentOnlineParticipationUpcoming start_at ->
+    Format.asprintf
+      "The next window for participation in this survey begins on %s."
+      (Pool_model.Time.formatted_date_time start_at)
+  | ExperimentOnlineParticipationNoUpcoming ->
+    "There are currently no further time windows for participation in this \
+     survey are planned."
   | ExperimentListTitle -> "Experiments"
   | ExperimentMessagingSubtitle -> "Identities"
   | ExperimentNewTitle -> "Create new experiment"
@@ -105,6 +123,13 @@ let to_string = function
     <li>Press the 'add' button to add the sorting parameter.</li>
     <li>Repeat that to add more parameters. You can sort them by dragging and dropping them.</li>
   </ol>|}
+  | MailingExperimentNoUpcomingSession ->
+    "There are no sessions to which contacts can sign up. No invitations will \
+     be sent. Create new sessions before you start the mailing."
+  | MailingExperimentNoUpcomingTimewindow ->
+    "There is no active or future time window during which participants can \
+     answer the survey. No invitations will be sent. Create a time window \
+     first."
   | MailingExperimentSessionFullyBooked ->
     "All sessions are fully booked. No invitations will be sent (independent \
      if mailings are active at the moment).\n\n\
@@ -178,6 +203,7 @@ let to_string = function
 let nav_link_to_string = function
   | ActorPermissions -> "Personal Permissions"
   | Admins -> "Admins"
+  | Announcements -> "Announcements"
   | Assignments -> "Assignments"
   | ContactInformation -> "Contact information"
   | Contacts -> "Contacts"
@@ -213,6 +239,7 @@ let nav_link_to_string = function
   | Settings -> "Settings"
   | Smtp -> "Email Server (SMTP)"
   | SystemSettings -> "System settings"
+  | SignupCodes -> "Signup Codes"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "Text messages"
@@ -378,6 +405,9 @@ By clicking on the template labels below you can open the default text message:
     {|All existing session of this experiment.
       Once someone has registered for the session, it can no longer be deleted.
     |}
+  | ExperimentSessionsCancelDelete ->
+    {|Canceling an assignment will inform the contact. The concat will be able to sign up for this experiment again.
+  Marking an assignment as deleted will not inform the contact. The contact will not be able to sign up for this experiment again.|}
   | ExperimentSessionsPublic ->
     "Please note: Sessions or completed experiments may no longer be \
      displayed, although listed in your email. Once all the available seats \
@@ -409,8 +439,8 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
      online survey. If the URL of the survey is sent in the invitation, \
      invited contacts can start it without creating an assignment. You cannot \
      see who participated in the survey in the assignment \
-     overview.<br/>Dynamic URL parameters in your survey URL, like the \
-     <code>callbackUrl</code>, will not be replaced by actual values."
+     overview.<br/><strong>Dynamic URL parameters in your survey URL, like the \
+     <code>callbackUrl</code>, will not be replaced by actual values.</strong>"
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
@@ -517,10 +547,6 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
        part in the survey. Under %s, enter the external URL of the survey to \
        which the contacts should be forwarded."
       (Locales_en.field_to_string Pool_message.Field.SurveyUrl)
-  | OnlineExperimentParticipationDeadline end_at ->
-    Format.asprintf
-      "You can participate in this experiment until %s."
-      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
@@ -616,6 +642,7 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SessionCloseLegendNoShow -> "the contact did not show up"
   | SessionCloseLegendParticipated ->
     "the contact participated in the experiment"
+  | SessionCloseLegendVerified -> "the contact was verified"
   | SessionCloseNoParticipationTagsSelected ->
     "No tags were selected to be assigned to the participants who participated \
      in this experiment."
@@ -633,6 +660,13 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SettingsNoEmailSuffixes ->
     "There are no email suffixes defined that are allowed. This means that all \
      email suffixes are allowed."
+  | SignUpCodeHint ->
+    Format.asprintf
+      "URLs with codes can be sent to track the channels through which \
+       contacts register with the pool. The codes can be freely selected, but \
+       must be sent as URL parameters with the key '%s'. You can use the form \
+       below to build a URL you can send to new contacts."
+      Pool_message.Field.(human_url SignUpCode)
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
@@ -652,7 +686,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
 
 Only sessions with open spots can be selected.|}
   | SurveyUrl ->
-    "A URL incl. protocol. The url parameter 'callbackUrl' is required. E.g: \
+    "A URL incl. protocol. You can pass information to your survey by adding \
+     query parameters. E.g: \
      https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | TagsIntro ->
     "The defined tags can be added to several types (e.g. contacts). The tags \
@@ -675,6 +710,7 @@ Only sessions with open spots can be selected.|}
   | UserImportInterval ->
     {|<p>Define after how many days a reminder will be sent to contacts that have not confirmed the import yet.</p>
 <p><strong>The 'second reminder' setting defines how long after the first reminder the second reminder is sent.</strong></p>|}
+  | VerifyContact -> "Mark the contact as verified."
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \
      phone number so that the recruitment team can contact you."

@@ -66,13 +66,26 @@ let new_form req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, experiment_path id)
     @@ let* experiment = Experiment.find database_label id in
+       let%lwt has_no_upcoming_session =
+         match experiment.Experiment.online_experiment with
+         | None ->
+           Session.find_upcoming_for_experiment database_label id
+           ||> CCList.is_empty
+         | Some _ ->
+           Time_window.find_upcoming_by_experiment database_label id
+           ||> CCOption.is_none
+       in
        let%lwt is_bookable =
-         Matcher.experiment_has_bookable_spots database_label experiment
+         match has_no_upcoming_session with
+         | true -> Lwt.return false
+         | false ->
+           Matcher.experiment_has_bookable_spots database_label experiment
        in
        let* matching_filter_count =
          matching_filter_count database_label experiment
        in
        Page.Admin.Mailing.form
+         ~has_no_upcoming_session
          ~fully_booked:(not is_bookable)
          ~matching_filter_count
          context

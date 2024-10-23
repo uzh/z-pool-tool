@@ -29,3 +29,7 @@ let create_public_url pool_url =
 ;;
 
 let clear_cache = Repo.Cache.clear
+
+module Repo = struct
+  module Id = Repo_entity.Id
+end

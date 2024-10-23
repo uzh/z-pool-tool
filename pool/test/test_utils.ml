@@ -3,6 +3,7 @@ module Data = struct
 end
 
 (* Testable *)
+let annoncement = Announcement.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let database_label = Database.Label.(Alcotest.testable pp equal)
 let error = Pool_message.Error.(Alcotest.testable pp equal)
@@ -46,6 +47,22 @@ let sort_events =
   CCList.stable_sort Pool_event.(fun a b -> CCString.compare (show a) (show b))
 ;;
 
+let urlencoded_update urlencoded updates =
+  let open CCOption in
+  CCList.map
+    (fun (k, v) ->
+      CCList.find_opt (fun (check, _) -> check k) updates
+      >|= snd
+      >|= CCList.return
+      |> value ~default:v
+      |> CCPair.make k)
+    urlencoded
+;;
+
+let urlencoded_remove urlencoded validation =
+  CCList.filter CCFun.(fst %> validation %> not) urlencoded
+;;
+
 let file_to_storage file =
   let open Seed.Assets in
   let stored_file =
@@ -78,6 +95,27 @@ let dummy_to_file (dummy : Seed.Assets.file) =
 ;;
 
 module Model = struct
+  let create_announcement
+    ?id
+    ?start_at
+    ?end_at
+    ?(show_to_admins = true)
+    ?(show_to_contacts = true)
+    ()
+    =
+    let open Announcement in
+    let text =
+      Text.create [ Pool_common.Language.En, "text" ] |> get_or_failwith
+    in
+    create
+      ?id
+      text
+      start_at
+      end_at
+      (ShowToAdmins.create show_to_admins)
+      (ShowToContacts.create show_to_contacts)
+  ;;
+
   let password =
     Pool_user.Password.Plain.(
       create "Somepassword1!" |> validate |> get_or_failwith)
@@ -241,15 +279,21 @@ module Model = struct
     }
   ;;
 
-  let create_mailing ?id ?(limit = Mailing.Limit.default) () =
+  let create_mailing ?id ?start ?(limit = Mailing.Limit.default) () =
     let open Mailing in
     let start =
-      Ptime.add_span
-        (Ptime_clock.now ())
-        Sihl.Time.(OneSecond |> duration_to_span)
-      |> CCOption.get_exn_or "Time calculation failed!"
-      |> StartAt.create
-      |> get_or_failwith
+      let default () =
+        let start_at =
+          Ptime.add_span
+            (Ptime_clock.now ())
+            Sihl.Time.(OneSecond |> duration_to_span)
+          |> CCOption.get_exn_or "Time calculation failed!"
+          |> StartAt.create
+          |> get_or_failwith
+        in
+        Start.StartAt start_at
+      in
+      CCOption.value ~default:(default ()) start
     in
     let deadline =
       Ptime.add_span
@@ -259,7 +303,7 @@ module Model = struct
       |> EndAt.create
       |> get_or_failwith
     in
-    create ?id Start.(StartAt start) deadline limit None |> get_or_failwith
+    create ?id start deadline limit None |> get_or_failwith
   ;;
 
   let create_email

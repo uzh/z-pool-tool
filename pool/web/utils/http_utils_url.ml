@@ -1,8 +1,16 @@
+module Field = Pool_message.Field
+
 let map = CCOption.map
 let append suffix path = Format.asprintf "%s/%s" path suffix
 
 let append_opt suffix path =
   suffix |> CCOption.map_or ~default:path (Format.asprintf "%s/%s" path)
+;;
+
+let announcement_path ?suffix ?id () =
+  ("/" ^ Field.(show Announcement))
+  |> append_opt (map Announcement.Id.value id)
+  |> append_opt suffix
 ;;
 
 module Admin = struct
@@ -87,20 +95,25 @@ module Admin = struct
   ;;
 
   module Settings = struct
+    let with_settings = Format.asprintf "/admin/settings/%s"
+
     let queue_list_path ?suffix table =
       let table =
         match table with
         | `Current -> ""
         | `History -> "/archive"
       in
-      Format.asprintf "/admin/settings/queue%s" table |> append_opt suffix
+      Format.asprintf "queue%s" table |> with_settings |> append_opt suffix
     ;;
 
     let queue_path ?suffix ?id () =
-      Format.asprintf "/admin/settings/queue"
+      Format.asprintf "queue"
+      |> with_settings
       |> append_opt Pool_queue.(map Id.value id)
       |> append_opt suffix
     ;;
+
+    let signup_codes_path = Field.(human_url SignUpCode) |> with_settings
   end
 end
 
@@ -109,5 +122,13 @@ module Contact = struct
     "/experiments"
     |> append_opt (map Experiment.Id.value id)
     |> append_opt suffix
+  ;;
+end
+
+module Root = struct
+  let with_root = Format.asprintf "/root%s"
+
+  let announcement_path ?suffix ?id () =
+    announcement_path ?suffix ?id () |> with_root
   ;;
 end
