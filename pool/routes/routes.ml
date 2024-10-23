@@ -285,6 +285,7 @@ module Admin = struct
       let specific =
         [ get "" ~middlewares:[ Access.read ] show
         ; get "/statistics" ~middlewares:[ Access.read ] statistics
+        ; get "/changelog" ~middlewares:[ Access.read ] changelog
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
         ; choose ~scope:"/files" files
@@ -313,6 +314,7 @@ module Admin = struct
         Update.
           [ get "/edit" edit
           ; post "" update_template
+          ; get "changelog" changelog
           ; choose
               (filter_form (toggle_key, toggle_predicate_type, add_predicate))
           ]
@@ -464,6 +466,7 @@ module Admin = struct
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
           ; get "/print" ~middlewares:[ Access.read ] print
+          ; get "/changelog" ~middlewares:[ Access.read ] changelog
           ; post
               "/update-matches-filter"
               ~middlewares:[ Access.update_matches_filter ]
@@ -580,6 +583,7 @@ module Admin = struct
           ; post "" ~middlewares:[ Access.update ] update
           ; get "/edit" ~middlewares:[ Access.update ] edit
           ; post "/delete" ~middlewares:[ Access.delete ] delete
+          ; get "/changelog" ~middlewares:[ Access.read ] changelog
           ; post
               "/reset-invitations"
               ~middlewares:[ Access.update ]
@@ -672,6 +676,7 @@ module Admin = struct
         ; post "delete" ~middlewares:[ Access.update ] mark_as_deleted
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
+        ; get "/changelog" ~middlewares:[ Access.changelog ] changelog
         ; get
             "/past-experiments"
             ~middlewares:[ Access.read ]
@@ -698,6 +703,11 @@ module Admin = struct
       ; choose ~scope:(Contact |> url_key) specific
       ]
     in
+    let users =
+      let open Handler.Admin.Users in
+      let specific = [ get "" redirect ] in
+      [ choose ~scope:(User |> url_key) specific ]
+    in
     let custom_fields =
       let open CustomField in
       let specific =
@@ -708,6 +718,7 @@ module Admin = struct
             ; post "" ~middlewares:[ Access.update ] update
             ; post "/delete" ~middlewares:[ Access.delete ] delete
             ; post "/publish" ~middlewares:[ Access.publish ] publish
+            ; get "/changelog" ~middlewares:[ Access.update ] changelog
             ]
           in
           [ get "/new" ~middlewares:[ Access.create ] new_form
@@ -720,6 +731,7 @@ module Admin = struct
         ; post "/publish" ~middlewares:[ Access.publish ] publish
         ; post "/delete" ~middlewares:[ Access.delete ] delete
         ; post "/sort-options" ~middlewares:[ Access.update ] sort_options
+        ; get "/changelog" ~middlewares:[ Access.update ] changelog
         ; choose ~scope:"options" options
         ]
       in
@@ -736,6 +748,7 @@ module Admin = struct
           ; post "" ~middlewares:[ Access.update ] update
           ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; post "sort-fields" ~middlewares:[ Access.sort_fields ] sort_fields
+          ; get "/changelog" ~middlewares:[ Access.update ] changelog
           ]
         in
         [ get "/new" ~middlewares:[ Access.create ] new_form
@@ -783,6 +796,7 @@ module Admin = struct
       let specific =
         [ get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
+        ; get "/changelog" ~middlewares:[ Access.index ] changelog
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
@@ -914,6 +928,7 @@ module Admin = struct
       ; choose ~scope:"/locations" location
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
+      ; choose ~scope:"/users" users
       ; choose ~scope:"/custom-fields" custom_fields
       ; choose ~scope:(add_human_field Field.Sessions) sessions
       ; choose ~scope:(add_human_field OrganisationalUnit) organisational_units

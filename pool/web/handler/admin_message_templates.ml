@@ -68,7 +68,7 @@ let write action req =
     | Create (_, _, redirect) -> redirect, Success.Created Field.MessageTemplate
     | Update (_, redirect) -> redirect, Success.Updated Field.MessageTemplate
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect.error, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -94,9 +94,7 @@ let write action req =
         Update.(urlencoded |> decode |> Lwt_result.lift >== handle template)
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect.success
         [ HttpUtils.Message.set ~success:[ success ] ]

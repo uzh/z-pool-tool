@@ -13,7 +13,7 @@ let handle req action =
   let redirect_path =
     Format.asprintf "/experiments/%s" (Experiment.Id.value experiment_id)
   in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -49,10 +49,7 @@ let handle req action =
         |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.map_s (Pool_event.handle_event ~tags database_label) events
-        ||> Utils.flat_unit
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       let success_message =
         let open Pool_message.Success in
         match action with

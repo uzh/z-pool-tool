@@ -276,7 +276,9 @@ module Write = struct
                                               ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
             ) ) )
     in
-    let decode _ = failwith "Write only model" in
+    let decode _ =
+      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
+    in
     let open Common in
     Caqti_type.(
       custom

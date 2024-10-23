@@ -891,6 +891,10 @@ let detail
   let open Pool_common in
   let open Session in
   let experiment_id = experiment.Experiment.id in
+  let changelog_url =
+    session_path ~suffix:"changelog" ~id:session.id experiment_id
+    |> Uri.of_string
+  in
   let session_path = session_path ~id:session.id experiment_id in
   let session_link ?style (show, url, control) =
     let style, icon =
@@ -1308,6 +1312,7 @@ let detail
         Message_template.Label.SessionReminder
         session_reminder_templates
     ; assignments_html
+    ; Component.Changelog.list context changelog_url None
     ]
   |> CCList.return
   |> Layout.Experiment.(

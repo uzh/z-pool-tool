@@ -231,7 +231,7 @@ let update ?contact req =
         | Error _ -> Lwt.return_unit
         | Ok events ->
           events
-          |> Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
+          |> Lwt_list.iter_s (Pool_event.handle_event ~tags database_label user)
       in
       () |> htmx_element
     in

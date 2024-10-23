@@ -1,4 +1,5 @@
 module Guard = Entity_guard
+module VersionHistory = Version_history
 include Repo
 include Entity
 include Event

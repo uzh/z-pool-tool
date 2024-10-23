@@ -1,6 +1,7 @@
 (library
  (name component)
  (libraries
+  changelog
   custom_field
   experiment
   filter

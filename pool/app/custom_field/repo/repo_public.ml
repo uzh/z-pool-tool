@@ -277,22 +277,19 @@ module Sql = struct
       select_sql
       (base_filter_conditions is_admin)
     |> Caqti_type.(t3 Contact.Repo.Id.t string Repo_entity.Id.t)
-       ->* Repo_entity.Public.t
+       ->! Repo_entity.Public.t
   ;;
 
   let find_by_contact ?(is_admin = false) pool contact_id field_id =
     let open Utils.Lwt_result.Infix in
-    Database.collect
+    Database.find_opt
       pool
       (find_by_contact_request is_admin)
       (contact_id, Entity.Model.(show Contact), field_id)
-    >|> fun field_list ->
-    let%lwt options =
-      field_list
-      |> CCList.head_opt
-      |> CCOption.map_or ~default:(Lwt.return []) (get_options pool)
-    in
-    Repo_entity.Public.to_ungrouped_entities is_admin options field_list
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.CustomField)
+    >>= fun field ->
+    let%lwt options = get_options pool field in
+    Repo_entity.Public.to_ungrouped_entities is_admin options [ field ]
     |> CCList.head_opt
     |> CCOption.to_result Pool_message.(Error.NotFound Field.CustomField)
     |> Lwt_result.lift

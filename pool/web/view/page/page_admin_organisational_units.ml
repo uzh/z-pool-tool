@@ -47,6 +47,28 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
     ]
 ;;
 
+let create context =
+  div ~a:[ a_class [ "trim"; "safety-margin" ] ] [ form context None ]
+;;
+
+let detail context ou =
+  let open Organisational_unit in
+  let url =
+    Http_utils.Url.Admin.organisational_unit_path
+      ~suffix:"changelog"
+      ~id:ou.id
+      ()
+    |> Uri.of_string
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ form context (Some ou)
+    ; div
+        ~a:[ a_class [ "gap-lg" ] ]
+        [ Component.Changelog.list context url None ]
+    ]
+;;
+
 let list { Pool_context.language; _ } organizations query =
   let open Component in
   let url = Uri.of_string (ou_path ()) in

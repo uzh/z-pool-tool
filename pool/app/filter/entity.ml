@@ -1,4 +1,7 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 module Id = Pool_common.Id
+
+let model = Pool_message.Field.Filter
 
 module Helper = struct
   let key_string = "key"
@@ -78,11 +81,7 @@ let value_of_yojson yojson =
 
 let to_assoc key value = `Assoc [ key, value ]
 
-let yojson_of_single_val value =
-  let to_assoc = to_assoc (value |> show_single_val) in
-  to_assoc
-  @@
-  match value with
+let yojson_of_single_val = function
   | Bool b -> `Bool b
   | Date date -> `String (Pool_model.Base.Ptime.date_to_string date)
   | Language lang -> `String (Pool_common.Language.show lang)
@@ -92,10 +91,13 @@ let yojson_of_single_val value =
 ;;
 
 let yojson_of_value m =
+  let to_json value =
+    to_assoc (value |> show_single_val) (yojson_of_single_val value)
+  in
   match m with
   | NoValue -> `Null
-  | Single single -> single |> yojson_of_single_val
-  | Lst values -> `List (CCList.map yojson_of_single_val values)
+  | Single single -> to_json single
+  | Lst values -> `List (CCList.map to_json values)
 ;;
 
 module Key = struct
@@ -693,7 +695,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson_of]
 
 let create ?(id = Pool_common.Id.create ()) title query =
   { id

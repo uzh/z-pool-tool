@@ -51,7 +51,7 @@ let write action req =
       ( Format.asprintf "%s/%s/edit" base_path (Organisational_unit.Id.value id)
       , Updated field )
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -66,9 +66,7 @@ let write action req =
         Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags ou)
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         base_path
         [ HttpUtils.Message.set ~success:[ success ] ]
@@ -91,21 +89,28 @@ let show action req =
     Utils.Lwt_result.map_error (fun err -> err, base_path)
     @@ let* html =
          match action with
-         | `New -> View.form context None |> Lwt_result.return
+         | `New -> View.create context |> Lwt_result.return
          | `Edit ->
-           let* ou =
-             req
-             |> id
-             |> Organisational_unit.find database_label
-             >|+ CCOption.return
-           in
-           View.form context ou |> Lwt_result.return
+           let* ou = req |> id |> Organisational_unit.find database_label in
+           View.detail context ou |> Lwt_result.return
        in
        html
        |> create_layout ~active_navigation:base_path req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let changelog req =
+  let ou_id = id req in
+  let url =
+    HttpUtils.Url.Admin.organisational_unit_path
+      ~suffix:"changelog"
+      ~id:ou_id
+      ()
+  in
+  let open Organisational_unit in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common ou_id) req
 ;;
 
 let new_form = show `New

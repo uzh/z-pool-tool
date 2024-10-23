@@ -30,7 +30,7 @@ let show req =
 ;;
 
 let delete req =
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     let permission =
       Sihl.Web.Request.to_urlencoded req
@@ -48,7 +48,7 @@ let delete req =
     let handle = function
       | Ok events ->
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         Http_utils.redirect_to_with_actions
           active_navigation
@@ -114,7 +114,7 @@ let handle_toggle_target req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, active_navigation)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -182,7 +182,7 @@ let create req =
       %> CCResult.map flatten
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      Pool_event.handle_events ~tags database_label user events
     in
     let* () = expand_targets >== events |>> handle in
     Lwt_result.ok

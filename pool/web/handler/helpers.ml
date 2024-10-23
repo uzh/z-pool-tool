@@ -1,3 +1,4 @@
+module Changelog = Helpers_changelog
 module ContactUpdate = Helpers_contact_update
 module Login = Helpers_login
 module PartialUpdate = Helpers_partial_update

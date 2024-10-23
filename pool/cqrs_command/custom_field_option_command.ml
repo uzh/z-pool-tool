@@ -52,9 +52,9 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Custom_field in
     let open CCResult in
-    let* name = Name.create sys_languages command in
-    let m = SelectOption.create ~id:option.SelectOption.id name in
-    Ok [ OptionUpdated m |> Pool_event.custom_field ]
+    let* names = Name.create sys_languages command in
+    let updated : SelectOption.t = SelectOption.{ option with name = names } in
+    Ok [ OptionUpdated (option, updated) |> Pool_event.custom_field ]
   ;;
 
   let effects = Custom_field.Guard.Access.update

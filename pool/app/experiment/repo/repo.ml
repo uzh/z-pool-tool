@@ -173,35 +173,26 @@ module Sql = struct
     insert_sql |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool experiment =
-    let open Entity in
-    let autofill_public_title_request =
-      {sql|
-        UPDATE pool_experiments
-        SET
-          public_title = CONCAT('#', id)
-        WHERE
-          uuid = UNHEX(REPLACE($1, '-', ''))
-        AND
-          public_title = $2
-      |sql}
-    in
-    let autofill_public_title =
+  let insert pool = Database.exec pool insert_request
+
+  let get_default_public_title pool =
+    let request =
       let open Caqti_request.Infix in
-      autofill_public_title_request
-      |> Caqti_type.(t2 Repo_entity.Id.t Repo_entity.PublicTitle.t ->. unit)
+      {sql|
+        SELECT
+          id
+        FROM
+          pool_experiments
+        ORDER BY
+          id DESC
+        LIMIT 1
+      |sql}
+      |> Caqti_type.(unit ->! int)
     in
-    let with_connection request input connection =
-      let (module Connection : Caqti_lwt.CONNECTION) = connection in
-      Connection.exec request input
-    in
-    let insert = with_connection insert_request experiment in
-    let set_title =
-      with_connection
-        autofill_public_title
-        (experiment.id, PublicTitle.placeholder)
-    in
-    Database.transaction_iter pool [ insert; set_title ]
+    let open Utils.Lwt_result.Infix in
+    Database.find_opt pool request ()
+    ||> CCOption.value ~default:0
+    ||> fun max_id -> Format.asprintf "#%i" (max_id + 1)
   ;;
 
   let search_select =

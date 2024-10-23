@@ -315,7 +315,10 @@ let update () =
           Data.validation_data
   in
   let expected =
-    Ok [ Custom_field.Updated custom_field |> Pool_event.custom_field ]
+    Ok
+      [ Custom_field.Updated (custom_field, custom_field)
+        |> Pool_event.custom_field
+      ]
   in
   Alcotest.(
     check
@@ -631,11 +634,13 @@ module Settings = struct
     let selected = [ field2 |> id |> Id.value ] in
     let expected =
       (* Expect fields that have not been updated to be ignored *)
-      let active = [ field2 |> set_show_on_session_close_page true ] in
-      let inactive = [ field1 |> set_show_on_session_close_page false ] in
-      active @ inactive
-      |> CCList.map (fun field -> Updated field |> Pool_event.custom_field)
-      |> CCResult.return
+      let active =
+        [ Updated (field2, field2 |> set_show_on_session_close_page true) ]
+      in
+      let inactive =
+        [ Updated (field1, field1 |> set_show_on_session_close_page false) ]
+      in
+      active @ inactive |> CCList.map Pool_event.custom_field |> CCResult.return
     in
     let result =
       Cqrs_command.Custom_field_settings_command.UpdateVisibilitySettings.handle

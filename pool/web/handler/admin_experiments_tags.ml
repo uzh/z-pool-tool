@@ -31,7 +31,7 @@ let handle_tag action req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err -> err, path)
     @@ let* experiment = Experiment.find database_label experiment_id in
        let handle_assign decode handle =
@@ -81,9 +81,7 @@ let handle_tag action req =
            let fnc = handle ~tags (Session (Session.Id.to_common session_id)) in
            handle_remove fnc
        in
-       let handle =
-         Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
-       in
+       let handle = Pool_event.handle_events ~tags database_label user in
        let return_to_edit () =
          HttpUtils.redirect_to_with_actions
            path
