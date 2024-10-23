@@ -39,7 +39,7 @@ module ContactRepo = struct
       Model.create_contact ?id ?lastname ?language ~with_terms_accepted ()
     in
     let open Contact in
-    let confirm = [ Verified contact; EmailVerified contact ] in
+    let confirm = [ EmailVerified contact ] in
     let%lwt () =
       [ Created
           { user_id = id contact

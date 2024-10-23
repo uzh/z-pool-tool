@@ -19,6 +19,12 @@ let version_path ?suffix ?id () =
 ;;
 
 module Admin = struct
+  let contact_path ?suffix ?id () =
+    "/admin/contacts"
+    |> append_opt (map Contact.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let role_permission_path ?suffix ?role () =
     "/admin/settings/role-permission"
     |> append_opt (map Role.Role.name role)

@@ -319,6 +319,26 @@ let mark_as_deleted req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let toggle_verified req =
+  let open Utils.Lwt_result.Infix in
+  let id = contact_id req in
+  let redirect_path =
+    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id)
+  in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result { Pool_context.database_label; _ } =
+    Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let* contact = Contact.find database_label id in
+    let events = Cqrs_command.Contact_command.ToggleVerified.handle contact in
+    events
+    |> Lwt_result.lift
+    |>> Pool_event.handle_events ~tags database_label
+    |>> fun () -> HttpUtils.redirect_to redirect_path
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
 let external_data_ids req =
   let open Utils.Lwt_result.Infix in
   let contact_id = contact_id req in

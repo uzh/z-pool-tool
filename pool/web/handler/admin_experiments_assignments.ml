@@ -134,12 +134,23 @@ module Close = struct
     Lwt_result.return (experiment, session)
   ;;
 
-  let decode req =
-    let boolean_fields = Assignment.boolean_fields |> CCList.map Field.show in
-    req
-    |> Sihl.Web.Request.to_urlencoded
-    ||> HttpUtils.format_htmx_request_boolean_values boolean_fields
-    ||> UpdateHtmx.decode
+  let decode_update urlencoded =
+    let boolean_fields =
+      let open Field in
+      array_key Verified :: CCList.map show Assignment.boolean_fields
+    in
+    urlencoded
+    |> HttpUtils.format_htmx_request_boolean_values boolean_fields
+    |> UpdateHtmx.decode
+  ;;
+
+  let disabled_verified urlencoded =
+    let open CCOption in
+    CCList.assoc_opt ~eq:CCString.equal Field.(array_key Verified) urlencoded
+    >>= CCList.head_opt
+    >|= CCString.split_on_char ','
+    >|= CCList.map Assignment.Id.of_string
+    |> value ~default:[]
   ;;
 
   let updated_fields (a1 : t) (a2 : t) =
@@ -158,7 +169,12 @@ module Close = struct
     let result ({ Pool_context.database_label; language; _ } as context) =
       let* experiment, session = router_params req database_label in
       let* assignment = find database_label assignment_id in
-      let* updated = decode req >|+ UpdateHtmx.handle assignment in
+      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      let* updated =
+        decode_update urlencoded
+        |> Lwt_result.lift
+        >|+ UpdateHtmx.handle assignment
+      in
       let%lwt () =
         Pool_event.handle_event
           ~tags
@@ -169,8 +185,45 @@ module Close = struct
         counters_of_session database_label session.Session.id
       in
       let updated_fields = updated_fields assignment updated in
+      let disable_verified =
+        disabled_verified urlencoded |> CCList.mem assignment.id
+      in
       Page.Admin.Session.
         [ close_assignment_htmx_form
+            ~disable_verified
+            ~updated_fields
+            context
+            experiment
+            session
+            updated
+        ; session_counters language counters
+        ]
+      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Lwt_result.return
+    in
+    result
+    |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  ;;
+
+  let verify_contact req =
+    let tags = Pool_context.Logger.Tags.req req in
+    let assignment_id = assignment_id req in
+    let result ({ Pool_context.database_label; language; _ } as context) =
+      let* experiment, session = router_params req database_label in
+      let* assignment = find database_label assignment_id in
+      let* events =
+        Cqrs_command.Contact_command.ToggleVerified.handle assignment.contact
+        |> Lwt_result.lift
+      in
+      let%lwt () = Pool_event.handle_events ~tags database_label events in
+      let updated_fields = [ Pool_message.Field.Verified ] in
+      let* updated = find database_label assignment_id in
+      let%lwt counters =
+        counters_of_session database_label session.Session.id
+      in
+      Page.Admin.Session.
+        [ close_assignment_htmx_form
+            ~disable_verified:false
             ~updated_fields
             context
             experiment
@@ -189,8 +242,10 @@ module Close = struct
     let tags = Pool_context.Logger.Tags.req req in
     let result ({ Pool_context.database_label; language; _ } as context) =
       let* experiment, session = router_params req database_label in
+      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       let* decoded =
-        decode req
+        decode_update urlencoded
+        |> Lwt_result.lift
         >== fun decoded ->
         match decoded with
         | ExternalDataId _ -> Error Error.InvalidHtmxRequest
@@ -218,6 +273,7 @@ module Close = struct
         |> experiment_target_id
         |> Helpers.Guard.can_read_contact_name context
       in
+      let disabled_verified = disabled_verified urlencoded in
       Page.Admin.Session.
         [ close_assignments_table
             context
@@ -226,6 +282,7 @@ module Close = struct
             session
             assignments
             custom_fields
+            disabled_verified
         ; session_counters language counters
         ]
       |> HttpUtils.Htmx.multi_html_to_plain_text_response
