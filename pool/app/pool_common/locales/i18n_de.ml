@@ -203,7 +203,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
   | Validation -> "Validierung"
-  | VersionsListTitle -> "Versionen"
+  | VersionsListTitle -> "Versionshinweise"
   | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;
 
@@ -253,7 +253,7 @@ let nav_link_to_string = function
   | TimeWindows -> "Zeitfenster"
   | Users -> "Benutzer"
   | WaitingList -> "Warteliste"
-  | Versions -> "Versionen"
+  | Versions -> "Versionshinweise"
 ;;
 
 let rec hint_to_string = function
