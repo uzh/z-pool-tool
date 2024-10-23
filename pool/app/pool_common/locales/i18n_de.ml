@@ -666,6 +666,7 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     "Der Kontakt ist nicht an der Session erschienen"
   | SessionCloseLegendParticipated ->
     "Der Kontakt hat am Experiment teilgenommen"
+  | SessionCloseLegendVerified -> "Der Kontakt wurde verifiziert"
   | SessionCloseNoParticipationTagsSelected ->
     "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
      werden, die an diesem Experiment teilgenommen haben."
@@ -735,6 +736,7 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | UserImportInterval ->
     {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
 <p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}
+  | VerifyContact -> "Den Kontakt als verifiziert markieren."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
      Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \

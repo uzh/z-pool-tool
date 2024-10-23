@@ -297,6 +297,7 @@ type hint =
   | SessionCloseHints
   | SessionCloseLegendNoShow
   | SessionCloseLegendParticipated
+  | SessionCloseLegendVerified
   | SessionCloseNoParticipationTagsSelected
   | SessionCloseParticipationTagsSelected
   | SessionRegistrationFollowUpHint
@@ -320,6 +321,7 @@ type hint =
   | TextLengthMax of int
   | TextLengthMin of int
   | UserImportInterval
+  | VerifyContact
   | WaitingListPhoneMissingContact
 [@@deriving variants]
 

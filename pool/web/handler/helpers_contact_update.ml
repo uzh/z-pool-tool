@@ -8,6 +8,9 @@ let toggle_paused
   tags
   =
   let open Utils.Lwt_result.Infix in
+  let redirect_path =
+    Http_utils.url_with_field_params query_parameters redirect_path
+  in
   let open Pool_user in
   let paused = contact.Contact.paused |> Paused.value |> not |> Paused.create in
   let events =
@@ -26,6 +29,5 @@ let toggle_paused
   events
   |>> handle
   |>> redirect
-  |> Utils.Lwt_result.map_error (fun err ->
-    Http_utils.(err, url_with_field_params query_parameters redirect_path))
+  |> Utils.Lwt_result.map_error (fun err -> err, redirect_path)
 ;;

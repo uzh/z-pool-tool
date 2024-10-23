@@ -642,6 +642,7 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SessionCloseLegendNoShow -> "the contact did not show up"
   | SessionCloseLegendParticipated ->
     "the contact participated in the experiment"
+  | SessionCloseLegendVerified -> "the contact was verified"
   | SessionCloseNoParticipationTagsSelected ->
     "No tags were selected to be assigned to the participants who participated \
      in this experiment."
@@ -709,6 +710,7 @@ Only sessions with open spots can be selected.|}
   | UserImportInterval ->
     {|<p>Define after how many days a reminder will be sent to contacts that have not confirmed the import yet.</p>
 <p><strong>The 'second reminder' setting defines how long after the first reminder the second reminder is sent.</strong></p>|}
+  | VerifyContact -> "Mark the contact as verified."
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \
      phone number so that the recruitment team can contact you."
