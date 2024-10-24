@@ -298,17 +298,17 @@ let find pool id =
   Sql.find pool id |>> files_to_location pool
 ;;
 
-let find_all pool =
+let find_all ?query ?actor ?permission pool =
   let open Utils.Lwt_result.Infix in
-  Sql.find_all pool >|> Lwt_list.map_s (files_to_location pool)
-;;
-
-let find_by query pool =
-  let open Lwt.Syntax in
-  let* locations, query =
-    Query.collect_and_count pool (Some query) ~select:Sql.find_request_sql t
+  let checks = [ Format.asprintf "pool_locations.uuid IN %s" ] in
+  let%lwt where =
+    Guard.create_where ?actor ?permission ~checks pool `Location
+    ||> CCOption.map (fun m -> m, Dynparam.empty)
   in
-  let* locations = Lwt_list.map_s (files_to_location pool) locations in
+  let%lwt locations, query =
+    Query.collect_and_count pool query ~select:Sql.find_request_sql ?where t
+  in
+  let%lwt locations = Lwt_list.map_s (files_to_location pool) locations in
   Lwt.return (locations, query)
 ;;
 

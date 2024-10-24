@@ -33,8 +33,18 @@ let index req =
     ~query:(module Pool_location)
     ~create_layout
     req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let%lwt location_list, query = Pool_location.find_by query database_label in
+  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* actor =
+    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+  in
+  let%lwt location_list, query =
+    Pool_location.find_all
+      ~query
+      ~actor
+      ~permission:Pool_location.Guard.Access.index_permission
+      database_label
+  in
   let open Page.Admin.Location in
   (if HttpUtils.Htmx.is_hx_request req then list else index)
     context
