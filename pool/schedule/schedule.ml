@@ -119,13 +119,23 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
           |> Lwt.map (CCOption.value ~default:Status.Active)
       in
       let open Status in
+      let retry_connection label =
+        Database.connect label
+        >|> function
+        | Ok () ->
+          let%lwt () = Database.Tenant.update_status label Active in
+          Lwt.return_true
+        | Error _ -> Lwt.return_false
+      in
       match database_status with
       | Active -> Lwt.return true
-      | ConnectionIssue
-      | Disabled
-      | Maintenance
-      | MigrationsPending
-      | MigrationsFailed -> Lwt.return false
+      | ConnectionIssue ->
+        CCOption.map_or
+          ~default:Lwt.return_false
+          retry_connection
+          schedule.database_label
+      | Disabled | Maintenance | MigrationsPending | MigrationsFailed ->
+        Lwt.return false
     in
     let run_schedule () =
       let process schedule =
