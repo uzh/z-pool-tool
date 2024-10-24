@@ -20,6 +20,7 @@ module StartAt : sig
 
   val value : t -> Ptime.t
   val create : Ptime.t -> t
+  val create_now : unit -> t
 end
 
 module EndAt : sig

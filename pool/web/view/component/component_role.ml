@@ -62,6 +62,7 @@ let create_target_path ?uuid =
     | `System
     | `SystemSetting
     | `Tenant
+    | `Version
     | `WaitingList -> None)
 ;;
 

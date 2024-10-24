@@ -18,6 +18,7 @@
   middleware
   page
   pool_common
+  pool_version
   reminder
   schedule
   sihl

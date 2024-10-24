@@ -115,6 +115,7 @@ type t =
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
   | Validation
+  | VersionsListTitle
   | WaitingListIsDisabled
 
 type nav_link =
@@ -163,6 +164,7 @@ type nav_link =
   | TimeWindows
   | Users
   | WaitingList
+  | Versions
 [@@deriving eq]
 
 type hint =
@@ -281,6 +283,7 @@ type hint =
   | ResendRemindersWarning
   | ResetInvitations
   | ResetInvitationsLastReset of Ptime.t
+  | ReleaseNotesHint of string
   | RoleIntro of Pool_message.Field.t * Pool_message.Field.t
   | RolePermissionsModelList
   | RolePermissionsRoleList

@@ -888,6 +888,11 @@ module Admin = struct
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
     in
+    let versions =
+      let open Version in
+      let specific = [ get "" show ] in
+      [ get "" index; choose ~scope:Field.(url_key Version) specific ]
+    in
     let profile =
       let open Profile in
       [ get "/login-information" show
@@ -918,6 +923,7 @@ module Admin = struct
       ; choose ~scope:(add_human_field Field.Sessions) sessions
       ; choose ~scope:(add_human_field OrganisationalUnit) organisational_units
       ; choose ~scope:(add_human_field MessageTemplate) message_templates
+      ; choose ~scope:(add_human_field Version) versions
       ]
   ;;
 end
@@ -998,6 +1004,17 @@ module Root = struct
       ; choose ~scope:Field.(url_key Announcement) specific
       ]
     in
+    let versions =
+      let open Version in
+      let specific =
+        [ post "" update; get "edit" edit; post "publish" publish ]
+      in
+      [ get "" index
+      ; post "" create
+      ; get "new" new_form
+      ; choose ~scope:Field.(url_key Version) specific
+      ]
+    in
     let settings =
       let smtp =
         let open Handler.Root.Settings in
@@ -1024,6 +1041,7 @@ module Root = struct
     [ choose
         [ get "/logout" Login.logout
         ; choose ~scope:Field.(show Announcement) announcements
+        ; choose ~scope:Field.(show Version) versions
         ; choose ~scope:"/settings" settings
         ; choose ~scope:"/user" profile
         ; choose ~scope:"/tenants" tenants

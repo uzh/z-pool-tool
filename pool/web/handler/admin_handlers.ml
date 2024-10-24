@@ -17,3 +17,4 @@ module Profile = Admin_user_profile
 module Session = Admin_session
 module Settings = Admin_settings
 module SignupCodes = Admin_signup_codes
+module Version = Admin_version

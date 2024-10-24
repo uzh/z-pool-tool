@@ -16,15 +16,21 @@ code {
 }
 
 @include mobile {
-    *+h1, h1+*, *+h2, *+.heading-1, .heading-1+*, *+.heading-2{
+
+    *+h1,
+    h1+*,
+    *+h2,
+    *+.heading-1,
+    .heading-1+*,
+    *+.heading-2 {
         margin-top: $space-md;
-    }  
+    }
 }
 
 
 .word-wrap-break {
     -ms-word-break: break-word;
-    
+
     /* Non standard for webkit */
     word-break: break-word;
     -webkit-hyphens: auto;
@@ -76,16 +82,17 @@ form[class*="stack"] input[type="hidden"]+* {
     border: 1px solid $grey;
     overflow: hidden;
 
-    select, input {
+    select,
+    input {
         border: none;
         border-radius: 0;
     }
 
-    & > * {
+    &>* {
         width: auto;
     }
 
-    & > .select select {
+    &>.select select {
         padding-right: $space-base * 2;
         width: auto;
         background-color: $grey-light;
@@ -93,13 +100,14 @@ form[class*="stack"] input[type="hidden"]+* {
     }
 }
 
-input[readonly], select[readonly] {
+input[readonly],
+select[readonly] {
     background-color: $grey-light;
     color: $grey-dark;
     cursor: not-allowed;
 
     &:hover {
-      background-color: $grey-light;
+        background-color: $grey-light;
     }
 }
 
@@ -170,7 +178,7 @@ input[readonly], select[readonly] {
     @include until($desktop-breakpoint) {
         grid-column: 2;
     }
-    
+
     @include until($tablet-breakpoint) {
         grid-column: 1;
     }
@@ -379,6 +387,7 @@ table.simple {
     justify-content: flex-end;
     padding-top: $space-xs;
     margin-left: auto;
+
     &>* {
         flex-basis: 3rem;
         display: flex;
@@ -395,12 +404,12 @@ table.simple {
     flex-direction: column;
     align-self: flex-start;
 
-    & > * {
+    &>* {
         flex-direction: row;
         flex-basis: 100%;
     }
 
-    & > * + * {
+    &>*+* {
         margin-top: $space-xs;
     }
 
@@ -411,21 +420,22 @@ table.simple {
     }
 }
 
-@include mobile { 
-    
-    .session-close-header .custom-data > * {
+@include mobile {
+
+    .session-close-header .custom-data>* {
         display: none;
     }
 
-    #session-close-table .striped {      
-        & > * {
+    #session-close-table .striped {
+        &>* {
             flex-direction: column;
-            & > * + * {
+
+            &>*+* {
                 margin-top: $space-sm;
             }
         }
 
-        & > * > * {
+        &>*>* {
             width: 100%;
         }
     }
@@ -551,7 +561,12 @@ table.simple {
 
 // Display EMail Template rich text
 .force-normalize-fonts {
-    h1, h2, h3, h4, h5 {
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
         font-size: $body-font-size;
     }
 }
@@ -561,7 +576,7 @@ table.simple {
 $i: 1;
 $n: 12;
 
-@while $i < $n + 1 {
+@while $i < $n +1 {
     .w-#{$i} {
         width: percentage(calc(1 / $n) * $i);
     }
@@ -575,7 +590,7 @@ $n: 12;
     }
 }
 
-[class*='grid-col-'].stretch-only-child  > *:only-child{
+[class*='grid-col-'].stretch-only-child>*:only-child {
     grid-column: 1 / -1;
 }
 
@@ -599,6 +614,11 @@ $n: 12;
             float: none;
         }
     }
+}
+
+.notification.error a,
+.notification.success a {
+    color: $white;
 }
 
 input[type="checkbox"][readonly] {

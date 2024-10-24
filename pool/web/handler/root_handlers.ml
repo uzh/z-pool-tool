@@ -5,6 +5,7 @@ module Settings = Root_settings
 module Status = Root_status
 module Tenant = Root_tenant
 module Users = Root_users
+module Version = Root_version
 
 let forward_to_entrypoint req =
   let open Utils.Lwt_result.Infix in

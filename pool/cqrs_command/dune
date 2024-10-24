@@ -20,6 +20,7 @@
   pool_location
   pool_tenant
   pool_user
+  pool_version
   role
   session
   settings
