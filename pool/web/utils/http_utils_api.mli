@@ -24,9 +24,10 @@ val respond
 val index_handler
   :  query:(module Http_utils_queryable.Queryable)
   -> ?src:Logs.src
+  -> yojson_of_t:('a -> Yojson.Safe.t)
   -> Rock.Request.t
   -> (Pool_context.Api.t
       -> Guard.Actor.t
       -> Query.t
-      -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
+      -> ('a list * Query.t, Pool_message.Error.t) Lwt_result.t)
   -> Rock.Response.t Lwt.t

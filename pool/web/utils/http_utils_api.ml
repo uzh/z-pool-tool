@@ -48,26 +48,33 @@ let respond ?(src = src) req result =
 
 let index_handler
   :  query:(module Http_utils_queryable.Queryable) -> ?src:Logs.src
-  -> Rock.Request.t
+  -> yojson_of_t:('a -> Yojson.Safe.t) -> Rock.Request.t
   -> (Pool_context.Api.t
       -> Guard.Actor.t
       -> Query.t
-      -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
+      -> ('a list * Query.t, Pool_message.Error.t) Lwt_result.t)
   -> Rock.Response.t Lwt.t
   =
-  fun ~query:(module Q) ?src req run ->
-  let open Utils.Lwt_result.Infix in
-  let run context =
-    let* actor = Pool_context.Utils.Api.find_authorizable context in
-    let query =
-      Query.from_request
-        ?filterable_by:Q.filterable_by
-        ~searchable_by:Q.searchable_by
-        ~sortable_by:Q.sortable_by
-        ~default:Q.default_query
-        req
-    in
-    run context actor query
+  let make_meta { Query.pagination; _ } =
+    pagination |> CCOption.map_or ~default:`Null Query.Pagination.yojson_of_t
   in
-  respond ?src req run
+  fun ~query:(module Q) ?src ~yojson_of_t req run ->
+    let open Utils.Lwt_result.Infix in
+    let run context =
+      let* actor = Pool_context.Utils.Api.find_authorizable context in
+      let query =
+        Query.from_request
+          ?filterable_by:Q.filterable_by
+          ~searchable_by:Q.searchable_by
+          ~sortable_by:Q.sortable_by
+          ~default:Q.default_query
+          req
+      in
+      run context actor query
+      >|+ fun (items, query) ->
+      let items = `List (CCList.map yojson_of_t items) in
+      let meta = make_meta query in
+      `Assoc [ "data", items; "meta", meta ]
+    in
+    respond ?src req run
 ;;
