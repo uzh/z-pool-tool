@@ -1139,6 +1139,14 @@ module Api = struct
         ]
     ;;
 
+    let session =
+      let open Session in
+      let specific = [ get "" ~middlewares:[ Access.read ] show ] in
+      choose
+        ~scope:Field.(human_url Session)
+        [ choose ~scope:Field.(url_key Session) specific ]
+    ;;
+
     let organisational_unit =
       let open OrganisationalUnit in
       choose ~scope:Field.(human_url OrganisationalUnit) [ get "" index ]
