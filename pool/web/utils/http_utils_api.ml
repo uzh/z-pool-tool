@@ -45,3 +45,29 @@ let respond ?(src = src) req result =
   | Error error ->
     respond_error ~status:`Internal_server_error error |> Lwt.return
 ;;
+
+let index_handler
+  :  query:(module Http_utils_queryable.Queryable) -> ?src:Logs.src
+  -> Rock.Request.t
+  -> (Pool_context.Api.t
+      -> Guard.Actor.t
+      -> Query.t
+      -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
+  -> Rock.Response.t Lwt.t
+  =
+  fun ~query:(module Q) ?src req run ->
+  let open Utils.Lwt_result.Infix in
+  let run context =
+    let* actor = Pool_context.Utils.Api.find_authorizable context in
+    let query =
+      Query.from_request
+        ?filterable_by:Q.filterable_by
+        ~searchable_by:Q.searchable_by
+        ~sortable_by:Q.sortable_by
+        ~default:Q.default_query
+        req
+    in
+    run context actor query
+  in
+  respond ?src req run
+;;

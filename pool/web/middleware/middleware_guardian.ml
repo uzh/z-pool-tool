@@ -136,6 +136,12 @@ let id_effects encode field make_set =
 ;;
 
 (* TODO: This could be separated in module or a different file *)
+let api_validate_admin_entity ?any_id effects =
+  validate_api_access_request_dependent ?any_id (fun (_ : Rock.Request.t) ->
+    Lwt_result.return effects)
+  |> validate_admin_entity_base
+;;
+
 let api_validate_generic ?any_id make_set =
   validate_api_access_request_dependent ?any_id (make_set %> Lwt_result.lift)
   |> validate_admin_entity_base

@@ -20,3 +20,13 @@ val respond
   -> Rock.Request.t
   -> (Pool_context.Api.t -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
   -> Rock.Response.t Lwt.t
+
+val index_handler
+  :  query:(module Http_utils_queryable.Queryable)
+  -> ?src:Logs.src
+  -> Rock.Request.t
+  -> (Pool_context.Api.t
+      -> Guard.Actor.t
+      -> Query.t
+      -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
+  -> Rock.Response.t Lwt.t

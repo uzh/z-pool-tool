@@ -105,6 +105,12 @@ module Utils : sig
     -> Database.Label.t
     -> user
     -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
+
+  module Api : sig
+    val find_authorizable
+      :  Api.t
+      -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
+  end
 end
 
 module Logger : sig

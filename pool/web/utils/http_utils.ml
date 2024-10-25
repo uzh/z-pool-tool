@@ -352,13 +352,6 @@ let first_n_characters ?(n = 47) m =
   else m
 ;;
 
-module type Queryable = sig
-  val default_query : Query.t
-  val filterable_by : Query.Filter.human option
-  val searchable_by : Query.Column.t list
-  val sortable_by : Query.Column.t list
-end
-
 module Htmx = struct
   let hx_request_header = "Hx-Request"
 
@@ -413,7 +406,7 @@ module Htmx = struct
 
   let handler
     :  ?active_navigation:string -> error_path:string
-    -> query:(module Queryable)
+    -> query:(module Http_utils_queryable.Queryable)
     -> create_layout:
          (Rock.Request.t
           -> ?active_navigation:CCString.t

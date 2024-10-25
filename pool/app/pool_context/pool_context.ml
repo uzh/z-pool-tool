@@ -1,4 +1,5 @@
 include Entity
+open Utils.Lwt_result.Infix
 
 let is_from_root { database_label; _ } = Database.is_root database_label
 
@@ -14,7 +15,6 @@ let get_admin_user = function
 
 module Utils = struct
   let find_authorizable_opt ?(admin_only = false) database_label user =
-    let open Utils.Lwt_result.Infix in
     match user with
     | Contact _ when Database.is_root database_label -> Lwt.return_none
     | Contact contact when not admin_only ->
@@ -41,6 +41,16 @@ module Utils = struct
     find_authorizable_opt ?admin_only database_label
     %> Lwt.map (CCOption.to_result (Error.NotFound field))
   ;;
+
+  module Api = struct
+    let find_authorizable { Api.database_label; api_key; _ } =
+      let open Api_key in
+      api_key.id
+      |> Guard.Uuid.actor_of Id.value
+      |> Guard.Persistence.Actor.find database_label
+      >|- CCFun.const Pool_message.(Error.NotFound Field.Actor)
+    ;;
+  end
 end
 
 module Logger = struct

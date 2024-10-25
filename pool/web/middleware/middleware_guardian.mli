@@ -22,6 +22,11 @@ val id_effects
   -> ('a -> Guard.ValidationSet.t)
   -> Rock.Middleware.t
 
+val api_validate_admin_entity
+  :  ?any_id:CCBool.t
+  -> Guard.ValidationSet.t
+  -> Rock.Middleware.t
+
 val api_id_effects
   :  (string -> ('a, Pool_message.Error.t) result)
   -> Pool_message.Field.t

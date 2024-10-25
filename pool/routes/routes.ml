@@ -1073,7 +1073,9 @@ module Api = struct
       let specific = [ get "" ~middlewares:[ Access.read ] show ] in
       choose
         ~scope:Field.(human_url Experiment)
-        [ choose ~scope:Field.(url_key Experiment) specific ]
+        [ get "" ~middlewares:[ Access.index ] index
+        ; choose ~scope:Field.(url_key Experiment) specific
+        ]
     ;;
 
     let organisational_unit =
