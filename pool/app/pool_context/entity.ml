@@ -81,7 +81,7 @@ let set = set_context key
 let find_contact { user; _ } =
   match user with
   | Contact c -> Ok c
-  | Admin _ | Guest -> Error Pool_message.(Error.NotFound Field.User)
+  | Admin _ | Guest -> Error Pool_message.(Error.NotFound Field.Contact)
 ;;
 
 let context_user_of_user database_label user =

@@ -11,7 +11,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
     | Ok { Pool_context.database_label; user; query_parameters; _ } ->
       let%lwt confirmed_and_terms_agreed =
         let* contact =
-          let error = NotFound Pool_message.Field.User in
+          let error = NotFound Pool_message.Field.Contact in
           (match user with
            | Contact c -> Ok c
            | Admin _ | Guest -> Error error)
