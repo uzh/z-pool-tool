@@ -43,7 +43,8 @@ module Access = struct
     one_of_tuple (action, model, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
-  let index = one_of_tuple (Read, `Location, None)
+  let index_permission = Read
+  let index = one_of_tuple (index_permission, `Location, None)
   let create = one_of_tuple (Create, `Location, None)
   let read ?model = location ?model Read
   let update ?model = location ?model Update

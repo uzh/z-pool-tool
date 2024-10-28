@@ -21,7 +21,7 @@ let add_human_field = CCFun.(Field.human_url %> Format.asprintf "/%s")
 let global_middlewares =
   [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
   ; CustomMiddleware.Error.middleware ()
-  ; Middleware.trailing_slash ()
+  ; CustomMiddleware.TrailingSlash.middleware ()
   ; Middleware.static_file ()
   ; Opium.Middleware.content_length
   ; Opium.Middleware.etag
@@ -80,6 +80,13 @@ module Public = struct
       in
       choose ~scope:(Queue |> url_key) specific
     in
+    let announcements =
+      let open Handler.Public in
+      let specific = [ post "hide" hide_announcement ] in
+      choose
+        ~scope:Field.(human_url Announcement)
+        [ choose ~scope:Field.(url_key Announcement) specific ]
+    in
     Handler.Public.(
       choose
         ~middlewares
@@ -124,7 +131,7 @@ module Public = struct
               [ CustomMiddleware.Guardian.require_user_type_of
                   Pool_context.UserType.[ Contact; Admin ]
               ]
-            [ get "/logout" Login.logout ]
+            [ get "/logout" Login.logout; announcements ]
         ; get "/denied" Handler.Public.denied
         ])
   ;;
@@ -421,6 +428,10 @@ module Admin = struct
             let specific =
               [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
               ; post "/close" ~middlewares:[ Session.Access.close ] Close.update
+              ; post
+                  "/verify"
+                  ~middlewares:[ Session.Access.close ]
+                  Close.verify_contact
               ; get "/edit" ~middlewares:[ Access.update ] edit
               ; post "" ~middlewares:[ Access.update ] update
               ; post "/remind" ~middlewares:[ Access.update ] remind
@@ -670,6 +681,7 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
+        ; post "verify" ~middlewares:[ Access.update ] toggle_verified
         ; post "delete" ~middlewares:[ Access.update ] mark_as_deleted
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
@@ -894,6 +906,10 @@ module Admin = struct
         ; post "delete" ~middlewares:[ Access.delete ] delete
         ]
       in
+      let signup_codes =
+        let open SignupCodes in
+        [ get "" ~middlewares:[ Access.index ] index ]
+      in
       [ get "" ~middlewares:[ Access.index ] show
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/actor-permission" actor_permission
@@ -902,9 +918,15 @@ module Admin = struct
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
       ; choose ~scope:"/text-messages" text_messages
+      ; choose ~scope:Field.(human_url SignUpCode) signup_codes
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
+    in
+    let versions =
+      let open Version in
+      let specific = [ get "" show ] in
+      [ get "" index; choose ~scope:Field.(url_key Version) specific ]
     in
     let profile =
       let open Profile in
@@ -936,6 +958,7 @@ module Admin = struct
       ; choose ~scope:(add_human_field Field.Sessions) sessions
       ; choose ~scope:(add_human_field OrganisationalUnit) organisational_units
       ; choose ~scope:(add_human_field MessageTemplate) message_templates
+      ; choose ~scope:(add_human_field Version) versions
       ]
   ;;
 end
@@ -1008,6 +1031,26 @@ module Root = struct
       ; choose ~scope:(Root |> url_key) specific
       ]
     in
+    let announcements =
+      let open Announcement in
+      let specific = [ post "" update; get "edit" edit ] in
+      [ get "" index
+      ; post "" create
+      ; get "new" new_form
+      ; choose ~scope:Field.(url_key Announcement) specific
+      ]
+    in
+    let versions =
+      let open Version in
+      let specific =
+        [ post "" update; get "edit" edit; post "publish" publish ]
+      in
+      [ get "" index
+      ; post "" create
+      ; get "new" new_form
+      ; choose ~scope:Field.(url_key Version) specific
+      ]
+    in
     let settings =
       let smtp =
         let open Handler.Root.Settings in
@@ -1033,6 +1076,8 @@ module Root = struct
     in
     [ choose
         [ get "/logout" Login.logout
+        ; choose ~scope:Field.(show Announcement) announcements
+        ; choose ~scope:Field.(show Version) versions
         ; choose ~scope:"/settings" settings
         ; choose ~scope:"/user" profile
         ; choose ~scope:"/tenants" tenants

@@ -31,6 +31,7 @@ let create_target_path ?uuid =
     | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
     | `Filter -> Some (build "filter" uuid)
     | `Tag -> Some (build "settings/tags" uuid)
+    | `Announcement
     | `Assignment
     | `ApiKey
     | `ContactInfo
@@ -56,11 +57,13 @@ let create_target_path ?uuid =
     | `Schedule
     | `Session
     | `SessionClose
+    | `SignupCode
     | `Smtp
     | `Statistics
     | `System
     | `SystemSetting
     | `Tenant
+    | `Version
     | `WaitingList -> None)
 ;;
 

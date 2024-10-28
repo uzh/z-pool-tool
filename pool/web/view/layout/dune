@@ -15,6 +15,7 @@
   pool_common
   schedule
   sihl
+  signup_code
   waiting_list)
  (preprocess
   (pps lwt_ppx ppx_deriving.show)))

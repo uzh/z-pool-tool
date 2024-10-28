@@ -92,7 +92,7 @@ let create pool =
                     text_message_reminder_lead_time
                     Reminder.TextMessageLeadTime.create
                 in
-                let location = CCList.hd locations in
+                let location = CCList.hd (fst locations) in
                 create
                   ?internal_description
                   ?public_description

@@ -6,14 +6,14 @@ module HttpUtils = Http_utils
 let txt_to_string lang m = txt (Pool_common.Utils.text_to_string lang m)
 
 let import_confirmation
-  Pool_context.{ language; query_language; csrf; _ }
+  Pool_context.{ language; query_parameters; csrf; _ }
   token
   password_policy
   terms_and_conditions
   =
   let action =
     "/import-confirmation"
-    |> HttpUtils.externalize_path_with_lang query_language
+    |> HttpUtils.externalize_path_with_params query_parameters
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]

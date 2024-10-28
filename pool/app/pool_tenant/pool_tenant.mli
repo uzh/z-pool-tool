@@ -200,6 +200,12 @@ val find_gtx_api_key_and_url_by_label
 val create_public_url : Url.t -> string -> string
 val clear_cache : unit -> unit
 
+module Repo : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
+end
+
 type handle_list_recruiters = unit -> Pool_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
 type logo_mappings = LogoMapping.Write.t list

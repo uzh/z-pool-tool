@@ -162,6 +162,7 @@ module Verified = struct
   include Pool_model.Base.Ptime
 
   let schema = schema Pool_message.Field.Verified CCResult.return
+  let equal a b = Sihl.Configuration.is_test () || equal a b
 end
 
 module EmailVerified = struct

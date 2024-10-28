@@ -16,6 +16,8 @@ type t =
   | AssignmentIsCanceled
   | AssignmentIsClosed
   | AssignmentsHaveErrors
+  | AtLeastOneLanguageRequired of Field.t
+  | AtLeastOneSelected of Field.t * Field.t
   | Authorization of string
   | CannotBeDeleted of Field.t
   | CannotBeUpdated of Field.t

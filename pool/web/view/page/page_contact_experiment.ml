@@ -48,7 +48,7 @@ let index
   past_experiments
   custom_fields_ansered
   i18n
-  Pool_context.{ language; query_language; _ }
+  Pool_context.{ language; query_parameters; _ }
   =
   let list_html ?empty_msg ?note title classnames list =
     div
@@ -100,9 +100,8 @@ let index
       [ a
           ~a:
             [ a_href
-                (HttpUtils.externalize_path_with_lang
-                   query_language
-                   (Format.asprintf "/experiments/%s" (Experiment.Id.value id)))
+                (HttpUtils.Url.Contact.experiment_path ~id ()
+                 |> HttpUtils.externalize_path_with_params query_parameters)
             ]
           [ Control.More |> Pool_common.Utils.control_to_string language |> txt
           ]
@@ -232,7 +231,7 @@ let show
   canceled_sessions
   user_is_enlisted
   contact
-  Pool_context.{ language; query_language; csrf; _ }
+  Pool_context.{ language; query_parameters; csrf; _ }
   =
   let open Pool_common in
   let hint_to_string = Utils.hint_to_string language in
@@ -267,7 +266,7 @@ let show
         ()
       |> (fun url ->
            if user_is_enlisted then Format.asprintf "%s/remove" url else url)
-      |> HttpUtils.externalize_path_with_lang query_language
+      |> HttpUtils.externalize_path_with_params query_parameters
     in
     let text_blocks =
       let base =
@@ -281,8 +280,8 @@ let show
         then
           [ Component.Notification.notification
               ~link:
-                ( HttpUtils.path_with_language
-                    query_language
+                ( HttpUtils.url_with_field_params
+                    query_parameters
                     "/user/contact-information"
                 , I18n.PersonalDetails )
               language

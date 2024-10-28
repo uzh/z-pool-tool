@@ -496,6 +496,25 @@ let verify_email () =
   check_result expected events
 ;;
 
+let toggle_verified () =
+  let open Contact in
+  let create_verified = Pool_user.Verified.create_now in
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let run_test contact expected =
+    let open Cqrs_command.Contact_command.ToggleVerified in
+    let events = handle contact in
+    let expected = Ok [ expected |> Pool_event.contact ] in
+    check_result expected events
+  in
+  run_test
+    contact
+    (Updated { contact with verified = Some (create_verified ()) });
+  run_test
+    { contact with verified = Some (create_verified ()) }
+    (Updated { contact with verified = None });
+  ()
+;;
+
 let accept_terms_and_conditions () =
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let events = Contact_command.AcceptTermsAndConditions.handle contact in

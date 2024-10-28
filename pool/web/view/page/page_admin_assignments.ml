@@ -40,11 +40,17 @@ module Partials = struct
       I18n.
         [ hint_to_string SessionCloseLegendNoShow, legend_text_item "NS"
         ; hint_to_string SessionCloseLegendParticipated, legend_text_item "P"
+        ; hint_to_string SessionCloseLegendVerified, legend_text_item "V"
         ; ( field_to_string Field.ExternalDataId
           , legend_text_item Field.(ExternalDataIdAbbr |> show) )
         ]
     in
-    (if hide_deleted then base else base @ not_matching_filter) |> table_legend
+    let hint =
+      Utils.hint_to_string language I18n.ExperimentSessionsCancelDelete
+      |> HttpUtils.add_line_breaks
+    in
+    (if hide_deleted then base else base @ not_matching_filter)
+    |> table_legend ~hint
   ;;
 
   let empty language =

@@ -48,7 +48,7 @@ let rec build_nav_links
   ?active_navigation
   ?(first_level = true)
   language
-  query_language
+  query_params
   { NavElement.url; label; icon; children; _ }
   =
   let rec find_is_active (children : NavElement.t list_wrap) : bool =
@@ -82,7 +82,7 @@ let rec build_nav_links
     | _, Some url ->
       [ a
           ~a:
-            [ a_href (Http_utils.externalize_path_with_lang query_language url)
+            [ a_href (Http_utils.externalize_path_with_params query_params url)
             ; a_class classnames
             ]
           label
@@ -110,14 +110,14 @@ let rec build_nav_links
            ~first_level:false
            ?active_navigation
            language
-           query_language)
+           query_params)
       %> ul ~a:list_attrs
     in
     nav_link @ [ build_rec children ] |> li ~a:parent_attrs
 ;;
 
 let create_nav
-  { Pool_context.query_language; language; guardian; _ }
+  { Pool_context.query_parameters; language; guardian; _ }
   items
   ?validate
   ?actor
@@ -127,7 +127,7 @@ let create_nav
   let nav_links =
     filter_items ?validate ?actor ~guardian items
     |> CCList.map
-         (build_nav_links ~layout ?active_navigation language query_language)
+         (build_nav_links ~layout ?active_navigation language query_parameters)
   in
   let nav = [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ] in
   match layout with
@@ -135,8 +135,9 @@ let create_nav
   | Horizonal -> nav
 ;;
 
-let i18n_links languages active_language layout =
+let i18n_links languages query_parameters active_language layout =
   let open Pool_message in
+  let field = Field.Language in
   let link_classes = [ "nav-link" ] in
   let nav_class =
     match layout with
@@ -144,40 +145,41 @@ let i18n_links languages active_language layout =
       [ "language-nav"; "gap"; "flexrow"; "flex-gap"; "justify-center" ]
     | Horizonal -> [ "main-nav" ]
   in
-  let to_html =
-    (fun language ->
-      let lang = Language.show language in
-      if Language.equal language active_language
-      then
-        li
-          ~a:[ a_class [ "active" ] ]
-          [ span ~a:[ a_class link_classes ] [ txt lang ] ]
-      else (
-        let query_param =
-          [ Field.Language, lang |> CCString.lowercase_ascii ]
-        in
-        li
-          [ a
-              ~a:
-                [ a_href (add_field_query_params "" query_param)
-                ; a_class link_classes
-                ]
-              [ txt lang ]
-          ]))
-    |> CCList.map
+  let to_html language =
+    let lang = Language.show language in
+    let query_parameters =
+      (field, lang)
+      :: CCList.remove_assoc ~eq:Field.equal field query_parameters
+    in
+    if Language.equal language active_language
+    then
+      li
+        ~a:[ a_class [ "active" ] ]
+        [ span ~a:[ a_class link_classes ] [ txt lang ] ]
+    else
+      li
+        [ a
+            ~a:
+              [ a_href (Http_utils.url_with_field_params query_parameters "")
+              ; a_class link_classes
+              ]
+            [ txt lang ]
+        ]
   in
-  [ languages |> to_html |> ul ] |> nav ~a:[ a_class nav_class ]
+  [ languages |> CCList.map to_html |> ul ] |> nav ~a:[ a_class nav_class ]
 ;;
 
 let create_nav_with_language_switch
-  ({ Pool_context.language; _ } as context)
+  ({ Pool_context.language; query_parameters; _ } as context)
   elements
   available_languages
   ?actor:_
   ?active_navigation
   layout
   =
-  let language_switch = i18n_links available_languages language in
+  let language_switch =
+    i18n_links available_languages query_parameters language
+  in
   let main =
     create_nav ~validate:false ?active_navigation context elements layout
   in

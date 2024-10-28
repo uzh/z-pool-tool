@@ -4,7 +4,8 @@ let () =
   let open Alcotest in
   run
     "cqrs commands"
-    [ ( "api_key"
+    [ ("announcement", Announcement_test.[ test_case "create" `Quick create ])
+    ; ( "api_key"
       , [ test_case "create API key" `Quick Api_key_test.create
         ; test_case "update API key" `Quick Api_key_test.update
         ] )
@@ -73,6 +74,7 @@ let () =
             Contact_test.request_email_validation_wrong_suffix
         ; test_case "update email" `Quick Contact_test.update_email
         ; test_case "verify email" `Quick Contact_test.verify_email
+        ; test_case "toggle verified" `Quick Contact_test.toggle_verified
         ; test_case
             "accept terms and condition"
             `Quick
@@ -566,6 +568,13 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
+    ; ( "pool_version"
+      , Pool_version_test.
+          [ test_case "create tag" `Quick create_version_tag
+          ; test_case "create" `Quick create
+          ; test_case "update" `Quick update
+          ; test_case "publish" `Quick publish
+          ] )
     ; ( "queue"
       , [ test_case
             "create delivery report"

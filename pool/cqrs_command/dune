@@ -2,11 +2,12 @@
  (name cqrs_command)
  (libraries
   admin
+  announcement
   api_key
   assignment_job
   conformist
-  custom_field
   contact
+  custom_field
   contact_counter
   email
   experiment
@@ -20,6 +21,7 @@
   pool_location
   pool_tenant
   pool_user
+  pool_version
   role
   session
   settings

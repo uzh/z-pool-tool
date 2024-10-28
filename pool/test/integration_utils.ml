@@ -1,5 +1,25 @@
 open Test_utils
 
+module AnnouncementRepo = struct
+  let create ?id ?start_at ?end_at ?show_to_admins ?show_to_contacts tenant_ids =
+    let announcement =
+      Test_utils.Model.create_announcement
+        ?id
+        ?start_at
+        ?end_at
+        ?show_to_admins
+        ?show_to_contacts
+        ()
+    in
+    let%lwt () =
+      Announcement.Created (announcement, tenant_ids)
+      |> Pool_event.announcement
+      |> Pool_event.handle_event Database.root
+    in
+    Lwt.return announcement
+  ;;
+end
+
 module AssignmentRepo = struct
   let create ?id session contact =
     let assignment = Assignment.create ?id contact in
@@ -19,7 +39,7 @@ module ContactRepo = struct
       Model.create_contact ?id ?lastname ?language ~with_terms_accepted ()
     in
     let open Contact in
-    let confirm = [ Verified contact; EmailVerified contact ] in
+    let confirm = [ EmailVerified contact ] in
     let%lwt () =
       [ Created
           { user_id = id contact

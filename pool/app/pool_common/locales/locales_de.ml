@@ -18,6 +18,7 @@ let rec field_to_string =
   | AdminInputOnly -> "Eingabe nur durch Admins"
   | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AllowUninvitedSignup -> "Einschreiben aller Kontakte erlauben"
+  | Announcement -> "Ankündigung"
   | Answer -> "Antwort"
   | AreaCode -> "Vorwahl"
   | ApiKey -> "API Key"
@@ -38,6 +39,7 @@ let rec field_to_string =
   | Chronological -> "chronologisch"
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"
+  | Code -> "Code"
   | Confirmed -> "Bestätigt"
   | ConfirmedAt -> "Bestätigt am"
   | Contact -> "Kontakt"
@@ -231,6 +233,7 @@ let rec field_to_string =
   | Reason -> "Grund"
   | Recipient -> "Empfänger"
   | Redirect -> "Weiterleitung"
+  | Redirected -> "Weitergeleitet"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | RegistrationPossible -> "Registrierung möglich"
   | Reminder -> "Erinnerung"
@@ -258,8 +261,11 @@ let rec field_to_string =
   | Setting -> "Einstellung"
   | Settings -> "Einstellungen"
   | ShowUpCount -> "Anwesende"
+  | ShowToAdmins -> "Den Administratoren anzeigen"
+  | ShowToContacts -> "Den Kontakten anzeigen"
   | ShowExteralDataIdLinks -> "Link zu externen Datenidentifikatoren anzeigen"
   | SignedUpAt -> "Eingeschrieben am"
+  | SignUpCode -> "Registrierungscode"
   | SignUpCount -> "Neuregistrierungen"
   | SMS -> "SMS"
   | SmsText -> "SMS Text"
@@ -297,6 +303,7 @@ let rec field_to_string =
   | TermsAndConditions -> "Teilnahmebedingungen"
   | TermsAndConditionsLastAccepted -> "Teilnahmebedingungen zuletzt akzeptiert"
   | TestPhoneNumber -> "Testtelefonnummer"
+  | Text -> "Text"
   | TextMessage -> "SMS"
   | TextMessageDlrStatus -> "SMS Status"
   | TextMessageLeadTime -> "SMS Vorlaufzeit"
@@ -320,6 +327,7 @@ let rec field_to_string =
   | Value -> "Wert"
   | ValueOf field -> combine Value field
   | VerificationCode -> "Verifizierungs Code"
+  | VerificationCount -> "Anz. Verifizierungen"
   | Verified -> "Verifiziert"
   | Version -> "Version"
   | Virtual -> "Virtuell"
@@ -457,6 +465,17 @@ let rec error_to_string =
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AssignmentAlreadySubmitted -> "Die Teilnahme wurde bereits abgeschlossen."
+  | AtLeastOneLanguageRequired field ->
+    field
+    |> field_to_string
+    |> CCString.trim
+    |> Format.asprintf "%s muss in mindestens einer Sprache angegeben werden."
+    |> CCString.capitalize_ascii
+  | AtLeastOneSelected (field1, field2) ->
+    Format.asprintf
+      "Mindestens eines der Felder '%s' oder '%s' muss ausgewählt werden."
+      (field_to_string field1)
+      (field_to_string field2)
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: \
@@ -747,7 +766,9 @@ let control_to_string =
   | Enroll -> format_submit "einschreiben" None
   | EnterNewCellPhone -> "eine andere Nummer eingeben"
   | Filter field -> format_submit "filtern" field
+  | Hide field -> format_submit "verbergen" field
   | Login -> format_submit "login" None
+  | Generate -> format_submit "generieren" None
   | LoadDefaultTemplate -> format_submit "Standardtemplate laden" None
   | Manage field -> format_submit "manage" (Some field)
   | MarkAsDeleted -> format_submit "als gelöscht markieren" None
@@ -788,6 +809,7 @@ let control_to_string =
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field
+  | Unverify -> "Als unverifiziert markieren"
   | Update field -> format_submit "aktualisieren" field
   | UpdateAssignmentsMatchFilter -> format_submit "Filter erneut ausführen" None
   | UpdateOrder -> "Reihenfolge anpassen"

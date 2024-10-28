@@ -18,6 +18,7 @@
   pool_tenant
   schedule
   session
+  signup_code
   sihl
   tags
   time_window

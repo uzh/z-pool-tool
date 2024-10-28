@@ -19,17 +19,25 @@ let make name ~maintenance_handler ~connection_issue_handler ~error_handler () =
   let filter handler req =
     let open Pool_context in
     match%lwt tenant_of_request req with
-    | Ok tenant ->
+    | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
       let open Database.Status in
-      (match tenant.Pool_tenant.status with
-       | Active ->
-         Settings.find_languages tenant.Pool_tenant.database_label
-         ||> Tenant.create tenant
-         ||> Tenant.set req
-         >|> handler
+      let handle_request =
+        Settings.find_languages database_label
+        ||> Tenant.create tenant
+        ||> Tenant.set req
+        >|> handler
+      in
+      (match status with
+       | Active -> handle_request
        | Maintenance | MigrationsPending | MigrationsFailed ->
          maintenance_handler ()
-       | ConnectionIssue | Disabled -> connection_issue_handler ())
+       | Disabled -> connection_issue_handler ()
+       | ConnectionIssue ->
+         (match%lwt Database.connect database_label with
+          | Ok () ->
+            let%lwt () = Database.Tenant.update_status database_label Active in
+            handle_request
+          | Error err -> error_handler err))
     | Error err ->
       let (_ : Pool_message.Error.t) =
         Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err

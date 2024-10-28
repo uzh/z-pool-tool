@@ -2,6 +2,8 @@ type t =
   | Activity
   | Address
   | AdminComment
+  | AnnouncementsListTitle
+  | AnnouncementsTenantSelect
   | ApiKeys
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
@@ -64,6 +66,8 @@ type t =
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingDistributionDescription
+  | MailingExperimentNoUpcomingSession
+  | MailingExperimentNoUpcomingTimewindow
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
   | MessageHistory of string
@@ -112,11 +116,13 @@ type t =
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
   | Validation
+  | VersionsListTitle
   | WaitingListIsDisabled
 
 type nav_link =
   | ActorPermissions
   | Admins
+  | Announcements
   | ApiKeys
   | Assignments
   | ContactInformation
@@ -152,6 +158,7 @@ type nav_link =
   | Sessions
   | Settings
   | Smtp
+  | SignupCodes
   | SystemSettings
   | Tags
   | Tenants
@@ -159,6 +166,7 @@ type nav_link =
   | TimeWindows
   | Users
   | WaitingList
+  | Versions
 [@@deriving eq]
 
 type hint =
@@ -213,6 +221,7 @@ type hint =
   | ExperimentMailingsRegistrationDisabled
   | ExperimentMessageTemplates
   | ExperimentSessions
+  | ExperimentSessionsCancelDelete
   | ExperimentSessionsPublic
   | ExperimentSmtp of string
   | ExperimentStatisticsRegistrationPossible
@@ -276,6 +285,7 @@ type hint =
   | ResendRemindersWarning
   | ResetInvitations
   | ResetInvitationsLastReset of Ptime.t
+  | ReleaseNotesHint of string
   | RoleIntro of Pool_message.Field.t * Pool_message.Field.t
   | RolePermissionsModelList
   | RolePermissionsRoleList
@@ -292,6 +302,7 @@ type hint =
   | SessionCloseHints
   | SessionCloseLegendNoShow
   | SessionCloseLegendParticipated
+  | SessionCloseLegendVerified
   | SessionCloseNoParticipationTagsSelected
   | SessionCloseParticipationTagsSelected
   | SessionRegistrationFollowUpHint
@@ -299,6 +310,7 @@ type hint =
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
   | SettingsNoEmailSuffixes
+  | SignUpCodeHint
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
@@ -314,6 +326,7 @@ type hint =
   | TextLengthMax of int
   | TextLengthMin of int
   | UserImportInterval
+  | VerifyContact
   | WaitingListPhoneMissingContact
 [@@deriving variants]
 

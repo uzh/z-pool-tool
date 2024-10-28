@@ -85,13 +85,6 @@ let contact ~prefix () =
     Pool_event.handle_events test_db verification_events |> Lwt_result.ok
   in
   let& contact = Contact.find test_db invited_contact_id in
-  let verification_events =
-    [ Contact.Verified contact |> Pool_event.contact ]
-  in
-  let& () =
-    Pool_event.handle_events test_db verification_events |> Lwt_result.ok
-  in
-  let& contact = Contact.find test_db invited_contact_id in
   Lwt_result.lift (Ok contact)
 ;;
 

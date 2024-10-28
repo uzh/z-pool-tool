@@ -18,6 +18,7 @@ let rec field_to_string =
   | AdminInputOnly -> "input only by admins"
   | AdminViewOnly -> "only visible for admins"
   | AllowUninvitedSignup -> "Allow registration of all contacts"
+  | Announcement -> "announcement"
   | Answer -> "answer"
   | AreaCode -> "area code"
   | ApiKey -> "API key"
@@ -38,6 +39,7 @@ let rec field_to_string =
   | Chronological -> "chronological"
   | City -> "city"
   | ClosedAt -> "Closed at"
+  | Code -> "Code"
   | Confirmed -> "Confirmed"
   | ConfirmedAt -> "Confirmed at"
   | Contact -> "contact"
@@ -227,6 +229,7 @@ let rec field_to_string =
   | Reason -> "reason"
   | Recipient -> "recipient"
   | Redirect -> "redirect"
+  | Redirected -> "redirected"
   | Reminder -> "reminder"
   | RegistrationDisabled -> "registration disabled"
   | RegistrationPossible -> "registration possible"
@@ -255,8 +258,11 @@ let rec field_to_string =
   | Setting -> "setting"
   | Settings -> "settings"
   | ShowUpCount -> "show ups"
+  | ShowToAdmins -> "Show to admins"
+  | ShowToContacts -> "Show to contacts"
   | ShowExteralDataIdLinks -> "show links to external data identifiers"
   | SignedUpAt -> "signed up at"
+  | SignUpCode -> "signup code"
   | SignUpCount -> "new sign ups"
   | SMS -> "SMS"
   | SmsText -> "SMS text"
@@ -294,6 +300,7 @@ let rec field_to_string =
   | TermsAndConditions -> "terms and conditions"
   | TermsAndConditionsLastAccepted -> "terms and conditions last accepted at"
   | TestPhoneNumber -> "test phone number"
+  | Text -> "text"
   | TextMessage -> "text message"
   | TextMessageDlrStatus -> "text message status"
   | TextMessageLeadTime -> "text message lead time"
@@ -317,6 +324,7 @@ let rec field_to_string =
   | Value -> "value"
   | ValueOf field -> combine Value field
   | VerificationCode -> "verification code"
+  | VerificationCount -> "no. verifications"
   | Verified -> "verified"
   | Version -> "version"
   | Virtual -> "virtual"
@@ -442,6 +450,17 @@ let rec error_to_string =
     "Some assignments have errors. Please resolve them first."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | AssignmentAlreadySubmitted -> "This assignment was already submitted."
+  | AtLeastOneLanguageRequired field ->
+    field
+    |> field_to_string
+    |> CCString.trim
+    |> Format.asprintf "%s has to be provided in at least one language."
+    |> CCString.capitalize_ascii
+  | AtLeastOneSelected (field1, field2) ->
+    Format.asprintf
+      "At least one of the fields '%s' or '%s' has to be selected."
+      (field_to_string field1)
+      (field_to_string field2)
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"
@@ -703,6 +722,8 @@ let control_to_string =
   | Enroll -> format_submit "enroll" None
   | EnterNewCellPhone -> "Enter a different number"
   | Filter field -> format_submit "filter" field
+  | Generate -> format_submit "generate" None
+  | Hide field -> format_submit "hide" field
   | Login -> format_submit "login" None
   | LoadDefaultTemplate -> format_submit "load default template" None
   | Manage field -> format_submit "manage" (Some field)
@@ -744,6 +765,7 @@ let control_to_string =
   | Stop field -> format_submit "stop" field
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field
+  | Unverify -> "Mark as unverified"
   | Update field -> format_submit "update" field
   | UpdateAssignmentsMatchFilter -> format_submit "rerun filter" None
   | UpdateOrder -> format_submit "update order" None

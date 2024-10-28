@@ -275,6 +275,7 @@ let detail
 
 let form
   ?(mailing : Mailing.t option)
+  ?(has_no_upcoming_session = true)
   ?(fully_booked = false)
   ~matching_filter_count
   ({ Pool_context.language; csrf; _ } as context)
@@ -507,18 +508,28 @@ let form
           ]
       ]
   in
-  let fully_booked_note =
-    if fully_booked
-    then
+  let note =
+    let open I18n in
+    let i18n =
+      match has_no_upcoming_session with
+      | true ->
+        CCOption.return
+          (match Experiment.is_sessionless experiment with
+           | false -> MailingExperimentNoUpcomingSession
+           | true -> MailingExperimentNoUpcomingTimewindow)
+      | false ->
+        (match fully_booked with
+         | true -> Some MailingExperimentSessionFullyBooked
+         | false -> None)
+    in
+    match i18n with
+    | None -> txt ""
+    | Some i18n ->
       div
-        ~a:
-          [ a_class [ "bg-grey-light"; "border"; "border-radius"; "inset-md" ] ]
-        [ Pool_common.Utils.text_to_string
-            language
-            I18n.MailingExperimentSessionFullyBooked
+        ~a:[ a_class [ "notification"; "warning" ] ]
+        [ Pool_common.Utils.text_to_string language i18n
           |> HttpUtils.add_line_breaks
         ]
-    else txt ""
   in
   let matching_filter_count_note =
     p
@@ -544,7 +555,7 @@ let form
     let open Htmx in
     div
       ~a:[ a_class [ "stack" ] ]
-      ([ notification; fully_booked_note; matching_filter_count_note ]
+      ([ notification; note; matching_filter_count_note ]
        @ [ form
              ~a:
                [ a_class [ "stack" ]

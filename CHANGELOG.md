@@ -4,6 +4,48 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.8.3](https://github.com/uzh/z-pool-tool/tree/0.8.3) - 2024-10-24
+
+### Fixed
+
+- handling of lost database connection in schedule
+- filtering of locations on location index page
+
+## [0.8.2](https://github.com/uzh/z-pool-tool/tree/0.8.2) - 2024-10-24
+
+### Added
+
+- creation of announcement banners on tenants for admins and/or contacts
+- keep track of sign up codes of newly registered contacts
+- enable verification of contacts
+- creation of release note pages
+
+### Changed
+
+- sort participation history on contact profile by session start
+
+### Fixed
+
+- fix tenant middleware to retry database connection after a connection issue occurred
+
+## [0.8.1](https://github.com/uzh/z-pool-tool/tree/0.8.1) - 2024-10-09
+
+### Added
+
+- validation of uuids in guardian middleware
+- warnings to mailings form if no invitations will be sent
+
+### Changed
+
+- standradized page width for all pages
+- matcher sends invitations to online experiment with upcoming time windows
+
+### Fixed
+
+- `experimentSurveyRedirectUrl` text template typo
+- resending of queue jobs
+- experiment detail view middleware
+
 ## [0.8.0](https://github.com/uzh/z-pool-tool/tree/0.8.0) - 2024-09-11
 
 ### Added
