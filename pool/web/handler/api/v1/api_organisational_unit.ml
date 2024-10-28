@@ -17,5 +17,5 @@ module Access = struct
   open Organisational_unit
   module Guardian = Middleware.Guardian
 
-  let index = Guardian.validate_admin_entity ~any_id:true Guard.Access.index
+  let index = Guardian.api_validate_admin_entity ~any_id:true Guard.Access.index
 end

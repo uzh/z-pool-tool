@@ -347,6 +347,7 @@ type confirmable =
   | DeleteMessageTemplate
   | DeleteSession
   | DeleteSmtpServer
+  | DisableApiKey
   | LoadDefaultTemplate
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted

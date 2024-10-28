@@ -89,13 +89,14 @@ let all ?query pool =
   Query.collect_and_count pool query ~select:find_request_sql Repo_entity.t
 ;;
 
-let destroy_request =
+let disable_request =
   let open Caqti_request.Infix in
   {sql|
-    DELETE FROM pool_api_keys
+    UPDATE pool_api_keys
+    SET expires_at = NOW()
     WHERE uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
   |> Pool_common.Repo.Id.t ->. Caqti_type.unit
 ;;
 
-let destroy pool Entity.{ id; _ } = Database.exec pool destroy_request id
+let disable pool Entity.{ id; _ } = Database.exec pool disable_request id

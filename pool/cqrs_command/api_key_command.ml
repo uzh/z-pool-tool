@@ -79,3 +79,24 @@ end = struct
 
   let effects = Access.update
 end
+
+module Disable : sig
+  type t = Api_key.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val effects : Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Api_key.t
+
+  let handle ?(tags = Logs.Tag.empty) api_key =
+    let open CCResult in
+    Logs.info ~src (fun m -> m "Handle command Disable" ~tags);
+    Ok [ Disabled api_key |> Pool_event.api_key ]
+  ;;
+
+  let effects = Access.update
+end

@@ -25,7 +25,7 @@ module Partials = struct
   ;;
 end
 
-let list { Pool_context.language; _ } (api_keys, query) =
+let list { Pool_context.language; csrf; _ } (api_keys, query) =
   let open Api_key in
   let make_btn = Component.Input.link_as_button in
   let url = api_key_path () |> Uri.of_string in
@@ -46,9 +46,34 @@ let list { Pool_context.language; _ } (api_keys, query) =
   in
   let row ({ id; name; expires_at; created_at; _ } : t) =
     let detai_btn = api_key_path ~id () |> make_btn ~icon:Icon.Eye in
+    let is_expired =
+      Ptime.is_earlier (ExpiresAt.value expires_at) ~than:(Ptime_clock.now ())
+    in
+    let classname = if is_expired then [ "bg-red-lighter" ] else [] in
     let edit_btn =
       api_key_path ~id ~suffix:"edit" ()
       |> make_btn ~style:`Primary ~icon:Icon.Create
+    in
+    let disable_form =
+      match is_expired with
+      | true -> txt ""
+      | false ->
+        let confirmable =
+          Pool_common.(Utils.confirmable_to_string language I18n.DisableApiKey)
+        in
+        form
+          ~a:
+            [ a_method `Post
+            ; a_action
+                (Sihl.Web.externalize_path
+                   (api_key_path ~id ~suffix:"disable" ()))
+            ; a_user_data "confirmable" confirmable
+            ]
+          [ Input.csrf_element csrf ()
+          ; button
+              ~a:[ a_button_type `Submit; a_class [ "btn"; "error" ] ]
+              [ Icon.(CloseCircle |> to_html) ]
+          ]
     in
     let format_time = Utils.Ptime.formatted_date_time in
     [ Name.value name |> txt
@@ -56,10 +81,10 @@ let list { Pool_context.language; _ } (api_keys, query) =
     ; created_at |> Pool_common.CreatedAt.value |> format_time |> txt
     ; div
         ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ]
-        [ detai_btn; edit_btn ]
+        [ detai_btn; edit_btn; disable_form ]
     ]
     |> CCList.map (CCList.return %> td)
-    |> tr
+    |> tr ~a:[ a_class classname ]
   in
   Component.DataTable.make
     ~cols

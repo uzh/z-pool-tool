@@ -752,6 +752,7 @@ let confirmable_to_string confirmable =
    | DeleteMessageTemplate -> "message template", "delete", None
    | DeleteSession -> "session", "delete", None
    | DeleteSmtpServer -> "email Server", "delete", None
+   | DisableApiKey -> "API key", "disable", None
    | LoadDefaultTemplate ->
      "default template", "load", Some "The current content is overwritten."
    | MarkAssignmentAsDeleted -> "assignment as deleted", "mark", None

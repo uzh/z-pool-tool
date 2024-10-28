@@ -786,6 +786,7 @@ let confirmable_to_string confirmable =
    | DeleteMessageTemplate -> "das Nachrichtentemplate", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
    | DeleteSmtpServer -> "E-Mail Server", "löschen", None
+   | DisableApiKey -> "den API Key", "deaktivieren", None
    | LoadDefaultTemplate ->
      ( "das Standardtemplate"
      , "laden"

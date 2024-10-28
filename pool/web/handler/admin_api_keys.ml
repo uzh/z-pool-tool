@@ -166,6 +166,30 @@ let update req =
   result |> Http_utils.extract_happy_path_with_actions ~src req
 ;;
 
+let disable req =
+  let tags = Pool_context.Logger.Tags.req req in
+  let id = api_key_id req in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, api_key_path ())
+    @@
+    let* api_key = Api_key.find database_label id in
+    let events =
+      let open Cqrs_command.Api_key_command.Disable in
+      handle ~tags:Logs.Tag.empty api_key |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        (api_key_path ())
+        [ Http_utils.Message.set ~success:[ Success.Updated Field.ApiKey ] ]
+    in
+    events |>> handle
+  in
+  result |> Http_utils.extract_happy_path ~src req
+;;
+
 let handle_toggle_role req =
   let open Api_key in
   let result { Pool_context.database_label; _ } =
@@ -224,6 +248,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
 module Access : sig
   include module type of Helpers.Access
 
+  val disable : Rock.Middleware.t
   val grant_role : Rock.Middleware.t
   val revoke_role : Rock.Middleware.t
 end = struct
@@ -242,6 +267,7 @@ end = struct
   let create = Command.Create.effects |> Guardian.validate_admin_entity
   let read = announcement_effects Api_key.Access.read
   let update = announcement_effects Command.Update.effects
+  let disable = announcement_effects Command.Disable.effects
   let delete = Guardian.denied
 
   let grant_role =

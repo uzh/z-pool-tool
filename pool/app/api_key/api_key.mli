@@ -45,7 +45,7 @@ val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 type event =
   | Created of t
   | Updated of (t * t)
-  | Destroyed of t
+  | Disabled of t
 
 val handle_event : ?tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

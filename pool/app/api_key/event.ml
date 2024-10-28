@@ -3,7 +3,7 @@ open Entity
 type event =
   | Created of t
   | Updated of (t * t)
-  | Destroyed of t
+  | Disabled of t
 [@@deriving eq, show]
 
 let handle_event ?tags pool =
@@ -34,5 +34,5 @@ let handle_event ?tags pool =
     in
     Lwt.return_unit
   | Updated (_, after) -> Repo.update pool after
-  | Destroyed m -> Repo.destroy pool m
+  | Disabled m -> Repo.disable pool m
 ;;
