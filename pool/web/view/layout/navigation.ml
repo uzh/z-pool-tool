@@ -121,6 +121,10 @@ module NavElements = struct
             "/admin/organisational-unit"
             OrganisationalUnits
             (Set Organisational_unit.Guard.Access.index)
+        ; single
+            (Http_utils.Url.Admin.api_key_path ())
+            ApiKeys
+            (Set Api_key.Access.index)
         ]
       in
       Parent (None, Settings, OnChildren, children) |> NavElement.create

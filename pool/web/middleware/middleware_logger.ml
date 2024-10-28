@@ -80,9 +80,8 @@ let response_to_string (response : Opium.Response.t) =
        body_string
 ;;
 
-let respond handler req =
+let respond handler req tags =
   let open Opium in
-  let tags = Pool_context.Logger.Tags.req req in
   let time_f f =
     let t1 = Mtime_clock.now () in
     let x = f () in
@@ -103,14 +102,19 @@ let respond handler req =
 let logger =
   let open Opium in
   let filter handler req =
-    let tags = Pool_context.Logger.Tags.req req in
+    let tags =
+      let open Pool_context.Logger in
+      if Http_utils.Api.is_api_request req
+      then Api.Tags.req req
+      else Tags.req req
+    in
     let meth = Method.to_string req.Request.meth in
     let uri = req.Request.target |> Uri.of_string |> Uri.path_and_query in
     Logs.info ~src (fun m -> m ~tags "%s %S" meth uri);
     let%lwt request_string = request_to_string req in
     Logs.debug ~src (fun m -> m ~tags "%s" request_string);
     Lwt.catch
-      (fun () -> respond handler req)
+      (fun () -> respond handler req tags)
       (fun exn ->
         Logs.err ~src (fun m -> m ~tags "%s" (Exn.to_string exn));
         Logs.err ~src (fun m -> m ~tags "%s" (Printexc.get_backtrace ()));

@@ -19,6 +19,15 @@ let version_path ?suffix ?id () =
 ;;
 
 module Admin = struct
+  let settings_path = Format.asprintf "/admin/settings/%s"
+
+  let api_key_path ?suffix ?id () =
+    Field.(human_url ApiKey)
+    |> settings_path
+    |> append_opt (map Api_key.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let contact_path ?suffix ?id () =
     "/admin/contacts"
     |> append_opt (map Contact.Id.value id)
@@ -26,7 +35,7 @@ module Admin = struct
   ;;
 
   let role_permission_path ?suffix ?role () =
-    "/admin/settings/role-permission"
+    settings_path "role-permission"
     |> append_opt (map Role.Role.name role)
     |> append_opt suffix
   ;;

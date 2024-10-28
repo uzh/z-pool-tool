@@ -11,7 +11,7 @@ type t =
   { id : Id.t
   ; name : Name.t
   }
-[@@deriving eq, show, fields ~getters]
+[@@deriving eq, show, fields ~getters, yojson]
 
 let create ?(id = Id.create ()) name = { id; name }
 

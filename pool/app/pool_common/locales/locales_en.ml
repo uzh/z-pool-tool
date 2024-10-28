@@ -21,6 +21,7 @@ let rec field_to_string =
   | Announcement -> "announcement"
   | Answer -> "answer"
   | AreaCode -> "area code"
+  | ApiKey -> "API key"
   | Argument -> "argument"
   | AssetId -> "asset identifier"
   | AssignableRole -> "assignable role"
@@ -100,6 +101,7 @@ let rec field_to_string =
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
   | ExternalDataIdAbbr -> "EID"
+  | ExpiresAt -> "Expires at"
   | ExternalDataId -> "external data identifier"
   | ExternalDataRequired -> "external data is required"
   | Failed -> "failed"
@@ -236,6 +238,7 @@ let rec field_to_string =
   | RemindersSent -> "reminders sent"
   | Required -> "required"
   | ResentAt -> "resent at"
+  | Resource -> "resource"
   | Role -> "role"
   | Room -> "room"
   | Root -> "root"
@@ -553,6 +556,7 @@ let rec error_to_string =
   | JobCannotBeRetriggered -> "This job cannot be retriggered."
   | JobPending -> "The job is still pending."
   | LoginProvideDetails -> "Please provide email and password"
+  | MaintenancePending -> "Maintenance work is in progress"
   | MaxLength max ->
     Format.asprintf "Must not be longer than %i characters." max
   | MeantimeUpdate field ->
@@ -646,6 +650,7 @@ let rec error_to_string =
   | SessionNotClosed -> "This session has not been closed yet."
   | SessionInPast -> "This session has already finished."
   | SessionNotStarted -> "This session cannot be closed, yet."
+  | ServiceUnavailable -> "Service currently not available."
   | SessionRegistrationViaParent -> "Registration via main session."
   | SessionTenantNotFound ->
     "Missing tenant: something on our side went wrong, please try again later \

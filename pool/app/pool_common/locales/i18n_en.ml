@@ -10,6 +10,7 @@ let to_string = function
   | AnnouncementsListTitle -> "Announcements"
   | AnnouncementsTenantSelect ->
     "Select on which tenants the announcement should be displayed."
+  | ApiKeys -> "API Keys"
   | AssignmentEditTagsWarning ->
     "Please note that editing the assignment does not assign or remove any \
      tags from the contact that may have been assigned by participating in \
@@ -205,6 +206,7 @@ let nav_link_to_string = function
   | ActorPermissions -> "Personal Permissions"
   | Admins -> "Admins"
   | Announcements -> "Announcements"
+  | ApiKeys -> "API Keys"
   | Assignments -> "Assignments"
   | ContactInformation -> "Contact information"
   | Contacts -> "Contacts"
@@ -750,6 +752,7 @@ let confirmable_to_string confirmable =
    | DeleteMessageTemplate -> "message template", "delete", None
    | DeleteSession -> "session", "delete", None
    | DeleteSmtpServer -> "email Server", "delete", None
+   | DisableApiKey -> "API key", "disable", None
    | LoadDefaultTemplate ->
      "default template", "load", Some "The current content is overwritten."
    | MarkAssignmentAsDeleted -> "assignment as deleted", "mark", None

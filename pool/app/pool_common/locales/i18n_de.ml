@@ -9,6 +9,7 @@ let to_string = function
   | AnnouncementsListTitle -> "Ankündigungen"
   | AnnouncementsTenantSelect ->
     "Wählen Sie, auf welchen Tenants die Ankündigung angezeigt werden soll."
+  | ApiKeys -> "API Schlüssel"
   | AssignmentEditTagsWarning ->
     "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
      zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \
@@ -211,6 +212,7 @@ let nav_link_to_string = function
   | ActorPermissions -> "Persönliche Berechtigungen"
   | Admins -> "Administratoren"
   | Announcements -> "Ankündigungen"
+  | ApiKeys -> "API Schlüssel"
   | Assignments -> "Anmeldungen"
   | ContactInformation -> "Kontaktangaben"
   | Contacts -> "Kontakte"
@@ -784,6 +786,7 @@ let confirmable_to_string confirmable =
    | DeleteMessageTemplate -> "das Nachrichtentemplate", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
    | DeleteSmtpServer -> "E-Mail Server", "löschen", None
+   | DisableApiKey -> "den API Key", "deaktivieren", None
    | LoadDefaultTemplate ->
      ( "das Standardtemplate"
      , "laden"
