@@ -135,6 +135,26 @@ module Tenant = struct
   ;;
 end
 
+module Api = struct
+  type t =
+    { api_key : Api_key.t
+    ; database_label : Database.Label.t
+    ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
+    }
+  [@@deriving show, sexp_of]
+
+  let key : t Opium.Context.key =
+    Opium.Context.Key.create ("api context", sexp_of_t)
+  ;;
+
+  let create api_key database_label guardian =
+    { api_key; database_label; guardian }
+  ;;
+
+  let find = find_context key
+  let set = set_context key
+end
+
 (* Logging *)
 let show_log_user = function
   | Admin user ->

@@ -4,6 +4,7 @@ type t =
   | AdminComment
   | AnnouncementsListTitle
   | AnnouncementsTenantSelect
+  | ApiKeys
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
   | AvailableSpots
@@ -122,6 +123,7 @@ type nav_link =
   | ActorPermissions
   | Admins
   | Announcements
+  | ApiKeys
   | Assignments
   | ContactInformation
   | Contacts
@@ -345,6 +347,7 @@ type confirmable =
   | DeleteMessageTemplate
   | DeleteSession
   | DeleteSmtpServer
+  | DisableApiKey
   | LoadDefaultTemplate
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted

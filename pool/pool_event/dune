@@ -4,6 +4,7 @@
  (libraries
   admin
   announcement
+  api_key
   assignment
   assignment_job
   contact

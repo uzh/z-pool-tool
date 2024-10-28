@@ -17,6 +17,8 @@ val show : t -> string
 val create : ?id:Id.t -> Name.t -> t
 val id : t -> Id.t
 val name : t -> Name.t
+val t_of_yojson : Yojson.Safe.t -> t
+val yojson_of_t : t -> Yojson.Safe.t
 
 type event =
   | Created of t
