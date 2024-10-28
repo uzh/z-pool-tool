@@ -125,7 +125,7 @@ module Model = struct
   let create_user
     ?(id = Pool_user.Id.create ())
     ?(email =
-      Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
+      Format.asprintf "test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
       |> Pool_user.EmailAddress.of_string)
     ?(lastname = Pool_user.Lastname.of_string "Doe")
     ()
