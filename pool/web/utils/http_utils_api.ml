@@ -40,7 +40,7 @@ let respond ?(src = src) req result =
     result context
     >|- Pool_common.Utils.with_log_error ~src ~tags
     ||> (function
-     | Ok result -> response_with_headers result
+     | Ok result -> `Assoc [ "data", result ] |> response_with_headers
      | Error error -> respond_error error)
   | Error error ->
     respond_error ~status:`Internal_server_error error |> Lwt.return
