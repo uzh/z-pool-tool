@@ -37,11 +37,6 @@ module Status = struct
   ;;
 end
 
-let remove_whitespaces =
-  let open Re in
-  replace_string (space |> compile) ~by:""
-;;
-
 module EmailAddress = struct
   include Pool_model.Base.String
 
@@ -86,7 +81,7 @@ module EmailAddress = struct
   ;;
 
   let validate = validate_suffix
-  let create = CCFun.(remove_whitespaces %> validate_characters)
+  let create = CCFun.(Utils.remove_whitespaces %> validate_characters)
 
   let schema ?(field = Pool_message.Field.Email) =
     schema field ~validation:create
@@ -108,7 +103,7 @@ module CellPhone = struct
     else Error Pool_message.(Error.Invalid Field.CellPhone)
   ;;
 
-  let create = CCFun.(remove_whitespaces %> validate)
+  let create = CCFun.(Utils.remove_whitespaces %> validate)
   let schema = schema Pool_message.Field.TestPhoneNumber ~validation:create
 end
 
