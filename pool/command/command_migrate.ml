@@ -98,17 +98,20 @@ let migrate_tenants db_labels =
       let%lwt () = set_status Status.MigrationsFailed in
       create_failure_notification db_label err
     in
-    Lwt.catch
-      (fun () ->
-        Migration.execute db_label (Pool_database.Tenant.steps ())
-        |>> (fun () -> set_status Status.Active)
-        >|> function
-        | Ok () -> Lwt.return ()
-        | Error err -> handle_error err)
-      (fun exn ->
-        let exn = Printexc.to_string exn in
-        let err = Pool_message.Error.MigrationFailed exn in
-        handle_error err)
+    match%lwt Database.Tenant.test_connection db_label with
+    | Ok () ->
+      Lwt.catch
+        (fun () ->
+          Migration.execute db_label (Pool_database.Tenant.steps ())
+          |>> (fun () -> set_status Status.Active)
+          >|> function
+          | Ok () -> Lwt.return ()
+          | Error err -> handle_error err)
+        (fun exn ->
+          let exn = Printexc.to_string exn in
+          let err = Pool_message.Error.MigrationFailed exn in
+          handle_error err)
+    | Error _ -> set_status Status.MigrationsConnectionIssue
   in
   db_labels |> Lwt_list.iter_p run >|> Outbox.send
 ;;
