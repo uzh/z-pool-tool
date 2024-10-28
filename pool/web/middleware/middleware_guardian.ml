@@ -66,7 +66,7 @@ let validate_web_access_request_dependent ?any_id effects req =
     Guard.Persistence.validate ?any_id database_label effects auth
 ;;
 
-let[@warning "-32"] validate_api_access_request_dependent ?any_id effects req =
+let validate_api_access_request_dependent ?any_id effects req =
   let open Utils.Lwt_result.Infix in
   let open Pool_context.Api in
   let* ({ api_key; database_label; _ } as context) =
@@ -135,7 +135,6 @@ let id_effects encode field make_set =
   |> validate_generic
 ;;
 
-(* TODO: This could be separated in module or a different file *)
 let api_validate_admin_entity ?any_id effects =
   validate_api_access_request_dependent ?any_id (fun (_ : Rock.Request.t) ->
     Lwt_result.return effects)
