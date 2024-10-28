@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.8.3](https://github.com/uzh/z-pool-tool/tree/0.8.3) - 2024-10-24
+
+### Fixed
+
+- handling of lost database connection in schedule
+- filtering of locations on location index page
+
 ## [0.8.2](https://github.com/uzh/z-pool-tool/tree/0.8.2) - 2024-10-24
 
 ### Added
