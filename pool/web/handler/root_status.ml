@@ -61,6 +61,7 @@ let show _ =
             | ConnectionIssue
             | Disabled
             | Maintenance
+            | MigrationsConnectionIssue
             | MigrationsFailed
             | MigrationsPending -> Lwt.return_none
           in

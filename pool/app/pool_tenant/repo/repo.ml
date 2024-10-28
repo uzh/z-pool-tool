@@ -264,7 +264,7 @@ let find_by_url pool url =
     let open Database.Status in
     match status with
     | Active | Disabled | Maintenance | MigrationsFailed -> true
-    | ConnectionIssue | MigrationsPending -> false
+    | ConnectionIssue | MigrationsConnectionIssue | MigrationsPending -> false
   in
   Cache.find_by_url url
   |> function

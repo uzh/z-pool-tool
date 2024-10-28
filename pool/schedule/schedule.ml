@@ -134,8 +134,11 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
           ~default:Lwt.return_false
           retry_connection
           schedule.database_label
-      | Disabled | Maintenance | MigrationsPending | MigrationsFailed ->
-        Lwt.return false
+      | Disabled
+      | Maintenance
+      | MigrationsConnectionIssue
+      | MigrationsFailed
+      | MigrationsPending -> Lwt.return false
     in
     let run_schedule () =
       let process schedule =

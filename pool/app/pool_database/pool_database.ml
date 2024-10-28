@@ -6,6 +6,25 @@ let src = Logs.Src.create "database"
 
 module Logs = (val Logs.src_log src : Logs.LOG)
 
+let connect_and_migrate database_label =
+  match%lwt Database.connect database_label with
+  | Ok () ->
+    let steps () =
+      if Database.is_root database_label then Root.steps () else Tenant.steps ()
+    in
+    let open Database in
+    let update_status = Tenant.update_status database_label in
+    Migration.execute database_label (steps ())
+    >|> (function
+     | Ok () ->
+       let%lwt () = update_status Status.Active in
+       Lwt.return_ok ()
+     | Error err ->
+       let%lwt () = update_status Status.MigrationsFailed in
+       Lwt.return_error err)
+  | Error err -> Lwt.return_error err
+;;
+
 type event = Migrated of Database.t [@@deriving eq, show]
 
 let root_steps = Root.steps

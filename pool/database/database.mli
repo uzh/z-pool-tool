@@ -52,8 +52,9 @@ module Status : sig
     | ConnectionIssue
     | Disabled
     | Maintenance
-    | MigrationsPending
+    | MigrationsConnectionIssue
     | MigrationsFailed
+    | MigrationsPending
 
   val create : string -> (t, Pool_message.Error.t) result
   val all : t list

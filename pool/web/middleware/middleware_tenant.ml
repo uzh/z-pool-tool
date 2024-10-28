@@ -29,8 +29,10 @@ let make name ~maintenance_handler ~connection_issue_handler ~error_handler () =
       in
       (match status with
        | Active -> handle_request
-       | Maintenance | MigrationsPending | MigrationsFailed ->
-         maintenance_handler ()
+       | Maintenance
+       | MigrationsConnectionIssue
+       | MigrationsFailed
+       | MigrationsPending -> maintenance_handler ()
        | Disabled -> connection_issue_handler ()
        | ConnectionIssue ->
          (match%lwt Database.connect database_label with
