@@ -6,7 +6,7 @@ module Dynparam = Database.Dynparam
    populate, we have to do that manually. *)
 let to_bytes encode decode id =
   match id |> decode |> Uuidm.of_string with
-  | Some uuid -> Uuidm.to_bytes uuid |> encode
+  | Some uuid -> Uuidm.to_binary_string uuid |> encode
   | None -> failwith "Invalid uuid provided"
 ;;
 
