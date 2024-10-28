@@ -110,7 +110,7 @@ let migrate_tenants db_labels =
         let err = Pool_message.Error.MigrationFailed exn in
         handle_error err)
   in
-  db_labels |> Lwt_list.iter_s run >|> Outbox.send
+  db_labels |> Lwt_list.iter_p run >|> Outbox.send
 ;;
 
 let tenants =

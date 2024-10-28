@@ -20,7 +20,7 @@ let root_data_clean =
 ;;
 
 let seed_tenant_clean ?is_test db_pools =
-  let%lwt () = Lwt_list.iter_s Database.clean_all db_pools in
+  let%lwt () = Lwt_list.iter_p Database.clean_all db_pools in
   let%lwt () = Seed.Tenant.create ?is_test db_pools () in
   Lwt.return_some ()
 ;;
