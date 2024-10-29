@@ -23,14 +23,18 @@ let global_middlewares =
   ; CustomMiddleware.Error.middleware ()
   ; CustomMiddleware.TrailingSlash.middleware ()
   ; Middleware.static_file ()
-  ; Middleware.flash ()
+  ; Opium.Middleware.content_length
+  ; Opium.Middleware.etag
+  ; Opium.Middleware.method_override
+  ]
+;;
+
+let web_middlewares =
+  [ Middleware.flash ()
   ; Middleware.csrf
       ~not_allowed_handler:CustomMiddleware.NotAllowed.handle
       ~expires:session_expiration
       ()
-  ; Opium.Middleware.content_length
-  ; Opium.Middleware.etag
-  ; Opium.Middleware.method_override
   ]
 ;;
 
@@ -40,6 +44,14 @@ module Public = struct
       [ get "/" Handler.Public.root_redirect
       ; get "/custom/assets/:id/:filename" Handler.Public.asset
       ; get "/error" Handler.Public.error
+      ]
+  ;;
+
+  let middlewares =
+    web_middlewares
+    @ [ CustomMiddleware.Tenant.validate ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
       ]
   ;;
 
@@ -77,11 +89,7 @@ module Public = struct
     in
     Handler.Public.(
       choose
-        ~middlewares:
-          [ CustomMiddleware.Tenant.validate ()
-          ; CustomMiddleware.Context.context ()
-          ; CustomMiddleware.Logger.logger
-          ]
+        ~middlewares
         [ choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
@@ -196,13 +204,17 @@ module Contact = struct
     ]
   ;;
 
+  let middlewares =
+    web_middlewares
+    @ [ CustomMiddleware.Tenant.validate ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
+      ]
+  ;;
+
   let routes =
     choose
-      ~middlewares:
-        [ CustomMiddleware.Tenant.validate ()
-        ; CustomMiddleware.Context.context ()
-        ; CustomMiddleware.Logger.logger
-        ]
+      ~middlewares
       [ choose
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
@@ -235,11 +247,12 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Tenant.validate ()
-    ; CustomMiddleware.Context.context ()
-    ; CustomMiddleware.Logger.logger
-    ; CustomMiddleware.Admin.require_admin ()
-    ]
+    web_middlewares
+    @ [ CustomMiddleware.Tenant.validate ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
+      ; CustomMiddleware.Admin.require_admin ()
+      ]
   ;;
 
   let routes =
@@ -835,6 +848,28 @@ module Admin = struct
         ; choose ~scope:(url_key Role) specific
         ]
       in
+      let api_key =
+        let open ApiKey in
+        let specific =
+          [ get "" ~middlewares:[ Access.read ] show
+          ; get "edit" ~middlewares:[ Access.update ] edit
+          ; post "" ~middlewares:[ Access.update ] update
+          ; post "/disable" ~middlewares:[ Access.disable ] disable
+          ; post "/toggle-role" ~middlewares:[ Access.read ] handle_toggle_role
+          ; post
+              "/search-role"
+              ~middlewares:[ Access.grant_role ]
+              search_role_entities
+          ; post "/grant-role" ~middlewares:[ Access.grant_role ] grant_role
+          ; post "/revoke-role" ~middlewares:[ Access.revoke_role ] revoke_role
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index ] index
+        ; post "" ~middlewares:[ Access.create ] create
+        ; get "/new" ~middlewares:[ Access.create ] new_form
+        ; choose ~scope:(ApiKey |> url_key) specific
+        ]
+      in
       let smtp =
         let open Smtp in
         let specific =
@@ -880,6 +915,7 @@ module Admin = struct
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/actor-permission" actor_permission
       ; choose ~scope:"/role-permission" role_permission
+      ; choose ~scope:Field.(human_url ApiKey) api_key
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
       ; choose ~scope:"/text-messages" text_messages
@@ -930,10 +966,11 @@ end
 
 module Root = struct
   let middlewares =
-    [ CustomMiddleware.Root.from_root_only ()
-    ; CustomMiddleware.Context.context ()
-    ; CustomMiddleware.Logger.logger
-    ]
+    web_middlewares
+    @ [ CustomMiddleware.Root.from_root_only ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
+      ]
   ;;
 
   let public_routes =
@@ -1067,12 +1104,57 @@ module Root = struct
   ;;
 end
 
+module Api = struct
+  open Api
+
+  let global_middlewares =
+    CustomMiddleware.[ Api.api_request (); Api.context (); Logger.logger ]
+  ;;
+
+  module V1 = struct
+    open V1
+
+    let experiment =
+      let open Experiment in
+      let specific = [ get "" ~middlewares:[ Access.read ] show ] in
+      choose
+        ~scope:Field.(human_url Experiment)
+        [ get "" ~middlewares:[ Access.index ] index
+        ; choose ~scope:Field.(url_key Experiment) specific
+        ]
+    ;;
+
+    let organisational_unit =
+      let open OrganisationalUnit in
+      choose ~scope:Field.(human_url OrganisationalUnit) [ get "" index ]
+    ;;
+
+    let routes =
+      choose
+        [ experiment
+        ; organisational_unit
+        ; get "/**" ~middlewares:global_middlewares not_found
+        ]
+    ;;
+  end
+
+  let routes =
+    choose
+      ~middlewares:
+        (CustomMiddleware.Api.validate_tenant () :: global_middlewares)
+      [ choose ~scope:"/v1" [ V1.routes ]
+      ; get "/**" ~middlewares:global_middlewares not_found
+      ]
+  ;;
+end
+
 let router =
   choose
     [ Public.routes
     ; Contact.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
+    ; choose ~scope:"/api" [ Api.routes ]
     ; Public.global_routes
     ; get
         "/**"

@@ -58,7 +58,7 @@ module Pagination = struct
     ; page : Page.t
     ; page_count : PageCount.t
     }
-  [@@deriving eq, show]
+  [@@deriving eq, show, yojson]
 
   let to_query_parts { limit; page; page_count } =
     [ Pool_message.Field.Limit, Limit.to_string limit

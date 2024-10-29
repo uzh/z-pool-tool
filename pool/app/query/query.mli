@@ -27,6 +27,7 @@ module Pagination : sig
     }
 
   val to_query_parts : t -> (Pool_message.Field.t * string) list
+  val yojson_of_t : t -> Yojson.Safe.t
 end
 
 module Search : sig

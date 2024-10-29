@@ -4,6 +4,7 @@ end
 
 (* Testable *)
 let annoncement = Announcement.(Alcotest.testable pp equal)
+let api_key = Api_key.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let database_label = Database.Label.(Alcotest.testable pp equal)
 let error = Pool_message.Error.(Alcotest.testable pp equal)
@@ -122,10 +123,21 @@ module Model = struct
       create "Somepassword1!" |> validate |> get_or_failwith)
   ;;
 
+  let create_api_key
+    ?id
+    ?token
+    ?(expires_at = Api_key.ExpiresAt.create_now ())
+    ()
+    =
+    let open Api_key in
+    let name = Name.of_string "Name" in
+    create ?id ?token name expires_at
+  ;;
+
   let create_user
     ?(id = Pool_user.Id.create ())
     ?(email =
-      Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
+      Format.asprintf "test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
       |> Pool_user.EmailAddress.of_string)
     ?(lastname = Pool_user.Lastname.of_string "Doe")
     ()

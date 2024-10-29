@@ -67,6 +67,7 @@ type t =
   | JobCannotBeRetriggered
   | JobPending
   | LoginProvideDetails
+  | MaintenancePending
   | MaxLength of int
   | MeantimeUpdate of Field.t
   | MigrationFailed of string
@@ -106,6 +107,7 @@ type t =
   | Retrieve of Field.t
   | SelectedOptionsCountMax of int
   | SelectedOptionsCountMin of int
+  | ServiceUnavailable
   | SessionAlreadyCanceled of string
   | SessionAlreadyClosed of string
   | SessionFullyBooked

@@ -21,6 +21,7 @@ let rec field_to_string =
   | Announcement -> "Ankündigung"
   | Answer -> "Antwort"
   | AreaCode -> "Vorwahl"
+  | ApiKey -> "API Key"
   | Argument -> "Argument"
   | AssetId -> "Anlagen Identifier"
   | AssignableRole -> "zuweisbare Rolle"
@@ -102,6 +103,7 @@ let rec field_to_string =
       (field_to_string LeadTime)
   | ExperimentType -> "Experimenttyp"
   | ExternalDataIdAbbr -> "EID"
+  | ExpiresAt -> "Läuft ab am"
   | ExternalDataId -> "Externer Daten Identifikator"
   | ExternalDataRequired -> "Externe Daten müssen angegeben werden"
   | Failed -> "Fehlgeschlagen"
@@ -239,6 +241,7 @@ let rec field_to_string =
   | RemindersSent -> "Gesendete reminders"
   | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
+  | Resource -> "Ressource"
   | Role -> "Rolle"
   | Room -> "Raum"
   | Root -> "Root"
@@ -577,6 +580,7 @@ let rec error_to_string =
   | JobCannotBeRetriggered -> "Dieser Auftrag kann nicht neu ausgelöst werden."
   | JobPending -> "Der Auftrag ist noch pendent."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | MaintenancePending -> "Es sind Wartungsarbeiten im Gange."
   | MaxLength max ->
     Format.asprintf "Darf nicht länger als %i Zeichen sein." max
   | MeantimeUpdate field ->
@@ -679,6 +683,7 @@ let rec error_to_string =
       if i == 1 then "muss", "Option" else "müssen", "Optionen"
     in
     Format.asprintf "Es %s mindestens %i %s ausgewählt werden." verb i noun
+  | ServiceUnavailable -> "Service zur Zeit nicht verfügbar"
   | SessionRegistrationViaParent -> "Einschreibung via Hauptsession."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \

@@ -5,6 +5,10 @@ let () =
   run
     "cqrs commands"
     [ ("announcement", Announcement_test.[ test_case "create" `Quick create ])
+    ; ( "api_key"
+      , [ test_case "create API key" `Quick Api_key_test.create
+        ; test_case "update API key" `Quick Api_key_test.update
+        ] )
     ; ( "contact"
       , [ test_case
             "sign up not allowed suffix"

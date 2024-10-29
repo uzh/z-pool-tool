@@ -286,7 +286,7 @@ module ExperimentSenderData = struct
   let database_label = Test_utils.Data.database_label
 
   let admin_email =
-    Format.asprintf "admin+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
+    Format.asprintf "admin+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
   ;;
 
   let get_exn = Test_utils.get_or_failwith

@@ -2,6 +2,7 @@
  (name http_utils)
  (libraries
   announcement
+  api_key
   contact
   experiment
   logger

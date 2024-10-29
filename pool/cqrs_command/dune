@@ -3,10 +3,11 @@
  (libraries
   admin
   announcement
+  api_key
   assignment_job
   conformist
-  custom_field
   contact
+  custom_field
   contact_counter
   email
   experiment
