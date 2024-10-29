@@ -37,12 +37,7 @@ let validate_email_adress () =
   in
   CCList.iter
     (fun email ->
-      let expected =
-        Error
-          Pool_message.(
-            Error.InvalidWithInfo
-              (Field.EmailAddress, email |> Utils.remove_whitespaces))
-      in
+      let expected = Error Pool_message.(Error.Invalid Field.EmailAddress) in
       let result = EmailAddress.create email in
       check_result expected result)
     invalid_addresses

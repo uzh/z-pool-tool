@@ -44,8 +44,7 @@ module EmailAddress = struct
     let open Mrmime in
     match Mailbox.of_string email with
     | Ok _ -> Ok email
-    | Error _ ->
-      Error Pool_message.(Error.InvalidWithInfo (Field.EmailAddress, email))
+    | Error _ -> Error Pool_message.(Error.Invalid Field.EmailAddress)
   ;;
 
   let strip_email_suffix email =
