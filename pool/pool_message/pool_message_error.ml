@@ -62,6 +62,7 @@ type t =
   | InvalidOptionSelected
   | InvalidPasswordHashingCount
   | InvalidRequest
+  | InvalidWithInfo of Field.t * string
   | IsMarkedAsDeleted of Field.t
   | JobCannotBeRetriggered
   | JobPending

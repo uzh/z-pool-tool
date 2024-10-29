@@ -570,6 +570,8 @@ let rec error_to_string =
     "Die Anzahl der Hashwerte für das Passwort muss zwischen 4 und 31 liegen."
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidRequest | InvalidHtmxRequest -> "Ungültige Anfrage."
+  | InvalidWithInfo (field, info) ->
+    Format.asprintf "%s ist ungültig (%s)!" (field_to_string field) info
   | IsMarkedAsDeleted field ->
     field_message
       ""

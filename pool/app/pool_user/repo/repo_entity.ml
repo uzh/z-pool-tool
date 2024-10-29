@@ -75,7 +75,17 @@ end
 module EmailAddress = struct
   include Entity.EmailAddress
 
-  let t = make_caqti_type Caqti_type.string create value
+  let t =
+    make_caqti_type
+      Caqti_type.string
+      (fun email ->
+        email
+        |> create
+        |> CCResult.map_err
+             (const
+                Pool_message.(Error.InvalidWithInfo (Field.EmailAddress, email))))
+      value
+  ;;
 end
 
 module EmailVerified = struct

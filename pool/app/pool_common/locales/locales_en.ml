@@ -546,6 +546,8 @@ let rec error_to_string =
   | InvalidPasswordHashingCount ->
     "Password hashing count has to be between 4 and 31"
   | InvalidRequest | InvalidHtmxRequest -> "Invalid request."
+  | InvalidWithInfo (field, info) ->
+    Format.asprintf "Invalid %s provided (%s)!" (field_to_string field) info
   | IsMarkedAsDeleted field ->
     field_message
       ""
