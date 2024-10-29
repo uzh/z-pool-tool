@@ -338,8 +338,15 @@ let changelog req =
         ~id:custom_field_id
         ()
     in
+    let to_human { Pool_context.database_label; language; _ } =
+      Custom_field.changelog_to_human database_label language
+    in
     let open Custom_field in
-    Helpers.Changelog.htmx_handler ~url (custom_field_id |> Id.to_common) req
+    Helpers.Changelog.htmx_handler
+      ~to_human
+      ~url
+      (custom_field_id |> Id.to_common)
+      req
   in
   get_model response req
 ;;

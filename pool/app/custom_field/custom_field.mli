@@ -380,6 +380,20 @@ val create
   -> PromptOnRegistration.t
   -> (t, Pool_message.Error.t) result
 
+type update =
+  { name : Name.t
+  ; hint : Hint.t
+  ; required : Required.t
+  ; disabled : Disabled.t
+  ; custom_field_group_id : Group.Id.t option
+  ; admin_hint : AdminHint.t option
+  ; admin_override : AdminOverride.t
+  ; admin_view_only : AdminViewOnly.t
+  ; admin_input_only : AdminInputOnly.t
+  ; prompt_on_registration : PromptOnRegistration.t
+  }
+
+val update : t -> update -> Validation.raw -> t
 val boolean_fields : Pool_message.Field.t list
 val has_options : t -> (unit, Pool_message.Error.t) result
 val id : t -> Id.t

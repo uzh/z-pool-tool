@@ -830,6 +830,66 @@ let create
          , select_options ))
 ;;
 
+type update =
+  { name : Name.t
+  ; hint : Hint.t
+  ; required : Required.t
+  ; disabled : Disabled.t
+  ; custom_field_group_id : Group.Id.t option
+  ; admin_hint : AdminHint.t option
+  ; admin_override : AdminOverride.t
+  ; admin_view_only : AdminViewOnly.t
+  ; admin_input_only : AdminInputOnly.t
+  ; prompt_on_registration : PromptOnRegistration.t
+  }
+
+let update_attributes
+  ({ name
+   ; hint
+   ; required
+   ; disabled
+   ; custom_field_group_id
+   ; admin_hint
+   ; admin_override
+   ; admin_view_only
+   ; admin_input_only
+   ; prompt_on_registration
+   } :
+    update)
+  (field : 'a custom_field)
+  : 'a custom_field
+  =
+  { field with
+    name
+  ; hint
+  ; required
+  ; disabled
+  ; custom_field_group_id
+  ; admin_hint
+  ; admin_override
+  ; admin_view_only
+  ; admin_input_only
+  ; prompt_on_registration
+  }
+;;
+
+let update field update validation =
+  match field with
+  | Boolean field -> Boolean (update_attributes update field)
+  | Date field -> Date (update_attributes update field)
+  | Number field ->
+    let validation = Validation.Number.schema validation in
+    Number { (update_attributes update field) with validation }
+  | MultiSelect (field, options) ->
+    let validation = Validation.MultiSelect.schema validation in
+    let field = { (update_attributes update field) with validation } in
+    MultiSelect (field, options)
+  | Select (field, options) -> Select (update_attributes update field, options)
+  | Text field ->
+    let validation = Validation.Text.schema validation in
+    Text { (update_attributes update field) with validation }
+;;
+
 let id = function
   | Boolean { id; _ }
   | Date { id; _ }

@@ -24,7 +24,9 @@ let select_names_of_custom_fields_and_options ids =
     {sql| 
         SELECT %{columns} FROM pool_custom_fields WHERE uuid IN (%{ids}) 
           UNION
-        SELECT %{columns} FROM pool_custom_field_options WHERE uuid IN (%{ids}) 
+        SELECT %{columns} FROM pool_custom_field_options WHERE uuid IN (%{ids})
+          UNION
+        SELECT %{columns} FROM pool_custom_field_groups WHERE uuid IN (%{ids})
     |sql}]
 ;;
 
