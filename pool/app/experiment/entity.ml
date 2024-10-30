@@ -1,3 +1,4 @@
+include Changelog.DefaultSettings
 open Ppx_yojson_conv_lib.Yojson_conv
 
 let model = Pool_message.Field.Experiment

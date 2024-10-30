@@ -62,6 +62,7 @@ module type RecordSig = sig
   type t
 
   val model : Pool_message.Field.t
+  val changelog_compare_at_index_keys : string list option
   val yojson_of_t : t -> Yojson.Safe.t
 end
 
@@ -87,6 +88,10 @@ module type TSig = sig
     -> after:record
     -> unit
     -> unit Lwt.t
+end
+
+module DefaultSettings = struct
+  let changelog_compare_at_index_keys = None
 end
 
 let column_created_at =

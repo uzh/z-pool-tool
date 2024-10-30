@@ -1,3 +1,4 @@
+include Changelog.DefaultSettings
 module Mapping = Entity_file_mapping
 module Conformist = Pool_conformist
 module Message = Pool_message

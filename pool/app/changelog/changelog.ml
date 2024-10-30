@@ -6,9 +6,14 @@ module T (R : RecordSig) = struct
 
   let model = R.model
 
+  let compare_at_index_keys =
+    CCOption.value ~default:[] R.changelog_compare_at_index_keys
+  ;;
+
   let make_changes before after : Changes.t option =
     let open Changes in
-    let rec compare json_before json_after =
+    let rec compare ?(compare_list_at_index = false) json_before json_after =
+      let _ = compare_list_at_index in
       let eq = CCString.equal in
       let make_changes before after =
         match Yojson.Safe.equal before after with
@@ -24,6 +29,37 @@ module T (R : RecordSig) = struct
         in
         check [] json_list
       in
+      let compare_list_index l1 l2 =
+        let open CCList.Infix in
+        let open CCOption.Infix in
+        let after = Hashtbl.create (CCList.length l2) in
+        let () = l2 |> CCList.iteri (fun i x -> Hashtbl.add after i x) in
+        let changes_before =
+          l1
+          |> CCList.foldi
+               (fun acc i before_json ->
+                 Hashtbl.find_opt after i
+                 |> CCOption.value ~default:`Null
+                 |> compare before_json
+                 >|= CCPair.make (CCInt.to_string i)
+                 |> fun change ->
+                 let () = Hashtbl.remove after i in
+                 match change with
+                 | None -> acc
+                 | Some change -> acc @ [ change ])
+               []
+        in
+        let changes_after =
+          after
+          |> Hashtbl.to_seq
+          |> CCList.of_seq
+          |> CCList.filter_map (fun (i, json) ->
+            make_changes `Null json >|= CCPair.make (CCInt.to_string i))
+        in
+        match changes_before @ changes_after with
+        | [] -> None
+        | changes -> Some (Assoc changes)
+      in
       match (json_before : Yojson.Safe.t), (json_after : Yojson.Safe.t) with
       | `Assoc l1, `Assoc l2 ->
         let keys =
@@ -37,7 +73,10 @@ module T (R : RecordSig) = struct
           in
           let value_before = assoc l1 in
           let value_after = assoc l2 in
-          compare value_before value_after
+          let compare_list_at_index =
+            CCList.mem ~eq key compare_at_index_keys
+          in
+          compare ~compare_list_at_index value_before value_after
           |> CCOption.map (fun value -> key, value))
         |> (function
          | [] -> None
@@ -54,7 +93,10 @@ module T (R : RecordSig) = struct
         (match list_to_assoc l1, list_to_assoc l2 with
          | Some assoc_before, Some assoc_after ->
            compare assoc_before assoc_after
-         | _, _ -> make_changes json_before json_after)
+         | _, _ ->
+           if compare_list_at_index
+           then compare_list_index l1 l2
+           else make_changes json_before json_after)
       | _ -> make_changes json_before json_after
     in
     compare (R.yojson_of_t before) (R.yojson_of_t after)

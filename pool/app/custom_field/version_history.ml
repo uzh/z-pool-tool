@@ -1,6 +1,7 @@
 open Ppx_yojson_conv_lib.Yojson_conv
 
 module Record = struct
+  include Changelog.DefaultSettings
   include Entity
 
   let model = Pool_message.Field.CustomField
@@ -11,6 +12,7 @@ module OptionVersionHistory = Changelog.T (Entity.SelectOption)
 module GroupVersionHistory = Changelog.T (Entity.Group)
 
 module AnswerRecord = struct
+  include Changelog.DefaultSettings
   module Answer = Entity_answer
   module SelectOption = Entity.SelectOption
   module Public = Entity.Public

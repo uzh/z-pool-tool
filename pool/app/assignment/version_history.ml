@@ -2,6 +2,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 open Entity
 
 module Record = struct
+  include Changelog.DefaultSettings
   open Entity
 
   let model = Pool_message.Field.Assignment

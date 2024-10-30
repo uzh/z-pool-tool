@@ -223,29 +223,31 @@ let update_list_value () =
   let run_test msg options expected_changes =
     let changelog = options |> make_filter |> make_changelog in
     let expected = expected_changes |> make_expected in
-    Alcotest.(check (option testable_changelog)) msg changelog expected
+    Alcotest.(check (option testable_changelog)) msg expected changelog
   in
+  let opt_id_json opt = `String (SelectOption.Id.value opt) in
   (* Add one option *)
   let options = [ opt1; opt2; opt3 ] in
   let expected_changes =
     let open Changelog.Changes in
-    Assoc [ "2", Change (`Null, `String (SelectOption.Id.value opt3)) ]
+    Change
+      ( `List [ opt_id_json opt1; opt_id_json opt2 ]
+      , `List [ opt_id_json opt1; opt_id_json opt2; opt_id_json opt3 ] )
   in
   let () = run_test "add an option" options expected_changes in
   (* Remove one option *)
   let options = [ opt1 ] in
   let expected_changes =
     let open Changelog.Changes in
-    Assoc [ "1", Change (`String (SelectOption.Id.value opt2), `Null) ]
+    Change
+      (`List [ opt_id_json opt1; opt_id_json opt2 ], `List [ opt_id_json opt1 ])
   in
   let () = run_test "remove an option" options expected_changes in
   (* Add and remove an option *)
   let options = [ opt1; opt3 ] in
   let expected_changes =
     let open Changelog.Changes in
-    Change
-      ( `String (SelectOption.Id.value opt2)
-      , `String (SelectOption.Id.value opt3) )
+    Change (opt_id_json opt2, opt_id_json opt3)
   in
   run_test "add and remove an option" options expected_changes
 ;;

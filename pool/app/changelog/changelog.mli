@@ -49,10 +49,15 @@ module Write : sig
   val pp : Format.formatter -> t -> unit
 end
 
+module DefaultSettings : sig
+  val changelog_compare_at_index_keys : string list option
+end
+
 module type RecordSig = sig
   type t
 
   val model : Pool_message.Field.t
+  val changelog_compare_at_index_keys : string list option
   val yojson_of_t : t -> Yojson.Safe.t
 end
 

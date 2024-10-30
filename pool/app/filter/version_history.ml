@@ -1,6 +1,8 @@
 module Record = struct
   open Entity
 
+  let changelog_compare_at_index_keys = Some [ "and"; "or" ]
+
   type t = Entity.t
 
   (* This function provides a more human readable json representation than the

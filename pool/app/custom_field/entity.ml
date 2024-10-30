@@ -369,6 +369,8 @@ module Validation = struct
 end
 
 module SelectOption = struct
+  include Changelog.DefaultSettings
+
   let model = Pool_message.Field.CustomFieldOption
 
   module Id = struct
@@ -611,6 +613,8 @@ module Public = struct
 end
 
 module Group = struct
+  include Changelog.DefaultSettings
+
   let model = Pool_message.Field.CustomFieldGroup
 
   module Id = struct
