@@ -154,11 +154,10 @@ let ptime_date_of_yojson json : Ptime.date =
   CCString.split ~by:"-" str
   |> function
   | [ y; m; d ] ->
-    let to_int s =
-      s
-      |> CCString.replace ~which:`Left ~sub:"0" ~by:""
-      |> CCInt.of_string
-      |> CCOption.get_exn_or error
+    let to_int =
+      CCString.replace ~which:`Left ~sub:"0" ~by:""
+      %> CCInt.of_string
+      %> CCOption.get_exn_or error
     in
     to_int y, to_int m, to_int d
   | _ -> failwith error

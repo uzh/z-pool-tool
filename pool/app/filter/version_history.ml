@@ -8,15 +8,14 @@ module Record = struct
   let yojson_of_t { id; query; title; created_at; updated_at } =
     let open Utils.Ptime in
     let open Pool_common in
-    let predicate_key (key : Key.t) =
+    let predicate_key : Key.t -> string =
       let open Key in
-      match key with
+      function
       | CustomField id -> Custom_field.Id.value id
       | Hardcoded key -> show_hardcoded key
     in
     let yojson_of_predicate ({ Predicate.operator; value; _ } : Predicate.t) =
-      let yojson_of_value m =
-        match m with
+      let yojson_of_value = function
         | NoValue -> `Null
         | Single single -> single |> yojson_of_single_val
         | Lst values -> `List (CCList.map yojson_of_single_val values)
