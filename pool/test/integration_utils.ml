@@ -90,7 +90,7 @@ module AdminRepo = struct
            ~default:
              (Format.asprintf
                 "test+%s@econ.uzh.ch"
-                (Uuidm.v `V4 |> Uuidm.to_string))
+                Pool_common.Id.(create () |> value))
       |> Pool_user.EmailAddress.of_string
     in
     let admin =

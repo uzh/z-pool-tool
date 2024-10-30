@@ -30,7 +30,7 @@ let make id ?(expires_in = Sihl.Time.OneDay) ?now ?(length = 80) data =
 
 let create ?secret:_ ?expires_in label data =
   let open Repo.Model in
-  let id = Uuidm.v `V4 |> Uuidm.to_string in
+  let id = Pool_common.Id.(create () |> value) in
   let length =
     CCOption.value ~default:30 (Sihl.Configuration.read schema).token_length
   in

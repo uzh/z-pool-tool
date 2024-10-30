@@ -13,6 +13,10 @@ let () =
           ; test_case "create filter changelog" `Quick update_filter
           ; test_case "create changelog with list" `Quick update_list_value
           ] )
+    ; ( "api_key"
+      , [ test_case "create API key" `Quick Api_key_test.create
+        ; test_case "update API key" `Quick Api_key_test.update
+        ] )
     ; ( "contact"
       , [ test_case
             "sign up not allowed suffix"
@@ -572,6 +576,13 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
+    ; ( "pool_version"
+      , Pool_version_test.
+          [ test_case "create tag" `Quick create_version_tag
+          ; test_case "create" `Quick create
+          ; test_case "update" `Quick update
+          ; test_case "publish" `Quick publish
+          ] )
     ; ( "queue"
       , [ test_case
             "create delivery report"

@@ -13,23 +13,73 @@ let language_attribute lang =
 ;;
 
 module Tenant = struct
+  open Pool_context
+  open Pool_tenant
+  open Layout_utils
+
+  let make_footer { database_label; language; query_parameters; _ } title_text =
+    let%lwt privacy_policy_is_set =
+      I18n.privacy_policy_is_set database_label language
+    in
+    let open Pool_common in
+    let externalize path =
+      path
+      |> Http_utils.url_with_field_params query_parameters
+      |> Sihl.Web.externalize_path
+    in
+    let text_fragments =
+      [ txt title_text; txt App.version ]
+      |> App.combine_footer_fragments ~classnames:[ "footer-static" ]
+    in
+    let footer_nav =
+      let nav_to_string = Utils.nav_link_to_string language in
+      let field_to_string = Utils.field_to_string_capitalized language in
+      let links =
+        [ Http_utils.Url.Admin.version_path (), nav_to_string I18n.Versions
+        ; "/credits", nav_to_string I18n.Credits
+        ; ( "/terms-and-conditions"
+          , field_to_string Pool_message.Field.TermsAndConditions )
+        ]
+      in
+      let links =
+        if privacy_policy_is_set
+        then links @ [ "/privacy-policy", nav_to_string I18n.PrivacyPolicy ]
+        else links
+      in
+      links
+      |> CCList.map (fun (url, label) ->
+        a ~a:[ a_href (externalize url) ] [ txt label ])
+      |> App.combine_footer_fragments
+           ~column_mobile:true
+           ~classnames:[ "footer-nav" ]
+    in
+    footer
+      ~a:
+        [ a_class
+            [ "inset"
+            ; "flexrow"
+            ; "flex-gap"
+            ; "flexcolumn-mobile"
+            ; "justify-center"
+            ; "bg-grey-light"
+            ; "border-top"
+            ; "push"
+            ]
+        ]
+      [ text_fragments
+      ; span ~a:[ a_class [ "hidden-mobile" ] ] [ txt "|" ]
+      ; footer_nav
+      ]
+    |> Lwt.return
+  ;;
+
   let create
     ?active_navigation
-    ({ Pool_context.database_label
-     ; csrf
-     ; language
-     ; query_parameters
-     ; message
-     ; user
-     ; announcement
-     ; _
-     } as context)
-    Pool_context.Tenant.{ tenant_languages; tenant }
+    ({ csrf; language; query_parameters; message; user; announcement; _ } as
+     context)
+    Tenant.{ tenant_languages; tenant }
     children
     =
-    let open Pool_context in
-    let open Pool_tenant in
-    let open Layout_utils in
     let title_text = Title.value tenant.title in
     let page_title = title (title_text |> txt) in
     let stylesheets =
@@ -65,68 +115,7 @@ module Tenant = struct
       let title = App.create_title query_parameters title_text in
       Navigation.create_main ?active_navigation context title tenant_languages
     in
-    let%lwt footer =
-      let%lwt privacy_policy_is_set =
-        I18n.privacy_policy_is_set database_label language
-      in
-      let open Pool_common in
-      let externalize path =
-        path
-        |> Http_utils.url_with_field_params query_parameters
-        |> Sihl.Web.externalize_path
-      in
-      let text_fragments =
-        [ txt title_text; txt App.version ]
-        |> App.combine_footer_fragments ~classnames:[ "footer-static" ]
-      in
-      let footer_nav =
-        let base =
-          [ a
-              ~a:[ a_href (externalize "/credits") ]
-              [ txt (Utils.nav_link_to_string language I18n.Credits) ]
-          ; a
-              ~a:[ a_href (externalize "/terms-and-conditions") ]
-              [ txt
-                  (Utils.field_to_string_capitalized
-                     language
-                     Pool_message.Field.TermsAndConditions)
-              ]
-          ]
-        in
-        let nav_links =
-          if privacy_policy_is_set
-          then
-            base
-            @ [ a
-                  ~a:[ a_href (externalize "/privacy-policy") ]
-                  [ txt (Utils.nav_link_to_string language I18n.PrivacyPolicy) ]
-              ]
-          else base
-        in
-        nav_links
-        |> App.combine_footer_fragments
-             ~column_mobile:true
-             ~classnames:[ "footer-nav" ]
-      in
-      footer
-        ~a:
-          [ a_class
-              [ "inset"
-              ; "flexrow"
-              ; "flex-gap"
-              ; "flexcolumn-mobile"
-              ; "justify-center"
-              ; "bg-grey-light"
-              ; "border-top"
-              ; "push"
-              ]
-          ]
-        [ text_fragments
-        ; span ~a:[ a_class [ "hidden-mobile" ] ] [ txt "|" ]
-        ; footer_nav
-        ]
-      |> Lwt.return
-    in
+    let%lwt footer = make_footer context title_text in
     html
       ~a:[ language_attribute language ]
       (head page_title head_tags)

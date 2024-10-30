@@ -13,9 +13,24 @@ let announcement_path ?suffix ?id () =
   |> append_opt suffix
 ;;
 
+let version_path ?suffix ?id () =
+  ("/" ^ Field.(show Version))
+  |> append_opt (map Pool_version.Id.value id)
+  |> append_opt suffix
+;;
+
 module Admin = struct
+  let settings_path = Format.asprintf "/admin/settings/%s"
+
   let admin_path ?suffix ?id () =
     "/admin/admins" |> append_opt (map Admin.Id.value id) |> append_opt suffix
+  ;;
+
+  let api_key_path ?suffix ?id () =
+    Field.(human_url ApiKey)
+    |> settings_path
+    |> append_opt (map Api_key.Id.value id)
+    |> append_opt suffix
   ;;
 
   let contact_path ?suffix ?id () =
@@ -70,7 +85,7 @@ module Admin = struct
   ;;
 
   let role_permission_path ?suffix ?role () =
-    "/admin/settings/role-permission"
+    settings_path "role-permission"
     |> append_opt (map Role.Role.name role)
     |> append_opt suffix
   ;;
@@ -92,6 +107,10 @@ module Admin = struct
 
   let user_redirect_path ~id =
     Pool_common.Id.value id |> Format.asprintf "/admin/users/%s"
+  ;;
+
+  let version_path ?suffix ?id () =
+    version_path ?suffix ?id () |> Format.asprintf "/admin/%s"
   ;;
 
   module Settings = struct
@@ -131,4 +150,6 @@ module Root = struct
   let announcement_path ?suffix ?id () =
     announcement_path ?suffix ?id () |> with_root
   ;;
+
+  let version_path ?suffix ?id () = version_path ?suffix ?id () |> with_root
 end

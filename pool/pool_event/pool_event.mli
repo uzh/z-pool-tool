@@ -1,6 +1,7 @@
 type t =
   | Admin of Admin.event
   | Announcement of Announcement.event
+  | ApiKey of Api_key.event
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
@@ -18,6 +19,7 @@ type t =
   | OrganisationalUnit of Organisational_unit.event
   | PoolLocation of Pool_location.event
   | PoolTenant of Pool_tenant.event
+  | PoolVersion of Pool_version.event
   | Session of Session.event
   | Settings of Settings.event
   | SignupCode of Signup_code.event
@@ -34,6 +36,7 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 val admin : Admin.event -> t
 val announcement : Announcement.event -> t
+val api_key : Api_key.event -> t
 val assignment : Assignment.event -> t
 val assignmentjob : Assignment_job.event -> t
 val contact : Contact.event -> t
@@ -50,6 +53,7 @@ val mailing : Mailing.event -> t
 val message_template : Message_template.event -> t
 val organisational_unit : Organisational_unit.event -> t
 val pool_location : Pool_location.event -> t
+val pool_version : Pool_version.event -> t
 val pool_tenant : Pool_tenant.event -> t
 val session : Session.event -> t
 val settings : Settings.event -> t

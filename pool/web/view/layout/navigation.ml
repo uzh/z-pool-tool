@@ -121,6 +121,10 @@ module NavElements = struct
             "/admin/organisational-unit"
             OrganisationalUnits
             (Set Organisational_unit.Guard.Access.index)
+        ; single
+            (Http_utils.Url.Admin.api_key_path ())
+            ApiKeys
+            (Set Api_key.Access.index)
         ]
       in
       Parent (None, Settings, OnChildren, children) |> NavElement.create
@@ -169,6 +173,13 @@ module NavElements = struct
         (Set Announcement.Access.index)
       |> NavElement.create
     in
+    let versions =
+      single
+        (Http_utils.Url.Root.version_path ())
+        Versions
+        (Set Pool_version.Access.index)
+      |> NavElement.create
+    in
     let settings =
       [ single "/root/settings/smtp" Smtp (Set Email.Guard.Access.Smtp.index) ]
       |> parent Settings
@@ -177,6 +188,7 @@ module NavElements = struct
     [ tenants
     ; users
     ; announcements
+    ; versions
     ; settings
     ; Profile.nav ~prefix:"/root" ()
     ; NavElement.logout ~prefix:"/root" ()

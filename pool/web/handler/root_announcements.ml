@@ -78,7 +78,7 @@ let form case req =
       sys_languages
       ~flash_fetcher
       ?announcement
-    |> create_layout ~active_navigation context
+    |> create_layout context
     ||> Sihl.Web.Response.of_html
     ||> CCResult.return
   in

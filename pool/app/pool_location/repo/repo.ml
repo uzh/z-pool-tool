@@ -269,7 +269,7 @@ module Sql = struct
       Database.collect pool request pv
   ;;
 
-  let find_targets_grantable_by_admin ?exclude database_label admin query =
+  let find_targets_grantable_by_target ?exclude database_label target_id query =
     let joins =
       {sql|
       LEFT JOIN guardian_actor_role_targets t ON t.target_uuid = pool_locations.uuid
@@ -277,11 +277,12 @@ module Sql = struct
         AND t.role = ?
     |sql}
     in
-    let conditions = "t.role IS NULL" in
+    let conditions = "(t.role IS NULL OR t.mark_as_deleted IS NOT NULL)" in
     let dyn =
+      let open Pool_common in
       Dynparam.(
         empty
-        |> add Admin.Repo.Id.t Admin.(id admin)
+        |> add Repo.Id.t (Guard.Uuid.Target.to_string target_id |> Id.of_string)
         |> add Caqti_type.string Role.Role.(show `LocationManager))
     in
     search ~conditions ~joins ~dyn ?exclude database_label query
@@ -298,17 +299,17 @@ let find pool id =
   Sql.find pool id |>> files_to_location pool
 ;;
 
-let find_all pool =
+let find_all ?query ?actor ?permission pool =
   let open Utils.Lwt_result.Infix in
-  Sql.find_all pool >|> Lwt_list.map_s (files_to_location pool)
-;;
-
-let find_by query pool =
-  let open Lwt.Syntax in
-  let* locations, query =
-    Query.collect_and_count pool (Some query) ~select:Sql.find_request_sql t
+  let checks = [ Format.asprintf "pool_locations.uuid IN %s" ] in
+  let%lwt where =
+    Guard.create_where ?actor ?permission ~checks pool `Location
+    ||> CCOption.map (fun m -> m, Dynparam.empty)
   in
-  let* locations = Lwt_list.map_s (files_to_location pool) locations in
+  let%lwt locations, query =
+    Query.collect_and_count pool query ~select:Sql.find_request_sql ?where t
+  in
+  let%lwt locations = Lwt_list.map_s (files_to_location pool) locations in
   Lwt.return (locations, query)
 ;;
 
@@ -320,4 +321,4 @@ let insert pool location files =
 let update = Sql.update
 let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
-let find_targets_grantable_by_admin = Sql.find_targets_grantable_by_admin
+let find_targets_grantable_by_target = Sql.find_targets_grantable_by_target

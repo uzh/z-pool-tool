@@ -74,9 +74,13 @@ let target_has_role db target (target_role, target_uuid) () =
   actor_roles |> CCList.mem ~eq:ActorRole.equal actor_role |> Lwt.return
 ;;
 
-let handle_validated_events db target actor role =
-  let open AdminCommand in
-  let grant_role role = { target; roles = [ role ] } in
+let handle_validated_events db admin actor role =
+  let open GuardianCommand in
+  let grant_role role =
+    { target_id = Guard.Uuid.actor_of Admin.Id.value (Admin.id admin)
+    ; roles = [ role ]
+    }
+  in
   let validate = Guard.Persistence.Actor.validate_assign_role db in
   validate actor role
   >|+ grant_role

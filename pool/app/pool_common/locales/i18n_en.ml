@@ -10,6 +10,7 @@ let to_string = function
   | AnnouncementsListTitle -> "Announcements"
   | AnnouncementsTenantSelect ->
     "Select on which tenants the announcement should be displayed."
+  | ApiKeys -> "API Keys"
   | AssignmentEditTagsWarning ->
     "Please note that editing the assignment does not assign or remove any \
      tags from the contact that may have been assigned by participating in \
@@ -197,6 +198,7 @@ let to_string = function
     "You paused all notifications for your user! (Click 'edit' to update this \
      setting)"
   | Validation -> "Validation"
+  | VersionsListTitle -> "Release notes"
   | WaitingListIsDisabled -> "The waiting list is disabled."
 ;;
 
@@ -204,6 +206,7 @@ let nav_link_to_string = function
   | ActorPermissions -> "Personal Permissions"
   | Admins -> "Admins"
   | Announcements -> "Announcements"
+  | ApiKeys -> "API Keys"
   | Assignments -> "Assignments"
   | ContactInformation -> "Contact information"
   | Contacts -> "Contacts"
@@ -246,6 +249,7 @@ let nav_link_to_string = function
   | TimeWindows -> "Time windows"
   | Users -> "Users"
   | WaitingList -> "Waiting list"
+  | Versions -> "Release notes"
 ;;
 
 let rec hint_to_string = function
@@ -599,6 +603,12 @@ If you trigger the reminders manually now, no more automatic reminders will be s
     Format.asprintf
       "The invitations were last reset on <strong>%s</strong>."
       (Pool_model.Time.formatted_date_time reset_at)
+  | ReleaseNotesHint repo_url ->
+    Format.asprintf
+      "Here you can find the changes relevant to you for each version of the \
+       tool. You can find a complete changelog on <a href=\"%s\" \
+       target=\"_blank\">github.com</a>."
+      repo_url
   | RoleIntro (singular, plural) ->
     Format.asprintf
       "If no %s is specified, the role includes all %s."
@@ -742,6 +752,7 @@ let confirmable_to_string confirmable =
    | DeleteMessageTemplate -> "message template", "delete", None
    | DeleteSession -> "session", "delete", None
    | DeleteSmtpServer -> "email Server", "delete", None
+   | DisableApiKey -> "API key", "disable", None
    | LoadDefaultTemplate ->
      "default template", "load", Some "The current content is overwritten."
    | MarkAssignmentAsDeleted -> "assignment as deleted", "mark", None

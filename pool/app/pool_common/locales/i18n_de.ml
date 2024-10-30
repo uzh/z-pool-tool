@@ -9,6 +9,7 @@ let to_string = function
   | AnnouncementsListTitle -> "Ankündigungen"
   | AnnouncementsTenantSelect ->
     "Wählen Sie, auf welchen Tenants die Ankündigung angezeigt werden soll."
+  | ApiKeys -> "API Schlüssel"
   | AssignmentEditTagsWarning ->
     "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
      zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \
@@ -203,6 +204,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
   | Validation -> "Validierung"
+  | VersionsListTitle -> "Versionshinweise"
   | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;
 
@@ -210,6 +212,7 @@ let nav_link_to_string = function
   | ActorPermissions -> "Persönliche Berechtigungen"
   | Admins -> "Administratoren"
   | Announcements -> "Ankündigungen"
+  | ApiKeys -> "API Schlüssel"
   | Assignments -> "Anmeldungen"
   | ContactInformation -> "Kontaktangaben"
   | Contacts -> "Kontakte"
@@ -252,6 +255,7 @@ let nav_link_to_string = function
   | TimeWindows -> "Zeitfenster"
   | Users -> "Benutzer"
   | WaitingList -> "Warteliste"
+  | Versions -> "Versionshinweise"
 ;;
 
 let rec hint_to_string = function
@@ -628,6 +632,12 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
+  | ReleaseNotesHint repo_url ->
+    Format.asprintf
+      "Hier finden Sie die für Sie relevaten Änderungen pro Version des Tools. \
+       Den vollständigen Changelog finden Sie auf <a href=\"%s\" \
+       target=\"_blank\">github.com</a>."
+      repo_url
   | RolePermissionsModelList ->
     "Wählen Sie das Objekt, für welches Sie die Berechtigungen anpassen wollen."
   | RolePermissionsRoleList -> "Alle anpassparen Rollen des Teants."
@@ -776,6 +786,7 @@ let confirmable_to_string confirmable =
    | DeleteMessageTemplate -> "das Nachrichtentemplate", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
    | DeleteSmtpServer -> "E-Mail Server", "löschen", None
+   | DisableApiKey -> "den API Key", "deaktivieren", None
    | LoadDefaultTemplate ->
      ( "das Standardtemplate"
      , "laden"

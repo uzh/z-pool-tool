@@ -5,7 +5,8 @@ module Id = struct
 
   type t = string [@@deriving eq, show, sexp, yojson]
 
-  let create () = Uuidm.v `V4 |> Uuidm.to_string
+  let random_state = Random.State.make_self_init ()
+  let create () = Uuidm.v4_gen random_state () |> Uuidm.to_string
   let of_string m = m
 
   let validate m =

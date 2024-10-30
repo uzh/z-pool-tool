@@ -2,12 +2,14 @@
  (name http_utils)
  (libraries
   announcement
+  api_key
   contact
   experiment
   logger
   pool_common
   pool_context
   pool_queue
+  pool_version
   session
   sexplib
   sihl-storage

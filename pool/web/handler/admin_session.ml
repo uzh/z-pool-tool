@@ -113,7 +113,7 @@ let new_helper req page =
              experiment
              default_leadtime_settings
              parent_session
-             locations
+             (fst locations)
              text_messages_enabled
              flash_fetcher
            |> Lwt_result.ok
@@ -128,7 +128,7 @@ let new_helper req page =
                  context
                  experiment
                  default_leadtime_settings
-                 locations
+                 (fst locations)
                  text_messages_enabled
                  flash_fetcher
              | true ->
@@ -332,7 +332,7 @@ let session_page database_label req context session experiment =
       experiment
       default_leadtime_settings
       session
-      locations
+      (fst locations)
       (current_tags, available_tags, experiment_participation_tags)
       text_messages_enabled
       flash_fetcher

@@ -1,5 +1,6 @@
 open CCFun
 open Ppx_yojson_conv_lib.Yojson_conv
+module Api = Http_utils_api
 module File = Http_utils_file
 module Filter = Http_utils_filter
 module Message = Http_utils_message
@@ -320,6 +321,12 @@ let find_id encode field req =
   Sihl.Web.Router.param req @@ Pool_message.Field.show field |> encode
 ;;
 
+let find_id_save encode field req =
+  let open Pool_message in
+  try find_id encode field req with
+  | _ -> Error Error.(NotFound field)
+;;
+
 let id_in_url req field =
   try find_id Pool_common.Id.of_string field req |> const true with
   | Not_found -> false
@@ -342,13 +349,6 @@ let first_n_characters ?(n = 47) m =
   then CCString.sub m 0 n |> Format.asprintf "%s..."
   else m
 ;;
-
-module type Queryable = sig
-  val default_query : Query.t
-  val filterable_by : Query.Filter.human option
-  val searchable_by : Query.Column.t list
-  val sortable_by : Query.Column.t list
-end
 
 module Htmx = struct
   let hx_request_header = "Hx-Request"
@@ -404,7 +404,7 @@ module Htmx = struct
 
   let handler
     :  ?active_navigation:string -> error_path:string
-    -> query:(module Queryable)
+    -> query:(module Http_utils_queryable.Queryable)
     -> create_layout:
          (Rock.Request.t
           -> ?active_navigation:CCString.t

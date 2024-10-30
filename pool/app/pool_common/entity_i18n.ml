@@ -4,6 +4,7 @@ type t =
   | AdminComment
   | AnnouncementsListTitle
   | AnnouncementsTenantSelect
+  | ApiKeys
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
   | AvailableSpots
@@ -115,12 +116,14 @@ type t =
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
   | Validation
+  | VersionsListTitle
   | WaitingListIsDisabled
 
 type nav_link =
   | ActorPermissions
   | Admins
   | Announcements
+  | ApiKeys
   | Assignments
   | ContactInformation
   | Contacts
@@ -163,6 +166,7 @@ type nav_link =
   | TimeWindows
   | Users
   | WaitingList
+  | Versions
 [@@deriving eq]
 
 type hint =
@@ -281,6 +285,7 @@ type hint =
   | ResendRemindersWarning
   | ResetInvitations
   | ResetInvitationsLastReset of Ptime.t
+  | ReleaseNotesHint of string
   | RoleIntro of Pool_message.Field.t * Pool_message.Field.t
   | RolePermissionsModelList
   | RolePermissionsRoleList
@@ -342,6 +347,7 @@ type confirmable =
   | DeleteMessageTemplate
   | DeleteSession
   | DeleteSmtpServer
+  | DisableApiKey
   | LoadDefaultTemplate
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted

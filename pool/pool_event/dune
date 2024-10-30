@@ -4,6 +4,7 @@
  (libraries
   admin
   announcement
+  api_key
   assignment
   assignment_job
   contact
@@ -21,6 +22,7 @@
   pool_location
   pool_tenant
   pool_user
+  pool_version
   settings
   sihl
   signup_code

@@ -12,6 +12,7 @@ type t =
   | AllowUninvitedSignup
   | Announcement
   | Answer
+  | ApiKey
   | AreaCode
   | Argument
   | AssetId
@@ -89,6 +90,7 @@ type t =
   | Experiments
   | ExperimentTextMessageReminderLeadTime
   | ExperimentType
+  | ExpiresAt
   | ExternalDataId
   | ExternalDataIdAbbr
   | ExternalDataRequired
@@ -224,6 +226,7 @@ type t =
   | RemindersSent
   | Required
   | ResentAt
+  | Resource
   | Role
   | Room
   | Root

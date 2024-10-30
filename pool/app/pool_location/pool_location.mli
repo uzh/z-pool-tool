@@ -287,8 +287,13 @@ module Repo : sig
 end
 
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_all : Database.Label.t -> t list Lwt.t
-val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+
+val find_all
+  :  ?query:Query.t
+  -> ?actor:Guard.Actor.t
+  -> ?permission:Guard.Permission.t
+  -> Database.Label.t
+  -> (t list * Query.t) Lwt.t
 
 val find_location_file
   :  Database.Label.t
@@ -310,10 +315,10 @@ val search_multiple_by_id
   -> Id.t list
   -> (Id.t * Name.t) list Lwt.t
 
-val find_targets_grantable_by_admin
+val find_targets_grantable_by_target
   :  ?exclude:Id.t list
   -> Database.Label.t
-  -> Admin.t
+  -> Guard.Uuid.Target.t
   -> string
   -> (Id.t * Name.t) list Lwt.t
 
@@ -385,6 +390,7 @@ module Guard : sig
   end
 
   module Access : sig
+    val index_permission : Guard.Permission.t
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
     val read : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t

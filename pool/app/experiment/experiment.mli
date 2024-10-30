@@ -144,6 +144,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val yojson_of_t : t -> Yojson.Safe.t
 val id : t -> Id.t
 val title : t -> Title.t
 val public_title : t -> PublicTitle.t
@@ -352,10 +353,10 @@ val find_to_enroll_directly
 
 val contact_is_enrolled : Database.Label.t -> Id.t -> Contact.Id.t -> bool Lwt.t
 
-val find_targets_grantable_by_admin
+val find_targets_grantable_by_target
   :  ?exclude:Id.t list
   -> Database.Label.t
-  -> Admin.t
+  -> Guard.Uuid.Target.t
   -> Role.Role.t
   -> string
   -> (Id.t * Title.t) list Lwt.t

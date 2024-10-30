@@ -3,6 +3,7 @@
  (libraries
   admin
   announcement
+  api_key
   contact
   logger
   pool_common

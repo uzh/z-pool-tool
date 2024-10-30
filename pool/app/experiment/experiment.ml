@@ -39,7 +39,7 @@ let search = Repo.search
 let search_multiple_by_id = Repo.search_multiple_by_id
 let find_to_enroll_directly = Repo.find_to_enroll_directly
 let contact_is_enrolled = Repo.contact_is_enrolled
-let find_targets_grantable_by_admin = Repo.find_targets_grantable_by_admin
+let find_targets_grantable_by_target = Repo.find_targets_grantable_by_target
 let get_default_public_title = Repo.Sql.get_default_public_title
 
 let query_participation_history_by_contact =

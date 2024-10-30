@@ -3,6 +3,7 @@
 type t =
   | Admin of Admin.event
   | Announcement of Announcement.event
+  | ApiKey of Api_key.event
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
@@ -20,6 +21,7 @@ type t =
   | OrganisationalUnit of Organisational_unit.event
   | PoolLocation of Pool_location.event
   | PoolTenant of Pool_tenant.event
+  | PoolVersion of Pool_version.event
   | Session of Session.event
   | Settings of Settings.event
   | SignupCode of Signup_code.event
@@ -35,6 +37,7 @@ type t =
 (* TODO: Consider using variants, instead of custom functions *)
 let admin events = Admin events
 let announcement events = Announcement events
+let api_key events = ApiKey events
 let assignment events = Assignment events
 let assignmentjob events = AssignmentJob events
 let contact events = Contact events
@@ -52,6 +55,7 @@ let message_template events = MessageTemplate events
 let organisational_unit events = OrganisationalUnit events
 let pool_location events = PoolLocation events
 let pool_tenant events = PoolTenant events
+let pool_version events = PoolVersion events
 let session events = Session events
 let settings events = Settings events
 let signupcode events = SignupCode events
@@ -76,6 +80,9 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   | Announcement event ->
     info "announcement" Announcement.pp_event event;
     Announcement.handle_event pool event
+  | ApiKey event ->
+    info "api_key" Api_key.pp_event event;
+    Api_key.handle_event ~tags pool event
   | Assignment event ->
     info "assignment" Assignment.pp_event event;
     Assignment.handle_event pool event
@@ -129,6 +136,9 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   | PoolTenant event ->
     info "pool_tenant" Pool_tenant.pp_event event;
     Pool_tenant.handle_event pool event
+  | PoolVersion event ->
+    info "pool_version" Pool_version.pp_event event;
+    Pool_version.handle_event event
   | Session event ->
     info "session" Session.pp_event event;
     Session.handle_event ?user_uuid pool event
