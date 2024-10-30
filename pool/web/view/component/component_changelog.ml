@@ -1,13 +1,16 @@
 open Tyxml.Html
 open Changelog
 
-let yojson_to_string (json : Yojson.Safe.t) =
+let rec yojson_to_html (json : Yojson.Safe.t) =
+  let to_span text = span [ txt text ] in
   match json with
-  | `Bool bool -> Utils.Bool.to_string bool
-  | `Int int -> CCInt.to_string int
-  | `Float float -> CCFloat.to_string float
-  | `String s -> s
-  | _ -> Yojson.Safe.pretty_to_string json
+  | `Bool bool -> Utils.Bool.to_string bool |> to_span
+  | `Int int -> CCInt.to_string int |> to_span
+  | `Float float -> CCFloat.to_string float |> to_span
+  | `String s -> to_span s
+  | `List lst ->
+    lst |> CCList.map yojson_to_html |> div ~a:[ a_class [ "flexcolumn" ] ]
+  | _ -> Yojson.Safe.pretty_to_string json |> to_span
 ;;
 
 let rec format_changes changes =
@@ -25,10 +28,16 @@ let rec format_changes changes =
       format_assoc_list acc tl
   in
   match changes with
-  | Assoc assocs -> format_assoc_list [] assocs |> div
+  | Assoc assocs ->
+    format_assoc_list [] assocs |> div ~a:[ a_class [ "flexcolumn" ] ]
   | Change (before, after) ->
-    let format json = span [ yojson_to_string json |> txt ] in
-    span [ strong [ format before; txt " → "; format after ] ]
+    let format json = yojson_to_html json in
+    div
+      ~a:[ a_class [ "changelog-changes" ] ]
+      [ format before
+      ; span ~a:[ a_class [ "changelog-separator" ] ] [ txt "→" ]
+      ; format after
+      ]
 ;;
 
 let list Pool_context.{ language; _ } url changelog =
@@ -75,12 +84,15 @@ let list Pool_context.{ language; _ } url changelog =
               ]
             [ txt (Pool_user.EmailAddress.value email) ]
       in
-      [ user_link
-      ; changes |> format_changes
-      ; txt
-          (created_at |> CreatedAt.value |> Pool_model.Time.formatted_date_time)
+      [ td [ user_link ]
+      ; td ~a:[ a_class [ "changes-cell" ] ] [ changes |> format_changes ]
+      ; td
+          [ txt
+              (created_at
+               |> CreatedAt.value
+               |> Pool_model.Time.formatted_date_time)
+          ]
       ]
-      |> CCList.map (fun value -> td [ value ])
       |> tr
     in
     Data_table.make

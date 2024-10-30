@@ -54,36 +54,6 @@ module T (R : RecordSig) = struct
         (match list_to_assoc l1, list_to_assoc l2 with
          | Some assoc_before, Some assoc_after ->
            compare assoc_before assoc_after
-         | None, None ->
-           let open CCList.Infix in
-           let open CCOption.Infix in
-           let after = Hashtbl.create (CCList.length l2) in
-           let () = l2 |> CCList.iteri (fun i x -> Hashtbl.add after i x) in
-           let changes_before =
-             l1
-             |> CCList.foldi
-                  (fun acc i before_json ->
-                    Hashtbl.find_opt after i
-                    |> CCOption.value ~default:`Null
-                    |> compare before_json
-                    >|= CCPair.make (CCInt.to_string i)
-                    |> fun change ->
-                    let () = Hashtbl.remove after i in
-                    match change with
-                    | None -> acc
-                    | Some change -> acc @ [ change ])
-                  []
-           in
-           let changes_after =
-             after
-             |> Hashtbl.to_seq
-             |> CCList.of_seq
-             |> CCList.filter_map (fun (i, json) ->
-               make_changes `Null json >|= CCPair.make (CCInt.to_string i))
-           in
-           (match changes_before @ changes_after with
-            | [] -> None
-            | changes -> Some (Assoc changes))
          | _, _ -> make_changes json_before json_after)
       | _ -> make_changes json_before json_after
     in
