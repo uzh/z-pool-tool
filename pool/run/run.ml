@@ -57,6 +57,7 @@ let commands =
   ; SystemEvent.handle_system_events_command
   ; Contact.all_profile_update_triggers
   ; Contact.tenant_specific_profile_update_trigger
+  ; Contact.find_duplicates
   ; Matcher.run_tenant
   ; Matcher.run_all
   ; Mail.send_mail
