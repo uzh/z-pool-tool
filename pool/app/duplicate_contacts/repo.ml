@@ -88,7 +88,7 @@ let similarity_request user_columns custom_field_columns similarities average =
       FROM
         average_similarity
       WHERE 
-        similarity_score >= 0.5
+        similarity_score >= 0.3
       ORDER BY
         similarity_score DESC;
     |sql}]
@@ -151,7 +151,8 @@ let find_similars database_label ~user_uuid custom_fields =
     map user_similarities columns @ map field_similarities custom_fields
   in
   let average_similarity =
-    let count = length similarities in
+    let not_null = asprintf "(%s IS NOT NULL)" in
+    let coalesce = asprintf "COALESCE(%s, 0)" in
     let user_similarities =
       columns
       >|= fun { Column.sql_column; _ } -> make_similarity_name sql_column
@@ -166,9 +167,17 @@ let find_similars database_label ~user_uuid custom_fields =
         |> make_similarity_name
         |> asprintf "`%s`")
     in
-    user_similarities @ custom_field_similarities
+    let similarities = user_similarities @ custom_field_similarities in
+    let division =
+      similarities
+      >|= not_null
+      |> CCString.concat " + "
+      |> asprintf "NULLIF(%s, 0)"
+    in
+    similarities
+    >|= coalesce
     |> CCString.concat " + "
-    |> fun average -> Format.asprintf "(%s) / %d" average count
+    |> fun average -> Format.asprintf "(%s) / %s" average division
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let request =
