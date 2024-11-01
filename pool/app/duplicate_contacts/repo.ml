@@ -31,6 +31,12 @@ let similarity_request user_columns custom_field_columns similarities average =
   let user_columns = user_columns |> CCString.concat "," in
   let custom_field_columns = custom_field_columns |> CCString.concat "," in
   let similarities = similarities |> CCString.concat "," in
+  let contact_joins =
+    {sql| 
+      INNER JOIN user_users ON pool_contacts.user_uuid = user_users.uuid
+      LEFT JOIN pool_custom_field_answers ON pool_contacts.user_uuid = pool_custom_field_answers.entity_uuid
+    |sql}
+  in
   [%string
     {sql|
       WITH target_contact AS (
@@ -40,8 +46,7 @@ let similarity_request user_columns custom_field_columns similarities average =
           %{custom_field_columns}
         FROM
           pool_contacts
-        INNER JOIN user_users ON pool_contacts.user_uuid = user_users.uuid
-        LEFT JOIN pool_custom_field_answers ON pool_contacts.user_uuid = pool_custom_field_answers.entity_uuid
+        %{contact_joins}
         WHERE user_users.uuid = UNHEX(REPLACE($1,'-',''))
         GROUP BY user_users.uuid
       ),
@@ -53,8 +58,7 @@ let similarity_request user_columns custom_field_columns similarities average =
           %{custom_field_columns}
         FROM
           pool_contacts
-        INNER JOIN user_users ON pool_contacts.user_uuid = user_users.uuid
-        LEFT JOIN pool_custom_field_answers ON pool_contacts.user_uuid = pool_custom_field_answers.entity_uuid
+        %{contact_joins}
         WHERE user_users.uuid <> UNHEX(REPLACE($1,'-',''))
         GROUP BY user_users.uuid
       ),
