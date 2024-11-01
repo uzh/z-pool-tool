@@ -693,3 +693,20 @@ let message_history
         messages
     ]
 ;;
+
+let[@warning "-27"] duplicates context contact possible_duplicates =
+  let table =
+    let open Contact in
+    possible_duplicates
+    |> CCList.map (fun (contact, score) ->
+      [ a
+          ~a:[ a_href (Http_utils.Url.Admin.contact_path ~id:(id contact) ()) ]
+          [ txt (fullname contact) ]
+      ; CCFloat.to_string score |> txt
+      ]
+      |> CCList.map (fun html -> td [ html ])
+      |> tr)
+    |> table ~a:[ a_class [ "table"; "table-striped" ] ]
+  in
+  div ~a:[ a_class [ "trim"; "safety-margin" ] ] [ table ]
+;;

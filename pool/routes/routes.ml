@@ -705,6 +705,7 @@ module Admin = struct
             ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))
             field_specific
         ; choose ~scope:(Tag |> human_url) tags
+        ; get "/duplicates" ~middlewares:[ Access.read ] duplicates
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
