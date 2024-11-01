@@ -156,7 +156,7 @@ let similariy_without_cross_join
       FROM
         average_similarity
       WHERE 
-        similarity_score >= 0.3
+        similarity_score >= 0.5
       ORDER BY
         similarity_score DESC;
     |sql}]
