@@ -60,6 +60,8 @@ let similarity_request user_columns custom_field_columns similarities average =
           pool_contacts
         %{contact_joins}
         WHERE user_users.uuid <> UNHEX(REPLACE($1,'-',''))
+        AND pool_contacts.email_verified IS NOT NULL
+        AND pool_contacts.disabled = 0
         GROUP BY user_users.uuid
       ),
       similarity_scores AS (
