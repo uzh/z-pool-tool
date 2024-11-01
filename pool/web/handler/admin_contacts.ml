@@ -522,15 +522,14 @@ let duplicates req =
       |> Id.of_string
       |> find database_label
     in
-    let* possible_duplicates =
-      let open Duplicate_contacts in
-      find_by_contact database_label (contact |> id |> Id.to_common)
-      >|> Lwt_list.map_s (fun { user_uuid; similarity_score; _ } ->
-        let* contact = find database_label (Id.of_common user_uuid) in
-        Lwt_result.return (contact, similarity_score))
-      ||> CCList.all_ok
+    (* DEV ONLY *)
+    let%lwt () =
+      Duplicate_contacts.run database_label (Id.to_common contact_id)
     in
-    Page.Admin.Contact.duplicates context contact possible_duplicates
+    let%lwt possible_duplicates =
+      Duplicate_contacts.find_by_contact database_label contact
+    in
+    Page.Admin.Contact.duplicates contact possible_duplicates
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in

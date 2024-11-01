@@ -1,5 +1,9 @@
 module Field = Pool_message.Field
 
+module Id = struct
+  include Pool_model.Base.Id
+end
+
 (** EXACT: an exact macth is definitely required when comparing custom field
     answers with select options
 
@@ -28,22 +32,24 @@ module Column = struct
     ; criteria : SimilarityCriteria.t
     ; sql_column : string
     ; sql_table : string
+    ; weight : int
     }
   [@@deriving eq, show]
 end
 
 let columns =
-  [ Field.Name, SimilarityCriteria.Exact, "user_users", "name"
-  ; Field.Firstname, SimilarityCriteria.Exact, "user_users", "given_name"
+  [ Field.Name, SimilarityCriteria.Exact, "user_users", "name", 5
+  ; Field.Firstname, SimilarityCriteria.Exact, "user_users", "given_name", 4
+  ; Field.CellPhone, SimilarityCriteria.Exact, "pool_contacts", "cell_phone", 3
   ]
-  |> CCList.map (fun (field, criteria, sql_table, sql_column) ->
-    { Column.field; criteria; sql_table; sql_column })
+  |> CCList.map (fun (field, criteria, sql_table, sql_column, weight) ->
+    { Column.field; criteria; sql_table; sql_column; weight })
 ;;
 
 type t =
-  { target_user_uuid : Pool_common.Id.t
-  ; user_uuid : Pool_common.Id.t
-  ; email : Pool_user.EmailAddress.t
-  ; similarity_score : float
+  { id : Id.t
+  ; target_contact_id : Contact.Id.t
+  ; contact : Contact.t
+  ; score : float
   }
 [@@deriving eq, show]

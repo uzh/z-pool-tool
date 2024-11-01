@@ -1,30 +1,36 @@
 module Dynparam = Database.Dynparam
+open Repo_entity
 
 let id_select_fragment = Pool_common.Id.sql_select_fragment
 let id_value_fragment = Pool_common.Id.sql_value_fragment
 
-let t =
-  let open Database.Caqti_encoders in
-  let open Entity in
-  let open CCResult in
-  let decode (target_user_uuid, (user_uuid, (email, (similarity_score, ())))) =
-    let* similarity_score =
-      CCFloat.of_string_opt similarity_score
-      |> CCOption.to_result "Invalid float"
-    in
-    Ok { target_user_uuid; user_uuid; email; similarity_score }
+let sql_select_columns =
+  [ id_select_fragment ~field:"pool_contacts_possible_duplicates.uuid"
+  ; id_select_fragment
+      ~field:"pool_contacts_possible_duplicates.target_user_uuid"
+  ]
+  @ Contact.Repo.sql_select_columns
+  @ [ "pool_contacts_possible_duplicates.score" ]
+;;
+
+let joins =
+  Format.asprintf
+    {sql|
+    INNER JOIN pool_contacts 
+      ON pool_contacts.user_uuid = pool_contacts_possible_duplicates.contact_uuid
+    %s
+  |sql}
+    Contact.Repo.joins
+;;
+
+let find_request_sql ?(count = false) =
+  let columns =
+    if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
   in
-  let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
-  let open Schema in
-  custom
-    ~encode
-    ~decode
-    Caqti_type.
-      [ Pool_common.Repo.Id.t
-      ; Pool_common.Repo.Id.t
-      ; Pool_user.Repo.EmailAddress.t
-      ; string
-      ]
+  Format.asprintf
+    {sql|SELECT %s FROM pool_contacts_possible_duplicates %s %s ORDER BY score DESC |sql}
+    columns
+    joins
 ;;
 
 let similarity_request user_columns custom_field_columns similarities average =
@@ -42,7 +48,6 @@ let similarity_request user_columns custom_field_columns similarities average =
       WITH filtered_contacts AS (
         SELECT
           user_users.uuid,
-          user_users.email,
           %{user_columns},
           %{custom_field_columns}
         FROM
@@ -57,7 +62,6 @@ let similarity_request user_columns custom_field_columns similarities average =
         SELECT
           t.uuid as target_uuid,
           contacts.uuid,
-          contacts.email,
           %{similarities}
         FROM
         filtered_contacts AS t
@@ -70,15 +74,13 @@ let similarity_request user_columns custom_field_columns similarities average =
         SELECT
           target_uuid,
           uuid,
-          email,
           %{average} AS similarity_score
         FROM similarity_scores
       )
       SELECT
         %{id_select_fragment ~field:"target_uuid"},
         %{id_select_fragment ~field:"uuid"},
-        email,
-        similarity_score
+        CAST(similarity_score AS FLOAT)
       FROM
         average_similarity
       WHERE 
@@ -167,21 +169,23 @@ let find_similars database_label ~user_uuid custom_fields =
     map user_similarities columns @ map field_similarities custom_fields
   in
   let average_similarity =
-    let not_null = asprintf "(%s IS NOT NULL)" in
-    let coalesce = asprintf "COALESCE(%s, 0)" in
+    let not_null = CCFun.uncurry (asprintf "(%s IS NOT NULL) * %d") in
+    let coalesce = CCFun.uncurry (asprintf "COALESCE(%s * %d, 0)") in
     let user_similarities =
       columns
-      >|= fun { Column.sql_column; _ } -> make_similarity_name sql_column
+      >|= fun { Column.sql_column; weight; _ } ->
+      make_similarity_name sql_column, weight
     in
     let custom_field_similarities =
       custom_fields
       >|= fun field ->
       Custom_field.(
-        id field
-        |> Id.to_common
-        |> Id.value
-        |> make_similarity_name
-        |> asprintf "`%s`")
+        ( id field
+          |> Id.to_common
+          |> Id.value
+          |> make_similarity_name
+          |> asprintf "`%s`"
+        , 1 ))
     in
     let similarities = user_similarities @ custom_field_similarities in
     let division =
@@ -202,11 +206,69 @@ let find_similars database_label ~user_uuid custom_fields =
       custom_field_columns
       similarities
       average_similarity
-    |> pt ->* t
+    |> pt ->* raw
   in
-  let () =
-    Caqti_request.make_pp_with_param () Format.std_formatter (request, pv)
-  in
-  print_endline "";
   Database.collect database_label request pv
+;;
+
+let insert_request =
+  Format.asprintf
+    {sql|
+    INSERT INTO pool_contacts_possible_duplicates (
+      uuid, 
+      target_user_uuid, 
+      contact_uuid,
+      score
+    ) VALUES 
+      %s
+    ON DUPLICATE KEY UPDATE
+      score = VALUES(score),
+      updated_at = NOW();
+  |sql}
+;;
+
+let insert pool = function
+  | [] -> Lwt.return_unit
+  | rows ->
+    let open Dynparam in
+    let open Caqti_request.Infix in
+    let id = Pool_common.Repo.Id.t in
+    let id_sql = "UNHEX(REPLACE(?, '-', ''))" in
+    let dyn, sql =
+      rows
+      |> CCList.fold_left
+           (fun (dyn, sql) (target_id, contact_id, score) ->
+             let dyn =
+               dyn
+               |> add id (Pool_common.Id.create ())
+               |> add id target_id
+               |> add id contact_id
+               |> add Caqti_type.float score
+             in
+             let values =
+               [ id_sql; id_sql; id_sql; "?" ]
+               |> CCString.concat ","
+               |> Format.asprintf "(%s)"
+             in
+             let sql = sql @ [ values ] in
+             dyn, sql)
+           (empty, [])
+    in
+    let sql = CCString.concat "," sql in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request = insert_request sql |> pt ->. Caqti_type.unit in
+    Database.exec pool request pv
+;;
+
+let find_by_contact pool contact =
+  let where =
+    {sql|
+      WHERE pool_contacts_possible_duplicates.target_user_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+  in
+  let request =
+    let open Caqti_request.Infix in
+    find_request_sql ~count:false where |> Contact.Repo.Id.t ->* t
+  in
+  Database.collect pool request (Contact.id contact)
 ;;

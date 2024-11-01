@@ -694,11 +694,12 @@ let message_history
     ]
 ;;
 
-let[@warning "-27"] duplicates context contact possible_duplicates =
+let duplicates contact possible_duplicates =
+  let open Duplicate_contacts in
   let open Contact in
   let table =
     possible_duplicates
-    |> CCList.map (fun (contact, score) ->
+    |> CCList.map (fun { contact; score; _ } ->
       [ a
           ~a:[ a_href (Http_utils.Url.Admin.contact_path ~id:(id contact) ()) ]
           [ txt (fullname contact) ]
