@@ -295,6 +295,15 @@ module Sql = struct
       Entity.Model.(show Contact)
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
+
+  let all_published pool =
+    let open Utils.Lwt_result.Infix in
+    let open Caqti_request.Infix in
+    let where = "WHERE pool_custom_fields.published_at IS NOT NULL" in
+    let request = select_sql where |> Caqti_type.unit ->* Repo_entity.t in
+    Database.collect pool request ()
+    >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+  ;;
 end
 
 let find_by_model = Sql.find_by_model

@@ -452,6 +452,7 @@ val find_by_model : Database.Label.t -> Model.t -> t list Lwt.t
 val find_by_group : Database.Label.t -> Group.Id.t -> t list Lwt.t
 val find_ungrouped_by_model : Database.Label.t -> Model.t -> t list Lwt.t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val all_published : Database.Label.t -> t list Lwt.t
 
 val find_by_table_view
   :  Database.Label.t

@@ -33,8 +33,8 @@ module Column = struct
 end
 
 let columns =
-  [ Field.Name, SimilarityCriteria.Fuzzy, "user_users", "name"
-  ; Field.Firstname, SimilarityCriteria.Fuzzy, "user_users", "given_name"
+  [ Field.Name, SimilarityCriteria.Exact, "user_users", "name"
+  ; Field.Firstname, SimilarityCriteria.Exact, "user_users", "given_name"
   ]
   |> CCList.map (fun (field, criteria, sql_table, sql_column) ->
     { Column.field; criteria; sql_table; sql_column })
