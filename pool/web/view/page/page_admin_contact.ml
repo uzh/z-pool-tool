@@ -695,8 +695,8 @@ let message_history
 ;;
 
 let[@warning "-27"] duplicates context contact possible_duplicates =
+  let open Contact in
   let table =
-    let open Contact in
     possible_duplicates
     |> CCList.map (fun (contact, score) ->
       [ a
@@ -708,5 +708,7 @@ let[@warning "-27"] duplicates context contact possible_duplicates =
       |> tr)
     |> table ~a:[ a_class [ "table"; "table-striped" ] ]
   in
-  div ~a:[ a_class [ "trim"; "safety-margin" ] ] [ table ]
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1 [ txt (fullname contact) ]; table ]
 ;;
