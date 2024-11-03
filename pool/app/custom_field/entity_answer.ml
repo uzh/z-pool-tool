@@ -20,3 +20,13 @@ let value { value; _ } = value
 let admin_value { admin_value; _ } = admin_value
 let admin_value_opt t = CCOption.bind t admin_value
 let entity_uuid { entity_uuid; _ } = entity_uuid
+
+let equal_value a b =
+  match a, b with
+  | Some a, Some b ->
+    (match a.value, b.value with
+     | Some a, Some b -> a = b
+     | None, None -> true
+     | _ -> false)
+  | _, _ -> false
+;;

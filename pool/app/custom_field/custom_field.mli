@@ -267,6 +267,7 @@ module Public : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val equal_answer : t -> t -> bool
   val id : t -> Id.t
   val entity_id : t -> Pool_common.Id.t option
   val name_value : Pool_common.Language.t -> t -> string

@@ -35,20 +35,28 @@ let show
   (target_contact, target_fields)
   (duplicate, duplicate_fields)
   =
+  let highlighted = [ a_class [ "bg-red-lighter" ] ] in
   let duplicate_contact = duplicate.Duplicate_contacts.contact in
   let show_field = Pool_common.Utils.field_to_string_capitalized language in
-  let field_cells =
+  let field_rows =
     let open Custom_field in
     target_fields
-    |> CCList.map (fun field ->
-      let head = Public.name_value language field in
-      let answer fields =
-        CCList.find_opt (fun f -> Public.id f = Public.id field) fields
-        |> CCOption.map_or
-             ~default:(txt "")
-             (Component.CustomField.answer_to_html user language)
+    |> CCList.map (fun target_field ->
+      let head = Public.name_value language target_field in
+      let find = CCList.find (fun f -> Public.id f = Public.id target_field) in
+      let to_html = Component.CustomField.answer_to_html user language in
+      let duplicate_field = find duplicate_fields in
+      let attrs =
+        if Public.equal_answer target_field duplicate_field
+        then highlighted
+        else []
       in
-      head, answer)
+      tr
+        ~a:attrs
+        [ th [ txt head ]
+        ; td [ to_html target_field ]
+        ; td [ to_html duplicate_field ]
+        ])
   in
   let cells : (string * (Contact.t -> uri)) list_wrap =
     let open Pool_user in
@@ -67,20 +75,18 @@ let show
     let rows =
       cells
       |> CCList.map (fun (head, fnc) ->
+        let target_value = fnc target_contact in
+        let duplicate_value = fnc duplicate_contact in
+        let attr =
+          if target_value = duplicate_value && target_value != ""
+          then highlighted
+          else []
+        in
         [ th [ txt head ]
-        ; td [ fnc target_contact |> txt ]
-        ; td [ fnc duplicate_contact |> txt ]
+        ; td [ target_value |> txt ]
+        ; td [ duplicate_value |> txt ]
         ]
-        |> tr)
-    in
-    let field_rows =
-      field_cells
-      |> CCList.map (fun (head, fnc) ->
-        [ th [ txt head ]
-        ; td [ fnc target_fields ]
-        ; td [ fnc duplicate_fields ]
-        ]
-        |> tr)
+        |> tr ~a:attr)
     in
     rows @ field_rows |> table ~a:[ a_class [ "table"; "striped" ] ]
   in

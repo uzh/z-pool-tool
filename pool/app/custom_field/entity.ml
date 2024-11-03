@@ -453,6 +453,18 @@ module Public = struct
     | Text of string public * string Answer.t option
   [@@deriving eq, show, variants]
 
+  let[@warning "-4"] equal_answer a b =
+    let open Answer in
+    match a, b with
+    | Boolean (_, a), Boolean (_, b) -> equal_value a b
+    | Date (_, a), Date (_, b) -> equal_value a b
+    | MultiSelect (_, _, a), MultiSelect (_, _, b) -> equal_value a b
+    | Number (_, a), Number (_, b) -> equal_value a b
+    | Select (_, _, a), Select (_, _, b) -> equal_value a b
+    | Text (_, a), Text (_, b) -> equal_value a b
+    | _ -> false
+  ;;
+
   let id (t : t) =
     match t with
     | Boolean ({ id; _ }, _)
