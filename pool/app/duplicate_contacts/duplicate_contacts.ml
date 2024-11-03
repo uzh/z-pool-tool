@@ -7,4 +7,5 @@ let run database_label contact_uuid =
   >|> Repo.insert database_label
 ;;
 
+let find = Repo.find
 let find_by_contact = Repo.find_by_contact

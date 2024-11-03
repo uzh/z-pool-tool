@@ -260,6 +260,19 @@ let insert pool = function
     Database.exec pool request pv
 ;;
 
+let find_request =
+  let open Caqti_request.Infix in
+  {sql| WHERE pool_contacts_possible_duplicates.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+  |> find_request_sql
+  |> Id.t ->! t
+;;
+
+let find pool id =
+  let open Utils.Lwt_result.Infix in
+  Database.find_opt pool find_request id
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Duplicate)
+;;
+
 let find_by_contact pool contact =
   let where =
     {sql|

@@ -39,6 +39,10 @@ module Name = struct
   let find_opt lang t = CCList.assoc_opt ~eq:Language.equal lang t
   let find_opt_or lang default t = find_opt lang t |> CCOption.value ~default
 
+  let find lang t =
+    find_opt lang t |> CCOption.value ~default:(CCList.hd t |> snd)
+  ;;
+
   let create sys_languages names =
     CCList.filter
       (fun lang ->

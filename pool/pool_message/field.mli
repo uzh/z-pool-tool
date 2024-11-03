@@ -66,6 +66,7 @@ type t =
   | Distribution
   | DistributionField
   | Duration
+  | Duplicate
   | Email
   | EmailAddress
   | EmailAddressUnverified

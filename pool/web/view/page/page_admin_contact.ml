@@ -7,6 +7,7 @@ module Input = Component.Input
 module Icon = Component.Icon
 module Modal = Component.Modal
 module Status = Component.UserStatus.Contact
+module Duplicates = Page_admin_contact_duplicates
 
 let path =
   Contact.id %> Contact.Id.value %> Format.asprintf "/admin/contacts/%s"
@@ -692,24 +693,4 @@ let message_history
         (message_history_url contact)
         messages
     ]
-;;
-
-let duplicates contact possible_duplicates =
-  let open Duplicate_contacts in
-  let open Contact in
-  let table =
-    possible_duplicates
-    |> CCList.map (fun { contact; score; _ } ->
-      [ a
-          ~a:[ a_href (Http_utils.Url.Admin.contact_path ~id:(id contact) ()) ]
-          [ txt (fullname contact) ]
-      ; CCFloat.to_string score |> txt
-      ]
-      |> CCList.map (fun html -> td [ html ])
-      |> tr)
-    |> table ~a:[ a_class [ "table"; "table-striped" ] ]
-  in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt (fullname contact) ]; table ]
 ;;

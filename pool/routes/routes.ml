@@ -678,6 +678,13 @@ module Admin = struct
           ; post (Experiment |> url_key) enroll_contact_post
           ]
         in
+        let duplicates =
+          let open Duplicates in
+          let specific = [ get "" ~middlewares:[] show ] in
+          [ get "" ~middlewares:[] index
+          ; choose ~scope:(Duplicate |> url_key) specific
+          ]
+        in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
@@ -705,7 +712,7 @@ module Admin = struct
             ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))
             field_specific
         ; choose ~scope:(Tag |> human_url) tags
-        ; get "/duplicates" ~middlewares:[ Access.read ] duplicates
+        ; choose ~scope:(Duplicate |> human_url) duplicates
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index

@@ -507,35 +507,7 @@ let message_history req =
   |> Lwt_result.return
 ;;
 
-let duplicates req =
-  let open Utils.Lwt_result.Infix in
-  let contact_id = contact_id req in
-  let error_path =
-    Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id)
-  in
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@
-    let open Contact in
-    let* contact =
-      HttpUtils.get_field_router_param req Field.Contact
-      |> Id.of_string
-      |> find database_label
-    in
-    (* DEV ONLY *)
-    let%lwt () =
-      Duplicate_contacts.run database_label (Id.to_common contact_id)
-    in
-    let%lwt possible_duplicates =
-      Duplicate_contacts.find_by_contact database_label contact
-    in
-    Page.Admin.Contact.duplicates contact possible_duplicates
-    |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
-  in
-  result |> extract_happy_path req
-;;
-
+module Duplicates = Admin_contact_duplicates
 module Tags = Admin_contacts_tags
 
 module Access : sig

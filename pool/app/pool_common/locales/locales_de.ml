@@ -74,6 +74,7 @@ let rec field_to_string =
   | Distribution -> "Verteilung"
   | DistributionField -> "Feld"
   | Duration -> "Dauer"
+  | Duplicate -> "Mögliches Duplikat"
   | Email -> "E-Mail"
   | EmailAddress -> "E-Mail-Adresse"
   | EmailAddressUnverified -> "Unverifizierte E-Mail-Adresse"
