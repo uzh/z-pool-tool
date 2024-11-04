@@ -26,6 +26,7 @@ let update req command success_message =
   let open Utils.Lwt_result.Infix in
   let open Pool_message.Field in
   let open Pool_tenant in
+  let open Database.Pool in
   let%lwt multipart_encoded =
     Sihl.Web.Request.to_multipart_form_data_exn req
     ||> HttpUtils.remove_empty_values_multiplart
@@ -59,15 +60,15 @@ let update req command success_message =
             ; tenant_model.Write.email_logo >|= EmailLogo.Write.value, EmailLogo
             ]
       in
-      let* (_ : string list) = File.update_files Database.root updates req in
+      let* (_ : string list) = File.update_files Root.label updates req in
       let* uploaded_files =
         match creations with
         | [] -> Lwt_result.return []
-        | fields -> File.upload_files Database.root (CCList.map show fields) req
+        | fields -> File.upload_files Root.label (CCList.map show fields) req
       in
       let* logo_files =
         File.upload_files
-          Database.root
+          Root.label
           (Pool_tenant.LogoMapping.LogoType.all_fields |> CCList.map show)
           req
       in
@@ -81,20 +82,16 @@ let update req command success_message =
         | `EditDatabase ->
           let open UpdateDatabase in
           let* { database_url; database_label } = decode urlencoded |> lift in
-          let* database =
-            Database.test_and_create database_url database_label
-          in
+          let* database = create_tested database_label database_url in
           handle ~tags tenant_model database |> lift
       in
       let files = logo_files @ uploaded_files in
       (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
       |> HttpUtils.format_request_boolean_values [ TenantDisabledFlag |> show ]
       |> events_list
-      >|> HttpUtils.File.cleanup_upload Database.root files
+      >|> HttpUtils.File.cleanup_upload Root.label files
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
-    in
+    let handle = Lwt_list.iter_s (Pool_event.handle_event ~tags Root.label) in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         redirect_path
@@ -130,7 +127,9 @@ let delete_asset req =
       Cqrs_command.Pool_tenant_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
+    let handle =
+      Lwt_list.iter_s (Pool_event.handle_event Database.Pool.Root.label)
+    in
     let destroy_file () =
       Storage.delete database_label (Common.Id.value asset_id)
     in

@@ -97,12 +97,8 @@ module Repo : sig
     -> string
     -> string
 
-  val find : Label.t -> Label.t -> (t, Pool_message.Error.t) Lwt_result.t
-  val find_all : Label.t -> t list Lwt.t
   val insert_request : (t, unit, [ `Zero ]) Caqti_request.t
-  val insert : Label.t -> t -> unit Lwt.t
   val update_request : (Label.t * t, unit, [ `Zero ]) Caqti_request.t
-  val update : Label.t -> t -> t -> unit Lwt.t
 
   module Status : Pool_model.Base.CaqtiSig with type t = Status.t
   module Label : Pool_model.Base.CaqtiSig with type t = Label.t
@@ -124,12 +120,6 @@ module Config : sig
   val database_pool_size : int
   val expected_databases : int
 end
-
-val test_and_create : Url.t -> Label.t -> (t, Pool_message.Error.t) Lwt_result.t
-val connect : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
-val disconnect : ?error:Caqti_error.t -> Entity.Label.t -> unit Lwt.t
-val add_pool : ?required:bool -> t -> unit
-val drop_pool : Label.t -> unit Lwt.t
 
 val query
   :  Label.t
@@ -183,15 +173,6 @@ val exclude_ids
   -> Dynparam.t
   -> 'a list
   -> (Dynparam.t, string option) CCPair.t
-
-val with_disabled_fk_check
-  :  Label.t
-  -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
-  -> 'a Lwt.t
-
-val clean_requests
-  :  Label.t
-  -> (unit, unit, [ `Zero ]) Caqti_request.t list Lwt.t
 
 val clean_all : Label.t -> unit Lwt.t
 
@@ -283,31 +264,52 @@ module Migration : sig
   val extend_migrations : (string * steps) list -> unit -> (string * steps) list
 end
 
-module Root : sig
-  val add : unit -> unit
-  val setup : unit -> unit Lwt.t
-  val start : unit -> unit Lwt.t
-  val stop : unit -> unit Lwt.t
-end
+module Pool : sig
+  val initialize : ?clear:bool -> unit -> unit Lwt.t
+  val create_tested : Label.t -> Url.t -> (t, Pool_message.Error.t) Lwt_result.t
 
-val root : Label.t
-val is_root : Label.t -> bool
+  val create_validated_and_tested
+    :  string
+    -> string
+    -> (t, Pool_message.Error.t) Lwt_result.t
 
-module Tenant : sig
-  val add : t -> Label.t Lwt.t
-  val setup : unit -> Label.t list Lwt.t
-  val find : Label.t -> (t, Pool_message.Error.t) Lwt_result.t
-  val find_all_by_status : ?status:Status.t list -> unit -> Label.t list Lwt.t
-  val database_status_by_label : Label.t -> Status.t option Lwt.t
+  val connect : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
+  val disconnect : ?error:Caqti_error.t -> Entity.Label.t -> unit Lwt.t
 
-  val find_label_by_url
+  val all
     :  ?allowed_status:Status.t list
-    -> Url.t
-    -> (Label.t, Pool_message.Error.t) Lwt_result.t
+    -> ?exclude:Label.t list
+    -> unit
+    -> Label.t list
 
-  val update_status : Label.t -> Status.t -> unit Lwt.t
-  val set_migration_pending : Label.t list -> unit Lwt.t
-  val start : unit -> unit Lwt.t
-  val stop : unit -> unit Lwt.t
-  val test_connection : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
+  val is_root : Label.t -> bool
+
+  module Root : sig
+    val label : Label.t
+    val add : unit -> unit
+    val setup : unit -> unit Lwt.t
+    val start : unit -> unit Lwt.t
+    val stop : unit -> unit Lwt.t
+  end
+
+  module Tenant : sig
+    val reset : Label.t -> unit Lwt.t
+    val add : t -> Label.t
+    val drop : Label.t -> unit Lwt.t
+    val setup : unit -> Label.t list Lwt.t
+    val all : ?status:Status.t list -> unit -> Label.t list
+    val find : Label.t -> (t, Pool_message.Error.t) result
+    val find_status_by_label : Label.t -> Status.t option
+
+    val find_label_by_url
+      :  ?allowed_status:Status.t list
+      -> Url.t
+      -> (Label.t, Pool_message.Error.t) result
+
+    val update_status : Label.t -> Status.t -> unit Lwt.t
+    val set_migration_pending : Label.t list -> unit Lwt.t
+    val start : unit -> unit Lwt.t
+    val stop : unit -> unit Lwt.t
+    val test_connection : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
+  end
 end

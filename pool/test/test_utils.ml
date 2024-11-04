@@ -605,20 +605,6 @@ module Repo = struct
   ;;
 end
 
-let truncate_tables database_label tables =
-  let open Utils.Lwt_result.Infix in
-  let open Caqti_request.Infix in
-  let query name =
-    [%string "TRUNCATE TABLE %{name}"] |> Caqti_type.(unit ->. unit)
-  in
-  Database.with_disabled_fk_check database_label (fun connection ->
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    CCList.map query tables
-    |> Lwt_list.map_s (CCFun.flip Connection.exec ())
-    ||> CCResult.flatten_l)
-  ||> Utils.flat_unit
-;;
-
 let case
   ?(preparation : unit -> (unit, Pool_message.Error.t) Lwt_result.t =
     fun () -> Lwt.return_ok ())

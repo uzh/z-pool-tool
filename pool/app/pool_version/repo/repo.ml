@@ -31,7 +31,7 @@ let insert_request =
   |> Repo_entity.Write.t ->. Caqti_type.unit
 ;;
 
-let insert = Database.exec Database.root insert_request
+let insert = Database.exec Database.Pool.Root.label insert_request
 
 let update_request =
   let open Caqti_request.Infix in
@@ -47,7 +47,7 @@ let update_request =
   |> Repo_entity.Write.t ->. Caqti_type.unit
 ;;
 
-let update = Database.exec Database.root update_request
+let update = Database.exec Database.Pool.Root.label update_request
 
 let find_request_sql ?(count = false) where_fragment =
   let columns =
@@ -70,13 +70,13 @@ let find_request =
 
 let find id =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt Database.root find_request id
+  Database.find_opt Database.Pool.Root.label find_request id
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Announcement)
 ;;
 
 let all ?query () =
   Query.collect_and_count
-    Database.root
+    Database.Pool.Root.label
     query
     ~select:find_request_sql
     Repo_entity.t
@@ -85,7 +85,7 @@ let all ?query () =
 let all_on_tenant ?query () =
   let where = "published_at IS NOT NULL", Dynparam.empty in
   Query.collect_and_count
-    Database.root
+    Database.Pool.Root.label
     query
     ~where
     ~select:find_request_sql

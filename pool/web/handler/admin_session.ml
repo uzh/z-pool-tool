@@ -558,7 +558,7 @@ let detail page req =
   let open Utils.Lwt_result.Infix in
   let session_id = session_id req in
   let error_path =
-    (try experiment_id req |> CCOption.some with
+    (try experiment_id req |> CCOption.return with
      | _ -> None)
     |> CCOption.map_or
          ~default:"/admin/dashboard"
@@ -626,7 +626,7 @@ let update_handler action req =
         match session.Session.follow_up_to with
         | None -> Lwt_result.return None
         | Some parent_id ->
-          parent_id |> Session.find database_label >|+ CCOption.some
+          parent_id |> Session.find database_label >|+ CCOption.return
       in
       Lwt_result.return (session, follow_ups, parent)
     in

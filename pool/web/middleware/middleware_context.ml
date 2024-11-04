@@ -7,7 +7,9 @@ let database_label_of_request is_root req =
     | Ok { Tenant.tenant; _ } -> Ok tenant.Pool_tenant.database_label
     | Error _ -> Error Pool_message.(Error.Missing Field.Context)
   in
-  if is_root then Ok Database.root else tenant_database_label_of_request req
+  if is_root
+  then Ok Database.Pool.Root.label
+  else tenant_database_label_of_request req
 ;;
 
 let context () =

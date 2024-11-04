@@ -2,7 +2,7 @@ let root_data =
   let name = "seed.root" in
   let description = "Seed development data to root database" in
   Command_utils.make_no_args name description (fun () ->
-    let%lwt () = Database.Root.setup () in
+    let%lwt () = Database.Pool.Root.setup () in
     let%lwt () = Seed.Root.create () in
     Lwt.return_some ())
 ;;
@@ -13,15 +13,15 @@ let root_data_clean =
     "Clean database and seed development data to root database"
   in
   Command_utils.make_no_args name description (fun () ->
-    let%lwt () = Database.Root.setup () in
-    let%lwt () = Database.clean_all Database.root in
+    let%lwt () = Database.Pool.Root.setup () in
+    let%lwt () = Database.clean_all Database.Pool.Root.label in
     let%lwt () = Seed.Root.create () in
     Lwt.return_some ())
 ;;
 
 let seed_tenant_clean ?is_test db_pools =
   let%lwt () = Lwt_list.iter_p Database.clean_all db_pools in
-  let%lwt () = Seed.Tenant.create ?is_test db_pools () in
+  let%lwt () = Seed.Tenant.create ?is_test db_pools in
   Lwt.return_some ()
 ;;
 
@@ -29,8 +29,8 @@ let tenant_data =
   let name = "seed.tenant" in
   let description = "Seed development data to tenant databases" in
   Command_utils.make_no_args name description (fun () ->
-    let%lwt db_pools = Command_utils.setup_databases () in
-    let%lwt () = Seed.Tenant.create db_pools () in
+    let%lwt () = Database.Pool.initialize () in
+    let%lwt () = Database.Pool.Tenant.all () |> Seed.Tenant.create in
     Lwt.return_some ())
 ;;
 
@@ -40,8 +40,8 @@ let tenant_data_clean =
     "Clean database and seed development data to all tenant databases"
   in
   Command_utils.make_no_args name description (fun () ->
-    let%lwt db_pools = Command_utils.setup_databases () in
-    seed_tenant_clean db_pools)
+    let%lwt () = Database.Pool.initialize () in
+    Database.Pool.Tenant.all () |> seed_tenant_clean)
 ;;
 
 let tenant_data_test =
@@ -50,8 +50,8 @@ let tenant_data_test =
     "Clean database and seed development data for test purpose"
   in
   Command_utils.make_no_args name description (fun () ->
-    let%lwt db_pools = Command_utils.setup_databases () in
-    seed_tenant_clean ~is_test:true db_pools)
+    let%lwt () = Database.Pool.initialize () in
+    Database.Pool.Tenant.all () |> seed_tenant_clean ~is_test:true)
 ;;
 
 let tenant_data_clean_specific =

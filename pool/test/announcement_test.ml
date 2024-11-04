@@ -118,7 +118,7 @@ let create () =
 let find_current _ () =
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in
-  let pool = Database.root in
+  let pool = Database.Pool.Root.label in
   let%lwt tenant =
     Pool_tenant.find_by_label Test_utils.Data.database_label ||> get_exn
   in

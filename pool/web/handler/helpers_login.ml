@@ -90,7 +90,7 @@ let log_request = Logging_helper.log_request_with_ip ~src "Failed login attempt"
 let login req urlencoded database_label =
   let open Utils.Lwt_result.Infix in
   let open Pool_user.FailedLoginAttempt in
-  let is_root = Database.is_root database_label in
+  let is_root = Database.Pool.is_root database_label in
   let tags = Pool_context.Logger.Tags.req req in
   let* email, password = login_params urlencoded in
   let handle_login login_attempts =

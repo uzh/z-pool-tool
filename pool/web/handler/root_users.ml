@@ -11,7 +11,9 @@ let active_navigation = "/root/users"
 
 let index req =
   let context = Pool_context.find_exn req in
-  let%lwt root_list = Admin.find_by ~query:Admin.default_query Database.root in
+  let%lwt root_list =
+    Admin.find_by ~query:Admin.default_query Database.Pool.Root.label
+  in
   let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
   Page.Root.Users.list root_list context flash_fetcher
   |> General.create_root_layout ~active_navigation context
@@ -36,7 +38,7 @@ let create req =
       RootCommand.Create.(urlencoded |> decode >>= handle ~tags)
     in
     let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
+      Lwt_list.iter_s (Pool_event.handle_event ~tags Database.Pool.Root.label)
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
@@ -68,7 +70,7 @@ let toggle_status req =
         [ Message.set ~success:[ Success.Updated Field.Root ] ]
     in
     id
-    |> Admin.find Database.root
+    |> Admin.find Database.Pool.Root.label
     >>= events
     >|- (fun err -> err, active_navigation)
     |>> handle

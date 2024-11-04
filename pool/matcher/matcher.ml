@@ -2,7 +2,7 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "matcher.service"
-let tags = Database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create Pool.Root.label)
 
 type config =
   { start : bool option
@@ -325,13 +325,13 @@ let match_invitations interval pools =
 ;;
 
 let start_matcher () =
-  let open Utils.Lwt_result.Infix in
   let open Schedule in
   let interval = Ptime.Span.of_int_s (5 * 60) in
   let periodic_fcn () =
-    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
-    Database.(Tenant.find_all_by_status ~status:Status.[ Active ] ())
-    >|> match_invitations interval
+    Logs.debug ~src (fun m ->
+      m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
+    Database.(Pool.Tenant.all ~status:Status.[ Active ] ())
+    |> match_invitations interval
   in
   let schedule =
     create

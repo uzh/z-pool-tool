@@ -94,7 +94,7 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
 let create_root_admin =
   let create_exn email password given_name name =
     let email = email |> Pool_user.EmailAddress.of_string in
-    match%lwt Pool_user.find_by_email_opt Database.root email with
+    match%lwt Pool_user.find_by_email_opt Database.Pool.Root.label email with
     | None ->
       let%lwt () =
         let open Admin in
@@ -107,7 +107,9 @@ let create_root_admin =
           ; lastname = name |> Pool_user.Lastname.of_string
           ; roles = [ `Operator, None ]
           }
-        |> handle_event ~tags:Database.(Logger.Tags.create root) Database.root
+        |> handle_event
+             ~tags:Database.(Logger.Tags.create Pool.Root.label)
+             Database.Pool.Root.label
       in
       Lwt.return_some ()
     | Some _ -> failwith "The user already exists."
@@ -130,7 +132,7 @@ Example: admin.root.create example@mail.com securePassword Max Muster
     ~help
     (function
     | [ email; password; given_name; name ] ->
-      let%lwt () = Database.Root.setup () in
+      let%lwt () = Database.Pool.Root.setup () in
       create_exn email password given_name name
     | _ -> Command_utils.failwith_missmatch help)
 ;;

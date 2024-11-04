@@ -59,16 +59,15 @@ let run database_label =
 ;;
 
 let run_all () =
-  let open Utils.Lwt_result.Infix in
-  Database.(Tenant.find_all_by_status ~status:Status.[ Active ] ())
-  >|> Lwt_list.iter_s run
+  Database.(Pool.Tenant.all ~status:Status.[ Active ] ()) |> Lwt_list.iter_s run
 ;;
 
 let start () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s interval_s in
   let periodic_fcn () =
-    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
+    Logs.debug ~src (fun m ->
+      m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run_all ()
   in
   create

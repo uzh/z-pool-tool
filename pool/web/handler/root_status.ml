@@ -43,7 +43,7 @@ let show _ =
     let%lwt databases = Pool_tenant.find_all () in
     let default = "" in
     let%lwt root_job_count =
-      let label = Database.root in
+      let label = Database.Pool.Root.label in
       Pool_queue.count_all_workable label
       ||> CCResult.map_or CCInt.to_string ~default
       ||> fun count -> label, count
@@ -106,7 +106,9 @@ let show _ =
         ||> create_entry ~database_label "ok")
     in
     let%lwt ok_root =
-      schedules_of Database.root ||> Utils.Bool.to_string ||> create_entry "ok"
+      schedules_of Database.Pool.Root.label
+      ||> Utils.Bool.to_string
+      ||> create_entry "ok"
     in
     (ok_root :: ok_tenants) @ list_database_status @ list_job_counts
     |> CCList.map (fun (k, v) -> k, `String v)

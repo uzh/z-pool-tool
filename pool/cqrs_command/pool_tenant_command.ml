@@ -119,7 +119,7 @@ end = struct
       [ Pool_tenant.Created (tenant, database) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; Pool_database.Migrated database |> Pool_event.database
-      ; System_event.Job.TenantDatabaseAdded (Database.label database)
+      ; System_event.Job.TenantDatabaseReset (Database.label database)
         |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
       ]
@@ -306,7 +306,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateDatabase" ~tags);
     Ok
       [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
-      ; System_event.Job.TenantDatabaseUpdated (Database.label database)
+      ; System_event.Job.TenantDatabaseReset (Database.label database)
         |> system_event_from_job ?id:system_event_id
       ]
   ;;

@@ -11,7 +11,7 @@ let from_root_only () =
         create
           ( []
           , Pool_common.Language.En
-          , Database.root
+          , Database.Pool.Root.label
           , None
           , csrf
           , Guest

@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let sign_up =
@@ -109,8 +111,7 @@ let tenant_specific_profile_update_trigger =
        let open Utils.Lwt_result.Infix in
        pool
        |> trigger_profile_update_by_tenant
-       ||> get_or_failwith
-       ||> CCOption.some)
+       ||> get_or_failwith %> CCOption.return)
 ;;
 
 let all_profile_update_triggers =
@@ -119,9 +120,9 @@ let all_profile_update_triggers =
     "Send profile update triggers of all tenants"
     (fun () ->
        let open Utils.Lwt_result.Infix in
-       Command_utils.setup_databases ()
-       >|> Lwt_list.map_s trigger_profile_update_by_tenant
+       let%lwt () = Database.Pool.initialize () in
+       Database.Pool.Tenant.all ()
+       |> Lwt_list.map_s trigger_profile_update_by_tenant
        ||> CCList.all_ok
-       ||> get_or_failwith
-       ||> fun (_ : unit list) -> Some ())
+       ||> get_or_failwith %> Utils.flat_unit %> CCOption.return)
 ;;

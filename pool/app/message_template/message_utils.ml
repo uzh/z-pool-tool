@@ -31,7 +31,7 @@ let create_public_url_with_params pool_url path =
 ;;
 
 let prepend_root_directory pool url =
-  match Database.is_root pool with
+  match Database.Pool.is_root pool with
   | true -> Format.asprintf "/root%s" url
   | false -> url
 ;;
