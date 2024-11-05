@@ -284,8 +284,8 @@ let find_by_contact pool contact =
           WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
         )
         SELECT  
-          duplicates.uuid,
-          duplicates.target_user_uuid,
+          %{id_select_fragment ~field:"duplicates.uuid"},
+          %{id_select_fragment ~field:"duplicates.target_user_uuid"},
           %{contact_columns},
           duplicates.score
         FROM duplicates
