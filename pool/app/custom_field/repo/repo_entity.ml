@@ -799,68 +799,32 @@ let to_entity
   let validation_schema schema =
     Validation.(validation |> raw_of_yojson |> schema)
   in
+  let make_field validation =
+    { id
+    ; model
+    ; name
+    ; hint
+    ; validation
+    ; required
+    ; disabled
+    ; custom_field_group_id
+    ; admin_hint
+    ; admin_override
+    ; admin_view_only
+    ; admin_input_only
+    ; prompt_on_registration
+    ; published_at
+    ; show_on_session_close_page
+    ; show_on_session_detail_page
+    ; duplicate_weighting
+    }
+  in
   match field_type with
-  | FieldType.Boolean ->
-    Boolean
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation = Validation.pure
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      ; duplicate_weighting
-      }
-  | FieldType.Date ->
-    Date
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation = Validation.pure
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      ; duplicate_weighting
-      }
+  | FieldType.Boolean -> Boolean (make_field Validation.pure)
+  | FieldType.Date -> Date (make_field Validation.pure)
   | FieldType.Number ->
     let validation = validation_schema Validation.Number.schema in
-    Number
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      ; duplicate_weighting
-      }
+    Number (make_field validation)
   | FieldType.Select ->
     let options =
       CCList.filter_map
@@ -868,26 +832,7 @@ let to_entity
           if Pool_common.Id.equal field_id id then Some option else None)
         select_options
     in
-    Select
-      ( { id
-        ; model
-        ; name
-        ; hint
-        ; validation = Validation.pure
-        ; required
-        ; disabled
-        ; custom_field_group_id
-        ; admin_hint
-        ; admin_override
-        ; admin_view_only
-        ; admin_input_only
-        ; prompt_on_registration
-        ; published_at
-        ; show_on_session_close_page
-        ; show_on_session_detail_page
-        ; duplicate_weighting
-        }
-      , options )
+    Select (make_field Validation.pure, options)
   | FieldType.MultiSelect ->
     let options =
       CCList.filter_map
@@ -896,45 +841,8 @@ let to_entity
         select_options
     in
     let validation = validation_schema Validation.MultiSelect.schema in
-    MultiSelect
-      ( { id
-        ; model
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; disabled
-        ; custom_field_group_id
-        ; admin_hint
-        ; admin_override
-        ; admin_view_only
-        ; admin_input_only
-        ; prompt_on_registration
-        ; published_at
-        ; show_on_session_close_page
-        ; show_on_session_detail_page
-        ; duplicate_weighting
-        }
-      , options )
+    MultiSelect (make_field validation, options)
   | FieldType.Text ->
     let validation = validation_schema Validation.Text.schema in
-    Text
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      ; duplicate_weighting
-      }
+    Text (make_field validation)
 ;;

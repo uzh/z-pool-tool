@@ -732,138 +732,39 @@ let create
   let show_on_session_detail_page = false in
   let required = if admin_input_only then false else required in
   let admin_input_only = admin_view_only || admin_input_only in
+  let make_field validation =
+    { id
+    ; model
+    ; name
+    ; hint
+    ; validation
+    ; required
+    ; disabled
+    ; custom_field_group_id
+    ; admin_hint
+    ; admin_override
+    ; admin_view_only
+    ; admin_input_only
+    ; published_at
+    ; prompt_on_registration
+    ; show_on_session_close_page
+    ; show_on_session_detail_page
+    ; duplicate_weighting
+    }
+  in
   match (field_type : FieldType.t) with
-  | FieldType.Boolean ->
-    Ok
-      (Boolean
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation = Validation.pure
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         ; duplicate_weighting
-         })
-  | FieldType.Date ->
-    Ok
-      (Date
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation = Validation.pure
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         ; duplicate_weighting
-         })
+  | FieldType.Boolean -> Ok (Boolean (make_field Validation.pure))
+  | FieldType.Date -> Ok (Date (make_field Validation.pure))
   | FieldType.Number ->
     let validation = Validation.Number.schema validation in
-    Ok
-      (Number
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         ; duplicate_weighting
-         })
+    Ok (Number (make_field validation))
   | FieldType.Text ->
     let validation = Validation.Text.schema validation in
-    Ok
-      (Text
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         ; duplicate_weighting
-         })
+    Ok (Text (make_field validation))
   | FieldType.MultiSelect ->
     let validation = Validation.MultiSelect.schema validation in
-    Ok
-      (MultiSelect
-         ( { id
-           ; model
-           ; name
-           ; hint
-           ; validation
-           ; required
-           ; disabled
-           ; custom_field_group_id
-           ; admin_hint
-           ; admin_override
-           ; admin_view_only
-           ; admin_input_only
-           ; published_at
-           ; prompt_on_registration
-           ; show_on_session_close_page
-           ; show_on_session_detail_page
-           ; duplicate_weighting
-           }
-         , select_options ))
-  | FieldType.Select ->
-    Ok
-      (Select
-         ( { id
-           ; model
-           ; name
-           ; hint
-           ; validation = Validation.pure
-           ; required
-           ; disabled
-           ; custom_field_group_id
-           ; admin_hint
-           ; admin_override
-           ; admin_view_only
-           ; admin_input_only
-           ; published_at
-           ; prompt_on_registration
-           ; show_on_session_close_page
-           ; show_on_session_detail_page
-           ; duplicate_weighting
-           }
-         , select_options ))
+    Ok (MultiSelect (make_field validation, select_options))
+  | FieldType.Select -> Ok (Select (make_field Validation.pure, select_options))
 ;;
 
 let id = function
