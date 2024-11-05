@@ -241,6 +241,7 @@ type hint =
   | LocationsIndex
   | MailingLimit
   | MailingLimitExceedsMatchingContacts
+  | MergeContacts
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentCancellation
   | MessageTemplateAssignmentConfirmation

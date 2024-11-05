@@ -488,6 +488,10 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | MailingLimitExceedsMatchingContacts ->
     "Die angegebene Limite ist grösser als die Anzahl Kontakt, die die \
      Kriterien dieses Experiments erfüllen."
+  | MergeContacts ->
+    {|Wählen Sie, von welchem Kontakt die Attribute übernommen werden. 
+    
+Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert vorhanden, wird dieser vor dem Kontaktwert berücksichtig.|}
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
      zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."

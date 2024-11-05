@@ -472,6 +472,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MailingLimitExceedsMatchingContacts ->
     "The given limit is larger than the number of contacts meeting the \
      criteria of this experiment."
+  | MergeContacts ->
+    {|Select which attributes are to be transferred from which contact. 
+      
+  The fields that are considered to be the same are marked. If an admin value exists, this is taken into account before the contact value.|}
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been \
      temporarily suspended because of too many failed login attempts."

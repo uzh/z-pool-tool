@@ -21,10 +21,16 @@ let admin_value { admin_value; _ } = admin_value
 let admin_value_opt t = CCOption.bind t admin_value
 let entity_uuid { entity_uuid; _ } = entity_uuid
 
-let equal_value a b =
+let equal_value ?(consider_admin = false) a b =
+  let open CCOption.Infix in
   match a, b with
   | Some a, Some b ->
-    (match a.value, b.value with
+    let a_val, b_val =
+      if consider_admin
+      then a.admin_value <+> a.value, b.admin_value <+> b.value
+      else a.value, b.value
+    in
+    (match a_val, b_val with
      | Some a, Some b -> a = b
      | None, None -> true
      | _ -> false)

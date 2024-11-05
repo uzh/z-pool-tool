@@ -58,10 +58,7 @@ let show
     let open Custom_field in
     target_fields
     |> CCList.map (fun target_field ->
-      let radio =
-        let name = Public.id target_field |> Id.value in
-        make_radio ~name
-      in
+      let radio = make_radio ~name:(Public.id target_field |> Id.value) in
       let head = Public.name_value language target_field in
       let find = CCList.find (fun f -> Public.id f = Public.id target_field) in
       let to_html = Component.CustomField.answer_to_html user language in
@@ -87,18 +84,24 @@ let show
     let open CCFun.Infix in
     let map_or = CCOption.map_or ~default:"" in
     Pool_message.
-      [ Field.(Id), id %> Id.value
-      ; Field.(Firstname), firstname %> Firstname.value
+      [ Field.(Firstname), firstname %> Firstname.value
       ; Field.(Lastname), lastname %> Lastname.value
       ; Field.(EmailAddress), email_address %> EmailAddress.value
       ; Field.(CellPhone), cell_phone %> map_or CellPhone.value
       ]
   in
   let table =
+    let id_row =
+      let cell contact = td [ txt Contact.(id contact |> Id.value) ] in
+      [ th [ txt (field_to_string Pool_message.Field.Id) ]
+      ; cell target_contact
+      ; cell duplicate_contact
+      ]
+      |> tr
+    in
     let rows =
       cells
       |> CCList.map (fun (field, fnc) ->
-        let radio = make_radio ~name:(Pool_message.Field.show field) in
         let target_value = fnc target_contact in
         let duplicate_value = fnc duplicate_contact in
         let attr =
@@ -108,22 +111,28 @@ let show
         in
         let cells =
           if merge
-          then
+          then (
+            let radio = make_radio ~name:(Pool_message.Field.show field) in
             [ td [ label [ radio target_contact; txt target_value ] ]
             ; td [ label [ radio duplicate_contact; txt duplicate_value ] ]
-            ]
+            ])
           else [ td [ txt target_value ]; td [ txt duplicate_value ] ]
         in
         th [ txt (field_to_string field) ] :: cells |> tr ~a:attr)
     in
-    rows @ field_rows |> table ~a:[ a_class [ "table"; "striped" ] ]
+    (id_row :: rows) @ field_rows |> table ~a:[ a_class [ "table"; "striped" ] ]
   in
   let body =
     if merge
     then
       form
         ~a:[ a_method `Post; a_action "#" ]
-        [ table
+        [ p
+            [ Pool_common.(
+                Utils.hint_to_string language I18n.MergeContacts
+                |> Http_utils.add_line_breaks)
+            ]
+        ; table
         ; div
             ~a:[ a_class [ "gap"; "flexrow"; "justify-end" ] ]
             [ Input.submit_element language Pool_message.Control.(Save None) ()

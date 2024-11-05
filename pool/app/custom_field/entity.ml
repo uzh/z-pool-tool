@@ -473,12 +473,13 @@ module Public = struct
   let[@warning "-4"] equal_answer a b =
     let open Answer in
     match a, b with
-    | Boolean (_, a), Boolean (_, b) -> equal_value a b
-    | Date (_, a), Date (_, b) -> equal_value a b
-    | MultiSelect (_, _, a), MultiSelect (_, _, b) -> equal_value a b
-    | Number (_, a), Number (_, b) -> equal_value a b
-    | Select (_, _, a), Select (_, _, b) -> equal_value a b
-    | Text (_, a), Text (_, b) -> equal_value a b
+    | Boolean (_, a), Boolean (_, b) -> equal_value ~consider_admin:true a b
+    | Date (_, a), Date (_, b) -> equal_value ~consider_admin:true a b
+    | MultiSelect (_, _, a), MultiSelect (_, _, b) ->
+      equal_value ~consider_admin:true a b
+    | Number (_, a), Number (_, b) -> equal_value ~consider_admin:true a b
+    | Select (_, _, a), Select (_, _, b) -> equal_value ~consider_admin:true a b
+    | Text (_, a), Text (_, b) -> equal_value ~consider_admin:true a b
     | _ -> false
   ;;
 
