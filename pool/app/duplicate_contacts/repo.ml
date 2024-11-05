@@ -90,28 +90,6 @@ let similarity_request user_columns custom_field_columns similarities average =
     |sql}]
 ;;
 
-(* let similariy_without_cross_join user_columns custom_field_columns
-   similarities average = let user_columns = user_columns |> CCString.concat ","
-   in let custom_field_columns = custom_field_columns |> CCString.concat "," in
-   let similarities = similarities |> CCString.concat "," in let contact_joins =
-   {sql| INNER JOIN user_users ON pool_contacts.user_uuid = user_users.uuid LEFT
-   JOIN pool_custom_field_answers ON pool_contacts.user_uuid =
-   pool_custom_field_answers.entity_uuid |sql} in [%string {sql| WITH
-   target_contact AS ( SELECT user_users.uuid, %{user_columns},
-   %{custom_field_columns} FROM pool_contacts %{contact_joins} WHERE
-   user_users.uuid = UNHEX(REPLACE($1,'-','')) GROUP BY user_users.uuid ),
-   contacts AS ( SELECT user_users.uuid, user_users.email, %{user_columns},
-   %{custom_field_columns} FROM pool_contacts %{contact_joins} WHERE
-   user_users.uuid <> UNHEX(REPLACE($1,'-','')) AND pool_contacts.email_verified
-   IS NOT NULL AND pool_contacts.disabled = 0 GROUP BY user_users.uuid ),
-   similarity_scores AS ( SELECT t.uuid as target_uuid, contacts.uuid,
-   contacts.email, %{similarities} FROM contacts, target_contact t ),
-   average_similarity AS ( SELECT target_uuid, uuid, email, %{average} AS
-   similarity_score FROM similarity_scores ) SELECT %{id_select_fragment
-   ~field:"target_uuid"}, %{id_select_fragment ~field:"uuid"}, email,
-   similarity_score FROM average_similarity WHERE similarity_score >= 0.5 ORDER
-   BY similarity_score DESC; |sql}] ;; *)
-
 let find_similars database_label ~user_uuid custom_fields =
   let open CCList in
   let open Entity in
@@ -149,7 +127,7 @@ let find_similars database_label ~user_uuid custom_fields =
     columns
     >|= fun col -> asprintf "%s as %s" (concat_sql col) col.Column.sql_column
   in
-  (* Dynparam not required anymore, atm *)
+  (* Dynparam not required, atm *)
   let dyn =
     Dynparam.(
       empty
@@ -279,14 +257,45 @@ let find pool id =
 ;;
 
 let find_by_contact pool contact =
-  let where =
-    {sql|
-      WHERE pool_contacts_possible_duplicates.target_user_uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
-  in
   let request =
     let open Caqti_request.Infix in
-    find_request_sql ~count:false where |> Contact.Repo.Id.t ->* t
+    let contact_columns =
+      Contact.Repo.sql_select_columns |> CCString.concat ", "
+    in
+    (* TODO: If the combanation is unique in both ways, group by can be replaced
+       with a select distinct *)
+    [%string
+      {sql|
+        WITH duplicates AS (
+          SELECT 
+            uuid,
+            target_user_uuid as target_user_uuid,
+            contact_uuid as duplicate_user_uuid,
+            score
+          FROM pool_contacts_possible_duplicates
+          WHERE target_user_uuid = UNHEX(REPLACE($1, '-', ''))
+        UNION ALL
+          SELECT 
+            uuid,
+            contact_uuid as target_user_uuid,
+            target_user_uuid as duplicate_user_uuid,
+            score
+          FROM pool_contacts_possible_duplicates
+          WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
+        )
+        SELECT  
+          duplicates.uuid,
+          duplicates.target_user_uuid,
+          %{contact_columns},
+          duplicates.score
+        FROM duplicates
+        INNER JOIN pool_contacts 
+          ON pool_contacts.user_uuid = duplicates.duplicate_user_uuid
+          %{Contact.Repo.joins}
+        GROUP BY user_users.uuid
+        ORDER BY score DESC
+      |sql}]
+    |> Contact.Repo.Id.t ->* t
   in
   Database.collect pool request (Contact.id contact)
 ;;

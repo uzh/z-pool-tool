@@ -3,7 +3,9 @@ module Field = Pool_message.Field
 (* The script will determine a score between 0 and 1 based on how equal two
    users are. The alert_threshold is the value from which it will be seen as a
    possible duplicate *)
-let alert_threshold = 0.7
+
+(* TODO: Increase *)
+let alert_threshold = 0.5
 
 module Id = struct
   include Pool_model.Base.Id
