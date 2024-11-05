@@ -75,6 +75,7 @@ let rec field_to_string =
   | DistributionField -> "field"
   | Duration -> "duration"
   | Duplicate -> "possible duplicate"
+  | DuplicateWeighting -> "weighting regarding duplicates"
   | Email -> "email"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
@@ -597,6 +598,8 @@ let rec error_to_string =
       "%s or %s"
       (error_to_string err1)
       (err2 |> error_to_string |> CCString.uncapitalize_ascii)
+  | OutOfRange (min, max) ->
+    Format.asprintf "Must be between %i and %i." min max
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicyMinLength n ->
     Format.asprintf "The password must at least contain %i characters." n

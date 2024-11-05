@@ -146,6 +146,15 @@ module PromptOnRegistration : sig
   include Pool_model.Base.BooleanSig
 end
 
+module DuplicateWeighting : sig
+  include Pool_model.Base.IntegerSig
+
+  val init : t
+  val min : int
+  val max : int
+  val field : Pool_message.Field.t
+end
+
 module Validation : sig
   type raw = (string * string) list
   type 'a t = ('a -> ('a, Pool_message.Error.t) result) * raw
@@ -341,6 +350,7 @@ type 'a custom_field =
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
+  ; duplicate_weighting : DuplicateWeighting.t option
   }
 
 type t =
@@ -359,6 +369,7 @@ val create
   :  ?id:Id.t
   -> ?select_options:SelectOption.t list
   -> ?published_at:PublishedAt.t
+  -> ?duplicate_weighting:DuplicateWeighting.t
   -> FieldType.t
   -> Model.t
   -> Name.t
@@ -394,6 +405,7 @@ val show_on_session_close_page : t -> bool
 val set_show_on_session_close_page : bool -> t -> t
 val show_on_session_detail_page : t -> bool
 val set_show_on_session_detail_page : bool -> t -> t
+val duplicate_weighting : t -> DuplicateWeighting.t option
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
 val validation_to_yojson : t -> Yojson.Safe.t

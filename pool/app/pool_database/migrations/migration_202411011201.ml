@@ -27,11 +27,21 @@ let create_duplicates_table =
     |sql}
 ;;
 
+let add_weight_to_custom_fields =
+  Database.Migration.Step.create
+    ~label:"add weight to custom_fields"
+    {sql|
+      ALTER TABLE pool_custom_fields
+        ADD COLUMN possible_duplicates_weight SMALLINT UNSIGNED DEFAULT 0 AFTER published_at
+    |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202411011201"
     |> add_step create_custom_field_answer_index
-    |> add_step create_duplicates_table)
+    |> add_step create_duplicates_table
+    |> add_step add_weight_to_custom_fields)
 ;;
 
 (* TODO: Two way uniqueness: 

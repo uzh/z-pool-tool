@@ -67,6 +67,7 @@ type t =
   | DistributionField
   | Duration
   | Duplicate
+  | DuplicateWeighting
   | Email
   | EmailAddress
   | EmailAddressUnverified

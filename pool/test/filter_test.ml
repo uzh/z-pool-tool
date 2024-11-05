@@ -62,6 +62,7 @@ module CustomFieldData = struct
       ; prompt_on_registration = false |> PromptOnRegistration.create
       ; show_on_session_close_page = false
       ; show_on_session_detail_page = false
+      ; duplicate_weighting = None
       }
     |> encoder
   ;;
@@ -286,6 +287,7 @@ module CustomFieldData = struct
         ; prompt_on_registration = false |> PromptOnRegistration.create
         ; show_on_session_close_page = false
         ; show_on_session_detail_page = false
+        ; duplicate_weighting = None
         })
   ;;
 
@@ -384,6 +386,7 @@ module CustomFieldData = struct
         ; prompt_on_registration = false |> PromptOnRegistration.create
         ; show_on_session_close_page = false
         ; show_on_session_detail_page = false
+        ; duplicate_weighting = None
         }
       , multi_select_options )
   ;;

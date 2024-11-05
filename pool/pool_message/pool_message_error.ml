@@ -87,6 +87,7 @@ type t =
   | NumberMax of int
   | NumberMin of int
   | Or of (t * t)
+  | OutOfRange of (int * int)
   | PasswordConfirmationDoesNotMatch
   | PasswordPolicyCapitalLetter
   | PasswordPolicyMinLength of int

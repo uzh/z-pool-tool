@@ -506,6 +506,25 @@ let field_form
                    |> Utils.field_to_string language
                    |> CCString.capitalize_ascii)
               ]
+          ; div
+              ~a:[ a_class [ "grid-col-2" ] ]
+              [ input_element
+                  ~additional_attributes:
+                    DuplicateWeighting.
+                      [ a_input_min (`Number min); a_input_max (`Number max) ]
+                  language
+                  `Number
+                  Field.DuplicateWeighting
+                  ~orientation:`Horizontal
+                  ~value:
+                    (value
+                       CCOption.(
+                         fun field ->
+                           duplicate_weighting field
+                           >|= DuplicateWeighting.value
+                           |> map_or ~default:"" CCInt.to_string))
+                  ~flash_fetcher
+              ]
           ; input_element
               language
               `Text
@@ -543,10 +562,7 @@ let field_form
               ~hints:[ I18n.CustomFieldPromptOnRegistration ]
               Field.PromptOnRegistration
               (prompt_on_registration %> PromptOnRegistration.value)
-          ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ checkbox_element
+          ; checkbox_element
               ~disabled:
                 (custom_field
                  |> CCOption.map_or ~default:false (fun f ->

@@ -92,6 +92,8 @@ type t =
   [@printer go "distribution_field"]
   | Duration [@name "duration"] [@printer go "duration"]
   | Duplicate [@name "duplicate"] [@printer go "duplicate"]
+  | DuplicateWeighting [@name "duplicate_weighting"]
+  [@printer go "duplicate_weighting"]
   | Email [@name "email"] [@printer go "email"]
   | EmailAddress [@name "email_address"] [@printer go "email_address"]
   | EmailAddressUnverified [@name "email_address_unverified"]

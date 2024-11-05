@@ -227,6 +227,7 @@ module Write = struct
       ; prompt_on_registration = prompt_on_registration t
       ; show_on_session_close_page = show_on_session_close_page t
       ; show_on_session_detail_page = show_on_session_detail_page t
+      ; duplicate_weighting = duplicate_weighting t
       }
   ;;
 
@@ -249,8 +250,9 @@ module Write = struct
                               , ( m.admin_input_only
                                 , ( m.prompt_on_registration
                                   , ( m.show_on_session_close_page
-                                    , m.show_on_session_detail_page ) ) ) ) ) )
-                        ) ) ) ) ) ) ) ) )
+                                    , ( m.show_on_session_detail_page
+                                      , m.duplicate_weighting ) ) ) ) ) ) ) ) )
+                    ) ) ) ) ) ) )
     in
     let decode _ =
       Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
@@ -287,7 +289,9 @@ module Write = struct
                                                AdminInputOnly.t
                                                (t2
                                                   PromptOnRegistration.t
-                                                  (t2 bool bool))))))))))))))))
+                                                  (t2
+                                                     bool
+                                                     (t2 bool (option int))))))))))))))))))
   ;;
 end
 
@@ -681,6 +685,7 @@ type repo =
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
+  ; duplicate_weighting : int option
   }
 
 let t =
@@ -704,8 +709,9 @@ let t =
                             , ( prompt_on_registration
                               , ( published_at
                                 , ( show_on_session_close_page
-                                  , show_on_session_detail_page ) ) ) ) ) ) ) )
-                  ) ) ) ) ) ) ) )
+                                  , ( show_on_session_detail_page
+                                    , duplicate_weighting ) ) ) ) ) ) ) ) ) ) )
+              ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -726,6 +732,7 @@ let t =
       ; published_at
       ; show_on_session_close_page
       ; show_on_session_detail_page
+      ; duplicate_weighting
       }
   in
   Caqti_type.(
@@ -762,7 +769,9 @@ let t =
                                                 PromptOnRegistration.t
                                                 (t2
                                                    (option PublishedAt.t)
-                                                   (t2 bool bool)))))))))))))))))
+                                                   (t2
+                                                      bool
+                                                      (t2 bool (option int)))))))))))))))))))
 ;;
 
 let to_entity
@@ -784,6 +793,7 @@ let to_entity
   ; published_at
   ; show_on_session_close_page
   ; show_on_session_detail_page
+  ; duplicate_weighting
   }
   =
   let validation_schema schema =
@@ -808,6 +818,7 @@ let to_entity
       ; published_at
       ; show_on_session_close_page
       ; show_on_session_detail_page
+      ; duplicate_weighting
       }
   | FieldType.Date ->
     Date
@@ -827,6 +838,7 @@ let to_entity
       ; published_at
       ; show_on_session_close_page
       ; show_on_session_detail_page
+      ; duplicate_weighting
       }
   | FieldType.Number ->
     let validation = validation_schema Validation.Number.schema in
@@ -847,6 +859,7 @@ let to_entity
       ; published_at
       ; show_on_session_close_page
       ; show_on_session_detail_page
+      ; duplicate_weighting
       }
   | FieldType.Select ->
     let options =
@@ -872,6 +885,7 @@ let to_entity
         ; published_at
         ; show_on_session_close_page
         ; show_on_session_detail_page
+        ; duplicate_weighting
         }
       , options )
   | FieldType.MultiSelect ->
@@ -899,6 +913,7 @@ let to_entity
         ; published_at
         ; show_on_session_close_page
         ; show_on_session_detail_page
+        ; duplicate_weighting
         }
       , options )
   | FieldType.Text ->
@@ -920,5 +935,6 @@ let to_entity
       ; published_at
       ; show_on_session_close_page
       ; show_on_session_detail_page
+      ; duplicate_weighting
       }
 ;;

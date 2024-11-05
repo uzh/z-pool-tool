@@ -18,6 +18,7 @@ type command =
   ; admin_view_only : Custom_field.AdminViewOnly.t
   ; admin_input_only : Custom_field.AdminInputOnly.t
   ; prompt_on_registration : Custom_field.PromptOnRegistration.t
+  ; duplicate_weighting : Custom_field.DuplicateWeighting.t option
   }
 
 let base_command
@@ -30,6 +31,7 @@ let base_command
   admin_view_only
   admin_input_only
   prompt_on_registration
+  duplicate_weighting
   =
   { field_type
   ; required
@@ -40,6 +42,7 @@ let base_command
   ; admin_view_only
   ; admin_input_only
   ; prompt_on_registration
+  ; duplicate_weighting
   }
 ;;
 
@@ -57,6 +60,7 @@ let base_schema =
         ; AdminViewOnly.schema ()
         ; AdminInputOnly.schema ()
         ; PromptOnRegistration.schema ()
+        ; Conformist.optional @@ DuplicateWeighting.schema ()
         ]
       base_command)
 ;;
@@ -101,6 +105,7 @@ end = struct
     ; admin_view_only
     ; admin_input_only
     ; prompt_on_registration
+    ; duplicate_weighting
     }
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
@@ -110,6 +115,7 @@ end = struct
     let* t =
       Custom_field.create
         ?id
+        ?duplicate_weighting
         field_type
         model
         name
@@ -163,6 +169,7 @@ end = struct
     ; admin_view_only
     ; admin_input_only
     ; prompt_on_registration
+    ; duplicate_weighting
     }
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
@@ -181,6 +188,7 @@ end = struct
     let* t =
       Custom_field.create
         ~id
+        ?duplicate_weighting
         field_type
         Custom_field.(model custom_field)
         name

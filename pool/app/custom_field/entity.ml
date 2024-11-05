@@ -138,6 +138,23 @@ module PromptOnRegistration = struct
   let schema = schema Pool_message.Field.PromptOnRegistration
 end
 
+module DuplicateWeighting = struct
+  include Pool_model.Base.Integer
+
+  let min = 0
+  let max = 10
+  let init = 0
+  let field = Pool_message.Field.DuplicateWeighting
+
+  let create i =
+    if i < min || i > max
+    then Error Pool_message.(Error.OutOfRange (min, max))
+    else Ok i
+  ;;
+
+  let schema = schema field create
+end
+
 module Validation = struct
   type raw = (string * string) list [@@deriving show, eq, yojson]
 
@@ -678,6 +695,7 @@ type 'a custom_field =
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
+  ; duplicate_weighting : DuplicateWeighting.t option
   }
 [@@deriving eq, show]
 
@@ -694,6 +712,7 @@ let create
   ?(id = Pool_common.Id.create ())
   ?(select_options = [])
   ?published_at
+  ?duplicate_weighting
   field_type
   model
   name
@@ -733,6 +752,7 @@ let create
          ; prompt_on_registration
          ; show_on_session_close_page
          ; show_on_session_detail_page
+         ; duplicate_weighting
          })
   | FieldType.Date ->
     Ok
@@ -753,6 +773,7 @@ let create
          ; prompt_on_registration
          ; show_on_session_close_page
          ; show_on_session_detail_page
+         ; duplicate_weighting
          })
   | FieldType.Number ->
     let validation = Validation.Number.schema validation in
@@ -774,6 +795,7 @@ let create
          ; prompt_on_registration
          ; show_on_session_close_page
          ; show_on_session_detail_page
+         ; duplicate_weighting
          })
   | FieldType.Text ->
     let validation = Validation.Text.schema validation in
@@ -795,6 +817,7 @@ let create
          ; prompt_on_registration
          ; show_on_session_close_page
          ; show_on_session_detail_page
+         ; duplicate_weighting
          })
   | FieldType.MultiSelect ->
     let validation = Validation.MultiSelect.schema validation in
@@ -816,6 +839,7 @@ let create
            ; prompt_on_registration
            ; show_on_session_close_page
            ; show_on_session_detail_page
+           ; duplicate_weighting
            }
          , select_options ))
   | FieldType.Select ->
@@ -837,6 +861,7 @@ let create
            ; prompt_on_registration
            ; show_on_session_close_page
            ; show_on_session_detail_page
+           ; duplicate_weighting
            }
          , select_options ))
 ;;
@@ -1006,6 +1031,15 @@ let set_show_on_session_close_page status = function
   | Text field -> Text { field with show_on_session_close_page = status }
 ;;
 
+let duplicate_weighting = function
+  | Boolean { duplicate_weighting; _ }
+  | Date { duplicate_weighting; _ }
+  | Number { duplicate_weighting; _ }
+  | MultiSelect ({ duplicate_weighting; _ }, _)
+  | Select ({ duplicate_weighting; _ }, _)
+  | Text { duplicate_weighting; _ } -> duplicate_weighting
+;;
+
 let field_type = function
   | Boolean _ -> FieldType.Boolean
   | Date _ -> FieldType.Date
@@ -1069,6 +1103,7 @@ module Write = struct
     ; prompt_on_registration : PromptOnRegistration.t
     ; show_on_session_close_page : bool
     ; show_on_session_detail_page : bool
+    ; duplicate_weighting : int option
     }
   [@@deriving eq, show]
 end
