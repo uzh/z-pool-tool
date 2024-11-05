@@ -8,7 +8,7 @@ let find_by_group = Repo.find_by_group
 let find_ungrouped_by_model = Repo.find_ungrouped_by_model
 let find = Repo.find
 let find_by_table_view = Repo.Sql.find_by_table_view
-let all_published = Repo.Sql.all_published
+let find_for_duplicate_check = Repo.Sql.find_for_duplicate_check
 
 let find_of_contact ?(required = false) pool user id =
   let open Pool_context in

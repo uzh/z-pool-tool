@@ -300,10 +300,15 @@ module Sql = struct
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
-  let all_published pool =
+  let find_for_duplicate_check pool =
     let open Utils.Lwt_result.Infix in
     let open Caqti_request.Infix in
-    let where = "WHERE pool_custom_fields.published_at IS NOT NULL" in
+    let where =
+      {sql|
+      WHERE pool_custom_fields.published_at IS NOT NULL
+      AND pool_custom_fields.possible_duplicates_weight > 0
+      |sql}
+    in
     let request = select_sql where |> Caqti_type.unit ->* Repo_entity.t in
     Database.collect pool request ()
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id

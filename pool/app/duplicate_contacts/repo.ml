@@ -140,13 +140,14 @@ let find_similars database_label ~user_uuid custom_fields =
     custom_fields
     >|= fun field ->
     let id = id field |> Id.to_common |> Id.value in
-    let column =
-      asprintf
-        {sql| MAX(CASE WHEN pool_custom_field_answers.custom_field_uuid = %s THEN pool_custom_field_answers.value END) AS %s |sql}
-        (id |> asprintf "\"%s\"" |> id_value_fragment)
-        (asprintf "`%s`" id)
-    in
-    column
+    asprintf
+      {sql| MAX(
+        CASE WHEN pool_custom_field_answers.custom_field_uuid = %s 
+        THEN COALESCE(pool_custom_field_answers.admin_value, pool_custom_field_answers.value) 
+        END) AS %s 
+      |sql}
+      (id |> asprintf "\"%s\"" |> id_value_fragment)
+      (asprintf "`%s`" id)
   in
   let similarities =
     map user_similarities columns @ map field_similarities custom_fields
