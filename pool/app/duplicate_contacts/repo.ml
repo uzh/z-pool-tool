@@ -84,7 +84,7 @@ let similarity_request user_columns custom_field_columns similarities average =
       FROM
         average_similarity
       WHERE 
-        similarity_score >= 0.5
+        similarity_score >= $2
       ORDER BY
         similarity_score DESC;
     |sql}]
@@ -149,8 +149,13 @@ let find_similars database_label ~user_uuid custom_fields =
     columns
     >|= fun col -> asprintf "%s as %s" (concat_sql col) col.Column.sql_column
   in
-  (* Dynparam not required anymore *)
-  let dyn = Dynparam.(empty |> add Pool_common.Repo.Id.t user_uuid) in
+  (* Dynparam not required anymore, atm *)
+  let dyn =
+    Dynparam.(
+      empty
+      |> add Pool_common.Repo.Id.t user_uuid
+      |> add Caqti_type.float Entity.alert_threshold)
+  in
   let custom_field_columns =
     let open Custom_field in
     (* Using placeholders like $2 or ? is not supported in colum names *)

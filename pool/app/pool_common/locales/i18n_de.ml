@@ -230,6 +230,7 @@ let nav_link_to_string = function
   | Login -> "Login"
   | LoginInformation -> "Anmeldeinformationen"
   | Logout -> "Logout"
+  | ManageDuplicates -> "Duplikate verwalten"
   | Mailings -> "Versand"
   | MessageHistory -> "Nachrichtenverlauf"
   | MessageTemplates -> "Nachrichtentemplates"

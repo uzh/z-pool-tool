@@ -504,6 +504,7 @@ let detail
       Pool_common.[ Utils.nav_link_to_string language nav |> txt ]
   in
   let buttons =
+    let open Pool_common in
     let contact_path = path contact in
     let edit =
       Format.asprintf "%s/edit" contact_path
@@ -512,18 +513,33 @@ let detail
            ~classnames:[ "small" ]
            ~control:(language, Pool_message.(Control.Edit (Some Field.Contact)))
     in
-    let messages =
-      let path =
-        Format.asprintf "%s/messages" contact_path |> Sihl.Web.externalize_path
-      in
+    let make_link path icon nav_link =
       a
-        ~a:[ a_class [ "btn small primary is-text has-icon" ]; a_href path ]
-        [ Icon.(to_html Mail)
-        ; txt
-            Pool_common.(Utils.nav_link_to_string language I18n.MessageHistory)
+        ~a:
+          [ a_class [ "btn small primary is-text has-icon" ]
+          ; a_href (Sihl.Web.externalize_path path)
+          ]
+        [ Icon.(to_html icon)
+        ; txt Pool_common.(Utils.nav_link_to_string language nav_link)
         ]
     in
-    div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ messages; edit ]
+    let messages =
+      make_link
+        (Format.asprintf "%s/messages" contact_path)
+        Icon.Mail
+        I18n.MessageHistory
+    in
+    let duplicate =
+      let path =
+        Http_utils.Url.Admin.contact_duplicate_path (Contact.id contact) ()
+      in
+      make_link path Icon.Person I18n.ManageDuplicates
+    in
+    div
+      ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+      [ span ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ] [ duplicate; messages ]
+      ; edit
+      ]
   in
   let past_experiments_html =
     let experiments, query = past_experiments in
@@ -544,7 +560,15 @@ let detail
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
-        ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between" ] ]
+        ~a:
+          [ a_class
+              [ "flexrow"
+              ; "wrap"
+              ; "flex-gap"
+              ; "justify-between"
+              ; "align-center"
+              ]
+          ]
         [ div [ heading_with_icons contact ]; buttons ]
     ; personal_detail ?admin_comment ~custom_fields ~tags user language contact
     ; div

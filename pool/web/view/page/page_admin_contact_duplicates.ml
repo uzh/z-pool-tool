@@ -31,17 +31,37 @@ let index contact possible_duplicates =
 ;;
 
 let show
+  ?(merge = true)
   { Pool_context.language; user; _ }
   (target_contact, target_fields)
   (duplicate, duplicate_fields)
   =
+  let title =
+    Pool_common.(
+      Utils.control_to_string
+        language
+        Pool_message.(Control.Manage Field.Duplicate))
+  in
   let highlighted = [ a_class [ "bg-red-lighter" ] ] in
+  let label = label ~a:[ a_class [ "flexrow"; "flex-gap" ] ] in
   let duplicate_contact = duplicate.Duplicate_contacts.contact in
-  let show_field = Pool_common.Utils.field_to_string_capitalized language in
+  let field_to_string =
+    Pool_common.Utils.field_to_string_capitalized language
+  in
+  let make_radio ~name contact =
+    let value = Contact.(id contact |> Id.value) in
+    input
+      ~a:[ a_name name; a_value value; a_input_type `Radio; a_required () ]
+      ()
+  in
   let field_rows =
     let open Custom_field in
     target_fields
     |> CCList.map (fun target_field ->
+      let radio =
+        let name = Public.id target_field |> Id.value in
+        make_radio ~name
+      in
       let head = Public.name_value language target_field in
       let find = CCList.find (fun f -> Public.id f = Public.id target_field) in
       let to_html = Component.CustomField.answer_to_html user language in
@@ -51,30 +71,34 @@ let show
         then highlighted
         else []
       in
-      tr
-        ~a:attrs
-        [ th [ txt head ]
-        ; td [ to_html target_field ]
-        ; td [ to_html duplicate_field ]
-        ])
+      let cells =
+        if merge
+        then
+          [ td [ label [ radio target_contact; to_html target_field ] ]
+          ; td [ label [ radio duplicate_contact; to_html duplicate_field ] ]
+          ]
+        else [ td [ to_html target_field ]; td [ to_html duplicate_field ] ]
+      in
+      th [ txt head ] :: cells |> tr ~a:attrs)
   in
-  let cells : (string * (Contact.t -> uri)) list_wrap =
+  let cells =
     let open Pool_user in
     let open Contact in
     let open CCFun.Infix in
     let map_or = CCOption.map_or ~default:"" in
     Pool_message.
-      [ Field.(show_field Id), id %> Id.value
-      ; Field.(show_field Firstname), firstname %> Firstname.value
-      ; Field.(show_field Lastname), lastname %> Lastname.value
-      ; Field.(show_field EmailAddress), email_address %> EmailAddress.value
-      ; Field.(show_field CellPhone), cell_phone %> map_or CellPhone.value
+      [ Field.(Id), id %> Id.value
+      ; Field.(Firstname), firstname %> Firstname.value
+      ; Field.(Lastname), lastname %> Lastname.value
+      ; Field.(EmailAddress), email_address %> EmailAddress.value
+      ; Field.(CellPhone), cell_phone %> map_or CellPhone.value
       ]
   in
   let table =
     let rows =
       cells
-      |> CCList.map (fun (head, fnc) ->
+      |> CCList.map (fun (field, fnc) ->
+        let radio = make_radio ~name:(Pool_message.Field.show field) in
         let target_value = fnc target_contact in
         let duplicate_value = fnc duplicate_contact in
         let attr =
@@ -82,13 +106,30 @@ let show
           then highlighted
           else []
         in
-        [ th [ txt head ]
-        ; td [ target_value |> txt ]
-        ; td [ duplicate_value |> txt ]
-        ]
-        |> tr ~a:attr)
+        let cells =
+          if merge
+          then
+            [ td [ label [ radio target_contact; txt target_value ] ]
+            ; td [ label [ radio duplicate_contact; txt duplicate_value ] ]
+            ]
+          else [ td [ txt target_value ]; td [ txt duplicate_value ] ]
+        in
+        th [ txt (field_to_string field) ] :: cells |> tr ~a:attr)
     in
     rows @ field_rows |> table ~a:[ a_class [ "table"; "striped" ] ]
   in
-  div ~a:[ a_class [ "trim"; "safety-margin" ] ] [ h1 [ txt "HEDLLO" ]; table ]
+  let body =
+    if merge
+    then
+      form
+        ~a:[ a_method `Post; a_action "#" ]
+        [ table
+        ; div
+            ~a:[ a_class [ "gap"; "flexrow"; "justify-end" ] ]
+            [ Input.submit_element language Pool_message.Control.(Save None) ()
+            ]
+        ]
+    else table
+  in
+  div ~a:[ a_class [ "trim"; "safety-margin" ] ] [ h1 [ txt title ]; body ]
 ;;

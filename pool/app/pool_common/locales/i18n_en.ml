@@ -223,6 +223,7 @@ let nav_link_to_string = function
   | Locations -> "Locations"
   | Login -> "Login"
   | LoginInformation -> "Login information"
+  | ManageDuplicates -> "Manage duplicates"
   | Logout -> "Logout"
   | Mailings -> "Mailings"
   | MessageHistory -> "Message history"

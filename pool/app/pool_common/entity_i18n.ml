@@ -141,6 +141,7 @@ type nav_link =
   | Login
   | LoginInformation
   | Logout
+  | ManageDuplicates
   | Mailings
   | MessageHistory
   | MessageTemplates

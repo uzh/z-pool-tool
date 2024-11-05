@@ -1,27 +1,17 @@
 module Field = Pool_message.Field
 
+(* The script will determine a score between 0 and 1 based on how equal two
+   users are. The alert_threshold is the value from which it will be seen as a
+   possible duplicate *)
+let alert_threshold = 0.7
+
 module Id = struct
   include Pool_model.Base.Id
 end
 
-(** EXACT: an exact macth is definitely required when comparing custom field
-    answers with select options
-
-    PARTIAL: partial match can be used to compare 'firstname' with 'firstname
-    middlename'
-
-    FUZZY:
-    - https://en.wikipedia.org/wiki/Levenshtein_distance
-    - https://github.com/juanmirocks/Levenshtein-MySQL-UDF
-    - https://mariadb.com/kb/en/soundex/
-    - https://mariadb.com/kb/en/match-against/
-
-    GENERAL QUESTIONS:
-    - comparison of null and some value, e.g. Some phone and no phone *)
 module SimilarityCriteria = struct
   type t =
     | Fuzzy
-    (* | Partial *)
     | Exact
   [@@deriving eq, show]
 end
