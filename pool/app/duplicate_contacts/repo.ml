@@ -162,13 +162,19 @@ let find_similars database_label ~user_uuid custom_fields =
     let custom_field_similarities =
       custom_fields
       >|= fun field ->
-      Custom_field.(
-        ( id field
-          |> Id.to_common
-          |> Id.value
-          |> make_similarity_name
-          |> asprintf "`%s`"
-        , 1 ))
+      let open Custom_field in
+      let weight =
+        CCOption.(
+          duplicate_weighting field
+          >|= DuplicateWeighting.value
+          |> value ~default:0)
+      in
+      ( id field
+        |> Id.to_common
+        |> Id.value
+        |> make_similarity_name
+        |> asprintf "`%s`"
+      , weight )
     in
     let similarities = user_similarities @ custom_field_similarities in
     let division =
