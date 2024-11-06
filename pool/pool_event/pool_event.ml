@@ -9,6 +9,7 @@ type t =
   | Contact of Contact.event
   | CustomField of Custom_field.event
   | Database of Pool_database.event
+  | DuplicateContacts of Duplicate_contacts.event
   | Email of Email.event
   | EmailVerification of Email.verification_event
   | Experiment of Experiment.event
@@ -42,6 +43,7 @@ let assignmentjob events = AssignmentJob events
 let contact events = Contact events
 let custom_field events = CustomField events
 let database events = Database events
+let duplicate_contacts events = DuplicateContacts events
 let email events = Email events
 let email_verification events = EmailVerification events
 let experiment events = Experiment events
@@ -99,6 +101,9 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
   | Database event ->
     info "database" Pool_database.pp_event event;
     Pool_database.handle_event pool event
+  | DuplicateContacts event ->
+    info "duplicate_contacts" Duplicate_contacts.pp_event event;
+    Duplicate_contacts.handle_event pool event
   | Email event ->
     info "email" Email.pp_event event;
     Email.handle_event pool event

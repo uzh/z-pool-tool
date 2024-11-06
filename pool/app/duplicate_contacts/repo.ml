@@ -5,22 +5,23 @@ let id_select_fragment = Pool_common.Id.sql_select_fragment
 let id_value_fragment = Pool_common.Id.sql_value_fragment
 
 let sql_select_columns =
-  [ id_select_fragment ~field:"pool_contacts_possible_duplicates.uuid"
-  ; id_select_fragment
-      ~field:"pool_contacts_possible_duplicates.target_user_uuid"
-  ]
-  @ Contact.Repo.sql_select_columns
-  @ [ "pool_contacts_possible_duplicates.score" ]
+  let open Contact.Repo in
+  [ id_select_fragment ~field:"pool_contacts_possible_duplicates.uuid" ]
+  @ make_sql_select_columns ~user_table:"user_a" ~contact_table:"contact_a"
+  @ make_sql_select_columns ~user_table:"user_b" ~contact_table:"contact_b"
+  @ [ "pool_contacts_possible_duplicates.score"
+    ; "pool_contacts_possible_duplicates.ignore"
+    ]
 ;;
 
 let joins =
-  Format.asprintf
-    {sql|
-    INNER JOIN pool_contacts 
-      ON pool_contacts.user_uuid = pool_contacts_possible_duplicates.contact_uuid
-    %s
+  {sql|
+    INNER JOIN pool_contacts AS contact_a ON contact_a.user_uuid = pool_contacts_possible_duplicates.contact_a
+    INNER JOIN user_users AS user_a ON contact_a.user_uuid = user_a.uuid
+
+    INNER JOIN pool_contacts AS contact_b ON contact_b.user_uuid = pool_contacts_possible_duplicates.contact_b
+    INNER JOIN user_users AS user_b ON contact_b.user_uuid = user_b.uuid
   |sql}
-    Contact.Repo.joins
 ;;
 
 let find_request_sql ?(count = false) =
@@ -28,7 +29,7 @@ let find_request_sql ?(count = false) =
     if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
   in
   Format.asprintf
-    {sql|SELECT %s FROM pool_contacts_possible_duplicates %s %s ORDER BY score DESC |sql}
+    {sql| SELECT %s FROM pool_contacts_possible_duplicates %s %s |sql}
     columns
     joins
 ;;
@@ -204,9 +205,10 @@ let insert_request =
     {sql|
     INSERT INTO pool_contacts_possible_duplicates (
       uuid, 
-      target_user_uuid, 
-      contact_uuid,
-      score
+      contact_a, 
+      contact_b,
+      score,
+      ignore
     ) VALUES 
       %s
     ON DUPLICATE KEY UPDATE
@@ -261,46 +263,38 @@ let find pool id =
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Duplicate)
 ;;
 
-let find_by_contact pool contact =
-  let request =
-    let open Caqti_request.Infix in
-    let contact_columns =
-      Contact.Repo.sql_select_columns |> CCString.concat ", "
-    in
-    (* TODO: If the combanation is unique in both ways, group by can be replaced
-       with a select distinct *)
-    [%string
+let find_by_contact ?query pool contact =
+  let where =
+    let open Contact in
+    let sql =
       {sql|
-        WITH duplicates AS (
-          SELECT 
-            uuid,
-            target_user_uuid as target_user_uuid,
-            contact_uuid as duplicate_user_uuid,
-            score
-          FROM pool_contacts_possible_duplicates
-          WHERE target_user_uuid = UNHEX(REPLACE($1, '-', ''))
-        UNION ALL
-          SELECT 
-            uuid,
-            contact_uuid as target_user_uuid,
-            target_user_uuid as duplicate_user_uuid,
-            score
-          FROM pool_contacts_possible_duplicates
-          WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
-        )
-        SELECT  
-          %{id_select_fragment ~field:"duplicates.uuid"},
-          %{id_select_fragment ~field:"duplicates.target_user_uuid"},
-          %{contact_columns},
-          duplicates.score
-        FROM duplicates
-        INNER JOIN pool_contacts 
-          ON pool_contacts.user_uuid = duplicates.duplicate_user_uuid
-          %{Contact.Repo.joins}
-        GROUP BY user_users.uuid
-        ORDER BY score DESC
-      |sql}]
-    |> Contact.Repo.Id.t ->* t
+        pool_contacts_possible_duplicates.contact_a = UNHEX(REPLACE($1, '-', ''))
+          OR 
+        pool_contacts_possible_duplicates.contact_a = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+    in
+    sql, Dynparam.(empty |> add Repo.Id.t (id contact))
   in
-  Database.collect pool request (Contact.id contact)
+  Query.collect_and_count
+    pool
+    query
+    ~where
+    ~select:find_request_sql
+    Repo_entity.t
 ;;
+
+let ingore_request =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {sql|
+      UPDATE 
+        pool_contacts_possible_duplicates
+      SET
+        ignore = 1
+      WHERE
+        uuid = UNHEX(REPLACE($1, '-', '')) 
+    |sql}
+  |> Repo_entity.Id.t ->. Caqti_type.unit
+;;
+
+let ignore pool { Entity.id; _ } = Database.exec pool ingore_request id

@@ -13,15 +13,15 @@ end
 let t =
   let open Database.Caqti_encoders in
   let open CCResult in
-  let decode (id, (target_contact_id, (contact, (score, ())))) =
-    Ok { id; target_contact_id; contact; score }
+  let decode (id, (contact_a, (contact_b, (score, (ignored, ()))))) =
+    Ok { id; contact_a; contact_b; score; ignored }
   in
   let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let open Schema in
   custom
     ~encode
     ~decode
-    Caqti_type.[ Id.t; Contact.Repo.Id.t; Contact.Repo.t; float ]
+    Caqti_type.[ Id.t; Contact.Repo.t; Contact.Repo.t; float; bool ]
 ;;
 
 let raw = Caqti_type.(t3 Pool_common.Repo.Id.t Pool_common.Repo.Id.t float)

@@ -8,6 +8,9 @@ let check_similarity _ () =
   let open Utils.Lwt_result.Infix in
   let open Duplicate_contacts in
   let open Pool_user in
+  let check ~result ~expected msg =
+    Alcotest.check (Alcotest.option testable_score) msg result expected
+  in
   let create_contact ~firstname ~lastname =
     ContactRepo.create
       ~firstname:(Firstname.of_string firstname)
@@ -18,8 +21,10 @@ let check_similarity _ () =
     let open Contact in
     let%lwt () = run pool (id target |> Id.to_common) in
     find_by_contact pool target
-    ||> CCList.find_opt (fun { contact; _ } ->
-      Id.equal (id contact) (id comparison))
+    ||> fst
+    ||> CCList.find_opt (fun { contact_a; contact_b; _ } ->
+      Id.equal (id contact_a) (id comparison)
+      || Id.equal (id contact_b) (id comparison))
   in
   let%lwt contact_1 = create_contact ~firstname:"John" ~lastname:"Doe" in
   let%lwt contact_2 = create_contact ~firstname:"John" ~lastname:"Doe" in
@@ -27,11 +32,18 @@ let check_similarity _ () =
     find_duplicate ~target:contact_1 ~comparison:contact_2
     ||> CCOption.map (fun { score; _ } -> score)
   in
-  Alcotest.(
-    check
-      (option testable_score)
-      "found duplicate with score 1"
-      duplicate_score
-      (Some 1.0));
+  check
+    ~result:duplicate_score
+    ~expected:(Some 1.0)
+    "found duplicate with score 1";
+  let%lwt contact_3 = create_contact ~firstname:"Jane" ~lastname:"Doe" in
+  let%lwt duplicate_score =
+    find_duplicate ~target:contact_1 ~comparison:contact_3
+    ||> CCOption.map (fun { score; _ } -> score)
+  in
+  check
+    ~result:duplicate_score
+    ~expected:None
+    "do not find duplicate with different given name";
   Lwt.return ()
 ;;

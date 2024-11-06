@@ -225,6 +225,11 @@ module Repo : sig
   val joins : string
   val sql_select_columns : string list
 
+  val make_sql_select_columns
+    :  user_table:string
+    -> contact_table:string
+    -> string list
+
   val find_request_sql
     :  ?additional_joins:string list
     -> ?count:bool

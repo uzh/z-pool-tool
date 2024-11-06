@@ -4,30 +4,38 @@ module Dynparam = Database.Dynparam
 
 let src = Logs.Src.create "contact.repo"
 
+let make_sql_select_columns ~user_table ~contact_table =
+  let with_tablemame = Format.asprintf "%s.%s" contact_table in
+  Pool_user.Repo.make_sql_select_columns ~tablename:user_table
+  @ ([ "terms_accepted_at"
+     ; "language"
+     ; "experiment_type_preference"
+     ; "cell_phone"
+     ; "paused"
+     ; "disabled"
+     ; "verified"
+     ; "email_verified"
+     ; "num_invitations"
+     ; "num_assignments"
+     ; "num_show_ups"
+     ; "num_no_shows"
+     ; "num_participations"
+     ; "firstname_version"
+     ; "lastname_version"
+     ; "paused_version"
+     ; "language_version"
+     ; "experiment_type_preference_version"
+     ; "import_pending"
+     ; "created_at"
+     ; "updated_at"
+     ]
+     |> CCList.map with_tablemame)
+;;
+
 let sql_select_columns =
-  Pool_user.Repo.sql_select_columns
-  @ [ "pool_contacts.terms_accepted_at"
-    ; "pool_contacts.language"
-    ; "pool_contacts.experiment_type_preference"
-    ; "pool_contacts.cell_phone"
-    ; "pool_contacts.paused"
-    ; "pool_contacts.disabled"
-    ; "pool_contacts.verified"
-    ; "pool_contacts.email_verified"
-    ; "pool_contacts.num_invitations"
-    ; "pool_contacts.num_assignments"
-    ; "pool_contacts.num_show_ups"
-    ; "pool_contacts.num_no_shows"
-    ; "pool_contacts.num_participations"
-    ; "pool_contacts.firstname_version"
-    ; "pool_contacts.lastname_version"
-    ; "pool_contacts.paused_version"
-    ; "pool_contacts.language_version"
-    ; "pool_contacts.experiment_type_preference_version"
-    ; "pool_contacts.import_pending"
-    ; "pool_contacts.created_at"
-    ; "pool_contacts.updated_at"
-    ]
+  make_sql_select_columns
+    ~user_table:"user_users"
+    ~contact_table:"pool_contacts"
 ;;
 
 let joins =

@@ -13,16 +13,18 @@ let create_duplicates_table =
       CREATE TABLE IF NOT EXISTS pool_contacts_possible_duplicates (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `uuid` binary(16) NOT NULL,
-        `target_user_uuid` binary(16) NOT NULL,
-        `contact_uuid` binary(16) NOT NULL,
+        `contact_a` binary(16) NOT NULL,
+        `contact_b` binary(16) NOT NULL,
         `score` float NOT NULL,
+        `ignore` boolean DEFAULT 0 NOT NULL,
+        `unique_combination` binary(16) GENERATED ALWAYS AS (UNHEX(CONCAT(contact_a, contact_b))) STORED,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
       UNIQUE KEY `unique_uuid` (`uuid`),
-      UNIQUE KEY `unique_target_user_combination` (`target_user_uuid`, `contact_uuid`),
-      FOREIGN KEY (`target_user_uuid`) REFERENCES user_users(`uuid`),
-      FOREIGN KEY (`contact_uuid`) REFERENCES user_users(`uuid`)
+      UNIQUE KEY `unique_combination` (`unique_combination`),
+      FOREIGN KEY (`contact_a`) REFERENCES user_users(`uuid`),
+      FOREIGN KEY (`contact_b`) REFERENCES user_users(`uuid`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     |sql}
 ;;

@@ -24,5 +24,6 @@ module Repo = struct
 
   let joins = Repo.joins
   let sql_select_columns = Repo.sql_select_columns
+  let make_sql_select_columns = Repo.make_sql_select_columns
   let find_request_sql = Repo.find_request_sql
 end

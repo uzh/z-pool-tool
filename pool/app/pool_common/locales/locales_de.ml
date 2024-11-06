@@ -128,6 +128,7 @@ let rec field_to_string =
   | HideMakedAsDeleted -> "Als gelöscht markerte ausblenden"
   | HidePaused -> "Pausierte ausblenden"
   | HideInactive -> "Inaktive ausblenden"
+  | HideIgnored -> "Hide ignored"
   | HidePast -> "Vergangene ausblenden"
   | HideUnverified -> "Unverifizierte ausblenden"
   | Hint -> "Hint"
@@ -251,6 +252,7 @@ let rec field_to_string =
   | RunAt -> "Läuft um"
   | ScheduledTime -> "Geplante Zeit"
   | ScheduledTimeSpan -> "Wiederholungs Interval"
+  | Score -> "Score"
   | Search -> "Suche"
   | SearchOf field -> combine Search field
   | SecondReminder -> "Zweite Erinnerung"
@@ -773,6 +775,7 @@ let control_to_string =
   | EnterNewCellPhone -> "eine andere Nummer eingeben"
   | Filter field -> format_submit "filtern" field
   | Hide field -> format_submit "verbergen" field
+  | Ignore field -> format_submit "ignorieren" field
   | Login -> format_submit "login" None
   | Generate -> format_submit "generieren" None
   | LoadDefaultTemplate -> format_submit "Standardtemplate laden" None

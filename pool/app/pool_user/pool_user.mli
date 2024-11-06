@@ -253,6 +253,7 @@ module Repo : sig
 
   val t : t Caqti_type.t
   val sql_select_columns : string list
+  val make_sql_select_columns : tablename:string -> string list
 end
 
 val searchable_by : Query.Column.t list

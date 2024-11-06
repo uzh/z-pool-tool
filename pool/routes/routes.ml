@@ -679,8 +679,13 @@ module Admin = struct
           ]
         in
         let duplicates =
+          (* TODO: ACCESS *)
           let open Duplicates in
-          let specific = [ get "" ~middlewares:[] show ] in
+          let specific =
+            [ get "" ~middlewares:[] show
+            ; post "ignore" ~middlewares:[] ignore
+            ]
+          in
           [ get "" ~middlewares:[] index
           ; choose ~scope:(Duplicate |> url_key) specific
           ]

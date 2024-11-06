@@ -4,11 +4,14 @@ module Field = Pool_message.Field
    users are. The alert_threshold is the value from which it will be seen as a
    possible duplicate *)
 
-(* TODO: Increase *)
-let alert_threshold = 0.5
+let alert_threshold = 0.7
 
 module Id = struct
   include Pool_model.Base.Id
+end
+
+module Ignored = struct
+  include Pool_model.Base.Boolean
 end
 
 module SimilarityCriteria = struct
@@ -40,8 +43,33 @@ let columns =
 
 type t =
   { id : Id.t
-  ; target_contact_id : Contact.Id.t
-  ; contact : Contact.t
+  ; contact_a : Contact.t
+  ; contact_b : Contact.t
   ; score : float
+  ; ignored : Ignored.t
   }
 [@@deriving eq, show]
+
+open Query
+open Pool_message
+
+let searchable_by = []
+let sortable_by = []
+
+let column_ignore =
+  Column.create
+    (Field.HideIgnored, "pool_contacts_possible_duplicates.ignore = 0")
+;;
+
+let column_score =
+  Column.create (Field.Score, "pool_contacts_possible_duplicates.score")
+;;
+
+let filterable_by = Some Filter.Condition.Human.[ Checkbox column_ignore ]
+
+let default_query =
+  create
+    ~sort:Sort.{ column = column_score; order = SortOrder.Descending }
+    ~filter:Filter.[ Condition.(Checkbox (column_ignore, true)) ]
+    ()
+;;
