@@ -4,6 +4,7 @@ module Command = Cqrs_command.Settings_command
 
 let get_or_failwith = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
+let current_user = Test_utils.Model.create_admin ()
 let days_to_timespan days = days * 60 * 60 * 24 |> Ptime.Span.of_int_s
 
 module Testable = struct
@@ -35,7 +36,9 @@ let check_events expected generated =
 ;;
 
 let handle_result result =
-  result |> get_or_failwith |> Pool_event.handle_events database_label
+  result
+  |> get_or_failwith
+  |> Pool_event.handle_events database_label current_user
 ;;
 
 let check_contact_email _ () =
@@ -293,7 +296,7 @@ let create_smtp_auth =
   (* feed the event into the event handler to affect the database *)
   let& () =
     [ Email.SmtpCreated write_event |> Pool_event.email ]
-    |> Pool_event.handle_events test_db
+    |> Pool_event.handle_events test_db current_user
     |> Lwt_result.ok
   in
   (* get the smtp auth that was actually saved and compare it *)
@@ -339,7 +342,7 @@ let delete_smtp_auth =
     [ Email.SmtpCreated write_event |> Pool_event.email
     ; Email.SmtpDeleted id |> Pool_event.email
     ]
-    |> Pool_event.handle_events test_db
+    |> Pool_event.handle_events test_db current_user
     |> Lwt_result.ok
   in
   (* get the smtp auth that was actually saved and compare it *)

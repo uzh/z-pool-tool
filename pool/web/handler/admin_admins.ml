@@ -95,7 +95,7 @@ let new_form req =
 
 let create_admin req =
   let redirect_path = Format.asprintf "/admin/admins" in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/new" redirect_path)
     @@
@@ -112,8 +112,7 @@ let create_admin req =
       Sihl.Web.Request.to_urlencoded req ||> decode >== handle ~id ~tags
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      |> Lwt_result.ok
+      Pool_event.handle_events ~tags database_label user events |> Lwt_result.ok
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
@@ -156,12 +155,9 @@ let grant_role req =
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
-    let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
-    in
     let* admin = Admin.find database_label admin_id in
     let target_id = to_guardian_id admin in
-    Helpers.Guard.grant_role ~redirect_path ~actor ~target_id database_label req
+    Helpers.Guard.grant_role ~redirect_path ~user ~target_id database_label req
   in
   result |> extract_happy_path req
 ;;
@@ -171,7 +167,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
   let redirect_path =
     CCString.replace ~which:`Right ~sub:"/revoke-role" ~by:"/edit" target
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let* target_id =
@@ -180,7 +176,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
       >|+ Admin.id
       >|+ Guard.Uuid.actor_of Admin.Id.value
     in
-    Helpers.Guard.revoke_role ~redirect_path ~target_id database_label req
+    Helpers.Guard.revoke_role ~redirect_path ~user ~target_id database_label req
   in
   result |> extract_happy_path req
 ;;

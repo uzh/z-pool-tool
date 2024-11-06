@@ -38,6 +38,7 @@ module Name = struct
 
   let find_opt lang t = CCList.assoc_opt ~eq:Language.equal lang t
   let find_opt_or lang default t = find_opt lang t |> CCOption.value ~default
+  let get_hd t = CCList.hd t |> snd
 
   let create sys_languages names =
     CCList.filter
@@ -140,7 +141,7 @@ module Validation = struct
   type 'a t =
     (('a -> ('a, Pool_message.Error.t) result) * raw
     [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
-  [@@deriving show, eq]
+  [@@deriving show, eq, yojson]
 
   let read_key key_of_yojson m =
     try Some (Utils.Json.read_variant key_of_yojson m) with
@@ -368,6 +369,10 @@ module Validation = struct
 end
 
 module SelectOption = struct
+  include Changelog.DefaultSettings
+
+  let model = Pool_message.Field.CustomFieldOption
+
   module Id = struct
     include Pool_common.Id
   end
@@ -608,6 +613,10 @@ module Public = struct
 end
 
 module Group = struct
+  include Changelog.DefaultSettings
+
+  let model = Pool_message.Field.CustomFieldGroup
+
   module Id = struct
     include Pool_common.Id
 
@@ -619,7 +628,7 @@ module Group = struct
     ; model : Model.t
     ; name : Name.t
     }
-  [@@deriving eq, show]
+  [@@deriving eq, show, yojson]
 
   let create ?(id = Id.create ()) model name = { id; model; name }
 
@@ -663,7 +672,7 @@ type 'a custom_field =
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 type t =
   | Boolean of bool custom_field
@@ -672,7 +681,7 @@ type t =
   | MultiSelect of SelectOption.t list custom_field * SelectOption.t list
   | Select of SelectOption.t custom_field * SelectOption.t list
   | Text of string custom_field
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 let create
   ?(id = Pool_common.Id.create ())
@@ -825,6 +834,66 @@ let create
          , select_options ))
 ;;
 
+type update =
+  { name : Name.t
+  ; hint : Hint.t
+  ; required : Required.t
+  ; disabled : Disabled.t
+  ; custom_field_group_id : Group.Id.t option
+  ; admin_hint : AdminHint.t option
+  ; admin_override : AdminOverride.t
+  ; admin_view_only : AdminViewOnly.t
+  ; admin_input_only : AdminInputOnly.t
+  ; prompt_on_registration : PromptOnRegistration.t
+  }
+
+let update_attributes
+  ({ name
+   ; hint
+   ; required
+   ; disabled
+   ; custom_field_group_id
+   ; admin_hint
+   ; admin_override
+   ; admin_view_only
+   ; admin_input_only
+   ; prompt_on_registration
+   } :
+    update)
+  (field : 'a custom_field)
+  : 'a custom_field
+  =
+  { field with
+    name
+  ; hint
+  ; required
+  ; disabled
+  ; custom_field_group_id
+  ; admin_hint
+  ; admin_override
+  ; admin_view_only
+  ; admin_input_only
+  ; prompt_on_registration
+  }
+;;
+
+let update field update validation =
+  match field with
+  | Boolean field -> Boolean (update_attributes update field)
+  | Date field -> Date (update_attributes update field)
+  | Number field ->
+    let validation = Validation.Number.schema validation in
+    Number { (update_attributes update field) with validation }
+  | MultiSelect (field, options) ->
+    let validation = Validation.MultiSelect.schema validation in
+    let field = { (update_attributes update field) with validation } in
+    MultiSelect (field, options)
+  | Select (field, options) -> Select (update_attributes update field, options)
+  | Text field ->
+    let validation = Validation.Text.schema validation in
+    Text { (update_attributes update field) with validation }
+;;
+
 let id = function
   | Boolean { id; _ }
   | Date { id; _ }
@@ -894,6 +963,17 @@ let published_at = function
   | MultiSelect ({ published_at; _ }, _)
   | Select ({ published_at; _ }, _)
   | Text { published_at; _ } -> published_at
+;;
+
+let set_published_at =
+  let published_at = Some (PublishedAt.create_now ()) in
+  function
+  | Boolean m -> Boolean { m with published_at }
+  | Date m -> Date { m with published_at }
+  | Number m -> Number { m with published_at }
+  | MultiSelect (m, options) -> MultiSelect ({ m with published_at }, options)
+  | Select (m, options) -> Select ({ m with published_at }, options)
+  | Text m -> Text { m with published_at }
 ;;
 
 let group_id = function

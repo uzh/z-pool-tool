@@ -46,7 +46,7 @@ let update req =
     |> Pool_common.Id.of_string
   in
   let redirect_path = Format.asprintf "/admin/i18n" in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -58,9 +58,7 @@ let update req =
       urlencoded |> decode >>= handle ~tags property
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Pool_message.(Success.Updated Field.I18n) ] ]

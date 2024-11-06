@@ -1,4 +1,7 @@
+include Changelog.DefaultSettings
 open Ppx_yojson_conv_lib.Yojson_conv
+
+let model = Pool_message.Field.Experiment
 
 module Id = struct
   include Pool_common.Id
@@ -17,8 +20,10 @@ module PublicTitle = struct
   include Pool_model.Base.String
 
   let field = Pool_message.Field.PublicTitle
-  let schema () = schema field ()
-  let placeholder = "###"
+
+  let schema ?default () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
+    Pool_conformist.schema_decoder ?default create value field
+  ;;
 end
 
 module InternalDescription = struct
@@ -42,18 +47,18 @@ module CostCenter = struct
   let schema () = schema field ()
 end
 
-module ContactEmail = struct
-  open Pool_user.EmailAddress
-
-  let field = Pool_message.Field.ContactEmail
-  let schema = schema ~field
-end
-
 module Filter = struct
   include Filter
 
   let yojson_of_t { Filter.id; _ } = `String (Id.value id)
   let t_of_yojson _ = failwith "decode only"
+end
+
+module ContactEmail = struct
+  open Pool_user.EmailAddress
+
+  let field = Pool_message.Field.ContactEmail
+  let schema = schema ~field
 end
 
 module DirectRegistrationDisabled = struct

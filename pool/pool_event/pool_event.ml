@@ -34,6 +34,7 @@ type t =
   | WaitingList of Waiting_list.event
 [@@deriving eq, show, variants]
 
+(* TODO: Consider using variants, instead of custom functions *)
 let admin events = Admin events
 let announcement events = Announcement events
 let api_key events = ApiKey events
@@ -66,7 +67,7 @@ let user_import events = UserImport events
 let user events = User events
 let waiting_list events = WaitingList events
 
-let handle_event ?(tags = Logs.Tag.empty) pool =
+let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   let info model pp event =
     let tags = tags |> Database.Logger.Tags.add pool in
     let src = Logs.Src.create [%string "%{model}.events"] in
@@ -95,7 +96,7 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Contact.handle_event pool event
   | CustomField event ->
     info "custom_field" Custom_field.pp_event event;
-    Custom_field.handle_event pool event
+    Custom_field.handle_event ?user_uuid pool event
   | Database event ->
     info "database" Pool_database.pp_event event;
     Pool_database.handle_event pool event
@@ -107,10 +108,10 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Email.handle_verification_event pool event
   | Experiment event ->
     info "experiment" Experiment.pp_event event;
-    Experiment.handle_event pool event
+    Experiment.handle_event ?user_uuid pool event
   | Filter event ->
     info "Filter" Filter.pp_event event;
-    Filter.handle_event pool event
+    Filter.handle_event ?user_uuid pool event
   | Guard event ->
     info "guard" Guard.pp_event event;
     Guard.handle_event pool event
@@ -128,10 +129,10 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Message_template.handle_event pool event
   | OrganisationalUnit event ->
     info "organisational_unit" Organisational_unit.pp_event event;
-    Organisational_unit.handle_event pool event
+    Organisational_unit.handle_event ?user_uuid pool event
   | PoolLocation event ->
     info "pool_location" Pool_location.pp_event event;
-    Pool_location.handle_event pool event
+    Pool_location.handle_event ?user_uuid pool event
   | PoolTenant event ->
     info "pool_tenant" Pool_tenant.pp_event event;
     Pool_tenant.handle_event pool event
@@ -140,7 +141,7 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Pool_version.handle_event event
   | Session event ->
     info "session" Session.pp_event event;
-    Session.handle_event pool event
+    Session.handle_event ?user_uuid pool event
   | Settings event ->
     info "settings" Settings.pp_event event;
     Settings.handle_event pool event
@@ -173,4 +174,23 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Waiting_list.handle_event pool event
 ;;
 
-let handle_events ?tags pool = Lwt_list.iter_s (handle_event ?tags pool)
+let user_uuid =
+  let open Pool_context in
+  function
+  | Guest -> None
+  | Contact contact -> Contact.(id contact |> Id.to_common) |> Option.some
+  | Admin admin -> Admin.(id admin |> Id.to_common) |> Option.some
+;;
+
+let handle_event ?tags pool user event =
+  let user_uuid = user_uuid user in
+  handle ?tags ?user_uuid pool event
+;;
+
+let handle_events ?tags pool user events =
+  let user_uuid = user_uuid user in
+  Lwt_list.iter_s (handle ?tags ?user_uuid pool) events
+;;
+
+let handle_system_event ?tags pool event = handle ?tags pool event
+let handle_system_events ?tags pool = Lwt_list.iter_s (handle ?tags pool)

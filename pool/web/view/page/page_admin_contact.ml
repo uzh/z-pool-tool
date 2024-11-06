@@ -540,6 +540,13 @@ let detail
       ; experiment_history context contact experiments query
       ]
   in
+  let changelog_url =
+    Http_utils.Url.Admin.contact_path
+      ~suffix:"changelog"
+      ~id:(Contact.id contact)
+      ()
+    |> Uri.of_string
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
@@ -554,6 +561,7 @@ let detail
         ~a:[ a_class [ "grid-col-2" ] ]
         [ assign_contact_form context contact ]
     ; past_experiments_html
+    ; Component.Changelog.list context changelog_url None
     ]
 ;;
 

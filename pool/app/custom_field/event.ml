@@ -10,19 +10,59 @@ type event =
   | GroupCreated of Group.t
   | GroupDestroyed of Group.t
   | GroupsSorted of Group.t list
-  | GroupUpdated of Group.t
+  | GroupUpdated of (Group.t * Group.t)
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
   | OptionPublished of SelectOption.t
   | OptionsSorted of SelectOption.t list
-  | OptionUpdated of SelectOption.t
+  | OptionUpdated of (SelectOption.t * SelectOption.t)
   | PartialUpdate of PartialUpdate.t * Contact.t * Pool_context.user
   | Published of t
-  | Updated of t
+  | Updated of t * t
 [@@deriving eq, show, variants]
 
-let handle_event pool : event -> unit Lwt.t =
+let handle_event ?user_uuid pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
+  let create_changelog before after =
+    let open Version_history in
+    insert pool ?user_uuid ~entity_uuid:(id before) ~before ~after ()
+  in
+  let create_option_changelog before after =
+    let open Version_history.OptionVersionHistory in
+    insert pool ?user_uuid ~entity_uuid:before.SelectOption.id ~before ~after ()
+  in
+  let create_group_changelog before after =
+    let open Version_history.GroupVersionHistory in
+    insert pool ?user_uuid ~entity_uuid:before.Group.id ~before ~after ()
+  in
+  let create_custom_field_answer_changelog contact public =
+    let open Version_history in
+    let contact_id = Contact.id contact in
+    let field_id = Public.id public in
+    let after = AnswerRecord.from_public public in
+    let%lwt before =
+      Repo_version_history.find_answer_opt pool contact_id field_id
+      ||> CCOption.value ~default:(AnswerRecord.default_record after)
+    in
+    AnswerVersionHistory.insert
+      pool
+      ?user_uuid
+      ~entity_uuid:(Contact.Id.to_common contact_id)
+      ~before
+      ~after
+      ()
+  in
+  let create_contact_changelog before after =
+    let open Contact in
+    let contact_id = id before in
+    VersionHistory.insert
+      pool
+      ?user_uuid
+      ~entity_uuid:(Id.to_common contact_id)
+      ~before
+      ~after
+      ()
+  in
   function
   | AdminAnswerCleared (m, entity_uuid) ->
     Repo_partial_update.clear_answer
@@ -55,15 +95,35 @@ let handle_event pool : event -> unit Lwt.t =
   | GroupDestroyed m -> Repo_group.destroy pool m
   | GroupsSorted m ->
     CCList.map (fun m -> m.Group.id) m |> Repo_group.sort_groups pool
-  | GroupUpdated m -> Repo_group.update pool m
+  | GroupUpdated (m, updated) ->
+    let%lwt () = create_group_changelog m updated in
+    Repo_group.update pool updated
   | OptionCreated (field_id, m) -> Repo_option.insert pool field_id m
   | OptionDestroyed m -> Repo_option.destroy pool m
   | OptionPublished m -> Repo_option.publish pool m
   | OptionsSorted m ->
     CCList.map (fun m -> m.SelectOption.id) m |> Repo_option.sort_options pool
-  | OptionUpdated m -> Repo_option.update pool m
-  | PartialUpdate (update, contact, user) ->
-    Repo_partial_update.update pool user update contact
-  | Published m -> Repo.publish pool m
-  | Updated m -> Repo.update pool m
+  | OptionUpdated (m, updated) ->
+    let%lwt () = create_option_changelog m updated in
+    Repo_option.update pool updated
+  | PartialUpdate (update, contact, current_user) ->
+    let open Contact in
+    let open PartialUpdate in
+    let%lwt () =
+      match update with
+      | Custom public -> create_custom_field_answer_changelog contact public
+      | Firstname (_, firstname) ->
+        create_contact_changelog contact (set_firstname contact firstname)
+      | Lastname (_, lastname) ->
+        create_contact_changelog contact (set_lastname contact lastname)
+      | Language (_, language) ->
+        create_contact_changelog contact (set_language contact language)
+    in
+    Repo_partial_update.update pool current_user update contact
+  | Published m ->
+    let%lwt () = create_changelog m (set_published_at m) in
+    Repo.publish pool m
+  | Updated (t, updated) ->
+    let%lwt () = create_changelog t updated in
+    Repo.update pool updated
 ;;

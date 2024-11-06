@@ -108,7 +108,7 @@ let create req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , api_key_path ~suffix:"new" ()
@@ -121,9 +121,7 @@ let create req =
       decode urlencoded >>= handle ~id ~tags:Logs.Tag.empty |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (api_key_path ~id ())
         [ Http_utils.Message.set ~success:[ Success.Created Field.ApiKey ] ]
@@ -139,7 +137,7 @@ let update req =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let id = api_key_id req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , api_key_path ~id ~suffix:"edit" ()
@@ -154,9 +152,7 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (api_key_path ~id ())
         [ Http_utils.Message.set ~success:[ Success.Updated Field.ApiKey ] ]
@@ -169,7 +165,7 @@ let update req =
 let disable req =
   let tags = Pool_context.Logger.Tags.req req in
   let id = api_key_id req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, api_key_path ())
     @@
     let* api_key = Api_key.find database_label id in
@@ -178,9 +174,7 @@ let disable req =
       handle ~tags:Logs.Tag.empty api_key |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (api_key_path ())
         [ Http_utils.Message.set ~success:[ Success.Updated Field.ApiKey ] ]
@@ -219,12 +213,9 @@ let grant_role req =
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
-    let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
-    in
     let* api_key = find database_label key_id in
     let target_id = Guard.Uuid.actor_of Id.value api_key.id in
-    Helpers.Guard.grant_role ~redirect_path ~actor ~target_id database_label req
+    Helpers.Guard.grant_role ~redirect_path ~user ~target_id database_label req
   in
   result |> extract_happy_path req
 ;;
@@ -235,12 +226,12 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
   let redirect_path =
     CCString.replace ~which:`Right ~sub:"/revoke-role" ~by:"/edit" target
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let* api_key = api_key_id req |> find database_label in
     let target_id = Guard.Uuid.actor_of Id.value api_key.id in
-    Helpers.Guard.revoke_role ~redirect_path ~target_id database_label req
+    Helpers.Guard.revoke_role ~redirect_path ~user ~target_id database_label req
   in
   result |> extract_happy_path req
 ;;

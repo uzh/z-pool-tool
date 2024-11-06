@@ -32,6 +32,12 @@ type data_table =
   (** additional url parameters that will be added to the dynamic parameters of the query, e.g. the language *)
   }
 
+val hx_get
+  :  url:string
+  -> target_id:string
+  -> push_url:bool
+  -> [> `User_data ] Tyxml.Html.attrib list
+
 val create_meta
   :  ?additional_url_params:(Pool_message.Field.t * string) list
   -> ?filter:Query.Filter.human
@@ -54,6 +60,7 @@ val make
   :  ?align_last_end:bool
   -> ?align_top:bool
   -> ?classnames:string list
+  -> ?execute_onload:bool
   -> ?layout:[ `Striped | `Simple ]
   -> ?prepend_html:[ | Html_types.flow5 ] Tyxml_html.elt
   -> ?th_class:string list

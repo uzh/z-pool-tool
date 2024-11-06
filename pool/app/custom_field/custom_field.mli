@@ -1,6 +1,8 @@
 module Answer : sig
   module Id : sig
     include Pool_model.Base.IdSig
+
+    val to_common : t -> Pool_common.Id.t
   end
 
   type 'a t =
@@ -28,6 +30,8 @@ end
 
 module Id : sig
   include Pool_model.Base.IdSig
+
+  val to_common : t -> Pool_common.Id.t
 end
 
 module Model : sig
@@ -63,6 +67,7 @@ module Name : sig
   val yojson_of_t : t -> Yojson.Safe.t
   val find_opt : Pool_common.Language.t -> t -> name option
   val find_opt_or : Pool_common.Language.t -> string -> t -> string
+  val get_hd : t -> name
 
   val create
     :  Pool_common.Language.t list
@@ -194,6 +199,8 @@ end
 module SelectOption : sig
   module Id : sig
     include Pool_model.Base.IdSig
+
+    val to_common : t -> Pool_common.Id.t
   end
 
   type t =
@@ -293,6 +300,7 @@ module Group : sig
   module Id : sig
     include Pool_model.Base.IdSig
 
+    val to_common : t -> Pool_common.Id.t
     val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
@@ -372,6 +380,20 @@ val create
   -> PromptOnRegistration.t
   -> (t, Pool_message.Error.t) result
 
+type update =
+  { name : Name.t
+  ; hint : Hint.t
+  ; required : Required.t
+  ; disabled : Disabled.t
+  ; custom_field_group_id : Group.Id.t option
+  ; admin_hint : AdminHint.t option
+  ; admin_override : AdminOverride.t
+  ; admin_view_only : AdminViewOnly.t
+  ; admin_input_only : AdminInputOnly.t
+  ; prompt_on_registration : PromptOnRegistration.t
+  }
+
+val update : t -> update -> Validation.raw -> t
 val boolean_fields : Pool_message.Field.t list
 val has_options : t -> (unit, Pool_message.Error.t) result
 val id : t -> Id.t
@@ -424,6 +446,12 @@ val validate_partial_update
   -> Pool_message.Field.t * Pool_common.Version.t * string list
   -> (PartialUpdate.t, Pool_message.Error.t) Lwt_result.t
 
+val changelog_to_human
+  :  Database.Label.t
+  -> Pool_common.Language.t
+  -> Changelog.t
+  -> Changelog.t Lwt.t
+
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
   | AnswerUpserted of Public.t * Contact.Id.t * Pool_context.user
@@ -434,20 +462,26 @@ type event =
   | GroupCreated of Group.t
   | GroupDestroyed of Group.t
   | GroupsSorted of Group.t list
-  | GroupUpdated of Group.t
+  | GroupUpdated of (Group.t * Group.t)
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
   | OptionPublished of SelectOption.t
   | OptionsSorted of SelectOption.t list
-  | OptionUpdated of SelectOption.t
+  | OptionUpdated of (SelectOption.t * SelectOption.t)
   | PartialUpdate of PartialUpdate.t * Contact.t * Pool_context.user
   | Published of t
-  | Updated of t
+  | Updated of t * t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val find_by_model : Database.Label.t -> Model.t -> t list Lwt.t
 val find_by_group : Database.Label.t -> Group.Id.t -> t list Lwt.t
 val find_ungrouped_by_model : Database.Label.t -> Model.t -> t list Lwt.t
@@ -524,6 +558,11 @@ val find_group
 
 val find_groups_by_model : Database.Label.t -> Model.t -> Group.t list Lwt.t
 
+val find_names
+  :  Database.Label.t
+  -> Id.t list
+  -> (Pool_common.Id.t * Name.t) list Lwt.t
+
 module Repo : sig
   module Id : sig
     type t = Id.t
@@ -587,3 +626,13 @@ module Guard : sig
     end
   end
 end
+
+module VersionHistory : Changelog.TSig with type record = t
+module OptionVersionHistory : Changelog.TSig with type record = SelectOption.t
+module GroupVersionHistory : Changelog.TSig with type record = Group.t
+
+module AnswerRecord : sig
+  type t
+end
+
+module AnswerVersionHistory : Changelog.TSig with type record = AnswerRecord.t

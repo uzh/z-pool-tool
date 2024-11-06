@@ -2,6 +2,7 @@ include Entity
 include Event
 module Guard = Entity_guard
 module Human = Entity_human
+module VersionHistory = Version_history
 module UtilsF = Filter_utils
 
 let find = Repo.find

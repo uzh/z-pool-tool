@@ -260,7 +260,7 @@ let hide_announcement req =
     let* () =
       Cqrs_command.Announcement_command.Hide.handle (user, announcement)
       |> Lwt_result.lift
-      |>> Pool_event.handle_events Database.root
+      |>> Pool_event.handle_events Database.root user
     in
     Tyxml.Html.txt "" |> Htmx.html_to_plain_text_response |> Lwt_result.return
   in
