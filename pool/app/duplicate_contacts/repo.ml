@@ -283,6 +283,10 @@ let find_by_contact ?query pool contact =
     Repo_entity.t
 ;;
 
+let all ?query pool =
+  Query.collect_and_count pool query ~select:find_request_sql Repo_entity.t
+;;
+
 let ingore_request =
   let open Caqti_request.Infix in
   Format.asprintf
@@ -290,7 +294,7 @@ let ingore_request =
       UPDATE 
         pool_contacts_possible_duplicates
       SET
-        ignore = 1
+        `ignore` = 1
       WHERE
         uuid = UNHEX(REPLACE($1, '-', '')) 
     |sql}

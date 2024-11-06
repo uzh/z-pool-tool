@@ -40,6 +40,12 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let duplicate_path ?suffix ?id () =
+    (contact_path ~suffix:Field.(show Duplicate)) ()
+    |> append_opt (map Duplicate_contacts.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let role_permission_path ?suffix ?role () =
     settings_path "role-permission"
     |> append_opt (map Role.Role.name role)

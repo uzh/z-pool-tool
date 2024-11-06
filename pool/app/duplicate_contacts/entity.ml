@@ -54,7 +54,6 @@ open Query
 open Pool_message
 
 let searchable_by = []
-let sortable_by = []
 
 let column_ignore =
   Column.create
@@ -66,6 +65,7 @@ let column_score =
 ;;
 
 let filterable_by = Some Filter.Condition.Human.[ Checkbox column_ignore ]
+let sortable_by = [ column_score ]
 
 let default_query =
   create
