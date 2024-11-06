@@ -136,6 +136,7 @@ module Model = struct
 
   let create_user
     ?(id = Pool_user.Id.create ())
+    ?(firstname = Pool_user.Firstname.of_string "Jane")
     ?(email =
       Format.asprintf "test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
       |> Pool_user.EmailAddress.of_string)
@@ -145,16 +146,27 @@ module Model = struct
     { Pool_user.id
     ; email
     ; lastname
-    ; firstname = Pool_user.Firstname.of_string "Jane"
+    ; firstname
     ; status = Pool_user.Status.Active
     ; admin = Pool_user.IsAdmin.create false
     ; confirmed = Pool_user.Confirmed.create true
     }
   ;;
 
-  let create_contact ?id ?language ?lastname ?(with_terms_accepted = true) () =
+  let create_contact
+    ?id
+    ?language
+    ?firstname
+    ?lastname
+    ?(with_terms_accepted = true)
+    ()
+    =
     let user =
-      create_user ?id:(CCOption.map Contact.Id.to_user id) ?lastname ()
+      create_user
+        ?id:(CCOption.map Contact.Id.to_user id)
+        ?firstname
+        ?lastname
+        ()
     in
     { Contact.user
     ; terms_accepted_at =

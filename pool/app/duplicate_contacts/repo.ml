@@ -34,8 +34,7 @@ let find_request_sql ?(count = false) =
 ;;
 
 let similarity_request user_columns custom_field_columns similarities average =
-  let user_columns = user_columns |> CCString.concat "," in
-  let custom_field_columns = custom_field_columns |> CCString.concat "," in
+  let columns = user_columns @ custom_field_columns |> CCString.concat "," in
   let similarities = similarities |> CCString.concat "," in
   let contact_joins =
     {sql| 
@@ -48,8 +47,7 @@ let similarity_request user_columns custom_field_columns similarities average =
       WITH filtered_contacts AS (
         SELECT
           user_users.uuid,
-          %{user_columns},
-          %{custom_field_columns}
+          %{columns}
         FROM
           pool_contacts
         %{contact_joins}
