@@ -127,11 +127,11 @@ let edit_template req =
 ;;
 
 let delete req =
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let experiment_id = experiment_id req in
     let template_id = template_id req in
     let redirect = experiment_path experiment_id in
-    Helpers.MessageTemplates.delete database_label template_id redirect
+    Helpers.MessageTemplates.delete database_label user template_id redirect
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;

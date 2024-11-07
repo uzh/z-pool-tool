@@ -30,7 +30,7 @@ let create req =
     multipart_encoded
     |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
   in
-  let result (_ : Pool_context.t) =
+  let result { Pool_context.user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -57,7 +57,7 @@ let create req =
       let events = Create.handle ~tags database decoded |> Lwt_result.lift in
       events >|> HttpUtils.File.cleanup_upload Root.label files
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Root.label) in
+    let handle = Pool_event.handle_events Database.Pool.Root.label user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path
@@ -99,7 +99,7 @@ let create_operator req =
   let redirect_path =
     Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value tenant_id)
   in
-  let result _ =
+  let result { Pool_context.user; _ } =
     Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/operator" redirect_path)
     @@
@@ -123,9 +123,7 @@ let create_operator req =
       |> Lwt_result.lift
     in
     let handle events =
-      events
-      |> Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db)
-      |> Lwt_result.ok
+      events |> Pool_event.handle_events ~tags tenant_db user |> Lwt_result.ok
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions

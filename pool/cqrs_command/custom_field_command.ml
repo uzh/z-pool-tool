@@ -169,7 +169,6 @@ end = struct
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
-    let id = Custom_field.id custom_field in
     let* () =
       if Custom_field.FieldType.equal
            field_type
@@ -178,24 +177,23 @@ end = struct
       then Ok ()
       else Error Pool_message.Error.CustomFieldTypeChangeNotAllowed
     in
-    let* t =
-      Custom_field.create
-        ~id
-        field_type
-        Custom_field.(model custom_field)
-        name
-        hint
-        validation
-        required
-        disabled
-        custom_field_group_id
-        admin_hint
-        admin_override
-        admin_view_only
-        admin_input_only
-        prompt_on_registration
+    let update =
+      { Custom_field.name
+      ; hint
+      ; required
+      ; disabled
+      ; custom_field_group_id
+      ; admin_hint
+      ; admin_override
+      ; admin_view_only
+      ; admin_input_only
+      ; prompt_on_registration
+      }
     in
-    Ok [ Custom_field.Updated t |> Pool_event.custom_field ]
+    let updated = Custom_field.update custom_field update validation in
+    Ok
+      [ Custom_field.Updated (custom_field, updated) |> Pool_event.custom_field
+      ]
   ;;
 
   let effects = Custom_field.Guard.Access.update

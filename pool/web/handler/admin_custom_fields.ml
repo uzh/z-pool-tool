@@ -126,7 +126,7 @@ let write ?id req model =
     | None -> Url.Field.new_path model, Updated Field.CustomField
     | Some id -> Url.Field.edit_path (model, id), Created Field.CustomField
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -163,9 +163,7 @@ let write ?id req model =
         |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (Url.index_path model)
         [ HttpUtils.Message.set ~success:[ success ] ]
@@ -191,7 +189,7 @@ let toggle_action action req =
     HttpUtils.get_field_router_param req Field.CustomField
     |> Custom_field.Id.of_string
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, Url.fallback_path, [])
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -211,9 +209,7 @@ let toggle_action action req =
       | `Delete -> Success.Deleted Field.CustomField
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (Url.index_path model)
         [ HttpUtils.Message.set ~success:[ success ] ]
@@ -234,7 +230,7 @@ let sort_options req =
       |> Custom_field.Id.of_string
     in
     let redirect_path = Url.Field.edit_path (model, custom_field_id) in
-    let result { Pool_context.database_label; _ } =
+    let result { Pool_context.database_label; user; _ } =
       Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
       @@
       let tags = Pool_context.Logger.Tags.req req in
@@ -263,7 +259,7 @@ let sort_options req =
       in
       let handle events =
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         Http_utils.redirect_to_with_actions
           redirect_path
@@ -285,7 +281,7 @@ let sort_fields req ?group () =
       | None -> Url.index_path current_model
       | Some group -> Url.Group.edit_path (current_model, group)
     in
-    let result { Pool_context.database_label; _ } =
+    let result { Pool_context.database_label; user; _ } =
       Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
       @@
       let open Custom_field in
@@ -312,7 +308,7 @@ let sort_fields req ?group () =
       in
       let handle events =
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         Http_utils.redirect_to_with_actions
           redirect_path
@@ -328,6 +324,32 @@ let sort_fields req ?group () =
 ;;
 
 let sort_ungrouped_fields req = sort_fields req ()
+
+let changelog req =
+  let response req model =
+    let custom_field_id =
+      HttpUtils.get_field_router_param req Field.CustomField
+      |> Custom_field.Id.of_string
+    in
+    let url =
+      HttpUtils.Url.Admin.custom_fields_path
+        model
+        ~suffix:"changelog"
+        ~id:custom_field_id
+        ()
+    in
+    let to_human { Pool_context.database_label; language; _ } =
+      Custom_field.changelog_to_human database_label language
+    in
+    let open Custom_field in
+    Helpers.Changelog.htmx_handler
+      ~to_human
+      ~url
+      (custom_field_id |> Id.to_common)
+      req
+  in
+  get_model response req
+;;
 
 module Access : sig
   include module type of Helpers.Access

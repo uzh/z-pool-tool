@@ -46,7 +46,9 @@ let t =
 module Write = struct
   let t =
     let encode (m : t) = Ok (m.id, (m.query, m.title)) in
-    let decode _ = failwith "Write only model" in
+    let decode _ =
+      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
+    in
     Caqti_type.(custom ~encode ~decode (t2 Id.t (t2 Query.t (option Title.t))))
   ;;
 end

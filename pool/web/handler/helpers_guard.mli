@@ -37,7 +37,7 @@ val can_rerun_session_filter
 
 val grant_role
   :  redirect_path:string
-  -> actor:Guard.Actor.t
+  -> user:Pool_context.user
   -> target_id:Guard.Uuid.Actor.t
   -> Database.Label.t
   -> Rock.Request.t
@@ -45,6 +45,7 @@ val grant_role
 
 val revoke_role
   :  redirect_path:string
+  -> user:Pool_context.user
   -> target_id:Guard.Uuid.Actor.t
   -> Database.Label.t
   -> Rock.Request.t

@@ -23,7 +23,7 @@ Example: seed.default guardian_role_permission
       let%lwt () = Database.Pool.initialize () in
       let%lwt () =
         Database.Pool.all ()
-        |> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
+        |> Lwt_list.iter_s CCFun.(flip Pool_event.handle_system_events events)
       in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)

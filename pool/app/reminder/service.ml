@@ -118,7 +118,7 @@ let send_tenant_reminder database_label =
     let* events =
       create_reminder_events tenant email_reminders text_message_reminders
     in
-    let%lwt () = Pool_event.handle_events database_label events in
+    let%lwt () = Pool_event.handle_system_events database_label events in
     Lwt_result.return (email_reminders, text_message_reminders)
   in
   ()

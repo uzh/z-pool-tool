@@ -1,4 +1,25 @@
+include Changelog.DefaultSettings
+open Ppx_yojson_conv_lib.Yojson_conv
 open CCFun.Infix
+
+let model = Pool_message.Field.Session
+
+module Ptime = Pool_model.Base.Ptime
+module PtimeSpan = Pool_model.Base.PtimeSpan
+
+module Pool_location = struct
+  include Pool_location
+
+  let t_of_yojson _ = failwith "Not implemented"
+  let yojson_of_t { Pool_location.id; _ } = `String (Id.value id)
+end
+
+module Experiment = struct
+  include Experiment
+
+  let t_of_yojson _ = failwith "Not implemented"
+  let yojson_of_t { Experiment.id; _ } = `String (Id.value id)
+end
 
 module Id = struct
   include Pool_common.Id
@@ -93,9 +114,7 @@ module AssignmentCount = struct
 end
 
 module NoShowCount = struct
-  type t = int [@@deriving eq, show]
-
-  let value m = m
+  include Pool_model.Base.Integer
 
   let create m =
     if m < 0 then Error Pool_message.(Error.Invalid Field.NoShowCount) else Ok m
@@ -103,9 +122,7 @@ module NoShowCount = struct
 end
 
 module ParticipantCount = struct
-  type t = int [@@deriving eq, show]
-
-  let value m = m
+  include Pool_model.Base.Integer
 
   let create m =
     if m < 0
@@ -138,7 +155,7 @@ type t =
   ; follow_up_to : Id.t option
   ; has_follow_ups : bool
   ; start : Start.t
-  ; duration : Ptime.Span.t
+  ; duration : PtimeSpan.t
   ; internal_description : InternalDescription.t option
   ; public_description : PublicDescription.t option
   ; location : Pool_location.t
@@ -166,7 +183,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 (* TODO [aerben] need insertion multiple session? *)
 (* TODO [aerben] do session copying *)
@@ -293,7 +310,7 @@ module Public = struct
     { id : Id.t
     ; follow_up_to : Id.t option
     ; start : Start.t
-    ; duration : Ptime.Span.t
+    ; duration : PtimeSpan.t
     ; description : PublicDescription.t option
     ; location : Pool_location.t
     ; max_participants : ParticipantAmount.t

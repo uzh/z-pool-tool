@@ -93,7 +93,7 @@ let create req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , announcement_path ~suffix:"new" ()
@@ -110,9 +110,7 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (announcement_path ())
         [ Http_utils.Message.set ~success:[ Success.Created Field.Announcement ]
@@ -129,7 +127,7 @@ let update req =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let id = announcement_id req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , announcement_path ~id ~suffix:"edit" ()
@@ -147,9 +145,7 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (announcement_path ())
         [ Http_utils.Message.set ~success:[ Success.Updated Field.Announcement ]

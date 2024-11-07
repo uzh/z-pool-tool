@@ -129,7 +129,7 @@ let confirm_as_contact_integration _ () =
     |> decode
     >>= handle (user_import, user)
     |> get_exn
-    |> Pool_event.handle_events Test_utils.Data.database_label
+    |> Pool_event.handle_events Test_utils.Data.database_label user
   in
   let%lwt contact =
     Contact.find Test_utils.Data.database_label (Contact.id contact)

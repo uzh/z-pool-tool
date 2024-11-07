@@ -1,7 +1,17 @@
 open Test_utils
 
+let default_current_user = Model.create_admin ()
+
 module AnnouncementRepo = struct
-  let create ?id ?start_at ?end_at ?show_to_admins ?show_to_contacts tenant_ids =
+  let create
+    ?(current_user = default_current_user)
+    ?id
+    ?start_at
+    ?end_at
+    ?show_to_admins
+    ?show_to_contacts
+    tenant_ids
+    =
     let announcement =
       Test_utils.Model.create_announcement
         ?id
@@ -14,26 +24,33 @@ module AnnouncementRepo = struct
     let%lwt () =
       Announcement.Created (announcement, tenant_ids)
       |> Pool_event.announcement
-      |> Pool_event.handle_event Database.Pool.Root.label
+      |> Pool_event.handle_event Database.Pool.Root.label current_user
     in
     Lwt.return announcement
   ;;
 end
 
 module AssignmentRepo = struct
-  let create ?id session contact =
+  let create ?(current_user = default_current_user) ?id session contact =
     let assignment = Assignment.create ?id contact in
     let%lwt () =
       Assignment.(Created (assignment, session.Session.id))
       |> Pool_event.assignment
-      |> Pool_event.handle_event Data.database_label
+      |> Pool_event.handle_event Data.database_label current_user
     in
     Lwt.return assignment
   ;;
 end
 
 module ContactRepo = struct
-  let create ?id ?lastname ?language ?(with_terms_accepted = false) () =
+  let create
+    ?(current_user = default_current_user)
+    ?id
+    ?lastname
+    ?language
+    ?(with_terms_accepted = false)
+    ()
+    =
     let open Utils.Lwt_result.Infix in
     let contact =
       Model.create_contact ?id ?lastname ?language ~with_terms_accepted ()
@@ -52,7 +69,8 @@ module ContactRepo = struct
           }
       ]
       @ confirm
-      |> Lwt_list.iter_s (handle_event Data.database_label)
+      |> CCList.map Pool_event.contact
+      |> Pool_event.handle_events Data.database_label current_user
     in
     contact |> id |> find Data.database_label ||> get_or_failwith
   ;;
@@ -61,7 +79,7 @@ end
 module AdminRepo = struct
   open Pool_user
 
-  let create ?id ?email () =
+  let create ?(current_user = default_current_user) ?id ?email () =
     let admin_id = id |> CCOption.value ~default:(Admin.Id.create ()) in
     let open Admin in
     let open Utils.Lwt_result.Infix in
@@ -85,32 +103,42 @@ module AdminRepo = struct
       }
     in
     let%lwt () =
-      [ Created admin ]
-      |> Lwt_list.iter_s (handle_event ~tags Data.database_label)
+      [ Created admin |> Pool_event.admin ]
+      |> Pool_event.handle_events ~tags Data.database_label current_user
     in
     admin_id |> find Data.database_label ||> get_or_failwith
   ;;
 end
 
 module ExperimentRepo = struct
-  let create ?(id = Experiment.Id.create ()) ?title ?online_experiment () =
+  let create
+    ?(current_user = default_current_user)
+    ?(id = Experiment.Id.create ())
+    ?title
+    ?online_experiment
+    ()
+    =
     let experiment = Model.create_experiment ~id ?title ?online_experiment () in
     let%lwt () =
       Experiment.Created experiment
       |> Pool_event.experiment
-      |> Pool_event.handle_event Data.database_label
+      |> Pool_event.handle_event Data.database_label current_user
     in
     experiment |> Lwt.return
   ;;
 end
 
 module LocationRepo = struct
-  let create ?(id = Pool_location.Id.create ()) () =
+  let create
+    ?(current_user = default_current_user)
+    ?(id = Pool_location.Id.create ())
+    ()
+    =
     let location = Model.create_location ~id () in
     let%lwt () =
       Pool_location.Created location
       |> Pool_event.pool_location
-      |> Pool_event.handle_event Data.database_label
+      |> Pool_event.handle_event Data.database_label current_user
     in
     location |> Lwt.return
   ;;
@@ -128,11 +156,15 @@ module MailingRepo = struct
 end
 
 module WaitingListRepo = struct
+  (* TODO: Is there a case where admins create waiting list entries? Or will it
+     always be the contact *)
   let create experiment contact () =
     let%lwt () =
       Waiting_list.Created { Waiting_list.experiment; contact }
       |> Pool_event.waiting_list
-      |> Pool_event.handle_event Data.database_label
+      |> Pool_event.handle_event
+           Data.database_label
+           (Pool_context.Contact contact)
     in
     experiment
     |> Experiment.Public.id
@@ -142,6 +174,7 @@ end
 
 module SessionRepo = struct
   let create
+    ?(current_user = default_current_user)
     ?id
     ?location
     ?follow_up_to
@@ -168,19 +201,26 @@ module SessionRepo = struct
     let%lwt () =
       Session.(Created session)
       |> Pool_event.session
-      |> Pool_event.handle_event Data.database_label
+      |> Pool_event.handle_event Data.database_label current_user
     in
     Lwt.return session
   ;;
 end
 
 module TimeWindowRepo = struct
-  let create ?id start duration experiment () =
+  let create
+    ?(current_user = default_current_user)
+    ?id
+    start
+    duration
+    experiment
+    ()
+    =
     let time_window = Time_window.create ?id start duration experiment in
     let%lwt () =
       Time_window.(Created time_window)
       |> Pool_event.time_window
-      |> Pool_event.handle_event Data.database_label
+      |> Pool_event.handle_event Data.database_label current_user
     in
     Lwt.return time_window
   ;;

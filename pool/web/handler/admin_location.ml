@@ -74,7 +74,7 @@ let create req =
     ||> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
     ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , "/admin/locations/create"
@@ -95,9 +95,7 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         "/admin/locations"
         [ Message.set ~success:[ Pool_message.(Success.Created Field.Location) ]
@@ -134,7 +132,7 @@ let add_file req =
   let path =
     id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/files/create" path)
     @@
@@ -171,9 +169,7 @@ let add_file req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         path
         [ Message.set
@@ -215,6 +211,13 @@ let detail edit req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let changelog req =
+  let open Pool_location in
+  let id = id req Field.Location Id.of_string in
+  let url = HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id () in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
+;;
+
 let show = detail false
 let edit = detail true
 
@@ -249,7 +252,7 @@ let statistics req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let id = id req Field.Location Pool_location.Id.of_string in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
@@ -278,7 +281,7 @@ let update req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+           Pool_event.handle_events ~tags database_label user events
          in
          Http_utils.redirect_to_with_actions
            detail_path
@@ -292,7 +295,7 @@ let update req =
 ;;
 
 let delete req =
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let location_id = id req Field.Location Pool_location.Id.of_string in
     let mapping_id =
       id req Field.FileMapping Pool_location.Mapping.Id.of_string
@@ -311,7 +314,7 @@ let delete req =
       |> Cqrs_command.Location_command.DeleteFile.handle ~tags
       |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
       path
       [ Message.set ~success:[ Pool_message.(Success.Deleted Field.File) ] ]

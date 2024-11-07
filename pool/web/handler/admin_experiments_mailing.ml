@@ -100,7 +100,7 @@ let new_form req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
@@ -124,9 +124,7 @@ let create req =
       >>= handle ~tags experiment
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (experiment_path ~suffix:"mailings" experiment_id)
         [ Message.set ~success:[ Success.Created Field.Mailing ] ]
@@ -186,7 +184,7 @@ let update req =
         ([ "mailings"; Mailing.Id.value id; "edit" ] |> CCString.concat "/")
       experiment_id
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
@@ -205,9 +203,7 @@ let update req =
       urlencoded |> decode >>= handle ~tags mailing
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Updated Field.Mailing ] ]
@@ -298,14 +294,14 @@ let add_condition req =
 let disabler command success_handler req =
   let redirect_path = experiment_path ~suffix:"mailings" (experiment_id req) in
   let mailing_id = HttpUtils.find_id Mailing.Id.of_string Field.Mailing req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* mailing = Mailing.find database_label mailing_id in
     let* events = command mailing |> Lwt_result.lift in
-    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
       redirect_path
       [ Message.set ~success:[ success_handler Field.Mailing ] ]

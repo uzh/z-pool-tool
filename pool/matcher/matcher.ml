@@ -182,12 +182,13 @@ let notify_all_invited pool tenant experiment =
       ||> Email.bulksent
       ||> Pool_event.email
     in
+    let updated =
+      { experiment with
+        matcher_notification_sent = MatcherNotificationSent.create true
+      }
+    in
     let experiment_event =
-      Updated
-        { experiment with
-          matcher_notification_sent = MatcherNotificationSent.create true
-        }
-      |> Pool_event.experiment
+      Updated (experiment, updated) |> Pool_event.experiment
     in
     Lwt.return [ email_event; experiment_event ]
 ;;
@@ -319,7 +320,7 @@ let match_invitations interval pools =
           ~tags:(Database.Logger.Tags.create pool)
           "Sending %4d intivation emails"
           (count_mails events));
-      Pool_event.handle_events pool events)
+      Pool_event.handle_system_events pool events)
   in
   create_invitation_events interval pools >|> handle_events
 ;;
