@@ -689,9 +689,8 @@ let rec error_to_string =
   | ServiceUnavailable -> "Service zur Zeit nicht verfügbar"
   | SessionRegistrationViaParent -> "Einschreibung via Hauptsession."
   | SessionTenantNotFound ->
-    "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
-     versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
-     kontaktieren."
+    "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals \
+     versuchen."
   | SessionAlreadyCanceled date ->
     CCFormat.asprintf "Diese Session wurde bereits abgesagt am %s." date
   | SessionAlreadyClosed date ->
