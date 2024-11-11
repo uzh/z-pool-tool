@@ -656,8 +656,7 @@ let rec error_to_string =
   | ServiceUnavailable -> "Service currently not available."
   | SessionRegistrationViaParent -> "Registration via main session."
   | SessionTenantNotFound ->
-    "Missing tenant: something on our side went wrong, please try again later \
-     or on multi occurrences please contact the Administrator."
+    "Missing tenant: something on our side went wrong, please try again later."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s smaller than %s"
