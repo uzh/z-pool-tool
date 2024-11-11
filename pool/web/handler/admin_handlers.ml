@@ -19,3 +19,4 @@ module Session = Admin_session
 module Settings = Admin_settings
 module SignupCodes = Admin_signup_codes
 module Version = Admin_version
+module Users = Admin_users

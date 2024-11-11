@@ -430,7 +430,7 @@ let[@warning "-4"] create_tenant () =
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
       ; Pool_database.Migrated database |> Pool_event.database
       ; System_event.(
-          Job.TenantDatabaseAdded database_label
+          Job.TenantDatabaseReset database_label
           |> create ~id:db_added_event
           |> created)
         |> Pool_event.system_event
@@ -556,7 +556,7 @@ let update_tenant_database () =
         [ Pool_tenant.DatabaseEdited (tenant, database)
           |> Pool_event.pool_tenant
         ; System_event.(
-            Job.TenantDatabaseUpdated (label database)
+            Job.TenantDatabaseReset (label database)
             |> create ~id:system_event_id
             |> created)
           |> Pool_event.system_event

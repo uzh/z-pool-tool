@@ -601,35 +601,17 @@ module Repo = struct
     all_experiments () ||> CCList.hd
   ;;
 
-  let create_experiment ?(id = Experiment.Id.create ()) ?filter () =
-    let experiment = Model.create_experiment ~id ?filter () in
-    let%lwt () =
-      Experiment.Created experiment
-      |> Pool_event.experiment
-      |> Pool_event.handle_event Data.database_label
-    in
-    Lwt.return experiment
-  ;;
+  (* TODO: This belongs to the intergration utils *)
+  (* let create_experiment ?(id = Experiment.Id.create ()) ?filter () = let
+     experiment = Model.create_experiment ~id ?filter () in let%lwt () =
+     Experiment.Created experiment |> Pool_event.experiment |>
+     Pool_event.handle_event Data.database_label in Lwt.return experiment ;; *)
 
   let first_location () =
     let open Utils.Lwt_result.Infix in
     Pool_location.find_all Data.database_label ||> fst ||> CCList.hd
   ;;
 end
-
-let truncate_tables database_label tables =
-  let open Utils.Lwt_result.Infix in
-  let open Caqti_request.Infix in
-  let query name =
-    [%string "TRUNCATE TABLE %{name}"] |> Caqti_type.(unit ->. unit)
-  in
-  Database.with_disabled_fk_check database_label (fun connection ->
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    CCList.map query tables
-    |> Lwt_list.map_s (CCFun.flip Connection.exec ())
-    ||> CCResult.flatten_l)
-  ||> Utils.flat_unit
-;;
 
 let case
   ?(preparation : unit -> (unit, Pool_message.Error.t) Lwt_result.t =

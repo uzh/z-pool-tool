@@ -2,7 +2,7 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "matcher.service"
-let tags = Database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create Pool.Root.label)
 
 type config =
   { start : bool option
@@ -182,12 +182,13 @@ let notify_all_invited pool tenant experiment =
       ||> Email.bulksent
       ||> Pool_event.email
     in
+    let updated =
+      { experiment with
+        matcher_notification_sent = MatcherNotificationSent.create true
+      }
+    in
     let experiment_event =
-      Updated
-        { experiment with
-          matcher_notification_sent = MatcherNotificationSent.create true
-        }
-      |> Pool_event.experiment
+      Updated (experiment, updated) |> Pool_event.experiment
     in
     Lwt.return [ email_event; experiment_event ]
 ;;
@@ -319,19 +320,19 @@ let match_invitations interval pools =
           ~tags:(Database.Logger.Tags.create pool)
           "Sending %4d intivation emails"
           (count_mails events));
-      Pool_event.handle_events pool events)
+      Pool_event.handle_system_events pool events)
   in
   create_invitation_events interval pools >|> handle_events
 ;;
 
 let start_matcher () =
-  let open Utils.Lwt_result.Infix in
   let open Schedule in
   let interval = Ptime.Span.of_int_s (5 * 60) in
   let periodic_fcn () =
-    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
-    Database.(Tenant.find_all_by_status ~status:Status.[ Active ] ())
-    >|> match_invitations interval
+    Logs.debug ~src (fun m ->
+      m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
+    Database.(Pool.Tenant.all ~status:Status.[ Active ] ())
+    |> match_invitations interval
   in
   let schedule =
     create

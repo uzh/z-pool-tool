@@ -73,6 +73,11 @@ let remove_whitespaces =
   replace_string (space |> compile) ~by:""
 ;;
 
+let ignore_res = function
+  | Ok () -> ()
+  | Error _ -> ()
+;;
+
 module Url = struct
   let public_host =
     let open CCOption in

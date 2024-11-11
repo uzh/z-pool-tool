@@ -36,6 +36,7 @@ let rec field_to_string =
   | CanceledAt -> "canceled at"
   | CallbackUrl -> "callback url"
   | CellPhone -> "cell phone"
+  | Changes -> "changes"
   | Chronological -> "chronological"
   | City -> "city"
   | ClosedAt -> "Closed at"
@@ -54,6 +55,7 @@ let rec field_to_string =
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | CustomField -> "field"
+  | CustomFieldAnswer -> "answer"
   | CustomFieldGroup -> "group"
   | CustomFieldGroups -> "groups"
   | CustomFieldOption -> "option"
@@ -131,6 +133,7 @@ let rec field_to_string =
   | HidePast -> "Hide past"
   | HideUnverified -> "Hide unverified"
   | Hint -> "hint"
+  | History -> "history"
   | Host -> "host"
   | I18n -> "translation"
   | Icon -> "icon"
@@ -659,8 +662,7 @@ let rec error_to_string =
   | ServiceUnavailable -> "Service currently not available."
   | SessionRegistrationViaParent -> "Registration via main session."
   | SessionTenantNotFound ->
-    "Missing tenant: something on our side went wrong, please try again later \
-     or on multi occurrences please contact the Administrator."
+    "Missing tenant: something on our side went wrong, please try again later."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s smaller than %s"

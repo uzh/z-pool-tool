@@ -7,6 +7,7 @@ module Database = Database
 
 let src = Logs.Src.create "handler.public"
 let create_layout req = General.create_tenant_layout req
+let root_label = Database.Pool.Root.label
 
 let root_redirect req =
   let open Http_utils in
@@ -58,11 +59,11 @@ let index_css req =
     let* file =
       Http_utils.File.get_storage_file
         ~tags
-        Database.root
+        root_label
         (styles |> Pool_tenant.Styles.id |> Common.Id.value)
     in
     let%lwt content =
-      Storage.download_data_base64 Database.root file ||> Base64.decode_exn
+      Storage.download_data_base64 root_label file ||> Base64.decode_exn
     in
     Sihl.Web.Response.of_plain_text content
     |> Sihl.Web.Response.set_content_type
@@ -154,8 +155,8 @@ let asset req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let asset_id = Sihl.Web.Router.param req Field.(Id |> show) in
-    let* file = Http_utils.File.get_storage_file ~tags Database.root asset_id in
-    let%lwt content = Storage.download_data_base64 Database.root file in
+    let* file = Http_utils.File.get_storage_file ~tags root_label asset_id in
+    let%lwt content = Storage.download_data_base64 root_label file in
     let mime = file.file.mime in
     let content = content |> Base64.decode_exn in
     Sihl.Web.Response.of_plain_text content
@@ -260,7 +261,7 @@ let hide_announcement req =
     let* () =
       Cqrs_command.Announcement_command.Hide.handle (user, announcement)
       |> Lwt_result.lift
-      |>> Pool_event.handle_events Database.root
+      |>> Pool_event.handle_events Database.Pool.Root.label user
     in
     Tyxml.Html.txt "" |> Htmx.html_to_plain_text_response |> Lwt_result.return
   in

@@ -3,14 +3,14 @@ module Assets = Seed_assets
 module Root = struct
   let create () =
     let%lwt () = Seed_tenant.create () in
-    let%lwt () = Seed_guard.create Database.root in
-    let%lwt () = Seed_smtp.create Database.root in
+    let%lwt () = Seed_guard.create Database.Pool.Root.label in
+    let%lwt () = Seed_smtp.create Database.Pool.Root.label in
     Lwt.return_unit
   ;;
 end
 
 module Tenant = struct
-  let create ?(is_test = false) db_pools () =
+  let create ?(is_test = false) db_pools =
     Lwt_list.iter_s
       (fun pool ->
         let seeds =

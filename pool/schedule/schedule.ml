@@ -3,7 +3,7 @@ include Entity
 module Guard = Entity_guard
 
 let src = Logs.Src.create "schedule.service"
-let tags = Database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create Pool.Root.label)
 
 module Registered = struct
   module ScheduleMap = CCMap.Make (Label)
@@ -111,19 +111,23 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
     let rerun () = Lwt_unix.sleep delay >|> loop in
     let database_ok () =
       let open Database in
-      let%lwt database_status =
+      let database_status =
         match schedule.database_label with
-        | None -> Lwt.return Status.Active
+        | None -> Status.Active
         | Some label ->
-          Tenant.database_status_by_label label
-          |> Lwt.map (CCOption.value ~default:Status.Active)
+          Pool.Tenant.find_status_by_label label
+          |> CCOption.value ~default:Status.Active
       in
       let open Status in
       let retry_connection label =
-        Database.connect label
+        Database.Pool.connect label
         >|> function
         | Ok () ->
-          let%lwt () = Database.Tenant.update_status label Active in
+          let%lwt () =
+            let open Pool_database in
+            StatusUpdated (label, Status.Active)
+            |> handle_event Database.Pool.Root.label
+          in
           Lwt.return_true
         | Error _ -> Lwt.return_false
       in
@@ -134,8 +138,11 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
           ~default:Lwt.return_false
           retry_connection
           schedule.database_label
-      | Disabled | Maintenance | MigrationsPending | MigrationsFailed ->
-        Lwt.return false
+      | Disabled
+      | Maintenance
+      | MigrationsConnectionIssue
+      | MigrationsFailed
+      | MigrationsPending -> Lwt.return false
     in
     let run_schedule () =
       let process schedule =

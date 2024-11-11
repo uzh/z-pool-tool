@@ -14,9 +14,8 @@ let run_all =
     "matcher.run_all"
     "Run invitation matcher on all tenants (Interval: 5 minutes)"
     (fun () ->
-       let open Utils.Lwt_result.Infix in
-       let%lwt () =
-         Command_utils.setup_databases () >|> Matcher.match_invitations interval
-       in
+       let open Database.Pool in
+       let%lwt () = initialize () in
+       let%lwt () = Tenant.all () |> Matcher.match_invitations interval in
        Lwt.return_some ())
 ;;

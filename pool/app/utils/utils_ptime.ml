@@ -140,6 +140,29 @@ let print_time_span span =
   |> CCOption.get_or ~default:"Session duration too long!"
 ;;
 
+let yojson_of_ptime_date (y, m, d) : Yojson.Safe.t =
+  `String (Format.asprintf "%d-%02d-%02d" y m d)
+;;
+
+let ptime_date_of_yojson json : Ptime.date =
+  let error = "Invalid date format" in
+  let str =
+    match json with
+    | `String s -> s
+    | _ -> failwith error
+  in
+  CCString.split ~by:"-" str
+  |> function
+  | [ y; m; d ] ->
+    let to_int =
+      CCString.replace ~which:`Left ~sub:"0" ~by:""
+      %> CCInt.of_string
+      %> CCOption.get_exn_or error
+    in
+    to_int y, to_int m, to_int d
+  | _ -> failwith error
+;;
+
 let t_of_yojson = ptime_of_yojson
 let yojson_of_t = yojson_of_ptime
 let sexp_of_t = ptime_to_sexp

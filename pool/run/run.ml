@@ -20,6 +20,7 @@ let worker_services =
   ; User_import.Service.register ()
   ; Reminder.Service.register ()
   ; Assignment_job.register ()
+  ; System_event.Service.ConnectionWatcher.register ()
   ]
 ;;
 

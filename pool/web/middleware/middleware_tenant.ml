@@ -1,4 +1,5 @@
 open Utils.Lwt_result.Infix
+open Database
 
 let src = Logs.Src.create "middleware.tenant"
 
@@ -12,15 +13,23 @@ let tenant_url_of_request =
 ;;
 
 let tenant_of_request req =
-  tenant_url_of_request req |> Lwt_result.lift >>= Pool_tenant.find_by_url
+  let should_cache ({ Pool_tenant.status; _ } : Pool_tenant.t) =
+    let open Status in
+    match status with
+    | Active | Disabled | Maintenance | MigrationsFailed -> true
+    | ConnectionIssue | MigrationsConnectionIssue | MigrationsPending -> false
+  in
+  tenant_url_of_request req
+  |> Lwt_result.lift
+  >>= Pool_tenant.find_by_url ~should_cache
 ;;
 
 let make name ~maintenance_handler ~connection_issue_handler ~error_handler () =
   let filter handler req =
     let open Pool_context in
+    let open Status in
     match%lwt tenant_of_request req with
     | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
-      let open Database.Status in
       let handle_request =
         Settings.find_languages database_label
         ||> Tenant.create tenant
@@ -29,20 +38,24 @@ let make name ~maintenance_handler ~connection_issue_handler ~error_handler () =
       in
       (match status with
        | Active -> handle_request
-       | Maintenance | MigrationsPending | MigrationsFailed ->
-         maintenance_handler ()
+       | Maintenance
+       | MigrationsConnectionIssue
+       | MigrationsFailed
+       | MigrationsPending -> maintenance_handler ()
        | Disabled -> connection_issue_handler ()
        | ConnectionIssue ->
-         (match%lwt Database.connect database_label with
+         (match%lwt Pool.connect database_label with
           | Ok () ->
-            let%lwt () = Database.Tenant.update_status database_label Active in
+            let%lwt () =
+              let open Pool_database in
+              StatusUpdated (database_label, Status.Active)
+              |> handle_event Pool.Root.label
+            in
             handle_request
           | Error err -> error_handler err))
     | Error err ->
-      let (_ : Pool_message.Error.t) =
-        Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err
-      in
-      error_handler err
+      Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err
+      |> error_handler
   in
   Rock.Middleware.create ~name ~filter
 ;;

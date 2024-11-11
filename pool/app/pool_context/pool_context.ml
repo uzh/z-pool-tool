@@ -1,7 +1,7 @@
 include Entity
 open Utils.Lwt_result.Infix
 
-let is_from_root { database_label; _ } = Database.is_root database_label
+let is_from_root { database_label; _ } = Database.Pool.is_root database_label
 
 let user_is_admin = function
   | Guest | Contact _ -> false
@@ -22,7 +22,7 @@ let get_user_id = function
 module Utils = struct
   let find_authorizable_opt ?(admin_only = false) database_label user =
     match user with
-    | Contact _ when Database.is_root database_label -> Lwt.return_none
+    | Contact _ when Database.Pool.is_root database_label -> Lwt.return_none
     | Contact contact when not admin_only ->
       Contact.id contact
       |> Guard.Uuid.actor_of Contact.Id.value

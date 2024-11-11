@@ -1,3 +1,5 @@
+open Ppx_yojson_conv_lib.Yojson_conv
+
 module Id = struct
   include Pool_common.Id
 end
@@ -8,7 +10,7 @@ type 'a t =
   ; value : 'a option
   ; admin_value : 'a option
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 let create ?(id = Id.create ()) ?admin_value entity_uuid value =
   { id; entity_uuid; value; admin_value }

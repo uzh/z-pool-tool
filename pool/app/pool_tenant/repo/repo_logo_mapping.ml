@@ -130,7 +130,7 @@ module Sql = struct
   let delete pool = CCFun.curry (Database.exec pool delete_request)
 end
 
-let insert_multiple = Lwt_list.iter_s (Sql.insert Database.root)
-let find_by_tenant = Sql.find Database.root
-let find_all = Sql.find_all Database.root
-let delete = Sql.delete Database.root
+let insert_multiple = Lwt_list.iter_s (Sql.insert Database.Pool.Root.label)
+let find_by_tenant = Sql.find Database.Pool.Root.label
+let find_all = Sql.find_all Database.Pool.Root.label
+let delete = Sql.delete Database.Pool.Root.label

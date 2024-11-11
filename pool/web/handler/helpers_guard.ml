@@ -79,8 +79,11 @@ let can_rerun_session_filter
        session_id)
 ;;
 
-let grant_role ~redirect_path ~actor ~target_id database_label req =
+let grant_role ~redirect_path ~user ~target_id database_label req =
   let open Utils.Lwt_result.Infix in
+  let* actor =
+    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+  in
   let lift = Lwt_result.lift in
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -133,7 +136,7 @@ let grant_role ~redirect_path ~actor ~target_id database_label req =
     GrantRoles.handle ~tags { target_id; roles } |> lift
   in
   let handle events =
-    Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+    Pool_event.handle_events ~tags database_label user events
   in
   let* () = roles >>= events |>> handle in
   Lwt_result.ok
@@ -142,7 +145,7 @@ let grant_role ~redirect_path ~actor ~target_id database_label req =
        [ Http_utils.Message.set ~success:[ Success.Created Field.Role ] ])
 ;;
 
-let revoke_role ~redirect_path ~target_id database_label req =
+let revoke_role ~redirect_path ~user ~target_id database_label req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let role =
@@ -163,9 +166,7 @@ let revoke_role ~redirect_path ~target_id database_label req =
     RevokeRole.handle ~tags { target_id; role } |> Lwt_result.lift
   in
   let handle events =
-    let%lwt () =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-    in
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
       ~skip_externalize:true
       redirect_path

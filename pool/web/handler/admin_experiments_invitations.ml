@@ -104,7 +104,7 @@ let create req =
   let redirect_path =
     Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -161,9 +161,7 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
@@ -185,7 +183,7 @@ let resend req =
       "/admin/experiments/%s/invitations"
       (Experiment.Id.value experiment_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -199,9 +197,7 @@ let resend req =
       handle ~tags create_email invitation |> Lwt.return
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
@@ -218,7 +214,7 @@ let reset req =
   let redirect_path =
     Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let* experiment = Experiment.find database_label experiment_id in
@@ -227,9 +223,7 @@ let reset req =
       handle ~tags experiment |> Lwt.return
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpMessage.set ~success:[ Success.ResetInvitations ] ]

@@ -784,6 +784,13 @@ let detail
       experiment
       message_templates
   in
+  let changelog_url =
+    HttpUtils.Url.Admin.experiment_path
+      ~suffix:"changelog"
+      ~id:experiment.Experiment.id
+      ()
+    |> Uri.of_string
+  in
   let delete_form =
     match session_count > 0 with
     | true ->
@@ -871,19 +878,18 @@ let detail
   let setting =
     if can_update_experiment
     then
-      [ div
-          ~a:[ a_class [ "stack-md" ] ]
-          [ h2
-              ~a:[ a_class [ "heading-2" ] ]
-              [ txt
-                  (Utils.field_to_string language Field.Settings
-                   |> CCString.capitalize_ascii)
-              ]
-          ; reset_invitation_form
-          ; delete_form
-          ]
-      ]
-    else []
+      div
+        ~a:[ a_class [ "stack-md" ] ]
+        [ h2
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt
+                (Utils.field_to_string language Field.Settings
+                 |> CCString.capitalize_ascii)
+            ]
+        ; reset_invitation_form
+        ; delete_form
+        ]
+    else txt ""
   in
   let bool_to_string = Utils.bool_to_string language in
   let tag_list = Component.Tag.tag_list ~tight:true language in
@@ -1016,17 +1022,18 @@ let detail
     in
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
-        ([ notifications
-         ; div
-             ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
-             [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
-             ; div
-                 ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
-                 [ statistics ]
-             ]
-         ; message_template
-         ]
-         @ setting)
+        [ notifications
+        ; div
+            ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
+            [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
+            ; div
+                ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
+                [ statistics ]
+            ]
+        ; message_template
+        ; setting
+        ; Component.Changelog.list context changelog_url None
+        ]
     ]
   in
   let edit_button =
@@ -1037,7 +1044,7 @@ let detail
         ~classnames:[ "small" ]
         ~control:(language, Edit (Some Field.Experiment))
         (build_experiment_path ~suffix:"edit" experiment)
-      |> CCOption.some
+      |> CCOption.return
     else None
   in
   Layout.Experiment.(
@@ -1061,6 +1068,19 @@ let invitations
   filtered_contacts
   ({ Pool_context.language; _ } as context)
   =
+  let changelog =
+    match experiment.Experiment.filter with
+    | None -> txt ""
+    | Some filter ->
+      let url =
+        Http_utils.Url.Admin.filter_path
+          ~suffix:"changelog"
+          ~id:filter.Filter.id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
+  in
   let open Pool_common in
   [ div
       ~a:[ a_class [ "stack" ] ]
@@ -1083,6 +1103,7 @@ let invitations
           filtered_contacts
           matching_filter_count
           invitation_count
+      ; changelog
       ]
   ]
   |> Layout.Experiment.(

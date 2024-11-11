@@ -1,4 +1,8 @@
+include Changelog.DefaultSettings
+open Ppx_yojson_conv_lib.Yojson_conv
 open CCFun.Infix
+
+let model = Pool_message.Field.Contact
 
 module Id = struct
   include Pool_model.Base.Id
@@ -77,7 +81,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, fields, show, ord]
+[@@deriving eq, fields, show, yojson, ord]
 
 let user { user; _ } = user
 let id m : Id.t = m.user.Pool_user.id |> Id.of_user
@@ -86,6 +90,18 @@ let firstname m = m.user |> Pool_user.firstname
 let lastname m = m.user |> Pool_user.lastname
 let lastname_firstname m = m.user |> Pool_user.fullname ~reversed:true
 let email_address m = m.user.Pool_user.email
+
+let set_firstname m updated_firstname =
+  let user = Pool_user.{ m.user with firstname = updated_firstname } in
+  { m with user }
+;;
+
+let set_lastname m updated_lastname =
+  let user = Pool_user.{ m.user with lastname = updated_lastname } in
+  { m with user }
+;;
+
+let set_language m language = { m with language }
 
 let create ?terms_accepted_at ?language user =
   { user

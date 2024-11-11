@@ -114,7 +114,7 @@ let find_similars database_label ~user_uuid custom_fields =
     make_comparison (user_col, target_col) column.criteria |> with_name
   in
   let field_similarities field =
-    let id = Custom_field.(id field |> Id.to_common |> Id.value) in
+    let id = Custom_field.(id field |> Id.value) in
     let target_col = asprintf "t.`%s`" id in
     let user_col = asprintf "contacts.`%s`" id in
     asprintf
@@ -138,7 +138,7 @@ let find_similars database_label ~user_uuid custom_fields =
     (* Using placeholders like $2 or ? is not supported in colum names *)
     custom_fields
     >|= fun field ->
-    let id = id field |> Id.to_common |> Id.value in
+    let id = id field |> Id.value in
     asprintf
       {sql| MAX(
         CASE WHEN pool_custom_field_answers.custom_field_uuid = %s 
@@ -169,12 +169,7 @@ let find_similars database_label ~user_uuid custom_fields =
           >|= DuplicateWeighting.value
           |> value ~default:0)
       in
-      ( id field
-        |> Id.to_common
-        |> Id.value
-        |> make_similarity_name
-        |> asprintf "`%s`"
-      , weight )
+      id field |> Id.value |> make_similarity_name |> asprintf "`%s`", weight
     in
     let similarities = user_similarities @ custom_field_similarities in
     let division =

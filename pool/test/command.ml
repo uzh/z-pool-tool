@@ -5,6 +5,14 @@ let () =
   run
     "cqrs commands"
     [ ("announcement", Announcement_test.[ test_case "create" `Quick create ])
+    ; ( "changelog"
+      , Changelog_test.
+          [ test_case "create unchanged" `Quick create_unchanged
+          ; test_case "create" `Quick create
+          ; test_case "create with nested changes" `Quick create_nested
+          ; test_case "create filter changelog" `Quick update_filter
+          ; test_case "create changelog with list" `Quick update_list_value
+          ] )
     ; ( "api_key"
       , [ test_case "create API key" `Quick Api_key_test.create
         ; test_case "update API key" `Quick Api_key_test.update

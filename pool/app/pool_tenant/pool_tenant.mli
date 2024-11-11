@@ -190,7 +190,12 @@ val file_fields : Pool_message.Field.t list
 val find : Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_full : Id.t -> (Write.t, Pool_message.Error.t) Lwt_result.t
 val find_by_label : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_by_url : Url.t -> (t, Pool_message.Error.t) Lwt_result.t
+
+val find_by_url
+  :  ?should_cache:(t -> bool)
+  -> Url.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
+
 val find_all : unit -> t list Lwt.t
 
 val find_gtx_api_key_and_url_by_label

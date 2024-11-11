@@ -25,7 +25,7 @@ let job_reporter
     let%lwt link =
       let default = "Couldn't generate Link" in
       let path = [%string "/admin/settings/queue/%{Entity.Id.value id}"] in
-      if Database.(Label.equal root database_label)
+      if Database.(Label.equal Pool.Root.label database_label)
       then
         Sihl.Configuration.read_string "PUBLIC_URL"
         |> CCOption.map_or

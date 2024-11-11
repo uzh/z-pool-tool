@@ -625,3 +625,24 @@ input[type="checkbox"][readonly] {
     filter: grayscale(1);
     opacity: 0.8;
 }
+
+
+// Changelog
+.changes-cell {
+    div {
+        display: flex;
+    }
+
+    div:last-child {
+        flex-grow: 1;
+    }
+
+    .changelog-separator {
+        padding-left: $space-xs;
+        padding-right: $space-xs;
+    }
+
+    .changelog-key {
+        text-transform: capitalize;
+    }
+}

@@ -1,7 +1,8 @@
+open CCFun
 open Migrations
 open Utils.Lwt_result.Infix
 
-let src = Logs.Src.create "database.tenant"
+let src = Logs.Src.create "Database.Pool.Tenant"
 
 module Logs = (val Logs.src_log src : Logs.LOG)
 
@@ -67,6 +68,7 @@ let steps =
       ; Migration_202407081355.migration ()
       ; Migration_202407151050.migration ()
       ; Migration_202407171415.migration ()
+      ; Migration_202408081359.migration ()
       ; Migration_202410071409.migration ()
       ; Migration_202410161017.migration ()
       ; Migration_202411011201.migration ()
@@ -99,63 +101,62 @@ let steps =
   |> Database.Migration.extend_migrations
 ;;
 
+let check_migration_status pool () =
+  let open Utils.Lwt_result.Infix in
+  let open Database in
+  let migrations = steps () in
+  let%lwt () =
+    let%lwt up_to_date =
+      Migration.pending_migrations pool ~migrations () ||> CCList.is_empty
+    in
+    Pool.Tenant.update_status
+      pool
+      Status.(if up_to_date then Active else MigrationsPending)
+  in
+  Migration.check_migrations_status pool ~migrations ()
+;;
+
+let report err =
+  let open Database in
+  let find_database_label text =
+    let open Re in
+    let regex = seq [ char '<'; group (rep1 any); str ">:" ] |> compile in
+    let substring =
+      try Some (exec regex text) with
+      | Not_found -> None
+    in
+    CCOption.bind substring (CCFun.flip Group.get_opt 1)
+  in
+  let%lwt (_ : (unit, Pool_message.Error.t) result) =
+    Lwt_result.map_error Pool_common.Utils.with_log_error
+    @@
+    let printed_error = Printexc.to_string err in
+    match find_database_label printed_error with
+    | Some database_url ->
+      let* database_label =
+        Database.Url.create database_url
+        |> Lwt_result.lift
+        >== Pool.Tenant.find_label_by_url
+      in
+      let tags = Database.Logger.Tags.create database_label in
+      Logs.err (fun m -> m ~tags "%s" printed_error);
+      Pool.Tenant.update_status database_label Status.ConnectionIssue
+      >|> Lwt.return_ok
+    | None ->
+      Logs.err (fun m -> m "%s" printed_error);
+      Lwt.return_ok ()
+  in
+  Lwt.return_unit
+;;
+
 let start () =
   let open Database in
-  let open Status in
-  let%lwt db_pools =
-    Tenant.find_all_by_status
-      ~status:[ Active; ConnectionIssue; MigrationsPending ]
+  let db_pools =
+    Pool.Tenant.all
+      ~status:Status.[ Active; ConnectionIssue; MigrationsPending ]
       ()
   in
-  let check_migration_status pool =
-    let open Migration in
-    let%lwt () =
-      let%lwt up_to_date =
-        pending_migrations pool ~migrations:(steps ()) () ||> CCList.is_empty
-      in
-      Tenant.update_status
-        pool
-        (if up_to_date then Active else MigrationsPending)
-    in
-    check_migrations_status pool ~migrations:(steps ()) ()
-  in
-  Lwt_list.iter_s
-    (fun db_pool ->
-      Lwt.catch
-        (fun () -> check_migration_status db_pool)
-        (fun err ->
-          let find_database_label text =
-            let open Re in
-            let regex =
-              seq [ char '<'; group (rep1 any); str ">:" ] |> compile
-            in
-            let substring =
-              try Some (exec regex text) with
-              | Not_found -> None
-            in
-            CCOption.bind substring (CCFun.flip Group.get_opt 1)
-          in
-          let%lwt (_ : (unit, Pool_message.Error.t) result) =
-            Lwt_result.map_error Pool_common.Utils.with_log_error
-            @@
-            let printed_error = Printexc.to_string err in
-            match find_database_label printed_error with
-            | Some database_url ->
-              let* database_label =
-                Url.create database_url
-                |> Lwt_result.lift
-                >>= Tenant.find_label_by_url
-              in
-              let tags = Logger.Tags.create database_label in
-              Logs.err (fun m -> m ~tags "%s" printed_error);
-              Tenant.update_status database_label ConnectionIssue
-              |> Lwt_result.ok
-            | None ->
-              Logs.err (fun m -> m "%s" printed_error);
-              Lwt.return_ok ()
-          in
-          Lwt.return_unit))
-    db_pools
+  Lwt_list.iter_p (check_migration_status %> flip Lwt.catch report) db_pools
 ;;
 
 let stop () = Lwt.return_unit

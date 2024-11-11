@@ -695,6 +695,21 @@ let detail
   sys_languages
   flash_fetcher
   =
+  let changelog_html =
+    match custom_field with
+    | None -> txt ""
+    | Some field ->
+      let url =
+        let id = Custom_field.id field in
+        HttpUtils.Url.Admin.custom_fields_path
+          current_model
+          ~suffix:"changelog"
+          ~id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
+  in
   let button_form = field_buttons language csrf current_model custom_field in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -712,7 +727,8 @@ let detail
            context
            groups
            sys_languages
-           flash_fetcher)
+           flash_fetcher
+         @ [ changelog_html ])
     ]
 ;;
 

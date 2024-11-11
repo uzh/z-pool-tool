@@ -24,7 +24,7 @@ let index req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, base_path)
     @@
     let open Pool_tenant in
@@ -37,9 +37,7 @@ let update req =
     let* gtx_api_key = validated_gtx_api_key ~tags urlencoded in
     let events = handle ~tags tenant gtx_api_key |> Lwt_result.lift in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         base_path
         [ HttpUtils.Message.set
@@ -53,7 +51,7 @@ let update req =
 
 let delete req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, base_path)
     @@
     let open Pool_tenant in
@@ -64,9 +62,7 @@ let delete req =
     Command.RemoveGtxApiKey.handle ~tags tenant
     |> Lwt_result.lift
     |>> fun events ->
-    let%lwt () =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-    in
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
       base_path
       [ HttpUtils.Message.set
@@ -97,7 +93,7 @@ let delivery_report req =
     Logging_helper.log_request_with_ip ~src message req tags None
   in
   let%lwt result =
-    let* { Pool_context.database_label; _ } =
+    let* { Pool_context.database_label; user; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
     let* job_id =
@@ -134,8 +130,7 @@ let delivery_report req =
       let open Cqrs_command.Queue_command.CreateTextMessageDeliveryReport in
       decode urlparams job_id raw >>= handle ~tags |> Lwt_result.lift
     in
-    Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-    |> Lwt_result.ok
+    Pool_event.handle_events ~tags database_label user events |> Lwt_result.ok
   in
   result |> CCResult.map_err log_error |> CCFun.const (respond ())
 ;;

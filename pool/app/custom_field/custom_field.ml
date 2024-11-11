@@ -2,6 +2,11 @@ include Entity
 include Event
 open Pool_message
 module Guard = Entity_guard
+module VersionHistory = Version_history
+module OptionVersionHistory = Version_history.OptionVersionHistory
+module GroupVersionHistory = Version_history.GroupVersionHistory
+module AnswerRecord = Version_history.AnswerRecord
+module AnswerVersionHistory = Version_history.AnswerVersionHistory
 
 let find_by_model = Repo.find_by_model
 let find_by_group = Repo.find_by_group
@@ -64,6 +69,7 @@ let find_options_by_field pool id =
 
 let find_group = Repo_group.find
 let find_groups_by_model = Repo_group.find_by_model
+let find_names = Repo_version_history.find_names
 
 module Repo = struct
   module Id = struct
@@ -226,4 +232,69 @@ let validate_partial_update
     in
     let old_v = Public.version custom_field in
     custom_field |> custom |> check_version old_v |> Lwt_result.lift
+;;
+
+(* Replace all ids with the names of the custom_fields and
+   custom_field_options *)
+let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
+  let open Changelog.Changes in
+  let id_of_string = CCFun.(Id.validate %> CCOption.of_result) in
+  let rec yojson_id = function
+    | `String id -> id_of_string id |> CCOption.map_or ~default:[] CCList.return
+    | `List lst -> CCList.fold_left (fun acc str -> acc @ yojson_id str) [] lst
+    | _ -> []
+  in
+  let rec collect_uuids acc = function
+    | Assoc lst ->
+      List.fold_left
+        (fun acc (key, v) ->
+          let uuids =
+            id_of_string key
+            |> function
+            | None -> acc
+            | Some uuid -> uuid :: acc
+          in
+          collect_uuids uuids v)
+        acc
+        lst
+    | Change (before, after) ->
+      CCList.fold_left (fun acc cur -> acc @ yojson_id cur) [] [ before; after ]
+      @ acc
+  in
+  let get_or = CCOption.get_or in
+  let uuids = collect_uuids [] changes in
+  let%lwt names = find_names pool uuids in
+  let tbl = Hashtbl.create (CCList.length names) in
+  let () =
+    CCList.iter
+      (fun (id, name) ->
+        let name =
+          let open Name in
+          find_opt language name
+          |> CCOption.value ~default:(get_hd name)
+          |> value_name
+        in
+        Hashtbl.add tbl (Pool_common.Id.value id) name)
+      names
+  in
+  let rec replace_names = function
+    | Assoc lst ->
+      Assoc
+        (CCList.map
+           (fun (key, changes) ->
+             let key = Hashtbl.find_opt tbl key |> get_or ~default:key in
+             let changes = replace_names changes in
+             key, changes)
+           lst)
+    | Change (before, after) ->
+      let rec replace = function
+        | `String str ->
+          `String (Hashtbl.find_opt tbl str |> get_or ~default:str)
+        | `List lst -> `List (CCList.map replace lst)
+        | change -> change
+      in
+      Change (replace before, replace after)
+  in
+  let changes = replace_names changes in
+  Lwt.return Changelog.{ changelog with changes }
 ;;

@@ -258,7 +258,8 @@ let format_request_boolean_values values urlencoded =
       k
       (function
         | None -> Some [ "false" ]
-        | Some values -> values |> intersection_to_bool_string |> CCOption.some)
+        | Some values ->
+          values |> intersection_to_bool_string |> CCOption.return)
       m
   in
   handle_boolean_values update urlencoded values

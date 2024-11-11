@@ -75,7 +75,7 @@ end = struct
     let open CCResult in
     let* query = validate_query key_list template_list query in
     Ok
-      [ Filter.(Updated { filter with query; title = Some title })
+      [ Filter.(Updated (filter, { filter with query; title = Some title }))
         |> Pool_event.filter
       ; Assignment_job.Dispatched |> Pool_event.assignmentjob
       ]

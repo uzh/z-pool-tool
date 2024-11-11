@@ -90,7 +90,7 @@ let toggle_role action req =
      | `AssignExperimenter | `UnassignExperimenter -> "experimenter")
     |> base_path
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
     Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -114,7 +114,7 @@ let toggle_role action req =
       | `AssignExperimenter -> AssignExperimenter.(handle ~tags update)
       | `UnassignExperimenter -> UnassignExperimenter.(handle ~tags update)
     in
-    let%lwt () = Pool_event.handle_events database_label events in
+    let%lwt () = Pool_event.handle_events database_label user events in
     Http_utils.redirect_to_with_actions
       redirect_path
       [ Message.set ~success:[ message ] ]

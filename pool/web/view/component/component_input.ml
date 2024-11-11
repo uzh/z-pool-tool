@@ -292,6 +292,7 @@ let timespan_picker
         ]
     in
     let attrs = if required then a_required () :: attrs else attrs in
+    let attrs = if read_only then a_readonly () :: attrs else attrs in
     if CCOption.is_some error then a_class [ "is-invalid" ] :: attrs else attrs
   in
   let group_class = Elements.group_class classnames orientation in
@@ -308,6 +309,7 @@ let timespan_picker
           ~a:
             [ a_name unit_field_name
             ; a_input_type `Hidden
+            ; a_readonly ()
             ; a_value
                 (time_unit
                  |> CCOption.value ~default:(TimeUnit.all |> CCList.hd)

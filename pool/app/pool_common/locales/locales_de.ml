@@ -36,6 +36,7 @@ let rec field_to_string =
   | CanceledAt -> "Abgesagt am"
   | CallbackUrl -> "Callback-URL"
   | CellPhone -> "Mobiltelefon"
+  | Changes -> "Änderungen"
   | Chronological -> "chronologisch"
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"
@@ -54,6 +55,7 @@ let rec field_to_string =
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | CustomField -> "Feld"
+  | CustomFieldAnswer -> "Antwort"
   | CustomFieldGroup -> "Gruppe"
   | CustomFieldGroups -> "Gruppen"
   | CustomFieldOption -> "Option"
@@ -132,6 +134,7 @@ let rec field_to_string =
   | HidePast -> "Vergangene ausblenden"
   | HideUnverified -> "Unverifizierte ausblenden"
   | Hint -> "Hint"
+  | History -> "Verlauf"
   | Host -> "Host"
   | I18n -> "Übersetzung"
   | Icon -> "Icon"
@@ -692,9 +695,8 @@ let rec error_to_string =
   | ServiceUnavailable -> "Service zur Zeit nicht verfügbar"
   | SessionRegistrationViaParent -> "Einschreibung via Hauptsession."
   | SessionTenantNotFound ->
-    "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
-     versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
-     kontaktieren."
+    "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals \
+     versuchen."
   | SessionAlreadyCanceled date ->
     CCFormat.asprintf "Diese Session wurde bereits abgesagt am %s." date
   | SessionAlreadyClosed date ->

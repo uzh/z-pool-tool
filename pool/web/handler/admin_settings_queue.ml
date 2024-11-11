@@ -35,7 +35,7 @@ let resend req =
   let open Utils.Lwt_result.Infix in
   let id = job_id req in
   let path = Format.asprintf "%s/%s" base_path (Pool_queue.Id.value id) in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -56,7 +56,7 @@ let resend req =
     let* () =
       Command.Resend.handle ?contact:job_contact ?experiment:job_experiment job
       |> Lwt_result.lift
-      |>> Pool_event.handle_events ~tags database_label
+      |>> Pool_event.handle_events ~tags database_label user
     in
     Http_utils.redirect_to_with_actions
       path

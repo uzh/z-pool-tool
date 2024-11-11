@@ -2,6 +2,7 @@ let ( let@ ) = CCResult.( >>= )
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
 let test_db = Test_utils.Data.database_label
+let current_user = Test_utils.Model.create_admin ()
 
 let session ~experiment =
   let open Session in
@@ -49,7 +50,9 @@ let session ~experiment =
     ; Session.Created session |> Pool_event.session
     ]
   in
-  let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
+  let& () =
+    Pool_event.handle_events test_db current_user events |> Lwt_result.ok
+  in
   Lwt_result.lift (Ok session)
 ;;
 
@@ -78,7 +81,8 @@ let experiment () =
     experiment |> Experiment.created |> Pool_event.experiment
   in
   let& () =
-    Pool_event.handle_event test_db experiment_created |> Lwt_result.ok
+    Pool_event.handle_event test_db current_user experiment_created
+    |> Lwt_result.ok
   in
   Experiment.find test_db experiment_id
 ;;
@@ -99,9 +103,9 @@ let contact ~prefix () =
   let* firstname = Pool_user.Firstname.create "firstname" in
   let* lastname = Pool_user.Lastname.create "lastname" in
   let terms_accepted_at =
-    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> CCOption.some
+    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> CCOption.return
   in
-  let language = Pool_common.Language.En |> CCOption.some in
+  let language = Pool_common.Language.En |> CCOption.return in
   let contact_created =
     [ Contact.created
         { user_id
@@ -115,7 +119,10 @@ let contact ~prefix () =
       |> Pool_event.contact
     ]
   in
-  let& () = Pool_event.handle_events test_db contact_created |> Lwt_result.ok in
+  let& () =
+    Pool_event.handle_events test_db current_user contact_created
+    |> Lwt_result.ok
+  in
   let& contact = Contact.find test_db user_id in
   let%lwt token = Email.create_token test_db email in
   let* verification_events =
@@ -129,7 +136,8 @@ let contact ~prefix () =
     Ok (created_email :: verify_events)
   in
   let& () =
-    Pool_event.handle_events test_db verification_events |> Lwt_result.ok
+    Pool_event.handle_events test_db current_user verification_events
+    |> Lwt_result.ok
   in
   let& contact = Contact.find test_db user_id in
   Lwt_result.lift (Ok contact)
@@ -152,7 +160,9 @@ let assignment ~experiment ~session ~contact =
           |> Email.create_dispatch)
         already_enrolled)
   in
-  let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
+  let& () =
+    Pool_event.handle_events test_db current_user events |> Lwt_result.ok
+  in
   Lwt_result.lift (Ok ())
 ;;
 
@@ -177,7 +187,9 @@ let invitation ~experiment ~contacts =
         ; mailing = None
         })
   in
-  let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
+  let& () =
+    Pool_event.handle_events test_db current_user events |> Lwt_result.ok
+  in
   Lwt_result.lift (Ok ())
 ;;
 

@@ -28,6 +28,7 @@ type t =
   | CallbackUrl
   | CanceledAt
   | CellPhone
+  | Changes
   | Chronological
   | City
   | ClosedAt
@@ -46,6 +47,7 @@ type t =
   | CreatedAt
   | CurrentPassword
   | CustomField
+  | CustomFieldAnswer
   | CustomFieldGroup
   | CustomFieldGroups
   | CustomFieldOption
@@ -117,6 +119,7 @@ type t =
   | HidePaused
   | HideUnverified
   | Hint
+  | History
   | Host
   | I18n
   | Icon
