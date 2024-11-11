@@ -38,10 +38,21 @@ let add_weight_to_custom_fields =
     |sql}
 ;;
 
+let create_duplicate_contact_permissions =
+  Database.Migration.Step.create
+    ~label:"add duplicate_contacts permission"
+    {sql|
+    INSERT INTO `guardian_role_permissions` (`role`, `permission`, `target_model`) VALUES
+    ('`Operator', 'manage', '`DuplicateContact')
+    ON DUPLICATE KEY UPDATE updated_at=updated_at;
+  |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202411011201"
     |> add_step create_custom_field_answer_index
     |> add_step create_duplicates_table
-    |> add_step add_weight_to_custom_fields)
+    |> add_step add_weight_to_custom_fields
+    |> add_step create_duplicate_contact_permissions)
 ;;
