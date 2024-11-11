@@ -202,8 +202,7 @@ let insert_request =
       uuid, 
       contact_a, 
       contact_b,
-      score,
-      ignore
+      score
     ) VALUES 
       %s
     ON DUPLICATE KEY UPDATE
