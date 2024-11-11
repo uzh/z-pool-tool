@@ -1,8 +1,3 @@
-let setup_databases () =
-  let%lwt () = Database.Root.setup () in
-  Database.Tenant.setup ()
-;;
-
 let failwith_missmatch help =
   print_endline help;
   failwith "Argument missmatch"
@@ -11,17 +6,17 @@ let failwith_missmatch help =
 let is_available_exn ?(include_root = false) pool =
   let open Database in
   let pool = Label.create pool |> Pool_common.Utils.get_or_failwith in
-  let%lwt () = Database.Root.setup () in
-  let%lwt pools = Database.Tenant.setup () in
-  let available_pools = if include_root then root :: pools else pools in
-  if CCList.mem ~eq:Label.equal pool available_pools
+  let%lwt () = Database.Pool.initialize () in
+  let exclude = if include_root then [] else Pool.Root.[ label ] in
+  let pools = Database.Pool.all ~exclude () in
+  if CCList.mem ~eq:Label.equal pool pools
   then Lwt.return pool
   else
     failwith
       (Format.asprintf
          "The specified database pool %s is not available (%s)."
          ([%show: Label.t] pool)
-         ([%show: Label.t list] available_pools))
+         ([%show: Label.t list] pools))
 ;;
 
 let make_no_args name description fcn =

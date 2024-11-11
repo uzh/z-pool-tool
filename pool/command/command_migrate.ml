@@ -47,9 +47,9 @@ end
 
 let root =
   Command_utils.make_no_args "migrate.root" "Migrate root database" (fun () ->
-    let%lwt () = Root.setup () in
+    let%lwt () = Pool.Root.setup () in
     let%lwt () =
-      Migration.execute root (Pool_database.Root.steps ())
+      Migration.execute Pool.Root.label (Pool_database.Root.steps ())
       ||> function
       | Ok () -> exit 0
       | Error _ -> exit 1
@@ -84,7 +84,7 @@ Please take the necessary actions.|}
       ; bcc = []
       }
     in
-    let%lwt prepared = Email.Service.Smtp.prepare Database.root email in
+    let%lwt prepared = Email.Service.Smtp.prepare Pool.Root.label email in
     Outbox.add (sender, prepared) |> Lwt.return
   | _ -> Lwt.return_unit
 ;;
@@ -92,25 +92,31 @@ Please take the necessary actions.|}
 let migrate_tenants db_labels =
   let open Utils.Lwt_result.Infix in
   let run db_label =
-    let set_status = Database.Tenant.update_status db_label in
+    let set_status status =
+      Pool_database.(
+        StatusUpdated (db_label, status) |> handle_event Pool.Root.label)
+    in
     let handle_error err =
       let err = Pool_common.(Utils.error_to_string Language.En err) in
       let%lwt () = set_status Status.MigrationsFailed in
       create_failure_notification db_label err
     in
-    Lwt.catch
-      (fun () ->
-        Migration.execute db_label (Pool_database.Tenant.steps ())
-        |>> (fun () -> set_status Status.Active)
-        >|> function
-        | Ok () -> Lwt.return ()
-        | Error err -> handle_error err)
-      (fun exn ->
-        let exn = Printexc.to_string exn in
-        let err = Pool_message.Error.MigrationFailed exn in
-        handle_error err)
+    match%lwt Pool.Tenant.test_connection db_label with
+    | Ok () ->
+      Lwt.catch
+        (fun () ->
+          Migration.execute db_label (Pool_database.Tenant.steps ())
+          |>> (fun () -> set_status Status.Active)
+          >|> function
+          | Ok () -> Lwt.return ()
+          | Error err -> handle_error err)
+        (fun exn ->
+          let exn = Printexc.to_string exn in
+          let err = Pool_message.Error.MigrationFailed exn in
+          handle_error err)
+    | Error _ -> set_status Status.MigrationsConnectionIssue
   in
-  db_labels |> Lwt_list.iter_s run >|> Outbox.send
+  db_labels |> Lwt_list.iter_p run >|> Outbox.send
 ;;
 
 let tenants =
@@ -118,8 +124,8 @@ let tenants =
     "migrate.tenant"
     "Migrate tenant databases"
     (fun () ->
-       let%lwt () = Root.setup () in
-       let%lwt db_pools = Tenant.setup () in
+       let%lwt () = Pool.Root.setup () in
+       let%lwt db_pools = Pool.Tenant.setup () in
        let%lwt () = migrate_tenants db_pools in
        Lwt.return_some ())
 ;;
@@ -129,9 +135,9 @@ let tenant_migration_pending =
     "migrate.tenant_migrations_pending"
     "Set tenant database status to migration pending"
     (fun () ->
-       let () = Root.add () in
-       let%lwt db_pools = Tenant.setup () in
-       let%lwt () = Database.Tenant.set_migration_pending db_pools in
+       let () = Pool.Root.add () in
+       let%lwt db_pools = Pool.Tenant.setup () in
+       let%lwt () = Pool.Tenant.set_migration_pending db_pools in
        let%lwt () = exit 0 in
        Lwt.return_some ())
 ;;

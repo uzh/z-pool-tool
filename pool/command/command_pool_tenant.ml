@@ -45,10 +45,8 @@ Provide all fields to create a new tenant:
       let%lwt () =
         let open CCResult.Infix in
         let%lwt database =
-          let open Database in
-          let label = Label.create database_label |> failwith in
-          let url = Url.create database_url |> failwith in
-          test_and_create url label |> Lwt.map failwith
+          Database.Pool.create_validated_and_tested database_label database_url
+          |> Lwt.map failwith
         in
         Cqrs_command.Pool_tenant_command.Create.decode
           [ "title", [ title ]
@@ -65,7 +63,7 @@ Provide all fields to create a new tenant:
           ]
         >>= Cqrs_command.Pool_tenant_command.Create.handle database
         |> Pool_common.Utils.get_or_failwith
-        |> Pool_event.handle_system_events Database.root
+        |> Pool_event.handle_system_events Database.Pool.Root.label
       in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
@@ -96,16 +94,18 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
         let open Cqrs_command.Pool_tenant_command.UpdateDatabase in
         let* tenant = find_by_label pool >>= fun { id; _ } -> find_full id in
         let%lwt updated_database =
-          let open Database in
-          let url = Url.create database_url |> failwith in
-          test_and_create url (tenant |> Write.database_label)
+          Database.Pool.create_validated_and_tested
+            (tenant |> Write.database_label |> Database.Label.value)
+            database_url
           |> Lwt.map failwith
         in
         handle tenant updated_database |> Lwt.return
       in
       (match%lwt result with
        | Ok events ->
-         let%lwt () = Pool_event.handle_system_events Database.root events in
+         let%lwt () =
+           Pool_event.handle_system_events Database.Pool.Root.label events
+         in
          Lwt.return_some ()
        | Error err ->
          let open Pool_common in

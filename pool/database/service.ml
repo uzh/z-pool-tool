@@ -1,5 +1,3 @@
-open CCFun.Infix
-
 let src = Logs.Src.create "database"
 
 module Logs = (val Logs.src_log src : Logs.LOG)
@@ -107,21 +105,3 @@ let clean_all database_label =
     |> Lwt.map CCResult.flatten_l
     |> Lwt_result.map Utils.flat_unit)
 ;;
-
-let add_pool ?required (model : Entity.t) =
-  let status = add_pool ?required model in
-  let () =
-    Guard.add_pool
-      Entity.(label model |> Label.value)
-      Entity.(url model |> Url.value)
-  in
-  status
-;;
-
-let drop_pool label =
-  let%lwt () = drop_pool label in
-  let%lwt () = Guard.drop_pool (Entity.Label.value label) in
-  Lwt.return_unit
-;;
-
-let connect = connect %> Lwt.return

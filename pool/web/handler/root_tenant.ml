@@ -20,6 +20,7 @@ let tenants req =
 ;;
 
 let create req =
+  let open Database.Pool in
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt multipart_encoded =
     Sihl.Web.Request.to_multipart_form_data_exn req
@@ -36,15 +37,14 @@ let create req =
     let events () =
       let open Cqrs_command.Pool_tenant_command in
       let* database =
-        let open Cqrs_command.Pool_tenant_command in
         let* { database_url; database_label } =
           decode_database urlencoded |> Lwt_result.lift
         in
-        Database.test_and_create database_url database_label
+        create_tested database_label database_url
       in
       let* files =
         HttpUtils.File.upload_files
-          Database.root
+          Root.label
           (CCList.map Field.show Pool_tenant.file_fields)
           req
       in
@@ -55,9 +55,9 @@ let create req =
         |> Lwt_result.lift
       in
       let events = Create.handle ~tags database decoded |> Lwt_result.lift in
-      events >|> HttpUtils.File.cleanup_upload Database.root files
+      events >|> HttpUtils.File.cleanup_upload Root.label files
     in
-    let handle = Pool_event.handle_events Database.root user in
+    let handle = Pool_event.handle_events Database.Pool.Root.label user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path

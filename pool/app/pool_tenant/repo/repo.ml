@@ -1,6 +1,5 @@
 open Caqti_request.Infix
 module RepoEntity = Repo_entity
-module Database = Database
 module Id = Pool_common.Id
 module LogoMapping = Entity_logo_mapping
 module LogoMappingRepo = Repo_logo_mapping
@@ -257,15 +256,10 @@ let find_by_label pool label =
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
-let find_by_url pool url =
+let find_by_url ?should_cache pool url =
   let open Utils.Lwt_result.Infix in
   let tags = Database.Logger.Tags.create pool in
-  let should_cache { Entity.status; _ } =
-    let open Database.Status in
-    match status with
-    | Active | Disabled | Maintenance | MigrationsFailed -> true
-    | ConnectionIssue | MigrationsPending -> false
-  in
+  let should_cache = CCOption.get_or ~default:(fun _ -> true) should_cache in
   Cache.find_by_url url
   |> function
   | Some tenant ->

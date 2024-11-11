@@ -24,7 +24,7 @@ module AnnouncementRepo = struct
     let%lwt () =
       Announcement.Created (announcement, tenant_ids)
       |> Pool_event.announcement
-      |> Pool_event.handle_event Database.root current_user
+      |> Pool_event.handle_event Database.Pool.Root.label current_user
     in
     Lwt.return announcement
   ;;

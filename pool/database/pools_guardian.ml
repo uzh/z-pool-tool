@@ -11,19 +11,22 @@ module Make (Config : Pools_sig.ConfigSig) : Guardian_backend.Pools.Sig = struct
     let additinal_pools =
       CCOption.map (CCList.map (CCFun.uncurry Entity.create)) additinal_pools
     in
-    initialize ?additinal_pools
+    Pool.initialize ?additinal_pools
   ;;
 
   let connect =
     let open CCFun.Infix in
-    connect %> CCResult.map_err Pool_message.Error.show
+    Pool.connect %> CCResult.map_err Pool_message.Error.show
   ;;
+
+  let disconnect = Pool.disconnect
 
   let add_pool ?required name database_url =
-    Entity.create name database_url |> add_pool ?required
+    Entity.create name database_url |> Pool.add ?required
   ;;
 
-  let fetch_pool ?ctx ?retries () = fetch_pool ?retries (of_ctx ctx)
+  let drop_pool = Pool.drop
+  let fetch_pool ?ctx ?retries () = Pool.fetch ?retries (of_ctx ctx)
   let find ?ctx = find (of_ctx ctx)
   let find_opt ?ctx = find_opt (of_ctx ctx)
   let collect ?ctx = collect (of_ctx ctx)

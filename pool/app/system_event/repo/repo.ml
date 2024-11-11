@@ -146,7 +146,7 @@ module Sql = struct
 
   let find_pending identifier =
     Entity.EventLog.ServiceIdentifier.get identifier
-    |> Database.collect root find_pending_request
+    |> Database.collect Pool.Root.label find_pending_request
   ;;
 end
 

@@ -24,7 +24,7 @@ module Cache = struct
 end
 
 let src = Logs.Src.create "pool_tenant.service"
-let tags = Database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create Pool.Root.label)
 
 module DevInbox = struct
   let dev_inbox : Sihl.Contract.Email.t list ref = ref []
@@ -134,7 +134,7 @@ let intercept_send sender email =
 let default_sender_of_pool database_label =
   let open Settings in
   let open Utils.Lwt_result.Infix in
-  if Database.is_root database_label
+  if Database.Pool.is_root database_label
   then
     Sihl.Configuration.read_string "SMTP_SENDER"
     |> CCOption.get_exn_or "Undefined 'SMTP_SENDER'"

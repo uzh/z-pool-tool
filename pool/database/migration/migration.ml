@@ -81,13 +81,13 @@ let with_disabled_fk_check database_label f =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let%lwt () =
       Connection.exec set_fk_check_request false
-      |> raise_caqti_error database_label
+      |> Pool.raise_caqti_error database_label
     in
     Lwt.finalize
       (fun () -> f connection)
       (fun () ->
         Connection.exec set_fk_check_request true
-        |> raise_caqti_error database_label))
+        |> Pool.raise_caqti_error database_label))
 ;;
 
 let execute_steps database_label state steps =

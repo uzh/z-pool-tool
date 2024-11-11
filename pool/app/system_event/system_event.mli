@@ -10,9 +10,7 @@ module Job : sig
     | GuardianCacheCleared
     | I18nPageUpdated
     | SmtpAccountUpdated
-    | TenantDatabaseAdded of Database.Label.t
-    | TenantDatabaseUpdated of Database.Label.t
-    | TenantDatabaseDeleted of Database.Label.t
+    | TenantDatabaseReset of Database.Label.t
     | TenantDatabaseCacheCleared
 
   val equal : t -> t -> bool
@@ -78,6 +76,7 @@ module Service : sig
   val register : identifier -> unit -> Sihl.Container.Service.t
 
   module ConnectionWatcher : sig
-    val verify_tenants : unit -> unit Lwt.t
+    val rerun_migrations_for_connection_issues : unit -> unit Lwt.t
+    val register : unit -> Sihl.Container.Service.t
   end
 end

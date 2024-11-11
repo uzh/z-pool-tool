@@ -1044,7 +1044,7 @@ let detail
         ~classnames:[ "small" ]
         ~control:(language, Edit (Some Field.Experiment))
         (build_experiment_path ~suffix:"edit" experiment)
-      |> CCOption.some
+      |> CCOption.return
     else None
   in
   Layout.Experiment.(
