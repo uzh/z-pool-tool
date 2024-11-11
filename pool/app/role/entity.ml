@@ -103,6 +103,7 @@ module Target = struct
     | `ContactName
     | `CustomField
     | `CustomFieldGroup
+    | `DuplicateContact
     | `Experiment
     | `Filter
     | `I18n
@@ -154,6 +155,7 @@ module Target = struct
     | "contactname", [] -> Ok `ContactName
     | "customfield", [] -> Ok `CustomField
     | "customfieldgroup", [] -> Ok `CustomFieldGroup
+    | "duplicatecontact", [] -> Ok `DuplicateContact
     | "experiment", [] -> Ok `Experiment
     | "filter", [] -> Ok `Filter
     | "i18n", [] -> Ok `I18n

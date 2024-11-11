@@ -663,12 +663,13 @@ module Admin = struct
     let contacts =
       let open Contacts in
       let duplicates =
-        (* TODO: ACCESS *)
         let open Duplicates in
         let specific =
-          [ get "" ~middlewares:[] show; post "ignore" ~middlewares:[] ignore ]
+          [ get "" ~middlewares:[ Access.read ] show
+          ; post "ignore" ~middlewares:[ Access.ignore ] ignore
+          ]
         in
-        [ get "" ~middlewares:[] index
+        [ get "" ~middlewares:[ Access.index ] index
         ; choose ~scope:(Duplicate |> url_key) specific
         ]
       in
@@ -689,9 +690,8 @@ module Admin = struct
           ]
         in
         let duplicates =
-          (* TODO: ACCESS *)
           let open Duplicates in
-          [ get "" ~middlewares:[] index ]
+          [ get "" ~middlewares:[ Access.index ] index ]
         in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update

@@ -105,6 +105,21 @@ let ignore req =
 
 module Access : sig
   include module type of Helpers.Access
+
+  val ignore : Rock.Middleware.t
 end = struct
   include Helpers.Access
+  module Guardian = Middleware.Guardian
+
+  let duplicate_effect =
+    Guardian.id_effects Duplicate_contacts.Id.validate Field.Duplicate
+  ;;
+
+  let index =
+    Duplicate_contacts.Access.index
+    |> Guardian.validate_admin_entity ~any_id:true
+  ;;
+
+  let read = duplicate_effect Duplicate_contacts.Access.read
+  let ignore = duplicate_effect Duplicate_contacts.Access.update
 end

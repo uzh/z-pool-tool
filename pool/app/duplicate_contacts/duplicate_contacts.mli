@@ -37,3 +37,10 @@ val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val filterable_by : Query.Filter.Condition.Human.t list option
 val default_query : Query.t
+
+module Access : sig
+  val index : Guard.ValidationSet.t
+  val create : Guard.ValidationSet.t
+  val read : Id.t -> Guard.ValidationSet.t
+  val update : Id.t -> Guard.ValidationSet.t
+end

@@ -1,5 +1,6 @@
 include Entity
 include Event
+include Entity_guard
 
 let run database_label contact_uuid =
   let open Utils.Lwt_result.Infix in

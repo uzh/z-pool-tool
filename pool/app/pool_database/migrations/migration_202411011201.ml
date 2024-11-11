@@ -45,11 +45,3 @@ let migration () =
     |> add_step create_duplicates_table
     |> add_step add_weight_to_custom_fields)
 ;;
-
-(* TODO: Two way uniqueness: 
-
-- manually check? number of new duplicates should become small
-- https://chatgpt.com/c/672a0605-7f94-8005-b01c-bcca59f498cf
-- https://stackoverflow.com/questions/41040301/bi-directional-unique-key-constraint-for-combination-of-two-columns
-
-*)
