@@ -6,7 +6,9 @@ let message_template_hints =
   let open Pool_common.I18n in
   function
   | ExperimentInvitation ->
-    [ "experumentSurveyRedirectUrl", ExperumentSurveyRedirectUrl ]
+    [ "experimentSurveyRedirectUrl", ExperimentSurveyRedirectUrl
+    ; "experimentSurveyUrl", ExperimentSurveyUrl
+    ]
   | AccountSuspensionNotification
   | AssignmentCancellation
   | AssignmentConfirmation

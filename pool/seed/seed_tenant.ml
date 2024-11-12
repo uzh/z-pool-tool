@@ -20,7 +20,9 @@ let create () =
             }
         in
         let base64 = Base64.encode_exn file.body in
-        let%lwt _ = Storage.upload_base64 Database.root stored_file base64 in
+        let%lwt _ =
+          Storage.upload_base64 Database.Pool.Root.label stored_file base64
+        in
         Lwt.return_unit)
       [ styles; icon; tenant_logo ]
   in
@@ -97,6 +99,7 @@ let create () =
                  |> get_or_failwith
                  |> CCOption.return)
                 (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
+                None
                 (Pool_common.Language.create default_language |> get_or_failwith)
             in
             let logo_mappings =
@@ -112,7 +115,8 @@ let create () =
             [ Pool_tenant.Created (tenant, database)
             ; Pool_tenant.LogosUploaded logo_mappings
             ]
-            |> Lwt_list.iter_s (Pool_tenant.handle_event Database.root))
+            |> Lwt_list.iter_s
+                 (Pool_tenant.handle_event Database.Pool.Root.label))
   in
   Lwt.return_unit
 ;;

@@ -40,7 +40,7 @@ let experiments_query_from_req req =
   let open Experiment in
   Query.from_request
     ~sortable_by
-    ~default:default_query
+    ~default:Session.participation_default_query
     ~searchable_by
     ?filterable_by
     req
@@ -213,14 +213,14 @@ let promote req =
   let error_path =
     Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value contact_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let open Cqrs_command.Admin_command.PromoteContact in
     let* contact = contact_id |> Contact.find database_label in
     handle ~tags Contact.(id contact |> Id.to_user)
     |> Lwt_result.lift
-    |>> Pool_event.handle_events ~tags database_label
+    |>> Pool_event.handle_events ~tags database_label user
     |>> fun () ->
     HttpUtils.redirect_to_with_actions
       (Format.asprintf "/admin/admins/%s" (Contact.Id.value contact_id))
@@ -252,7 +252,7 @@ let delete_answer req =
       let open Cqrs_command.Contact_command.ClearAnswer in
       handle ~tags custom_field contact
       |> Lwt_result.lift
-      |>> Pool_event.handle_events ~tags database_label
+      |>> Pool_event.handle_events ~tags database_label user
     in
     let* custom_field =
       HttpUtils.find_id Custom_field.Id.of_string Field.CustomField req
@@ -286,6 +286,55 @@ let toggle_paused req =
       Contact.find database_label id >|- fun err -> err, redirect_path
     in
     Helpers.ContactUpdate.toggle_paused context redirect_path contact tags
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let mark_as_deleted req =
+  let open Utils.Lwt_result.Infix in
+  let id = contact_id req in
+  let redirect_path =
+    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id)
+  in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result { Pool_context.database_label; user; _ } =
+    Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let* contact = Contact.find database_label id in
+    let* () =
+      Session.find_upcoming_public_by_contact database_label id
+      >== function
+      | [] -> Ok ()
+      | _ -> Error Pool_message.Error.DeleteContactUpcomingSessions
+    in
+    let open Cqrs_command.Contact_command in
+    MarkAsDeleted.handle ~tags contact
+    |> Lwt_result.lift
+    |>> Pool_event.handle_events database_label user
+    |>> fun () ->
+    HttpUtils.redirect_to_with_actions
+      (Format.asprintf "/admin/contacts")
+      [ Message.set ~success:[ Pool_message.Success.ContactMarkedAsDeleted ] ]
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let toggle_verified req =
+  let open Utils.Lwt_result.Infix in
+  let id = contact_id req in
+  let redirect_path =
+    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id)
+  in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result { Pool_context.database_label; user; _ } =
+    Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let* contact = Contact.find database_label id in
+    let events = Cqrs_command.Contact_command.ToggleVerified.handle contact in
+    events
+    |> Lwt_result.lift
+    |>> Pool_event.handle_events ~tags database_label user
+    |>> fun () -> HttpUtils.redirect_to redirect_path
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
@@ -372,7 +421,7 @@ let enroll_contact_post req =
     Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id)
   in
   let tags = Pool_context.Logger.Tags.req req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let%lwt urlencoded =
@@ -414,7 +463,7 @@ let enroll_contact_post req =
     in
     let handle events =
       let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+        (Pool_event.handle_events ~tags database_label user) events
       in
       HttpUtils.redirect_to_with_actions
         redirect_path
@@ -426,6 +475,7 @@ let enroll_contact_post req =
 ;;
 
 let message_history req =
+  let queue_table = `History in
   let contact_id = contact_id req in
   let error_path =
     Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id)
@@ -440,15 +490,30 @@ let message_history req =
   let* contact = Contact.find database_label contact_id in
   let%lwt messages =
     Pool_queue.find_instances_by_entity
+      queue_table
       ~query
       database_label
       (Contact.Id.to_common contact_id)
   in
   let open Page.Admin in
   (if HttpUtils.Htmx.is_hx_request req
-   then Queue.list context (Contact.message_history_url contact) messages
-   else Contact.message_history context contact messages)
+   then
+     Queue.list
+       context
+       queue_table
+       (Contact.message_history_url contact)
+       messages
+   else Contact.message_history context queue_table contact messages)
   |> Lwt_result.return
+;;
+
+let changelog req =
+  let id = contact_id req in
+  let url = HttpUtils.Url.Admin.contact_path ~suffix:"changelog" ~id () in
+  let to_human { Pool_context.database_label; language; _ } =
+    Custom_field.changelog_to_human database_label language
+  in
+  Helpers.Changelog.htmx_handler ~to_human ~url (Contact.Id.to_common id) req
 ;;
 
 module Tags = Admin_contacts_tags
@@ -459,9 +524,12 @@ module Access : sig
   val external_data_ids : Rock.Middleware.t
   val promote : Rock.Middleware.t
   val message_history : Rock.Middleware.t
+  val changelog : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
+
+  let contact_effects = Guardian.id_effects Contact.Id.validate Field.Contact
 
   let index =
     Contact.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
@@ -490,7 +558,7 @@ end = struct
           |> CCList.map one_of_tuple)
       |> or_
       |> Lwt.return_ok)
-    |> Guardian.validate_generic_lwt_result
+    |> Guardian.validate_generic_lwt
   ;;
 
   let read =
@@ -509,6 +577,11 @@ end = struct
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
 
   let message_history =
-    Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
+    contact_effects (fun id ->
+      Pool_queue.Guard.Access.index
+        ~id:(Guard.Uuid.target_of Contact.Id.value id)
+        ())
   ;;
+
+  let changelog = read
 end

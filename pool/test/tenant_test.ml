@@ -166,6 +166,7 @@ module Data = struct
       ; gtx_sender
       ; styles = styles |> CCOption.return
       ; icon = icon |> CCOption.return
+      ; email_logo = None
       ; default_language = Common.Language.En
       ; created_at = Common.CreatedAt.create_now ()
       ; updated_at = Common.UpdatedAt.create_now ()
@@ -226,6 +227,7 @@ module Data = struct
       ; icon = icon |> CCOption.return
       ; logos
       ; partner_logo
+      ; email_logo = None
       ; status = Database.Status.Active
       ; default_language = Common.Language.En
       ; text_messages_enabled = false
@@ -402,6 +404,7 @@ let[@warning "-4"] create_tenant () =
         ; gtx_sender
         ; styles = styles |> CCOption.return
         ; icon = icon |> CCOption.return
+        ; email_logo = None
         ; default_language
         ; created_at
         ; updated_at
@@ -427,7 +430,7 @@ let[@warning "-4"] create_tenant () =
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
       ; Pool_database.Migrated database |> Pool_event.database
       ; System_event.(
-          Job.TenantDatabaseAdded database_label
+          Job.TenantDatabaseReset database_label
           |> create ~id:db_added_event
           |> created)
         |> Pool_event.system_event
@@ -488,6 +491,7 @@ let[@warning "-4"] update_tenant_details () =
         ; default_language
         ; styles = Some styles
         ; icon = Some icon
+        ; email_logo = None
         ; status = None
         }
       in
@@ -552,7 +556,7 @@ let update_tenant_database () =
         [ Pool_tenant.DatabaseEdited (tenant, database)
           |> Pool_event.pool_tenant
         ; System_event.(
-            Job.TenantDatabaseUpdated (label database)
+            Job.TenantDatabaseReset (label database)
             |> create ~id:system_event_id
             |> created)
           |> Pool_event.system_event

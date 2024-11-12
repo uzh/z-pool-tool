@@ -12,7 +12,10 @@ end
 module PublicTitle : sig
   include Pool_model.Base.StringSig
 
-  val placeholder : t
+  val schema
+    :  ?default:t
+    -> unit
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module InternalDescription : sig
@@ -42,14 +45,7 @@ module RegistrationDisabled : sig
 end
 
 module AllowUninvitedSignup : sig
-  type t
-
-  val equal : t -> t -> t
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : bool -> t
-  val value : t -> bool
-  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  include Pool_model.Base.BooleanSig
 end
 
 module ExternalDataRequired : sig
@@ -148,6 +144,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val yojson_of_t : t -> Yojson.Safe.t
 val id : t -> Id.t
 val title : t -> Title.t
 val public_title : t -> PublicTitle.t
@@ -202,33 +199,6 @@ val create
   -> ExternalDataRequired.t
   -> ShowExternalDataIdLinks.t
   -> (t, Pool_message.Error.t) result
-
-type create =
-  { title : Title.t
-  ; public_title : PublicTitle.t
-  ; internal_description : InternalDescription.t option
-  ; public_description : PublicDescription.t option
-  ; language : Pool_common.Language.t option
-  ; cost_center : CostCenter.t option
-  ; contact_email : Pool_user.EmailAddress.t option
-  ; direct_registration_disabled : DirectRegistrationDisabled.t
-  ; registration_disabled : RegistrationDisabled.t
-  ; allow_uninvited_signup : AllowUninvitedSignup.t
-  ; external_data_required : ExternalDataRequired.t
-  ; show_external_data_id_links : ShowExternalDataIdLinks.t
-  ; experiment_type : Pool_common.ExperimentType.t option
-  ; assignment_without_session : AssignmentWithoutSession.t
-  ; survey_url : SurveyUrl.t option
-  ; email_session_reminder_lead_time : int option
-  ; email_session_reminder_lead_time_unit : Pool_model.Base.TimeUnit.t option
-  ; text_message_session_reminder_lead_time : int option
-  ; text_message_session_reminder_lead_time_unit :
-      Pool_model.Base.TimeUnit.t option
-  }
-
-val equal_create : create -> create -> bool
-val pp_create : Format.formatter -> create -> unit
-val show_create : create -> string
 
 module Public : sig
   type t
@@ -287,16 +257,21 @@ end
 
 type event =
   | Created of t
-  | Updated of t
+  | Updated of t * t
   | ResetInvitations of t
   | Deleted of Id.t
 
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val created : t -> event
-val updated : t -> event
+val updated : t -> t -> event
 val resetinvitations : t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_message.Field.t list
@@ -378,13 +353,15 @@ val find_to_enroll_directly
 
 val contact_is_enrolled : Database.Label.t -> Id.t -> Contact.Id.t -> bool Lwt.t
 
-val find_targets_grantable_by_admin
+val find_targets_grantable_by_target
   :  ?exclude:Id.t list
   -> Database.Label.t
-  -> Admin.t
+  -> Guard.Uuid.Target.t
   -> Role.Role.t
   -> string
   -> (Id.t * Title.t) list Lwt.t
+
+val get_default_public_title : Database.Label.t -> PublicTitle.t Lwt.t
 
 val query_participation_history_by_contact
   :  ?query:Query.t
@@ -557,3 +534,5 @@ val default_query : Query.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+
+module VersionHistory : Changelog.TSig with type record = t

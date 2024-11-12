@@ -98,7 +98,7 @@ let update req =
       (Pool_common.Id.value waiting_list_id)
   in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -113,9 +113,7 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set
@@ -138,7 +136,7 @@ let assign_contact req =
     let open Experiment.Id in
     Format.asprintf "/admin/experiments/%s/waiting-list" (experiment_id |> value)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , Format.asprintf
@@ -190,9 +188,7 @@ let assign_contact req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpUtils.Message.set
@@ -214,49 +210,27 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
-    let id = find_id Pool_common.Id.of_string Field.WaitingList req in
-    fcn experiment_id id
+  let combined_effects validation_set =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic
+    @@ fun req ->
+    let* experiment_id = find Experiment.Id.validate Field.Experiment req in
+    let* id = find Pool_common.Id.validate Field.WaitingList req in
+    validation_set experiment_id id |> CCResult.return
   ;;
 
-  let index =
-    Waiting_list.Guard.Access.index
-    |> experiment_effects
-    |> Guardian.validate_generic ~any_id:true
-  ;;
-
-  let create =
-    WaitingListCommand.Create.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let read =
-    Waiting_list.Guard.Access.read
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let update =
-    WaitingListCommand.Update.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    WaitingListCommand.Destroy.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
+  let index = experiment_effects Waiting_list.Guard.Access.index
+  let create = experiment_effects WaitingListCommand.Create.effects
+  let read = combined_effects Waiting_list.Guard.Access.read
+  let update = combined_effects WaitingListCommand.Update.effects
+  let delete = combined_effects WaitingListCommand.Destroy.effects
 
   let assign =
-    Cqrs_command.Assignment_command.CreateFromWaitingList.effects
-    |> combined_effects
-    |> Guardian.validate_generic
+    combined_effects
+      Cqrs_command.Assignment_command.CreateFromWaitingList.effects
   ;;
 end

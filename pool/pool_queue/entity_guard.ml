@@ -3,7 +3,7 @@ module Access = struct
   open ValidationSet
   open Permission
 
-  let index = one_of_tuple (Read, `Queue, None)
+  let index ?id () = one_of_tuple (Read, `Queue, id)
   let read = one_of_tuple (Read, `Queue, None)
   let resend = one_of_tuple (Create, `Queue, None)
 end

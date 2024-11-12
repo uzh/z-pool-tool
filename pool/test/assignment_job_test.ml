@@ -61,6 +61,9 @@ let update_without_filter _ () =
 ;;
 
 let exclude_contact _ () =
+  let%lwt current_user =
+    Integration_utils.AdminRepo.create () ||> Pool_context.admin
+  in
   let%lwt assignment = get_assignment_by_contact contact_id_1 in
   let exclude_1 =
     let open Filter in
@@ -74,7 +77,7 @@ let exclude_contact _ () =
   in
   let%lwt () =
     let%lwt experiment = get_experiment () in
-    Filter_test.save_filter exclude_1 experiment
+    Filter_test.save_filter current_user exclude_1 experiment
   in
   let%lwt experiment = get_experiment () in
   let%lwt session = get_session () in

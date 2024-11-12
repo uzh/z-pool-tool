@@ -33,8 +33,18 @@ let index req =
     ~query:(module Pool_location)
     ~create_layout
     req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let%lwt location_list, query = Pool_location.find_by query database_label in
+  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* actor =
+    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+  in
+  let%lwt location_list, query =
+    Pool_location.find_all
+      ~query
+      ~actor
+      ~permission:Pool_location.Guard.Access.index_permission
+      database_label
+  in
   let open Page.Admin.Location in
   (if HttpUtils.Htmx.is_hx_request req then list else index)
     context
@@ -64,7 +74,7 @@ let create req =
     ||> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
     ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , "/admin/locations/create"
@@ -85,9 +95,7 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         "/admin/locations"
         [ Message.set ~success:[ Pool_message.(Success.Created Field.Location) ]
@@ -124,7 +132,7 @@ let add_file req =
   let path =
     id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/files/create" path)
     @@
@@ -161,9 +169,7 @@ let add_file req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         path
         [ Message.set
@@ -205,6 +211,13 @@ let detail edit req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let changelog req =
+  let open Pool_location in
+  let id = id req Field.Location Id.of_string in
+  let url = HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id () in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
+;;
+
 let show = detail false
 let edit = detail true
 
@@ -239,7 +252,7 @@ let statistics req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let id = id req Field.Location Pool_location.Id.of_string in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
@@ -268,7 +281,7 @@ let update req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+           Pool_event.handle_events ~tags database_label user events
          in
          Http_utils.redirect_to_with_actions
            detail_path
@@ -282,7 +295,7 @@ let update req =
 ;;
 
 let delete req =
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let location_id = id req Field.Location Pool_location.Id.of_string in
     let mapping_id =
       id req Field.FileMapping Pool_location.Mapping.Id.of_string
@@ -301,7 +314,7 @@ let delete req =
       |> Cqrs_command.Location_command.DeleteFile.handle ~tags
       |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
       path
       [ Message.set ~success:[ Pool_message.(Success.Deleted Field.File) ] ]
@@ -325,18 +338,21 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let file_effects =
-    Guardian.id_effects Pool_location.Mapping.Id.of_string Field.File
+    Guardian.id_effects Pool_location.Mapping.Id.validate Field.File
   ;;
 
   let location_effects =
-    Guardian.id_effects Pool_location.Id.of_string Field.Location
+    Guardian.id_effects Pool_location.Id.validate Field.Location
   ;;
 
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let location_id = find_id Pool_location.Id.of_string Field.Location req in
-    let file_id = find_id Pool_location.Mapping.Id.of_string Field.File req in
-    fcn location_id file_id
+  let combined_effects validation_set =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic
+    @@ fun req ->
+    let* location_id = find Pool_location.Id.validate Field.Location req in
+    let* file_id = find Pool_location.Mapping.Id.validate Field.File req in
+    validation_set location_id file_id |> CCResult.return
   ;;
 
   let index =
@@ -345,36 +361,10 @@ end = struct
   ;;
 
   let create = LocationCommand.Create.effects |> Guardian.validate_admin_entity
-
-  let create_file =
-    LocationCommand.AddFile.effects
-    |> location_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let read =
-    Pool_location.Guard.Access.read
-    |> location_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let read_file =
-    Pool_location.Guard.Access.File.read
-    |> file_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let update =
-    LocationCommand.Update.effects
-    |> location_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete_file =
-    LocationCommand.DeleteFile.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
+  let create_file = location_effects LocationCommand.AddFile.effects
+  let read = location_effects Pool_location.Guard.Access.read
+  let read_file = file_effects Pool_location.Guard.Access.File.read
+  let update = location_effects LocationCommand.Update.effects
+  let delete_file = combined_effects LocationCommand.DeleteFile.effects
   let search = index
 end

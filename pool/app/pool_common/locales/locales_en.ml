@@ -18,8 +18,10 @@ let rec field_to_string =
   | AdminInputOnly -> "input only by admins"
   | AdminViewOnly -> "only visible for admins"
   | AllowUninvitedSignup -> "Allow registration of all contacts"
+  | Announcement -> "announcement"
   | Answer -> "answer"
   | AreaCode -> "area code"
+  | ApiKey -> "API key"
   | Argument -> "argument"
   | AssetId -> "asset identifier"
   | AssignableRole -> "assignable role"
@@ -34,9 +36,11 @@ let rec field_to_string =
   | CanceledAt -> "canceled at"
   | CallbackUrl -> "callback url"
   | CellPhone -> "cell phone"
+  | Changes -> "changes"
   | Chronological -> "chronological"
   | City -> "city"
   | ClosedAt -> "Closed at"
+  | Code -> "Code"
   | Confirmed -> "Confirmed"
   | ConfirmedAt -> "Confirmed at"
   | Contact -> "contact"
@@ -51,6 +55,7 @@ let rec field_to_string =
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | CustomField -> "field"
+  | CustomFieldAnswer -> "answer"
   | CustomFieldGroup -> "group"
   | CustomFieldGroups -> "groups"
   | CustomFieldOption -> "option"
@@ -76,6 +81,7 @@ let rec field_to_string =
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
   | EmailLeadTime -> "email lead time"
+  | EmailLogo -> "email logo"
   | EmailRemindersSentAt -> "email reminders sent at"
   | EmailSubject -> "email subject"
   | EmailSuffix -> "email suffix"
@@ -97,6 +103,7 @@ let rec field_to_string =
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
   | ExternalDataIdAbbr -> "EID"
+  | ExpiresAt -> "Expires at"
   | ExternalDataId -> "external data identifier"
   | ExternalDataRequired -> "external data is required"
   | Failed -> "failed"
@@ -123,6 +130,7 @@ let rec field_to_string =
   | HidePast -> "Hide past"
   | HideUnverified -> "Hide unverified"
   | Hint -> "hint"
+  | History -> "history"
   | Host -> "host"
   | I18n -> "translation"
   | Icon -> "icon"
@@ -224,6 +232,7 @@ let rec field_to_string =
   | Reason -> "reason"
   | Recipient -> "recipient"
   | Redirect -> "redirect"
+  | Redirected -> "redirected"
   | Reminder -> "reminder"
   | RegistrationDisabled -> "registration disabled"
   | RegistrationPossible -> "registration possible"
@@ -232,6 +241,7 @@ let rec field_to_string =
   | RemindersSent -> "reminders sent"
   | Required -> "required"
   | ResentAt -> "resent at"
+  | Resource -> "resource"
   | Role -> "role"
   | Room -> "room"
   | Root -> "root"
@@ -251,8 +261,11 @@ let rec field_to_string =
   | Setting -> "setting"
   | Settings -> "settings"
   | ShowUpCount -> "show ups"
+  | ShowToAdmins -> "Show to admins"
+  | ShowToContacts -> "Show to contacts"
   | ShowExteralDataIdLinks -> "show links to external data identifiers"
   | SignedUpAt -> "signed up at"
+  | SignUpCode -> "signup code"
   | SignUpCount -> "new sign ups"
   | SMS -> "SMS"
   | SmsText -> "SMS text"
@@ -290,6 +303,7 @@ let rec field_to_string =
   | TermsAndConditions -> "terms and conditions"
   | TermsAndConditionsLastAccepted -> "terms and conditions last accepted at"
   | TestPhoneNumber -> "test phone number"
+  | Text -> "text"
   | TextMessage -> "text message"
   | TextMessageDlrStatus -> "text message status"
   | TextMessageLeadTime -> "text message lead time"
@@ -313,6 +327,7 @@ let rec field_to_string =
   | Value -> "value"
   | ValueOf field -> combine Value field
   | VerificationCode -> "verification code"
+  | VerificationCount -> "no. verifications"
   | Verified -> "verified"
   | Version -> "version"
   | Virtual -> "virtual"
@@ -336,6 +351,7 @@ let success_to_string =
     field_message "" (field_to_string field) "was successfully canceled."
   | Closed field ->
     field_message "" (field_to_string field) "was successfully closed."
+  | ContactMarkedAsDeleted -> "The contact was successfully deleted."
   | ContactPromoted -> "The contact was successfully promoted to an admin."
   | Created field ->
     field_message "" (field_to_string field) "was successfully created."
@@ -437,6 +453,17 @@ let rec error_to_string =
     "Some assignments have errors. Please resolve them first."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | AssignmentAlreadySubmitted -> "This assignment was already submitted."
+  | AtLeastOneLanguageRequired field ->
+    field
+    |> field_to_string
+    |> CCString.trim
+    |> Format.asprintf "%s has to be provided in at least one language."
+    |> CCString.capitalize_ascii
+  | AtLeastOneSelected (field1, field2) ->
+    Format.asprintf
+      "At least one of the fields '%s' or '%s' has to be selected."
+      (field_to_string field1)
+      (field_to_string field2)
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"
@@ -473,12 +500,16 @@ let rec error_to_string =
   | ContactUnconfirmed -> "Participant isn't confirmed!"
   | CustomFieldNoOptions -> "At least one option must exist."
   | CustomFieldTypeChangeNotAllowed -> "Type of field cannot be changed."
-  | DatabaseAddPoolFirst -> "Unknown Pool: Please 'add_pool' first!"
+  | DatabaseAddPoolFirst pool ->
+    Format.asprintf "Unknown Pool '%s': Please 'add_pool' first!" pool
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
   | DirectRegistrationIsDisabled ->
     "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
   | DefaultMustNotBeUnchecked -> "'Default' must not be unchecked."
+  | DeleteContactUpcomingSessions ->
+    "Contact cannot be deleted. This contact is signed up to upcoming \
+     sessions. These assignments have to be deleted first."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingAdmin -> "Please provide admin email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
@@ -518,6 +549,8 @@ let rec error_to_string =
   | InvalidPasswordHashingCount ->
     "Password hashing count has to be between 4 and 31"
   | InvalidRequest | InvalidHtmxRequest -> "Invalid request."
+  | InvalidWithInfo (field, info) ->
+    Format.asprintf "Invalid %s provided (%s)!" (field_to_string field) info
   | IsMarkedAsDeleted field ->
     field_message
       ""
@@ -526,10 +559,12 @@ let rec error_to_string =
   | JobCannotBeRetriggered -> "This job cannot be retriggered."
   | JobPending -> "The job is still pending."
   | LoginProvideDetails -> "Please provide email and password"
+  | MaintenancePending -> "Maintenance work is in progress"
   | MaxLength max ->
     Format.asprintf "Must not be longer than %i characters." max
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
+  | MigrationFailed exn -> Format.asprintf "Migration failed: %s" exn
   | Missing field ->
     field_message
       "The field"
@@ -618,10 +653,10 @@ let rec error_to_string =
   | SessionNotClosed -> "This session has not been closed yet."
   | SessionInPast -> "This session has already finished."
   | SessionNotStarted -> "This session cannot be closed, yet."
+  | ServiceUnavailable -> "Service currently not available."
   | SessionRegistrationViaParent -> "Registration via main session."
   | SessionTenantNotFound ->
-    "Missing tenant: something on our side went wrong, please try again later \
-     or on multi occurrences please contact the Administrator."
+    "Missing tenant: something on our side went wrong, please try again later."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s smaller than %s"
@@ -691,6 +726,8 @@ let control_to_string =
   | Enroll -> format_submit "enroll" None
   | EnterNewCellPhone -> "Enter a different number"
   | Filter field -> format_submit "filter" field
+  | Generate -> format_submit "generate" None
+  | Hide field -> format_submit "hide" field
   | Login -> format_submit "login" None
   | LoadDefaultTemplate -> format_submit "load default template" None
   | Manage field -> format_submit "manage" (Some field)
@@ -732,6 +769,7 @@ let control_to_string =
   | Stop field -> format_submit "stop" field
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field
+  | Unverify -> "Mark as unverified"
   | Update field -> format_submit "update" field
   | UpdateAssignmentsMatchFilter -> format_submit "rerun filter" None
   | UpdateOrder -> format_submit "update order" None

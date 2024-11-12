@@ -34,7 +34,9 @@ let sign_up_create req =
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
-  let result { Pool_context.database_label; query_language; language; _ } =
+  let result
+    { Pool_context.database_label; query_parameters; language; user; _ }
+    =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     Utils.Lwt_result.map_error (fun msg ->
@@ -55,6 +57,9 @@ let sign_up_create req =
                (user_id |> Contact.Id.to_common)
        in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
+       let tenant_languages =
+         Pool_context.Tenant.get_tenant_languages_exn req
+       in
        let* email_address =
          Sihl.Web.Request.urlencoded Field.(Email |> show) req
          ||> CCOption.to_result Error.ContactSignupInvalidEmail
@@ -73,8 +78,18 @@ let sign_up_create req =
            Command.SignUp.decode urlencoded |> Lwt_result.lift
          in
          let%lwt token = Email.create_token database_label email_address in
+         let signup_code =
+           let open Signup_code in
+           let open CCOption.Infix in
+           Pool_context.Utils.find_query_param query_parameters url_key
+           >>= CCFun.(Code.create %> CCResult.to_opt)
+         in
+         let query_language =
+           Pool_context.Utils.query_language tenant_languages query_parameters
+         in
          let%lwt verification_mail =
            Message_template.SignUpVerification.create
+             ?signup_code
              database_label
              (CCOption.value ~default:language query_language)
              tenant
@@ -89,6 +104,7 @@ let sign_up_create req =
               ~tags
               ?allowed_email_suffixes
               ~user_id
+              ?signup_code
               answered_custom_fields
               token
               email_address
@@ -145,7 +161,7 @@ let sign_up_create req =
            log_request ();
            Lwt_result.return events
        in
-       let%lwt () = Pool_event.handle_events ~tags database_label events in
+       let%lwt () = Pool_event.handle_events ~tags database_label user events in
        HttpUtils.(
          redirect_to_with_actions
            "/email-confirmation"
@@ -158,7 +174,9 @@ let sign_up_create req =
 let email_verification req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; query_parameters; user; _ } as context)
+    =
     let%lwt redirect_path =
       let user =
         Pool_context.find_contact context
@@ -189,20 +207,26 @@ let email_verification req =
      in
      let* events =
        let open UserCommand in
+       let signup_code =
+         let open Signup_code in
+         let open CCOption.Infix in
+         Pool_context.Utils.find_query_param query_parameters url_key
+         >>= CCFun.(Code.create %> CCResult.to_opt)
+       in
        let%lwt admin =
          Admin.find database_label (email |> Email.user_id |> Admin.Id.of_user)
        in
        let%lwt contact =
          Contact.find database_label (Email.user_id email |> Contact.Id.of_user)
        in
-       let verify_email user =
-         VerifyEmail.(handle ~tags user email) |> Lwt_result.lift
+       let verify_email ?signup_code user =
+         VerifyEmail.(handle ~tags ?signup_code user email) |> Lwt_result.lift
        in
        let update_email user =
          UpdateEmail.(handle ~tags user email) |> Lwt_result.lift
        in
        match email |> Email.user_is_confirmed, contact, admin with
-       | false, Ok contact, _ -> verify_email (Contact contact)
+       | false, Ok contact, _ -> verify_email ?signup_code (Contact contact)
        | true, Ok contact, _ -> update_email (Contact contact)
        | false, Error _, Ok admin -> verify_email (Admin admin)
        | true, _, Ok admin -> update_email (Admin admin)
@@ -215,10 +239,10 @@ let email_verification req =
              ([%show: Pool_context.t] context));
          Lwt.return_ok []
      in
-     let%lwt () = Pool_event.handle_events ~tags database_label events in
+     let%lwt () = Pool_event.handle_events ~tags database_label user events in
      HttpUtils.(
        redirect_to_with_actions
-         (path_with_language query_language redirect_path)
+         (url_with_field_params query_parameters redirect_path)
          [ Message.set ~success:[ Success.EmailVerified ] ])
      |> Lwt_result.ok)
     >|- fun msg -> msg, redirect_path
@@ -228,15 +252,16 @@ let email_verification req =
 
 let terms req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; language; query_parameters; _ } as context)
+    =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@
     let%lwt terms =
       I18n.find_by_key database_label I18n.Key.TermsAndConditions language
     in
     let notification =
-      req
-      |> Sihl.Web.Request.query "redirected"
+      Pool_context.Utils.find_query_param query_parameters Field.Redirected
       |> CCOption.map (CCFun.const Pool_common.I18n.TermsAndConditionsUpdated)
     in
     Page.Contact.terms ?notification terms context
@@ -247,7 +272,9 @@ let terms req =
 ;;
 
 let terms_accept req =
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; query_parameters; user; _ } as context)
+    =
     Utils.Lwt_result.map_error (fun msg -> msg, "/login")
     @@
     let open Utils.Lwt_result.Infix in
@@ -256,8 +283,9 @@ let terms_accept req =
     let* events =
       Command.AcceptTermsAndConditions.handle ~tags contact |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label events in
-    HttpUtils.(redirect_to (path_with_language query_language "/experiments"))
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    HttpUtils.(
+      redirect_to (url_with_field_params query_parameters "/experiments"))
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req

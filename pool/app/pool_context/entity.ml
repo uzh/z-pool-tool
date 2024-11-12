@@ -22,20 +22,36 @@ module UserType = struct
 end
 
 type t =
-  { query_language : Pool_common.Language.t option
+  { query_parameters : (Pool_message.Field.t * string) list
   ; language : Pool_common.Language.t
   ; database_label : Database.Label.t
   ; message : Pool_message.Collection.t option
   ; csrf : string
   ; user : user
   ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
+  ; announcement : Announcement.t option
   }
 [@@deriving show, sexp_of]
 
 let create
-  (query_language, language, database_label, message, csrf, user, guardian)
+  ( query_parameters
+  , language
+  , database_label
+  , message
+  , csrf
+  , user
+  , guardian
+  , announcement )
   =
-  { query_language; language; database_label; message; csrf; user; guardian }
+  { query_parameters
+  ; language
+  ; database_label
+  ; message
+  ; csrf
+  ; user
+  ; guardian
+  ; announcement
+  }
 ;;
 
 let find_context key req =
@@ -65,7 +81,7 @@ let set = set_context key
 let find_contact { user; _ } =
   match user with
   | Contact c -> Ok c
-  | Admin _ | Guest -> Error Pool_message.(Error.NotFound Field.User)
+  | Admin _ | Guest -> Error Pool_message.(Error.NotFound Field.Contact)
 ;;
 
 let context_user_of_user database_label user =
@@ -117,6 +133,26 @@ module Tenant = struct
   let text_messages_enabled =
     find_key_exn (fun c -> c.tenant.Pool_tenant.text_messages_enabled)
   ;;
+end
+
+module Api = struct
+  type t =
+    { api_key : Api_key.t
+    ; database_label : Database.Label.t
+    ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
+    }
+  [@@deriving show, sexp_of]
+
+  let key : t Opium.Context.key =
+    Opium.Context.Key.create ("api context", sexp_of_t)
+  ;;
+
+  let create api_key database_label guardian =
+    { api_key; database_label; guardian }
+  ;;
+
+  let find = find_context key
+  let set = set_context key
 end
 
 (* Logging *)

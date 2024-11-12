@@ -5,6 +5,10 @@ module Model = Test_utils.Model
 let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
 
+let current_user () =
+  Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+;;
+
 let create () =
   let open Waiting_list in
   let experiment = Model.create_public_experiment () in
@@ -116,8 +120,9 @@ module PendingWaitingLists = struct
       Experiment.find_pending_waitinglists_by_contact
         Test_utils.Data.database_label
         contact
-      ||> CCList.find_opt (Experiment.Public.equal experiment)
-          %> CCOption.is_some
+      |> Lwt.map
+           (CCList.find_opt (Experiment.Public.equal experiment)
+            %> CCOption.is_some)
     in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
@@ -141,9 +146,10 @@ module PendingWaitingLists = struct
       find_pending_waitinglists_by_contact
         Test_utils.Data.database_label
         contact
-      ||> CCList.find_opt (fun public ->
-            Id.equal (Public.id public) experiment_id)
-          %> CCOption.is_none
+      |> Lwt.map
+           (CCList.find_opt (fun public ->
+              Id.equal (Public.id public) experiment_id)
+            %> CCOption.is_none)
     in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit
@@ -151,6 +157,7 @@ module PendingWaitingLists = struct
 
   let include_after_session_cancellation _ () =
     let open Utils.Lwt_result.Infix in
+    let%lwt current_user = current_user () in
     let%lwt experiment =
       Experiment.find database_label experiment_id
       ||> get_exn
@@ -161,15 +168,16 @@ module PendingWaitingLists = struct
     let%lwt () =
       Session.Canceled session
       |> Pool_event.session
-      |> Pool_event.handle_event database_label
+      |> Pool_event.handle_event database_label current_user
     in
     let%lwt res =
       let open CCFun in
       Experiment.find_pending_waitinglists_by_contact
         Test_utils.Data.database_label
         contact
-      ||> CCList.find_opt (Experiment.Public.equal experiment)
-          %> CCOption.is_some
+      |> Lwt.map
+           (CCList.find_opt (Experiment.Public.equal experiment)
+            %> CCOption.is_some)
     in
     let () = Alcotest.(check bool "succeeds" true res) in
     Lwt.return_unit

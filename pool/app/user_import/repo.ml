@@ -327,6 +327,7 @@ let find_contacts_to_notify pool limit =
        ~where:
          {| pool_contacts.import_pending = 1
           AND pool_contacts.disabled = 0
+          AND pool_contacts.paused = 0
           AND pool_user_imports.notification_sent_at IS NULL|}
        limit
      |> Caqti_type.(unit ->* t2 Contact.Repo.t RepoEntity.t))

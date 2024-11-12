@@ -3,16 +3,22 @@ open Tyxml.Html
 open Component.Input
 module HttpUtils = Http_utils
 
+let externalize_with_params = HttpUtils.externalize_path_with_params
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
 let login_form
   ?(hide_signup = false)
   ?intended
   ?flash_fetcher
-  Pool_context.{ language; query_language; csrf; _ }
+  Pool_context.{ language; query_parameters; csrf; _ }
   =
   let open Pool_common in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let query_parameters =
+    intended
+    |> CCOption.map_or ~default:query_parameters (fun intended ->
+      [ Pool_message.Field.Location, intended ] @ query_parameters)
+  in
+  let externalize = externalize_with_params query_parameters in
   let action = HttpUtils.intended_or "/login" intended |> externalize in
   let reset_password =
     a
@@ -25,7 +31,10 @@ let login_form
     else
       a
         ~a:[ a_href (externalize "/signup") ]
-        (txt_to_string language I18n.SignUpTitle)
+        [ txt
+            Pool_common.(
+              Utils.control_to_string language Pool_message.Control.SignUp)
+        ]
   in
   div
     ~a:[ a_class [ "stack" ] ]
@@ -51,7 +60,7 @@ let login_form
 
 let index
   (tenant : Pool_tenant.t)
-  Pool_context.({ language; query_language; user; _ } as context)
+  Pool_context.({ language; query_parameters; user; _ } as context)
   welcome_text
   signup_cta
   =
@@ -76,7 +85,7 @@ let index
               ~a:[ a_class [ "flexrow" ] ]
               [ link_as_button
                   ~control:(language, Pool_message.Control.SignUp)
-                  (HttpUtils.path_with_language query_language "/signup")
+                  (HttpUtils.url_with_field_params query_parameters "/signup")
               ]
           ]
       ]
@@ -146,7 +155,7 @@ let login ?intended Pool_context.({ language; _ } as context) flash_fetcher =
     ]
 ;;
 
-let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
+let request_reset_password Pool_context.{ language; query_parameters; csrf; _ } =
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
@@ -157,8 +166,8 @@ let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
     ; form
         ~a:
           [ a_action
-              (HttpUtils.externalize_path_with_lang
-                 query_language
+              (externalize_with_params
+                 query_parameters
                  "/request-reset-password")
           ; a_method `Post
           ; a_class [ "stack" ]
@@ -179,10 +188,10 @@ let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
 
 let reset_password
   token
-  Pool_context.{ language; query_language; csrf; _ }
+  Pool_context.{ language; query_parameters; csrf; _ }
   password_policy
   =
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let externalize = externalize_with_params query_parameters in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1

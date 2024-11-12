@@ -70,7 +70,7 @@ let update_settings req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let redirect_path = "/admin/settings" in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -132,9 +132,7 @@ let update_settings req =
       |> lift
       >>= flip command_handler urlencoded
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
-    in
+    let handle = Pool_event.handle_events ~tags database_label user in
     let return_to_settings () =
       Http_utils.redirect_to_with_actions
         redirect_path
@@ -173,7 +171,7 @@ module Access : module type of Helpers.Access = struct
     flip Sihl.Web.Router.param "action"
     %> Settings.action_of_param
     %> CCResult.map find_effects
-    |> Guardian.validate_generic_result
+    |> Guardian.validate_generic
   ;;
 
   let index = Settings.Guard.Access.index |> Guardian.validate_admin_entity

@@ -9,6 +9,7 @@ let admins_to_notify = Experiment.find_admins_to_notify_about_invitations
 let trigger_text =
   let open Pool_common.I18n in
   function
+  | `Experiment _ -> MatchesFilterChangeReasonFilter
   | `Session _ -> MatchesFilterChangeReasonManually
   | `Upcoming -> MatchesFilterChangeReasonWorker
 ;;
@@ -98,6 +99,9 @@ let handle_update ?current_user database_label context =
     >|> make_events ?current_user context database_label experiment
   in
   match context with
+  | `Experiment (experiment, filter) ->
+    find_upcoming_by_experiment database_label experiment.Experiment.id
+    >>= fun (experiment, sessions) -> handle experiment filter sessions
   | `Session ({ Session.id; experiment; _ } as session) ->
     let%lwt assignments = find_all_by_session database_label id in
     handle experiment experiment.Experiment.filter [ session, assignments ]

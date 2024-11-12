@@ -2,6 +2,9 @@ type t =
   | Activity
   | Address
   | AdminComment
+  | AnnouncementsListTitle
+  | AnnouncementsTenantSelect
+  | ApiKeys
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
   | AvailableSpots
@@ -10,6 +13,8 @@ type t =
   | Closed
   | ContactWaitingListEmpty
   | CustomFieldsSettings
+  | CustomFieldsSettingsCloseScreen
+  | CustomFieldsSettingsDetailScreen
   | DashboardProfileCompletionText
   | DashboardProfileCompletionTitle
   | DashboardTitle
@@ -26,6 +31,10 @@ type t =
   | ExperimentListPublicTitle
   | ExperimentOnlineListEmpty
   | ExperimentOnlineListPublicTitle
+  | ExperimentOnlineParticiated of Ptime.t
+  | ExperimentOnlineParticipationDeadline of Ptime.t
+  | ExperimentOnlineParticipationNoUpcoming
+  | ExperimentOnlineParticipationUpcoming of Ptime.t
   | ExperimentListTitle
   | ExperimentMessagingSubtitle
   | ExperimentNewTitle
@@ -58,8 +67,11 @@ type t =
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingDistributionDescription
+  | MailingExperimentNoUpcomingSession
+  | MailingExperimentNoUpcomingTimewindow
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
+  | MatchesFilterChangeReasonFilter
   | MatchesFilterChangeReasonManually
   | MatchesFilterChangeReasonWorker
   | MessageHistory of string
@@ -98,6 +110,8 @@ type t =
   | TermsAndConditionsLastUpdated of Ptime.t
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated
+  | TenantMaintenanceText
+  | TenantMaintenanceTitle
   | TextTemplates
   | TimeWindowDetailTitle of string
   | UpcomingSessionsListEmpty
@@ -106,11 +120,14 @@ type t =
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
   | Validation
+  | VersionsListTitle
   | WaitingListIsDisabled
 
 type nav_link =
   | ActorPermissions
   | Admins
+  | Announcements
+  | ApiKeys
   | Assignments
   | ContactInformation
   | Contacts
@@ -138,12 +155,14 @@ type nav_link =
   | PrivacyPolicy
   | Profile
   | Queue
+  | QueueHistory
   | RolePermissions
   | Schedules
   | SentInvitations
   | Sessions
   | Settings
   | Smtp
+  | SignupCodes
   | SystemSettings
   | Tags
   | Tenants
@@ -151,6 +170,7 @@ type nav_link =
   | TimeWindows
   | Users
   | WaitingList
+  | Versions
 [@@deriving eq]
 
 type hint =
@@ -191,6 +211,7 @@ type hint =
   | CustomFieldTypeText
   | CustomHtmx of string
   | DefaultReminderLeadTime of Ptime.Span.t
+  | DeleteContact
   | DirectRegistrationDisbled
   | Distribution
   | DuplicateSession
@@ -204,13 +225,16 @@ type hint =
   | ExperimentMailingsRegistrationDisabled
   | ExperimentMessageTemplates
   | ExperimentSessions
+  | ExperimentSessionsCancelDelete
   | ExperimentSessionsPublic
   | ExperimentSmtp of string
   | ExperimentStatisticsRegistrationPossible
   | ExperimentStatisticsSendingInvitations
   | ExperimentWaitingList
-  | ExperumentSurveyRedirectUrl
+  | ExperimentSurveyRedirectUrl
+  | ExperimentSurveyUrl
   | ExternalDataRequired
+  | FileUploadAcceptMime of string list
   | FilterTemplates
   | GtxKeyMissing
   | GtxKeyStored
@@ -249,7 +273,6 @@ type hint =
   | NumberMax of int
   | NumberMin of int
   | OnlineExperiment
-  | OnlineExperimentParticipationDeadline of Ptime.t
   | Overbook
   | PartialUpdate
   | ParticipationTagsHint
@@ -266,6 +289,7 @@ type hint =
   | ResendRemindersWarning
   | ResetInvitations
   | ResetInvitationsLastReset of Ptime.t
+  | ReleaseNotesHint of string
   | RoleIntro of Pool_message.Field.t * Pool_message.Field.t
   | RolePermissionsModelList
   | RolePermissionsRoleList
@@ -282,6 +306,7 @@ type hint =
   | SessionCloseHints
   | SessionCloseLegendNoShow
   | SessionCloseLegendParticipated
+  | SessionCloseLegendVerified
   | SessionCloseNoParticipationTagsSelected
   | SessionCloseParticipationTagsSelected
   | SessionRegistrationFollowUpHint
@@ -289,6 +314,7 @@ type hint =
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
   | SettingsNoEmailSuffixes
+  | SignUpCodeHint
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
@@ -304,6 +330,7 @@ type hint =
   | TextLengthMax of int
   | TextLengthMin of int
   | UserImportInterval
+  | VerifyContact
   | WaitingListPhoneMissingContact
 [@@deriving variants]
 
@@ -312,6 +339,7 @@ type confirmable =
   | CancelAssignmentWithFollowUps
   | CancelSession
   | CloseSession
+  | DeleteContact
   | DeleteCustomField
   | DeleteCustomFieldOption
   | DeleteEmailSuffix
@@ -323,6 +351,7 @@ type confirmable =
   | DeleteMessageTemplate
   | DeleteSession
   | DeleteSmtpServer
+  | DisableApiKey
   | LoadDefaultTemplate
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted

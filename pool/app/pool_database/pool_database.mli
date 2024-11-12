@@ -1,4 +1,10 @@
-type event = Migrated of Database.t
+val connect_and_migrate
+  :  Database.Label.t
+  -> (unit, Pool_message.Error.t) result Lwt.t
+
+type event =
+  | Migrated of Database.t
+  | StatusUpdated of Database.Label.t * Database.Status.t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

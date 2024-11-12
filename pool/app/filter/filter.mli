@@ -212,15 +212,21 @@ val find_multiple_templates
 type event =
   | Created of t
   | Deleted of t
-  | Updated of t
+  | Updated of t * t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val created : t -> event
 val deleted : t -> event
-val updated : t -> event
+val updated : t -> t -> event
 
 module UtilsF : sig
   type filter_label =
@@ -321,3 +327,5 @@ val default_query : Query.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+
+module VersionHistory : Changelog.TSig with type record = t

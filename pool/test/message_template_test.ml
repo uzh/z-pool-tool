@@ -2,6 +2,8 @@ module TemplateCommand = Cqrs_command.Message_template_command
 open CCFun.Infix
 open Pool_message
 
+let current_user = Test_utils.Model.create_admin ()
+
 module Data = struct
   let urlencoded =
     Field.
@@ -90,7 +92,7 @@ let create_experiment () =
   let experiment = Test_utils.Model.create_experiment () in
   let%lwt () =
     [ Experiment.Created experiment |> Pool_event.experiment ]
-    |> Pool_event.handle_events database_label
+    |> Pool_event.handle_events database_label current_user
   in
   Lwt.return experiment
 ;;
@@ -103,7 +105,7 @@ let create_invitation language ?entity_uuid () =
   in
   let%lwt () =
     [ Message_template.Created template |> Pool_event.message_template ]
-    |> Pool_event.handle_events database_label
+    |> Pool_event.handle_events database_label current_user
   in
   Lwt.return template
 ;;
@@ -286,7 +288,7 @@ module ExperimentSenderData = struct
   let database_label = Test_utils.Data.database_label
 
   let admin_email =
-    Format.asprintf "admin+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
+    Format.asprintf "admin+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
   ;;
 
   let get_exn = Test_utils.get_or_failwith
@@ -297,9 +299,10 @@ module ExperimentSenderData = struct
     let%lwt (_ : Contact.t) = ContactRepo.create ~id:contact_id () in
     let open Experiment in
     Updated
-      { experiment with
-        contact_email = Some (Pool_user.EmailAddress.of_string admin_email)
-      }
+      ( experiment
+      , { experiment with
+          contact_email = Some (Pool_user.EmailAddress.of_string admin_email)
+        } )
     |> handle_event database_label
   ;;
 end
@@ -341,7 +344,7 @@ let experiment_invitation_with_sender _ () =
       | _ -> failwith "Event missmatch"
     in
     Alcotest.(check string "succeeds" admin_email res);
-    events |> Pool_event.handle_events database_label
+    Pool_event.handle_events database_label current_user events
   in
   Lwt.return_unit
 ;;

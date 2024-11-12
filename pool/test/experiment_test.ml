@@ -5,6 +5,7 @@ module Model = Test_utils.Model
 
 let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
+let current_user = Model.create_admin ()
 
 let experiment_boolean_fields =
   Experiment.boolean_fields |> CCList.map Field.show
@@ -159,13 +160,14 @@ let create () =
 let create_without_title () =
   let events =
     let open CCResult.Infix in
+    let default_public_title = Experiment.PublicTitle.of_string "#42" in
     Field.
       [ Title |> show, [ "" ]
       ; PublicTitle |> show, [ "public_title" ]
       ; InternalDescription |> show, [ Data.internal_description ]
       ]
     |> Http_utils.format_request_boolean_values experiment_boolean_fields
-    |> ExperimentCommand.Create.decode
+    |> ExperimentCommand.Create.decode default_public_title
     >>= ExperimentCommand.Create.handle
   in
   let expected = Error Error.(Conformist [ Field.Title, NoValue ]) in
@@ -215,7 +217,7 @@ let update () =
     >>= handle_update ~session_count:0 experiment
   in
   let expected =
-    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
+    Ok [ Experiment.Updated (experiment, experiment) |> Pool_event.experiment ]
   in
   Test_utils.check_result expected events
 ;;
@@ -236,9 +238,10 @@ let update_add_ou_and_contact_person () =
     Ok
       Experiment.
         [ Updated
-            { experiment with
-              organisational_unit = Some Data.organisational_unit
-            }
+            ( experiment
+            , { experiment with
+                organisational_unit = Some Data.organisational_unit
+              } )
           |> Pool_event.experiment
         ]
   in
@@ -262,27 +265,40 @@ let update_with_existing_sessions () =
   (* offline experiment *)
   let events = make_events Data.urlencoded experiment in
   let expected =
-    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
+    Ok [ Experiment.Updated (experiment, experiment) |> Pool_event.experiment ]
   in
-  Test_utils.check_result expected events;
+  Test_utils.check_result ~msg:"update offline experiment" expected events;
+  (* update offline experiment to be online *)
   let events =
     make_events Data.(urlencoded @ online_experiment_urlencoded) experiment
   in
   let expected = Error (Error.CannotBeUpdated Field.AssignmentWithoutSession) in
-  Test_utils.check_result expected events;
+  Test_utils.check_result
+    ~msg:"update offline experiment to be online"
+    expected
+    events;
   (* online experiment *)
   let events = make_events Data.urlencoded online_experiment in
   let expected = Error (Error.CannotBeUpdated Field.AssignmentWithoutSession) in
-  Test_utils.check_result expected events;
+  Test_utils.check_result
+    ~msg:"update online experiment to be offline"
+    expected
+    events;
   let events =
     make_events
       Data.(urlencoded @ online_experiment_urlencoded)
       online_experiment
   in
   let expected =
-    Ok [ Experiment.Updated online_experiment |> Pool_event.experiment ]
+    Ok
+      [ Experiment.Updated (online_experiment, online_experiment)
+        |> Pool_event.experiment
+      ]
   in
-  Test_utils.check_result expected events
+  Test_utils.check_result
+    ~msg:"update survey data of online experiment"
+    expected
+    events
 ;;
 
 let update_remove_ou () =
@@ -301,7 +317,7 @@ let update_remove_ou () =
   let expected =
     Ok
       Experiment.
-        [ Updated { experiment with organisational_unit = None }
+        [ Updated (experiment, { experiment with organisational_unit = None })
           |> Pool_event.experiment
         ]
   in
@@ -363,35 +379,45 @@ let delete_with_filter () =
 let autofill_public_title _ () =
   let open Utils.Lwt_result.Infix in
   let open Experiment in
-  let without_title =
-    let experiment = Model.create_experiment () in
-    { experiment with public_title = PublicTitle.placeholder }
+  let check msg res expected =
+    let tesetable = PublicTitle.(Alcotest.testable pp equal) in
+    Alcotest.(check tesetable msg res expected)
   in
-  let with_title = Model.create_experiment () in
-  let%lwt () =
-    [ without_title; with_title ]
-    |> CCList.map (created %> Pool_event.experiment)
-    |> Pool_event.handle_events database_label
+  (* Create with public title *)
+  let%lwt default_public_title =
+    Experiment.get_default_public_title database_label
   in
-  let find id = Experiment.find database_label id ||> get_exn in
-  let%lwt without_title_persisted = find without_title.id in
-  let%lwt with_title_persisted = find with_title.id in
+  let get_result urlencoded =
+    let open CCResult in
+    let open ExperimentCommand.Create in
+    let id = Experiment.Id.create () in
+    let%lwt () =
+      urlencoded
+      |> Http_utils.format_request_boolean_values experiment_boolean_fields
+      |> decode default_public_title
+      >>= handle ~id
+      |> get_exn
+      |> Lwt_list.iter_s (Pool_event.handle_event database_label current_user)
+    in
+    let%lwt experiment = Experiment.find database_label id ||> get_exn in
+    Lwt.return experiment.Experiment.public_title
+  in
+  let%lwt result = get_result Data.urlencoded in
   let () =
-    Alcotest.(
-      check
-        bool
-        "succeeds"
-        false
-        PublicTitle.(equal without_title_persisted.public_title placeholder))
+    check
+      "public title equals urlencoded public title"
+      result
+      (PublicTitle.of_string Data.public_title)
   in
+  let urlencoded =
+    CCList.remove_assoc
+      ~eq:CCString.equal
+      Field.(show PublicTitle)
+      Data.urlencoded
+  in
+  let%lwt result = get_result urlencoded in
   let () =
-    Alcotest.(
-      check
-        bool
-        "succeeds"
-        true
-        PublicTitle.(
-          equal with_title_persisted.public_title with_title.public_title))
+    check "public title equals default public title" result default_public_title
   in
   Lwt.return_unit
 ;;
@@ -412,7 +438,7 @@ module AvailableExperiments = struct
     let%lwt online_experiment =
       ExperimentRepo.create ~online_experiment:Data.online_experiment ()
     in
-    let%lwt _ =
+    let%lwt (_ : Session.t) =
       Integration_utils.SessionRepo.create ~id:session_id on_site_experiment ()
     in
     let%lwt (_ : Time_window.t) =
@@ -432,7 +458,7 @@ module AvailableExperiments = struct
       in
       [ on_site_experiment; online_experiment ]
       |> CCList.map invitation
-      |> Pool_event.handle_events database_label
+      |> Pool_event.handle_events database_label current_user
     in
     let find_experiment experiment experiment_type =
       let public = experiment |> Experiment.to_public in
@@ -496,20 +522,30 @@ module AvailableExperiments = struct
 
   let cancel_session _ () =
     let open Utils.Lwt_result.Infix in
+    let%lwt current_user =
+      Integration_utils.AdminRepo.create () ||> Pool_context.admin
+    in
+    let%lwt experiment =
+      Experiment.find database_label experiment_id ||> get_exn
+    in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session = Session.find database_label session_id ||> get_exn in
     let%lwt () =
       Session.Canceled session
       |> Pool_event.session
-      |> Pool_event.handle_event database_label
+      |> Pool_event.handle_event database_label current_user
     in
-    let%lwt experiment_available =
-      (* Expect the experiment not to be found after session cancellation to
-         enable reregistration of contact *)
+    let find_available_experiment () =
+      (* Expect the experiment not to be found after session cancellation as
+         there is no upcoming uncanceled session *)
       let open Experiment in
       find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
+    in
+    let%lwt experiment_available = find_available_experiment () in
+    let () =
+      Alcotest.(check bool "not listed as available" false experiment_available)
     in
     let%lwt upcoming_session_found =
       (* Expect the session to be listed among the upcoming sessions, but to be
@@ -524,8 +560,18 @@ module AvailableExperiments = struct
           && CCOption.is_some upcoming.Public.canceled_at))
       ||> CCOption.is_some
     in
-    let res = experiment_available && upcoming_session_found in
-    let () = Alcotest.(check bool "succeeds" true res) in
+    let () =
+      Alcotest.(check bool "canceled session found" true upcoming_session_found)
+    in
+    (* Expect the experiment to be listed as available, as an upcoming session
+       exists *)
+    let%lwt (_ : Session.t) =
+      Integration_utils.SessionRepo.create experiment ()
+    in
+    let%lwt experiment_available = find_available_experiment () in
+    let () =
+      Alcotest.(check bool "listed as available" true experiment_available)
+    in
     Lwt.return_unit
   ;;
 
@@ -538,11 +584,11 @@ module AvailableExperiments = struct
       find_not_deleted_by_session database_label session_id
       ||> CCList.map (fun assignment ->
         Assignment.MarkedAsDeleted assignment |> Pool_event.assignment)
-      >|> Pool_event.handle_events database_label
+      >|> Pool_event.handle_events database_label current_user
     in
     let%lwt experiment_available =
-      (* Expect the experiment not to be found after session cancellation to
-         enable reregistration of contact *)
+      (* Expect the experiment not to be found after marking the assignment as
+         deleted *)
       let open Experiment in
       find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)

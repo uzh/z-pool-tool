@@ -25,6 +25,8 @@ type t =
   | Enroll
   | EnterNewCellPhone
   | Filter of Field.t option
+  | Generate
+  | Hide of Field.t option
   | LoadDefaultTemplate
   | Login
   | Manage of Field.t
@@ -62,6 +64,7 @@ type t =
   | Stop of Field.t option
   | ToggleAll
   | Unassign of Field.t option
+  | Unverify
   | Update of Field.t option
   | UpdateAssignmentsMatchFilter
   | UpdateOrder

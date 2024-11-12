@@ -79,7 +79,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
   in
   let translations = build_translations_row translation_list in
   div
-    ~a:[ a_class [ "safety-margin"; "trim"; "measure" ] ]
+    ~a:[ a_class [ "safety-margin"; "trim" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string Language.En I18n.I18n) ]

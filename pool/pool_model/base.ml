@@ -5,8 +5,17 @@ module Id = struct
 
   type t = string [@@deriving eq, show, sexp, yojson]
 
-  let create () = Uuidm.v `V4 |> Uuidm.to_string
+  let random_state = Random.State.make_self_init ()
+  let create () = Uuidm.v4_gen random_state () |> Uuidm.to_string
   let of_string m = m
+
+  let validate m =
+    m
+    |> Uuidm.of_string
+    |> CCOption.to_result Pool_message.Error.(Invalid Pool_message.Field.Id)
+    |> CCResult.map Uuidm.to_string
+  ;;
+
   let value m = m
   let to_common m = m
   let of_common m = m
@@ -47,6 +56,7 @@ module type IdSig = sig
   val yojson_of_t : t -> Yojson.Safe.t
   val create : unit -> t
   val of_string : string -> t
+  val validate : string -> (t, Pool_message.Error.t) result
   val value : t -> string
   val to_common : t -> t
   val of_common : t -> t
@@ -81,8 +91,11 @@ module Boolean = struct
     | _ -> false
   ;;
 
-  let schema field () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
+  let schema ?default field ()
+    : (Pool_message.Error.t, t) Pool_conformist.Field.t
+    =
     Pool_conformist.schema_decoder
+      ?default
       (fun m ->
         m
         |> bool_of_string_opt
@@ -233,12 +246,17 @@ module Ptime = struct
   let sexp_of_t = Time.ptime_to_sexp
   let t_of_yojson = Utils.Ptime.ptime_of_yojson
   let yojson_of_t = Utils.Ptime.yojson_of_ptime
+  let date_of_yojson = Utils.Ptime.ptime_date_of_yojson
+  let yojson_of_date = Utils.Ptime.yojson_of_ptime_date
   let value m = m
   let create m = m
   let create_now = Ptime_clock.now
   let to_human = Utils.Ptime.formatted_date_time
   let date_time_to_flatpickr = Ptime.to_rfc3339
   let compare = Ptime.compare
+  let to_rfc3339 = Ptime.to_rfc3339
+  let add_span = Ptime.add_span
+  let is_later = Ptime.is_later
 
   (* Date *)
   let equal_date (y1, m1, d1) (y2, m2, d2) =
@@ -277,6 +295,8 @@ module type PtimeSig = sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
+  val date_of_yojson : Yojson.Safe.t -> Ptime.date
+  val yojson_of_date : Ptime.date -> Yojson.Safe.t
   val value : t -> Ptime.t
   val create : Ptime.t -> t
   val create_now : unit -> t

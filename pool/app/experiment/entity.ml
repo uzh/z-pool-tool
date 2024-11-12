@@ -1,3 +1,8 @@
+include Changelog.DefaultSettings
+open Ppx_yojson_conv_lib.Yojson_conv
+
+let model = Pool_message.Field.Experiment
+
 module Id = struct
   include Pool_common.Id
 
@@ -15,8 +20,10 @@ module PublicTitle = struct
   include Pool_model.Base.String
 
   let field = Pool_message.Field.PublicTitle
-  let schema () = schema field ()
-  let placeholder = "###"
+
+  let schema ?default () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
+    Pool_conformist.schema_decoder ?default create value field
+  ;;
 end
 
 module InternalDescription = struct
@@ -38,6 +45,13 @@ module CostCenter = struct
 
   let field = Pool_message.Field.CostCenter
   let schema () = schema field ()
+end
+
+module Filter = struct
+  include Filter
+
+  let yojson_of_t { Filter.id; _ } = `String (Id.value id)
+  let t_of_yojson _ = failwith "decode only"
 end
 
 module ContactEmail = struct
@@ -118,14 +132,15 @@ module InvitationResetAt = struct
 end
 
 module MatcherNotificationSent = struct
-  type t = bool [@@deriving show, eq]
+  type t = bool [@@deriving show, eq, yojson]
 
   let value t = t
   let create t = t
 end
 
 module OnlineExperiment = struct
-  type t = { survey_url : SurveyUrl.t } [@@deriving eq, fields ~getters, show]
+  type t = { survey_url : SurveyUrl.t }
+  [@@deriving eq, fields ~getters, show, yojson]
 
   let create ~survey_url = { survey_url }
 
@@ -186,7 +201,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, fields ~getters, show]
+[@@deriving eq, fields ~getters, show, yojson]
 
 let create
   ?id

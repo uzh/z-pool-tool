@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: add commit SHA for non-production builds
         if: github.ref_type != 'tag'
@@ -62,12 +62,12 @@ jobs:
             # Restore directory permissions to avoid conflicts
             sudo chown -R 1001:123 .
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: run.exe
           path: _build/default/pool/run/run.exe
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: tests
@@ -85,12 +85,10 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: node:lts
-      env:
-        ECON_PACKAGE_REGISTRY_READ_TOKEN: ${{ secrets.ECON_PACKAGE_REGISTRY_READ_TOKEN }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: install yarn packages
         run: yarn install
@@ -101,7 +99,7 @@ jobs:
       - name: move all assets to one folder
         run: '[ "$(ls pool/public)" ] && cp -r pool/public/* public || exit 0'
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: assets
           path: public
@@ -119,7 +117,7 @@ jobs:
     if: github.ref_name == 'main'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Trigger deploy
         uses: ./.github/actions/trigger-deploy
@@ -134,10 +132,10 @@ jobs:
     if: github.ref_type == 'tag'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Extract version changelog
         run: sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d' > changes.md
@@ -148,7 +146,7 @@ jobs:
           tar -zcf executable.tar.gz run.exe/run.exe
 
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: changes.md
@@ -168,7 +166,7 @@ jobs:
     needs: release
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Trigger deploy
         uses: ./.github/actions/trigger-deploy

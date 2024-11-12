@@ -5,6 +5,8 @@ open Pool_message
 module AdminCommand = Cqrs_command.Admin_command
 module GuardianCommand = Cqrs_command.Guardian_command
 
+let current_user = Model.create_admin ()
+
 let role_message msg (role, uuid) =
   [%show: Role.Role.t] role
   :: (uuid
@@ -42,7 +44,7 @@ module Data = struct
     |> Lwt.return
     ||> decode
     >== handle ~id ~roles
-    |>> Pool_event.handle_events database_label
+    |>> Pool_event.handle_events database_label current_user
     >>= (fun () -> Admin.find database_label id)
     ||> Pool_common.Utils.get_or_failwith
   ;;
@@ -72,27 +74,31 @@ let target_has_role db target (target_role, target_uuid) () =
   actor_roles |> CCList.mem ~eq:ActorRole.equal actor_role |> Lwt.return
 ;;
 
-let handle_validated_events db target actor role =
-  let open AdminCommand in
-  let grant_role role = { target; roles = [ role ] } in
+let handle_validated_events db admin actor role =
+  let open GuardianCommand in
+  let grant_role role =
+    { target_id = Guard.Uuid.actor_of Admin.Id.value (Admin.id admin)
+    ; roles = [ role ]
+    }
+  in
   let validate = Guard.Persistence.Actor.validate_assign_role db in
   validate actor role
   >|+ grant_role
   >== GrantRoles.handle
-  |>> Pool_event.handle_events db
+  |>> Pool_event.handle_events db current_user
   >|+ Guard.Persistence.Cache.clear
 ;;
 
 let handle_create_role_permission_events db role_permission =
   GuardianCommand.CreateRolePermission.handle role_permission
   |> Lwt_result.lift
-  |>> Pool_event.handle_events db
+  |>> Pool_event.handle_events db current_user
 ;;
 
 let handle_delete_role_permission_events db role_permission =
   GuardianCommand.DeleteRolePermission.handle role_permission
   |> Lwt_result.lift
-  |>> Pool_event.handle_events db
+  |>> Pool_event.handle_events db current_user
 ;;
 
 let assignable_roles _ () =

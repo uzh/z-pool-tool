@@ -104,7 +104,7 @@ let form
         ]
   in
   div
-    ~a:[ a_class [ "stack-lg" ] ]
+    ~a:[ a_class [ "gap" ] ]
     [ form
         ~a:
           [ a_method `Post
@@ -115,8 +115,7 @@ let form
         [ csrf_element csrf ()
         ; div
             ~a:[ a_class [ "stack" ] ]
-            [ h4
-                ~a:[ a_class [ "heading-4" ] ]
+            [ strong
                 [ txt
                     Pool_common.(
                       Field.Name
@@ -150,10 +149,35 @@ let detail
   sys_langauges
   flash_fetcher
   =
+  let changelog_html =
+    match custom_field_group with
+    | None -> txt ""
+    | Some ({ Custom_field.Group.id; _ }, _) ->
+      let url =
+        HttpUtils.Url.Admin.custom_field_groups_path
+          current_model
+          ~suffix:"changelog"
+          ~id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
+  in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ Partials.form_title language Field.CustomFieldGroup custom_field_group
-    ; Page_admin_custom_fields.model_subtitle language current_model
-    ; form ?custom_field_group current_model context sys_langauges flash_fetcher
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ div
+        [ Partials.form_title language Field.CustomFieldGroup custom_field_group
+        ; Page_admin_custom_fields.model_subtitle language current_model
+        ]
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ form
+            ?custom_field_group
+            current_model
+            context
+            sys_langauges
+            flash_fetcher
+        ; changelog_html
+        ]
     ]
 ;;

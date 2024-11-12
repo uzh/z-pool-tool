@@ -1,3 +1,4 @@
+open CCFun
 open Assignment
 
 let src = Logs.Src.create "session_reminder.service"
@@ -107,16 +108,17 @@ let create_reminder_events
   Lwt_result.return (email_events @ text_msg_events)
 ;;
 
-let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
+let send_tenant_reminder database_label =
   let open Utils.Lwt_result.Infix in
   let run () =
+    let* tenant = Pool_tenant.find_by_label database_label in
     let* email_reminders, text_message_reminders =
       Session.find_sessions_to_remind tenant
     in
     let* events =
       create_reminder_events tenant email_reminders text_message_reminders
     in
-    let%lwt () = Pool_event.handle_events database_label events in
+    let%lwt () = Pool_event.handle_system_events database_label events in
     Lwt_result.return (email_reminders, text_message_reminders)
   in
   ()
@@ -125,7 +127,7 @@ let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
   | Error err ->
     Logs.err ~src (fun m ->
       m
-        ~tags:Database.(Logger.Tags.create root)
+        ~tags:Database.(Logger.Tags.create Pool.Root.label)
         "Serialized message string was NULL, can not deserialize message. \
          Please fix the string manually and reset the job instance. Error: %s"
         Pool_common.(Utils.error_to_string Language.En err))
@@ -146,21 +148,23 @@ let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
           m "%s sent for the following sessions: %s" label (sessions |> get_ids)))
 ;;
 
-let run () =
-  let open Utils.Lwt_result.Infix in
-  () |> Pool_tenant.find_all >|> Lwt_list.iter_s send_tenant_reminder
+let run =
+  Database.(Pool.Tenant.all ~status:[ Status.Active ])
+  %> Lwt_list.iter_s send_tenant_reminder
 ;;
 
 let start_handler () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s 60 in
   let periodic_fcn () =
-    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
+    Logs.debug ~src (fun m ->
+      m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run ()
   in
   create
     "session_reminder"
     (Every (interval |> ScheduledTimeSpan.of_span))
+    None
     periodic_fcn
   |> Schedule.add_and_start
 ;;

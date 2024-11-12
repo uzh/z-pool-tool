@@ -76,6 +76,21 @@ module PartnerLogos : sig
   val of_files : Pool_common.File.t list -> t
 end
 
+module EmailLogo : sig
+  type t
+
+  val value : t -> Pool_common.File.t
+  val equal : t -> t -> bool
+
+  module Write : sig
+    type t
+
+    val create : string -> (t, Pool_message.Error.t) result
+    val value : t -> string
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  end
+end
+
 module LogoMapping : sig
   module LogoType : sig
     type t =
@@ -113,6 +128,7 @@ type t =
   ; icon : Icon.t option
   ; logos : Logos.t
   ; partner_logo : PartnerLogos.t
+  ; email_logo : EmailLogo.t option
   ; status : Database.Status.t
   ; default_language : Pool_common.Language.t
   ; text_messages_enabled : bool
@@ -135,6 +151,7 @@ module Write : sig
     ; gtx_sender : GtxSender.t
     ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
+    ; email_logo : EmailLogo.Write.t option
     ; icon : Icon.Write.t option
     ; default_language : Pool_common.Language.t
     ; created_at : Pool_common.CreatedAt.t
@@ -149,6 +166,7 @@ module Write : sig
     -> GtxSender.t
     -> Styles.Write.t option
     -> Icon.Write.t option
+    -> EmailLogo.Write.t option
     -> Pool_common.Language.t
     -> t
 
@@ -165,13 +183,19 @@ type update =
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
   ; icon : Icon.Write.t option
+  ; email_logo : EmailLogo.Write.t option
   }
 
 val file_fields : Pool_message.Field.t list
 val find : Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_full : Id.t -> (Write.t, Pool_message.Error.t) Lwt_result.t
 val find_by_label : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_by_url : Url.t -> (t, Pool_message.Error.t) Lwt_result.t
+
+val find_by_url
+  :  ?should_cache:(t -> bool)
+  -> Url.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
+
 val find_all : unit -> t list Lwt.t
 
 val find_gtx_api_key_and_url_by_label
@@ -180,6 +204,12 @@ val find_gtx_api_key_and_url_by_label
 
 val create_public_url : Url.t -> string -> string
 val clear_cache : unit -> unit
+
+module Repo : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
+end
 
 type handle_list_recruiters = unit -> Pool_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t

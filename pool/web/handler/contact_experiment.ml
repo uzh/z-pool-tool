@@ -75,10 +75,6 @@ let show_online_study
   =
   let open Utils.Lwt_result.Infix in
   let experiment_id = Experiment.Public.id experiment in
-  let* time_window =
-    Time_window.find_current_by_experiment database_label experiment_id
-    >|- CCFun.const (Error.NotFound Field.Experiment)
-  in
   let%lwt assignment =
     let open Utils.Lwt_result.Infix in
     Assignment.Public.find_all_by_experiment
@@ -87,11 +83,16 @@ let show_online_study
       contact
     ||> CCList.head_opt
   in
+  let%lwt current_time_window =
+    Time_window.find_current_by_experiment database_label experiment_id
+  in
+  let%lwt upcoming_time_window =
+    Time_window.find_upcoming_by_experiment database_label experiment_id
+  in
   let argument =
     let open CCOption in
     let open Assignment in
     match assignment with
-    | None -> `Upcoming time_window
     | Some assignment ->
       assignment
       |> Public.participated
@@ -99,7 +100,14 @@ let show_online_study
       |> value ~default:false
       |> (function
        | true -> `Participated assignment
-       | false -> `Pending (assignment, time_window))
+       | false ->
+         (match current_time_window with
+          | Some time_window -> `Active (time_window, Some assignment)
+          | None -> `Upcoming upcoming_time_window))
+    | None ->
+      (match current_time_window with
+       | Some time_window -> `Active (time_window, None)
+       | None -> `Upcoming upcoming_time_window)
   in
   Page.Contact.Experiment.show_online_study experiment context argument
   |> Lwt.return_ok
@@ -166,7 +174,7 @@ module OnlineSurvey = struct
   let redirect req =
     let open Utils.Lwt_result.Infix in
     let error_path = "/experiments" in
-    let result ({ Pool_context.database_label; _ } as context) =
+    let result ({ Pool_context.database_label; user; _ } as context) =
       Utils.Lwt_result.map_error (fun err -> err, error_path)
       @@
       let open Experiment in
@@ -207,7 +215,7 @@ module OnlineSurvey = struct
         Time_window.find_current_by_experiment
           database_label
           (Experiment.Public.id experiment)
-        >|- CCFun.const (Error.NotFound Field.Experiment)
+        ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
       in
       let* events =
         Lwt_result.lift
@@ -220,7 +228,7 @@ module OnlineSurvey = struct
       in
       let handle events =
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         Sihl.Web.Response.redirect_to survey_url |> Lwt_result.return
       in
@@ -232,7 +240,7 @@ module OnlineSurvey = struct
   let submit req =
     let open Utils.Lwt_result.Infix in
     let error_path = "/" in
-    let result ({ Pool_context.database_label; _ } as context) =
+    let result ({ Pool_context.database_label; user; _ } as context) =
       Utils.Lwt_result.map_error (fun err -> err, error_path)
       @@
       let tags = Pool_context.Logger.Tags.req req in
@@ -251,7 +259,7 @@ module OnlineSurvey = struct
         let open CCResult.Infix in
         query |> decode >>= handle ~tags assignment |> Lwt_result.lift
       in
-      let handle = Pool_event.handle_events ~tags database_label in
+      let handle = Pool_event.handle_events ~tags database_label user in
       let return () =
         Page.Contact.Experiment.online_study_completition experiment context
         |> Lwt.return_ok

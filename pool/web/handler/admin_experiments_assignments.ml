@@ -21,7 +21,7 @@ let cancel req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Url.session_path ~id:session_id experiment_id in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -61,9 +61,7 @@ let cancel req =
       |> Lwt.return
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Canceled Field.Assignment ] ]
@@ -77,7 +75,7 @@ let mark_as_deleted req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Url.session_path ~id:session_id experiment_id in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -104,9 +102,7 @@ let mark_as_deleted req =
         |> Lwt.return
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.MarkedAsDeleted Field.Assignment ] ]
@@ -134,12 +130,23 @@ module Close = struct
     Lwt_result.return (experiment, session)
   ;;
 
-  let decode req =
-    let boolean_fields = Assignment.boolean_fields |> CCList.map Field.show in
-    req
-    |> Sihl.Web.Request.to_urlencoded
-    ||> HttpUtils.format_htmx_request_boolean_values boolean_fields
-    ||> UpdateHtmx.decode
+  let decode_update urlencoded =
+    let boolean_fields =
+      let open Field in
+      array_key Verified :: CCList.map show Assignment.boolean_fields
+    in
+    urlencoded
+    |> HttpUtils.format_htmx_request_boolean_values boolean_fields
+    |> UpdateHtmx.decode
+  ;;
+
+  let disabled_verified urlencoded =
+    let open CCOption in
+    CCList.assoc_opt ~eq:CCString.equal Field.(array_key Verified) urlencoded
+    >>= CCList.head_opt
+    >|= CCString.split_on_char ','
+    >|= CCList.map Assignment.Id.of_string
+    |> value ~default:[]
   ;;
 
   let updated_fields (a1 : t) (a2 : t) =
@@ -155,22 +162,65 @@ module Close = struct
   let update req =
     let tags = Pool_context.Logger.Tags.req req in
     let assignment_id = assignment_id req in
-    let result ({ Pool_context.database_label; language; _ } as context) =
+    let result ({ Pool_context.database_label; language; user; _ } as context) =
       let* experiment, session = router_params req database_label in
       let* assignment = find database_label assignment_id in
-      let* updated = decode req >|+ UpdateHtmx.handle assignment in
+      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      let* updated =
+        decode_update urlencoded
+        |> Lwt_result.lift
+        >|+ UpdateHtmx.handle assignment
+      in
       let%lwt () =
         Pool_event.handle_event
           ~tags
           database_label
+          user
           (Updated updated |> Pool_event.assignment)
       in
       let%lwt counters =
         counters_of_session database_label session.Session.id
       in
       let updated_fields = updated_fields assignment updated in
+      let disable_verified =
+        disabled_verified urlencoded |> CCList.mem assignment.id
+      in
       Page.Admin.Session.
         [ close_assignment_htmx_form
+            ~disable_verified
+            ~updated_fields
+            context
+            experiment
+            session
+            updated
+        ; session_counters language counters
+        ]
+      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Lwt_result.return
+    in
+    result
+    |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  ;;
+
+  let verify_contact req =
+    let tags = Pool_context.Logger.Tags.req req in
+    let assignment_id = assignment_id req in
+    let result ({ Pool_context.database_label; language; user; _ } as context) =
+      let* experiment, session = router_params req database_label in
+      let* assignment = find database_label assignment_id in
+      let* events =
+        Cqrs_command.Contact_command.ToggleVerified.handle assignment.contact
+        |> Lwt_result.lift
+      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let updated_fields = [ Pool_message.Field.Verified ] in
+      let* updated = find database_label assignment_id in
+      let%lwt counters =
+        counters_of_session database_label session.Session.id
+      in
+      Page.Admin.Session.
+        [ close_assignment_htmx_form
+            ~disable_verified:false
             ~updated_fields
             context
             experiment
@@ -187,10 +237,12 @@ module Close = struct
 
   let toggle req =
     let tags = Pool_context.Logger.Tags.req req in
-    let result ({ Pool_context.database_label; language; _ } as context) =
+    let result ({ Pool_context.database_label; language; user; _ } as context) =
       let* experiment, session = router_params req database_label in
+      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       let* decoded =
-        decode req
+        decode_update urlencoded
+        |> Lwt_result.lift
         >== fun decoded ->
         match decoded with
         | ExternalDataId _ -> Error Error.InvalidHtmxRequest
@@ -209,7 +261,7 @@ module Close = struct
                , assignments @ [ updated, Some updated_fields ] ))
              ([], [])
       in
-      let%lwt () = Pool_event.handle_events ~tags database_label events in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       let%lwt counters =
         counters_of_session database_label session.Session.id
       in
@@ -218,6 +270,7 @@ module Close = struct
         |> experiment_target_id
         |> Helpers.Guard.can_read_contact_name context
       in
+      let disabled_verified = disabled_verified urlencoded in
       Page.Admin.Session.
         [ close_assignments_table
             context
@@ -226,6 +279,7 @@ module Close = struct
             session
             assignments
             custom_fields
+            disabled_verified
         ; session_counters language counters
         ]
       |> HttpUtils.Htmx.multi_html_to_plain_text_response
@@ -284,7 +338,7 @@ let update req =
       session_id
       assignment_id
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -318,9 +372,7 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Updated Field.Assignment ] ]
@@ -337,7 +389,7 @@ let remind req =
   let redirect_path =
     Page.Admin.Session.session_path ~id:session_id experiment_id
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -366,9 +418,7 @@ let remind req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Sent Field.Reminder ] ]
@@ -480,7 +530,7 @@ let swap_session_post req =
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values Field.[ show NotifyContact ]
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -523,9 +573,7 @@ let swap_session_post req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Updated Field.Session ] ]
@@ -545,34 +593,18 @@ end = struct
   module AssignmentCommand = Cqrs_command.Assignment_command
   module Guardian = Middleware.Guardian
 
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
-    let assignment_id = find_id Assignment.Id.of_string Field.Assignment req in
-    fcn experiment_id assignment_id
+  let combined_effects validation_set =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic
+    @@ fun req ->
+    let* experiment_id = find Experiment.Id.validate Field.Experiment req in
+    let* assignment_id = find Assignment.Id.validate Field.Assignment req in
+    validation_set experiment_id assignment_id |> CCResult.return
   ;;
 
-  let delete =
-    Assignment.Guard.Access.delete
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let cancel =
-    AssignmentCommand.Cancel.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let mark_as_deleted =
-    AssignmentCommand.MarkAsDeleted.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let update =
-    Assignment.Guard.Access.update
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
+  let delete = combined_effects Assignment.Guard.Access.delete
+  let cancel = combined_effects AssignmentCommand.Cancel.effects
+  let mark_as_deleted = combined_effects AssignmentCommand.MarkAsDeleted.effects
+  let update = combined_effects Assignment.Guard.Access.update
 end

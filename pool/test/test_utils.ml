@@ -3,6 +3,8 @@ module Data = struct
 end
 
 (* Testable *)
+let annoncement = Announcement.(Alcotest.testable pp equal)
+let api_key = Api_key.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let database_label = Database.Label.(Alcotest.testable pp equal)
 let error = Pool_message.Error.(Alcotest.testable pp equal)
@@ -14,6 +16,7 @@ let partial_update = Custom_field.PartialUpdate.(Alcotest.testable pp equal)
 let password = Pool_user.Password.(Alcotest.testable pp equal)
 let password_plain = Pool_user.Password.Plain.(Alcotest.testable pp equal)
 let phone_nr = Pool_user.CellPhone.(Alcotest.testable pp equal)
+let pool_version = Pool_version.(Alcotest.testable pp equal)
 let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
 let time_window_testable = Time_window.(Alcotest.testable pp equal)
 
@@ -44,6 +47,22 @@ let get_or_failwith res =
 
 let sort_events =
   CCList.stable_sort Pool_event.(fun a b -> CCString.compare (show a) (show b))
+;;
+
+let urlencoded_update urlencoded updates =
+  let open CCOption in
+  CCList.map
+    (fun (k, v) ->
+      CCList.find_opt (fun (check, _) -> check k) updates
+      >|= snd
+      >|= CCList.return
+      |> value ~default:v
+      |> CCPair.make k)
+    urlencoded
+;;
+
+let urlencoded_remove urlencoded validation =
+  CCList.filter CCFun.(fst %> validation %> not) urlencoded
 ;;
 
 let file_to_storage file =
@@ -78,15 +97,47 @@ let dummy_to_file (dummy : Seed.Assets.file) =
 ;;
 
 module Model = struct
+  let create_announcement
+    ?id
+    ?start_at
+    ?end_at
+    ?(show_to_admins = true)
+    ?(show_to_contacts = true)
+    ()
+    =
+    let open Announcement in
+    let text =
+      Text.create [ Pool_common.Language.En, "text" ] |> get_or_failwith
+    in
+    create
+      ?id
+      text
+      start_at
+      end_at
+      (ShowToAdmins.create show_to_admins)
+      (ShowToContacts.create show_to_contacts)
+  ;;
+
   let password =
     Pool_user.Password.Plain.(
       create "Somepassword1!" |> validate |> get_or_failwith)
   ;;
 
+  let create_api_key
+    ?id
+    ?token
+    ?(expires_at = Api_key.ExpiresAt.create_now ())
+    ()
+    =
+    let open Api_key in
+    let name = Name.of_string "Name" in
+    create ?id ?token name expires_at
+  ;;
+
   let create_user
     ?(id = Pool_user.Id.create ())
     ?(email =
-      Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
+      Format.asprintf "test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
       |> Pool_user.EmailAddress.of_string)
     ?(lastname = Pool_user.Lastname.of_string "Doe")
     ()
@@ -241,15 +292,21 @@ module Model = struct
     }
   ;;
 
-  let create_mailing ?id ?(limit = Mailing.Limit.default) () =
+  let create_mailing ?id ?start ?(limit = Mailing.Limit.default) () =
     let open Mailing in
     let start =
-      Ptime.add_span
-        (Ptime_clock.now ())
-        Sihl.Time.(OneSecond |> duration_to_span)
-      |> CCOption.get_exn_or "Time calculation failed!"
-      |> StartAt.create
-      |> get_or_failwith
+      let default () =
+        let start_at =
+          Ptime.add_span
+            (Ptime_clock.now ())
+            Sihl.Time.(OneSecond |> duration_to_span)
+          |> CCOption.get_exn_or "Time calculation failed!"
+          |> StartAt.create
+          |> get_or_failwith
+        in
+        Start.StartAt start_at
+      in
+      CCOption.value ~default:(default ()) start
     in
     let deadline =
       Ptime.add_span
@@ -259,7 +316,7 @@ module Model = struct
       |> EndAt.create
       |> get_or_failwith
     in
-    create ?id Start.(StartAt start) deadline limit None |> get_or_failwith
+    create ?id start deadline limit None |> get_or_failwith
   ;;
 
   let create_email
@@ -532,35 +589,17 @@ module Repo = struct
     all_experiments () ||> CCList.hd
   ;;
 
-  let create_experiment ?(id = Experiment.Id.create ()) ?filter () =
-    let experiment = Model.create_experiment ~id ?filter () in
-    let%lwt () =
-      Experiment.Created experiment
-      |> Pool_event.experiment
-      |> Pool_event.handle_event Data.database_label
-    in
-    Lwt.return experiment
-  ;;
+  (* TODO: This belongs to the intergration utils *)
+  (* let create_experiment ?(id = Experiment.Id.create ()) ?filter () = let
+     experiment = Model.create_experiment ~id ?filter () in let%lwt () =
+     Experiment.Created experiment |> Pool_event.experiment |>
+     Pool_event.handle_event Data.database_label in Lwt.return experiment ;; *)
 
   let first_location () =
     let open Utils.Lwt_result.Infix in
-    Pool_location.find_all Data.database_label ||> CCList.hd
+    Pool_location.find_all Data.database_label ||> fst ||> CCList.hd
   ;;
 end
-
-let truncate_tables database_label tables =
-  let open Utils.Lwt_result.Infix in
-  let open Caqti_request.Infix in
-  let query name =
-    [%string "TRUNCATE TABLE %{name}"] |> Caqti_type.(unit ->. unit)
-  in
-  Database.with_disabled_fk_check database_label (fun connection ->
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    CCList.map query tables
-    |> Lwt_list.map_s (CCFun.flip Connection.exec ())
-    ||> CCResult.flatten_l)
-  ||> Utils.flat_unit
-;;
 
 let case
   ?(preparation : unit -> (unit, Pool_message.Error.t) Lwt_result.t =

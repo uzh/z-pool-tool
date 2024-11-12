@@ -47,7 +47,7 @@ let index ({ Pool_context.language; _ } as context) filter_list query =
     |> Component.Notification.notification language `Warning
   in
   div
-    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ Pool_common.Utils.field_to_string language Pool_message.Field.Filter
@@ -60,23 +60,40 @@ let index ({ Pool_context.language; _ } as context) filter_list query =
 ;;
 
 let edit
-  { Pool_context.language; csrf; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   filter
   key_list
   query_experiments
   query_tags
   =
+  let changelog =
+    match filter with
+    | None -> txt ""
+    | Some filter ->
+      let url =
+        Http_utils.Url.Admin.filter_path
+          ~suffix:"changelog"
+          ~id:filter.Filter.id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ Component.Partials.form_title language Pool_message.Field.Filter filter
-    ; Component.Filter.(
-        filter_form
-          csrf
-          language
-          (Http_utils.Filter.Template filter)
-          key_list
-          []
-          query_experiments
-          query_tags)
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ Component.Filter.(
+            filter_form
+              csrf
+              language
+              (Http_utils.Filter.Template filter)
+              key_list
+              []
+              query_experiments
+              query_tags)
+        ; changelog
+        ]
     ]
 ;;

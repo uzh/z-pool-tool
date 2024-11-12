@@ -9,10 +9,12 @@
   pool_token_test)
  (libraries
   admin
+  api_key
   alcotest
   alcotest-lwt
   assignment
   caqti-driver-mariadb
+  changelog
   contact
   contact_counter
   cqrs_command

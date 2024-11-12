@@ -164,6 +164,8 @@ end
 
 module Id : sig
   include Pool_model.Base.IdSig
+
+  val to_common : t -> Pool_common.Id.t
 end
 
 module Name : sig
@@ -220,6 +222,8 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val yojson_of_t : t -> Yojson.Safe.t
+val t_of_yojson : Yojson.Safe.t -> t
 
 val create
   :  ?id:Id.t
@@ -260,7 +264,12 @@ val filedeleted : Mapping.Id.t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
 
 module Repo : sig
   module Id : sig
@@ -278,8 +287,13 @@ module Repo : sig
 end
 
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_all : Database.Label.t -> t list Lwt.t
-val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+
+val find_all
+  :  ?query:Query.t
+  -> ?actor:Guard.Actor.t
+  -> ?permission:Guard.Permission.t
+  -> Database.Label.t
+  -> (t list * Query.t) Lwt.t
 
 val find_location_file
   :  Database.Label.t
@@ -301,10 +315,10 @@ val search_multiple_by_id
   -> Id.t list
   -> (Id.t * Name.t) list Lwt.t
 
-val find_targets_grantable_by_admin
+val find_targets_grantable_by_target
   :  ?exclude:Id.t list
   -> Database.Label.t
-  -> Admin.t
+  -> Guard.Uuid.Target.t
   -> string
   -> (Id.t * Name.t) list Lwt.t
 
@@ -376,6 +390,7 @@ module Guard : sig
   end
 
   module Access : sig
+    val index_permission : Guard.Permission.t
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
     val read : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
@@ -398,3 +413,5 @@ val default_query : Query.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+
+module VersionHistory : Changelog.TSig with type record = t

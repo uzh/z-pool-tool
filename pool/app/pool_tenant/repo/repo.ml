@@ -1,27 +1,20 @@
 open Caqti_request.Infix
 module RepoEntity = Repo_entity
-module Database = Database
 module Id = Pool_common.Id
 module LogoMapping = Entity_logo_mapping
 module LogoMappingRepo = Repo_logo_mapping
 
 module Cache : sig
-  val lru_find_by_url
-    : (Database.Label.t * Entity.Url.t, Entity.t option Lwt.t) CCCache.t
-
+  val add : string -> Entity.t -> unit
+  val find_by_url : string -> Entity.t option
   val clear : unit -> unit
 end = struct
-  open CCCache
+  open Hashtbl
 
-  let equal_find_by_url (label1, (url1 : Entity.Url.t)) (label2, url2) =
-    Database.Label.equal label1 label2 && Entity.Url.equal url1 url2
-  ;;
-
-  let lru_find_by_url =
-    lru ~eq:equal_find_by_url Database.Config.expected_databases
-  ;;
-
-  let clear () = clear lru_find_by_url
+  let tbl : (Entity.Url.t, Entity.t) t = create 10
+  let add = add tbl
+  let find_by_url = find_opt tbl
+  let clear () = clear tbl
 end
 
 module Sql = struct
@@ -40,7 +33,8 @@ module Sql = struct
         pool_tenant.database_label = $9,
         pool_tenant.styles = UNHEX(REPLACE($10, '-', '')),
         pool_tenant.icon = UNHEX(REPLACE($11, '-', '')),
-        pool_tenant.gtx_api_key = $12
+        pool_tenant.email_logo = UNHEX(REPLACE($12, '-', '')),
+        pool_tenant.gtx_api_key = $13
       WHERE
         pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -95,6 +89,8 @@ module Sql = struct
           ON pool_tenant.styles = styles.uuid
         LEFT JOIN storage_handles icon
           ON pool_tenant.icon = icon.uuid
+        LEFT JOIN storage_handles email_logo
+          ON pool_tenant.email_logo = email_logo.uuid
       |sql}]
   ;;
 
@@ -110,6 +106,7 @@ module Sql = struct
       @ [ Database.Repo.sql_select_label ]
       @ sql_select_storage_handle_columns ~alias:"styles" kind
       @ sql_select_storage_handle_columns ~alias:"icon" kind
+      @ sql_select_storage_handle_columns ~alias:"email_logo" kind
       @ [ api_key ]
       |> CCString.concat ",\n"
     in
@@ -190,6 +187,7 @@ module Sql = struct
           database_label,
           styles,
           icon,
+          email_logo,
           gtx_api_key
         ) VALUES (
           %{Id.sql_value_fragment "$1"},
@@ -203,7 +201,8 @@ module Sql = struct
           $9,
           %{Id.sql_value_fragment "$10"},
           %{Id.sql_value_fragment "$11"},
-          $12
+          %{Id.sql_value_fragment "$12"},
+          $13
         )
       |sql}]
     |> RepoEntity.Write.t ->. Caqti_type.unit
@@ -234,6 +233,7 @@ let set_logos tenant logos =
     ; icon = tenant.icon
     ; logos = tenant_logos
     ; partner_logo
+    ; email_logo = tenant.email_logo
     ; status = tenant.status
     ; default_language = tenant.default_language
     ; text_messages_enabled = tenant.text_messages_enabled
@@ -256,32 +256,30 @@ let find_by_label pool label =
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
-let find_by_url pool url =
+let find_by_url ?should_cache pool url =
   let open Utils.Lwt_result.Infix in
-  let cb ~in_cache _ _ =
-    if in_cache
-    then (
-      let tags = Database.Logger.Tags.create pool in
-      Logs.debug (fun m ->
-        m ~tags "Found in cache: Tenant %s" ([%show: Entity.Url.t] url)))
-    else ()
-  in
-  let find_by_url' (pool, url) : Entity.t option Lwt.t =
-    Database.query pool (fun connection ->
-      let (module Connection : Caqti_lwt.CONNECTION) = connection in
-      let combine = function
-        | Some ({ Entity.Read.id; _ } as tenant) ->
-          id
-          |> Connection.collect_list Repo_logo_mapping.Sql.find_request
-          ||> CCResult.to_opt
-          ||> CCOption.map (set_logos tenant)
-        | None -> Lwt.return_none
-      in
-      Connection.find_opt Sql.find_by_url_request url |>> combine)
-  in
-  (pool, url)
-  |> CCCache.(with_cache ~cb Cache.lru_find_by_url find_by_url')
-  ||> CCOption.to_result Pool_message.Error.SessionTenantNotFound
+  let tags = Database.Logger.Tags.create pool in
+  let should_cache = CCOption.get_or ~default:(fun _ -> true) should_cache in
+  Cache.find_by_url url
+  |> function
+  | Some tenant ->
+    Logs.debug (fun m ->
+      m ~tags "Found in cache: Tenant %s" ([%show: Entity.Url.t] url));
+    Lwt_result.return tenant
+  | None ->
+    let combine ({ Entity.Read.id; _ } as tenant) =
+      Database.collect pool Repo_logo_mapping.Sql.find_request id
+      ||> set_logos tenant
+    in
+    let%lwt tenant =
+      Database.find_opt pool Sql.find_by_url_request url
+      >|> CCOption.map_or ~default:Lwt.return_none (fun tenant ->
+        let%lwt tenant = combine tenant in
+        let () = if should_cache tenant then Cache.add url tenant else () in
+        Lwt.return_some tenant)
+      ||> CCOption.to_result Pool_message.Error.SessionTenantNotFound
+    in
+    Lwt.return tenant
 ;;
 
 let find_full = Sql.find_full

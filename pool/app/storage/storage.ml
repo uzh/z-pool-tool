@@ -22,7 +22,9 @@ let delete label id =
 ;;
 
 let upload_base64 label ?id file base64 =
-  let blob_id = CCOption.value id ~default:(Uuidm.v `V4 |> Uuidm.to_string) in
+  let blob_id =
+    CCOption.value id ~default:Pool_common.Id.(create () |> value)
+  in
   let%lwt blob =
     match Base64.decode base64 with
     | Error (`Msg msg) ->

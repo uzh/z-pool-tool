@@ -85,7 +85,7 @@ module NavElements = struct
         ; single
             "/admin/settings/queue"
             Queue
-            (Set Pool_queue.Guard.Access.index)
+            (Set (Pool_queue.Guard.Access.index ()))
         ; single
             "/admin/settings"
             SystemSettings
@@ -114,9 +114,17 @@ module NavElements = struct
             TextMessages
             (Set Settings.Guard.Access.update)
         ; single
+            Http_utils.Url.Admin.Settings.signup_codes_path
+            SignupCodes
+            (Set Signup_code.Access.index)
+        ; single
             "/admin/organisational-unit"
             OrganisationalUnits
             (Set Organisational_unit.Guard.Access.index)
+        ; single
+            (Http_utils.Url.Admin.api_key_path ())
+            ApiKeys
+            (Set Api_key.Access.index)
         ]
       in
       Parent (None, Settings, OnChildren, children) |> NavElement.create
@@ -158,6 +166,20 @@ module NavElements = struct
       single "/root/users" Users (Set Admin.Guard.Access.index)
       |> NavElement.create
     in
+    let announcements =
+      single
+        (Http_utils.Url.Root.announcement_path ())
+        Announcements
+        (Set Announcement.Access.index)
+      |> NavElement.create
+    in
+    let versions =
+      single
+        (Http_utils.Url.Root.version_path ())
+        Versions
+        (Set Pool_version.Access.index)
+      |> NavElement.create
+    in
     let settings =
       [ single "/root/settings/smtp" Smtp (Set Email.Guard.Access.Smtp.index) ]
       |> parent Settings
@@ -165,6 +187,8 @@ module NavElements = struct
     in
     [ tenants
     ; users
+    ; announcements
+    ; versions
     ; settings
     ; Profile.nav ~prefix:"/root" ()
     ; NavElement.logout ~prefix:"/root" ()

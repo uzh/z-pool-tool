@@ -9,9 +9,9 @@ let print = Utils.ppx_printer
 
 module Utils = Component_utils
 
-let roles_path ?suffix admin =
+let roles_path base_path ?suffix target_id =
   let default =
-    Format.asprintf "/admin/admins/%s/" Admin.(id admin |> Id.value)
+    Format.asprintf "%s/%s/" base_path (Guard.Uuid.Target.to_string target_id)
   in
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
 ;;
@@ -31,7 +31,9 @@ let create_target_path ?uuid =
     | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
     | `Filter -> Some (build "filter" uuid)
     | `Tag -> Some (build "settings/tags" uuid)
+    | `Announcement
     | `Assignment
+    | `ApiKey
     | `ContactInfo
     | `ContactDirectMessage
     | `ContactName
@@ -55,11 +57,13 @@ let create_target_path ?uuid =
     | `Schedule
     | `Session
     | `SessionClose
+    | `SignupCode
     | `Smtp
     | `Statistics
     | `System
     | `SystemSetting
     | `Tenant
+    | `Version
     | `WaitingList -> None)
 ;;
 
@@ -67,11 +71,22 @@ let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
   create_target_path ?uuid:target_uuid target_model
 ;;
 
+let roles_section ?(top_element = []) language children =
+  let open Pool_common in
+  div
+    [ h2
+        ~a:[ a_class [ "heading-2" ] ]
+        [ Utils.text_to_string language I18n.RolesGranted |> txt ]
+    ; div ~a:[ a_class [ "stack" ] ] (top_element @ children)
+    ]
+;;
+
 module List = struct
   let row
     ?(is_edit = false)
+    ~path
     Pool_context.{ csrf; language; _ }
-    target_admin
+    target_id
     (( ({ Guard.ActorRole.actor_uuid; role; target_uuid } as actor_role)
      , (_ : Role.Target.t option)
      , (title : string option) ) as role_element)
@@ -81,7 +96,7 @@ module List = struct
         ~a:
           [ a_method `Post
           ; a_action
-              (roles_path ~suffix:target target_admin
+              (roles_path ~suffix:target path target_id
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
@@ -153,8 +168,9 @@ module List = struct
 
   let create
     ?is_edit
+    ~path
     ({ Pool_context.language; _ } as context)
-    target_admin
+    target_id
     roles
     =
     let open CCList in
@@ -163,45 +179,45 @@ module List = struct
       (Field.[ Role ] |> Table.fields_to_txt language) @ [ txt "" ]
     in
     roles
-    >|= row ?is_edit context target_admin
+    >|= row ?is_edit ~path context target_id
     |> Table.horizontal_table `Striped ~thead
   ;;
 end
 
 module Search = struct
-  let action_path admin =
-    Format.asprintf "/admin/admins/%s/%s" Admin.(admin |> id |> Id.value)
+  let action_path base_path target_id =
+    Format.asprintf "%s/%s/%s" base_path (Guard.Uuid.Target.to_string target_id)
   ;;
 
-  let value_input language admin_id =
+  let value_input ~path language target_id =
     let open Role.Role in
     let open Pool_common.I18n in
     function
     | Some QueryLocations ->
       let hints = [ RoleIntro (Field.Location, Field.Locations) ] in
-      Component_search.RoleTarget.locations ~hints language admin_id
+      Component_search.RoleTarget.locations ~hints ~path language target_id
     | Some QueryExperiments ->
       let hints = [ RoleIntro (Field.Experiment, Field.Experiments) ] in
-      Component_search.RoleTarget.experiments ~hints language admin_id
+      Component_search.RoleTarget.experiments ~hints ~path language target_id
     | None -> div []
   ;;
 
-  let value_form language admin_id ?key () =
+  let value_form ~path language target_id ?key () =
     CCOption.map_or ~default:(Ok None) Role.Role.type_of_key key
     |> function
     | Error err -> p [ Pool_common.Utils.error_to_string language err |> txt ]
     | Ok input_type ->
-      let input_field = value_input language admin_id input_type in
+      let input_field = value_input ~path language target_id input_type in
       div ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ] [ input_field ]
   ;;
 
-  let role_form ?key language csrf admin role_list =
+  let role_form ?key ~path language csrf target_id role_list =
     let toggle_id = "role-search" in
-    let toggled_content = value_form language Admin.(id admin) ?key () in
+    let toggled_content = value_form ~path language target_id ?key () in
     let key_selector =
       let attributes =
         Utils.htmx_attribs
-          ~action:(action_path admin "toggle-role")
+          ~action:(action_path path target_id "toggle-role")
           ~trigger:"change"
           ~swap:"innerHTML"
           ~target:(Utils.as_target_id toggle_id)
@@ -230,7 +246,9 @@ module Search = struct
     in
     form
       ~a:
-        [ a_action (action_path admin "grant-role" |> Sihl.Web.externalize_path)
+        [ a_action
+            (action_path path target_id "grant-role"
+             |> Sihl.Web.externalize_path)
         ; a_method `Post
         ]
       [ Component_input.csrf_element csrf ()
@@ -243,8 +261,8 @@ module Search = struct
       ]
   ;;
 
-  let input_form ?key csrf language admin role_list () =
-    let role_form = role_form ?key language csrf admin role_list in
+  let input_form ?key ~path csrf language actor_id role_list () =
+    let role_form = role_form ?key ~path language csrf actor_id role_list in
     let stack = "stack-sm" in
     div
       ~a:[ a_class [ stack; "inset-sm"; "border"; "role-search" ] ]

@@ -68,6 +68,16 @@ let group_tuples data =
   |> CCFun.const (fold (fun key items acc -> (key, items) :: acc) tbl [])
 ;;
 
+let remove_whitespaces =
+  let open Re in
+  replace_string (space |> compile) ~by:""
+;;
+
+let ignore_res = function
+  | Ok () -> ()
+  | Error _ -> ()
+;;
+
 module Url = struct
   let public_host =
     let open CCOption in

@@ -552,7 +552,8 @@ module SignUpVerification : sig
     -> (string * string) list
 
   val create
-    :  Database.Label.t
+    :  ?signup_code:Signup_code.Code.t
+    -> Database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Pool_user.EmailAddress.t

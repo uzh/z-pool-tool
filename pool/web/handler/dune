@@ -1,6 +1,7 @@
 (library
  (name handler)
  (libraries
+  announcement
   assignment
   assignment_job
   contact
@@ -15,11 +16,14 @@
   matcher
   message_template
   middleware
+  organisational_unit
   page
   pool_common
+  pool_version
   reminder
   schedule
   sihl
+  signup_code
   statistics
   tags
   user_import

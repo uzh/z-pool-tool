@@ -20,6 +20,7 @@ let tenants req =
 ;;
 
 let create req =
+  let open Database.Pool in
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt multipart_encoded =
     Sihl.Web.Request.to_multipart_form_data_exn req
@@ -29,22 +30,21 @@ let create req =
     multipart_encoded
     |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
   in
-  let result (_ : Pool_context.t) =
+  let result { Pool_context.user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events () =
       let open Cqrs_command.Pool_tenant_command in
       let* database =
-        let open Cqrs_command.Pool_tenant_command in
         let* { database_url; database_label } =
           decode_database urlencoded |> Lwt_result.lift
         in
-        Database.test_and_create database_url database_label
+        create_tested database_label database_url
       in
       let* files =
         HttpUtils.File.upload_files
-          Database.root
+          Root.label
           (CCList.map Field.show Pool_tenant.file_fields)
           req
       in
@@ -55,9 +55,9 @@ let create req =
         |> Lwt_result.lift
       in
       let events = Create.handle ~tags database decoded |> Lwt_result.lift in
-      events >|> HttpUtils.File.cleanup_upload Database.root files
+      events >|> HttpUtils.File.cleanup_upload Root.label files
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
+    let handle = Pool_event.handle_events Database.Pool.Root.label user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path
@@ -99,11 +99,10 @@ let create_operator req =
   let redirect_path =
     Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value tenant_id)
   in
-  let result _ =
+  let result { Pool_context.user; _ } =
     Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/operator" redirect_path)
     @@
-    let open CCFun in
     let tags = Pool_context.Logger.Tags.req req in
     let* tenant_db =
       Pool_tenant.(find_full tenant_id >|+ Write.database_label)
@@ -123,8 +122,8 @@ let create_operator req =
       >>= handle ~roles:[ `Operator, None ] ~tags
       |> Lwt_result.lift
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) %> Lwt_result.ok
+    let handle events =
+      events |> Pool_event.handle_events ~tags tenant_db user |> Lwt_result.ok
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
@@ -165,17 +164,11 @@ end = struct
   module Guardian = Middleware.Guardian
   module TenantCommand = Cqrs_command.Pool_tenant_command
 
-  let tenant_effects = Guardian.id_effects Pool_tenant.Id.of_string Field.Tenant
+  let tenant_effects = Guardian.id_effects Pool_tenant.Id.validate Field.Tenant
   let index = Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity TenantCommand.Create.effects
-  let read = Access.read |> tenant_effects |> Guardian.validate_generic
-
-  let update =
-    TenantCommand.EditDetails.effects
-    |> tenant_effects
-    |> Guardian.validate_generic
-  ;;
-
+  let read = tenant_effects Access.read
+  let update = tenant_effects TenantCommand.EditDetails.effects
   let read_operator = Admin.Guard.Access.index |> Guardian.validate_admin_entity
 
   let create_operator =

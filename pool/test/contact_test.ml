@@ -3,6 +3,8 @@ open Pool_message
 module Contact_command = Cqrs_command.Contact_command
 module Language = Pool_common.Language
 
+let current_user = Test_utils.Model.create_admin ()
+
 let check_result expected generated =
   Alcotest.(
     check
@@ -496,6 +498,25 @@ let verify_email () =
   check_result expected events
 ;;
 
+let toggle_verified () =
+  let open Contact in
+  let create_verified = Pool_user.Verified.create_now in
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let run_test contact expected =
+    let open Cqrs_command.Contact_command.ToggleVerified in
+    let events = handle contact in
+    let expected = Ok [ expected |> Pool_event.contact ] in
+    check_result expected events
+  in
+  run_test
+    contact
+    (Updated { contact with verified = Some (create_verified ()) });
+  run_test
+    { contact with verified = Some (create_verified ()) }
+    (Updated { contact with verified = None });
+  ()
+;;
+
 let accept_terms_and_conditions () =
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let events = Contact_command.AcceptTermsAndConditions.handle contact in
@@ -526,7 +547,7 @@ let should_not_send_registration_notification _ () =
       |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
            contact
       |> Test_utils.get_or_failwith
-      |> Lwt_list.iter_s (Pool_event.handle_event database_label)
+      |> Pool_event.handle_events database_label current_user
     in
     let%lwt res =
       Contact.should_send_registration_attempt_notification

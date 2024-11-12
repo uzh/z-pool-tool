@@ -5,7 +5,7 @@ module Message = HttpUtils.Message
 open HttpUtils.Filter
 
 let src = Logs.Src.create "handler.admin.filter"
-let template_id = HttpUtils.find_id Filter.Id.of_string Field.Filter
+let filter_id = HttpUtils.find_id Filter.Id.of_string Field.Filter
 
 let templates_disabled urlencoded =
   let open CCOption in
@@ -101,7 +101,7 @@ let new_form = form false
 let write action req =
   let open Utils.Lwt_result.Infix in
   let open Cqrs_command in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* query =
@@ -119,6 +119,13 @@ let write action req =
       match action with
       | Experiment exp ->
         let open Experiment_command in
+        let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
+        let matcher_events filter =
+          Assignment_job.update_matches_filter
+            ~current_user:admin
+            database_label
+            (`Experiment (exp, Some filter))
+        in
         (match exp.Experiment.filter with
          | None ->
            let open CreateFilter in
@@ -126,10 +133,11 @@ let write action req =
            handle ~tags exp filter |> lift
          | Some filter ->
            let open UpdateFilter in
-           let* filter =
+           let* updated =
              create_filter key_list template_list filter query |> lift
            in
-           handle ~tags exp filter |> lift)
+           let* matcher_events = matcher_events filter in
+           handle ~tags exp matcher_events filter updated |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
@@ -141,7 +149,7 @@ let write action req =
            |> lift)
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      Pool_event.handle_events ~tags database_label user events
     in
     let success () =
       let open Success in
@@ -322,7 +330,7 @@ end
 module Update = struct
   let handler fnc req =
     let open Utils.Lwt_result.Infix in
-    let id = template_id req in
+    let id = filter_id req in
     req
     |> database_label_from_req
     >>= flip Filter.find id
@@ -341,16 +349,27 @@ module Update = struct
   let toggle_key = handler handle_toggle_key
 end
 
+let changelog req =
+  let open Filter in
+  let id = filter_id req in
+  let url = HttpUtils.Url.Admin.filter_path ~suffix:"changelog" ~id () in
+  let to_human { Pool_context.database_label; language; _ } =
+    Custom_field.changelog_to_human database_label language
+  in
+  Helpers.Changelog.htmx_handler ~to_human ~url (Id.to_common id) req
+;;
+
 module Access : module type of Helpers.Access = struct
   include Helpers.Access
   module Command = Cqrs_command.Filter_command
   module Guardian = Middleware.Guardian
 
-  let filter_effects = Guardian.id_effects Filter.Id.of_string Field.Filter
-  let index = Filter.Guard.Access.index |> Guardian.validate_admin_entity
-  let create = Command.Create.effects () |> Guardian.validate_admin_entity
+  let filter_effects = Guardian.id_effects Filter.Id.validate Field.Filter
 
-  let update =
-    Command.Update.effects |> filter_effects |> Guardian.validate_generic
+  let index =
+    Filter.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
+
+  let create = Command.Create.effects () |> Guardian.validate_admin_entity
+  let update = filter_effects Command.Update.effects
 end

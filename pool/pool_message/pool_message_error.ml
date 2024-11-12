@@ -16,6 +16,8 @@ type t =
   | AssignmentIsCanceled
   | AssignmentIsClosed
   | AssignmentsHaveErrors
+  | AtLeastOneLanguageRequired of Field.t
+  | AtLeastOneSelected of Field.t * Field.t
   | Authorization of string
   | CannotBeDeleted of Field.t
   | CannotBeUpdated of Field.t
@@ -30,10 +32,11 @@ type t =
   | ContactUnconfirmed
   | CustomFieldNoOptions
   | CustomFieldTypeChangeNotAllowed
-  | DatabaseAddPoolFirst
+  | DatabaseAddPoolFirst of string
   | Decode of Field.t
   | DecodeAction
   | DefaultMustNotBeUnchecked
+  | DeleteContactUpcomingSessions
   | DirectRegistrationIsDisabled
   | Disabled of Field.t
   | EmailAddressMissingAdmin
@@ -59,12 +62,15 @@ type t =
   | InvalidOptionSelected
   | InvalidPasswordHashingCount
   | InvalidRequest
+  | InvalidWithInfo of Field.t * string
   | IsMarkedAsDeleted of Field.t
   | JobCannotBeRetriggered
   | JobPending
   | LoginProvideDetails
+  | MaintenancePending
   | MaxLength of int
   | MeantimeUpdate of Field.t
+  | MigrationFailed of string
   | Missing of Field.t
   | MutuallyExclusive of (Field.t * Field.t)
   | NegativeAmount
@@ -101,6 +107,7 @@ type t =
   | Retrieve of Field.t
   | SelectedOptionsCountMax of int
   | SelectedOptionsCountMin of int
+  | ServiceUnavailable
   | SessionAlreadyCanceled of string
   | SessionAlreadyClosed of string
   | SessionFullyBooked

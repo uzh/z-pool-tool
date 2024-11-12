@@ -88,7 +88,7 @@ let write ?id req custom_field =
     in
     go Pool_message.Field.Name encode_lang
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -112,9 +112,7 @@ let write ?id req custom_field =
         |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       let success =
         let open Pool_message.Success in
         if CCOption.is_some id
@@ -141,7 +139,7 @@ let toggle_action action req =
   let open Utils.Lwt_result.Infix in
   let handler req custom_field =
     let id = req |> get_option_id in
-    let result { Pool_context.database_label; _ } =
+    let result { Pool_context.database_label; user; _ } =
       let redirect_path =
         Url.Field.edit_path Custom_field.(model custom_field, id custom_field)
       in
@@ -164,7 +162,9 @@ let toggle_action action req =
         | `Publish -> Published Field.CustomFieldOption
       in
       let handle events =
-        let%lwt () = Pool_event.handle_events ~tags database_label events in
+        let%lwt () =
+          Pool_event.handle_events ~tags database_label user events
+        in
         Http_utils.redirect_to_with_actions
           redirect_path
           [ Message.set ~success:[ success ] ]
@@ -179,6 +179,30 @@ let toggle_action action req =
 let delete = toggle_action `Delete
 let publish = toggle_action `Publish
 
+let changelog req =
+  let result (_ : Pool_context.t) =
+    let open Utils.Lwt_result.Infix in
+    let* model = Admin_custom_fields.model_from_router req |> Lwt_result.lift in
+    let field_id = get_field_id req in
+    let option_id = get_option_id req in
+    let url =
+      HttpUtils.Url.Admin.custom_field_option_path
+        model
+        field_id
+        ~suffix:"changelog"
+        ~id:option_id
+        ()
+    in
+    let open Custom_field in
+    Lwt_result.ok
+    @@ Helpers.Changelog.htmx_handler
+         ~url
+         (SelectOption.Id.to_common option_id)
+         req
+  in
+  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
@@ -188,7 +212,7 @@ end = struct
   module CustomFieldCommand = Cqrs_command.Custom_field_option_command
 
   let custom_field_effects =
-    Middleware.Guardian.id_effects Custom_field.Id.of_string Field.CustomField
+    Middleware.Guardian.id_effects Custom_field.Id.validate Field.CustomField
   ;;
 
   let create =
@@ -196,21 +220,7 @@ end = struct
     |> Middleware.Guardian.validate_admin_entity
   ;;
 
-  let update =
-    CustomFieldCommand.Update.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let publish =
-    CustomFieldCommand.Publish.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let delete =
-    CustomFieldCommand.Destroy.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
+  let update = custom_field_effects CustomFieldCommand.Update.effects
+  let publish = custom_field_effects CustomFieldCommand.Publish.effects
+  let delete = custom_field_effects CustomFieldCommand.Destroy.effects
 end

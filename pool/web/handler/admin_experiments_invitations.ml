@@ -97,7 +97,7 @@ let create req =
   let redirect_path =
     Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -154,9 +154,7 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
@@ -178,7 +176,7 @@ let resend req =
       "/admin/experiments/%s/invitations"
       (Experiment.Id.value experiment_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -192,9 +190,7 @@ let resend req =
       handle ~tags create_email invitation |> Lwt.return
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
@@ -211,7 +207,7 @@ let reset req =
   let redirect_path =
     Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let* experiment = Experiment.find database_label experiment_id in
@@ -220,9 +216,7 @@ let reset req =
       handle ~tags experiment |> Lwt.return
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpMessage.set ~success:[ Success.ResetInvitations ] ]
@@ -242,37 +236,21 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
-    let invitation_id = find_id Pool_common.Id.of_string Field.Invitation req in
-    fcn experiment_id invitation_id
+  let combined_effects validation_set =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic
+    @@ fun req ->
+    let* experiment_id = find Experiment.Id.validate Field.Experiment req in
+    let* invitation_id = find Pool_common.Id.validate Field.Invitation req in
+    validation_set experiment_id invitation_id |> CCResult.return
   ;;
 
-  let index =
-    Invitation.Guard.Access.index
-    |> experiment_effects
-    |> Guardian.validate_generic ~any_id:true
-  ;;
-
-  let create =
-    InvitationCommand.Create.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let read =
-    Invitation.Guard.Access.read
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let resend =
-    InvitationCommand.Resend.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
+  let index = experiment_effects Invitation.Guard.Access.index
+  let create = experiment_effects InvitationCommand.Create.effects
+  let read = combined_effects Invitation.Guard.Access.read
+  let resend = combined_effects InvitationCommand.Resend.effects
 end

@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let sign_up =
@@ -74,7 +76,7 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
          |> get_or_failwith
          |> Lwt.return
        in
-       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event pool) events in
+       let%lwt () = Pool_event.handle_system_events pool events in
        Lwt.return_some ()
      | _ -> Command_utils.failwith_missmatch help)
 ;;
@@ -98,7 +100,7 @@ let trigger_profile_update_by_tenant pool =
       { contacts; emails }
       |> handle
       |> Lwt_result.lift
-      |>> Pool_event.handle_events pool)
+      |>> Pool_event.handle_system_events pool)
 ;;
 
 let tenant_specific_profile_update_trigger =
@@ -109,8 +111,7 @@ let tenant_specific_profile_update_trigger =
        let open Utils.Lwt_result.Infix in
        pool
        |> trigger_profile_update_by_tenant
-       ||> get_or_failwith
-       ||> CCOption.some)
+       ||> get_or_failwith %> CCOption.return)
 ;;
 
 let all_profile_update_triggers =
@@ -119,9 +120,9 @@ let all_profile_update_triggers =
     "Send profile update triggers of all tenants"
     (fun () ->
        let open Utils.Lwt_result.Infix in
-       Command_utils.setup_databases ()
-       >|> Lwt_list.map_s trigger_profile_update_by_tenant
+       let%lwt () = Database.Pool.initialize () in
+       Database.Pool.Tenant.all ()
+       |> Lwt_list.map_s trigger_profile_update_by_tenant
        ||> CCList.all_ok
-       ||> get_or_failwith
-       ||> fun (_ : unit list) -> Some ())
+       ||> get_or_failwith %> Utils.flat_unit %> CCOption.return)
 ;;

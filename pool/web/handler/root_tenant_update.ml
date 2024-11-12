@@ -26,6 +26,7 @@ let update req command success_message =
   let open Utils.Lwt_result.Infix in
   let open Pool_message.Field in
   let open Pool_tenant in
+  let open Database.Pool in
   let%lwt multipart_encoded =
     Sihl.Web.Request.to_multipart_form_data_exn req
     ||> HttpUtils.remove_empty_values_multiplart
@@ -40,7 +41,7 @@ let update req command success_message =
   let redirect_path =
     Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
   in
-  let result (_ : Pool_context.t) =
+  let result { Pool_context.user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -56,17 +57,18 @@ let update req command success_message =
           CCOption.
             [ tenant_model.Write.styles >|= Styles.Write.value, Styles
             ; tenant_model.Write.icon >|= Icon.Write.value, Icon
+            ; tenant_model.Write.email_logo >|= EmailLogo.Write.value, EmailLogo
             ]
       in
-      let* (_ : string list) = File.update_files Database.root updates req in
+      let* (_ : string list) = File.update_files Root.label updates req in
       let* uploaded_files =
         match creations with
         | [] -> Lwt_result.return []
-        | fields -> File.upload_files Database.root (CCList.map show fields) req
+        | fields -> File.upload_files Root.label (CCList.map show fields) req
       in
       let* logo_files =
         File.upload_files
-          Database.root
+          Root.label
           (Pool_tenant.LogoMapping.LogoType.all_fields |> CCList.map show)
           req
       in
@@ -80,20 +82,16 @@ let update req command success_message =
         | `EditDatabase ->
           let open UpdateDatabase in
           let* { database_url; database_label } = decode urlencoded |> lift in
-          let* database =
-            Database.test_and_create database_url database_label
-          in
+          let* database = create_tested database_label database_url in
           handle ~tags tenant_model database |> lift
       in
       let files = logo_files @ uploaded_files in
       (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
       |> HttpUtils.format_request_boolean_values [ TenantDisabledFlag |> show ]
       |> events_list
-      >|> HttpUtils.File.cleanup_upload Database.root files
+      >|> HttpUtils.File.cleanup_upload Database.Pool.Root.label files
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
-    in
+    let handle = Pool_event.handle_events ~tags Database.Pool.Root.label user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         redirect_path
@@ -121,7 +119,7 @@ let delete_asset req =
   let redirect_path =
     Format.asprintf "root/tenants/%s" (Pool_tenant.Id.value tenant_id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
@@ -129,7 +127,7 @@ let delete_asset req =
       Cqrs_command.Pool_tenant_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
+    let handle = Pool_event.handle_events Database.Pool.Root.label user in
     let destroy_file () =
       Storage.delete database_label (Common.Id.value asset_id)
     in

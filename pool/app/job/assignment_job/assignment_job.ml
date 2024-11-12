@@ -37,19 +37,19 @@ module Job = struct
 end
 
 let run_all () =
-  let open Utils.Lwt_result.Infix in
-  Database.Tenant.find_all_by_status ~status:[ Database.Status.Active ] ()
-  >|> Lwt_list.iter_s update_upcoming_assignments
+  Database.(Pool.Tenant.all ~status:Status.[ Active ] ())
+  |> Lwt_list.iter_s update_upcoming_assignments
 ;;
 
 let start () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s (60 * 60) |> ScheduledTimeSpan.of_span in
   let periodic_fcn () =
-    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
+    Logs.debug ~src (fun m ->
+      m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run_all ()
   in
-  create "upcoming_assignments_match_filter" (Every interval) periodic_fcn
+  create "upcoming_assignments_match_filter" (Every interval) None periodic_fcn
   |> Schedule.add_and_start
 ;;
 

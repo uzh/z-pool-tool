@@ -2,6 +2,8 @@
 
 type t =
   | Admin of Admin.event
+  | Announcement of Announcement.event
+  | ApiKey of Api_key.event
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
@@ -19,8 +21,10 @@ type t =
   | OrganisationalUnit of Organisational_unit.event
   | PoolLocation of Pool_location.event
   | PoolTenant of Pool_tenant.event
+  | PoolVersion of Pool_version.event
   | Session of Session.event
   | Settings of Settings.event
+  | SignupCode of Signup_code.event
   | SystemEvent of System_event.event
   | Tags of Tags.event
   | TextMessage of Text_message.event
@@ -30,7 +34,10 @@ type t =
   | WaitingList of Waiting_list.event
 [@@deriving eq, show, variants]
 
+(* TODO: Consider using variants, instead of custom functions *)
 let admin events = Admin events
+let announcement events = Announcement events
+let api_key events = ApiKey events
 let assignment events = Assignment events
 let assignmentjob events = AssignmentJob events
 let contact events = Contact events
@@ -48,8 +55,10 @@ let message_template events = MessageTemplate events
 let organisational_unit events = OrganisationalUnit events
 let pool_location events = PoolLocation events
 let pool_tenant events = PoolTenant events
+let pool_version events = PoolVersion events
 let session events = Session events
 let settings events = Settings events
+let signupcode events = SignupCode events
 let system_event events = SystemEvent events
 let tags events = Tags events
 let text_message events = TextMessage events
@@ -58,7 +67,7 @@ let user_import events = UserImport events
 let user events = User events
 let waiting_list events = WaitingList events
 
-let handle_event ?(tags = Logs.Tag.empty) pool =
+let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   let info model pp event =
     let tags = tags |> Database.Logger.Tags.add pool in
     let src = Logs.Src.create [%string "%{model}.events"] in
@@ -68,6 +77,12 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
   | Admin event ->
     info "admin" Admin.pp_event event;
     Admin.handle_event ~tags pool event
+  | Announcement event ->
+    info "announcement" Announcement.pp_event event;
+    Announcement.handle_event pool event
+  | ApiKey event ->
+    info "api_key" Api_key.pp_event event;
+    Api_key.handle_event ~tags pool event
   | Assignment event ->
     info "assignment" Assignment.pp_event event;
     Assignment.handle_event pool event
@@ -81,7 +96,7 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Contact.handle_event pool event
   | CustomField event ->
     info "custom_field" Custom_field.pp_event event;
-    Custom_field.handle_event pool event
+    Custom_field.handle_event ?user_uuid pool event
   | Database event ->
     info "database" Pool_database.pp_event event;
     Pool_database.handle_event pool event
@@ -93,10 +108,10 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Email.handle_verification_event pool event
   | Experiment event ->
     info "experiment" Experiment.pp_event event;
-    Experiment.handle_event pool event
+    Experiment.handle_event ?user_uuid pool event
   | Filter event ->
     info "Filter" Filter.pp_event event;
-    Filter.handle_event pool event
+    Filter.handle_event ?user_uuid pool event
   | Guard event ->
     info "guard" Guard.pp_event event;
     Guard.handle_event pool event
@@ -114,19 +129,25 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Message_template.handle_event pool event
   | OrganisationalUnit event ->
     info "organisational_unit" Organisational_unit.pp_event event;
-    Organisational_unit.handle_event pool event
+    Organisational_unit.handle_event ?user_uuid pool event
   | PoolLocation event ->
     info "pool_location" Pool_location.pp_event event;
-    Pool_location.handle_event pool event
+    Pool_location.handle_event ?user_uuid pool event
   | PoolTenant event ->
     info "pool_tenant" Pool_tenant.pp_event event;
     Pool_tenant.handle_event pool event
+  | PoolVersion event ->
+    info "pool_version" Pool_version.pp_event event;
+    Pool_version.handle_event event
   | Session event ->
     info "session" Session.pp_event event;
-    Session.handle_event pool event
+    Session.handle_event ?user_uuid pool event
   | Settings event ->
     info "settings" Settings.pp_event event;
     Settings.handle_event pool event
+  | SignupCode event ->
+    info "signup_code" Signup_code.pp_event event;
+    Signup_code.handle_event pool event
   | SystemEvent event ->
     info "system_event" System_event.pp_event event;
     (* Not passing pool, so the event can be handled with tenant events *)
@@ -153,4 +174,23 @@ let handle_event ?(tags = Logs.Tag.empty) pool =
     Waiting_list.handle_event pool event
 ;;
 
-let handle_events ?tags pool = Lwt_list.iter_s (handle_event ?tags pool)
+let user_uuid =
+  let open Pool_context in
+  function
+  | Guest -> None
+  | Contact contact -> Contact.(id contact |> Id.to_common) |> Option.some
+  | Admin admin -> Admin.(id admin |> Id.to_common) |> Option.some
+;;
+
+let handle_event ?tags pool user event =
+  let user_uuid = user_uuid user in
+  handle ?tags ?user_uuid pool event
+;;
+
+let handle_events ?tags pool user events =
+  let user_uuid = user_uuid user in
+  Lwt_list.iter_s (handle ?tags ?user_uuid pool) events
+;;
+
+let handle_system_event ?tags pool event = handle ?tags pool event
+let handle_system_events ?tags pool = Lwt_list.iter_s (handle ?tags pool)

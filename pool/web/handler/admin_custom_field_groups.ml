@@ -62,7 +62,7 @@ let write ?id req model =
     let go = Admin_custom_fields.find_assocs_in_urlencoded urlencoded in
     go Field.Name encode_lang
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -82,9 +82,7 @@ let write ?id req model =
           |> Lwt_result.lift)
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       let success =
         let open Success in
         if CCOption.is_some id
@@ -111,7 +109,7 @@ let delete req =
   let handler req model =
     let tags = Pool_context.Logger.Tags.req req in
     let id = req |> get_group_id in
-    let result { Pool_context.database_label; _ } =
+    let result { Pool_context.database_label; user; _ } =
       let redirect_path = Url.Group.edit_path (model, id) in
       Utils.Lwt_result.map_error (fun err -> err, redirect_path)
       @@
@@ -123,7 +121,7 @@ let delete req =
         >>= Cqrs_command.Custom_field_group_command.Destroy.handle ~tags
             %> Lwt_result.lift
       in
-      let%lwt () = Pool_event.handle_events database_label events in
+      let%lwt () = Pool_event.handle_events database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpUtils.Message.set
@@ -140,7 +138,7 @@ let sort req =
   let handler req model =
     let open Utils.Lwt_result.Infix in
     let redirect_path = Url.index_path model in
-    let result { Pool_context.database_label; _ } =
+    let result { Pool_context.database_label; user; _ } =
       Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
       @@
       let tags = Pool_context.Logger.Tags.req req in
@@ -167,7 +165,7 @@ let sort req =
       in
       let handle events =
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         Http_utils.redirect_to_with_actions
           redirect_path
@@ -187,6 +185,27 @@ let sort_fields req =
   Admin_custom_fields.sort_fields req ~group ()
 ;;
 
+let changelog req =
+  let result (_ : Pool_context.t) =
+    let open Utils.Lwt_result.Infix in
+    let* model = Admin_custom_fields.model_from_router req |> Lwt_result.lift in
+    let group_id = get_group_id req in
+    let url =
+      HttpUtils.Url.Admin.custom_field_groups_path
+        model
+        ~suffix:"changelog"
+        ~id:group_id
+        ()
+    in
+    Lwt_result.ok
+    @@ Helpers.Changelog.htmx_handler
+         ~url
+         (Custom_field.Group.Id.to_common group_id)
+         req
+  in
+  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
@@ -198,31 +217,20 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let custom_field_group_effects =
-    Guardian.id_effects Custom_field.Group.Id.of_string Field.CustomFieldGroup
+    Guardian.id_effects Custom_field.Group.Id.validate Field.CustomFieldGroup
   ;;
 
   let create = Command.Create.effects |> Guardian.validate_admin_entity
-
-  let update =
-    Command.Update.effects
-    |> custom_field_group_effects
-    |> Guardian.validate_generic
-  ;;
-
+  let update = custom_field_group_effects Command.Update.effects
   let sort = Command.Sort.effects |> Guardian.validate_admin_entity
 
   let sort_fields =
-    (fun req ->
+    custom_field_group_effects (fun goup_id ->
       Guard.ValidationSet.And
         [ Cqrs_command.Custom_field_command.Sort.effects
-        ; custom_field_group_effects Custom_field.Guard.Access.Group.update req
+        ; Custom_field.Guard.Access.Group.update goup_id
         ])
-    |> Guardian.validate_generic
   ;;
 
-  let delete =
-    Command.Destroy.effects
-    |> custom_field_group_effects
-    |> Guardian.validate_generic
-  ;;
+  let delete = custom_field_group_effects Command.Destroy.effects
 end

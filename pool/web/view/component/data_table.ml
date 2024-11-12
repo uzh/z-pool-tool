@@ -396,6 +396,7 @@ let make
   ?(align_last_end = true)
   ?align_top
   ?(classnames = [])
+  ?(execute_onload = false)
   ?(layout = `Striped)
   ?(prepend_html = txt "")
   ?th_class
@@ -445,8 +446,23 @@ let make
       (Component_table.table_classes ?align_top layout ~align_last_end ()
        @ classnames)
   in
+  let trigger_onload =
+    if execute_onload
+    then (
+      let { additional_url_params; url; push_url; _ } = data_table in
+      let url =
+        Query.to_uri_query
+          ?additional_params:additional_url_params
+          data_table.query
+        |> Uri.with_query url
+        |> Format.asprintf "%a" Uri.pp
+        |> Sihl.Web.externalize_path
+      in
+      a_user_data "hx-trigger" "load" :: hx_get ~url ~target_id ~push_url)
+    else []
+  in
   div
-    ~a:[ a_class [ "stack" ]; a_id target_id ]
+    ~a:([ a_class [ "stack" ]; a_id target_id ] @ trigger_onload)
     [ filter_block
     ; prepend_html
     ; table ~a:[ classes ] ~thead rows

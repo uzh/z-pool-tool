@@ -1,4 +1,5 @@
 module Admin = Admin_admins
+module ApiKey = Admin_api_keys
 module Assignments = Admin_experiments_assignments
 module Contacts = Admin_contacts
 module CustomField = Admin_custom_fields
@@ -16,3 +17,6 @@ module OrganisationalUnit = Admin_organisational_units
 module Profile = Admin_user_profile
 module Session = Admin_session
 module Settings = Admin_settings
+module SignupCodes = Admin_signup_codes
+module Version = Admin_version
+module Users = Admin_users

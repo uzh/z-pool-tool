@@ -1,8 +1,10 @@
 include Entity
 include Event
 module Guard = Entity_guard
+module VersionHistory = Version_history
 
 let find_all_for_experiment = Repo.find_all_for_experiment
+let find_upcoming_for_experiment = Repo.Sql.find_upcoming_for_experiment
 
 let find_all_to_assign_from_waitinglist =
   Repo.find_all_to_assign_from_waitinglist

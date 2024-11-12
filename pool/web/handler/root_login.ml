@@ -3,7 +3,6 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let src = Logs.Src.create "handler.root.login"
-let ctx = Database.(to_ctx root)
 let root_login_path = "/root/login"
 let root_entrypoint_path = "/root/tenants"
 let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
@@ -11,7 +10,7 @@ let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
 let login_get req =
   let open Utils.Lwt_result.Infix in
   let result context =
-    Pool_user.Web.user_from_session Database.root req
+    Pool_user.Web.user_from_session Database.Pool.Root.label req
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
@@ -49,7 +48,7 @@ let request_reset_password_get req =
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
-    Pool_user.Web.user_from_session Database.root req
+    Pool_user.Web.user_from_session Database.Pool.Root.label req
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
@@ -67,7 +66,7 @@ let request_reset_password_post req =
   let open HttpUtils in
   let open Cqrs_command.Common_command.ResetPassword in
   let open Message_template in
-  let result { Pool_context.database_label; language; _ } =
+  let result { Pool_context.database_label; language; user; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     let redirect_path = "/root/request-reset-password" in
@@ -78,7 +77,7 @@ let request_reset_password_post req =
           ||> CCOption.to_result Error.PasswordResetFailMessage)
     >>= PasswordReset.create database_label language Root
     >>= CCFun.(handle ~tags %> Lwt_result.lift)
-    |>> Pool_event.handle_events ~tags database_label
+    |>> Pool_event.handle_events ~tags database_label user
     >|> function
     | Ok () | Error (_ : Error.t) ->
       redirect_to_with_actions
@@ -132,7 +131,7 @@ let reset_password_post req =
     in
     let* () =
       Pool_user.Password.Reset.reset_password
-        Database.root
+        Database.Pool.Root.label
         ~token
         password
         password_confirmed

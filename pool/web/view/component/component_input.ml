@@ -111,6 +111,7 @@ let input_element
   ?(orientation = `Vertical)
   ?(classnames = [])
   ?label_field
+  ?(hide_label = false)
   ?hints
   ?identifier
   ?(required = false)
@@ -146,12 +147,14 @@ let input_element
     let help = Elements.hints language hints in
     let error = Elements.error language error in
     let input_element = Elements.apply_orientation attributes orientation in
+    let label =
+      if hide_label
+      then txt ""
+      else label ~a:[ a_label_for id ] [ txt input_label ]
+    in
     div
       ~a:[ a_class group_class ]
-      ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
-       @ help
-       @ error
-       @ append_html)
+      ([ label; input_element ] @ help @ error @ append_html)
 ;;
 
 let flatpicker_element
@@ -289,6 +292,7 @@ let timespan_picker
         ]
     in
     let attrs = if required then a_required () :: attrs else attrs in
+    let attrs = if read_only then a_readonly () :: attrs else attrs in
     if CCOption.is_some error then a_class [ "is-invalid" ] :: attrs else attrs
   in
   let group_class = Elements.group_class classnames orientation in
@@ -305,6 +309,7 @@ let timespan_picker
           ~a:
             [ a_name unit_field_name
             ; a_input_type `Hidden
+            ; a_readonly ()
             ; a_value
                 (time_unit
                  |> CCOption.value ~default:(TimeUnit.all |> CCList.hd)
@@ -436,6 +441,7 @@ let input_element_file
   ?(allow_multiple = false)
   ?(required = false)
   ?label_field
+  ?(accept = [])
   language
   field
   =
@@ -458,8 +464,16 @@ let input_element_file
       ; placeholder
       ]
   in
+  let accept_attr, accept_hint =
+    match accept with
+    | [] -> [], None
+    | accept ->
+      [ a_accept accept ], Some [ Pool_common.I18n.FileUploadAcceptMime accept ]
+  in
   let input_attributes =
-    let attributes = [ a_input_type `File; a_id name; a_name name ] in
+    let attributes =
+      [ a_input_type `File; a_id name; a_name name ] @ accept_attr
+    in
     let attributes =
       if allow_multiple then a_multiple () :: attributes else attributes
     in
@@ -467,13 +481,15 @@ let input_element_file
     | true -> attributes @ [ a_required () ]
     | false -> attributes
   in
+  let help = Elements.hints language accept_hint in
   div
     ~a:[ a_class (Elements.group_class [] orientation) ]
-    [ label ~a:[ a_label_for name ] [ txt input_label ]
-    ; label
-        ~a:[ a_label_for name; a_class [ "file-input" ] ]
-        [ input ~a:input_attributes (); visible_part ]
-    ]
+    ([ label ~a:[ a_label_for name ] [ txt input_label ]
+     ; label
+         ~a:[ a_label_for name; a_class [ "file-input" ] ]
+         [ input ~a:input_attributes (); visible_part ]
+     ]
+     @ help)
 ;;
 
 let textarea_element

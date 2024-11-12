@@ -6,7 +6,7 @@ module Dynparam = Database.Dynparam
    populate, we have to do that manually. *)
 let to_bytes encode decode id =
   match id |> decode |> Uuidm.of_string with
-  | Some uuid -> Uuidm.to_bytes uuid |> encode
+  | Some uuid -> Uuidm.to_binary_string uuid |> encode
   | None -> failwith "Invalid uuid provided"
 ;;
 
@@ -101,28 +101,23 @@ let find label id =
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Queue)
 ;;
 
-let find_combined_request_sql ?(count = false) where_fragment =
-  let columns ?(count = false) ?decode () =
+let find_all_request table ?(joins = "") ?(count = false) where_fragment =
+  let columns =
     if count
     then "COUNT(*)"
-    else sql_select_columns ?decode None |> CCString.concat ", "
+    else sql_select_columns ~decode:true None |> CCString.concat ", "
   in
   [%string
     {sql|
-      SELECT %{columns ~count ()} FROM (
-        SELECT %{columns ~decode:false ()} FROM %{sql_table `History}
-        UNION ALL
-        SELECT %{columns ~decode:false ()} FROM %{sql_table `Current}
-        ) queue
-      %{where_fragment}
+      SELECT %{columns} FROM %{sql_table table} %{joins} %{where_fragment}
     |sql}]
 ;;
 
-let find_by ?query pool =
+let find_by table ?query pool =
   Query.collect_and_count
     pool
     query
-    ~select:find_combined_request_sql
+    ~select:(find_all_request ?joins:None table)
     Repo_entity.Instance.t
 ;;
 
@@ -332,7 +327,7 @@ let find_archivable_request =
     {sql|
       SELECT %{Entity.Id.sql_select_fragment ~field:("uuid")}
       FROM %{sql_table `Current}
-      WHERE status != "pending"
+      WHERE status != 'pending'
     |sql}]
   |> Caqti_type.unit ->* Repo_entity.Id.t
 ;;
@@ -367,10 +362,17 @@ module type ColumnsSig = sig
   val column_run_at : Query.Column.t
   val column_input : Query.Column.t
   val job_name_filter : Query.Filter.Condition.Human.t
-  val job_status_filter : Query.Filter.Condition.Human.t
+
+  val job_status_filter
+    :  ?history:bool
+    -> unit
+    -> Query.Filter.Condition.Human.t
+
   val searchable_by : Query.Column.t list
   val sortable_by : Query.Column.t list
   val filterable_by : Query.Filter.Condition.Human.t list option
+  val current_filterable_by : Query.Filter.Condition.Human.t list option
+  val history_filterable_by : Query.Filter.Condition.Human.t list option
   val default_sort : Query.Sort.t
   val default_query : Query.t
 end
@@ -399,9 +401,10 @@ module MakeColumns (Table : sig
     Condition.Human.Select (column_job_name, options)
   ;;
 
-  let job_status_filter =
+  let job_status_filter ?(history = false) () =
     let open Status in
-    let options = build_options all show in
+    let options = if history then [ Succeeded; Failed; Cancelled ] else all in
+    let options = build_options options show in
     Condition.Human.Select (column_job_status, options)
   ;;
 
@@ -416,7 +419,13 @@ module MakeColumns (Table : sig
     ]
   ;;
 
-  let filterable_by = Some [ job_name_filter; job_status_filter ]
+  let filterable_by = Some [ job_name_filter; job_status_filter () ]
+
+  let history_filterable_by =
+    Some [ job_name_filter; job_status_filter ~history:true () ]
+  ;;
+
+  let current_filterable_by = Some [ job_name_filter ]
 
   let default_sort =
     Query.Sort.{ column = column_run_at; order = SortOrder.Descending }

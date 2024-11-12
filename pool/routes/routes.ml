@@ -21,16 +21,20 @@ let add_human_field = CCFun.(Field.human_url %> Format.asprintf "/%s")
 let global_middlewares =
   [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
   ; CustomMiddleware.Error.middleware ()
-  ; Middleware.trailing_slash ()
+  ; CustomMiddleware.TrailingSlash.middleware ()
   ; Middleware.static_file ()
-  ; Middleware.flash ()
+  ; Opium.Middleware.content_length
+  ; Opium.Middleware.etag
+  ; Opium.Middleware.method_override
+  ]
+;;
+
+let web_middlewares =
+  [ Middleware.flash ()
   ; Middleware.csrf
       ~not_allowed_handler:CustomMiddleware.NotAllowed.handle
       ~expires:session_expiration
       ()
-  ; Opium.Middleware.content_length
-  ; Opium.Middleware.etag
-  ; Opium.Middleware.method_override
   ]
 ;;
 
@@ -40,6 +44,14 @@ module Public = struct
       [ get "/" Handler.Public.root_redirect
       ; get "/custom/assets/:id/:filename" Handler.Public.asset
       ; get "/error" Handler.Public.error
+      ]
+  ;;
+
+  let middlewares =
+    web_middlewares
+    @ [ CustomMiddleware.Tenant.validate ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
       ]
   ;;
 
@@ -68,13 +80,16 @@ module Public = struct
       in
       choose ~scope:(Queue |> url_key) specific
     in
+    let announcements =
+      let open Handler.Public in
+      let specific = [ post "hide" hide_announcement ] in
+      choose
+        ~scope:Field.(human_url Announcement)
+        [ choose ~scope:Field.(url_key Announcement) specific ]
+    in
     Handler.Public.(
       choose
-        ~middlewares:
-          [ CustomMiddleware.Tenant.validate ()
-          ; CustomMiddleware.Context.context ()
-          ; CustomMiddleware.Logger.logger
-          ]
+        ~middlewares
         [ choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
@@ -116,7 +131,7 @@ module Public = struct
               [ CustomMiddleware.Guardian.require_user_type_of
                   Pool_context.UserType.[ Contact; Admin ]
               ]
-            [ get "/logout" Login.logout ]
+            [ get "/logout" Login.logout; announcements ]
         ; get "/denied" Handler.Public.denied
         ])
   ;;
@@ -189,13 +204,17 @@ module Contact = struct
     ]
   ;;
 
+  let middlewares =
+    web_middlewares
+    @ [ CustomMiddleware.Tenant.validate ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
+      ]
+  ;;
+
   let routes =
     choose
-      ~middlewares:
-        [ CustomMiddleware.Tenant.validate ()
-        ; CustomMiddleware.Context.context ()
-        ; CustomMiddleware.Logger.logger
-        ]
+      ~middlewares
       [ choose
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
@@ -228,11 +247,12 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Tenant.validate ()
-    ; CustomMiddleware.Context.context ()
-    ; CustomMiddleware.Logger.logger
-    ; CustomMiddleware.Admin.require_admin ()
-    ]
+    web_middlewares
+    @ [ CustomMiddleware.Tenant.validate ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
+      ; CustomMiddleware.Admin.require_admin ()
+      ]
   ;;
 
   let routes =
@@ -276,8 +296,9 @@ module Admin = struct
         [ get "" ~middlewares:[ Session.Access.read_by_location ] Session.show ]
       in
       let specific =
-        [ get "" ~middlewares:[ Access.index ] show
-        ; get "/statistics" ~middlewares:[ Access.index ] statistics
+        [ get "" ~middlewares:[ Access.read ] show
+        ; get "/statistics" ~middlewares:[ Access.read ] statistics
+        ; get "/changelog" ~middlewares:[ Access.read ] changelog
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
         ; choose ~scope:"/files" files
@@ -306,6 +327,7 @@ module Admin = struct
         Update.
           [ get "/edit" edit
           ; post "" update_template
+          ; get "changelog" changelog
           ; choose
               (filter_form (toggle_key, toggle_predicate_type, add_predicate))
           ]
@@ -408,6 +430,10 @@ module Admin = struct
             let specific =
               [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
               ; post "/close" ~middlewares:[ Session.Access.close ] Close.update
+              ; post
+                  "/verify"
+                  ~middlewares:[ Session.Access.close ]
+                  Close.verify_contact
               ; get "/edit" ~middlewares:[ Access.update ] edit
               ; post "" ~middlewares:[ Access.update ] update
               ; post "/remind" ~middlewares:[ Access.update ] remind
@@ -453,6 +479,7 @@ module Admin = struct
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
           ; get "/print" ~middlewares:[ Access.read ] print
+          ; get "/changelog" ~middlewares:[ Access.read ] changelog
           ; post
               "/update-matches-filter"
               ~middlewares:[ Access.update_matches_filter ]
@@ -565,10 +592,11 @@ module Admin = struct
       in
       let specific =
         Experiments.
-          [ get "" ~middlewares:[ Access.index ] show
+          [ get "" ~middlewares:[ Access.read ] show
           ; post "" ~middlewares:[ Access.update ] update
           ; get "/edit" ~middlewares:[ Access.update ] edit
           ; post "/delete" ~middlewares:[ Access.delete ] delete
+          ; get "/changelog" ~middlewares:[ Access.read ] changelog
           ; post
               "/reset-invitations"
               ~middlewares:[ Access.update ]
@@ -657,8 +685,11 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
+        ; post "verify" ~middlewares:[ Access.update ] toggle_verified
+        ; post "delete" ~middlewares:[ Access.update ] mark_as_deleted
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
+        ; get "/changelog" ~middlewares:[ Access.changelog ] changelog
         ; get
             "/past-experiments"
             ~middlewares:[ Access.read ]
@@ -685,6 +716,11 @@ module Admin = struct
       ; choose ~scope:(Contact |> url_key) specific
       ]
     in
+    let users =
+      let open Handler.Admin.Users in
+      let specific = [ get "" redirect ] in
+      [ choose ~scope:(User |> url_key) specific ]
+    in
     let custom_fields =
       let open CustomField in
       let specific =
@@ -695,6 +731,7 @@ module Admin = struct
             ; post "" ~middlewares:[ Access.update ] update
             ; post "/delete" ~middlewares:[ Access.delete ] delete
             ; post "/publish" ~middlewares:[ Access.publish ] publish
+            ; get "/changelog" ~middlewares:[ Access.update ] changelog
             ]
           in
           [ get "/new" ~middlewares:[ Access.create ] new_form
@@ -707,6 +744,7 @@ module Admin = struct
         ; post "/publish" ~middlewares:[ Access.publish ] publish
         ; post "/delete" ~middlewares:[ Access.delete ] delete
         ; post "/sort-options" ~middlewares:[ Access.update ] sort_options
+        ; get "/changelog" ~middlewares:[ Access.update ] changelog
         ; choose ~scope:"options" options
         ]
       in
@@ -723,6 +761,7 @@ module Admin = struct
           ; post "" ~middlewares:[ Access.update ] update
           ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; post "sort-fields" ~middlewares:[ Access.sort_fields ] sort_fields
+          ; get "/changelog" ~middlewares:[ Access.update ] changelog
           ]
         in
         [ get "/new" ~middlewares:[ Access.create ] new_form
@@ -770,6 +809,7 @@ module Admin = struct
       let specific =
         [ get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
+        ; get "/changelog" ~middlewares:[ Access.index ] changelog
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
@@ -788,6 +828,7 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index ] show
+        ; get "/archive" ~middlewares:[ Access.index ] show_archive
         ; choose ~scope:(Queue |> url_key) specific
         ]
       in
@@ -819,6 +860,28 @@ module Admin = struct
         in
         [ get "" ~middlewares:[ Access.read ] index
         ; choose ~scope:(url_key Role) specific
+        ]
+      in
+      let api_key =
+        let open ApiKey in
+        let specific =
+          [ get "" ~middlewares:[ Access.read ] show
+          ; get "edit" ~middlewares:[ Access.update ] edit
+          ; post "" ~middlewares:[ Access.update ] update
+          ; post "/disable" ~middlewares:[ Access.disable ] disable
+          ; post "/toggle-role" ~middlewares:[ Access.read ] handle_toggle_role
+          ; post
+              "/search-role"
+              ~middlewares:[ Access.grant_role ]
+              search_role_entities
+          ; post "/grant-role" ~middlewares:[ Access.grant_role ] grant_role
+          ; post "/revoke-role" ~middlewares:[ Access.revoke_role ] revoke_role
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index ] index
+        ; post "" ~middlewares:[ Access.create ] create
+        ; get "/new" ~middlewares:[ Access.create ] new_form
+        ; choose ~scope:(ApiKey |> url_key) specific
         ]
       in
       let smtp =
@@ -858,16 +921,27 @@ module Admin = struct
         ; post "delete" ~middlewares:[ Access.delete ] delete
         ]
       in
+      let signup_codes =
+        let open SignupCodes in
+        [ get "" ~middlewares:[ Access.index ] index ]
+      in
       [ get "" ~middlewares:[ Access.index ] show
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/actor-permission" actor_permission
       ; choose ~scope:"/role-permission" role_permission
+      ; choose ~scope:Field.(human_url ApiKey) api_key
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
       ; choose ~scope:"/text-messages" text_messages
+      ; choose ~scope:Field.(human_url SignUpCode) signup_codes
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
+    in
+    let versions =
+      let open Version in
+      let specific = [ get "" show ] in
+      [ get "" index; choose ~scope:Field.(url_key Version) specific ]
     in
     let profile =
       let open Profile in
@@ -895,20 +969,23 @@ module Admin = struct
       ; choose ~scope:"/locations" location
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
+      ; choose ~scope:"/users" users
       ; choose ~scope:"/custom-fields" custom_fields
       ; choose ~scope:(add_human_field Field.Sessions) sessions
       ; choose ~scope:(add_human_field OrganisationalUnit) organisational_units
       ; choose ~scope:(add_human_field MessageTemplate) message_templates
+      ; choose ~scope:(add_human_field Version) versions
       ]
   ;;
 end
 
 module Root = struct
   let middlewares =
-    [ CustomMiddleware.Root.from_root_only ()
-    ; CustomMiddleware.Context.context ()
-    ; CustomMiddleware.Logger.logger
-    ]
+    web_middlewares
+    @ [ CustomMiddleware.Root.from_root_only ()
+      ; CustomMiddleware.Context.context ()
+      ; CustomMiddleware.Logger.logger
+      ]
   ;;
 
   let public_routes =
@@ -970,6 +1047,26 @@ module Root = struct
       ; choose ~scope:(Root |> url_key) specific
       ]
     in
+    let announcements =
+      let open Announcement in
+      let specific = [ post "" update; get "edit" edit ] in
+      [ get "" index
+      ; post "" create
+      ; get "new" new_form
+      ; choose ~scope:Field.(url_key Announcement) specific
+      ]
+    in
+    let versions =
+      let open Version in
+      let specific =
+        [ post "" update; get "edit" edit; post "publish" publish ]
+      in
+      [ get "" index
+      ; post "" create
+      ; get "new" new_form
+      ; choose ~scope:Field.(url_key Version) specific
+      ]
+    in
     let settings =
       let smtp =
         let open Handler.Root.Settings in
@@ -995,6 +1092,8 @@ module Root = struct
     in
     [ choose
         [ get "/logout" Login.logout
+        ; choose ~scope:Field.(show Announcement) announcements
+        ; choose ~scope:Field.(show Version) versions
         ; choose ~scope:"/settings" settings
         ; choose ~scope:"/user" profile
         ; choose ~scope:"/tenants" tenants
@@ -1020,12 +1119,57 @@ module Root = struct
   ;;
 end
 
+module Api = struct
+  open Api
+
+  let global_middlewares =
+    CustomMiddleware.[ Api.api_request (); Api.context (); Logger.logger ]
+  ;;
+
+  module V1 = struct
+    open V1
+
+    let experiment =
+      let open Experiment in
+      let specific = [ get "" ~middlewares:[ Access.read ] show ] in
+      choose
+        ~scope:Field.(human_url Experiment)
+        [ get "" ~middlewares:[ Access.index ] index
+        ; choose ~scope:Field.(url_key Experiment) specific
+        ]
+    ;;
+
+    let organisational_unit =
+      let open OrganisationalUnit in
+      choose ~scope:Field.(human_url OrganisationalUnit) [ get "" index ]
+    ;;
+
+    let routes =
+      choose
+        [ experiment
+        ; organisational_unit
+        ; get "/**" ~middlewares:global_middlewares not_found
+        ]
+    ;;
+  end
+
+  let routes =
+    choose
+      ~middlewares:
+        (CustomMiddleware.Api.validate_tenant () :: global_middlewares)
+      [ choose ~scope:"/v1" [ V1.routes ]
+      ; get "/**" ~middlewares:global_middlewares not_found
+      ]
+  ;;
+end
+
 let router =
   choose
     [ Public.routes
     ; Contact.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
+    ; choose ~scope:"/api" [ Api.routes ]
     ; Public.global_routes
     ; get
         "/**"

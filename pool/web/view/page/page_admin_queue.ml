@@ -23,8 +23,13 @@ let data_table_head language =
   [ name; status; message_template; recipient; last_error_at; run_at; `empty ]
 ;;
 
-let list Pool_context.{ language; _ } url (queued_jobs, query) =
+let list Pool_context.{ language; _ } queue_table url (queued_jobs, query) =
   let open Pool_queue in
+  let filterable_by =
+    match queue_table with
+    | `History -> history_filterable_by
+    | `Current -> current_filterable_by
+  in
   let data_table =
     Component.DataTable.create_meta
       ?filter:filterable_by
@@ -61,7 +66,7 @@ let list Pool_context.{ language; _ } url (queued_jobs, query) =
       |> Instance.last_error_at
       |> CCOption.map_or ~default:(txt "") formatted_date_time
     ; instance |> Instance.run_at |> formatted_date_time
-    ; [%string "/admin/settings/queue/%{instance |> Instance.id |> Id.value}"]
+    ; Http_utils.Url.Admin.Settings.queue_path ~id:(Instance.id instance) ()
       |> Component.Input.link_as_button ~icon:Component.Icon.Eye
     ]
     |> CCList.map CCFun.(CCList.return %> td)

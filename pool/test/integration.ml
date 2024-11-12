@@ -8,6 +8,8 @@ let suite =
           ; test_case "find tenants" `Slow check_find_tenant_database
           ; test_case "access tenant" `Slow check_tenant_database
           ] )
+    ; ( "api_key"
+      , Api_key_test.[ test_case "get current api_key" `Slow get_current ] )
     ; ( "settings"
       , Tenant_settings_test.
           [ test_case "read contact email" `Slow check_contact_email
@@ -52,6 +54,8 @@ let suite =
               `Slow
               Admin_role_assignment.grant_roles
           ] )
+    ; ( "announcement"
+      , Announcement_test.[ test_case "find current" `Slow find_current ] )
     ; ( "partial_update"
       , Partial_update.
           [ test_case "update with old version" `Slow update_with_old_version
@@ -153,6 +157,10 @@ let suite =
           [ test_case "send invitations" `Slow create_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
           ; test_case "matcher notifiaction" `Slow matcher_notification
+          ; test_case
+              "online experiment matcher"
+              `Slow
+              create_invitations_for_online_experiment
           ] )
     ; ( "assignment job"
       , Assignment_job_test.
@@ -417,8 +425,7 @@ let suite =
     ; ( "time window"
       , Time_window_test.
           [ test_case "confirm as contact" `Slow find_overlapping ] )
-      (* ; "cleanup", [ test_case "clean up test database" `Slow
-         Test_seed.cleanup ] *)
+    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;
 

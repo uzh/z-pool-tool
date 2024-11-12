@@ -5,6 +5,7 @@ end
 module Status : sig
   type t =
     | Active
+    | Failed
     | Finished
     | Paused
     | Running
@@ -38,13 +39,19 @@ type scheduled_time =
 
 type t =
   { label : Label.t
+  ; database_label : Database.Label.t option
   ; scheduled_time : scheduled_time
   ; status : Status.t
   ; last_run : LastRunAt.t option
   ; fcn : unit -> unit Lwt.t [@opaque] [@equal fun _ _ -> true]
   }
 
-val create : string -> scheduled_time -> (unit -> unit Lwt.t) -> t
+val create
+  :  string
+  -> scheduled_time
+  -> Database.Label.t option
+  -> (unit -> unit Lwt.t)
+  -> t
 
 type public =
   { label : Label.t
@@ -59,7 +66,11 @@ val lifecycle : Sihl.Container.lifecycle
 val register : ?schedules:t list -> unit -> Sihl.Container.Service.t
 val is_ok : public -> bool
 val find_all : unit -> public list Lwt.t
-val find_by : Query.t -> (public list * Query.t) Lwt.t
+
+val find_by_db_label
+  :  Database.Label.t
+  -> Query.t
+  -> (public list * Query.t) Lwt.t
 
 module Guard : sig
   module Access : sig

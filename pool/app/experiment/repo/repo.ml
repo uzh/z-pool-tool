@@ -173,35 +173,26 @@ module Sql = struct
     insert_sql |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool experiment =
-    let open Entity in
-    let autofill_public_title_request =
-      {sql|
-        UPDATE pool_experiments
-        SET
-          public_title = CONCAT('#', id)
-        WHERE
-          uuid = UNHEX(REPLACE($1, '-', ''))
-        AND
-          public_title = $2
-      |sql}
-    in
-    let autofill_public_title =
+  let insert pool = Database.exec pool insert_request
+
+  let get_default_public_title pool =
+    let request =
       let open Caqti_request.Infix in
-      autofill_public_title_request
-      |> Caqti_type.(t2 Repo_entity.Id.t Repo_entity.PublicTitle.t ->. unit)
+      {sql|
+        SELECT
+          id
+        FROM
+          pool_experiments
+        ORDER BY
+          id DESC
+        LIMIT 1
+      |sql}
+      |> Caqti_type.(unit ->! int)
     in
-    let with_connection request input connection =
-      let (module Connection : Caqti_lwt.CONNECTION) = connection in
-      Connection.exec request input
-    in
-    let insert = with_connection insert_request experiment in
-    let set_title =
-      with_connection
-        autofill_public_title
-        (experiment.id, PublicTitle.placeholder)
-    in
-    Database.transaction_iter pool [ insert; set_title ]
+    let open Utils.Lwt_result.Infix in
+    Database.find_opt pool request ()
+    ||> CCOption.value ~default:0
+    ||> fun max_id -> Format.asprintf "#%i" (max_id + 1)
   ;;
 
   let search_select =
@@ -549,7 +540,13 @@ module Sql = struct
     Database.find pool contact_is_enrolled_request (experiment_id, contact_id)
   ;;
 
-  let find_targets_grantable_by_admin ?exclude database_label admin role query =
+  let find_targets_grantable_by_target
+    ?exclude
+    database_label
+    target_id
+    role
+    query
+    =
     let joins =
       {sql|
       LEFT JOIN guardian_actor_role_targets t ON t.target_uuid = pool_experiments.uuid
@@ -557,11 +554,12 @@ module Sql = struct
         AND t.role = ?
     |sql}
     in
-    let conditions = "t.role IS NULL" in
+    let conditions = "(t.role IS NULL OR t.mark_as_deleted IS NOT NULL)" in
     let dyn =
+      let open Pool_common in
       Dynparam.(
         empty
-        |> add Admin.Repo.Id.t Admin.(id admin)
+        |> add Repo.Id.t (Guard.Uuid.Target.to_string target_id |> Id.of_string)
         |> add Caqti_type.string Role.Role.(show role))
     in
     search ~conditions ~joins ~dyn ?exclude database_label query
@@ -575,10 +573,11 @@ module Sql = struct
     let joins =
       {sql|
         INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
+          AND pool_sessions.canceled_at IS NULL
         INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
           AND pool_assignments.canceled_at IS NULL
           AND pool_assignments.marked_as_deleted = 0
-        |sql}
+      |sql}
     in
     let where =
       let only_closed_condition =
@@ -599,20 +598,7 @@ module Sql = struct
          then Format.asprintf "AND (%s)" only_closed_condition
          else "")
     in
-    let _ =
-      Format.asprintf
-        {sql|
-            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
-            AND(
-              CASE WHEN pool_experiments.assignment_without_session = 1 THEN
-                pool_assignments.participated = 1
-              ELSE
-                %s
-              END)
-        |sql}
-        (if only_closed then "pool_sessions.closed_at IS NOT NULL" else "TRUE")
-    in
-    (where, dyn |> Dynparam.add Contact.Repo.Id.t contact_id), joins
+    Dynparam.(where, dyn |> add Contact.Repo.Id.t contact_id), joins
   ;;
 
   let query_participation_history_by_contact ?query pool contact =
@@ -663,4 +649,4 @@ let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
 let find_to_enroll_directly = Sql.find_to_enroll_directly
 let contact_is_enrolled = Sql.contact_is_enrolled
-let find_targets_grantable_by_admin = Sql.find_targets_grantable_by_admin
+let find_targets_grantable_by_target = Sql.find_targets_grantable_by_target

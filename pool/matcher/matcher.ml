@@ -2,7 +2,7 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "matcher.service"
-let tags = Database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create Pool.Root.label)
 
 type config =
   { start : bool option
@@ -80,16 +80,16 @@ let experiment_has_bookable_spots
   let open Session in
   match CCOption.is_some online_experiment with
   | false ->
-    find_all_for_experiment database_label id
+    find_upcoming_for_experiment database_label id
     ||> CCList.filter (fun session ->
       CCOption.is_none session.follow_up_to && not (is_fully_booked session))
     ||> CCList.is_empty
     ||> not
   | true ->
-    Time_window.find_current_by_experiment database_label id
+    Time_window.find_upcoming_by_experiment database_label id
     ||> (function
-     | Error _ -> false
-     | Ok { Time_window.max_participants; participant_count; _ } ->
+     | None -> false
+     | Some { Time_window.max_participants; participant_count; _ } ->
        max_participants
        |> CCOption.map_or ~default:true (fun max_participants ->
          ParticipantAmount.value max_participants
@@ -182,12 +182,13 @@ let notify_all_invited pool tenant experiment =
       ||> Email.bulksent
       ||> Pool_event.email
     in
+    let updated =
+      { experiment with
+        matcher_notification_sent = MatcherNotificationSent.create true
+      }
+    in
     let experiment_event =
-      Updated
-        { experiment with
-          matcher_notification_sent = MatcherNotificationSent.create true
-        }
-      |> Pool_event.experiment
+      Updated (experiment, updated) |> Pool_event.experiment
     in
     Lwt.return [ email_event; experiment_event ]
 ;;
@@ -319,25 +320,25 @@ let match_invitations interval pools =
           ~tags:(Database.Logger.Tags.create pool)
           "Sending %4d intivation emails"
           (count_mails events));
-      Pool_event.handle_events pool events)
+      Pool_event.handle_system_events pool events)
   in
   create_invitation_events interval pools >|> handle_events
 ;;
 
 let start_matcher () =
-  let open Utils.Lwt_result.Infix in
   let open Schedule in
   let interval = Ptime.Span.of_int_s (5 * 60) in
   let periodic_fcn () =
-    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create root) "Run");
-    Pool_tenant.find_all ()
-    ||> CCList.map (fun Pool_tenant.{ database_label; _ } -> database_label)
-    >|> match_invitations interval
+    Logs.debug ~src (fun m ->
+      m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
+    Database.(Pool.Tenant.all ~status:Status.[ Active ] ())
+    |> match_invitations interval
   in
   let schedule =
     create
       "matcher"
       (Every (interval |> ScheduledTimeSpan.of_span))
+      None
       periodic_fcn
   in
   Schedule.add_and_start schedule

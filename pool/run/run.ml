@@ -10,7 +10,7 @@ let worker_services =
       register
         ~kind:Worker
         ~jobs:
-          [ hide Email.Service.Job.send
+          [ hide ~execute_on_root:true Email.Service.Job.send
           ; hide Text_message.Service.Job.send
           ; hide Assignment_job.job
           ]
@@ -20,6 +20,7 @@ let worker_services =
   ; User_import.Service.register ()
   ; Reminder.Service.register ()
   ; Assignment_job.register ()
+  ; System_event.Service.ConnectionWatcher.register ()
   ]
 ;;
 
@@ -34,7 +35,6 @@ let services =
   ; Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register `Server ()
-  ; System_event.Service.ConnectionWatcher.register ()
   ]
 ;;
 
@@ -42,6 +42,7 @@ let commands =
   let open Command in
   [ Migrate.root
   ; Migrate.tenants
+  ; Migrate.tenant_migration_pending
   ; Seed.root_data
   ; Seed.root_data_clean
   ; Seed.tenant_data

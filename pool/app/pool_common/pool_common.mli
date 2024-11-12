@@ -19,6 +19,7 @@ module Language : sig
   val all : t list
   val all_codes : string list
   val field_of_t : t -> Pool_message.Field.t
+  val read_opt : string -> t option
 end
 
 module Version : sig
@@ -149,6 +150,8 @@ module ExperimentType : sig
   val compare : t -> t -> int
   val read : string -> t
   val all : t list
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
 end
 
 module VerificationCode : sig
@@ -183,6 +186,14 @@ module Repo : sig
     -> ('a -> ('b, Pool_message.Error.t) result)
     -> ('b -> 'a)
     -> 'b Caqti_type.t
+
+  val encode_yojson : ('a -> Yojson.Safe.t) -> 'a -> (string, 'b) result
+
+  val decode_yojson
+    :  (Yojson.Safe.t -> 'a)
+    -> Pool_message.Field.t
+    -> string
+    -> ('a, string) result
 
   module Model : sig
     module SelectorType : module type of Repo.Model.SelectorType

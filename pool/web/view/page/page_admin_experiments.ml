@@ -670,7 +670,7 @@ let edit
   ?(allowed_to_assign = false)
   ~session_count
   experiment
-  ({ Pool_context.language; csrf; query_language; _ } as context)
+  ({ Pool_context.language; csrf; query_parameters; _ } as context)
   tenant
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
@@ -714,7 +714,7 @@ let edit
             ~suffix:(Format.asprintf "%s/assign" Field.(field |> human_url))
             experiment
         in
-        Http_utils.externalize_path_with_lang query_language path
+        Http_utils.externalize_path_with_params query_parameters path
       in
       div
         ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
@@ -783,6 +783,13 @@ let detail
       sys_languages
       experiment
       message_templates
+  in
+  let changelog_url =
+    HttpUtils.Url.Admin.experiment_path
+      ~suffix:"changelog"
+      ~id:experiment.Experiment.id
+      ()
+    |> Uri.of_string
   in
   let delete_form =
     match session_count > 0 with
@@ -871,19 +878,18 @@ let detail
   let setting =
     if can_update_experiment
     then
-      [ div
-          ~a:[ a_class [ "stack-md" ] ]
-          [ h2
-              ~a:[ a_class [ "heading-2" ] ]
-              [ txt
-                  (Utils.field_to_string language Field.Settings
-                   |> CCString.capitalize_ascii)
-              ]
-          ; reset_invitation_form
-          ; delete_form
-          ]
-      ]
-    else []
+      div
+        ~a:[ a_class [ "stack-md" ] ]
+        [ h2
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt
+                (Utils.field_to_string language Field.Settings
+                 |> CCString.capitalize_ascii)
+            ]
+        ; reset_invitation_form
+        ; delete_form
+        ]
+    else txt ""
   in
   let bool_to_string = Utils.bool_to_string language in
   let tag_list = Component.Tag.tag_list ~tight:true language in
@@ -1016,17 +1022,18 @@ let detail
     in
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
-        ([ notifications
-         ; div
-             ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
-             [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
-             ; div
-                 ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
-                 [ statistics ]
-             ]
-         ; message_template
-         ]
-         @ setting)
+        [ notifications
+        ; div
+            ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
+            [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
+            ; div
+                ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
+                [ statistics ]
+            ]
+        ; message_template
+        ; setting
+        ; Component.Changelog.list context changelog_url None
+        ]
     ]
   in
   let edit_button =
@@ -1037,7 +1044,7 @@ let detail
         ~classnames:[ "small" ]
         ~control:(language, Edit (Some Field.Experiment))
         (build_experiment_path ~suffix:"edit" experiment)
-      |> CCOption.some
+      |> CCOption.return
     else None
   in
   Layout.Experiment.(
@@ -1060,6 +1067,19 @@ let invitations
   filtered_contacts
   ({ Pool_context.language; _ } as context)
   =
+  let changelog =
+    match experiment.Experiment.filter with
+    | None -> txt ""
+    | Some filter ->
+      let url =
+        Http_utils.Url.Admin.filter_path
+          ~suffix:"changelog"
+          ~id:filter.Filter.id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
+  in
   let open Pool_common in
   [ div
       ~a:[ a_class [ "stack" ] ]
@@ -1081,6 +1101,7 @@ let invitations
           query_tags
           filtered_contacts
           statistics
+      ; changelog
       ]
   ]
   |> Layout.Experiment.(
@@ -1187,10 +1208,14 @@ let message_history_url =
   build_experiment_path ~suffix:"messages" %> Uri.of_string
 ;;
 
-let message_history context experiment messages =
+let message_history context queue_table experiment messages =
   let open Pool_common in
   let html =
-    Page_admin_queue.list context (message_history_url experiment) messages
+    Page_admin_queue.list
+      context
+      queue_table
+      (message_history_url experiment)
+      messages
   in
   Layout.Experiment.(
     create

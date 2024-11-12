@@ -4,7 +4,7 @@
 
 (name pool)
 
-(version 0.7.6)
+(version 0.8.3)
 
 (authors "Department of Economics, University of Zurich")
 
@@ -48,9 +48,9 @@
   (logs
    (>= 0.7.0))
   (containers
-   (>= 3.6))
+   (>= 3.14))
   (containers-data
-   (>= 3.6))
+   (>= 3.14))
   (mariadb
    (and
     (>= 1.1.6)
@@ -77,5 +77,4 @@
   (guardian
    (= 0.3.2))
   ;; Test/Dev dependencies
-  (alcotest-lwt :with-test)
-  ))
+  (alcotest-lwt :with-test)))

@@ -31,7 +31,7 @@ let create_public_url_with_params pool_url path =
 ;;
 
 let prepend_root_directory pool url =
-  match Database.is_root pool with
+  match Database.Pool.is_root pool with
   | true -> Format.asprintf "/root%s" url
   | false -> url
 ;;
@@ -39,12 +39,14 @@ let prepend_root_directory pool url =
 let layout_from_tenant (tenant : Pool_tenant.t) =
   let open Pool_tenant in
   let logo_src =
-    tenant.logos
-    |> Logos.value
-    |> CCList.head_opt
-    |> CCOption.map_or
-         ~default:""
-         CCFun.(Pool_common.File.path %> create_public_url tenant.url)
+    let file_url = Pool_common.File.path %> create_public_url tenant.url in
+    match tenant.email_logo with
+    | Some logo -> EmailLogo.value logo |> file_url
+    | None ->
+      tenant.logos
+      |> Logos.value
+      |> CCList.head_opt
+      |> CCOption.map_or ~default:"" file_url
   in
   let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
   let link = tenant.url |> Url.value |> Format.asprintf "https://%s" in
@@ -152,6 +154,9 @@ let combine_html ?optout_link language layout html_title =
           ]
       ]
   in
+  let logo_style =
+    [ "display: block"; "width: 300px"; "height: auto" ] |> CCString.concat ";"
+  in
   let email_body =
     body
       ~a:[ a_style "margin:0; padding:0;" ]
@@ -164,9 +169,7 @@ let combine_html ?optout_link language layout html_title =
                   [ img
                       ~src:"{logoSrc}"
                       ~alt:"{logoAlt}"
-                      ~a:
-                        [ a_style "width: 300px; height: auto; max-width: 100%;"
-                        ]
+                      ~a:[ a_style logo_style; a_title "{logoAlt}" ]
                       ()
                   ]
               ]

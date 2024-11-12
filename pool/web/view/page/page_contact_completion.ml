@@ -3,7 +3,7 @@ module Input = Component.Input
 module Message = Pool_message
 
 let form
-  Pool_context.{ language; csrf; query_language; _ }
+  Pool_context.{ language; csrf; query_parameters; _ }
   flash_fetcher
   custom_fields
   =
@@ -32,8 +32,8 @@ let form
           [ a_class [ "stack"; "gap-lg" ]
           ; a_method `Post
           ; a_action
-              (Http_utils.externalize_path_with_lang
-                 query_language
+              (Http_utils.externalize_path_with_params
+                 query_parameters
                  "/user/completion")
           ; a_user_data "detect-unsaved-changes" ""
           ]

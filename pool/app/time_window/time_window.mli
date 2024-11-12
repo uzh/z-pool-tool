@@ -50,6 +50,7 @@ type create =
 type event =
   | Created of t
   | Updated of t
+  | Deleted of t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -78,4 +79,9 @@ val query_by_experiment
 val find_current_by_experiment
   :  Database.Label.t
   -> Experiment.Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
+  -> t option Lwt.t
+
+val find_upcoming_by_experiment
+  :  Database.Label.t
+  -> Experiment.Id.t
+  -> t option Lwt.t

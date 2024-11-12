@@ -12,6 +12,7 @@ type update =
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
   ; icon : Icon.Write.t option
+  ; email_logo : EmailLogo.Write.t option
   }
 [@@deriving eq, show]
 
@@ -29,12 +30,17 @@ type event =
   | GtxApiKeyRemoved of Write.t
 [@@deriving eq, show]
 
-let handle_event pool : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t =
+  let open Pool_database in
+  let status_updated label status =
+    StatusUpdated (label, status) |> handle_event pool
+  in
+  function
   | Created (({ Write.id; _ } as tenant), database) ->
     let open Utils.Lwt_result.Infix in
     let open Guard in
     let ctx = Database.to_ctx pool in
-    let%lwt () = Repo.insert Database.root (tenant, database) in
+    let%lwt () = Repo.insert Database.Pool.Root.label (tenant, database) in
     let%lwt () =
       Repo.find pool id
       >>= Entity_guard.Target.to_authorizable ~ctx
@@ -55,7 +61,7 @@ let handle_event pool : event -> unit Lwt.t = function
       update_t.status
       |> CCOption.map_or
            ~default:Lwt.return_unit
-           (Database.Tenant.update_status tenant.database_label)
+           (status_updated tenant.database_label)
     in
     { tenant with
       title = update_t.title
@@ -63,27 +69,26 @@ let handle_event pool : event -> unit Lwt.t = function
     ; url = update_t.url
     ; styles = update_t.styles <+> tenant.styles
     ; icon = update_t.icon <+> tenant.icon
+    ; email_logo = update_t.email_logo <+> tenant.email_logo
     ; default_language = update_t.default_language
     ; gtx_sender = update_t.gtx_sender
     ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
-    |> Repo.update Database.root
+    |> Repo.update Database.Pool.Root.label
   | DatabaseEdited (tenant, database) ->
-    let%lwt () = Repo.update_database Database.root (tenant, database) in
+    let%lwt () =
+      Repo.update_database Database.Pool.Root.label (tenant, database)
+    in
     Lwt.return_unit
   | ActivateMaintenance { Entity.Write.database_label; _ } ->
-    let open Database in
-    let%lwt () = Tenant.update_status database_label Status.Maintenance in
-    Lwt.return_unit
+    status_updated database_label Database.Status.Maintenance
   | DeactivateMaintenance { Entity.Write.database_label; _ } ->
-    let open Database in
-    let%lwt () = Tenant.update_status database_label Status.Active in
-    Lwt.return_unit
+    StatusUpdated (database_label, Database.Status.Active) |> handle_event pool
   | GtxApiKeyUpdated (tenant, (gtx_api_key, gtx_sender)) ->
     let open Entity.Write in
     { tenant with gtx_api_key = Some gtx_api_key; gtx_sender }
-    |> Repo.update Database.root
+    |> Repo.update Database.Pool.Root.label
   | GtxApiKeyRemoved tenant ->
     let open Entity.Write in
-    { tenant with gtx_api_key = None } |> Repo.update Database.root
+    { tenant with gtx_api_key = None } |> Repo.update Database.Pool.Root.label
 ;;

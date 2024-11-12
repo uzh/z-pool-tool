@@ -211,15 +211,16 @@ let create req =
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Create in
+      let%lwt default_public_title =
+        Experiment.get_default_public_title database_label
+      in
       urlencoded
-      |> decode
+      |> decode default_public_title
       >>= handle ~tags ~id ?organisational_unit ?smtp_auth
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         "/admin/experiments"
         [ Message.set ~success:[ Success.Created Field.Experiment ] ]
@@ -335,9 +336,18 @@ let detail edit req =
 let show = detail false
 let edit = detail true
 
+let changelog req =
+  let experiment_id = experiment_id req in
+  let url =
+    HttpUtils.Url.Admin.experiment_path ~suffix:"changelog" ~id:experiment_id ()
+  in
+  let open Experiment in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common experiment_id) req
+;;
+
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let id = experiment_id req in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
@@ -368,9 +378,7 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         detail_path
         [ Message.set ~success:[ Success.Updated Field.Experiment ] ]
@@ -382,7 +390,7 @@ let update req =
 
 let delete req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let experiment_id = experiment_id req in
     let experiments_path = "/admin/experiments" in
     Utils.Lwt_result.map_error (fun err ->
@@ -435,9 +443,7 @@ let delete req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         experiments_path
         [ Message.set ~success:[ Success.Created Field.Experiment ] ]
@@ -477,7 +483,7 @@ module Filter = struct
   let update = handler Admin_filter.write
 
   let delete req =
-    let result { Pool_context.database_label; _ } =
+    let result { Pool_context.database_label; user; _ } =
       let experiment_id =
         HttpUtils.find_id Experiment.Id.of_string Field.Experiment req
       in
@@ -496,7 +502,7 @@ module Filter = struct
       in
       let handle events =
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+          Pool_event.handle_events ~tags database_label user events
         in
         Http_utils.redirect_to_with_actions
           redirect_path
@@ -509,6 +515,7 @@ module Filter = struct
 end
 
 let message_history req =
+  let queue_table = `History in
   let experiment_id = experiment_id req in
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
@@ -523,6 +530,7 @@ let message_history req =
   let* experiment = Experiment.find database_label experiment_id in
   let%lwt messages =
     Pool_queue.find_instances_by_entity
+      queue_table
       ~query
       database_label
       (Experiment.Id.to_common experiment_id)
@@ -532,9 +540,13 @@ let message_history req =
   @@
   if HttpUtils.Htmx.is_hx_request req
   then
-    Queue.list context (Experiments.message_history_url experiment) messages
+    Queue.list
+      context
+      queue_table
+      (Experiments.message_history_url experiment)
+      messages
     |> Lwt.return
-  else Experiments.message_history context experiment messages
+  else Experiments.message_history context queue_table experiment messages
 ;;
 
 module Tags = Admin_experiments_tags
@@ -546,12 +558,11 @@ module Access : sig
   val search : Rock.Middleware.t
   val message_history : Rock.Middleware.t
 end = struct
-  module Field = Field
   module ExperimentCommand = Cqrs_command.Experiment_command
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
   let index =
@@ -562,55 +573,34 @@ end = struct
     ExperimentCommand.Create.effects |> Guardian.validate_admin_entity
   ;;
 
-  let read =
-    let read id = Experiment.Guard.Access.read id in
-    read |> experiment_effects |> Guardian.validate_generic
-  ;;
-
-  let update =
-    ExperimentCommand.Update.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    ExperimentCommand.Delete.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let read = experiment_effects Experiment.Guard.Access.read
+  let update = experiment_effects ExperimentCommand.Update.effects
+  let delete = experiment_effects ExperimentCommand.Delete.effects
 
   module Filter = struct
     include Helpers.Access
 
-    let combined_effects effects req =
-      let open HttpUtils in
-      let filter_id = find_id FilterEntity.Id.of_string Field.Filter req in
-      let id = find_id Experiment.Id.of_string Field.Experiment req in
-      effects id filter_id
+    let combined_effects validation_set =
+      let open CCResult.Infix in
+      let find = HttpUtils.find_id in
+      Guardian.validate_generic
+      @@ fun req ->
+      let* filter_id = find FilterEntity.Id.validate Field.Filter req in
+      let* id = find Experiment.Id.validate Field.Experiment req in
+      validation_set id filter_id |> CCResult.return
     ;;
 
-    let create =
-      ExperimentCommand.CreateFilter.effects
-      |> experiment_effects
-      |> Guardian.validate_generic
-    ;;
-
-    let update =
-      ExperimentCommand.UpdateFilter.effects
-      |> combined_effects
-      |> Guardian.validate_generic
-    ;;
-
-    let delete =
-      ExperimentCommand.DeleteFilter.effects
-      |> combined_effects
-      |> Guardian.validate_generic
-    ;;
+    let create = experiment_effects ExperimentCommand.CreateFilter.effects
+    let update = combined_effects ExperimentCommand.UpdateFilter.effects
+    let delete = combined_effects ExperimentCommand.DeleteFilter.effects
   end
 
   let search = index
 
   let message_history =
-    Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
+    experiment_effects (fun id ->
+      Pool_queue.Guard.Access.index
+        ~id:(Guard.Uuid.target_of Experiment.Id.value id)
+        ())
   ;;
 end

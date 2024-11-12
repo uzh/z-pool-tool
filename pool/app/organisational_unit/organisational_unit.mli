@@ -1,5 +1,7 @@
 module Id : sig
   include Pool_model.Base.IdSig
+
+  val to_common : t -> Pool_common.Id.t
 end
 
 module Name : sig
@@ -17,12 +19,19 @@ val show : t -> string
 val create : ?id:Id.t -> Name.t -> t
 val id : t -> Id.t
 val name : t -> Name.t
+val t_of_yojson : Yojson.Safe.t -> t
+val yojson_of_t : t -> Yojson.Safe.t
 
 type event =
   | Created of t
   | Updated of (t * Name.t)
 
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -68,3 +77,5 @@ val default_query : Query.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+
+module VersionHistory : Changelog.TSig with type record = t

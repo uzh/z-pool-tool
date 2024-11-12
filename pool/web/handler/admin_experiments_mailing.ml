@@ -66,13 +66,26 @@ let new_form req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, experiment_path id)
     @@ let* experiment = Experiment.find database_label id in
+       let%lwt has_no_upcoming_session =
+         match experiment.Experiment.online_experiment with
+         | None ->
+           Session.find_upcoming_for_experiment database_label id
+           ||> CCList.is_empty
+         | Some _ ->
+           Time_window.find_upcoming_by_experiment database_label id
+           ||> CCOption.is_none
+       in
        let%lwt is_bookable =
-         Matcher.experiment_has_bookable_spots database_label experiment
+         match has_no_upcoming_session with
+         | true -> Lwt.return false
+         | false ->
+           Matcher.experiment_has_bookable_spots database_label experiment
        in
        let* matching_filter_count =
          matching_filter_count database_label experiment
        in
        Page.Admin.Mailing.form
+         ~has_no_upcoming_session
          ~fully_booked:(not is_bookable)
          ~matching_filter_count
          context
@@ -87,7 +100,7 @@ let new_form req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
@@ -111,9 +124,7 @@ let create req =
       >>= handle ~tags experiment
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (experiment_path ~suffix:"mailings" experiment_id)
         [ Message.set ~success:[ Success.Created Field.Mailing ] ]
@@ -173,7 +184,7 @@ let update req =
         ([ "mailings"; Mailing.Id.value id; "edit" ] |> CCString.concat "/")
       experiment_id
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
@@ -192,9 +203,7 @@ let update req =
       urlencoded |> decode >>= handle ~tags mailing
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Updated Field.Mailing ] ]
@@ -285,14 +294,14 @@ let add_condition req =
 let disabler command success_handler req =
   let redirect_path = experiment_path ~suffix:"mailings" (experiment_id req) in
   let mailing_id = HttpUtils.find_id Mailing.Id.of_string Field.Mailing req in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* mailing = Mailing.find database_label mailing_id in
     let* events = command mailing |> Lwt_result.lift in
-    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
       redirect_path
       [ Message.set ~success:[ success_handler Field.Mailing ] ]
@@ -316,57 +325,25 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  let combined_effects fcn req =
-    let open HttpUtils in
-    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
-    let mailing_id = find_id Mailing.Id.of_string Field.Mailing req in
-    fcn experiment_id mailing_id
+  let combined_effects fcn =
+    let open CCResult.Infix in
+    let find = HttpUtils.find_id in
+    Guardian.validate_generic
+    @@ fun req ->
+    let* experiment_id = find Experiment.Id.validate Field.Experiment req in
+    let* mailing_id = find Mailing.Id.validate Field.Mailing req in
+    fcn experiment_id mailing_id |> CCResult.return
   ;;
 
-  let index =
-    Mailing.Guard.Access.index
-    |> experiment_effects
-    |> Guardian.validate_generic ~any_id:true
-  ;;
-
-  let create =
-    MailingCommand.Create.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let read =
-    Mailing.Guard.Access.read |> combined_effects |> Guardian.validate_generic
-  ;;
-
-  let update =
-    MailingCommand.Update.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let delete =
-    MailingCommand.Delete.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let add_condition =
-    Experiment.Guard.Access.update
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let stop =
-    MailingCommand.Stop.effects |> combined_effects |> Guardian.validate_generic
-  ;;
-
-  let search_info =
-    MailingCommand.Overlaps.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let index = experiment_effects Mailing.Guard.Access.index
+  let create = experiment_effects MailingCommand.Create.effects
+  let read = combined_effects Mailing.Guard.Access.read
+  let update = combined_effects MailingCommand.Update.effects
+  let delete = combined_effects MailingCommand.Delete.effects
+  let add_condition = experiment_effects Experiment.Guard.Access.update
+  let stop = combined_effects MailingCommand.Stop.effects
+  let search_info = experiment_effects MailingCommand.Overlaps.effects
 end

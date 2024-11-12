@@ -60,7 +60,7 @@ let write action req =
     | `Update id ->
       Format.asprintf "%s/%s" base_path (Tags.Id.value id), Updated field
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -90,9 +90,7 @@ let write action req =
           >== handle ~tags tag)
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         base_path
         [ HttpUtils.Message.set ~success:[ success ] ]
@@ -119,43 +117,33 @@ end = struct
   module Guardian = Middleware.Guardian
   module Command = Cqrs_command.Tags_command
 
-  let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
+  let contact_effects = Guardian.id_effects Contact.Id.validate Field.Contact
 
   let experiment_effects =
-    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.validate Field.Experiment
   ;;
 
-  let tag_effects = Guardian.id_effects Tags.Id.of_string Field.Tag
-  let index = Tags.Guard.Access.index |> Guardian.validate_admin_entity
+  let tag_effects = Guardian.id_effects Tags.Id.validate Field.Tag
+
+  let index =
+    Tags.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
+  ;;
+
   let create = Command.Create.effects |> Guardian.validate_admin_entity
-  let read = Tags.Guard.Access.read |> tag_effects |> Guardian.validate_generic
-
-  let update =
-    Command.Update.effects |> tag_effects |> Guardian.validate_generic
-  ;;
-
-  let assign_tag_to_contact =
-    Command.AssignTagToContact.effects
-    |> contact_effects
-    |> Guardian.validate_generic
-  ;;
+  let read = tag_effects Tags.Guard.Access.read
+  let update = tag_effects Command.Update.effects
+  let assign_tag_to_contact = contact_effects Command.AssignTagToContact.effects
 
   let remove_tag_from_contact =
-    Command.RemoveTagFromContact.effects
-    |> contact_effects
-    |> Guardian.validate_generic
+    contact_effects Command.RemoveTagFromContact.effects
   ;;
 
   let assign_tag_to_experiment =
-    Command.AssignTagToExperiment.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
+    experiment_effects Command.AssignTagToExperiment.effects
   ;;
 
   let remove_tag_from_experiment =
-    Command.RemoveTagFromExperiment.effects
-    |> experiment_effects
-    |> Guardian.validate_generic
+    experiment_effects Command.RemoveTagFromExperiment.effects
   ;;
 
   let search = Tags.Guard.Access.read_entity |> Guardian.validate_admin_entity

@@ -11,16 +11,26 @@ h1,
     word-wrap: break-word;
 }
 
+code {
+    font-size: inherit;
+}
+
 @include mobile {
-    *+h1, h1+*, *+h2, *+.heading-1, .heading-1+*, *+.heading-2{
+
+    *+h1,
+    h1+*,
+    *+h2,
+    *+.heading-1,
+    .heading-1+*,
+    *+.heading-2 {
         margin-top: $space-md;
-    }  
+    }
 }
 
 
 .word-wrap-break {
     -ms-word-break: break-word;
-    
+
     /* Non standard for webkit */
     word-break: break-word;
     -webkit-hyphens: auto;
@@ -72,16 +82,17 @@ form[class*="stack"] input[type="hidden"]+* {
     border: 1px solid $grey;
     overflow: hidden;
 
-    select, input {
+    select,
+    input {
         border: none;
         border-radius: 0;
     }
 
-    & > * {
+    &>* {
         width: auto;
     }
 
-    & > .select select {
+    &>.select select {
         padding-right: $space-base * 2;
         width: auto;
         background-color: $grey-light;
@@ -89,13 +100,14 @@ form[class*="stack"] input[type="hidden"]+* {
     }
 }
 
-input[readonly], select[readonly] {
+input[readonly],
+select[readonly] {
     background-color: $grey-light;
     color: $grey-dark;
     cursor: not-allowed;
 
     &:hover {
-      background-color: $grey-light;
+        background-color: $grey-light;
     }
 }
 
@@ -166,7 +178,7 @@ input[readonly], select[readonly] {
     @include until($desktop-breakpoint) {
         grid-column: 2;
     }
-    
+
     @include until($tablet-breakpoint) {
         grid-column: 1;
     }
@@ -370,60 +382,61 @@ table.simple {
 }
 
 .session-close-checkboxes {
-    @extend .flexrow;
-    @extend .flex-gap;
-    width: 5rem;
-    align-items: flex-start;
+    display: flex;
+    width: 9rem;
+    justify-content: flex-end;
     padding-top: $space-xs;
     margin-left: auto;
+
     &>* {
-        flex-basis: 50%;
+        flex-basis: 3rem;
         display: flex;
         justify-content: center;
     }
 }
 
+.session-close-box {
+    width: 3rem;
+}
+
 #session-close-table .custom-data {
     display: flex;
-    & > * {
+    flex-direction: column;
+    align-self: flex-start;
+
+    &>* {
+        flex-direction: row;
         flex-basis: 100%;
+    }
+
+    &>*+* {
+        margin-top: $space-xs;
+    }
+
+    [data-label]:before {
+        content: attr(data-label);
+        width: 50%;
+        font-weight: 600;
     }
 }
 
-@include mobile { 
-    
-    .session-close-header .custom-data > * {
+@include mobile {
+
+    .session-close-header .custom-data>* {
         display: none;
     }
 
-    #session-close-table .striped {      
-        & > * {
+    #session-close-table .striped {
+        &>* {
             flex-direction: column;
-            & > * + * {
+
+            &>*+* {
                 margin-top: $space-sm;
             }
         }
 
-        & > * > * {
+        &>*>* {
             width: 100%;
-        }
-    }
-
-    .custom-data {
-        flex-direction: column;
-        
-        & > * + * {
-            margin-top: $space-xs;
-        }
-        
-        & > * {
-            flex-direction: row;
-        }
-
-        [data-label]:before {
-            content: attr(data-label);
-            width: 30%;
-            font-weight: $font-weight-bold;    
         }
     }
 }
@@ -548,16 +561,22 @@ table.simple {
 
 // Display EMail Template rich text
 .force-normalize-fonts {
-    h1, h2, h3, h4, h5 {
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
         font-size: $body-font-size;
     }
 }
 
+// WORKAROUND: Could be added to the framework
 // Width base classes
 $i: 1;
 $n: 12;
 
-@while $i < $n + 1 {
+@while $i < $n +1 {
     .w-#{$i} {
         width: percentage(calc(1 / $n) * $i);
     }
@@ -571,6 +590,59 @@ $n: 12;
     }
 }
 
-[class*='grid-col-'].stretch-only-child  > *:only-child{
+[class*='grid-col-'].stretch-only-child>*:only-child {
     grid-column: 1 / -1;
+}
+
+.break-grid {
+    grid-column: 1;
+}
+
+.announcement {
+    .close {
+        float: right;
+        margin-left: $space-sm;
+    }
+
+    @include mobile {
+        display: flex;
+        flex-direction: column-reverse;
+
+        .close {
+            margin-left: 0;
+            margin-top: $space-sm;
+            float: none;
+        }
+    }
+}
+
+.notification.error a,
+.notification.success a {
+    color: $white;
+}
+
+input[type="checkbox"][readonly] {
+    filter: grayscale(1);
+    opacity: 0.8;
+}
+
+
+// Changelog
+.changes-cell {
+    div {
+        display: flex;
+    }
+
+    div:last-child {
+        flex-grow: 1;
+    }
+
+    .changelog-separator {
+        padding-left: $space-xs;
+        padding-right: $space-xs;
+    }
+
+    .changelog-key {
+        text-transform: capitalize;
+    }
 }

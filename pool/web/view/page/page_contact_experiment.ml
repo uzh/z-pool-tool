@@ -48,7 +48,7 @@ let index
   past_experiments
   custom_fields_ansered
   i18n
-  Pool_context.{ language; query_language; _ }
+  Pool_context.{ language; query_parameters; _ }
   =
   let list_html ?empty_msg ?note title classnames list =
     div
@@ -100,9 +100,8 @@ let index
       [ a
           ~a:
             [ a_href
-                (HttpUtils.externalize_path_with_lang
-                   query_language
-                   (Format.asprintf "/experiments/%s" (Experiment.Id.value id)))
+                (HttpUtils.Url.Contact.experiment_path ~id ()
+                 |> HttpUtils.externalize_path_with_params query_parameters)
             ]
           [ Control.More |> Pool_common.Utils.control_to_string language |> txt
           ]
@@ -232,7 +231,7 @@ let show
   canceled_sessions
   user_is_enlisted
   contact
-  Pool_context.{ language; query_language; csrf; _ }
+  Pool_context.{ language; query_parameters; csrf; _ }
   =
   let open Pool_common in
   let hint_to_string = Utils.hint_to_string language in
@@ -267,7 +266,7 @@ let show
         ()
       |> (fun url ->
            if user_is_enlisted then Format.asprintf "%s/remove" url else url)
-      |> HttpUtils.externalize_path_with_lang query_language
+      |> HttpUtils.externalize_path_with_params query_parameters
     in
     let text_blocks =
       let base =
@@ -281,8 +280,8 @@ let show
         then
           [ Component.Notification.notification
               ~link:
-                ( HttpUtils.path_with_language
-                    query_language
+                ( HttpUtils.url_with_field_params
+                    query_parameters
                     "/user/contact-information"
                 , I18n.PersonalDetails )
               language
@@ -350,9 +349,9 @@ let show_online_study
   (experiment : Experiment.Public.t)
   { Pool_context.language; _ }
   (argument :
-    [< `Participated of Assignment.Public.t
-    | `Pending of Assignment.Public.t * Time_window.t
-    | `Upcoming of Time_window.t
+    [> `Active of Time_window.t * Assignment.Public.t option
+    | `Participated of Assignment.Public.t
+    | `Upcoming of Time_window.t option
     ])
   =
   let html =
@@ -376,33 +375,43 @@ let show_online_study
     in
     let end_at_hint time_window =
       p
-        ~a:[ a_class [ "font-italic" ] ]
-        [ txt
-            (I18n.OnlineExperimentParticipationDeadline
-               (Time_window.ends_at time_window)
-             |> Utils.hint_to_string language)
+        [ strong
+            [ txt
+                (I18n.ExperimentOnlineParticipationDeadline
+                   (Time_window.ends_at time_window)
+                 |> Utils.text_to_string language)
+            ]
         ]
     in
-    let participated assignment =
+    let upcoming_hint time_window =
+      let open Time_window in
+      let hint =
+        match time_window with
+        | None -> I18n.ExperimentOnlineParticipationNoUpcoming
+        | Some (time_window : t) ->
+          I18n.ExperimentOnlineParticipationUpcoming
+            (time_window.start |> Session.Start.value)
+      in
+      p [ strong [ txt (Utils.text_to_string language hint) ] ]
+    in
+    let participated_hint assignment =
       let open Utils in
       p
         [ strong
-            [ txt (field_to_string_capitalized language Field.Participated)
-            ; txt ": "
-            ; txt
-                (assignment.Public.created_at
-                 |> CreatedAt.value
-                 |> Pool_model.Time.formatted_date_time)
+            [ I18n.ExperimentOnlineParticiated
+                (CreatedAt.value assignment.Public.created_at)
+              |> text_to_string language
+              |> txt
             ]
         ]
     in
     div ~a:[ a_class [ "stack"; "flexcolumn" ] ]
     @@
     match argument with
-    | `Pending (assignment, time_window) ->
-      [ start_button (Some assignment); end_at_hint time_window ]
-    | `Participated assignment -> [ participated assignment ]
-    | `Upcoming time_window -> [ start_button None; end_at_hint time_window ]
+    | `Active (time_window, assignment) ->
+      [ start_button assignment; end_at_hint time_window ]
+    | `Participated assignment -> [ participated_hint assignment ]
+    | `Upcoming time_window -> [ upcoming_hint time_window ]
   in
   experiment_detail_page experiment html
 ;;

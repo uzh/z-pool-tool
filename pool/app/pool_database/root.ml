@@ -23,6 +23,10 @@ let steps =
       ; Migration_202406051700.migration ()
       ; Migration_202406071359.migration ()
       ; Migration_202407171415.migration ()
+      ; Migration_202408131047.migration ()
+      ; Migration_202409021617.migration ()
+      ; Migration_202410031211.migration ()
+      ; Migration_202410181519.migration ()
       ]
     |> sort
   in
@@ -39,7 +43,9 @@ let steps =
 let start () =
   let open Database in
   let migrations = steps () in
-  let%lwt () = Migration.check_migrations_status root ~migrations () in
+  let%lwt () =
+    Migration.check_migrations_status Pool.Root.label ~migrations ()
+  in
   Lwt.return_unit
 ;;
 

@@ -159,12 +159,17 @@ type event =
   | Canceled of t
   | Closed of t
   | Deleted of t
-  | Updated of t
+  | Updated of (t * t)
   | EmailReminderSent of t
   | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -277,6 +282,11 @@ val find_all_public_by_location
   -> (Public.t list, Pool_message.Error.t) Lwt_result.t
 
 val find_all_for_experiment
+  :  Database.Label.t
+  -> Experiment.Id.t
+  -> t list Lwt.t
+
+val find_upcoming_for_experiment
   :  Database.Label.t
   -> Experiment.Id.t
   -> t list Lwt.t
@@ -399,6 +409,7 @@ val default_filter : Query.Filter.t
 val default_sort : Query.Sort.t
 val default_query : Query.t
 val incomplete_default_query : Query.t
+val participation_default_query : Query.t
 
 module Repo : sig
   val sql_select_columns : string list
@@ -473,3 +484,5 @@ module Guard : sig
     val close : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
   end
 end
+
+module VersionHistory : Changelog.TSig with type record = t

@@ -6,6 +6,10 @@ let to_string = function
   | Activity -> "Aktivität"
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
+  | AnnouncementsListTitle -> "Ankündigungen"
+  | AnnouncementsTenantSelect ->
+    "Wählen Sie, auf welchen Tenants die Ankündigung angezeigt werden soll."
+  | ApiKeys -> "API Schlüssel"
   | AssignmentEditTagsWarning ->
     "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
      zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \
@@ -21,6 +25,12 @@ let to_string = function
     "In der folgenden Liste können Sie bestimmen, in welcher Tabelle \
      zusätzlich zu den Kontaktangaben auch die individuellen Angaben angezeigt \
      werden sollen."
+  | CustomFieldsSettingsCloseScreen ->
+    "Diese Ansicht wird beim beenden einer Session angezeigt. User, mit der \
+     Berechtigung, eine Session zu beenden, können diese Angaben sehen."
+  | CustomFieldsSettingsDetailScreen ->
+    "Diese Angaben werden auf der Detailseite aller Sessions angezeigt. User, \
+     mit Leseberechtigung einer Session, können diese Angaben sehen."
   | DashboardProfileCompletionText ->
     "Ihr Profil ist unvollständig. Um zu mehr Experimenten eingeladen zu \
      werden, vervollständigen Sie Ihr Profil."
@@ -47,6 +57,22 @@ let to_string = function
   | ExperimentOnlineListEmpty ->
     "Aktuell gibt es keine Onlinestudien, an denen Sie teilnehmen können."
   | ExperimentOnlineListPublicTitle -> "Verfügbare Onlinestudien"
+  | ExperimentOnlineParticipationDeadline end_at ->
+    Format.asprintf
+      "Sie können noch bis zum %s an diesem Experiment teilnehmen."
+      (Pool_model.Time.formatted_date_time end_at)
+  | ExperimentOnlineParticiated submitted ->
+    Format.asprintf
+      "Sie haben diese Umfrage am %s abgeschlossen."
+      (Utils.Ptime.formatted_date submitted)
+  | ExperimentOnlineParticipationUpcoming start_at ->
+    Format.asprintf
+      "Das nächste Zeitfenster für die Teilnahme an dieser Umfrage beginnt am \
+       %s."
+      (Pool_model.Time.formatted_date_time start_at)
+  | ExperimentOnlineParticipationNoUpcoming ->
+    "Es sind zur Zeit keine weiteren Zeitfenster für die Teilnahme an dieser \
+     Umfrage geplant."
   | ExperimentListTitle -> "Experimente"
   | ExperimentMessagingSubtitle -> "Identitäten"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
@@ -101,11 +127,22 @@ let to_string = function
       <li>Drücken Sie die Schaltfläche "Hinzufügen", um den Sortierparameter hinzuzufügen.</li>
       <li>Wiederholen Sie diesen Vorgang, um weitere Parameter hinzuzufügen. Sie können sie durch "drag and drop" sortieren.</li>
     </ol>|}
+  | MailingExperimentNoUpcomingSession ->
+    "Es gibt keine Sessions, an die sich Kontakte anmelden können. Es werden \
+     keine Einladungen versendet. Legen Sie neue Sessions an, bevor Sie das \
+     Mailing starten."
+  | MailingExperimentNoUpcomingTimewindow ->
+    "Es gibt kein aktives oder zukünftiges Zeitfenster, während dem die \
+     Teilnehmer die Umfrage beantworten können. Es werden keine Einladungen \
+     versendet. Legen Sie zuerst ein Zeitfenster an."
   | MailingExperimentSessionFullyBooked ->
     "Alle Sessions sind ausgebucht. Es werden keine Einladungen versendet \
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
      Füge zusätzliche Sessions zum Experiment hinzu."
   | MailingNewTitle -> "Neuen Versand erstellen"
+  | MatchesFilterChangeReasonFilter ->
+    "Diese Meldung wurde durch eine Aktualisierung des Experimentierfilters \
+     ausgelöst."
   | MatchesFilterChangeReasonManually ->
     "Diese Nachricht wurde manuell ausgelöst."
   | MatchesFilterChangeReasonWorker ->
@@ -149,7 +186,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SessionReminder -> "Sessionerinnerung"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
-  | SignUpTitle -> "Anmeldung"
+  | SignUpTitle -> "Registrierung"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwapSessionsListEmpty ->
     "Es wurden keine Sessions gefunden, der Sie diesen Kontakt zuweisen können."
@@ -164,6 +201,8 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | TermsAndConditionsUpdated ->
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \
      Bitte lesen und akzeptieren Sie diese, um fortzufahren."
+  | TenantMaintenanceText -> "Bitte versuchen Sie es in Kürze erneut."
+  | TenantMaintenanceTitle -> "Wartungsarbeiten"
   | TextTemplates -> "Textelemente"
   | TimeWindowDetailTitle string -> string
   | UpcomingSessionsListEmpty ->
@@ -175,12 +214,15 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
   | Validation -> "Validierung"
+  | VersionsListTitle -> "Versionshinweise"
   | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;
 
 let nav_link_to_string = function
   | ActorPermissions -> "Persönliche Berechtigungen"
   | Admins -> "Administratoren"
+  | Announcements -> "Ankündigungen"
+  | ApiKeys -> "API Schlüssel"
   | Assignments -> "Anmeldungen"
   | ContactInformation -> "Kontaktangaben"
   | Contacts -> "Kontakte"
@@ -208,6 +250,7 @@ let nav_link_to_string = function
   | PrivacyPolicy -> "Datenschutzerklärung"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
+  | QueueHistory -> "ausgeführte Hintergrundjobs"
   | RolePermissions -> "Rollenberechtigungen"
   | Schedules -> "Prozesse"
   | SentInvitations -> "Versendete Einladungen"
@@ -215,12 +258,14 @@ let nav_link_to_string = function
   | Settings -> "Einstellungen"
   | Smtp -> "E-Mail Server (SMTP)"
   | SystemSettings -> "Systemeinstellungen"
+  | SignupCodes -> "Registrierungscodes"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
   | TextMessages -> "SMS"
   | TimeWindows -> "Zeitfenster"
   | Users -> "Benutzer"
   | WaitingList -> "Warteliste"
+  | Versions -> "Versionshinweise"
 ;;
 
 let rec hint_to_string = function
@@ -332,6 +377,9 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     Format.asprintf
       "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
       (lead_time |> Pool_model.Time.formatted_timespan)
+  | DeleteContact ->
+    "Der Benutzer wird als gelöscht markiert und kann sich nicht mehr \
+     anmelden. Diese Aktion kann nicht rückgängig gemacht werden."
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."
@@ -379,6 +427,9 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
   | ExperimentSessions ->
     {|Alle existierenden Session dieses Experiments.
   Sobald sich jemand angemeldet hat, kann die Session nicht mehr gelöscht werden.|}
+  | ExperimentSessionsCancelDelete ->
+    {|Wird eine Sessionanmeldung abgesagt, wird der Kontakt darüber informiert und kann sich anschliessend nicht mehr für dieses Experiment anmelden.
+Wird eine Sessionanmeldung als gelöscht markiert, wird der Kontkt nicht darüber informiert, kann sich jedoch wieder für dieses Experiment anmelden.|}
   | ExperimentSessionsPublic ->
     "Hinweis: Möglicherweise werden einzelne Sessions oder komplette \
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
@@ -400,22 +451,34 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
      werden."
-  | ExperumentSurveyRedirectUrl ->
+  | ExperimentSurveyRedirectUrl ->
     "<strong>Nur für Online-Umfragen verwenden.</strong> Diese URL erstellt \
      eine Anmeldung zum Experiment und leitet den Kontakt direkt auf die URL \
      der Onlineumfrage weiter. Alternativ kann {experimentUrl} verwendet \
      werden, mit dem Unterschied, dass der Kontakt die Teilnahme und \
      Weiterleitung zusätzlich bestätigen muss."
+  | ExperimentSurveyUrl ->
+    "<strong>Nur für Online-Umfragen verwenden.</strong> Die externe URL der \
+     Onlineumfrage. Wird die URL der Umfrage in der Einladung verschickt, \
+     können eingeladene Kontakte diese starten, ohne dass eine Anmeldung \
+     erstellt wird. Sie können im Pool nicht einsehen, wer an der Umfrage \
+     teilgenommen hat.<br/><strong>Dynamische URL Parameter, wie die \
+     <code>callbackUrl</code>, werden nicht mit effektiven Werten \
+     ersetzt.</strong>"
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
   | SurveyUrl ->
-    "ine URL inkl. Protokoll. Der URL-Parameter 'callbackUrl' ist \
-     erforderlich. Z.B.: \
+    "ine URL inkl. Protokoll. Sie können Informationen an Ihre Umfrage \
+     übermitteln, indem Sie Query-Parameter zu Ihrere URL hinzufügen. Z.B.: \
      https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | FilterTemplates ->
     "Änderungen an einem dieser Filter wird auf alle Experimentfilter \
      übertragen, die dieses Template beinhalten."
+  | FileUploadAcceptMime types ->
+    types
+    |> CCString.concat ", "
+    |> Format.asprintf "Zugelassen sind foldende Dateitypen: %s"
   | GtxKeyMissing ->
     "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten \
      verschickt werden."
@@ -519,10 +582,6 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
        externe URL der Studie an, auf welche die Kontakte weitergeleitet \
        werden sollen."
       (Locales_de.field_to_string Pool_message.Field.SurveyUrl)
-  | OnlineExperimentParticipationDeadline end_at ->
-    Format.asprintf
-      "Sie können noch bis zum %s an diesem Experiment teilnehmen."
-      (Pool_model.Time.formatted_date_time end_at)
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
@@ -583,6 +642,12 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
+  | ReleaseNotesHint repo_url ->
+    Format.asprintf
+      "Hier finden Sie die für Sie relevaten Änderungen pro Version des Tools. \
+       Den vollständigen Changelog finden Sie auf <a href=\"%s\" \
+       target=\"_blank\">github.com</a>."
+      repo_url
   | RolePermissionsModelList ->
     "Wählen Sie das Objekt, für welches Sie die Berechtigungen anpassen wollen."
   | RolePermissionsRoleList -> "Alle anpassparen Rollen des Teants."
@@ -621,6 +686,7 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     "Der Kontakt ist nicht an der Session erschienen"
   | SessionCloseLegendParticipated ->
     "Der Kontakt hat am Experiment teilgenommen"
+  | SessionCloseLegendVerified -> "Der Kontakt wurde verifiziert"
   | SessionCloseNoParticipationTagsSelected ->
     "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
      werden, die an diesem Experiment teilgenommen haben."
@@ -641,6 +707,14 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SettingsNoEmailSuffixes ->
     "Es sind keine Email-Endungen definiert, die zugelassen sind. Das \
      bedeutet, dass alle Email-Endungen erlaubt sind."
+  | SignUpCodeHint ->
+    Format.asprintf
+      "Um zu verfolgen, über welche Kanäle sich Kontakte beim Pool \
+       registrieren, können URLs mit Codes verschickt werden. Die Codes können \
+       frei gewählt werden, müssen aber als URL Parameter mit dem Key '%s' \
+       verschickt werden. Sie können das Formular unten, um eine URL zu \
+       erstellen, die Sie an neue Kontakte senden können"
+      Pool_message.Field.(human_url SignUpCode)
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
@@ -682,6 +756,7 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | UserImportInterval ->
     {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
 <p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}
+  | VerifyContact -> "Den Kontakt als verifiziert markieren."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
      Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \
@@ -700,6 +775,10 @@ let confirmable_to_string confirmable =
      ( "die Session"
      , "schliessen"
      , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
+   | DeleteContact ->
+     ( "den Kontakt"
+     , "löschen"
+     , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
    | DeleteCustomField -> "das Feld", "löschen", None
    | DeleteCustomFieldOption -> "das Option", "löschen", None
    | DeleteEmailSuffix -> "das Suffix", "löschen", None
@@ -717,6 +796,7 @@ let confirmable_to_string confirmable =
    | DeleteMessageTemplate -> "das Nachrichtentemplate", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
    | DeleteSmtpServer -> "E-Mail Server", "löschen", None
+   | DisableApiKey -> "den API Key", "deaktivieren", None
    | LoadDefaultTemplate ->
      ( "das Standardtemplate"
      , "laden"

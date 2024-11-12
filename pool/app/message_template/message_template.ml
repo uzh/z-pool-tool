@@ -131,12 +131,15 @@ let public_experiment_params layout experiment =
     Format.asprintf "experiments/%s" experiment_id |> to_absolute_path layout
   in
   let online_experiment_params =
+    let open OnlineExperiment in
     experiment
     |> Public.online_experiment
-    |> CCOption.is_some
     |> function
-    | true -> [ "experumentSurveyRedirectUrl", experiment_url ^ "/start" ]
-    | false -> []
+    | Some online ->
+      [ "experimentSurveyRedirectUrl", experiment_url ^ "/start"
+      ; "experimentSurveyUrl", SurveyUrl.value online.survey_url
+      ]
+    | None -> []
   in
   [ "experimentId", experiment_id
   ; ( "experimentPublicTitle"
@@ -1275,18 +1278,36 @@ module SignUpVerification = struct
     @ layout_params layout
   ;;
 
-  let create pool language tenant email_address token firstname lastname user_id
+  let create
+    ?signup_code
+    pool
+    language
+    tenant
+    email_address
+    token
+    firstname
+    lastname
+    user_id
     =
     let%lwt template = find_by_label_and_language_to_send pool label language in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt sender = default_sender_of_pool pool in
     let verification_url =
-      Pool_common.
-        [ ( Pool_message.Field.Language
-          , language |> Language.show |> CCString.lowercase_ascii )
-        ; Pool_message.Field.Token, Email.Token.value token
-        ]
-      |> create_public_url_with_params url "/email-verified"
+      let params =
+        let signup_code =
+          let open Signup_code in
+          signup_code
+          |> CCOption.map_or ~default:[] (fun code ->
+            [ url_key, Code.value code ])
+        in
+        Pool_common.
+          [ ( Pool_message.Field.Language
+            , language |> Language.show |> CCString.lowercase_ascii )
+          ; Pool_message.Field.Token, Email.Token.value token
+          ]
+        @ signup_code
+      in
+      create_public_url_with_params url "/email-verified" params
     in
     let layout = layout_from_tenant tenant in
     let entity_uuids = [ user_id |> Contact.Id.to_common |> Id.of_common ] in

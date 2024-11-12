@@ -65,13 +65,13 @@ let update ?contact req =
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
   let result
-    ({ Pool_context.database_label; language; query_language; user; _ } as
+    ({ Pool_context.database_label; language; query_parameters; user; _ } as
      context)
     =
     let is_admin = Pool_context.user_is_admin user in
-    let path_with_lang = HttpUtils.path_with_language query_language in
+    let path_with_params = HttpUtils.url_with_field_params query_parameters in
     let with_redirect path res =
-      res |> CCResult.map_err (fun err -> err, path_with_lang path)
+      res |> CCResult.map_err (fun err -> err, path_with_params path)
     in
     let* contact =
       match contact with
@@ -134,7 +134,7 @@ let update ?contact req =
             if is_admin
             then admin_profile_hx_post contact_id
             else contact_profile_hx_post)
-          |> path_with_lang
+          |> path_with_params
           |> Sihl.Web.externalize_path
         in
         let hx_delete =
@@ -210,7 +210,7 @@ let update ?contact req =
                 HttpUtils.(
                   Htmx.htmx_redirect
                     back_path
-                    ?query_language
+                    ~query_parameters
                     ~actions:[ Message.set ~error:[ error ] ]
                     ())
               | Ok field ->
@@ -231,7 +231,7 @@ let update ?contact req =
         | Error _ -> Lwt.return_unit
         | Ok events ->
           events
-          |> Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
+          |> Lwt_list.iter_s (Pool_event.handle_event ~tags database_label user)
       in
       () |> htmx_element
     in

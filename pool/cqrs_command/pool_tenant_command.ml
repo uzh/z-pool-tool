@@ -25,6 +25,7 @@ type create =
   ; default_language : Pool_common.Language.t
   ; tenant_logos : Pool_common.Id.t list
   ; partner_logos : Pool_common.Id.t list option
+  ; email_logo : Pool_tenant.EmailLogo.Write.t option
   }
 
 let system_event_from_job ?id job =
@@ -57,6 +58,7 @@ end = struct
     default_language
     tenant_logos
     partner_logos
+    email_logo
     =
     { title
     ; description
@@ -67,6 +69,7 @@ end = struct
     ; default_language
     ; tenant_logos
     ; partner_logos
+    ; email_logo
     }
   ;;
 
@@ -83,6 +86,7 @@ end = struct
           ; Pool_common.Language.schema ()
           ; Pool_tenant.Logos.schema ()
           ; Conformist.optional @@ Pool_tenant.PartnerLogos.schema ()
+          ; Conformist.optional @@ Pool_tenant.EmailLogo.Write.schema ()
           ]
         command)
   ;;
@@ -98,6 +102,7 @@ end = struct
         command.gtx_sender
         command.styles
         command.icon
+        command.email_logo
         command.default_language
     in
     let logo_mappings =
@@ -114,7 +119,7 @@ end = struct
       [ Pool_tenant.Created (tenant, database) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; Pool_database.Migrated database |> Pool_event.database
-      ; System_event.Job.TenantDatabaseAdded (Database.label database)
+      ; System_event.Job.TenantDatabaseReset (Database.label database)
         |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
       ]
@@ -128,19 +133,22 @@ end = struct
   let effects = Pool_tenant.Guard.Access.create
 end
 
+type edit_details =
+  { title : Pool_tenant.Title.t
+  ; description : Pool_tenant.Description.t option
+  ; url : Pool_tenant.Url.t
+  ; gtx_sender : Pool_tenant.GtxSender.t
+  ; status : Database.Status.t option
+  ; default_language : Pool_common.Language.t
+  ; styles : Pool_tenant.Styles.Write.t option
+  ; icon : Pool_tenant.Icon.Write.t option
+  ; tenant_logos : Pool_common.Id.t list option
+  ; partner_logos : Pool_common.Id.t list option
+  ; email_logo : Pool_tenant.EmailLogo.Write.t option
+  }
+
 module EditDetails : sig
-  type t =
-    { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t option
-    ; url : Pool_tenant.Url.t
-    ; gtx_sender : Pool_tenant.GtxSender.t
-    ; status : Database.Status.t option
-    ; default_language : Pool_common.Language.t
-    ; styles : Pool_tenant.Styles.Write.t option
-    ; icon : Pool_tenant.Icon.Write.t option
-    ; tenant_logos : Pool_common.Id.t list option
-    ; partner_logos : Pool_common.Id.t list option
-    }
+  type t = edit_details
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -152,18 +160,7 @@ module EditDetails : sig
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t =
-    { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t option
-    ; url : Pool_tenant.Url.t
-    ; gtx_sender : Pool_tenant.GtxSender.t
-    ; status : Database.Status.t option
-    ; default_language : Pool_common.Language.t
-    ; styles : Pool_tenant.Styles.Write.t option
-    ; icon : Pool_tenant.Icon.Write.t option
-    ; tenant_logos : Pool_common.Id.t list option
-    ; partner_logos : Pool_common.Id.t list option
-    }
+  type t = edit_details
 
   let command
     title
@@ -176,6 +173,7 @@ end = struct
     icon
     tenant_logos
     partner_logos
+    email_logo
     =
     { title
     ; description
@@ -187,6 +185,7 @@ end = struct
     ; icon
     ; tenant_logos
     ; partner_logos
+    ; email_logo
     }
   ;;
 
@@ -204,6 +203,7 @@ end = struct
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Logos.schema ()
           ; Conformist.optional @@ Pool_tenant.PartnerLogos.schema ()
+          ; Conformist.optional @@ Pool_tenant.EmailLogo.Write.schema ()
           ]
         command)
   ;;
@@ -224,14 +224,16 @@ end = struct
         ; status = command.status
         ; styles = command.styles
         ; icon = command.icon
+        ; email_logo = command.email_logo
         ; default_language = command.default_language
         }
     in
     let logo_mappings =
       let open Pool_tenant.LogoMapping in
+      let create_mapping = create_logo_mappings tenant in
       CCList.filter_map
         (fun (id_list, logo_type) ->
-          id_list |> CCOption.map (create_logo_mappings tenant logo_type))
+          id_list |> CCOption.map (create_mapping logo_type))
         [ command.partner_logos, LogoType.PartnerLogo
         ; command.tenant_logos, LogoType.TenantLogo
         ]
@@ -304,7 +306,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateDatabase" ~tags);
     Ok
       [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
-      ; System_event.Job.TenantDatabaseUpdated (Database.label database)
+      ; System_event.Job.TenantDatabaseReset (Database.label database)
         |> system_event_from_job ?id:system_event_id
       ]
   ;;

@@ -10,7 +10,9 @@ type t =
   | AdminInputOnly
   | AdminViewOnly
   | AllowUninvitedSignup
+  | Announcement
   | Answer
+  | ApiKey
   | AreaCode
   | Argument
   | AssetId
@@ -26,9 +28,11 @@ type t =
   | CallbackUrl
   | CanceledAt
   | CellPhone
+  | Changes
   | Chronological
   | City
   | ClosedAt
+  | Code
   | Confirmed
   | ConfirmedAt
   | Contact
@@ -43,6 +47,7 @@ type t =
   | CreatedAt
   | CurrentPassword
   | CustomField
+  | CustomFieldAnswer
   | CustomFieldGroup
   | CustomFieldGroups
   | CustomFieldOption
@@ -68,6 +73,7 @@ type t =
   | EmailAddressUnverified
   | EmailAddressVerified
   | EmailLeadTime
+  | EmailLogo
   | EmailRemindersSentAt
   | EmailsSent
   | EmailSubject
@@ -84,6 +90,7 @@ type t =
   | Experiments
   | ExperimentTextMessageReminderLeadTime
   | ExperimentType
+  | ExpiresAt
   | ExternalDataId
   | ExternalDataIdAbbr
   | ExternalDataRequired
@@ -109,6 +116,7 @@ type t =
   | HidePaused
   | HideUnverified
   | Hint
+  | History
   | Host
   | I18n
   | Icon
@@ -210,6 +218,7 @@ type t =
   | Reason
   | Recipient
   | Redirect
+  | Redirected
   | RegistrationDisabled
   | RegistrationPossible
   | Reminder
@@ -217,6 +226,7 @@ type t =
   | RemindersSent
   | Required
   | ResentAt
+  | Resource
   | Role
   | Room
   | Root
@@ -237,7 +247,10 @@ type t =
   | Settings
   | ShowExteralDataIdLinks
   | ShowUpCount
+  | ShowToAdmins
+  | ShowToContacts
   | SignedUpAt
+  | SignUpCode
   | SignUpCount
   | SMS
   | SmsText
@@ -275,6 +288,7 @@ type t =
   | TermsAndConditions
   | TermsAndConditionsLastAccepted
   | TestPhoneNumber
+  | Text
   | TextMessage
   | TextMessageDlrStatus
   | TextMessageLeadTime
@@ -298,6 +312,7 @@ type t =
   | Value
   | ValueOf of t
   | VerificationCode
+  | VerificationCount
   | Verified
   | Version
   | Virtual

@@ -46,8 +46,12 @@ module Status = struct
       [@printer print "connection_issue"]
       | Disabled [@name "disabled"] [@printer print "disabled"]
       | Maintenance [@name "maintenance"] [@printer print "maintenance"]
-      | OpenMigrations [@name "open_migrations"]
-      [@printer print "open_migrations"]
+      | MigrationsConnectionIssue [@name "migrations_connection_issue"]
+      [@printer print "migrations_connection_issue"]
+      | MigrationsFailed [@name "migrations_failed"]
+      [@printer print "migrations_failed"]
+      | MigrationsPending [@name "migrations_pending"]
+      [@printer print "migrations_pending"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 

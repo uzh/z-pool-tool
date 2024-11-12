@@ -4,7 +4,8 @@ let handle_user_import_notifications =
     "Notify users about import"
     (fun () ->
        let open Utils.Lwt_result.Infix in
-       Command_utils.setup_databases ()
-       >|> Lwt_list.iter_s User_import.Service.run
+       let%lwt () = Database.Pool.initialize () in
+       Database.Pool.Tenant.all ()
+       |> Lwt_list.iter_s User_import.Service.run
        ||> CCOption.return)
 ;;

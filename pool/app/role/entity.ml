@@ -6,6 +6,7 @@ let src = Logs.Src.create "role.entity"
 module Actor = struct
   type t =
     [ `Admin
+    | `ApiKey
     | `Contact
     | `Guest
     | `System
@@ -18,6 +19,7 @@ module Actor = struct
     Guardian.Utils.decompose_variant_string
     %> function
     | "admin", [] -> Ok `Admin
+    | "apikey", [] -> Ok `ApiKey
     | "contact", [] -> Ok `Contact
     | "guest", [] -> Ok `Guest
     | "system", [] -> Ok `System
@@ -92,6 +94,8 @@ end
 module Target = struct
   type t =
     [ `Admin
+    | `Announcement
+    | `ApiKey
     | `Assignment
     | `Contact
     | `ContactInfo
@@ -122,12 +126,14 @@ module Target = struct
     | `Schedule
     | `Session
     | `SessionClose
+    | `SignupCode
     | `Smtp
     | `Statistics
     | `System
     | `SystemSetting
     | `Tag
     | `Tenant
+    | `Version
     | `WaitingList
     ]
   [@@deriving show, eq, enum, ord, yojson, sexp_of]
@@ -139,6 +145,8 @@ module Target = struct
     Guardian.Utils.decompose_variant_string
     %> function
     | "admin", [] -> Ok `Admin
+    | "announcement", [] -> Ok `Announcement
+    | "apikey", [] -> Ok `ApiKey
     | "assignment", [] -> Ok `Assignment
     | "contact", [] -> Ok `Contact
     | "contactinfo", [] -> Ok `ContactInfo
@@ -169,12 +177,14 @@ module Target = struct
     | "schedule", [] -> Ok `Schedule
     | "session", [] -> Ok `Session
     | "sessionclose", [] -> Ok `SessionClose
+    | "signupcode", [] -> Ok `SignupCode
     | "smtp", [] -> Ok `Smtp
     | "statistics", [] -> Ok `Statistics
     | "system", [] -> Ok `System
     | "systemsetting", [] -> Ok `SystemSetting
     | "tag", [] -> Ok `Tag
     | "tenant", [] -> Ok `Tenant
+    | "version", [] -> Ok `Version
     | "waitinglist", [] -> Ok `WaitingList
     | role -> Error (Guardian.Utils.invalid_role role)
   ;;

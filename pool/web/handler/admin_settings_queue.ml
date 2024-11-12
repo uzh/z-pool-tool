@@ -7,20 +7,8 @@ module Command = Cqrs_command.Queue_command
 let src = Logs.Src.create "handler.admin.settings_queue"
 let base_path = "/admin/settings/queue"
 let job_id = HttpUtils.find_id Pool_queue.Id.of_string Field.Queue
-
-let show req =
-  HttpUtils.Htmx.handler
-    ~active_navigation:base_path
-    ~error_path:"/admin"
-    ~create_layout:General.create_tenant_layout
-    ~query:(module Pool_queue)
-    req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let%lwt queue = Pool_queue.find_by ~query database_label in
-  let open Page.Admin.Settings.Queue in
-  (if HttpUtils.Htmx.is_hx_request req then list else index) context queue
-  |> Lwt_result.return
-;;
+let show = Helpers.QueueJobs.htmx_handler `Current
+let show_archive = Helpers.QueueJobs.htmx_handler `History
 
 let detail req =
   let result ({ Pool_context.database_label; _ } as context) =
@@ -47,7 +35,7 @@ let resend req =
   let open Utils.Lwt_result.Infix in
   let id = job_id req in
   let path = Format.asprintf "%s/%s" base_path (Pool_queue.Id.value id) in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -68,7 +56,7 @@ let resend req =
     let* () =
       Command.Resend.handle ?contact:job_contact ?experiment:job_experiment job
       |> Lwt_result.lift
-      |>> Pool_event.handle_events ~tags database_label
+      |>> Pool_event.handle_events ~tags database_label user
     in
     Http_utils.redirect_to_with_actions
       path
@@ -86,7 +74,11 @@ end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let index = Pool_queue.Guard.Access.index |> Guardian.validate_admin_entity
+  let index =
+    Pool_queue.Guard.Access.index ()
+    |> Guardian.validate_admin_entity ~any_id:true
+  ;;
+
   let read = Pool_queue.Guard.Access.read |> Guardian.validate_admin_entity
   let resend = Command.Resend.effects |> Guardian.validate_admin_entity
 end

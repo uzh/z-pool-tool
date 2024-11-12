@@ -4,7 +4,20 @@ let () =
   let open Alcotest in
   run
     "cqrs commands"
-    [ ( "contact"
+    [ ("announcement", Announcement_test.[ test_case "create" `Quick create ])
+    ; ( "changelog"
+      , Changelog_test.
+          [ test_case "create unchanged" `Quick create_unchanged
+          ; test_case "create" `Quick create
+          ; test_case "create with nested changes" `Quick create_nested
+          ; test_case "create filter changelog" `Quick update_filter
+          ; test_case "create changelog with list" `Quick update_list_value
+          ] )
+    ; ( "api_key"
+      , [ test_case "create API key" `Quick Api_key_test.create
+        ; test_case "update API key" `Quick Api_key_test.update
+        ] )
+    ; ( "contact"
       , [ test_case
             "sign up not allowed suffix"
             `Quick
@@ -69,6 +82,7 @@ let () =
             Contact_test.request_email_validation_wrong_suffix
         ; test_case "update email" `Quick Contact_test.update_email
         ; test_case "verify email" `Quick Contact_test.verify_email
+        ; test_case "toggle verified" `Quick Contact_test.toggle_verified
         ; test_case
             "accept terms and condition"
             `Quick
@@ -503,7 +517,7 @@ let () =
             `Quick
             Message_template_test.create_with_unavailable_language
         ; test_case
-            "delete  with entity uuid"
+            "delete with entity uuid"
             `Quick
             Message_template_test.delete_valid
         ; test_case
@@ -511,7 +525,7 @@ let () =
             `Quick
             Message_template_test.delete_without_entity
         ] )
-    ; ( "queue"
+    ; ( "queue: message mappings"
       , Message_mapping.Resend.
           [ test_case "resend pending job" `Quick resend_pending
           ; test_case "resend unchanged" `Quick resend_unchanged
@@ -562,7 +576,14 @@ let () =
             `Quick
             Role_permission_test.update_permissions
         ] )
-    ; ( " queue"
+    ; ( "pool_version"
+      , Pool_version_test.
+          [ test_case "create tag" `Quick create_version_tag
+          ; test_case "create" `Quick create
+          ; test_case "update" `Quick update
+          ; test_case "publish" `Quick publish
+          ] )
+    ; ( "queue"
       , [ test_case
             "create delivery report"
             `Quick

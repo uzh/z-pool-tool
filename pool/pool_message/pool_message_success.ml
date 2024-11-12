@@ -8,6 +8,7 @@ type t =
   | CellPhoneTokenSent
   | CellPhoneVerified
   | Closed of Field.t
+  | ContactMarkedAsDeleted
   | ContactPromoted
   | Created of Field.t
   | Deleted of Field.t

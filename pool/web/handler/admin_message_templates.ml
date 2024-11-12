@@ -68,7 +68,7 @@ let write action req =
     | Create (_, _, redirect) -> redirect, Success.Created Field.MessageTemplate
     | Update (_, redirect) -> redirect, Success.Updated Field.MessageTemplate
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect.error, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -94,9 +94,7 @@ let write action req =
         Update.(urlencoded |> decode |> Lwt_result.lift >== handle template)
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect.success
         [ HttpUtils.Message.set ~success:[ success ] ]
@@ -261,14 +259,12 @@ module Access : module type of Helpers.Access = struct
   module Guardian = Middleware.Guardian
 
   let template_effects =
-    Guardian.id_effects Message_template.Id.of_string Field.MessageTemplate
+    Guardian.id_effects Message_template.Id.validate Field.MessageTemplate
   ;;
 
   let index =
     Message_template.Guard.Access.index |> Guardian.validate_admin_entity
   ;;
 
-  let update =
-    Command.Update.effects |> template_effects |> Guardian.validate_generic
-  ;;
+  let update = template_effects Command.Update.effects
 end

@@ -26,8 +26,8 @@ let filter pool =
         let open Experiment in
         let filter = Filter.create None test_filter in
         ( Filter.Created filter :: filter_events
-        , Updated { experiment with filter = Some filter } :: experiment_events
-        ))
+        , Updated (experiment, { experiment with filter = Some filter })
+          :: experiment_events ))
       ([], [])
       experiments
   in

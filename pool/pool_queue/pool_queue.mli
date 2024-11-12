@@ -161,12 +161,14 @@ val find
   -> (Instance.t, Pool_message.Error.t) Lwt_result.t
 
 val find_by
-  :  ?query:Query.t
+  :  [< `Current | `History ]
+  -> ?query:Query.t
   -> Database.Label.t
   -> (Instance.t list * Query.t) Lwt.t
 
 val find_instances_by_entity
-  :  ?query:Query.t
+  :  [< `Current | `History ]
+  -> ?query:Query.t
   -> Database.Label.t
   -> Pool_common.Id.t
   -> (Instance.t list * Query.t) Lwt.t
@@ -225,7 +227,7 @@ type kind =
 
 val lifecycle_service : Sihl.Container.lifecycle
 val lifecycle_worker : Sihl.Container.lifecycle
-val hide : 'a Job.t -> AnyJob.t
+val hide : ?execute_on_root:bool -> 'a Job.t -> AnyJob.t
 val register_jobs : AnyJob.t list -> unit Lwt.t
 
 val register

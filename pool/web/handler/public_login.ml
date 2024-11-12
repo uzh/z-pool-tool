@@ -16,7 +16,7 @@ let increase_sign_in_count ~tags database_label user =
     | Contact contact -> Contact_command.UpdateSignInCount.handle ~tags contact
     | Guest -> Ok []
   in
-  events |> Lwt_result.lift |>> Pool_event.handle_events database_label
+  events |> Lwt_result.lift |>> Pool_event.handle_events database_label user
 ;;
 
 let login_get req =
@@ -45,7 +45,7 @@ let login_post req =
     | Contact { Contact.user; _ } -> Ok user
     | Guest -> Error Pool_message.(Error.NotFound Field.User)
   in
-  let result { Pool_context.database_label; query_language; _ } =
+  let result { Pool_context.database_label; query_parameters; _ } =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err ->
       ( err
@@ -58,7 +58,7 @@ let login_post req =
          let* () = increase_sign_in_count ~tags database_label user in
          HttpUtils.(
            redirect_to_with_actions
-             (path_with_language query_language path)
+             (url_with_field_params query_parameters path)
              ([ Sihl.Web.Session.set
                   [ "user_id", pool_user.Pool_user.id |> Pool_user.Id.value ]
               ]
@@ -75,7 +75,7 @@ let login_post req =
          |> Lwt_result.ok
        in
        let redirect path =
-         HttpUtils.(redirect_to (path_with_language query_language path))
+         HttpUtils.(redirect_to (url_with_field_params query_parameters path))
          |> Lwt_result.ok
        in
        let success user () =
@@ -97,7 +97,9 @@ let login_post req =
        match user |> Pool_user.is_confirmed with
        | false ->
          redirect
-           (Http_utils.path_with_language query_language "/email-confirmation")
+           (Http_utils.url_with_field_params
+              query_parameters
+              "/email-confirmation")
        | true ->
          user
          |> Admin.user_is_admin database_label
@@ -144,9 +146,9 @@ let request_reset_password_post req =
   let open HttpUtils in
   let open Cqrs_command.Common_command.ResetPassword in
   let open Message_template in
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result ({ Pool_context.database_label; query_parameters; _ } as context) =
     let redirect_path =
-      path_with_language query_language "/request-reset-password"
+      url_with_field_params query_parameters "/request-reset-password"
     in
     Lwt_result.map_error (fun err ->
       err, redirect_path, [ (fun res -> Message.set ~error:[ err ] res) ])
@@ -154,6 +156,7 @@ let request_reset_password_post req =
     let tags = Pool_context.Logger.Tags.req req in
     let open Utils.Lwt_result.Infix in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let* user =
       Sihl.Web.Request.to_urlencoded req
       ||> decode
@@ -164,7 +167,9 @@ let request_reset_password_post req =
       | None -> Lwt_result.return ()
       | Some user ->
         let%lwt message_language =
-          match query_language with
+          match
+            Pool_context.Utils.query_language tenant_languages query_parameters
+          with
           | Some lang -> Lwt.return lang
           | None ->
             (match%lwt Admin.user_is_admin database_label user with
@@ -182,7 +187,10 @@ let request_reset_password_post req =
           (Tenant tenant)
           user
         >== handle ~tags
-        |>> Pool_event.handle_events ~tags database_label
+        |>> Pool_event.handle_events
+              ~tags
+              database_label
+              context.Pool_context.user
     in
     redirect_to_with_actions
       redirect_path
@@ -220,7 +228,7 @@ let reset_password_get req =
 
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.database_label; query_language; _ } =
+  let result { Pool_context.database_label; query_parameters; user; _ } =
     let open Utils.Lwt_result.Infix in
     let open Pool_message in
     let redirect = "/reset-password/" in
@@ -280,10 +288,12 @@ let reset_password_post req =
     match reset with
     | Ok () ->
       let%lwt () = Pool_token.deactivate database_label token in
-      let%lwt () = import_events |> Pool_event.handle_events database_label in
+      let%lwt () =
+        import_events |> Pool_event.handle_events database_label user
+      in
       HttpUtils.(
         redirect_to_with_actions
-          (path_with_language query_language "/login")
+          (url_with_field_params query_parameters "/login")
           [ Message.set ~success:[ Success.PasswordReset ] ])
       |> Lwt_result.ok
     | Error err -> err |> Lwt_result.fail
@@ -292,9 +302,8 @@ let reset_password_post req =
 ;;
 
 let logout req =
-  let query_lang = Http_utils.find_query_lang req in
   HttpUtils.(
     redirect_to_with_actions
-      (HttpUtils.path_with_language query_lang "/login")
+      (HttpUtils.retain_url_params req "/login" |> Uri.to_string)
       [ Sihl.Web.Session.set [ "user_id", "" ] ])
 ;;

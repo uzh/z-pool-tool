@@ -540,6 +540,13 @@ let detail
       ; experiment_history context contact experiments query
       ]
   in
+  let changelog_url =
+    Http_utils.Url.Admin.contact_path
+      ~suffix:"changelog"
+      ~id:(Contact.id contact)
+      ()
+    |> Uri.of_string
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
@@ -554,18 +561,19 @@ let detail
         ~a:[ a_class [ "grid-col-2" ] ]
         [ assign_contact_form context contact ]
     ; past_experiments_html
+    ; Component.Changelog.list context changelog_url None
     ]
 ;;
 
 let tag_form
-  (Pool_context.{ query_language; _ } as context)
+  (Pool_context.{ query_parameters; _ } as context)
   ?existing
   available
   contact
   =
   let action =
-    Http_utils.externalize_path_with_lang
-      query_language
+    Http_utils.externalize_path_with_params
+      query_parameters
       (Format.asprintf
          "%s/%s/assign"
          (contact |> path)
@@ -574,50 +582,17 @@ let tag_form
   Component.Tag.add_tags_form ?existing context available action
 ;;
 
-let promote_form csrf language query_language contact =
-  let open Pool_common in
-  let action =
-    Format.asprintf
-      "/admin/contacts/%s/promote"
-      Contact.(contact |> id |> Id.value)
-    |> Http_utils.externalize_path_with_lang query_language
-  in
-  [ div
-      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-      [ form
-          ~a:
-            [ a_method `Post
-            ; a_action action
-            ; a_user_data
-                "confirmable"
-                (Utils.confirmable_to_string language I18n.PromoteContact)
-            ]
-          [ Input.csrf_element csrf ()
-          ; Input.submit_element
-              ~submit_type:`Success
-              ~classnames:[ "nobr" ]
-              language
-              Pool_message.Control.PromoteContact
-              ()
-          ]
-      ; div
-          ~a:[ a_class [ "grow" ] ]
-          [ txt Pool_common.(Utils.hint_to_string language I18n.PromoteContact)
-          ]
-      ]
-  ]
-;;
-
 let edit
   ?(allowed_to_assign = false)
   ?(allowed_to_promote = false)
-  (Pool_context.{ language; csrf; query_language; _ } as context)
+  (Pool_context.{ language; csrf; query_parameters; _ } as context)
   tenant_languages
   contact
   custom_fields
   tags
   available_tags
   =
+  let open Page_contact_partials in
   let base_action = Htmx.admin_profile_hx_post (Contact.id contact) in
   let assign_tags =
     if allowed_to_assign
@@ -645,10 +620,23 @@ let edit
         ])
     else txt ""
   in
+  let pause_form = pause_form csrf language query_parameters contact `Admin in
+  let delete_form =
+    match Pool_user.Disabled.value contact.Contact.disabled with
+    | true -> None
+    | false ->
+      Some (mark_as_deleted_form csrf language query_parameters contact)
+  in
   let promote_form =
     if allowed_to_promote
-    then promote_form csrf language query_language contact
-    else []
+    then Some (promote_form csrf language query_parameters contact)
+    else None
+  in
+  let verify_form = verify_form csrf language query_parameters contact in
+  let status_forms =
+    [ promote_form; Some verify_form; Some pause_form; delete_form ]
+    |> CCList.filter_map CCFun.id
+    |> status_form_table language
   in
   let form_context = `Admin in
   div
@@ -659,33 +647,13 @@ let edit
         [ Page_contact_edit.personal_details_form
             csrf
             language
-            query_language
+            query_parameters
             form_context
             tenant_languages
             contact
             custom_fields
         ; assign_tags
-        ; Page_contact_edit.status_form
-            ~additional:promote_form
-            csrf
-            language
-            query_language
-            contact
-            form_context
-        ; p
-            [ a
-                ~a:
-                  [ a_href
-                      (Sihl.Web.externalize_path
-                         (Format.asprintf
-                            "/admin/contacts/%s"
-                            Contact.(contact |> id |> Id.value)))
-                  ]
-                [ Pool_message.Control.Back
-                  |> Pool_common.Utils.control_to_string language
-                  |> txt
-                ]
-            ]
+        ; status_forms
         ]
     ]
 ;;
@@ -710,7 +678,12 @@ let message_history_url contact =
        Contact.(contact |> id |> Id.value))
 ;;
 
-let message_history ({ Pool_context.language; _ } as context) contact messages =
+let message_history
+  ({ Pool_context.language; _ } as context)
+  queue_table
+  contact
+  messages
+  =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
@@ -721,6 +694,10 @@ let message_history ({ Pool_context.language; _ } as context) contact messages =
                 language
                 I18n.(MessageHistory (Contact.lastname_firstname contact)))
         ]
-    ; Page_admin_queue.list context (message_history_url contact) messages
+    ; Page_admin_queue.list
+        context
+        queue_table
+        (message_history_url contact)
+        messages
     ]
 ;;
