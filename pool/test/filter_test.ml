@@ -555,6 +555,7 @@ let update_filter _ () =
       [ Experiment.updated experiment updated_experiment
         |> Pool_event.experiment
       ; Filter.Updated (filter, filter) |> Pool_event.filter
+      ; Email.BulkSent [] |> Pool_event.email
       ]
   in
   check_result expected events |> Lwt.return
