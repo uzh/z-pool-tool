@@ -546,6 +546,7 @@ module CreateFilter : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
+    -> Assignment.event list * Email.dispatch list
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -559,7 +560,12 @@ end = struct
     Filter.create ~id None query |> return
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) experiment filter =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    experiment
+    (assignment_events, emails)
+    filter
+    =
     Logs.info ~src (fun m -> m "Handle command CreateFilter" ~tags);
     let open CCResult in
     let updated =
@@ -568,10 +574,16 @@ end = struct
       ; matcher_notification_sent = MatcherNotificationSent.create false
       }
     in
+    let assignment_events =
+      assignment_events |> CCList.map Pool_event.assignment
+    in
+    let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
-      [ Filter.Created filter |> Pool_event.filter
-      ; Experiment.Updated (experiment, updated) |> Pool_event.experiment
-      ]
+      ([ Filter.Created filter |> Pool_event.filter
+       ; Experiment.Updated (experiment, updated) |> Pool_event.experiment
+       ]
+       @ assignment_events
+       @ [ email_event ])
   ;;
 
   let effects id =

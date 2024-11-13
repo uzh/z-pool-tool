@@ -130,7 +130,8 @@ let write action req =
          | None ->
            let open CreateFilter in
            let* filter = create_filter key_list template_list query |> lift in
-           handle ~tags exp filter |> lift
+           let* matcher_events = matcher_events filter in
+           handle ~tags exp matcher_events filter |> lift
          | Some filter ->
            let open UpdateFilter in
            let* updated =
