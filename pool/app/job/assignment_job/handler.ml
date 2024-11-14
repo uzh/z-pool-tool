@@ -6,58 +6,12 @@ let src = Logs.Src.create "job.assignment_job"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 let admins_to_notify = Experiment.find_admins_to_notify_about_invitations
 
-let changes_to_text { Changelog.Write.changes; _ } =
-  let open Changelog in
-  let pretty = Yojson.Safe.pretty_to_string in
-  let rec format ?(level = 0) = function
-    | Changes.Change (before, after) ->
-      Format.asprintf "%s => %s" (pretty before) (pretty after)
-    | Changes.Assoc assocs ->
-      let separator = "&nbsp;&nbsp;" in
-      let inset = CCString.repeat separator level in
-      List.map
-        (fun (key, value) ->
-          format ~level:(level + 1) value
-          |> Format.asprintf "%s%s\n%s%s" inset inset key)
-        assocs
-      |> CCString.concat "\n"
-  in
-  format changes
-;;
-
-let changelog_text before after =
-  let changelog =
-    match before, after with
-    | Some before, Some after ->
-      Filter.VersionHistory.create
-        ~entity_uuid:before.Filter.id
-        ~before
-        ~after
-        ()
-    | _ -> None
-  in
-  changelog |> CCOption.map_or ~default:"" changes_to_text
-;;
-
-let trigger_text
-  language
-  (context :
-    [< `Experiment of Experiment.t * Filter.t option
-    | `Session of 'c
-    | `Upcoming
-    ])
-  =
-  let to_string = Pool_common.Utils.text_to_string language in
+let trigger_text =
   let open Pool_common.I18n in
-  match context with
-  | `Experiment (experiment, filter) ->
-    let changelog = changelog_text experiment.Experiment.filter filter in
-    Format.asprintf
-      "%s\n%s"
-      (to_string MatchesFilterChangeReasonWorker)
-      changelog
-  | `Session _ -> to_string MatchesFilterChangeReasonManually
-  | `Upcoming -> to_string MatchesFilterChangeReasonWorker
+  function
+  | `Experiment _ -> MatchesFilterChangeReasonFilter
+  | `Session _ -> MatchesFilterChangeReasonManually
+  | `Upcoming -> MatchesFilterChangeReasonWorker
 ;;
 
 let make_messages
@@ -69,8 +23,8 @@ let make_messages
   =
   let* tenant = Pool_tenant.find_by_label database_label in
   let make_mail assignments admin =
-    let trigger = trigger_text Pool_common.Language.En context in
-    Notification.create tenant ~text:trigger admin experiment assignments
+    let trigger = trigger_text context in
+    Notification.create tenant trigger admin experiment assignments
   in
   let remove_matching =
     let open Assignment in
