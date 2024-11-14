@@ -88,7 +88,7 @@ let has_open_sessions_request =
   let open Caqti_request.Infix in
   {sql|
     SELECT
-      COUNT(s.uuid) > 1
+      COUNT(s.uuid) >= 1
     FROM
       pool_sessions s
       LEFT JOIN (
@@ -114,10 +114,9 @@ let has_open_sessions_request =
 let registration_possible pool id =
   let open Utils.Lwt_result.Infix in
   Database.find pool registration_disabled_request id
-  ||> not
   >|> function
-  | false -> Lwt.return_false
-  | true -> Database.find pool has_open_sessions_request id
+  | true -> Lwt.return_false
+  | false -> Database.find pool has_open_sessions_request id
 ;;
 
 let sending_invitations_request =
