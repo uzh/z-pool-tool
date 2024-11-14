@@ -1,3 +1,5 @@
+val admins_to_notify : Database.Label.t -> Experiment.Id.t -> Admin.t list Lwt.t
+
 val update_matches_filter
   :  ?current_user:Admin.t
   -> Database.Label.t
