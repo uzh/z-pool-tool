@@ -782,32 +782,25 @@ module MatchFilterUpdateNotification = struct
     [ "assignments", data ]
   ;;
 
-  let email_params layout language trigger user experiment assignments =
-    let trigger = Pool_common.Utils.text_to_string language trigger in
+  let email_params layout ~text user experiment assignments =
     global_params layout user
     @ experiment_params layout experiment
     @ assignment_list assignments
-    @ [ "trigger", trigger ]
+    @ [ "trigger", text ]
   ;;
 
   let template pool language =
     find_by_label_and_language_to_send pool label language
   ;;
 
-  let create tenant trigger admin experiment assignments =
+  let create tenant ~text admin experiment assignments =
     let pool = tenant.Pool_tenant.database_label in
     let language = Pool_common.Language.En in
     let%lwt template = template pool language in
     let layout = layout_from_tenant tenant in
     let%lwt sender = sender_of_experiment pool experiment in
     let params =
-      email_params
-        layout
-        language
-        trigger
-        (Admin.user admin)
-        experiment
-        assignments
+      email_params layout ~text (Admin.user admin) experiment assignments
     in
     let email =
       prepare_email

@@ -377,8 +377,7 @@ end
 module MatchFilterUpdateNotification : sig
   val email_params
     :  email_layout
-    -> Pool_common.Language.t
-    -> Pool_common.I18n.t
+    -> text:string
     -> Pool_user.t
     -> Experiment.t
     -> (Session.t * Assignment.t list) list
@@ -386,7 +385,7 @@ module MatchFilterUpdateNotification : sig
 
   val create
     :  Pool_tenant.t
-    -> Pool_common.I18n.t
+    -> text:string
     -> Admin.t
     -> Experiment.t
     -> (Session.t * Assignment.t list) list

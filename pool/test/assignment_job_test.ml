@@ -28,7 +28,9 @@ let create_notification experiment assignments =
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_exn in
   Message_template.MatchFilterUpdateNotification.create
     tenant
-    Pool_common.I18n.MatchesFilterChangeReasonWorker
+    ~text:
+      Pool_common.(
+        Utils.text_to_string Language.En I18n.MatchesFilterChangeReasonWorker)
     admin
     experiment
     assignments

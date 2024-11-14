@@ -137,7 +137,7 @@ let write action req =
            let* updated =
              create_filter key_list template_list filter query |> lift
            in
-           let* matcher_events = matcher_events filter in
+           let* matcher_events = matcher_events updated in
            handle ~tags exp matcher_events filter updated |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
