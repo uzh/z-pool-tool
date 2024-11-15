@@ -1,5 +1,7 @@
+val admins_to_notify : Database.Label.t -> Experiment.Id.t -> Admin.t list Lwt.t
+
 val update_matches_filter
-  :  ?admin:Admin.t
+  :  ?current_user:Admin.t
   -> Database.Label.t
   -> [< `Experiment of Experiment.t * Filter.t option | `Session of Session.t ]
   -> ( Assignment.event list * Email.dispatch list

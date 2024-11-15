@@ -540,9 +540,7 @@ let update_filter _ () =
     Cqrs_command.Experiment_command.UpdateFilter.handle
       experiment
       ([], [])
-      Filter.[ Key.(Hardcoded Firstname) ]
-      []
-      query
+      filter
       filter
   in
   let expected =

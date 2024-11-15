@@ -118,14 +118,14 @@ let write action req =
       let lift = Lwt_result.lift in
       match action with
       | Experiment exp ->
+        let open Experiment_command in
         let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
         let matcher_events filter =
           Assignment_job.update_matches_filter
-            ~admin
+            ~current_user:admin
             database_label
             (`Experiment (exp, Some filter))
         in
-        let open Experiment_command in
         (match exp.Experiment.filter with
          | None ->
            let open CreateFilter in
@@ -134,9 +134,11 @@ let write action req =
            handle ~tags exp matcher_events filter |> lift
          | Some filter ->
            let open UpdateFilter in
-           let* matcher_events = matcher_events filter in
-           handle ~tags exp matcher_events key_list template_list query filter
-           |> lift)
+           let* updated =
+             create_filter key_list template_list filter query |> lift
+           in
+           let* matcher_events = matcher_events updated in
+           handle ~tags exp matcher_events filter updated |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
@@ -292,11 +294,11 @@ let handle_add_predicate action req =
   result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
-let count_contacts req =
+let filter_statistics req =
   let experiment_id =
     HttpUtils.find_id Experiment.Id.of_string Field.Experiment req
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; language; _ } =
     let open Utils.Lwt_result.Infix in
     let* experiment = Experiment.find database_label experiment_id in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -308,14 +310,14 @@ let count_contacts req =
         str |> Filter.query_of_string >|= CCOption.pure)
       |> Lwt_result.lift
     in
-    Filter.(
-      count_filtered_contacts
-        database_label
-        (Matcher (experiment.Experiment.id |> Experiment.Id.to_common))
-        query)
-    >|+ fun count -> `Assoc [ "count", `Int count ]
+    let* statistics =
+      Statistics.ExperimentFilter.create database_label experiment query
+    in
+    Component.Statistics.ExperimentFilter.create language statistics
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
   in
-  result |> HttpUtils.Json.handle_yojson_response ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 module Create = struct

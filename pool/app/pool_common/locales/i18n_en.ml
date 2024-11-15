@@ -91,6 +91,8 @@ let to_string = function
   | FilterNrOfContacts ->
     "Number of contacts meeting the criteria of this filter:"
   | FilterNrOfSentInvitations -> "Number of contacts already invited:"
+  | FilterNrOfUnsuitableAssignments ->
+    "Number of assigned contacts not meeting the criteria of this filter:"
   | FollowUpSessionFor -> "Follow-up for:"
   | Help -> "Help"
   | ImportConfirmationNote ->
@@ -136,6 +138,12 @@ let to_string = function
      if mailings are active at the moment).\n\n\
      Add additional sessions to the experiment."
   | MailingNewTitle -> "Create new mailing"
+  | MatchesFilterChangeReasonFilter ->
+    "This message was triggered by an update to the experiment filter."
+  | MatchesFilterChangeReasonManually -> "The message was manually triggered."
+  | MatchesFilterChangeReasonWorker ->
+    "This message was triggered by a background job that repeatedly checks if \
+     future assignments match the experiments filter."
   | MessageHistory name -> Format.asprintf "Message history of %s" name
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)

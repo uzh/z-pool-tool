@@ -134,3 +134,45 @@ type t =
   ; emails_sent : EmailsSent.t
   }
 [@@deriving eq, show, yojson]
+
+module ExperimentFilter = struct
+  type t =
+    { contacts_meeting_criteria : int
+    ; invitation_count : int
+    ; assigned_contacts_not_matching : int
+    }
+
+  let create pool experiment query =
+    let open Utils.Lwt_result.Infix in
+    let open Filter in
+    let contacts_not_matching query =
+      let%lwt contacts =
+        Assignment.find_assigned_contacts_by_experiment
+          pool
+          experiment.Experiment.id
+      in
+      let%lwt matching =
+        Lwt_list.filter_s (Filter.contact_matches_filter pool query) contacts
+        ||> CCList.length
+      in
+      Lwt.return CCList.(length contacts - matching)
+    in
+    let* contacts_meeting_criteria =
+      count_filtered_contacts
+        pool
+        (Matcher Experiment.(experiment |> id |> Id.to_common))
+        query
+    in
+    let%lwt invitation_count =
+      experiment |> Experiment.id |> Experiment.invitation_count pool
+    in
+    let%lwt assigned_contacts_not_matching =
+      query |> CCOption.map_or ~default:(Lwt.return 0) contacts_not_matching
+    in
+    Lwt_result.return
+      { contacts_meeting_criteria
+      ; invitation_count
+      ; assigned_contacts_not_matching
+      }
+  ;;
+end

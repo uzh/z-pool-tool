@@ -191,8 +191,11 @@ let message_template_help
   | MatchFilterUpdateNotification ->
     let session = create_session () in
     let assignment = create_assignment () in
+    let trigger = Pool_common.I18n.MatchesFilterChangeReasonWorker in
     MatchFilterUpdateNotification.email_params
       layout
+      language
+      trigger
       (create_user ())
       (create_experiment ())
       [ session, [ assignment ] ]
