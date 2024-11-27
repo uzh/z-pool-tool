@@ -17,6 +17,7 @@ type event =
   | ReportCreated of delivery_report
 [@@deriving eq, show, variants]
 
+let bulksent_opt jobs = if CCList.is_empty jobs then [] else [ BulkSent jobs ]
 let sent ?new_recipient job = Sent (job, new_recipient)
 
 let create_sent ?id ?message_template ?job_ctx ?new_recipient job =
@@ -26,10 +27,11 @@ let create_sent ?id ?message_template ?job_ctx ?new_recipient job =
 let handle_event pool : event -> unit Lwt.t = function
   | Sent ({ job; id; message_template; job_ctx }, new_recipient) ->
     Text_message_service.dispatch ?id ?new_recipient ?message_template ?job_ctx pool job
+  | BulkSent [] -> Lwt.return_unit
   | BulkSent jobs ->
     Lwt_list.iter_s
       (fun { job; id; message_template; job_ctx } ->
-         Text_message_service.dispatch ?id ?message_template ?job_ctx pool job)
+        Text_message_service.dispatch ?id ?message_template ?job_ctx pool job)
       jobs
   | ReportCreated report -> Repo.insert_report pool report
 ;;

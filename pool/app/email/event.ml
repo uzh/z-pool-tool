@@ -77,6 +77,8 @@ let create_sent ?id ?message_template ?job_ctx ?new_email_address ?new_smtp_auth
   |> sent ?new_email_address ?new_smtp_auth_id
 ;;
 
+let bulksent_opt jobs = if CCList.is_empty jobs then [] else [ BulkSent jobs ]
+
 let handle_event pool : event -> unit Lwt.t = function
   | Sent ({ job; id; message_template; job_ctx }, new_email_address, new_smtp_auth_id) ->
     Email_service.dispatch
@@ -87,6 +89,7 @@ let handle_event pool : event -> unit Lwt.t = function
       ?job_ctx
       pool
       job
+  | BulkSent [] -> Lwt.return_unit
   | BulkSent jobs ->
     let jobs =
       CCList.map

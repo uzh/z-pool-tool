@@ -53,8 +53,8 @@ end = struct
         Ok
           ([ Invitation.(Created { contacts; mailing; experiment })
              |> Pool_event.invitation
-           ; Email.BulkSent emails |> Pool_event.email
            ]
+           @ (Email.bulksent_opt emails |> Pool_event.(map email))
            @ contact_update_on_invitation_sent contacts)
       | Error err -> Error err)
   ;;

@@ -319,7 +319,7 @@ let matcher_notification _ () =
     in
     let experiment = Experiment.Updated (experiment, updated) |> Pool_event.experiment in
     let%lwt emails = email_event () in
-    Lwt.return [ emails; experiment ]
+    Lwt.return [ experiment; emails ]
   in
   (* Expect notification to be sent *)
   let () = Alcotest.(check (list Test_utils.event) "succeeds" expected events) in

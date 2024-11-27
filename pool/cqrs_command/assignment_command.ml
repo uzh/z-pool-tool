@@ -575,9 +575,8 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) (assignment_events, emails) =
     Logs.info ~src (fun m -> m "Handle command UpdateMatchesFilter" ~tags);
-    Ok
-      ((assignment_events |> CCList.map Pool_event.assignment)
-       @ [ Email.BulkSent emails |> Pool_event.email ])
+    let email_events = Email.bulksent_opt emails |> Pool_event.(map email) in
+    Ok (Pool_event.(map assignment) assignment_events @ email_events)
   ;;
 
   let effects id = Session.Guard.Access.update id

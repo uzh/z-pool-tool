@@ -192,3 +192,4 @@ let handle_events ?tags pool user events =
 
 let handle_system_event ?tags pool event = handle ?tags pool event
 let handle_system_events ?tags pool = Lwt_list.iter_s (handle ?tags pool)
+let map = CCList.map

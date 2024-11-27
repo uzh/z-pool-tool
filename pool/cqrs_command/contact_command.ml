@@ -276,9 +276,8 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) ({ contacts; emails } : t) =
     Logs.info ~src (fun m -> m "Handle command SendProfileUpdateTrigger" ~tags);
     Ok
-      [ Contact.ProfileUpdateTriggeredAtUpdated contacts |> Pool_event.contact
-      ; Email.BulkSent emails |> Pool_event.email
-      ]
+      ((Contact.ProfileUpdateTriggeredAtUpdated contacts |> Pool_event.contact)
+       :: (Email.bulksent_opt emails |> Pool_event.(map email)))
   ;;
 
   let effects = Contact.Guard.Access.update

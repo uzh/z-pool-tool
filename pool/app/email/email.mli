@@ -340,3 +340,4 @@ val sent
   -> event
 
 val bulksent : dispatch list -> event
+val bulksent_opt : dispatch list -> event list
