@@ -633,10 +633,7 @@ end = struct
     Ok
       ((Session.Rescheduled (session, { Session.start; duration })
         |> Pool_event.session)
-       ::
-       (if emails |> CCList.is_empty |> not
-        then [ Email.BulkSent emails |> Pool_event.email ]
-        else []))
+       :: (Email.bulksent_opt emails |> Pool_event.(map email)))
   ;;
 
   let decode data =
@@ -957,10 +954,10 @@ end = struct
                (Ok ([], []))
         in
         Ok
-          [ Email.BulkSent emails |> Pool_event.email
-          ; Text_message.BulkSent text_messages |> Pool_event.text_message
-          ; Session.TextMsgReminderSent session |> Pool_event.session
-          ]
+          ((Email.bulksent_opt emails |> Pool_event.(map email))
+           @ (Text_message.bulksent_opt text_messages
+              |> Pool_event.(map text_message))
+           @ [ Session.TextMsgReminderSent session |> Pool_event.session ])
     in
     Ok events
   ;;
@@ -1068,9 +1065,8 @@ end = struct
                  assignment)
           | None, false -> `Drop)
       in
-      [ Text_message.BulkSent sms_jobs |> Pool_event.text_message
-      ; Email.BulkSent email_jobs |> Pool_event.email
-      ]
+      (Text_message.bulksent_opt sms_jobs |> Pool_event.(map text_message))
+      @ (Email.bulksent_opt email_jobs |> Pool_event.(map email))
   ;;
 
   let email_command language email_subject email_text plain_text =

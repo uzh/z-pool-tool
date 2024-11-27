@@ -49,7 +49,7 @@ let to_events (assignment_events, emails) =
   let assignments = CCList.map Pool_event.assignment assignment_events in
   match emails with
   | [] -> assignments
-  | emails -> assignments @ [ Pool_event.email (Email.BulkSent emails) ]
+  | emails -> assignments @ (Email.bulksent_opt emails |> Pool_event.(map email))
 ;;
 
 let update_without_filter _ () =

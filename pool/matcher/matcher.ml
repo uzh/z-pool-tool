@@ -179,8 +179,7 @@ let notify_all_invited pool tenant experiment =
              tenant
              Pool_common.Language.En
              experiment)
-      ||> Email.bulksent
-      ||> Pool_event.email
+      ||> Email.bulksent_opt %> Pool_event.(map email)
     in
     let updated =
       { experiment with
@@ -190,7 +189,7 @@ let notify_all_invited pool tenant experiment =
     let experiment_event =
       Updated (experiment, updated) |> Pool_event.experiment
     in
-    Lwt.return [ email_event; experiment_event ]
+    Lwt.return (experiment_event :: email_event)
 ;;
 
 let events_of_mailings =

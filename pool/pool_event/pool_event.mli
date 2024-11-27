@@ -91,3 +91,5 @@ val handle_system_events
   -> Database.Label.t
   -> t list
   -> unit Lwt.t
+
+val map : ('a -> t) -> 'a list -> t list

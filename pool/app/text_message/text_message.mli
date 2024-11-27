@@ -130,3 +130,5 @@ val create_sent
   -> event
 
 val sent : ?new_recipient:Pool_user.CellPhone.t -> job -> event
+val bulksent : job list -> event
+val bulksent_opt : job list -> event list
