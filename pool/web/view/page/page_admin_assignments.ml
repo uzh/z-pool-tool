@@ -853,6 +853,15 @@ let edit
     assignment_specific_path experiment.Experiment.id session_id id
     |> Sihl.Web.externalize_path
   in
+  let changelog_url =
+    HttpUtils.Url.Admin.assignment_path
+      experiment.Experiment.id
+      session_id
+      ~suffix:"changelog"
+      ~id
+      ()
+    |> Uri.of_string
+  in
   let session_data =
     let open Session in
     let location =
@@ -921,6 +930,7 @@ let edit
           ]
       ; session_data
       ]
+  ; Component.Changelog.list context changelog_url None
   ]
   |> Layout.Experiment.(
        create

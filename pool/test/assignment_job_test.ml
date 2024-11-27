@@ -93,8 +93,7 @@ let exclude_contact _ () =
     let%lwt message =
       create_notification experiment [ session, [ assignment ] ] admin
     in
-    [ Assignment.(
-        Updated { assignment with matches_filter = MatchesFilter.create false })
+    [ Assignment.(MatchesFilterUpdated (assignment, MatchesFilter.create false))
       |> Pool_event.assignment
     ; Email.BulkSent [ message ] |> Pool_event.email
     ]

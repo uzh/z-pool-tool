@@ -607,10 +607,11 @@ module UpdateAssignments = struct
     let expected =
       Assignment.(
         Updated
-          { assignment with
-            no_show = Some (NoShow.create true)
-          ; participated = Some (Participated.create false)
-          })
+          ( assignment
+          , { assignment with
+              no_show = Some (NoShow.create true)
+            ; participated = Some (Participated.create false)
+            } ))
       |> Pool_event.assignment
       |> CCList.return
       |> CCResult.return
@@ -744,10 +745,11 @@ module UpdateAssignments = struct
       let expected =
         Ok
           [ Updated
-              { assignment with
-                no_show = Some update.no_show
-              ; participated = Some update.participated
-              }
+              ( assignment
+              , { assignment with
+                  no_show = Some update.no_show
+                ; participated = Some update.participated
+                } )
             |> Pool_event.assignment
           ]
       in
@@ -767,10 +769,11 @@ module UpdateAssignments = struct
       let expected =
         Ok
           [ Updated
-              { assignment with
-                no_show = Some update.no_show
-              ; participated = Some update.participated
-              }
+              ( assignment
+              , { assignment with
+                  no_show = Some update.no_show
+                ; participated = Some update.participated
+                } )
             |> Pool_event.assignment
           ; Contact.Updated contact |> Pool_event.contact
           ]
@@ -785,10 +788,11 @@ module UpdateAssignments = struct
       let expected =
         Ok
           [ Updated
-              { assignment with
-                no_show = Some update.no_show
-              ; participated = Some update.participated
-              }
+              ( assignment
+              , { assignment with
+                  no_show = Some update.no_show
+                ; participated = Some update.participated
+                } )
             |> Pool_event.assignment
           ; Contact.Updated
               (contact

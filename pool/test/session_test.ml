@@ -951,7 +951,9 @@ let close_valid_with_assignments () =
             |> Pool_event.tags)
         in
         events
-        @ [ Updated assignment |> Pool_event.assignment; contact_event ]
+        @ [ Updated (assignment, assignment) |> Pool_event.assignment
+          ; contact_event
+          ]
         @ tag_events)
       [ Session.Closed session |> Pool_event.session ]
       assignments
@@ -1030,7 +1032,7 @@ let close_unparticipated_with_followup () =
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.Updated assignment |> Pool_event.assignment
+      ; Assignment.Updated (assignment, assignment) |> Pool_event.assignment
       ; Contact.Updated contact |> Pool_event.contact
       ; Assignment.MarkedAsDeleted follow_up |> Pool_event.assignment
       ]
@@ -1519,13 +1521,13 @@ let close_session_check_contact_figures _ () =
         |> Test_utils.get_or_failwith
       in
       let assignment = find_assignment contact in
-      let assignment =
+      let updated =
         { assignment with
           no_show = Some no_show
         ; participated = Some participated
         }
       in
-      [ Updated assignment |> Pool_event.assignment
+      [ Updated (assignment, updated) |> Pool_event.assignment
       ; Contact.Updated contact |> Pool_event.contact
       ])
     |> flatten

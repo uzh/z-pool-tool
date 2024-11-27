@@ -85,7 +85,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Api_key.handle_event ~tags pool event
   | Assignment event ->
     info "assignment" Assignment.pp_event event;
-    Assignment.handle_event pool event
+    Assignment.handle_event ?user_uuid pool event
   | AssignmentJob event ->
     let src = Logs.Src.create "assignment.events" in
     Logs.info ~src (fun m ->

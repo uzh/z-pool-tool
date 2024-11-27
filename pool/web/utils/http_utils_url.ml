@@ -105,6 +105,15 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let assignment_path experiment_id session_id ?suffix ?id () =
+    session_path
+      experiment_id
+      ~id:session_id
+      ~suffix:Field.(human_url Assignments)
+    |> append_opt (map Assignment.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let user_redirect_path ~id =
     Pool_common.Id.value id |> Format.asprintf "/admin/users/%s"
   ;;

@@ -1035,7 +1035,7 @@ let filter_by_experiment_participation _ () =
       ; participated = Some (Participated.create true)
       }
     in
-    [ Updated assignment |> Pool_event.assignment
+    [ Updated (assignment, assignment) |> Pool_event.assignment
     ; Session.Closed first_session |> Pool_event.session
     ]
     |> handle_events

@@ -354,7 +354,8 @@ end = struct
       | Error (hd :: _) -> Error hd
     in
     Ok
-      ((Assignment.Updated updated_assignment |> Pool_event.assignment)
+      ((Assignment.Updated (assignment, updated_assignment)
+        |> Pool_event.assignment)
        :: contact_counters)
   ;;
 
@@ -477,9 +478,10 @@ end = struct
     let update =
       Assignment.(
         Updated
-          { assignment with
-            reminder_manually_last_sent_at = Some (SentAt.create_now ())
-          })
+          ( assignment
+          , { assignment with
+              reminder_manually_last_sent_at = Some (SentAt.create_now ())
+            } ))
       |> Pool_event.assignment
     in
     Ok [ msg_event; update ]
@@ -723,7 +725,7 @@ module OnlineSurvey = struct
         ; no_show = Some (NoShow.create false)
         ; participated = Some (Participated.create true)
         }
-        |> updated
+        |> updated assignment
         |> Pool_event.assignment
       in
       let contact_event =

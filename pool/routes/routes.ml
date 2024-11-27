@@ -441,6 +441,7 @@ module Admin = struct
                   "/mark-as-deleted"
                   ~middlewares:[ Access.mark_as_deleted ]
                   mark_as_deleted
+              ; get "/changelog" ~middlewares:[ Access.update ] changelog
               ; choose
                   ~scope:"swap-session"
                   [ get "" ~middlewares:[ Access.update ] swap_session_get

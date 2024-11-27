@@ -176,7 +176,7 @@ module Close = struct
           ~tags
           database_label
           user
-          (Updated updated |> Pool_event.assignment)
+          (Updated (assignment, updated) |> Pool_event.assignment)
       in
       let%lwt counters =
         counters_of_session database_label session.Session.id
@@ -257,7 +257,8 @@ module Close = struct
              (fun (events, assignments) original ->
                let updated = UpdateHtmx.handle original decoded in
                let updated_fields = updated_fields original updated in
-               ( events @ [ Updated updated |> Pool_event.assignment ]
+               ( events
+                 @ [ Updated (original, updated) |> Pool_event.assignment ]
                , assignments @ [ updated, Some updated_fields ] ))
              ([], [])
       in
@@ -581,6 +582,20 @@ let swap_session_post req =
     events |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
+;;
+
+let changelog req =
+  let experiment_id, session_id, assignment_id = ids_from_request req in
+  let url =
+    HttpUtils.Url.Admin.assignment_path
+      ~suffix:"changelog"
+      experiment_id
+      session_id
+      ~id:assignment_id
+      ()
+  in
+  let open Assignment in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common assignment_id) req
 ;;
 
 module Access : sig

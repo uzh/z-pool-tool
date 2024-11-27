@@ -194,7 +194,7 @@ let set_attendance () =
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.Updated assignment |> Pool_event.assignment
+      ; Assignment.Updated (assignment, assignment) |> Pool_event.assignment
       ; updated_contact
       ]
   in
@@ -312,7 +312,7 @@ let set_attendance_with_data_id () =
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.Updated assignment |> Pool_event.assignment
+      ; Assignment.Updated (assignment, assignment) |> Pool_event.assignment
       ; updated_contact
       ]
   in
