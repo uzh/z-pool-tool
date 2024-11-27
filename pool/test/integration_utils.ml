@@ -67,7 +67,7 @@ module ContactRepo = struct
           }
       ]
       @ confirm
-      |> CCList.map Pool_event.contact
+      |> Pool_event.(map contact)
       |> Pool_event.handle_events Data.database_label current_user
     in
     contact |> id |> find Data.database_label ||> get_or_failwith

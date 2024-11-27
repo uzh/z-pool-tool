@@ -573,7 +573,7 @@ module Settings = struct
       let inactive =
         [ Updated (field1, field1 |> set_show_on_session_close_page false) ]
       in
-      active @ inactive |> CCList.map Pool_event.custom_field |> CCResult.return
+      active @ inactive |> Pool_event.(map custom_field) |> CCResult.return
     in
     let result =
       Cqrs_command.Custom_field_settings_command.UpdateVisibilitySettings.handle

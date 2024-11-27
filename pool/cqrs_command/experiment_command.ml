@@ -544,7 +544,7 @@ end = struct
       ; matcher_notification_sent = MatcherNotificationSent.create false
       }
     in
-    let assignment_events = assignment_events |> CCList.map Pool_event.assignment in
+    let assignment_events = assignment_events |> Pool_event.(map assignment) in
     let email_event = Email.bulksent_opt emails |> Pool_event.(map email) in
     Ok
       ([ Filter.Created filter |> Pool_event.filter

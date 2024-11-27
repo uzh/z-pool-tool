@@ -131,7 +131,7 @@ end = struct
         | true -> if value then `Drop else `Right role_permission)
     in
     Guard.RolePermissionSaved create :: (destroy |> CCList.map Guard.rolepermissiondeleted)
-    |> CCList.map Pool_event.guard
+    |> Pool_event.(map guard)
     |> CCResult.return
   ;;
 

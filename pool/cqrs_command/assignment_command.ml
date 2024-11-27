@@ -56,7 +56,7 @@ let assignment_creation_and_confirmation_events
   let email_event = Email.sent confirmation_email |> Pool_event.email in
   let create_events =
     Created (main_assignment, session.Session.id) :: follow_up_events
-    |> CCList.map Pool_event.assignment
+    |> Pool_event.(map assignment)
   in
   Ok (email_event :: create_events)
 ;;

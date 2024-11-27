@@ -41,7 +41,7 @@ end = struct
            | Some (_ : string) | None -> `Drop)
         fields
     in
-    active @ inactive |> CCList.map Pool_event.custom_field |> CCResult.return
+    active @ inactive |> Pool_event.(map custom_field) |> CCResult.return
   ;;
 
   let effects = Custom_field.Guard.Access.create
