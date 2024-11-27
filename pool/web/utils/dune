@@ -5,6 +5,7 @@
   api_key
   contact
   experiment
+  mailing
   logger
   pool_common
   pool_context

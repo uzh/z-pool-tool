@@ -531,6 +531,7 @@ module Admin = struct
           ; get "/edit" ~middlewares:[ Access.update ] edit
           ; post "/stop" ~middlewares:[ Access.stop ] stop
           ; post "/delete" ~middlewares:[ Access.delete ] delete
+          ; get "/changelog" ~middlewares:[ Access.read ] changelog
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index

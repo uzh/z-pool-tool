@@ -123,7 +123,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Invitation.handle_event pool event
   | Mailing event ->
     info "mailing" Mailing.pp_event event;
-    Mailing.handle_event pool event
+    Mailing.handle_event ?user_uuid pool event
   | MessageTemplate event ->
     info "message_template" Message_template.pp_event event;
     Message_template.handle_event pool event

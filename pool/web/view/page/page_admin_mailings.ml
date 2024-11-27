@@ -14,21 +14,13 @@ let append_suffied suffix path =
   | Some suffix -> Format.asprintf "%s/%s" path suffix
 ;;
 
-let mailings_path ?suffix experiment_id =
-  Format.asprintf
-    "/admin/experiments/%s/mailings"
-    (Experiment.Id.value experiment_id)
-  |> append_suffied suffix
-;;
-
-let detail_mailing_path ?suffix experiment_id mailing =
-  let open Mailing in
-  mailings_path ~suffix:(Id.value mailing.id) experiment_id
-  |> append_suffied suffix
+let mailings_path ?suffix ?id experiment_id =
+  HttpUtils.Url.Admin.mailing_path ?suffix ?id experiment_id ()
 ;;
 
 let mailing_detail_btn experiment_id mailing =
-  detail_mailing_path experiment_id mailing |> link_as_button ~icon:Icon.Eye
+  mailings_path experiment_id ~id:mailing.Mailing.id
+  |> link_as_button ~icon:Icon.Eye
 ;;
 
 let table_legend language =
@@ -110,7 +102,7 @@ module List = struct
         ~a:
           [ a_method `Post
           ; a_action
-              (detail_mailing_path ~suffix:target experiment_id mailing
+              (mailings_path ~suffix:target ~id:mailing.id experiment_id
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
@@ -225,6 +217,10 @@ let detail
   ((mailing, count) : Mailing.t * Mailing.InvitationCount.t)
   =
   let open Mailing in
+  let changelog_url =
+    mailings_path ~suffix:"changelog" experiment.Experiment.id ~id:mailing.id
+    |> Uri.of_string
+  in
   let mailing_overview =
     div
       ~a:[ a_class [ "stack" ] ]
@@ -260,10 +256,12 @@ let detail
         ~icon:Icon.Create
         ~classnames:[ "small" ]
         ~control:(language, Control.Edit (Some Field.Mailing))
-        (detail_mailing_path ~suffix:"edit" experiment.Experiment.id mailing)
+        (mailings_path ~suffix:"edit" ~id:mailing.id experiment.Experiment.id)
     else txt ""
   in
-  div ~a:[ a_class [ "stack" ] ] [ mailing_overview ]
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ mailing_overview; Component.Changelog.list context changelog_url None ]
   |> CCList.return
   |> Layout.Experiment.(
        create
@@ -548,7 +546,7 @@ let form
       ( mailings_path experiment.Experiment.id
       , Control.Create (Some Field.Mailing) )
     | Some m ->
-      ( m |> detail_mailing_path experiment.Experiment.id
+      ( mailings_path experiment.Experiment.id ~id:m.Mailing.id
       , Control.Save (Some Field.Mailing) )
   in
   let html =

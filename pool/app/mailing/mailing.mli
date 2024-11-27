@@ -178,7 +178,13 @@ val created : t * Experiment.Id.t -> event
 val updated : update * t -> event
 val deleted : t -> event
 val stopped : t -> event
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_with_detail
@@ -253,6 +259,8 @@ module Guard : sig
     val delete : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
   end
 end
+
+module VersionHistory : Changelog.TSig with type record = t
 
 val column_start : Query.Column.t
 val column_end : Query.Column.t

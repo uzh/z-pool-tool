@@ -5,6 +5,7 @@ module Message = HttpUtils.Message
 let src = Logs.Src.create "handler.admin.experiments_mailing"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
+let mailing_id = HttpUtils.find_id Mailing.Id.of_string Field.Mailing
 
 let experiment_path ?suffix id =
   [ Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id) ]
@@ -137,7 +138,7 @@ let create req =
 let detail edit req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
-  let id = HttpUtils.find_id Mailing.Id.of_string Field.Mailing req in
+  let id = mailing_id req in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err ->
       err, experiment_path ~suffix:"mailings" experiment_id)
@@ -177,7 +178,7 @@ let edit = detail true
 let update req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
-  let id = HttpUtils.find_id Mailing.Id.of_string Field.Mailing req in
+  let id = mailing_id req in
   let redirect_path =
     experiment_path
       ~suffix:
@@ -293,13 +294,13 @@ let add_condition req =
 
 let disabler command success_handler req =
   let redirect_path = experiment_path ~suffix:"mailings" (experiment_id req) in
-  let mailing_id = HttpUtils.find_id Mailing.Id.of_string Field.Mailing req in
+  let id = mailing_id req in
   let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* mailing = Mailing.find database_label mailing_id in
+    let* mailing = Mailing.find database_label id in
     let* events = command mailing |> Lwt_result.lift in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
@@ -312,6 +313,16 @@ let disabler command success_handler req =
 
 let stop = disabler Cqrs_command.Mailing_command.Stop.handle Success.stopped
 let delete = disabler Cqrs_command.Mailing_command.Delete.handle Success.deleted
+
+let changelog req =
+  let open Mailing in
+  let experiment_id = experiment_id req in
+  let id = mailing_id req in
+  let url =
+    HttpUtils.Url.Admin.mailing_path experiment_id ~suffix:"changelog" ~id ()
+  in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
+;;
 
 module Access : sig
   include module type of Helpers.Access

@@ -78,6 +78,12 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let mailing_path experiment_id ?suffix ?id () =
+    experiment_path ~id:experiment_id ~suffix:"mailings" ()
+    |> append_opt (map Mailing.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let organisational_unit_path ?suffix ?id () =
     "/admin/organisational-unit"
     |> append_opt (map Organisational_unit.Id.value id)
