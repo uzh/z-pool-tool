@@ -1,5 +1,7 @@
 module Id : sig
   include module type of Pool_common.Id
+
+  val to_common : t -> Pool_common.Id.t
 end
 
 module Label : sig
@@ -107,7 +109,13 @@ val show_event : event -> string
 val created : t -> event
 val updated : t -> update -> event
 val deleted : t -> event
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+
+val handle_event
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_default_by_label_and_language
@@ -188,6 +196,8 @@ module Guard : sig
     val delete : Id.t -> Guard.ValidationSet.t
   end
 end
+
+module VersionHistory : Changelog.TSig with type record = t
 
 val create_public_url_with_params
   :  Pool_tenant.Url.t

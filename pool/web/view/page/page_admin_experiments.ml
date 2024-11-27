@@ -1189,17 +1189,36 @@ let message_template_form
       tenant
       label
   in
+  let changelog =
+    match form_context with
+    | `Create _ -> txt ""
+    | `Update t ->
+      let path =
+        HttpUtils.Url.Admin.experiment_message_template_path
+          experiment.Experiment.id
+          label
+          ~suffix:"changelog"
+          ~id:t.id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context path None
+  in
   let open Page_admin_message_template in
-  template_form
-    context
-    ~entity:(Experiment experiment.Experiment.id)
-    ?languages
-    ~text_elements
-    ?fixed_language:experiment.Experiment.language
-    form_context
-    tenant.Pool_tenant.text_messages_enabled
-    action
-    flash_fetcher
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ template_form
+        context
+        ~entity:(Experiment experiment.Experiment.id)
+        ?languages
+        ~text_elements
+        ?fixed_language:experiment.Experiment.language
+        form_context
+        tenant.Pool_tenant.text_messages_enabled
+        action
+        flash_fetcher
+    ; changelog
+    ]
   |> CCList.return
   |> Layout.Experiment.create context (control_to_title control) experiment
 ;;

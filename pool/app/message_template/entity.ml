@@ -1,4 +1,9 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 module Field = Pool_message.Field
+
+let model = Pool_message.Field.MessageTemplate
+
+include Changelog.DefaultSettings
 
 module Id = struct
   include Pool_common.Id
@@ -126,7 +131,7 @@ type t =
   ; plain_text : PlainText.t
   ; sms_text : SmsText.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 module ManualMessage = struct
   type t =

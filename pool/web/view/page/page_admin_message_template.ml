@@ -51,7 +51,7 @@ let table
   in
   CCList.map
     (fun template ->
-      let buttons = edit_link (template |> to_edit_path) in
+      let buttons = edit_link (to_edit_path template) in
       let buttons =
         match delete_path with
         | None -> buttons
@@ -374,19 +374,30 @@ let edit
       tenant
       template.label
   in
+  let changelog_url =
+    HttpUtils.Url.Admin.message_template_path
+      ~id:template.id
+      ~suffix:"changelog"
+      ()
+    |> Uri.of_string
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ Component.Partials.form_title
         language
         Field.MessageTemplate
         (Some template)
-    ; template_form
-        context
-        ~text_elements
-        (`Update template)
-        tenant.Pool_tenant.text_messages_enabled
-        action
-        flash_fetcher
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ template_form
+            context
+            ~text_elements
+            (`Update template)
+            tenant.Pool_tenant.text_messages_enabled
+            action
+            flash_fetcher
+        ; Component.Changelog.list context changelog_url None
+        ]
     ]
 ;;
 

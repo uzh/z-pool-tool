@@ -258,9 +258,13 @@ module Admin = struct
   let routes =
     let open Field in
     let open Handler.Admin in
-    let label_specific_template edit update new_form create delete =
+    let label_specific_template edit update new_form create delete changelog =
       let specific =
-        [ get "/edit" edit; post "" update; post "/delete" delete ]
+        [ get "/edit" edit
+        ; post "" update
+        ; post "/delete" delete
+        ; get "/changelog" changelog
+        ]
       in
       [ get "" new_form
       ; post "" create
@@ -350,6 +354,7 @@ module Admin = struct
       let specific =
         [ get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
+        ; get "/changelog" ~middlewares:[ Access.update ] changelog
         ]
       in
       let label_specific =
@@ -422,7 +427,8 @@ module Admin = struct
                 (label_specific
                    new_session_reminder
                    new_session_reminder_post
-                   delete_message_template)
+                   delete_message_template
+                   message_template_changelog)
             ]
           in
           let assignments =
@@ -576,7 +582,8 @@ module Admin = struct
             (label_specific
                new_message_template
                new_message_template_post
-               delete)
+               delete
+               changelog)
         ]
       in
       let tags =

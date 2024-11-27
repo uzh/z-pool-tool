@@ -126,7 +126,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Mailing.handle_event ?user_uuid pool event
   | MessageTemplate event ->
     info "message_template" Message_template.pp_event event;
-    Message_template.handle_event pool event
+    Message_template.handle_event ?user_uuid pool event
   | OrganisationalUnit event ->
     info "organisational_unit" Organisational_unit.pp_event event;
     Organisational_unit.handle_event ?user_uuid pool event

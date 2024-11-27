@@ -84,6 +84,22 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let message_template_path ?suffix ?id () =
+    Format.asprintf "/admin/%s" Field.(human_url MessageTemplate)
+    |> append_opt (map Message_template.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let experiment_message_template_path experiment_id label ?suffix ?id () =
+    Format.asprintf
+      "%s/%s/%s"
+      (experiment_path ~id:experiment_id ())
+      Field.(human_url MessageTemplate)
+      (Message_template.Label.show label)
+    |> append_opt (map Message_template.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let organisational_unit_path ?suffix ?id () =
     "/admin/organisational-unit"
     |> append_opt (map Organisational_unit.Id.value id)
@@ -108,6 +124,23 @@ module Admin = struct
       "/admin/experiments/%s/sessions"
       Experiment.(Id.value experiment_id)
     |> append_opt Session.(map Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let session_message_template_path
+    experiment_id
+    session_id
+    label
+    ?suffix
+    ?id
+    ()
+    =
+    Format.asprintf
+      "%s/%s/%s"
+      (session_path ~id:session_id experiment_id)
+      Field.(human_url MessageTemplate)
+      (Message_template.Label.show label)
+    |> append_opt (map Message_template.Id.value id)
     |> append_opt suffix
   ;;
 

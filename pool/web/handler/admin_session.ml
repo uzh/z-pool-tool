@@ -1038,6 +1038,24 @@ let update_template req =
       [ HttpUtils.Message.set ~error:[ err ] ]
 ;;
 
+let message_template_changelog req =
+  let open Message_template in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let id = template_id req in
+  let label = Message_template.Label.SessionReminder in
+  let url =
+    HttpUtils.Url.Admin.session_message_template_path
+      experiment_id
+      session_id
+      label
+      ~suffix:"changelog"
+      ~id
+      ()
+  in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
+;;
+
 let delete_message_template req =
   let result { Pool_context.database_label; user; _ } =
     let experiment_id = experiment_id req in

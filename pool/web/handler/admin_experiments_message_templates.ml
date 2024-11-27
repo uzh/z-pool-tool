@@ -136,6 +136,22 @@ let delete req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let changelog req =
+  let open Message_template in
+  let experiment_id = experiment_id req in
+  let template_label = template_label req in
+  let id = template_id req in
+  let url =
+    HttpUtils.Url.Admin.experiment_message_template_path
+      experiment_id
+      template_label
+      ~suffix:"changelog"
+      ~id
+      ()
+  in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
