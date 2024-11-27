@@ -427,7 +427,7 @@ module CustomFieldData = struct
       (multi_select_options
        |> CCList.map (fun o -> OptionCreated (id multi_select_custom_field, o))
       )
-    |> CCList.map Pool_event.custom_field
+    |> Pool_event.(map custom_field)
   ;;
 
   let answer_multi_select contacts answer_index =

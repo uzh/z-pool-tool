@@ -45,7 +45,7 @@ let update_permissions () =
       [ RolePermissionSaved [ role_permission Permission.Delete ]
       ; RolePermissionDeleted (role_permission Permission.Update)
       ]
-    |> CCList.map Pool_event.guard
+    |> Pool_event.(map guard)
     |> return
   in
   Test_utils.check_result expected events

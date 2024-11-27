@@ -140,7 +140,7 @@ end = struct
     in
     Guard.RolePermissionSaved create
     :: (destroy |> CCList.map Guard.rolepermissiondeleted)
-    |> CCList.map Pool_event.guard
+    |> Pool_event.(map guard)
     |> CCResult.return
   ;;
 
