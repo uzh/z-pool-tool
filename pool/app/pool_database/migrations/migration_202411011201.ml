@@ -17,7 +17,7 @@ let create_duplicates_table =
         `contact_b` binary(16) NOT NULL,
         `score` float NOT NULL,
         `ignore` boolean DEFAULT 0 NOT NULL,
-        `unique_combination` binary(16) GENERATED ALWAYS AS (UNHEX(CONCAT(contact_a, contact_b))) STORED,
+        `unique_combination` binary(32) GENERATED ALWAYS AS (CONCAT(LEAST(contact_a, contact_b), GREATEST(contact_a, contact_b))) STORED,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
