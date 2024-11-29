@@ -305,7 +305,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let%lwt () =
       Connection.rollback ()
-      >|+ CCFun.tap (fun _ ->
+      >|+ CCFun.tap (fun () ->
         Logs.debug (fun m -> m "Successfully rolled back transaction"))
       |> Pool.raise_caqti_error label
     in

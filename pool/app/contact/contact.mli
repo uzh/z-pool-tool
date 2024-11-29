@@ -199,6 +199,12 @@ val update_num_show_ups : step:int -> t -> t
 val update_num_no_shows : step:int -> t -> t
 val update_num_participations : step:int -> t -> t
 
+module Write : sig
+  type t
+end
+
+val to_write : t -> Write.t
+
 module Preview : sig
   type t =
     { user : Pool_user.t
@@ -241,6 +247,8 @@ module Repo : sig
     -> ?count:bool
     -> string
     -> string
+
+  val update_request : (Write.t, unit, [ `Zero ]) Caqti_request.t
 end
 
 module VersionHistory : Changelog.TSig with type record = t

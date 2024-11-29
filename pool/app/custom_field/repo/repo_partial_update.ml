@@ -202,22 +202,22 @@ let override_values to_string (answer : 'a Answer.t option) =
     Some (value >|= to_string, admin_value >|= to_string)
 ;;
 
-let override_answer pool entity_uuid (t : Public.t) =
+(* TODO: Does not really belong to partial update *)
+let override_answer ~entity_uuid (t : Public.t) =
   let field_id = Public.id t in
   let version = Public.version t in
-  let clear () =
-    Database.exec pool clear_answer_request (entity_uuid, field_id)
-  in
   let override = function
-    | None -> clear ()
+    | None -> `Clear (clear_answer_request, (entity_uuid, field_id))
     | Some (value, admin_value) ->
-      Repo_entity_answer.Override.of_entity
-        field_id
-        entity_uuid
-        value
-        admin_value
-        version
-      |> Database.exec pool override_answer_request
+      let override =
+        Repo_entity_answer.Override.of_entity
+          field_id
+          entity_uuid
+          value
+          admin_value
+          version
+      in
+      `Override (override_answer_request, override)
   in
   match t with
   | Public.Boolean (_, answer) ->

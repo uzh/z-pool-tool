@@ -80,34 +80,11 @@ let read_hardcoded =
   ]
 ;;
 
-let _ =
-  let open CCResult in
-  let non_empty field = function
-    | None -> Error (Pool_message.Error.NotFound field)
-    | Some s -> Ok s
-  in
-  let create_opt f = function
-    | None -> Ok None
-    | Some s -> f s >|= Option.some
-  in
-  [ ( Field.Lastname
-    , fun s ->
-        non_empty Field.Lastname s >>= Pool_user.Lastname.create >|= lastname )
-  ; ( Field.Firstname
-    , fun s ->
-        non_empty Field.Firstname s >>= Pool_user.Firstname.create >|= firstname
-    )
-  ; ( Field.EmailAddress
-    , fun s ->
-        non_empty Field.EmailAddress s
-        >>= Pool_user.EmailAddress.create
-        >|= emailaddress )
-  ; ( Field.CellPhone
-    , fun s -> create_opt Pool_user.CellPhone.create s >|= cellphone )
-  ; ( Field.Language
-    , fun s -> create_opt Pool_common.Language.create s >|= language )
-  ]
-;;
+type merge =
+  { contact : Contact.t
+  ; merged_contact : Contact.t
+  ; kept_fields : Custom_field.Public.t list
+  }
 
 let searchable_by = []
 

@@ -20,24 +20,27 @@ module Merge : sig
     -> (string * string list) list
     -> t
     -> Custom_field.Public.t list * Custom_field.Public.t list
-    -> (Pool_event.t list, Pool_message.Error.t) result
+    -> (Duplicate_contacts.merge, Pool_message.Error.t) result
 end = struct
-  let handle ?(tags = Logs.Tag.empty) urlencoded duplicate (fields_a, fields_b) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    urlencoded
+    { contact_a; contact_b; _ }
+    (fields_a, fields_b)
+    =
     Logs.info ~src (fun m -> m "Handle command Merge" ~tags);
     let open CCResult.Infix in
     let open Pool_message in
     let open Duplicate_contacts in
     let select_contact id =
       let id = Contact.Id.of_string id in
-      if Contact.Id.equal id (Contact.id duplicate.contact_a)
-      then duplicate.contact_a
-      else duplicate.contact_b
+      if Contact.Id.equal id (Contact.id contact_a)
+      then contact_a
+      else contact_b
     in
     let select_fields id =
       let id = Contact.Id.of_string id in
-      if Contact.Id.equal id (Contact.id duplicate.contact_a)
-      then fields_a
-      else fields_b
+      if Contact.Id.equal id (Contact.id contact_a) then fields_a else fields_b
     in
     let* selected_contact =
       let open CCOption in
@@ -45,6 +48,12 @@ end = struct
       >>= CCList.head_opt
       |> map select_contact
       |> to_result (Pool_message.Error.NotFound Field.Id)
+    in
+    let merged_contact =
+      Contact.(
+        if Id.equal (id selected_contact) (id contact_a)
+        then contact_b
+        else contact_a)
     in
     let* hardcoded =
       let open CCOption in
@@ -79,7 +88,7 @@ end = struct
       |> CCList.all_ok
     in
     let open Contact in
-    let contact =
+    let selected_contact =
       CCList.fold_left
         (fun contact field ->
           match field with
@@ -91,13 +100,11 @@ end = struct
         selected_contact
         hardcoded
     in
-    let custom_field_events =
-      CCList.map
-        (fun field ->
-          Custom_field.AnswerOverridden (field, contact)
-          |> Pool_event.custom_field)
-        custom_fields
-    in
-    Ok ((Contact.Updated contact |> Pool_event.contact) :: custom_field_events)
+    Ok
+      Duplicate_contacts.
+        { contact = selected_contact
+        ; merged_contact
+        ; kept_fields = custom_fields
+        }
   ;;
 end

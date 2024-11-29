@@ -12,3 +12,4 @@ let run database_label contact_uuid =
 let find = Repo.find
 let all = Repo.all
 let find_by_contact = Repo.find_by_contact
+let merge = Repo_merge.merge

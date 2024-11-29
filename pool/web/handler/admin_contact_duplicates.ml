@@ -127,19 +127,18 @@ let merge req =
     in
     let%lwt fields_a = get_fields duplicate.contact_a in
     let%lwt fields_b = get_fields duplicate.contact_b in
-    let events =
+    let* data =
       let open Cqrs_command.Duplicate_contacts_command.Merge in
       handle ~tags urlencoded duplicate (fields_a, fields_b) |> Lwt_result.lift
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle () =
       Http_utils.redirect_to_with_actions
         duplicate_path
         [ Http_utils.Message.set
             ~success:Pool_message.[ Success.Updated Field.Duplicate ]
         ]
     in
-    events |>> handle
+    data |> merge database_label |>> handle
   in
   result |> Http_utils.extract_happy_path ~src req
 ;;

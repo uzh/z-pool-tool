@@ -254,6 +254,7 @@ module Repo : sig
   val t : t Caqti_type.t
   val sql_select_columns : string list
   val make_sql_select_columns : tablename:string -> string list
+  val update_request : (t, unit, [ `Zero ]) Caqti_request.t
 end
 
 val searchable_by : Query.Column.t list

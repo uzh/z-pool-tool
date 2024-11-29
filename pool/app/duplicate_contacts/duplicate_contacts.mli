@@ -16,6 +16,12 @@ type t =
   ; ignored : Ignored.t
   }
 
+type merge =
+  { contact : Contact.t
+  ; merged_contact : Contact.t
+  ; kept_fields : Custom_field.Public.t list
+  }
+
 val run : Database.Label.t -> Pool_common.Id.t -> unit Lwt.t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
@@ -25,6 +31,11 @@ val find_by_contact
   -> Database.Label.t
   -> Contact.t
   -> (t list * Query.t) Lwt.t
+
+val merge
+  :  Database.Label.t
+  -> merge
+  -> (unit, Pool_message.Error.t) Lwt_result.t
 
 type event = Ignored of t
 

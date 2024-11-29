@@ -81,6 +81,8 @@ module Repo = struct
       include Repo_entity.Option.Id
     end
   end
+
+  let override_answer = Repo_partial_update.override_answer
 end
 
 let create_answer is_admin entity_uuid answer new_value =

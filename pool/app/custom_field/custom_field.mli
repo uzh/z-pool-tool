@@ -594,6 +594,16 @@ module Repo : sig
       val t : t Caqti_type.t
     end
   end
+
+  val override_answer
+    :  entity_uuid:Pool_common.Id.t
+    -> Public.t
+    -> [> `Clear of
+          (Id.t * Id.t, unit, [ `Zero ]) Caqti_request.t * (Id.t * Id.t)
+       | `Override of
+         (Repo_entity_answer.Override.t, unit, [ `Zero ]) Caqti_request.t
+         * Repo_entity_answer.Override.t
+       ]
 end
 
 val group_fields : Group.t list -> t list -> (Group.t * t list) list * t list
