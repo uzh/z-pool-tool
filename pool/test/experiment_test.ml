@@ -579,6 +579,9 @@ module AvailableExperiments = struct
     let open Utils.Lwt_result.Infix in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session = Session.find database_label session_id ||> get_exn in
+    let%lwt current_user =
+      Integration_utils.AdminRepo.create () ||> Pool_context.admin
+    in
     let%lwt () =
       let open Assignment in
       find_not_deleted_by_session database_label session_id
