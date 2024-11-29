@@ -167,7 +167,7 @@ let run_job
   in
   let%lwt result =
     Lwt.catch
-      (fun () -> handle database_label input)
+      (fun () -> handle ~id database_label input)
       (log_reraise
          "Exception caught while running job, this is a bug in your job \
           handler. Don't throw exceptions there, use CCResult.t instead.")
