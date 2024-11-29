@@ -127,6 +127,12 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let waiting_list_path ?suffix ?id experiment_id =
+    experiment_path ~id:experiment_id ~suffix:"waiting-list" ()
+    |> append_opt (map Waiting_list.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let session_message_template_path
     experiment_id
     session_id

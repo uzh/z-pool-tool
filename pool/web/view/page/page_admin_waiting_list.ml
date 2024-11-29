@@ -6,6 +6,8 @@ open Pool_message
 module Table = Component.Table
 module DataTable = Component.DataTable
 
+let waiting_list_path = HttpUtils.Url.Admin.waiting_list_path
+
 let list
   ?(access_contact_profiles = false)
   { Pool_context.language; _ }
@@ -13,12 +15,7 @@ let list
   (waiting_list_entries, query)
   =
   let open Pool_user in
-  let url =
-    experiment.Experiment.id
-    |> Experiment.Id.value
-    |> Format.asprintf "/admin/experiments/%s/waiting-list"
-    |> Uri.of_string
-  in
+  let url = waiting_list_path experiment.Experiment.id |> Uri.of_string in
   let data_table =
     Component.DataTable.create_meta
       ~search:Waiting_list.searchable_by
@@ -218,11 +215,8 @@ let detail
             [ a_class [ "stack" ]
             ; a_method `Post
             ; a_action
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/admin/experiments/%s/waiting-list/%s"
-                      (Experiment.Id.value experiment.Experiment.id)
-                      (Waiting_list.Id.value id)))
+                (waiting_list_path ~id experiment_id
+                 |> Sihl.Web.externalize_path)
             ]
           [ csrf_element csrf ()
           ; textarea_element
@@ -259,10 +253,7 @@ let detail
           ~a:
             [ a_method `Post
             ; a_action
-                (Format.asprintf
-                   "/admin/experiments/%s/waiting-list/%s/assign"
-                   (experiment_id |> Experiment.Id.value)
-                   (id |> Waiting_list.Id.value)
+                (waiting_list_path ~id ~suffix:"assign" experiment_id
                  |> Sihl.Web.externalize_path)
             ]
           [ csrf_element csrf ()
@@ -289,7 +280,15 @@ let detail
       ; content
       ]
   in
-  div ~a:[ a_class [ "stack-lg" ] ] [ waiting_list_detail; sessions ]
+  let changelog_url =
+    waiting_list_path ~id ~suffix:"changelog" experiment_id |> Uri.of_string
+  in
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ waiting_list_detail
+    ; sessions
+    ; Component.Changelog.list context changelog_url None
+    ]
   |> CCList.return
   |> Layout.Experiment.(create context (NavLink I18n.WaitingList) experiment)
 ;;

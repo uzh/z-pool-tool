@@ -6,6 +6,12 @@ let src = Logs.Src.create "handler.admin.experiments_waiting_list"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
+let waiting_list_id =
+  HttpUtils.find_id Waiting_list.Id.of_string Field.WaitingList
+;;
+
+let waiting_list_path = HttpUtils.Url.Admin.waiting_list_path
+
 let index req =
   let id = experiment_id req in
   HttpUtils.Htmx.handler
@@ -36,18 +42,12 @@ let index req =
 
 let detail req =
   let open Utils.Lwt_result.Infix in
-  let experiment_id, id =
-    ( experiment_id req
-    , HttpUtils.find_id Pool_common.Id.of_string Field.WaitingList req )
-  in
-  let error_path =
-    Format.asprintf
-      "/admin/experiments/%s/waiting-list"
-      (Experiment.Id.value experiment_id)
-  in
+  let experiment_id = experiment_id req in
+  let waiting_list_id = waiting_list_id req in
+  let error_path = waiting_list_path ~id:waiting_list_id experiment_id in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* waiting_list = Waiting_list.find database_label id in
+    @@ let* waiting_list = Waiting_list.find database_label waiting_list_id in
        let%lwt sessions =
          Session.find_all_to_assign_from_waitinglist
            database_label
@@ -87,15 +87,10 @@ let detail req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let experiment_id, waiting_list_id =
-    ( experiment_id req
-    , HttpUtils.find_id Pool_common.Id.of_string Field.WaitingList req )
-  in
+  let experiment_id = experiment_id req in
+  let waiting_list_id = waiting_list_id req in
   let redirect_path =
-    Format.asprintf
-      "/admin/experiments/%s/waiting-list/%s"
-      (Experiment.Id.value experiment_id)
-      (Pool_common.Id.value waiting_list_id)
+    HttpUtils.Url.Admin.waiting_list_path ~id:waiting_list_id experiment_id
   in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.database_label; user; _ } =
@@ -128,21 +123,12 @@ let update req =
 let assign_contact req =
   let open Session in
   let open Utils.Lwt_result.Infix in
-  let experiment_id, waiting_list_id =
-    ( experiment_id req
-    , HttpUtils.find_id Pool_common.Id.of_string Field.WaitingList req )
-  in
-  let redirect_path =
-    let open Experiment.Id in
-    Format.asprintf "/admin/experiments/%s/waiting-list" (experiment_id |> value)
-  in
+  let experiment_id = experiment_id req in
+  let waiting_list_id = waiting_list_id req in
+  let redirect_path = waiting_list_path experiment_id in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf
-          "%s/%s"
-          redirect_path
-          (Pool_common.Id.value waiting_list_id) ))
+      err, waiting_list_path ~id:waiting_list_id experiment_id)
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -198,6 +184,22 @@ let assign_contact req =
     events |>> handle
   in
   result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let changelog req =
+  let experiment_id = experiment_id req in
+  let id = waiting_list_id req in
+  let url =
+    HttpUtils.Url.Admin.waiting_list_path ~suffix:"changelog" ~id experiment_id
+  in
+  let to_human { Pool_context.database_label; language; _ } =
+    Custom_field.changelog_to_human database_label language
+  in
+  Helpers.Changelog.htmx_handler
+    ~to_human
+    ~url
+    (Waiting_list.Id.to_common id)
+    req
 ;;
 
 module Access : sig

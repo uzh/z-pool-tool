@@ -171,7 +171,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Pool_user.handle_event pool event
   | WaitingList event ->
     info "waiting_list" Waiting_list.pp_event event;
-    Waiting_list.handle_event pool event
+    Waiting_list.handle_event ?user_uuid pool event
 ;;
 
 let user_uuid =

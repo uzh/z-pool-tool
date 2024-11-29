@@ -523,6 +523,7 @@ module Admin = struct
           [ get "" ~middlewares:[ Access.read ] detail
           ; post "" ~middlewares:[ Access.update ] update
           ; post "/assign" ~middlewares:[ Access.assign ] assign_contact
+          ; get "/changelog" ~middlewares:[ Access.read ] changelog
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index
