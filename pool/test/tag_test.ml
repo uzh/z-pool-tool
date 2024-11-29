@@ -88,7 +88,7 @@ let update_event () =
     |> handle tag
   in
   let updated_tag = Data.Tag.updated_tag () in
-  let expected = Ok [ Tags.Updated updated_tag |> Pool_event.tags ] in
+  let expected = Ok [ Tags.Updated (tag, updated_tag) |> Pool_event.tags ] in
   Test_utils.check_result expected events
 ;;
 
@@ -132,7 +132,7 @@ let update_persistent _ () =
     Pool_event.handle_events
       database_label
       current_user
-      [ Tags.Updated tag |> Pool_event.tags ]
+      [ Tags.Updated (tag, tag) |> Pool_event.tags ]
   in
   let%lwt found_tag = Tags.find database_label Data.Tag.id in
   let expected = Ok tag in

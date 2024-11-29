@@ -181,6 +181,13 @@ module Admin = struct
     ;;
 
     let signup_codes_path = Field.(human_url SignUpCode) |> with_settings
+
+    let tags_path ?id ?suffix () =
+      "tags"
+      |> with_settings
+      |> append_opt (map Tags.Id.value id)
+      |> append_opt suffix
+    ;;
   end
 end
 

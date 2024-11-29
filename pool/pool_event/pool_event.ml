@@ -154,7 +154,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     System_event.handle_event event
   | Tags event ->
     info "tags" Tags.pp_event event;
-    Tags.handle_event pool event
+    Tags.handle_event ?user_uuid pool event
   | TextMessage event ->
     info "text_message" Text_message.pp_event event;
     Text_message.handle_event pool event

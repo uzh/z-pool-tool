@@ -914,6 +914,7 @@ module Admin = struct
         let specific =
           [ get "" ~middlewares:[ Access.update ] edit
           ; post "" ~middlewares:[ Access.update ] update
+          ; get "changelog" ~middlewares:[ Access.update ] changelog
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index
