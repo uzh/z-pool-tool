@@ -469,6 +469,7 @@ val changelog_to_human
 
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
+  | AnswerOverridden of Public.t * Contact.t
   | AnswerUpserted of Public.t * Contact.Id.t * Pool_context.user
   | AnsweredOnSignup of Public.t * Pool_common.Id.t
   | Created of t

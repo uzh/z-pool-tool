@@ -2,6 +2,7 @@ open Entity
 
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
+  | AnswerOverridden of Public.t * Contact.t
   | AnswerUpserted of Public.t * Contact.Id.t * Pool_context.user
   | AnsweredOnSignup of Public.t * Pool_common.Id.t
   | Created of t
@@ -71,6 +72,10 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
       ~field_id:(Public.id m)
       ~entity_uuid
       ()
+  | AnswerOverridden (m, contact) ->
+    let%lwt () = create_custom_field_answer_changelog contact m in
+    let entity_uuid = Contact.(id contact |> Id.to_common) in
+    Repo_partial_update.override_answer pool entity_uuid m
   | AnswerUpserted (m, entity_uuid, user) ->
     let is_admin = Pool_context.user_is_admin user in
     Repo_partial_update.upsert_answer

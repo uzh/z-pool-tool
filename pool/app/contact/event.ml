@@ -133,6 +133,12 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
   | RegistrationAttemptNotificationSent t ->
     Repo.set_registration_attempt_notification_sent_at pool t
-  | Updated contact -> contact |> Repo.update pool
+  | Updated contact ->
+    let%lwt () = contact |> Repo.update pool in
+    let { Pool_user.email; lastname; firstname; _ } = user contact in
+    let%lwt (_ : Pool_user.t) =
+      Pool_user.update pool ~email ~lastname ~firstname contact.user
+    in
+    Lwt.return_unit
   | SignInCounterUpdated contact -> Repo.update_sign_in_count pool contact
 ;;

@@ -82,6 +82,7 @@ let index ({ Pool_context.language; _ } as context) ?contact possible_duplicates
 
 let show
   { Pool_context.language; user; csrf; _ }
+  fields
   (contact_a, fields_a)
   (contact_b, fields_b)
   duplicate
@@ -136,25 +137,33 @@ let show
   in
   let field_rows =
     let open Custom_field in
-    fields_a
-    |> CCList.map (fun target_field ->
-      let radio = make_radio ~name:(Public.id target_field |> Id.value) in
-      let head = Public.name_value language target_field in
-      let find = CCList.find (fun f -> Public.id f = Public.id target_field) in
-      let to_html = Component.CustomField.answer_to_html user language in
-      let duplicate_field = find fields_b in
+    fields
+    |> CCList.map (fun custom_field ->
+      let radio = make_radio ~name:(id custom_field |> Id.value) in
+      let head = name_value language custom_field in
+      let find = CCList.find_opt (fun f -> Public.id f = id custom_field) in
+      let to_html =
+        CCOption.map_or
+          ~default:(txt "")
+          (Component.CustomField.answer_to_html user language)
+      in
+      let field_a = find fields_a in
+      let field_b = find fields_b in
       let attrs =
-        if Public.equal_answer target_field duplicate_field
-        then highlighted
-        else []
+        let equal =
+          match field_a, field_b with
+          | Some a, Some b -> Public.equal_answer a b
+          | _, _ -> false
+        in
+        if equal then highlighted else []
       in
       let cells =
         if is_merge
         then
-          [ td [ label [ radio contact_a; to_html target_field ] ]
-          ; td [ label [ radio contact_b; to_html duplicate_field ] ]
+          [ td [ label [ radio contact_a; to_html field_a ] ]
+          ; td [ label [ radio contact_b; to_html field_b ] ]
           ]
-        else [ td [ to_html target_field ]; td [ to_html duplicate_field ] ]
+        else [ td [ to_html field_a ]; td [ to_html field_b ] ]
       in
       th [ txt head ] :: cells |> tr ~a:attrs)
   in
@@ -162,60 +171,68 @@ let show
     let open Pool_user in
     let open Contact in
     let open CCFun.Infix in
-    let map_or = CCOption.map_or ~default:"" in
+    let map_or = CCOption.map_or in
+    let default = "" in
     Pool_message.
-      [ Field.(Firstname), firstname %> Firstname.value
-      ; Field.(Lastname), lastname %> Lastname.value
-      ; Field.(EmailAddress), email_address %> EmailAddress.value
-      ; Field.(CellPhone), cell_phone %> map_or CellPhone.value
+      [ Field.Id, id %> Id.value
+      ; Field.Firstname, firstname %> Firstname.value
+      ; Field.Lastname, lastname %> Lastname.value
+      ; Field.EmailAddress, email_address %> EmailAddress.value
+      ; Field.CellPhone, cell_phone %> map_or ~default CellPhone.value
+      ; ( Field.Language
+        , fun c -> c.language |> map_or ~default Pool_common.Language.show )
       ]
   in
   let table =
-    let id_row =
-      let cell contact = td [ txt Contact.(id contact |> Id.value) ] in
-      [ th [ txt (field_to_string Pool_message.Field.Id) ]
-      ; cell contact_a
-      ; cell contact_b
-      ]
-      |> tr
-    in
     let rows =
       cells
       |> CCList.map (fun (field, fnc) ->
-        let target_value = fnc contact_a in
-        let duplicate_value = fnc contact_b in
+        let value_a = fnc contact_a in
+        let value_b = fnc contact_b in
         let attr =
-          if target_value = duplicate_value && target_value != ""
-          then highlighted
-          else []
+          if value_a = value_b && value_a != "" then highlighted else []
         in
         let cells =
           if is_merge
           then (
             let radio = make_radio ~name:(Pool_message.Field.show field) in
-            [ td [ label [ radio contact_a; txt target_value ] ]
-            ; td [ label [ radio contact_b; txt duplicate_value ] ]
+            [ td [ label [ radio contact_a; span [ txt value_a ] ] ]
+            ; td [ label [ radio contact_b; span [ txt value_b ] ] ]
             ])
-          else [ td [ txt target_value ]; td [ txt duplicate_value ] ]
+          else [ td [ txt value_a ]; td [ txt value_b ] ]
         in
         th [ txt (field_to_string field) ] :: cells |> tr ~a:attr)
     in
-    (id_row :: rows) @ field_rows |> table ~a:[ a_class [ "table"; "striped" ] ]
+    rows @ field_rows |> table ~a:[ a_class [ "table"; "striped" ] ]
   in
   let body =
     if is_merge
     then
-      form
-        ~a:[ a_method `Post; a_action "#" ]
+      div
         [ p
             [ Pool_common.(
                 Utils.hint_to_string language I18n.MergeContacts
                 |> Http_utils.add_line_breaks)
             ]
-        ; table
-        ; div
-            ~a:[ a_class [ "gap"; "flexrow"; "justify-end" ] ]
-            [ Input.submit_element language Pool_message.Control.(Save None) ()
+        ; form
+            ~a:
+              [ a_method `Post
+              ; a_action
+                  (Http_utils.Url.Admin.duplicate_path
+                     ~suffix:"merge"
+                     ~id:duplicate.id
+                     ()
+                   |> Sihl.Web.externalize_path)
+              ]
+            [ Input.csrf_element csrf ()
+            ; table
+            ; div
+                ~a:[ a_class [ "gap"; "flexrow"; "justify-end" ] ]
+                [ Input.submit_element
+                    language
+                    Pool_message.Control.(Save None)
+                    ()
+                ]
             ]
         ]
     else table

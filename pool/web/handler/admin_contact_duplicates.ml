@@ -20,6 +20,17 @@ let duplicate_id =
   HttpUtils.find_id Duplicate_contacts.Id.of_string Field.Duplicate
 ;;
 
+let get_flat_customfields pool user contact =
+  let open Custom_field in
+  Contact.id contact
+  |> find_all_by_contact pool user
+  ||> fun (groups, ungrouped) ->
+  groups
+  |> CCList.fold_left
+       (fun acc group -> group.Group.Public.fields @ acc)
+       ungrouped
+;;
+
 let index req =
   let contact_id = contact_id req in
   let error_path =
@@ -57,21 +68,16 @@ let show req =
     Lwt_result.map_error (fun err -> err, duplicate_path ())
     @@
     let open Duplicate_contacts in
+    let%lwt fields =
+      Custom_field.find_by_model database_label Custom_field.Model.Contact
+    in
     let with_fields contact =
-      let open Custom_field in
-      Contact.id contact
-      |> find_all_by_contact database_label user
-      ||> (fun (groups, ungrouped) ->
-            groups
-            |> CCList.fold_left
-                 (fun acc group -> group.Group.Public.fields @ acc)
-                 ungrouped)
-      ||> CCPair.make contact
+      get_flat_customfields database_label user contact ||> CCPair.make contact
     in
     let* duplicate = duplicate_id req |> find database_label in
     let%lwt contact_a = with_fields duplicate.contact_a in
     let%lwt contact_b = with_fields duplicate.contact_b in
-    Page.show context contact_a contact_b duplicate
+    Page.show context fields contact_a contact_b duplicate
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -89,7 +95,7 @@ let ignore req =
     let* duplicate = Duplicate_contacts.find database_label id in
     let* () =
       let open Cqrs_command.Duplicate_contacts_command.Ignore in
-      handle ~tags:Logs.Tag.empty duplicate
+      handle ~tags duplicate
       |> Lwt_result.lift
       |>> Pool_event.handle_events ~tags database_label user
     in
@@ -103,10 +109,46 @@ let ignore req =
   result |> Http_utils.extract_happy_path ~src req
 ;;
 
+let merge req =
+  let open Utils.Lwt_result.Infix in
+  let tags = Pool_context.Logger.Tags.req req in
+  let id = duplicate_id req in
+  let duplicate_path = duplicate_path ~id () in
+  let result { Pool_context.database_label; user; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, duplicate_path)
+    @@
+    let open Duplicate_contacts in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
+    in
+    let* duplicate = Duplicate_contacts.find database_label id in
+    let get_fields contact =
+      get_flat_customfields database_label user contact
+    in
+    let%lwt fields_a = get_fields duplicate.contact_a in
+    let%lwt fields_b = get_fields duplicate.contact_b in
+    let events =
+      let open Cqrs_command.Duplicate_contacts_command.Merge in
+      handle ~tags urlencoded duplicate (fields_a, fields_b) |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      Http_utils.redirect_to_with_actions
+        duplicate_path
+        [ Http_utils.Message.set
+            ~success:Pool_message.[ Success.Updated Field.Duplicate ]
+        ]
+    in
+    events |>> handle
+  in
+  result |> Http_utils.extract_happy_path ~src req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
   val ignore : Rock.Middleware.t
+  val merge : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
@@ -122,4 +164,5 @@ end = struct
 
   let read = duplicate_effect Duplicate_contacts.Access.read
   let ignore = duplicate_effect Duplicate_contacts.Access.update
+  let merge = duplicate_effect Duplicate_contacts.Access.update
 end

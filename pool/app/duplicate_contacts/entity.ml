@@ -53,6 +53,62 @@ type t =
 open Query
 open Pool_message
 
+type hardcoded =
+  | Lastname of Pool_user.Lastname.t
+  | Firstname of Pool_user.Firstname.t
+  | EmailAddress of Pool_user.EmailAddress.t
+  | CellPhone of Pool_user.CellPhone.t option
+  | Language of Pool_common.Language.t option
+[@@deriving eq, show, variants]
+
+let hardcoded_fields =
+  [ Field.Lastname
+  ; Field.Firstname
+  ; Field.EmailAddress
+  ; Field.CellPhone
+  ; Field.Language
+  ]
+;;
+
+let read_hardcoded =
+  let open CCFun.Infix in
+  [ Field.Lastname, Contact.lastname %> lastname
+  ; Field.Firstname, Contact.firstname %> firstname
+  ; Field.EmailAddress, Contact.email_address %> emailaddress
+  ; Field.CellPhone, Contact.cell_phone %> cellphone
+  ; (Field.Language, fun c -> language c.Contact.language)
+  ]
+;;
+
+let _ =
+  let open CCResult in
+  let non_empty field = function
+    | None -> Error (Pool_message.Error.NotFound field)
+    | Some s -> Ok s
+  in
+  let create_opt f = function
+    | None -> Ok None
+    | Some s -> f s >|= Option.some
+  in
+  [ ( Field.Lastname
+    , fun s ->
+        non_empty Field.Lastname s >>= Pool_user.Lastname.create >|= lastname )
+  ; ( Field.Firstname
+    , fun s ->
+        non_empty Field.Firstname s >>= Pool_user.Firstname.create >|= firstname
+    )
+  ; ( Field.EmailAddress
+    , fun s ->
+        non_empty Field.EmailAddress s
+        >>= Pool_user.EmailAddress.create
+        >|= emailaddress )
+  ; ( Field.CellPhone
+    , fun s -> create_opt Pool_user.CellPhone.create s >|= cellphone )
+  ; ( Field.Language
+    , fun s -> create_opt Pool_common.Language.create s >|= language )
+  ]
+;;
+
 let searchable_by = []
 
 let column_ignore =

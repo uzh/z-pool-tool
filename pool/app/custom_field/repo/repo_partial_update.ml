@@ -157,6 +157,92 @@ let upsert_answer pool is_admin entity_uuid t =
     |> map_or ~clear (fun (id, value) -> update_answer id value)
 ;;
 
+let override_answer_request =
+  let open Caqti_request.Infix in
+  {sql|
+    INSERT INTO pool_custom_field_answers (
+      custom_field_uuid,
+      entity_uuid,
+      value,
+      admin_value,
+      version
+    ) VALUES (
+      UNHEX(REPLACE($1, '-', '')),
+      UNHEX(REPLACE($2, '-', '')),
+      $3,
+      $4,
+      $5
+    )
+    ON DUPLICATE KEY UPDATE
+      uuid = UNHEX(REPLACE(UUID(), '-', '')),
+      value = VALUES(value),
+      admin_value = VALUES(admin_value),
+      version = VALUES(version)
+    |sql}
+  |> Repo_entity_answer.Override.t ->. Caqti_type.unit
+;;
+
+let clear_answer_request =
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM pool_custom_field_answers
+    WHERE entity_uuid = UNHEX(REPLACE($1, '-', ''))
+    AND custom_field_uuid = UNHEX(REPLACE($2, '-', ''))
+  |sql}
+  |> Caqti_type.(t2 Pool_common.Repo.Id.t Pool_common.Repo.Id.t)
+     ->. Caqti_type.unit
+;;
+
+let override_values to_string (answer : 'a Answer.t option) =
+  let open Answer in
+  let open CCOption.Infix in
+  match answer with
+  | None -> None
+  | Some { value; admin_value; _ } ->
+    Some (value >|= to_string, admin_value >|= to_string)
+;;
+
+let override_answer pool entity_uuid (t : Public.t) =
+  let field_id = Public.id t in
+  let version = Public.version t in
+  let clear () =
+    Database.exec pool clear_answer_request (entity_uuid, field_id)
+  in
+  let override = function
+    | None -> clear ()
+    | Some (value, admin_value) ->
+      Repo_entity_answer.Override.of_entity
+        field_id
+        entity_uuid
+        value
+        admin_value
+        version
+      |> Database.exec pool override_answer_request
+  in
+  match t with
+  | Public.Boolean (_, answer) ->
+    let to_string = Utils.Bool.to_string in
+    override_values to_string answer |> override
+  | Public.Date (_, answer) ->
+    let to_string = Ptime.date_to_string in
+    override_values to_string answer |> override
+  | Public.Number (_, answer) ->
+    let to_string = CCInt.to_string in
+    override_values to_string answer |> override
+  | Public.MultiSelect (_, _, answer) ->
+    let to_string options =
+      options
+      |> CCList.map (fun { Entity.SelectOption.Public.id; _ } -> id)
+      |> Repo_entity.yojson_of_multi_select_answer
+      |> Yojson.Safe.to_string
+    in
+    override_values to_string answer |> override
+  | Public.Select (_, _, answer) ->
+    let to_string = Entity.SelectOption.Public.show_id in
+    override_values to_string answer |> override
+  | Public.Text (_, answer) -> override_values CCFun.id answer |> override
+;;
+
 let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
   let open Entity in
   let is_admin = Pool_context.user_is_admin user in

@@ -99,9 +99,11 @@ val sexp_of_t : t -> Sexplib0.Sexp.t
 val yojson_of_t : t -> Yojson.Safe.t
 val show : t -> string
 val compare : t -> t -> int
+val set_email_address : t -> Pool_user.EmailAddress.t -> t
 val set_firstname : t -> Pool_user.Firstname.t -> t
 val set_lastname : t -> Pool_user.Lastname.t -> t
 val set_language : t -> Pool_common.Language.t option -> t
+val set_cellphone : t -> Pool_user.CellPhone.t option -> t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_admin_comment : Database.Label.t -> Id.t -> AdminComment.t option Lwt.t
 val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t

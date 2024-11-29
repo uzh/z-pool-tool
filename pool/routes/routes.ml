@@ -671,6 +671,7 @@ module Admin = struct
         let specific =
           [ get "" ~middlewares:[ Access.read ] show
           ; post "ignore" ~middlewares:[ Access.ignore ] ignore
+          ; post "merge" ~middlewares:[ Access.merge ] merge
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index
