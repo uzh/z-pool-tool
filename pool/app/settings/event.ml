@@ -17,10 +17,8 @@ type event =
 [@@deriving eq, show]
 
 let handle_event ?user_uuid pool : event -> unit Lwt.t =
-  let () = print_endline "handle_event" in
   let open Utils.Lwt_result.Infix in
   let create_changelog after =
-    let () = print_endline "handle_event ?> CHangelog " in
     let open Version_history in
     let key = key_of_setting after in
     let%lwt before = Repo.find_by_key pool key ||> fun { value; _ } -> value in
