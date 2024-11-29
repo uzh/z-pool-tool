@@ -105,6 +105,25 @@ let find_default_text_msg_reminder_lead_time pool =
   Sql.find pool RepoEntity.t Entity.TextMsgReminderLeadTime
 ;;
 
+let find_by_key pool key = Sql.find pool RepoEntity.t key
+
+let find_setting_id pool key =
+  let request =
+    let open Caqti_request.Infix in
+    [%string
+      {sql|
+      SELECT %{Pool_model.Base.Id.sql_select_fragment ~field:"uuid"}
+      FROM pool_system_settings
+      WHERE settings_key = ?
+    |sql}]
+    |> Caqti_type.(string ->! Pool_common.Repo.Id.t)
+  in
+  key
+  |> Entity.yojson_of_setting_key
+  |> Yojson.Safe.to_string
+  |> Database.find pool request
+;;
+
 let update pool value = Sql.update pool Entity.Write.{ value }
 
 let upsert pool ?(id = Pool_common.Id.create ()) (value : Entity.Value.t) =

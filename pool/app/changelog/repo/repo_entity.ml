@@ -43,7 +43,7 @@ let t =
       ; Field.t
       ; RepoId.t
       ; option RepoId.t
-      ; option Pool_user.Repo.EmailAddress.t
+      ; option Caqti_type.string
       ; Changes.t
       ; Pool_common.Repo.CreatedAt.t
       ]

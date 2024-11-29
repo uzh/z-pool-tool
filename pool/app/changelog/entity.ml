@@ -32,7 +32,7 @@ end
 
 type user =
   { uuid : Pool_common.Id.t
-  ; email : Pool_user.EmailAddress.t
+  ; email : string
   }
 [@@deriving eq, show]
 
