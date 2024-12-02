@@ -234,13 +234,13 @@ module Job = struct
       let open Cohttp in
       let dlr =
         if is_production ()
-        then None
-        else
+        then
           let open CCOption in
           id
           >|= CCPair.make tenant_url
           |> get_exn_or "Text message service: No instance id provided"
           |> return
+        else None
       in
       let%lwt resp, body_string = send_message ?dlr api_key message in
       (match
