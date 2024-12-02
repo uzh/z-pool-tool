@@ -11,6 +11,7 @@ module Job : sig
     | I18nPageUpdated
     | SmtpAccountUpdated
     | TenantDatabaseReset of Database.Label.t
+    | TenantCacheCleared
     | TenantDatabaseCacheCleared
 
   val equal : t -> t -> bool
