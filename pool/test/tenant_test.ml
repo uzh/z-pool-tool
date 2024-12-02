@@ -510,9 +510,7 @@ let[@warning "-4"] update_tenant_details () =
         [ DetailsEdited (tenant, update) |> Pool_event.pool_tenant
         ; logo_event
         ; System_event.(
-            Job.TenantDatabaseCacheCleared
-            |> create ~id:system_event_id
-            |> created)
+            Job.TenantCacheCleared |> create ~id:system_event_id |> created)
           |> Pool_event.system_event
         ]
     in

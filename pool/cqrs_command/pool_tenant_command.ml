@@ -243,9 +243,7 @@ end = struct
       [ Pool_tenant.DetailsEdited (tenant, update) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; System_event.(
-          Job.TenantDatabaseCacheCleared
-          |> create ?id:system_event_id
-          |> created)
+          Job.TenantCacheCleared |> create ?id:system_event_id |> created)
         |> Pool_event.system_event
       ]
   ;;
