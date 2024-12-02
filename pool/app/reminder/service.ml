@@ -46,7 +46,7 @@ let create_email_events data =
          , reminders @ emails ))
        ([], [])
   |> fun (session_events, emails) ->
-  (Email.BulkSent emails |> Pool_event.email) :: session_events
+  (Email.bulksent_opt emails |> Pool_event.(map email)) @ session_events
 ;;
 
 let create_text_message_events data =
@@ -58,8 +58,8 @@ let create_text_message_events data =
          , reminders @ text_messages ))
        ([], [])
   |> fun (session_events, text_messages) ->
-  (Text_message.BulkSent text_messages |> Pool_event.text_message)
-  :: session_events
+  (Text_message.bulksent_opt text_messages |> Pool_event.(map text_message))
+  @ session_events
 ;;
 
 let create_reminder_events

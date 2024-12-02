@@ -427,7 +427,7 @@ module CustomFieldData = struct
       (multi_select_options
        |> CCList.map (fun o -> OptionCreated (id multi_select_custom_field, o))
       )
-    |> CCList.map Pool_event.custom_field
+    |> Pool_event.(map custom_field)
   ;;
 
   let answer_multi_select contacts answer_index =
@@ -555,7 +555,6 @@ let update_filter _ () =
       [ Experiment.updated experiment updated_experiment
         |> Pool_event.experiment
       ; Filter.Updated (filter, filter) |> Pool_event.filter
-      ; Email.BulkSent [] |> Pool_event.email
       ]
   in
   check_result expected events |> Lwt.return

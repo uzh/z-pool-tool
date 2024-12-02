@@ -1974,7 +1974,6 @@ module DirectMessaging = struct
       Ok
         [ Text_message.BulkSent [ Model.create_text_message_job cell_phone ]
           |> Pool_event.text_message
-        ; Email.BulkSent [] |> Pool_event.email
         ]
     in
     check_result expected res
