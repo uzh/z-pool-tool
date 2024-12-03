@@ -37,7 +37,6 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
         assignment
         { assignment with marked_as_deleted = MarkedAsDeleted.(create true) }
     in
-    (* TODO: Use update query *)
     assignment.id |> Repo.marked_as_deleted pool
   | MatchesFilterUpdated (assignment, matches_filter) ->
     let updated = { assignment with matches_filter } in

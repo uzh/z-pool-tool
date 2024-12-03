@@ -19,8 +19,7 @@ let make_messages
   context
   database_label
   ({ Experiment.id; _ } as experiment)
-  (sessions :
-    (Session.t * (Assignment.t * Assignment.MatchesFilter.t) CCList.t) CCList.t)
+  sessions
   =
   let* tenant = Pool_tenant.find_by_label database_label in
   let make_mail assignments admin =
