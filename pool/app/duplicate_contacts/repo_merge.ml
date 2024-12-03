@@ -1,4 +1,5 @@
 open Entity
+open Utils.Lwt_result.Infix
 open Caqti_request.Infix
 module Dynparam = Database.Dynparam
 
@@ -138,6 +139,27 @@ let destroy_assignments =
   |> Contact.Repo.Id.t ->. unit
 ;;
 
+(** CHANGELOGS
+
+    - Contact
+    - waiting_list
+    - invitations
+    - assignments
+    - Taggins ?? *)
+
+module Changelog = struct
+  let contact_changelog pool current_contact_state contact =
+    let open Contact in
+    let open VersionHistory in
+    insert
+      pool
+      ~entity_uuid:(id contact |> Id.to_common)
+      ~before:current_contact_state
+      ~after:contact
+      ()
+  ;;
+end
+
 let merge
   pool
   { contact; merged_contact; kept_fields }
@@ -146,6 +168,7 @@ let merge
   assignments
   =
   let open Contact in
+  let* current_contact_state = find pool (id contact) in
   let update_contact connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec Repo.update_request (to_write contact)
