@@ -467,6 +467,13 @@ val changelog_to_human
   -> Changelog.t
   -> Changelog.t Lwt.t
 
+val create_custom_field_answer_changelog
+  :  ?user_uuid:Id.t
+  -> Database.Label.t
+  -> Contact.t
+  -> Public.t
+  -> unit Lwt.t
+
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
   | AnswerOverridden of Public.t * Contact.t

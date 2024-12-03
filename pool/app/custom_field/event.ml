@@ -22,6 +22,25 @@ type event =
   | Updated of t * t
 [@@deriving eq, show, variants]
 
+let create_custom_field_answer_changelog ?user_uuid pool contact public =
+  let open Utils.Lwt_result.Infix in
+  let open Version_history in
+  let contact_id = Contact.id contact in
+  let field_id = Public.id public in
+  let after = AnswerRecord.from_public public in
+  let%lwt before =
+    Repo_version_history.find_answer_opt pool contact_id field_id
+    ||> CCOption.value ~default:(AnswerRecord.default_record after)
+  in
+  AnswerVersionHistory.insert
+    pool
+    ?user_uuid
+    ~entity_uuid:(Contact.Id.to_common contact_id)
+    ~before
+    ~after
+    ()
+;;
+
 let handle_event ?user_uuid pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   let create_changelog before after =
@@ -35,23 +54,6 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
   let create_group_changelog before after =
     let open Version_history.GroupVersionHistory in
     insert pool ?user_uuid ~entity_uuid:before.Group.id ~before ~after ()
-  in
-  let create_custom_field_answer_changelog contact public =
-    let open Version_history in
-    let contact_id = Contact.id contact in
-    let field_id = Public.id public in
-    let after = AnswerRecord.from_public public in
-    let%lwt before =
-      Repo_version_history.find_answer_opt pool contact_id field_id
-      ||> CCOption.value ~default:(AnswerRecord.default_record after)
-    in
-    AnswerVersionHistory.insert
-      pool
-      ?user_uuid
-      ~entity_uuid:(Contact.Id.to_common contact_id)
-      ~before
-      ~after
-      ()
   in
   let create_contact_changelog before after =
     let open Contact in
@@ -117,7 +119,8 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     let open PartialUpdate in
     let%lwt () =
       match update with
-      | Custom public -> create_custom_field_answer_changelog contact public
+      | Custom public ->
+        create_custom_field_answer_changelog ?user_uuid pool contact public
       | Firstname (_, firstname) ->
         create_contact_changelog contact (set_firstname contact firstname)
       | Lastname (_, lastname) ->

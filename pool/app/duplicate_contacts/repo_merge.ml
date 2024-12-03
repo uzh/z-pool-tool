@@ -259,16 +259,29 @@ let merge
     ; destroy_assignments
     ]
   in
-  Database.transaction_iter
-    pool
-    ([ update_contact
-     ; update_user
-     ; override_queue
-     ; override_changelog
-     ; override_tags
-     ]
-     @ store_custom_answers
-     @ actions
-     @ destroy_requests)
-  |> Lwt_result.ok
+  let%lwt () =
+    Database.transaction_iter
+      pool
+      ([ update_contact
+       ; update_user
+       ; override_queue
+       ; override_changelog
+       ; override_tags
+       ]
+       @ store_custom_answers
+       @ actions
+       @ destroy_requests)
+  in
+  let create_changelog () =
+    let%lwt () =
+      Changelog.contact_changelog pool current_contact_state contact
+    in
+    let%lwt () =
+      kept_fields
+      |> Lwt_list.iter_s
+           (Custom_field.create_custom_field_answer_changelog pool contact)
+    in
+    Lwt.return ()
+  in
+  () |> create_changelog |> Lwt_result.ok
 ;;
