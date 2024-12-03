@@ -1738,7 +1738,7 @@ let close_assignments_table
             ]
         in
         div
-          ~a:[ a_class [ "flexrow"; "w-5" ] ]
+          ~a:[ a_class [ "flexrow"; "w-5"; "push" ] ]
           [ div
               ~a:[ a_class [ "session-close-checkboxes" ] ]
               [ div [ strong [ txt "V" ] ]

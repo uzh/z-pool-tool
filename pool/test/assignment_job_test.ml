@@ -24,10 +24,11 @@ let get_assignment_by_contact contact_id =
     Id.equal (id contact) contact_id)
 ;;
 
-let create_notification experiment assignments =
+let create_notification experiment assignments admin =
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_exn in
   Message_template.MatchFilterUpdateNotification.create
     tenant
+    Pool_common.I18n.MatchesFilterChangeReasonWorker
     admin
     experiment
     assignments
@@ -90,7 +91,7 @@ let exclude_contact _ () =
   let%lwt session = get_session () in
   let%lwt expected =
     let%lwt message =
-      create_notification experiment [ session, [ assignment ] ]
+      create_notification experiment [ session, [ assignment ] ] admin
     in
     [ Assignment.(
         Updated { assignment with matches_filter = MatchesFilter.create false })
@@ -100,11 +101,15 @@ let exclude_contact _ () =
     |> Lwt_result.return
   in
   let%lwt events =
-    update_matches_filter ~admin pool (`Session session) >|+ to_events
+    update_matches_filter ~current_user:admin pool (`Session session)
+    >|+ to_events
   in
   let () = check_result expected events in
   let%lwt events =
-    update_matches_filter ~admin pool (`Experiment (experiment, Some exclude_1))
+    update_matches_filter
+      ~current_user:admin
+      pool
+      (`Experiment (experiment, Some exclude_1))
     >|+ to_events
   in
   check_result expected events |> Lwt.return

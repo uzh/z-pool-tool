@@ -19,6 +19,8 @@ module Job = struct
     [@printer Utils.ppx_printer "smtpaccountupdated"]
     | TenantDatabaseReset of Database.Label.t [@name "tenantdatabasereset"]
     [@printer Utils.ppx_printer "tenantdatabasereset"]
+    | TenantCacheCleared [@name "tenantcachecleared"]
+    [@printer Utils.ppx_printer "tenantcachecleared"]
     | TenantDatabaseCacheCleared [@name "tenantdatabasecachecleared"]
     [@printer Utils.ppx_printer "tenantdatabasecachecleared"]
   [@@deriving eq, show, yojson]

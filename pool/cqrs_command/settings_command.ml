@@ -332,9 +332,7 @@ end = struct
       [ Pool_tenant.GtxApiKeyUpdated (tenant, gtx_info)
         |> Pool_event.pool_tenant
       ; System_event.(
-          Job.TenantDatabaseCacheCleared
-          |> create ?id:system_event_id
-          |> created)
+          Job.TenantCacheCleared |> create ?id:system_event_id |> created)
         |> Pool_event.system_event
       ]
   ;;
@@ -358,9 +356,7 @@ end = struct
     Ok
       [ Pool_tenant.GtxApiKeyRemoved tenant |> Pool_event.pool_tenant
       ; System_event.(
-          Job.TenantDatabaseCacheCleared
-          |> create ?id:system_event_id
-          |> created)
+          Job.TenantCacheCleared |> create ?id:system_event_id |> created)
         |> Pool_event.system_event
       ]
   ;;

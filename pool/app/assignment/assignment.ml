@@ -60,6 +60,11 @@ let count_unsuitable_by = Repo.Sql.count_unsuitable_by
 let find_with_follow_ups = Repo.find_with_follow_ups
 let find_follow_ups = Repo.find_follow_ups
 let find_upcoming_by_experiment = Repo.Sql.find_upcoming_by_experiment
+
+let find_assigned_contacts_by_experiment =
+  Repo.Sql.find_assigned_contacts_by_experiment
+;;
+
 let find_upcoming = Repo.Sql.find_upcoming
 
 let contact_participation_in_other_assignments =

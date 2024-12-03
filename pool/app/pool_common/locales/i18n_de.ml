@@ -92,6 +92,8 @@ let to_string = function
   | FilterNrOfContacts ->
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
   | FilterNrOfSentInvitations -> "Anzahl bereits eingeladener Kontakte:"
+  | FilterNrOfUnsuitableAssignments ->
+    "Anzahl angemeldeter Kontakte, die nicht den Kriterien entsprechen:"
   | FollowUpSessionFor -> "Folgesession für:"
   | Help -> "Hilfe"
   | ImportConfirmationNote ->
@@ -138,6 +140,14 @@ let to_string = function
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
      Füge zusätzliche Sessions zum Experiment hinzu."
   | MailingNewTitle -> "Neuen Versand erstellen"
+  | MatchesFilterChangeReasonFilter ->
+    "Diese Meldung wurde durch eine Aktualisierung des Experimentierfilters \
+     ausgelöst."
+  | MatchesFilterChangeReasonManually ->
+    "Diese Nachricht wurde manuell ausgelöst."
+  | MatchesFilterChangeReasonWorker ->
+    "Diese Meldung wurde durch einen Hintergrundjob ausgelöst, der wiederholt \
+     prüft, ob künftige Assignments auf den Experimentfilter zutreffen."
   | MessageHistory name -> Format.asprintf "Nachrichtenverlauf von %s" name
   | NoEntries field ->
     Format.asprintf
