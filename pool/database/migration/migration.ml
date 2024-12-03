@@ -86,8 +86,8 @@ let with_disabled_fk_check database_label f =
     Lwt.finalize
       (fun () -> f connection)
       (fun () ->
-        Connection.exec set_fk_check_request true
-        |> Pool.raise_caqti_error database_label))
+         Connection.exec set_fk_check_request true
+         |> Pool.raise_caqti_error database_label))
 ;;
 
 let execute_steps database_label state steps =
@@ -198,20 +198,20 @@ let execute_migration database_label migration =
     let%lwt state = mark_dirty state in
     Lwt.catch
       (fun () ->
-        execute_steps database_label state steps_to_apply
-        >|> mark_clean
-        ||> CCFun.const (CCResult.return ()))
+         execute_steps database_label state steps_to_apply
+         >|> mark_clean
+         ||> CCFun.const (CCResult.return ()))
       (fun exn ->
-        let err = Printexc.to_string exn in
-        let error_message =
-          Format.asprintf
-            "Error while running migration '%a': %s"
-            pp
-            migration
-            err
-        in
-        Logs.err (fun m -> m ~tags "%s" error_message);
-        Lwt_result.fail (Pool_message.Error.MigrationFailed error_message))
+         let err = Printexc.to_string exn in
+         let error_message =
+           Format.asprintf
+             "Error while running migration '%a': %s"
+             pp
+             migration
+             err
+         in
+         Logs.err (fun m -> m ~tags "%s" error_message);
+         Lwt_result.fail (Pool_message.Error.MigrationFailed error_message))
 ;;
 
 let execute database_label migrations =
@@ -260,23 +260,23 @@ let migrations_status ?migrations database_label () =
   Lwt.return
   @@ CCList.map
        (fun namespace ->
-         let migrations = Map.find_opt namespace migrations_to_check in
-         let migration_state =
-           CCList.find_opt
-             (Migration_repo.Migration.namespace %> CCString.equal namespace)
-             migrations_states
-         in
-         match migrations, migration_state with
-         | None, None -> namespace, None
-         | None, Some migration_state ->
-           namespace, Some (-Migration_repo.Migration.version migration_state)
-         | Some migrations, Some migration_state ->
-           let unapplied_migrations_count =
-             CCList.length migrations
-             - Migration_repo.Migration.version migration_state
-           in
-           namespace, Some unapplied_migrations_count
-         | Some migrations, None -> namespace, Some (CCList.length migrations))
+          let migrations = Map.find_opt namespace migrations_to_check in
+          let migration_state =
+            CCList.find_opt
+              (Migration_repo.Migration.namespace %> CCString.equal namespace)
+              migrations_states
+          in
+          match migrations, migration_state with
+          | None, None -> namespace, None
+          | None, Some migration_state ->
+            namespace, Some (-Migration_repo.Migration.version migration_state)
+          | Some migrations, Some migration_state ->
+            let unapplied_migrations_count =
+              CCList.length migrations
+              - Migration_repo.Migration.version migration_state
+            in
+            namespace, Some unapplied_migrations_count
+          | Some migrations, None -> namespace, Some (CCList.length migrations))
        namespaces_to_check
 ;;
 
@@ -300,39 +300,39 @@ let check_migrations_status ?migrations database_label () =
   let%lwt unapplied = migrations_status database_label ?migrations () in
   CCList.iter
     (fun (namespace, count) ->
-      match count with
-      | None ->
-        Logs.warn (fun m ->
-          m
-            ~tags
-            "Could not find registered migrations for namespace '%s'. This \
-             implies you removed all migrations of that namespace. Migrations \
-             should be append-only. If you intended to remove those \
-             migrations, make sure to remove the migration state in your \
-             database/other persistence layer."
-            namespace)
-      | Some count ->
-        if count > 0
-        then
-          Logs.info (fun m ->
-            m
-              ~tags
-              "Unapplied migrations for namespace '%s' detected. Found %s \
-               unapplied migrations, run command 'migrate'."
-              namespace
-              (Int.to_string count))
-        else if count < 0
-        then
-          Logs.warn (fun m ->
-            m
-              ~tags
-              "Fewer registered migrations found than migration state \
-               indicates for namespace '%s'. Current migration state version \
-               is ahead of registered migrations by %s. This implies you \
-               removed migrations, which should be append-only."
-              namespace
-              (Int.to_string @@ Int.abs count))
-        else ())
+       match count with
+       | None ->
+         Logs.warn (fun m ->
+           m
+             ~tags
+             "Could not find registered migrations for namespace '%s'. This \
+              implies you removed all migrations of that namespace. Migrations \
+              should be append-only. If you intended to remove those \
+              migrations, make sure to remove the migration state in your \
+              database/other persistence layer."
+             namespace)
+       | Some count ->
+         if count > 0
+         then
+           Logs.info (fun m ->
+             m
+               ~tags
+               "Unapplied migrations for namespace '%s' detected. Found %s \
+                unapplied migrations, run command 'migrate'."
+               namespace
+               (Int.to_string count))
+         else if count < 0
+         then
+           Logs.warn (fun m ->
+             m
+               ~tags
+               "Fewer registered migrations found than migration state \
+                indicates for namespace '%s'. Current migration state version \
+                is ahead of registered migrations by %s. This implies you \
+                removed migrations, which should be append-only."
+               namespace
+               (Int.to_string @@ Int.abs count))
+         else ())
     unapplied;
   Lwt.return ()
 ;;

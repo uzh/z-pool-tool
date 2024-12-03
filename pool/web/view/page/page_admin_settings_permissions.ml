@@ -11,12 +11,12 @@ let role_permission_path = HttpUtils.Url.Admin.role_permission_path
 let edit_permission_modal_id = "edit-permission-modal"
 
 let edit_target_modal
-  { Pool_context.language; csrf; _ }
-  ?error
-  ?flash_fetcher
-  role
-  target
-  current_permissions
+      { Pool_context.language; csrf; _ }
+      ?error
+      ?flash_fetcher
+      role
+      target
+      current_permissions
   =
   let open Role in
   let action =
@@ -95,10 +95,10 @@ let edit_target_modal
 ;;
 
 let list
-  Pool_context.{ language; guardian; _ }
-  role
-  (rules : (Guard.Persistence.target_model * Guard.Permission.t list) list)
-  query
+      Pool_context.{ language; guardian; _ }
+      role
+      (rules : (Guard.Persistence.target_model * Guard.Permission.t list) list)
+      query
   =
   let open Guard in
   let can_manage =

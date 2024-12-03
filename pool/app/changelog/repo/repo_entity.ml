@@ -22,10 +22,10 @@ let t =
   let open Database.Caqti_encoders in
   let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let decode
-    ( id
-    , ( model
-      , (entity_uuid, (user_uuid, (user_email, (changes, (created_at, ()))))) )
-    )
+        ( id
+        , ( model
+          , (entity_uuid, (user_uuid, (user_email, (changes, (created_at, ())))))
+          ) )
     =
     let user =
       match user_uuid, user_email with

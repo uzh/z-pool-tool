@@ -25,12 +25,12 @@ let template_label_url label suffix =
 ;;
 
 let table
-  ?(buttons = txt "")
-  ?(can_update_experiment = false)
-  ?delete_path
-  language
-  templates
-  to_edit_path
+      ?(buttons = txt "")
+      ?(can_update_experiment = false)
+      ?delete_path
+      language
+      templates
+      to_edit_path
   =
   let open Message_template in
   let empty_hint =
@@ -51,40 +51,40 @@ let table
   in
   CCList.map
     (fun template ->
-      let buttons = edit_link (template |> to_edit_path) in
-      let buttons =
-        match delete_path with
-        | None -> buttons
-        | Some (delete_path, csrf) ->
-          let delete =
-            let action = delete_path template in
-            form
-              ~a:
-                [ a_method `Post
-                ; a_action action
-                ; a_user_data
-                    "confirmable"
-                    Pool_common.(
-                      Utils.confirmable_to_string
-                        language
-                        I18n.DeleteMessageTemplate)
-                ]
-              [ csrf_element csrf ()
-              ; submit_element
-                  ~has_icon:Icon.TrashOutline
-                  ~submit_type:`Error
-                  language
-                  Pool_message.(Control.Delete None)
-                  ()
-              ]
-          in
-          (if can_update_experiment then [ buttons; delete ] else [])
-          |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-      in
-      [ txt (to_human_label template)
-      ; txt (template.language |> Pool_common.Language.show)
-      ; buttons
-      ])
+       let buttons = edit_link (template |> to_edit_path) in
+       let buttons =
+         match delete_path with
+         | None -> buttons
+         | Some (delete_path, csrf) ->
+           let delete =
+             let action = delete_path template in
+             form
+               ~a:
+                 [ a_method `Post
+                 ; a_action action
+                 ; a_user_data
+                     "confirmable"
+                     Pool_common.(
+                       Utils.confirmable_to_string
+                         language
+                         I18n.DeleteMessageTemplate)
+                 ]
+               [ csrf_element csrf ()
+               ; submit_element
+                   ~has_icon:Icon.TrashOutline
+                   ~submit_type:`Error
+                   language
+                   Pool_message.(Control.Delete None)
+                   ()
+               ]
+           in
+           (if can_update_experiment then [ buttons; delete ] else [])
+           |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+       in
+       [ txt (to_human_label template)
+       ; txt (template.language |> Pool_common.Language.show)
+       ; buttons
+       ])
     templates
   |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
   |> fun table -> div ~a:[ a_class [ "stack" ] ] [ table; empty_hint ]
@@ -108,17 +108,17 @@ let index { Pool_context.language; _ } templates =
 ;;
 
 let template_inputs
-  { Pool_context.language; _ }
-  ?entity
-  ?(hide_text_message_input = false)
-  ?languages
-  ?language_select_attriutes
-  ?flash_fetcher
-  ?fixed_language
-  ?selected_language
-  text_messages_enabled
-  form_context
-  template_label
+      { Pool_context.language; _ }
+      ?entity
+      ?(hide_text_message_input = false)
+      ?languages
+      ?language_select_attriutes
+      ?flash_fetcher
+      ?fixed_language
+      ?selected_language
+      text_messages_enabled
+      form_context
+      template_label
   =
   let id = "message-template-inputs" in
   let open Message_template in
@@ -299,16 +299,16 @@ let template_inputs
 ;;
 
 let template_form
-  ({ Pool_context.language; query_parameters; csrf; _ } as context)
-  ?entity
-  ?(hide_text_message_input = false)
-  ?languages
-  ?text_elements
-  ?fixed_language
-  form_context
-  text_messages_disabled
-  action
-  flash_fetcher
+      ({ Pool_context.language; query_parameters; csrf; _ } as context)
+      ?entity
+      ?(hide_text_message_input = false)
+      ?languages
+      ?text_elements
+      ?fixed_language
+      form_context
+      text_messages_disabled
+      action
+      flash_fetcher
   =
   let open Message_template in
   let externalize = Http_utils.externalize_path_with_params query_parameters in
@@ -359,10 +359,10 @@ let template_form
 ;;
 
 let edit
-  ({ Pool_context.language; _ } as context)
-  template
-  (tenant : Pool_tenant.t)
-  flash_fetcher
+      ({ Pool_context.language; _ } as context)
+      template
+      (tenant : Pool_tenant.t)
+      flash_fetcher
   =
   let open Message_template in
   let action =

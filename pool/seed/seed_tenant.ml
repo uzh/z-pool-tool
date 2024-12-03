@@ -10,20 +10,20 @@ let create () =
   let%lwt () =
     Lwt_list.iter_s
       (fun file ->
-        let open Assets in
-        let stored_file =
-          Sihl_storage.
-            { id = file.Assets.id
-            ; filename = file.filename
-            ; filesize = file.filesize
-            ; mime = file.mime
-            }
-        in
-        let base64 = Base64.encode_exn file.body in
-        let%lwt _ =
-          Storage.upload_base64 Database.Pool.Root.label stored_file base64
-        in
-        Lwt.return_unit)
+         let open Assets in
+         let stored_file =
+           Sihl_storage.
+             { id = file.Assets.id
+             ; filename = file.filename
+             ; filesize = file.filesize
+             ; mime = file.mime
+             }
+         in
+         let base64 = Base64.encode_exn file.body in
+         let%lwt _ =
+           Storage.upload_base64 Database.Pool.Root.label stored_file base64
+         in
+         Lwt.return_unit)
       [ styles; icon; tenant_logo ]
   in
   let data =
@@ -77,7 +77,7 @@ let create () =
              , styles
              , icon
              , default_language )
-           ->
+            ->
             let database =
               let open Database in
               let open CCResult in

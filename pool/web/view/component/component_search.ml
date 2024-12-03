@@ -38,19 +38,19 @@ let query_results to_item items =
 ;;
 
 let multi_search
-  ?(query_field = query_field)
-  language
-  field
-  multi_search
-  ?(additional_attributes = [])
-  ?(disabled = false)
-  ?hints
-  ?(is_filter = false)
-  ?js_callback
-  ?input_type
-  ?placeholder
-  ?tag_name
-  ()
+      ?(query_field = query_field)
+      language
+      field
+      multi_search
+      ?(additional_attributes = [])
+      ?(disabled = false)
+      ?hints
+      ?(is_filter = false)
+      ?js_callback
+      ?input_type
+      ?placeholder
+      ?tag_name
+      ()
   =
   let open Pool_common in
   let filter_selected_attributes =

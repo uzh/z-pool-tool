@@ -69,8 +69,8 @@ let smtp_form location req =
         |> SmtpAuth.find_default
         ||> CCResult.to_opt
         ||> (function
-               | Some auth -> show context location flash_fetcher auth
-               | None -> smtp_create_form context location flash_fetcher)
+         | Some auth -> show context location flash_fetcher auth
+         | None -> smtp_create_form context location flash_fetcher)
         >|> General.create_root_layout ~active_navigation context
         ||> CCResult.return
     in
@@ -202,12 +202,10 @@ let delete_base location req =
   Cqrs_command.Smtp_command.Delete.handle ~tags smtp_id
   |> Lwt_result.lift
   |>> (fun events ->
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
-        Http_utils.redirect_to_with_actions
-          path
-          [ Message.set ~success:[ Success.Deleted Field.Smtp ] ])
+  let%lwt () = Pool_event.handle_events ~tags database_label user events in
+  Http_utils.redirect_to_with_actions
+    path
+    [ Message.set ~success:[ Success.Deleted Field.Smtp ] ])
   |> Utils.Lwt_result.map_error (fun err -> err, path)
 ;;
 

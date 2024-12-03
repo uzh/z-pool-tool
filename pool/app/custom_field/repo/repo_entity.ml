@@ -182,13 +182,13 @@ module Public = struct
   [@@deriving show, eq]
 
   let create_answer
-    id
-    entity_uuid
-    ~is_admin
-    ~admin_override
-    ~answer_value
-    ~answer_admin_value
-    parse_value
+        id
+        entity_uuid
+        ~is_admin
+        ~admin_override
+        ~answer_value
+        ~answer_admin_value
+        parse_value
     =
     let open CCOption.Infix in
     match id, entity_uuid with
@@ -204,25 +204,25 @@ module Public = struct
   ;;
 
   let to_entity
-    is_admin
-    select_options
-    { id
-    ; name
-    ; hint
-    ; validation
-    ; field_type
-    ; required
-    ; admin_override
-    ; admin_input_only
-    ; prompt_on_registration
-    ; answer_id
-    ; answer_entity_uuid
-    ; answer_value
-    ; answer_admin_value
-    ; version
-    ; admin_version
-    ; _
-    }
+        is_admin
+        select_options
+        { id
+        ; name
+        ; hint
+        ; validation
+        ; field_type
+        ; required
+        ; admin_override
+        ; admin_input_only
+        ; prompt_on_registration
+        ; answer_id
+        ; answer_entity_uuid
+        ; answer_value
+        ; answer_admin_value
+        ; version
+        ; admin_version
+        ; _
+        }
     =
     let open CCOption.Infix in
     let validation_schema schema =
@@ -326,7 +326,7 @@ module Public = struct
       let options =
         CCList.filter_map
           (fun (field_id, option) ->
-            if Pool_common.Id.equal field_id id then Some option else None)
+             if Pool_common.Id.equal field_id id then Some option else None)
           select_options
       in
       Public.Select
@@ -346,7 +346,7 @@ module Public = struct
       let select_options =
         CCList.filter_map
           (fun (field_id, option) ->
-            if Pool_common.Id.equal field_id id then Some option else None)
+             if Pool_common.Id.equal field_id id then Some option else None)
           select_options
       in
       let validation = validation_schema Validation.MultiSelect.schema in
@@ -422,22 +422,23 @@ module Public = struct
     let partition_map fields { Group.id; _ } =
       CCList.partition_filter_map
         (fun (field : repo) ->
-          match
-            field.custom_field_group_id
-            |> CCOption.map_or ~default:false (Id.equal id)
-          with
-          | true -> `Left (to_entity field)
-          | false -> `Right field)
+           match
+             field.custom_field_group_id
+             |> CCOption.map_or ~default:false (Id.equal id)
+           with
+           | true -> `Left (to_entity field)
+           | false -> `Right field)
         fields
     in
     let grouped, ungrouped =
       CCList.fold_left
         (fun (groups, fields) group ->
-          let of_group, rest = partition_map fields group in
-          let group =
-            Group.{ Public.id = group.id; name = group.name; fields = of_group }
-          in
-          CCList.append groups [ group ], rest)
+           let of_group, rest = partition_map fields group in
+           let group =
+             Group.
+               { Public.id = group.id; name = group.name; fields = of_group }
+           in
+           CCList.append groups [ group ], rest)
         ([], fields)
         groups
     in
@@ -455,21 +456,22 @@ module Public = struct
       Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
     in
     let decode
-      ( id
-      , ( name
-        , ( hint
-          , ( validation
-            , ( field_type
-              , ( required
-                , ( custom_field_group_id
-                  , ( admin_override
-                    , ( admin_input_only
-                      , ( prompt_on_registration
-                        , ( answer_id
-                          , ( answer_entity_uuid
-                            , ( answer_value
-                              , (answer_admin_value, (version, admin_version))
-                              ) ) ) ) ) ) ) ) ) ) ) ) )
+          ( id
+          , ( name
+            , ( hint
+              , ( validation
+                , ( field_type
+                  , ( required
+                    , ( custom_field_group_id
+                      , ( admin_override
+                        , ( admin_input_only
+                          , ( prompt_on_registration
+                            , ( answer_id
+                              , ( answer_entity_uuid
+                                , ( answer_value
+                                  , ( answer_admin_value
+                                    , (version, admin_version) ) ) ) ) ) ) ) )
+                    ) ) ) ) ) )
       =
       Ok
         { id
@@ -557,24 +559,24 @@ let t =
     Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
   in
   let decode
-    ( id
-    , ( model
-      , ( name
-        , ( hint
-          , ( field_type
-            , ( validation
-              , ( required
-                , ( disabled
-                  , ( custom_field_group_id
-                    , ( admin_hint
-                      , ( admin_override
-                        , ( admin_view_only
-                          , ( admin_input_only
-                            , ( prompt_on_registration
-                              , ( published_at
-                                , ( show_on_session_close_page
-                                  , show_on_session_detail_page ) ) ) ) ) ) ) )
-                  ) ) ) ) ) ) ) )
+        ( id
+        , ( model
+          , ( name
+            , ( hint
+              , ( field_type
+                , ( validation
+                  , ( required
+                    , ( disabled
+                      , ( custom_field_group_id
+                        , ( admin_hint
+                          , ( admin_override
+                            , ( admin_view_only
+                              , ( admin_input_only
+                                , ( prompt_on_registration
+                                  , ( published_at
+                                    , ( show_on_session_close_page
+                                      , show_on_session_detail_page ) ) ) ) ) )
+                          ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -635,25 +637,25 @@ let t =
 ;;
 
 let to_entity
-  select_options
-  { id
-  ; model
-  ; name
-  ; hint
-  ; validation
-  ; field_type
-  ; required
-  ; disabled
-  ; custom_field_group_id
-  ; admin_hint
-  ; admin_override
-  ; admin_view_only
-  ; admin_input_only
-  ; prompt_on_registration
-  ; published_at
-  ; show_on_session_close_page
-  ; show_on_session_detail_page
-  }
+      select_options
+      { id
+      ; model
+      ; name
+      ; hint
+      ; validation
+      ; field_type
+      ; required
+      ; disabled
+      ; custom_field_group_id
+      ; admin_hint
+      ; admin_override
+      ; admin_view_only
+      ; admin_input_only
+      ; prompt_on_registration
+      ; published_at
+      ; show_on_session_close_page
+      ; show_on_session_detail_page
+      }
   =
   let validation_schema schema =
     Validation.(validation |> raw_of_yojson |> schema)
@@ -721,7 +723,7 @@ let to_entity
     let options =
       CCList.filter_map
         (fun (field_id, option) ->
-          if Pool_common.Id.equal field_id id then Some option else None)
+           if Pool_common.Id.equal field_id id then Some option else None)
         select_options
     in
     Select
@@ -747,7 +749,7 @@ let to_entity
     let options =
       CCList.filter_map
         (fun (field_id, option) ->
-          if Pool_common.Id.equal field_id id then Some option else None)
+           if Pool_common.Id.equal field_id id then Some option else None)
         select_options
     in
     let validation = validation_schema Validation.MultiSelect.schema in

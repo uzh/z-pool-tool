@@ -23,8 +23,8 @@ let exclude_ids column_name decode_id dyn exclude =
     let dyn, sql_strings =
       CCList.fold_left
         (fun (dyn, sql_strings) id ->
-          ( dyn |> Entity.Dynparam.add Caqti_type.string (id |> decode_id)
-          , sql :: sql_strings ))
+           ( dyn |> Entity.Dynparam.add Caqti_type.string (id |> decode_id)
+           , sql :: sql_strings ))
         (dyn, [])
         exclude
     in

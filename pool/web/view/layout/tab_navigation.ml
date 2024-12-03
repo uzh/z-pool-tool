@@ -45,18 +45,18 @@ let make_body ?buttons ?hint language title children =
       CCOption.map_or
         ~default:base
         (fun buttons ->
-          div ~a:[ a_class classnames ] [ div [ base ]; div [ buttons ] ])
+           div ~a:[ a_class classnames ] [ div [ base ]; div [ buttons ] ])
         buttons
     in
     CCOption.map_or
       ~default:[ title ]
       (fun hint ->
-        [ title
-        ; p
-            [ Pool_common.Utils.hint_to_string language hint
-              |> Http_utils.add_line_breaks
-            ]
-        ])
+         [ title
+         ; p
+             [ Pool_common.Utils.hint_to_string language hint
+               |> Http_utils.add_line_breaks
+             ]
+         ])
       hint
   in
   title @ [ div ~a:[ a_class [ "gap-lg" ] ] children ]

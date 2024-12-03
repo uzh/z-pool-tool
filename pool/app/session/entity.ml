@@ -190,20 +190,20 @@ type t =
 (* TODO [aerben] write tests *)
 
 let create
-  ?id
-  ?internal_description
-  ?public_description
-  ?email_reminder_lead_time
-  ?follow_up_to
-  ?(has_follow_ups = false)
-  ?text_message_reminder_lead_time
-  start
-  duration
-  location
-  max_participants
-  min_participants
-  overbook
-  experiment
+      ?id
+      ?internal_description
+      ?public_description
+      ?email_reminder_lead_time
+      ?follow_up_to
+      ?(has_follow_ups = false)
+      ?text_message_reminder_lead_time
+      start
+      duration
+      location
+      max_participants
+      min_participants
+      overbook
+      experiment
   =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; follow_up_to
@@ -262,7 +262,7 @@ type notification_log =
 type notification_history =
   { session : t
   ; queue_entries : (Sihl_email.t * Pool_queue.Instance.t) list
-       [@equal fun _ _ -> true]
+        [@equal fun _ _ -> true]
   }
 
 let session_date_to_human (session : t) =
@@ -327,9 +327,10 @@ module Public = struct
   ;;
 
   let not_past session =
-    if Ptime.is_later
-         (session |> get_session_end |> Start.value)
-         ~than:Ptime_clock.(now ())
+    if
+      Ptime.is_later
+        (session |> get_session_end |> Start.value)
+        ~than:Ptime_clock.(now ())
     then Ok ()
     else Error Pool_message.Error.SessionInPast
   ;;
@@ -382,15 +383,15 @@ module Public = struct
     let parents, follow_ups =
       CCList.fold_left
         (fun (parents, follow_ups) (s : t) ->
-          let add_parent (s : t) = parents @ [ s.id, (s, []) ], follow_ups in
-          match s.follow_up_to with
-          | None -> add_parent s
-          | Some id
-            when CCOption.is_some
-                   (CCList.find_opt
-                      (fun (parent, _) -> Id.equal parent id)
-                      parents) -> parents, follow_ups @ [ id, s ]
-          | Some _ -> add_parent s)
+           let add_parent (s : t) = parents @ [ s.id, (s, []) ], follow_ups in
+           match s.follow_up_to with
+           | None -> add_parent s
+           | Some id
+             when CCOption.is_some
+                    (CCList.find_opt
+                       (fun (parent, _) -> Id.equal parent id)
+                       parents) -> parents, follow_ups @ [ id, s ]
+           | Some _ -> add_parent s)
         ([], [])
         sessions
     in
@@ -408,20 +409,20 @@ module Public = struct
 end
 
 let to_public
-  ({ id
-   ; follow_up_to
-   ; start
-   ; duration
-   ; public_description
-   ; location
-   ; max_participants
-   ; min_participants
-   ; overbook
-   ; assignment_count
-   ; canceled_at
-   ; _
-   } :
-    t)
+      ({ id
+       ; follow_up_to
+       ; start
+       ; duration
+       ; public_description
+       ; location
+       ; max_participants
+       ; min_participants
+       ; overbook
+       ; assignment_count
+       ; canceled_at
+       ; _
+       } :
+        t)
   =
   Public.
     { id
@@ -459,12 +460,12 @@ module Calendar = struct
   [@@deriving eq, show, yojson]
 
   let create_links
-    ?(show_experiment = false)
-    ?(show_session = false)
-    ?(show_location_session = false)
-    experiment_id
-    session_id
-    ({ url; _ } : location)
+        ?(show_experiment = false)
+        ?(show_session = false)
+        ?(show_location_session = false)
+        experiment_id
+        session_id
+        ({ url; _ } : location)
     =
     let session_id = Id.value session_id in
     let experiment =
@@ -536,8 +537,8 @@ let follow_up_sessions_to_email_list follow_ups =
 ;;
 
 let public_to_email_text
-  language
-  (Public.{ start; duration; location; _ } : Public.t)
+      language
+      (Public.{ start; duration; location; _ } : Public.t)
   =
   email_text language start duration location
 ;;
@@ -565,9 +566,10 @@ let not_closed session =
 ;;
 
 let not_past session =
-  if Ptime.is_later
-       (session |> get_session_end |> Start.value)
-       ~than:Ptime_clock.(now ())
+  if
+    Ptime.is_later
+      (session |> get_session_end |> Start.value)
+      ~than:Ptime_clock.(now ())
   then Ok ()
   else Error Pool_message.Error.SessionInPast
 ;;

@@ -174,10 +174,10 @@ let finds_uninvited_contacts =
   let found_contacts =
     CCList.filter
       (fun contact ->
-        let open Contact in
-        let open Pool_user in
-        contact.user.id = invited_contact.user.id
-        || contact.user.id = expected_contact.user.id)
+         let open Contact in
+         let open Pool_user in
+         contact.user.id = invited_contact.user.id
+         || contact.user.id = expected_contact.user.id)
       found_contacts
   in
   (* 5. assert on the found contacts *)
@@ -246,9 +246,9 @@ let filters_out_invited_contacts =
   let found_contacts =
     CCList.filter
       (fun contact ->
-        let open Contact in
-        let open Pool_user in
-        contact.user.id = invited_contact.user.id)
+         let open Contact in
+         let open Pool_user in
+         contact.user.id = invited_contact.user.id)
       found_contacts
   in
   (* 4. assert on the found contacts *)

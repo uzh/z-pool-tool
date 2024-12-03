@@ -106,8 +106,8 @@ module Instance = struct
   ;;
 
   let should_run
-    ?(is_polled = false)
-    ({ tries; max_tries; run_at; polled_at; _ } as job)
+        ?(is_polled = false)
+        ({ tries; max_tries; run_at; polled_at; _ } as job)
     =
     let has_tries_left = tries < max_tries in
     let is_after_delay = Ptime_clock.now () |> Ptime.is_later ~than:run_at in
@@ -136,18 +136,18 @@ module Instance = struct
   ;;
 
   let create
-    ?(id = Id.create ())
-    ?message_template
-    ?(tries = 0)
-    ?(max_tries = default_tries)
-    ?(status = Status.Pending)
-    ?last_error
-    ?last_error_at
-    ?(run_at = Now)
-    ?clone_of
-    database_label
-    name
-    input
+        ?(id = Id.create ())
+        ?message_template
+        ?(tries = 0)
+        ?(max_tries = default_tries)
+        ?(status = Status.Pending)
+        ?last_error
+        ?last_error_at
+        ?(run_at = Now)
+        ?clone_of
+        database_label
+        name
+        input
     =
     { id
     ; name
@@ -238,25 +238,25 @@ module Job = struct
   let decode { decode; _ } = decode
 
   let create
-    ?(max_tries = default_tries)
-    ?(retry_delay = default_retry_delay)
-    ?(failed = Instance.default_error_handler)
-    handle
-    encode
-    decode
-    name
+        ?(max_tries = default_tries)
+        ?(retry_delay = default_retry_delay)
+        ?(failed = Instance.default_error_handler)
+        handle
+        encode
+        decode
+        name
     =
     { name; handle; failed; max_tries; retry_delay; encode; decode }
   ;;
 
   let to_instance
-    ?id
-    ?message_template
-    ?run_at
-    ?clone_of
-    label
-    input
-    ({ name; encode; max_tries; _ } : 'a t)
+        ?id
+        ?message_template
+        ?run_at
+        ?clone_of
+        label
+        input
+        ({ name; encode; max_tries; _ } : 'a t)
     =
     Instance.create
       ?id

@@ -135,9 +135,9 @@ let create_with_distribution () =
       Format.asprintf "%s,%s" (SortableField.show field) (SortOrder.show sort))
     |> of_urlencoded_list
     >|= (function
-           | None -> urlencoded
-           | Some distribution ->
-             (show Field.Distribution, distribution) :: urlencoded)
+     | None -> urlencoded
+     | Some distribution ->
+       (show Field.Distribution, distribution) :: urlencoded)
     >|= CCList.map (fun (field, value) -> field, [ value ])
     >|= Http_utils.format_request_boolean_values mailing_boolean_fields
   in
@@ -187,8 +187,8 @@ let create_with_start_now () =
     |> urlencoded
     |> Create.decode
     >>= (fun { start_at; start_now; end_at; limit; distribution } ->
-          let* start_at = Start.create start_at start_now in
-          Mailing.create start_at end_at limit distribution)
+    let* start_at = Start.create start_at start_now in
+    Mailing.create start_at end_at limit distribution)
     |> CCResult.is_ok
   in
   (* Only testing if mailing is Ok, as comparison of timestampts with

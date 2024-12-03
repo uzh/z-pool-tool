@@ -25,17 +25,17 @@ end = struct
   type t = User_command.create_user
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?allowed_email_suffixes
-    ?(user_id = Contact.Id.create ())
-    ?(terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ()))
-    ?signup_code
-    custom_fields
-    token
-    unverified_email
-    verification_email
-    default_language
-    command
+        ?(tags = Logs.Tag.empty)
+        ?allowed_email_suffixes
+        ?(user_id = Contact.Id.create ())
+        ?(terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ()))
+        ?signup_code
+        custom_fields
+        token
+        unverified_email
+        verification_email
+        default_language
+        command
     =
     Logs.info ~src (fun m -> m "Handle command SignUp" ~tags);
     let open CCResult in
@@ -197,12 +197,12 @@ end = struct
   type t = Pool_user.EmailAddress.t
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?allowed_email_suffixes
-    token
-    verification_email
-    (contact : Contact.t)
-    email
+        ?(tags = Logs.Tag.empty)
+        ?allowed_email_suffixes
+        token
+        verification_email
+        (contact : Contact.t)
+        email
     =
     Logs.info ~src (fun m -> m "Handle command RequestEmailValidation" ~tags);
     let open CCResult in

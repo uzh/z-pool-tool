@@ -51,10 +51,10 @@ let archive instance =
 ;;
 
 let dev_dispatch
-  ~callback
-  ?tags
-  { Job.handle; decode; _ }
-  ({ Instance.database_label; input; _ } as instance)
+      ~callback
+      ?tags
+      { Job.handle; decode; _ }
+      ({ Instance.database_label; input; _ } as instance)
   =
   let open Utils.Lwt_result.Infix in
   Logs.info (fun m -> m ?tags "Skipping queue");
@@ -71,14 +71,14 @@ let dev_dispatch
 ;;
 
 let dispatch
-  ?(id = Id.create ())
-  ?(callback = fun (_ : 'a) -> Lwt.return_unit)
-  ?message_template
-  ?job_ctx
-  ?run_at
-  label
-  input
-  job
+      ?(id = Id.create ())
+      ?(callback = fun (_ : 'a) -> Lwt.return_unit)
+      ?message_template
+      ?job_ctx
+      ?run_at
+      label
+      input
+      job
   =
   let tags = Database.Logger.Tags.create label in
   let config = Sihl.Configuration.read schema in
@@ -114,11 +114,11 @@ let dispatch
 ;;
 
 let dispatch_all
-  ?(callback = fun (_ : 'a) -> Lwt.return_unit)
-  ?run_at
-  label
-  inputs
-  job
+      ?(callback = fun (_ : 'a) -> Lwt.return_unit)
+      ?run_at
+      label
+      inputs
+      job
   =
   let tags = Database.Logger.Tags.create label in
   let config = Sihl.Configuration.read schema in
@@ -126,18 +126,18 @@ let dispatch_all
     CCList.fold_left
       (fun (init_instances, init_create, init_clone)
         (id, input, message_template, job_ctx) ->
-        let instance =
-          Job.to_instance ~id ?message_template ?run_at label input job
-        in
-        match job_ctx with
-        | Create uuids ->
-          ( CCList.cons' init_instances instance
-          , init_create @ CCList.map (Entity_mapping.create instance) uuids
-          , init_clone )
-        | Clone uuid ->
-          ( CCList.cons' init_instances instance
-          , init_create
-          , CCList.cons' init_clone uuid ))
+         let instance =
+           Job.to_instance ~id ?message_template ?run_at label input job
+         in
+         match job_ctx with
+         | Create uuids ->
+           ( CCList.cons' init_instances instance
+           , init_create @ CCList.map (Entity_mapping.create instance) uuids
+           , init_clone )
+         | Clone uuid ->
+           ( CCList.cons' init_instances instance
+           , init_create
+           , CCList.cons' init_clone uuid ))
       ([], [], [])
       inputs
   in
@@ -153,9 +153,9 @@ let dispatch_all
 ;;
 
 let run_job
-  ?tags
-  { AnyJob.handle; failed; _ }
-  ({ Instance.id; database_label; input; _ } as instance)
+      ?tags
+      { AnyJob.handle; failed; _ }
+      ({ Instance.id; database_label; input; _ } as instance)
   =
   let tags =
     let open Database.Logger.Tags in
@@ -176,8 +176,8 @@ let run_job
   | Error msg ->
     Lwt.catch
       (fun () ->
-        let%lwt () = failed database_label msg instance in
-        Lwt.return_error msg)
+         let%lwt () = failed database_label msg instance in
+         Lwt.return_error msg)
       (log_reraise
          "Exception caught while cleaning up job, this is a bug in your job \
           failure handler, make sure to not throw exceptions there.")
@@ -195,10 +195,10 @@ let work_job job instance =
     let%lwt instance =
       Lwt.catch
         (fun () ->
-          let%lwt instance = handle database_label instance in
-          match%lwt run_job ~tags job instance with
-          | Error msg -> fail msg
-          | Ok () -> success database_label instance)
+           let%lwt instance = handle database_label instance in
+           match%lwt run_job ~tags job instance with
+           | Error msg -> fail msg
+           | Ok () -> success database_label instance)
         (Printexc.to_string %> Pool_message.Error.nothandled %> fail)
     in
     let%lwt () = archive instance in
@@ -286,13 +286,13 @@ let start () =
       let open CCList in
       fold_left
         (fun jobs_per_db job ->
-          let database_labels =
-            match job.AnyJob.execute_on_root with
-            | false -> database_labels
-            | true -> Database.Pool.Root.label :: database_labels
-          in
-          fold_left (fun acc label -> acc @ [ label, job ]) [] database_labels
-          |> append jobs_per_db)
+           let database_labels =
+             match job.AnyJob.execute_on_root with
+             | false -> database_labels
+             | true -> Database.Pool.Root.label :: database_labels
+           in
+           fold_left (fun acc label -> acc @ [ label, job ]) [] database_labels
+           |> append jobs_per_db)
         []
         jobs
     in

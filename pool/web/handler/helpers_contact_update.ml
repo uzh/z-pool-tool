@@ -2,10 +2,10 @@ let tags = Pool_context.Logger.Tags.req
 let src = Logs.Src.create "handler.contact.helpers_contact_update"
 
 let toggle_paused
-  { Pool_context.database_label; query_parameters; user; _ }
-  redirect_path
-  contact
-  tags
+      { Pool_context.database_label; query_parameters; user; _ }
+      redirect_path
+      contact
+      tags
   =
   let open Utils.Lwt_result.Infix in
   let redirect_path =

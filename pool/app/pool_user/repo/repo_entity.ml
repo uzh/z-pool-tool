@@ -79,11 +79,12 @@ module EmailAddress = struct
     make_caqti_type
       Caqti_type.string
       (fun email ->
-        email
-        |> create
-        |> CCResult.map_err
-             (const
-                Pool_message.(Error.InvalidWithInfo (Field.EmailAddress, email))))
+         email
+         |> create
+         |> CCResult.map_err
+              (const
+                 Pool_message.(
+                   Error.InvalidWithInfo (Field.EmailAddress, email))))
       value
   ;;
 end
@@ -121,7 +122,9 @@ end
 let t =
   let open Database.Caqti_encoders in
   let decode
-    (id, (email, (lastname, (firstname, (status, (admin, (confirmed, ())))))))
+        ( id
+        , (email, (lastname, (firstname, (status, (admin, (confirmed, ()))))))
+        )
     =
     Ok { Entity.id; email; lastname; firstname; status; admin; confirmed }
   in

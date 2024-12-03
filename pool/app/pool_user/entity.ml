@@ -54,8 +54,8 @@ module EmailAddress = struct
   ;;
 
   let validate_suffix
-    (allowed_email_suffixes : Settings.EmailSuffix.t list option)
-    email
+        (allowed_email_suffixes : Settings.EmailSuffix.t list option)
+        email
     =
     match allowed_email_suffixes with
     | None -> Ok ()
@@ -66,10 +66,11 @@ module EmailAddress = struct
        | Some suffix ->
          let open CCResult in
          let* suffix = suffix |> Settings.EmailSuffix.create in
-         if CCList.mem
-              ~eq:Settings.EmailSuffix.equal
-              suffix
-              allowed_email_suffixes
+         if
+           CCList.mem
+             ~eq:Settings.EmailSuffix.equal
+             suffix
+             allowed_email_suffixes
          then Ok ()
          else
            Error
@@ -205,12 +206,12 @@ let is_admin user = user.admin |> IsAdmin.value
 let is_confirmed user = user.confirmed |> Confirmed.value
 
 let create
-  ?(id = Id.create ())
-  ?(admin = IsAdmin.create false)
-  ?(confirmed = Confirmed.create false)
-  email
-  lastname
-  firstname
+      ?(id = Id.create ())
+      ?(admin = IsAdmin.create false)
+      ?(confirmed = Confirmed.create false)
+      email
+      lastname
+      firstname
   : (t, Pool_message.Error.t) result
   =
   Ok

@@ -111,17 +111,17 @@ let create_persistent_fail _ () =
   let%lwt () =
     Lwt.catch
       (fun () ->
-        Pool_event.handle_events
-          database_label
-          current_user
-          [ Tags.Created tag |> Pool_event.tags ])
+         Pool_event.handle_events
+           database_label
+           current_user
+           [ Tags.Created tag |> Pool_event.tags ])
       (fun exeption ->
-        let correct_exn =
-          CCString.mem
-            ~sub:"failed: Error 1062, Duplicate entry"
-            (Printexc.to_string exeption)
-        in
-        Alcotest.(check bool "duplicate error" true correct_exn) |> Lwt.return)
+         let correct_exn =
+           CCString.mem
+             ~sub:"failed: Error 1062, Duplicate entry"
+             (Printexc.to_string exeption)
+         in
+         Alcotest.(check bool "duplicate error" true correct_exn) |> Lwt.return)
   in
   Lwt.return_unit
 ;;

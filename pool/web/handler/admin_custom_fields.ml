@@ -29,18 +29,18 @@ let find_assocs_in_urlencoded urlencoded field encoder =
   let field = Field.show field in
   CCList.filter_map
     (fun (key, values) ->
-      let group, id = CCString.take_drop (CCString.length field) key in
-      let value = CCList.head_opt values in
-      let key =
-        let open CCOption in
-        id
-        |> CCString.chop_prefix ~pre:"["
-        >>= CCString.chop_suffix ~suf:"]"
-        >>= encoder
-      in
-      match key, value with
-      | Some l, Some v when CCString.equal field group -> Some (l, v)
-      | _ -> None)
+       let group, id = CCString.take_drop (CCString.length field) key in
+       let value = CCList.head_opt values in
+       let key =
+         let open CCOption in
+         id
+         |> CCString.chop_prefix ~pre:"["
+         >>= CCString.chop_suffix ~suf:"]"
+         >>= encoder
+       in
+       match key, value with
+       | Some l, Some v when CCString.equal field group -> Some (l, v)
+       | _ -> None)
     urlencoded
 ;;
 
@@ -247,10 +247,10 @@ let sort_options req =
         ||> fun options ->
         CCList.filter_map
           (fun id ->
-            CCList.find_opt
-              SelectOption.(
-                fun (option : t) -> Id.equal (Id.of_string id) option.id)
-              options)
+             CCList.find_opt
+               SelectOption.(
+                 fun (option : t) -> Id.equal (Id.of_string id) option.id)
+               options)
           ids
       in
       let events =
@@ -297,9 +297,9 @@ let sort_fields req ?group () =
       let fields =
         CCList.filter_map
           (fun idx ->
-            CCList.find_opt
-              (fun (field : t) -> Id.equal (Id.of_string idx) (id field))
-              fields)
+             CCList.find_opt
+               (fun (field : t) -> Id.equal (Id.of_string idx) (id field))
+               fields)
           ids
       in
       let events =

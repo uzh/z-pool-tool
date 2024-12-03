@@ -18,14 +18,14 @@ let format_identifiers ?prefix identifiers =
 ;;
 
 let htmx_attribs
-  ~action
-  ~trigger
-  ?target
-  ?(swap = "outerHTML")
-  ?(allow_empty_values = false)
-  ?templates_disabled
-  ?identifier
-  ()
+      ~action
+      ~trigger
+      ?target
+      ?(swap = "outerHTML")
+      ?(allow_empty_values = false)
+      ?templates_disabled
+      ?identifier
+      ()
   =
   let target = target |> CCOption.map (a_user_data "hx-target") in
   let hx_vals =

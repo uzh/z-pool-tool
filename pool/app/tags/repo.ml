@@ -251,10 +251,10 @@ module Sql = struct
   ;;
 
   let find_all_validated_with_model
-    ?(permission = Guard.Permission.Read)
-    pool
-    model
-    actor
+        ?(permission = Guard.Permission.Read)
+        pool
+        model
+        actor
     =
     let%lwt guardian =
       Guard.sql_where_fragment

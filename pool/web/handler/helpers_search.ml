@@ -6,10 +6,10 @@ module HttpUtils = Http_utils
 let src = Logs.Src.create "handler.helper.search"
 
 let htmx_search_helper
-  ?(query_field = Field.Search)
-  ?(exclude_field = Field.Exclude)
-  entity
-  req
+      ?(query_field = Field.Search)
+      ?(exclude_field = Field.Exclude)
+      entity
+      req
   =
   let result { Pool_context.database_label; user; language; _ } =
     let* actor =

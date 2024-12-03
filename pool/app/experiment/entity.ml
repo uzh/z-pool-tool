@@ -204,27 +204,27 @@ type t =
 [@@deriving eq, fields ~getters, show, yojson]
 
 let create
-  ?id
-  ?contact_email
-  ?cost_center
-  ?internal_description
-  ?public_description
-  ?language
-  ?email_session_reminder_lead_time
-  ?experiment_type
-  ?filter
-  ?invitation_reset_at
-  ?organisational_unit
-  ?smtp_auth_id
-  ?text_message_session_reminder_lead_time
-  ?online_experiment
-  title
-  public_title
-  direct_registration_disabled
-  registration_disabled
-  allow_uninvited_signup
-  external_data_required
-  show_external_data_id_links
+      ?id
+      ?contact_email
+      ?cost_center
+      ?internal_description
+      ?public_description
+      ?language
+      ?email_session_reminder_lead_time
+      ?experiment_type
+      ?filter
+      ?invitation_reset_at
+      ?organisational_unit
+      ?smtp_auth_id
+      ?text_message_session_reminder_lead_time
+      ?online_experiment
+      title
+      public_title
+      direct_registration_disabled
+      registration_disabled
+      allow_uninvited_signup
+      external_data_required
+      show_external_data_id_links
   =
   let open CCResult in
   Ok
@@ -291,14 +291,14 @@ module Public = struct
   [@@deriving eq, show]
 
   let create
-    ?description
-    ?language
-    ?experiment_type
-    ?smtp_auth_id
-    ?online_experiment
-    id
-    public_title
-    direct_registration_disabled
+        ?description
+        ?language
+        ?experiment_type
+        ?smtp_auth_id
+        ?online_experiment
+        id
+        public_title
+        direct_registration_disabled
     =
     { id
     ; public_title
@@ -327,16 +327,16 @@ module Public = struct
 end
 
 let to_public
-  { id
-  ; public_title
-  ; public_description
-  ; language
-  ; direct_registration_disabled
-  ; experiment_type
-  ; smtp_auth_id
-  ; online_experiment
-  ; _
-  }
+      { id
+      ; public_title
+      ; public_description
+      ; language
+      ; direct_registration_disabled
+      ; experiment_type
+      ; smtp_auth_id
+      ; online_experiment
+      ; _
+      }
   =
   { Public.id
   ; public_title

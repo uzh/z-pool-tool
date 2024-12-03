@@ -67,9 +67,9 @@ module App = struct
   let version = Format.asprintf "Z-Pool-Tool %s" Version.to_string
 
   let combine_footer_fragments
-    ?(column_mobile = false)
-    ?(classnames = [])
-    fragments
+        ?(column_mobile = false)
+        ?(classnames = [])
+        fragments
     =
     let classnames = [ "flexrow"; "flex-gap" ] @ classnames in
     let classnames =

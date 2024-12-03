@@ -95,12 +95,11 @@ let handle_toggle_target req =
     CCResult.both (find Field.Permission) (find Field.Model)
     |> Lwt_result.lift
     >== (fun (permission, model) ->
-          let permission = Guard.Permission.of_string_res permission in
-          let model =
-            Role.Target.of_string_res model
-            |> CCResult.map_err Error.authorization
-          in
-          CCResult.both permission model)
+    let permission = Guard.Permission.of_string_res permission in
+    let model =
+      Role.Target.of_string_res model |> CCResult.map_err Error.authorization
+    in
+    CCResult.both permission model)
     >|+ fun (permission, model) ->
     Component.Role.ActorPermissionSearch.value_form
       ~empty:(equal Create permission)

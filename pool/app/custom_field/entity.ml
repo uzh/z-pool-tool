@@ -43,8 +43,8 @@ module Name = struct
   let create sys_languages names =
     CCList.filter
       (fun lang ->
-        CCList.assoc_opt ~eq:Pool_common.Language.equal lang names
-        |> CCOption.is_none)
+         CCList.assoc_opt ~eq:Pool_common.Language.equal lang names
+         |> CCOption.is_none)
       sys_languages
     |> function
     | [] -> Ok names
@@ -190,17 +190,17 @@ module Validation = struct
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule_value) ->
-              let map_or = CCOption.map_or ~default:result in
-              match read_key key with
-              | Some TextLengthMin ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_min_length rule)
-              | Some TextLengthMax ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_max_length rule)
-              | None -> result)
+               let map_or = CCOption.map_or ~default:result in
+               match read_key key with
+               | Some TextLengthMin ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_min_length rule)
+               | Some TextLengthMax ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_max_length rule)
+               | None -> result)
             (Ok value)
             data)
       , data )
@@ -250,17 +250,17 @@ module Validation = struct
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule) ->
-              let map_or = CCOption.map_or ~default:result in
-              match read_key key with
-              | Some NumberMin ->
-                rule
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_min rule)
-              | Some NumberMax ->
-                rule
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_max rule)
-              | None -> result)
+               let map_or = CCOption.map_or ~default:result in
+               match read_key key with
+               | Some NumberMin ->
+                 rule
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_min rule)
+               | Some NumberMax ->
+                 rule
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_max rule)
+               | None -> result)
             (Ok value)
             data)
       , data )
@@ -310,17 +310,17 @@ module Validation = struct
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule_value) ->
-              let map_or = CCOption.map_or ~default:result in
-              match read_key key with
-              | Some OptionsCountMin ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_options_min_count rule)
-              | Some OptionsCountMax ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_options_max_count rule)
-              | None -> result)
+               let map_or = CCOption.map_or ~default:result in
+               match read_key key with
+               | Some OptionsCountMin ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_options_min_count rule)
+               | Some OptionsCountMax ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_options_max_count rule)
+               | None -> result)
             (Ok value)
             data)
       , data )
@@ -684,22 +684,22 @@ type t =
 [@@deriving eq, show, yojson]
 
 let create
-  ?(id = Pool_common.Id.create ())
-  ?(select_options = [])
-  ?published_at
-  field_type
-  model
-  name
-  hint
-  validation
-  required
-  disabled
-  custom_field_group_id
-  admin_hint
-  admin_override
-  admin_view_only
-  admin_input_only
-  prompt_on_registration
+      ?(id = Pool_common.Id.create ())
+      ?(select_options = [])
+      ?published_at
+      field_type
+      model
+      name
+      hint
+      validation
+      required
+      disabled
+      custom_field_group_id
+      admin_hint
+      admin_override
+      admin_view_only
+      admin_input_only
+      prompt_on_registration
   =
   let open CCResult in
   let show_on_session_close_page = false in
@@ -848,19 +848,19 @@ type update =
   }
 
 let update_attributes
-  ({ name
-   ; hint
-   ; required
-   ; disabled
-   ; custom_field_group_id
-   ; admin_hint
-   ; admin_override
-   ; admin_view_only
-   ; admin_input_only
-   ; prompt_on_registration
-   } :
-    update)
-  (field : 'a custom_field)
+      ({ name
+       ; hint
+       ; required
+       ; disabled
+       ; custom_field_group_id
+       ; admin_hint
+       ; admin_override
+       ; admin_view_only
+       ; admin_input_only
+       ; prompt_on_registration
+       } :
+        update)
+      (field : 'a custom_field)
   : 'a custom_field
   =
   { field with
@@ -1145,8 +1145,8 @@ let group_fields groups fields =
   in
   CCList.fold_left
     (fun (grouped, ungrouped) group ->
-      let of_group, ungrouped = partition group ungrouped in
-      grouped @ [ group, of_group ], ungrouped)
+       let of_group, ungrouped = partition group ungrouped in
+       grouped @ [ group, of_group ], ungrouped)
     ([], fields)
     groups
 ;;

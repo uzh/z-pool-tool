@@ -214,12 +214,12 @@ let sql_uuid_list_fragment pool permission model actor =
 ;;
 
 let create_where
-  ?actor
-  ?permission
-  ?(checks : (string -> string) list = [])
-  ?all
-  pool
-  model
+      ?actor
+      ?permission
+      ?(checks : (string -> string) list = [])
+      ?all
+      pool
+      model
   =
   let open Utils.Lwt_result.Infix in
   let tags = Database.Logger.Tags.create pool in

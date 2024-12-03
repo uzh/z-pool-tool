@@ -26,8 +26,8 @@ let handle_verification_event pool : verification_event -> unit Lwt.t = function
 ;;
 
 let[@warning "-4"] equal_verification_event
-  (one : verification_event)
-  (two : verification_event)
+                     (one : verification_event)
+                     (two : verification_event)
   : bool
   =
   match one, two with
@@ -75,12 +75,12 @@ let sent ?new_email_address ?new_smtp_auth_id job =
 ;;
 
 let create_sent
-  ?id
-  ?message_template
-  ?job_ctx
-  ?new_email_address
-  ?new_smtp_auth_id
-  job
+      ?id
+      ?message_template
+      ?job_ctx
+      ?new_email_address
+      ?new_smtp_auth_id
+      job
   =
   create_dispatch ?id ?message_template ?job_ctx job
   |> sent ?new_email_address ?new_smtp_auth_id
@@ -103,10 +103,10 @@ let handle_event pool : event -> unit Lwt.t = function
     let jobs =
       CCList.map
         (fun { job; id; message_template; job_ctx } ->
-          ( CCOption.get_or ~default:(Pool_queue.Id.create ()) id
-          , job
-          , message_template
-          , job_ctx ))
+           ( CCOption.get_or ~default:(Pool_queue.Id.create ()) id
+           , job
+           , message_template
+           , job_ctx ))
         jobs
     in
     Email_service.dispatch_all pool jobs

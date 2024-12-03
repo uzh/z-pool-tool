@@ -102,7 +102,7 @@ module Logger = struct
         find req
         |> of_result
         >|= (fun { database_label; user; _ } ->
-              database_label |> Database.Label.value, user |> show_log_user)
+        database_label |> Database.Label.value, user |> show_log_user)
         |> value ~default:(default, default)
       in
       let open Logs.Tag in
@@ -134,8 +134,7 @@ module Logger = struct
           find req
           |> of_result
           >|= (fun { database_label; api_key; _ } ->
-                ( database_label |> Database.Label.value
-                , Api_key.(Id.value api_key.id) ))
+          database_label |> Database.Label.value, Api_key.(Id.value api_key.id))
           |> value ~default:(default, default)
         in
         let open Logs.Tag in

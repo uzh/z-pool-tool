@@ -85,12 +85,12 @@ type t =
 let sexp_of_t { id; _ } = Id.sexp_of_t id
 
 let create
-  ?(id = Id.create ())
-  text
-  start_at
-  end_at
-  show_to_admins
-  show_to_contacts
+      ?(id = Id.create ())
+      text
+      start_at
+      end_at
+      show_to_admins
+      show_to_contacts
   =
   { id
   ; text

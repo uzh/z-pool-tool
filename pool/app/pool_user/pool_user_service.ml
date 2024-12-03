@@ -28,15 +28,15 @@ let confirm label user =
 ;;
 
 let create
-  ?id
-  ?admin
-  ?confirmed
-  label
-  email
-  lastname
-  firstname
-  password
-  password_confirmation
+      ?id
+      ?admin
+      ?confirmed
+      label
+      email
+      lastname
+      firstname
+      password
+      password_confirmation
   =
   let* user =
     create ?id ?admin ?confirmed email lastname firstname |> Lwt_result.lift
@@ -57,13 +57,13 @@ let validate_existance label email =
 ;;
 
 let create_user
-  ?id
-  label
-  email
-  lastname
-  firstname
-  password
-  password_confirmation
+      ?id
+      label
+      email
+      lastname
+      firstname
+      password
+      password_confirmation
   =
   let* () = validate_existance label email in
   create ?id label email lastname firstname password password_confirmation
@@ -76,13 +76,13 @@ let create_user_unvalidated ?id label email lastname firstname password =
 ;;
 
 let create_admin
-  ?id
-  label
-  email
-  lastname
-  firstname
-  password
-  password_confirmation
+      ?id
+      label
+      email
+      lastname
+      firstname
+      password
+      password_confirmation
   =
   let* () = validate_existance label email in
   create

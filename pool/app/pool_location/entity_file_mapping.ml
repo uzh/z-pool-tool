@@ -64,11 +64,11 @@ module Write = struct
   [@@deriving eq, show]
 
   let create
-    ?(id = Pool_common.Id.create ())
-    label
-    language
-    asset_id
-    location_id
+        ?(id = Pool_common.Id.create ())
+        label
+        language
+        asset_id
+        location_id
     =
     { id; label; language; asset_id; location_id }
   ;;

@@ -7,9 +7,9 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Target.create
-          `Invitation
-          (id |> Pool_common.Id.value |> Uuid.Target.of_string_exn))
+         Target.create
+           `Invitation
+           (id |> Pool_common.Id.value |> Uuid.Target.of_string_exn))
       t
     >|- Pool_message.Error.authorization
   ;;

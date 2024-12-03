@@ -38,10 +38,10 @@ let group_by_target query permissions =
   let () =
     CCList.iter
       (fun { RolePermission.permission; model; _ } ->
-        find model
-        |> function
-        | None -> add model [ permission ]
-        | Some permissions -> add model (permission :: permissions))
+         find model
+         |> function
+         | None -> add model [ permission ]
+         | Some permissions -> add model (permission :: permissions))
       permissions
   in
   targets

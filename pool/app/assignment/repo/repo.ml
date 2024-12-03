@@ -563,10 +563,10 @@ module Sql = struct
   ;;
 
   let contact_participation_in_other_assignments
-    pool
-    ~exclude_assignments
-    experiment_uuid
-    contact_uuid
+        pool
+        ~exclude_assignments
+        experiment_uuid
+        contact_uuid
     =
     if CCList.is_empty exclude_assignments
     then Lwt_result.fail Pool_message.Error.InvalidRequest
@@ -661,12 +661,12 @@ let enrich_with_customfield_data table_view pool assignments =
       let current, rest =
         CCList.partition_filter_map
           (fun field ->
-            field
-            |> Custom_field.Public.entity_id
-            |> CCOption.map_or ~default:false (Pool_common.Id.equal contact_id)
-            |> function
-            | true -> `Left field
-            | false -> `Right field)
+             field
+             |> Custom_field.Public.entity_id
+             |> CCOption.map_or ~default:false (Pool_common.Id.equal contact_id)
+             |> function
+             | true -> `Left field
+             | false -> `Right field)
           custom_fields
       in
       let result =
@@ -702,12 +702,12 @@ let find_with_custom_field_data table_view pool session_id =
       let current, rest =
         CCList.partition_filter_map
           (fun field ->
-            field
-            |> Custom_field.Public.entity_id
-            |> CCOption.map_or ~default:false (Pool_common.Id.equal contact_id)
-            |> function
-            | true -> `Left field
-            | false -> `Right field)
+             field
+             |> Custom_field.Public.entity_id
+             |> CCOption.map_or ~default:false (Pool_common.Id.equal contact_id)
+             |> function
+             | true -> `Left field
+             | false -> `Right field)
           custom_fields
       in
       let result =

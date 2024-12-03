@@ -152,9 +152,9 @@ module Key = struct
     let find_in_keys key_id =
       CCList.find_opt
         (fun key ->
-          match (key : human) with
-          | Hardcoded _ -> false
-          | CustomField f -> Custom_field.(Id.equal (id f) key_id))
+           match (key : human) with
+           | Hardcoded _ -> false
+           | CustomField f -> Custom_field.(Id.equal (id f) key_id))
         key_list
     in
     match (m : t) with
@@ -263,7 +263,7 @@ module Key = struct
         ->
         CCList.find_opt
           (fun option ->
-            Custom_field.SelectOption.(Id.equal option.id selected))
+             Custom_field.SelectOption.(Id.equal option.id selected))
           options
         |> CCOption.to_result error
         >|= CCFun.const ()
@@ -286,12 +286,12 @@ module Key = struct
       let* custom_field =
         CCList.find_map
           (fun (key : human) ->
-            match key with
-            | Hardcoded _ -> None
-            | CustomField field ->
-              if Custom_field.(Id.equal (id field) field_id)
-              then Some field
-              else None)
+             match key with
+             | Hardcoded _ -> None
+             | CustomField field ->
+               if Custom_field.(Id.equal (id field) field_id)
+               then Some field
+               else None)
           key_list
         |> CCOption.to_result Pool_message.(Error.Invalid Field.Key)
       in

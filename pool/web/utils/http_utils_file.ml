@@ -33,8 +33,9 @@ let save_files allow_list req =
   let files = Hashtbl.create ~random:true 5 in
   let assocs = Hashtbl.create ~random:true 5 in
   let callback ~name ~filename string =
-    if CCString.equal filename ""
-       || not (CCList.mem ~eq:CCString.equal name allow_list)
+    if
+      CCString.equal filename ""
+      || not (CCList.mem ~eq:CCString.equal name allow_list)
     then Lwt.return_unit
     else
       let open Utils.Lwt_result.Infix in
@@ -107,9 +108,9 @@ let multipart_form_data_to_urlencoded list =
   let () =
     CCList.iter
       (fun (k, v) ->
-        match Hashtbl.find_opt fields k with
-        | None -> Hashtbl.add fields k [ v ]
-        | Some lst -> Hashtbl.replace fields k (CCList.cons v lst))
+         match Hashtbl.find_opt fields k with
+         | None -> Hashtbl.add fields k [ v ]
+         | Some lst -> Hashtbl.replace fields k (CCList.cons v lst))
       list
   in
   fields |> Hashtbl.to_seq |> CCList.of_seq

@@ -48,16 +48,16 @@ end
 let t =
   let open Database.Caqti_encoders in
   let decode
-    ( id
-    , ( contact
-      , ( no_show
-        , ( participated
-          , ( matches_filter
-            , ( canceled_at
-              , ( marked_as_deleted
-                , ( external_data_id
-                  , ( reminder_manually_last_sent_at
-                    , (created_at, (updated_at, ())) ) ) ) ) ) ) ) ) )
+        ( id
+        , ( contact
+          , ( no_show
+            , ( participated
+              , ( matches_filter
+                , ( canceled_at
+                  , ( marked_as_deleted
+                    , ( external_data_id
+                      , ( reminder_manually_last_sent_at
+                        , (created_at, (updated_at, ())) ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -200,10 +200,10 @@ module ExternalDataIdentifier = struct
   let t =
     let open Database.Caqti_encoders in
     let decode
-      ( external_data_id
-      , ( experiment_id
-        , ( experiment_title
-          , (session_id, (session_start, (session_duration, ()))) ) ) )
+          ( external_data_id
+          , ( experiment_id
+            , ( experiment_title
+              , (session_id, (session_start, (session_duration, ()))) ) ) )
       =
       Ok
         { external_data_id

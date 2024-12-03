@@ -49,24 +49,24 @@ let distribution_sort_select language ?field current_order =
   in
   CCList.map
     (fun order ->
-      let selected =
-        match equal order current_order with
-        | true -> [ a_selected () ]
-        | false -> []
-      in
-      option
-        ~a:
-          ([ a_value
-               (match field with
-                | None -> order |> show
-                | Some field ->
-                  Format.asprintf
-                    "%s,%s"
-                    (Mailing.Distribution.SortableField.show field)
-                    (order |> show))
-           ]
-           @ selected)
-        (order |> to_human language |> CCString.capitalize_ascii |> txt))
+       let selected =
+         match equal order current_order with
+         | true -> [ a_selected () ]
+         | false -> []
+       in
+       option
+         ~a:
+           ([ a_value
+                (match field with
+                 | None -> order |> show
+                 | Some field ->
+                   Format.asprintf
+                     "%s,%s"
+                     (Mailing.Distribution.SortableField.show field)
+                     (order |> show))
+            ]
+            @ selected)
+         (order |> to_human language |> CCString.capitalize_ascii |> txt))
     all
   |> fun options ->
   div ~a:[ a_class [ "select" ] ] [ select ~a:[ a_name select_name ] options ]
@@ -133,9 +133,9 @@ module List = struct
   ;;
 
   let data_list
-    Pool_context.{ csrf; language; _ }
-    experiment_id
-    (mailings, query)
+        Pool_context.{ csrf; language; _ }
+        experiment_id
+        (mailings, query)
     =
     let url = Uri.of_string (mailings_path experiment_id) in
     let data_table =
@@ -220,9 +220,9 @@ let index ({ Pool_context.language; _ } as context) experiment mailings =
 ;;
 
 let detail
-  ({ Pool_context.language; _ } as context)
-  experiment
-  ((mailing, count) : Mailing.t * Mailing.InvitationCount.t)
+      ({ Pool_context.language; _ } as context)
+      experiment
+      ((mailing, count) : Mailing.t * Mailing.InvitationCount.t)
   =
   let open Mailing in
   let mailing_overview =
@@ -274,13 +274,13 @@ let detail
 ;;
 
 let form
-  ?(mailing : Mailing.t option)
-  ?(has_no_upcoming_session = true)
-  ?(fully_booked = false)
-  ~matching_filter_count
-  ({ Pool_context.language; csrf; _ } as context)
-  (experiment : Experiment.t)
-  flash_fetcher
+      ?(mailing : Mailing.t option)
+      ?(has_no_upcoming_session = true)
+      ?(fully_booked = false)
+      ~matching_filter_count
+      ({ Pool_context.language; csrf; _ } as context)
+      (experiment : Experiment.t)
+      flash_fetcher
   =
   let functions =
     {js|
@@ -318,7 +318,7 @@ let form
       CCOption.map_or
         ~default:false
         (fun dist ->
-          dist |> find_dist |> CCList.mem_assoc ~eq:SortableField.equal field)
+           dist |> find_dist |> CCList.mem_assoc ~eq:SortableField.equal field)
         distribution
     in
     let distribution_fncs =
@@ -399,15 +399,15 @@ let form
       in
       CCList.map
         (fun field ->
-          let is_disabled =
-            if is_disabled field then [ a_disabled () ] else []
-          in
-          option
-            ~a:([ a_value (field |> SortableField.show) ] @ is_disabled)
-            (field
-             |> SortableField.to_human language
-             |> CCString.capitalize_ascii
-             |> txt))
+           let is_disabled =
+             if is_disabled field then [ a_disabled () ] else []
+           in
+           option
+             ~a:([ a_value (field |> SortableField.show) ] @ is_disabled)
+             (field
+              |> SortableField.to_human language
+              |> CCString.capitalize_ascii
+              |> txt))
         SortableField.all
       |> fun options ->
       select
@@ -603,7 +603,7 @@ let form
                          ?value:
                            (CCOption.map
                               (fun (m : Mailing.t) ->
-                                m.Mailing.start_at |> Mailing.StartAt.value)
+                                 m.Mailing.start_at |> Mailing.StartAt.value)
                               mailing)
                      ; checkbox_element ~flash_fetcher language Field.StartNow
                      ]
@@ -616,7 +616,7 @@ let form
                      ?value:
                        (CCOption.map
                           (fun (m : Mailing.t) ->
-                            m.Mailing.end_at |> Mailing.EndAt.value)
+                             m.Mailing.end_at |> Mailing.EndAt.value)
                           mailing)
                  ; input_element
                      language
@@ -661,11 +661,11 @@ let edit context experiment_id mailing flash_fetcher =
 ;;
 
 let overlaps
-  ?average_send
-  ~show_limit_warning
-  (Pool_context.{ language; _ } as context)
-  experiment_id
-  mailings
+      ?average_send
+      ~show_limit_warning
+      (Pool_context.{ language; _ } as context)
+      experiment_id
+      mailings
   =
   let notification =
     if show_limit_warning

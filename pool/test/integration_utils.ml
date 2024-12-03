@@ -4,13 +4,13 @@ let default_current_user = Model.create_admin ()
 
 module AnnouncementRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    ?start_at
-    ?end_at
-    ?show_to_admins
-    ?show_to_contacts
-    tenant_ids
+        ?(current_user = default_current_user)
+        ?id
+        ?start_at
+        ?end_at
+        ?show_to_admins
+        ?show_to_contacts
+        tenant_ids
     =
     let announcement =
       Test_utils.Model.create_announcement
@@ -44,12 +44,12 @@ end
 
 module ContactRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    ?lastname
-    ?language
-    ?(with_terms_accepted = false)
-    ()
+        ?(current_user = default_current_user)
+        ?id
+        ?lastname
+        ?language
+        ?(with_terms_accepted = false)
+        ()
     =
     let open Utils.Lwt_result.Infix in
     let contact =
@@ -112,11 +112,11 @@ end
 
 module ExperimentRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?(id = Experiment.Id.create ())
-    ?title
-    ?online_experiment
-    ()
+        ?(current_user = default_current_user)
+        ?(id = Experiment.Id.create ())
+        ?title
+        ?online_experiment
+        ()
     =
     let experiment = Model.create_experiment ~id ?title ?online_experiment () in
     let%lwt () =
@@ -130,9 +130,9 @@ end
 
 module LocationRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?(id = Pool_location.Id.create ())
-    ()
+        ?(current_user = default_current_user)
+        ?(id = Pool_location.Id.create ())
+        ()
     =
     let location = Model.create_location ~id () in
     let%lwt () =
@@ -174,15 +174,15 @@ end
 
 module SessionRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    ?location
-    ?follow_up_to
-    ?start
-    ?duration
-    ?email_reminder_sent_at
-    experiment
-    ()
+        ?(current_user = default_current_user)
+        ?id
+        ?location
+        ?follow_up_to
+        ?start
+        ?duration
+        ?email_reminder_sent_at
+        experiment
+        ()
     =
     let%lwt location =
       location |> CCOption.map_or ~default:(LocationRepo.create ()) Lwt.return
@@ -209,12 +209,12 @@ end
 
 module TimeWindowRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    start
-    duration
-    experiment
-    ()
+        ?(current_user = default_current_user)
+        ?id
+        start
+        duration
+        experiment
+        ()
     =
     let time_window = Time_window.create ?id start duration experiment in
     let%lwt () =

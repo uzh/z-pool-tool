@@ -42,7 +42,7 @@ let intended_to_url url intended =
     let open CCOption in
     Sihl.Configuration.read_string "PREFIX_PATH"
     >|= (fun p ->
-          if CCString.prefix ~pre:"/" p then p else Format.asprintf "/%s" p)
+    if CCString.prefix ~pre:"/" p then p else Format.asprintf "/%s" p)
     |> value ~default:""
     |> fun pre ->
     CCString.chop_prefix ~pre intended |> value ~default:intended |> of_string
@@ -289,7 +289,7 @@ let multipart_to_urlencoded ingnore_fields lst =
   let ingnore_fields = CCList.map Pool_message.Field.show ingnore_fields in
   CCList.filter_map
     (fun (key, value) ->
-      if CCList.mem key ingnore_fields then None else Some (key, [ value ]))
+       if CCList.mem key ingnore_fields then None else Some (key, [ value ]))
     lst
 ;;
 
@@ -309,9 +309,9 @@ let externalize_path_with_params params path =
 let add_line_breaks = Utils.Html.handle_line_breaks Tyxml.Html.span
 
 let invalid_session_redirect
-  ?(login_path = fun req -> "/login" |> intended_of_request req)
-  req
-  url_parameters
+      ?(login_path = fun req -> "/login" |> intended_of_request req)
+      req
+      url_parameters
   =
   redirect_to_with_actions
     (url_with_field_params url_parameters (login_path req))
@@ -366,12 +366,12 @@ module Htmx = struct
   ;;
 
   let htmx_redirect
-    ?(skip_externalize = false)
-    ?(query_parameters = [])
-    ?status
-    ?(actions = [])
-    path
-    ()
+        ?(skip_externalize = false)
+        ?(query_parameters = [])
+        ?status
+        ?(actions = [])
+        path
+        ()
     =
     let externalize_path path =
       if skip_externalize then path else Sihl.Web.externalize_path path
@@ -396,7 +396,7 @@ module Htmx = struct
     html_els
     |> CCList.fold_left
          (fun acc cur ->
-           Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
+            Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
          ""
     |> Sihl.Web.Response.of_plain_text
          ~status:(status |> Opium.Status.of_code)
@@ -404,7 +404,8 @@ module Htmx = struct
   ;;
 
   let handler
-    :  ?active_navigation:string -> error_path:string
+    :  ?active_navigation:string
+    -> error_path:string
     -> query:(module Http_utils_queryable.Queryable)
     -> create_layout:
          (Rock.Request.t
@@ -420,7 +421,12 @@ module Htmx = struct
         -> ('page Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
     -> Rock.Response.t Lwt.t
     =
-    fun ?active_navigation ~error_path ~query:(module Q) ~create_layout req run ->
+    fun ?active_navigation
+      ~error_path
+      ~query:(module Q)
+      ~create_layout
+      req
+      run ->
     let open Utils.Lwt_result.Infix in
     extract_happy_path ~src req
     @@ fun context ->
@@ -477,10 +483,10 @@ module Htmx = struct
   ;;
 
   let handle_error_message
-    ?(src = src)
-    ?(error_as_notification = false)
-    req
-    result
+        ?(src = src)
+        ?(error_as_notification = false)
+        req
+        result
     =
     let context = Pool_context.find req in
     let tags = Pool_context.Logger.Tags.req req in
@@ -531,8 +537,9 @@ module Json = struct
       yojson_response
         ~status:(Opium.Status.of_code 400)
         (`Assoc
-          [ "message", `String Pool_common.(Utils.error_to_string language err)
-          ])
+            [ ( "message"
+              , `String Pool_common.(Utils.error_to_string language err) )
+            ])
     in
     match context with
     | Ok ({ Pool_context.language; _ } as context) ->

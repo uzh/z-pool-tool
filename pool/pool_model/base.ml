@@ -97,10 +97,10 @@ module Boolean = struct
     Pool_conformist.schema_decoder
       ?default
       (fun m ->
-        m
-        |> bool_of_string_opt
-        |> CCOption.get_or ~default:false
-        |> CCResult.return)
+         m
+         |> bool_of_string_opt
+         |> CCOption.get_or ~default:false
+         |> CCResult.return)
       string_of_bool
       field
   ;;

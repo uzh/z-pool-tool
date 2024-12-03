@@ -49,16 +49,16 @@ end = struct
   type t = create
 
   let command
-    title
-    description
-    url
-    gtx_sender
-    styles
-    icon
-    default_language
-    tenant_logos
-    partner_logos
-    email_logo
+        title
+        description
+        url
+        gtx_sender
+        styles
+        icon
+        default_language
+        tenant_logos
+        partner_logos
+        email_logo
     =
     { title
     ; description
@@ -109,7 +109,7 @@ end = struct
       let open Pool_tenant.LogoMapping in
       CCList.filter_map
         (fun (id_list, logo_type) ->
-          id_list |> CCOption.map (create_logo_mappings tenant logo_type))
+           id_list |> CCOption.map (create_logo_mappings tenant logo_type))
         [ command.partner_logos, LogoType.PartnerLogo
         ; Some command.tenant_logos, LogoType.TenantLogo
         ]
@@ -163,17 +163,17 @@ end = struct
   type t = edit_details
 
   let command
-    title
-    description
-    url
-    gtx_sender
-    status
-    default_language
-    styles
-    icon
-    tenant_logos
-    partner_logos
-    email_logo
+        title
+        description
+        url
+        gtx_sender
+        status
+        default_language
+        styles
+        icon
+        tenant_logos
+        partner_logos
+        email_logo
     =
     { title
     ; description
@@ -209,10 +209,10 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?system_event_id
-    (tenant : Pool_tenant.Write.t)
-    (command : t)
+        ?(tags = Logs.Tag.empty)
+        ?system_event_id
+        (tenant : Pool_tenant.Write.t)
+        (command : t)
     =
     Logs.info ~src (fun m -> m "Handle command EditDetails" ~tags);
     let update =
@@ -233,7 +233,7 @@ end = struct
       let create_mapping = create_logo_mappings tenant in
       CCList.filter_map
         (fun (id_list, logo_type) ->
-          id_list |> CCOption.map (create_mapping logo_type))
+           id_list |> CCOption.map (create_mapping logo_type))
         [ command.partner_logos, LogoType.PartnerLogo
         ; command.tenant_logos, LogoType.TenantLogo
         ]
@@ -296,10 +296,10 @@ end = struct
   type t = Database.t
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?system_event_id
-    (tenant : Pool_tenant.Write.t)
-    database
+        ?(tags = Logs.Tag.empty)
+        ?system_event_id
+        (tenant : Pool_tenant.Write.t)
+        database
     =
     Logs.info ~src (fun m -> m "Handle command UpdateDatabase" ~tags);
     Ok

@@ -10,12 +10,12 @@ let update_terms_and_conditions () =
   let terms =
     CCList.map
       (fun lang ->
-        let system_event_id = System_event.Id.create () in
-        ( I18n.create
-            I18n.Key.TermsAndConditions
-            lang
-            (I18n.Content.of_string content)
-        , system_event_id ))
+         let system_event_id = System_event.Id.create () in
+         ( I18n.create
+             I18n.Key.TermsAndConditions
+             lang
+             (I18n.Content.of_string content)
+         , system_event_id ))
       languages
   in
   let events =

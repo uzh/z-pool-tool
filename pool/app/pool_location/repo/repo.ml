@@ -207,13 +207,13 @@ module Sql = struct
   ;;
 
   let search
-    ?conditions
-    ?(dyn = Dynparam.empty)
-    ?exclude
-    ?joins
-    ?(limit = 20)
-    pool
-    query
+        ?conditions
+        ?(dyn = Dynparam.empty)
+        ?exclude
+        ?joins
+        ?(limit = 20)
+        pool
+        query
     =
     let open Caqti_request.Infix in
     let exclude_ids =
@@ -257,7 +257,7 @@ module Sql = struct
       let dyn =
         CCList.fold_left
           (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
           Dynparam.empty
           ids
       in

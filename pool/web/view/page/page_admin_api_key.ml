@@ -9,10 +9,10 @@ let field_to_string = Pool_common.Utils.field_to_string_capitalized
 
 module Partials = struct
   let roles_list
-    ?is_edit
-    ?top_element
-    ({ Pool_context.language; _ } as context)
-    target_id
+        ?is_edit
+        ?top_element
+        ({ Pool_context.language; _ } as context)
+        target_id
     =
     let open Component.Role in
     List.create
@@ -168,12 +168,12 @@ let create ({ Pool_context.language; _ } as context) ?flash_fetcher ?api_key () 
 ;;
 
 let edit
-  ({ Pool_context.language; csrf; _ } as context)
-  ?flash_fetcher
-  api_key
-  target_id
-  available_roles
-  granted_roles
+      ({ Pool_context.language; csrf; _ } as context)
+      ?flash_fetcher
+      api_key
+      target_id
+      available_roles
+      granted_roles
   =
   let open Api_key in
   let control = Control.Edit (Some Field.ApiKey) in
@@ -200,10 +200,10 @@ let edit
 ;;
 
 let show
-  ({ Pool_context.language; _ } as context)
-  { Api_key.name; token; expires_at; created_at; updated_at; _ }
-  target_id
-  granted_roles
+      ({ Pool_context.language; _ } as context)
+      { Api_key.name; token; expires_at; created_at; updated_at; _ }
+      target_id
+      granted_roles
   =
   let open Api_key in
   let format_ptime = Utils.Ptime.formatted_date_time in

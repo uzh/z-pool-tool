@@ -77,11 +77,11 @@ let group_by_contact list =
   let tbl = Hashtbl.create 20 in
   CCList.iter
     (fun ({ contact; _ } as m : t) ->
-      let open CCOption in
-      Hashtbl.find_opt tbl contact
-      >|= CCList.cons m
-      |> value ~default:[ m ]
-      |> Hashtbl.replace tbl contact)
+       let open CCOption in
+       Hashtbl.find_opt tbl contact
+       >|= CCList.cons m
+       |> value ~default:[ m ]
+       |> Hashtbl.replace tbl contact)
     list;
   Hashtbl.fold (fun contact lst acc -> (contact, lst) :: acc) tbl []
 ;;
@@ -100,15 +100,15 @@ let assignments_to_session_counters =
   CCList.fold_left
     (fun { total; num_no_shows; num_participations }
       ({ no_show; participated; _ } : t) ->
-      let default = CCOption.value ~default:false in
-      { total = total + 1
-      ; num_no_shows =
-          (if default no_show then num_no_shows + 1 else num_no_shows)
-      ; num_participations =
-          (if default participated
-           then num_participations + 1
-           else num_participations)
-      })
+       let default = CCOption.value ~default:false in
+       { total = total + 1
+       ; num_no_shows =
+           (if default no_show then num_no_shows + 1 else num_no_shows)
+       ; num_participations =
+           (if default participated
+            then num_participations + 1
+            else num_participations)
+       })
     init_session_counters
 ;;
 

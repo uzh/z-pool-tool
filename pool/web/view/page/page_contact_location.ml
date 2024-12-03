@@ -12,17 +12,17 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
         [ h2 [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
         ; CCList.map
             (fun (mapping : file) ->
-              let label =
-                Format.asprintf
-                  "%s (%s)"
-                  (mapping.label |> Label.show |> CCString.capitalize_ascii)
-                  (mapping.language |> Pool_common.Language.show)
-              in
-              let path =
-                contact_file_path location.id mapping
-                |> Sihl.Web.externalize_path
-              in
-              [ a ~a:[ a_href path ] [ txt label ] ])
+               let label =
+                 Format.asprintf
+                   "%s (%s)"
+                   (mapping.label |> Label.show |> CCString.capitalize_ascii)
+                   (mapping.language |> Pool_common.Language.show)
+               in
+               let path =
+                 contact_file_path location.id mapping
+                 |> Sihl.Web.externalize_path
+               in
+               [ a ~a:[ a_href path ] [ txt label ] ])
             files
           |> Component.Table.horizontal_table `Striped
         ]

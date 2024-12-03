@@ -153,10 +153,10 @@ let sort req =
         ||> fun options ->
         CCList.filter_map
           (fun id ->
-            CCList.find_opt
-              Custom_field.Group.(
-                fun (option : t) -> Id.equal (Id.of_string id) option.id)
-              options)
+             CCList.find_opt
+               Custom_field.Group.(
+                 fun (option : t) -> Id.equal (Id.of_string id) option.id)
+               options)
           ids
       in
       let events =

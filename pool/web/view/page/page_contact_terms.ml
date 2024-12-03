@@ -3,9 +3,9 @@ open Component.Input
 open Pool_message
 
 let terms
-  ?notification
-  terms
-  Pool_context.{ language; query_parameters; csrf; _ }
+      ?notification
+      terms
+      Pool_context.{ language; query_parameters; csrf; _ }
   =
   let terms = terms |> I18n.content_to_string |> Unsafe.data in
   let open Pool_common in

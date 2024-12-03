@@ -36,8 +36,8 @@ let recruiter_can_update_contact_language =
     let open Guard.Persistence in
     ActorRole.find_actors_by_role ~ctx (`Recruiter, None)
     ||> (function
-           | [] -> failwith "No actors with role `Recruiter found."
-           | hd :: _ -> hd)
+     | [] -> failwith "No actors with role `Recruiter found."
+     | hd :: _ -> hd)
     >|> Actor.find database_label
     ||> CCResult.get_or_failwith
   in

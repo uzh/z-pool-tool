@@ -29,7 +29,8 @@ let list { Pool_context.language; _ } (annoucements, query) =
     ]
   in
   let row
-    ({ id; start_at; end_at; text; show_to_admins; show_to_contacts; _ } : t)
+        ({ id; start_at; end_at; text; show_to_admins; show_to_contacts; _ } :
+          t)
     =
     let open CCOption in
     let edit_btn =
@@ -74,11 +75,11 @@ let index (Pool_context.{ language; _ } as context) announcements =
 ;;
 
 let form
-  { Pool_context.csrf; language; _ }
-  ?announcement
-  ?(flash_fetcher : (string -> string option) option)
-  available_tenants
-  system_languages
+      { Pool_context.csrf; language; _ }
+      ?announcement
+      ?(flash_fetcher : (string -> string option) option)
+      available_tenants
+      system_languages
   =
   let open Announcement in
   let open CCOption.Infix in

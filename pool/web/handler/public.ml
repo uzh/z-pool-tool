@@ -23,7 +23,8 @@ let index req =
   then Http_utils.redirect_to "/root"
   else (
     let result
-      ({ Pool_context.database_label; language; query_parameters; _ } as context)
+          ({ Pool_context.database_label; language; query_parameters; _ } as
+           context)
       =
       let open Utils.Lwt_result.Infix in
       let error_path =
@@ -86,7 +87,8 @@ let email_confirmation_note req =
 
 let not_found req =
   let result
-    ({ Pool_context.language; query_parameters; database_label; _ } as context)
+        ({ Pool_context.language; query_parameters; database_label; _ } as
+         context)
     =
     let open Utils.Lwt_result.Infix in
     let html = Page.Utils.error_page_not_found language () in
@@ -189,7 +191,8 @@ let error req =
 
 let credits req =
   let result
-    ({ Pool_context.language; query_parameters; database_label; _ } as context)
+        ({ Pool_context.language; query_parameters; database_label; _ } as
+         context)
     =
     let error_path =
       Http_utils.url_with_field_params query_parameters "/error"
@@ -209,7 +212,8 @@ let credits req =
 
 let privacy_policy req =
   let result
-    ({ Pool_context.language; query_parameters; database_label; _ } as context)
+        ({ Pool_context.language; query_parameters; database_label; _ } as
+         context)
     =
     let redirect_path = Http_utils.url_with_field_params query_parameters "/" in
     let open Utils.Lwt_result.Infix in
@@ -230,7 +234,8 @@ let privacy_policy req =
 
 let terms_and_conditions req =
   let result
-    ({ Pool_context.language; query_parameters; database_label; _ } as context)
+        ({ Pool_context.language; query_parameters; database_label; _ } as
+         context)
     =
     let redirect_path = Http_utils.url_with_field_params query_parameters "/" in
     let open Utils.Lwt_result.Infix in

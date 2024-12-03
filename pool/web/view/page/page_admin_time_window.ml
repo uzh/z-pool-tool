@@ -50,11 +50,11 @@ module Partials = struct
 end
 
 let time_window_form
-  csrf
-  language
-  ?time_window
-  (experiment : Experiment.t)
-  ~flash_fetcher
+      csrf
+      language
+      ?time_window
+      (experiment : Experiment.t)
+      ~flash_fetcher
   =
   let open CCFun in
   let open Session in
@@ -148,9 +148,9 @@ let time_window_form
 ;;
 
 let new_form
-  ({ Pool_context.language; csrf; _ } as context)
-  experiment
-  flash_fetcher
+      ({ Pool_context.language; csrf; _ } as context)
+      experiment
+      flash_fetcher
   =
   time_window_form csrf language experiment ~flash_fetcher
   |> CCList.return
@@ -159,11 +159,11 @@ let new_form
 ;;
 
 let edit
-  ({ Pool_context.language; csrf; _ } as context)
-  experiment
-  time_window
-  tags
-  flash_fetcher
+      ({ Pool_context.language; csrf; _ } as context)
+      experiment
+      time_window
+      tags
+      flash_fetcher
   =
   let tags_html =
     Page_admin_session.tags_subform
@@ -182,9 +182,9 @@ let edit
 ;;
 
 let data_table
-  ({ Pool_context.language; _ } as context)
-  experiment
-  (time_windows, query)
+      ({ Pool_context.language; _ } as context)
+      experiment
+      (time_windows, query)
   =
   let open Session in
   let target_id = "session-list" in
@@ -214,13 +214,13 @@ let data_table
   in
   let th_class = [ "w-4"; "w-2"; "w-2"; "w-2"; "w-1"; "w-1" ] in
   let row
-    ({ Time_window.assignment_count
-     ; no_show_count
-     ; participant_count
-     ; max_participants
-     ; _
-     } as time_window :
-      Time_window.t)
+        ({ Time_window.assignment_count
+         ; no_show_count
+         ; participant_count
+         ; max_participants
+         ; _
+         } as time_window :
+          Time_window.t)
     =
     let open Time_window in
     let int_to_txt i = CCInt.to_string i |> txt in
@@ -273,16 +273,16 @@ let index ({ Pool_context.language; _ } as context) experiment sessions =
 ;;
 
 let detail
-  ?access_contact_profiles
-  ?send_direct_message
-  ?view_contact_name
-  ?view_contact_info
-  ~text_messages_enabled
-  (Pool_context.{ language; _ } as context)
-  experiment
-  (time_window : Time_window.t)
-  participation_tags
-  assignments
+      ?access_contact_profiles
+      ?send_direct_message
+      ?view_contact_name
+      ?view_contact_info
+      ~text_messages_enabled
+      (Pool_context.{ language; _ } as context)
+      experiment
+      (time_window : Time_window.t)
+      participation_tags
+      assignments
   =
   let open Time_window in
   let session_path = session_path ~id:time_window.id experiment.Experiment.id in

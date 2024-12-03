@@ -223,12 +223,12 @@ type t =
 [@@deriving eq, show]
 
 let create
-  ?allow_start_in_past
-  ?(id = Id.create ())
-  start
-  end_at
-  limit
-  distribution
+      ?allow_start_in_past
+      ?(id = Id.create ())
+      start
+      end_at
+      limit
+      distribution
   =
   let open CCResult in
   let* start_at = Start.validate ?allow_start_in_past start end_at in

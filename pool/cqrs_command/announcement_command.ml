@@ -77,10 +77,10 @@ end = struct
   type t = command
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?id
-    tenant_ids
-    ({ text; start_at; end_at; show_to_admins; show_to_contacts } : t)
+        ?(tags = Logs.Tag.empty)
+        ?id
+        tenant_ids
+        ({ text; start_at; end_at; show_to_admins; show_to_contacts } : t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
@@ -120,10 +120,10 @@ end = struct
   type t = command
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    (announcement : Announcement.t)
-    tenant_ids
-    ({ text; start_at; end_at; show_to_admins; show_to_contacts } : t)
+        ?(tags = Logs.Tag.empty)
+        (announcement : Announcement.t)
+        tenant_ids
+        ({ text; start_at; end_at; show_to_admins; show_to_contacts } : t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);

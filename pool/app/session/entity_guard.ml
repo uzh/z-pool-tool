@@ -8,7 +8,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun id ->
-        Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
+         Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
       id
     >|- Pool_message.Error.authorization
   ;;

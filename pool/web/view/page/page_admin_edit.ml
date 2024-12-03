@@ -17,10 +17,10 @@ let profile_layout language title html =
 ;;
 
 let login_information
-  ?(action_prefix = "/admin")
-  admin
-  Pool_context.{ language; csrf; _ }
-  password_policy
+      ?(action_prefix = "/admin")
+      admin
+      Pool_context.{ language; csrf; _ }
+      password_policy
   =
   let form_attrs action =
     [ a_method `Post

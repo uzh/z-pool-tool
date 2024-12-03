@@ -116,15 +116,15 @@ module Partials = struct
     |> CCOption.map_or ~default:[] (fun custom_data ->
       CCList.map
         (fun field ->
-          CCList.find_opt
-            (fun public -> public |> Public.id |> Id.equal (id field))
-            custom_data
-          |> CCOption.map_or
-               ~default:(div [ txt "" ])
-               (Component.CustomField.answer_to_html
-                  ~add_data_label:true
-                  user
-                  language))
+           CCList.find_opt
+             (fun public -> public |> Public.id |> Id.equal (id field))
+             custom_data
+           |> CCOption.map_or
+                ~default:(div [ txt "" ])
+                (Component.CustomField.answer_to_html
+                   ~add_data_label:true
+                   user
+                   language))
         custom_fields)
     |> div ~a:[ a_class [ "flexcolumn" ] ]
   ;;
@@ -149,11 +149,11 @@ module Partials = struct
     let title language = Pool_common.(Utils.control_to_string language control)
 
     let modal
-      { Pool_context.language; csrf; _ }
-      experiment_id
-      session
-      { Assignment.id; contact; reminder_manually_last_sent_at; _ }
-      text_messages_enabled
+          { Pool_context.language; csrf; _ }
+          experiment_id
+          session
+          { Assignment.id; contact; reminder_manually_last_sent_at; _ }
+          text_messages_enabled
       =
       let open Pool_common in
       let action =
@@ -223,14 +223,14 @@ module Partials = struct
   end
 
   let swap_session_notification_form_fields
-    context
-    (experiment : Experiment.t)
-    session_id
-    assignment_id
-    languages
-    swap_session_template
-    flash_fetcher
-    text_messages_disabled
+        context
+        (experiment : Experiment.t)
+        session_id
+        assignment_id
+        languages
+        swap_session_template
+        flash_fetcher
+        text_messages_disabled
     =
     let id = "swap-session-notification-form" in
     let language_select_attriutes =
@@ -269,16 +269,16 @@ module Partials = struct
   ;;
 
   let swap_session_form
-    ({ Pool_context.language; csrf; _ } as context)
-    experiment
-    session
-    assignment
-    assigned_sessions
-    available_sessions
-    swap_session_template
-    languages
-    flash_fetcher
-    text_messages_disabled
+        ({ Pool_context.language; csrf; _ } as context)
+        experiment
+        session
+        assignment
+        assigned_sessions
+        available_sessions
+        swap_session_template
+        languages
+        flash_fetcher
+        text_messages_disabled
     =
     let action =
       assignment_specific_path
@@ -366,12 +366,12 @@ module Partials = struct
   ;;
 
   let direct_message_modal
-    ({ Pool_context.language; csrf; _ } as context)
-    ?selected_language
-    session
-    message_template
-    languages
-    assignments
+        ({ Pool_context.language; csrf; _ } as context)
+        ?selected_language
+        session
+        message_template
+        languages
+        assignments
     =
     let open Pool_common in
     let experiment = session.Session.experiment in
@@ -435,8 +435,8 @@ module Partials = struct
     let hidden_inputs =
       assignments
       |> (function
-            | `One assignment -> [ assignment ]
-            | `Multiple assignments -> assignments)
+       | `One assignment -> [ assignment ]
+       | `Multiple assignments -> assignments)
       |> CCList.map (fun { Assignment.id; _ } ->
         input
           ~a:
@@ -525,23 +525,23 @@ module Partials = struct
       ~active:true
       language
       (fun lang ->
-        Utils.control_to_string lang Control.(Send (Some Field.Message)))
+         Utils.control_to_string lang Control.(Send (Some Field.Message)))
       direct_message_modal_id
       html
   ;;
 end
 
 let data_table
-  ?(access_contact_profiles = false)
-  ?(send_direct_message = false)
-  ?(view_contact_name = false)
-  ?(view_contact_info = false)
-  ?(is_print = false)
-  (Pool_context.{ language; csrf; user; _ } as context)
-  experiment
-  (session : [ `Session of Session.t | `TimeWindow of Time_window.t ])
-  text_messages_enabled
-  ((assignments, custom_fields), query)
+      ?(access_contact_profiles = false)
+      ?(send_direct_message = false)
+      ?(view_contact_name = false)
+      ?(view_contact_info = false)
+      ?(is_print = false)
+      (Pool_context.{ language; csrf; user; _ } as context)
+      experiment
+      (session : [ `Session of Session.t | `TimeWindow of Time_window.t ])
+      text_messages_enabled
+      ((assignments, custom_fields), query)
   =
   let open Pool_common in
   let open Partials in
@@ -812,16 +812,16 @@ let data_table
   let modals =
     CCList.filter_map
       (fun assignment ->
-        match create_reminder_modal assignment, session with
-        | true, `Session session ->
-          Some
-            (ReminderModal.modal
-               context
-               experiment.Experiment.id
-               session
-               assignment
-               text_messages_enabled)
-        | false, _ | _, `TimeWindow _ -> None)
+         match create_reminder_modal assignment, session with
+         | true, `Session session ->
+           Some
+             (ReminderModal.modal
+                context
+                experiment.Experiment.id
+                session
+                assignment
+                text_messages_enabled)
+         | false, _ | _, `TimeWindow _ -> None)
       assignments
     |> function
     | [] -> None
@@ -839,11 +839,11 @@ let data_table
 ;;
 
 let edit
-  ({ Pool_context.language; csrf; _ } as context)
-  view_contact_name
-  experiment
-  session
-  { Assignment.id; no_show; participated; external_data_id; contact; _ }
+      ({ Pool_context.language; csrf; _ } as context)
+      view_contact_name
+      experiment
+      session
+      { Assignment.id; no_show; participated; external_data_id; contact; _ }
   =
   let open Assignment in
   let open Component.Input in

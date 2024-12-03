@@ -127,19 +127,19 @@ let t =
         ]
   in
   let decode
-    ( id
-    , ( title
-      , ( description
-        , ( url
-          , ( default_language
-            , ( gtx_sender
-              , ( created_at
-                , ( updated_at
-                  , ( status
-                    , ( database_label
-                      , ( styles
-                        , (icon, (email_logo, (text_messages_enabled, ()))) ) )
-                    ) ) ) ) ) ) ) ) )
+        ( id
+        , ( title
+          , ( description
+            , ( url
+              , ( default_language
+                , ( gtx_sender
+                  , ( created_at
+                    , ( updated_at
+                      , ( status
+                        , ( database_label
+                          , ( styles
+                            , (icon, (email_logo, (text_messages_enabled, ())))
+                            ) ) ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -204,17 +204,17 @@ module Write = struct
           ]
     in
     let decode
-      ( id
-      , ( title
-        , ( description
-          , ( url
-            , ( default_language
-              , ( gtx_sender
-                , ( created_at
-                  , ( updated_at
-                    , ( database_label
-                      , (styles, (icon, (email_logo, (gtx_api_key, ())))) ) ) )
-                ) ) ) ) ) )
+          ( id
+          , ( title
+            , ( description
+              , ( url
+                , ( default_language
+                  , ( gtx_sender
+                    , ( created_at
+                      , ( updated_at
+                        , ( database_label
+                          , (styles, (icon, (email_logo, (gtx_api_key, ())))) )
+                        ) ) ) ) ) ) ) )
       =
       Ok
         { id

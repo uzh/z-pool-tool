@@ -49,20 +49,21 @@ module Instance = struct
   let t =
     let open Database.Caqti_encoders in
     let decode
-      ( id
-      , ( name
-        , ( input
-          , ( message_template
-            , ( tries
-              , ( max_tries
-                , ( run_at
-                  , ( status
-                    , ( persisted_at
-                      , ( polled_at
-                        , ( handled_at
-                          , ( last_error
-                            , (last_error_at, (database_label, (clone_of, ())))
-                            ) ) ) ) ) ) ) ) ) ) ) )
+          ( id
+          , ( name
+            , ( input
+              , ( message_template
+                , ( tries
+                  , ( max_tries
+                    , ( run_at
+                      , ( status
+                        , ( persisted_at
+                          , ( polled_at
+                            , ( handled_at
+                              , ( last_error
+                                , ( last_error_at
+                                  , (database_label, (clone_of, ())) ) ) ) ) )
+                        ) ) ) ) ) ) ) )
       =
       Ok
         { id

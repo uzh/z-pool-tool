@@ -90,10 +90,15 @@ let prepare_email ?optout_link language template sender email layout params =
 ;;
 
 let prepare_manual_email
-  { ManualMessage.recipient; language; email_subject; email_text; plain_text }
-  layout
-  params
-  sender
+      { ManualMessage.recipient
+      ; language
+      ; email_subject
+      ; email_text
+      ; plain_text
+      }
+      layout
+      params
+      sender
   =
   let open Sihl_email in
   let mail =
@@ -158,9 +163,9 @@ let experiment_params layout experiment =
 ;;
 
 let location_params
-  language
-  layout
-  ({ Pool_location.id; address; description; _ } as location)
+      language
+      layout
+      ({ Pool_location.id; address; description; _ } as location)
   =
   let open Pool_location in
   let location_url =
@@ -201,11 +206,11 @@ let location_params
 ;;
 
 let session_params
-  layout
-  ?follow_up_sessions
-  ?prefix
-  lang
-  ({ Session.start; duration; location; _ } as session : Session.t)
+      layout
+      ?follow_up_sessions
+      ?prefix
+      lang
+      ({ Session.start; duration; location; _ } as session : Session.t)
   =
   let open Session in
   let session_id = session.Session.id |> Id.value in
@@ -312,17 +317,17 @@ module AssignmentCancellation = struct
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params
-    ?follow_up_sessions
-    language
-    layout
-    experiment
-    session
-    assignment
+        ?follow_up_sessions
+        language
+        layout
+        experiment
+        session
+        assignment
     =
     let follow_up_sessions =
       CCOption.map
         (fun lst ->
-          lst, Pool_common.I18n.AssignmentCancellationMessageFollowUps)
+           lst, Pool_common.I18n.AssignmentCancellationMessageFollowUps)
         follow_up_sessions
     in
     base_params layout assignment.contact
@@ -376,17 +381,17 @@ module AssignmentConfirmation = struct
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params
-    ?follow_up_sessions
-    language
-    layout
-    experiment
-    session
-    assignment
+        ?follow_up_sessions
+        language
+        layout
+        experiment
+        session
+        assignment
     =
     let follow_up_sessions =
       CCOption.map
         (fun lst ->
-          lst, Pool_common.I18n.AssignmentConfirmationMessageFollowUps)
+           lst, Pool_common.I18n.AssignmentConfirmationMessageFollowUps)
         follow_up_sessions
     in
     base_params layout assignment.contact
@@ -449,12 +454,12 @@ module AssignmentSessionChange = struct
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params
-    language
-    layout
-    experiment
-    ~new_session
-    ~old_session
-    assignment
+        language
+        layout
+        experiment
+        ~new_session
+        ~old_session
+        assignment
     =
     base_params layout assignment.Assignment.contact
     @ experiment_params layout experiment
@@ -711,12 +716,12 @@ module ManualSessionMessage = struct
   ;;
 
   let prepare_text_message
-    (tenant : Pool_tenant.t)
-    session
-    language
-    assignment
-    message
-    cell_phone
+        (tenant : Pool_tenant.t)
+        session
+        language
+        assignment
+        message
+        cell_phone
     =
     let experiment = session.Session.experiment in
     let open Text_message in
@@ -904,12 +909,12 @@ module PhoneVerification = struct
   ;;
 
   let create_text_message
-    pool
-    message_language
-    (tenant : Pool_tenant.t)
-    contact
-    cell_phone
-    token
+        pool
+        message_language
+        (tenant : Pool_tenant.t)
+        contact
+        cell_phone
+        token
     =
     let open Text_message in
     let%lwt { sms_text; _ } =
@@ -970,13 +975,13 @@ module SessionCancellation = struct
   let label = Label.SessionCancellation
 
   let email_params
-    language
-    layout
-    (experiment : Experiment.t)
-    session
-    follow_up_sessions
-    reason
-    contact
+        language
+        layout
+        (experiment : Experiment.t)
+        session
+        follow_up_sessions
+        reason
+        contact
     =
     let follow_up_sessions =
       follow_up_sessions, Pool_common.I18n.SessionCancellationMessageFollowUps
@@ -1029,12 +1034,12 @@ module SessionCancellation = struct
   ;;
 
   let prepare_text_message
-    pool
-    (tenant : Pool_tenant.t)
-    experiment
-    sys_langs
-    session
-    follow_up_sessions
+        pool
+        (tenant : Pool_tenant.t)
+        experiment
+        sys_langs
+        session
+        follow_up_sessions
     =
     let open Message_utils in
     let%lwt templates =
@@ -1096,12 +1101,12 @@ module SessionReminder = struct
   ;;
 
   let create
-    pool
-    tenant
-    system_languages
-    experiment
-    session
-    ({ Assignment.contact; _ } as assignment)
+        pool
+        tenant
+        system_languages
+        experiment
+        session
+        ({ Assignment.contact; _ } as assignment)
     =
     let open Message_utils in
     let language =
@@ -1165,11 +1170,11 @@ module SessionReminder = struct
   ;;
 
   let prepare_text_messages
-    pool
-    (tenant : Pool_tenant.t)
-    sys_langs
-    experiment
-    session
+        pool
+        (tenant : Pool_tenant.t)
+        sys_langs
+        experiment
+        session
     =
     let open Message_utils in
     let%lwt templates =
@@ -1279,15 +1284,15 @@ module SignUpVerification = struct
   ;;
 
   let create
-    ?signup_code
-    pool
-    language
-    tenant
-    email_address
-    token
-    firstname
-    lastname
-    user_id
+        ?signup_code
+        pool
+        language
+        tenant
+        email_address
+        token
+        firstname
+        lastname
+        user_id
     =
     let%lwt template = find_by_label_and_language_to_send pool label language in
     let%lwt url = Pool_tenant.Url.of_pool pool in

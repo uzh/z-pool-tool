@@ -178,10 +178,10 @@ let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
 ;;
 
 let validate_partial_update
-  ?(is_admin = false)
-  contact
-  custom_field
-  (partial_field, current_version, value)
+      ?(is_admin = false)
+      contact
+      custom_field
+      (partial_field, current_version, value)
   =
   let open PartialUpdate in
   let check_version old_v t =
@@ -247,13 +247,13 @@ let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
     | Assoc lst ->
       List.fold_left
         (fun acc (key, v) ->
-          let uuids =
-            id_of_string key
-            |> function
-            | None -> acc
-            | Some uuid -> uuid :: acc
-          in
-          collect_uuids uuids v)
+           let uuids =
+             id_of_string key
+             |> function
+             | None -> acc
+             | Some uuid -> uuid :: acc
+           in
+           collect_uuids uuids v)
         acc
         lst
     | Change (before, after) ->
@@ -267,13 +267,13 @@ let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
   let () =
     CCList.iter
       (fun (id, name) ->
-        let name =
-          let open Name in
-          find_opt language name
-          |> CCOption.value ~default:(get_hd name)
-          |> value_name
-        in
-        Hashtbl.add tbl (Pool_common.Id.value id) name)
+         let name =
+           let open Name in
+           find_opt language name
+           |> CCOption.value ~default:(get_hd name)
+           |> value_name
+         in
+         Hashtbl.add tbl (Pool_common.Id.value id) name)
       names
   in
   let rec replace_names = function
@@ -281,9 +281,9 @@ let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
       Assoc
         (CCList.map
            (fun (key, changes) ->
-             let key = Hashtbl.find_opt tbl key |> get_or ~default:key in
-             let changes = replace_names changes in
-             key, changes)
+              let key = Hashtbl.find_opt tbl key |> get_or ~default:key in
+              let changes = replace_names changes in
+              key, changes)
            lst)
     | Change (before, after) ->
       let rec replace = function

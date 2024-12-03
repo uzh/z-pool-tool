@@ -1,11 +1,11 @@
 include Entity
 
 let from_request
-  ?(filterable_by : Filter.human option)
-  ?(searchable_by : Column.t list option)
-  ?(sortable_by : Column.t list option)
-  ?(default : t option)
-  req
+      ?(filterable_by : Filter.human option)
+      ?(searchable_by : Column.t list option)
+      ?(sortable_by : Column.t list option)
+      ?(default : t option)
+      req
   =
   let query_params = Sihl.Web.Request.query_list req in
   let open CCOption in
@@ -99,11 +99,11 @@ let append_query_to_sql dyn where t =
 ;;
 
 let collect_and_count
-  database_label
-  query
-  ~(select : ?count:bool -> string -> string)
-  ?where
-  caqti_type
+      database_label
+      query
+      ~(select : ?count:bool -> string -> string)
+      ?where
+      caqti_type
   =
   let open Caqti_request.Infix in
   let where, dyn =

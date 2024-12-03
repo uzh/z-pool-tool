@@ -12,44 +12,44 @@ let filter_items ?validate ?actor ?(guardian = []) items =
     let rec filter_nav items =
       CCList.filter_map
         (fun ({ NavElement.validation; children; _ } as element) ->
-          let with_children () =
-            let children = filter_nav children in
-            Some NavElement.{ element with children }
-          in
-          match validation with
-          | AlwaysOn -> with_children ()
-          | OnChildren ->
-            (match filter_nav children with
-             | [] -> None
-             | children -> Some NavElement.{ element with children })
-          | Set validation_set ->
-            (try
-               let self =
-                 Persistence.PermissionOnTarget.validate_set
-                   ~any_id:true
-                   guardian
-                   Pool_message.Error.authorization
-                   validation_set
-                   actor
-               in
-               match self with
-               | Ok () when CCList.is_empty children -> Some element
-               | Ok () -> with_children ()
-               | Error _ -> None
-             with
-             | _ -> None))
+           let with_children () =
+             let children = filter_nav children in
+             Some NavElement.{ element with children }
+           in
+           match validation with
+           | AlwaysOn -> with_children ()
+           | OnChildren ->
+             (match filter_nav children with
+              | [] -> None
+              | children -> Some NavElement.{ element with children })
+           | Set validation_set ->
+             (try
+                let self =
+                  Persistence.PermissionOnTarget.validate_set
+                    ~any_id:true
+                    guardian
+                    Pool_message.Error.authorization
+                    validation_set
+                    actor
+                in
+                match self with
+                | Ok () when CCList.is_empty children -> Some element
+                | Ok () -> with_children ()
+                | Error _ -> None
+              with
+              | _ -> None))
         items
     in
     filter_nav items
 ;;
 
 let rec build_nav_links
-  ?(layout = Horizonal)
-  ?active_navigation
-  ?(first_level = true)
-  language
-  query_params
-  { NavElement.url; label; icon; children; _ }
+          ?(layout = Horizonal)
+          ?active_navigation
+          ?(first_level = true)
+          language
+          query_params
+          { NavElement.url; label; icon; children; _ }
   =
   let rec find_is_active (children : NavElement.t list_wrap) : bool =
     let is_active url =
@@ -57,9 +57,9 @@ let rec build_nav_links
     in
     CCList.fold_left
       (fun init { NavElement.url; children; _ } ->
-        match url with
-        | None -> init || find_is_active children
-        | Some url -> init || is_active url || find_is_active children)
+         match url with
+         | None -> init || find_is_active children
+         | Some url -> init || is_active url || find_is_active children)
       (CCOption.map_or ~default:false is_active url)
       children
   in
@@ -69,10 +69,10 @@ let rec build_nav_links
     CCOption.map_or
       ~default:[ label_elt ]
       (fun icon ->
-        [ span
-            ~a:[ a_class [ "has-icon" ] ]
-            [ Icon.to_html icon; span [ label_elt ] ]
-        ])
+         [ span
+             ~a:[ a_class [ "has-icon" ] ]
+             [ Icon.to_html icon; span [ label_elt ] ]
+         ])
       icon
   in
   let nav_link : [< Html_types.li_content_fun ] elt list_wrap =
@@ -117,12 +117,12 @@ let rec build_nav_links
 ;;
 
 let create_nav
-  { Pool_context.query_parameters; language; guardian; _ }
-  items
-  ?validate
-  ?actor
-  ?active_navigation
-  layout
+      { Pool_context.query_parameters; language; guardian; _ }
+      items
+      ?validate
+      ?actor
+      ?active_navigation
+      layout
   =
   let nav_links =
     filter_items ?validate ?actor ~guardian items
@@ -170,12 +170,12 @@ let i18n_links languages query_parameters active_language layout =
 ;;
 
 let create_nav_with_language_switch
-  ({ Pool_context.language; query_parameters; _ } as context)
-  elements
-  available_languages
-  ?actor:_
-  ?active_navigation
-  layout
+      ({ Pool_context.language; query_parameters; _ } as context)
+      elements
+      available_languages
+      ?actor:_
+      ?active_navigation
+      layout
   =
   let language_switch =
     i18n_links available_languages query_parameters language

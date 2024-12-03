@@ -24,13 +24,13 @@ type data_table =
   }
 
 let create_meta
-  ?additional_url_params
-  ?filter
-  ?search
-  ?(push_url = true)
-  url
-  query
-  language
+      ?additional_url_params
+      ?filter
+      ?search
+      ?(push_url = true)
+      url
+      query
+      language
   =
   { url; query; language; filter; search; additional_url_params; push_url }
 ;;
@@ -89,9 +89,9 @@ let sort_icon sort col =
 ;;
 
 let filter
-  { additional_url_params; language; url; query; push_url; _ }
-  target_id
-  filter
+      { additional_url_params; language; url; query; push_url; _ }
+      target_id
+      filter
   =
   let open Query in
   let hx_attribs filter =
@@ -117,9 +117,9 @@ let filter
         conditions
         |> CCList.fold_left
              (fun (params, current) cur ->
-               match Column.equal (column cur) (Human.column condition) with
-               | true -> params, Some cur
-               | false -> params @ [ cur ], current)
+                match Column.equal (column cur) (Human.column condition) with
+                | true -> params, Some cur
+                | false -> params @ [ cur ], current)
              default
     in
     let checkbox_filter col =
@@ -178,9 +178,9 @@ let filter
 ;;
 
 let pagination
-  ~target_id
-  { additional_url_params; language; url; query; push_url; _ }
-  { Query.Pagination.page; page_count; _ }
+      ~target_id
+      { additional_url_params; language; url; query; push_url; _ }
+      { Query.Pagination.page; page_count; _ }
   =
   let max_button_count = 7 in
   let button_count_threshold = 3 in
@@ -292,9 +292,9 @@ let pagination
 ;;
 
 let searchbar
-  ~target_id
-  { additional_url_params; url; query; language; push_url; _ }
-  searchable_by
+      ~target_id
+      { additional_url_params; url; query; language; push_url; _ }
+      searchable_by
   =
   let open Pool_common in
   let open Query in
@@ -393,18 +393,18 @@ let make_header ?th_class target_id cols sort =
 ;;
 
 let make
-  ?(align_last_end = true)
-  ?align_top
-  ?(classnames = [])
-  ?(execute_onload = false)
-  ?(layout = `Striped)
-  ?(prepend_html = txt "")
-  ?th_class
-  ~target_id
-  ~cols
-  ~row
-  data_table
-  items
+      ?(align_last_end = true)
+      ?align_top
+      ?(classnames = [])
+      ?(execute_onload = false)
+      ?(layout = `Striped)
+      ?(prepend_html = txt "")
+      ?th_class
+      ~target_id
+      ~cols
+      ~row
+      data_table
+      items
   =
   let default = txt "" in
   let search_bar =

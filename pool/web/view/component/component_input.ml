@@ -108,22 +108,22 @@ let flash_fetched_value fetcher value name =
 let csrf_element csrf = input ~a:(csrf_attibs csrf)
 
 let input_element
-  ?(orientation = `Vertical)
-  ?(classnames = [])
-  ?label_field
-  ?(hide_label = false)
-  ?hints
-  ?identifier
-  ?(required = false)
-  ?(disabled = false)
-  ?flash_fetcher
-  ?value
-  ?error
-  ?(additional_attributes = [])
-  ?(append_html = [])
-  language
-  input_type
-  name
+      ?(orientation = `Vertical)
+      ?(classnames = [])
+      ?label_field
+      ?(hide_label = false)
+      ?hints
+      ?identifier
+      ?(required = false)
+      ?(disabled = false)
+      ?flash_fetcher
+      ?value
+      ?error
+      ?(additional_attributes = [])
+      ?(append_html = [])
+      language
+      input_type
+      name
   =
   let input_label = Elements.input_label language name label_field required in
   let value = flash_fetched_value flash_fetcher value name in
@@ -158,26 +158,26 @@ let input_element
 ;;
 
 let flatpicker_element
-  input_type
-  ?(append_html = [])
-  ?(orientation = `Vertical)
-  ?(classnames = [])
-  ?error
-  ?label_field
-  ?min_value
-  ?hints
-  ?identifier
-  ?(read_only = false)
-  ?(required = false)
-  ?flash_fetcher
-  ?value
-  ?(warn_past = false)
-  ?(disable_past = false)
-  ?(disable_future = false)
-  ?(additional_attributes = [])
-  ?(success = false)
-  language
-  name
+      input_type
+      ?(append_html = [])
+      ?(orientation = `Vertical)
+      ?(classnames = [])
+      ?error
+      ?label_field
+      ?min_value
+      ?hints
+      ?identifier
+      ?(read_only = false)
+      ?(required = false)
+      ?flash_fetcher
+      ?value
+      ?(warn_past = false)
+      ?(disable_past = false)
+      ?(disable_future = false)
+      ?(additional_attributes = [])
+      ?(success = false)
+      language
+      name
   =
   let input_label = Elements.input_label language name label_field required in
   let value = flash_fetched_value flash_fetcher value name in
@@ -200,7 +200,7 @@ let flatpicker_element
     @ additional_attributes
     @ CCList.filter_map
         (fun (flag, key, value) ->
-          if flag then Some (a_user_data key value) else None)
+           if flag then Some (a_user_data key value) else None)
         [ ( warn_past
           , "warn-past"
           , Pool_common.(Utils.hint_to_string language I18n.SelectedDateIsPast)
@@ -252,21 +252,21 @@ let date_time_picker_element ?value =
 ;;
 
 let timespan_picker
-  ?(additional_attributes = [])
-  ?enabled_time_units
-  ?(orientation = `Vertical)
-  ?(classnames = [])
-  ?hints
-  ?identifier
-  ?label_field
-  ?min_value
-  ?(read_only = false)
-  ?(required = false)
-  ?flash_fetcher
-  ?value
-  ?error
-  language
-  name
+      ?(additional_attributes = [])
+      ?enabled_time_units
+      ?(orientation = `Vertical)
+      ?(classnames = [])
+      ?hints
+      ?identifier
+      ?label_field
+      ?min_value
+      ?(read_only = false)
+      ?(required = false)
+      ?flash_fetcher
+      ?value
+      ?error
+      language
+      name
   =
   let human_field = CCOption.value ~default:name label_field in
   let input_label = Elements.input_label language human_field None required in
@@ -361,23 +361,23 @@ let timespan_picker
 ;;
 
 let checkbox_element
-  ?(additional_attributes = [])
-  ?(as_switch = false)
-  ?(switcher_class = [])
-  ?(classnames = [])
-  ?error
-  ?flash_fetcher
-  ?hints
-  ?identifier
-  ?label_field
-  ?(orientation = `Vertical)
-  ?(required = false)
-  ?(disabled = false)
-  ?(read_only = false)
-  ?(value = false)
-  ?(append_html = [])
-  language
-  name
+      ?(additional_attributes = [])
+      ?(as_switch = false)
+      ?(switcher_class = [])
+      ?(classnames = [])
+      ?error
+      ?flash_fetcher
+      ?hints
+      ?identifier
+      ?label_field
+      ?(orientation = `Vertical)
+      ?(required = false)
+      ?(disabled = false)
+      ?(read_only = false)
+      ?(value = false)
+      ?(append_html = [])
+      language
+      name
   =
   let input_label = Elements.input_label language name label_field required in
   let value =
@@ -403,7 +403,7 @@ let checkbox_element
     [ disabled, a_disabled (); read_only, a_onclick "return false;" ]
     |> CCList.fold_left
          (fun attributes (condition, attr) ->
-           if condition then attr :: attributes else attributes)
+            if condition then attr :: attributes else attributes)
          attributes
   in
   let attributes = attributes @ additional_attributes in
@@ -437,13 +437,13 @@ let checkbox_element
 ;;
 
 let input_element_file
-  ?(orientation = `Vertical)
-  ?(allow_multiple = false)
-  ?(required = false)
-  ?label_field
-  ?(accept = [])
-  language
-  field
+      ?(orientation = `Vertical)
+      ?(allow_multiple = false)
+      ?(required = false)
+      ?label_field
+      ?(accept = [])
+      language
+      field
   =
   let input_label = Elements.input_label language field label_field required in
   let name = Field.(field |> show) in
@@ -493,18 +493,18 @@ let input_element_file
 ;;
 
 let textarea_element
-  ?(attributes = [])
-  ?(classnames = [])
-  ?flash_fetcher
-  ?(orientation = `Vertical)
-  ?label_field
-  ?identifier
-  ?hints
-  ?(required = false)
-  ?(rich_text = false)
-  ?value
-  language
-  name
+      ?(attributes = [])
+      ?(classnames = [])
+      ?flash_fetcher
+      ?(orientation = `Vertical)
+      ?label_field
+      ?identifier
+      ?hints
+      ?(required = false)
+      ?(rich_text = false)
+      ?value
+      language
+      name
   =
   let id = Elements.identifier ?identifier name in
   let input_label = Elements.input_label language name label_field required in
@@ -536,14 +536,14 @@ let textarea_element
 ;;
 
 let submit_element
-  lang
-  control
-  ?(is_text = false)
-  ?(submit_type = `Primary)
-  ?(classnames = [])
-  ?has_icon
-  ?(attributes = [])
-  ()
+      lang
+      control
+      ?(is_text = false)
+      ?(submit_type = `Primary)
+      ?(classnames = [])
+      ?has_icon
+      ?(attributes = [])
+      ()
   =
   let button_type_class =
     (submit_type_to_class submit_type
@@ -575,13 +575,13 @@ let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
 ;;
 
 let link_as_button
-  ?(is_text = false)
-  ?(style = `Primary)
-  ?(classnames = [])
-  ?(attributes = [])
-  ?icon
-  ?control
-  href
+      ?(is_text = false)
+      ?(style = `Primary)
+      ?(classnames = [])
+      ?(attributes = [])
+      ?icon
+      ?control
+      href
   =
   let classnames =
     let base =
@@ -622,27 +622,27 @@ let edit_link ?classnames ?attributes href =
 ;;
 
 let selector
-  language
-  field
-  show
-  options
-  selected
-  ?(add_empty = false)
-  ?(append_html = [])
-  ?(attributes = [])
-  ?(classnames = [])
-  ?(disabled = false)
-  ?(hide_label = false)
-  ?(read_only = false)
-  ?(required = false)
-  ?elt_option_formatter
-  ?error
-  ?flash_fetcher
-  ?hints
-  ?label_field
-  ?option_disabler
-  ?option_formatter
-  ()
+      language
+      field
+      show
+      options
+      selected
+      ?(add_empty = false)
+      ?(append_html = [])
+      ?(attributes = [])
+      ?(classnames = [])
+      ?(disabled = false)
+      ?(hide_label = false)
+      ?(read_only = false)
+      ?(required = false)
+      ?elt_option_formatter
+      ?error
+      ?flash_fetcher
+      ?hints
+      ?label_field
+      ?option_disabler
+      ?option_formatter
+      ()
   =
   let name = Field.(show field) in
   let selected =
@@ -667,31 +667,31 @@ let selector
   let options =
     CCList.map
       (fun l ->
-        let is_selected =
-          CCOption.map
-            (fun flash ->
-              if CCString.equal flash (show l) then [ a_selected () ] else [])
-            selected
-          |> CCOption.value ~default:[]
-        in
-        let is_disabled =
-          option_disabler
-          |> CCOption.map_or ~default:false (fun fnc -> fnc l)
-          |> function
-          | true -> [ a_disabled () ]
-          | false -> []
-        in
-        let attrs = is_selected @ is_disabled in
-        let label =
-          match elt_option_formatter with
-          | Some fnc -> fnc l
-          | None ->
-            l
-            |> CCOption.value ~default:show option_formatter
-            |> CCString.capitalize_ascii
-            |> txt
-        in
-        option ~a:((l |> show |> a_value) :: attrs) label)
+         let is_selected =
+           CCOption.map
+             (fun flash ->
+                if CCString.equal flash (show l) then [ a_selected () ] else [])
+             selected
+           |> CCOption.value ~default:[]
+         in
+         let is_disabled =
+           option_disabler
+           |> CCOption.map_or ~default:false (fun fnc -> fnc l)
+           |> function
+           | true -> [ a_disabled () ]
+           | false -> []
+         in
+         let attrs = is_selected @ is_disabled in
+         let label =
+           match elt_option_formatter with
+           | Some fnc -> fnc l
+           | None ->
+             l
+             |> CCOption.value ~default:show option_formatter
+             |> CCString.capitalize_ascii
+             |> txt
+         in
+         option ~a:((l |> show |> a_value) :: attrs) label)
       options
   in
   let options =
@@ -774,20 +774,20 @@ type 'a multi_select =
   }
 
 let multi_select
-  language
-  { options; selected; to_label; to_value }
-  group_field
-  ?(classnames = [])
-  ?(disabled = false)
-  ?(orientation = `Horizontal)
-  ?(required = false)
-  ?additional_attributes
-  ?append_html
-  ?error
-  ?flash_values
-  ?hints
-  ?label_field
-  ()
+      language
+      { options; selected; to_label; to_value }
+      group_field
+      ?(classnames = [])
+      ?(disabled = false)
+      ?(orientation = `Horizontal)
+      ?(required = false)
+      ?additional_attributes
+      ?append_html
+      ?error
+      ?flash_values
+      ?hints
+      ?label_field
+      ()
   =
   let error = Elements.error language error in
   let help_html =
@@ -795,35 +795,37 @@ let multi_select
   in
   CCList.map
     (fun option ->
-      let value = to_value option in
-      let is_checked =
-        match flash_values with
-        | None ->
-          CCList.mem
-            ~eq:(fun o1 o2 -> CCString.equal (to_value o1) (to_value o2))
-            option
-            selected
-        | Some flash_values ->
-          CCList.find_opt (CCString.equal value) flash_values
-          |> CCOption.is_some
-      in
-      let input_elm =
-        let checked = if is_checked then [ a_checked () ] else [] in
-        let disabled = if disabled then [ a_disabled () ] else [] in
-        input
-          ~a:
-            ([ a_input_type `Checkbox
-             ; a_name (group_field |> Field.array_key)
-             ; a_id value
-             ; a_value value
-             ]
-             @ checked
-             @ disabled
-             @ CCOption.value ~default:[] additional_attributes)
-          ()
-      in
-      let label = label ~a:[ a_label_for value ] [ txt (option |> to_label) ] in
-      div [ input_elm; label ])
+       let value = to_value option in
+       let is_checked =
+         match flash_values with
+         | None ->
+           CCList.mem
+             ~eq:(fun o1 o2 -> CCString.equal (to_value o1) (to_value o2))
+             option
+             selected
+         | Some flash_values ->
+           CCList.find_opt (CCString.equal value) flash_values
+           |> CCOption.is_some
+       in
+       let input_elm =
+         let checked = if is_checked then [ a_checked () ] else [] in
+         let disabled = if disabled then [ a_disabled () ] else [] in
+         input
+           ~a:
+             ([ a_input_type `Checkbox
+              ; a_name (group_field |> Field.array_key)
+              ; a_id value
+              ; a_value value
+              ]
+              @ checked
+              @ disabled
+              @ CCOption.value ~default:[] additional_attributes)
+           ()
+       in
+       let label =
+         label ~a:[ a_label_for value ] [ txt (option |> to_label) ]
+       in
+       div [ input_elm; label ])
     options
   |> fun inputs ->
   let classnames =
@@ -927,14 +929,14 @@ let notify_via_selection language =
 ;;
 
 let admin_select
-  language
-  options
-  selected
-  field
-  ?(attributes = [])
-  ?(required = false)
-  ?hints
-  ()
+      language
+      options
+      selected
+      field
+      ?(attributes = [])
+      ?(required = false)
+      ?hints
+      ()
   =
   let open Pool_common in
   let name = Pool_message.Field.show field in
@@ -969,17 +971,17 @@ let admin_select
     in
     CCList.map
       (fun (admin : Admin.t) ->
-        let is_selected =
-          selected
-          |> CCOption.map (fun selected ->
-            if Admin.(Id.equal (id admin) selected)
-            then [ a_selected () ]
-            else [])
-          |> CCOption.value ~default:[]
-        in
-        option
-          ~a:([ a_value Admin.(admin |> id |> Id.value) ] @ is_selected)
-          (txt (Admin.fullname admin)))
+         let is_selected =
+           selected
+           |> CCOption.map (fun selected ->
+             if Admin.(Id.equal (id admin) selected)
+             then [ a_selected () ]
+             else [])
+           |> CCOption.value ~default:[]
+         in
+         option
+           ~a:([ a_value Admin.(admin |> id |> Id.value) ] @ is_selected)
+           (txt (Admin.fullname admin)))
       options
     |> CCList.cons default_option
   in

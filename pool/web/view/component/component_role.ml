@@ -83,13 +83,13 @@ let roles_section ?(top_element = []) language children =
 
 module List = struct
   let row
-    ?(is_edit = false)
-    ~path
-    Pool_context.{ csrf; language; _ }
-    target_id
-    (( ({ Guard.ActorRole.actor_uuid; role; target_uuid } as actor_role)
-     , (_ : Role.Target.t option)
-     , (title : string option) ) as role_element)
+        ?(is_edit = false)
+        ~path
+        Pool_context.{ csrf; language; _ }
+        target_id
+        (( ({ Guard.ActorRole.actor_uuid; role; target_uuid } as actor_role)
+         , (_ : Role.Target.t option)
+         , (title : string option) ) as role_element)
     =
     let button_form target name submit_type confirm_text =
       form
@@ -122,14 +122,14 @@ module List = struct
          @ CCOption.map_or
              ~default:[]
              (fun uuid ->
-               [ input
-                   ~a:
-                     [ a_name Input.Field.(show Target)
-                     ; a_value ([%show: Guard.Uuid.Target.t] uuid)
-                     ; a_hidden ()
-                     ]
-                   ()
-               ])
+                [ input
+                    ~a:
+                      [ a_name Input.Field.(show Target)
+                      ; a_value ([%show: Guard.Uuid.Target.t] uuid)
+                      ; a_hidden ()
+                      ]
+                    ()
+                ])
              target_uuid)
     in
     let buttons =
@@ -167,11 +167,11 @@ module List = struct
   ;;
 
   let create
-    ?is_edit
-    ~path
-    ({ Pool_context.language; _ } as context)
-    target_id
-    roles
+        ?is_edit
+        ~path
+        ({ Pool_context.language; _ } as context)
+        target_id
+        roles
     =
     let open CCList in
     let thead =

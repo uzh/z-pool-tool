@@ -52,10 +52,10 @@ let joins_tags =
 ;;
 
 let find_request_sql
-  ?(distinct = false)
-  ?additional_joins
-  ?(count = false)
-  where_fragment
+      ?(distinct = false)
+      ?additional_joins
+      ?(count = false)
+      where_fragment
   =
   let columns =
     if count
@@ -350,13 +350,13 @@ module Sql = struct
   ;;
 
   let search
-    ?conditions
-    ?(dyn = Dynparam.empty)
-    ?exclude
-    ?joins
-    ?(limit = 20)
-    pool
-    query
+        ?conditions
+        ?(dyn = Dynparam.empty)
+        ?exclude
+        ?joins
+        ?(limit = 20)
+        pool
+        query
     =
     let open Caqti_request.Infix in
     let exclude_ids =
@@ -400,7 +400,7 @@ module Sql = struct
       let dyn =
         CCList.fold_left
           (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
           Dynparam.empty
           ids
       in
@@ -541,11 +541,11 @@ module Sql = struct
   ;;
 
   let find_targets_grantable_by_target
-    ?exclude
-    database_label
-    target_id
-    role
-    query
+        ?exclude
+        database_label
+        target_id
+        role
+        query
     =
     let joins =
       {sql|
@@ -566,9 +566,9 @@ module Sql = struct
   ;;
 
   let participation_history_where
-    ?(dyn = Dynparam.empty)
-    ~only_closed
-    contact_id
+        ?(dyn = Dynparam.empty)
+        ~only_closed
+        contact_id
     =
     let joins =
       {sql|

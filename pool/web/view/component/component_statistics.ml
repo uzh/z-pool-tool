@@ -7,19 +7,19 @@ type title =
   | Text of Pool_common.I18n.t
 
 let create
-  language
-  ( period
-  , { active_contacts
-    ; pending_contact_imports
-    ; login_count
-    ; sign_up_count
-    ; terms_accepted_count
-    ; terms_last_changed
-    ; assignments_created
-    ; invitations_sent
-    ; reminders_sent
-    ; emails_sent
-    } )
+      language
+      ( period
+      , { active_contacts
+        ; pending_contact_imports
+        ; login_count
+        ; sign_up_count
+        ; terms_accepted_count
+        ; terms_last_changed
+        ; assignments_created
+        ; invitations_sent
+        ; reminders_sent
+        ; emails_sent
+        } )
   =
   let open Pool_common in
   let open Statistics in
@@ -128,11 +128,11 @@ module ExperimentFilter = struct
   open ExperimentFilter
 
   let create
-    language
-    { contacts_meeting_criteria
-    ; invitation_count
-    ; assigned_contacts_not_matching
-    }
+        language
+        { contacts_meeting_criteria
+        ; invitation_count
+        ; assigned_contacts_not_matching
+        }
     =
     let open Pool_common in
     let to_string = Utils.text_to_string language in

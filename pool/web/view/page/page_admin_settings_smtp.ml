@@ -76,10 +76,10 @@ let list Pool_context.{ language; csrf; _ } location smtp_auth_list query =
 ;;
 
 let index
-  (Pool_context.{ language; _ } as context)
-  location
-  smtp_auth_list
-  query
+      (Pool_context.{ language; _ } as context)
+      location
+      smtp_auth_list
+      query
   =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -93,11 +93,11 @@ let index
 let smtp_form_inputs language flash_fetcher (smtp_auth : SmtpAuth.t option) =
   let open SmtpAuth in
   let input_element_root
-    ?(break = false)
-    ?(required = false)
-    ?(field_type = `Text)
-    field
-    decode_fcn
+        ?(break = false)
+        ?(required = false)
+        ?(field_type = `Text)
+        field
+        decode_fcn
     =
     input_element
       ~classnames:(if break then [ "break-grid" ] else [])
@@ -168,10 +168,10 @@ let show Pool_context.{ language; csrf; _ } location flash_fetcher smtp_auth =
          sub)
   in
   let submit
-    ?submit_type
-    ?(has_icon = Icon.Save)
-    ?(control = Control.Update None)
-    ()
+        ?submit_type
+        ?(has_icon = Icon.Save)
+        ?(control = Control.Update None)
+        ()
     =
     div
       ~a:[ a_class [ "flexrow" ] ]

@@ -45,12 +45,12 @@ module RepoEntity = struct
                 , (m.last_reminded_at, (m.created_at, m.updated_at)) ) ) ) ) )
     in
     let decode
-      ( user_uuid
-      , ( token
-        , ( confirmed_at
-          , ( notified_at
-            , (reminder_count, (last_reminded_at, (created_at, updated_at))) )
-          ) ) )
+          ( user_uuid
+          , ( token
+            , ( confirmed_at
+              , ( notified_at
+                , (reminder_count, (last_reminded_at, (created_at, updated_at)))
+                ) ) ) )
       =
       Ok
         { user_uuid
@@ -105,13 +105,13 @@ module RepoEntity = struct
       }
 
     let from_entity
-      { Entity.user_uuid
-      ; confirmed_at
-      ; notified_at
-      ; reminder_count
-      ; last_reminded_at
-      ; _
-      }
+          { Entity.user_uuid
+          ; confirmed_at
+          ; notified_at
+          ; reminder_count
+          ; last_reminded_at
+          ; _
+          }
       =
       { user_uuid; confirmed_at; notified_at; reminder_count; last_reminded_at }
     ;;

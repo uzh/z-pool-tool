@@ -88,8 +88,16 @@ end = struct
   ;;
 
   let smtp_of_command
-    ?id
-    { label; server; port; username; password; mechanism; protocol; default }
+        ?id
+        { label
+        ; server
+        ; port
+        ; username
+        ; password
+        ; mechanism
+        ; protocol
+        ; default
+        }
     =
     SmtpAuth.Write.create
       ?id
@@ -146,11 +154,11 @@ end = struct
   type t = update
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?(clear_id = System_event.Id.create ())
-    (default_smtp : SmtpAuth.t option)
-    (smtp_auth : SmtpAuth.t)
-    (command : t)
+        ?(tags = Logs.Tag.empty)
+        ?(clear_id = System_event.Id.create ())
+        (default_smtp : SmtpAuth.t option)
+        (smtp_auth : SmtpAuth.t)
+        (command : t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Edit" ~tags);
@@ -238,9 +246,9 @@ end = struct
   type t = SmtpAuth.Id.t
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?(clear_id = System_event.Id.create ())
-    (command : t)
+        ?(tags = Logs.Tag.empty)
+        ?(clear_id = System_event.Id.create ())
+        (command : t)
     =
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     Ok

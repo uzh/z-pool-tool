@@ -145,10 +145,10 @@ let index (Pool_context.{ language; _ } as context) location_list query =
 ;;
 
 let file_form
-  (labels : Pool_location.Mapping.Label.t list)
-  (languages : Pool_common.Language.t list)
-  (location : Pool_location.t)
-  Pool_context.{ language; csrf; _ }
+      (labels : Pool_location.Mapping.Label.t list)
+      (languages : Pool_common.Language.t list)
+      (location : Pool_location.t)
+      Pool_context.{ language; csrf; _ }
   =
   let open Pool_location in
   let action = location_specific_path ~suffix:"files" location.id in
@@ -199,11 +199,11 @@ let file_form
 ;;
 
 let form
-  ?(location : Pool_location.t option)
-  ?(states : Pool_location.Status.t list = [])
-  Pool_context.{ language; csrf; _ }
-  tenant_languages
-  flash_fetcher
+      ?(location : Pool_location.t option)
+      ?(states : Pool_location.Status.t list = [])
+      Pool_context.{ language; csrf; _ }
+      tenant_languages
+      flash_fetcher
   =
   let open Pool_location in
   let default = "" in
@@ -498,10 +498,10 @@ module FileList = struct
   ;;
 
   let row
-    page_language
-    csrf
-    location_id
-    (Mapping.{ id; label; language; _ } as file)
+        page_language
+        csrf
+        location_id
+        (Mapping.{ id; label; language; _ } as file)
     =
     let delete_form =
       Tyxml.Html.form
@@ -580,32 +580,32 @@ module SessionList = struct
   let rows sessions =
     CCList.map
       (fun (session, (experiment_id, experiment_title)) ->
-        let open Session.Public in
-        [ session |> session_title |> txt
-        ; experiment_title |> txt
-        ; session.duration
-          |> Session.Duration.value
-          |> Pool_model.Time.formatted_timespan
-          |> txt
-        ; session.canceled_at
-          |> CCOption.map_or ~default:"" (fun t ->
-            Pool_model.Time.formatted_date_time t)
-          |> txt
-        ; Format.asprintf
-            "/admin/experiments/%s/sessions/%s"
-            (Experiment.Id.value experiment_id)
-            Session.(session.id |> Id.value)
-          |> edit_link
-        ])
+         let open Session.Public in
+         [ session |> session_title |> txt
+         ; experiment_title |> txt
+         ; session.duration
+           |> Session.Duration.value
+           |> Pool_model.Time.formatted_timespan
+           |> txt
+         ; session.canceled_at
+           |> CCOption.map_or ~default:"" (fun t ->
+             Pool_model.Time.formatted_date_time t)
+           |> txt
+         ; Format.asprintf
+             "/admin/experiments/%s/sessions/%s"
+             (Experiment.Id.value experiment_id)
+             Session.(session.id |> Id.value)
+           |> edit_link
+         ])
       sessions
   ;;
 end
 
 let detail
-  (location : Pool_location.t)
-  statistics
-  statistics_year_range
-  Pool_context.({ csrf; language; _ } as context)
+      (location : Pool_location.t)
+      statistics
+      statistics_year_range
+      Pool_context.({ csrf; language; _ } as context)
   =
   let open Pool_location in
   let location_details =

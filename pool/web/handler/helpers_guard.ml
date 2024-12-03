@@ -50,8 +50,8 @@ let can_access_contact_profile context id =
 ;;
 
 let target_model_for_actor_role
-  pool
-  ({ Guard.ActorRole.target_uuid; _ } as role)
+      pool
+      ({ Guard.ActorRole.target_uuid; _ } as role)
   =
   let find_target_model =
     CCOption.map_or ~default:Lwt.return_none (fun uuid ->
@@ -67,9 +67,9 @@ let can_send_direct_message { Pool_context.database_label; user; _ } =
 ;;
 
 let can_rerun_session_filter
-  { Pool_context.database_label; user; _ }
-  experiment_id
-  session_id
+      { Pool_context.database_label; user; _ }
+      experiment_id
+      session_id
   =
   has_permission
     database_label

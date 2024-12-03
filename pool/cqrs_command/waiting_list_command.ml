@@ -16,15 +16,16 @@ end = struct
   type t = Waiting_list.create
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    confimration_email
-    (command : Waiting_list.create)
+        ?(tags = Logs.Tag.empty)
+        confimration_email
+        (command : Waiting_list.create)
     =
     let open Experiment.Public in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    if command.Waiting_list.experiment
-       |> direct_registration_disabled
-       |> Experiment.DirectRegistrationDisabled.value
+    if
+      command.Waiting_list.experiment
+      |> direct_registration_disabled
+      |> Experiment.DirectRegistrationDisabled.value
     then
       Ok
         [ Waiting_list.Created command |> Pool_event.waiting_list

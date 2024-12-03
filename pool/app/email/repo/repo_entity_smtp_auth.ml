@@ -64,7 +64,9 @@ let t =
       )
   in
   let decode
-    (id, (label, (server, (port, (username, (mechanism, (protocol, default)))))))
+        ( id
+        , (label, (server, (port, (username, (mechanism, (protocol, default))))))
+        )
     =
     Ok { id; label; server; port; username; mechanism; protocol; default }
   in
@@ -100,11 +102,11 @@ module Write = struct
         )
     in
     let decode
-      ( id
-      , ( label
-        , ( server
-          , (port, (username, (password, (mechanism, (protocol, default))))) )
-        ) )
+          ( id
+          , ( label
+            , ( server
+              , (port, (username, (password, (mechanism, (protocol, default)))))
+              ) ) )
       =
       let open CCResult in
       Ok

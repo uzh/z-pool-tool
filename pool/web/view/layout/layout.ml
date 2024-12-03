@@ -74,11 +74,11 @@ module Tenant = struct
   ;;
 
   let create
-    ?active_navigation
-    ({ csrf; language; query_parameters; message; user; announcement; _ } as
-     context)
-    Tenant.{ tenant_languages; tenant }
-    children
+        ?active_navigation
+        ({ csrf; language; query_parameters; message; user; announcement; _ } as
+         context)
+        Tenant.{ tenant_languages; tenant }
+        children
     =
     let title_text = Title.value tenant.title in
     let page_title = title (title_text |> txt) in
@@ -132,9 +132,9 @@ end
 
 module Root = struct
   let create
-    ?active_navigation
-    ({ Pool_context.message; query_parameters; _ } as context)
-    content
+        ?active_navigation
+        ({ Pool_context.message; query_parameters; _ } as context)
+        content
     =
     let open Layout_utils in
     let language = Language.En in

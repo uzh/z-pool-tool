@@ -283,12 +283,12 @@ module Job = struct
 end
 
 let dispatch
-  ?id
-  ?new_recipient
-  ?message_template
-  ?(job_ctx = Pool_queue.job_ctx_create [])
-  database_label
-  message
+      ?id
+      ?new_recipient
+      ?message_template
+      ?(job_ctx = Pool_queue.job_ctx_create [])
+      database_label
+      message
   =
   let tags = Database.Logger.Tags.create database_label in
   Logs.debug ~src (fun m ->

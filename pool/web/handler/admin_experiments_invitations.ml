@@ -116,9 +116,9 @@ let create req =
         let retrieved_ids = CCList.map Contact.id contacts in
         CCList.fold_left
           (fun missing id ->
-            match CCList.mem ~eq:Contact.Id.equal id retrieved_ids with
-            | true -> missing
-            | false -> CCList.cons id missing)
+             match CCList.mem ~eq:Contact.Id.equal id retrieved_ids with
+             | true -> missing
+             | false -> CCList.cons id missing)
           []
           contact_ids
       in

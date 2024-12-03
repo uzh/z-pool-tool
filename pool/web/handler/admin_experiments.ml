@@ -60,8 +60,7 @@ let contact_person_from_urlencoded database_label urlencoded experiment_id =
       |> CCOption.to_result (Error.NotFound Field.ContactPerson)
       |> Lwt_result.lift
       >>= (fun id ->
-            Guard.Persistence.Actor.find database_label id
-            >|- Error.authorization)
+      Guard.Persistence.Actor.find database_label id >|- Error.authorization)
       >>= Guard.Persistence.validate
             database_label
             (validation_set experiment_id)
@@ -93,12 +92,12 @@ let experiment_message_templates database_label experiment =
       (experiment.Experiment.id |> Id.to_common)
       label
     ||> (fun templates ->
-          match experiment.language with
-          | None -> templates
-          | Some experiment_language ->
-            templates
-            |> CCList.filter (fun { Message_template.language; _ } ->
-              Pool_common.Language.equal language experiment_language))
+    match experiment.language with
+    | None -> templates
+    | Some experiment_language ->
+      templates
+      |> CCList.filter (fun { Message_template.language; _ } ->
+        Pool_common.Language.equal language experiment_language))
     ||> CCPair.make label
   in
   Label.customizable_by_experiment |> Lwt_list.map_s find_templates

@@ -23,19 +23,19 @@ let mail_to_html ?(highlight_first_line = true) mail =
   lst @ base
   |> CCList.foldi
        (fun html index str ->
-         let str = str |> txt in
-         match index with
-         | 0 ->
-           CCList.pure (if highlight_first_line then strong [ str ] else str)
-         | _ -> html @ [ br (); str ])
+          let str = str |> txt in
+          match index with
+          | 0 ->
+            CCList.pure (if highlight_first_line then strong [ str ] else str)
+          | _ -> html @ [ br (); str ])
        []
   |> span
 ;;
 
 let address_to_html
-  ?(highlight_first_line = true)
-  language
-  (location_address : Pool_location.Address.t)
+      ?(highlight_first_line = true)
+      language
+      (location_address : Pool_location.Address.t)
   =
   let open Pool_location.Address in
   match location_address with
@@ -81,11 +81,11 @@ let location_to_html ?(public = false) language (location : Pool_location.t) =
   let link =
     CCOption.map
       (fun l ->
-        p
-          [ a
-              ~a:[ a_href (l |> Link.value); a_target "_blank" ]
-              [ txt (l |> Link.value) ]
-          ])
+         p
+           [ a
+               ~a:[ a_href (l |> Link.value); a_target "_blank" ]
+               [ txt (l |> Link.value) ]
+           ])
       location.link
   in
   [ title; address; status; link ]

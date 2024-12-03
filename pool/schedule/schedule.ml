@@ -100,10 +100,10 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
       Lwt.catch
         (fun () -> fcn ())
         (fun exn ->
-          let prefix = Format.asprintf "Running schedule %s" label in
-          let%lwt () = Registered.update_status Status.Failed schedule in
-          Logger.log_exception ~prefix ~tags ~src exn;
-          Lwt.return_unit)
+           let prefix = Format.asprintf "Running schedule %s" label in
+           let%lwt () = Registered.update_status Status.Failed schedule in
+           Logger.log_exception ~prefix ~tags ~src exn;
+           Lwt.return_unit)
     in
     Registered.update_run_status schedule scheduled_time
   in

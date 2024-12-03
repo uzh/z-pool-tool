@@ -130,10 +130,10 @@ let t =
       )
   in
   let decode
-    ( id
-    , ( name
-      , (description, (address, (link, (status, (created_at, updated_at))))) )
-    )
+        ( id
+        , ( name
+          , (description, (address, (link, (status, (created_at, updated_at)))))
+          ) )
     =
     let open CCResult in
     Ok { id; name; description; address; link; status; created_at; updated_at }

@@ -7,9 +7,9 @@ open Repo_entity
 let sql_select_label = "pool_tenant_databases.label"
 
 let sql_database_join_on_label
-  ?(join_prefix = "")
-  ?(status = `List Status.[ Active; ConnectionIssue; MigrationsPending ])
-  label_column
+      ?(join_prefix = "")
+      ?(status = `List Status.[ Active; ConnectionIssue; MigrationsPending ])
+      label_column
   =
   match status with
   | `All ->
@@ -60,8 +60,8 @@ let find_all_by_status_request ?(status = []) pt =
 ;;
 
 let find_all_by_status
-  ?(status = Status.[ Active; ConnectionIssue; MigrationsPending ])
-  label
+      ?(status = Status.[ Active; ConnectionIssue; MigrationsPending ])
+      label
   =
   let open Dynparam in
   let (Pack (pt, pv)) =

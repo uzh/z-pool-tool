@@ -6,7 +6,9 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Guard.Target.create `Mailing (id |> Guard.Uuid.target_of Entity.Id.value))
+         Guard.Target.create
+           `Mailing
+           (id |> Guard.Uuid.target_of Entity.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;

@@ -15,11 +15,11 @@ let trigger_text =
 ;;
 
 let make_messages
-  ?current_user
-  context
-  database_label
-  ({ Experiment.id; _ } as experiment)
-  sessions
+      ?current_user
+      context
+      database_label
+      ({ Experiment.id; _ } as experiment)
+      sessions
   =
   let* tenant = Pool_tenant.find_by_label database_label in
   let make_mail assignments admin =
@@ -109,13 +109,13 @@ let handle_update ?current_user database_label context =
     find_upcoming database_label
     >|> Lwt_list.fold_left_s
           (fun acc (experiment, assignments) ->
-            let filter = Experiment.filter experiment in
-            match acc with
-            | Error err -> Lwt_result.fail err
-            | Ok acc ->
-              handle experiment filter assignments
-              >|+ fun (assignments, emails) ->
-              fst acc @ assignments, snd acc @ emails)
+             let filter = Experiment.filter experiment in
+             match acc with
+             | Error err -> Lwt_result.fail err
+             | Ok acc ->
+               handle experiment filter assignments
+               >|+ fun (assignments, emails) ->
+               fst acc @ assignments, snd acc @ emails)
           (Ok ([], []))
 ;;
 
@@ -131,10 +131,12 @@ let update_upcoming_assignments database_label =
 ;;
 
 let update_matches_filter
-  ?current_user
-  pool
-  (context :
-    [< `Experiment of Experiment.t * Filter.t option | `Session of Session.t ])
+      ?current_user
+      pool
+      (context :
+        [< `Experiment of Experiment.t * Filter.t option
+        | `Session of Session.t
+        ])
   =
   handle_update ?current_user pool context
 ;;

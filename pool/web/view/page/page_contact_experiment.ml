@@ -41,14 +41,14 @@ let experiment_detail_page experiment html =
 ;;
 
 let index
-  experiment_list
-  online_studies
-  upcoming_sessions
-  waiting_list
-  past_experiments
-  custom_fields_ansered
-  i18n
-  Pool_context.{ language; query_parameters; _ }
+      experiment_list
+      online_studies
+      upcoming_sessions
+      waiting_list
+      past_experiments
+      custom_fields_ansered
+      i18n
+      Pool_context.{ language; query_parameters; _ }
   =
   let list_html ?empty_msg ?note title classnames list =
     div
@@ -56,11 +56,11 @@ let index
       ; CCOption.map_or
           ~default:(txt "")
           (fun hint ->
-            hint
-            |> Pool_common.Utils.hint_to_string language
-            |> txt
-            |> CCList.return
-            |> p)
+             hint
+             |> Pool_common.Utils.hint_to_string language
+             |> txt
+             |> CCList.return
+             |> p)
           note
       ; (match list, empty_msg with
          | [], Some empty_msg ->
@@ -224,14 +224,14 @@ let index
 ;;
 
 let show
-  (experiment : Experiment.Public.t)
-  grouped_sessions
-  upcoming_sessions
-  past_sessions
-  canceled_sessions
-  user_is_enlisted
-  contact
-  Pool_context.{ language; query_parameters; csrf; _ }
+      (experiment : Experiment.Public.t)
+      grouped_sessions
+      upcoming_sessions
+      past_sessions
+      canceled_sessions
+      user_is_enlisted
+      contact
+      Pool_context.{ language; query_parameters; csrf; _ }
   =
   let open Pool_common in
   let hint_to_string = Utils.hint_to_string language in
@@ -265,7 +265,7 @@ let show
         ~suffix:"waiting-list"
         ()
       |> (fun url ->
-           if user_is_enlisted then Format.asprintf "%s/remove" url else url)
+      if user_is_enlisted then Format.asprintf "%s/remove" url else url)
       |> HttpUtils.externalize_path_with_params query_parameters
     in
     let text_blocks =
@@ -346,13 +346,13 @@ let show
 ;;
 
 let show_online_study
-  (experiment : Experiment.Public.t)
-  { Pool_context.language; _ }
-  (argument :
-    [> `Active of Time_window.t * Assignment.Public.t option
-    | `Participated of Assignment.Public.t
-    | `Upcoming of Time_window.t option
-    ])
+      (experiment : Experiment.Public.t)
+      { Pool_context.language; _ }
+      (argument :
+        [> `Active of Time_window.t * Assignment.Public.t option
+        | `Participated of Assignment.Public.t
+        | `Upcoming of Time_window.t option
+        ])
   =
   let html =
     let open Pool_common in
@@ -417,8 +417,8 @@ let show_online_study
 ;;
 
 let online_study_completition
-  (experiment : Experiment.Public.t)
-  (_ : Pool_context.t)
+      (experiment : Experiment.Public.t)
+      (_ : Pool_context.t)
   =
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]

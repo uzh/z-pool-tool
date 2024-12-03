@@ -11,7 +11,8 @@ let yojson_response ?status json =
 ;;
 
 let schedule_to_json
-  ({ Schedule.label; scheduled_time; status; last_run; _ } : Schedule.public)
+      ({ Schedule.label; scheduled_time; status; last_run; _ } :
+        Schedule.public)
   =
   let open Schedule in
   let label = Label.value label in
@@ -51,21 +52,21 @@ let show _ =
     let%lwt tenant_job_count =
       Lwt_list.map_s
         (fun { Pool_tenant.database_label; status; _ } ->
-          let open Database.Status in
-          let%lwt count =
-            match status with
-            | Active ->
-              Pool_queue.count_all_workable database_label
-              >|+ CCInt.to_string
-              ||> CCResult.to_opt
-            | ConnectionIssue
-            | Disabled
-            | Maintenance
-            | MigrationsConnectionIssue
-            | MigrationsFailed
-            | MigrationsPending -> Lwt.return_none
-          in
-          Lwt.return (database_label, CCOption.get_or ~default count))
+           let open Database.Status in
+           let%lwt count =
+             match status with
+             | Active ->
+               Pool_queue.count_all_workable database_label
+               >|+ CCInt.to_string
+               ||> CCResult.to_opt
+             | ConnectionIssue
+             | Disabled
+             | Maintenance
+             | MigrationsConnectionIssue
+             | MigrationsFailed
+             | MigrationsPending -> Lwt.return_none
+           in
+           Lwt.return (database_label, CCOption.get_or ~default count))
         databases
     in
     let is_ok =

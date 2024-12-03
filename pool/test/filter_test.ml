@@ -113,14 +113,14 @@ module CustomFieldData = struct
     let save_answers ~answer_value ?admin contacts =
       CCList.map
         (fun contact ->
-          let user =
-            admin |> CCOption.value ~default:(Pool_context.Contact contact)
-          in
-          Custom_field.AnswerUpserted
-            ( public (CCOption.is_some admin) answer_value
-            , Contact.id contact
-            , user )
-          |> Pool_event.custom_field)
+           let user =
+             admin |> CCOption.value ~default:(Pool_context.Contact contact)
+           in
+           Custom_field.AnswerUpserted
+             ( public (CCOption.is_some admin) answer_value
+             , Contact.id contact
+             , user )
+           |> Pool_event.custom_field)
         contacts
     ;;
   end
@@ -160,14 +160,14 @@ module CustomFieldData = struct
     let save_answers ~answer_value ?admin contacts =
       CCList.map
         (fun contact ->
-          let user =
-            admin |> CCOption.value ~default:(Pool_context.Contact contact)
-          in
-          Custom_field.AnswerUpserted
-            ( public (CCOption.is_some admin) answer_value
-            , Contact.id contact
-            , user )
-          |> Pool_event.custom_field)
+           let user =
+             admin |> CCOption.value ~default:(Pool_context.Contact contact)
+           in
+           Custom_field.AnswerUpserted
+             ( public (CCOption.is_some admin) answer_value
+             , Contact.id contact
+             , user )
+           |> Pool_event.custom_field)
         contacts
     ;;
 
@@ -238,12 +238,12 @@ module CustomFieldData = struct
     let save_answer answer ?admin contacts =
       CCList.map
         (fun contact ->
-          let user =
-            admin |> CCOption.value ~default:(Pool_context.Contact contact)
-          in
-          Custom_field.AnswerUpserted
-            (public (CCOption.is_some admin) answer, Contact.id contact, user)
-          |> Pool_event.custom_field)
+           let user =
+             admin |> CCOption.value ~default:(Pool_context.Contact contact)
+           in
+           Custom_field.AnswerUpserted
+             (public (CCOption.is_some admin) answer, Contact.id contact, user)
+           |> Pool_event.custom_field)
         contacts
     ;;
 
@@ -294,9 +294,9 @@ module CustomFieldData = struct
   ;;
 
   let admin_override_nr_field_public
-    ?(entity_uuid = Pool_common.Id.create ())
-    is_admin
-    answer_value
+        ?(entity_uuid = Pool_common.Id.create ())
+        is_admin
+        answer_value
     =
     let open Custom_field in
     let answer =
@@ -327,14 +327,14 @@ module CustomFieldData = struct
   let answer_admin_override_nr_field ?admin ~answer_value contacts =
     CCList.map
       (fun contact ->
-        let user =
-          admin |> CCOption.value ~default:(Pool_context.Contact contact)
-        in
-        Custom_field.AnswerUpserted
-          ( admin_override_nr_field_public (CCOption.is_some admin) answer_value
-          , Contact.id contact
-          , user )
-        |> Pool_event.custom_field)
+         let user =
+           admin |> CCOption.value ~default:(Pool_context.Contact contact)
+         in
+         Custom_field.AnswerUpserted
+           ( admin_override_nr_field_public (CCOption.is_some admin) answer_value
+           , Contact.id contact
+           , user )
+         |> Pool_event.custom_field)
       contacts
   ;;
 
@@ -393,8 +393,8 @@ module CustomFieldData = struct
   ;;
 
   let multi_select_custom_field_public
-    ?(entity_uuid = Pool_common.Id.create ())
-    answer_index
+        ?(entity_uuid = Pool_common.Id.create ())
+        answer_index
     =
     let open Custom_field in
     let open Custom_field_test in
@@ -433,11 +433,11 @@ module CustomFieldData = struct
   let answer_multi_select contacts answer_index =
     CCList.map
       (fun contact ->
-        Custom_field.AnswerUpserted
-          ( multi_select_custom_field_public answer_index
-          , Contact.id contact
-          , Pool_context.Contact contact )
-        |> Pool_event.custom_field)
+         Custom_field.AnswerUpserted
+           ( multi_select_custom_field_public answer_index
+           , Contact.id contact
+           , Pool_context.Contact contact )
+         |> Pool_event.custom_field)
       contacts
   ;;
 

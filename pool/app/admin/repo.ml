@@ -263,11 +263,11 @@ let search_by_name_and_email_request ?conditions =
 ;;
 
 let search_by_name_and_email
-  ?(dyn = Dynparam.empty)
-  ?exclude
-  ?(limit = 20)
-  pool
-  query
+      ?(dyn = Dynparam.empty)
+      ?exclude
+      ?(limit = 20)
+      pool
+      query
   =
   let open Caqti_request.Infix in
   let exclude_ids = Database.exclude_ids "pool_admins.uuid" Id.value in

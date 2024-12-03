@@ -8,10 +8,14 @@ let run ?(services = []) () =
   in
   let name = "worker" in
   let description = "Run worker (no server services)" in
-  let help = Format.asprintf {|
+  let help =
+    Format.asprintf
+      {|
 
 Example: %s
-  |} name in
+  |}
+      name
+  in
   Sihl.Command.make ~name ~description ~help ~dependencies (function
     | [] -> run_forever ()
     | _ -> Command_utils.failwith_missmatch help)

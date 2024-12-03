@@ -8,7 +8,7 @@ module SmtpTarget = struct
     Persistence.Target.decorate
       ?ctx
       (fun ({ Entity.SmtpAuth.id; _ } : Entity.SmtpAuth.t) ->
-        Target.create `Smtp (id |> Uuid.target_of Pool_common.Id.value))
+         Target.create `Smtp (id |> Uuid.target_of Pool_common.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;

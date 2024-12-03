@@ -153,10 +153,10 @@ let create password password_confirmation =
 ;;
 
 let update
-  (hashed_password : t)
-  ~(old_password : Plain.t)
-  ~(new_password : Plain.t)
-  ~(new_password_confirmation : Confirmation.t)
+      (hashed_password : t)
+      ~(old_password : Plain.t)
+      ~(new_password : Plain.t)
+      ~(new_password_confirmation : Confirmation.t)
   =
   let open CCResult.Infix in
   let* () = validate_res hashed_password old_password in

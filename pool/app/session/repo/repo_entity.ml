@@ -56,29 +56,29 @@ let t =
                                         ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
-    ( id
-    , ( follow_up_to
-      , ( has_follow_ups
-        , ( start
-          , ( duration
-            , ( internal_description
-              , ( public_description
-                , ( max_participants
-                  , ( min_participants
-                    , ( overbook
-                      , ( email_reminder_lead_time
-                        , ( email_reminder_sent_at
-                          , ( text_message_reminder_lead_time
-                            , ( text_message_reminder_sent_at
-                              , ( assignment_count
-                                , ( no_show_count
-                                  , ( participant_count
-                                    , ( closed_at
-                                      , ( canceled_at
-                                        , ( created_at
-                                          , (updated_at, (experiment, location))
-                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-    )
+        ( id
+        , ( follow_up_to
+          , ( has_follow_ups
+            , ( start
+              , ( duration
+                , ( internal_description
+                  , ( public_description
+                    , ( max_participants
+                      , ( min_participants
+                        , ( overbook
+                          , ( email_reminder_lead_time
+                            , ( email_reminder_sent_at
+                              , ( text_message_reminder_lead_time
+                                , ( text_message_reminder_sent_at
+                                  , ( assignment_count
+                                    , ( no_show_count
+                                      , ( participant_count
+                                        , ( closed_at
+                                          , ( canceled_at
+                                            , ( created_at
+                                              , ( updated_at
+                                                , (experiment, location) ) ) )
+                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let location = Pool_location.Repo.to_entity location [] in
     Ok
@@ -190,26 +190,26 @@ module Write = struct
     }
 
   let entity_to_write
-    (Entity.
-       { id
-       ; follow_up_to
-       ; start
-       ; duration
-       ; internal_description
-       ; public_description
-       ; location
-       ; max_participants
-       ; min_participants
-       ; overbook
-       ; email_reminder_lead_time
-       ; email_reminder_sent_at
-       ; text_message_reminder_lead_time
-       ; text_message_reminder_sent_at
-       ; closed_at
-       ; canceled_at
-       ; _
-       } :
-      Entity.t)
+        (Entity.
+           { id
+           ; follow_up_to
+           ; start
+           ; duration
+           ; internal_description
+           ; public_description
+           ; location
+           ; max_participants
+           ; min_participants
+           ; overbook
+           ; email_reminder_lead_time
+           ; email_reminder_sent_at
+           ; text_message_reminder_lead_time
+           ; text_message_reminder_sent_at
+           ; closed_at
+           ; canceled_at
+           ; _
+           } :
+          Entity.t)
     =
     { id
     ; follow_up_to
@@ -251,22 +251,22 @@ module Write = struct
                     ) ) ) ) ) ) )
     in
     let decode
-      ( id
-      , ( follow_up_to
-        , ( start
-          , ( duration
-            , ( internal_description
-              , ( public_description
-                , ( location_id
-                  , ( max_participants
-                    , ( min_participants
-                      , ( overbook
-                        , ( email_reminder_lead_time
-                          , ( email_reminder_sent_at
-                            , ( text_message_reminder_lead_time
-                              , ( text_message_reminder_sent_at
-                                , (closed_at, canceled_at) ) ) ) ) ) ) ) ) ) )
-            ) ) ) )
+          ( id
+          , ( follow_up_to
+            , ( start
+              , ( duration
+                , ( internal_description
+                  , ( public_description
+                    , ( location_id
+                      , ( max_participants
+                        , ( min_participants
+                          , ( overbook
+                            , ( email_reminder_lead_time
+                              , ( email_reminder_sent_at
+                                , ( text_message_reminder_lead_time
+                                  , ( text_message_reminder_sent_at
+                                    , (closed_at, canceled_at) ) ) ) ) ) ) ) )
+                    ) ) ) ) ) )
       =
       Ok
         { id
@@ -398,16 +398,16 @@ module Public = struct
                 ) ) ) ) )
     in
     let decode
-      ( id
-      , ( follow_up_to
-        , ( start
-          , ( duration
-            , ( description
-              , ( location_id
-                , ( max_participants
-                  , ( min_participants
-                    , (overbook, (assignment_count, canceled_at)) ) ) ) ) ) ) )
-      )
+          ( id
+          , ( follow_up_to
+            , ( start
+              , ( duration
+                , ( description
+                  , ( location_id
+                    , ( max_participants
+                      , ( min_participants
+                        , (overbook, (assignment_count, canceled_at)) ) ) ) ) )
+              ) ) )
       =
       Ok
         { id
@@ -473,17 +473,17 @@ module Calendar = struct
   let t =
     let encode (_ : t) = failwith read_only in
     let decode
-      ( id
-      , ( title
-        , ( experiment_id
-          , ( contact_email
-            , ( start
-              , ( duration
-                , ( internal_description
-                  , ( max_participants
-                    , ( min_participants
-                      , (overbook, (assignment_count, location)) ) ) ) ) ) ) )
-        ) )
+          ( id
+          , ( title
+            , ( experiment_id
+              , ( contact_email
+                , ( start
+                  , ( duration
+                    , ( internal_description
+                      , ( max_participants
+                        , ( min_participants
+                          , (overbook, (assignment_count, location)) ) ) ) ) )
+                ) ) ) )
       =
       let* end_ =
         Entity.End.build start duration

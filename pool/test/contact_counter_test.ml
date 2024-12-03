@@ -71,11 +71,11 @@ let sign_up_for_session experiment contact session_id =
 ;;
 
 let close_session
-  ?(no_show = false)
-  ?(participated = true)
-  session
-  contact_id
-  experiment
+      ?(no_show = false)
+      ?(participated = true)
+      session
+      contact_id
+      experiment
   =
   let open Assignment in
   let open Session_command in
@@ -288,10 +288,10 @@ module CancelSession = struct
           session :: follow_ups
           |> Lwt_list.fold_left_s
                (fun assignments session ->
-                 Assignment.find_uncanceled_by_session
-                   database_label
-                   session.Session.id
-                 ||> CCList.append assignments)
+                  Assignment.find_uncanceled_by_session
+                    database_label
+                    session.Session.id
+                  ||> CCList.append assignments)
                []
           ||> Assignment.group_by_contact
         in
@@ -301,7 +301,7 @@ module CancelSession = struct
           (session :: follow_ups)
           assignments
           (fun _ _ ->
-            Ok (Email.Service.Job.create email |> Email.create_dispatch))
+             Ok (Email.Service.Job.create email |> Email.create_dispatch))
           Session_test.create_cancellation_text_message
           [ Pool_common.NotifyVia.Email ]
           reason

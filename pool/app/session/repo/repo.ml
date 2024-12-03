@@ -204,7 +204,7 @@ module Sql = struct
       let (Dynparam.Pack (pt, pv)) =
         CCList.fold_left
           (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value))
+             dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value))
           Dynparam.empty
           ids
       in
@@ -306,8 +306,8 @@ module Sql = struct
         let followups =
           CCList.filter
             (fun { follow_up_to; _ } ->
-              follow_up_to
-              |> CCOption.map_or ~default:false (Entity.Id.equal session.id))
+               follow_up_to
+               |> CCOption.map_or ~default:false (Entity.Id.equal session.id))
             followups
         in
         session, followups)
@@ -599,7 +599,7 @@ module Sql = struct
   ;;
 
   let find_sessions_to_remind
-    { Pool_tenant.database_label; text_messages_enabled; _ }
+        { Pool_tenant.database_label; text_messages_enabled; _ }
     =
     let email_default_lead_time =
       Settings.default_email_session_reminder_lead_time_key_yojson

@@ -82,9 +82,9 @@ let update_settings req =
           fun m ->
             CCList.filter_map
               (fun (k, _) ->
-                match CCList.mem k Pool_common.Language.all_codes with
-                | true -> Some (k |> Pool_common.Language.create)
-                | false -> None)
+                 match CCList.mem k Pool_common.Language.all_codes with
+                 | true -> Some (k |> Pool_common.Language.create)
+                 | false -> None)
               m
             |> CCResult.flatten_l
             >>= UpdateLanguages.handle ~tags

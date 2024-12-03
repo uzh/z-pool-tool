@@ -15,12 +15,12 @@ end
 
 let t =
   let decode
-    ( id
-    , ( text
-      , ( start_at
-        , ( end_at
-          , (show_to_admins, (show_to_contacts, (created_at, (updated_at, ()))))
-          ) ) ) )
+        ( id
+        , ( text
+          , ( start_at
+            , ( end_at
+              , ( show_to_admins
+                , (show_to_contacts, (created_at, (updated_at, ()))) ) ) ) ) )
     =
     Ok
       { id

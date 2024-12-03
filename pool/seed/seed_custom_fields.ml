@@ -157,49 +157,49 @@ let create pool =
            , options
            , group
            , prompt_on_registration ) ->
-        let field_id = Custom_field.Id.create () in
-        let field =
-          let name = make_names name in
-          let hint =
-            system_languages
-            |> CCList.filter_map (fun lang ->
-              hint |> CCOption.map (fun h -> lang, h))
-            |> Hint.create
-            |> get_or_failwith
-          in
-          let required = required |> Required.create in
-          let disabled = disabled |> Disabled.create in
-          let prompt_on_registration =
-            prompt_on_registration |> PromptOnRegistration.create
-          in
-          Custom_field.create
-            ~id:field_id
-            field_type
-            model
-            name
-            hint
-            validation
-            required
-            disabled
-            (group |> CCOption.map (fun g -> g.Group.id))
-            admin_hint
-            admin_override
-            admin_view_only
-            admin_input_only
-            prompt_on_registration
-          |> get_or_failwith
-        in
-        let create_field_event = Custom_field.Created field in
-        let option_events =
-          CCList.map
-            (fun option ->
-              let name = make_names option in
-              let option = SelectOption.create name in
-              OptionCreated (field_id, option))
-            options
-        in
-        let publis_field_event = Custom_field.Published field in
-        [ create_field_event ] @ option_events @ [ publis_field_event ])
+         let field_id = Custom_field.Id.create () in
+         let field =
+           let name = make_names name in
+           let hint =
+             system_languages
+             |> CCList.filter_map (fun lang ->
+               hint |> CCOption.map (fun h -> lang, h))
+             |> Hint.create
+             |> get_or_failwith
+           in
+           let required = required |> Required.create in
+           let disabled = disabled |> Disabled.create in
+           let prompt_on_registration =
+             prompt_on_registration |> PromptOnRegistration.create
+           in
+           Custom_field.create
+             ~id:field_id
+             field_type
+             model
+             name
+             hint
+             validation
+             required
+             disabled
+             (group |> CCOption.map (fun g -> g.Group.id))
+             admin_hint
+             admin_override
+             admin_view_only
+             admin_input_only
+             prompt_on_registration
+           |> get_or_failwith
+         in
+         let create_field_event = Custom_field.Created field in
+         let option_events =
+           CCList.map
+             (fun option ->
+                let name = make_names option in
+                let option = SelectOption.create name in
+                OptionCreated (field_id, option))
+             options
+         in
+         let publis_field_event = Custom_field.Published field in
+         [ create_field_event ] @ option_events @ [ publis_field_event ])
       data
   in
   let%lwt () =

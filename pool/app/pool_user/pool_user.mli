@@ -100,8 +100,7 @@ module Password : sig
     -> Confirmation.t
     -> (unit, Pool_message.Error.t) Lwt_result.t
 
-  (** [update database_label user_id ~old_password ~new_password
-    ~new_password_confirmation]
+  (** [update database_label user_id ~old_password ~new_password ~new_password_confirmation]
       updates the password of a [user_id] to [new_password] and returns the user.
       The [old_password] is the current password that the user has to enter.
       [new_password] has to equal [new_password_confirmation]. *)
@@ -359,17 +358,20 @@ module Web : sig
     -> t option Lwt.t
 end
 
-(** [find database_label id] returns a user with [id], [Error NotFound] otherwise. *)
+(** [find database_label id] returns a user with [id], [Error NotFound] otherwise.
+*)
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
-(** [find_exn database_label id] returns a user with [id], throws exception otherwise. *)
+(** [find_exn database_label id] returns a user with [id], throws exception otherwise.
+*)
 val find_exn : Database.Label.t -> Id.t -> t Lwt.t
 
 (** [find_opt database_label id] returns a user with [id], [None] otherwise. *)
 val find_opt : Database.Label.t -> Id.t -> t option Lwt.t
 
 (** [find_by_email database_label email] returns a [User.t] if there is a user with
-    email address [email]. The lookup is case-insensitive. [Error NotFound] otherwise. *)
+    email address [email]. The lookup is case-insensitive. [Error NotFound] otherwise.
+*)
 val find_by_email
   :  Database.Label.t
   -> EmailAddress.t
@@ -396,7 +398,8 @@ val update
   -> t
   -> t Lwt.t
 
-(** [confirm database_label user] stores the [user] as confirmed and returns it. *)
+(** [confirm database_label user] stores the [user] as confirmed and returns it.
+*)
 val confirm : Database.Label.t -> t -> t Lwt.t
 
 (** [create_user ?id label email lastname firstname password password_confirmed] returns

@@ -101,11 +101,11 @@ let update_custom_field _ () =
 ;;
 
 let partial_update_exec
-  ?is_admin
-  ?(custom_field = Custom_field_test.Data.custom_text_field ())
-  ?(value = "testvalue")
-  expected
-  ()
+      ?is_admin
+      ?(custom_field = Custom_field_test.Data.custom_text_field ())
+      ?(value = "testvalue")
+      expected
+      ()
   =
   let%lwt () =
     let open Custom_field in

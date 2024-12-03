@@ -255,10 +255,10 @@ module Close = struct
         assignments
         |> CCList.fold_left
              (fun (events, assignments) original ->
-               let updated = UpdateHtmx.handle original decoded in
-               let updated_fields = updated_fields original updated in
-               ( events @ [ Updated updated |> Pool_event.assignment ]
-               , assignments @ [ updated, Some updated_fields ] ))
+                let updated = UpdateHtmx.handle original decoded in
+                let updated_fields = updated_fields original updated in
+                ( events @ [ Updated updated |> Pool_event.assignment ]
+                , assignments @ [ updated, Some updated_fields ] ))
              ([], [])
       in
       let%lwt () = Pool_event.handle_events ~tags database_label user events in

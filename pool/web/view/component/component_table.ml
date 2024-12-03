@@ -58,13 +58,13 @@ let table_legend ?hint items =
 ;;
 
 let horizontal_table
-  layout
-  ?(classnames = [])
-  ?id
-  ?thead
-  ?align_top
-  ?align_last_end
-  rows
+      layout
+      ?(classnames = [])
+      ?id
+      ?thead
+      ?align_top
+      ?align_last_end
+      rows
   =
   let classes =
     table_classes layout ?align_top ?align_last_end () @ classnames
@@ -82,13 +82,13 @@ let horizontal_table
 ;;
 
 let responsive_horizontal_table
-  layout
-  language
-  header
-  ?align_top
-  ?align_last_end
-  ?row_formatter
-  rows
+      layout
+      language
+      header
+      ?align_top
+      ?align_last_end
+      ?row_formatter
+      rows
   =
   let classes = table_classes layout ?align_top ?align_last_end () in
   let header =
@@ -113,33 +113,33 @@ let responsive_horizontal_table
     ~a:[ a_class ("break-mobile" :: classes) ]
     (CCList.mapi
        (fun i row ->
-         let cells =
-           CCList.mapi
-             (fun i cell ->
-               match find_label i with
-               | None -> td [ cell ]
-               | Some label -> td ~a:[ a_user_data "label" label ] [ cell ])
-             row
-         in
-         match row_formatter with
-         | None -> tr cells
-         | Some fnc ->
-           i
-           |> fnc
-           |> (function
-            | Some classnames -> tr ~a:[ a_class classnames ] cells
-            | None -> tr cells))
+          let cells =
+            CCList.mapi
+              (fun i cell ->
+                 match find_label i with
+                 | None -> td [ cell ]
+                 | Some label -> td ~a:[ a_user_data "label" label ] [ cell ])
+              row
+          in
+          match row_formatter with
+          | None -> tr cells
+          | Some fnc ->
+            i
+            |> fnc
+            |> (function
+             | Some classnames -> tr ~a:[ a_class classnames ] cells
+             | None -> tr cells))
        rows)
 ;;
 
 let vertical_table
-  layout
-  language
-  ?align_top
-  ?(break_mobile = false)
-  ?(classnames = [])
-  ?th_class
-  rows
+      layout
+      language
+      ?align_top
+      ?(break_mobile = false)
+      ?(classnames = [])
+      ?th_class
+      rows
   =
   let classes =
     table_classes layout ?align_top ~align_last_end:false ()
@@ -154,13 +154,13 @@ let vertical_table
     ~a:[ a_class (classes @ classnames) ]
     (CCList.map
        (fun (label, value) ->
-         let label =
-           Pool_common.Utils.field_to_string language label
-           |> CCString.capitalize_ascii
-         in
-         [ table_head [ label |> txt ]
-         ; td ~a:[ a_user_data "label" label ] [ value ]
-         ]
-         |> tr)
+          let label =
+            Pool_common.Utils.field_to_string language label
+            |> CCString.capitalize_ascii
+          in
+          [ table_head [ label |> txt ]
+          ; td ~a:[ a_user_data "label" label ] [ value ]
+          ]
+          |> tr)
        rows)
 ;;

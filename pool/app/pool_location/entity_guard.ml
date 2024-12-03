@@ -9,7 +9,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Target.create `Location (id |> Uuid.target_of Entity.Id.value))
+         Target.create `Location (id |> Uuid.target_of Entity.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;

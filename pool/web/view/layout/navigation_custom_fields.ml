@@ -20,11 +20,11 @@ let nav_elements =
 ;;
 
 let create
-  ?buttons
-  ?hint
-  ({ Pool_context.database_label; language; user; _ } as context)
-  model
-  content
+      ?buttons
+      ?hint
+      ({ Pool_context.database_label; language; user; _ } as context)
+      model
+      content
   =
   let open Utils.Lwt_result.Infix in
   let open Tab_navigation in

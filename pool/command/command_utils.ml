@@ -20,10 +20,14 @@ let is_available_exn ?(include_root = false) pool =
 ;;
 
 let make_no_args name description fcn =
-  let help = Format.asprintf {|
+  let help =
+    Format.asprintf
+      {|
 
 Example: %s
-  |} name in
+  |}
+      name
+  in
   Sihl.Command.make ~name ~description ~help (function
     | [] -> fcn ()
     | _ -> failwith_missmatch help)

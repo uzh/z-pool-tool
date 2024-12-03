@@ -3,16 +3,16 @@ open Component.Input
 open Pool_message.Control
 
 let role_assignment
-  ?hint
-  ?(can_assign = false)
-  ?(can_unassign = false)
-  base_url
-  field
-  { Pool_context.language; csrf; _ }
-  ~assign
-  ~unassign
-  ~applicable:available
-  ~current:existing
+      ?hint
+      ?(can_assign = false)
+      ?(can_unassign = false)
+      base_url
+      field
+      { Pool_context.language; csrf; _ }
+      ~assign
+      ~unassign
+      ~applicable:available
+      ~current:existing
   =
   let open CCFun in
   let column ?hint title lst =

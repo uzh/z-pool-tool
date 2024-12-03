@@ -60,11 +60,11 @@ let index ({ Pool_context.language; _ } as context) filter_list query =
 ;;
 
 let edit
-  ({ Pool_context.language; csrf; _ } as context)
-  filter
-  key_list
-  query_experiments
-  query_tags
+      ({ Pool_context.language; csrf; _ } as context)
+      filter
+      key_list
+      query_experiments
+      query_tags
   =
   let changelog =
     match filter with

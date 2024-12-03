@@ -27,9 +27,9 @@ let enroll_contact_path ?suffix contact_id =
     (Contact.Id.value contact_id)
     Pool_message.Field.(Experiments |> human_url)
   |> (fun base ->
-       match suffix with
-       | None -> base
-       | Some suffix -> Format.asprintf "%s/%s" base suffix)
+  match suffix with
+  | None -> base
+  | Some suffix -> Format.asprintf "%s/%s" base suffix)
   |> Sihl.Web.externalize_path
 ;;
 
@@ -45,12 +45,12 @@ let heading_with_icons contact =
 ;;
 
 let personal_detail
-  ?admin_comment
-  ?custom_fields
-  ?tags
-  current_user
-  language
-  contact
+      ?admin_comment
+      ?custom_fields
+      ?tags
+      current_user
+      language
+      contact
   =
   let open Contact in
   let open Pool_message in
@@ -137,11 +137,11 @@ let personal_detail
 ;;
 
 let assign_contact_experiment_modal
-  { Pool_context.language; csrf; _ }
-  contact_id
-  (experiment : Experiment.t)
-  sessions
-  matches_filter
+      { Pool_context.language; csrf; _ }
+      contact_id
+      (experiment : Experiment.t)
+      sessions
+      matches_filter
   =
   let open Pool_common in
   let title language = Utils.text_to_string language I18n.EnrollInExperiment in
@@ -220,9 +220,9 @@ let assign_contact_experiment_modal
 ;;
 
 let assign_contact_experiment_list
-  { Pool_context.language; _ }
-  contact_id
-  experiments
+      { Pool_context.language; _ }
+      contact_id
+      experiments
   =
   let base_class = [ "data-item" ] in
   let disabled =
@@ -260,21 +260,21 @@ let assign_contact_experiment_list
        let open DirectEnrollment in
        CCList.map
          (fun ({ id; title; public_title; matches_filter; _ } as experiment) ->
-           let attrs =
-             if not (assignable experiment)
-             then disabled
-             else if not matches_filter
-             then not_matching_filter id
-             else assignable_attrs id
-           in
-           div
-             ~a:attrs
-             [ txt
-                 (Format.asprintf
-                    "%s (%s)"
-                    (Title.value title)
-                    (PublicTitle.value public_title))
-             ])
+            let attrs =
+              if not (assignable experiment)
+              then disabled
+              else if not matches_filter
+              then not_matching_filter id
+              else assignable_attrs id
+            in
+            div
+              ~a:attrs
+              [ txt
+                  (Format.asprintf
+                     "%s (%s)"
+                     (Title.value title)
+                     (PublicTitle.value public_title))
+              ])
          experiments)
 ;;
 
@@ -452,9 +452,9 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
 ;;
 
 let experiment_history_modal
-  { Pool_context.language; _ }
-  (experiment : Experiment.t)
-  assignments
+      { Pool_context.language; _ }
+      (experiment : Experiment.t)
+      assignments
   =
   let open Pool_common in
   let title (_ : Language.t) = Experiment.(Title.value experiment.title) in
@@ -489,13 +489,13 @@ let experiment_history_modal
 ;;
 
 let detail
-  ?admin_comment
-  (Pool_context.{ language; user; _ } as context)
-  contact
-  tags
-  external_data_ids
-  custom_fields
-  past_experiments
+      ?admin_comment
+      (Pool_context.{ language; user; _ } as context)
+      contact
+      tags
+      external_data_ids
+      custom_fields
+      past_experiments
   =
   let subtitle nav =
     h3
@@ -566,10 +566,10 @@ let detail
 ;;
 
 let tag_form
-  (Pool_context.{ query_parameters; _ } as context)
-  ?existing
-  available
-  contact
+      (Pool_context.{ query_parameters; _ } as context)
+      ?existing
+      available
+      contact
   =
   let action =
     Http_utils.externalize_path_with_params
@@ -583,14 +583,14 @@ let tag_form
 ;;
 
 let edit
-  ?(allowed_to_assign = false)
-  ?(allowed_to_promote = false)
-  (Pool_context.{ language; csrf; query_parameters; _ } as context)
-  tenant_languages
-  contact
-  custom_fields
-  tags
-  available_tags
+      ?(allowed_to_assign = false)
+      ?(allowed_to_promote = false)
+      (Pool_context.{ language; csrf; query_parameters; _ } as context)
+      tenant_languages
+      contact
+      custom_fields
+      tags
+      available_tags
   =
   let open Page_contact_partials in
   let base_action = Htmx.admin_profile_hx_post (Contact.id contact) in
@@ -679,10 +679,10 @@ let message_history_url contact =
 ;;
 
 let message_history
-  ({ Pool_context.language; _ } as context)
-  queue_table
-  contact
-  messages
+      ({ Pool_context.language; _ } as context)
+      queue_table
+      contact
+      messages
   =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]

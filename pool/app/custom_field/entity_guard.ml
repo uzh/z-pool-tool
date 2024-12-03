@@ -10,9 +10,9 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun field ->
-        Target.create
-          `CustomField
-          (field |> Entity.id |> Uuid.target_of Entity.Id.value))
+         Target.create
+           `CustomField
+           (field |> Entity.id |> Uuid.target_of Entity.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;
@@ -26,9 +26,9 @@ module Group = struct
       Persistence.Target.decorate
         ?ctx
         (fun { Entity.Group.id; _ } ->
-          Guard.Target.create
-            `CustomField
-            (id |> Uuid.target_of Entity.Group.Id.value))
+           Guard.Target.create
+             `CustomField
+             (id |> Uuid.target_of Entity.Group.Id.value))
         t
       >|- Pool_message.Error.authorization
     ;;

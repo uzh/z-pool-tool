@@ -3,9 +3,9 @@ module Input = Component.Input
 module Message = Pool_message
 
 let form
-  Pool_context.{ language; csrf; query_parameters; _ }
-  flash_fetcher
-  custom_fields
+      Pool_context.{ language; csrf; query_parameters; _ }
+      flash_fetcher
+      custom_fields
   =
   let custom_fields_form =
     let to_html field =

@@ -1,15 +1,15 @@
 open Tyxml.Html
 
 let toggle_status_form
-  csrf
-  language
-  query_params
-  ?has_icon
-  ~action
-  ?confirmable
-  ~submit_type
-  ~control
-  ()
+      csrf
+      language
+      query_params
+      ?has_icon
+      ~action
+      ?confirmable
+      ~submit_type
+      ~control
+      ()
   =
   let open Component.Input in
   let externalize = Http_utils.externalize_path_with_params query_params in

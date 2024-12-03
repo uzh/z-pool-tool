@@ -12,10 +12,10 @@ let update_on_session_signup m sessions =
 let update_on_assignment_from_waiting_list = update_on_session_signup
 
 let update_on_session_closing
-  contact
-  no_show
-  participated
-  increment_num_participaton
+      contact
+      no_show
+      participated
+      increment_num_participaton
   =
   let open Contact in
   let open Assignment in
@@ -42,45 +42,46 @@ let update_on_session_cancellation assignments m =
 let update_on_assignment_cancellation = update_on_session_cancellation
 
 let update_on_assignment_deletion
-  assignments
-  contact
-  decrement_participation_count
+      assignments
+      contact
+      decrement_participation_count
   =
   CCList.fold_left
     (fun (contact, closed_assignment)
       { Assignment.no_show; participated; canceled_at; _ } ->
-      let open Contact in
-      let open Assignment in
-      let closed_assignment =
-        closed_assignment
-        || CCOption.is_some no_show
-        || CCOption.is_some participated
-      in
-      let contact =
-        match no_show with
-        | None -> contact
-        | Some no_show ->
-          if NoShow.value no_show
-          then update_num_no_shows ~step:(-1) contact
-          else update_num_show_ups ~step:(-1) contact
-      in
-      match canceled_at with
-      | None -> update_num_assignments ~step:(-1) contact, closed_assignment
-      | Some _ -> contact, closed_assignment)
+       let open Contact in
+       let open Assignment in
+       let closed_assignment =
+         closed_assignment
+         || CCOption.is_some no_show
+         || CCOption.is_some participated
+       in
+       let contact =
+         match no_show with
+         | None -> contact
+         | Some no_show ->
+           if NoShow.value no_show
+           then update_num_no_shows ~step:(-1) contact
+           else update_num_show_ups ~step:(-1) contact
+       in
+       match canceled_at with
+       | None -> update_num_assignments ~step:(-1) contact, closed_assignment
+       | Some _ -> contact, closed_assignment)
     (contact, false)
     assignments
   |> fun (contact, closed_assignment) ->
-  if Assignment.IncrementParticipationCount.value decrement_participation_count
-     && closed_assignment
+  if
+    Assignment.IncrementParticipationCount.value decrement_participation_count
+    && closed_assignment
   then Contact.update_num_participations ~step:(-1) contact
   else contact
 ;;
 
 let update_on_assignment_update
-  { Assignment.contact; _ }
-  ~(current_values : update_counters)
-  ~(updated_values : update_counters)
-  ~participated_in_other_assignments
+      { Assignment.contact; _ }
+      ~(current_values : update_counters)
+      ~(updated_values : update_counters)
+      ~participated_in_other_assignments
   =
   let open Contact in
   let no_show = Assignment.NoShow.value in

@@ -38,7 +38,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     let%lwt () =
       file
       |> (fun { label; language; asset_id; location_id; _ } ->
-           create label language asset_id location_id)
+      create label language asset_id location_id)
       |> Repo.RepoFileMapping.insert pool
     in
     Entity_guard.FileTarget.to_authorizable_of_write

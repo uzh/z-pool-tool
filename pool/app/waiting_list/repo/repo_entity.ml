@@ -12,7 +12,7 @@ let t =
     Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
   in
   let decode
-    (id, (contact, (experiment, (admin_comment, (created_at, updated_at)))))
+        (id, (contact, (experiment, (admin_comment, (created_at, updated_at)))))
     =
     Ok { id; contact; experiment; admin_comment; created_at; updated_at }
   in

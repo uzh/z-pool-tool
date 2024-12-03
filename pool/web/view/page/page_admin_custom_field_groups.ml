@@ -5,11 +5,11 @@ module Partials = Component.Partials
 module Url = Page_admin_custom_fields.Url
 
 let form
-  ?custom_field_group
-  current_model
-  Pool_context.{ language; csrf; _ }
-  tenant_languages
-  flash_fetcher
+      ?custom_field_group
+      current_model
+      Pool_context.{ language; csrf; _ }
+      tenant_languages
+      flash_fetcher
   =
   let open Custom_field in
   let action =
@@ -66,29 +66,30 @@ let form
             [ csrf_element csrf ()
             ; CCList.map
                 (fun field ->
-                  div
-                    ~a:
-                      [ a_class
-                          [ "flexrow"
-                          ; "flex-gap"
-                          ; "justify-between"
-                          ; "align-center"
-                          ]
-                      ]
-                    [ div
-                        [ txt (field |> name |> Name.find_opt_or language "-") ]
-                    ; div
-                        [ input
-                            ~a:
-                              [ a_input_type `Hidden
-                              ; a_name Field.(CustomField |> array_key)
-                              ; a_value (field |> id |> Id.value)
-                              ]
-                            ()
-                        ]
-                    ; Url.Field.edit_path (model field, id field)
-                      |> edit_link ~classnames:[ "small" ]
-                    ])
+                   div
+                     ~a:
+                       [ a_class
+                           [ "flexrow"
+                           ; "flex-gap"
+                           ; "justify-between"
+                           ; "align-center"
+                           ]
+                       ]
+                     [ div
+                         [ txt (field |> name |> Name.find_opt_or language "-")
+                         ]
+                     ; div
+                         [ input
+                             ~a:
+                               [ a_input_type `Hidden
+                               ; a_name Field.(CustomField |> array_key)
+                               ; a_value (field |> id |> Id.value)
+                               ]
+                             ()
+                         ]
+                     ; Url.Field.edit_path (model field, id field)
+                       |> edit_link ~classnames:[ "small" ]
+                     ])
                 fields
               |> Component.Sortable.create_sortable
             ; div
@@ -143,11 +144,11 @@ let form
 ;;
 
 let detail
-  ?custom_field_group
-  current_model
-  (Pool_context.{ language; _ } as context)
-  sys_langauges
-  flash_fetcher
+      ?custom_field_group
+      current_model
+      (Pool_context.{ language; _ } as context)
+      sys_langauges
+      flash_fetcher
   =
   let changelog_html =
     match custom_field_group with

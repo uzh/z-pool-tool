@@ -5,11 +5,11 @@ module Partials = Component.Partials
 module Url = Page_admin_custom_fields.Url
 
 let option_form
-  ?(custom_field_option : Custom_field.SelectOption.t option)
-  custom_field
-  Pool_context.{ language; csrf; _ }
-  tenant_languages
-  flash_fetcher
+      ?(custom_field_option : Custom_field.SelectOption.t option)
+      custom_field
+      Pool_context.{ language; csrf; _ }
+      tenant_languages
+      flash_fetcher
   =
   let open Custom_field in
   let action =
@@ -110,11 +110,11 @@ let field_buttons language csrf custom_field option =
 ;;
 
 let detail
-  ?custom_field_option
-  custom_field
-  (Pool_context.{ language; csrf; _ } as context)
-  sys_languages
-  flash_fetcher
+      ?custom_field_option
+      custom_field
+      (Pool_context.{ language; csrf; _ } as context)
+      sys_languages
+      flash_fetcher
   =
   let changelog_html =
     let open Custom_field in

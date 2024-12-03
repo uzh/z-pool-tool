@@ -75,8 +75,8 @@ let console () =
 ;;
 
 let redirected_email
-  new_recipient
-  (Sihl_email.{ recipient; subject; cc; bcc; text; _ } as email)
+      new_recipient
+      (Sihl_email.{ recipient; subject; cc; bcc; text; _ } as email)
   =
   let subject =
     Format.asprintf
@@ -159,14 +159,14 @@ module Smtp = struct
     }
 
   let email_from_smtp_auth
-    username
-    password
-    server
-    port
-    mechanism
-    protocol
-    default_sender_of_pool
-    { Sihl.Contract.Email.sender; recipient; subject; text; html; cc; bcc }
+        username
+        password
+        server
+        port
+        mechanism
+        protocol
+        default_sender_of_pool
+        { Sihl.Contract.Email.sender; recipient; subject; text; html; cc; bcc }
     =
     let open CCFun.Infix in
     let recipients =
@@ -219,14 +219,15 @@ module Smtp = struct
 
   let prepare database_label ?smtp_auth_id email =
     let open Utils.Lwt_result.Infix in
-    let%lwt { SmtpAuth.Write.server
-            ; port
-            ; username
-            ; password
-            ; mechanism
-            ; protocol
-            ; _
-            }
+    let%lwt
+        { SmtpAuth.Write.server
+        ; port
+        ; username
+        ; password
+        ; mechanism
+        ; protocol
+        ; _
+        }
       =
       let open Pool_common.Utils in
       let cached =
@@ -263,9 +264,16 @@ module Smtp = struct
   ;;
 
   let prepare_test_email
-    database_label
-    { SmtpAuth.Write.server; port; username; password; mechanism; protocol; _ }
-    test_email
+        database_label
+        { SmtpAuth.Write.server
+        ; port
+        ; username
+        ; password
+        ; mechanism
+        ; protocol
+        ; _
+        }
+        test_email
     =
     let%lwt default_sender_of_pool = default_sender_of_pool database_label in
     let%lwt test_email =
@@ -396,13 +404,13 @@ module Job = struct
 end
 
 let dispatch
-  ?id
-  ?new_email_address
-  ?new_smtp_auth_id
-  ?message_template
-  ?(job_ctx = Pool_queue.job_ctx_create [])
-  database_label
-  ({ Entity.Job.email; _ } as job)
+      ?id
+      ?new_email_address
+      ?new_smtp_auth_id
+      ?message_template
+      ?(job_ctx = Pool_queue.job_ctx_create [])
+      database_label
+      ({ Entity.Job.email; _ } as job)
   =
   let tags = Database.Logger.Tags.create database_label in
   Logs.debug ~src (fun m ->
@@ -423,13 +431,13 @@ let dispatch_all database_label jobs =
     |> CCList.fold_left
          (fun (recipients, jobs)
            (id, ({ Entity.Job.email; _ } as job), message_template, mappings) ->
-           ( email.Sihl_email.recipient :: recipients
-           , ( id
-             , job |> Job.intercept_prepare_of_event
-             , message_template
-             , CCOption.get_or ~default:(Pool_queue.job_ctx_create []) mappings
-             )
-             :: jobs ))
+            ( email.Sihl_email.recipient :: recipients
+            , ( id
+              , job |> Job.intercept_prepare_of_event
+              , message_template
+              , CCOption.get_or ~default:(Pool_queue.job_ctx_create []) mappings
+              )
+              :: jobs ))
          ([], [])
   in
   Logs.debug ~src (fun m ->

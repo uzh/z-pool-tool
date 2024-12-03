@@ -9,9 +9,9 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun user ->
-        Target.create
-          `Contact
-          (user |> Entity.id |> Uuid.target_of Entity.Id.value))
+         Target.create
+           `Contact
+           (user |> Entity.id |> Uuid.target_of Entity.Id.value))
       t
     >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
     >|- Pool_message.Error.authorization
@@ -54,7 +54,7 @@ module Access = struct
     let create ?target_uuid = create ?target_uuid Permission.Read in
     CCList.flat_map
       (fun target_uuid ->
-        [ create ~target_uuid `Contact; create ~target_uuid model ])
+         [ create ~target_uuid `Contact; create ~target_uuid model ])
       verify_on_ids
     @ [ create `Contact; create model ]
   ;;

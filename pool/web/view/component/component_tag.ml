@@ -66,10 +66,10 @@ let tag_form ?label language remove_action tags =
 ;;
 
 let add_tags_form
-  Pool_context.{ language; csrf; _ }
-  ?(existing = [])
-  available
-  action
+      Pool_context.{ language; csrf; _ }
+      ?(existing = [])
+      available
+      action
   =
   let available =
     CCList.(filter CCFun.(flip (mem ~eq:Tags.equal) existing %> not) available)

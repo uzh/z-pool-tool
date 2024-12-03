@@ -124,16 +124,16 @@ module Data = struct
     ;;
 
     let from_write
-      { SmtpAuth.Write.id
-      ; label
-      ; server
-      ; port
-      ; username
-      ; mechanism
-      ; protocol
-      ; default
-      ; _
-      }
+          { SmtpAuth.Write.id
+          ; label
+          ; server
+          ; port
+          ; username
+          ; mechanism
+          ; protocol
+          ; default
+          ; _
+          }
       =
       { SmtpAuth.id
       ; label
@@ -538,7 +538,7 @@ let update_tenant_database () =
           ]
         |> decode_database
         >|= (fun { database_url; database_label } ->
-              Database.create database_label database_url)
+        Database.create database_label database_url)
         |> fail_with
       in
       UpdateDatabase.handle ~system_event_id tenant database

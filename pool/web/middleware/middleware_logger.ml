@@ -116,9 +116,9 @@ let logger =
     Lwt.catch
       (fun () -> respond handler req tags)
       (fun exn ->
-        Logs.err ~src (fun m -> m ~tags "%s" (Exn.to_string exn));
-        Logs.err ~src (fun m -> m ~tags "%s" (Printexc.get_backtrace ()));
-        Lwt.fail exn)
+         Logs.err ~src (fun m -> m ~tags "%s" (Exn.to_string exn));
+         Logs.err ~src (fun m -> m ~tags "%s" (Printexc.get_backtrace ()));
+         Lwt.fail exn)
   in
   Rock.Middleware.create ~name:"Logger" ~filter
 ;;

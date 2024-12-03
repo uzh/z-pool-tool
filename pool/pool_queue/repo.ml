@@ -96,8 +96,8 @@ let find label id =
   let find_in table = Database.find_opt label (find_request table) id in
   find_in `History
   >|> (function
-         | Some element -> Lwt.return_some element
-         | None -> find_in `Current)
+   | Some element -> Lwt.return_some element
+   | None -> find_in `Current)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Queue)
 ;;
 
@@ -184,23 +184,23 @@ let poll_n_workable database_label n_instances job_name =
     let* () = Connection.start () in
     Lwt.catch
       (fun () ->
-        let* instances =
-          Connection.collect_list find_workable_request job_name
-        in
-        let%lwt instances =
-          CCList.map Entity.Instance.poll instances
-          |> Lwt_list.filter_map_s (fun instance ->
-            Connection.exec (update_request (sql_table `Current)) instance
-            ||> function
-            | Ok () -> Some instance
-            | Error _ -> None)
-        in
-        let* () = Connection.commit () in
-        Lwt.return_ok instances)
+         let* instances =
+           Connection.collect_list find_workable_request job_name
+         in
+         let%lwt instances =
+           CCList.map Entity.Instance.poll instances
+           |> Lwt_list.filter_map_s (fun instance ->
+             Connection.exec (update_request (sql_table `Current)) instance
+             ||> function
+             | Ok () -> Some instance
+             | Error _ -> None)
+         in
+         let* () = Connection.commit () in
+         Lwt.return_ok instances)
       (fun exn ->
-        Logs.err (fun m -> m "Couldn't poll jobs: %s" (Printexc.to_string exn));
-        let* () = Connection.rollback () in
-        Lwt.return_ok []))
+         Logs.err (fun m -> m "Couldn't poll jobs: %s" (Printexc.to_string exn));
+         let* () = Connection.rollback () in
+         Lwt.return_ok []))
 ;;
 
 let insert_request table =
@@ -314,12 +314,12 @@ let archive { Entity.Instance.id; database_label; _ } =
     let* () = Connection.start () in
     Lwt.catch
       (fun () ->
-        let* () = Connection.exec archive_insert_request id in
-        let* () = Connection.exec delete_request id in
-        Connection.commit ())
+         let* () = Connection.exec archive_insert_request id in
+         let* () = Connection.exec delete_request id in
+         Connection.commit ())
       (fun exn ->
-        Logs.err (fun m -> m "Job archive failed: %s" (Printexc.to_string exn));
-        Connection.rollback ()))
+         Logs.err (fun m -> m "Job archive failed: %s" (Printexc.to_string exn));
+         Connection.rollback ()))
 ;;
 
 let find_archivable_request =
@@ -339,19 +339,19 @@ let archive_all_processed database_label =
     let* () = Connection.start () in
     Lwt.catch
       (fun () ->
-        let* () =
-          Lwt_list.map_s
-            (fun id ->
-              let* () = Connection.exec archive_insert_request id in
-              Connection.exec delete_request id)
-            ids
-          ||> CCResult.flatten_l
-          >|+ Utils.flat_unit
-        in
-        Connection.commit ())
+         let* () =
+           Lwt_list.map_s
+             (fun id ->
+                let* () = Connection.exec archive_insert_request id in
+                Connection.exec delete_request id)
+             ids
+           ||> CCResult.flatten_l
+           >|+ Utils.flat_unit
+         in
+         Connection.commit ())
       (fun exn ->
-        Logs.err (fun m -> m "Job archive failed: %s" (Printexc.to_string exn));
-        Connection.rollback ()))
+         Logs.err (fun m -> m "Job archive failed: %s" (Printexc.to_string exn));
+         Connection.rollback ()))
 ;;
 
 module type ColumnsSig = sig

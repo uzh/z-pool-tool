@@ -64,14 +64,14 @@ let login_post req =
               ]
               @ actions))
          ||> (fun res ->
-               if set_completion_cookie
-               then
-                 Sihl.Web.Session.set_value
-                   ~key:Contact.profile_completion_cookie
-                   "true"
-                   req
-                   res
-               else res)
+         if set_completion_cookie
+         then
+           Sihl.Web.Session.set_value
+             ~key:Contact.profile_completion_cookie
+             "true"
+             req
+             res
+         else res)
          |> Lwt_result.ok
        in
        let redirect path =

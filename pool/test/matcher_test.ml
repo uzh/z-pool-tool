@@ -166,8 +166,8 @@ let expected_create_events contacts mailing experiment invitation_mail =
   ]
   @ CCList.map
       (fun contact ->
-        Contact.(Updated (update_num_invitations ~step:1 contact))
-        |> Pool_event.contact)
+         Contact.(Updated (update_num_invitations ~step:1 contact))
+         |> Pool_event.contact)
       contacts
 ;;
 
@@ -175,13 +175,13 @@ let expected_resend_events contacts mailing experiment invitation_mail =
   let%lwt invitations =
     Lwt_list.map_s
       (fun contact ->
-        contact
-        |> Contact.id
-        |> Invitation.find_by_contact_and_experiment_opt
-             database_label
-             experiment.Experiment.id
-        ||> CCOption.to_result (Pool_message.Error.NotFound Field.Invitation)
-        ||> get_or_failwith)
+         contact
+         |> Contact.id
+         |> Invitation.find_by_contact_and_experiment_opt
+              database_label
+              experiment.Experiment.id
+         ||> CCOption.to_result (Pool_message.Error.NotFound Field.Invitation)
+         ||> get_or_failwith)
       contacts
   in
   invitations
@@ -225,9 +225,9 @@ module MatcherTestUtils = struct
   ;;
 
   let setup_experiment_filter_with_matching_contacts
-    current_user
-    experiment
-    contact_ids
+        current_user
+        experiment
+        contact_ids
     =
     let%lwt experiment =
       Experiment.Id.value experiment.Experiment.id
@@ -237,11 +237,11 @@ module MatcherTestUtils = struct
     let%lwt contacts =
       Lwt_list.map_s
         (fun id ->
-          let lastname =
-            Experiment.Id.value experiment.Experiment.id
-            |> Pool_user.Lastname.of_string
-          in
-          ContactRepo.create ~id ~lastname ())
+           let lastname =
+             Experiment.Id.value experiment.Experiment.id
+             |> Pool_user.Lastname.of_string
+           in
+           ContactRepo.create ~id ~lastname ())
         contact_ids
       ||> Matcher.sort_contacts
     in

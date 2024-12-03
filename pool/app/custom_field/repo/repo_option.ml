@@ -49,7 +49,7 @@ let find_by_multiple_fields pool ids =
     let dyn =
       CCList.fold_left
         (fun dyn id ->
-          dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+           dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
         Dynparam.empty
         ids
     in
@@ -212,7 +212,7 @@ let sort_options pool ids =
   let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
-      Database.exec pool update_position_request (index, Entity.Id.value id))
+       Database.exec pool update_position_request (index, Entity.Id.value id))
     ids
   ||> CCFun.const ()
 ;;
@@ -266,7 +266,7 @@ module Public = struct
       let dyn =
         CCList.fold_left
           (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
           Dynparam.empty
           ids
       in

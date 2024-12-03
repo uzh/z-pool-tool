@@ -10,10 +10,10 @@ let with_log_info ?(src = src) ?(tags = Logs.Tag.empty) ?(level = info) info =
 ;;
 
 let with_log_success
-  ?(src = src)
-  ?(tags = Logs.Tag.empty)
-  ?(level = info)
-  success
+      ?(src = src)
+      ?(tags = Logs.Tag.empty)
+      ?(level = info)
+      success
   =
   Logs.msg ~src level (fun m ->
     m ~tags "%s" (Locales_en.success_to_string success));
@@ -21,10 +21,10 @@ let with_log_success
 ;;
 
 let with_log_warning
-  ?(src = src)
-  ?(tags = Logs.Tag.empty)
-  ?(level = warning)
-  warn
+      ?(src = src)
+      ?(tags = Logs.Tag.empty)
+      ?(level = warning)
+      warn
   =
   Logs.msg ~src level (fun m ->
     m ~tags "%s" (Locales_en.warning_to_string warn));

@@ -144,8 +144,8 @@ let detail edit req =
     @@ let* mailing, count =
          Mailing.find_with_detail database_label id
          >== fun (m, count) ->
-         if edit
-            && Ptime_clock.now () > Mailing.StartAt.value m.Mailing.start_at
+         if
+           edit && Ptime_clock.now () > Mailing.StartAt.value m.Mailing.start_at
          then Error Error.AlreadyStarted
          else Ok (m, count)
        in

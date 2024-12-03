@@ -1,10 +1,10 @@
 open Tyxml.Html
 
 let answer_to_html
-  ?(add_data_label = false)
-  user
-  language
-  (custom_field : Custom_field.Public.t)
+      ?(add_data_label = false)
+      user
+      language
+      (custom_field : Custom_field.Public.t)
   =
   let open CCFun in
   let open Custom_field in

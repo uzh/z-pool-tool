@@ -108,9 +108,9 @@ let insert_request =
 ;;
 
 let insert
-  label
-  ( { Entity.id; email; lastname; firstname; status; admin; confirmed }
-  , (password : Password.t) )
+      label
+      ( { Entity.id; email; lastname; firstname; status; admin; confirmed }
+      , (password : Password.t) )
   =
   Database.exec
     label

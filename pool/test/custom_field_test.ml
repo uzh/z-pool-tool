@@ -44,14 +44,14 @@ module Data = struct
   ;;
 
   let custom_field
-    ?published_at
-    ?select_options
-    ?validation
-    ?(required = required)
-    ?(admin_override = AdminOverride.create false)
-    ?(admin_input_only = AdminInputOnly.create false)
-    ?(prompt_on_registration = PromptOnRegistration.create false)
-    field_type
+        ?published_at
+        ?select_options
+        ?validation
+        ?(required = required)
+        ?(admin_override = AdminOverride.create false)
+        ?(admin_input_only = AdminInputOnly.create false)
+        ?(prompt_on_registration = PromptOnRegistration.create false)
+        field_type
     =
     let name = Name.create sys_languages name |> get in
     let hint = Hint.create hint |> get in
@@ -77,12 +77,12 @@ module Data = struct
   ;;
 
   let custom_text_field
-    ?published_at
-    ?validation
-    ?admin_override
-    ?admin_input_only
-    ?required
-    ()
+        ?published_at
+        ?validation
+        ?admin_override
+        ?admin_input_only
+        ?required
+        ()
     =
     custom_field
       ?published_at

@@ -46,8 +46,8 @@ let json_error_handler req =
 ;;
 
 let issue_reporter
-  (request : Rock.Request.t)
-  { Report.exn; req_id; req; stack; _ }
+      (request : Rock.Request.t)
+      { Report.exn; req_id; req; stack; _ }
   =
   let open Format in
   let formatter = str_formatter in
@@ -102,27 +102,27 @@ let middleware ?error_handler () =
     Lwt.catch
       (fun () -> handler req)
       (fun exn ->
-        let report = Report.create exn req in
-        Logs.err (fun m -> m "%s" (Report.to_string report));
-        let () =
-          Lwt.dont_wait
-            (fun () -> reporter req report)
-            (fun exn ->
-              let msg = Printexc.to_string exn in
-              Logs.err (fun m ->
-                m "Failed to run custom error reporter: %s" msg))
-        in
-        match error_handler with
-        | Some error_handler -> error_handler req
-        | None ->
-          req
-          |> Opium.Request.header "Content-Type"
-          |> CCOption.map (CCString.split_on_char ';')
-          |> CCFun.flip CCOption.bind CCList.head_opt
-          |> (function
-           | Some "application/json" -> json_error_handler req
-           (* Default to text/html *)
-           | Some _ | None -> site_error_handler req))
+         let report = Report.create exn req in
+         Logs.err (fun m -> m "%s" (Report.to_string report));
+         let () =
+           Lwt.dont_wait
+             (fun () -> reporter req report)
+             (fun exn ->
+                let msg = Printexc.to_string exn in
+                Logs.err (fun m ->
+                  m "Failed to run custom error reporter: %s" msg))
+         in
+         match error_handler with
+         | Some error_handler -> error_handler req
+         | None ->
+           req
+           |> Opium.Request.header "Content-Type"
+           |> CCOption.map (CCString.split_on_char ';')
+           |> CCFun.flip CCOption.bind CCList.head_opt
+           |> (function
+            | Some "application/json" -> json_error_handler req
+            (* Default to text/html *)
+            | Some _ | None -> site_error_handler req))
   in
   (* In a production setting we don't want to use the built in debugger
      middleware of opium. It is useful for development but it exposed too much

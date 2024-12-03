@@ -64,10 +64,10 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?(id = Mailing.Id.create ())
-    experiment
-    ({ start_at; start_now; end_at; limit; distribution } : t)
+        ?(tags = Logs.Tag.empty)
+        ?(id = Mailing.Id.create ())
+        experiment
+        ({ start_at; start_now; end_at; limit; distribution } : t)
     =
     Logs.info ~src (fun m -> m "Handle command CreateOperator" ~tags);
     let open CCResult in
@@ -102,9 +102,9 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    (mailing : Mailing.t)
-    ({ start_at; start_now; end_at; limit; distribution } : t)
+        ?(tags = Logs.Tag.empty)
+        (mailing : Mailing.t)
+        ({ start_at; start_now; end_at; limit; distribution } : t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);

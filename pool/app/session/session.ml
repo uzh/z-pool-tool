@@ -43,14 +43,14 @@ let find_all_to_swap_by_experiment database_label experiment_id =
   ||> group_and_sort
   ||> CCList.fold_left
         (fun sessions (parent, followups) ->
-          parent :: followups
-          |> fun list ->
-          CCList.find_opt
-            CCFun.(can_be_assigned_to_existing_assignment %> CCResult.is_ok)
-            list
-          |> function
-          | None -> sessions
-          | Some _ -> sessions @ list)
+           parent :: followups
+           |> fun list ->
+           CCList.find_opt
+             CCFun.(can_be_assigned_to_existing_assignment %> CCResult.is_ok)
+             list
+           |> function
+           | None -> sessions
+           | Some _ -> sessions @ list)
         []
 ;;
 

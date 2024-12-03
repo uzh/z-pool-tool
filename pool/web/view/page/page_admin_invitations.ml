@@ -82,14 +82,14 @@ module Partials = struct
   ;;
 
   let send_invitation
-    Pool_context.{ csrf; language; _ }
-    experiment
-    key_list
-    template_list
-    query_experiments
-    query_tags
-    filtered_contacts
-    statistics
+        Pool_context.{ csrf; language; _ }
+        experiment
+        key_list
+        template_list
+        query_experiments
+        query_tags
+        filtered_contacts
+        statistics
     =
     let open Pool_common in
     let filtered_contacts_form =
@@ -102,21 +102,21 @@ module Partials = struct
           else
             CCList.map
               (fun (contact : Contact.t) ->
-                let id = Contact.id contact |> Contact.Id.value in
-                [ div
-                    [ input
-                        ~a:
-                          [ a_input_type `Checkbox
-                          ; a_name Field.(Contacts |> array_key)
-                          ; a_id id
-                          ; a_value id
-                          ]
-                        ()
-                    ; label
-                        ~a:[ a_label_for id ]
-                        [ txt (Contact.fullname contact) ]
-                    ]
-                ])
+                 let id = Contact.id contact |> Contact.Id.value in
+                 [ div
+                     [ input
+                         ~a:
+                           [ a_input_type `Checkbox
+                           ; a_name Field.(Contacts |> array_key)
+                           ; a_id id
+                           ; a_value id
+                           ]
+                         ()
+                     ; label
+                         ~a:[ a_label_for id ]
+                         [ txt (Contact.fullname contact) ]
+                     ]
+                 ])
               filtered_contacts
             |> Component.Table.horizontal_table `Striped
         in
@@ -167,11 +167,11 @@ module Partials = struct
   ;;
 
   let statistics
-    language
-    { Experiment.Statistics.SentInvitations.total_sent
-    ; sent_by_count
-    ; total_match_filter
-    }
+        language
+        { Experiment.Statistics.SentInvitations.total_sent
+        ; sent_by_count
+        ; total_match_filter
+        }
     =
     let open Pool_common in
     let to_string = CCInt.to_string in
@@ -226,10 +226,10 @@ module Partials = struct
 end
 
 let sent_invitations
-  (Pool_context.{ language; _ } as context)
-  experiment
-  invitations
-  statistics
+      (Pool_context.{ language; _ } as context)
+      experiment
+      invitations
+      statistics
   =
   let open Pool_common in
   div

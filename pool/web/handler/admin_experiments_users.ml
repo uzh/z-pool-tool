@@ -148,7 +148,7 @@ end = struct
   ;;
 
   let index_effects
-    (validation_set : ?target_uuid:Uuid.Target.t -> unit -> ValidationSet.t)
+        (validation_set : ?target_uuid:Uuid.Target.t -> unit -> ValidationSet.t)
     =
     Middleware.Guardian.validate_generic
     @@ fun req ->

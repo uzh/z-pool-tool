@@ -68,9 +68,9 @@ end = struct
     let* suffixes =
       CCList.filter_map
         (fun (key, v) ->
-          if CCString.equal key "_csrf"
-          then None
-          else Some (Settings.EmailSuffix.create (CCList.hd v)))
+           if CCString.equal key "_csrf"
+           then None
+           else Some (Settings.EmailSuffix.create (CCList.hd v)))
         suffixes
       |> CCResult.flatten_l
     in

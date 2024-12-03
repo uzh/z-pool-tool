@@ -67,8 +67,9 @@ module EventLog = struct
           , (m.status, (m.message, (m.created_at, m.updated_at))) ) )
     in
     let decode
-      ( event_id
-      , (service_identifier, (status, (message, (created_at, updated_at)))) )
+          ( event_id
+          , (service_identifier, (status, (message, (created_at, updated_at))))
+          )
       =
       let open CCResult in
       Ok

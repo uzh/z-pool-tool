@@ -192,7 +192,7 @@ let reset_to_default_htmx req =
       let open CCOption in
       HttpUtils.find_in_urlencoded_opt Field.MessageTemplate urlencoded
       >|= (fun id ->
-            id |> Id.of_string |> find database_label >|+ CCOption.return)
+      id |> Id.of_string |> find database_label >|+ CCOption.return)
       |> CCOption.value ~default:(Lwt_result.return None)
     in
     let* template_language =

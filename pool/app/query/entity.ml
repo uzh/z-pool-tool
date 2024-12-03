@@ -118,11 +118,11 @@ module Search = struct
         |> CCList.map Column.to_sql
         |> CCList.fold_left
              (fun (dyn, columns) column ->
-               ( dyn
-                 |> Dynparam.add
-                      Caqti_type.string
-                      ("%" ^ CCString.(split ~by:" " query |> concat "%") ^ "%")
-               , Format.asprintf "%s LIKE ? " column :: columns ))
+                ( dyn
+                  |> Dynparam.add
+                       Caqti_type.string
+                       ("%" ^ CCString.(split ~by:" " query |> concat "%") ^ "%")
+                , Format.asprintf "%s LIKE ? " column :: columns ))
              (dyn, [])
       in
       where
@@ -230,14 +230,14 @@ module Filter = struct
     m
     |> CCList.fold_left
          (fun default conditon ->
-           let dyn, sql = default in
-           let open Condition in
-           match conditon with
-           | Checkbox (col, active) ->
-             if active then dyn, sql @ [ Column.to_sql col ] else default
-           | Select (col, option) ->
-             ( dyn |> Dynparam.add Caqti_type.string (SelectOption.value option)
-             , sql @ [ Format.asprintf "%s = ?" (Column.to_sql col) ] ))
+            let dyn, sql = default in
+            let open Condition in
+            match conditon with
+            | Checkbox (col, active) ->
+              if active then dyn, sql @ [ Column.to_sql col ] else default
+            | Select (col, option) ->
+              ( dyn |> Dynparam.add Caqti_type.string (SelectOption.value option)
+              , sql @ [ Format.asprintf "%s = ?" (Column.to_sql col) ] ))
          (dyn, [])
     |> fun (dyn, sql) ->
     match sql with

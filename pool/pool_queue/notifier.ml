@@ -9,14 +9,14 @@ let create_external_link pool_url =
 ;;
 
 let job_reporter
-  ({ Entity.Instance.id
-   ; tries
-   ; max_tries
-   ; status
-   ; last_error
-   ; database_label
-   ; _
-   } as instance)
+      ({ Entity.Instance.id
+       ; tries
+       ; max_tries
+       ; status
+       ; last_error
+       ; database_label
+       ; _
+       } as instance)
   =
   let open Entity.Status in
   match status, last_error with

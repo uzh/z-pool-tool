@@ -41,14 +41,14 @@ let generate_events (experiments : Experiment.Id.t list) =
   in
   CCList.mapi
     (fun index start ->
-      Created
-        ( create
-            Start.(StartAt start)
-            (generate_end start (index mod 3))
-            (generate_rate (index mod 8))
-            distribution
-          |> Pool_common.Utils.get_or_failwith
-        , CCList.(CCRandom.run (random_choose experiments)) ))
+       Created
+         ( create
+             Start.(StartAt start)
+             (generate_end start (index mod 3))
+             (generate_rate (index mod 8))
+             distribution
+           |> Pool_common.Utils.get_or_failwith
+         , CCList.(CCRandom.run (random_choose experiments)) ))
     (mailings @ overlaps)
 ;;
 

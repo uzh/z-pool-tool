@@ -35,7 +35,7 @@ let sign_up_create req =
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
   let result
-    { Pool_context.database_label; query_parameters; language; user; _ }
+        { Pool_context.database_label; query_parameters; language; user; _ }
     =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
@@ -175,7 +175,7 @@ let email_verification req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let result
-    ({ Pool_context.database_label; query_parameters; user; _ } as context)
+        ({ Pool_context.database_label; query_parameters; user; _ } as context)
     =
     let%lwt redirect_path =
       let user =
@@ -253,7 +253,8 @@ let email_verification req =
 let terms req =
   let open Utils.Lwt_result.Infix in
   let result
-    ({ Pool_context.database_label; language; query_parameters; _ } as context)
+        ({ Pool_context.database_label; language; query_parameters; _ } as
+         context)
     =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@
@@ -273,7 +274,7 @@ let terms req =
 
 let terms_accept req =
   let result
-    ({ Pool_context.database_label; query_parameters; user; _ } as context)
+        ({ Pool_context.database_label; query_parameters; user; _ } as context)
     =
     Utils.Lwt_result.map_error (fun msg -> msg, "/login")
     @@

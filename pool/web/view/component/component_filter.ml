@@ -50,13 +50,13 @@ let operators_select language ?operators ?selected () =
 ;;
 
 let value_input
-  language
-  query_experiments
-  query_tags
-  input_type
-  ?(disabled = false)
-  ?value
-  ()
+      language
+      query_experiments
+      query_tags
+      input_type
+      ?(disabled = false)
+      ?value
+      ()
   =
   let open Filter in
   let open CCOption.Infix in
@@ -77,14 +77,14 @@ let value_input
     CCOption.map_or
       ~default:[]
       (fun value ->
-        match value with
-        | NoValue | Single _ -> []
-        | Lst lst ->
-          CCList.filter_map
-            (function[@warning "-4"]
-              | Option id -> find_in_options options id
-              | _ -> None)
-            lst)
+         match value with
+         | NoValue | Single _ -> []
+         | Lst lst ->
+           CCList.filter_map
+             (function[@warning "-4"]
+               | Option id -> find_in_options options id
+               | _ -> None)
+             lst)
       value
   in
   match input_type with
@@ -112,8 +112,8 @@ let value_input
        let value =
          single_value
          >>= (function[@warning "-4"]
-                | Nr n -> Some n
-                | _ -> None)
+          | Nr n -> Some n
+          | _ -> None)
          |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
        in
        Input.input_element
@@ -128,9 +128,9 @@ let value_input
          CCOption.map_or
            ~default:false
            (fun value ->
-             match[@warning "-4"] value with
-             | Bool b -> b
-             | _ -> false)
+              match[@warning "-4"] value with
+              | Bool b -> b
+              | _ -> false)
            single_value
        in
        Input.checkbox_element
@@ -250,13 +250,13 @@ let value_input
 ;;
 
 let predicate_value_form
-  language
-  query_experiments
-  query_tags
-  ?key
-  ?value
-  ?operator
-  ()
+      language
+      query_experiments
+      query_tags
+      ?key
+      ?value
+      ?operator
+      ()
   =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
@@ -283,17 +283,17 @@ let predicate_value_form
 ;;
 
 let single_predicate_form
-  language
-  param
-  identifier
-  key_list
-  templates_disabled
-  query_experiments
-  query_tags
-  ?key
-  ?operator
-  ?value
-  ()
+      language
+      param
+      identifier
+      key_list
+      templates_disabled
+      query_experiments
+      query_tags
+      ?key
+      ?operator
+      ?value
+      ()
   =
   let toggle_id = Utils.format_identifiers ~prefix:"pred-s" identifier in
   let toggled_content =
@@ -338,13 +338,13 @@ let single_predicate_form
 ;;
 
 let predicate_type_select
-  language
-  experiment
-  target
-  identifier
-  templates_disabled
-  ?selected
-  ()
+      language
+      experiment
+      target
+      identifier
+      templates_disabled
+      ?selected
+      ()
   =
   let attributes =
     Utils.htmx_attribs
@@ -394,16 +394,16 @@ let add_predicate_btn experiment identifier templates_disabled =
 ;;
 
 let rec predicate_form
-  language
-  param
-  key_list
-  template_list
-  templates_disabled
-  query_experiments
-  query_tags
-  query
-  ?(identifier = [ 0 ])
-  ()
+          language
+          param
+          key_list
+          template_list
+          templates_disabled
+          query_experiments
+          query_tags
+          query
+          ?(identifier = [ 0 ])
+          ()
   =
   let query = CCOption.value ~default:(Filter.Human.init ()) query in
   let predicate_identifier =
@@ -438,8 +438,8 @@ let rec predicate_form
     | And queries | Or queries ->
       CCList.mapi
         (fun i query ->
-          let query = CCOption.pure query in
-          to_form query ~identifier:(identifier @ [ i ]) ())
+           let query = CCOption.pure query in
+           to_form query ~identifier:(identifier @ [ i ]) ())
         queries
       @ [ add_predicate_btn
             param
@@ -509,14 +509,14 @@ let rec predicate_form
 ;;
 
 let filter_form
-  ?statistics
-  csrf
-  language
-  param
-  key_list
-  template_list
-  query_experiments
-  query_tags
+      ?statistics
+      csrf
+      language
+      param
+      key_list
+      template_list
+      query_experiments
+      query_tags
   =
   let filter, action =
     let open Experiment in

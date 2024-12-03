@@ -22,7 +22,7 @@ end = struct
     let actor_roles =
       CCList.map
         (fun (role, target_uuid) ->
-          Guard.ActorRole.create ?target_uuid target_id role)
+           Guard.ActorRole.create ?target_uuid target_id role)
         roles
     in
     Ok
@@ -121,11 +121,11 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    role
-    model
-    current_permissions
-    new_permissions
+        ?(tags = Logs.Tag.empty)
+        role
+        model
+        current_permissions
+        new_permissions
     =
     Logs.info ~src (fun m -> m "Handle command UpdateRolePermissions" ~tags);
     let create, destroy =

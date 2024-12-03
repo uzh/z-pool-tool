@@ -48,28 +48,29 @@ end
 let t =
   let open Database.Caqti_encoders in
   let decode
-    ( user
-    , ( terms_accepted_at
-      , ( language
-        , ( experiment_type_preference
-          , ( cell_phone
-            , ( paused
-              , ( disabled
-                , ( verified
-                  , ( email_verified
-                    , ( num_invitations
-                      , ( num_assignments
-                        , ( num_show_ups
-                          , ( num_no_shows
-                            , ( num_participations
-                              , ( firstname_version
-                                , ( lastname_version
-                                  , ( paused_version
-                                    , ( language_version
-                                      , ( experiment_type_preference_version
-                                        , ( import_pending
-                                          , (created_at, (updated_at, ())) ) )
-                                      ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+        ( user
+        , ( terms_accepted_at
+          , ( language
+            , ( experiment_type_preference
+              , ( cell_phone
+                , ( paused
+                  , ( disabled
+                    , ( verified
+                      , ( email_verified
+                        , ( num_invitations
+                          , ( num_assignments
+                            , ( num_show_ups
+                              , ( num_no_shows
+                                , ( num_participations
+                                  , ( firstname_version
+                                    , ( lastname_version
+                                      , ( paused_version
+                                        , ( language_version
+                                          , ( experiment_type_preference_version
+                                            , ( import_pending
+                                              , (created_at, (updated_at, ()))
+                                              ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+            ) ) )
     =
     Ok
       { user
@@ -264,10 +265,10 @@ module Preview = struct
             ) ) )
     in
     let decode
-      ( user
-      , ( language
-        , (cell_phone, (paused, (verified, (num_invitations, num_assignments))))
-        ) )
+          ( user
+          , ( language
+            , ( cell_phone
+              , (paused, (verified, (num_invitations, num_assignments))) ) ) )
       =
       let open CCResult in
       Ok

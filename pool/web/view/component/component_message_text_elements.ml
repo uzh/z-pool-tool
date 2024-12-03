@@ -97,13 +97,13 @@ let build_help ?(hints = []) language help =
 ;;
 
 let message_template_help
-  language
-  (tenant : Pool_tenant.t)
-  ?contact
-  ?experiment
-  ?session
-  ?assignment
-  template_label
+      language
+      (tenant : Pool_tenant.t)
+      ?contact
+      ?experiment
+      ?session
+      ?assignment
+      template_label
   =
   let open Message_template in
   let open Label in

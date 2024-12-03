@@ -46,7 +46,7 @@ let create req =
     create_user ()
     >== events
     >|- (fun err ->
-          err, active_navigation, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    err, active_navigation, [ HttpUtils.urlencoded_to_flash urlencoded ])
     |>> handle
     |>> return_to_overview
   in

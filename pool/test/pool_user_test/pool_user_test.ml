@@ -192,14 +192,14 @@ let find_by_email_is_case_insensitive =
   let%lwt (_ : t list) =
     Lwt_list.map_s
       (fun email ->
-        create_user
-          database_label
-          email
-          (Lastname.of_string "Star")
-          (Firstname.of_string "Jane")
-          created_password
-          created_password_confirmation
-        ||> Pool_common.Utils.get_or_failwith)
+         create_user
+           database_label
+           email
+           (Lastname.of_string "Star")
+           (Firstname.of_string "Jane")
+           created_password
+           created_password_confirmation
+         ||> Pool_common.Utils.get_or_failwith)
       email_addresses
   in
   let%lwt user =
@@ -222,14 +222,14 @@ let filter_users_by_email_returns_single_user =
   let%lwt (users : t list) =
     Lwt_list.map_s
       (fun email ->
-        create_user
-          database_label
-          email
-          (Lastname.of_string "Star")
-          (Firstname.of_string "Jane")
-          created_password
-          created_password_confirmation
-        ||> Pool_common.Utils.get_or_failwith)
+         create_user
+           database_label
+           email
+           (Lastname.of_string "Star")
+           (Firstname.of_string "Jane")
+           created_password
+           created_password_confirmation
+         ||> Pool_common.Utils.get_or_failwith)
       email_addresses
   in
   let%lwt actual_user =

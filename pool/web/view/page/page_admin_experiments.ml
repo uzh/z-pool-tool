@@ -28,11 +28,11 @@ module Partials = struct
 end
 
 let notifications
-  ?(can_update_experiment = false)
-  language
-  sys_languages
-  (experiment : Experiment.t)
-  message_templates
+      ?(can_update_experiment = false)
+      language
+      sys_languages
+      (experiment : Experiment.t)
+      message_templates
   =
   let open CCList in
   let open Pool_common in
@@ -47,10 +47,10 @@ let notifications
       else
         filter
           (fun lang ->
-            find_opt
-              (fun { language; _ } -> Language.equal language lang)
-              templates
-            |> CCOption.is_none)
+             find_opt
+               (fun { language; _ } -> Language.equal language lang)
+               templates
+             |> CCOption.is_none)
           sys_languages
         |> function
         | [] -> None
@@ -167,9 +167,9 @@ module Statistics = struct
 end
 
 let message_template_buttons
-  sys_languages
-  (experiment : Experiment.t)
-  message_templates
+      sys_languages
+      (experiment : Experiment.t)
+      message_templates
   =
   let open Message_template in
   let build_button label =
@@ -200,12 +200,12 @@ let message_template_buttons
 ;;
 
 let message_templates_html
-  ?(can_update_experiment = false)
-  language
-  csrf
-  experiment
-  sys_languages
-  message_templates
+      ?(can_update_experiment = false)
+      language
+      csrf
+      experiment
+      sys_languages
+      message_templates
   =
   let open Message_template in
   let experiment_path suffix = build_experiment_path ~suffix experiment in
@@ -294,17 +294,17 @@ let index (Pool_context.{ language; _ } as context) experiments query =
 ;;
 
 let experiment_form
-  ?experiment
-  ?session_count
-  Pool_context.{ language; csrf; _ }
-  tenant
-  organisational_units
-  smtp_auth_list
-  default_sender
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  text_messages_enabled
-  flash_fetcher
+      ?experiment
+      ?session_count
+      Pool_context.{ language; csrf; _ }
+      tenant
+      organisational_units
+      smtp_auth_list
+      default_sender
+      default_email_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      text_messages_enabled
+      flash_fetcher
   =
   let open Pool_common in
   let context_language = language in
@@ -636,15 +636,15 @@ let experiment_form
 ;;
 
 let create
-  (Pool_context.{ language; _ } as context)
-  tenant
-  organisational_units
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  smtp_auth_list
-  default_sender
-  text_messages_enabled
-  flash_fetcher
+      (Pool_context.{ language; _ } as context)
+      tenant
+      organisational_units
+      default_email_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      smtp_auth_list
+      default_sender
+      text_messages_enabled
+      flash_fetcher
   =
   let open Pool_common in
   div
@@ -667,20 +667,20 @@ let create
 ;;
 
 let edit
-  ?(allowed_to_assign = false)
-  ~session_count
-  experiment
-  ({ Pool_context.language; csrf; query_parameters; _ } as context)
-  tenant
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  organisational_units
-  smtp_auth_list
-  default_sender
-  (available_tags, current_tags)
-  (available_participation_tags, current_participation_tags)
-  text_messages_enabled
-  flash_fetcher
+      ?(allowed_to_assign = false)
+      ~session_count
+      experiment
+      ({ Pool_context.language; csrf; query_parameters; _ } as context)
+      tenant
+      default_email_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      organisational_units
+      smtp_auth_list
+      default_sender
+      (available_tags, current_tags)
+      (available_participation_tags, current_participation_tags)
+      text_messages_enabled
+      flash_fetcher
   =
   let form =
     experiment_form
@@ -758,15 +758,15 @@ let edit
 ;;
 
 let detail
-  experiment
-  session_count
-  message_templates
-  sys_languages
-  smtp_account
-  tags
-  participation_tags
-  statistics
-  ({ Pool_context.language; csrf; guardian; _ } as context)
+      experiment
+      session_count
+      message_templates
+      sys_languages
+      smtp_account
+      tags
+      participation_tags
+      statistics
+      ({ Pool_context.language; csrf; guardian; _ } as context)
   =
   let open Pool_common in
   let experiment_id = Experiment.id experiment in
@@ -1058,14 +1058,14 @@ let detail
 ;;
 
 let invitations
-  experiment
-  key_list
-  template_list
-  query_experiments
-  query_tags
-  statistics
-  filtered_contacts
-  ({ Pool_context.language; _ } as context)
+      experiment
+      key_list
+      template_list
+      query_experiments
+      query_tags
+      statistics
+      filtered_contacts
+      ({ Pool_context.language; _ } as context)
   =
   let changelog =
     match experiment.Experiment.filter with
@@ -1113,14 +1113,14 @@ let invitations
 ;;
 
 let users
-  ?hint
-  ?can_assign
-  ?can_unassign
-  role
-  experiment
-  applicable_admins
-  currently_assigned
-  context
+      ?hint
+      ?can_assign
+      ?can_unassign
+      role
+      experiment
+      applicable_admins
+      currently_assigned
+      context
   =
   let base_url field admin =
     let suffix =
@@ -1154,13 +1154,13 @@ let users
 ;;
 
 let message_template_form
-  ({ Pool_context.language; _ } as context)
-  tenant
-  experiment
-  languages
-  label
-  form_context
-  flash_fetcher
+      ({ Pool_context.language; _ } as context)
+      tenant
+      experiment
+      languages
+      label
+      form_context
+      flash_fetcher
   =
   let open Message_template in
   let open Pool_common in

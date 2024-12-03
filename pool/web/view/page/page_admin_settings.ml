@@ -10,19 +10,19 @@ module Tags = Page_admin_settings_tags
 module TextMessage = Page_admin_settings_text_messages
 
 let show
-  tenant_languages
-  email_suffixes
-  contact_email
-  inactive_user_disable_after
-  inactive_user_warning
-  trigger_profile_update_after
-  default_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  user_import_first_reminder
-  user_import_second_reminder
-  Pool_context.{ language; csrf; _ }
-  text_messages_enabled
-  flash_fetcher
+      tenant_languages
+      email_suffixes
+      contact_email
+      inactive_user_disable_after
+      inactive_user_warning
+      trigger_profile_update_after
+      default_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      user_import_first_reminder
+      user_import_second_reminder
+      Pool_context.{ language; csrf; _ }
+      text_messages_enabled
+      flash_fetcher
   =
   let action_path action =
     Sihl.Web.externalize_path
@@ -63,18 +63,18 @@ let show
     let field_elements =
       CCList.map
         (fun (language, selected) ->
-          let attrs =
-            [ a_input_type `Checkbox
-            ; a_name (Pool_common.Language.show language)
-            ]
-          in
-          let selected =
-            match selected with
-            | false -> []
-            | true -> [ a_checked () ]
-          in
-          let checkbox = input ~a:(attrs @ selected) () in
-          div [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
+           let attrs =
+             [ a_input_type `Checkbox
+             ; a_name (Pool_common.Language.show language)
+             ]
+           in
+           let selected =
+             match selected with
+             | false -> []
+             | true -> [ a_checked () ]
+           in
+           let checkbox = input ~a:(attrs @ selected) () in
+           div [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
         all_languages
       |> Component.Sortable.create_sortable
     in

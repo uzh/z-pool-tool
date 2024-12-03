@@ -214,8 +214,8 @@ let find_template_by_language templates lang =
     (fun { language; _ } -> Pool_common.Language.equal language lang)
     templates
   |> (function
-        | None -> templates |> CCList.head_opt
-        | Some template -> Some template)
+   | None -> templates |> CCList.head_opt
+   | Some template -> Some template)
   |> CCOption.map (fun ({ language; _ } as t) -> language, t)
   |> CCOption.to_result Pool_message.(Error.NotFound Field.MessageTemplate)
 ;;
@@ -240,9 +240,9 @@ let experiment_or_contact_lang sys_langs contact = function
 ;;
 
 let experiment_message_language
-  sys_langs
-  ({ Experiment.language; _ } : Experiment.t)
-  contact
+      sys_langs
+      ({ Experiment.language; _ } : Experiment.t)
+      contact
   =
   experiment_or_contact_lang sys_langs contact language
 ;;

@@ -216,11 +216,11 @@ module NavElements = struct
 end
 
 let create_main
-  ?(kind : [ `Tenant | `Root ] = `Tenant)
-  ?active_navigation
-  ({ Pool_context.database_label; user; _ } as context)
-  title
-  tenant_languages
+      ?(kind : [ `Tenant | `Root ] = `Tenant)
+      ?active_navigation
+      ({ Pool_context.database_label; user; _ } as context)
+      title
+      tenant_languages
   =
   let%lwt actor =
     Pool_context.Utils.find_authorizable_opt database_label user

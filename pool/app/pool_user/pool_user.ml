@@ -20,11 +20,11 @@ module Password = struct
   ;;
 
   let update
-    label
-    user_id
-    ~old_password
-    ~new_password
-    ~new_password_confirmation
+        label
+        user_id
+        ~old_password
+        ~new_password
+        ~new_password_confirmation
     =
     let* hashed_password = Repo_password.find label user_id in
     let* new_password' =

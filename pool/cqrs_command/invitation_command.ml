@@ -43,8 +43,8 @@ end = struct
     }
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    { invited_contacts; contacts; create_message; experiment; mailing }
+        ?(tags = Logs.Tag.empty)
+        { invited_contacts; contacts; create_message; experiment; mailing }
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in

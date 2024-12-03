@@ -22,26 +22,26 @@ let grouped_custom_fields_form language custom_fields to_html =
       (div ~a:[ a_class [ "grid-col-2" ] ] (CCList.map to_html ungrouped_fields)
        :: CCList.map
             (fun (Group.Public.{ fields; _ } as group) ->
-              div
-                [ h2
-                    ~a:[ a_class [ "heading-2" ] ]
-                    [ txt Group.(Public.name language group) ]
-                ; div
-                    ~a:[ a_class [ "grid-col-2" ] ]
-                    (fields |> CCList.map to_html)
-                ])
+               div
+                 [ h2
+                     ~a:[ a_class [ "heading-2" ] ]
+                     [ txt Group.(Public.name language group) ]
+                 ; div
+                     ~a:[ a_class [ "grid-col-2" ] ]
+                     (fields |> CCList.map to_html)
+                 ])
             groups)
   ]
 ;;
 
 let personal_details_form
-  csrf
-  language
-  query_parameters
-  form_context
-  tenant_languages
-  contact
-  custom_fields
+      csrf
+      language
+      query_parameters
+      form_context
+      tenant_languages
+      contact
+      custom_fields
   =
   let open Contact in
   let action, is_admin =
@@ -89,8 +89,8 @@ let personal_details_form
         (csrf_element csrf ()
          :: CCList.map
               (fun (version, field, label, value, help) ->
-                Htmx.create_entity ?help ?label version field value
-                |> htmx_create)
+                 Htmx.create_entity ?help ?label version field value
+                 |> htmx_create)
               Htmx.
                 [ ( contact.firstname_version
                   , Field.Firstname
@@ -164,10 +164,10 @@ let personal_details_form
 ;;
 
 let personal_details
-  contact
-  custom_fields
-  tenant_languages
-  Pool_context.{ language; query_parameters; csrf; _ }
+      contact
+      custom_fields
+      tenant_languages
+      Pool_context.{ language; query_parameters; csrf; _ }
   =
   let form_context = `Contact in
   let pause_form =
@@ -194,9 +194,9 @@ let personal_details
 ;;
 
 let login_information
-  (contact : Contact.t)
-  Pool_context.{ language; query_parameters; csrf; _ }
-  password_policy
+      (contact : Contact.t)
+      Pool_context.{ language; query_parameters; csrf; _ }
+      password_policy
   =
   let open Contact in
   let open Message.Control in
@@ -284,10 +284,10 @@ let login_information
 ;;
 
 let contact_information
-  contact
-  Pool_context.{ language; query_parameters; csrf; _ }
-  (verification : Pool_user.UnverifiedCellPhone.t option)
-  was_reset
+      contact
+      Pool_context.{ language; query_parameters; csrf; _ }
+      (verification : Pool_user.UnverifiedCellPhone.t option)
+      was_reset
   =
   let open Contact in
   let open Pool_common in

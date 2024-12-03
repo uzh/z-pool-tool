@@ -35,18 +35,18 @@ module MailingInvitationMapping = struct
     let values, value_insert =
       CCList.fold_left
         (fun (dyn, sql) invitation ->
-          let sql_line =
-            {sql| ( UNHEX(REPLACE(?, '-', '')),
+           let sql_line =
+             {sql| ( UNHEX(REPLACE(?, '-', '')),
               (SELECT uuid FROM pool_invitations WHERE experiment_uuid = (SELECT experiment_uuid FROM pool_mailing WHERE uuid = UNHEX(REPLACE(?, '-', ''))) AND contact_uuid = UNHEX(REPLACE(?, '-', '')))
             ) |sql}
-          in
-          ( dyn
-            |> Dynparam.add Mailing.Repo.Id.t mailing_id
-            |> Dynparam.add Mailing.Repo.Id.t mailing_id
-            |> Dynparam.add
-                 Contact.Repo.Id.t
-                 (invitation.Entity.contact |> Contact.id)
-          , sql @ [ sql_line ] ))
+           in
+           ( dyn
+             |> Dynparam.add Mailing.Repo.Id.t mailing_id
+             |> Dynparam.add Mailing.Repo.Id.t mailing_id
+             |> Dynparam.add
+                  Contact.Repo.Id.t
+                  (invitation.Entity.contact |> Contact.id)
+           , sql @ [ sql_line ] ))
         (Dynparam.empty, [])
         invitations
     in
@@ -245,8 +245,8 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
   let values, value_insert =
     CCList.fold_left
       (fun (dyn, sql) entity ->
-        let sql_line =
-          {sql| (
+         let sql_line =
+           {sql| (
             UNHEX(REPLACE(?, '-', '')),
             UNHEX(REPLACE(?, '-', '')),
             UNHEX(REPLACE(?, '-', '')),
@@ -255,12 +255,12 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
             ?,
             ?)
           |sql}
-        in
-        ( dyn
-          |> Dynparam.add
-               RepoEntity.Write.t
-               (entity |> RepoEntity.Write.of_entity experiment_id)
-        , sql @ [ sql_line ] ))
+         in
+         ( dyn
+           |> Dynparam.add
+                RepoEntity.Write.t
+                (entity |> RepoEntity.Write.of_entity experiment_id)
+         , sql @ [ sql_line ] ))
       (Dynparam.empty, [])
       invitations
   in

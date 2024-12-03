@@ -177,16 +177,16 @@ let find_by_label_and_language_to_send pool ?entity_uuids label language =
         ids
         |> CCList.foldi
              (fun (dyn, ids) i entity_uuid ->
-               let dyn =
-                 Dynparam.(
-                   dyn
-                   |> add Caqti_type.string (Pool_common.Id.value entity_uuid))
-               in
-               let ids =
-                 ids
-                 @ [ Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 3) ]
-               in
-               dyn, ids)
+                let dyn =
+                  Dynparam.(
+                    dyn
+                    |> add Caqti_type.string (Pool_common.Id.value entity_uuid))
+                in
+                let ids =
+                  ids
+                  @ [ Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 3) ]
+                in
+                dyn, ids)
              (dyn, [])
       in
       let where =

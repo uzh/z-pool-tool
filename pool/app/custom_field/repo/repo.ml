@@ -310,7 +310,7 @@ let sort_fields pool ids =
   let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
-      Database.exec pool Sql.update_position_request (index, Entity.Id.value id))
+       Database.exec pool Sql.update_position_request (index, Entity.Id.value id))
     ids
   ||> CCFun.const ()
 ;;

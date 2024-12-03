@@ -38,45 +38,45 @@ let experiments pool =
            , cost_center
            , direct_registration_disabled
            , email_session_reminder_lead_time ) ->
-        let experiment =
-          let title = Title.create title |> get_or_failwith in
-          let public_title =
-            PublicTitle.create public_title |> get_or_failwith
-          in
-          let internal_description =
-            InternalDescription.create description |> get_or_failwith
-          in
-          let cost_center = cost_center |> CCOption.map CostCenter.of_string in
-          let email_session_reminder_lead_time =
-            email_session_reminder_lead_time
-            >|= Ptime.Span.of_int_s
-            >|= Reminder.EmailLeadTime.create
-            >|= get_or_failwith
-          in
-          let direct_registration_disabled =
-            DirectRegistrationDisabled.create direct_registration_disabled
-          in
-          let allow_uninvited_signup = AllowUninvitedSignup.create false in
-          let external_data_required = ExternalDataRequired.create false in
-          let show_external_data_id_links =
-            ShowExternalDataIdLinks.create false
-          in
-          let registration_disabled = RegistrationDisabled.create false in
-          create
-            title
-            public_title
-            ?cost_center
-            ~internal_description
-            ?email_session_reminder_lead_time
-            ~experiment_type:Pool_common.ExperimentType.Lab
-            direct_registration_disabled
-            registration_disabled
-            allow_uninvited_signup
-            external_data_required
-            show_external_data_id_links
-          |> get_or_failwith
-        in
-        Experiment.Created experiment)
+         let experiment =
+           let title = Title.create title |> get_or_failwith in
+           let public_title =
+             PublicTitle.create public_title |> get_or_failwith
+           in
+           let internal_description =
+             InternalDescription.create description |> get_or_failwith
+           in
+           let cost_center = cost_center |> CCOption.map CostCenter.of_string in
+           let email_session_reminder_lead_time =
+             email_session_reminder_lead_time
+             >|= Ptime.Span.of_int_s
+             >|= Reminder.EmailLeadTime.create
+             >|= get_or_failwith
+           in
+           let direct_registration_disabled =
+             DirectRegistrationDisabled.create direct_registration_disabled
+           in
+           let allow_uninvited_signup = AllowUninvitedSignup.create false in
+           let external_data_required = ExternalDataRequired.create false in
+           let show_external_data_id_links =
+             ShowExternalDataIdLinks.create false
+           in
+           let registration_disabled = RegistrationDisabled.create false in
+           create
+             title
+             public_title
+             ?cost_center
+             ~internal_description
+             ?email_session_reminder_lead_time
+             ~experiment_type:Pool_common.ExperimentType.Lab
+             direct_registration_disabled
+             registration_disabled
+             allow_uninvited_signup
+             external_data_required
+             show_external_data_id_links
+           |> get_or_failwith
+         in
+         Experiment.Created experiment)
       data
   in
   let%lwt () = Lwt_list.iter_s (Experiment.handle_event pool) events in

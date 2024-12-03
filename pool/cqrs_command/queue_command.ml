@@ -68,19 +68,19 @@ end = struct
   type t = Text_message.delivery_report
 
   let command
-    from
-    to_
-    message_id
-    dlr_mask
-    error_code
-    error_message
-    submit_date
-    done_date
-    plmn
-    country
-    sms_cost
-    job_id
-    raw
+        from
+        to_
+        message_id
+        dlr_mask
+        error_code
+        error_message
+        submit_date
+        done_date
+        plmn
+        country
+        sms_cost
+        job_id
+        raw
     =
     Text_message.
       { job_id
@@ -104,10 +104,10 @@ end = struct
       let open CCResult.Infix in
       Conformist.custom
         (fun values ->
-          values
-          |> CCList.head_opt
-          |> CCOption.to_result Pool_message.Error.NoValue
-          >>= Pool_model.Time.parse_time)
+           values
+           |> CCList.head_opt
+           |> CCOption.to_result Pool_message.Error.NoValue
+           >>= Pool_model.Time.parse_time)
         (fun date -> date |> Ptime.to_rfc3339 |> CCList.return)
         name
     in

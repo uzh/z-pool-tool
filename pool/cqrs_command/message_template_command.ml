@@ -51,12 +51,12 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?(id = Message_template.Id.create ())
-    label
-    entity_uuid
-    available_languages
-    { language; email_subject; email_text; plain_text; sms_text }
+        ?(tags = Logs.Tag.empty)
+        ?(id = Message_template.Id.create ())
+        label
+        entity_uuid
+        available_languages
+        { language; email_subject; email_text; plain_text; sms_text }
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);

@@ -7,10 +7,10 @@ module Table = Component.Table
 module DataTable = Component.DataTable
 
 let list
-  ?(access_contact_profiles = false)
-  { Pool_context.language; _ }
-  experiment
-  (waiting_list_entries, query)
+      ?(access_contact_profiles = false)
+      { Pool_context.language; _ }
+      experiment
+      (waiting_list_entries, query)
   =
   let open Pool_user in
   let url =
@@ -50,8 +50,8 @@ let list
   in
   let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
   let row
-    ({ Waiting_list.contact; admin_comment; created_at; _ } as waiting_list :
-      Waiting_list.t)
+        ({ Waiting_list.contact; admin_comment; created_at; _ } as waiting_list :
+          Waiting_list.t)
     =
     let edit =
       Waiting_list.(id %> Id.value)
@@ -167,19 +167,20 @@ let session_list language chronological sessions =
   let rows =
     CCList.flat_map
       (fun (parent, follow_ups) ->
-        let row = session_row language chronological in
-        let parent = row parent in
-        let follow_ups = CCList.map row follow_ups in
-        parent :: follow_ups)
+         let row = session_row language chronological in
+         let parent = row parent in
+         let follow_ups = CCList.map row follow_ups in
+         parent :: follow_ups)
       sessions
   in
   let chronological_toggle =
     let open Page_admin_session in
-    if sessions
-       |> CCList.fold_left
-            (fun acc (session, followups) -> acc @ (session :: followups))
-            []
-       |> some_session_is_followup
+    if
+      sessions
+      |> CCList.fold_left
+           (fun acc (session, followups) -> acc @ (session :: followups))
+           []
+      |> some_session_is_followup
     then Page_admin_session.Partials.chronological_toggle language chronological
     else txt ""
   in
@@ -202,12 +203,13 @@ let session_list language chronological sessions =
 ;;
 
 let detail
-  (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
-  sessions
-  experiment_id
-  (Pool_context.{ language; csrf; user; _ } as context)
-  flash_fetcher
-  chronological
+      (Waiting_list.{ id; contact; experiment; admin_comment; _ } :
+        Waiting_list.t)
+      sessions
+      experiment_id
+      (Pool_context.{ language; csrf; user; _ } as context)
+      flash_fetcher
+      chronological
   =
   let waiting_list_detail =
     div

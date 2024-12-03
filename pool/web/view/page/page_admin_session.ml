@@ -75,7 +75,8 @@ module Partials = struct
   ;;
 
   let session_key_figures
-    ({ Session.min_participants; max_participants; overbook; _ } : Session.t)
+        ({ Session.min_participants; max_participants; overbook; _ } :
+          Session.t)
     =
     let value = ParticipantAmount.value in
     Format.asprintf
@@ -147,9 +148,9 @@ module Partials = struct
   ;;
 
   let button_dropdown
-    ({ Pool_context.language; _ } as context)
-    experiment_id
-    session
+        ({ Pool_context.language; _ } as context)
+        experiment_id
+        session
     =
     [ detail_button language experiment_id session.id |> CCOption.return
     ; delete_form context experiment_id (`Session session) |> CCOption.return
@@ -201,16 +202,16 @@ let location_select language options selected () =
 ;;
 
 let session_form
-  csrf
-  language
-  (experiment : Experiment.t)
-  (default_email_reminder_lead_time, default_text_msg_reminder_lead_time)
-  ?(session : Session.t option)
-  ?(follow_up_to : Session.t option)
-  ?(duplicate : (Session.t * Session.t list) option)
-  locations
-  text_messages_enabled
-  ~flash_fetcher
+      csrf
+      language
+      (experiment : Experiment.t)
+      (default_email_reminder_lead_time, default_text_msg_reminder_lead_time)
+      ?(session : Session.t option)
+      ?(follow_up_to : Session.t option)
+      ?(duplicate : (Session.t * Session.t list) option)
+      locations
+      text_messages_enabled
+      ~flash_fetcher
   =
   let open CCFun in
   let open Session in
@@ -440,10 +441,10 @@ let session_base_information language session =
 ;;
 
 let reschedule_session
-  ({ Pool_context.language; csrf; _ } as context)
-  experiment
-  (session : Session.t)
-  flash_fetcher
+      ({ Pool_context.language; csrf; _ } as context)
+      experiment
+      (session : Session.t)
+      flash_fetcher
   =
   let open Session in
   let open Pool_common in
@@ -498,10 +499,10 @@ let reschedule_session
 ;;
 
 let data_table
-  ({ Pool_context.language; _ } as context)
-  experiment
-  (sessions, query)
-  chronological
+      ({ Pool_context.language; _ } as context)
+      experiment
+      (sessions, query)
+      chronological
   =
   let open Session in
   let session_index_path =
@@ -543,13 +544,13 @@ let data_table
   in
   let th_class = [ "w-3"; "w-2"; "w-2"; "w-2"; "w-2"; "w-1" ] in
   let row
-    ({ Session.assignment_count
-     ; no_show_count
-     ; participant_count
-     ; closed_at
-     ; _
-     } as session :
-      Session.t)
+        ({ Session.assignment_count
+         ; no_show_count
+         ; participant_count
+         ; closed_at
+         ; _
+         } as session :
+          Session.t)
     =
     let open Partials in
     let row_attrs = Partials.row_attrs session in
@@ -582,10 +583,10 @@ let data_table
 ;;
 
 let index
-  ({ Pool_context.language; _ } as context)
-  experiment
-  sessions
-  chronological
+      ({ Pool_context.language; _ } as context)
+      experiment
+      sessions
+      chronological
   =
   let open Pool_common in
   let html =
@@ -653,12 +654,12 @@ let index
 ;;
 
 let new_form
-  ({ Pool_context.language; csrf; _ } as context)
-  experiment
-  default_leadtime_settings
-  locations
-  text_messages_enabled
-  flash_fetcher
+      ({ Pool_context.language; csrf; _ } as context)
+      experiment
+      default_leadtime_settings
+      locations
+      text_messages_enabled
+      flash_fetcher
   =
   session_form
     csrf
@@ -761,11 +762,11 @@ let duplicate_form ?parent_session language session followups form_id =
 ;;
 
 let duplicate
-  ({ Pool_context.language; csrf; _ } as context)
-  ?parent_session
-  experiment
-  session
-  followups
+      ({ Pool_context.language; csrf; _ } as context)
+      ?parent_session
+      experiment
+      session
+      followups
   =
   let open Session in
   let session_info =
@@ -873,20 +874,20 @@ let duplicate
 ;;
 
 let detail
-  ?access_contact_profiles
-  ~not_matching_filter_count
-  ?(rerun_session_filter = false)
-  ?(send_direct_message = false)
-  ?view_contact_name
-  ?view_contact_info
-  (Pool_context.{ language; csrf; _ } as context)
-  experiment
-  (session : Session.t)
-  participation_tags
-  sys_languages
-  session_reminder_templates
-  text_messages_enabled
-  (assignments, query)
+      ?access_contact_profiles
+      ~not_matching_filter_count
+      ?(rerun_session_filter = false)
+      ?(send_direct_message = false)
+      ?view_contact_name
+      ?view_contact_info
+      (Pool_context.{ language; csrf; _ } as context)
+      experiment
+      (session : Session.t)
+      participation_tags
+      sys_languages
+      session_reminder_templates
+      text_messages_enabled
+      (assignments, query)
   =
   let open Pool_common in
   let open Session in
@@ -991,21 +992,21 @@ let detail
       let parent =
         CCOption.map
           (fun follow_up_to ->
-            ( Field.MainSession
-            , a
-                ~a:
-                  [ a_href
-                      (Format.asprintf
-                         "/admin/experiments/%s/sessions/%s"
-                         (Experiment.Id.value experiment_id)
-                         (Id.value follow_up_to)
-                       |> Sihl.Web.externalize_path)
-                  ]
-                [ Control.Show
-                  |> Utils.control_to_string language
-                  |> CCString.capitalize_ascii
-                  |> txt
-                ] ))
+             ( Field.MainSession
+             , a
+                 ~a:
+                   [ a_href
+                       (Format.asprintf
+                          "/admin/experiments/%s/sessions/%s"
+                          (Experiment.Id.value experiment_id)
+                          (Id.value follow_up_to)
+                        |> Sihl.Web.externalize_path)
+                   ]
+                 [ Control.Show
+                   |> Utils.control_to_string language
+                   |> CCString.capitalize_ascii
+                   |> txt
+                 ] ))
           session.follow_up_to
       in
       let no_show_count, participant_count =
@@ -1324,12 +1325,12 @@ let detail
 ;;
 
 let print
-  ?view_contact_name
-  ?view_contact_info
-  ({ Pool_context.language; _ } as context)
-  experiment
-  session
-  assignments
+      ?view_contact_name
+      ?view_contact_info
+      ({ Pool_context.language; _ } as context)
+      experiment
+      session
+      assignments
   =
   let open Page_admin_assignments in
   let assignment_list =
@@ -1361,10 +1362,10 @@ let print
 ;;
 
 let tags_subform
-  ({ Pool_context.language; csrf; _ } as context)
-  experiment
-  session
-  (current_tags, available_tags, experiment_tags)
+      ({ Pool_context.language; csrf; _ } as context)
+      experiment
+      session
+      (current_tags, available_tags, experiment_tags)
   =
   let tags_action =
     Format.asprintf
@@ -1413,14 +1414,14 @@ let tags_subform
 ;;
 
 let edit
-  ({ Pool_context.language; csrf; _ } as context)
-  experiment
-  default_leadtime_settings
-  (session : Session.t)
-  locations
-  tags
-  text_messages_enabled
-  flash_fetcher
+      ({ Pool_context.language; csrf; _ } as context)
+      experiment
+      default_leadtime_settings
+      (session : Session.t)
+      locations
+      tags
+      text_messages_enabled
+      flash_fetcher
   =
   let form =
     div
@@ -1449,14 +1450,14 @@ let edit
 ;;
 
 let follow_up
-  ({ Pool_context.language; csrf; _ } as context)
-  ?duplicate
-  experiment
-  default_leadtime_settings
-  (parent_session : Session.t)
-  locations
-  text_messages_enabled
-  flash_fetcher
+      ({ Pool_context.language; csrf; _ } as context)
+      ?duplicate
+      experiment
+      default_leadtime_settings
+      (parent_session : Session.t)
+      locations
+      text_messages_enabled
+      flash_fetcher
   =
   let open Pool_common in
   div
@@ -1490,8 +1491,8 @@ let follow_up
 ;;
 
 let session_counters
-  language
-  { Assignment.total; num_no_shows; num_participations }
+      language
+      { Assignment.total; num_no_shows; num_participations }
   =
   let field_to_string field =
     Pool_common.Utils.field_to_string language field
@@ -1546,22 +1547,23 @@ module CloseScreen = struct
   ;;
 
   let checkbox_element
-    experiment
-    session
-    assignment
-    ?(updated_fields = [])
-    ?(disabled = false)
-    ?(id_value = false)
-    name
-    suffix
-    value
+        experiment
+        session
+        assignment
+        ?(updated_fields = [])
+        ?(disabled = false)
+        ?(id_value = false)
+        name
+        suffix
+        value
     =
     let checked = if value then [ a_checked () ] else [] in
     let classnames =
-      if CCList.mem
-           ~eq:CCString.equal
-           name
-           (CCList.map Field.show updated_fields)
+      if
+        CCList.mem
+          ~eq:CCString.equal
+          name
+          (CCList.map Field.show updated_fields)
       then [ a_class [ "is-valid" ] ]
       else []
     in
@@ -1595,12 +1597,13 @@ module CloseScreen = struct
 end
 
 let close_assignment_htmx_form
-  ~disable_verified
-  { Pool_context.language; csrf; _ }
-  (experiment : Experiment.t)
-  ?(updated_fields = [])
-  session
-  ({ Assignment.id; no_show; participated; external_data_id; _ } as assignment)
+      ~disable_verified
+      { Pool_context.language; csrf; _ }
+      (experiment : Experiment.t)
+      ?(updated_fields = [])
+      session
+      ({ Assignment.id; no_show; participated; external_data_id; _ } as
+       assignment)
   =
   let open Assignment in
   let open Pool_common.Utils in
@@ -1629,10 +1632,11 @@ let close_assignment_htmx_form
       in
       let field = Field.ExternalDataId in
       let classnames =
-        if CCList.mem
-             ~eq:Error.equal
-             (Error.FieldRequired Field.ExternalDataId)
-             (errors |> CCOption.value ~default:[])
+        if
+          CCList.mem
+            ~eq:Error.equal
+            (Error.FieldRequired Field.ExternalDataId)
+            (errors |> CCOption.value ~default:[])
         then [ a_class [ "is-invalid" ] ]
         else if CCList.mem ~eq:Field.equal field updated_fields
         then [ a_class [ "is-valid" ] ]
@@ -1702,13 +1706,13 @@ let close_assignment_htmx_form
 ;;
 
 let close_assignments_table
-  ({ Pool_context.language; user; _ } as context)
-  view_contact_name
-  experiment
-  session
-  assignments
-  custom_fields
-  disabled_verified
+      ({ Pool_context.language; user; _ } as context)
+      view_contact_name
+      experiment
+      session
+      assignments
+      custom_fields
+      disabled_verified
   =
   match assignments with
   | [] ->
@@ -1756,44 +1760,44 @@ let close_assignments_table
     in
     CCList.map
       (fun (({ Assignment.id; contact; _ } as assignment), updated_fields) ->
-        let custom_data = assignment.Assignment.custom_fields in
-        let custom_field_cells =
-          let map_or = CCOption.map_or in
-          let open Custom_field in
-          match custom_data with
-          | None -> div []
-          | Some custom_data ->
-            let answer_html =
-              Component.CustomField.answer_to_html
-                ~add_data_label:true
-                user
-                language
-            in
-            custom_fields
-            |> CCList.map (fun field ->
-              CCList.find_opt (Public.id %> Id.equal (id field)) custom_data
-              |> map_or ~default:(div [ txt "" ]) answer_html)
-            |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
-        in
-        let identity =
-          Component.UserStatus.Contact.identity
-            view_contact_name
-            contact
-            (Assignment.Id.to_common id)
-        in
-        let disable_verified =
-          CCList.mem ~eq:Assignment.Id.equal id disabled_verified
-        in
-        [ div ~a:[ a_class [ identity_width ] ] [ strong [ txt identity ] ]
-        ; custom_field_cells
-        ; close_assignment_htmx_form
-            ~disable_verified
-            ?updated_fields
-            context
-            experiment
-            session
-            assignment
-        ])
+         let custom_data = assignment.Assignment.custom_fields in
+         let custom_field_cells =
+           let map_or = CCOption.map_or in
+           let open Custom_field in
+           match custom_data with
+           | None -> div []
+           | Some custom_data ->
+             let answer_html =
+               Component.CustomField.answer_to_html
+                 ~add_data_label:true
+                 user
+                 language
+             in
+             custom_fields
+             |> CCList.map (fun field ->
+               CCList.find_opt (Public.id %> Id.equal (id field)) custom_data
+               |> map_or ~default:(div [ txt "" ]) answer_html)
+             |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
+         in
+         let identity =
+           Component.UserStatus.Contact.identity
+             view_contact_name
+             contact
+             (Assignment.Id.to_common id)
+         in
+         let disable_verified =
+           CCList.mem ~eq:Assignment.Id.equal id disabled_verified
+         in
+         [ div ~a:[ a_class [ identity_width ] ] [ strong [ txt identity ] ]
+         ; custom_field_cells
+         ; close_assignment_htmx_form
+             ~disable_verified
+             ?updated_fields
+             context
+             experiment
+             session
+             assignment
+         ])
       assignments
     |> CCList.map (div ~a:[ a_class [ "inset-sm"; "flexrow" ] ])
     |> fun rows ->
@@ -1807,14 +1811,14 @@ let close_assignments_table
 ;;
 
 let close
-  ?(view_contact_name = false)
-  ({ Pool_context.language; csrf; _ } as context)
-  experiment
-  (session : Session.t)
-  assignments
-  custom_fields
-  participation_tags
-  counters
+      ?(view_contact_name = false)
+      ({ Pool_context.language; csrf; _ } as context)
+      experiment
+      (session : Session.t)
+      assignments
+      custom_fields
+      participation_tags
+      counters
   =
   let open Pool_common in
   let control = Control.(Close (Some Field.Session)) in
@@ -1851,9 +1855,9 @@ let close
   let disabled_verified =
     CCList.filter_map
       (fun { Assignment.id; contact; _ } ->
-        match contact.Contact.verified with
-        | None -> None
-        | Some _ -> Some id)
+         match contact.Contact.verified with
+         | None -> None
+         | Some _ -> Some id)
       assignments
   in
   let assignments = CCList.map (CCFun.flip CCPair.make None) assignments in
@@ -1941,11 +1945,11 @@ let close
 ;;
 
 let cancel
-  ({ Pool_context.language; csrf; _ } as context)
-  experiment
-  (session : Session.t)
-  follow_ups
-  flash_fetcher
+      ({ Pool_context.language; csrf; _ } as context)
+      experiment
+      (session : Session.t)
+      follow_ups
+      flash_fetcher
   =
   let open Pool_common in
   let action =
@@ -2010,14 +2014,14 @@ let cancel
 ;;
 
 let message_template_form
-  ({ Pool_context.language; _ } as context)
-  tenant
-  experiment
-  session
-  languages
-  label
-  form_context
-  flash_fetcher
+      ({ Pool_context.language; _ } as context)
+      tenant
+      experiment
+      session
+      languages
+      label
+      form_context
+      flash_fetcher
   =
   let open Message_template in
   let open Pool_common in

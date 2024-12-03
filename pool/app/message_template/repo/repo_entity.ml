@@ -56,11 +56,11 @@ let t =
         ) )
   in
   let decode
-    ( id
-    , ( label
-      , ( entity_uuid
-        , (language, (email_subject, (email_text, (plain_text, sms_text)))) ) )
-    )
+        ( id
+        , ( label
+          , ( entity_uuid
+            , (language, (email_subject, (email_text, (plain_text, sms_text))))
+            ) ) )
     =
     Ok
       { id

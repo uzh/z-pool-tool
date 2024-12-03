@@ -268,8 +268,8 @@ module Admin = struct
       ]
     in
     let tag_routes_helper
-      (assign_handler, assign_access)
-      (remove_handler, remove_access)
+          (assign_handler, assign_access)
+          (remove_handler, remove_access)
       =
       let specific =
         [ post "/remove" ~middlewares:[ remove_access ] remove_handler ]

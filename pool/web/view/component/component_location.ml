@@ -19,9 +19,9 @@ let formatted_address language address =
      |> CCList.filter_map CCFun.id)
   |> CCList.fold_left
        (fun acc curr ->
-         match acc with
-         | [] -> [ txt curr ]
-         | _ -> acc @ [ br (); txt curr ])
+          match acc with
+          | [] -> [ txt curr ]
+          | _ -> acc @ [ br (); txt curr ])
        []
 ;;
 

@@ -107,32 +107,34 @@ end
 let t =
   let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let decode
-    ( id
-    , ( title
-      , ( public_title
-        , ( internal_description
-          , ( public_description
-            , ( language
-              , ( cost_center
-                , ( contact_email
-                  , ( smtp_auth_id
-                    , ( direct_registration_disabled
-                      , ( registration_disabled
-                        , ( allow_uninvited_signup
-                          , ( external_data_required
-                            , ( show_external_data_id_links
-                              , ( experiment_type
-                                , ( OnlineExperimentRepo.
-                                      { assignment_without_session; survey_url }
-                                  , ( email_session_reminder_lead_time
-                                    , ( text_message_session_reminder_lead_time
-                                      , ( invitation_reset_at
-                                        , ( matcher_notification_sent
-                                          , ( created_at
-                                            , ( updated_at
-                                              , (filter, organisational_unit) )
-                                            ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-        ) ) )
+        ( id
+        , ( title
+          , ( public_title
+            , ( internal_description
+              , ( public_description
+                , ( language
+                  , ( cost_center
+                    , ( contact_email
+                      , ( smtp_auth_id
+                        , ( direct_registration_disabled
+                          , ( registration_disabled
+                            , ( allow_uninvited_signup
+                              , ( external_data_required
+                                , ( show_external_data_id_links
+                                  , ( experiment_type
+                                    , ( OnlineExperimentRepo.
+                                          { assignment_without_session
+                                          ; survey_url
+                                          }
+                                      , ( email_session_reminder_lead_time
+                                        , ( text_message_session_reminder_lead_time
+                                          , ( invitation_reset_at
+                                            , ( matcher_notification_sent
+                                              , ( created_at
+                                                , ( updated_at
+                                                  , (filter, organisational_unit)
+                                                  ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                    ) ) ) ) ) ) )
     =
     let open CCResult in
     let online_experiment =
@@ -349,15 +351,16 @@ module Public = struct
       Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel
     in
     let decode
-      ( id
-      , ( public_title
-        , ( description
-          , ( language
-            , ( direct_registration_disabled
-              , ( experiment_type
-                , ( smtp_auth_id
-                  , OnlineExperimentRepo.
-                      { assignment_without_session; survey_url } ) ) ) ) ) ) )
+          ( id
+          , ( public_title
+            , ( description
+              , ( language
+                , ( direct_registration_disabled
+                  , ( experiment_type
+                    , ( smtp_auth_id
+                      , OnlineExperimentRepo.
+                          { assignment_without_session; survey_url } ) ) ) ) )
+            ) )
       =
       let online_experiment =
         OnlineExperiment.create_opt ~assignment_without_session ~survey_url
@@ -403,13 +406,13 @@ module DirectEnrollment = struct
       Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
     in
     let decode
-      ( id
-      , ( title
-        , ( public_title
-          , ( filter
-            , ( direct_registration_disabled
-              , ( registration_disabled
-                , (available_spots, contact_already_assigned) ) ) ) ) ) )
+          ( id
+          , ( title
+            , ( public_title
+              , ( filter
+                , ( direct_registration_disabled
+                  , ( registration_disabled
+                    , (available_spots, contact_already_assigned) ) ) ) ) ) )
       =
       let matches_filter = false in
       Ok

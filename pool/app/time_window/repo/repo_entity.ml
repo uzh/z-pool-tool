@@ -77,16 +77,17 @@ let t =
             ) ) ) )
   in
   let decode
-    ( id
-    , ( start
-      , ( duration
-        , ( internal_description
-          , ( public_description
-            , ( max_participants
-              , ( assignment_count
-                , ( no_show_count
-                  , (participant_count, (created_at, (updated_at, experiment)))
-                  ) ) ) ) ) ) ) )
+        ( id
+        , ( start
+          , ( duration
+            , ( internal_description
+              , ( public_description
+                , ( max_participants
+                  , ( assignment_count
+                    , ( no_show_count
+                      , ( participant_count
+                        , (created_at, (updated_at, experiment)) ) ) ) ) ) ) )
+          ) )
     =
     Ok
       { id
@@ -144,17 +145,17 @@ module Write = struct
     }
 
   let of_entity
-    (Entity.
-       { id
-       ; start
-       ; duration
-       ; internal_description
-       ; public_description
-       ; max_participants
-       ; experiment
-       ; _
-       } :
-      Entity.t)
+        (Entity.
+           { id
+           ; start
+           ; duration
+           ; internal_description
+           ; public_description
+           ; max_participants
+           ; experiment
+           ; _
+           } :
+          Entity.t)
     =
     { id
     ; experiment_id = experiment.Experiment.id

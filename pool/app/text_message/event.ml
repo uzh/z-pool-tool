@@ -37,7 +37,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | BulkSent jobs ->
     Lwt_list.iter_s
       (fun { job; id; message_template; job_ctx } ->
-        Text_message_service.dispatch ?id ?message_template ?job_ctx pool job)
+         Text_message_service.dispatch ?id ?message_template ?job_ctx pool job)
       jobs
   | ReportCreated report -> Repo.insert_report pool report
 ;;

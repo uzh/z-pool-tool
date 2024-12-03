@@ -110,9 +110,11 @@ module Sql = struct
 
   let find_all_request =
     let open Caqti_request.Infix in
-    let order_by = {sql|
+    let order_by =
+      {sql|
       ORDER BY last_run_at DESC
-    |sql} in
+    |sql}
+    in
     select_public_fragment order_by |> Caqti_type.unit ->* public
   ;;
 

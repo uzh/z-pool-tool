@@ -34,14 +34,14 @@ type t =
 [@@deriving show, sexp_of]
 
 let create
-  ( query_parameters
-  , language
-  , database_label
-  , message
-  , csrf
-  , user
-  , guardian
-  , announcement )
+      ( query_parameters
+      , language
+      , database_label
+      , message
+      , csrf
+      , user
+      , guardian
+      , announcement )
   =
   { query_parameters
   ; language

@@ -101,12 +101,13 @@ type update_password =
 [@@deriving eq, show]
 
 let validate_mechanism
-  mechanism
-  (username : Username.t option)
-  (password : Password.t option)
+      mechanism
+      (username : Username.t option)
+      (password : Password.t option)
   =
-  if Mechanism.(equal LOGIN) mechanism
-     && (CCOption.is_none username || CCOption.is_none password)
+  if
+    Mechanism.(equal LOGIN) mechanism
+    && (CCOption.is_none username || CCOption.is_none password)
   then Error Pool_message.Error.SmtpLoginMissingCredentials
   else Ok mechanism
 ;;

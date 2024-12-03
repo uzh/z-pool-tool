@@ -53,9 +53,9 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?(id = Id.create ())
-    ({ name; description; link; address } : t)
+        ?(tags = Logs.Tag.empty)
+        ?(id = Id.create ())
+        ({ name; description; link; address } : t)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
@@ -206,9 +206,9 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    location
-    ({ label; language; asset_id } : t)
+        ?(tags = Logs.Tag.empty)
+        location
+        ({ label; language; asset_id } : t)
     =
     Logs.info ~src (fun m -> m "Handle command AddFile" ~tags);
     let open CCResult in

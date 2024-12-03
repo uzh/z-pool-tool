@@ -55,8 +55,8 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     in
     Lwt_list.iter_s
       (fun (role, target_uuid) ->
-        ActorRole.create ?target_uuid authorizable.Actor.uuid role
-        |> Persistence.ActorRole.upsert ~ctx)
+         ActorRole.create ?target_uuid authorizable.Actor.uuid role
+         |> Persistence.ActorRole.upsert ~ctx)
       roles
   in
   function

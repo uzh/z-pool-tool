@@ -110,7 +110,7 @@ module Sql = struct
       let dyn =
         CCList.fold_left
           (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
           Dynparam.empty
           ids
       in
@@ -262,7 +262,7 @@ module Sql = struct
         query :: template_queries
         |> CCList.fold_left
              (fun acc cur ->
-               acc @ Repo_utils.find_experiments_by_key Key.Invitation cur)
+                acc @ Repo_utils.find_experiments_by_key Key.Invitation cur)
              []
         |> (function
          | [] -> Lwt_result.return ()
@@ -310,7 +310,7 @@ module Sql = struct
         query :: template_queries
         |> CCList.fold_left
              (fun acc cur ->
-               acc @ Repo_utils.find_experiments_by_key Key.Assignment cur)
+                acc @ Repo_utils.find_experiments_by_key Key.Assignment cur)
              []
         |> (function
          | [] -> Lwt_result.return ()
@@ -361,7 +361,7 @@ module Sql = struct
         query :: template_queries
         |> CCList.fold_left
              (fun acc cur ->
-               acc @ Repo_utils.find_experiments_by_key Key.Participation cur)
+                acc @ Repo_utils.find_experiments_by_key Key.Participation cur)
              []
         |> (function
          | [] -> Lwt_result.return ()

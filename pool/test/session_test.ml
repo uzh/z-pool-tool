@@ -564,9 +564,9 @@ let create_cancellation_message experiment reason contact =
 ;;
 
 let create_cancellation_text_message
-  (_ : Session.CancellationReason.t)
-  (_ : Contact.t)
-  cell_phone
+      (_ : Session.CancellationReason.t)
+      (_ : Contact.t)
+      cell_phone
   =
   Model.create_text_message_job cell_phone |> CCResult.return
 ;;
@@ -930,29 +930,29 @@ let close_valid_with_assignments () =
   let expected =
     CCList.fold_left
       (fun events ((assignment : Assignment.t), _, (_ : t list option)) ->
-        let contact_event =
-          let open Contact in
-          let contact =
-            assignment.contact
-            |> update_num_show_ups ~step:1
-            |> update_num_participations ~step:1
-          in
-          Contact.Updated contact |> Pool_event.contact
-        in
-        let tag_events =
-          let open Tags in
-          tags
-          |> CCList.map (fun (tag : t) ->
-            Tagged
-              { Tagged.model_uuid =
-                  Contact.id assignment.contact |> Contact.Id.to_common
-              ; tag_uuid = tag.id
-              }
-            |> Pool_event.tags)
-        in
-        events
-        @ [ Updated assignment |> Pool_event.assignment; contact_event ]
-        @ tag_events)
+         let contact_event =
+           let open Contact in
+           let contact =
+             assignment.contact
+             |> update_num_show_ups ~step:1
+             |> update_num_participations ~step:1
+           in
+           Contact.Updated contact |> Pool_event.contact
+         in
+         let tag_events =
+           let open Tags in
+           tags
+           |> CCList.map (fun (tag : t) ->
+             Tagged
+               { Tagged.model_uuid =
+                   Contact.id assignment.contact |> Contact.Id.to_common
+               ; tag_uuid = tag.id
+               }
+             |> Pool_event.tags)
+         in
+         events
+         @ [ Updated assignment |> Pool_event.assignment; contact_event ]
+         @ tag_events)
       [ Session.Closed session |> Pool_event.session ]
       assignments
     |> CCResult.return
@@ -1882,10 +1882,10 @@ module DirectMessaging = struct
   ;;
 
   let make_text_message_job
-    (_ : Pool_common.Language.t)
-    (_ : Assignment.t)
-    (_ : Message_template.SmsText.t)
-    cell_phone
+        (_ : Pool_common.Language.t)
+        (_ : Assignment.t)
+        (_ : Message_template.SmsText.t)
+        cell_phone
     =
     Model.create_text_message_job cell_phone
   ;;

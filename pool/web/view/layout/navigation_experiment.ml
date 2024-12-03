@@ -56,9 +56,10 @@ let nav_elements experiment =
     ]
   in
   let waiting_list_nav =
-    if experiment
-       |> direct_registration_disabled
-       |> DirectRegistrationDisabled.value
+    if
+      experiment
+      |> direct_registration_disabled
+      |> DirectRegistrationDisabled.value
     then
       [ Single
           ( url "waiting-list"
@@ -91,13 +92,13 @@ let nav_elements experiment =
 ;;
 
 let create
-  ?active_navigation
-  ?buttons
-  ?hint
-  ({ Pool_context.database_label; language; user; _ } as context)
-  title
-  experiment
-  content
+      ?active_navigation
+      ?buttons
+      ?hint
+      ({ Pool_context.database_label; language; user; _ } as context)
+      title
+      experiment
+      content
   =
   let open Utils.Lwt_result.Infix in
   let open Tab_navigation in

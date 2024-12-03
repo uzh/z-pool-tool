@@ -28,11 +28,11 @@ end = struct
   type t = User_command.create_user
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?allowed_email_suffixes
-    ?id
-    ?(roles = [])
-    command
+        ?(tags = Logs.Tag.empty)
+        ?allowed_email_suffixes
+        ?id
+        ?(roles = [])
+        command
     =
     Logs.info ~src (fun m -> m "Handle command CreateAdmin" ~tags);
     let open CCResult in

@@ -33,7 +33,8 @@ let user_import_from_req database_label req =
 
 let import_confirmation req =
   let result
-    ({ Pool_context.database_label; language; query_parameters; _ } as context)
+        ({ Pool_context.database_label; language; query_parameters; _ } as
+         context)
     =
     let error_path =
       Http_utils.url_with_field_params query_parameters "/index"
@@ -109,8 +110,8 @@ let import_confirmation_post req =
 ;;
 
 let contact_import_from_req
-  ({ Pool_context.database_label; language; _ } as context)
-  req
+      ({ Pool_context.database_label; language; _ } as context)
+      req
   =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
@@ -156,7 +157,7 @@ let unsubscribe_post req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let result
-    ({ Pool_context.database_label; query_parameters; user; _ } as context)
+        ({ Pool_context.database_label; query_parameters; user; _ } as context)
     =
     let redirect_path =
       Http_utils.url_with_field_params query_parameters "/error"

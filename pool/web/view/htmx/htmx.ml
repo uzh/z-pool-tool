@@ -65,12 +65,12 @@ let base_hx_attributes name version ?action ?(additional_attributes = []) () =
 ;;
 
 let hx_attributes
-  field
-  version
-  ?action
-  ?additional_attributes
-  ?(disabled = false)
-  ()
+      field
+      version
+      ?action
+      ?additional_attributes
+      ?(disabled = false)
+      ()
   =
   if disabled
   then [ a_disabled () ]
@@ -117,18 +117,18 @@ let create_entity ?help ?htmx_attributes ?label version field value =
 ;;
 
 let create
-  ({ version; field; label; value; help; htmx_attributes } : 'a t)
-  language
-  ?overridden_value
-  ?promt_in_registration_hint
-  ?(classnames = [])
-  ?disabled
-  ?error
-  ?flash_values
-  ?hx_post
-  ?required
-  ?success
-  ()
+      ({ version; field; label; value; help; htmx_attributes } : 'a t)
+      language
+      ?overridden_value
+      ?promt_in_registration_hint
+      ?(classnames = [])
+      ?disabled
+      ?error
+      ?flash_values
+      ?hx_post
+      ?required
+      ?success
+      ()
   =
   let input_class =
     match error, success with
@@ -380,9 +380,9 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
                (SelectOption.Public.name lang %> txt %> CCList.pure %> li)
              %> ul
              %> (fun html ->
-                  [ span [ prefix; txt ":" ]
-                  ; div ~a:[ a_class [ "input-group" ] ] [ html ]
-                  ])
+             [ span [ prefix; txt ":" ]
+             ; div ~a:[ a_class [ "input-group" ] ] [ html ]
+             ])
              %> wrap)
      | Public.Number (_, answer) ->
        answer >>= field_overridden_value >|= build_html (CCInt.to_string %> txt)
@@ -395,16 +395,16 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
 ;;
 
 let custom_field_to_htmx
-  ?version
-  ?hx_post
-  ?hx_delete
-  ?classnames
-  ?error
-  ?flash_values
-  ?success
-  language
-  is_admin
-  custom_field
+      ?version
+      ?hx_post
+      ?hx_delete
+      ?classnames
+      ?error
+      ?flash_values
+      ?success
+      language
+      is_admin
+      custom_field
   =
   let required =
     Custom_field.(Public.required custom_field |> Required.value)
@@ -413,10 +413,11 @@ let custom_field_to_htmx
     custom_field_overridden_value ?hx_delete is_admin language custom_field
   in
   let promt_in_registration_hint =
-    if is_admin
-       && Custom_field.(
-            Public.prompt_on_registration custom_field
-            |> PromptOnRegistration.value)
+    if
+      is_admin
+      && Custom_field.(
+           Public.prompt_on_registration custom_field
+           |> PromptOnRegistration.value)
     then Some Pool_common.I18n.CustomFieldAnsweredOnRegistration
     else None
   in
@@ -448,15 +449,15 @@ let custom_field_to_htmx
 ;;
 
 let partial_update_to_htmx
-  language
-  sys_languages
-  is_admin
-  partial_update
-  ?hx_delete
-  ?hx_post
-  ?classnames
-  ?error
-  ?success
+      language
+      sys_languages
+      is_admin
+      partial_update
+      ?hx_delete
+      ?hx_post
+      ?classnames
+      ?error
+      ?success
   =
   let open Custom_field.PartialUpdate in
   let to_html m () =

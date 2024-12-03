@@ -23,10 +23,10 @@ let find_all_with_roles ?exclude pool roles =
 ;;
 
 let find_all_with_permissions_on_target
-  database_label
-  target
-  entity_uuid
-  permissions
+      database_label
+      target
+      entity_uuid
+      permissions
   =
   let open Utils.Lwt_result.Infix in
   let open Guard in

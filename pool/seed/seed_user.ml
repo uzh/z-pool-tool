@@ -166,51 +166,53 @@ let admins db_label =
          , name
          , email
          , (roles : (Role.Role.t * Guard.Uuid.Target.t option) list) ) ->
-      let email = Pool_user.EmailAddress.of_string email in
-      let%lwt user = User.find_by_email_opt db_label email in
-      match user with
-      | None ->
-        let%lwt admin =
-          let id = Admin.Id.create () in
-          let create =
-            { Admin.id = id |> CCOption.return
-            ; email
-            ; password = Pool_user.Password.Plain.create password
-            ; firstname = Pool_user.Firstname.of_string given_name
-            ; lastname = Pool_user.Lastname.of_string name
-            ; roles = []
-            }
-          in
-          let%lwt () =
-            Admin.Created create |> Admin.handle_event ~tags db_label
-          in
-          Admin.find db_label id |> Lwt.map CCResult.get_exn
-        in
-        let%lwt (_ : Guard.Actor.t) =
-          let%lwt (_ : Guard.Target.t) =
-            admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
-          in
-          admin |> Admin.Guard.Actor.to_authorizable ~ctx ||> get_or_failwith
-        in
-        let%lwt () =
-          let open Guard in
-          roles
-          |> Lwt_list.iter_s (fun (role, target_uuid) ->
-            ActorRole.create
-              ?target_uuid
-              (Uuid.Actor.of_string_exn Admin.(id admin |> Id.value))
-              role
-            |> Persistence.ActorRole.upsert ~ctx)
-          ||> tap (fun _ -> Persistence.Cache.clear ())
-        in
-        Lwt.return_unit
-      | Some _ ->
-        Logs.debug ~src (fun m ->
-          m
-            ~tags:(Database.Logger.Tags.create db_label)
-            "%s"
-            "Admin user already exists");
-        Lwt.return_unit)
+       let email = Pool_user.EmailAddress.of_string email in
+       let%lwt user = User.find_by_email_opt db_label email in
+       match user with
+       | None ->
+         let%lwt admin =
+           let id = Admin.Id.create () in
+           let create =
+             { Admin.id = id |> CCOption.return
+             ; email
+             ; password = Pool_user.Password.Plain.create password
+             ; firstname = Pool_user.Firstname.of_string given_name
+             ; lastname = Pool_user.Lastname.of_string name
+             ; roles = []
+             }
+           in
+           let%lwt () =
+             Admin.Created create |> Admin.handle_event ~tags db_label
+           in
+           Admin.find db_label id |> Lwt.map CCResult.get_exn
+         in
+         let%lwt (_ : Guard.Actor.t) =
+           let%lwt (_ : Guard.Target.t) =
+             admin
+             |> Admin.Guard.Target.to_authorizable ~ctx
+             ||> get_or_failwith
+           in
+           admin |> Admin.Guard.Actor.to_authorizable ~ctx ||> get_or_failwith
+         in
+         let%lwt () =
+           let open Guard in
+           roles
+           |> Lwt_list.iter_s (fun (role, target_uuid) ->
+             ActorRole.create
+               ?target_uuid
+               (Uuid.Actor.of_string_exn Admin.(id admin |> Id.value))
+               role
+             |> Persistence.ActorRole.upsert ~ctx)
+           ||> tap (fun _ -> Persistence.Cache.clear ())
+         in
+         Lwt.return_unit
+       | Some _ ->
+         Logs.debug ~src (fun m ->
+           m
+             ~tags:(Database.Logger.Tags.create db_label)
+             "%s"
+             "Admin user already exists");
+         Lwt.return_unit)
     data
 ;;
 
@@ -278,7 +280,7 @@ let contacts db_label =
              , _
              , _
              , _ )
-           ->
+            ->
             match%lwt Pool_user.find_by_email_opt db_label email with
             | None ->
               Lwt.return_some
@@ -309,38 +311,39 @@ let contacts db_label =
     Lwt_list.fold_left_s
       (fun (contacts, fields)
         (user_id, _, _, _, _, _, paused, disabled, verified) ->
-        let%lwt contact = Contact.find db_label user_id in
-        let custom_fields contact =
-          let open Custom_field in
-          find_all_by_contact db_label (Pool_context.Contact contact) user_id
-          ||> fun (grouped, ungrouped) ->
-          ungrouped
-          @ CCList.flat_map (fun { Group.Public.fields; _ } -> fields) grouped
-        in
-        match contact with
-        | Ok contact ->
-          let%lwt custom_fields = custom_fields contact in
-          let field_events =
-            if verified then answer_custom_fields custom_fields contact else []
-          in
-          let contact_events =
-            if disabled
-            then
-              [ Contact.(
-                  Updated
-                    { contact with
-                      paused = Pool_user.Paused.create paused
-                    ; disabled = Pool_user.Disabled.create true
-                    })
-              ]
-            else [] @ if verified then [ Contact.EmailVerified contact ] else []
-          in
-          (contacts @ contact_events, fields @ field_events) |> Lwt.return
-        | Error err ->
-          let _ =
-            Pool_common.Utils.with_log_error ~src ~tags ~level:Logs.Debug err
-          in
-          (contacts, fields) |> Lwt.return)
+         let%lwt contact = Contact.find db_label user_id in
+         let custom_fields contact =
+           let open Custom_field in
+           find_all_by_contact db_label (Pool_context.Contact contact) user_id
+           ||> fun (grouped, ungrouped) ->
+           ungrouped
+           @ CCList.flat_map (fun { Group.Public.fields; _ } -> fields) grouped
+         in
+         match contact with
+         | Ok contact ->
+           let%lwt custom_fields = custom_fields contact in
+           let field_events =
+             if verified then answer_custom_fields custom_fields contact else []
+           in
+           let contact_events =
+             if disabled
+             then
+               [ Contact.(
+                   Updated
+                     { contact with
+                       paused = Pool_user.Paused.create paused
+                     ; disabled = Pool_user.Disabled.create true
+                     })
+               ]
+             else
+               [] @ if verified then [ Contact.EmailVerified contact ] else []
+           in
+           (contacts @ contact_events, fields @ field_events) |> Lwt.return
+         | Error err ->
+           let _ =
+             Pool_common.Utils.with_log_error ~src ~tags ~level:Logs.Debug err
+           in
+           (contacts, fields) |> Lwt.return)
       ([], [])
       users
   in

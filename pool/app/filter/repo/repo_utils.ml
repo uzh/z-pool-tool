@@ -147,14 +147,14 @@ let add_uuid_param dyn ids =
   let open CCResult in
   CCList.fold_left
     (fun query id ->
-      query
-      >>= fun (dyn, params) ->
-      match id with
-      | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
-        Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key))
-      | Str id ->
-        add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
-        >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
+       query
+       >>= fun (dyn, params) ->
+       match id with
+       | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
+         Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key))
+       | Str id ->
+         add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
+         >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
     (Ok (dyn, []))
     ids
   >|= fun (dyn, ids) -> dyn, CCString.concat "," ids
@@ -291,8 +291,8 @@ let tag_subquery dyn operator ids =
 ;;
 
 let predicate_to_sql
-  (dyn, sql)
-  ({ Predicate.key; operator; value } : Predicate.t)
+      (dyn, sql)
+      ({ Predicate.key; operator; value } : Predicate.t)
   =
   let open CCResult in
   let open Operator in
@@ -332,14 +332,14 @@ let predicate_to_sql
        let* dyn, subqueries =
          CCList.fold_left
            (fun res value ->
-             match res with
-             | Error err -> Error err
-             | Ok (dyn, lst_sql) ->
-               let* dyn = add_value_to_params operator value dyn in
-               let new_sql =
-                 where_clause coalesce_value (Operator.to_sql operator)
-               in
-               Ok (dyn, lst_sql @ [ new_sql ]))
+              match res with
+              | Error err -> Error err
+              | Ok (dyn, lst_sql) ->
+                let* dyn = add_value_to_params operator value dyn in
+                let new_sql =
+                  where_clause coalesce_value (Operator.to_sql operator)
+                in
+                Ok (dyn, lst_sql @ [ new_sql ]))
            (Ok (Dynparam.(dyn |> add Custom_field.Repo.Id.t id), []))
            values
        in
@@ -373,10 +373,10 @@ let filter_to_sql template_list dyn query =
       let query =
         CCList.fold_left
           (fun res query ->
-            res
-            >>= fun (dyn, lst_sql) ->
-            query_sql (dyn, sql) query
-            >|= fun (dyn, new_sql) -> dyn, lst_sql @ [ new_sql ])
+             res
+             >>= fun (dyn, lst_sql) ->
+             query_sql (dyn, sql) query
+             >|= fun (dyn, new_sql) -> dyn, lst_sql @ [ new_sql ])
           (Ok (dyn, []))
           queries
       in
@@ -405,12 +405,12 @@ let filter_to_sql template_list dyn query =
 ;;
 
 let filtered_params
-  ?include_invited
-  ?group_by
-  ?order_by
-  use_case
-  template_list
-  filter
+      ?include_invited
+      ?group_by
+      ?order_by
+      use_case
+      template_list
+      filter
   =
   let open CCResult.Infix in
   let base_dyn =

@@ -19,9 +19,9 @@ let find_id validate_and_encode field req =
 ;;
 
 let respond_error
-  ?(status = `Bad_request)
-  ?(language = Pool_common.Language.En)
-  error
+      ?(status = `Bad_request)
+      ?(language = Pool_common.Language.En)
+      error
   =
   let error = Pool_common.Utils.error_to_string language error in
   `Assoc [ "error", `String error ] |> response_with_headers ~status
@@ -47,8 +47,10 @@ let respond ?(src = src) req result =
 ;;
 
 let index_handler
-  :  query:(module Http_utils_queryable.Queryable) -> ?src:Logs.src
-  -> yojson_of_t:('a -> Yojson.Safe.t) -> Rock.Request.t
+  :  query:(module Http_utils_queryable.Queryable)
+  -> ?src:Logs.src
+  -> yojson_of_t:('a -> Yojson.Safe.t)
+  -> Rock.Request.t
   -> (Pool_context.Api.t
       -> Guard.Actor.t
       -> Query.t

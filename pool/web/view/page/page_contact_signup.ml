@@ -3,10 +3,10 @@ open Tyxml.Html
 module Field = Pool_message.Field
 
 let signup
-  terms
-  custom_fields
-  Pool_context.{ language; query_parameters; csrf; _ }
-  flash_fetcher
+      terms
+      custom_fields
+      Pool_context.{ language; query_parameters; csrf; _ }
+      flash_fetcher
   =
   let open Component.Input in
   let open Pool_common in

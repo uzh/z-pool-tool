@@ -727,10 +727,10 @@ let cancel req =
       session :: follow_ups
       |> Lwt_list.fold_left_s
            (fun assignments session ->
-             Assignment.find_uncanceled_by_session
-               database_label
-               session.Session.id
-             ||> CCList.append assignments)
+              Assignment.find_uncanceled_by_session
+                database_label
+                session.Session.id
+              ||> CCList.append assignments)
            []
       ||> Assignment.group_by_contact
     in
@@ -881,7 +881,7 @@ let close_post req =
       ]
       |> Lwt_list.fold_left_s
            (fun tags entity ->
-             find_all database_label entity ||> CCList.append tags)
+              find_all database_label entity ||> CCList.append tags)
            []
     in
     let* events =
@@ -889,7 +889,7 @@ let close_post req =
       |> Lwt_list.map_s
            (fun
                ({ Assignment.no_show; participated; contact; _ } as assignment)
-             ->
+              ->
               let open Assignment in
               let* increment_num_participations =
                 Assignment.contact_participation_in_other_assignments
@@ -1265,7 +1265,7 @@ module Api = struct
               (fun
                   (Session.Calendar.{ id; experiment_id; location; links; _ } as
                    cal)
-                ->
+                 ->
                  let open Session.Calendar in
                  match actor with
                  | None -> cal

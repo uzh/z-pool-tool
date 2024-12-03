@@ -21,15 +21,15 @@ type command =
   }
 
 let base_command
-  field_type
-  required
-  disabled
-  custom_field_group_id
-  admin_hint
-  admin_override
-  admin_view_only
-  admin_input_only
-  prompt_on_registration
+      field_type
+      required
+      disabled
+      custom_field_group_id
+      admin_hint
+      admin_override
+      admin_view_only
+      admin_input_only
+      prompt_on_registration
   =
   { field_type
   ; required
@@ -85,23 +85,23 @@ end = struct
   type t = command
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?id
-    sys_languages
-    model
-    name
-    hint
-    validation
-    { field_type
-    ; required
-    ; disabled
-    ; custom_field_group_id
-    ; admin_hint
-    ; admin_override
-    ; admin_view_only
-    ; admin_input_only
-    ; prompt_on_registration
-    }
+        ?(tags = Logs.Tag.empty)
+        ?id
+        sys_languages
+        model
+        name
+        hint
+        validation
+        { field_type
+        ; required
+        ; disabled
+        ; custom_field_group_id
+        ; admin_hint
+        ; admin_override
+        ; admin_view_only
+        ; admin_input_only
+        ; prompt_on_registration
+        }
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
@@ -148,32 +148,33 @@ end = struct
   type t = command
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    sys_languages
-    custom_field
-    name
-    hint
-    validation
-    { field_type
-    ; required
-    ; disabled
-    ; custom_field_group_id
-    ; admin_hint
-    ; admin_override
-    ; admin_view_only
-    ; admin_input_only
-    ; prompt_on_registration
-    }
+        ?(tags = Logs.Tag.empty)
+        sys_languages
+        custom_field
+        name
+        hint
+        validation
+        { field_type
+        ; required
+        ; disabled
+        ; custom_field_group_id
+        ; admin_hint
+        ; admin_override
+        ; admin_view_only
+        ; admin_input_only
+        ; prompt_on_registration
+        }
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
     let* () =
-      if Custom_field.FieldType.equal
-           field_type
-           (Custom_field.field_type custom_field)
-         || CCOption.is_none Custom_field.(published_at custom_field)
+      if
+        Custom_field.FieldType.equal
+          field_type
+          (Custom_field.field_type custom_field)
+        || CCOption.is_none Custom_field.(published_at custom_field)
       then Ok ()
       else Error Pool_message.Error.CustomFieldTypeChangeNotAllowed
     in

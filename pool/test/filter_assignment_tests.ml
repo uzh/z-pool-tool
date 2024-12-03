@@ -151,13 +151,13 @@ let assignment ~experiment ~session ~contact =
       handle
         { experiment; contact; follow_up_sessions = []; session }
         (fun (_ : Assignment.t) ->
-          Sihl_email.create
-            ~sender:"sender"
-            ~recipient:"recipient"
-            ~subject:"subject"
-            "body"
-          |> Email.Service.Job.create
-          |> Email.create_dispatch)
+           Sihl_email.create
+             ~sender:"sender"
+             ~recipient:"recipient"
+             ~subject:"subject"
+             "body"
+           |> Email.Service.Job.create
+           |> Email.create_dispatch)
         already_enrolled)
   in
   let& () =
@@ -252,10 +252,10 @@ let finds_unassigned_contacts =
   let found_contacts =
     CCList.filter
       (fun contact ->
-        let open Contact in
-        let open Pool_user in
-        contact.user.id = unassigned_contact.user.id
-        || contact.user.id = assigned_contact.user.id)
+         let open Contact in
+         let open Pool_user in
+         contact.user.id = unassigned_contact.user.id
+         || contact.user.id = assigned_contact.user.id)
       found_contacts
   in
   (* 6. assert on the found contacts *)
@@ -331,9 +331,9 @@ let filters_out_assigned_contacts =
   let found_contacts =
     CCList.filter
       (fun contact ->
-        let open Contact in
-        let open Pool_user in
-        contact.user.id = assigned_contact.user.id)
+         let open Contact in
+         let open Pool_user in
+         contact.user.id = assigned_contact.user.id)
       found_contacts
   in
   (* 4. assert on the found contacts *)

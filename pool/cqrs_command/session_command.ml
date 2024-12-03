@@ -12,18 +12,18 @@ type reschedule =
 let src = Logs.Src.create "session.cqrs"
 
 let command
-  start
-  duration
-  duration_unit
-  internal_description
-  public_description
-  max_participants
-  min_participants
-  overbook
-  email_reminder_lead_time
-  email_reminder_lead_time_unit
-  text_message_reminder_lead_time
-  text_message_reminder_lead_time_unit
+      start
+      duration
+      duration_unit
+      internal_description
+      public_description
+      max_participants
+      min_participants
+      overbook
+      email_reminder_lead_time
+      email_reminder_lead_time_unit
+      text_message_reminder_lead_time
+      text_message_reminder_lead_time_unit
   : Session.base
   =
   Session.
@@ -66,14 +66,14 @@ let schema =
 ;;
 
 let decode_time_durations
-  { Session.duration
-  ; duration_unit
-  ; email_reminder_lead_time
-  ; email_reminder_lead_time_unit
-  ; text_message_reminder_lead_time
-  ; text_message_reminder_lead_time_unit
-  ; _
-  }
+      { Session.duration
+      ; duration_unit
+      ; email_reminder_lead_time
+      ; email_reminder_lead_time_unit
+      ; text_message_reminder_lead_time
+      ; text_message_reminder_lead_time_unit
+      ; _
+      }
   =
   let open CCResult in
   let open Pool_common in
@@ -97,7 +97,7 @@ let starts_after_parent parent_session start =
   CCOption.map_or
     ~default:false
     (fun (s : Session.t) ->
-      Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
+       Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
     parent_session
 ;;
 
@@ -107,7 +107,9 @@ let validate_start follow_up_sessions parent_session start =
   let starts_before_followups =
     CCList.exists
       (fun (follow_up : Session.t) ->
-        Ptime.is_earlier ~than:(Start.value start) (Start.value follow_up.start))
+         Ptime.is_earlier
+           ~than:(Start.value start)
+           (Start.value follow_up.start))
       follow_up_sessions
   in
   if starts_after_parent parent_session start || starts_before_followups
@@ -144,21 +146,21 @@ end = struct
   let schema = schema
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    ?session_id
-    experiment
-    location
-    (Session.
-       { start
-       ; internal_description
-       ; public_description
-       ; max_participants
-       ; min_participants
-       ; overbook
-       ; _
-       } as command :
-      Session.base)
+        ?(tags = Logs.Tag.empty)
+        ?parent_session
+        ?session_id
+        experiment
+        location
+        (Session.
+           { start
+           ; internal_description
+           ; public_description
+           ; max_participants
+           ; min_participants
+           ; overbook
+           ; _
+           } as command :
+          Session.base)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
@@ -202,11 +204,11 @@ end = struct
 end
 
 let time_window_command
-  start
-  end_at
-  internal_description
-  public_description
-  max_participants
+      start
+      end_at
+      internal_description
+      public_description
+      max_participants
   : Time_window.create
   =
   let open Time_window in
@@ -244,16 +246,16 @@ end = struct
   type t = Time_window.create
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ~overlapps
-    ?id
-    experiment
-    { Time_window.start
-    ; end_at
-    ; internal_description
-    ; public_description
-    ; max_participants
-    }
+        ?(tags = Logs.Tag.empty)
+        ~overlapps
+        ?id
+        experiment
+        { Time_window.start
+        ; end_at
+        ; internal_description
+        ; public_description
+        ; max_participants
+        }
     =
     Logs.info ~src (fun m -> m "Handle command CreateTimeWindow" ~tags);
     let open CCResult in
@@ -305,15 +307,15 @@ end = struct
   type t = Time_window.create
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ~overlapps
-    time_window
-    { Time_window.start
-    ; end_at
-    ; internal_description
-    ; public_description
-    ; max_participants
-    }
+        ?(tags = Logs.Tag.empty)
+        ~overlapps
+        time_window
+        { Time_window.start
+        ; end_at
+        ; internal_description
+        ; public_description
+        ; max_participants
+        }
     =
     Logs.info ~src (fun m -> m "Handle command UpdateTimeWindow" ~tags);
     let open CCResult in
@@ -384,50 +386,50 @@ end = struct
     urlencoded
     |> CCList.fold_left
          (fun acc (key, value) ->
-           let open CCString in
-           match acc with
-           | Error _ -> acc
-           | Ok (acc : (int * (Session.Id.t * Session.Start.t) list) list) ->
-             key
-             |> replace ~which:`Right ~sub:"]" ~by:""
-             |> split ~by:"["
-             |> (function
-              | [ id; group ] ->
-                parse_row id group value
-                >|= fun (group, data) ->
-                let eq = CCInt.equal in
-                let current =
-                  CCList.assoc_opt ~eq group acc |> CCOption.value ~default:[]
-                in
-                CCList.Assoc.set ~eq group (data :: current) acc
-              | _ -> Ok acc))
+            let open CCString in
+            match acc with
+            | Error _ -> acc
+            | Ok (acc : (int * (Session.Id.t * Session.Start.t) list) list) ->
+              key
+              |> replace ~which:`Right ~sub:"]" ~by:""
+              |> split ~by:"["
+              |> (function
+               | [ id; group ] ->
+                 parse_row id group value
+                 >|= fun (group, data) ->
+                 let eq = CCInt.equal in
+                 let current =
+                   CCList.assoc_opt ~eq group acc |> CCOption.value ~default:[]
+                 in
+                 CCList.Assoc.set ~eq group (data :: current) acc
+               | _ -> Ok acc))
          (Ok [])
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    session
-    followups
-    (urlencoded : t)
+        ?(tags = Logs.Tag.empty)
+        ?parent_session
+        session
+        followups
+        (urlencoded : t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Duplicate" ~tags);
     let validate_and_merge_session
-      ?parent
-      { Session.internal_description
-      ; public_description
-      ; email_reminder_lead_time
-      ; text_message_reminder_lead_time
-      ; duration
-      ; location
-      ; max_participants
-      ; min_participants
-      ; overbook
-      ; experiment
-      ; _
-      }
-      start
+          ?parent
+          { Session.internal_description
+          ; public_description
+          ; email_reminder_lead_time
+          ; text_message_reminder_lead_time
+          ; duration
+          ; location
+          ; max_participants
+          ; min_participants
+          ; overbook
+          ; experiment
+          ; _
+          }
+          start
       =
       if starts_after_parent parent start
       then Error Pool_message.Error.FollowUpIsEarlierThanMain
@@ -463,21 +465,21 @@ end = struct
     |> parse_urlencoded
     >>= CCList.fold_left
           (fun acc (_, form_data) ->
-            acc
-            >>= fun acc ->
-            let sessions =
-              let* parent_clone =
-                build_session ?parent:parent_session form_data session
-              in
-              let* followup_clones =
-                let open CCList in
-                followups
-                >|= build_session ~parent:parent_clone form_data
-                |> all_ok
-              in
-              Ok (parent_clone :: followup_clones)
-            in
-            sessions >|= CCList.map created >|= CCList.append acc)
+             acc
+             >>= fun acc ->
+             let sessions =
+               let* parent_clone =
+                 build_session ?parent:parent_session form_data session
+               in
+               let* followup_clones =
+                 let open CCList in
+                 followups
+                 >|= build_session ~parent:parent_clone form_data
+                 |> all_ok
+               in
+               Ok (parent_clone :: followup_clones)
+             in
+             sessions >|= CCList.map created >|= CCList.append acc)
           (Ok [])
   ;;
 
@@ -502,21 +504,21 @@ end = struct
   type t = Session.base
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    follow_up_sessions
-    session
-    location
-    (Session.
-       { start
-       ; internal_description
-       ; public_description
-       ; max_participants
-       ; min_participants
-       ; overbook
-       ; _
-       } as command :
-      Session.base)
+        ?(tags = Logs.Tag.empty)
+        ?parent_session
+        follow_up_sessions
+        session
+        location
+        (Session.
+           { start
+           ; internal_description
+           ; public_description
+           ; max_participants
+           ; min_participants
+           ; overbook
+           ; _
+           } as command :
+          Session.base)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Session in
@@ -604,22 +606,23 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    follow_up_sessions
-    session
-    assignments
-    create_message
-    ({ start; duration; duration_unit } : t)
+        ?(tags = Logs.Tag.empty)
+        ?parent_session
+        follow_up_sessions
+        session
+        assignments
+        create_message
+        ({ start; duration; duration_unit } : t)
     =
     Logs.info ~src (fun m -> m "Handle command Reschedule" ~tags);
     let open CCResult in
     let* () = validate_start follow_up_sessions parent_session start in
     let* duration = Session.Duration.of_int duration duration_unit in
     let* () =
-      if Ptime.is_earlier
-           ~than:(Ptime_clock.now ())
-           (start |> Session.Start.value)
+      if
+        Ptime.is_earlier
+          ~than:(Ptime_clock.now ())
+          (start |> Session.Start.value)
       then Error Pool_message.Error.TimeInPast
       else Ok ()
     in
@@ -709,13 +712,13 @@ end = struct
   type t = Session.CancellationReason.t
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    sessions
-    (assignments : (Contact.t * Assignment.t list) list)
-    email_fn
-    text_message_fn
-    notify_via
-    (reason : t)
+        ?(tags = Logs.Tag.empty)
+        sessions
+        (assignments : (Contact.t * Assignment.t list) list)
+        email_fn
+        text_message_fn
+        notify_via
+        (reason : t)
     =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let open CCResult in
@@ -808,11 +811,11 @@ end = struct
       list
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    experiment
-    (session : Session.t)
-    (participation_tags : Tags.t list)
-    (command : t)
+        ?(tags = Logs.Tag.empty)
+        experiment
+        (session : Session.t)
+        (participation_tags : Tags.t list)
+        (command : t)
     =
     Logs.info ~src (fun m -> m "Handle command SetAttendance" ~tags);
     let open CCResult in
@@ -821,74 +824,74 @@ end = struct
     let* () = Session.is_closable session in
     CCList.fold_left
       (fun events participation ->
-        events
-        >>= fun events ->
-        participation
-        |> fun ( ({ contact; _ } as assignment : Assignment.t)
-               , increment_num_participaton
-               , follow_ups ) ->
-        let assignment, no_show, participated =
-          set_close_default_values assignment
-        in
-        let* () =
-          validate experiment assignment
-          |> CCResult.map_err
-               (CCFun.const Pool_message.Error.AssignmentsHaveErrors)
-        in
-        let cancel_followups =
-          NoShow.value no_show || not (Participated.value participated)
-        in
-        let* () = attendance_settable assignment in
-        let* contact =
-          Contact_counter.update_on_session_closing
-            contact
-            no_show
-            participated
-            increment_num_participaton
-        in
-        let num_assignments_decrement, mark_as_deleted =
-          let open CCList in
-          match cancel_followups, follow_ups with
-          | true, Some follow_ups ->
-            let num_assignments =
-              follow_ups
-              |> filter (fun assignment ->
-                   CCOption.is_none assignment.Assignment.canceled_at)
-                 %> length
-            in
-            let marked_as_deleted =
-              follow_ups >|= markedasdeleted %> Pool_event.assignment
-            in
-            num_assignments, marked_as_deleted
-          | _, _ -> 0, []
-        in
-        let contact =
-          Contact.update_num_assignments
-            ~step:(CCInt.neg num_assignments_decrement)
-            contact
-        in
-        let tag_events =
-          let open Tags in
-          match participated |> Participated.value with
-          | false -> []
-          | true ->
-            participation_tags
-            |> CCList.map (fun (tag : t) ->
-              Tagged
-                Tagged.
-                  { model_uuid = Contact.id contact |> Contact.Id.to_common
-                  ; tag_uuid = tag.id
-                  }
-              |> Pool_event.tags)
-        in
-        let contact_events =
-          (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
-        in
-        events
-        @ ((Assignment.Updated assignment |> Pool_event.assignment)
-           :: contact_events)
-        @ tag_events
-        |> CCResult.return)
+         events
+         >>= fun events ->
+         participation
+         |> fun ( ({ contact; _ } as assignment : Assignment.t)
+                , increment_num_participaton
+                , follow_ups ) ->
+         let assignment, no_show, participated =
+           set_close_default_values assignment
+         in
+         let* () =
+           validate experiment assignment
+           |> CCResult.map_err
+                (CCFun.const Pool_message.Error.AssignmentsHaveErrors)
+         in
+         let cancel_followups =
+           NoShow.value no_show || not (Participated.value participated)
+         in
+         let* () = attendance_settable assignment in
+         let* contact =
+           Contact_counter.update_on_session_closing
+             contact
+             no_show
+             participated
+             increment_num_participaton
+         in
+         let num_assignments_decrement, mark_as_deleted =
+           let open CCList in
+           match cancel_followups, follow_ups with
+           | true, Some follow_ups ->
+             let num_assignments =
+               follow_ups
+               |> filter (fun assignment ->
+                    CCOption.is_none assignment.Assignment.canceled_at)
+                  %> length
+             in
+             let marked_as_deleted =
+               follow_ups >|= markedasdeleted %> Pool_event.assignment
+             in
+             num_assignments, marked_as_deleted
+           | _, _ -> 0, []
+         in
+         let contact =
+           Contact.update_num_assignments
+             ~step:(CCInt.neg num_assignments_decrement)
+             contact
+         in
+         let tag_events =
+           let open Tags in
+           match participated |> Participated.value with
+           | false -> []
+           | true ->
+             participation_tags
+             |> CCList.map (fun (tag : t) ->
+               Tagged
+                 Tagged.
+                   { model_uuid = Contact.id contact |> Contact.Id.to_common
+                   ; tag_uuid = tag.id
+                   }
+               |> Pool_event.tags)
+         in
+         let contact_events =
+           (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
+         in
+         events
+         @ ((Assignment.Updated assignment |> Pool_event.assignment)
+            :: contact_events)
+         @ tag_events
+         |> CCResult.return)
       (Ok [ Closed session |> Pool_event.session ])
       command
   ;;
@@ -920,11 +923,11 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    (create_email, create_text_message)
-    session
-    assignments
-    channel
+        ?(tags = Logs.Tag.empty)
+        (create_email, create_text_message)
+        session
+        assignments
+        channel
     =
     Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
     let open Pool_common.MessageChannel in
@@ -945,15 +948,15 @@ end = struct
           assignments
           |> CCList.fold_left
                (fun messages ({ Assignment.contact; _ } as assignment) ->
-                 messages
-                 >>= fun (emails, text_messages) ->
-                 match contact.Contact.cell_phone with
-                 | None ->
-                   create_email assignment
-                   >|= fun email -> email :: emails, text_messages
-                 | Some cell_phone ->
-                   create_text_message assignment cell_phone
-                   >|= fun msg -> emails, msg :: text_messages)
+                  messages
+                  >>= fun (emails, text_messages) ->
+                  match contact.Contact.cell_phone with
+                  | None ->
+                    create_email assignment
+                    >|= fun email -> email :: emails, text_messages
+                  | Some cell_phone ->
+                    create_text_message assignment cell_phone
+                    >|= fun msg -> emails, msg :: text_messages)
                (Ok ([], []))
         in
         Ok
@@ -1019,11 +1022,11 @@ end = struct
   type t = direct_message
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    make_email_job
-    make_sms_job
-    assignments
-    command
+        ?(tags = Logs.Tag.empty)
+        make_email_job
+        make_sms_job
+        assignments
+        command
     =
     Logs.info ~src (fun m -> m "Handle command SendDirectMessage" ~tags);
     let open Message_template in

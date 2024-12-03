@@ -81,9 +81,11 @@ end
 module RolePermission = struct
   include RolePermission
 
-  let from_sql = {sql|
+  let from_sql =
+    {sql|
     guardian_role_permissions AS role_permissions
   |sql}
+  ;;
 
   let std_filter_sql = {sql| role_permissions.mark_as_deleted IS NULL |sql}
 
@@ -131,7 +133,7 @@ module RolePermission = struct
         let dyn =
           CCList.fold_left
             (fun dyn target ->
-              dyn |> Dynparam.add Caqti_type.string (show target))
+               dyn |> Dynparam.add Caqti_type.string (show target))
             dyn
             Role.Target.static
         in
@@ -408,10 +410,10 @@ module ActorRole = struct
 end
 
 let validate
-  ?(any_id = false)
-  database_label
-  validation_set
-  ({ Core.Actor.uuid; _ } as actor)
+      ?(any_id = false)
+      database_label
+      validation_set
+      ({ Core.Actor.uuid; _ } as actor)
   =
   let cb ~in_cache _ _ =
     if in_cache

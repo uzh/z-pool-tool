@@ -8,7 +8,7 @@ module Actor = struct
     Persistence.Actor.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        id |> Uuid.actor_of Entity.Id.value |> Actor.create `ApiKey)
+         id |> Uuid.actor_of Entity.Id.value |> Actor.create `ApiKey)
       t
     >|- Pool_message.Error.authorization
   ;;
@@ -22,9 +22,9 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Guard.Target.create
-          `ApiKey
-          (id |> Guard.Uuid.target_of Pool_common.Id.value))
+         Guard.Target.create
+           `ApiKey
+           (id |> Guard.Uuid.target_of Pool_common.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;

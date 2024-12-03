@@ -30,37 +30,37 @@ let create ?(contact_data = data) db_pool =
   let%lwt contact_data =
     Lwt_list.filter_s
       (fun (_, _, _, email, _, _) ->
-        Pool_user.find_by_email_opt db_pool email ||> CCOption.is_none)
+         Pool_user.find_by_email_opt db_pool email ||> CCOption.is_none)
       contact_data
   in
   let%lwt () =
     Lwt_list.iter_s
       (fun (user_id, firstname, lastname, email, language, terms_accepted_at) ->
-        let%lwt () =
-          Contact.Created
-            { Contact.user_id
-            ; email
-            ; password
-            ; firstname
-            ; lastname
-            ; terms_accepted_at
-            ; language
-            }
-          |> handle_event db_pool
-        in
-        match%lwt find db_pool user_id with
-        | Ok contact ->
-          let%lwt user = Pool_user.confirm db_pool contact.user in
-          let contact =
-            { contact with
-              user
-            ; email_verified = Some (Pool_user.EmailVerified.create_now ())
-            ; terms_accepted_at = Some (User.TermsAccepted.create_now ())
-            ; verified = Some (Pool_user.Verified.create_now ())
-            }
-          in
-          Updated contact |> Contact.handle_event db_pool
-        | Error _ -> failwith "Seeded test contact not found!")
+         let%lwt () =
+           Contact.Created
+             { Contact.user_id
+             ; email
+             ; password
+             ; firstname
+             ; lastname
+             ; terms_accepted_at
+             ; language
+             }
+           |> handle_event db_pool
+         in
+         match%lwt find db_pool user_id with
+         | Ok contact ->
+           let%lwt user = Pool_user.confirm db_pool contact.user in
+           let contact =
+             { contact with
+               user
+             ; email_verified = Some (Pool_user.EmailVerified.create_now ())
+             ; terms_accepted_at = Some (User.TermsAccepted.create_now ())
+             ; verified = Some (Pool_user.Verified.create_now ())
+             }
+           in
+           Updated contact |> Contact.handle_event db_pool
+         | Error _ -> failwith "Seeded test contact not found!")
       contact_data
   in
   Lwt.return_unit

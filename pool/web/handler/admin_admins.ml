@@ -31,7 +31,7 @@ let index req =
 
 let admin_detail req is_edit =
   let result
-    ({ Pool_context.csrf; database_label; language; user; _ } as context)
+        ({ Pool_context.csrf; database_label; language; user; _ } as context)
     =
     let%lwt actor =
       Pool_context.Utils.find_authorizable_opt

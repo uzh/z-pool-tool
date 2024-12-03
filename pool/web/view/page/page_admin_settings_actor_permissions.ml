@@ -36,12 +36,15 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
   in
   let th_class = [ "w-3"; "w-3"; "w-3"; "w-3" ] in
   let row
-    (( ({ Guard.ActorPermission.actor_uuid; permission; target } as
-        actor_permission)
-     , actor_name
-     , target_model
-     , target_name ) :
-      Guard.ActorPermission.t * string * Role.Target.t option * string option)
+        (( ({ Guard.ActorPermission.actor_uuid; permission; target } as
+            actor_permission)
+         , actor_name
+         , target_model
+         , target_name ) :
+          Guard.ActorPermission.t
+          * string
+          * Role.Target.t option
+          * string option)
     =
     let open Component.Role in
     let button_form target name submit_type confirm_text actor_permission =

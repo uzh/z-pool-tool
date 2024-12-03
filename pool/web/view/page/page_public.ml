@@ -7,10 +7,10 @@ let externalize_with_params = HttpUtils.externalize_path_with_params
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
 let login_form
-  ?(hide_signup = false)
-  ?intended
-  ?flash_fetcher
-  Pool_context.{ language; query_parameters; csrf; _ }
+      ?(hide_signup = false)
+      ?intended
+      ?flash_fetcher
+      Pool_context.{ language; query_parameters; csrf; _ }
   =
   let open Pool_common in
   let query_parameters =
@@ -59,10 +59,10 @@ let login_form
 ;;
 
 let index
-  (tenant : Pool_tenant.t)
-  Pool_context.({ language; query_parameters; user; _ } as context)
-  welcome_text
-  signup_cta
+      (tenant : Pool_tenant.t)
+      Pool_context.({ language; query_parameters; user; _ } as context)
+      welcome_text
+      signup_cta
   =
   let text_to_string = Pool_common.Utils.text_to_string language in
   let is_logged_in =
@@ -106,8 +106,8 @@ let index
           ~a:[ a_class [ "grid-col-4"; "flex-gap" ] ]
           (CCList.map
              (fun logo ->
-               img ~src:(Pool_common.File.externalized_path logo) ~alt:"" ()
-               |> aspect_ratio)
+                img ~src:(Pool_common.File.externalized_path logo) ~alt:"" ()
+                |> aspect_ratio)
              (tenant.Pool_tenant.partner_logo |> Pool_tenant.PartnerLogos.value))
       ]
   in
@@ -127,14 +127,14 @@ let index
             ~a:[ a_class [ "flexcolumn"; "stack" ] ]
             (CCList.map
                (fun logo ->
-                 img
-                   ~src:(Pool_common.File.externalized_path logo)
-                   ~alt:
-                     (Format.asprintf
-                        "Logo %s"
-                        Pool_tenant.(tenant.title |> Title.value))
-                   ()
-                 |> aspect_ratio)
+                  img
+                    ~src:(Pool_common.File.externalized_path logo)
+                    ~alt:
+                      (Format.asprintf
+                         "Logo %s"
+                         Pool_tenant.(tenant.title |> Title.value))
+                    ()
+                  |> aspect_ratio)
                (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value)
              @ [ (if is_logged_in
                   then txt ""
@@ -187,9 +187,9 @@ let request_reset_password Pool_context.{ language; query_parameters; csrf; _ } 
 ;;
 
 let reset_password
-  token
-  Pool_context.{ language; query_parameters; csrf; _ }
-  password_policy
+      token
+      Pool_context.{ language; query_parameters; csrf; _ }
+      password_policy
   =
   let externalize = externalize_with_params query_parameters in
   div

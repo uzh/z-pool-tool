@@ -68,10 +68,10 @@ let index req =
 ;;
 
 let show_online_study
-  req
-  ({ Pool_context.database_label; _ } as context)
-  experiment
-  contact
+      req
+      ({ Pool_context.database_label; _ } as context)
+      experiment
+      contact
   =
   let open Utils.Lwt_result.Infix in
   let experiment_id = Experiment.Public.id experiment in

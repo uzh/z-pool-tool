@@ -38,15 +38,15 @@ module T (R : RecordSig) = struct
           l1
           |> CCList.foldi
                (fun acc i before_json ->
-                 Hashtbl.find_opt after i
-                 |> CCOption.value ~default:`Null
-                 |> compare before_json
-                 >|= CCPair.make (CCInt.to_string i)
-                 |> fun change ->
-                 let () = Hashtbl.remove after i in
-                 match change with
-                 | None -> acc
-                 | Some change -> acc @ [ change ])
+                  Hashtbl.find_opt after i
+                  |> CCOption.value ~default:`Null
+                  |> compare before_json
+                  >|= CCPair.make (CCInt.to_string i)
+                  |> fun change ->
+                  let () = Hashtbl.remove after i in
+                  match change with
+                  | None -> acc
+                  | Some change -> acc @ [ change ])
                []
         in
         let changes_after =
@@ -103,11 +103,11 @@ module T (R : RecordSig) = struct
   ;;
 
   let make_write
-    ?(id = Id.create ())
-    ?user_uuid
-    ~entity_uuid
-    (before : R.t)
-    (after : R.t)
+        ?(id = Id.create ())
+        ?user_uuid
+        ~entity_uuid
+        (before : R.t)
+        (after : R.t)
     =
     (*** the entity_uuid could also be part of the Reord module, as a function.
       This would probably require us to create a Record module for each model,

@@ -216,9 +216,9 @@ let set_logos tenant logos =
     let open LogoMapping.LogoType in
     CCList.partition_filter_map
       (fun l ->
-        match l.LogoMapping.logo_type with
-        | TenantLogo -> `Left l.LogoMapping.file
-        | PartnerLogo -> `Right l.LogoMapping.file)
+         match l.LogoMapping.logo_type with
+         | TenantLogo -> `Left l.LogoMapping.file
+         | PartnerLogo -> `Right l.LogoMapping.file)
       logos
   in
   let open Entity.Read in

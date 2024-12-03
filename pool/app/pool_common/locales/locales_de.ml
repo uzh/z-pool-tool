@@ -495,10 +495,10 @@ let rec error_to_string =
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
-        Format.asprintf
-          "%s: %s"
-          (field_to_string field |> CCString.capitalize_ascii)
-          (error_to_string err))
+         Format.asprintf
+           "%s: %s"
+           (field_to_string field |> CCString.capitalize_ascii)
+           (error_to_string err))
       errs
     |> CCString.concat "\n"
   | ConformistModuleErrorType -> failwith "Do not use"

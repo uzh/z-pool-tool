@@ -6,9 +6,9 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        Guard.Target.create
-          `Filter
-          (id |> Guard.Uuid.target_of Pool_common.Id.value))
+         Guard.Target.create
+           `Filter
+           (id |> Guard.Uuid.target_of Pool_common.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;
@@ -30,7 +30,8 @@ module Access = struct
     CCOption.map_or
       ~default:(filter Create)
       (fun id ->
-        And [ Or [ filter Create; filter ~id:(Entity.Id.of_common id) Create ] ])
+         And
+           [ Or [ filter Create; filter ~id:(Entity.Id.of_common id) Create ] ])
       experiment_id
   ;;
 

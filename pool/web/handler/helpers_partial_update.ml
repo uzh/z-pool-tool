@@ -65,8 +65,8 @@ let update ?contact req =
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
   let result
-    ({ Pool_context.database_label; language; query_parameters; user; _ } as
-     context)
+        ({ Pool_context.database_label; language; query_parameters; user; _ } as
+         context)
     =
     let is_admin = Pool_context.user_is_admin user in
     let path_with_params = HttpUtils.url_with_field_params query_parameters in

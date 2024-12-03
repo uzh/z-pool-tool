@@ -42,8 +42,8 @@ module Description = struct
   let create sys_languages descriptions =
     CCList.filter
       (fun lang ->
-        CCList.assoc_opt ~eq:Pool_common.Language.equal lang descriptions
-        |> CCOption.is_none)
+         CCList.assoc_opt ~eq:Pool_common.Language.equal lang descriptions
+         |> CCOption.is_none)
       sys_languages
     |> function
     | [] -> Ok descriptions

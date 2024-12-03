@@ -68,7 +68,7 @@ let public_overview sessions experiment language =
   let session_item = session_item `Register language experiment in
   CCList.flat_map
     (fun (session, follow_ups) ->
-      session_item session :: CCList.map session_item follow_ups)
+       session_item session :: CCList.map session_item follow_ups)
     sessions
   |> Component.Table.responsive_horizontal_table
        `Striped

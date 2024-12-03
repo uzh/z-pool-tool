@@ -64,15 +64,15 @@ type t =
 [@@deriving eq, show]
 
 let create
-  ?(id = Id.create ())
-  ?no_show
-  ?participated
-  ?(matches_filter = MatchesFilter.create true)
-  ?canceled_at
-  ?(marked_as_deleted = MarkedAsDeleted.init)
-  ?external_data_id
-  ?reminder_manually_last_sent_at
-  contact
+      ?(id = Id.create ())
+      ?no_show
+      ?participated
+      ?(matches_filter = MatchesFilter.create true)
+      ?canceled_at
+      ?(marked_as_deleted = MarkedAsDeleted.init)
+      ?external_data_id
+      ?reminder_manually_last_sent_at
+      contact
   =
   { id
   ; contact
