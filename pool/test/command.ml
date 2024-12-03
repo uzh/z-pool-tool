@@ -88,6 +88,9 @@ let () =
             `Quick
             Contact_test.accept_terms_and_conditions
         ] )
+    ; ( "duplicate_contacts"
+      , Duplicate_contacts_test.
+          [ test_case "merge contacts" `Quick merge_contacts_command ] )
     ; ( "tenant"
       , [ test_case
             "create tenant smtp auth"

@@ -56,25 +56,18 @@ open Pool_message
 type hardcoded =
   | Lastname of Pool_user.Lastname.t
   | Firstname of Pool_user.Firstname.t
-  | EmailAddress of Pool_user.EmailAddress.t
   | CellPhone of Pool_user.CellPhone.t option
   | Language of Pool_common.Language.t option
 [@@deriving eq, show, variants]
 
 let hardcoded_fields =
-  [ Field.Lastname
-  ; Field.Firstname
-  ; Field.EmailAddress
-  ; Field.CellPhone
-  ; Field.Language
-  ]
+  [ Field.Lastname; Field.Firstname; Field.CellPhone; Field.Language ]
 ;;
 
 let read_hardcoded =
   let open CCFun.Infix in
   [ Field.Lastname, Contact.lastname %> lastname
   ; Field.Firstname, Contact.firstname %> firstname
-  ; Field.EmailAddress, Contact.email_address %> emailaddress
   ; Field.CellPhone, Contact.cell_phone %> cellphone
   ; (Field.Language, fun c -> language c.Contact.language)
   ]
@@ -85,6 +78,7 @@ type merge =
   ; merged_contact : Contact.t
   ; kept_fields : Custom_field.Public.t list
   }
+[@@deriving eq, show]
 
 let searchable_by = []
 

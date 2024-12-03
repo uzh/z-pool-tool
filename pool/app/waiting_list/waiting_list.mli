@@ -85,6 +85,12 @@ val find_by_contact_and_experiment
   -> Experiment.Id.t
   -> t option Lwt.t
 
+val find_by_contact_to_merge
+  :  Database.Label.t
+  -> contact:Contact.t
+  -> merged_contact:Contact.t
+  -> t list Lwt.t
+
 val column_signed_up_at : Query.Column.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list

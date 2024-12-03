@@ -32,7 +32,7 @@ end = struct
     let open CCResult.Infix in
     let open Pool_message in
     let open Duplicate_contacts in
-    let select_contact id =
+    let select_contact_by_id id =
       let id = Contact.Id.of_string id in
       if Contact.Id.equal id (Contact.id contact_a)
       then contact_a
@@ -44,16 +44,18 @@ end = struct
     in
     let* selected_contact =
       let open CCOption in
-      CCList.assoc_opt ~eq:( = ) Field.(show Id) urlencoded
+      CCList.assoc_opt ~eq:( = ) Field.(show EmailAddress) urlencoded
       >>= CCList.head_opt
-      |> map select_contact
-      |> to_result (Pool_message.Error.NotFound Field.Id)
+      |> map select_contact_by_id
+      |> to_result (Pool_message.Error.NotFound Field.EmailAddress)
     in
     let merged_contact =
-      Contact.(
-        if Id.equal (id selected_contact) (id contact_a)
-        then contact_b
-        else contact_a)
+      let email =
+        CCFun.(Contact.email_address %> Pool_user.EmailAddress.value)
+      in
+      if CCString.equal (email selected_contact) (email contact_a)
+      then contact_b
+      else contact_a
     in
     let* hardcoded =
       let open CCOption in
@@ -62,7 +64,7 @@ end = struct
           CCList.assoc_opt ~eq:( = ) (Field.show field) urlencoded
           >>= CCList.head_opt
           |> to_result (Pool_message.Error.NotFound field)
-          |> Result.map select_contact
+          |> Result.map select_contact_by_id
           |> CCResult.map create)
         read_hardcoded
       |> CCList.all_ok
@@ -94,7 +96,6 @@ end = struct
           match field with
           | Lastname name -> set_lastname contact name
           | Firstname name -> set_firstname contact name
-          | EmailAddress email -> set_email_address contact email
           | Language language -> set_language contact language
           | CellPhone cell_phone -> set_cellphone contact cell_phone)
         selected_contact

@@ -170,6 +170,8 @@ val find_by_contact_and_experiment
   -> Contact.t
   -> (Session.t * t) list Lwt.t
 
+val find_by_contact : Database.Label.t -> Contact.Id.t -> t list Lwt.t
+
 val find_not_deleted_by_session
   :  Database.Label.t
   -> Session.Id.t
@@ -181,6 +183,12 @@ val find_multiple_by_session
   :  Database.Label.t
   -> Session.Id.t
   -> Id.t list
+  -> t list Lwt.t
+
+val find_by_contact_to_merge
+  :  Database.Label.t
+  -> contact:Contact.t
+  -> merged_contact:Contact.t
   -> t list Lwt.t
 
 val query_by_session

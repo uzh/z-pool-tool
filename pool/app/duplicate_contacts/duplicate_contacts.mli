@@ -6,6 +6,7 @@ module Ignored : sig
   type t
 
   val value : t -> bool
+  val create : bool -> t
 end
 
 type t =
@@ -37,6 +38,10 @@ val merge
   -> merge
   -> (unit, Pool_message.Error.t) Lwt_result.t
 
+val show_merge : merge -> string
+val pp_merge : Format.formatter -> merge -> unit
+val equal_merge : merge -> merge -> bool
+
 type event = Ignored of t
 
 val equal_event : event -> event -> bool
@@ -48,7 +53,6 @@ val column_score : Query.Column.t
 type hardcoded =
   | Lastname of Pool_user.Lastname.t
   | Firstname of Pool_user.Firstname.t
-  | EmailAddress of Pool_user.EmailAddress.t
   | CellPhone of Pool_user.CellPhone.t option
   | Language of Pool_common.Language.t option
 

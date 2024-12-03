@@ -1,6 +1,15 @@
 (library
  (name duplicate_contacts)
- (libraries guard custom_field pool_common contact utils query)
+ (libraries
+  assignment
+  guard
+  custom_field
+  invitation
+  pool_common
+  contact
+  utils
+  query
+  waiting_list)
  (preprocess
   (pps
    lwt_ppx

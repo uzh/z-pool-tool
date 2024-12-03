@@ -174,10 +174,9 @@ let show
     let map_or = CCOption.map_or in
     let default = "" in
     Pool_message.
-      [ Field.Id, id %> Id.value
+      [ Field.EmailAddress, email_address %> EmailAddress.value
       ; Field.Firstname, firstname %> Firstname.value
       ; Field.Lastname, lastname %> Lastname.value
-      ; Field.EmailAddress, email_address %> EmailAddress.value
       ; Field.CellPhone, cell_phone %> map_or ~default CellPhone.value
       ; ( Field.Language
         , fun c -> c.language |> map_or ~default Pool_common.Language.show )
