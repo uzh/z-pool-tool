@@ -43,22 +43,7 @@ module Policy = struct
   ;;
 
   let default_special_char_set =
-    [ '!'
-    ; '?'
-    ; '*'
-    ; '+'
-    ; '-'
-    ; '_'
-    ; '&'
-    ; '%'
-    ; '('
-    ; ')'
-    ; '}'
-    ; '{'
-    ; '$'
-    ; ','
-    ; '.'
-    ]
+    [ '!'; '?'; '*'; '+'; '-'; '_'; '&'; '%'; '('; ')'; '}'; '{'; '$'; ','; '.' ]
   ;;
 
   let default =
@@ -88,10 +73,7 @@ module Confirmation = struct
   let create m = m
   let show _ = CCString.repeat "*" 10
   let pp formatter m = Format.fprintf formatter "%s" (show m)
-
-  let schema ?(field = Pool_message.Field.PasswordConfirmation) () =
-    schema field ()
-  ;;
+  let schema ?(field = Pool_message.Field.PasswordConfirmation) () = schema field ()
 end
 
 module Plain = struct
@@ -141,9 +123,7 @@ let validate (hashed_password : t) (password : Plain.t) =
 ;;
 
 let validate_res ?(field = Pool_message.Field.CurrentPassword) user password =
-  if validate user password
-  then Ok ()
-  else Error Pool_message.Error.(Invalid field)
+  if validate user password then Ok () else Error Pool_message.Error.(Invalid field)
 ;;
 
 let create password password_confirmation =
@@ -153,10 +133,10 @@ let create password password_confirmation =
 ;;
 
 let update
-  (hashed_password : t)
-  ~(old_password : Plain.t)
-  ~(new_password : Plain.t)
-  ~(new_password_confirmation : Confirmation.t)
+      (hashed_password : t)
+      ~(old_password : Plain.t)
+      ~(new_password : Plain.t)
+      ~(new_password_confirmation : Confirmation.t)
   =
   let open CCResult.Infix in
   let* () = validate_res hashed_password old_password in

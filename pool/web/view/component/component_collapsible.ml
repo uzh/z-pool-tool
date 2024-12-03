@@ -22,8 +22,7 @@ let create title html =
 let create_note ?(icon = Some info_icon) ?title language =
   let title =
     title
-    |> CCOption.value
-         ~default:Pool_common.(Utils.text_to_string language I18n.Note)
+    |> CCOption.value ~default:Pool_common.(Utils.text_to_string language I18n.Note)
     |> fun title ->
     span
       ~a:[ a_class [ "has-icon"; "flex-gap-xs" ] ]

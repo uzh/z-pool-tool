@@ -21,11 +21,7 @@ module MakeUserProfile (Config : module type of Config) = struct
          let%lwt password_policy =
            I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
          in
-         Page.Admin.login_information
-           ~action_prefix:prefix
-           admin
-           context
-           password_policy
+         Page.Admin.login_information ~action_prefix:prefix admin context password_policy
          |> create_layout ~active_navigation req context
          >|+ Sihl.Web.Response.of_html
     in
@@ -42,10 +38,7 @@ module MakeUserProfile (Config : module type of Config) = struct
       @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
          let tenant = Pool_context.Tenant.get_tenant_exn req in
          let%lwt notification =
-           Message_template.PasswordChange.create
-             language
-             tenant
-             (Admin.user admin)
+           Message_template.PasswordChange.create language tenant (Admin.user admin)
          in
          let* events =
            let open CCResult.Infix in
@@ -54,9 +47,7 @@ module MakeUserProfile (Config : module type of Config) = struct
            >>= handle ~tags ~notification Admin.(admin |> id |> Id.to_user)
            |> Lwt_result.lift
          in
-         let%lwt () =
-           Pool_event.handle_events ~tags database_label user events
-         in
+         let%lwt () = Pool_event.handle_events ~tags database_label user events in
          redirect_to_with_actions
            active_navigation
            [ Message.set ~success:[ Pool_message.Success.PasswordChanged ] ]
@@ -75,12 +66,9 @@ module MakeUserProfile (Config : module type of Config) = struct
       @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
          let* events =
            let open CCResult.Infix in
-           Command.Update.(decode urlencoded >>= handle ~tags admin)
-           |> Lwt_result.lift
+           Command.Update.(decode urlencoded >>= handle ~tags admin) |> Lwt_result.lift
          in
-         let%lwt () =
-           Pool_event.handle_events ~tags database_label user events
-         in
+         let%lwt () = Pool_event.handle_events ~tags database_label user events in
          redirect_to_with_actions
            active_navigation
            [ Message.set ~success:[ Pool_message.Success.Updated Field.Name ] ]

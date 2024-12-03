@@ -16,6 +16,5 @@ let create_system_settings_table =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "system_settings" |> add_step create_system_settings_table)
+  Database.Migration.(empty "system_settings" |> add_step create_system_settings_table)
 ;;

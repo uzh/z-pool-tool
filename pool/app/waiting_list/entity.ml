@@ -39,8 +39,7 @@ let create ?(id = Pool_common.Id.create ()) contact experiment admin_comment =
 ;;
 
 let column_signed_up_at =
-  Pool_message.(Field.SignedUpAt, "pool_waiting_list.created_at")
-  |> Query.Column.create
+  Pool_message.(Field.SignedUpAt, "pool_waiting_list.created_at") |> Query.Column.create
 ;;
 
 let default_sort =

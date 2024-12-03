@@ -7,9 +7,7 @@ let update_user pool ?firstname ?lastname contact =
 
 let update_sql column_fragment =
   let base = {sql| UPDATE pool_contacts SET profile_updated_at = $2, |sql} in
-  let where_fragment =
-    {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
-  in
+  let where_fragment = {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) |sql} in
   Format.asprintf "%s %s %s" base column_fragment where_fragment
 ;;
 
@@ -126,13 +124,11 @@ let upsert_answer pool is_admin entity_uuid t =
   | Boolean (_, answer) ->
     answer
     |> value_to_store is_admin
-    |> map_or ~clear (fun (id, value) ->
-      update_answer id (Utils.Bool.to_string value))
+    |> map_or ~clear (fun (id, value) -> update_answer id (Utils.Bool.to_string value))
   | Date (_, answer) ->
     answer
     |> value_to_store is_admin
-    |> map_or ~clear (fun (id, value) ->
-      update_answer id (Ptime.date_to_string value))
+    |> map_or ~clear (fun (id, value) -> update_answer id (Ptime.date_to_string value))
   | MultiSelect (_, _, answer) ->
     answer
     |> value_to_store is_admin
@@ -145,8 +141,7 @@ let upsert_answer pool is_admin entity_uuid t =
   | Number (_, answer) ->
     answer
     |> value_to_store is_admin
-    |> map_or ~clear (fun (id, value) ->
-      update_answer id (CCInt.to_string value))
+    |> map_or ~clear (fun (id, value) -> update_answer id (CCInt.to_string value))
   | Select (_, _, answer) ->
     answer
     |> value_to_store is_admin
@@ -190,7 +185,8 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
     , {sql|
         language = $3,
         language_version = $4
-      |sql} )
+      |sql}
+    )
     |> update_user_table
   | Custom field ->
     (upsert_answer pool is_admin Contact.(id contact |> Id.to_common)) field

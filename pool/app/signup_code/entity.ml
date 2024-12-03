@@ -33,19 +33,11 @@ let column_signup_count =
 ;;
 
 let column_verification_count =
-  (Field.VerificationCount, "pool_signup_codes.verification_count")
-  |> Query.Column.create
+  (Field.VerificationCount, "pool_signup_codes.verification_count") |> Query.Column.create
 ;;
 
 let filterable_by = None
 let searchable_by = [ column_code ]
-
-let sortable_by =
-  [ column_code; column_signup_count; column_verification_count ]
-;;
-
-let default_sort =
-  Query.Sort.{ column = column_code; order = SortOrder.Descending }
-;;
-
+let sortable_by = [ column_code; column_signup_count; column_verification_count ]
+let default_sort = Query.Sort.{ column = column_code; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

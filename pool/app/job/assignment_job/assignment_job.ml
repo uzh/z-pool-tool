@@ -14,9 +14,7 @@ module Job = struct
     let open CCFun in
     let open Database in
     let encode = Label.yojson_of_t %> Yojson.Safe.to_string in
-    let decode =
-      Yojson.Safe.from_string %> Label.t_of_yojson %> CCResult.return
-    in
+    let decode = Yojson.Safe.from_string %> Label.t_of_yojson %> CCResult.return in
     Pool_queue.Job.create
       handle
       ~max_tries:10
@@ -45,8 +43,7 @@ let start () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s (60 * 60) |> ScheduledTimeSpan.of_span in
   let periodic_fcn () =
-    Logs.debug ~src (fun m ->
-      m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
+    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run_all ()
   in
   create "upcoming_assignments_match_filter" (Every interval) None periodic_fcn
@@ -56,8 +53,7 @@ let start () =
 let lifecycle =
   Sihl.Container.create_lifecycle
     "System events"
-    ~dependencies:(fun () ->
-      [ Pool_database.lifecycle; Pool_queue.lifecycle_service ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle; Pool_queue.lifecycle_service ])
     ~start
 ;;
 

@@ -11,10 +11,7 @@ let stored_file =
     Ok { file; blob }
   in
   Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      Caqti_type.(t2 string (t2 string (t2 int (t2 string string)))))
+    custom ~encode ~decode Caqti_type.(t2 string (t2 string (t2 int (t2 string string)))))
 ;;
 
 let insert_request =
@@ -122,9 +119,7 @@ let insert_blob_request =
   |> Caqti_type.(t2 string string ->. unit)
 ;;
 
-let insert_blob label ~id blob =
-  Database.exec label insert_blob_request (id, blob)
-;;
+let insert_blob label ~id blob = Database.exec label insert_blob_request (id, blob)
 
 let update_blob_request =
   let open Caqti_request.Infix in
@@ -137,9 +132,7 @@ let update_blob_request =
   |> Caqti_type.(t2 string string ->. unit)
 ;;
 
-let update_blob label ~id blob =
-  Database.exec label update_blob_request (id, blob)
-;;
+let update_blob label ~id blob = Database.exec label update_blob_request (id, blob)
 
 let delete_blob_request =
   let open Caqti_request.Infix in

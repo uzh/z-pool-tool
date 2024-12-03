@@ -79,8 +79,7 @@ let login_params urlencoded =
     |> Lwt_result.lift
   in
   let password =
-    CCList.assoc ~eq:String.equal Field.(Password |> show) params
-    |> Password.Plain.create
+    CCList.assoc ~eq:String.equal Field.(Password |> show) params |> Password.Plain.create
   in
   Lwt_result.return (email, password)
 ;;
@@ -114,17 +113,15 @@ let login req urlencoded database_label =
       blocked_until
       |> CCOption.map BlockedUntil.value
       |> function
-      | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked)
-        -> Lwt_result.fail (Error.AccountTemporarilySuspended blocked)
+      | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked) ->
+        Lwt_result.fail (Error.AccountTemporarilySuspended blocked)
       | None | _ -> handler ()
     in
     let handle_result = function
       | Ok user ->
         let%lwt () =
           login_attempts
-          |> CCOption.map_or
-               ~default:(Lwt.return ())
-               (Repo.delete database_label)
+          |> CCOption.map_or ~default:(Lwt.return ()) (Repo.delete database_label)
         in
         Lwt_result.return user
       | Error err ->
@@ -140,14 +137,11 @@ let login req urlencoded database_label =
        | false ->
          User_import.find_pending_by_email_opt database_label email
          >|> (function
-          | Some _ ->
-            Lwt.return_error Pool_message.(Error.Invalid Field.Password)
+          | Some _ -> Lwt.return_error Pool_message.(Error.Invalid Field.Password)
           | None -> create_session ()))
       >|> handle_result
     in
     suspension_error login blocked_until
   in
-  email
-  |> Pool_user.FailedLoginAttempt.Repo.find_opt database_label
-  >|> handle_login
+  email |> Pool_user.FailedLoginAttempt.Repo.find_opt database_label >|> handle_login
 ;;

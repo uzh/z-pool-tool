@@ -103,17 +103,12 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
       in
       (match%lwt result with
        | Ok events ->
-         let%lwt () =
-           Pool_event.handle_system_events Database.Pool.Root.label events
-         in
+         let%lwt () = Pool_event.handle_system_events Database.Pool.Root.label events in
          Lwt.return_some ()
        | Error err ->
          let open Pool_common in
          let (_ : Pool_message.Error.t) =
-           Utils.with_log_error
-             ~src
-             ~tags:(Database.Logger.Tags.create pool)
-             err
+           Utils.with_log_error ~src ~tags:(Database.Logger.Tags.create pool) err
          in
          Lwt.return_none)
     | _ -> Command_utils.failwith_missmatch help)

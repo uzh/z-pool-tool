@@ -9,6 +9,5 @@ let add_prompt_on_registration_flag_to_custom_fields =
 
 let migration () =
   Database.Migration.(
-    empty "202307281144"
-    |> add_step add_prompt_on_registration_flag_to_custom_fields)
+    empty "202307281144" |> add_step add_prompt_on_registration_flag_to_custom_fields)
 ;;

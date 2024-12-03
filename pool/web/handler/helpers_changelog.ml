@@ -2,7 +2,10 @@ let src = Logs.Src.create "helpers.changelog"
 
 let htmx_handler
   :  ?to_human:(Pool_context.t -> Changelog.t -> Changelog.t Lwt.t)
-  -> url:string -> Pool_common.Id.t -> Rock.Request.t -> Rock.Response.t Lwt.t
+  -> url:string
+  -> Pool_common.Id.t
+  -> Rock.Request.t
+  -> Rock.Response.t Lwt.t
   =
   fun ?to_human ~url entity_id req ->
   Http_utils.Htmx.handle_error_message ~src ~error_as_notification:true req

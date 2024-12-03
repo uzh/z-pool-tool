@@ -10,6 +10,5 @@ let add_direct_message_permission =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202403181624" |> add_step add_direct_message_permission)
+  Database.Migration.(empty "202403181624" |> add_step add_direct_message_permission)
 ;;

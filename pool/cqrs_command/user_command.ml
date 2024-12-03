@@ -49,26 +49,20 @@ end = struct
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command UpdateEmail" ~tags);
     let* () =
-      Pool_user.EmailAddress.validate
-        allowed_email_suffixes
-        (Email.address email)
+      Pool_user.EmailAddress.validate allowed_email_suffixes (Email.address email)
     in
     match contact with
     | Contact contact ->
       Ok
-        [ Contact.EmailUpdated (contact, Email.address email)
-          |> Pool_event.contact
+        [ Contact.EmailUpdated (contact, Email.address email) |> Pool_event.contact
         ; Email.EmailVerified email |> Pool_event.email_verification
         ]
-    | Admin _ ->
-      Ok [ Email.EmailVerified email |> Pool_event.email_verification ]
+    | Admin _ -> Ok [ Email.EmailVerified email |> Pool_event.email_verification ]
   ;;
 
   let effects role user =
     let open Guard in
-    let target_id =
-      user.Pool_user.id |> Guard.Uuid.target_of Pool_user.Id.value
-    in
+    let target_id = user.Pool_user.id |> Guard.Uuid.target_of Pool_user.Id.value in
     ValidationSet.one_of_tuple (Permission.Update, role, Some target_id)
   ;;
 end
@@ -110,9 +104,7 @@ end = struct
 
   let effects role user =
     let open Guard in
-    let target_id =
-      user.Pool_user.id |> Guard.Uuid.target_of Pool_user.Id.value
-    in
+    let target_id = user.Pool_user.id |> Guard.Uuid.target_of Pool_user.Id.value in
     ValidationSet.one_of_tuple (Permission.Update, role, Some target_id)
   ;;
 end

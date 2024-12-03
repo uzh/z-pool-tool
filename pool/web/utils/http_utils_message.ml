@@ -3,18 +3,15 @@ module Message = Pool_message
 module Utils = Pool_common.Utils
 
 let get_error message lang =
-  message.Pool_message.Collection.error
-  |> CCList.map (Utils.error_to_string lang)
+  message.Pool_message.Collection.error |> CCList.map (Utils.error_to_string lang)
 ;;
 
 let get_warning message lang =
-  message.Pool_message.Collection.warning
-  |> CCList.map (Utils.warning_to_string lang)
+  message.Pool_message.Collection.warning |> CCList.map (Utils.warning_to_string lang)
 ;;
 
 let get_success message lang =
-  message.Pool_message.Collection.success
-  |> CCList.map (Utils.success_to_string lang)
+  message.Pool_message.Collection.success |> CCList.map (Utils.success_to_string lang)
 ;;
 
 let get_info message lang =

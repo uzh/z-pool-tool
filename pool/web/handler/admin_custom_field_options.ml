@@ -36,16 +36,13 @@ let form ?id req custom_field =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Url.Field.edit_path Custom_field.(model custom_field, id custom_field) ))
+      err, Url.Field.edit_path Custom_field.(model custom_field, id custom_field))
     @@ let* custom_field_option =
          id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Custom_field.find_option database_label id >|+ CCOption.pure)
        in
-       let* custom_field =
-         req |> get_field_id |> Custom_field.find database_label
-       in
+       let* custom_field = req |> get_field_id |> Custom_field.find database_label in
        let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.CustomFieldOptions.detail
@@ -83,9 +80,7 @@ let write ?id req custom_field =
   let field_names =
     let open Pool_common in
     let encode_lang t = t |> Language.create |> CCResult.to_opt in
-    let go field =
-      Admin_custom_fields.find_assocs_in_urlencoded urlencoded field
-    in
+    let go field = Admin_custom_fields.find_assocs_in_urlencoded urlencoded field in
     go Pool_message.Field.Name encode_lang
   in
   let result { Pool_context.database_label; user; _ } =
@@ -162,9 +157,7 @@ let toggle_action action req =
         | `Publish -> Published Field.CustomFieldOption
       in
       let handle events =
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         Http_utils.redirect_to_with_actions
           redirect_path
           [ Message.set ~success:[ success ] ]
@@ -195,10 +188,7 @@ let changelog req =
     in
     let open Custom_field in
     Lwt_result.ok
-    @@ Helpers.Changelog.htmx_handler
-         ~url
-         (SelectOption.Id.to_common option_id)
-         req
+    @@ Helpers.Changelog.htmx_handler ~url (SelectOption.Id.to_common option_id) req
   in
   HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
 ;;
@@ -216,8 +206,7 @@ end = struct
   ;;
 
   let create =
-    CustomFieldCommand.Create.effects
-    |> Middleware.Guardian.validate_admin_entity
+    CustomFieldCommand.Create.effects |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let update = custom_field_effects CustomFieldCommand.Update.effects

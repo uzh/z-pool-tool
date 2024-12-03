@@ -11,8 +11,7 @@ let decode_yojson t_of_yojson field t =
   try Ok (read t) with
   | _ ->
     Error
-      (Pool_message.(Error.Invalid field)
-       |> Pool_common.Utils.error_to_string Language.En)
+      (Pool_message.(Error.Invalid field) |> Pool_common.Utils.error_to_string Language.En)
 ;;
 
 module Id = struct
@@ -67,10 +66,7 @@ module Required = struct
   include Required
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Pool_common.Repo.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end
 
@@ -78,10 +74,7 @@ module Disabled = struct
   include Disabled
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Pool_common.Repo.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end
 
@@ -101,10 +94,7 @@ module AdminOverride = struct
   include AdminOverride
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Pool_common.Repo.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end
 
@@ -112,10 +102,7 @@ module AdminViewOnly = struct
   include AdminViewOnly
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Pool_common.Repo.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end
 
@@ -123,10 +110,7 @@ module AdminInputOnly = struct
   include AdminInputOnly
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Pool_common.Repo.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end
 
@@ -134,9 +118,6 @@ module PromptOnRegistration = struct
   include PromptOnRegistration
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Pool_common.Repo.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end

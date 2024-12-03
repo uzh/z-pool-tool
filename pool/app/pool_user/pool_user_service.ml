@@ -16,8 +16,7 @@ let find_active_by_email_opt database_label email =
 
 let update ?email ?lastname ?firstname ?status ?confirmed label user =
   let%lwt () =
-    Entity.update ?email ?lastname ?firstname ?status ?confirmed user
-    |> Repo.update label
+    Entity.update ?email ?lastname ?firstname ?status ?confirmed user |> Repo.update label
   in
   find_exn label user.id
 ;;
@@ -28,19 +27,17 @@ let confirm label user =
 ;;
 
 let create
-  ?id
-  ?admin
-  ?confirmed
-  label
-  email
-  lastname
-  firstname
-  password
-  password_confirmation
+      ?id
+      ?admin
+      ?confirmed
+      label
+      email
+      lastname
+      firstname
+      password
+      password_confirmation
   =
-  let* user =
-    create ?id ?admin ?confirmed email lastname firstname |> Lwt_result.lift
-  in
+  let* user = create ?id ?admin ?confirmed email lastname firstname |> Lwt_result.lift in
   let* password =
     Entity_password.create password password_confirmation |> Lwt_result.lift
   in
@@ -56,15 +53,7 @@ let validate_existance label email =
     | None -> Ok ())
 ;;
 
-let create_user
-  ?id
-  label
-  email
-  lastname
-  firstname
-  password
-  password_confirmation
-  =
+let create_user ?id label email lastname firstname password password_confirmation =
   let* () = validate_existance label email in
   create ?id label email lastname firstname password password_confirmation
 ;;
@@ -75,15 +64,7 @@ let create_user_unvalidated ?id label email lastname firstname password =
   |> create ?id label email lastname firstname password
 ;;
 
-let create_admin
-  ?id
-  label
-  email
-  lastname
-  firstname
-  password
-  password_confirmation
-  =
+let create_admin ?id label email lastname firstname password password_confirmation =
   let* () = validate_existance label email in
   create
     ?id

@@ -27,11 +27,7 @@ let check_result ?(msg = "succeeds") =
 
 (* Helper functions *)
 
-let setup_test
-  ?(log_level = Logs.Info)
-  ?(reporter = Logger.lwt_file_reporter ())
-  ()
-  =
+let setup_test ?(log_level = Logs.Info) ?(reporter = Logger.lwt_file_reporter ()) () =
   let open Sihl.Configuration in
   let () = read_env_file () |> CCOption.value ~default:[] |> store in
   let () = Logs.set_level (Some log_level) in
@@ -53,11 +49,11 @@ let urlencoded_update urlencoded updates =
   let open CCOption in
   CCList.map
     (fun (k, v) ->
-      CCList.find_opt (fun (check, _) -> check k) updates
-      >|= snd
-      >|= CCList.return
-      |> value ~default:v
-      |> CCPair.make k)
+       CCList.find_opt (fun (check, _) -> check k) updates
+       >|= snd
+       >|= CCList.return
+       |> value ~default:v
+       |> CCPair.make k)
     urlencoded
 ;;
 
@@ -98,17 +94,15 @@ let dummy_to_file (dummy : Seed.Assets.file) =
 
 module Model = struct
   let create_announcement
-    ?id
-    ?start_at
-    ?end_at
-    ?(show_to_admins = true)
-    ?(show_to_contacts = true)
-    ()
+        ?id
+        ?start_at
+        ?end_at
+        ?(show_to_admins = true)
+        ?(show_to_contacts = true)
+        ()
     =
     let open Announcement in
-    let text =
-      Text.create [ Pool_common.Language.En, "text" ] |> get_or_failwith
-    in
+    let text = Text.create [ Pool_common.Language.En, "text" ] |> get_or_failwith in
     create
       ?id
       text
@@ -119,28 +113,22 @@ module Model = struct
   ;;
 
   let password =
-    Pool_user.Password.Plain.(
-      create "Somepassword1!" |> validate |> get_or_failwith)
+    Pool_user.Password.Plain.(create "Somepassword1!" |> validate |> get_or_failwith)
   ;;
 
-  let create_api_key
-    ?id
-    ?token
-    ?(expires_at = Api_key.ExpiresAt.create_now ())
-    ()
-    =
+  let create_api_key ?id ?token ?(expires_at = Api_key.ExpiresAt.create_now ()) () =
     let open Api_key in
     let name = Name.of_string "Name" in
     create ?id ?token name expires_at
   ;;
 
   let create_user
-    ?(id = Pool_user.Id.create ())
-    ?(email =
-      Format.asprintf "test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
-      |> Pool_user.EmailAddress.of_string)
-    ?(lastname = Pool_user.Lastname.of_string "Doe")
-    ()
+        ?(id = Pool_user.Id.create ())
+        ?(email =
+          Format.asprintf "test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
+          |> Pool_user.EmailAddress.of_string)
+        ?(lastname = Pool_user.Lastname.of_string "Doe")
+        ()
     =
     { Pool_user.id
     ; email
@@ -153,9 +141,7 @@ module Model = struct
   ;;
 
   let create_contact ?id ?language ?lastname ?(with_terms_accepted = true) () =
-    let user =
-      create_user ?id:(CCOption.map Contact.Id.to_user id) ?lastname ()
-    in
+    let user = create_user ?id:(CCOption.map Contact.Id.to_user id) ?lastname () in
     { Contact.user
     ; terms_accepted_at =
         (if with_terms_accepted
@@ -168,10 +154,7 @@ module Model = struct
     ; disabled = Pool_user.Disabled.create false
     ; verified = None
     ; email_verified =
-        ()
-        |> Ptime_clock.now
-        |> Pool_user.EmailVerified.create
-        |> CCOption.return
+        () |> Ptime_clock.now |> Pool_user.EmailVerified.create |> CCOption.return
     ; num_invitations = Contact.NumberOfInvitations.init
     ; num_assignments = Contact.NumberOfAssignments.init
     ; num_show_ups = Contact.NumberOfShowUps.init
@@ -191,8 +174,7 @@ module Model = struct
   let create_admin ?id ?email () =
     ()
     |> create_user ?id ?email
-    |> Admin.create
-         ~email_verified:(Some (Pool_user.EmailVerified.create_now ()))
+    |> Admin.create ~email_verified:(Some (Pool_user.EmailVerified.create_now ()))
     |> Pool_context.admin
   ;;
 
@@ -214,8 +196,7 @@ module Model = struct
     let open Experiment in
     Public.create
       ~description:
-        (PublicDescription.create "A description for everyone"
-         |> get_or_failwith)
+        (PublicDescription.create "A description for everyone" |> get_or_failwith)
       ~experiment_type:Pool_common.ExperimentType.Lab
       (Id.create ())
       (PublicTitle.create "public_title" |> get_or_failwith)
@@ -223,12 +204,12 @@ module Model = struct
   ;;
 
   let create_experiment
-    ?(id = Experiment.Id.create ())
-    ?(title = "An Experiment")
-    ?email_session_reminder_lead_time_hours
-    ?filter
-    ?online_experiment
-    ()
+        ?(id = Experiment.Id.create ())
+        ?(title = "An Experiment")
+        ?email_session_reminder_lead_time_hours
+        ?filter
+        ?online_experiment
+        ()
     =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
     let email_session_reminder_lead_time =
@@ -240,9 +221,7 @@ module Model = struct
         |> to_opt)
     in
     let title = Experiment.Title.create title |> get_or_failwith in
-    let public_title =
-      Experiment.PublicTitle.create "public_title" |> get_or_failwith
-    in
+    let public_title = Experiment.PublicTitle.create "public_title" |> get_or_failwith in
     let internal_description =
       Experiment.InternalDescription.create "A description for everyone"
       |> get_or_failwith
@@ -297,9 +276,7 @@ module Model = struct
     let start =
       let default () =
         let start_at =
-          Ptime.add_span
-            (Ptime_clock.now ())
-            Sihl.Time.(OneSecond |> duration_to_span)
+          Ptime.add_span (Ptime_clock.now ()) Sihl.Time.(OneSecond |> duration_to_span)
           |> CCOption.get_exn_or "Time calculation failed!"
           |> StartAt.create
           |> get_or_failwith
@@ -309,9 +286,7 @@ module Model = struct
       CCOption.value ~default:(default ()) start
     in
     let deadline =
-      Ptime.add_span
-        (Ptime_clock.now ())
-        Sihl.Time.(OneHour |> duration_to_span)
+      Ptime.add_span (Ptime_clock.now ()) Sihl.Time.(OneHour |> duration_to_span)
       |> CCOption.get_exn_or "Time calculation failed!"
       |> EndAt.create
       |> get_or_failwith
@@ -319,11 +294,7 @@ module Model = struct
     create ?id start deadline limit None |> get_or_failwith
   ;;
 
-  let create_email
-    ?(sender = "sender@mail.com")
-    ?(recipient = "recipient@mail.com")
-    ()
-    =
+  let create_email ?(sender = "sender@mail.com") ?(recipient = "recipient@mail.com") () =
     Sihl_email.create
       ~html:"<p>Hello</p>"
       ~cc:[ "cc1@mail.com"; "cc2@mail.com" ]
@@ -334,22 +305,13 @@ module Model = struct
       "Hello"
   ;;
 
-  let create_email_job
-    ?job_ctx
-    ?message_template
-    ?email_address
-    ?smtp_auth_id
-    ()
-    =
+  let create_email_job ?job_ctx ?message_template ?email_address ?smtp_auth_id () =
     create_email ?recipient:email_address ()
     |> Email.Service.Job.create ?smtp_auth_id
     |> Email.create_dispatch ?job_ctx ?message_template
   ;;
 
-  let create_text_message
-    ?(sender = Pool_tenant.GtxSender.of_string "UAST")
-    cell_phone
-    =
+  let create_text_message ?(sender = Pool_tenant.GtxSender.of_string "UAST") cell_phone =
     Text_message.render_and_create cell_phone sender ("Hello world", [])
   ;;
 
@@ -379,14 +341,14 @@ module Model = struct
   let in_two_hours () = Ptime.Span.of_int_s @@ (60 * 60 * 2) |> session_start_in
 
   let create_session
-    ?(id = Session.Id.create ())
-    ?(location = create_location ())
-    ?(duration = Session.Duration.create hour |> get_or_failwith)
-    ?follow_up_to
-    ?start
-    ?email_reminder_sent_at
-    ?(experiment = create_experiment ())
-    ()
+        ?(id = Session.Id.create ())
+        ?(location = create_location ())
+        ?(duration = Session.Duration.create hour |> get_or_failwith)
+        ?follow_up_to
+        ?start
+        ?email_reminder_sent_at
+        ?(experiment = create_experiment ())
+        ()
     =
     let open Session in
     create
@@ -403,11 +365,11 @@ module Model = struct
   ;;
 
   let create_timewindow
-    ?(id = Session.Id.create ())
-    ?(duration = Session.Duration.create hour |> get_or_failwith)
-    ?start
-    ?(experiment = create_experiment ())
-    ()
+        ?(id = Session.Id.create ())
+        ?(duration = Session.Duration.create hour |> get_or_failwith)
+        ?start
+        ?(experiment = create_experiment ())
+        ()
     =
     Time_window.create
       ~id
@@ -450,19 +412,19 @@ module Model = struct
   ;;
 
   let session_to_public_session
-    { Session.id
-    ; follow_up_to
-    ; start
-    ; duration
-    ; public_description
-    ; location
-    ; max_participants
-    ; min_participants
-    ; overbook
-    ; assignment_count
-    ; canceled_at
-    ; _
-    }
+        { Session.id
+        ; follow_up_to
+        ; start
+        ; duration
+        ; public_description
+        ; location
+        ; max_participants
+        ; min_participants
+        ; overbook
+        ; assignment_count
+        ; canceled_at
+        ; _
+        }
     =
     Session.Public.
       { id
@@ -495,8 +457,7 @@ module Model = struct
         max_participants = Session.ParticipantAmount.create 5 |> get_or_failwith
       ; min_participants = Session.ParticipantAmount.create 0 |> get_or_failwith
       ; overbook = Session.ParticipantAmount.create 0 |> get_or_failwith
-      ; assignment_count =
-          5 |> Session.AssignmentCount.create |> get_or_failwith
+      ; assignment_count = 5 |> Session.AssignmentCount.create |> get_or_failwith
       }
   ;;
 
@@ -505,11 +466,11 @@ module Model = struct
   ;;
 
   let create_assignment
-    ?no_show
-    ?participated
-    ?external_data_id
-    ?(contact = create_contact ())
-    ()
+        ?no_show
+        ?participated
+        ?external_data_id
+        ?(contact = create_contact ())
+        ()
     =
     let open CCOption in
     let open Assignment in
@@ -548,8 +509,8 @@ module Model = struct
   ;;
 
   let create_manual_message
-    ?(recipient = "foo@bar.com" |> Pool_user.EmailAddress.of_string)
-    ()
+        ?(recipient = "foo@bar.com" |> Pool_user.EmailAddress.of_string)
+        ()
     =
     let open Message_template in
     Message_template.ManualMessage.
@@ -602,13 +563,13 @@ module Repo = struct
 end
 
 let case
-  ?(preparation : unit -> (unit, Pool_message.Error.t) Lwt_result.t =
-    fun () -> Lwt.return_ok ())
-  ?(cleanup : unit -> (unit, Pool_message.Error.t) Lwt_result.t =
-    fun () -> Lwt.return_ok ())
-  fn
-  (_switch : Lwt_switch.t)
-  ()
+      ?(preparation : unit -> (unit, Pool_message.Error.t) Lwt_result.t =
+        fun () -> Lwt.return_ok ())
+      ?(cleanup : unit -> (unit, Pool_message.Error.t) Lwt_result.t =
+        fun () -> Lwt.return_ok ())
+      fn
+      (_switch : Lwt_switch.t)
+      ()
   : unit Lwt.t
   =
   let open Utils.Lwt_result.Infix in

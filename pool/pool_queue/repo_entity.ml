@@ -6,10 +6,7 @@ module Id = struct
   include Entity.Id
 
   let t =
-    Database.Repo.make_caqti_type
-      Caqti_type.string
-      (of_string %> CCResult.return)
-      value
+    Database.Repo.make_caqti_type Caqti_type.string (of_string %> CCResult.return) value
   ;;
 end
 
@@ -49,20 +46,20 @@ module Instance = struct
   let t =
     let open Database.Caqti_encoders in
     let decode
-      ( id
-      , ( name
-        , ( input
-          , ( message_template
-            , ( tries
-              , ( max_tries
-                , ( run_at
-                  , ( status
-                    , ( persisted_at
-                      , ( polled_at
-                        , ( handled_at
-                          , ( last_error
-                            , (last_error_at, (database_label, (clone_of, ())))
-                            ) ) ) ) ) ) ) ) ) ) ) )
+          ( id
+          , ( name
+            , ( input
+              , ( message_template
+                , ( tries
+                  , ( max_tries
+                    , ( run_at
+                      , ( status
+                        , ( persisted_at
+                          , ( polled_at
+                            , ( handled_at
+                              , ( last_error
+                                , (last_error_at, (database_label, (clone_of, ()))) ) ) )
+                          ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -134,18 +131,14 @@ module Mapping = struct
 
     let t =
       let encode m = Ok (m.queue_uuid, m.entity_uuid) in
-      let decode _ =
-        Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
-      in
+      let decode _ = Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel in
       Caqti_type.(custom ~encode ~decode (t2 Id.t Pool_common.Repo.Id.t))
     ;;
   end
 
   let t =
     let open Pool_common in
-    let encode (_ : Entity_mapping.t) =
-      Utils.failwith Pool_message.Error.ReadOnlyModel
-    in
+    let encode (_ : Entity_mapping.t) = Utils.failwith Pool_message.Error.ReadOnlyModel in
     let decode (entity_uuid, job) = Ok { Entity_mapping.entity_uuid; job } in
     Caqti_type.(custom ~encode ~decode (t2 Pool_common.Repo.Id.t Instance.t))
   ;;

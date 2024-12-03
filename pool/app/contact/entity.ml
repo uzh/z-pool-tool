@@ -179,10 +179,7 @@ let to_write (m : t) : Write.t =
   }
 ;;
 
-let is_inactive { user; _ } =
-  Pool_user.Status.(equal user.Pool_user.status Inactive)
-;;
-
+let is_inactive { user; _ } = Pool_user.Status.(equal user.Pool_user.status Inactive)
 let sexp_of_t t = t |> id |> Id.sexp_of_t
 
 let update_num_invitations ~step ({ num_invitations; _ } as m) =
@@ -202,9 +199,7 @@ let update_num_no_shows ~step ({ num_no_shows; _ } as m) =
 ;;
 
 let update_num_participations ~step ({ num_participations; _ } as m) =
-  { m with
-    num_participations = NumberOfParticipations.update step num_participations
-  }
+  { m with num_participations = NumberOfParticipations.update step num_participations }
 ;;
 
 module Preview = struct
@@ -226,8 +221,7 @@ end
 let profile_completion_cookie = "profile_completion"
 
 let column_cell_phone =
-  (Pool_message.Field.CellPhone, "pool_contacts.cell_phone")
-  |> Query.Column.create
+  (Pool_message.Field.CellPhone, "pool_contacts.cell_phone") |> Query.Column.create
 ;;
 
 let column_hide_paused =
@@ -236,8 +230,7 @@ let column_hide_paused =
 
 let column_hide_unverified =
   Query.Column.create
-    ( Pool_message.Field.HideUnverified
-    , "pool_contacts.email_verified IS NOT NULL" )
+    (Pool_message.Field.HideUnverified, "pool_contacts.email_verified IS NOT NULL")
 ;;
 
 let filterable_by =

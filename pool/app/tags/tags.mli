@@ -97,12 +97,7 @@ val search_by_title
 
 val find_by : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 val find_all_with_model : Database.Label.t -> Model.t -> t list Lwt.t
-
-val find_all_of_entity
-  :  Database.Label.t
-  -> Model.t
-  -> Pool_common.Id.t
-  -> t list Lwt.t
+val find_all_of_entity : Database.Label.t -> Model.t -> Pool_common.Id.t -> t list Lwt.t
 
 val find_all_validated
   :  ?permission:Guard.Permission.t

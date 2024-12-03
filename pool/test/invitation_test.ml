@@ -30,8 +30,7 @@ let create () =
       contact |> update_num_invitations ~step:1 |> updated |> Pool_event.contact
     in
     Ok
-      [ Invitation.(
-          Created { contacts = [ contact ]; mailing = None; experiment })
+      [ Invitation.(Created { contacts = [ contact ]; mailing = None; experiment })
         |> Pool_event.invitation
       ; Email.BulkSent [ email ] |> Pool_event.email
       ; contact_update
@@ -44,9 +43,7 @@ let create_with_experiment_smtp () =
   let experiment = Model.create_experiment () in
   let contact = Model.create_contact () in
   let smtp_auth_id = Email.SmtpAuth.Id.create () in
-  let experiment =
-    { experiment with Experiment.smtp_auth_id = Some smtp_auth_id }
-  in
+  let experiment = { experiment with Experiment.smtp_auth_id = Some smtp_auth_id } in
   let expected =
     let email = Matcher_test.create_message contact |> CCResult.get_exn in
     let contact_update =
@@ -54,8 +51,7 @@ let create_with_experiment_smtp () =
       contact |> update_num_invitations ~step:1 |> updated |> Pool_event.contact
     in
     Ok
-      [ Invitation.(
-          Created { contacts = [ contact ]; mailing = None; experiment })
+      [ Invitation.(Created { contacts = [ contact ]; mailing = None; experiment })
         |> Pool_event.invitation
       ; Email.BulkSent [ email ] |> Pool_event.email
       ; contact_update
@@ -69,9 +65,7 @@ let resend () =
   let invitation = create_invitation () in
   let experiment = Model.create_experiment () in
   let email =
-    Test_utils.Model.create_email_job
-      ?smtp_auth_id:experiment.Experiment.smtp_auth_id
-      ()
+    Test_utils.Model.create_email_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id ()
   in
   let create_messge _ = Ok email in
   let events = handle create_messge invitation in

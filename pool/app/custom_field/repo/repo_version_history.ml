@@ -11,14 +11,11 @@ let answer_sql_select_columns =
 
 let select_names_of_custom_fields_and_options ids =
   let ids =
-    CCList.mapi
-      (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
-      ids
+    CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
     |> CCString.concat ","
   in
   let columns =
-    [ Entity.Id.sql_select_fragment ~field:"uuid"; "name" ]
-    |> CCString.concat ","
+    [ Entity.Id.sql_select_fragment ~field:"uuid"; "name" ] |> CCString.concat ","
   in
   [%string
     {sql| 
@@ -37,9 +34,7 @@ let find_names pool =
   | [] -> Lwt.return []
   | ids ->
     let (Pack (pt, pv)) =
-      (CCList.fold_left (fun dyn id -> dyn |> add Pool_common.Repo.Id.t id))
-        empty
-        ids
+      (CCList.fold_left (fun dyn id -> dyn |> add Pool_common.Repo.Id.t id)) empty ids
     in
     let request =
       select_names_of_custom_fields_and_options ids
@@ -64,8 +59,7 @@ let find_answer_request =
     |sql}
     (answer_sql_select_columns |> CCString.concat ", ")
   |> Caqti_type.(
-       t2 Repo_entity_base.Id.t Contact.Repo.Id.t
-       ->! Repo_entity_answer.VersionHistory.t)
+       t2 Repo_entity_base.Id.t Contact.Repo.Id.t ->! Repo_entity_answer.VersionHistory.t)
 ;;
 
 let find_answer_opt pool contact_id field_id =

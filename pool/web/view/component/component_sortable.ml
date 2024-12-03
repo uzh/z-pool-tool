@@ -16,10 +16,7 @@ let sortable_item sortable =
 let create_sortable ?(classnames = []) ?(attributes = []) sortables =
   sortables
   |> CCList.map sortable_item
-  |> div
-       ~a:
-         ([ sortable_list_attrib; a_class ([ "grow" ] @ classnames) ]
-          @ attributes)
+  |> div ~a:([ sortable_list_attrib; a_class ([ "grow" ] @ classnames) ] @ attributes)
 ;;
 
 let create_table ?(classnames = []) sortable_cells =

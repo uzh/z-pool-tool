@@ -20,11 +20,7 @@ module Pagination = struct
 
     let default = 20
     let field = Pool_message.Field.Limit
-
-    let create m =
-      if m >= 0 then Ok m else Error (Pool_message.Error.Invalid field)
-    ;;
-
+    let create m = if m >= 0 then Ok m else Error (Pool_message.Error.Invalid field)
     let schema = schema field create
   end
 
@@ -33,11 +29,7 @@ module Pagination = struct
 
     let default = 1
     let field = Pool_message.Field.Page
-
-    let create m =
-      if m > 0 then Ok m else Error (Pool_message.Error.Invalid field)
-    ;;
-
+    let create m = if m > 0 then Ok m else Error (Pool_message.Error.Invalid field)
     let schema = schema field create
   end
 
@@ -45,11 +37,7 @@ module Pagination = struct
     include Pool_model.Base.Integer
 
     let field = Pool_message.Field.PageCount
-
-    let create m =
-      if m >= 0 then Ok m else Error (Pool_message.Error.Invalid field)
-    ;;
-
+    let create m = if m >= 0 then Ok m else Error (Pool_message.Error.Invalid field)
     let schema = schema field create
   end
 
@@ -80,9 +68,7 @@ module Pagination = struct
 
   let set_page_count row_count t =
     let open CCFloat in
-    let page_count =
-      ceil (of_int row_count /. of_int t.limit) |> to_int |> CCInt.max 1
-    in
+    let page_count = ceil (of_int row_count /. of_int t.limit) |> to_int |> CCInt.max 1 in
     { t with page_count }
   ;;
 
@@ -118,11 +104,11 @@ module Search = struct
         |> CCList.map Column.to_sql
         |> CCList.fold_left
              (fun (dyn, columns) column ->
-               ( dyn
-                 |> Dynparam.add
-                      Caqti_type.string
-                      ("%" ^ CCString.(split ~by:" " query |> concat "%") ^ "%")
-               , Format.asprintf "%s LIKE ? " column :: columns ))
+                ( dyn
+                  |> Dynparam.add
+                       Caqti_type.string
+                       ("%" ^ CCString.(split ~by:" " query |> concat "%") ^ "%")
+                , Format.asprintf "%s LIKE ? " column :: columns ))
              (dyn, [])
       in
       where
@@ -230,14 +216,14 @@ module Filter = struct
     m
     |> CCList.fold_left
          (fun default conditon ->
-           let dyn, sql = default in
-           let open Condition in
-           match conditon with
-           | Checkbox (col, active) ->
-             if active then dyn, sql @ [ Column.to_sql col ] else default
-           | Select (col, option) ->
-             ( dyn |> Dynparam.add Caqti_type.string (SelectOption.value option)
-             , sql @ [ Format.asprintf "%s = ?" (Column.to_sql col) ] ))
+            let dyn, sql = default in
+            let open Condition in
+            match conditon with
+            | Checkbox (col, active) ->
+              if active then dyn, sql @ [ Column.to_sql col ] else default
+            | Select (col, option) ->
+              ( dyn |> Dynparam.add Caqti_type.string (SelectOption.value option)
+              , sql @ [ Format.asprintf "%s = ?" (Column.to_sql col) ] ))
          (dyn, [])
     |> fun (dyn, sql) ->
     match sql with
@@ -274,10 +260,7 @@ let filter { filter; _ } = filter
 let pagination { pagination; _ } = pagination
 let search { search; _ } = search
 let sort { sort; _ } = sort
-
-let create ?filter ?pagination ?search ?sort () =
-  { filter; pagination; search; sort }
-;;
+let create ?filter ?pagination ?search ?sort () = { filter; pagination; search; sort }
 
 let with_sort_order order t =
   let sort = t.sort |> CCOption.map (fun sort -> Sort.{ sort with order }) in
@@ -290,9 +273,7 @@ let with_sort_column column t =
 ;;
 
 let set_page_count ({ pagination; _ } as t) row_count =
-  let pagination =
-    pagination |> CCOption.map (Pagination.set_page_count row_count)
-  in
+  let pagination = pagination |> CCOption.map (Pagination.set_page_count row_count) in
   { t with pagination }
 ;;
 

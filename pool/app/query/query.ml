@@ -1,19 +1,16 @@
 include Entity
 
 let from_request
-  ?(filterable_by : Filter.human option)
-  ?(searchable_by : Column.t list option)
-  ?(sortable_by : Column.t list option)
-  ?(default : t option)
-  req
+      ?(filterable_by : Filter.human option)
+      ?(searchable_by : Column.t list option)
+      ?(sortable_by : Column.t list option)
+      ?(default : t option)
+      req
   =
   let query_params = Sihl.Web.Request.query_list req in
   let open CCOption in
   let find field =
-    CCList.assoc_opt
-      ~eq:CCString.equal
-      (Pool_message.Field.show field)
-      query_params
+    CCList.assoc_opt ~eq:CCString.equal (Pool_message.Field.show field) query_params
     >>= CCList.head_opt
     >>= function
     | "" -> None
@@ -59,8 +56,7 @@ let from_request
         handle_ppx_yojson_err (exn, yojson) |> CCFun.const None
     in
     sortable_by
-    >>= fun columns ->
-    find Field.Order >|= Field.read >>= Sort.create ?order columns
+    >>= fun columns -> find Field.Order >|= Field.read >>= Sort.create ?order columns
   in
   create ~pagination ?filter ?search ?sort () |> apply_default ~default
 ;;
@@ -79,13 +75,10 @@ let append_query_to_sql dyn where t =
   let dyn, search =
     t >>= search |> CCOption.map_or ~default:(dyn, None) (Search.to_sql dyn)
   in
-  let order_by =
-    t >>= fun { sort; _ } -> sort >|= Sort.to_sql >|= format "ORDER BY %s"
-  in
+  let order_by = t >>= fun { sort; _ } -> sort >|= Sort.to_sql >|= format "ORDER BY %s" in
   let paginate_and_sort =
     match order_by, pagination with
-    | Some order_by, Some pagination ->
-      Some (format "%s %s" order_by pagination)
+    | Some order_by, Some pagination -> Some (format "%s %s" order_by pagination)
     | Some str, None | None, Some str -> Some str
     | None, None -> None
   in
@@ -99,11 +92,11 @@ let append_query_to_sql dyn where t =
 ;;
 
 let collect_and_count
-  database_label
-  query
-  ~(select : ?count:bool -> string -> string)
-  ?where
-  caqti_type
+      database_label
+      query
+      ~(select : ?count:bool -> string -> string)
+      ?where
+      caqti_type
   =
   let open Caqti_request.Infix in
   let where, dyn =

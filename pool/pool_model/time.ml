@@ -25,15 +25,12 @@ let parse_date str =
   let open CCOption in
   let error = Pool_message.(Error.Invalid Field.Date) in
   let split_date_string date =
-    date
-    |> CCString.split_on_char '-'
-    |> CCList.map CCInt.of_string
-    |> sequence_l
+    date |> CCString.split_on_char '-' |> CCList.map CCInt.of_string |> sequence_l
   in
   split_date_string str
   >>= (function
-         | [ y; m; d ] -> (y, m, d) |> Ptime.of_date >|= Ptime.to_date
-         | _ -> None)
+   | [ y; m; d ] -> (y, m, d) |> Ptime.of_date >|= Ptime.to_date
+   | _ -> None)
   |> CCOption.to_result error
 ;;
 
@@ -44,8 +41,7 @@ let parse_date_from_calendar str =
   |> CCString.split ~by:"T"
   |> CCList.hd
   |> parse_date
-  >>= Ptime.of_date
-      %> CCOption.to_result Pool_message.(Error.Invalid Field.Date)
+  >>= Ptime.of_date %> CCOption.to_result Pool_message.(Error.Invalid Field.Date)
 ;;
 
 let start_is_before_end ~start ~end_at =

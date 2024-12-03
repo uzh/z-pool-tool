@@ -12,11 +12,7 @@ let list Pool_context.{ language; guardian; _ } (admins, query) =
   in
   let url = Uri.of_string "/admin/admins" in
   let data_table =
-    Component.DataTable.create_meta
-      ~search:Contact.searchable_by
-      url
-      query
-      language
+    Component.DataTable.create_meta ~search:Contact.searchable_by url query language
   in
   let cols =
     let create : [ | Html_types.flow5 ] elt =
@@ -45,13 +41,7 @@ let list Pool_context.{ language; guardian; _ } (admins, query) =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make
-    ~th_class
-    ~target_id:"admin-list"
-    ~cols
-    ~row
-    data_table
-    admins
+  Component.DataTable.make ~th_class ~target_id:"admin-list" ~cols ~row data_table admins
 ;;
 
 let static_overview ?(disable_edit = false) language admins =
@@ -71,19 +61,15 @@ let static_overview ?(disable_edit = false) language admins =
   in
   CCList.map
     (fun admin ->
-      let user = Admin.user admin in
-      let base =
-        [ Status.email_with_icons admin; txt (Pool_user.fullname user) ]
-      in
-      match disable_edit with
-      | false ->
-        base
-        @ [ Format.asprintf
-              "/admin/admins/%s"
-              (user.Pool_user.id |> Pool_user.Id.value)
-            |> Input.link_as_button ~icon:Icon.Eye
-          ]
-      | true -> base)
+       let user = Admin.user admin in
+       let base = [ Status.email_with_icons admin; txt (Pool_user.fullname user) ] in
+       match disable_edit with
+       | false ->
+         base
+         @ [ Format.asprintf "/admin/admins/%s" (user.Pool_user.id |> Pool_user.Id.value)
+             |> Input.link_as_button ~icon:Icon.Eye
+           ]
+       | true -> base)
     admins
   |> fun rows ->
   div
@@ -93,12 +79,7 @@ let static_overview ?(disable_edit = false) language admins =
     ]
 ;;
 
-let roles_list
-  ?is_edit
-  ?top_element
-  ({ Pool_context.language; _ } as context)
-  target_id
-  =
+let roles_list ?is_edit ?top_element ({ Pool_context.language; _ } as context) target_id =
   let open Component.Role in
   List.create ?is_edit ~path:"/admin/admins" context target_id
   %> CCList.return
@@ -111,9 +92,7 @@ let new_form { Pool_context.language; csrf; _ } =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         Pool_common.
-          [ Control.(Create (Some Field.Admin))
-            |> Utils.control_to_string language
-            |> txt
+          [ Control.(Create (Some Field.Admin)) |> Utils.control_to_string language |> txt
           ]
     ; form
         ~a:
@@ -126,7 +105,7 @@ let new_form { Pool_context.language; csrf; _ } =
              ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
              (CCList.map
                 (fun (field, input) ->
-                  Input.input_element ~required:true language input field)
+                   Input.input_element ~required:true language input field)
                 Field.
                   [ Email, `Email
                   ; Password, `Password
@@ -156,20 +135,13 @@ let index (Pool_context.{ language; _ } as context) admins =
     ]
 ;;
 
-let detail
-  ({ Pool_context.language; _ } as context)
-  admin
-  target_id
-  granted_roles
-  =
+let detail ({ Pool_context.language; _ } as context) admin target_id granted_roles =
   let user = Admin.user admin in
   [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ]
   ; Input.link_as_button
       ~icon:Icon.Create
       ~control:(language, Control.(Edit None))
-      (Format.asprintf
-         "/admin/admins/%s/edit"
-         (user.Pool_user.id |> Pool_user.Id.value))
+      (Format.asprintf "/admin/admins/%s/edit" (user.Pool_user.id |> Pool_user.Id.value))
   ; roles_list context target_id granted_roles
   ]
   |> div ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]

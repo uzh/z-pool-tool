@@ -16,9 +16,7 @@ type json_response =
   }
 [@@deriving yojson]
 
-let url_with_field_params path params =
-  Pool_message.add_field_query_params params path
-;;
+let url_with_field_params path params = Pool_message.add_field_query_params params path
 
 let find_intended_opt req =
   let open Uri in
@@ -41,8 +39,7 @@ let intended_to_url url intended =
   let intended =
     let open CCOption in
     Sihl.Configuration.read_string "PREFIX_PATH"
-    >|= (fun p ->
-          if CCString.prefix ~pre:"/" p then p else Format.asprintf "/%s" p)
+    >|= (fun p -> if CCString.prefix ~pre:"/" p then p else Format.asprintf "/%s" p)
     |> value ~default:""
     |> fun pre ->
     CCString.chop_prefix ~pre intended |> value ~default:intended |> of_string
@@ -89,9 +86,7 @@ let retain_url_params req url =
 let find_query_lang req =
   let open CCOption.Infix in
   Sihl.Web.Request.query Pool_message.Field.(Language |> show) req
-  >>= CCString.uppercase_ascii
-      %> Pool_common.Language.create
-      %> CCOption.of_result
+  >>= CCString.uppercase_ascii %> Pool_common.Language.create %> CCOption.of_result
 ;;
 
 let find_query_param req field decode =
@@ -148,10 +143,7 @@ let extract_happy_path_generic ?(src = src) ?enable_cache req result msgf =
 let extract_happy_path ?(src = src) ?enable_cache req result =
   extract_happy_path_generic ~src ?enable_cache req result (fun err ->
     let err =
-      Pool_common.Utils.with_log_error
-        ~src
-        ~tags:(Pool_context.Logger.Tags.req req)
-        err
+      Pool_common.Utils.with_log_error ~src ~tags:(Pool_context.Logger.Tags.req req) err
     in
     Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
@@ -163,8 +155,7 @@ let extract_happy_path_with_actions ?(src = src) ?enable_cache req result =
   | Ok ({ Pool_context.query_parameters; _ } as context) ->
     let%lwt res = result context in
     res
-    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _, _) ->
-      err)
+    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _, _) -> err)
     |> CCResult.map (set_no_cache_headers ?enable_cache)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
@@ -174,8 +165,7 @@ let extract_happy_path_with_actions ?(src = src) ?enable_cache req result =
            [ Message.set ~warning:[] ~success:[] ~info:[] ~error:[ error_key ] ]
            error_actions))
   | Error err ->
-    Logs.err ~src (fun m ->
-      m ~tags "Context not found: %s" (Pool_message.Error.show err));
+    Logs.err ~src (fun m -> m ~tags "Context not found: %s" (Pool_message.Error.show err));
     redirect_to "/error"
 ;;
 
@@ -191,8 +181,8 @@ let urlencoded_to_params urlencoded keys =
 let urlencoded_to_flash urlencoded =
   Sihl.Web.Flash.set
     (urlencoded
-     |> CCList.map (fun (m, k) ->
-       m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
+     |> CCList.map (fun (m, k) -> m, k |> CCList.head_opt |> CCOption.get_or ~default:"")
+    )
 ;;
 
 let find_in_urlencoded_base_opt
@@ -203,14 +193,12 @@ let find_in_urlencoded_base_opt
 
 let find_in_urlencoded_list_opt field =
   let open Pool_message in
-  find_in_urlencoded_base_opt Field.(array_key field)
-  %> CCOption.value ~default:[]
+  find_in_urlencoded_base_opt Field.(array_key field) %> CCOption.value ~default:[]
 ;;
 
 let find_in_urlencoded_opt field =
   let open Pool_message in
-  find_in_urlencoded_base_opt Field.(show field)
-  %> flip CCOption.bind CCList.head_opt
+  find_in_urlencoded_base_opt Field.(show field) %> flip CCOption.bind CCList.head_opt
 ;;
 
 let find_in_urlencoded ?error field =
@@ -224,8 +212,7 @@ let htmx_urlencoded_list key req =
   let open Utils.Lwt_result.Infix in
   Sihl.Web.Request.urlencoded_list key req
   ||> function
-  | [ hd ] when CCString.equal "undefined" (hd |> CCString.lowercase_ascii) ->
-    []
+  | [ hd ] when CCString.equal "undefined" (hd |> CCString.lowercase_ascii) -> []
   | lst -> lst
 ;;
 
@@ -258,8 +245,7 @@ let format_request_boolean_values values urlencoded =
       k
       (function
         | None -> Some [ "false" ]
-        | Some values ->
-          values |> intersection_to_bool_string |> CCOption.return)
+        | Some values -> values |> intersection_to_bool_string |> CCOption.return)
       m
   in
   handle_boolean_values update urlencoded values
@@ -289,7 +275,7 @@ let multipart_to_urlencoded ingnore_fields lst =
   let ingnore_fields = CCList.map Pool_message.Field.show ingnore_fields in
   CCList.filter_map
     (fun (key, value) ->
-      if CCList.mem key ingnore_fields then None else Some (key, [ value ]))
+       if CCList.mem key ingnore_fields then None else Some (key, [ value ]))
     lst
 ;;
 
@@ -309,9 +295,9 @@ let externalize_path_with_params params path =
 let add_line_breaks = Utils.Html.handle_line_breaks Tyxml.Html.span
 
 let invalid_session_redirect
-  ?(login_path = fun req -> "/login" |> intended_of_request req)
-  req
-  url_parameters
+      ?(login_path = fun req -> "/login" |> intended_of_request req)
+      req
+      url_parameters
   =
   redirect_to_with_actions
     (url_with_field_params url_parameters (login_path req))
@@ -346,9 +332,7 @@ let externalized_path_with_version url =
 ;;
 
 let first_n_characters ?(n = 47) m =
-  if CCString.length m > n
-  then CCString.sub m 0 n |> Format.asprintf "%s..."
-  else m
+  if CCString.length m > n then CCString.sub m 0 n |> Format.asprintf "%s..." else m
 ;;
 
 module Htmx = struct
@@ -361,25 +345,22 @@ module Htmx = struct
     | _ -> false
   ;;
 
-  let headers =
-    Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
-  ;;
+  let headers = Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
 
   let htmx_redirect
-    ?(skip_externalize = false)
-    ?(query_parameters = [])
-    ?status
-    ?(actions = [])
-    path
-    ()
+        ?(skip_externalize = false)
+        ?(query_parameters = [])
+        ?status
+        ?(actions = [])
+        path
+        ()
     =
     let externalize_path path =
       if skip_externalize then path else Sihl.Web.externalize_path path
     in
     Sihl.Web.Response.of_plain_text "" ?status
     |> Sihl.Web.Response.add_header
-         ( "HX-Redirect"
-         , url_with_field_params query_parameters path |> externalize_path )
+         ("HX-Redirect", url_with_field_params query_parameters path |> externalize_path)
     |> CCList.fold_left ( % ) id actions
     |> Lwt.return
   ;;
@@ -387,33 +368,27 @@ module Htmx = struct
   let html_to_plain_text_response ?(status = 200) html =
     html
     |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
-    |> Sihl.Web.Response.of_plain_text
-         ~status:(status |> Opium.Status.of_code)
-         ~headers
+    |> Sihl.Web.Response.of_plain_text ~status:(status |> Opium.Status.of_code) ~headers
   ;;
 
   let multi_html_to_plain_text_response ?(status = 200) html_els =
     html_els
     |> CCList.fold_left
-         (fun acc cur ->
-           Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
+         (fun acc cur -> Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
          ""
-    |> Sihl.Web.Response.of_plain_text
-         ~status:(status |> Opium.Status.of_code)
-         ~headers
+    |> Sihl.Web.Response.of_plain_text ~status:(status |> Opium.Status.of_code) ~headers
   ;;
 
   let handler
-    :  ?active_navigation:string -> error_path:string
+    :  ?active_navigation:string
+    -> error_path:string
     -> query:(module Http_utils_queryable.Queryable)
     -> create_layout:
          (Rock.Request.t
           -> ?active_navigation:CCString.t
           -> Pool_context.t
           -> 'page Tyxml_html.elt
-          -> ( [> Html_types.html ] Tyxml_html.elt
-               , Pool_message.Error.t )
-               Lwt_result.t)
+          -> ([> Html_types.html ] Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
     -> Rock.Request.t
     -> (Pool_context.t
         -> Query.t
@@ -437,8 +412,7 @@ module Htmx = struct
     then Ok (html_to_plain_text_response page) |> Lwt_result.lift
     else
       let* view =
-        create_layout ?active_navigation req context page
-        >|- fun err -> err, error_path
+        create_layout ?active_navigation req context page >|- fun err -> err, error_path
       in
       Ok (Sihl.Web.Response.of_html view) |> Lwt_result.lift
   ;;
@@ -471,17 +445,11 @@ module Htmx = struct
   let context_error ~src ~tags err =
     Logs.err ~src (fun m ->
       m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));
-    Logs.err ~src (fun m ->
-      m ~tags "Context not found: %s" (Pool_message.Error.show err));
+    Logs.err ~src (fun m -> m ~tags "Context not found: %s" (Pool_message.Error.show err));
     htmx_redirect "/error" ()
   ;;
 
-  let handle_error_message
-    ?(src = src)
-    ?(error_as_notification = false)
-    req
-    result
-    =
+  let handle_error_message ?(src = src) ?(error_as_notification = false) req result =
     let context = Pool_context.find req in
     let tags = Pool_context.Logger.Tags.req req in
     match context with
@@ -503,8 +471,7 @@ module Htmx = struct
     | Ok ({ Pool_context.query_parameters; _ } as context) ->
       let%lwt res = result context in
       res
-      |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) ->
-        err)
+      |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) -> err)
       |> CCResult.map Lwt.return
       |> CCResult.get_lazy (fun (error_msg, error_path) ->
         htmx_redirect
@@ -518,9 +485,7 @@ end
 
 module Json = struct
   let yojson_response ?status json =
-    let headers =
-      Opium.Headers.of_list [ "Content-Type", "application/json" ]
-    in
+    let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ] in
     json |> Sihl.Web.Response.of_json ?status ~headers |> Lwt.return
   ;;
 
@@ -530,9 +495,7 @@ module Json = struct
     let return_error language err =
       yojson_response
         ~status:(Opium.Status.of_code 400)
-        (`Assoc
-          [ "message", `String Pool_common.(Utils.error_to_string language err)
-          ])
+        (`Assoc [ "message", `String Pool_common.(Utils.error_to_string language err) ])
     in
     match context with
     | Ok ({ Pool_context.language; _ } as context) ->

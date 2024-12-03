@@ -4,10 +4,7 @@ module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.admin.location"
 let create_layout req = General.create_tenant_layout req
-
-let id req field encode =
-  Sihl.Web.Router.param req @@ Field.show field |> encode
-;;
+let id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encode
 
 let descriptions_from_urlencoded req urlencoded =
   let open Pool_location in
@@ -15,10 +12,7 @@ let descriptions_from_urlencoded req urlencoded =
   let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
   tenant_languages
   |> CCList.filter_map (fun language ->
-    CCList.assoc_opt
-      ~eq:CCString.equal
-      (Description.field_name language)
-      urlencoded
+    CCList.assoc_opt ~eq:CCString.equal (Description.field_name language) urlencoded
     >>= CCList.head_opt
     >|= CCPair.make language)
   |> function
@@ -46,10 +40,7 @@ let index req =
       database_label
   in
   let open Page.Admin.Location in
-  (if HttpUtils.Htmx.is_hx_request req then list else index)
-    context
-    location_list
-    query
+  (if HttpUtils.Htmx.is_hx_request req then list else index) context location_list query
   |> Lwt_result.return
 ;;
 
@@ -76,14 +67,10 @@ let create req =
   in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , "/admin/locations/create"
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      err, "/admin/locations/create", [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* description =
-      descriptions_from_urlencoded req urlencoded |> Lwt_result.lift
-    in
+    let* description = descriptions_from_urlencoded req urlencoded |> Lwt_result.lift in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Location_command.Create in
@@ -98,8 +85,7 @@ let create req =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         "/admin/locations"
-        [ Message.set ~success:[ Pool_message.(Success.Created Field.Location) ]
-        ]
+        [ Message.set ~success:[ Pool_message.(Success.Created Field.Location) ] ]
     in
     events |>> handle
   in
@@ -126,26 +112,17 @@ let new_file req =
 let add_file req =
   let open Utils.Lwt_result.Infix in
   let id =
-    HttpUtils.get_field_router_param req Field.Location
-    |> Pool_location.Id.of_string
+    HttpUtils.get_field_router_param req Field.Location |> Pool_location.Id.of_string
   in
-  let path =
-    id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
-  in
+  let path = id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s" in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, Format.asprintf "%s/files/create" path)
+    Utils.Lwt_result.map_error (fun err -> err, Format.asprintf "%s/files/create" path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* location = Pool_location.find database_label id in
-    let%lwt multipart_encoded =
-      Sihl.Web.Request.to_multipart_form_data_exn req
-    in
+    let%lwt multipart_encoded = Sihl.Web.Request.to_multipart_form_data_exn req in
     let* files =
-      HttpUtils.File.upload_files
-        database_label
-        [ Field.(FileMapping |> show) ]
-        req
+      HttpUtils.File.upload_files database_label [ Field.(FileMapping |> show) ] req
     in
     let finalize = function
       | Ok resp -> Lwt.return_ok resp
@@ -155,8 +132,7 @@ let add_file req =
             (fun (_, asset_id) -> asset_id |> Storage.delete database_label)
             files
         in
-        Logs.err (fun m ->
-          m ~tags "One of the events failed while adding a file");
+        Logs.err (fun m -> m ~tags "One of the events failed while adding a file");
         Lwt.return_error err
     in
     let events =
@@ -172,9 +148,7 @@ let add_file req =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         path
-        [ Message.set
-            ~success:[ Pool_message.(Success.Created Field.FileMapping) ]
-        ]
+        [ Message.set ~success:[ Pool_message.(Success.Created Field.FileMapping) ] ]
     in
     events >|> finalize |>> handle
   in
@@ -202,8 +176,7 @@ let detail edit req =
         detail location statistics statistics_year_range context |> Lwt.return
       | true ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
-        form ~location ~states context tenant_languages flash_fetcher
-        |> Lwt.return)
+        form ~location ~states context tenant_languages flash_fetcher |> Lwt.return)
     |> Lwt_result.ok
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -231,23 +204,16 @@ let statistics req =
         req
         Field.Year
         CCFun.Infix.(
-          CCInt.of_string
-          %> CCOption.to_result Pool_message.(Error.Invalid Field.Year))
+          CCInt.of_string %> CCOption.to_result Pool_message.(Error.Invalid Field.Year))
       |> Lwt_result.lift
     in
     let%lwt statistics = Statistics.create ~year database_label id in
     let%lwt statistics_year_range = Statistics.year_select database_label in
-    Page.Admin.Location.make_statistics
-      ~year
-      statistics_year_range
-      language
-      id
-      statistics
+    Page.Admin.Location.make_statistics ~year statistics_year_range language id statistics
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
-  result
-  |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  result |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 let update req =
@@ -274,20 +240,13 @@ let update req =
        let events =
          let open CCResult.Infix in
          let open Cqrs_command.Location_command.Update in
-         urlencoded
-         |> decode description
-         >>= handle ~tags location
-         |> Lwt_result.lift
+         urlencoded |> decode description >>= handle ~tags location |> Lwt_result.lift
        in
        let handle events =
-         let%lwt () =
-           Pool_event.handle_events ~tags database_label user events
-         in
+         let%lwt () = Pool_event.handle_events ~tags database_label user events in
          Http_utils.redirect_to_with_actions
            detail_path
-           [ Message.set
-               ~success:[ Pool_message.(Success.Updated Field.Location) ]
-           ]
+           [ Message.set ~success:[ Pool_message.(Success.Updated Field.Location) ] ]
        in
        events |>> handle
   in
@@ -297,13 +256,9 @@ let update req =
 let delete req =
   let result { Pool_context.database_label; user; _ } =
     let location_id = id req Field.Location Pool_location.Id.of_string in
-    let mapping_id =
-      id req Field.FileMapping Pool_location.Mapping.Id.of_string
-    in
+    let mapping_id = id req Field.FileMapping Pool_location.Mapping.Id.of_string in
     let path =
-      location_id
-      |> Pool_location.Id.value
-      |> Format.asprintf "/admin/locations/%s"
+      location_id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
     in
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
@@ -337,13 +292,8 @@ end = struct
   module LocationCommand = Cqrs_command.Location_command
   module Guardian = Middleware.Guardian
 
-  let file_effects =
-    Guardian.id_effects Pool_location.Mapping.Id.validate Field.File
-  ;;
-
-  let location_effects =
-    Guardian.id_effects Pool_location.Id.validate Field.Location
-  ;;
+  let file_effects = Guardian.id_effects Pool_location.Mapping.Id.validate Field.File
+  let location_effects = Guardian.id_effects Pool_location.Id.validate Field.Location
 
   let combined_effects validation_set =
     let open CCResult.Infix in
@@ -356,8 +306,7 @@ end = struct
   ;;
 
   let index =
-    Pool_location.Guard.Access.index
-    |> Guardian.validate_admin_entity ~any_id:true
+    Pool_location.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let create = LocationCommand.Create.effects |> Guardian.validate_admin_entity

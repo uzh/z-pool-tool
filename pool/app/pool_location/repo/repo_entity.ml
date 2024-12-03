@@ -77,9 +77,7 @@ module Address = struct
           ~decode
           (t2
              (option Institution.t)
-             (t2
-                (option Room.t)
-                (t2 (option Building.t) (t2 Street.t (t2 Zip.t City.t))))))
+             (t2 (option Room.t) (t2 (option Building.t) (t2 Street.t (t2 Zip.t City.t))))))
     ;;
   end
 
@@ -93,9 +91,7 @@ module Address = struct
       | true, _ -> Ok Virtual
       | _, Some address -> Ok (Physical address)
       | false, None ->
-        failwith
-          "Location could be created without beeing virtual and without \
-           address!"
+        failwith "Location could be created without beeing virtual and without address!"
     in
     Caqti_type.(custom ~encode ~decode (t2 bool (option Mail.t)))
   ;;
@@ -125,15 +121,11 @@ let t =
     Ok
       ( m.id
       , ( m.name
-        , ( m.description
-          , (m.address, (m.link, (m.status, (m.created_at, m.updated_at)))) ) )
-      )
+        , (m.description, (m.address, (m.link, (m.status, (m.created_at, m.updated_at)))))
+        ) )
   in
   let decode
-    ( id
-    , ( name
-      , (description, (address, (link, (status, (created_at, updated_at))))) )
-    )
+        (id, (name, (description, (address, (link, (status, (created_at, updated_at)))))))
     =
     let open CCResult in
     Ok { id; name; description; address; link; status; created_at; updated_at }
@@ -154,9 +146,7 @@ let t =
                      (option Link.t)
                      (t2
                         Status.t
-                        (t2
-                           Pool_common.Repo.CreatedAt.t
-                           Pool_common.Repo.UpdatedAt.t))))))))
+                        (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))))))
 ;;
 
 let to_entity (m : t) files : Entity.t =
@@ -204,8 +194,6 @@ module Update = struct
         ~decode
         (t2
            Pool_common.Repo.Id.t
-           (t2
-              Name.t
-              (t2 (option Description.t) (t2 Address.t (option Link.t))))))
+           (t2 Name.t (t2 (option Description.t) (t2 Address.t (option Link.t))))))
   ;;
 end

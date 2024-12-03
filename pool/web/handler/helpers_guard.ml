@@ -29,9 +29,7 @@ let can_read_contact permisson_on_target { Pool_context.guardian; _ } =
   let open Guard in
   let open PermissionOnTarget in
   permisson_on_target
-  |> CCList.fold_left
-       (fun init set -> if init then init else validate set guardian)
-       false
+  |> CCList.fold_left (fun init set -> if init then init else validate set guardian) false
 ;;
 
 let can_read_contact_name context verify_on_ids =
@@ -44,15 +42,11 @@ let can_read_contact_info context verify_on_ids =
 
 let can_access_contact_profile context id =
   can_read_contact
-    Contact.Guard.Access.(
-      read_of_target (Guard.Uuid.target_of Experiment.Id.value id))
+    Contact.Guard.Access.(read_of_target (Guard.Uuid.target_of Experiment.Id.value id))
     context
 ;;
 
-let target_model_for_actor_role
-  pool
-  ({ Guard.ActorRole.target_uuid; _ } as role)
-  =
+let target_model_for_actor_role pool ({ Guard.ActorRole.target_uuid; _ } as role) =
   let find_target_model =
     CCOption.map_or ~default:Lwt.return_none (fun uuid ->
       Guard.Persistence.Target.find_model ~ctx:(Database.to_ctx pool) uuid
@@ -67,16 +61,14 @@ let can_send_direct_message { Pool_context.database_label; user; _ } =
 ;;
 
 let can_rerun_session_filter
-  { Pool_context.database_label; user; _ }
-  experiment_id
-  session_id
+      { Pool_context.database_label; user; _ }
+      experiment_id
+      session_id
   =
   has_permission
     database_label
     user
-    (Cqrs_command.Assignment_command.UpdateMatchesFilter.effects
-       experiment_id
-       session_id)
+    (Cqrs_command.Assignment_command.UpdateMatchesFilter.effects experiment_id session_id)
 ;;
 
 let grant_role ~redirect_path ~user ~target_id database_label req =
@@ -95,8 +87,7 @@ let grant_role ~redirect_path ~user ~target_id database_label req =
   let* role_target =
     Http_utils.htmx_urlencoded_list Field.(Target |> array_key) req
     ||> CCList.map
-          (Guard.Uuid.Target.of_string
-           %> CCOption.to_result (Error.Decode Field.Id))
+          (Guard.Uuid.Target.of_string %> CCOption.to_result (Error.Decode Field.Id))
     ||> CCResult.flatten_l
   in
   let* expand_targets =
@@ -120,24 +111,20 @@ let grant_role ~redirect_path ~user ~target_id database_label req =
         ||> CCList.map (fun uuid -> role, Some uuid)
         |> Lwt_result.ok
       | role ->
-        Logs.err (fun m ->
-          m "Admin handler: Missing role %s" ([%show: Role.Role.t] role));
+        Logs.err (fun m -> m "Admin handler: Missing role %s" ([%show: Role.Role.t] role));
         Lwt.return_error (Error.NotFound Field.Role)
         ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id)
   in
   let roles =
     expand_targets
-    |> Lwt_list.map_s
-         (Guard.Persistence.Actor.validate_assign_role database_label actor)
+    |> Lwt_list.map_s (Guard.Persistence.Actor.validate_assign_role database_label actor)
     ||> CCList.all_ok
   in
   let events roles =
     let open Command in
     GrantRoles.handle ~tags { target_id; roles } |> lift
   in
-  let handle events =
-    Pool_event.handle_events ~tags database_label user events
-  in
+  let handle events = Pool_event.handle_events ~tags database_label user events in
   let* () = roles >>= events |>> handle in
   Lwt_result.ok
     (Http_utils.redirect_to_with_actions

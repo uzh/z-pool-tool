@@ -36,9 +36,7 @@ module Write = struct
 
   let t =
     let open Database.Caqti_encoders in
-    let decode _ =
-      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
-    in
+    let decode _ = Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel in
     let encode (m : t) : ('a Data.t, string) result =
       Ok Data.[ m.user_uuid; m.email_verified; m.import_pending ]
     in
@@ -47,9 +45,6 @@ module Write = struct
       ~encode
       ~decode
       Caqti_type.
-        [ Id.t
-        ; option Pool_user.Repo.EmailVerified.t
-        ; Pool_user.Repo.ImportPending.t
-        ]
+        [ Id.t; option Pool_user.Repo.EmailVerified.t; Pool_user.Repo.ImportPending.t ]
   ;;
 end

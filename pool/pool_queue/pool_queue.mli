@@ -108,12 +108,8 @@ module Job : sig
   val create
     :  ?max_tries:int
     -> ?retry_delay:Ptime.span
-    -> ?failed:
-         (Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t)
-    -> (?id:Id.t
-        -> Database.Label.t
-        -> 'a
-        -> (unit, Pool_message.Error.t) Lwt_result.t)
+    -> ?failed:(Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t)
+    -> (?id:Id.t -> Database.Label.t -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t)
     -> ('a -> string)
     -> (string -> ('a, Pool_message.Error.t) result)
     -> JobName.t
@@ -137,13 +133,7 @@ module AnyJob : sig
   val show : t -> string
   val retry_delay : t -> Ptime.span
   val max_tries : t -> int
-
-  val failed
-    :  t
-    -> Database.Label.t
-    -> Pool_message.Error.t
-    -> Instance.t
-    -> unit Lwt.t
+  val failed : t -> Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
 
   val handle
     :  t
@@ -155,10 +145,7 @@ module AnyJob : sig
   val name : t -> JobName.t
 end
 
-val find
-  :  Database.Label.t
-  -> Id.t
-  -> (Instance.t, Pool_message.Error.t) Lwt_result.t
+val find : Database.Label.t -> Id.t -> (Instance.t, Pool_message.Error.t) Lwt_result.t
 
 val find_by
   :  [< `Current | `History ]
@@ -184,9 +171,7 @@ val count_workable
   -> Database.Label.t
   -> (int, Pool_message.Error.t) result Lwt.t
 
-val count_all_workable
-  :  Database.Label.t
-  -> (int, Pool_message.Error.t) result Lwt.t
+val count_all_workable : Database.Label.t -> (int, Pool_message.Error.t) result Lwt.t
 
 include Repo.ColumnsSig
 
@@ -229,12 +214,7 @@ val lifecycle_service : Sihl.Container.lifecycle
 val lifecycle_worker : Sihl.Container.lifecycle
 val hide : ?execute_on_root:bool -> 'a Job.t -> AnyJob.t
 val register_jobs : AnyJob.t list -> unit Lwt.t
-
-val register
-  :  ?kind:kind
-  -> ?jobs:AnyJob.t list
-  -> unit
-  -> Sihl.Container.Service.t
+val register : ?kind:kind -> ?jobs:AnyJob.t list -> unit -> Sihl.Container.Service.t
 
 module Repo : sig
   module Id : sig

@@ -13,10 +13,7 @@ module UserImport = Command_import
 module Worker = Command_worker
 
 let version =
-  Command_utils.make_no_args
-    "version"
-    "Show version of current executable."
-    (fun () ->
-       print_endline (Format.asprintf "Version: %s" Version.to_string);
-       Lwt.return_some ())
+  Command_utils.make_no_args "version" "Show version of current executable." (fun () ->
+    print_endline (Format.asprintf "Version: %s" Version.to_string);
+    Lwt.return_some ())
 ;;

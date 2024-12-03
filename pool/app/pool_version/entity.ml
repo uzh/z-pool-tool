@@ -66,9 +66,5 @@ let filterable_by = None
 let column_tag = (Field.Tag, "pool_versions.tag") |> Query.Column.create
 let searchable_by = [ column_tag ]
 let sortable_by = [ column_tag ]
-
-let default_sort =
-  Query.Sort.{ column = column_tag; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_tag; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

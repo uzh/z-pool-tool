@@ -8,6 +8,5 @@ let add_gtx_api_key_to_tenant =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202305261314" |> add_step add_gtx_api_key_to_tenant)
+  Database.Migration.(empty "202305261314" |> add_step add_gtx_api_key_to_tenant)
 ;;

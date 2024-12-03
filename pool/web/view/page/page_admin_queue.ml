@@ -4,10 +4,7 @@ open Tyxml.Html
 module Field = Pool_message.Field
 
 let formatted_date_time = Pool_model.Time.formatted_date_time
-
-let path =
-  Contact.id %> Contact.Id.value %> Format.asprintf "/admin/contacts/%s"
-;;
+let path = Contact.id %> Contact.Id.value %> Format.asprintf "/admin/contacts/%s"
 
 let data_table_head language =
   let open Pool_queue in
@@ -44,8 +41,7 @@ let list Pool_context.{ language; _ } queue_table url (queued_jobs, query) =
     let recipient =
       match instance |> Instance.name with
       | JobName.SendEmail -> Email.Service.Job.show_recipient instance
-      | JobName.SendTextMessage ->
-        Text_message.Service.Job.show_recipient instance
+      | JobName.SendTextMessage -> Text_message.Service.Job.show_recipient instance
       | JobName.CheckMatchesFilter -> ""
     in
     let formatted_date_time date =
@@ -58,8 +54,7 @@ let list Pool_context.{ language; _ } queue_table url (queued_jobs, query) =
       %> CCString.replace ~which:`All ~sub:"_" ~by:" "
     in
     [ txt (instance |> name)
-    ; txt
-        (instance |> Instance.status |> Status.show |> CCString.capitalize_ascii)
+    ; txt (instance |> Instance.status |> Status.show |> CCString.capitalize_ascii)
     ; txt (instance |> Instance.message_template |> CCOption.value ~default:"")
     ; txt recipient
     ; instance

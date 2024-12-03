@@ -30,9 +30,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
              | false -> Error ContactUnconfirmed)
         in
         let terms_agreed contact =
-          let%lwt accepted =
-            Contact.has_terms_accepted database_label contact
-          in
+          let%lwt accepted = Contact.has_terms_accepted database_label contact in
           match accepted with
           | true -> Lwt.return_ok contact
           | false -> Lwt.return_error TermsAndConditionsNotAccepted
@@ -51,8 +49,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
               "/accept-terms")
            []
        | Error ContactUnconfirmed ->
-         redirect_to
-           (url_with_field_params query_parameters "/email-confirmation")
+         redirect_to (url_with_field_params query_parameters "/email-confirmation")
        | Error ImportPending ->
          redirect_to_with_actions
            (url_with_field_params query_parameters "/import-pending")
@@ -67,9 +64,8 @@ let completion_in_progress () =
     let query_parameters =
       Pool_context.find req
       |> CCResult.to_opt
-      |> CCOption.map_or
-           ~default:[]
-           (fun { Pool_context.query_parameters; _ } -> query_parameters)
+      |> CCOption.map_or ~default:[] (fun { Pool_context.query_parameters; _ } ->
+        query_parameters)
     in
     match Sihl.Web.Session.find Contact.profile_completion_cookie req with
     | Some "true" ->

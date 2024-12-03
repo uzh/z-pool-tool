@@ -38,16 +38,13 @@ let nav_elements experiment =
   in
   let left =
     [ Single (url "", Overview, Set (Guard.Access.read id))
-    ; Single
-        (url "sessions", sessions_label, Set (Session.Guard.Access.index id))
+    ; Single (url "sessions", sessions_label, Set (Session.Guard.Access.index id))
     ; Parent
         ( None
         , Invitations
         , OnChildren
-        , [ Single
-              (url "invitations", Filter, Set (Invitation.Guard.Access.index id))
-          ; Single
-              (url "mailings", Mailings, Set (Mailing.Guard.Access.index id))
+        , [ Single (url "invitations", Filter, Set (Invitation.Guard.Access.index id))
+          ; Single (url "mailings", Mailings, Set (Mailing.Guard.Access.index id))
           ; Single
               ( url "invitations/sent"
               , SentInvitations
@@ -56,14 +53,9 @@ let nav_elements experiment =
     ]
   in
   let waiting_list_nav =
-    if experiment
-       |> direct_registration_disabled
-       |> DirectRegistrationDisabled.value
+    if experiment |> direct_registration_disabled |> DirectRegistrationDisabled.value
     then
-      [ Single
-          ( url "waiting-list"
-          , WaitingList
-          , Set (Waiting_list.Guard.Access.index id) )
+      [ Single (url "waiting-list", WaitingList, Set (Waiting_list.Guard.Access.index id))
       ]
     else []
   in
@@ -91,13 +83,13 @@ let nav_elements experiment =
 ;;
 
 let create
-  ?active_navigation
-  ?buttons
-  ?hint
-  ({ Pool_context.database_label; language; user; _ } as context)
-  title
-  experiment
-  content
+      ?active_navigation
+      ?buttons
+      ?hint
+      ({ Pool_context.database_label; language; user; _ } as context)
+      title
+      experiment
+      content
   =
   let open Utils.Lwt_result.Infix in
   let open Tab_navigation in

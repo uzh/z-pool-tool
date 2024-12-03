@@ -19,9 +19,7 @@ let tenant_of_request req =
     | Active | Disabled | Maintenance | MigrationsFailed -> true
     | ConnectionIssue | MigrationsConnectionIssue | MigrationsPending -> false
   in
-  tenant_url_of_request req
-  |> Lwt_result.lift
-  >>= Pool_tenant.find_by_url ~should_cache
+  tenant_url_of_request req |> Lwt_result.lift >>= Pool_tenant.find_by_url ~should_cache
 ;;
 
 let make name ~maintenance_handler ~connection_issue_handler ~error_handler () =
@@ -38,10 +36,8 @@ let make name ~maintenance_handler ~connection_issue_handler ~error_handler () =
       in
       (match status with
        | Active -> handle_request
-       | Maintenance
-       | MigrationsConnectionIssue
-       | MigrationsFailed
-       | MigrationsPending -> maintenance_handler ()
+       | Maintenance | MigrationsConnectionIssue | MigrationsFailed | MigrationsPending ->
+         maintenance_handler ()
        | Disabled -> connection_issue_handler ()
        | ConnectionIssue ->
          (match%lwt Pool.connect database_label with
@@ -73,13 +69,6 @@ let validate () =
     |> Lwt.return
   in
   let connection_issue_handler () = Http_utils.redirect_to "/error" in
-  let error_handler (_ : Pool_message.Error.t) =
-    Http_utils.redirect_to "/not-found"
-  in
-  make
-    "tenant.valid"
-    ~maintenance_handler
-    ~connection_issue_handler
-    ~error_handler
-    ()
+  let error_handler (_ : Pool_message.Error.t) = Http_utils.redirect_to "/not-found" in
+  make "tenant.valid" ~maintenance_handler ~connection_issue_handler ~error_handler ()
 ;;

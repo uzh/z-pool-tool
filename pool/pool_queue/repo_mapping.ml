@@ -3,8 +3,7 @@ open Utils.Lwt_result.Infix
 module Dynparam = Database.Dynparam
 
 let sql_select_columns =
-  Pool_common.Id.sql_select_fragment
-    ~field:"pool_queue_jobs_mapping.entity_uuid"
+  Pool_common.Id.sql_select_fragment ~field:"pool_queue_jobs_mapping.entity_uuid"
   :: Repo.sql_select_columns None
 ;;
 
@@ -44,9 +43,7 @@ let insert_all label mappings =
       ~table:"pool_queue_jobs_mapping"
       ~columns:sql_write_columns
       Repo_entity.Mapping.Write.t
-      (mappings
-       |> CCList.map (Entity_mapping.to_write %> populatable)
-       |> to_stream)
+      (mappings |> CCList.map (Entity_mapping.to_write %> populatable) |> to_stream)
     |> Lwt.map Caqti_error.uncongested)
 ;;
 
@@ -67,32 +64,31 @@ let duplicate_for_new_job label queue_uuid =
     let* () = Connection.start () in
     Lwt.catch
       (fun () ->
-        let%lwt mappings =
-          Connection.collect_list find_all_by_queue_request queue_uuid
-          >|- Caqti_error.show
-          ||> CCResult.get_or_failwith
-          ||> CCList.map (Repo_entity.Mapping.Write.create queue_uuid)
-        in
-        let* () =
-          Connection.populate
-            ~table:"pool_queue_jobs_mapping"
-            ~columns:sql_write_columns
-            Repo_entity.Mapping.Write.t
-            (mappings |> CCList.map populatable |> to_stream)
-          |> Lwt.map Caqti_error.uncongested
-        in
-        Connection.commit ())
+         let%lwt mappings =
+           Connection.collect_list find_all_by_queue_request queue_uuid
+           >|- Caqti_error.show
+           ||> CCResult.get_or_failwith
+           ||> CCList.map (Repo_entity.Mapping.Write.create queue_uuid)
+         in
+         let* () =
+           Connection.populate
+             ~table:"pool_queue_jobs_mapping"
+             ~columns:sql_write_columns
+             Repo_entity.Mapping.Write.t
+             (mappings |> CCList.map populatable |> to_stream)
+           |> Lwt.map Caqti_error.uncongested
+         in
+         Connection.commit ())
       (fun exn ->
-        Logs.err (fun m ->
-          m "Job mapping duplication failed: %s" (Printexc.to_string exn));
-        Connection.rollback ()))
+         Logs.err (fun m ->
+           m "Job mapping duplication failed: %s" (Printexc.to_string exn));
+         Connection.rollback ()))
 ;;
 
 let find_instances_by_entity queue_table ?query pool entity_uuid =
   let where =
     let open Pool_common.Repo in
-    ( [%string
-        {sql| entity_uuid = %{Pool_common.Id.sql_value_fragment "?"} |sql}]
+    ( [%string {sql| entity_uuid = %{Pool_common.Id.sql_value_fragment "?"} |sql}]
     , Dynparam.(empty |> add Id.t entity_uuid) )
   in
   let joins =

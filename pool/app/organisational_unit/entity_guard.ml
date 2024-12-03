@@ -6,9 +6,9 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        Guard.Target.create
-          `OrganisationalUnit
-          (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
+         Guard.Target.create
+           `OrganisationalUnit
+           (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
       t
     >|- Pool_message.Error.authorization
   ;;
@@ -21,9 +21,7 @@ module Access = struct
 
   let organisational_unit action uuid =
     one_of_tuple
-      ( action
-      , `OrganisationalUnit
-      , Some (uuid |> Uuid.target_of Entity.Id.value) )
+      (action, `OrganisationalUnit, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index = one_of_tuple (Read, `OrganisationalUnit, None)

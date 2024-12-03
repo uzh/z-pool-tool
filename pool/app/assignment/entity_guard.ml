@@ -19,9 +19,7 @@ module Access = struct
   open ValidationSet
   open Permission
 
-  let assignment action uuid =
-    one_of_tuple (action, `Assignment, Some (uuid |> target_of))
-  ;;
+  let assignment action uuid = one_of_tuple (action, `Assignment, Some (uuid |> target_of))
 
   let create id =
     And
@@ -39,9 +37,7 @@ module Access = struct
       [ Or
           [ assignment Read assignment_id
           ; one_of_tuple
-              ( Read
-              , `Assignment
-              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+              (Read, `Assignment, Some (Uuid.target_of Experiment.Id.value experiment_id))
           ]
       ; Experiment.Guard.Access.read experiment_id
       ]

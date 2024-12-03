@@ -37,9 +37,7 @@ let predicate_of_yojson key_list (yojson : Yojson.Safe.t) =
     let go key of_yojson =
       assoc |> CCList.assoc_opt ~eq:CCString.equal key >>= of_yojson
     in
-    let key =
-      go key_string (Key.of_yojson %> of_result) >>= Key.to_human key_list
-    in
+    let key = go key_string (Key.of_yojson %> of_result) >>= Key.to_human key_list in
     let operator = go operator_string (Operator.of_yojson %> of_result) in
     let value = go value_string value_of_yojson_opt in
     Predicate.create_human ?key ?operator ?value () |> CCResult.return

@@ -15,6 +15,5 @@ let create_pool_participation_tags =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202307250839" |> add_step create_pool_participation_tags)
+  Database.Migration.(empty "202307250839" |> add_step create_pool_participation_tags)
 ;;

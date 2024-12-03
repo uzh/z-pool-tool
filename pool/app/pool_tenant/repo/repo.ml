@@ -125,8 +125,7 @@ module Sql = struct
   ;;
 
   let find_request =
-    select_from_tenants_sql find_fragment `Read
-    |> Pool_common.Repo.Id.t ->! RepoEntity.t
+    select_from_tenants_sql find_fragment `Read |> Pool_common.Repo.Id.t ->! RepoEntity.t
   ;;
 
   let find pool id =
@@ -136,8 +135,7 @@ module Sql = struct
   ;;
 
   let find_full_request =
-    select_from_tenants_sql find_fragment `Write
-    |> RepoEntity.Id.t ->! RepoEntity.Write.t
+    select_from_tenants_sql find_fragment `Write |> RepoEntity.Id.t ->! RepoEntity.Write.t
   ;;
 
   let find_full pool id =
@@ -147,9 +145,7 @@ module Sql = struct
   ;;
 
   let find_by_label_request =
-    select_from_tenants_sql
-      {sql| WHERE pool_tenant.database_label = ? |sql}
-      `Read
+    select_from_tenants_sql {sql| WHERE pool_tenant.database_label = ? |sql} `Read
     |> Database.Repo.Label.t ->! RepoEntity.t
   ;;
 
@@ -216,9 +212,9 @@ let set_logos tenant logos =
     let open LogoMapping.LogoType in
     CCList.partition_filter_map
       (fun l ->
-        match l.LogoMapping.logo_type with
-        | TenantLogo -> `Left l.LogoMapping.file
-        | PartnerLogo -> `Right l.LogoMapping.file)
+         match l.LogoMapping.logo_type with
+         | TenantLogo -> `Left l.LogoMapping.file
+         | PartnerLogo -> `Right l.LogoMapping.file)
       logos
   in
   let open Entity.Read in
@@ -263,13 +259,11 @@ let find_by_url ?should_cache pool url =
   Cache.find_by_url url
   |> function
   | Some tenant ->
-    Logs.debug (fun m ->
-      m ~tags "Found in cache: Tenant %s" ([%show: Entity.Url.t] url));
+    Logs.debug (fun m -> m ~tags "Found in cache: Tenant %s" ([%show: Entity.Url.t] url));
     Lwt_result.return tenant
   | None ->
     let combine ({ Entity.Read.id; _ } as tenant) =
-      Database.collect pool Repo_logo_mapping.Sql.find_request id
-      ||> set_logos tenant
+      Database.collect pool Repo_logo_mapping.Sql.find_request id ||> set_logos tenant
     in
     let%lwt tenant =
       Database.find_opt pool Sql.find_by_url_request url
@@ -298,9 +292,7 @@ let insert pool (tenant, database) =
   let open Database in
   transaction_iter
     pool
-    [ exec_query Repo.insert_request database
-    ; exec_query Sql.insert_request tenant
-    ]
+    [ exec_query Repo.insert_request database; exec_query Sql.insert_request tenant ]
 ;;
 
 let update = Sql.update

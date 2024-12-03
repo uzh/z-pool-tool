@@ -7,10 +7,10 @@ let externalize_with_params = HttpUtils.externalize_path_with_params
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
 let login_form
-  ?(hide_signup = false)
-  ?intended
-  ?flash_fetcher
-  Pool_context.{ language; query_parameters; csrf; _ }
+      ?(hide_signup = false)
+      ?intended
+      ?flash_fetcher
+      Pool_context.{ language; query_parameters; csrf; _ }
   =
   let open Pool_common in
   let query_parameters =
@@ -31,10 +31,7 @@ let login_form
     else
       a
         ~a:[ a_href (externalize "/signup") ]
-        [ txt
-            Pool_common.(
-              Utils.control_to_string language Pool_message.Control.SignUp)
-        ]
+        [ txt Pool_common.(Utils.control_to_string language Pool_message.Control.SignUp) ]
   in
   div
     ~a:[ a_class [ "stack" ] ]
@@ -45,24 +42,18 @@ let login_form
         ; input_element language `Password Pool_message.Field.Password
         ; div
             ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
-            [ div
-                ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-                [ reset_password; sign_up ]
-            ; submit_element
-                ~classnames:[ "push" ]
-                language
-                Pool_message.Control.Login
-                ()
+            [ div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ reset_password; sign_up ]
+            ; submit_element ~classnames:[ "push" ] language Pool_message.Control.Login ()
             ]
         ]
     ]
 ;;
 
 let index
-  (tenant : Pool_tenant.t)
-  Pool_context.({ language; query_parameters; user; _ } as context)
-  welcome_text
-  signup_cta
+      (tenant : Pool_tenant.t)
+      Pool_context.({ language; query_parameters; user; _ } as context)
+      welcome_text
+      signup_cta
   =
   let text_to_string = Pool_common.Utils.text_to_string language in
   let is_logged_in =
@@ -90,9 +81,7 @@ let index
           ]
       ]
   in
-  let aspect_ratio img =
-    img |> Component.Image.aspect_ratio ~contain:true `R16x9
-  in
+  let aspect_ratio img = img |> Component.Image.aspect_ratio ~contain:true `R16x9 in
   let partner_html =
     let open Pool_tenant in
     let logos = tenant.partner_logo |> PartnerLogos.value in
@@ -106,8 +95,8 @@ let index
           ~a:[ a_class [ "grid-col-4"; "flex-gap" ] ]
           (CCList.map
              (fun logo ->
-               img ~src:(Pool_common.File.externalized_path logo) ~alt:"" ()
-               |> aspect_ratio)
+                img ~src:(Pool_common.File.externalized_path logo) ~alt:"" ()
+                |> aspect_ratio)
              (tenant.Pool_tenant.partner_logo |> Pool_tenant.PartnerLogos.value))
       ]
   in
@@ -116,30 +105,24 @@ let index
     [ div
         ~a:[ a_class [ "flexrow"; "flex-gap-lg"; "index-page" ] ]
         [ div
-            ~a:
-              [ a_class
-                  [ "bg-grey-light"; "border"; "border-radius"; "inset-lg" ]
-              ]
-            ((div [ welcome_text |> I18n.content_to_string |> Unsafe.data ]
-              :: sign_up_cta)
+            ~a:[ a_class [ "bg-grey-light"; "border"; "border-radius"; "inset-lg" ] ]
+            ((div [ welcome_text |> I18n.content_to_string |> Unsafe.data ] :: sign_up_cta)
              @ partner_html)
         ; div
             ~a:[ a_class [ "flexcolumn"; "stack" ] ]
             (CCList.map
                (fun logo ->
-                 img
-                   ~src:(Pool_common.File.externalized_path logo)
-                   ~alt:
-                     (Format.asprintf
-                        "Logo %s"
-                        Pool_tenant.(tenant.title |> Title.value))
-                   ()
-                 |> aspect_ratio)
+                  img
+                    ~src:(Pool_common.File.externalized_path logo)
+                    ~alt:
+                      (Format.asprintf
+                         "Logo %s"
+                         Pool_tenant.(tenant.title |> Title.value))
+                    ()
+                  |> aspect_ratio)
                (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value)
-             @ [ (if is_logged_in
-                  then txt ""
-                  else login_form ~hide_signup:true context)
-               ])
+             @ [ (if is_logged_in then txt "" else login_form ~hide_signup:true context) ]
+            )
         ]
     ]
 ;;
@@ -148,9 +131,7 @@ let login ?intended Pool_context.({ language; _ } as context) flash_fetcher =
   let txt_to_string = txt_to_string language in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        (txt_to_string Pool_common.I18n.LoginTitle)
+    [ h1 ~a:[ a_class [ "heading-1" ] ] (txt_to_string Pool_common.I18n.LoginTitle)
     ; login_form ?intended ~flash_fetcher context
     ]
 ;;
@@ -160,15 +141,10 @@ let request_reset_password Pool_context.{ language; query_parameters; csrf; _ } 
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            Pool_common.(Utils.text_to_string language I18n.ResetPasswordTitle)
-        ]
+        [ txt Pool_common.(Utils.text_to_string language I18n.ResetPasswordTitle) ]
     ; form
         ~a:
-          [ a_action
-              (externalize_with_params
-                 query_parameters
-                 "/request-reset-password")
+          [ a_action (externalize_with_params query_parameters "/request-reset-password")
           ; a_method `Post
           ; a_class [ "stack" ]
           ]
@@ -187,18 +163,16 @@ let request_reset_password Pool_context.{ language; query_parameters; csrf; _ } 
 ;;
 
 let reset_password
-  token
-  Pool_context.{ language; query_parameters; csrf; _ }
-  password_policy
+      token
+      Pool_context.{ language; query_parameters; csrf; _ }
+      password_policy
   =
   let externalize = externalize_with_params query_parameters in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            Pool_common.(Utils.text_to_string language I18n.ResetPasswordTitle)
-        ]
+        [ txt Pool_common.(Utils.text_to_string language I18n.ResetPasswordTitle) ]
     ; form
         ~a:
           [ a_action (externalize "/reset-password")
@@ -209,15 +183,11 @@ let reset_password
         ; input_element language `Hidden Pool_message.Field.Token ~value:token
         ; input_element
             ~hints:
-              Pool_common.I18n.
-                [ I18nText (password_policy |> I18n.content_to_string) ]
+              Pool_common.I18n.[ I18nText (password_policy |> I18n.content_to_string) ]
             language
             `Password
             Pool_message.Field.Password
-        ; input_element
-            language
-            `Password
-            Pool_message.Field.PasswordConfirmation
+        ; input_element language `Password Pool_message.Field.PasswordConfirmation
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element
@@ -234,9 +204,7 @@ let terms_and_conditions language terms terms_last_updated =
   let terms = terms |> I18n.content |> I18n.Content.value in
   let title =
     Pool_common.(
-      Utils.field_to_string_capitalized
-        language
-        Pool_message.Field.TermsAndConditions)
+      Utils.field_to_string_capitalized language Pool_message.Field.TermsAndConditions)
   in
   let last_updated =
     Pool_common.(

@@ -37,21 +37,14 @@ let list { Pool_context.language; _ } (versions, query) =
     in
     let format_time = Utils.Ptime.formatted_date_time in
     [ txt (Tag.value tag)
-    ; published_at
-      |> map_or ~default:"" CCFun.(PublishedAt.value %> format_time)
-      |> txt
+    ; published_at |> map_or ~default:"" CCFun.(PublishedAt.value %> format_time) |> txt
     ; created_at |> Pool_common.CreatedAt.value |> format_time |> txt
     ; edit_btn
     ]
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make
-    ~target_id:"versions-list"
-    ~cols
-    ~row
-    data_table
-    versions
+  Component.DataTable.make ~target_id:"versions-list" ~cols ~row data_table versions
 ;;
 
 let index (Pool_context.{ language; _ } as context) versions =
@@ -82,8 +75,7 @@ let form { Pool_context.csrf; language; _ } ?version ?flash_fetcher () =
   let publish_form { id; _ } =
     let open CCOption in
     match
-      version
-      |> map_or ~default:false (fun { published_at; _ } -> is_some published_at)
+      version |> map_or ~default:false (fun { published_at; _ } -> is_some published_at)
     with
     | true -> txt ""
     | false ->
@@ -94,11 +86,7 @@ let form { Pool_context.csrf; language; _ } ?version ?flash_fetcher () =
           ; a_class [ "no-gap" ]
           ]
         [ Input.csrf_element csrf ()
-        ; Input.submit_element
-            ~submit_type:`Success
-            language
-            (Control.Publish field)
-            ()
+        ; Input.submit_element ~submit_type:`Success language (Control.Publish field) ()
         ]
   in
   let title =
@@ -106,17 +94,14 @@ let form { Pool_context.csrf; language; _ } ?version ?flash_fetcher () =
     match version with
     | None -> h1 [ txt (to_string control) ]
     | Some version ->
-      let title =
-        Format.asprintf "%s %s" (to_string control) (Tag.value version.tag)
-      in
+      let title = Format.asprintf "%s %s" (to_string control) (Tag.value version.tag) in
       div
         ~a:[ a_class [ "flexrow"; "justify-between" ] ]
         [ h1 [ txt title ]; publish_form version ]
   in
   let version_input =
     match version with
-    | None ->
-      Input.input_element ?flash_fetcher ~required:true language `Text Field.Tag
+    | None -> Input.input_element ?flash_fetcher ~required:true language `Text Field.Tag
     | Some _ -> txt ""
   in
   div

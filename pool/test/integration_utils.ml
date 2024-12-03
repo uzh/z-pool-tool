@@ -4,13 +4,13 @@ let default_current_user = Model.create_admin ()
 
 module AnnouncementRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    ?start_at
-    ?end_at
-    ?show_to_admins
-    ?show_to_contacts
-    tenant_ids
+        ?(current_user = default_current_user)
+        ?id
+        ?start_at
+        ?end_at
+        ?show_to_admins
+        ?show_to_contacts
+        tenant_ids
     =
     let announcement =
       Test_utils.Model.create_announcement
@@ -44,17 +44,15 @@ end
 
 module ContactRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    ?lastname
-    ?language
-    ?(with_terms_accepted = false)
-    ()
+        ?(current_user = default_current_user)
+        ?id
+        ?lastname
+        ?language
+        ?(with_terms_accepted = false)
+        ()
     =
     let open Utils.Lwt_result.Infix in
-    let contact =
-      Model.create_contact ?id ?lastname ?language ~with_terms_accepted ()
-    in
+    let contact = Model.create_contact ?id ?lastname ?language ~with_terms_accepted () in
     let open Contact in
     let confirm = [ EmailVerified contact ] in
     let%lwt () =
@@ -88,9 +86,7 @@ module AdminRepo = struct
       email
       |> CCOption.value
            ~default:
-             (Format.asprintf
-                "test+%s@econ.uzh.ch"
-                Pool_common.Id.(create () |> value))
+             (Format.asprintf "test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value))
       |> Pool_user.EmailAddress.of_string
     in
     let admin =
@@ -112,11 +108,11 @@ end
 
 module ExperimentRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?(id = Experiment.Id.create ())
-    ?title
-    ?online_experiment
-    ()
+        ?(current_user = default_current_user)
+        ?(id = Experiment.Id.create ())
+        ?title
+        ?online_experiment
+        ()
     =
     let experiment = Model.create_experiment ~id ?title ?online_experiment () in
     let%lwt () =
@@ -129,11 +125,7 @@ module ExperimentRepo = struct
 end
 
 module LocationRepo = struct
-  let create
-    ?(current_user = default_current_user)
-    ?(id = Pool_location.Id.create ())
-    ()
-    =
+  let create ?(current_user = default_current_user) ?(id = Pool_location.Id.create ()) () =
     let location = Model.create_location ~id () in
     let%lwt () =
       Pool_location.Created location
@@ -148,8 +140,7 @@ module MailingRepo = struct
   let create ?(id = Mailing.Id.create ()) ?start ?limit experiment_id =
     let mailing = Model.create_mailing ~id ?start ?limit () in
     let%lwt () =
-      Mailing.(
-        Created (mailing, experiment_id) |> handle_event Data.database_label)
+      Mailing.(Created (mailing, experiment_id) |> handle_event Data.database_label)
     in
     Mailing.find Data.database_label id |> Lwt.map get_or_failwith
   ;;
@@ -162,9 +153,7 @@ module WaitingListRepo = struct
     let%lwt () =
       Waiting_list.Created { Waiting_list.experiment; contact }
       |> Pool_event.waiting_list
-      |> Pool_event.handle_event
-           Data.database_label
-           (Pool_context.Contact contact)
+      |> Pool_event.handle_event Data.database_label (Pool_context.Contact contact)
     in
     experiment
     |> Experiment.Public.id
@@ -174,15 +163,15 @@ end
 
 module SessionRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    ?location
-    ?follow_up_to
-    ?start
-    ?duration
-    ?email_reminder_sent_at
-    experiment
-    ()
+        ?(current_user = default_current_user)
+        ?id
+        ?location
+        ?follow_up_to
+        ?start
+        ?duration
+        ?email_reminder_sent_at
+        experiment
+        ()
     =
     let%lwt location =
       location |> CCOption.map_or ~default:(LocationRepo.create ()) Lwt.return
@@ -208,14 +197,7 @@ module SessionRepo = struct
 end
 
 module TimeWindowRepo = struct
-  let create
-    ?(current_user = default_current_user)
-    ?id
-    start
-    duration
-    experiment
-    ()
-    =
+  let create ?(current_user = default_current_user) ?id start duration experiment () =
     let time_window = Time_window.create ?id start duration experiment in
     let%lwt () =
       Time_window.(Created time_window)

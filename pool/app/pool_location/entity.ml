@@ -42,8 +42,8 @@ module Description = struct
   let create sys_languages descriptions =
     CCList.filter
       (fun lang ->
-        CCList.assoc_opt ~eq:Pool_common.Language.equal lang descriptions
-        |> CCOption.is_none)
+         CCList.assoc_opt ~eq:Pool_common.Language.equal lang descriptions
+         |> CCOption.is_none)
       sys_languages
     |> function
     | [] -> Ok descriptions
@@ -141,9 +141,7 @@ let create ?(id = Id.create ()) name description address link status files =
     }
 ;;
 
-let file_path file =
-  Format.asprintf "files/%s" Mapping.(Id.value file.Mapping.id)
-;;
+let file_path file = Format.asprintf "files/%s" Mapping.(Id.value file.Mapping.id)
 
 let contact_file_path id file =
   Format.asprintf "/location/%s/%s" (Id.value id) (file_path file)
@@ -154,17 +152,13 @@ let admin_file_path id file =
 ;;
 
 module Human = struct
-  let link_with_default ~default { link; _ } =
-    link |> CCOption.map_or ~default Link.value
-  ;;
+  let link_with_default ~default { link; _ } = link |> CCOption.map_or ~default Link.value
 
   let detailed language { description; address; _ } =
     let concat = CCString.concat "\n" in
     let address = Address.address_rows_human language address in
     let address_block = address |> concat in
-    let description =
-      CCOption.bind description (Description.find_opt language)
-    in
+    let description = CCOption.bind description (Description.find_opt language) in
     match description with
     | None -> address_block
     | Some description -> [ address_block; ""; description ] |> concat
@@ -188,9 +182,5 @@ let column_created_at =
 let filterable_by = None
 let searchable_by = [ column_name; column_description ]
 let sortable_by = column_created_at :: searchable_by
-
-let default_sort =
-  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

@@ -11,13 +11,9 @@ let terms_and_conditions_last_updated = Repo.terms_and_conditions_last_updated
 module I18nCache = struct
   open Hashtbl
 
-  let privacy_policy : (Database.Label.t * Pool_common.Language.t, bool) t =
-    create 5
-  ;;
+  let privacy_policy : (Database.Label.t * Pool_common.Language.t, bool) t = create 5
 
-  let tbl
-    : (Database.Label.t * Entity.Key.t * Pool_common.Language.t, Entity.t) t
-    =
+  let tbl : (Database.Label.t * Entity.Key.t * Pool_common.Language.t, Entity.t) t =
     create 5
   ;;
 
@@ -40,12 +36,9 @@ let privacy_policy_is_set database_label language =
   | Some bool -> Lwt.return bool
   | None ->
     let%lwt existing =
-      find_by_key_opt database_label Key.PrivacyPolicy language
-      ||> CCOption.is_some
+      find_by_key_opt database_label Key.PrivacyPolicy language ||> CCOption.is_some
     in
-    let () =
-      Hashtbl.add I18nCache.privacy_policy (database_label, language) existing
-    in
+    let () = Hashtbl.add I18nCache.privacy_policy (database_label, language) existing in
     Lwt.return existing
 ;;
 

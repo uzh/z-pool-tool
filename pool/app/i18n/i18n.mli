@@ -75,10 +75,7 @@ module I18nCache : sig
   val clear : unit -> unit
 end
 
-val privacy_policy_is_set
-  :  Database.Label.t
-  -> Pool_common.Language.t
-  -> bool Lwt.t
+val privacy_policy_is_set : Database.Label.t -> Pool_common.Language.t -> bool Lwt.t
 
 module Guard : sig
   module Target : sig

@@ -25,25 +25,23 @@ module Record = struct
 end
 
 let to_record
-  ({ id
-   ; contact
-   ; no_show
-   ; participated
-   ; matches_filter
-   ; canceled_at
-   ; marked_as_deleted
-   ; external_data_id
-   ; reminder_manually_last_sent_at
-   ; custom_fields
-   ; created_at
-   ; updated_at
-   } :
-    Entity.t)
+      ({ id
+       ; contact
+       ; no_show
+       ; participated
+       ; matches_filter
+       ; canceled_at
+       ; marked_as_deleted
+       ; external_data_id
+       ; reminder_manually_last_sent_at
+       ; custom_fields
+       ; created_at
+       ; updated_at
+       } :
+        Entity.t)
   : Record.t
   =
-  let custom_fields =
-    custom_fields |> CCOption.map (CCList.map Custom_field.Public.id)
-  in
+  let custom_fields = custom_fields |> CCOption.map (CCList.map Custom_field.Public.id) in
   Record.
     { id
     ; contact = Contact.id contact

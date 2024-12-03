@@ -8,6 +8,5 @@ let create_experiment_language_column =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202312121047" |> add_step create_experiment_language_column)
+  Database.Migration.(empty "202312121047" |> add_step create_experiment_language_column)
 ;;

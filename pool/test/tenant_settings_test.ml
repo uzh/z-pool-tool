@@ -15,30 +15,18 @@ module Testable = struct
     Settings.InactiveUser.DisableAfter.(Alcotest.testable pp equal)
   ;;
 
-  let inactive_user_warning =
-    Settings.InactiveUser.Warning.(Alcotest.testable pp equal)
-  ;;
-
+  let inactive_user_warning = Settings.InactiveUser.Warning.(Alcotest.testable pp equal)
   let language = Pool_common.Language.(Alcotest.testable pp equal)
-
-  let terms_and_conditions =
-    Settings.TermsAndConditions.(Alcotest.testable pp equal)
-  ;;
+  let terms_and_conditions = Settings.TermsAndConditions.(Alcotest.testable pp equal)
 end
 
 let check_events expected generated =
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      generated)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected generated)
 ;;
 
 let handle_result result =
-  result
-  |> get_or_failwith
-  |> Pool_event.handle_events database_label current_user
+  result |> get_or_failwith |> Pool_event.handle_events database_label current_user
 ;;
 
 let check_contact_email _ () =
@@ -53,19 +41,13 @@ let check_contact_email _ () =
   let valid_email = "pool@econ.uzh.ch" in
   let result = handle valid_email in
   let expected_email = ContactEmail.of_string valid_email in
-  let expected =
-    Ok [ ContactEmailUpdated expected_email |> Pool_event.settings ]
-  in
+  let expected = Ok [ ContactEmailUpdated expected_email |> Pool_event.settings ] in
   let () = check_events expected result in
   let%lwt () = handle_result result in
   let%lwt contact_email = Settings.find_contact_email database_label in
   let () =
     Alcotest.(
-      check
-        Testable.contact_email
-        "contact email address"
-        contact_email
-        expected_email)
+      check Testable.contact_email "contact email address" contact_email expected_email)
   in
   Lwt.return ()
 ;;
@@ -90,12 +72,7 @@ let check_email_suffix _ () =
   let%lwt suffixes = find_email_suffixes database_label in
   let expected = EmailSuffix.of_string suffix |> CCList.return in
   let () =
-    Alcotest.(
-      check
-        (list Testable.email_suffix)
-        "created email suffix"
-        suffixes
-        expected)
+    Alcotest.(check (list Testable.email_suffix) "created email suffix" suffixes expected)
   in
   let handle_updated suffix =
     UpdateEmailSuffixes.([ Field.show field, [ suffix ] ] |> handle)
@@ -113,12 +90,7 @@ let check_email_suffix _ () =
   let%lwt suffixes = find_email_suffixes database_label in
   let expected = EmailSuffix.of_string updated |> CCList.return in
   let () =
-    Alcotest.(
-      check
-        (list Testable.email_suffix)
-        "updated email suffix"
-        suffixes
-        expected)
+    Alcotest.(check (list Testable.email_suffix) "updated email suffix" suffixes expected)
   in
   Lwt.return ()
 ;;
@@ -144,21 +116,15 @@ let check_inactive_user_disable_after _ () =
   let expected =
     Ok
       [ Settings.InactiveUserDisableAfterUpdated
-          (days_to_timespan valid
-           |> InactiveUser.DisableAfter.create
-           |> get_or_failwith)
+          (days_to_timespan valid |> InactiveUser.DisableAfter.create |> get_or_failwith)
         |> Pool_event.settings
       ]
   in
   let () = check_events expected result in
   let%lwt () = handle_result result in
-  let%lwt disable_after =
-    Settings.find_inactive_user_disable_after database_label
-  in
+  let%lwt disable_after = Settings.find_inactive_user_disable_after database_label in
   let expected =
-    days_to_timespan valid
-    |> InactiveUser.DisableAfter.create
-    |> get_or_failwith
+    days_to_timespan valid |> InactiveUser.DisableAfter.create |> get_or_failwith
   in
   let () =
     Alcotest.(
@@ -192,10 +158,7 @@ let check_inactive_user_warning _ () =
   let expected =
     Ok
       [ Settings.InactiveUserWarningUpdated
-          (valid
-           |> days_to_timespan
-           |> InactiveUser.Warning.create
-           |> get_or_failwith)
+          (valid |> days_to_timespan |> InactiveUser.Warning.create |> get_or_failwith)
         |> Pool_event.settings
       ]
   in
@@ -219,11 +182,7 @@ let check_inactive_user_warning _ () =
 let check_languages _ () =
   let%lwt language = Settings.find_languages database_label in
   Alcotest.(
-    check
-      (list Testable.language)
-      "languages"
-      language
-      Pool_common.Language.[ En; De ])
+    check (list Testable.language) "languages" language Pool_common.Language.[ En; De ])
   |> Lwt.return
 ;;
 
@@ -241,9 +200,7 @@ let login_after_terms_update _ () =
   let open Utils.Lwt_result.Infix in
   let%lwt user = Integration_utils.ContactRepo.create () in
   let accepted =
-    let contact =
-      Contact.find_by_email database_label (Contact.email_address user)
-    in
+    let contact = Contact.find_by_email database_label (Contact.email_address user) in
     let terms_agreed contact =
       let%lwt accepted = Contact.has_terms_accepted database_label contact in
       match accepted with
@@ -256,11 +213,7 @@ let login_after_terms_update _ () =
   accepted
   ||> fun accepted ->
   Alcotest.(
-    check
-      (result Test_utils.contact Test_utils.error)
-      "succeeds"
-      expected
-      accepted)
+    check (result Test_utils.contact Test_utils.error) "succeeds" expected accepted)
 ;;
 
 (* Test the creation of an SMTP Authentication record. *)
@@ -373,14 +326,11 @@ let update_gtx_settings _ () =
   in
   let phone = "+41791234567" in
   let stringify = CCList.map (fun (field, value) -> Field.show field, value) in
-  let urlencoded =
-    [ Field.GtxApiKey, [ "api-key" ]; Field.TestPhoneNumber, [ phone ] ]
-  in
+  let urlencoded = [ Field.GtxApiKey, [ "api-key" ]; Field.TestPhoneNumber, [ phone ] ] in
   let%lwt res = urlencoded |> stringify |> validate in
   let expected = Error Error.(Conformist [ Field.GtxSender, NoValue ]) in
   let () =
-    Alcotest.(
-      check (result testable_gtx Test_utils.error) "succeeds" expected res)
+    Alcotest.(check (result testable_gtx Test_utils.error) "succeeds" expected res)
   in
   let urlencoded =
     [ Field.GtxApiKey, [ "api-key" ]
@@ -391,8 +341,7 @@ let update_gtx_settings _ () =
   let%lwt res = urlencoded |> stringify |> validate in
   let expected = Error Error.(Conformist [ Field.GtxSender, MaxLength 11 ]) in
   let () =
-    Alcotest.(
-      check (result testable_gtx Test_utils.error) "succeeds" expected res)
+    Alcotest.(check (result testable_gtx Test_utils.error) "succeeds" expected res)
   in
   Lwt.return_unit
 ;;

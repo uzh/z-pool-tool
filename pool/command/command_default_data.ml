@@ -17,9 +17,7 @@ Example: seed.default guardian_role_permission
     ~help
     (function
     | [ "guardian_role_permission" ] ->
-      let events =
-        [ Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard ]
-      in
+      let events = [ Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard ] in
       let%lwt () = Database.Pool.initialize () in
       let%lwt () =
         Database.Pool.all ()

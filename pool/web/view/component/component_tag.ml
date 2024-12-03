@@ -26,13 +26,10 @@ let create ?remove_action language tag =
               ; a_action (action tag)
               ; a_user_data
                   "confirmable"
-                  Pool_common.(
-                    Utils.confirmable_to_string language I18n.RemoveTag)
+                  Pool_common.(Utils.confirmable_to_string language I18n.RemoveTag)
               ]
             [ Component_input.csrf_element csrf ()
-            ; button
-                ~a:[ a_button_type `Submit ]
-                [ Component_icon.(to_html Close) ]
+            ; button ~a:[ a_button_type `Submit ] [ Component_icon.(to_html Close) ]
             ]
         ] )
   in
@@ -59,18 +56,10 @@ let tag_form ?label language remove_action tags =
   | Some i18n ->
     div
       ~a:[ a_class [ "form-group" ] ]
-      [ Tyxml.Html.label
-          [ txt Pool_common.(Utils.text_to_string language i18n) ]
-      ; html
-      ]
+      [ Tyxml.Html.label [ txt Pool_common.(Utils.text_to_string language i18n) ]; html ]
 ;;
 
-let add_tags_form
-  Pool_context.{ language; csrf; _ }
-  ?(existing = [])
-  available
-  action
-  =
+let add_tags_form Pool_context.{ language; csrf; _ } ?(existing = []) available action =
   let available =
     CCList.(filter CCFun.(flip (mem ~eq:Tags.equal) existing %> not) available)
   in

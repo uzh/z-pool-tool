@@ -31,9 +31,7 @@ let make id ?(expires_in = Sihl.Time.OneDay) ?now ?(length = 80) data =
 let create ?secret:_ ?expires_in label data =
   let open Repo.Model in
   let id = Pool_common.Id.(create () |> value) in
-  let length =
-    CCOption.value ~default:30 (Sihl.Configuration.read schema).token_length
-  in
+  let length = CCOption.value ~default:30 (Sihl.Configuration.read schema).token_length in
   let token = make id ?expires_in ~length data in
   let%lwt () = Repo.insert label token in
   Repo.find_by_id label id |> Lwt.map (fun token -> token.value)
@@ -47,9 +45,7 @@ let read ?secret:_ ?force label token_value ~k =
   | Some token ->
     (match is_valid_token token, force with
      | true, _ | false, Some () ->
-       (match
-          CCList.find_opt (fun (key, _) -> CCString.equal k key) token.data
-        with
+       (match CCList.find_opt (fun (key, _) -> CCString.equal k key) token.data with
         | Some (_, value) -> Lwt.return (Some value)
         | None -> Lwt.return None)
      | false, None -> Lwt.return None)

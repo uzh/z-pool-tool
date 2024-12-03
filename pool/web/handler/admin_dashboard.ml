@@ -4,8 +4,7 @@ let create_layout req = General.create_tenant_layout req
 let statistics_from_request req database_label =
   let open CCOption.Infix in
   let period =
-    Sihl.Web.Request.query Pool_message.Field.(show Period) req
-    >>= Statistics.read_period
+    Sihl.Web.Request.query Pool_message.Field.(show Period) req >>= Statistics.read_period
   in
   let%lwt statistics = Statistics.create ?period database_label () in
   Lwt.return (period, statistics)
@@ -31,10 +30,7 @@ let index req =
       ||> CCOption.is_some
     in
     let%lwt statistics =
-      Guard.Persistence.validate
-        database_label
-        Statistics.Guard.Access.read
-        actor
+      Guard.Persistence.validate database_label Statistics.Guard.Access.read actor
       ||> CCResult.is_ok
       >|> function
       | true -> statistics_from_request req database_label ||> CCOption.pure
@@ -96,8 +92,7 @@ let statistics req =
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
-  result
-  |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  result |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 module Access : sig

@@ -181,12 +181,7 @@ module SmtpAuth : sig
 
   val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
   val find_by_label : Database.Label.t -> Label.t -> t option Lwt.t
-
-  val find_full
-    :  Database.Label.t
-    -> Id.t
-    -> (Write.t, Pool_message.Error.t) Lwt_result.t
-
+  val find_full : Database.Label.t -> Id.t -> (Write.t, Pool_message.Error.t) Lwt_result.t
   val find_default : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
   val find_default_opt : Database.Label.t -> t option Lwt.t
   val find_all : Database.Label.t -> t list Lwt.t
@@ -247,10 +242,7 @@ module Service : sig
     val send : t Pool_queue.Job.t
   end
 
-  val default_sender_of_pool
-    :  Database.Label.t
-    -> Pool_user.EmailAddress.t Lwt.t
-
+  val default_sender_of_pool : Database.Label.t -> Pool_user.EmailAddress.t Lwt.t
   val intercept_prepare : Job.t -> (Job.t, Pool_message.Error.t) result
 
   val dispatch
@@ -265,8 +257,7 @@ module Service : sig
 
   val dispatch_all
     :  Database.Label.t
-    -> (Pool_queue.Id.t * Job.t * string option * Pool_queue.job_ctx option)
-         list
+    -> (Pool_queue.Id.t * Job.t * string option * Pool_queue.job_ctx option) list
     -> unit Lwt.t
 
   val lifecycle : Sihl.Container.lifecycle
@@ -295,11 +286,7 @@ type verification_event =
   | Created of Pool_user.EmailAddress.t * Token.t * Pool_user.Id.t
   | EmailVerified of unverified t
 
-val handle_verification_event
-  :  Database.Label.t
-  -> verification_event
-  -> unit Lwt.t
-
+val handle_verification_event : Database.Label.t -> verification_event -> unit Lwt.t
 val equal_verification_event : verification_event -> verification_event -> bool
 val pp_verification_event : Format.formatter -> verification_event -> unit
 

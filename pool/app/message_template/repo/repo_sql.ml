@@ -170,23 +170,20 @@ let find_by_label_and_language_to_send pool ?entity_uuids label language =
   let where, dyn =
     match entity_uuids with
     | None | Some [] ->
-      ( Format.asprintf "%s AND pool_message_templates.entity_uuid IS NULL" where
-      , dyn )
+      Format.asprintf "%s AND pool_message_templates.entity_uuid IS NULL" where, dyn
     | Some ids ->
       let dyn, ids =
         ids
         |> CCList.foldi
              (fun (dyn, ids) i entity_uuid ->
-               let dyn =
-                 Dynparam.(
-                   dyn
-                   |> add Caqti_type.string (Pool_common.Id.value entity_uuid))
-               in
-               let ids =
-                 ids
-                 @ [ Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 3) ]
-               in
-               dyn, ids)
+                let dyn =
+                  Dynparam.(
+                    dyn |> add Caqti_type.string (Pool_common.Id.value entity_uuid))
+                in
+                let ids =
+                  ids @ [ Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 3) ]
+                in
+                dyn, ids)
              (dyn, [])
       in
       let where =
@@ -232,8 +229,7 @@ let find_all_by_label_to_send pool ?entity_uuids languages label =
                  (Pool_common.Language.show lang)))
     | Some entity_uuids ->
       languages
-      |> Lwt_list.map_s
-           (find_by_label_and_language_to_send pool label ~entity_uuids))
+      |> Lwt_list.map_s (find_by_label_and_language_to_send pool label ~entity_uuids))
 ;;
 
 let find_entity_defaults_by_label pool ?entity_uuids languages label =

@@ -110,17 +110,9 @@ type session_counters =
   ; num_participations : int
   }
 
-val counters_of_session
-  :  Database.Label.t
-  -> Session.Id.t
-  -> session_counters Lwt.t
-
+val counters_of_session : Database.Label.t -> Session.Id.t -> session_counters Lwt.t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-
-val find_closed
-  :  Database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
+val find_closed : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 module Public : sig
   type t =
@@ -170,11 +162,7 @@ val find_by_contact_and_experiment
   -> Contact.t
   -> (Session.t * t) list Lwt.t
 
-val find_not_deleted_by_session
-  :  Database.Label.t
-  -> Session.Id.t
-  -> t list Lwt.t
-
+val find_not_deleted_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 val find_all_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val find_multiple_by_session
@@ -189,10 +177,7 @@ val query_by_session
   -> Session.Id.t
   -> (t list * Query.t) Lwt.t
 
-val find_uncanceled_by_session
-  :  Database.Label.t
-  -> Session.Id.t
-  -> t list Lwt.t
+val find_uncanceled_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val find_for_session_close_screen
   :  Database.Label.t
@@ -218,9 +203,7 @@ val find_follow_ups : Database.Label.t -> t -> t list Lwt.t
 val find_upcoming_by_experiment
   :  Database.Label.t
   -> Experiment.Id.t
-  -> ( Experiment.t * (Session.t * t list) list
-       , Pool_message.Error.t )
-       Lwt_result.t
+  -> (Experiment.t * (Session.t * t list) list, Pool_message.Error.t) Lwt_result.t
 
 val find_assigned_contacts_by_experiment
   :  Database.Label.t

@@ -32,11 +32,7 @@ let show { Pool_context.csrf; language; _ } contact_fields =
       [ h2 [ txt (Utils.text_to_string language title) ]
       ; p [ txt Utils.(text_to_string language hint) ]
       ; form
-          ~a:
-            [ a_method `Post
-            ; a_action (action setting_url)
-            ; a_class [ "flexcolumn" ]
-            ]
+          ~a:[ a_method `Post; a_action (action setting_url); a_class [ "flexcolumn" ] ]
           [ Input.csrf_element csrf ()
           ; table getter
           ; div

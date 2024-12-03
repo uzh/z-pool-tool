@@ -51,17 +51,12 @@ let validate_email =
       "intercepted recipient"
       email.Sihl_email.recipient
       (Sihl.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
-  let%lwt { Smtp.subject; _ } =
-    Smtp.prepare ?smtp_auth_id database_label email
-  in
+  let%lwt { Smtp.subject; _ } = Smtp.prepare ?smtp_auth_id database_label email in
   Alcotest.(
     check
       string
       "intercepted subject"
       subject
-      (Format.asprintf
-         "[Pool Tool] %s (original to: %s)"
-         Data.subject
-         Data.recipient));
+      (Format.asprintf "[Pool Tool] %s (original to: %s)" Data.subject Data.recipient));
   Lwt.return_ok ()
 ;;

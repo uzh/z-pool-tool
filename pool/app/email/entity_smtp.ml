@@ -101,12 +101,13 @@ type update_password =
 [@@deriving eq, show]
 
 let validate_mechanism
-  mechanism
-  (username : Username.t option)
-  (password : Password.t option)
+      mechanism
+      (username : Username.t option)
+      (password : Password.t option)
   =
-  if Mechanism.(equal LOGIN) mechanism
-     && (CCOption.is_none username || CCOption.is_none password)
+  if
+    Mechanism.(equal LOGIN) mechanism
+    && (CCOption.is_none username || CCOption.is_none password)
   then Error Pool_message.Error.SmtpLoginMissingCredentials
   else Ok mechanism
 ;;
@@ -157,10 +158,7 @@ end
 open Pool_message
 
 let column_label = (Field.Label, "pool_smtp.label") |> Query.Column.create
-
-let column_smtp_server =
-  (Field.SmtpServer, "pool_smtp.server") |> Query.Column.create
-;;
+let column_smtp_server = (Field.SmtpServer, "pool_smtp.server") |> Query.Column.create
 
 let column_smtp_username =
   (Field.SmtpUsername, "pool_smtp.username") |> Query.Column.create
@@ -178,9 +176,7 @@ let column_smtp_default_account =
   (Field.DefaultSmtpServer, "pool_smtp.default_account") |> Query.Column.create
 ;;
 
-let column_created_at =
-  (Field.CreatedAt, "pool_smtp.created_at") |> Query.Column.create
-;;
+let column_created_at = (Field.CreatedAt, "pool_smtp.created_at") |> Query.Column.create
 
 let searchable_by =
   [ column_label
@@ -192,10 +188,7 @@ let searchable_by =
 ;;
 
 let default_sort_column = column_created_at
-
-let sortable_by =
-  [ column_created_at; column_smtp_default_account ] @ searchable_by
-;;
+let sortable_by = [ column_created_at; column_smtp_default_account ] @ searchable_by
 
 let default_sort =
   Query.Sort.{ column = default_sort_column; order = SortOrder.Descending }

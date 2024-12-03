@@ -1,9 +1,6 @@
 include Conformist__Core.CONFORMIST with type error_msg = Pool_message.Error.t
 
-val pp_schema
-  :  Format.formatter
-  -> ('a, 'b, 'c) t * (string * string list) list
-  -> unit
+val pp_schema : Format.formatter -> ('a, 'b, 'c) t * (string * string list) list -> unit
 
 val decode_and_validate
   :  ?tags:Logs.Tag.set

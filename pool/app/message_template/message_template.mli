@@ -300,11 +300,7 @@ module ContactRegistrationAttempt : sig
 end
 
 module EmailVerification : sig
-  val email_params
-    :  email_layout
-    -> string
-    -> Contact.t
-    -> (string * string) list
+  val email_params : email_layout -> string -> Contact.t -> (string * string) list
 
   val create
     :  Database.Label.t
@@ -317,17 +313,8 @@ module EmailVerification : sig
 end
 
 module ExperimentInvitation : sig
-  val email_params
-    :  email_layout
-    -> Experiment.t
-    -> Contact.t
-    -> (string * string) list
-
-  val create
-    :  Pool_tenant.t
-    -> Experiment.t
-    -> Contact.t
-    -> Email.dispatch Lwt.t
+  val email_params : email_layout -> Experiment.t -> Contact.t -> (string * string) list
+  val create : Pool_tenant.t -> Experiment.t -> Contact.t -> Email.dispatch Lwt.t
 
   val prepare
     :  Pool_tenant.t
@@ -360,11 +347,7 @@ module ManualSessionMessage : sig
 end
 
 module MatcherNotification : sig
-  val email_params
-    :  email_layout
-    -> Pool_user.t
-    -> Experiment.t
-    -> (string * string) list
+  val email_params : email_layout -> Pool_user.t -> Experiment.t -> (string * string) list
 
   val create
     :  Pool_tenant.t
@@ -404,11 +387,7 @@ module PasswordChange : sig
 end
 
 module PasswordReset : sig
-  val email_params
-    :  email_layout
-    -> string
-    -> Pool_user.t
-    -> (string * string) list
+  val email_params : email_layout -> string -> Pool_user.t -> (string * string) list
 
   val create
     :  Database.Label.t
@@ -574,10 +553,7 @@ module UserImport : sig
   val prepare
     :  Database.Label.t
     -> Pool_tenant.t
-    -> ([< `Admin of Admin.t | `Contact of Contact.t ]
-        -> string
-        -> Email.dispatch)
-         Lwt.t
+    -> ([< `Admin of Admin.t | `Contact of Contact.t ] -> string -> Email.dispatch) Lwt.t
 end
 
 module WaitingListConfirmation : sig

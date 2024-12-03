@@ -48,28 +48,28 @@ end
 let t =
   let open Database.Caqti_encoders in
   let decode
-    ( user
-    , ( terms_accepted_at
-      , ( language
-        , ( experiment_type_preference
-          , ( cell_phone
-            , ( paused
-              , ( disabled
-                , ( verified
-                  , ( email_verified
-                    , ( num_invitations
-                      , ( num_assignments
-                        , ( num_show_ups
-                          , ( num_no_shows
-                            , ( num_participations
-                              , ( firstname_version
-                                , ( lastname_version
-                                  , ( paused_version
-                                    , ( language_version
-                                      , ( experiment_type_preference_version
-                                        , ( import_pending
-                                          , (created_at, (updated_at, ())) ) )
-                                      ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+        ( user
+        , ( terms_accepted_at
+          , ( language
+            , ( experiment_type_preference
+              , ( cell_phone
+                , ( paused
+                  , ( disabled
+                    , ( verified
+                      , ( email_verified
+                        , ( num_invitations
+                          , ( num_assignments
+                            , ( num_show_ups
+                              , ( num_no_shows
+                                , ( num_participations
+                                  , ( firstname_version
+                                    , ( lastname_version
+                                      , ( paused_version
+                                        , ( language_version
+                                          , ( experiment_type_preference_version
+                                            , ( import_pending
+                                              , (created_at, (updated_at, ())) ) ) ) ) )
+                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     Ok
       { user
@@ -131,9 +131,7 @@ let t =
 
 let contact =
   let open Database.Caqti_encoders in
-  let decode _ =
-    Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
-  in
+  let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
   let encode m : ('a Data.t, string) result =
     Ok
       Data.
@@ -194,9 +192,7 @@ module Write = struct
 
   let t : t Caqti_type.t =
     let open Database.Caqti_encoders in
-    let decode _ =
-      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
-    in
+    let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
     let encode m : ('a Data.t, string) result =
       Ok
         Data.
@@ -260,14 +256,12 @@ module Preview = struct
         ( m.user
         , ( m.language
           , ( m.cell_phone
-            , (m.paused, (m.verified, (m.num_invitations, m.num_assignments)))
-            ) ) )
+            , (m.paused, (m.verified, (m.num_invitations, m.num_assignments))) ) ) )
     in
     let decode
-      ( user
-      , ( language
-        , (cell_phone, (paused, (verified, (num_invitations, num_assignments))))
-        ) )
+          ( user
+          , ( language
+            , (cell_phone, (paused, (verified, (num_invitations, num_assignments)))) ) )
       =
       let open CCResult in
       Ok

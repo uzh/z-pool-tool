@@ -6,8 +6,7 @@ let active_navigation = version_path ()
 let create_layout req = General.create_tenant_layout req
 
 let version_id req =
-  Http_utils.get_field_router_param req Field.Version
-  |> Pool_version.Id.of_string
+  Http_utils.get_field_router_param req Field.Version |> Pool_version.Id.of_string
 ;;
 
 let index req =

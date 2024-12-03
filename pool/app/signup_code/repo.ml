@@ -49,12 +49,7 @@ let find_request_sql ?(count = false) where_fragment =
     then "COUNT( pool_signup_codes.uuid )"
     else sql_select_columns |> CCString.concat ", "
   in
-  Format.asprintf
-    {sql|SELECT %s FROM pool_signup_codes %s |sql}
-    columns
-    where_fragment
+  Format.asprintf {sql|SELECT %s FROM pool_signup_codes %s |sql} columns where_fragment
 ;;
 
-let all ?query pool =
-  Query.collect_and_count pool query ~select:find_request_sql t
-;;
+let all ?query pool = Query.collect_and_count pool query ~select:find_request_sql t

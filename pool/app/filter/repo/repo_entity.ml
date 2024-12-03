@@ -23,9 +23,7 @@ module Query = struct
 end
 
 let t =
-  let encode (m : t) =
-    Ok (m.id, (m.query, (m.title, (m.created_at, m.updated_at))))
-  in
+  let encode (m : t) = Ok (m.id, (m.query, (m.title, (m.created_at, m.updated_at)))) in
   let decode (id, (query, (title, (created_at, updated_at)))) =
     let open CCResult in
     Ok { id; query; title; created_at; updated_at }
@@ -38,17 +36,13 @@ let t =
          Id.t
          (t2
             Query.t
-            (t2
-               (option Title.t)
-               (t2 Common.Repo.CreatedAt.t Common.Repo.UpdatedAt.t)))))
+            (t2 (option Title.t) (t2 Common.Repo.CreatedAt.t Common.Repo.UpdatedAt.t)))))
 ;;
 
 module Write = struct
   let t =
     let encode (m : t) = Ok (m.id, (m.query, m.title)) in
-    let decode _ =
-      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
-    in
+    let decode _ = Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel in
     Caqti_type.(custom ~encode ~decode (t2 Id.t (t2 Query.t (option Title.t))))
   ;;
 end

@@ -61,18 +61,12 @@ module TenantMapping = struct
       let open Dynparam in
       let (Pack (pt, pv)) =
         let init = empty |> add caqti_id id in
-        CCList.fold_left
-          (fun dyn id -> add caqti_tenant_id id dyn)
-          init
-          tenant_ids
+        CCList.fold_left (fun dyn id -> add caqti_tenant_id id dyn) init tenant_ids
       in
-      let delete_request =
-        delete_existing_request tenant_ids |> pt ->. Caqti_type.unit
-      in
+      let delete_request = delete_existing_request tenant_ids |> pt ->. Caqti_type.unit in
       let%lwt () = exec pool delete_request pv in
       tenant_ids
-      |> Lwt_list.iter_s (fun tenant_id ->
-        exec pool insert_request (id, tenant_id))
+      |> Lwt_list.iter_s (fun tenant_id -> exec pool insert_request (id, tenant_id))
   ;;
 
   let tenant_uuid_request =
@@ -147,13 +141,8 @@ let update pool (announcement, tenant_ids) =
 ;;
 
 let find_request_sql ?(count = false) where_fragment =
-  let columns =
-    if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-  in
-  Format.asprintf
-    {sql|SELECT %s FROM pool_announcements %s|sql}
-    columns
-    where_fragment
+  let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
+  Format.asprintf {sql|SELECT %s FROM pool_announcements %s|sql} columns where_fragment
 ;;
 
 let find_request =
@@ -233,10 +222,7 @@ let find_by_user_request context =
 ;;
 
 let find_by_user database_label (context, user_id) =
-  find_opt
-    Pool.Root.label
-    (find_by_user_request context)
-    (database_label, user_id)
+  find_opt Pool.Root.label (find_by_user_request context) (database_label, user_id)
 ;;
 
 let hide_requeset =
