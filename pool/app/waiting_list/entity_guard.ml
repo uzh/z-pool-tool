@@ -14,10 +14,7 @@ module Target = struct
   ;;
 
   let to_authorizable ?ctx { Entity.id; _ } = decorate ?ctx id
-
-  let to_authorizable_of_write ?ctx { Repo_entity.Write.id; _ } =
-    decorate ?ctx id
-  ;;
+  let to_authorizable_of_write ?ctx { Repo_entity.Write.id; _ } = decorate ?ctx id
 end
 
 module Access = struct
@@ -26,16 +23,14 @@ module Access = struct
   open Permission
 
   let waiting_list action uuid =
-    one_of_tuple
-      (action, `WaitingList, Some (uuid |> Uuid.target_of Pool_common.Id.value))
+    one_of_tuple (action, `WaitingList, Some (uuid |> Uuid.target_of Pool_common.Id.value))
   ;;
 
   let index id =
     And
       [ Or
           [ one_of_tuple (Read, `WaitingList, None)
-          ; one_of_tuple
-              (Read, `WaitingList, Some (Uuid.target_of Experiment.Id.value id))
+          ; one_of_tuple (Read, `WaitingList, Some (Uuid.target_of Experiment.Id.value id))
           ]
       ; Experiment.Guard.Access.read id
       ]
@@ -46,9 +41,7 @@ module Access = struct
       [ Or
           [ one_of_tuple (Create, `WaitingList, None)
           ; one_of_tuple
-              ( Create
-              , `WaitingList
-              , Some (Uuid.target_of Experiment.Id.value id) )
+              (Create, `WaitingList, Some (Uuid.target_of Experiment.Id.value id))
           ]
       ; Experiment.Guard.Access.read id
       ]
@@ -59,9 +52,7 @@ module Access = struct
       [ Or
           [ waiting_list Read waiting_list_id
           ; one_of_tuple
-              ( Read
-              , `WaitingList
-              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+              (Read, `WaitingList, Some (Uuid.target_of Experiment.Id.value experiment_id))
           ]
       ; Experiment.Guard.Access.read experiment_id
       ]

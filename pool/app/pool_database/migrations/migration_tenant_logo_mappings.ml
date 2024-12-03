@@ -17,6 +17,5 @@ let create_tenant_table =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "tenant_logo_mappings" |> add_step create_tenant_table)
+  Database.Migration.(empty "tenant_logo_mappings" |> add_step create_tenant_table)
 ;;

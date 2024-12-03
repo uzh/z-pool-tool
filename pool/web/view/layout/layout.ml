@@ -8,9 +8,7 @@ module CustomField = Navigation_custom_fields
 module Experiment = Navigation_experiment
 module Print = Layout_print
 
-let language_attribute lang =
-  Language.show lang |> CCString.lowercase_ascii |> a_lang
-;;
+let language_attribute lang = Language.show lang |> CCString.lowercase_ascii |> a_lang
 
 module Tenant = struct
   open Pool_context
@@ -18,9 +16,7 @@ module Tenant = struct
   open Layout_utils
 
   let make_footer { database_label; language; query_parameters; _ } title_text =
-    let%lwt privacy_policy_is_set =
-      I18n.privacy_policy_is_set database_label language
-    in
+    let%lwt privacy_policy_is_set = I18n.privacy_policy_is_set database_label language in
     let open Pool_common in
     let externalize path =
       path
@@ -37,8 +33,7 @@ module Tenant = struct
       let links =
         [ Http_utils.Url.Admin.version_path (), nav_to_string I18n.Versions
         ; "/credits", nav_to_string I18n.Credits
-        ; ( "/terms-and-conditions"
-          , field_to_string Pool_message.Field.TermsAndConditions )
+        ; "/terms-and-conditions", field_to_string Pool_message.Field.TermsAndConditions
         ]
       in
       let links =
@@ -47,11 +42,8 @@ module Tenant = struct
         else links
       in
       links
-      |> CCList.map (fun (url, label) ->
-        a ~a:[ a_href (externalize url) ] [ txt label ])
-      |> App.combine_footer_fragments
-           ~column_mobile:true
-           ~classnames:[ "footer-nav" ]
+      |> CCList.map (fun (url, label) -> a ~a:[ a_href (externalize url) ] [ txt label ])
+      |> App.combine_footer_fragments ~column_mobile:true ~classnames:[ "footer-nav" ]
     in
     footer
       ~a:
@@ -66,19 +58,15 @@ module Tenant = struct
             ; "push"
             ]
         ]
-      [ text_fragments
-      ; span ~a:[ a_class [ "hidden-mobile" ] ] [ txt "|" ]
-      ; footer_nav
-      ]
+      [ text_fragments; span ~a:[ a_class [ "hidden-mobile" ] ] [ txt "|" ]; footer_nav ]
     |> Lwt.return
   ;;
 
   let create
-    ?active_navigation
-    ({ csrf; language; query_parameters; message; user; announcement; _ } as
-     context)
-    Tenant.{ tenant_languages; tenant }
-    children
+        ?active_navigation
+        ({ csrf; language; query_parameters; message; user; announcement; _ } as context)
+        Tenant.{ tenant_languages; tenant }
+        children
     =
     let title_text = Title.value tenant.title in
     let page_title = title (title_text |> txt) in
@@ -93,21 +81,16 @@ module Tenant = struct
       |> CCList.map js_script_tag
     in
     let message = Message.create message language () in
-    let htmx_notification =
-      div ~a:[ a_id Http_utils.Htmx.notification_id ] []
-    in
+    let htmx_notification = div ~a:[ a_id Http_utils.Htmx.notification_id ] [] in
     let announcement =
       CCOption.map (Component.Announcement.make language csrf) announcement
     in
     let children = div ~a:[ a_class [ "stack" ] ] [ children ] in
-    let content =
-      main_tag ?announcement [ message; htmx_notification; children ]
-    in
+    let content = main_tag ?announcement [ message; htmx_notification; children ] in
     let head_tags =
       let favicon =
         tenant.icon
-        |> CCOption.(
-             map (Icon.value %> File.externalized_path %> favicon) %> to_list)
+        |> CCOption.(map (Icon.value %> File.externalized_path %> favicon) %> to_list)
       in
       [ charset; viewport ] @ stylesheets @ favicon
     in
@@ -132,9 +115,9 @@ end
 
 module Root = struct
   let create
-    ?active_navigation
-    ({ Pool_context.message; query_parameters; _ } as context)
-    content
+        ?active_navigation
+        ({ Pool_context.message; query_parameters; _ } as context)
+        content
     =
     let open Layout_utils in
     let language = Language.En in
@@ -178,15 +161,9 @@ module Error = struct
     let content = main_tag [ children ] in
     html
       ~a:[ language_attribute Language.En ]
-      (head
-         page_title
-         ([ charset; viewport ] @ [ `GlobalStylesheet |> css_link_tag ]))
+      (head page_title ([ charset; viewport ] @ [ `GlobalStylesheet |> css_link_tag ]))
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ App.navbar [] title_text
-         ; content
-         ; App.root_footer
-         ; js_script_tag `IndexJs
-         ])
+         [ App.navbar [] title_text; content; App.root_footer; js_script_tag `IndexJs ])
   ;;
 end

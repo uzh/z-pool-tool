@@ -8,7 +8,7 @@ module SmtpTarget = struct
     Persistence.Target.decorate
       ?ctx
       (fun ({ Entity.SmtpAuth.id; _ } : Entity.SmtpAuth.t) ->
-        Target.create `Smtp (id |> Uuid.target_of Pool_common.Id.value))
+         Target.create `Smtp (id |> Uuid.target_of Pool_common.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;
@@ -21,8 +21,7 @@ module Access = struct
 
   module Smtp = struct
     let smtp action id =
-      one_of_tuple
-        (action, `Smtp, Some (id |> Uuid.target_of Entity.SmtpAuth.Id.value))
+      one_of_tuple (action, `Smtp, Some (id |> Uuid.target_of Entity.SmtpAuth.Id.value))
     ;;
 
     let index = one_of_tuple (Read, `Smtp, None)

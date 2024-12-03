@@ -22,16 +22,16 @@ let delivery_report =
         ]
   in
   let decode
-    ( job_id
-    , ( raw
-      , ( from
-        , ( to_
-          , ( message_id
-            , ( dlr_mask
-              , ( error_code
-                , ( error_message
-                  , (submit_date, (done_date, (plmn, (country, (sms_cost, ())))))
-                  ) ) ) ) ) ) ) )
+        ( job_id
+        , ( raw
+          , ( from
+            , ( to_
+              , ( message_id
+                , ( dlr_mask
+                  , ( error_code
+                    , ( error_message
+                      , (submit_date, (done_date, (plmn, (country, (sms_cost, ()))))) ) )
+                  ) ) ) ) ) )
     =
     Ok
       { job_id

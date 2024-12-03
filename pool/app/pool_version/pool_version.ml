@@ -17,9 +17,7 @@ let announcement ?id (version : t) =
     in
     p
       [ txt
-          (Format.asprintf
-             "A new version has been released: %s"
-             (Tag.value version.tag))
+          (Format.asprintf "A new version has been released: %s" (Tag.value version.tag))
       ; br ()
       ; a ~a:[ a_href url ] [ txt "Read more" ]
       ]

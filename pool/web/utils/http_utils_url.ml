@@ -34,9 +34,7 @@ module Admin = struct
   ;;
 
   let contact_path ?suffix ?id () =
-    "/admin/contacts"
-    |> append_opt (map Contact.Id.value id)
-    |> append_opt suffix
+    "/admin/contacts" |> append_opt (map Contact.Id.value id) |> append_opt suffix
   ;;
 
   let custom_fields_path model ?suffix ?id () =
@@ -63,9 +61,7 @@ module Admin = struct
   ;;
 
   let experiment_path ?suffix ?id () =
-    "/admin/experiments"
-    |> append_opt (map Experiment.Id.value id)
-    |> append_opt suffix
+    "/admin/experiments" |> append_opt (map Experiment.Id.value id) |> append_opt suffix
   ;;
 
   let filter_path ?suffix ?id () =
@@ -73,9 +69,7 @@ module Admin = struct
   ;;
 
   let location_path ?suffix ?id () =
-    "/admin/locations/"
-    |> append_opt Pool_location.(map Id.value id)
-    |> append_opt suffix
+    "/admin/locations/" |> append_opt Pool_location.(map Id.value id) |> append_opt suffix
   ;;
 
   let mailing_path experiment_id ?suffix ?id () =
@@ -120,9 +114,7 @@ module Admin = struct
   ;;
 
   let session_path ?suffix ?id experiment_id =
-    Format.asprintf
-      "/admin/experiments/%s/sessions"
-      Experiment.(Id.value experiment_id)
+    Format.asprintf "/admin/experiments/%s/sessions" Experiment.(Id.value experiment_id)
     |> append_opt Session.(map Id.value id)
     |> append_opt suffix
   ;;
@@ -133,14 +125,7 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
-  let session_message_template_path
-    experiment_id
-    session_id
-    label
-    ?suffix
-    ?id
-    ()
-    =
+  let session_message_template_path experiment_id session_id label ?suffix ?id () =
     Format.asprintf
       "%s/%s/%s"
       (session_path ~id:session_id experiment_id)
@@ -151,10 +136,7 @@ module Admin = struct
   ;;
 
   let assignment_path experiment_id session_id ?suffix ?id () =
-    session_path
-      experiment_id
-      ~id:session_id
-      ~suffix:Field.(human_url Assignments)
+    session_path experiment_id ~id:session_id ~suffix:Field.(human_url Assignments)
     |> append_opt (map Assignment.Id.value id)
     |> append_opt suffix
   ;;
@@ -189,28 +171,19 @@ module Admin = struct
     let signup_codes_path = Field.(human_url SignUpCode) |> with_settings
 
     let tags_path ?id ?suffix () =
-      "tags"
-      |> with_settings
-      |> append_opt (map Tags.Id.value id)
-      |> append_opt suffix
+      "tags" |> with_settings |> append_opt (map Tags.Id.value id) |> append_opt suffix
     ;;
   end
 end
 
 module Contact = struct
   let experiment_path ?suffix ?id () =
-    "/experiments"
-    |> append_opt (map Experiment.Id.value id)
-    |> append_opt suffix
+    "/experiments" |> append_opt (map Experiment.Id.value id) |> append_opt suffix
   ;;
 end
 
 module Root = struct
   let with_root = Format.asprintf "/root%s"
-
-  let announcement_path ?suffix ?id () =
-    announcement_path ?suffix ?id () |> with_root
-  ;;
-
+  let announcement_path ?suffix ?id () = announcement_path ?suffix ?id () |> with_root
   let version_path ?suffix ?id () = version_path ?suffix ?id () |> with_root
 end

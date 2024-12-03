@@ -214,8 +214,7 @@ module Repo : sig
   module File : Pool_model.Base.CaqtiSig with type t = File.t
 
   module Reminder : sig
-    module EmailLeadTime :
-      Pool_model.Base.CaqtiSig with type t = Reminder.EmailLeadTime.t
+    module EmailLeadTime : Pool_model.Base.CaqtiSig with type t = Reminder.EmailLeadTime.t
 
     module TextMessageLeadTime :
       Pool_model.Base.CaqtiSig with type t = Reminder.TextMessageLeadTime.t
@@ -223,11 +222,8 @@ module Repo : sig
     module SentAt : Pool_model.Base.CaqtiSig with type t = Reminder.SentAt.t
   end
 
-  module VerificationCode :
-    Pool_model.Base.CaqtiSig with type t = VerificationCode.t
-
-  module ExperimentType :
-    Pool_model.Base.CaqtiSig with type t = ExperimentType.t
+  module VerificationCode : Pool_model.Base.CaqtiSig with type t = VerificationCode.t
+  module ExperimentType : Pool_model.Base.CaqtiSig with type t = ExperimentType.t
 end
 
 module Utils : sig

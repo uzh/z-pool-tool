@@ -1,11 +1,7 @@
 module type CommandSig = sig
   type t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Guard.ValidationSet.t
 end
 

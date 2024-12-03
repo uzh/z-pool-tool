@@ -70,10 +70,7 @@ let create_smtp_valid () =
   let event_id = System_event.Id.create () in
   let events =
     Command.Create.(
-      Urlencoded.valid
-      |> decode
-      >>= smtp_of_command ~id:smtp_id
-      >>= handle ~event_id None)
+      Urlencoded.valid |> decode >>= smtp_of_command ~id:smtp_id >>= handle ~event_id None)
   in
   let expected =
     Ok
@@ -86,11 +83,7 @@ let create_smtp_valid () =
       ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let create_missing_username () =
@@ -107,9 +100,5 @@ let create_missing_username () =
   in
   let expected = Error Pool_message.Error.SmtpLoginMissingCredentials in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;

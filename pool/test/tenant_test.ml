@@ -100,12 +100,8 @@ module Data = struct
         let* label = database_label |> Label.create in
         let* server = server |> Server.create in
         let* port = port |> Port.create in
-        let* username =
-          username |> Username.create |> CCResult.map CCOption.pure
-        in
-        let* password =
-          password |> Password.create |> CCResult.map CCOption.pure
-        in
+        let* username = username |> Username.create |> CCResult.map CCOption.pure in
+        let* password = password |> Password.create |> CCResult.map CCOption.pure in
         let mechanism = fst mechanism in
         let protocol = fst protocol in
         let default = Default.create true in
@@ -124,26 +120,18 @@ module Data = struct
     ;;
 
     let from_write
-      { SmtpAuth.Write.id
-      ; label
-      ; server
-      ; port
-      ; username
-      ; mechanism
-      ; protocol
-      ; default
-      ; _
-      }
+          { SmtpAuth.Write.id
+          ; label
+          ; server
+          ; port
+          ; username
+          ; mechanism
+          ; protocol
+          ; default
+          ; _
+          }
       =
-      { SmtpAuth.id
-      ; label
-      ; server
-      ; port
-      ; username
-      ; mechanism
-      ; protocol
-      ; default
-      }
+      { SmtpAuth.id; label; server; port; username; mechanism; protocol; default }
     ;;
   end
 
@@ -209,9 +197,7 @@ module Data = struct
         ; updated_at = Common.UpdatedAt.create_now ()
         }
     in
-    let logos =
-      logo_file |> CCResult.get_exn |> CCList.pure |> Logos.of_files
-    in
+    let logos = logo_file |> CCResult.get_exn |> CCList.pure |> Logos.of_files in
     let partner_logo =
       logo_file |> CCResult.get_exn |> CCList.pure |> PartnerLogos.of_files
     in
@@ -250,17 +236,12 @@ let create_smtp_auth () =
   let expected =
     Ok
       [ SmtpCreated (Data.Smtp.create ()) |> Pool_event.email
-      ; System_event.(
-          Job.SmtpAccountUpdated |> create ~id:sys_event_id |> created)
+      ; System_event.(Job.SmtpAccountUpdated |> create ~id:sys_event_id |> created)
         |> Pool_event.system_event
       ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let create_smtp_force_defaut () =
@@ -280,17 +261,12 @@ let create_smtp_force_defaut () =
     in
     Ok
       [ SmtpCreated smtp |> Pool_event.email
-      ; System_event.(
-          Job.SmtpAccountUpdated |> create ~id:sys_event_id |> created)
+      ; System_event.(Job.SmtpAccountUpdated |> create ~id:sys_event_id |> created)
         |> Pool_event.system_event
       ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let update_smtp_auth () =
@@ -310,11 +286,7 @@ let update_smtp_auth () =
     Ok [ SmtpEdited smtp_auth |> Pool_event.email; sys_event ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let delete_smtp_auth () =
@@ -331,11 +303,7 @@ let delete_smtp_auth () =
     Ok [ SmtpDeleted smtp_id |> Pool_event.email; sys_event ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let[@warning "-4"] create_tenant () =
@@ -359,15 +327,12 @@ let[@warning "-4"] create_tenant () =
     |> function
     | [ Pool_event.PoolTenant
           Pool_tenant.(Created (Write.{ id; created_at; updated_at; _ }, _))
-      ; Pool_event.PoolTenant
-          (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
+      ; Pool_event.PoolTenant (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
       ; Pool_event.Database (Pool_database.Migrated database)
       ; Pool_event.SystemEvent System_event.(Created db_added_event)
       ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
       ] ->
-      let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } =
-        id, asset_id
-      in
+      let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } = id, asset_id in
       ( id
       , created_at
       , updated_at
@@ -381,10 +346,7 @@ let[@warning "-4"] create_tenant () =
   let expected_root_events, expected_database_label =
     let open CCResult in
     let database =
-      database_url
-      |> Database.Url.create
-      |> fail_with
-      |> Database.create database_label
+      database_url |> Database.Url.create |> fail_with |> Database.create database_label
     in
     let create =
       let* title = title |> Pool_tenant.Title.create in
@@ -425,19 +387,14 @@ let[@warning "-4"] create_tenant () =
         ]
     in
     let expected_root_events =
-      [ Pool_tenant.Created (create |> fail_with, database)
-        |> Pool_event.pool_tenant
+      [ Pool_tenant.Created (create |> fail_with, database) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
       ; Pool_database.Migrated database |> Pool_event.database
       ; System_event.(
-          Job.TenantDatabaseReset database_label
-          |> create ~id:db_added_event
-          |> created)
+          Job.TenantDatabaseReset database_label |> create ~id:db_added_event |> created)
         |> Pool_event.system_event
       ; System_event.(
-          Job.GuardianCacheCleared
-          |> create ~id:guardian_cache_cleared_event
-          |> created)
+          Job.GuardianCacheCleared |> create ~id:guardian_cache_cleared_event |> created)
         |> Pool_event.system_event
       ]
     in
@@ -451,11 +408,7 @@ let[@warning "-4"] create_tenant () =
       expected_root_events
       root_events
   in
-  check
-    Test_utils.database_label
-    "succeeds"
-    expected_database_label
-    database_label
+  check Test_utils.database_label "succeeds" expected_database_label database_label
 ;;
 
 let[@warning "-4"] update_tenant_details () =
@@ -468,8 +421,7 @@ let[@warning "-4"] update_tenant_details () =
       let open CCResult.Infix in
       let open Pool_tenant_command.EditDetails in
       Data.urlencoded
-      |> HttpUtils.format_request_boolean_values
-           Field.[ TenantDisabledFlag |> show ]
+      |> HttpUtils.format_request_boolean_values Field.[ TenantDisabledFlag |> show ]
       |> decode
       >>= handle ~system_event_id tenant
     in
@@ -477,9 +429,7 @@ let[@warning "-4"] update_tenant_details () =
       let open Pool_tenant in
       let open CCResult in
       let* title = title |> Title.create in
-      let* description =
-        description |> Description.create >|= CCOption.return
-      in
+      let* description = description |> Description.create >|= CCOption.return in
       let* url = url |> Pool_tenant.Url.create in
       let* gtx_sender = gtx_sender |> Pool_tenant.GtxSender.create in
       let* default_language = default_language |> Common.Language.create in
@@ -500,28 +450,19 @@ let[@warning "-4"] update_tenant_details () =
         events
         |> fail_with
         |> function
-        | [ _
-          ; (Pool_event.PoolTenant (Pool_tenant.LogosUploaded [ _; _ ]) as logos)
-          ; _
-          ] -> logos
+        | [ _; (Pool_event.PoolTenant (Pool_tenant.LogosUploaded [ _; _ ]) as logos); _ ]
+          -> logos
         | _ -> failwith "Tenant create events don't match in test."
       in
       Ok
         [ DetailsEdited (tenant, update) |> Pool_event.pool_tenant
         ; logo_event
-        ; System_event.(
-            Job.TenantDatabaseCacheCleared
-            |> create ~id:system_event_id
-            |> created)
+        ; System_event.(Job.TenantCacheCleared |> create ~id:system_event_id |> created)
           |> Pool_event.system_event
         ]
     in
     Alcotest.(
-      check
-        (result (list Test_utils.event) Test_utils.error)
-        "succeeds"
-        expected
-        events)
+      check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let update_tenant_database () =
@@ -540,7 +481,7 @@ let update_tenant_database () =
           ]
         |> decode_database
         >|= (fun { database_url; database_label } ->
-              Database.create database_label database_url)
+        Database.create database_label database_url)
         |> fail_with
       in
       UpdateDatabase.handle ~system_event_id tenant database
@@ -553,8 +494,7 @@ let update_tenant_database () =
         >|= CCFun.uncurry create
       in
       Ok
-        [ Pool_tenant.DatabaseEdited (tenant, database)
-          |> Pool_event.pool_tenant
+        [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
         ; System_event.(
             Job.TenantDatabaseReset (label database)
             |> create ~id:system_event_id
@@ -563,11 +503,7 @@ let update_tenant_database () =
         ]
     in
     Alcotest.(
-      check
-        (result (list Test_utils.event) Test_utils.error)
-        "succeeds"
-        expected
-        events)
+      check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let create_operator () =
@@ -596,9 +532,5 @@ let create_operator () =
     Ok [ Admin.Created admin |> Pool_event.admin ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;

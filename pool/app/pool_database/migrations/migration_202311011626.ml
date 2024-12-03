@@ -13,6 +13,5 @@ let change_disable_user_after_from_weeks_to_days =
 
 let migration () =
   Database.Migration.(
-    empty "202311011626"
-    |> add_step change_disable_user_after_from_weeks_to_days)
+    empty "202311011626" |> add_step change_disable_user_after_from_weeks_to_days)
 ;;

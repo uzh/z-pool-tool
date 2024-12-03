@@ -7,9 +7,7 @@ let database_label_of_request is_root req =
     | Ok { Tenant.tenant; _ } -> Ok tenant.Pool_tenant.database_label
     | Error _ -> Error Pool_message.(Error.Missing Field.Context)
   in
-  if is_root
-  then Ok Database.Pool.Root.label
-  else tenant_database_label_of_request req
+  if is_root then Ok Database.Pool.Root.label else tenant_database_label_of_request req
 ;;
 
 let context () =
@@ -18,8 +16,7 @@ let context () =
   let find_query_language parameters =
     let open Pool_message.Field in
     let open CCOption.Infix in
-    CCList.assoc_opt ~eq:equal Language parameters
-    >>= Pool_common.Language.read_opt
+    CCList.assoc_opt ~eq:equal Language parameters >>= Pool_common.Language.read_opt
   in
   let contact_language = function
     | None -> None
@@ -44,20 +41,14 @@ let context () =
     let is_root = Http_utils.is_req_from_root_host req in
     let csrf = Sihl.Web.Csrf.find_exn req in
     let message =
-      CCOption.bind
-        (Sihl.Web.Flash.find_alert req)
-        Pool_message.Collection.of_string
+      CCOption.bind (Sihl.Web.Flash.find_alert req) Pool_message.Collection.of_string
     in
     let find_user pool =
       Http_utils.user_from_session pool req
-      >|> CCOption.map_or
-            ~default:(Lwt.return Guest)
-            (context_user_of_user pool)
+      >|> CCOption.map_or ~default:(Lwt.return Guest) (context_user_of_user pool)
     in
     let%lwt context =
-      let* database_label =
-        database_label_of_request is_root req |> Lwt_result.lift
-      in
+      let* database_label = database_label_of_request is_root req |> Lwt_result.lift in
       let%lwt user = find_user database_label in
       let url_parameters = Utils.url_parameters_by_user req user in
       let%lwt language, guardian =
@@ -84,8 +75,7 @@ let context () =
           let context =
             match user with
             | Admin admin -> Some (`Admin, Admin.(admin |> id |> Id.to_common))
-            | Contact contact ->
-              Some (`Contact, Contact.(contact |> id |> Id.to_common))
+            | Contact contact -> Some (`Contact, Contact.(contact |> id |> Id.to_common))
             | Guest -> None
           in
           context

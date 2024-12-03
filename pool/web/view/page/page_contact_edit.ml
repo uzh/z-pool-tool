@@ -22,26 +22,24 @@ let grouped_custom_fields_form language custom_fields to_html =
       (div ~a:[ a_class [ "grid-col-2" ] ] (CCList.map to_html ungrouped_fields)
        :: CCList.map
             (fun (Group.Public.{ fields; _ } as group) ->
-              div
-                [ h2
-                    ~a:[ a_class [ "heading-2" ] ]
-                    [ txt Group.(Public.name language group) ]
-                ; div
-                    ~a:[ a_class [ "grid-col-2" ] ]
-                    (fields |> CCList.map to_html)
-                ])
+               div
+                 [ h2
+                     ~a:[ a_class [ "heading-2" ] ]
+                     [ txt Group.(Public.name language group) ]
+                 ; div ~a:[ a_class [ "grid-col-2" ] ] (fields |> CCList.map to_html)
+                 ])
             groups)
   ]
 ;;
 
 let personal_details_form
-  csrf
-  language
-  query_parameters
-  form_context
-  tenant_languages
-  contact
-  custom_fields
+      csrf
+      language
+      query_parameters
+      form_context
+      tenant_languages
+      contact
+      custom_fields
   =
   let open Contact in
   let action, is_admin =
@@ -51,32 +49,21 @@ let personal_details_form
   in
   let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let htmx_action = externalize action in
-  let form_attrs =
-    [ a_method `Post; a_action htmx_action; a_class [ "stack" ] ]
-  in
+  let form_attrs = [ a_method `Post; a_action htmx_action; a_class [ "stack" ] ] in
   let htmx_create field =
     Htmx.create ~required:true field language ~hx_post:htmx_action ()
   in
   let custom_field_to_html field =
     let hx_delete =
-      Htmx.admin_profile_hx_delete
-        (Contact.id contact)
-        (Custom_field.Public.id field)
+      Htmx.admin_profile_hx_delete (Contact.id contact) (Custom_field.Public.id field)
     in
-    Htmx.custom_field_to_htmx
-      language
-      is_admin
-      ~hx_post:htmx_action
-      ~hx_delete
-      field
-      ()
+    Htmx.custom_field_to_htmx language is_admin ~hx_post:htmx_action ~hx_delete field ()
   in
   let open Message in
   let admin_hint =
     match is_admin with
     | true ->
-      [ Pool_common.(
-          Utils.hint_to_string language I18n.AdminOverwriteContactValues)
+      [ Pool_common.(Utils.hint_to_string language I18n.AdminOverwriteContactValues)
         |> HttpUtils.add_line_breaks
       ]
       |> Component.Notification.notification language `Warning
@@ -89,8 +76,7 @@ let personal_details_form
         (csrf_element csrf ()
          :: CCList.map
               (fun (version, field, label, value, help) ->
-                Htmx.create_entity ?help ?label version field value
-                |> htmx_create)
+                 Htmx.create_entity ?help ?label version field value |> htmx_create)
               Htmx.
                 [ ( contact.firstname_version
                   , Field.Firstname
@@ -105,10 +91,7 @@ let personal_details_form
                   , Field.Lastname
                   , None
                   , Text
-                      (contact
-                       |> Contact.lastname
-                       |> User.Lastname.value
-                       |> CCOption.pure)
+                      (contact |> Contact.lastname |> User.Lastname.value |> CCOption.pure)
                   , None )
                 ; ( contact.language_version
                   , Field.Language
@@ -129,9 +112,7 @@ let personal_details_form
         [ p
             [ txt
                 Pool_common.(
-                  Utils.hint_to_string
-                    language
-                    I18n.ContactProfileVisibleOverride)
+                  Utils.hint_to_string language I18n.ContactProfileVisibleOverride)
             ]
         ; fields
         ]
@@ -142,10 +123,7 @@ let personal_details_form
     [ Notification.notification
         language
         `Default
-        [ p
-            [ txt Pool_common.(Utils.hint_to_string language I18n.PartialUpdate)
-            ]
-        ]
+        [ p [ txt Pool_common.(Utils.hint_to_string language I18n.PartialUpdate) ] ]
     ; form
         ~a:form_attrs
         [ static_fields
@@ -154,20 +132,18 @@ let personal_details_form
             [ div
                 ~a:[ a_class [ "stack-lg" ] ]
                 (admin_hint
-                 :: grouped_custom_fields_form
-                      language
-                      custom_fields
-                      custom_field_to_html)
+                 :: grouped_custom_fields_form language custom_fields custom_field_to_html
+                )
             ]
         ]
     ]
 ;;
 
 let personal_details
-  contact
-  custom_fields
-  tenant_languages
-  Pool_context.{ language; query_parameters; csrf; _ }
+      contact
+      custom_fields
+      tenant_languages
+      Pool_context.{ language; query_parameters; csrf; _ }
   =
   let form_context = `Contact in
   let pause_form =
@@ -194,9 +170,9 @@ let personal_details
 ;;
 
 let login_information
-  (contact : Contact.t)
-  Pool_context.{ language; query_parameters; csrf; _ }
-  password_policy
+      (contact : Contact.t)
+      Pool_context.{ language; query_parameters; csrf; _ }
+      password_policy
   =
   let open Contact in
   let open Message.Control in
@@ -209,9 +185,7 @@ let login_information
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           Pool_common.
-            [ Utils.control_to_string language (Update (Some Field.email))
-              |> txt
-            ]
+            [ Utils.control_to_string language (Update (Some Field.email)) |> txt ]
       ; form
           ~a:(form_attrs "/user/update-email")
           [ csrf_element csrf ()
@@ -219,8 +193,7 @@ let login_information
               language
               `Email
               Pool_message.Field.Email
-              ~value:
-                (contact.user.Pool_user.email |> Pool_user.EmailAddress.value)
+              ~value:(contact.user.Pool_user.email |> Pool_user.EmailAddress.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element
@@ -237,9 +210,7 @@ let login_information
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           Pool_common.
-            [ Utils.control_to_string language (Update (Some Field.password))
-              |> txt
-            ]
+            [ Utils.control_to_string language (Update (Some Field.password)) |> txt ]
       ; form
           ~a:(form_attrs "/user/update-password")
           [ csrf_element csrf ()
@@ -252,8 +223,7 @@ let login_information
           ; input_element
               language
               ~hints:
-                Pool_common.I18n.
-                  [ I18nText (password_policy |> I18n.content_to_string) ]
+                Pool_common.I18n.[ I18nText (password_policy |> I18n.content_to_string) ]
               `Password
               ~value:""
               Field.NewPassword
@@ -275,19 +245,15 @@ let login_information
           ]
       ]
   in
-  div
-    [ div
-        ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ]
-        [ email_form; password_form ]
-    ]
+  div [ div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ email_form; password_form ] ]
   |> contact_profile_layout language Pool_common.I18n.LoginInformation
 ;;
 
 let contact_information
-  contact
-  Pool_context.{ language; query_parameters; csrf; _ }
-  (verification : Pool_user.UnverifiedCellPhone.t option)
-  was_reset
+      contact
+      Pool_context.{ language; query_parameters; csrf; _ }
+      (verification : Pool_user.UnverifiedCellPhone.t option)
+      was_reset
   =
   let open Contact in
   let open Pool_common in
@@ -303,10 +269,7 @@ let contact_information
     let link =
       HttpUtils.url_with_field_params query_parameters "/user/login-information"
     in
-    [ txt
-        Pool_common.(
-          Utils.hint_to_string language I18n.ContactInformationEmailHint)
-    ]
+    [ txt Pool_common.(Utils.hint_to_string language I18n.ContactInformationEmailHint) ]
     |> Notification.notification
          language
          ~link:(link, Pool_common.I18n.LoginInformation)
@@ -357,17 +320,14 @@ let contact_information
   let form_as_link url i18n =
     form
       ~a:[ a_method `Post; a_action (externalize url) ]
-      [ csrf_element csrf ()
-      ; submit_element ~classnames:[ "as-link" ] language i18n ()
-      ]
+      [ csrf_element csrf (); submit_element ~classnames:[ "as-link" ] language i18n () ]
   in
   let verify_form cell_phone =
     div
       [ form_title (Verify (Some Field.CellPhone))
       ; div
           ~a:[ a_class [ "stack" ] ]
-          [ [ I18n.ContactEnterCellPhoneToken
-                (Pool_user.CellPhone.value cell_phone)
+          [ [ I18n.ContactEnterCellPhoneToken (Pool_user.CellPhone.value cell_phone)
               |> Utils.hint_to_string language
               |> txt
             ]
@@ -390,9 +350,7 @@ let contact_information
               ]
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap"; "gap"; "justify-end" ] ]
-              [ form_as_link
-                  "/user/phone/resend-token"
-                  (Resend (Some Field.Token))
+              [ form_as_link "/user/phone/resend-token" (Resend (Some Field.Token))
               ; form_as_link "/user/phone/reset" EnterNewCellPhone
               ]
           ]
@@ -401,15 +359,13 @@ let contact_information
   let form =
     match verification with
     | None -> new_form ()
-    | Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } ->
-      verify_form cell_phone
+    | Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } -> verify_form cell_phone
   in
   div [ email_hint; div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
   |> contact_profile_layout language Pool_common.I18n.ContactInformation
 ;;
 
-let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token ()
-  =
+let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token () =
   let open Pool_common in
   let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let action =

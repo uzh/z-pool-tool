@@ -16,9 +16,7 @@ let find_by_table_view = Repo.Sql.find_by_table_view
 
 let find_of_contact ?(required = false) pool user id =
   let open Pool_context in
-  let find is_admin =
-    Repo_public.find_all_by_contact ~is_admin ~required pool id
-  in
+  let find is_admin = Repo_public.find_all_by_contact ~is_admin ~required pool id in
   match user with
   | Guest -> Lwt.return ([], [])
   | Contact _ -> find false
@@ -42,10 +40,7 @@ let find_unanswered_required_by_contact database_label user id =
 let find_unanswered_ungrouped_required_by_contact database_label user id =
   let open Pool_context in
   let find is_admin =
-    Repo_public.find_unanswered_ungrouped_required_by_contact
-      ~is_admin
-      database_label
-      id
+    Repo_public.find_unanswered_ungrouped_required_by_contact ~is_admin database_label id
   in
   match user with
   | Guest -> Lwt.return []
@@ -100,8 +95,7 @@ let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
   let single_value =
     value
     |> CCList.head_opt
-    |> CCFun.flip CCOption.bind (fun v ->
-      if CCString.is_empty v then None else Some v)
+    |> CCFun.flip CCOption.bind (fun v -> if CCString.is_empty v then None else Some v)
   in
   let validate validation value = validation |> fst |> fun rule -> rule value in
   match m with
@@ -178,10 +172,10 @@ let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
 ;;
 
 let validate_partial_update
-  ?(is_admin = false)
-  contact
-  custom_field
-  (partial_field, current_version, value)
+      ?(is_admin = false)
+      contact
+      custom_field
+      (partial_field, current_version, value)
   =
   let open PartialUpdate in
   let check_version old_v t =
@@ -247,18 +241,17 @@ let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
     | Assoc lst ->
       List.fold_left
         (fun acc (key, v) ->
-          let uuids =
-            id_of_string key
-            |> function
-            | None -> acc
-            | Some uuid -> uuid :: acc
-          in
-          collect_uuids uuids v)
+           let uuids =
+             id_of_string key
+             |> function
+             | None -> acc
+             | Some uuid -> uuid :: acc
+           in
+           collect_uuids uuids v)
         acc
         lst
     | Change (before, after) ->
-      CCList.fold_left (fun acc cur -> acc @ yojson_id cur) [] [ before; after ]
-      @ acc
+      CCList.fold_left (fun acc cur -> acc @ yojson_id cur) [] [ before; after ] @ acc
   in
   let get_or = CCOption.get_or in
   let uuids = collect_uuids [] changes in
@@ -267,13 +260,11 @@ let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
   let () =
     CCList.iter
       (fun (id, name) ->
-        let name =
-          let open Name in
-          find_opt language name
-          |> CCOption.value ~default:(get_hd name)
-          |> value_name
-        in
-        Hashtbl.add tbl (Pool_common.Id.value id) name)
+         let name =
+           let open Name in
+           find_opt language name |> CCOption.value ~default:(get_hd name) |> value_name
+         in
+         Hashtbl.add tbl (Pool_common.Id.value id) name)
       names
   in
   let rec replace_names = function
@@ -281,14 +272,13 @@ let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
       Assoc
         (CCList.map
            (fun (key, changes) ->
-             let key = Hashtbl.find_opt tbl key |> get_or ~default:key in
-             let changes = replace_names changes in
-             key, changes)
+              let key = Hashtbl.find_opt tbl key |> get_or ~default:key in
+              let changes = replace_names changes in
+              key, changes)
            lst)
     | Change (before, after) ->
       let rec replace = function
-        | `String str ->
-          `String (Hashtbl.find_opt tbl str |> get_or ~default:str)
+        | `String str -> `String (Hashtbl.find_opt tbl str |> get_or ~default:str)
         | `List lst -> `List (CCList.map replace lst)
         | change -> change
       in

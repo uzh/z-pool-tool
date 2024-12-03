@@ -52,8 +52,7 @@ module UnverifiedCellPhone = struct
   let t =
     let encode (m : t) = Ok (m.cell_phone, m.created_at) in
     let decode (cell_phone, created_at) = Ok { cell_phone; created_at } in
-    Caqti_type.(
-      custom ~encode ~decode (t2 CellPhone.t Pool_common.Repo.CreatedAt.t))
+    Caqti_type.(custom ~encode ~decode (t2 CellPhone.t Pool_common.Repo.CreatedAt.t))
   ;;
 
   let full =
@@ -65,10 +64,7 @@ module UnverifiedCellPhone = struct
       custom
         ~encode
         ~decode
-        (t3
-           CellPhone.t
-           Pool_common.Repo.VerificationCode.t
-           Pool_common.Repo.CreatedAt.t))
+        (t3 CellPhone.t Pool_common.Repo.VerificationCode.t Pool_common.Repo.CreatedAt.t))
   ;;
 end
 
@@ -79,11 +75,10 @@ module EmailAddress = struct
     make_caqti_type
       Caqti_type.string
       (fun email ->
-        email
-        |> create
-        |> CCResult.map_err
-             (const
-                Pool_message.(Error.InvalidWithInfo (Field.EmailAddress, email))))
+         email
+         |> create
+         |> CCResult.map_err
+              (const Pool_message.(Error.InvalidWithInfo (Field.EmailAddress, email))))
       value
   ;;
 end
@@ -120,9 +115,7 @@ end
 
 let t =
   let open Database.Caqti_encoders in
-  let decode
-    (id, (email, (lastname, (firstname, (status, (admin, (confirmed, ())))))))
-    =
+  let decode (id, (email, (lastname, (firstname, (status, (admin, (confirmed, ()))))))) =
     Ok { Entity.id; email; lastname; firstname; status; admin; confirmed }
   in
   let encode (m : Entity.t) : ('a Data.t, string) result =
@@ -141,12 +134,5 @@ let t =
     ~encode
     ~decode
     Schema.
-      [ Id.t
-      ; EmailAddress.t
-      ; Lastname.t
-      ; Firstname.t
-      ; Status.t
-      ; IsAdmin.t
-      ; Confirmed.t
-      ]
+      [ Id.t; EmailAddress.t; Lastname.t; Firstname.t; Status.t; IsAdmin.t; Confirmed.t ]
 ;;

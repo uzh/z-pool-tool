@@ -65,8 +65,7 @@ let delete req =
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
       base_path
-      [ HttpUtils.Message.set
-          ~success:[ Pool_message.(Success.Deleted Field.GtxApiKey) ]
+      [ HttpUtils.Message.set ~success:[ Pool_message.(Success.Deleted Field.GtxApiKey) ]
       ]
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -75,18 +74,14 @@ let delete req =
 let delivery_report req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let respond () =
-    Sihl.Web.Response.of_plain_text "OK" ~status:`OK |> Lwt.return
-  in
+  let respond () = Sihl.Web.Response.of_plain_text "OK" ~status:`OK |> Lwt.return in
   let request_to_string req =
     Sihl.Web.Request.pp_hum Format.str_formatter req;
     Format.flush_str_formatter ()
   in
   let log_error err =
     Logs.err ~src (fun m ->
-      m
-        "An error occurred parsing the dlr report: %s"
-        (Pool_message.Error.show err))
+      m "An error occurred parsing the dlr report: %s" (Pool_message.Error.show err))
   in
   let log_request_with_ip message =
     let message = "text message dlr: " ^ message in

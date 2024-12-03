@@ -32,9 +32,7 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t =
   let open Pool_database in
-  let status_updated label status =
-    StatusUpdated (label, status) |> handle_event pool
-  in
+  let status_updated label status = StatusUpdated (label, status) |> handle_event pool in
   function
   | Created (({ Write.id; _ } as tenant), database) ->
     let open Utils.Lwt_result.Infix in
@@ -59,9 +57,7 @@ let handle_event pool : event -> unit Lwt.t =
     let open CCOption.Infix in
     let%lwt () =
       update_t.status
-      |> CCOption.map_or
-           ~default:Lwt.return_unit
-           (status_updated tenant.database_label)
+      |> CCOption.map_or ~default:Lwt.return_unit (status_updated tenant.database_label)
     in
     { tenant with
       title = update_t.title
@@ -76,9 +72,7 @@ let handle_event pool : event -> unit Lwt.t =
     }
     |> Repo.update Database.Pool.Root.label
   | DatabaseEdited (tenant, database) ->
-    let%lwt () =
-      Repo.update_database Database.Pool.Root.label (tenant, database)
-    in
+    let%lwt () = Repo.update_database Database.Pool.Root.label (tenant, database) in
     Lwt.return_unit
   | ActivateMaintenance { Entity.Write.database_label; _ } ->
     status_updated database_label Database.Status.Maintenance

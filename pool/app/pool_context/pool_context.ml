@@ -40,9 +40,7 @@ module Utils = struct
     let open CCFun in
     let open Pool_message in
     let field =
-      if CCOption.value ~default:false admin_only
-      then Field.Admin
-      else Field.User
+      if CCOption.value ~default:false admin_only then Field.Admin else Field.User
     in
     find_authorizable_opt ?admin_only database_label
     %> Lwt.map (CCOption.to_result (Error.NotFound field))
@@ -61,8 +59,7 @@ module Utils = struct
     let open CCOption.Infix in
     CCList.assoc_opt ~eq:Field.equal Field.Language query_parameters
     >>= Pool_common.Language.read_opt
-    >>= fun lang ->
-    CCList.find_opt (Pool_common.Language.equal lang) tenant_languages
+    >>= fun lang -> CCList.find_opt (Pool_common.Language.equal lang) tenant_languages
   ;;
 
   let url_parameters_by_user req =
@@ -76,8 +73,7 @@ module Utils = struct
     function
     | Admin _ -> []
     | Contact _ -> filter_params Field.[ Redirected; Language ]
-    | Guest ->
-      filter_params Field.[ Redirected; Language; Location; SignUpCode ]
+    | Guest -> filter_params Field.[ Redirected; Language; Location; SignUpCode ]
   ;;
 
   module Api = struct
@@ -102,7 +98,7 @@ module Logger = struct
         find req
         |> of_result
         >|= (fun { database_label; user; _ } ->
-              database_label |> Database.Label.value, user |> show_log_user)
+        database_label |> Database.Label.value, user |> show_log_user)
         |> value ~default:(default, default)
       in
       let open Logs.Tag in
@@ -134,8 +130,7 @@ module Logger = struct
           find req
           |> of_result
           >|= (fun { database_label; api_key; _ } ->
-                ( database_label |> Database.Label.value
-                , Api_key.(Id.value api_key.id) ))
+          database_label |> Database.Label.value, Api_key.(Id.value api_key.id))
           |> value ~default:(default, default)
         in
         let open Logs.Tag in

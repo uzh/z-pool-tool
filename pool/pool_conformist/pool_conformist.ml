@@ -47,12 +47,12 @@ let decode_and_validate ?tags schema input =
     let msg =
       CCList.map
         (fun (field, values, error_msg) ->
-          let values =
-            if CCList.mem ~eq:CCString.equal field conformist_hide_list
-            then "************"
-            else CCString.concat ", " values
-          in
-          asprintf "(%s, (%s), %s)" field values (Error.show_error error_msg))
+           let values =
+             if CCList.mem ~eq:CCString.equal field conformist_hide_list
+             then "************"
+             else CCString.concat ", " values
+           in
+           asprintf "(%s, (%s), %s)" field values (Error.show_error error_msg))
         errors
       |> CCString.concat ", "
       |> asprintf "(%s)"

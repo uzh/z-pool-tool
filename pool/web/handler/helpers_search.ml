@@ -6,10 +6,10 @@ module HttpUtils = Http_utils
 let src = Logs.Src.create "handler.helper.search"
 
 let htmx_search_helper
-  ?(query_field = Field.Search)
-  ?(exclude_field = Field.Exclude)
-  entity
-  req
+      ?(query_field = Field.Search)
+      ?(exclude_field = Field.Exclude)
+      entity
+      req
   =
   let result { Pool_context.database_label; user; language; _ } =
     let* actor =
@@ -57,11 +57,7 @@ let htmx_search_helper
       let open Tags.Guard.Access in
       let%lwt exclude = entities_to_exclude Tags.Id.of_string in
       let search_tags value actor =
-        Tags.search_by_title
-          database_label
-          ~model:Tags.Model.Contact
-          ~exclude
-          value
+        Tags.search_by_title database_label ~model:Tags.Model.Contact ~exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
@@ -78,6 +74,5 @@ let htmx_search_helper
       in
       execute_search search_experiment query_results
   in
-  result
-  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;

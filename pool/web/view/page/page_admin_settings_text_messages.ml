@@ -16,8 +16,7 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
     | true ->
       ( form
           ~a:
-            [ a_action
-                (Sihl.Web.externalize_path (Format.asprintf "%s/delete" action))
+            [ a_action (Sihl.Web.externalize_path (Format.asprintf "%s/delete" action))
             ; a_method `Post
             ; a_class [ "stack" ]
             ; a_user_data
@@ -47,12 +46,7 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
               ; a_class [ "stack" ]
               ]
             [ csrf_element csrf ()
-            ; input_element
-                language
-                `Text
-                Field.GtxApiKey
-                ~flash_fetcher
-                ~required:true
+            ; input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
             ; input_element
                 language
                 `Text

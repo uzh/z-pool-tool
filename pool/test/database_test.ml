@@ -23,8 +23,7 @@ end
 
 let check_root_database _ () =
   let%lwt (_ : (unit, Pool_message.Error.t) result) =
-    Pool.connect Pool.Root.label
-    |> Lwt_result.map_error Pool_common.Utils.with_log_error
+    Pool.connect Pool.Root.label |> Lwt_result.map_error Pool_common.Utils.with_log_error
   in
   Lwt.return_unit
 ;;
@@ -32,8 +31,7 @@ let check_root_database _ () =
 let check_find_tenant_database _ () =
   let expected = [ fst Data.database ] in
   let tenants = Database.Pool.Tenant.all () in
-  Alcotest.(check (list Testable.label) "databases found" expected tenants)
-  |> Lwt.return
+  Alcotest.(check (list Testable.label) "databases found" expected tenants) |> Lwt.return
 ;;
 
 let check_tenant_database _ () =

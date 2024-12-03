@@ -15,16 +15,13 @@ module Create : sig
 end = struct
   type t = Waiting_list.create
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    confimration_email
-    (command : Waiting_list.create)
-    =
+  let handle ?(tags = Logs.Tag.empty) confimration_email (command : Waiting_list.create) =
     let open Experiment.Public in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    if command.Waiting_list.experiment
-       |> direct_registration_disabled
-       |> Experiment.DirectRegistrationDisabled.value
+    if
+      command.Waiting_list.experiment
+      |> direct_registration_disabled
+      |> Experiment.DirectRegistrationDisabled.value
     then
       Ok
         [ Waiting_list.Created command |> Pool_event.waiting_list
@@ -54,16 +51,12 @@ end = struct
 
   let schema =
     Conformist.(
-      make
-        Field.[ Conformist.optional @@ Waiting_list.AdminComment.schema () ]
-        command)
+      make Field.[ Conformist.optional @@ Waiting_list.AdminComment.schema () ] command)
   ;;
 
   let handle ?(tags = Logs.Tag.empty) waiting_list (command : t) =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    Ok
-      [ Waiting_list.Updated (command, waiting_list) |> Pool_event.waiting_list
-      ]
+    Ok [ Waiting_list.Updated (command, waiting_list) |> Pool_event.waiting_list ]
   ;;
 
   let decode data =
@@ -77,11 +70,7 @@ end
 module Destroy : sig
   include Common.CommandSig with type t = Waiting_list.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Waiting_list.t

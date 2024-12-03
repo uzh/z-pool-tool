@@ -38,9 +38,7 @@ let joins =
 ;;
 
 let find_request_sql ?(additional_joins = []) ?(count = false) where_fragment =
-  let columns =
-    if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-  in
+  let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
   Format.asprintf
     {sql|SELECT %s FROM pool_contacts %s %s|sql}
     columns
@@ -124,9 +122,7 @@ let find_multiple_request ids =
       WHERE user_uuid IN ( %s )
       AND user_users.admin = 0
     |sql}
-    (CCList.mapi
-       (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
-       ids
+    (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
      |> CCString.concat ",")
   |> find_request_sql
 ;;
@@ -134,10 +130,7 @@ let find_multiple_request ids =
 let find_multiple pool ids =
   let open Caqti_request.Infix in
   let (Dynparam.Pack (pt, pv)) =
-    CCList.fold_left
-      (fun dyn id -> dyn |> Dynparam.add Id.t id)
-      Dynparam.empty
-      ids
+    CCList.fold_left (fun dyn id -> dyn |> Dynparam.add Id.t id) Dynparam.empty ids
   in
   let request = find_multiple_request ids |> pt ->* t in
   Database.collect pool request pv
@@ -363,9 +356,7 @@ let update_profile_updated_triggered_request ids =
       profile_update_triggered_at = $1
       WHERE user_uuid IN ( %s )
    |sql}
-    (CCList.mapi
-       (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2))
-       ids
+    (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2)) ids
      |> CCString.concat ",")
 ;;
 
@@ -379,8 +370,7 @@ let update_profile_updated_triggered pool ids =
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let request =
-    update_profile_updated_triggered_request ids
-    |> (pt ->. Caqti_type.unit) ~oneshot:true
+    update_profile_updated_triggered_request ids |> (pt ->. Caqti_type.unit) ~oneshot:true
   in
   Database.exec pool request pv
 ;;
@@ -416,8 +406,7 @@ let set_registration_attempt_notification_sent_at_request =
 ;;
 
 let set_registration_attempt_notification_sent_at pool =
-  Entity.id
-  %> Database.exec pool set_registration_attempt_notification_sent_at_request
+  Entity.id %> Database.exec pool set_registration_attempt_notification_sent_at_request
 ;;
 
 let add_cell_phone_request =
@@ -439,15 +428,11 @@ let add_cell_phone_request =
       created_at = NOW()
     |sql}
   |> Caqti_type.(
-       t3 Pool_user.Repo.CellPhone.t Id.t Pool_common.Repo.VerificationCode.t
-       ->. unit)
+       t3 Pool_user.Repo.CellPhone.t Id.t Pool_common.Repo.VerificationCode.t ->. unit)
 ;;
 
 let add_cell_phone pool contact cell_phone code =
-  Database.exec
-    pool
-    add_cell_phone_request
-    (cell_phone, Entity.(id contact), code)
+  Database.exec pool add_cell_phone_request (cell_phone, Entity.(id contact), code)
 ;;
 
 let cell_phone_verifiaction_sql ?(where = "") () =
@@ -467,13 +452,11 @@ let cell_phone_verifiaction_sql ?(where = "") () =
 
 let find_cell_phone_verification_by_contact_request =
   let open Caqti_request.Infix in
-  cell_phone_verifiaction_sql ()
-  |> Id.t ->? Pool_user.Repo.UnverifiedCellPhone.t
+  cell_phone_verifiaction_sql () |> Id.t ->? Pool_user.Repo.UnverifiedCellPhone.t
 ;;
 
 let find_cell_phone_verification_by_contact pool =
-  Entity.id
-  %> Database.find_opt pool find_cell_phone_verification_by_contact_request
+  Entity.id %> Database.find_opt pool find_cell_phone_verification_by_contact_request
 ;;
 
 let find_cell_phone_verification_by_contact_and_code_request =

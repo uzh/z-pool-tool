@@ -9,9 +9,7 @@ let root_data =
 
 let root_data_clean =
   let name = "seed.root.clean" in
-  let description =
-    "Clean database and seed development data to root database"
-  in
+  let description = "Clean database and seed development data to root database" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Pool.Root.setup () in
     let%lwt () = Database.clean_all Database.Pool.Root.label in
@@ -36,9 +34,7 @@ let tenant_data =
 
 let tenant_data_clean =
   let name = "seed.tenant.clean" in
-  let description =
-    "Clean database and seed development data to all tenant databases"
-  in
+  let description = "Clean database and seed development data to all tenant databases" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Pool.initialize () in
     Database.Pool.Tenant.all () |> seed_tenant_clean)
@@ -46,9 +42,7 @@ let tenant_data_clean =
 
 let tenant_data_test =
   let name = "seed.tenant.test" in
-  let description =
-    "Clean database and seed development data for test purpose"
-  in
+  let description = "Clean database and seed development data for test purpose" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Pool.initialize () in
     Database.Pool.Tenant.all () |> seed_tenant_clean ~is_test:true)
@@ -66,8 +60,7 @@ let tenant_data_clean_specific =
 let tenant_data_contacts_specific =
   let name = "seed.tenant.specific.contacts" in
   let description =
-    "Seed 200 additional contacts (development data!) to specific tenant \
-     database"
+    "Seed 200 additional contacts (development data!) to specific tenant database"
   in
   Command_utils.make_pool_specific name description (fun pool ->
     let%lwt () = Seed.Tenant.create_contacts pool () in

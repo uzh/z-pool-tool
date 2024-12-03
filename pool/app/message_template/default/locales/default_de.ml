@@ -26,22 +26,20 @@ let account_suspension_notification =
   let email_text =
     [ p
         [ txt
-            "aufgrund zu vieler fehlgeschlagener Anmeldeversuche wurde Ihr \
-             Account vorübergehend gesperrt."
+            "aufgrund zu vieler fehlgeschlagener Anmeldeversuche wurde Ihr Account \
+             vorübergehend gesperrt."
         ]
     ; p
         [ txt
-            "Wenn diese Versuche nicht von Ihnen durchgeführt wurden, \
-             informieren Sie bitte einen Administrator."
+            "Wenn diese Versuche nicht von Ihnen durchgeführt wurden, informieren Sie \
+             bitte einen Administrator."
         ]
     ]
     |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject =
-    "Ihr Account wurde temporär gesperrt" |> EmailSubject.of_string
-  in
+  let email_subject = "Ihr Account wurde temporär gesperrt" |> EmailSubject.of_string in
   let sms_text =
     {|Aufgrund zu vieler fehlgeschlagener Anmeldeversuche wurde Ihr Account vorübergehend gesperrt.
 
@@ -65,8 +63,8 @@ let assignment_confirmation =
   let email_text =
     [ p
         [ txt
-            "Sie wurden erfolgreich zur folgenden Session / zu den folgenden \
-             Sessions angemeldet:"
+            "Sie wurden erfolgreich zur folgenden Session / zu den folgenden Sessions \
+             angemeldet:"
         ; br ()
         ; txt "{sessionOverview}"
         ]
@@ -105,11 +103,7 @@ let assignment_session_change =
         ; br ()
         ; txt "{sessionOverview}"
         ]
-    ; p
-        [ txt
-            "An der Session vom {oldSessionStart} sind Sie nicht mehr \
-             angemeldet."
-        ]
+    ; p [ txt "An der Session vom {oldSessionStart} sind Sie nicht mehr angemeldet." ]
     ]
     |> add_salutation
     |> html_to_string
@@ -142,9 +136,7 @@ let email_verification =
   let label = Label.EmailVerification in
   let email_text =
     [ p
-        [ txt
-            "Du hast kürzlich eine neue E-Mail-Adresse zu deinem Account \
-             hinzugefügt."
+        [ txt "Du hast kürzlich eine neue E-Mail-Adresse zu deinem Account hinzugefügt."
         ; br ()
         ; txt "Nutze diesen"
         ; a ~a:[ a_href "{verificationUrl}" ] [ txt " Link " ]
@@ -152,13 +144,13 @@ let email_verification =
         ]
     ; p
         [ txt
-            "Wenn du diese Aktion nicht ausgeführt hattest, dann ignoriere \
-             diese E-Mail oder trete mit uns in Kontakt."
+            "Wenn du diese Aktion nicht ausgeführt hattest, dann ignoriere diese E-Mail \
+             oder trete mit uns in Kontakt."
         ]
     ; p
         [ txt
-            "Falls der obige Link nicht funktioniert, kopiere bitte den \
-             folgenden manuell in deinen Browser: {verificationUrl}"
+            "Falls der obige Link nicht funktioniert, kopiere bitte den folgenden \
+             manuell in deinen Browser: {verificationUrl}"
         ]
     ]
     |> add_salutation
@@ -199,17 +191,15 @@ let experiment_invitation =
         ]
     ; p
         [ txt
-            "Falls der obige Link nicht funktioniert, kopiere bitte den \
-             folgenden manuell in deinen Browser: {experimentUrl}"
+            "Falls der obige Link nicht funktioniert, kopiere bitte den folgenden \
+             manuell in deinen Browser: {experimentUrl}"
         ]
     ]
     |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject =
-    "Einladung zu einem Experiment" |> EmailSubject.of_string
-  in
+  let email_subject = "Einladung zu einem Experiment" |> EmailSubject.of_string in
   let sms_text =
     {|Wir möchten Sie zu einem bevorstehenden Experiment einladen:
 
@@ -237,8 +227,8 @@ let password_change =
     [ p [ txt "Du hast kürzlich das Passwort deines Accounts geändert." ]
     ; p
         [ txt
-            "Wenn du dein Passwort nicht geändert hast, dann kontaktiere uns \
-             bitte umgehend."
+            "Wenn du dein Passwort nicht geändert hast, dann kontaktiere uns bitte \
+             umgehend."
         ]
     ]
     |> add_salutation
@@ -267,15 +257,11 @@ Wenn du dein Passwort nicht geändert hast, dann kontaktiere uns bitte umgehend.
 let phone_verification =
   let label = Label.PhoneVerification in
   let email_text =
-    "Ihr Code zur Verifizierung Ihrer Mobiltelefonnummer: {token}"
-    |> EmailText.of_string
+    "Ihr Code zur Verifizierung Ihrer Mobiltelefonnummer: {token}" |> EmailText.of_string
   in
-  let email_subject =
-    "Verifizierung Mobiltelefonnummer" |> EmailSubject.of_string
-  in
+  let email_subject = "Verifizierung Mobiltelefonnummer" |> EmailSubject.of_string in
   let sms_text =
-    {|Ihr Code zur Verifizierung Ihrer Mobiltelefonnummer: {token}|}
-    |> SmsText.of_string
+    {|Ihr Code zur Verifizierung Ihrer Mobiltelefonnummer: {token}|} |> SmsText.of_string
   in
   { id = Id.create ()
   ; label
@@ -302,9 +288,7 @@ let profile_update_trigger =
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject =
-    "Bitte kontrollieren Sie Ihr Profil." |> EmailSubject.of_string
-  in
+  let email_subject = "Bitte kontrollieren Sie Ihr Profil." |> EmailSubject.of_string in
   let sms_text =
     {|Ihr Profil wurde schon länger nicht aktualisiert.
 
@@ -328,8 +312,7 @@ let password_reset =
   let email_text =
     [ p
         [ txt
-            "Du hast kürzlich beantragt, dein Passwort für deinen Account \
-             zurückzusetzen."
+            "Du hast kürzlich beantragt, dein Passwort für deinen Account zurückzusetzen."
         ; br ()
         ; txt "Nutze diesen"
         ; a ~a:[ a_href "{resetUrl}" ] [ txt " Link " ]
@@ -337,15 +320,14 @@ let password_reset =
         ]
     ; p
         [ txt
-            "Wenn du dies nicht beantragt hast, kannst du diese E-Mail \
-             ignorieren oder mit und Kontakt aufnehmen. Der Link ist für die \
-             nächste Stunde valid, anschliessend muss ein neuer beantragt \
-             werden."
+            "Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder \
+             mit und Kontakt aufnehmen. Der Link ist für die nächste Stunde valid, \
+             anschliessend muss ein neuer beantragt werden."
         ]
     ; p
         [ txt
-            "Falls der obige Link nicht funktioniert, kopiere bitte den \
-             folgenden manuell in deinen Browser: {resetUrl}"
+            "Falls der obige Link nicht funktioniert, kopiere bitte den folgenden \
+             manuell in deinen Browser: {resetUrl}"
         ]
     ]
     |> add_salutation
@@ -385,13 +367,13 @@ let signup_verification =
         ]
     ; p
         [ txt
-            "Wenn du dies nicht beantragt hast, kannst du diese E-Mail \
-             ignorieren oder mit und Kontakt aufnehmen."
+            "Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder \
+             mit und Kontakt aufnehmen."
         ]
     ; p
         [ txt
-            "Falls der obige Link nicht funktioniert, kopiere bitte den \
-             folgenden manuell in deinen Browser: {verificationUrl}"
+            "Falls der obige Link nicht funktioniert, kopiere bitte den folgenden \
+             manuell in deinen Browser: {verificationUrl}"
         ]
     ]
     |> add_salutation
@@ -423,10 +405,7 @@ Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder mit un
 let session_cancellation =
   let label = Label.SessionCancellation in
   let email_text =
-    [ p
-        [ txt
-            "Die folgende Session, zu der du angemeldet warst, wurde abgesagt:"
-        ]
+    [ p [ txt "Die folgende Session, zu der du angemeldet warst, wurde abgesagt:" ]
     ; p [ txt "{sessionOverview}" ]
     ; p [ txt "Grund:" ]
     ; p [ txt "{reason}" ]
@@ -509,9 +488,7 @@ let session_reschedule =
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject =
-    "Eine Session wurde verschoben" |> EmailSubject.of_string
-  in
+  let email_subject = "Eine Session wurde verschoben" |> EmailSubject.of_string in
   let sms_text =
     {|Eine Session, zu der Sie angemeldet sind, wurde verschoben:
 
@@ -540,27 +517,27 @@ let contact_registration_attempt =
   let email_text =
     [ p
         [ txt
-            "Es wurde versucht, auf {tenantUrl} ein Konto mit der \
-             E-Mail-Adresse '{emailAddress}' zu erstellen."
+            "Es wurde versucht, auf {tenantUrl} ein Konto mit der E-Mail-Adresse \
+             '{emailAddress}' zu erstellen."
         ; br ()
         ; txt "Es existiert bereits ein Konto mit dieser E-Mail-Adresse."
         ]
     ; p
         [ txt
-            "Wenn Sie dies waren und Ihre Anmeldedaten vergessen haben, können \
-             Sie Ihr Passwort "
+            "Wenn Sie dies waren und Ihre Anmeldedaten vergessen haben, können Sie Ihr \
+             Passwort "
         ; a ~a:[ a_href "{resetUrl}" ] [ txt "hier" ]
         ; txt "zurücksetzen."
         ]
     ; p
         [ txt
-            "Wenn diese Aktion nicht von Ihnen durchgeführt wurde, können Sie \
-             diese Meldung ignorieren oder die Administratoren informieren."
+            "Wenn diese Aktion nicht von Ihnen durchgeführt wurde, können Sie diese \
+             Meldung ignorieren oder die Administratoren informieren."
         ]
     ; p
         [ txt
-            "Wenn der obige Link nicht funktioniert, kopieren Sie bitte den \
-             folgenden Link manuell in Ihren Browser: {resetUrl}"
+            "Wenn der obige Link nicht funktioniert, kopieren Sie bitte den folgenden \
+             Link manuell in Ihren Browser: {resetUrl}"
         ]
     ]
     |> add_salutation
@@ -601,17 +578,15 @@ let user_import =
         ]
     ; p
         [ txt
-            "Falls der obige Link nicht funktioniert, kopiere bitte den \
-             folgenden manuell in deinen Browser: {confirmationUrl}"
+            "Falls der obige Link nicht funktioniert, kopiere bitte den folgenden \
+             manuell in deinen Browser: {confirmationUrl}"
         ]
     ]
     |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject =
-    "Reaktivierung Ihres Accounts" |> EmailSubject.of_string
-  in
+  let email_subject = "Reaktivierung Ihres Accounts" |> EmailSubject.of_string in
   let sms_text =
     {|Ihr Account wurde kürzlich migriert. Nutzen Sie den folgenden Link um Ihren Account wieder zu aktivieren:
 

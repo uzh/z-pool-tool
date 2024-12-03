@@ -55,23 +55,17 @@ let to_events (assignment_events, emails) =
 let update_without_filter _ () =
   let%lwt experiment = get_experiment () in
   let%lwt session = get_session () in
-  let%lwt events =
-    update_matches_filter pool (`Session session) >|+ to_events
-  in
+  let%lwt events = update_matches_filter pool (`Session session) >|+ to_events in
   let () = check_result (Ok []) events in
   let%lwt events =
-    update_matches_filter
-      pool
-      (`Experiment (experiment, experiment.Experiment.filter))
+    update_matches_filter pool (`Experiment (experiment, experiment.Experiment.filter))
     >|+ to_events
   in
   check_result (Ok []) events |> Lwt.return
 ;;
 
 let exclude_contact _ () =
-  let%lwt current_user =
-    Integration_utils.AdminRepo.create () ||> Pool_context.admin
-  in
+  let%lwt current_user = Integration_utils.AdminRepo.create () ||> Pool_context.admin in
   let%lwt assignment = get_assignment_by_contact contact_id_1 in
   let exclude_1 =
     let open Filter in
@@ -90,9 +84,7 @@ let exclude_contact _ () =
   let%lwt experiment = get_experiment () in
   let%lwt session = get_session () in
   let%lwt expected =
-    let%lwt message =
-      create_notification experiment [ session, [ assignment ] ] admin
-    in
+    let%lwt message = create_notification experiment [ session, [ assignment ] ] admin in
     [ Assignment.(MatchesFilterUpdated (assignment, MatchesFilter.create false))
       |> Pool_event.assignment
     ; Email.BulkSent [ message ] |> Pool_event.email
@@ -100,8 +92,7 @@ let exclude_contact _ () =
     |> Lwt_result.return
   in
   let%lwt events =
-    update_matches_filter ~current_user:admin pool (`Session session)
-    >|+ to_events
+    update_matches_filter ~current_user:admin pool (`Session session) >|+ to_events
   in
   let () = check_result expected events in
   let%lwt events =

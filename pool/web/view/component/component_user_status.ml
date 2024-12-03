@@ -19,9 +19,7 @@ let status_to_icon =
 
 let status_legend_text language =
   let open Pool_common in
-  let field_to_string =
-    Utils.field_to_string language %> CCString.capitalize_ascii
-  in
+  let field_to_string = Utils.field_to_string language %> CCString.capitalize_ascii in
   let open Pool_message.Field in
   function
   | EmailUnverified -> field_to_string EmailAddressUnverified
@@ -34,8 +32,7 @@ let make_table_legend ?(additional_items = []) language icons =
   icons
   |> CCList.map (fun status_icon ->
     ( status_legend_text language status_icon
-    , status_to_icon status_icon
-      |> Component_icon.to_html ~classnames:[ "legend-item" ] ))
+    , status_to_icon status_icon |> Component_icon.to_html ~classnames:[ "legend-item" ] ))
   |> CCList.append additional_items
   |> Component_table.table_legend
 ;;
@@ -122,9 +119,7 @@ module Admin = struct
     |> CCList.map CCFun.(status_to_icon %> Component_icon.to_html)
   ;;
 
-  let status_icons_table_legend language =
-    make_table_legend language email_status_icons
-  ;;
+  let status_icons_table_legend language = make_table_legend language email_status_icons
 
   let email_with_icons admin =
     let text = Admin.email_address admin |> Pool_user.EmailAddress.value in

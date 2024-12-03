@@ -9,9 +9,7 @@ let contact_update_on_invitation_sent contacts =
   let open CCFun in
   let open CCList in
   contacts
-  >|= Contact_counter.update_on_invitation_sent
-      %> Contact.updated
-      %> Pool_event.contact
+  >|= Contact_counter.update_on_invitation_sent %> Contact.updated %> Pool_event.contact
 ;;
 
 module Create : sig
@@ -22,15 +20,10 @@ module Create : sig
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
     ; invited_contacts : Contact.Id.t list
-    ; create_message :
-        Contact.t -> (Email.dispatch, Pool_message.Error.t) result
+    ; create_message : Contact.t -> (Email.dispatch, Pool_message.Error.t) result
     }
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
@@ -38,13 +31,12 @@ end = struct
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
     ; invited_contacts : Contact.Id.t list
-    ; create_message :
-        Contact.t -> (Email.dispatch, Pool_message.Error.t) result
+    ; create_message : Contact.t -> (Email.dispatch, Pool_message.Error.t) result
     }
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    { invited_contacts; contacts; create_message; experiment; mailing }
+        ?(tags = Logs.Tag.empty)
+        { invited_contacts; contacts; create_message; experiment; mailing }
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in

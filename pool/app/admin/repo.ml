@@ -64,21 +64,15 @@ let find_by_email pool email =
 ;;
 
 let find_all_request =
-  {sql| WHERE user_users.admin = 1 |sql}
-  |> find_request_sql
-  |> Caqti_type.unit ->* t
+  {sql| WHERE user_users.admin = 1 |sql} |> find_request_sql |> Caqti_type.unit ->* t
 ;;
 
-let find_by ?query pool =
-  Query.collect_and_count pool query ~select:find_request_sql t
-;;
+let find_by ?query pool = Query.collect_and_count pool query ~select:find_request_sql t
 
 let find_multiple_request ids =
   Format.asprintf
     {sql| WHERE user_users.uuid IN ( %s ) |sql}
-    (CCList.mapi
-       (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
-       ids
+    (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
      |> CCString.concat ",")
   |> find_request_sql
 ;;
@@ -262,20 +256,12 @@ let search_by_name_and_email_request ?conditions =
     where
 ;;
 
-let search_by_name_and_email
-  ?(dyn = Dynparam.empty)
-  ?exclude
-  ?(limit = 20)
-  pool
-  query
-  =
+let search_by_name_and_email ?(dyn = Dynparam.empty) ?exclude ?(limit = 20) pool query =
   let open Caqti_request.Infix in
   let exclude_ids = Database.exclude_ids "pool_admins.uuid" Id.value in
   let add_query = Dynparam.add Caqti_type.string ("%" ^ query ^ "%") in
   let dyn = dyn |> add_query |> add_query in
-  let dyn, exclude =
-    exclude |> CCOption.map_or ~default:(dyn, None) (exclude_ids dyn)
-  in
+  let dyn, exclude = exclude |> CCOption.map_or ~default:(dyn, None) (exclude_ids dyn) in
   let conditions =
     [ exclude ]
     |> CCList.filter_map CCFun.id
@@ -284,8 +270,6 @@ let search_by_name_and_email
     | conditions -> conditions |> CCString.concat " AND " |> CCOption.return
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
-  let request =
-    search_by_name_and_email_request ?conditions limit |> pt ->* t
-  in
+  let request = search_by_name_and_email_request ?conditions limit |> pt ->* t in
   Database.collect pool request pv
 ;;

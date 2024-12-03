@@ -126,21 +126,17 @@ module Value = struct
   type default_reminder_lead_time = Pool_common.Reminder.EmailLeadTime.t
   [@@deriving eq, show, yojson]
 
-  type default_text_msg_reminder_lead_time =
-    Pool_common.Reminder.TextMessageLeadTime.t
+  type default_text_msg_reminder_lead_time = Pool_common.Reminder.TextMessageLeadTime.t
   [@@deriving eq, show, yojson]
 
-  type tenant_languages = Pool_common.Language.t list
-  [@@deriving eq, show, yojson]
-
+  type tenant_languages = Pool_common.Language.t list [@@deriving eq, show, yojson]
   type tenant_email_suffixes = EmailSuffix.t list [@@deriving eq, show, yojson]
   type tenant_contact_email = ContactEmail.t [@@deriving eq, show, yojson]
 
   type inactive_user_disable_after = InactiveUser.DisableAfter.t
   [@@deriving eq, show, yojson]
 
-  type inactive_user_warning = InactiveUser.DisableAfter.t
-  [@@deriving eq, show, yojson]
+  type inactive_user_warning = InactiveUser.DisableAfter.t [@@deriving eq, show, yojson]
 
   type trigger_profile_update_after = TriggerProfileUpdateAfter.t
   [@@deriving eq, show, yojson]

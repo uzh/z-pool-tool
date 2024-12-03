@@ -16,6 +16,5 @@ let create_email_address_table =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "email_address" |> add_step create_email_address_table)
+  Database.Migration.(empty "email_address" |> add_step create_email_address_table)
 ;;

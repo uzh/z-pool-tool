@@ -80,14 +80,5 @@ val handle_events
   -> t list
   -> unit Lwt.t
 
-val handle_system_event
-  :  ?tags:Logs.Tag.set
-  -> Database.Label.t
-  -> t
-  -> unit Lwt.t
-
-val handle_system_events
-  :  ?tags:Logs.Tag.set
-  -> Database.Label.t
-  -> t list
-  -> unit Lwt.t
+val handle_system_event : ?tags:Logs.Tag.set -> Database.Label.t -> t -> unit Lwt.t
+val handle_system_events : ?tags:Logs.Tag.set -> Database.Label.t -> t list -> unit Lwt.t

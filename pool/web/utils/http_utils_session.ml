@@ -20,15 +20,13 @@ let assignments_cancelable = function
 
 let session_changeable session assignment =
   match session with
-  | `Session session ->
-    Assignment.session_changeable session assignment |> CCResult.is_ok
+  | `Session session -> Assignment.session_changeable session assignment |> CCResult.is_ok
   | `TimeWindow _ -> false
 ;;
 
 let reminder_sendable session assignment =
   match session with
-  | `Session session ->
-    Assignment.reminder_sendable session assignment |> CCResult.is_ok
+  | `Session session -> Assignment.reminder_sendable session assignment |> CCResult.is_ok
   | `TimeWindow _ -> false
 ;;
 
@@ -38,8 +36,7 @@ let has_follow_ups = function
 ;;
 
 let session_title (session : Session.t) =
-  Pool_common.I18n.SessionDetailTitle
-    (session.Session.start |> Session.Start.value)
+  Pool_common.I18n.SessionDetailTitle (session.Session.start |> Session.Start.value)
 ;;
 
 let timewindow_title time_window =

@@ -33,9 +33,7 @@ let joins =
 ;;
 
 let find_request_sql ?(count = false) where_fragment =
-  let columns =
-    if count then "1" else sql_select_columns |> CCString.concat ", "
-  in
+  let columns = if count then "1" else sql_select_columns |> CCString.concat ", " in
   let query =
     Format.asprintf
       {sql| SELECT %s FROM pool_sessions %s %s GROUP BY pool_sessions.uuid |sql}
@@ -64,9 +62,7 @@ let find pool id =
 ;;
 
 let find_overlapping_request exclude =
-  let end_at =
-    "DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND)"
-  in
+  let end_at = "DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND)" in
   let base =
     [%string
       {sql|
@@ -78,10 +74,7 @@ let find_overlapping_request exclude =
   in
   let where =
     if CCOption.is_some exclude
-    then
-      Format.asprintf
-        "%s AND pool_sessions.uuid != UNHEX(REPLACE($4, '-', ''))"
-        base
+    then Format.asprintf "%s AND pool_sessions.uuid != UNHEX(REPLACE($4, '-', ''))" base
     else base
   in
   where |> find_request_sql
@@ -129,9 +122,7 @@ let insert_request =
   |> Caqti_type.(RepoEntity.Write.t ->. unit)
 ;;
 
-let insert pool m =
-  Database.exec pool insert_request (RepoEntity.Write.of_entity m)
-;;
+let insert pool m = Database.exec pool insert_request (RepoEntity.Write.of_entity m)
 
 let update_request =
   let open Caqti_request.Infix in
@@ -149,9 +140,7 @@ let update_request =
   |> RepoEntity.Write.t ->. Caqti_type.unit
 ;;
 
-let update pool =
-  RepoEntity.Write.of_entity %> Database.exec pool update_request
-;;
+let update pool = RepoEntity.Write.of_entity %> Database.exec pool update_request
 
 let delete_request =
   let open Caqti_request.Infix in
@@ -162,24 +151,15 @@ let delete_request =
   |> Session.Repo.Id.t ->. Caqti_type.unit
 ;;
 
-let delete pool time_window =
-  Database.exec pool delete_request time_window.Entity.id
-;;
+let delete pool time_window = Database.exec pool delete_request time_window.Entity.id
 
 let query_by_experiment ?query pool id =
   let where =
-    let sql =
-      {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-    in
+    let sql = {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
     let dyn = Dynparam.(empty |> add Experiment.Repo.Entity.Id.t id) in
     sql, dyn
   in
-  Query.collect_and_count
-    pool
-    query
-    ~select:find_request_sql
-    ~where
-    Repo_entity.t
+  Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
 ;;
 
 let find_by_experiment_and_time_request time =

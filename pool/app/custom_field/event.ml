@@ -73,11 +73,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
       ()
   | AnswerUpserted (m, entity_uuid, user) ->
     let is_admin = Pool_context.user_is_admin user in
-    Repo_partial_update.upsert_answer
-      pool
-      is_admin
-      (Contact.Id.to_common entity_uuid)
-      m
+    Repo_partial_update.upsert_answer pool is_admin (Contact.Id.to_common entity_uuid) m
   | AnsweredOnSignup (m, entity_uuid) ->
     Repo_partial_update.upsert_answer pool false entity_uuid m
   | Created m ->
@@ -93,8 +89,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | GroupDestroyed m -> Repo_group.destroy pool m
-  | GroupsSorted m ->
-    CCList.map (fun m -> m.Group.id) m |> Repo_group.sort_groups pool
+  | GroupsSorted m -> CCList.map (fun m -> m.Group.id) m |> Repo_group.sort_groups pool
   | GroupUpdated (m, updated) ->
     let%lwt () = create_group_changelog m updated in
     Repo_group.update pool updated

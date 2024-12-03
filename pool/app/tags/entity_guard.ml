@@ -7,8 +7,7 @@ module Target = struct
   let to_authorizable ?ctx t =
     Persistence.Target.decorate
       ?ctx
-      (fun Entity.{ id; _ } ->
-        Target.create `Tag (id |> Uuid.target_of Entity.Id.value))
+      (fun Entity.{ id; _ } -> Target.create `Tag (id |> Uuid.target_of Entity.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;

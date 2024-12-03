@@ -17,16 +17,14 @@ let profile_layout language title html =
 ;;
 
 let login_information
-  ?(action_prefix = "/admin")
-  admin
-  Pool_context.{ language; csrf; _ }
-  password_policy
+      ?(action_prefix = "/admin")
+      admin
+      Pool_context.{ language; csrf; _ }
+      password_policy
   =
   let form_attrs action =
     [ a_method `Post
-    ; a_action
-        (Format.asprintf "%s%s" action_prefix action
-         |> Sihl.Web.externalize_path)
+    ; a_action (Format.asprintf "%s%s" action_prefix action |> Sihl.Web.externalize_path)
     ; a_class [ "stack" ]
     ]
   in
@@ -38,8 +36,7 @@ let login_information
     div
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
-          [ control_to_string language Control.(Update (Some Field.Name)) |> txt
-          ]
+          [ control_to_string language Control.(Update (Some Field.Name)) |> txt ]
       ; form
           ~a:(form_attrs "/user/update-details")
           [ csrf_element csrf ()
@@ -68,9 +65,7 @@ let login_information
     div
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
-          [ control_to_string language Control.(Update (Some Field.password))
-            |> txt
-          ]
+          [ control_to_string language Control.(Update (Some Field.password)) |> txt ]
       ; form
           ~a:(form_attrs "/user/update-password")
           [ csrf_element csrf ()
@@ -83,8 +78,7 @@ let login_information
           ; input_element
               language
               ~hints:
-                Pool_common.I18n.
-                  [ I18nText (password_policy |> I18n.content_to_string) ]
+                Pool_common.I18n.[ I18nText (password_policy |> I18n.content_to_string) ]
               `Password
               ~value:""
               Field.NewPassword
@@ -106,10 +100,6 @@ let login_information
           ]
       ]
   in
-  div
-    [ div
-        ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ]
-        [ details_form; password_form ]
-    ]
+  div [ div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ details_form; password_form ] ]
   |> profile_layout language Pool_common.I18n.LoginInformation
 ;;

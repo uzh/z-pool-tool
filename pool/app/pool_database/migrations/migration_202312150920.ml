@@ -10,6 +10,5 @@ let seed_default_signup_cta_i18n =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202312150920" |> add_step seed_default_signup_cta_i18n)
+  Database.Migration.(empty "202312150920" |> add_step seed_default_signup_cta_i18n)
 ;;

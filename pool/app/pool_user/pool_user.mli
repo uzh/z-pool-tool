@@ -100,8 +100,7 @@ module Password : sig
     -> Confirmation.t
     -> (unit, Pool_message.Error.t) Lwt_result.t
 
-  (** [update database_label user_id ~old_password ~new_password
-    ~new_password_confirmation]
+  (** [update database_label user_id ~old_password ~new_password ~new_password_confirmation]
       updates the password of a [user_id] to [new_password] and returns the user.
       The [old_password] is the current password that the user has to enter.
       [new_password] has to equal [new_password_confirmation]. *)
@@ -228,11 +227,7 @@ val fullname : ?reversed:bool -> t -> string
 val status : t -> Status.t
 val is_admin : t -> bool
 val is_confirmed : t -> bool
-
-val find_active_by_email_opt
-  :  Database.Label.t
-  -> EmailAddress.t
-  -> t option Lwt.t
+val find_active_by_email_opt : Database.Label.t -> EmailAddress.t -> t option Lwt.t
 
 module Repo : sig
   module Id : Pool_model.Base.CaqtiSig with type t = Id.t
@@ -299,12 +294,7 @@ module FailedLoginAttempt : sig
     ; blocked_until : BlockedUntil.t option
     }
 
-  val create
-    :  ?id:Id.t
-    -> EmailAddress.t
-    -> Counter.t
-    -> BlockedUntil.t option
-    -> t
+  val create : ?id:Id.t -> EmailAddress.t -> Counter.t -> BlockedUntil.t option -> t
 
   module Repo : sig
     val find_opt : Database.Label.t -> EmailAddress.t -> t option Lwt.t

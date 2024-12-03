@@ -95,9 +95,7 @@ let destroy_request =
   |> Caqti_type.(string ->. unit)
 ;;
 
-let destroy pool m =
-  Database.exec pool destroy_request Entity.Group.(m.id |> Id.value)
-;;
+let destroy pool m = Database.exec pool destroy_request Entity.Group.(m.id |> Id.value)
 
 let update_position_request =
   let open Caqti_request.Infix in
@@ -114,7 +112,7 @@ let sort_groups pool ids =
   let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
-      Database.exec pool update_position_request (index, Entity.Id.value id))
+       Database.exec pool update_position_request (index, Entity.Id.value id))
     ids
   ||> CCFun.const ()
 ;;

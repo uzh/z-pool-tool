@@ -9,9 +9,7 @@ type job =
   }
 [@@deriving eq, fields, show, yojson]
 
-let create_job ?id ?message_template ?job_ctx job =
-  { job; id; message_template; job_ctx }
-;;
+let create_job ?id ?message_template ?job_ctx job = { job; id; message_template; job_ctx }
 
 type event =
   | Sent of (job * Pool_user.CellPhone.t option)
@@ -27,17 +25,11 @@ let create_sent ?id ?message_template ?job_ctx ?new_recipient job =
 
 let handle_event pool : event -> unit Lwt.t = function
   | Sent ({ job; id; message_template; job_ctx }, new_recipient) ->
-    Text_message_service.dispatch
-      ?id
-      ?new_recipient
-      ?message_template
-      ?job_ctx
-      pool
-      job
+    Text_message_service.dispatch ?id ?new_recipient ?message_template ?job_ctx pool job
   | BulkSent jobs ->
     Lwt_list.iter_s
       (fun { job; id; message_template; job_ctx } ->
-        Text_message_service.dispatch ?id ?message_template ?job_ctx pool job)
+         Text_message_service.dispatch ?id ?message_template ?job_ctx pool job)
       jobs
   | ReportCreated report -> Repo.insert_report pool report
 ;;

@@ -3,16 +3,14 @@ open Tyxml.Html
 module Field = Pool_message.Field
 
 let signup
-  terms
-  custom_fields
-  Pool_context.{ language; query_parameters; csrf; _ }
-  flash_fetcher
+      terms
+      custom_fields
+      Pool_context.{ language; query_parameters; csrf; _ }
+      flash_fetcher
   =
   let open Component.Input in
   let open Pool_common in
-  let submit_url =
-    Http_utils.externalize_path_with_params query_parameters "/signup"
-  in
+  let submit_url = Http_utils.externalize_path_with_params query_parameters "/signup" in
   let txt_to_string = Utils.text_to_string language %> txt in
   let custom_fields_html =
     let to_html field =
@@ -26,30 +24,10 @@ let signup
     ; form
         ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
         ([ csrf_element csrf ()
-         ; input_element
-             language
-             `Email
-             Field.Email
-             ~required:true
-             ~flash_fetcher
-         ; input_element
-             language
-             `Text
-             Field.Firstname
-             ~required:true
-             ~flash_fetcher
-         ; input_element
-             language
-             `Text
-             Field.Lastname
-             ~required:true
-             ~flash_fetcher
-         ; input_element
-             language
-             `Password
-             Field.Password
-             ~required:true
-             ~value:""
+         ; input_element language `Email Field.Email ~required:true ~flash_fetcher
+         ; input_element language `Text Field.Firstname ~required:true ~flash_fetcher
+         ; input_element language `Text Field.Lastname ~required:true ~flash_fetcher
+         ; input_element language `Password Field.Password ~required:true ~value:""
          ]
          @ custom_fields_html
          @ [ Component.Partials.terms_and_conditions_checkbox language terms

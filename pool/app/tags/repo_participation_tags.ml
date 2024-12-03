@@ -52,9 +52,7 @@ let find_all_request =
   |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
 
-let find_all pool entity =
-  Database.collect pool find_all_request (get_id entity)
-;;
+let find_all pool entity = Database.collect pool find_all_request (get_id entity)
 
 let find_available_for_experiment_request =
   let open Caqti_request.Infix in

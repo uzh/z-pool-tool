@@ -38,10 +38,7 @@ module Start : sig
     -> EndAt.t
     -> (StartAt.t, Pool_message.Error.t) result
 
-  val create
-    :  StartAt.t option
-    -> StartNow.t
-    -> (t, Pool_message.Error.t) result
+  val create : StartAt.t option -> StartNow.t -> (t, Pool_message.Error.t) result
 end
 
 module Limit : sig
@@ -119,14 +116,8 @@ module Distribution : sig
   val yojson_of_t : t -> Yojson.Safe.t
   val get_order_element : t -> string
   val schema : unit -> (Pool_message.Error.t, sorted) Pool_conformist.Field.t
-
-  val is_random_schema
-    :  unit
-    -> (Pool_message.Error.t, bool) Pool_conformist.Field.t
-
-  val of_urlencoded_list
-    :  string list
-    -> (string option, Pool_message.Error.t) result
+  val is_random_schema : unit -> (Pool_message.Error.t, bool) Pool_conformist.Field.t
+  val of_urlencoded_list : string list -> (string option, Pool_message.Error.t) result
 end
 
 type t =
@@ -178,13 +169,7 @@ val created : t * Experiment.Id.t -> event
 val updated : update * t -> event
 val deleted : t -> event
 val stopped : t -> event
-
-val handle_event
-  :  ?user_uuid:Pool_common.Id.t
-  -> Database.Label.t
-  -> event
-  -> unit Lwt.t
-
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_with_detail

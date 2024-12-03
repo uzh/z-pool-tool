@@ -17,6 +17,4 @@ let create_schedule_table =
     |sql}
 ;;
 
-let migration () =
-  Database.Migration.(empty "schedule" |> add_step create_schedule_table)
-;;
+let migration () = Database.Migration.(empty "schedule" |> add_step create_schedule_table)

@@ -17,13 +17,13 @@ type t =
 [@@deriving eq, show]
 
 let create
-  ?id
-  ?internal_description
-  ?public_description
-  ?max_participants
-  start
-  duration
-  experiment
+      ?id
+      ?internal_description
+      ?public_description
+      ?max_participants
+      start
+      duration
+      experiment
   =
   let count encode = encode 0 |> Pool_common.Utils.get_or_failwith in
   { id = id |> CCOption.value ~default:(Id.create ())

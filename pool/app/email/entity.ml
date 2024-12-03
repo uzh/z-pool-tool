@@ -79,8 +79,7 @@ let pp : type state. Format.formatter -> state t -> unit =
 ;;
 
 let show : type state. state t -> string = function
-  | Unverified { address; _ } | Verified { address; _ } ->
-    User.EmailAddress.show address
+  | Unverified { address; _ } | Verified { address; _ } -> User.EmailAddress.show address
 ;;
 
 let user_id : type state. state t -> Pool_user.Id.t = function

@@ -8,8 +8,7 @@ let announcement_path = Http_utils.Url.Root.announcement_path
 let boolean_fields = Field.[ show ShowToAdmins; show ShowToContacts ]
 
 let announcement_id req =
-  Http_utils.get_field_router_param req Field.Announcement
-  |> Announcement.Id.of_string
+  Http_utils.get_field_router_param req Field.Announcement |> Announcement.Id.of_string
 ;;
 
 let text_from_urlencoded urlencoded =
@@ -18,9 +17,7 @@ let text_from_urlencoded urlencoded =
   let sys_languages = all in
   sys_languages
   |> CCList.filter_map (fun lang ->
-    let field language =
-      Format.asprintf "%s[%s]" Field.(show Text) (show language)
-    in
+    let field language = Format.asprintf "%s[%s]" Field.(show Text) (show language) in
     CCList.assoc_opt ~eq:CCString.equal (field lang) urlencoded
     >>= CCList.head_opt
     >|= fun text -> lang, text)
@@ -41,8 +38,7 @@ let selected_tenants_from_urlencoded req =
 
 let index req =
   let create_layout (_ : Rock.Request.t) ?active_navigation context children =
-    General.create_root_layout ?active_navigation context children
-    |> Lwt_result.ok
+    General.create_root_layout ?active_navigation context children |> Lwt_result.ok
   in
   Http_utils.Htmx.handler
     ~active_navigation:(announcement_path ())
@@ -53,9 +49,7 @@ let index req =
   @@ fun (Pool_context.{ database_label; _ } as context) query ->
   let%lwt announcements = Announcement.all ~query database_label in
   let open Page.Root.Announcement in
-  (if Http_utils.Htmx.is_hx_request req then list else index)
-    context
-    announcements
+  (if Http_utils.Htmx.is_hx_request req then list else index) context announcements
   |> Lwt_result.return
 ;;
 
@@ -69,15 +63,9 @@ let form case req =
     let* announcement =
       match case with
       | `New -> Lwt_result.return None
-      | `Edit ->
-        announcement_id req |> Announcement.find_admin >|+ CCOption.return
+      | `Edit -> announcement_id req |> Announcement.find_admin >|+ CCOption.return
     in
-    Page.Root.Announcement.form
-      context
-      tenants
-      sys_languages
-      ~flash_fetcher
-      ?announcement
+    Page.Root.Announcement.form context tenants sys_languages ~flash_fetcher ?announcement
     |> create_layout context
     ||> Sihl.Web.Response.of_html
     ||> CCResult.return
@@ -113,8 +101,7 @@ let create req =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (announcement_path ())
-        [ Http_utils.Message.set ~success:[ Success.Created Field.Announcement ]
-        ]
+        [ Http_utils.Message.set ~success:[ Success.Created Field.Announcement ] ]
     in
     events |>> handle
   in
@@ -148,8 +135,7 @@ let update req =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         (announcement_path ())
-        [ Http_utils.Message.set ~success:[ Success.Updated Field.Announcement ]
-        ]
+        [ Http_utils.Message.set ~success:[ Success.Updated Field.Announcement ] ]
     in
     events |>> handle
   in
@@ -166,10 +152,7 @@ end = struct
     Guardian.id_effects Announcement.Id.validate Field.Announcement
   ;;
 
-  let index =
-    Announcement.Access.index |> Guardian.validate_admin_entity ~any_id:true
-  ;;
-
+  let index = Announcement.Access.index |> Guardian.validate_admin_entity ~any_id:true
   let create = Command.Create.effects |> Guardian.validate_admin_entity
   let read = announcement_effects Announcement.Access.read
   let update = announcement_effects Command.Update.effects

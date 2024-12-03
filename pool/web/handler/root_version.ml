@@ -7,14 +7,12 @@ let create_layout = General.create_root_layout
 let version_path = Http_utils.Url.Root.version_path
 
 let version_id req =
-  Http_utils.get_field_router_param req Field.Version
-  |> Pool_version.Id.of_string
+  Http_utils.get_field_router_param req Field.Version |> Pool_version.Id.of_string
 ;;
 
 let index req =
   let create_layout (_ : Rock.Request.t) ?active_navigation context children =
-    General.create_root_layout ?active_navigation context children
-    |> Lwt_result.ok
+    General.create_root_layout ?active_navigation context children |> Lwt_result.ok
   in
   Http_utils.Htmx.handler
     ~active_navigation
@@ -57,9 +55,7 @@ let create req =
   in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , version_path ~suffix:"new" ()
-      , [ Http_utils.urlencoded_to_flash urlencoded ] ))
+      err, version_path ~suffix:"new" (), [ Http_utils.urlencoded_to_flash urlencoded ])
     @@
     let events =
       let open CCResult in
@@ -93,10 +89,7 @@ let update req =
     let events =
       let open CCResult in
       let open Cqrs_command.Pool_version_command.Update in
-      urlencoded
-      |> decode
-      >>= handle ~tags:Logs.Tag.empty version
-      |> Lwt_result.lift
+      urlencoded |> decode >>= handle ~tags:Logs.Tag.empty version |> Lwt_result.lift
     in
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
@@ -113,8 +106,7 @@ let publish req =
   let tags = Pool_context.Logger.Tags.req req in
   let id = version_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, version_path ~id ~suffix:"edit" ())
+    Utils.Lwt_result.map_error (fun err -> err, version_path ~id ~suffix:"edit" ())
     @@
     let* version = Pool_version.find id in
     let%lwt tenant_ids =
@@ -141,14 +133,8 @@ end = struct
   module Command = Cqrs_command.Pool_version_command
   module Guardian = Middleware.Guardian
 
-  let announcement_effects =
-    Guardian.id_effects Pool_version.Id.validate Field.Version
-  ;;
-
-  let index =
-    Pool_version.Access.index |> Guardian.validate_admin_entity ~any_id:true
-  ;;
-
+  let announcement_effects = Guardian.id_effects Pool_version.Id.validate Field.Version
+  let index = Pool_version.Access.index |> Guardian.validate_admin_entity ~any_id:true
   let create = Command.Create.effects |> Guardian.validate_admin_entity
   let read = announcement_effects Pool_version.Access.read
   let update = announcement_effects Command.Update.effects

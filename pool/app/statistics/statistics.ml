@@ -11,9 +11,7 @@ let create database_label ?(period = default_period) () =
   let%lwt invitations_sent = invitations_sent database_label period in
   let%lwt reminders_sent = reminders_sent database_label period in
   let%lwt terms_accepted_count = terms_accepted_count database_label period in
-  let%lwt terms_last_changed =
-    I18n.terms_and_conditions_last_updated database_label
-  in
+  let%lwt terms_last_changed = I18n.terms_and_conditions_last_updated database_label in
   let%lwt emails_sent = Repo.total_emails_sent database_label period in
   Lwt.return
     { active_contacts

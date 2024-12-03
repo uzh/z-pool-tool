@@ -36,11 +36,11 @@ module NavElement = struct
 
   let rec create ?icon =
     let build
-      ?icon
-      ?(children = [])
-      ?(validation = Set Guard.ValidationSet.empty)
-      ?url
-      label
+          ?icon
+          ?(children = [])
+          ?(validation = Set Guard.ValidationSet.empty)
+          ?url
+          label
       =
       { icon; children; validation; url; label }
     in

@@ -76,10 +76,7 @@ let edit req =
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* api_key = api_key_id req |> find database_label in
     let%lwt actor =
-      Pool_context.Utils.find_authorizable_opt
-        ~admin_only:true
-        database_label
-        user
+      Pool_context.Utils.find_authorizable_opt ~admin_only:true database_label user
     in
     let target_id = api_key.id |> Guard.Uuid.target_of Id.value in
     let%lwt available_roles =
@@ -110,9 +107,7 @@ let create req =
   in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , api_key_path ~suffix:"new" ()
-      , [ Http_utils.urlencoded_to_flash urlencoded ] ))
+      err, api_key_path ~suffix:"new" (), [ Http_utils.urlencoded_to_flash urlencoded ])
     @@
     let id = Api_key.Id.create () in
     let events =
@@ -147,9 +142,7 @@ let update req =
     let events =
       let open CCResult in
       let open Cqrs_command.Api_key_command.Update in
-      decode urlencoded
-      >>= handle ~tags:Logs.Tag.empty api_key
-      |> Lwt_result.lift
+      decode urlencoded >>= handle ~tags:Logs.Tag.empty api_key |> Lwt_result.lift
     in
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
@@ -207,9 +200,7 @@ let grant_role req =
   let open Api_key in
   let open Utils.Lwt_result.Infix in
   let key_id = api_key_id req in
-  let redirect_path =
-    Http_utils.Url.Admin.api_key_path ~suffix:"edit" ~id:key_id ()
-  in
+  let redirect_path = Http_utils.Url.Admin.api_key_path ~suffix:"edit" ~id:key_id () in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -247,14 +238,8 @@ end = struct
   module Guardian = Middleware.Guardian
   module GuardianCommand = Cqrs_command.Guardian_command
 
-  let announcement_effects =
-    Guardian.id_effects Api_key.Id.validate Field.ApiKey
-  ;;
-
-  let index =
-    Api_key.Access.index |> Guardian.validate_admin_entity ~any_id:true
-  ;;
-
+  let announcement_effects = Guardian.id_effects Api_key.Id.validate Field.ApiKey
+  let index = Api_key.Access.index |> Guardian.validate_admin_entity ~any_id:true
   let create = Command.Create.effects |> Guardian.validate_admin_entity
   let read = announcement_effects Api_key.Access.read
   let update = announcement_effects Command.Update.effects
@@ -262,12 +247,10 @@ end = struct
   let delete = Guardian.denied
 
   let grant_role =
-    GuardianCommand.GrantRoles.effects
-    |> Middleware.Guardian.validate_admin_entity
+    GuardianCommand.GrantRoles.effects |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let revoke_role =
-    GuardianCommand.RevokeRole.effects
-    |> Middleware.Guardian.validate_admin_entity
+    GuardianCommand.RevokeRole.effects |> Middleware.Guardian.validate_admin_entity
   ;;
 end

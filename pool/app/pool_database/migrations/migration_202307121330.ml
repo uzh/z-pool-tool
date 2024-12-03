@@ -36,7 +36,5 @@ let create_tagging_table =
 
 let migration () =
   Database.Migration.(
-    empty "202307121330"
-    |> add_step create_tag_table
-    |> add_step create_tagging_table)
+    empty "202307121330" |> add_step create_tag_table |> add_step create_tagging_table)
 ;;

@@ -28,8 +28,10 @@ let handle_system_event identifier system_event =
   | TenantDatabaseReset database_label ->
     let%lwt () = Tenant.reset database_label in
     success_log ()
-  | TenantDatabaseCacheCleared ->
+  | TenantCacheCleared ->
     let () = Pool_tenant.clear_cache () in
+    success_log ()
+  | TenantDatabaseCacheCleared ->
     let%lwt () = initialize ~clear:true () in
     success_log ()
 ;;

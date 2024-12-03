@@ -31,9 +31,7 @@ end = struct
 
   let t =
     let open Caqti_encoders in
-    let decode (namespace, (version, (dirty, ()))) =
-      Ok { namespace; version; dirty }
-    in
+    let decode (namespace, (version, (dirty, ()))) = Ok { namespace; version; dirty } in
     let encode t : ('a Data.t, string) result =
       Ok Data.[ namespace t; version t; dirty t ]
     in
@@ -57,9 +55,7 @@ let get_request =
   %> (Caqti_type.string ->? Migration.t)
 ;;
 
-let get label table ~namespace =
-  Service.find_opt label (get_request table) namespace
-;;
+let get label table ~namespace = Service.find_opt label (get_request table) namespace
 
 let get_all_request =
   Format.asprintf
@@ -88,10 +84,7 @@ let create_request =
   %> Caqti_type.(unit ->. unit)
 ;;
 
-let create_table_if_not_exists label table =
-  Service.exec label (create_request table) ()
-;;
-
+let create_table_if_not_exists label table = Service.exec label (create_request table) ()
 let get = get
 let get_all = get_all
 

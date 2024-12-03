@@ -37,9 +37,7 @@ let find_identifier urlencoded =
   |> all_ok
 ;;
 
-let get_id req field encode =
-  Sihl.Web.Router.param req @@ Field.show field |> encode
-;;
+let get_id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encode
 
 let index req =
   Http_utils.Htmx.handler
@@ -51,10 +49,7 @@ let index req =
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let%lwt filter_list, query = Filter.find_templates_by query database_label in
   let open Page.Admin.Filter in
-  (if HttpUtils.Htmx.is_hx_request req then list else index)
-    context
-    filter_list
-    query
+  (if HttpUtils.Htmx.is_hx_request req then list else index) context filter_list query
   |> Lwt_result.return
 ;;
 
@@ -78,17 +73,10 @@ let form is_edit req =
              (filter
               |> Filter.all_query_experiments
               |> Experiment.search_multiple_by_id database_label)
-             (filter
-              |> Filter.all_query_tags
-              |> Tags.find_multiple database_label)
+             (filter |> Filter.all_query_tags |> Tags.find_multiple database_label)
        in
        let%lwt key_list = Filter.all_keys database_label in
-       Page.Admin.Filter.edit
-         context
-         filter
-         key_list
-         query_experiments
-         query_tags
+       Page.Admin.Filter.edit context filter key_list query_experiments query_tags
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
@@ -111,9 +99,7 @@ let write action req =
       |> Lwt_result.lift
     in
     let%lwt key_list = Filter.all_keys database_label in
-    let%lwt template_list =
-      Filter.find_templates_of_query database_label query
-    in
+    let%lwt template_list = Filter.find_templates_of_query database_label query in
     let events =
       let lift = Lwt_result.lift in
       match action with
@@ -134,32 +120,23 @@ let write action req =
            handle ~tags exp matcher_events filter |> lift
          | Some filter ->
            let open UpdateFilter in
-           let* updated =
-             create_filter key_list template_list filter query |> lift
-           in
+           let* updated = create_filter key_list template_list filter query |> lift in
            let* matcher_events = matcher_events updated in
            handle ~tags exp matcher_events filter updated |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
         (match filter with
-         | None ->
-           Create.handle ~tags key_list template_list query decoded |> lift
+         | None -> Create.handle ~tags key_list template_list query decoded |> lift
          | Some filter ->
-           Update.handle ~tags key_list template_list filter query decoded
-           |> lift)
+           Update.handle ~tags key_list template_list filter query decoded |> lift)
     in
-    let handle events =
-      Pool_event.handle_events ~tags database_label user events
-    in
+    let handle events = Pool_event.handle_events ~tags database_label user events in
     let success () =
       let open Success in
       let field = Field.Filter in
       let redirect path msg =
-        HttpUtils.Htmx.htmx_redirect
-          path
-          ~actions:[ Message.set ~success:[ msg ] ]
-          ()
+        HttpUtils.Htmx.htmx_redirect path ~actions:[ Message.set ~success:[ msg ] ] ()
       in
       match action with
       | Template None -> redirect "/admin/filter" (Created field)
@@ -169,9 +146,7 @@ let write action req =
           (Updated field)
       | Experiment exp ->
         let msg =
-          if CCOption.is_some exp.Experiment.filter
-          then Updated field
-          else Created field
+          if CCOption.is_some exp.Experiment.filter then Updated field else Created field
         in
         redirect
           (Format.asprintf
@@ -181,8 +156,7 @@ let write action req =
     in
     events |>> handle |>> success
   in
-  result
-  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 let handle_toggle_predicate_type action req =
@@ -191,9 +165,7 @@ let handle_toggle_predicate_type action req =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
     let%lwt key_list = Filter.all_keys database_label in
-    let%lwt template_list =
-      find_all_templates database_label templates_disabled
-    in
+    let%lwt template_list = find_all_templates database_label templates_disabled in
     let* query =
       let open CCResult in
       Lwt_result.lift
@@ -202,9 +174,7 @@ let handle_toggle_predicate_type action req =
            >|= Yojson.Safe.from_string
            >>= Filter.Human.of_yojson key_list
          in
-         let* predicate_type =
-           HttpUtils.find_in_urlencoded Field.Predicate urlencoded
-         in
+         let* predicate_type = HttpUtils.find_in_urlencoded Field.Predicate urlencoded in
          Filter.toggle_predicate_type current predicate_type
     in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
@@ -213,9 +183,7 @@ let handle_toggle_predicate_type action req =
         (query
          |> Filter.Human.all_query_experiments
          |> Experiment.search_multiple_by_id database_label)
-        (query
-         |> Filter.Human.all_query_tags
-         |> Tags.find_multiple database_label)
+        (query |> Filter.Human.all_query_tags |> Tags.find_multiple database_label)
     in
     Component.Filter.(
       predicate_form
@@ -257,9 +225,7 @@ let handle_add_predicate action req =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
     let%lwt key_list = Filter.all_keys database_label in
-    let%lwt template_list =
-      find_all_templates database_label templates_disabled
-    in
+    let%lwt template_list = find_all_templates database_label templates_disabled in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
     let rec increment_identifier identifier =
       match identifier with
@@ -295,9 +261,7 @@ let handle_add_predicate action req =
 ;;
 
 let filter_statistics req =
-  let experiment_id =
-    HttpUtils.find_id Experiment.Id.of_string Field.Experiment req
-  in
+  let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment req in
   let result { Pool_context.database_label; language; _ } =
     let open Utils.Lwt_result.Infix in
     let* experiment = Experiment.find database_label experiment_id in
@@ -339,9 +303,7 @@ module Update = struct
     >|> function
     | Ok res -> Lwt.return res
     | Error err ->
-      Http_utils.redirect_to_with_actions
-        "/admin/filter"
-        [ Message.set ~error:[ err ] ]
+      Http_utils.redirect_to_with_actions "/admin/filter" [ Message.set ~error:[ err ] ]
   ;;
 
   let update_template = handler write
@@ -366,11 +328,7 @@ module Access : module type of Helpers.Access = struct
   module Guardian = Middleware.Guardian
 
   let filter_effects = Guardian.id_effects Filter.Id.validate Field.Filter
-
-  let index =
-    Filter.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
-  ;;
-
+  let index = Filter.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   let create = Command.Create.effects () |> Guardian.validate_admin_entity
   let update = filter_effects Command.Update.effects
 end

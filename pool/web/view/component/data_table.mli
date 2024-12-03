@@ -20,16 +20,15 @@
 type data_table =
   { url : Uri.t (** the URL to which to make the sort requests *)
   ; query : Query.t (** the current URL query string *)
-  ; language : Pool_common.Language.t
-  (** the language in which to show the table *)
-  ; filter : Query.Filter.human option
-  (** the columns that can be filtered by *)
-  ; search : Query.Column.t list option
-  (** the columns that can be searched for *)
+  ; language : Pool_common.Language.t (** the language in which to show the table *)
+  ; filter : Query.Filter.human option (** the columns that can be filtered by *)
+  ; search : Query.Column.t list option (** the columns that can be searched for *)
   ; push_url : bool
-  (** determines if the url of the HTMX request is pushed to the browser history. Defaults to true *)
+    (** determines if the url of the HTMX request is pushed to the browser history. Defaults to true
+    *)
   ; additional_url_params : (Pool_message.Field.t * string) list option
-  (** additional url parameters that will be added to the dynamic parameters of the query, e.g. the language *)
+    (** additional url parameters that will be added to the dynamic parameters of the query, e.g. the language
+    *)
   }
 
 val hx_get
@@ -48,7 +47,8 @@ val create_meta
   -> Pool_common.Language.t
   -> data_table
 
-(** A column in the table. Use [`column] for actual database columns, and use [`custom] for arbitrary elements. *)
+(** A column in the table. Use [`column] for actual database columns, and use [`custom] for arbitrary elements.
+*)
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt

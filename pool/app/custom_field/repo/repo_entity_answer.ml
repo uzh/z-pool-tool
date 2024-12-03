@@ -46,9 +46,7 @@ module VersionHistory = struct
 
   let t =
     let ( %> ) = CCFun.( %> ) in
-    let encode _ =
-      Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel
-    in
+    let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
     let decode (field_type, custom_field_uuid, value, admin_value) =
       let make_anwer decode =
         let decode_opt value = CCOption.bind value decode in

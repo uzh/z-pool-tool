@@ -17,10 +17,7 @@ module ParticipantAmount : sig
 
   val value : t -> int
   val create : int -> (t, Pool_message.Error.t) result
-
-  val schema
-    :  Pool_message.Field.t
-    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  val schema : Pool_message.Field.t -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module Start : sig
@@ -112,8 +109,7 @@ type t =
   ; overbook : ParticipantAmount.t
   ; email_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; email_reminder_sent_at : Pool_common.Reminder.SentAt.t option
-  ; text_message_reminder_lead_time :
-      Pool_common.Reminder.TextMessageLeadTime.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.TextMessageLeadTime.t option
   ; text_message_reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t
@@ -164,12 +160,7 @@ type event =
   | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 
-val handle_event
-  :  ?user_uuid:Pool_common.Id.t
-  -> Database.Label.t
-  -> event
-  -> unit Lwt.t
-
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -256,11 +247,7 @@ val is_deletable : t -> (unit, Pool_message.Error.t) result
 val assignments_cancelable : t -> (unit, Pool_message.Error.t) result
 val assignments_session_changeable : t -> (unit, Pool_message.Error.t) result
 val assignment_creatable : t -> (unit, Pool_message.Error.t) result
-
-val can_be_assigned_to_existing_assignment
-  :  t
-  -> (unit, Pool_message.Error.t) result
-
+val can_be_assigned_to_existing_assignment : t -> (unit, Pool_message.Error.t) result
 val reminder_resendable : t -> (unit, Pool_message.Error.t) result
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
@@ -281,15 +268,8 @@ val find_all_public_by_location
   -> Pool_location.Id.t
   -> (Public.t list, Pool_message.Error.t) Lwt_result.t
 
-val find_all_for_experiment
-  :  Database.Label.t
-  -> Experiment.Id.t
-  -> t list Lwt.t
-
-val find_upcoming_for_experiment
-  :  Database.Label.t
-  -> Experiment.Id.t
-  -> t list Lwt.t
+val find_all_for_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
+val find_upcoming_for_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
 
 val find_all_to_assign_from_waitinglist
   :  Database.Label.t
@@ -302,10 +282,7 @@ val find_all_public_for_experiment
   -> Experiment.Id.t
   -> (Public.t list, Pool_message.Error.t) Lwt_result.t
 
-val find_all_ids_of_contact_id
-  :  Database.Label.t
-  -> Contact.Id.t
-  -> Id.t list Lwt.t
+val find_all_ids_of_contact_id : Database.Label.t -> Contact.Id.t -> Id.t list Lwt.t
 
 val find_public_by_assignment
   :  Database.Label.t
@@ -315,9 +292,7 @@ val find_public_by_assignment
 val find_upcoming_public_by_contact
   :  Database.Label.t
   -> Contact.Id.t
-  -> ( (Experiment.Public.t * Public.t * Public.t list) list
-       , Pool_message.Error.t )
-       result
+  -> ((Experiment.Public.t * Public.t * Public.t list) list, Pool_message.Error.t) result
        Lwt.t
 
 val find_by_assignment
@@ -341,10 +316,7 @@ val find_open_with_follow_ups
   -> Id.t
   -> (t list, Pool_message.Error.t) Lwt_result.t
 
-val find_open
-  :  Database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
+val find_open : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_for_calendar_by_location
   :  Pool_location.Id.t
@@ -392,12 +364,7 @@ val find_upcoming_by_admin
 val to_email_text : Pool_common.Language.t -> t -> string
 val follow_up_sessions_to_email_list : t list -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
-
-val find_all_to_swap_by_experiment
-  :  Database.Label.t
-  -> Experiment.Id.t
-  -> t list Lwt.t
-
+val find_all_to_swap_by_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
 val column_date : Query.Column.t
 val column_no_assignments : Query.Column.t
 val column_noshow_count : Query.Column.t
@@ -451,17 +418,8 @@ module Guard : sig
   module Access : sig
     val index_permission : Guard.Permission.t
     val index : ?model:Role.Target.t -> Experiment.Id.t -> Guard.ValidationSet.t
-
-    val create
-      :  ?model:Role.Target.t
-      -> Experiment.Id.t
-      -> Guard.ValidationSet.t
-
-    val read
-      :  ?model:Role.Target.t
-      -> Experiment.Id.t
-      -> Id.t
-      -> Guard.ValidationSet.t
+    val create : ?model:Role.Target.t -> Experiment.Id.t -> Guard.ValidationSet.t
+    val read : ?model:Role.Target.t -> Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
 
     val read_by_location
       :  ?model:Role.Target.t
@@ -469,18 +427,8 @@ module Guard : sig
       -> Id.t
       -> Guard.ValidationSet.t
 
-    val update
-      :  ?model:Role.Target.t
-      -> Experiment.Id.t
-      -> Id.t
-      -> Guard.ValidationSet.t
-
-    val delete
-      :  ?model:Role.Target.t
-      -> Experiment.Id.t
-      -> Id.t
-      -> Guard.ValidationSet.t
-
+    val update : ?model:Role.Target.t -> Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
+    val delete : ?model:Role.Target.t -> Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
     val close : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
   end
 end

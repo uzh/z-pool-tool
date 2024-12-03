@@ -1,11 +1,11 @@
 open Tyxml.Html
 
 let dropdown
-  ?(classnames = [])
-  ?(icon = Component_icon.EllipsisVertical)
-  ?(icon_style = [ "small"; "is-text" ])
-  ?(orientation = `Right)
-  buttons
+      ?(classnames = [])
+      ?(icon = Component_icon.EllipsisVertical)
+      ?(icon_style = [ "small"; "is-text" ])
+      ?(orientation = `Right)
+      buttons
   =
   let orientation_cls = function
     | `Left -> "left"

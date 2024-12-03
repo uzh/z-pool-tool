@@ -14,15 +14,10 @@ let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ]
 let response_with_headers = Sihl.Web.Response.of_json ~headers
 
 let find_id validate_and_encode field req =
-  Sihl.Web.Router.param req @@ Pool_message.Field.show field
-  |> validate_and_encode
+  Sihl.Web.Router.param req @@ Pool_message.Field.show field |> validate_and_encode
 ;;
 
-let respond_error
-  ?(status = `Bad_request)
-  ?(language = Pool_common.Language.En)
-  error
-  =
+let respond_error ?(status = `Bad_request) ?(language = Pool_common.Language.En) error =
   let error = Pool_common.Utils.error_to_string language error in
   `Assoc [ "error", `String error ] |> response_with_headers ~status
 ;;
@@ -42,13 +37,14 @@ let respond ?(src = src) req result =
     ||> (function
      | Ok result -> `Assoc [ "data", result ] |> response_with_headers
      | Error error -> respond_error error)
-  | Error error ->
-    respond_error ~status:`Internal_server_error error |> Lwt.return
+  | Error error -> respond_error ~status:`Internal_server_error error |> Lwt.return
 ;;
 
 let index_handler
-  :  query:(module Http_utils_queryable.Queryable) -> ?src:Logs.src
-  -> yojson_of_t:('a -> Yojson.Safe.t) -> Rock.Request.t
+  :  query:(module Http_utils_queryable.Queryable)
+  -> ?src:Logs.src
+  -> yojson_of_t:('a -> Yojson.Safe.t)
+  -> Rock.Request.t
   -> (Pool_context.Api.t
       -> Guard.Actor.t
       -> Query.t

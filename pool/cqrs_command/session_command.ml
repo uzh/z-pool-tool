@@ -12,18 +12,18 @@ type reschedule =
 let src = Logs.Src.create "session.cqrs"
 
 let command
-  start
-  duration
-  duration_unit
-  internal_description
-  public_description
-  max_participants
-  min_participants
-  overbook
-  email_reminder_lead_time
-  email_reminder_lead_time_unit
-  text_message_reminder_lead_time
-  text_message_reminder_lead_time_unit
+      start
+      duration
+      duration_unit
+      internal_description
+      public_description
+      max_participants
+      min_participants
+      overbook
+      email_reminder_lead_time
+      email_reminder_lead_time_unit
+      text_message_reminder_lead_time
+      text_message_reminder_lead_time_unit
   : Session.base
   =
   Session.
@@ -56,8 +56,7 @@ let schema =
         ; Session.ParticipantAmount.schema Pool_message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Pool_message.Field.Overbook
         ; Conformist.optional @@ Reminder.EmailLeadTime.integer_schema ()
-        ; Conformist.optional
-          @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
+        ; Conformist.optional @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
         ; Conformist.optional @@ Reminder.TextMessageLeadTime.integer_schema ()
         ; Conformist.optional
           @@ TimeUnit.named_schema Reminder.TextMessageLeadTime.name ()
@@ -66,14 +65,14 @@ let schema =
 ;;
 
 let decode_time_durations
-  { Session.duration
-  ; duration_unit
-  ; email_reminder_lead_time
-  ; email_reminder_lead_time_unit
-  ; text_message_reminder_lead_time
-  ; text_message_reminder_lead_time_unit
-  ; _
-  }
+      { Session.duration
+      ; duration_unit
+      ; email_reminder_lead_time
+      ; email_reminder_lead_time_unit
+      ; text_message_reminder_lead_time
+      ; text_message_reminder_lead_time_unit
+      ; _
+      }
   =
   let open CCResult in
   let open Pool_common in
@@ -97,7 +96,7 @@ let starts_after_parent parent_session start =
   CCOption.map_or
     ~default:false
     (fun (s : Session.t) ->
-      Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
+       Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
     parent_session
 ;;
 
@@ -107,7 +106,7 @@ let validate_start follow_up_sessions parent_session start =
   let starts_before_followups =
     CCList.exists
       (fun (follow_up : Session.t) ->
-        Ptime.is_earlier ~than:(Start.value start) (Start.value follow_up.start))
+         Ptime.is_earlier ~than:(Start.value start) (Start.value follow_up.start))
       follow_up_sessions
   in
   if starts_after_parent parent_session start || starts_before_followups
@@ -144,21 +143,21 @@ end = struct
   let schema = schema
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    ?session_id
-    experiment
-    location
-    (Session.
-       { start
-       ; internal_description
-       ; public_description
-       ; max_participants
-       ; min_participants
-       ; overbook
-       ; _
-       } as command :
-      Session.base)
+        ?(tags = Logs.Tag.empty)
+        ?parent_session
+        ?session_id
+        experiment
+        location
+        (Session.
+           { start
+           ; internal_description
+           ; public_description
+           ; max_participants
+           ; min_participants
+           ; overbook
+           ; _
+           } as command :
+          Session.base)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
@@ -166,8 +165,7 @@ end = struct
       [ ( starts_after_parent parent_session start
         , Pool_message.Error.FollowUpIsEarlierThanMain )
       ; ( max_participants < min_participants
-        , Pool_message.(
-            Error.Smaller (Field.MaxParticipants, Field.MinParticipants)) )
+        , Pool_message.(Error.Smaller (Field.MaxParticipants, Field.MinParticipants)) )
       ]
     in
     let* () = run_validations validations in
@@ -202,11 +200,11 @@ end = struct
 end
 
 let time_window_command
-  start
-  end_at
-  internal_description
-  public_description
-  max_participants
+      start
+      end_at
+      internal_description
+      public_description
+      max_participants
   : Time_window.create
   =
   let open Time_window in
@@ -244,16 +242,16 @@ end = struct
   type t = Time_window.create
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ~overlapps
-    ?id
-    experiment
-    { Time_window.start
-    ; end_at
-    ; internal_description
-    ; public_description
-    ; max_participants
-    }
+        ?(tags = Logs.Tag.empty)
+        ~overlapps
+        ?id
+        experiment
+        { Time_window.start
+        ; end_at
+        ; internal_description
+        ; public_description
+        ; max_participants
+        }
     =
     Logs.info ~src (fun m -> m "Handle command CreateTimeWindow" ~tags);
     let open CCResult in
@@ -263,9 +261,7 @@ end = struct
         ~end_at:(Session.End.value end_at)
     in
     let* () =
-      if CCList.is_empty overlapps
-      then Ok ()
-      else Error Pool_message.Error.SessionOverlap
+      if CCList.is_empty overlapps then Ok () else Error Pool_message.Error.SessionOverlap
     in
     let* duration = Time_window.duration ~start ~end_at in
     let time_window =
@@ -305,15 +301,15 @@ end = struct
   type t = Time_window.create
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ~overlapps
-    time_window
-    { Time_window.start
-    ; end_at
-    ; internal_description
-    ; public_description
-    ; max_participants
-    }
+        ?(tags = Logs.Tag.empty)
+        ~overlapps
+        time_window
+        { Time_window.start
+        ; end_at
+        ; internal_description
+        ; public_description
+        ; max_participants
+        }
     =
     Logs.info ~src (fun m -> m "Handle command UpdateTimeWindow" ~tags);
     let open CCResult in
@@ -325,9 +321,7 @@ end = struct
         ~end_at:(End.value end_at)
     in
     let* () =
-      if CCList.is_empty overlapps
-      then Ok ()
-      else Error Pool_message.Error.SessionOverlap
+      if CCList.is_empty overlapps then Ok () else Error Pool_message.Error.SessionOverlap
     in
     let* duration = Time_window.duration ~start ~end_at in
     let time_window =
@@ -370,64 +364,54 @@ end = struct
     =
     let error = Pool_message.Error.InvalidRequest in
     let open CCResult in
-    let start_of_string str =
-      Pool_model.Time.parse_time str >|= Session.Start.create
-    in
+    let start_of_string str = Pool_model.Time.parse_time str >|= Session.Start.create in
     let parse_row id group value =
       let to_result = CCOption.to_result in
       let* group = CCInt.of_string group |> to_result error in
-      let* start =
-        CCList.head_opt value |> to_result error >>= start_of_string
-      in
+      let* start = CCList.head_opt value |> to_result error >>= start_of_string in
       Ok (group, (Session.Id.of_string id, start))
     in
     urlencoded
     |> CCList.fold_left
          (fun acc (key, value) ->
-           let open CCString in
-           match acc with
-           | Error _ -> acc
-           | Ok (acc : (int * (Session.Id.t * Session.Start.t) list) list) ->
-             key
-             |> replace ~which:`Right ~sub:"]" ~by:""
-             |> split ~by:"["
-             |> (function
-              | [ id; group ] ->
-                parse_row id group value
-                >|= fun (group, data) ->
-                let eq = CCInt.equal in
-                let current =
-                  CCList.assoc_opt ~eq group acc |> CCOption.value ~default:[]
-                in
-                CCList.Assoc.set ~eq group (data :: current) acc
-              | _ -> Ok acc))
+            let open CCString in
+            match acc with
+            | Error _ -> acc
+            | Ok (acc : (int * (Session.Id.t * Session.Start.t) list) list) ->
+              key
+              |> replace ~which:`Right ~sub:"]" ~by:""
+              |> split ~by:"["
+              |> (function
+               | [ id; group ] ->
+                 parse_row id group value
+                 >|= fun (group, data) ->
+                 let eq = CCInt.equal in
+                 let current =
+                   CCList.assoc_opt ~eq group acc |> CCOption.value ~default:[]
+                 in
+                 CCList.Assoc.set ~eq group (data :: current) acc
+               | _ -> Ok acc))
          (Ok [])
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    session
-    followups
-    (urlencoded : t)
-    =
+  let handle ?(tags = Logs.Tag.empty) ?parent_session session followups (urlencoded : t) =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Duplicate" ~tags);
     let validate_and_merge_session
-      ?parent
-      { Session.internal_description
-      ; public_description
-      ; email_reminder_lead_time
-      ; text_message_reminder_lead_time
-      ; duration
-      ; location
-      ; max_participants
-      ; min_participants
-      ; overbook
-      ; experiment
-      ; _
-      }
-      start
+          ?parent
+          { Session.internal_description
+          ; public_description
+          ; email_reminder_lead_time
+          ; text_message_reminder_lead_time
+          ; duration
+          ; location
+          ; max_participants
+          ; min_participants
+          ; overbook
+          ; experiment
+          ; _
+          }
+          start
       =
       if starts_after_parent parent start
       then Error Pool_message.Error.FollowUpIsEarlierThanMain
@@ -447,9 +431,7 @@ end = struct
              overbook
              experiment)
     in
-    let find_start session_id data
-      : (Session.Start.t, Pool_message.Error.t) Result.t
-      =
+    let find_start session_id data : (Session.Start.t, Pool_message.Error.t) Result.t =
       CCList.find_opt (fun (id, _) -> Session.Id.equal id session_id) data
       |> CCOption.to_result Pool_message.(Error.Missing Field.Start)
       >|= snd
@@ -463,21 +445,19 @@ end = struct
     |> parse_urlencoded
     >>= CCList.fold_left
           (fun acc (_, form_data) ->
-            acc
-            >>= fun acc ->
-            let sessions =
-              let* parent_clone =
-                build_session ?parent:parent_session form_data session
-              in
-              let* followup_clones =
-                let open CCList in
-                followups
-                >|= build_session ~parent:parent_clone form_data
-                |> all_ok
-              in
-              Ok (parent_clone :: followup_clones)
-            in
-            sessions >|= CCList.map created >|= CCList.append acc)
+             acc
+             >>= fun acc ->
+             let sessions =
+               let* parent_clone =
+                 build_session ?parent:parent_session form_data session
+               in
+               let* followup_clones =
+                 let open CCList in
+                 followups >|= build_session ~parent:parent_clone form_data |> all_ok
+               in
+               Ok (parent_clone :: followup_clones)
+             in
+             sessions >|= CCList.map created >|= CCList.append acc)
           (Ok [])
   ;;
 
@@ -502,21 +482,21 @@ end = struct
   type t = Session.base
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    follow_up_sessions
-    session
-    location
-    (Session.
-       { start
-       ; internal_description
-       ; public_description
-       ; max_participants
-       ; min_participants
-       ; overbook
-       ; _
-       } as command :
-      Session.base)
+        ?(tags = Logs.Tag.empty)
+        ?parent_session
+        follow_up_sessions
+        session
+        location
+        (Session.
+           { start
+           ; internal_description
+           ; public_description
+           ; max_participants
+           ; min_participants
+           ; overbook
+           ; _
+           } as command :
+          Session.base)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Session in
@@ -530,12 +510,8 @@ end = struct
       | false -> Ok ()
       | true ->
         let error field = Error (Error.CannotBeUpdated field) in
-        let* () =
-          if Start.equal session.start start then Ok () else error Field.Start
-        in
-        if Duration.equal session.duration duration
-        then Ok ()
-        else error Field.Duration
+        let* () = if Start.equal session.start start then Ok () else error Field.Start in
+        if Duration.equal session.duration duration then Ok () else error Field.Duration
     in
     let* () = validate_start follow_up_sessions parent_session start in
     let* () =
@@ -604,35 +580,31 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    follow_up_sessions
-    session
-    assignments
-    create_message
-    ({ start; duration; duration_unit } : t)
+        ?(tags = Logs.Tag.empty)
+        ?parent_session
+        follow_up_sessions
+        session
+        assignments
+        create_message
+        ({ start; duration; duration_unit } : t)
     =
     Logs.info ~src (fun m -> m "Handle command Reschedule" ~tags);
     let open CCResult in
     let* () = validate_start follow_up_sessions parent_session start in
     let* duration = Session.Duration.of_int duration duration_unit in
     let* () =
-      if Ptime.is_earlier
-           ~than:(Ptime_clock.now ())
-           (start |> Session.Start.value)
+      if Ptime.is_earlier ~than:(Ptime_clock.now ()) (start |> Session.Start.value)
       then Error Pool_message.Error.TimeInPast
       else Ok ()
     in
     let* emails =
       let open Assignment in
       assignments
-      |> CCList.map (fun ({ contact; _ } : t) ->
-        create_message contact start duration)
+      |> CCList.map (fun ({ contact; _ } : t) -> create_message contact start duration)
       |> CCResult.flatten_l
     in
     Ok
-      ((Session.Rescheduled (session, { Session.start; duration })
-        |> Pool_event.session)
+      ((Session.Rescheduled (session, { Session.start; duration }) |> Pool_event.session)
        ::
        (if emails |> CCList.is_empty |> not
         then [ Email.BulkSent emails |> Pool_event.email ]
@@ -656,11 +628,7 @@ module Delete : sig
     ; templates : Message_template.t list
     }
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
@@ -676,9 +644,7 @@ end = struct
     then Error Pool_message.Error.SessionHasFollowUps
     else
       let* () = Session.is_deletable session in
-      let delete_template =
-        Message_template.deleted %> Pool_event.message_template
-      in
+      let delete_template = Message_template.deleted %> Pool_event.message_template in
       Ok
         ((Session.Deleted session |> Pool_event.session)
          :: (templates |> CCList.map delete_template))
@@ -709,13 +675,13 @@ end = struct
   type t = Session.CancellationReason.t
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    sessions
-    (assignments : (Contact.t * Assignment.t list) list)
-    email_fn
-    text_message_fn
-    notify_via
-    (reason : t)
+        ?(tags = Logs.Tag.empty)
+        sessions
+        (assignments : (Contact.t * Assignment.t list) list)
+        email_fn
+        text_message_fn
+        notify_via
+        (reason : t)
     =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let open CCResult in
@@ -750,8 +716,7 @@ end = struct
       | notify_via ->
         notify_via
         |> CCList.flat_map (function
-          | Email ->
-            assignments |> CCList.map (fun (contact, _) -> email_event contact)
+          | Email -> assignments |> CCList.map (fun (contact, _) -> email_event contact)
           | TextMessage ->
             assignments
             |> CCList.filter_map (fun (contact, _) ->
@@ -764,17 +729,14 @@ end = struct
     in
     let cancel_events =
       sessions
-      |> CCList.map (fun session ->
-        Session.Canceled session |> Pool_event.session)
+      |> CCList.map (fun session -> Session.Canceled session |> Pool_event.session)
     in
     [ notification_events; cancel_events; contact_events ]
     |> CCList.flatten
     |> CCResult.return
   ;;
 
-  let schema =
-    Conformist.(make Field.[ Session.CancellationReason.schema () ] CCFun.id)
-  ;;
+  let schema = Conformist.(make Field.[ Session.CancellationReason.schema () ] CCFun.id)
 
   let decode data =
     Conformist.decode_and_validate schema data
@@ -786,9 +748,7 @@ end
 
 module Close : sig
   type t =
-    (Assignment.t
-    * Assignment.IncrementParticipationCount.t
-    * Assignment.t list option)
+    (Assignment.t * Assignment.IncrementParticipationCount.t * Assignment.t list option)
       list
 
   val handle
@@ -802,17 +762,15 @@ module Close : sig
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
-    (Assignment.t
-    * Assignment.IncrementParticipationCount.t
-    * Assignment.t list option)
+    (Assignment.t * Assignment.IncrementParticipationCount.t * Assignment.t list option)
       list
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    experiment
-    (session : Session.t)
-    (participation_tags : Tags.t list)
-    (command : t)
+        ?(tags = Logs.Tag.empty)
+        experiment
+        (session : Session.t)
+        (participation_tags : Tags.t list)
+        (command : t)
     =
     Logs.info ~src (fun m -> m "Handle command SetAttendance" ~tags);
     let open CCResult in
@@ -821,75 +779,73 @@ end = struct
     let* () = Session.is_closable session in
     CCList.fold_left
       (fun events participation ->
-        events
-        >>= fun events ->
-        participation
-        |> fun ( ({ contact; _ } as assignment : Assignment.t)
-               , increment_num_participaton
-               , follow_ups ) ->
-        let updated_assignment, no_show, participated =
-          set_close_default_values assignment
-        in
-        let* () =
-          validate experiment updated_assignment
-          |> CCResult.map_err
-               (CCFun.const Pool_message.Error.AssignmentsHaveErrors)
-        in
-        let cancel_followups =
-          NoShow.value no_show || not (Participated.value participated)
-        in
-        let* () = attendance_settable updated_assignment in
-        let* contact =
-          Contact_counter.update_on_session_closing
-            contact
-            no_show
-            participated
-            increment_num_participaton
-        in
-        let num_assignments_decrement, mark_as_deleted =
-          let open CCList in
-          match cancel_followups, follow_ups with
-          | true, Some follow_ups ->
-            let num_assignments =
-              follow_ups
-              |> filter (fun assignment ->
-                   CCOption.is_none assignment.Assignment.canceled_at)
-                 %> length
-            in
-            let marked_as_deleted =
-              follow_ups >|= markedasdeleted %> Pool_event.assignment
-            in
-            num_assignments, marked_as_deleted
-          | _, _ -> 0, []
-        in
-        let contact =
-          Contact.update_num_assignments
-            ~step:(CCInt.neg num_assignments_decrement)
-            contact
-        in
-        let tag_events =
-          let open Tags in
-          match participated |> Participated.value with
-          | false -> []
-          | true ->
-            participation_tags
-            |> CCList.map (fun (tag : t) ->
-              Tagged
-                Tagged.
-                  { model_uuid = Contact.id contact |> Contact.Id.to_common
-                  ; tag_uuid = tag.id
-                  }
-              |> Pool_event.tags)
-        in
-        let contact_events =
-          (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
-        in
-        events
-        @ ((Assignment.Updated (assignment, updated_assignment)
-            |> Pool_event.assignment)
-           :: contact_events)
-        @ tag_events
-        |> CCResult.return)
+         events
+         >>= fun events ->
+         participation
+         |> fun ( ({ contact; _ } as assignment : Assignment.t)
+                , increment_num_participaton
+                , follow_ups ) ->
+         let updated_assignment, no_show, participated =
+           set_close_default_values assignment
+         in
+         let* () =
+           validate experiment updated_assignment
+           |> CCResult.map_err (CCFun.const Pool_message.Error.AssignmentsHaveErrors)
+         in
+         let cancel_followups =
+           NoShow.value no_show || not (Participated.value participated)
+         in
+         let* () = attendance_settable updated_assignment in
+         let* contact =
+           Contact_counter.update_on_session_closing
+             contact
+             no_show
+             participated
+             increment_num_participaton
+         in
+         let num_assignments_decrement, mark_as_deleted =
+           let open CCList in
+           match cancel_followups, follow_ups with
+           | true, Some follow_ups ->
+             let num_assignments =
+               follow_ups
+               |> filter (fun assignment ->
+                    CCOption.is_none assignment.Assignment.canceled_at)
+                  %> length
+             in
+             let marked_as_deleted =
+               follow_ups >|= markedasdeleted %> Pool_event.assignment
+             in
+             num_assignments, marked_as_deleted
+           | _, _ -> 0, []
+         in
+         let contact =
+           Contact.update_num_assignments
+             ~step:(CCInt.neg num_assignments_decrement)
+             contact
+         in
+         let tag_events =
+           let open Tags in
+           match participated |> Participated.value with
+           | false -> []
+           | true ->
+             participation_tags
+             |> CCList.map (fun (tag : t) ->
+               Tagged
+                 Tagged.
+                   { model_uuid = Contact.id contact |> Contact.Id.to_common
+                   ; tag_uuid = tag.id
+                   }
+               |> Pool_event.tags)
+         in
+         let contact_events =
+           (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
+         in
+         events
+         @ ((Assignment.Updated (assignment, updated_assignment) |> Pool_event.assignment)
+            :: contact_events)
+         @ tag_events
+         |> CCResult.return)
       (Ok [ Closed session |> Pool_event.session ])
       command
   ;;
@@ -916,16 +872,14 @@ module ResendReminders : sig
 end = struct
   type t = Pool_common.MessageChannel.t
 
-  let schema =
-    Conformist.(make Field.[ Pool_common.MessageChannel.schema () ] CCFun.id)
-  ;;
+  let schema = Conformist.(make Field.[ Pool_common.MessageChannel.schema () ] CCFun.id)
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    (create_email, create_text_message)
-    session
-    assignments
-    channel
+        ?(tags = Logs.Tag.empty)
+        (create_email, create_text_message)
+        session
+        assignments
+        channel
     =
     Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
     let open Pool_common.MessageChannel in
@@ -946,15 +900,15 @@ end = struct
           assignments
           |> CCList.fold_left
                (fun messages ({ Assignment.contact; _ } as assignment) ->
-                 messages
-                 >>= fun (emails, text_messages) ->
-                 match contact.Contact.cell_phone with
-                 | None ->
-                   create_email assignment
-                   >|= fun email -> email :: emails, text_messages
-                 | Some cell_phone ->
-                   create_text_message assignment cell_phone
-                   >|= fun msg -> emails, msg :: text_messages)
+                  messages
+                  >>= fun (emails, text_messages) ->
+                  match contact.Contact.cell_phone with
+                  | None ->
+                    create_email assignment
+                    >|= fun email -> email :: emails, text_messages
+                  | Some cell_phone ->
+                    create_text_message assignment cell_phone
+                    >|= fun msg -> emails, msg :: text_messages)
                (Ok ([], []))
         in
         Ok
@@ -1019,13 +973,7 @@ module SendDirectMessage : sig
 end = struct
   type t = direct_message
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    make_email_job
-    make_sms_job
-    assignments
-    command
-    =
+  let handle ?(tags = Logs.Tag.empty) make_email_job make_sms_job assignments command =
     Logs.info ~src (fun m -> m "Handle command SendDirectMessage" ~tags);
     let open Message_template in
     let make_email_job language email_text email_subject plain_text assignment =
@@ -1043,8 +991,7 @@ end = struct
     match command with
     | Mail { language; email_subject; email_text; plain_text } ->
       assignments
-      |> CCList.map
-           (make_email_job language email_text email_subject plain_text)
+      |> CCList.map (make_email_job language email_text email_subject plain_text)
       |> Email.bulksent
       |> Pool_event.email
       |> CCList.return
@@ -1053,20 +1000,13 @@ end = struct
         let open Assignment in
         assignments
         |> CCList.partition_filter_map (fun ({ contact; _ } as assignment) ->
-          match
-            contact.Contact.cell_phone, FallbackToEmail.value fallback_to_email
-          with
+          match contact.Contact.cell_phone, FallbackToEmail.value fallback_to_email with
           | Some cell_phone, _ ->
             `Left (make_sms_job language assignment sms_text cell_phone)
           | None, true ->
             let email_text, plain_text = sms_text_to_email sms_text in
             `Right
-              (make_email_job
-                 language
-                 email_text
-                 email_subject
-                 plain_text
-                 assignment)
+              (make_email_job language email_text email_subject plain_text assignment)
           | None, false -> `Drop)
       in
       [ Text_message.BulkSent sms_jobs |> Pool_event.text_message

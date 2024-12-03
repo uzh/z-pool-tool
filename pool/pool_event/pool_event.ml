@@ -88,8 +88,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Assignment.handle_event ?user_uuid pool event
   | AssignmentJob event ->
     let src = Logs.Src.create "assignment.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Assignment_job.show_event event) ~tags);
+    Logs.info ~src (fun m -> m "Handle event %s" (Assignment_job.show_event event) ~tags);
     Assignment_job.handle_event pool event
   | Contact event ->
     info "contact" Contact.pp_event event;
@@ -160,8 +159,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Text_message.handle_event pool event
   | TimeWindow event ->
     let src = Logs.Src.create "time_window.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Time_window.show_event event) ~tags);
+    Logs.info ~src (fun m -> m "Handle event %s" (Time_window.show_event event) ~tags);
     Time_window.handle_event pool event
   | UserImport event ->
     info "user_import" User_import.pp_event event;

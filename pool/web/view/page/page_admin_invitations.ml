@@ -5,28 +5,17 @@ module DataTable = Component.DataTable
 
 let form_action ?path id =
   let base =
-    Format.asprintf
-      "/admin/experiments/%s/invitations"
-      (id |> Experiment.Id.value)
+    Format.asprintf "/admin/experiments/%s/invitations" (id |> Experiment.Id.value)
   in
-  CCOption.map_or
-    ~default:base
-    (fun path -> Format.asprintf "%s/%s" base path)
-    path
+  CCOption.map_or ~default:base (fun path -> Format.asprintf "%s/%s" base path) path
 ;;
 
 module Partials = struct
   let list Pool_context.{ language; csrf; _ } experiment (invitations, query) =
     let open Invitation in
-    let url =
-      form_action ~path:"sent" experiment.Experiment.id |> Uri.of_string
-    in
+    let url = form_action ~path:"sent" experiment.Experiment.id |> Uri.of_string in
     let data_table =
-      Component.DataTable.create_meta
-        ~search:Invitation.searchable_by
-        url
-        query
-        language
+      Component.DataTable.create_meta ~search:Invitation.searchable_by url query language
     in
     let cols =
       [ `column Pool_user.column_name
@@ -47,8 +36,7 @@ module Partials = struct
             [ a_method `Post
             ; a_action
                 (form_action
-                   ~path:
-                     (Format.asprintf "%s/resend" (id |> Pool_common.Id.value))
+                   ~path:(Format.asprintf "%s/resend" (id |> Pool_common.Id.value))
                    experiment.Experiment.id
                  |> Sihl.Web.externalize_path)
             ; a_class [ "flexrow"; "justify-end" ]
@@ -82,14 +70,14 @@ module Partials = struct
   ;;
 
   let send_invitation
-    Pool_context.{ csrf; language; _ }
-    experiment
-    key_list
-    template_list
-    query_experiments
-    query_tags
-    filtered_contacts
-    statistics
+        Pool_context.{ csrf; language; _ }
+        experiment
+        key_list
+        template_list
+        query_experiments
+        query_tags
+        filtered_contacts
+        statistics
     =
     let open Pool_common in
     let filtered_contacts_form =
@@ -102,21 +90,19 @@ module Partials = struct
           else
             CCList.map
               (fun (contact : Contact.t) ->
-                let id = Contact.id contact |> Contact.Id.value in
-                [ div
-                    [ input
-                        ~a:
-                          [ a_input_type `Checkbox
-                          ; a_name Field.(Contacts |> array_key)
-                          ; a_id id
-                          ; a_value id
-                          ]
-                        ()
-                    ; label
-                        ~a:[ a_label_for id ]
-                        [ txt (Contact.fullname contact) ]
-                    ]
-                ])
+                 let id = Contact.id contact |> Contact.Id.value in
+                 [ div
+                     [ input
+                         ~a:
+                           [ a_input_type `Checkbox
+                           ; a_name Field.(Contacts |> array_key)
+                           ; a_id id
+                           ; a_value id
+                           ]
+                         ()
+                     ; label ~a:[ a_label_for id ] [ txt (Contact.fullname contact) ]
+                     ]
+                 ])
               filtered_contacts
             |> Component.Table.horizontal_table `Striped
         in
@@ -128,8 +114,7 @@ module Partials = struct
               ~a:
                 [ a_method `Post
                 ; a_action
-                    (form_action experiment.Experiment.id
-                     |> Sihl.Web.externalize_path)
+                    (form_action experiment.Experiment.id |> Sihl.Web.externalize_path)
                 ; a_class [ "stack" ]
                 ]
               [ csrf_element csrf ()
@@ -149,8 +134,7 @@ module Partials = struct
             |> Utils.control_to_string language
             |> txt
           ]
-      ; Unsafe.data
-          (Utils.text_to_string language I18n.FilterContactsDescription)
+      ; Unsafe.data (Utils.text_to_string language I18n.FilterContactsDescription)
         |> Component.Collapsible.create_note language
       ; Component.Filter.(
           filter_form
@@ -167,11 +151,11 @@ module Partials = struct
   ;;
 
   let statistics
-    language
-    { Experiment.Statistics.SentInvitations.total_sent
-    ; sent_by_count
-    ; total_match_filter
-    }
+        language
+        { Experiment.Statistics.SentInvitations.total_sent
+        ; sent_by_count
+        ; total_match_filter
+        }
     =
     let open Pool_common in
     let to_string = CCInt.to_string in
@@ -183,9 +167,7 @@ module Partials = struct
       thead
         Field.
           [ tr
-              [ td
-                  ~a:[ a_class [ "w-7" ] ]
-                  [ text_to_string I18n.Iteration |> txt ]
+              [ td ~a:[ a_class [ "w-7" ] ] [ text_to_string I18n.Iteration |> txt ]
               ; td [ field_to_string InvitationCount |> txt ]
               ]
           ]
@@ -204,8 +186,7 @@ module Partials = struct
       | sent_by_count ->
         sent_by_count
         |> CCList.map (fun (key, value) ->
-          ( to_string key
-          , Format.asprintf "%s / %i" (to_string value) total_match_filter )
+          (to_string key, Format.asprintf "%s / %i" (to_string value) total_match_filter)
           |> to_row)
         |> fun rows ->
         rows @ [ total ] |> table ~thead ~a:[ a_class [ "table"; "simple" ] ]
@@ -226,10 +207,10 @@ module Partials = struct
 end
 
 let sent_invitations
-  (Pool_context.{ language; _ } as context)
-  experiment
-  invitations
-  statistics
+      (Pool_context.{ language; _ } as context)
+      experiment
+      invitations
+      statistics
   =
   let open Pool_common in
   div
@@ -240,8 +221,7 @@ let sent_invitations
             ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
             [ h3
                 [ txt
-                    Pool_common.(
-                      Utils.text_to_string language I18n.InvitationsStatistics)
+                    Pool_common.(Utils.text_to_string language I18n.InvitationsStatistics)
                 ]
             ; Partials.statistics language statistics
             ]

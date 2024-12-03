@@ -84,13 +84,7 @@ val created : t -> event
 val updated : t * t -> event
 val tagged : Tagged.t -> event
 val untagged : Tagged.t -> event
-
-val handle_event
-  :  ?user_uuid:Pool_common.Id.t
-  -> Database.Label.t
-  -> event
-  -> unit Lwt.t
-
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_multiple : Database.Label.t -> Id.t list -> (Id.t * Title.t) list Lwt.t
 
@@ -103,12 +97,7 @@ val search_by_title
 
 val find_by : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 val find_all_with_model : Database.Label.t -> Model.t -> t list Lwt.t
-
-val find_all_of_entity
-  :  Database.Label.t
-  -> Model.t
-  -> Pool_common.Id.t
-  -> t list Lwt.t
+val find_all_of_entity : Database.Label.t -> Model.t -> Pool_common.Id.t -> t list Lwt.t
 
 val find_all_validated
   :  ?permission:Guard.Permission.t

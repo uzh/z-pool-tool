@@ -50,9 +50,7 @@ let access_denied database_label =
 let validate_web_access_request_dependent ?any_id effects req =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
-  let* ({ user; database_label; _ } as context) =
-    req |> find |> Lwt_result.lift
-  in
+  let* ({ user; database_label; _ } as context) = req |> find |> Lwt_result.lift in
   Lwt_result.map_error (access_denied database_label)
   @@
   match user with
@@ -69,9 +67,7 @@ let validate_web_access_request_dependent ?any_id effects req =
 let validate_api_access_request_dependent ?any_id effects req =
   let open Utils.Lwt_result.Infix in
   let open Pool_context.Api in
-  let* ({ api_key; database_label; _ } as context) =
-    req |> find |> Lwt_result.lift
-  in
+  let* ({ api_key; database_label; _ } as context) = req |> find |> Lwt_result.lift in
   Lwt_result.map_error (access_denied database_label)
   @@
   let ctx = Database.to_ctx database_label in
@@ -101,9 +97,7 @@ let validate_admin_entity_base validate =
        | false ->
          let open Http_utils in
          (match Api.is_api_request req with
-          | true ->
-            Api.respond_error ~status:`Forbidden Error.AccessDenied
-            |> Lwt.return
+          | true -> Api.respond_error ~status:`Forbidden Error.AccessDenied |> Lwt.return
           | false ->
             Http_utils.redirect_to
             @@
@@ -131,8 +125,7 @@ let validate_generic_lwt ?any_id =
 
 let id_effects encode field make_set =
   let open CCResult.Infix in
-  (fun req -> Http_utils.find_id_save encode field req >|= make_set)
-  |> validate_generic
+  (fun req -> Http_utils.find_id_save encode field req >|= make_set) |> validate_generic
 ;;
 
 let api_validate_admin_entity ?any_id effects =

@@ -49,8 +49,7 @@ let add_user_language_version =
 
 let add_user_email_verified_counts =
   Database.Migration.Step.create
-    ~label:
-      "add field for email verification, assignment inclusive show up count"
+    ~label:"add field for email verification, assignment inclusive show up count"
     {sql|
       ALTER TABLE pool_participants
       ADD COLUMN email_verified timestamp NULL AFTER verified,

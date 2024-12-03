@@ -1,6 +1,4 @@
-val connect_and_migrate
-  :  Database.Label.t
-  -> (unit, Pool_message.Error.t) result Lwt.t
+val connect_and_migrate : Database.Label.t -> (unit, Pool_message.Error.t) result Lwt.t
 
 type event =
   | Migrated of Database.t

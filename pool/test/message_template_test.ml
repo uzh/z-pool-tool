@@ -39,13 +39,9 @@ end
 let test_create ?id ?entity_uuid available_languages expected =
   let open TemplateCommand.Create in
   let open CCResult in
-  let entity_uuid =
-    entity_uuid |> CCOption.value ~default:(Pool_common.Id.create ())
-  in
+  let entity_uuid = entity_uuid |> CCOption.value ~default:(Pool_common.Id.create ()) in
   let events =
-    Data.urlencoded
-    |> decode
-    >>= handle ?id Data.label entity_uuid available_languages
+    Data.urlencoded |> decode >>= handle ?id Data.label entity_uuid available_languages
   in
   Test_utils.check_result expected events
 ;;
@@ -134,9 +130,7 @@ module LanguageTestsData = struct
       label
   ;;
 
-  let experiment_message_language =
-    experiment_message_language Pool_common.Language.all
-  ;;
+  let experiment_message_language = experiment_message_language Pool_common.Language.all
 
   let find_default_by_label_and_language lang label =
     find_default_by_label_and_language database_label lang label
@@ -180,9 +174,7 @@ let get_template_without_experiment_language _ () =
   let label = invitation_label in
   let experiment = create_experiment () in
   let find_template = find_template_to_send experiment in
-  let%lwt template_de =
-    create_experiment_message_template experiment label de
-  in
+  let%lwt template_de = create_experiment_message_template experiment label de in
   let%lwt default_template_en = find_default_by_label_and_language en label in
   let%lwt res_de = find_template contact_de in
   let%lwt res_en = find_template contact_en in
@@ -210,9 +202,7 @@ let get_template_with_experiment_language_and_template _ () =
   let open LanguageTestsData in
   let label = invitation_label in
   let experiment = create_experiment ~language:Pool_common.Language.De () in
-  let%lwt template_de =
-    create_experiment_message_template experiment label de
-  in
+  let%lwt template_de = create_experiment_message_template experiment label de in
   let find_template = find_template_to_send experiment in
   let%lwt res_de = find_template contact_de in
   let%lwt res_en = find_template contact_en in
@@ -260,10 +250,7 @@ let get_templates_in_multile_languages _ () =
     let%lwt templates =
       languages
       |> Lwt_list.map_s (fun lang ->
-        create_invitation
-          lang
-          ~entity_uuid:Experiment.(experiment.id |> Id.to_common)
-          ())
+        create_invitation lang ~entity_uuid:Experiment.(experiment.id |> Id.to_common) ())
     in
     let%lwt res =
       languages
@@ -317,9 +304,7 @@ let experiment_invitation_with_sender _ () =
   let%lwt () =
     let%lwt () = initialize () in
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
-    let%lwt experiment =
-      Experiment.find database_label experiment_id ||> get_exn
-    in
+    let%lwt experiment = Experiment.find database_label experiment_id ||> get_exn in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt create_message =
       Message_template.ExperimentInvitation.prepare tenant experiment
@@ -355,22 +340,13 @@ let assignment_creation_with_sender _ () =
   let%lwt () =
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
-    let%lwt experiment =
-      Experiment.find database_label experiment_id ||> get_exn
-    in
-    let%lwt session =
-      Integration_utils.SessionRepo.create ~id:session_id experiment ()
-    in
+    let%lwt experiment = Experiment.find database_label experiment_id ||> get_exn in
+    let%lwt session = Integration_utils.SessionRepo.create ~id:session_id experiment () in
     let%lwt confirmation_email =
-      Message_template.AssignmentConfirmation.prepare
-        tenant
-        contact
-        experiment
-        session
+      Message_template.AssignmentConfirmation.prepare tenant contact experiment session
       ||> fun fnc -> fnc (Assignment.create contact)
     in
-    Alcotest.(
-      check string "succeeds" admin_email (sender_of_job confirmation_email))
+    Alcotest.(check string "succeeds" admin_email (sender_of_job confirmation_email))
     |> Lwt.return
   in
   Lwt.return_unit

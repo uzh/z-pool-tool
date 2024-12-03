@@ -3,17 +3,14 @@ open Entity
 type event =
   | ContactEmailUpdated of ContactEmail.t
   | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.EmailLeadTime.t
-  | DefaultTextMsgReminderLeadTimeUpdated of
-      Pool_common.Reminder.TextMessageLeadTime.t
+  | DefaultTextMsgReminderLeadTimeUpdated of Pool_common.Reminder.TextMessageLeadTime.t
   | EmailSuffixesUpdated of EmailSuffix.t list
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | LanguagesUpdated of Pool_common.Language.t list
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
-  | UserImportFirstReminderAfterUpdated of
-      UserImportReminder.FirstReminderAfter.t
-  | UserImportSecondReminderAfterUpdated of
-      UserImportReminder.SecondReminderAfter.t
+  | UserImportFirstReminderAfterUpdated of UserImportReminder.FirstReminderAfter.t
+  | UserImportSecondReminderAfterUpdated of UserImportReminder.SecondReminderAfter.t
 [@@deriving eq, show]
 
 let handle_event ?user_uuid pool : event -> unit Lwt.t =
@@ -30,8 +27,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     Repo.update pool setting
   in
   function
-  | LanguagesUpdated languages ->
-    handle_update (Value.TenantLanguages languages)
+  | LanguagesUpdated languages -> handle_update (Value.TenantLanguages languages)
   | EmailSuffixesUpdated email_suffixes ->
     handle_update (Value.TenantEmailSuffixes email_suffixes)
   | DefaultReminderLeadTimeUpdated lead_time ->

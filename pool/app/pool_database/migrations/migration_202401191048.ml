@@ -8,6 +8,5 @@ let add_show_on_close_screen_flag =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202401191048" |> add_step add_show_on_close_screen_flag)
+  Database.Migration.(empty "202401191048" |> add_step add_show_on_close_screen_flag)
 ;;

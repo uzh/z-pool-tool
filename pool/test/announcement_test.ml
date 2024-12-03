@@ -7,11 +7,7 @@ let get_exn = Test_utils.get_or_failwith
 
 module Data = struct
   let boolean_fields = Field.[ show ShowToAdmins; show ShowToContacts ]
-
-  let text_name lang =
-    Format.asprintf "%s[%s]" Field.(show Text) (Language.show lang)
-  ;;
-
+  let text_name lang = Format.asprintf "%s[%s]" Field.(show Text) (Language.show lang)
   let text_en = "EN"
   let text_de = "DE"
   let exn_opt = CCOption.get_exn_or "invalid timespan"
@@ -29,11 +25,7 @@ module Data = struct
 
   let start_at = StartAt.create Time.in_an_hour
   let end_at = EndAt.create Time.in_two_hours
-
-  let text =
-    Text.create [ Language.En, text_en; Language.De, text_de ] |> get_exn
-  ;;
-
+  let text = Text.create [ Language.En, text_en; Language.De, text_de ] |> get_exn
   let show_to_admins = ShowToAdmins.create true
   let show_to_contacts = ShowToContacts.create true
 
@@ -80,9 +72,7 @@ let create () =
     let announcement = create text None None show_to_admins show_to_contacts in
     Ok [ Created (announcement, tenant_ids) |> Pool_event.announcement ]
   in
-  let () =
-    run_test (urlencoded_remove updates) expected "create no start / no end"
-  in
+  let () = run_test (urlencoded_remove updates) expected "create no start / no end" in
   (* CREATE START AFTER END *)
   let updates =
     let open Ptime in
@@ -93,25 +83,17 @@ let create () =
     ]
   in
   let expected = Error Error.EndBeforeStart in
-  let () =
-    run_test (urlencoded_update updates) expected "create start after end"
-  in
+  let () = run_test (urlencoded_update updates) expected "create start after end" in
   (* CREATE WITHOUT TEXT *)
   let expected = Error (Error.AtLeastOneLanguageRequired Field.Text) in
   let updates = CCString.starts_with ~prefix:Field.(show Text) in
-  let () =
-    run_test (urlencoded_remove updates) expected "create without text"
-  in
+  let () = run_test (urlencoded_remove updates) expected "create without text" in
   (* CREATE WITHOUT NO DISPLAY FLAG *)
   let expected =
     Error Error.(AtLeastOneSelected (Field.ShowToAdmins, Field.ShowToContacts))
   in
-  let updates key =
-    CCList.mem key Field.[ show ShowToAdmins; show ShowToContacts ]
-  in
-  let () =
-    run_test (urlencoded_remove updates) expected "create with no display flag"
-  in
+  let updates key = CCList.mem key Field.[ show ShowToAdmins; show ShowToContacts ] in
+  let () = run_test (urlencoded_remove updates) expected "create with no display flag" in
   ()
 ;;
 
@@ -119,9 +101,7 @@ let find_current _ () =
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in
   let pool = Database.Pool.Root.label in
-  let%lwt tenant =
-    Pool_tenant.find_by_label Test_utils.Data.database_label ||> get_exn
-  in
+  let%lwt tenant = Pool_tenant.find_by_label Test_utils.Data.database_label ||> get_exn in
   let tenand_db = tenant.Pool_tenant.database_label in
   let%lwt as_contat =
     let open Contact in
@@ -142,8 +122,7 @@ let find_current _ () =
       | true -> find_of_tenant tenand_db id ||> get_exn ||> CCOption.return
     in
     let%lwt res = find_by_user tenand_db context in
-    Alcotest.(check (option Test_utils.annoncement) msg expected res)
-    |> Lwt.return
+    Alcotest.(check (option Test_utils.annoncement) msg expected res) |> Lwt.return
   in
   (* GET WITHOUT START / END *)
   let%lwt () = run_test announcement as_admin true "get without start / end" in
@@ -181,9 +160,7 @@ let find_current _ () =
   let%lwt () =
     let start_at = StartAt.create Data.Time.two_hours_ago in
     let end_at = EndAt.create Data.Time.in_an_hour in
-    let m =
-      { announcement with start_at = Some start_at; end_at = Some end_at }
-    in
+    let m = { announcement with start_at = Some start_at; end_at = Some end_at } in
     let msg = Format.asprintf "get with past start and future end, as %s" in
     let%lwt () = run_test m as_admin true (msg "admin") in
     let%lwt () = run_test m as_contat true (msg "user") in
@@ -192,12 +169,8 @@ let find_current _ () =
   (* ON DIFFERENT TENANT *)
   let%lwt () =
     let msg = Format.asprintf "on different tenant, as %s" in
-    let%lwt () =
-      run_test ~tenants:[] announcement as_admin false (msg "admin")
-    in
-    let%lwt () =
-      run_test ~tenants:[] announcement as_contat false (msg "contact")
-    in
+    let%lwt () = run_test ~tenants:[] announcement as_admin false (msg "admin") in
+    let%lwt () = run_test ~tenants:[] announcement as_contat false (msg "contact") in
     Lwt.return_unit
   in
   (* MARK AS READ *)

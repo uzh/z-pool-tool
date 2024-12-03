@@ -24,10 +24,7 @@ module Sql = struct
       then "COUNT(*)"
       else CCString.concat ", " (sql_select_columns @ additional_cols)
     in
-    Format.asprintf
-      {sql|SELECT %s FROM pool_mailing %s|sql}
-      columns
-      where_fragment
+    Format.asprintf {sql|SELECT %s FROM pool_mailing %s|sql} columns where_fragment
   ;;
 
   let count_column =
@@ -89,12 +86,9 @@ module Sql = struct
   let find_by_experiment_with_count pool query id =
     let select = select_with_count in
     let where =
-      let sql =
-        {sql| pool_mailing.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-      in
+      let sql = {sql| pool_mailing.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
       let dyn =
-        Dynparam.(
-          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+        Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
       in
       sql, dyn
     in
@@ -249,9 +243,7 @@ module Sql = struct
       |> Caqti_type.ptime_span ->* Status.t
     ;;
 
-    let find_current pool interval =
-      Database.collect pool find_current_request interval
-    ;;
+    let find_current pool interval = Database.collect pool find_current_request interval
   end
 end
 
@@ -262,8 +254,7 @@ let find pool id =
 
 let find_with_detail pool id =
   let open Utils.Lwt_result.Infix in
-  Sql.find_with_detail pool id
-  >|+ fun (model, count) -> model |> to_entity, count
+  Sql.find_with_detail pool id >|+ fun (model, count) -> model |> to_entity, count
 ;;
 
 let find_by_experiment pool id =
@@ -287,11 +278,7 @@ let find_overlaps pool Entity.{ id; start_at; end_at; _ } =
 ;;
 
 let find_experiment_id = Sql.find_experiment_id
-
-let insert pool experiment_id model =
-  model |> of_entity experiment_id |> Sql.insert pool
-;;
-
+let insert pool experiment_id model = model |> of_entity experiment_id |> Sql.insert pool
 let update = Sql.update
 let delete = Sql.delete
 

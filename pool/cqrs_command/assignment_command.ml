@@ -36,10 +36,10 @@ let assignment_effect action uuid =
 ;;
 
 let assignment_creation_and_confirmation_events
-  confirmation_email
-  session
-  follow_up_sessions
-  contact
+      confirmation_email
+      session
+      follow_up_sessions
+      contact
   =
   let open CCResult in
   let open Assignment in
@@ -89,19 +89,17 @@ end = struct
     }
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?(direct_enrollment_by_admin = false)
-    { contact; session; follow_up_sessions; experiment }
-    confirmation_email
-    already_enrolled
+        ?(tags = Logs.Tag.empty)
+        ?(direct_enrollment_by_admin = false)
+        { contact; session; follow_up_sessions; experiment }
+        confirmation_email
+        already_enrolled
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let open Pool_message.Error in
     let all_sessions = session :: follow_up_sessions in
-    let* () =
-      if Contact.is_inactive contact then Error ContactIsInactive else Ok ()
-    in
+    let* () = if Contact.is_inactive contact then Error ContactIsInactive else Ok () in
     if already_enrolled
     then Error AlreadySignedUpForExperiment
     else
@@ -110,8 +108,7 @@ end = struct
         if direct_enrollment_by_admin
         then Ok ()
         else
-          (experiment.direct_registration_disabled
-           |> DirectRegistrationDisabled.value
+          (experiment.direct_registration_disabled |> DirectRegistrationDisabled.value
            || experiment.registration_disabled |> RegistrationDisabled.value)
           |> Utils.bool_to_result_not DirectRegistrationIsDisabled
       in
@@ -162,8 +159,7 @@ end = struct
     in
     let cancel_events =
       CCList.map
-        (fun assignment ->
-          Assignment.Canceled assignment |> Pool_event.assignment)
+        (fun assignment -> Assignment.Canceled assignment |> Pool_event.assignment)
         assignments
     in
     let decrease_assignment_count =
@@ -205,9 +201,9 @@ end = struct
     }
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ({ session; follow_up_sessions; waiting_list; already_enrolled } : t)
-    confirmation_email
+        ?(tags = Logs.Tag.empty)
+        ({ session; follow_up_sessions; waiting_list; already_enrolled } : t)
+        confirmation_email
     =
     let all_sessions = session :: follow_up_sessions in
     Logs.info ~src (fun m -> m "Handle command CreateFromWaitingList" ~tags);
@@ -224,9 +220,7 @@ end = struct
           contact
       in
       let conter_events =
-        Contact_counter.update_on_assignment_from_waiting_list
-          contact
-          all_sessions
+        Contact_counter.update_on_assignment_from_waiting_list contact all_sessions
         |> Contact.updated
         |> Pool_event.contact
       in
@@ -245,25 +239,19 @@ end
 module MarkAsDeleted : sig
   include
     Common.CommandSig
-    with type t =
-      Contact.t * Assignment.t list * Assignment.IncrementParticipationCount.t
+    with type t = Contact.t * Assignment.t list * Assignment.IncrementParticipationCount.t
 
   val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t =
-    Contact.t * Assignment.t list * Assignment.IncrementParticipationCount.t
+  type t = Contact.t * Assignment.t list * Assignment.IncrementParticipationCount.t
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    (contact, assignments, decrement_participation_count)
+  let handle ?(tags = Logs.Tag.empty) (contact, assignments, decrement_participation_count)
     : (Pool_event.t list, Pool_message.Error.t) result
     =
     let open Assignment in
     let open CCResult in
     Logs.info ~src (fun m -> m ~tags "Handle command MarkAsDeleted");
-    let* (_ : unit list) =
-      CCList.map is_deletable assignments |> CCList.all_ok
-    in
+    let* (_ : unit list) = CCList.map is_deletable assignments |> CCList.all_ok in
     let mark_as_deleted =
       CCList.map (markedasdeleted %> Pool_event.assignment) assignments
     in
@@ -298,12 +286,12 @@ end = struct
   type t = update
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    (experiment : Experiment.t)
-    session
-    ({ Assignment.no_show; participated; _ } as assignment)
-    participated_in_other_assignments
-    (command : update)
+        ?(tags = Logs.Tag.empty)
+        (experiment : Experiment.t)
+        session
+        ({ Assignment.no_show; participated; _ } as assignment)
+        participated_in_other_assignments
+        (command : update)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
@@ -314,8 +302,7 @@ end = struct
         match session with
         | `Session { Session.closed_at; _ } ->
           (match CCOption.is_some closed_at, no_show, participated with
-           | true, Some no_show, Some participated ->
-             Some { no_show; participated }
+           | true, Some no_show, Some participated -> Some { no_show; participated }
            | _, _, _ -> None)
         | `TimeWindow _ ->
           (match no_show, participated with
@@ -354,8 +341,7 @@ end = struct
       | Error (hd :: _) -> Error hd
     in
     Ok
-      ((Assignment.Updated (assignment, updated_assignment)
-        |> Pool_event.assignment)
+      ((Assignment.Updated (assignment, updated_assignment) |> Pool_event.assignment)
        :: contact_counters)
   ;;
 
@@ -419,9 +405,9 @@ end = struct
     let open CCOption in
     CCList.find_map
       (fun (field, decoder) ->
-        CCList.assoc_opt ~eq:( = ) (Field.show field) data
-        >>= CCList.head_opt
-        >|= decoder)
+         CCList.assoc_opt ~eq:( = ) (Field.show field) data
+         >>= CCList.head_opt
+         >|= decoder)
       fields
     |> function
     | None -> Error Error.InvalidHtmxRequest
@@ -448,16 +434,14 @@ module SendReminder : sig
 end = struct
   type t = Pool_common.MessageChannel.t
 
-  let schema =
-    Conformist.(make Field.[ Pool_common.MessageChannel.schema () ] CCFun.id)
-  ;;
+  let schema = Conformist.(make Field.[ Pool_common.MessageChannel.schema () ] CCFun.id)
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    (create_email, create_text_message)
-    session
-    ({ Assignment.contact; _ } as assignment)
-    channel
+        ?(tags = Logs.Tag.empty)
+        (create_email, create_text_message)
+        session
+        ({ Assignment.contact; _ } as assignment)
+        channel
     =
     Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
     let open Pool_common.Reminder in
@@ -522,17 +506,15 @@ module SwapSession : sig
     -> Email.dispatch option
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (session_swap, Pool_message.Error.t) result
+  val decode : (string * string list) list -> (session_swap, Pool_message.Error.t) result
 end = struct
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?assignment_id
-    ~current_session
-    ~new_session
-    assignment
-    notification_email
+        ?(tags = Logs.Tag.empty)
+        ?assignment_id
+        ~current_session
+        ~new_session
+        assignment
+        notification_email
     : (Pool_event.t list, Pool_message.Error.t) result
     =
     let open Assignment in
@@ -553,20 +535,12 @@ end = struct
     in
     Ok
       ([ MarkedAsDeleted assignment |> Pool_event.assignment
-       ; Created (new_assignment, new_session.Session.id)
-         |> Pool_event.assignment
+       ; Created (new_assignment, new_session.Session.id) |> Pool_event.assignment
        ]
        @ email_event)
   ;;
 
-  let command
-    session
-    notify_contact
-    language
-    email_subject
-    email_text
-    plain_text
-    =
+  let command session notify_contact language email_subject email_text plain_text =
     { session; notify_contact; language; email_subject; email_text; plain_text }
   ;;
 
@@ -592,14 +566,9 @@ end = struct
 end
 
 module UpdateMatchesFilter : sig
-  include
-    Common.CommandSig with type t = Assignment.event list * Email.dispatch list
+  include Common.CommandSig with type t = Assignment.event list * Email.dispatch list
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Assignment.event list * Email.dispatch list
@@ -638,14 +607,11 @@ module OnlineSurvey = struct
       ; experiment : Experiment.Public.t
       }
 
-    let handle ?(tags = Logs.Tag.empty) ?id { contact; time_window; experiment }
-      =
+    let handle ?(tags = Logs.Tag.empty) ?id { contact; time_window; experiment } =
       Logs.info ~src (fun m -> m "Handle command OnlineSurvey.Create" ~tags);
       let open CCResult in
       let open Pool_message.Error in
-      let* () =
-        if Contact.is_inactive contact then Error ContactIsInactive else Ok ()
-      in
+      let* () = if Contact.is_inactive contact then Error ContactIsInactive else Ok () in
       let* () =
         let open Experiment in
         experiment
@@ -692,8 +658,7 @@ module OnlineSurvey = struct
 
     let schema =
       let open Assignment in
-      Conformist.(
-        make Field.[ Conformist.optional @@ ExternalDataId.schema () ] command)
+      Conformist.(make Field.[ Conformist.optional @@ ExternalDataId.schema () ] command)
     ;;
 
     let decode data =
@@ -702,9 +667,9 @@ module OnlineSurvey = struct
     ;;
 
     let handle
-      ?(tags = Logs.Tag.empty)
-      ({ Assignment.contact; participated; marked_as_deleted; _ } as assignment)
-      ({ external_data_id } : t)
+          ?(tags = Logs.Tag.empty)
+          ({ Assignment.contact; participated; marked_as_deleted; _ } as assignment)
+          ({ external_data_id } : t)
       =
       Logs.info ~src (fun m -> m "Handle command OnlineSurvey.Submit" ~tags);
       let open CCResult in

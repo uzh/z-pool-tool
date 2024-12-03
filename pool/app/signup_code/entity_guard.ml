@@ -4,8 +4,7 @@ module Access = struct
   open Permission
 
   let signup_code action uuid =
-    one_of_tuple
-      (action, `SignupCode, Some (uuid |> Uuid.target_of Entity.Id.value))
+    one_of_tuple (action, `SignupCode, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index = one_of_tuple (Read, `SignupCode, None)

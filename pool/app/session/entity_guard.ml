@@ -7,8 +7,7 @@ module Target = struct
     let open Guard in
     Persistence.Target.decorate
       ?ctx
-      (fun id ->
-        Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
+      (fun id -> Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
       id
     >|- Pool_message.Error.authorization
   ;;
@@ -23,17 +22,12 @@ module Access = struct
 
   let session ?session_id ?(model = `Session) permission =
     one_of_tuple
-      ( permission
-      , model
-      , CCOption.map (Uuid.target_of Entity.Id.value) session_id )
+      (permission, model, CCOption.map (Uuid.target_of Entity.Id.value) session_id)
   ;;
 
   let index ?(model = `Session) id =
     And
-      [ Or
-          [ session ~model index_permission
-          ; Experiment.Guard.Access.read ~model id
-          ]
+      [ Or [ session ~model index_permission; Experiment.Guard.Access.read ~model id ]
       ; Experiment.Guard.Access.read id
       ]
   ;;

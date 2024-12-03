@@ -41,8 +41,7 @@ let custom
 ;;
 
 let custom_ok
-  : type a b.
-    encode:(b -> a Data.t) -> decode:(a -> b) -> a Schema.t -> b Caqti_type.t
+  : type a b. encode:(b -> a Data.t) -> decode:(a -> b) -> a Schema.t -> b Caqti_type.t
   =
   let open CCFun in
   fun ~encode ~decode schema ->

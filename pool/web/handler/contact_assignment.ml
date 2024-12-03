@@ -32,10 +32,7 @@ let create req =
            session
        in
        let%lwt already_enrolled =
-         Assignment.assignment_to_experiment_exists
-           database_label
-           experiment_id
-           contact
+         Assignment.assignment_to_experiment_exists database_label experiment_id contact
        in
        let events =
          let open Cqrs_command.Assignment_command.Create in
@@ -47,14 +44,10 @@ let create req =
          |> Lwt_result.lift
        in
        let handle events =
-         let%lwt () =
-           Pool_event.handle_events ~tags database_label user events
-         in
+         let%lwt () = Pool_event.handle_events ~tags database_label user events in
          Http_utils.redirect_to_with_actions
            redirect_path
-           [ HttpUtils.Message.set
-               ~success:[ Pool_message.Success.AssignmentCreated ]
-           ]
+           [ HttpUtils.Message.set ~success:[ Pool_message.Success.AssignmentCreated ] ]
        in
        events |>> handle
   in

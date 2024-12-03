@@ -20,14 +20,9 @@ let hide_location = function
 
 let data_attribs calendar =
   let action = [ a_user_data "calendar" (calendar_endpoint calendar) ] in
-  if hide_location calendar
-  then a_user_data "hide-location" "true" :: action
-  else action
+  if hide_location calendar then a_user_data "hide-location" "true" :: action else action
 ;;
 
 let create calendar =
-  div
-    [ div ~a:[ a_id "calendar-notification" ] []
-    ; div ~a:(data_attribs calendar) []
-    ]
+  div [ div ~a:[ a_id "calendar-notification" ] []; div ~a:(data_attribs calendar) [] ]
 ;;

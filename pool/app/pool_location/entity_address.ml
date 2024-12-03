@@ -43,10 +43,7 @@ module Mail = struct
 
     let create zip =
       let regex =
-        Re.(
-          seq [ repn (alt [ digit; set "_-" ]) 4 (Some 10) ]
-          |> whole_string
-          |> compile)
+        Re.(seq [ repn (alt [ digit; set "_-" ]) 4 (Some 10) ] |> whole_string |> compile)
       in
       if Re.execp regex zip then Ok zip else Error Message.(Error.Invalid field)
     ;;

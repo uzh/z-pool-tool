@@ -6,8 +6,7 @@ module Config = struct
   let prefix = "/root"
 
   let create_layout (_ : Rock.Request.t) ?active_navigation context content =
-    General.create_root_layout ?active_navigation context content
-    |> Lwt_result.ok
+    General.create_root_layout ?active_navigation context content |> Lwt_result.ok
   ;;
 end
 

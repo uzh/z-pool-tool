@@ -34,9 +34,7 @@ let login_post req =
     let* user = Helpers.Login.login req urlencoded database_label in
     HttpUtils.redirect_to_with_actions
       root_entrypoint_path
-      [ Sihl.Web.Session.set
-          [ "user_id", user.Pool_user.id |> Pool_user.Id.value ]
-      ]
+      [ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -73,8 +71,8 @@ let request_reset_password_post req =
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= (fun email ->
-          Pool_user.find_active_by_email_opt database_label email
-          ||> CCOption.to_result Error.PasswordResetFailMessage)
+    Pool_user.find_active_by_email_opt database_label email
+    ||> CCOption.to_result Error.PasswordResetFailMessage)
     >>= PasswordReset.create database_label language Root
     >>= CCFun.(handle ~tags %> Lwt_result.lift)
     |>> Pool_event.handle_events ~tags database_label user
@@ -99,9 +97,7 @@ let reset_password_get req =
          |> Lwt_result.lift
        in
        Page.Root.Login.reset_password token context
-       |> General.create_root_layout
-            ~active_navigation:"/root/reset-password"
-            context
+       |> General.create_root_layout ~active_navigation:"/root/reset-password" context
        ||> Response.of_html
        |> Lwt_result.ok
   in
@@ -120,9 +116,7 @@ let reset_password_post req =
       |> CCOption.to_result (Error.PasswordResetInvalidData, redirect)
       |> Lwt_result.lift
     in
-    let go field =
-      field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params
-    in
+    let go field = field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params in
     let token = go Field.Token in
     let password = Field.Password |> go |> Pool_user.Password.Plain.create in
     let password_confirmed =

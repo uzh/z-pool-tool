@@ -32,9 +32,9 @@ let database_fields tenant language flash_fetcher =
 let map_or = CCOption.map_or ~default:""
 
 let tenant_form
-  ?(tenant : Pool_tenant.t option)
-  Pool_context.{ language; csrf; _ }
-  flash_fetcher
+      ?(tenant : Pool_tenant.t option)
+      Pool_context.{ language; csrf; _ }
+      flash_fetcher
   =
   let open Pool_tenant in
   let action, control =
@@ -51,10 +51,7 @@ let tenant_form
   in
   let file_uploads =
     let open CCOption.Infix in
-    [ ( Field.Styles
-      , (tenant >>= fun t -> t.styles >|= Styles.value)
-      , false
-      , false )
+    [ Field.Styles, (tenant >>= fun t -> t.styles >|= Styles.value), false, false
     ; Field.Icon, (tenant >>= fun t -> t.icon >|= Icon.value), false, false
     ; Field.TenantLogos, None, true, true
     ; Field.PartnerLogos, None, false, true
@@ -86,9 +83,7 @@ let tenant_form
             [ a ~a:[ a_href (File.externalized_path file) ] [ txt "Download" ] ]
       in
       div
-        [ input_element_file ~accept language field ~allow_multiple ~required
-        ; download
-        ])
+        [ input_element_file ~accept language field ~allow_multiple ~required; download ])
   in
   form
     ~a:
@@ -147,16 +142,15 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
     let body =
       CCList.map
         (fun (tenant : t) ->
-          [ txt (tenant.title |> Title.value)
-          ; a
-              ~a:
-                [ a_href
-                    (Sihl.Web.externalize_path
-                       (Format.asprintf "/root/tenants/%s" (Id.value tenant.id)))
-                ]
-              [ txt Pool_common.(Utils.control_to_string language Control.More)
-              ]
-          ])
+           [ txt (tenant.title |> Title.value)
+           ; a
+               ~a:
+                 [ a_href
+                     (Sihl.Web.externalize_path
+                        (Format.asprintf "/root/tenants/%s" (Id.value tenant.id)))
+                 ]
+               [ txt Pool_common.(Utils.control_to_string language Control.More) ]
+           ])
         tenant_list
     in
     Table.horizontal_table `Striped ~thead ~align_last_end:true body
@@ -174,9 +168,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
             [ h2
                 ~a:[ a_class [ "heading-2" ] ]
                 [ Pool_common.(
-                    Utils.control_to_string
-                      language
-                      Control.(Create (Some Field.Tenant)))
+                    Utils.control_to_string language Control.(Create (Some Field.Tenant)))
                   |> txt
                 ]
             ; tenant_form context flash_fetcher
@@ -185,11 +177,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
     ]
 ;;
 
-let manage_operators
-  { Pool_tenant.id; _ }
-  operators
-  Pool_context.{ language; csrf; _ }
-  =
+let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; csrf; _ } =
   let operator_list =
     Page_admin_admins.static_overview ~disable_edit:true language operators
   in
@@ -199,9 +187,7 @@ let manage_operators
           ~a:[ a_class [ "heading-2" ] ]
           [ txt
               Pool_common.(
-                Utils.control_to_string
-                  language
-                  Control.(Create (Some Field.Operator)))
+                Utils.control_to_string language Control.(Create (Some Field.Operator)))
           ]
       ; form
           ~a:
@@ -215,8 +201,7 @@ let manage_operators
             ]
           ((csrf_element csrf ()
             :: CCList.map
-                 (fun (field, input) ->
-                   input_element ~required:true language input field)
+                 (fun (field, input) -> input_element ~required:true language input field)
                  Field.
                    [ Email, `Email
                    ; Password, `Password
@@ -230,13 +215,9 @@ let manage_operators
                          ~a:
                            [ a_href
                                (Sihl.Web.externalize_path
-                                  (Format.asprintf
-                                     "/root/tenants/%s"
-                                     (Id.value id)))
+                                  (Format.asprintf "/root/tenants/%s" (Id.value id)))
                            ]
-                         [ Pool_common.Utils.control_to_string
-                             language
-                             Control.Back
+                         [ Pool_common.Utils.control_to_string language Control.Back
                            |> txt
                          ]
                      ]
@@ -274,9 +255,9 @@ let tenant_detail_sub_form language field form_html =
 ;;
 
 let detail
-  (tenant : Pool_tenant.t)
-  (Pool_context.{ language; csrf; _ } as context)
-  flash_fetcher
+      (tenant : Pool_tenant.t)
+      (Pool_context.{ language; csrf; _ } as context)
+      flash_fetcher
   =
   let open Pool_tenant in
   let control_to_string = Pool_common.Utils.control_to_string language in
@@ -285,32 +266,29 @@ let detail
       ~a:[ a_class [ "flexrow" ] ]
       (CCList.map
          (fun (file : File.t) ->
-           div
-             [ div
-                 ~a:
-                   [ a_class [ "aspect-ratio"; "contain" ]
-                   ; a_style "width: 200px"
-                   ]
-                 [ img ~src:(File.externalized_path file) ~alt:"" () ]
-             ; form
-                 ~a:
-                   [ a_action
-                       (Sihl.Web.externalize_path
-                          (Format.asprintf
-                             "/root/tenants/%s/assets/%s/delete"
-                             (tenant.id |> Id.value)
-                             (File.id file |> Pool_common.Id.value)))
-                   ; a_method `Post
-                   ; a_class [ "stack" ]
-                   ]
-                 [ csrf_element csrf ()
-                 ; submit_element
-                     language
-                     Control.(Delete (Some Field.file))
-                     ~submit_type:`Error
-                     ()
-                 ]
-             ])
+            div
+              [ div
+                  ~a:[ a_class [ "aspect-ratio"; "contain" ]; a_style "width: 200px" ]
+                  [ img ~src:(File.externalized_path file) ~alt:"" () ]
+              ; form
+                  ~a:
+                    [ a_action
+                        (Sihl.Web.externalize_path
+                           (Format.asprintf
+                              "/root/tenants/%s/assets/%s/delete"
+                              (tenant.id |> Id.value)
+                              (File.id file |> Pool_common.Id.value)))
+                    ; a_method `Post
+                    ; a_class [ "stack" ]
+                    ]
+                  [ csrf_element csrf ()
+                  ; submit_element
+                      language
+                      Control.(Delete (Some Field.file))
+                      ~submit_type:`Error
+                      ()
+                  ]
+              ])
          files)
   in
   let delete_file_forms =
@@ -326,24 +304,15 @@ let detail
       ~a:
         [ a_action
             (Sihl.Web.externalize_path
-               (Format.asprintf
-                  "/root/tenants/%s/update-database"
-                  (Id.value tenant.id)))
+               (Format.asprintf "/root/tenants/%s/update-database" (Id.value tenant.id)))
         ; a_method `Post
         ; a_enctype "multipart/form-data"
         ; a_class [ "stack" ]
         ]
-      ([ csrf_element csrf ()
-       ; database_fields (Some tenant) language flash_fetcher
-       ]
+      ([ csrf_element csrf (); database_fields (Some tenant) language flash_fetcher ]
        @ [ div
              ~a:[ a_class [ "flexrow" ] ]
-             [ submit_element
-                 ~classnames:[ "push" ]
-                 language
-                 Control.(Update None)
-                 ()
-             ]
+             [ submit_element ~classnames:[ "push" ] language Control.(Update None) () ]
          ])
     |> tenant_detail_sub_form language Field.Database
   in
@@ -357,9 +326,7 @@ let detail
             ~a:
               [ a_href
                   (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/root/tenants/%s/operator"
-                        (tenant.id |> Id.value)))
+                     (Format.asprintf "/root/tenants/%s/operator" (tenant.id |> Id.value)))
               ]
             [ txt (control_to_string (Control.Manage Field.Operators)) ]
         ]

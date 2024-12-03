@@ -139,8 +139,7 @@ module MatcherNotificationSent = struct
 end
 
 module OnlineExperiment = struct
-  type t = { survey_url : SurveyUrl.t }
-  [@@deriving eq, fields ~getters, show, yojson]
+  type t = { survey_url : SurveyUrl.t } [@@deriving eq, fields ~getters, show, yojson]
 
   let create ~survey_url = { survey_url }
 
@@ -192,8 +191,7 @@ type t =
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; online_experiment : OnlineExperiment.t option
-  ; email_session_reminder_lead_time :
-      Pool_common.Reminder.EmailLeadTime.t option
+  ; email_session_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
   ; invitation_reset_at : InvitationResetAt.t option
@@ -204,27 +202,27 @@ type t =
 [@@deriving eq, fields ~getters, show, yojson]
 
 let create
-  ?id
-  ?contact_email
-  ?cost_center
-  ?internal_description
-  ?public_description
-  ?language
-  ?email_session_reminder_lead_time
-  ?experiment_type
-  ?filter
-  ?invitation_reset_at
-  ?organisational_unit
-  ?smtp_auth_id
-  ?text_message_session_reminder_lead_time
-  ?online_experiment
-  title
-  public_title
-  direct_registration_disabled
-  registration_disabled
-  allow_uninvited_signup
-  external_data_required
-  show_external_data_id_links
+      ?id
+      ?contact_email
+      ?cost_center
+      ?internal_description
+      ?public_description
+      ?language
+      ?email_session_reminder_lead_time
+      ?experiment_type
+      ?filter
+      ?invitation_reset_at
+      ?organisational_unit
+      ?smtp_auth_id
+      ?text_message_session_reminder_lead_time
+      ?online_experiment
+      title
+      public_title
+      direct_registration_disabled
+      registration_disabled
+      allow_uninvited_signup
+      external_data_required
+      show_external_data_id_links
   =
   let open CCResult in
   Ok
@@ -291,14 +289,14 @@ module Public = struct
   [@@deriving eq, show]
 
   let create
-    ?description
-    ?language
-    ?experiment_type
-    ?smtp_auth_id
-    ?online_experiment
-    id
-    public_title
-    direct_registration_disabled
+        ?description
+        ?language
+        ?experiment_type
+        ?smtp_auth_id
+        ?online_experiment
+        id
+        public_title
+        direct_registration_disabled
     =
     { id
     ; public_title
@@ -327,16 +325,16 @@ module Public = struct
 end
 
 let to_public
-  { id
-  ; public_title
-  ; public_description
-  ; language
-  ; direct_registration_disabled
-  ; experiment_type
-  ; smtp_auth_id
-  ; online_experiment
-  ; _
-  }
+      { id
+      ; public_title
+      ; public_description
+      ; language
+      ; direct_registration_disabled
+      ; experiment_type
+      ; smtp_auth_id
+      ; online_experiment
+      ; _
+      }
   =
   { Public.id
   ; public_title
@@ -400,9 +398,7 @@ let boolean_fields =
 
 open Pool_message
 
-let column_title =
-  (Field.Title, "pool_experiments.title") |> Query.Column.create
-;;
+let column_title = (Field.Title, "pool_experiments.title") |> Query.Column.create
 
 let column_public_title =
   (Field.PublicTitle, "pool_experiments.public_title") |> Query.Column.create
@@ -413,8 +409,7 @@ let column_created_at =
 ;;
 
 let column_experiment_type =
-  (Field.ExperimentType, "pool_experiments.experiment_type")
-  |> Query.Column.create
+  (Field.ExperimentType, "pool_experiments.experiment_type") |> Query.Column.create
 ;;
 
 let experiment_type_filter =
@@ -426,8 +421,7 @@ let experiment_type_filter =
     |> CCList.map (fun exp_type ->
       let label =
         languages
-        |> CCList.map (fun lang ->
-          lang, show exp_type |> CCString.capitalize_ascii)
+        |> CCList.map (fun lang -> lang, show exp_type |> CCString.capitalize_ascii)
       in
       let value = show exp_type in
       SelectOption.create label value)
@@ -438,9 +432,5 @@ let experiment_type_filter =
 let filterable_by = Some [ experiment_type_filter ]
 let searchable_by = [ column_title; column_public_title; Tags.column_title ]
 let sortable_by = column_created_at :: searchable_by
-
-let default_sort =
-  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

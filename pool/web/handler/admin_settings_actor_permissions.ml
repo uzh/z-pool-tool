@@ -18,9 +18,7 @@ let show req =
   let%lwt permissions, query =
     Guard.Persistence.ActorPermission.find_by query database_label
   in
-  let%lwt hint =
-    I18n.(find_by_key database_label Key.ActorPermissionHint) language
-  in
+  let%lwt hint = I18n.(find_by_key database_label Key.ActorPermissionHint) language in
   let open Page.Admin.Settings.ActorPermission in
   (if HttpUtils.Htmx.is_hx_request req then list else index ~hint)
     context
@@ -42,14 +40,10 @@ let delete req =
         (try read permission with
          | _ -> Error "Undefined Yojson for actor permission.")
     in
-    let events =
-      Cqrs_command.Guardian_command.DeleteActorPermission.handle ~tags
-    in
+    let events = Cqrs_command.Guardian_command.DeleteActorPermission.handle ~tags in
     let handle = function
       | Ok events ->
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         Http_utils.redirect_to_with_actions
           active_navigation
           [ Message.set ~success:[ Success.Deleted Field.Permission ] ]
@@ -72,12 +66,7 @@ let new_form req =
     Page.Admin.Settings.ActorPermission.create
       ~hint
       context
-      [ Component.Role.ActorPermissionSearch.input_form
-          ~flash_fetcher
-          csrf
-          language
-          ()
-      ]
+      [ Component.Role.ActorPermissionSearch.input_form ~flash_fetcher csrf language () ]
     |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, Format.asprintf "%s/new" active_navigation
@@ -95,12 +84,9 @@ let handle_toggle_target req =
     CCResult.both (find Field.Permission) (find Field.Model)
     |> Lwt_result.lift
     >== (fun (permission, model) ->
-          let permission = Guard.Permission.of_string_res permission in
-          let model =
-            Role.Target.of_string_res model
-            |> CCResult.map_err Error.authorization
-          in
-          CCResult.both permission model)
+    let permission = Guard.Permission.of_string_res permission in
+    let model = Role.Target.of_string_res model |> CCResult.map_err Error.authorization in
+    CCResult.both permission model)
     >|+ fun (permission, model) ->
     Component.Role.ActorPermissionSearch.value_form
       ~empty:(equal Create permission)
@@ -123,8 +109,7 @@ let create req =
     let* actors =
       HttpUtils.htmx_urlencoded_list Field.(ValueOf Admin |> array_key) req
       ||> CCList.map
-            (Guard.Uuid.Actor.of_string
-             %> CCOption.to_result (Error.Decode Field.Id))
+            (Guard.Uuid.Actor.of_string %> CCOption.to_result (Error.Decode Field.Id))
       ||> CCResult.flatten_l
     in
     let%lwt actors =
@@ -133,9 +118,7 @@ let create req =
       |> Lwt_list.filter_s (fun id ->
         id |> to_id |> Admin.find database_label ||> CCResult.is_ok)
     in
-    let* permission =
-      find Field.Permission |> lift >== Guard.Permission.of_string_res
-    in
+    let* permission = find Field.Permission |> lift >== Guard.Permission.of_string_res in
     let* model =
       find Field.Model
       |> lift
@@ -144,8 +127,7 @@ let create req =
     let* targets =
       HttpUtils.htmx_urlencoded_list Field.(Value |> array_key) req
       ||> CCList.map
-            (Guard.Uuid.Target.of_string
-             %> CCOption.to_result (Error.Decode Field.Id))
+            (Guard.Uuid.Target.of_string %> CCOption.to_result (Error.Decode Field.Id))
       ||> CCResult.flatten_l
     in
     let expand_targets =
@@ -176,14 +158,11 @@ let create req =
       in
       let open CCList in
       flat_map (fun target ->
-        actors
-        |> map (create permission target %> CreateActorPermission.handle ~tags))
+        actors |> map (create permission target %> CreateActorPermission.handle ~tags))
       %> CCResult.flatten_l
       %> CCResult.map flatten
     in
-    let handle events =
-      Pool_event.handle_events ~tags database_label user events
-    in
+    let handle events = Pool_event.handle_events ~tags database_label user events in
     let* () = expand_targets >== events |>> handle in
     Lwt_result.ok
       (Http_utils.redirect_to_with_actions
@@ -196,9 +175,7 @@ let create req =
 module Access : module type of Helpers.Access = struct
   include Helpers.Access
 
-  let index =
-    Guard.Access.Permission.read |> Middleware.Guardian.validate_admin_entity
-  ;;
+  let index = Guard.Access.Permission.read |> Middleware.Guardian.validate_admin_entity
 
   let create =
     Cqrs_command.Guardian_command.CreateActorPermission.effects

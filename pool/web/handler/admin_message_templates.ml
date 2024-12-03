@@ -4,10 +4,7 @@ module Message = HttpUtils.Message
 
 let src = Logs.Src.create "handler.admin.message_templates"
 let create_layout req = General.create_tenant_layout req
-
-let template_id =
-  HttpUtils.find_id Message_template.Id.of_string Field.MessageTemplate
-;;
+let template_id = HttpUtils.find_id Message_template.Id.of_string Field.MessageTemplate
 
 let template_label req =
   let open Message_template.Label in
@@ -79,10 +76,7 @@ let write action req =
       | Create (entity_id, label, _) ->
         let%lwt available_languages =
           Pool_context.Tenant.get_tenant_languages_exn req
-          |> Message_template.missing_template_languages
-               database_label
-               entity_id
-               label
+          |> Message_template.missing_template_languages database_label entity_id label
         in
         Create.(
           urlencoded
@@ -107,9 +101,7 @@ let write action req =
 let update req =
   let id = template_id req in
   let redirect_path =
-    id
-    |> Message_template.Id.value
-    |> Format.asprintf "/admin/message-template/%s/edit"
+    id |> Message_template.Id.value |> Format.asprintf "/admin/message-template/%s/edit"
   in
   let redirect = { success = redirect_path; error = redirect_path } in
   write (Update (id, redirect)) req
@@ -121,8 +113,7 @@ let default_templates_from_request req ?languages database_label params =
   let label = template_label req in
   let languages =
     languages
-    |> CCOption.value
-         ~default:(Pool_context.Tenant.get_tenant_languages_exn req)
+    |> CCOption.value ~default:(Pool_context.Tenant.get_tenant_languages_exn req)
   in
   let find_param field = HttpUtils.find_in_urlencoded_opt field params in
   let experiment_entity experiment_id =
@@ -141,14 +132,10 @@ let default_templates_from_request req ?languages database_label params =
     in
     let entity = Session session_id in
     Lwt_result.return
-      ( [ Experiment.Id.to_common experiment.Experiment.id
-        ; Id.to_common session.id
-        ]
+      ( [ Experiment.Id.to_common experiment.Experiment.id; Id.to_common session.id ]
       , entity )
   in
-  let entities =
-    [ Field.Session, session_entity; Field.Experiment, experiment_entity ]
-  in
+  let entities = [ Field.Session, session_entity; Field.Experiment, experiment_entity ] in
   let* entity_uuids, entity =
     entities
     |> CCList.find_map (fun (key, entity_fnc) ->
@@ -173,9 +160,7 @@ let preview_default req =
     let* message_templates, _ =
       default_templates_from_request req database_label query_params
     in
-    Page.Admin.MessageTemplate.preview_template_modal
-      language
-      (label, message_templates)
+    Page.Admin.MessageTemplate.preview_template_modal language (label, message_templates)
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
@@ -191,8 +176,7 @@ let reset_to_default_htmx req =
       let open Message_template in
       let open CCOption in
       HttpUtils.find_in_urlencoded_opt Field.MessageTemplate urlencoded
-      >|= (fun id ->
-            id |> Id.of_string |> find database_label >|+ CCOption.return)
+      >|= (fun id -> id |> Id.of_string |> find database_label >|+ CCOption.return)
       |> CCOption.value ~default:(Lwt_result.return None)
     in
     let* template_language =
@@ -232,13 +216,9 @@ let reset_to_default_htmx req =
       |> CCOption.to_result (Error.NotFound Field.MessageTemplate)
       |> Lwt_result.lift
     in
-    let text_messages_disabled =
-      Pool_context.Tenant.text_messages_enabled req
-    in
+    let text_messages_disabled = Pool_context.Tenant.text_messages_enabled req in
     let form_context =
-      if CCOption.is_some current_template
-      then `Update template
-      else `Create template
+      if CCOption.is_some current_template then `Update template else `Create template
     in
     Page.Admin.MessageTemplate.template_inputs
       ~entity
@@ -255,9 +235,7 @@ let reset_to_default_htmx req =
 
 let changelog req =
   let id = template_id req in
-  let url =
-    HttpUtils.Url.Admin.message_template_path ~suffix:"changelog" ~id ()
-  in
+  let url = HttpUtils.Url.Admin.message_template_path ~suffix:"changelog" ~id () in
   Helpers.Changelog.htmx_handler ~url (Message_template.Id.to_common id) req
 ;;
 
@@ -270,9 +248,6 @@ module Access : module type of Helpers.Access = struct
     Guardian.id_effects Message_template.Id.validate Field.MessageTemplate
   ;;
 
-  let index =
-    Message_template.Guard.Access.index |> Guardian.validate_admin_entity
-  ;;
-
+  let index = Message_template.Guard.Access.index |> Guardian.validate_admin_entity
   let update = template_effects Command.Update.effects
 end

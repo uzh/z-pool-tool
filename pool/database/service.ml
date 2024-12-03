@@ -23,8 +23,8 @@ let exclude_ids column_name decode_id dyn exclude =
     let dyn, sql_strings =
       CCList.fold_left
         (fun (dyn, sql_strings) id ->
-          ( dyn |> Entity.Dynparam.add Caqti_type.string (id |> decode_id)
-          , sql :: sql_strings ))
+           ( dyn |> Entity.Dynparam.add Caqti_type.string (id |> decode_id)
+           , sql :: sql_strings ))
         (dyn, [])
         exclude
     in
@@ -105,10 +105,7 @@ let clean_root_requests () =
     CCFormat.asprintf "TRUNCATE TABLE %s" table |> Caqti_type.(unit ->. unit)
   in
   let tables =
-    [ "pool_announcements"
-    ; "pool_announcement_users_hide"
-    ; "pool_announcement_tenants"
-    ]
+    [ "pool_announcements"; "pool_announcement_users_hide"; "pool_announcement_tenants" ]
   in
   CCList.map truncate_table tables
 ;;

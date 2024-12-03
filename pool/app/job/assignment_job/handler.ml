@@ -15,11 +15,11 @@ let trigger_text =
 ;;
 
 let make_messages
-  ?current_user
-  context
-  database_label
-  ({ Experiment.id; _ } as experiment)
-  sessions
+      ?current_user
+      context
+      database_label
+      ({ Experiment.id; _ } as experiment)
+      sessions
   =
   let* tenant = Pool_tenant.find_by_label database_label in
   let make_mail assignments admin =
@@ -40,8 +40,7 @@ let make_messages
     let open CCList in
     filter_map (fun (session, assignments) ->
       assignments
-      |> filter (fun (_, matches_filter) ->
-        MatchesFilter.value matches_filter |> not)
+      |> filter (fun (_, matches_filter) -> MatchesFilter.value matches_filter |> not)
       |> function
       | [] -> None
       | assignments -> Some (session, assignments))
@@ -79,9 +78,7 @@ let make_events ?current_user context database_label experiment sessions =
   let* messages =
     make_messages context ?current_user database_label experiment sessions
   in
-  let assignments =
-    sessions |> flat_map snd >|= Assignment.matchesfilterupdated
-  in
+  let assignments = sessions |> flat_map snd >|= Assignment.matchesfilterupdated in
   Lwt_result.return (assignments, messages)
 ;;
 
@@ -89,8 +86,7 @@ let handle_update ?current_user database_label context =
   let open Assignment in
   let handle experiment filter assignments =
     let matches_filter query contact =
-      Filter.contact_matches_filter database_label query contact
-      ||> MatchesFilter.create
+      Filter.contact_matches_filter database_label query contact ||> MatchesFilter.create
     in
     assignments
     |> Lwt_list.map_s (fun (session, assignments) ->
@@ -116,13 +112,12 @@ let handle_update ?current_user database_label context =
     find_upcoming database_label
     >|> Lwt_list.fold_left_s
           (fun acc (experiment, assignments) ->
-            let filter = Experiment.filter experiment in
-            match acc with
-            | Error err -> Lwt_result.fail err
-            | Ok acc ->
-              handle experiment filter assignments
-              >|+ fun (assignments, emails) ->
-              fst acc @ assignments, snd acc @ emails)
+             let filter = Experiment.filter experiment in
+             match acc with
+             | Error err -> Lwt_result.fail err
+             | Ok acc ->
+               handle experiment filter assignments
+               >|+ fun (assignments, emails) -> fst acc @ assignments, snd acc @ emails)
           (Ok ([], []))
 ;;
 
@@ -131,17 +126,16 @@ let update_upcoming_assignments database_label =
   ||> get_or_failwith
   >|> fun (assignment_events, emails) ->
   let%lwt () =
-    assignment_events
-    |> Lwt_list.iter_s (Assignment.handle_event database_label)
+    assignment_events |> Lwt_list.iter_s (Assignment.handle_event database_label)
   in
   Email.handle_event database_label (Email.BulkSent emails)
 ;;
 
 let update_matches_filter
-  ?current_user
-  pool
-  (context :
-    [< `Experiment of Experiment.t * Filter.t option | `Session of Session.t ])
+      ?current_user
+      pool
+      (context :
+        [< `Experiment of Experiment.t * Filter.t option | `Session of Session.t ])
   =
   handle_update ?current_user pool context
 ;;

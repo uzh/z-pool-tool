@@ -3,8 +3,7 @@ module Database = Database
 open Caqti_request.Infix
 
 let sql_select_columns =
-  [ Pool_queue.Id.sql_select_fragment
-      ~field:"pool_text_message_dlr.queue_job_uuid"
+  [ Pool_queue.Id.sql_select_fragment ~field:"pool_text_message_dlr.queue_job_uuid"
   ; "pool_text_message_dlr.raw"
   ; "pool_text_message_dlr.from"
   ; "pool_text_message_dlr.to"
@@ -21,13 +20,8 @@ let sql_select_columns =
 ;;
 
 let find_request_sql ?(count = false) where_fragment =
-  let columns =
-    if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-  in
-  Format.asprintf
-    {sql|SELECT %s FROM pool_text_message_dlr %s|sql}
-    columns
-    where_fragment
+  let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
+  Format.asprintf {sql|SELECT %s FROM pool_text_message_dlr %s|sql} columns where_fragment
 ;;
 
 let find_report_by_queue_id_request =
@@ -39,9 +33,7 @@ let find_report_by_queue_id_request =
   |> Pool_queue.Repo.Id.t ->! RepoEntity.delivery_report
 ;;
 
-let find_report_by_queue_id pool =
-  Database.find_opt pool find_report_by_queue_id_request
-;;
+let find_report_by_queue_id pool = Database.find_opt pool find_report_by_queue_id_request
 
 let insert_request =
   [%string

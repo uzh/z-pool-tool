@@ -34,19 +34,11 @@ let create =
     let email = Pool_user.EmailAddress.create email |> get_or_failwith in
     match%lwt Pool_user.find_by_email_opt pool email with
     | None ->
-      let firstname =
-        Pool_user.Firstname.create given_name |> get_or_failwith
-      in
+      let firstname = Pool_user.Firstname.create given_name |> get_or_failwith in
       let lastname = Pool_user.Lastname.create name |> get_or_failwith in
       let password = Pool_user.Password.Plain.create password in
       let admin : Admin.create =
-        { id = None
-        ; Admin.email
-        ; password
-        ; firstname
-        ; lastname
-        ; roles = [ role ]
-        }
+        { id = None; Admin.email; password; firstname; lastname; roles = [ role ] }
       in
       let%lwt () =
         Admin.Created admin |> Pool_event.(admin %> handle_system_event pool)
@@ -74,11 +66,7 @@ NOTE: There is NO check if the UUID of a role is correct for CLI commands.
 Example: admin.create econ-uzh example@mail.com securePassword Max Muster RecruiterAll
         |}
   in
-  Sihl.Command.make
-    ~name:"admin.create"
-    ~description:"New admin"
-    ~help
-    (function
+  Sihl.Command.make ~name:"admin.create" ~description:"New admin" ~help (function
     | [ db_pool; email; password; given_name; name; role ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
       (role_of_string role, None)
@@ -127,11 +115,7 @@ Provide all fields to sign up a new contact:
 Example: admin.root.create example@mail.com securePassword Max Muster
         |}
   in
-  Sihl.Command.make
-    ~name:"admin.root.create"
-    ~description:"New admin"
-    ~help
-    (function
+  Sihl.Command.make ~name:"admin.root.create" ~description:"New admin" ~help (function
     | [ email; password; given_name; name ] ->
       let%lwt () = Database.Pool.Root.setup () in
       create_exn email password given_name name

@@ -33,11 +33,7 @@ type notification_history =
   ; queue_entries : (Sihl_email.t * Pool_queue.Instance.t) list
   }
 
-val equal_notification_history
-  :  notification_history
-  -> notification_history
-  -> bool
-
+val equal_notification_history : notification_history -> notification_history -> bool
 val pp_notification_history : Format.formatter -> notification_history -> unit
 val email_experiment_elements : Experiment.t -> (string * string) list
 
@@ -59,11 +55,7 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Database.Label.t -> event -> unit Lwt.t
-
-val find
-  :  Database.Label.t
-  -> Pool_common.Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
+val find : Database.Label.t -> Pool_common.Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_by_experiment
   :  ?query:Query.t

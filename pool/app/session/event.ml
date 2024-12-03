@@ -47,9 +47,7 @@ let handle_event ?user_uuid pool =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Canceled session ->
-    let updated =
-      { session with canceled_at = Some (CanceledAt.create_now ()) }
-    in
+    let updated = { session with canceled_at = Some (CanceledAt.create_now ()) } in
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | Closed session ->
@@ -61,16 +59,12 @@ let handle_event ?user_uuid pool =
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | EmailReminderSent session ->
-    let updated =
-      { session with email_reminder_sent_at = Some (SentAt.create_now ()) }
-    in
+    let updated = { session with email_reminder_sent_at = Some (SentAt.create_now ()) } in
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | TextMsgReminderSent session ->
     let updated =
-      { session with
-        text_message_reminder_sent_at = Some (SentAt.create_now ())
-      }
+      { session with text_message_reminder_sent_at = Some (SentAt.create_now ()) }
     in
     let%lwt () = create_changelog session updated in
     Repo.update pool updated

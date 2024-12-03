@@ -15,14 +15,7 @@ module Answer : sig
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
   val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
-
-  val create
-    :  ?id:Id.t
-    -> ?admin_value:'a
-    -> Pool_common.Id.t
-    -> 'a option
-    -> 'a t
-
+  val create : ?id:Id.t -> ?admin_value:'a -> Pool_common.Id.t -> 'a option -> 'a t
   val id : 'a t -> Id.t
   val value : 'a t -> 'a option
   val admin_value : 'a t -> 'a option
@@ -93,10 +86,7 @@ module Hint : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val find_opt : Pool_common.Language.t -> t -> hint option
-
-  val create
-    :  (Pool_common.Language.t * string) list
-    -> (t, Pool_message.Error.t) result
+  val create : (Pool_common.Language.t * string) list -> (t, Pool_message.Error.t) result
 end
 
 module FieldType : sig
@@ -286,12 +276,7 @@ module Public : sig
   val field_type : t -> FieldType.t
   val increment_version : t -> t
   val to_common_field : Pool_common.Language.t -> t -> Pool_message.Field.t
-
-  val to_common_hint
-    :  Pool_common.Language.t
-    -> t
-    -> Pool_common.I18n.hint option
-
+  val to_common_hint : Pool_common.Language.t -> t -> Pool_common.I18n.hint option
   val validation_hints : t -> Pool_common.I18n.hint list option
   val help_elements : Pool_common.Language.t -> t -> Pool_common.I18n.hint list
 end
@@ -475,13 +460,7 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-
-val handle_event
-  :  ?user_uuid:Pool_common.Id.t
-  -> Database.Label.t
-  -> event
-  -> unit Lwt.t
-
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val find_by_model : Database.Label.t -> Model.t -> t list Lwt.t
 val find_by_group : Database.Label.t -> Group.Id.t -> t list Lwt.t
 val find_ungrouped_by_model : Database.Label.t -> Model.t -> t list Lwt.t
@@ -546,10 +525,7 @@ val find_option
   -> SelectOption.Id.t
   -> (SelectOption.t, Pool_message.Error.t) Lwt_result.t
 
-val find_options_by_field
-  :  Database.Label.t
-  -> Id.t
-  -> SelectOption.t list Lwt.t
+val find_options_by_field : Database.Label.t -> Id.t -> SelectOption.t list Lwt.t
 
 val find_group
   :  Database.Label.t
@@ -557,11 +533,7 @@ val find_group
   -> (Group.t, Pool_message.Error.t) Lwt_result.t
 
 val find_groups_by_model : Database.Label.t -> Model.t -> Group.t list Lwt.t
-
-val find_names
-  :  Database.Label.t
-  -> Id.t list
-  -> (Pool_common.Id.t * Name.t) list Lwt.t
+val find_names : Database.Label.t -> Id.t list -> (Pool_common.Id.t * Name.t) list Lwt.t
 
 module Repo : sig
   module Id : sig

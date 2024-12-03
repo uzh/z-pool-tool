@@ -79,13 +79,7 @@ module Api : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-
-  val create
-    :  Api_key.t
-    -> Database.Label.t
-    -> Guard.PermissionOnTarget.t list
-    -> t
-
+  val create : Api_key.t -> Database.Label.t -> Guard.PermissionOnTarget.t list -> t
   val find : Rock.Request.t -> (t, Pool_message.Error.t) result
   val set : Rock.Request.t -> t -> Rock.Request.t
 end
@@ -130,9 +124,7 @@ module Utils : sig
     -> (Pool_message.Field.t * string) list
 
   module Api : sig
-    val find_authorizable
-      :  Api.t
-      -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
+    val find_authorizable : Api.t -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
   end
 end
 

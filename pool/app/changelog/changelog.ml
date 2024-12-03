@@ -5,10 +5,7 @@ module T (R : RecordSig) = struct
   type record = R.t
 
   let model = R.model
-
-  let compare_at_index_keys =
-    CCOption.value ~default:[] R.changelog_compare_at_index_keys
-  ;;
+  let compare_at_index_keys = CCOption.value ~default:[] R.changelog_compare_at_index_keys
 
   let make_changes before after : Changes.t option =
     let open Changes in
@@ -38,15 +35,15 @@ module T (R : RecordSig) = struct
           l1
           |> CCList.foldi
                (fun acc i before_json ->
-                 Hashtbl.find_opt after i
-                 |> CCOption.value ~default:`Null
-                 |> compare before_json
-                 >|= CCPair.make (CCInt.to_string i)
-                 |> fun change ->
-                 let () = Hashtbl.remove after i in
-                 match change with
-                 | None -> acc
-                 | Some change -> acc @ [ change ])
+                  Hashtbl.find_opt after i
+                  |> CCOption.value ~default:`Null
+                  |> compare before_json
+                  >|= CCPair.make (CCInt.to_string i)
+                  |> fun change ->
+                  let () = Hashtbl.remove after i in
+                  match change with
+                  | None -> acc
+                  | Some change -> acc @ [ change ])
                []
         in
         let changes_after =
@@ -73,9 +70,7 @@ module T (R : RecordSig) = struct
           in
           let value_before = assoc l1 in
           let value_after = assoc l2 in
-          let compare_list_at_index =
-            CCList.mem ~eq key compare_at_index_keys
-          in
+          let compare_list_at_index = CCList.mem ~eq key compare_at_index_keys in
           compare ~compare_list_at_index value_before value_after
           |> CCOption.map (fun value -> key, value))
         |> (function
@@ -86,13 +81,10 @@ module T (R : RecordSig) = struct
       | `List [ `String key1; val1 ], `List [ `String key2; val2 ] ->
         if eq key1 key2
         then compare val1 val2
-        else
-          Some (Change (json_before, json_after))
-          (* Catching equal assoc lists *)
+        else Some (Change (json_before, json_after)) (* Catching equal assoc lists *)
       | `List l1, `List l2 ->
         (match list_to_assoc l1, list_to_assoc l2 with
-         | Some assoc_before, Some assoc_after ->
-           compare assoc_before assoc_after
+         | Some assoc_before, Some assoc_after -> compare assoc_before assoc_after
          | _, _ ->
            if compare_list_at_index
            then compare_list_index l1 l2
@@ -102,12 +94,7 @@ module T (R : RecordSig) = struct
     compare (R.yojson_of_t before) (R.yojson_of_t after)
   ;;
 
-  let make_write
-    ?(id = Id.create ())
-    ?user_uuid
-    ~entity_uuid
-    (before : R.t)
-    (after : R.t)
+  let make_write ?(id = Id.create ()) ?user_uuid ~entity_uuid (before : R.t) (after : R.t)
     =
     (*** the entity_uuid could also be part of the Reord module, as a function.
       This would probably require us to create a Record module for each model,

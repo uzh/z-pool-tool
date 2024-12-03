@@ -8,8 +8,7 @@ let rec yojson_to_html (json : Yojson.Safe.t) =
   | `Int int -> CCInt.to_string int |> to_span
   | `Float float -> CCFloat.to_string float |> to_span
   | `String s -> to_span s
-  | `List lst ->
-    lst |> CCList.map yojson_to_html |> div ~a:[ a_class [ "flexcolumn" ] ]
+  | `List lst -> lst |> CCList.map yojson_to_html |> div ~a:[ a_class [ "flexcolumn" ] ]
   | _ -> Yojson.Safe.pretty_to_string json |> to_span
 ;;
 
@@ -28,8 +27,7 @@ let rec format_changes changes =
       format_assoc_list acc tl
   in
   match changes with
-  | Assoc assocs ->
-    format_assoc_list [] assocs |> div ~a:[ a_class [ "flexcolumn" ] ]
+  | Assoc assocs -> format_assoc_list [] assocs |> div ~a:[ a_class [ "flexcolumn" ] ]
   | Change (before, after) ->
     let format json = yojson_to_html json in
     div
@@ -43,9 +41,7 @@ let rec format_changes changes =
 let list Pool_context.{ language; _ } url changelog =
   let open Pool_common in
   let target_id = "changelog-datatable" in
-  let field_to_string field =
-    Utils.field_to_string_capitalized language field |> txt
-  in
+  let field_to_string field = Utils.field_to_string_capitalized language field |> txt in
   match changelog with
   | None ->
     let trigger_onload =
@@ -53,14 +49,9 @@ let list Pool_context.{ language; _ } url changelog =
       [ a_id target_id; a_user_data "hx-trigger" "load" ]
       @ Data_table.hx_get ~url ~target_id ~push_url:false
     in
-    div
-      [ h2 [ field_to_string Pool_message.Field.History ]
-      ; div ~a:trigger_onload []
-      ]
+    div [ h2 [ field_to_string Pool_message.Field.History ]; div ~a:trigger_onload [] ]
   | Some (changelogs, query) ->
-    let data_table =
-      Data_table.create_meta ~push_url:false url query language
-    in
+    let data_table = Data_table.create_meta ~push_url:false url query language in
     let cols =
       Pool_message.
         [ `custom (field_to_string Field.User)
@@ -86,21 +77,9 @@ let list Pool_context.{ language; _ } url changelog =
       in
       [ td [ user_link ]
       ; td ~a:[ a_class [ "changes-cell" ] ] [ changes |> format_changes ]
-      ; td
-          [ txt
-              (created_at
-               |> CreatedAt.value
-               |> Pool_model.Time.formatted_date_time)
-          ]
+      ; td [ txt (created_at |> CreatedAt.value |> Pool_model.Time.formatted_date_time) ]
       ]
       |> tr
     in
-    Data_table.make
-      ~align_top:true
-      ~target_id
-      ~th_class
-      ~cols
-      ~row
-      data_table
-      changelogs
+    Data_table.make ~align_top:true ~target_id ~th_class ~cols ~row data_table changelogs
 ;;

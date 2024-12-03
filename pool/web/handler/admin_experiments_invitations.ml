@@ -10,9 +10,7 @@ let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let index req =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id)
-  in
+  let error_path = Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id) in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = id |> Experiment.find database_label in
@@ -27,9 +25,7 @@ let index req =
              (filter
               |> Filter.all_query_experiments
               |> Experiment.search_multiple_by_id database_label)
-             (filter
-              |> Filter.all_query_tags
-              |> Tags.find_multiple database_label)
+             (filter |> Filter.all_query_tags |> Tags.find_multiple database_label)
        in
        let* filtered_contacts =
          if Sihl.Configuration.is_production ()
@@ -45,8 +41,7 @@ let index req =
        in
        let* statistics =
          let query =
-           experiment.Experiment.filter
-           |> CCOption.map (fun f -> f.Filter.query)
+           experiment.Experiment.filter |> CCOption.map (fun f -> f.Filter.query)
          in
          Statistics.ExperimentFilter.create database_label experiment query
        in
@@ -70,11 +65,7 @@ let sent_invitations req =
   let error_path =
     Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
   in
-  HttpUtils.Htmx.handler
-    ~error_path
-    ~create_layout
-    ~query:(module Invitation)
-    req
+  HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Invitation) req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label id in
@@ -116,9 +107,9 @@ let create req =
         let retrieved_ids = CCList.map Contact.id contacts in
         CCList.fold_left
           (fun missing id ->
-            match CCList.mem ~eq:Contact.Id.equal id retrieved_ids with
-            | true -> missing
-            | false -> CCList.cons id missing)
+             match CCList.mem ~eq:Contact.Id.equal id retrieved_ids with
+             | true -> missing
+             | false -> CCList.cons id missing)
           []
           contact_ids
       in
@@ -145,12 +136,7 @@ let create req =
       let open Cqrs_command.Invitation_command.Create in
       handle
         ~tags
-        { experiment
-        ; contacts
-        ; invited_contacts
-        ; create_message
-        ; mailing = None
-        }
+        { experiment; contacts; invited_contacts; create_message; mailing = None }
       |> Lwt_result.lift
     in
     let handle events =
@@ -168,8 +154,7 @@ let resend req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let experiment_id, id =
-    ( experiment_id req
-    , HttpUtils.find_id Pool_common.Id.of_string Field.Invitation req )
+    experiment_id req, HttpUtils.find_id Pool_common.Id.of_string Field.Invitation req
   in
   let redirect_path =
     Format.asprintf
@@ -235,9 +220,7 @@ end = struct
   module InvitationCommand = Cqrs_command.Invitation_command
   module Guardian = Middleware.Guardian
 
-  let experiment_effects =
-    Guardian.id_effects Experiment.Id.validate Field.Experiment
-  ;;
+  let experiment_effects = Guardian.id_effects Experiment.Id.validate Field.Experiment
 
   let combined_effects validation_set =
     let open CCResult.Infix in

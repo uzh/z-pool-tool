@@ -30,16 +30,15 @@ end = struct
     let active, inactive =
       CCList.partition_filter_map
         (fun field ->
-          let active = getter field in
-          CCList.find_opt
-            (fun selected_id ->
-              selected_id |> Id.of_string |> Id.equal (id field))
-            selected
-          |> function
-          | Some (_ : string) when not active ->
-            `Left (Updated (field, setter true field))
-          | None when active -> `Right (Updated (field, setter false field))
-          | Some (_ : string) | None -> `Drop)
+           let active = getter field in
+           CCList.find_opt
+             (fun selected_id -> selected_id |> Id.of_string |> Id.equal (id field))
+             selected
+           |> function
+           | Some (_ : string) when not active ->
+             `Left (Updated (field, setter true field))
+           | None when active -> `Right (Updated (field, setter false field))
+           | Some (_ : string) | None -> `Drop)
         fields
     in
     active @ inactive |> CCList.map Pool_event.custom_field |> CCResult.return

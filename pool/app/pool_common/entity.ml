@@ -17,10 +17,7 @@ module Language = struct
   include Pool_model.Base.SelectorType (Core)
   include Core
 
-  let label country_code =
-    country_code |> show |> Utils.Countries.find_country_name
-  ;;
-
+  let label country_code = country_code |> show |> Utils.Countries.find_country_name
   let all_codes = all |> CCList.map show
 
   let field_of_t =
@@ -79,9 +76,7 @@ module File = struct
 
     let create m =
       let open CCInt.Infix in
-      if m >= CCInt.zero
-      then Ok m
-      else Error Pool_message.(Error.Invalid Field.Filesize)
+      if m >= CCInt.zero then Ok m else Error Pool_message.(Error.Invalid Field.Filesize)
     ;;
   end
 
@@ -259,10 +254,7 @@ module VerificationCode = struct
     let rec go n acc =
       if n = 0
       then acc
-      else
-        go
-          (n - 1)
-          (Format.asprintf "%s%s" acc (Random.int 10 |> CCInt.to_string))
+      else go (n - 1) (Format.asprintf "%s%s" acc (Random.int 10 |> CCInt.to_string))
     in
     go length ""
   ;;

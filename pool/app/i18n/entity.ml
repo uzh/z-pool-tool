@@ -18,8 +18,7 @@ module Key = struct
       [@printer print "dashboard_upcoming_sessions"]
       | DashboardOnlineStudies [@name "dashboard_online_studies"]
       [@printer print "dashboard_online_studies"]
-      | DashboardExperimentRegistration
-      [@name "dashboard_experiment_registration"]
+      | DashboardExperimentRegistration [@name "dashboard_experiment_registration"]
       [@printer print "dashboard_experiment_registration"]
       | DashboardExperimentHistory [@name "dashboard_experiment_history"]
       [@printer print "dashboard_experiment_history"]
@@ -79,10 +78,7 @@ type t =
   }
 [@@deriving eq, show]
 
-let create key language content =
-  { id = Common.Id.create (); key; language; content }
-;;
-
+let create key language content = { id = Common.Id.create (); key; language; content }
 let compare (one : t) (two : t) = CCString.compare (one |> show) (two |> show)
 let id m = m.id
 let key m = m.key

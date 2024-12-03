@@ -42,9 +42,7 @@ let pool_invitations_left_join =
     |sql}
 ;;
 
-let condition_registration_not_disabled =
-  "pool_experiments.registration_disabled = 0"
-;;
+let condition_registration_not_disabled = "pool_experiments.registration_disabled = 0"
 
 let condition_allow_uninvited_signup =
   {sql|
@@ -75,10 +73,7 @@ let assignments_base_condition ~require_participated =
 ;;
 
 let condition_assigned = assignments_base_condition ~require_participated:false
-
-let condition_participated =
-  assignments_base_condition ~require_participated:true
-;;
+let condition_participated = assignments_base_condition ~require_participated:true
 
 let condition_is_invited =
   {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
@@ -102,8 +97,7 @@ let find_upcoming_to_register_request experiment_type () =
   in
   let experiment_type, session_condition, assignment_condition, order_by =
     let type_condition =
-      Format.asprintf
-        {sql| pool_experiments.assignment_without_session = %s |sql}
+      Format.asprintf {sql| pool_experiments.assignment_without_session = %s |sql}
     in
     match experiment_type with
     | `Online ->
@@ -111,8 +105,7 @@ let find_upcoming_to_register_request experiment_type () =
       , timewindow_exists
       , condition_participated
       , "ORDER BY pool_sessions.start" )
-    | `OnSite ->
-      type_condition "0", onsite_session_exists, condition_assigned, ""
+    | `OnSite -> type_condition "0", onsite_session_exists, condition_assigned, ""
   in
   let not_on_waitinglist =
     {sql|
@@ -195,10 +188,7 @@ let find_pending_waitinglists_by_contact_request =
 ;;
 
 let find_pending_waitinglists_by_contact pool contact =
-  Database.collect
-    pool
-    find_pending_waitinglists_by_contact_request
-    (Contact.id contact)
+  Database.collect pool find_pending_waitinglists_by_contact_request (Contact.id contact)
 ;;
 
 let find_past_experiments_by_contact pool contact =

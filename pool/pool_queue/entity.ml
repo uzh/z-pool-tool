@@ -64,8 +64,7 @@ module RunAt = struct
     let now = Ptime_clock.now () in
     function
     | Delay delay ->
-      Ptime.add_span now delay
-      |> CCOption.get_exn_or "Could not add delay for job."
+      Ptime.add_span now delay |> CCOption.get_exn_or "Could not add delay for job."
     | Now -> now
   ;;
 end
@@ -101,14 +100,10 @@ module Instance = struct
     match polled_at, handled_at with
     | None, _ -> false
     | Some _, None -> true
-    | Some polled_at, Some handled_at ->
-      Ptime.is_later ~than:handled_at polled_at
+    | Some polled_at, Some handled_at -> Ptime.is_later ~than:handled_at polled_at
   ;;
 
-  let should_run
-    ?(is_polled = false)
-    ({ tries; max_tries; run_at; polled_at; _ } as job)
-    =
+  let should_run ?(is_polled = false) ({ tries; max_tries; run_at; polled_at; _ } as job) =
     let has_tries_left = tries < max_tries in
     let is_after_delay = Ptime_clock.now () |> Ptime.is_later ~than:run_at in
     let is_pending = is_pending job in
@@ -121,9 +116,7 @@ module Instance = struct
   let resendable job =
     let open CCResult in
     let* () =
-      if is_pending job || currently_handled job
-      then Error Error.JobPending
-      else Ok ()
+      if is_pending job || currently_handled job then Error Error.JobPending else Ok ()
     in
     let* () =
       let open JobName in
@@ -136,18 +129,18 @@ module Instance = struct
   ;;
 
   let create
-    ?(id = Id.create ())
-    ?message_template
-    ?(tries = 0)
-    ?(max_tries = default_tries)
-    ?(status = Status.Pending)
-    ?last_error
-    ?last_error_at
-    ?(run_at = Now)
-    ?clone_of
-    database_label
-    name
-    input
+        ?(id = Id.create ())
+        ?message_template
+        ?(tries = 0)
+        ?(max_tries = default_tries)
+        ?(status = Status.Pending)
+        ?last_error
+        ?last_error_at
+        ?(run_at = Now)
+        ?clone_of
+        database_label
+        name
+        input
     =
     { id
     ; name
@@ -224,12 +217,8 @@ module Job = struct
     ; encode : 'a -> string
     ; decode : string -> ('a, Pool_message.Error.t) result
     ; handle :
-        ?id:Id.t
-        -> Database.Label.t
-        -> 'a
-        -> (unit, Pool_message.Error.t) Lwt_result.t
-    ; failed :
-        Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
+        ?id:Id.t -> Database.Label.t -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t
+    ; failed : Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
     }
@@ -238,25 +227,25 @@ module Job = struct
   let decode { decode; _ } = decode
 
   let create
-    ?(max_tries = default_tries)
-    ?(retry_delay = default_retry_delay)
-    ?(failed = Instance.default_error_handler)
-    handle
-    encode
-    decode
-    name
+        ?(max_tries = default_tries)
+        ?(retry_delay = default_retry_delay)
+        ?(failed = Instance.default_error_handler)
+        handle
+        encode
+        decode
+        name
     =
     { name; handle; failed; max_tries; retry_delay; encode; decode }
   ;;
 
   let to_instance
-    ?id
-    ?message_template
-    ?run_at
-    ?clone_of
-    label
-    input
-    ({ name; encode; max_tries; _ } : 'a t)
+        ?id
+        ?message_template
+        ?run_at
+        ?clone_of
+        label
+        input
+        ({ name; encode; max_tries; _ } : 'a t)
     =
     Instance.create
       ?id
@@ -275,10 +264,7 @@ type job_ctx =
   | Clone of Id.t
 [@@deriving eq, show, yojson]
 
-let job_ctx_create ids =
-  Create (ids |> CCList.stable_sort Pool_common.Id.compare)
-;;
-
+let job_ctx_create ids = Create (ids |> CCList.stable_sort Pool_common.Id.compare)
 let job_ctx_clone id = Clone id
 
 module AnyJob = struct
@@ -289,8 +275,7 @@ module AnyJob = struct
         -> Database.Label.t
         -> string
         -> (unit, Pool_message.Error.t) Lwt_result.t
-    ; failed :
-        Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
+    ; failed : Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
     ; execute_on_root : bool
@@ -347,8 +332,7 @@ let build_options all show =
   all
   |> CCList.map (fun item ->
     let label =
-      languages
-      |> CCList.map (fun lang -> lang, show item |> CCString.capitalize_ascii)
+      languages |> CCList.map (fun lang -> lang, show item |> CCString.capitalize_ascii)
     in
     let value = show item in
     Query.Filter.SelectOption.create label value)

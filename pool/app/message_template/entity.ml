@@ -25,8 +25,7 @@ module Label = struct
     [@printer print "contact_email_change_attempt"]
     | ContactRegistrationAttempt [@name "contact_registration_attempt"]
     [@printer print "contact_registration_attempt"]
-    | EmailVerification [@name "email_verification"]
-    [@printer print "email_verification"]
+    | EmailVerification [@name "email_verification"] [@printer print "email_verification"]
     | ExperimentInvitation [@name "experiment_invitation"]
     [@printer print "experiment_invitation"]
     | ManualSessionMessage [@name "manual_session_message"]
@@ -35,31 +34,24 @@ module Label = struct
     [@printer print "matcher_notification"]
     | MatchFilterUpdateNotification [@name "match_filter_update_notification"]
     [@printer print "match_filter_update_notification"]
-    | PasswordChange [@name "password_change"]
-    [@printer print "password_change"]
+    | PasswordChange [@name "password_change"] [@printer print "password_change"]
     | PasswordReset [@name "password_reset"] [@printer print "password_reset"]
-    | PhoneVerification [@name "phone_verification"]
-    [@printer print "phone_verification"]
+    | PhoneVerification [@name "phone_verification"] [@printer print "phone_verification"]
     | ProfileUpdateTrigger [@name "profile_update_trigger"]
     [@printer print "profile_update_trigger"]
     | SignUpVerification [@name "signup_verification"]
     [@printer print "signup_verification"]
     | SessionCancellation [@name "session_cancellation"]
     [@printer print "session_cancellation"]
-    | SessionReminder [@name "session_reminder"]
-    [@printer print "session_reminder"]
-    | SessionReschedule [@name "session_reschedule"]
-    [@printer print "session_reschedule"]
+    | SessionReminder [@name "session_reminder"] [@printer print "session_reminder"]
+    | SessionReschedule [@name "session_reschedule"] [@printer print "session_reschedule"]
     | UserImport [@name "user_import"] [@printer print "user_import"]
     | WaitingListConfirmation [@name "waiting_list_confirmation"]
     [@printer print "waiting_list_confirmation"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
 
   let read = Utils.Json.read_variant t_of_yojson
-
-  let read_from_url m =
-    m |> CCString.replace ~which:`All ~sub:"-" ~by:"_" |> read
-  ;;
+  let read_from_url m = m |> CCString.replace ~which:`All ~sub:"-" ~by:"_" |> read
 
   let of_string str =
     try Ok (read str) with
@@ -151,9 +143,7 @@ type layout =
 let to_human_label m = m.label |> Label.to_human
 
 let prefixed_template_url ?append m =
-  let base =
-    Format.asprintf "%s/%s" (Label.prefixed_human_url m.label) (Id.value m.id)
-  in
+  let base = Format.asprintf "%s/%s" (Label.prefixed_human_url m.label) (Id.value m.id) in
   append |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
 ;;
 
@@ -161,8 +151,7 @@ let template_hint label =
   let open Label in
   let open Pool_common.I18n in
   match label with
-  | AccountSuspensionNotification ->
-    MessageTemplateAccountSuspensionNotification
+  | AccountSuspensionNotification -> MessageTemplateAccountSuspensionNotification
   | AssignmentCancellation -> MessageTemplateAssignmentCancellation
   | AssignmentConfirmation -> MessageTemplateAssignmentConfirmation
   | AssignmentSessionChange -> MessageTemplateAssignmentSessionChange
@@ -172,8 +161,7 @@ let template_hint label =
   | ExperimentInvitation -> MessageTemplateExperimentInvitation
   | ManualSessionMessage -> MessageTemplateManualSessionMessage
   | MatcherNotification -> MessageTemplateMatcherNotification
-  | MatchFilterUpdateNotification ->
-    MessageTemplateMatchFilterUpdateNotification
+  | MatchFilterUpdateNotification -> MessageTemplateMatchFilterUpdateNotification
   | PasswordChange -> MessageTemplatePasswordChange
   | PasswordReset -> MessageTemplatePasswordReset
   | PhoneVerification -> MessageTemplatePhoneVerification

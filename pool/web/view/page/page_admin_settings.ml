@@ -10,19 +10,19 @@ module Tags = Page_admin_settings_tags
 module TextMessage = Page_admin_settings_text_messages
 
 let show
-  tenant_languages
-  email_suffixes
-  contact_email
-  inactive_user_disable_after
-  inactive_user_warning
-  trigger_profile_update_after
-  default_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  user_import_first_reminder
-  user_import_second_reminder
-  Pool_context.{ language; csrf; _ }
-  text_messages_enabled
-  flash_fetcher
+      tenant_languages
+      email_suffixes
+      contact_email
+      inactive_user_disable_after
+      inactive_user_warning
+      trigger_profile_update_after
+      default_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      user_import_first_reminder
+      user_import_second_reminder
+      Pool_context.{ language; csrf; _ }
+      text_messages_enabled
+      flash_fetcher
   =
   let action_path action =
     Sihl.Web.externalize_path
@@ -63,18 +63,16 @@ let show
     let field_elements =
       CCList.map
         (fun (language, selected) ->
-          let attrs =
-            [ a_input_type `Checkbox
-            ; a_name (Pool_common.Language.show language)
-            ]
-          in
-          let selected =
-            match selected with
-            | false -> []
-            | true -> [ a_checked () ]
-          in
-          let checkbox = input ~a:(attrs @ selected) () in
-          div [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
+           let attrs =
+             [ a_input_type `Checkbox; a_name (Pool_common.Language.show language) ]
+           in
+           let selected =
+             match selected with
+             | false -> []
+             | true -> [ a_checked () ]
+           in
+           let checkbox = input ~a:(attrs @ selected) () in
+           div [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
         all_languages
       |> Component.Sortable.create_sortable
     in
@@ -84,8 +82,7 @@ let show
         ([ csrf_element csrf (); field_elements ] @ [ submit () ])
     in
     let hint =
-      "You have to add Terms and Condidions before you can activate a new \
-       language."
+      "You have to add Terms and Condidions before you can activate a new language."
     in
     "Languages", [ form ], Some hint
   in
@@ -121,8 +118,7 @@ let show
             ; a_action (action_path `DeleteEmailSuffix)
             ; a_user_data
                 "confirmable"
-                Pool_common.(
-                  Utils.confirmable_to_string language I18n.DeleteEmailSuffix)
+                Pool_common.(Utils.confirmable_to_string language I18n.DeleteEmailSuffix)
             ]
           [ submit_icon ~classnames:[ "error" ] Icon.TrashOutline
           ; input
@@ -171,10 +167,7 @@ let show
     let suffix_rows = function
       | [] ->
         div
-          [ txt
-              Pool_common.(
-                Utils.hint_to_string language I18n.SettingsNoEmailSuffixes)
-          ]
+          [ txt Pool_common.(Utils.hint_to_string language I18n.SettingsNoEmailSuffixes) ]
       | suffixes ->
         div
           [ control_to_string Message.(Control.Update (Some Field.EmailSuffix))
@@ -235,9 +228,7 @@ let show
     let open Settings.TriggerProfileUpdateAfter in
     let title =
       Pool_common.(
-        Utils.field_to_string
-          language
-          Pool_message.Field.TriggerProfileUpdateAfter)
+        Utils.field_to_string language Pool_message.Field.TriggerProfileUpdateAfter)
       |> CCString.capitalize_ascii
     in
     let form =
@@ -343,8 +334,7 @@ let show
     ; default_lead_time
     ; user_import_reminder
     ]
-    |> CCList.map (fun (title, columns, hint) ->
-      make_columns title ?hint columns)
+    |> CCList.map (fun (title, columns, hint) -> make_columns title ?hint columns)
     |> div ~a:[ a_class [ "stack" ] ]
   in
   div

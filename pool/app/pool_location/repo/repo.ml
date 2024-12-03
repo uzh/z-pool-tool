@@ -63,13 +63,8 @@ module Sql = struct
   ;;
 
   let find_request_sql ?(count = false) where_fragment =
-    let columns =
-      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-    in
-    Format.asprintf
-      {sql|SELECT %s FROM pool_locations %s|sql}
-      columns
-      where_fragment
+    let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
+    Format.asprintf {sql|SELECT %s FROM pool_locations %s|sql} columns where_fragment
   ;;
 
   let search_select =
@@ -176,9 +171,7 @@ module Sql = struct
            Id.t
            (t2
               Name.t
-              (t2
-                 (option Description.t)
-                 (t2 Address.t (t2 (option Link.t) Status.t))))
+              (t2 (option Description.t) (t2 Address.t (t2 (option Link.t) Status.t))))
          ->. unit)
   ;;
 
@@ -192,10 +185,7 @@ module Sql = struct
   let search_request ?joins ?conditions ~limit () =
     let default_contidion = "pool_locations.name LIKE ?" in
     let joined_select =
-      CCOption.map_or
-        ~default:search_select
-        (Format.asprintf "%s %s" search_select)
-        joins
+      CCOption.map_or ~default:search_select (Format.asprintf "%s %s" search_select) joins
     in
     let where =
       CCOption.map_or
@@ -206,19 +196,9 @@ module Sql = struct
     Format.asprintf "%s WHERE %s LIMIT %i" joined_select where limit
   ;;
 
-  let search
-    ?conditions
-    ?(dyn = Dynparam.empty)
-    ?exclude
-    ?joins
-    ?(limit = 20)
-    pool
-    query
-    =
+  let search ?conditions ?(dyn = Dynparam.empty) ?exclude ?joins ?(limit = 20) pool query =
     let open Caqti_request.Infix in
-    let exclude_ids =
-      Database.exclude_ids "pool_locations.uuid" Entity.Id.value
-    in
+    let exclude_ids = Database.exclude_ids "pool_locations.uuid" Entity.Id.value in
     let dyn = Dynparam.(dyn |> add Caqti_type.string ("%" ^ query ^ "%")) in
     let dyn, exclude =
       exclude |> CCOption.map_or ~default:(dyn, None) (exclude_ids dyn)
@@ -232,8 +212,7 @@ module Sql = struct
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
-      search_request ?joins ?conditions ~limit ()
-      |> pt ->* Caqti_type.t2 Id.t Name.t
+      search_request ?joins ?conditions ~limit () |> pt ->* Caqti_type.t2 Id.t Name.t
     in
     Database.collect pool request pv
   ;;
@@ -257,7 +236,7 @@ module Sql = struct
       let dyn =
         CCList.fold_left
           (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
           Dynparam.empty
           ids
       in

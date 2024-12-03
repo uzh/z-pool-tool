@@ -31,16 +31,10 @@ let update req command success_message =
     Sihl.Web.Request.to_multipart_form_data_exn req
     ||> HttpUtils.remove_empty_values_multiplart
   in
-  let urlencoded =
-    multipart_encoded |> HttpUtils.multipart_to_urlencoded file_fields
-  in
+  let urlencoded = multipart_encoded |> HttpUtils.multipart_to_urlencoded file_fields in
   let tags = Pool_context.Logger.Tags.req req in
-  let id =
-    HttpUtils.get_field_router_param req tenant |> Pool_tenant.Id.of_string
-  in
-  let redirect_path =
-    Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
-  in
+  let id = HttpUtils.get_field_router_param req tenant |> Pool_tenant.Id.of_string in
+  let redirect_path = Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id) in
   let result { Pool_context.user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
@@ -102,9 +96,7 @@ let update req command success_message =
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
-let update_detail req =
-  update req `EditDetail Pool_message.Success.TenantUpdateDetails
-;;
+let update_detail req = update req `EditDetail Pool_message.Success.TenantUpdateDetails
 
 let update_database req =
   update req `EditDatabase Pool_message.Success.TenantUpdateDatabase
@@ -128,9 +120,7 @@ let delete_asset req =
       |> Lwt_result.lift
     in
     let handle = Pool_event.handle_events Database.Pool.Root.label user in
-    let destroy_file () =
-      Storage.delete database_label (Common.Id.value asset_id)
-    in
+    let destroy_file () = Storage.delete database_label (Common.Id.value asset_id) in
     let return_to_tenant () =
       Http_utils.redirect_to_with_actions
         redirect_path

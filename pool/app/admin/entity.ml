@@ -19,10 +19,7 @@ type t =
 let user { user; _ } = user
 
 let create ~email_verified (user : Pool_user.t) : t =
-  { user
-  ; email_verified
-  ; import_pending = Pool_user.ImportPending.create false
-  }
+  { user; email_verified; import_pending = Pool_user.ImportPending.create false }
 ;;
 
 let id ({ user; _ } : t) = user.Pool_user.id |> Id.of_user
