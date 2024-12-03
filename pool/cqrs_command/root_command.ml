@@ -28,9 +28,7 @@ end = struct
     ; lastname : User.Lastname.t
     }
 
-  let command email password firstname lastname =
-    { email; password; firstname; lastname }
-  ;;
+  let command email password firstname lastname = { email; password; firstname; lastname }
 
   let schema =
     Conformist.(
@@ -47,9 +45,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) ?allowed_email_suffixes command =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
-    let* () =
-      Pool_user.EmailAddress.validate allowed_email_suffixes command.email
-    in
+    let* () = Pool_user.EmailAddress.validate allowed_email_suffixes command.email in
     let admin : Admin.create =
       { id = None
       ; Admin.email = command.email

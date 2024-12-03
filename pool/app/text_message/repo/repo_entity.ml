@@ -30,8 +30,7 @@ let delivery_report =
                 , ( dlr_mask
                   , ( error_code
                     , ( error_message
-                      , ( submit_date
-                        , (done_date, (plmn, (country, (sms_cost, ())))) ) ) )
+                      , (submit_date, (done_date, (plmn, (country, (sms_cost, ()))))) ) )
                   ) ) ) ) ) )
     =
     Ok

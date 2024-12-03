@@ -36,11 +36,7 @@ let update_and_return ?history database_label job =
 ;;
 
 let handle label = Instance.handle %> update_and_return label
-
-let fail label retry_delay job =
-  Instance.fail retry_delay job %> update_and_return label
-;;
-
+let fail label retry_delay job = Instance.fail retry_delay job %> update_and_return label
 let success label = Instance.success %> update_and_return label
 
 let archive instance =
@@ -59,9 +55,7 @@ let dev_dispatch
   let open Utils.Lwt_result.Infix in
   Logs.info (fun m -> m ?tags "Skipping queue");
   Logs.debug (fun m ->
-    m
-      ?tags
-      "Environment is not 'production' and/or var `QUEUE_FORCE_ASYNC` not set");
+    m ?tags "Environment is not 'production' and/or var `QUEUE_FORCE_ASYNC` not set");
   match%lwt decode input |> Lwt_result.lift >>= handle database_label with
   | Ok () -> callback instance
   | Error msg ->
@@ -104,8 +98,7 @@ let dispatch
           | Clone id -> Repo_mapping.duplicate_for_new_job label id
           | Create entity_uuids ->
             Lwt_list.iter_s
-              (Entity_mapping.(create instance %> to_write)
-               %> Repo_mapping.insert label)
+              (Entity_mapping.(create instance %> to_write) %> Repo_mapping.insert label)
               entity_uuids)
         job_ctx
     in
@@ -113,31 +106,21 @@ let dispatch
   else dev_dispatch ~callback ~tags job instance
 ;;
 
-let dispatch_all
-      ?(callback = fun (_ : 'a) -> Lwt.return_unit)
-      ?run_at
-      label
-      inputs
-      job
-  =
+let dispatch_all ?(callback = fun (_ : 'a) -> Lwt.return_unit) ?run_at label inputs job =
   let tags = Database.Logger.Tags.create label in
   let config = Sihl.Configuration.read schema in
   let instances, create, clone =
     CCList.fold_left
       (fun (init_instances, init_create, init_clone)
         (id, input, message_template, job_ctx) ->
-         let instance =
-           Job.to_instance ~id ?message_template ?run_at label input job
-         in
+         let instance = Job.to_instance ~id ?message_template ?run_at label input job in
          match job_ctx with
          | Create uuids ->
            ( CCList.cons' init_instances instance
            , init_create @ CCList.map (Entity_mapping.create instance) uuids
            , init_clone )
          | Clone uuid ->
-           ( CCList.cons' init_instances instance
-           , init_create
-           , CCList.cons' init_clone uuid ))
+           CCList.cons' init_instances instance, init_create, CCList.cons' init_clone uuid)
       ([], [], [])
       inputs
   in
@@ -145,9 +128,7 @@ let dispatch_all
   then (
     let%lwt () = Repo.enqueue_all label instances in
     let%lwt () = Repo_mapping.insert_all label create in
-    let%lwt () =
-      Lwt_list.iter_s (Repo_mapping.duplicate_for_new_job label) clone
-    in
+    let%lwt () = Lwt_list.iter_s (Repo_mapping.duplicate_for_new_job label) clone in
     Lwt_list.iter_s callback instances)
   else Lwt_list.iter_s (dev_dispatch ~callback ~tags job) instances
 ;;
@@ -169,8 +150,8 @@ let run_job
     Lwt.catch
       (fun () -> handle ~id database_label input)
       (log_reraise
-         "Exception caught while running job, this is a bug in your job \
-          handler. Don't throw exceptions there, use CCResult.t instead.")
+         "Exception caught while running job, this is a bug in your job handler. Don't \
+          throw exceptions there, use CCResult.t instead.")
   in
   match result with
   | Error msg ->
@@ -179,8 +160,8 @@ let run_job
          let%lwt () = failed database_label msg instance in
          Lwt.return_error msg)
       (log_reraise
-         "Exception caught while cleaning up job, this is a bug in your job \
-          failure handler, make sure to not throw exceptions there.")
+         "Exception caught while cleaning up job, this is a bug in your job failure \
+          handler, make sure to not throw exceptions there.")
   | Ok () ->
     Logs.debug (fun m -> m "Successfully ran instance: %s" (Id.show id));
     Lwt.return_ok ()
@@ -245,8 +226,7 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
   in
   create
     [%string
-      "queue [%{Database.Label.value database_label}]: %{JobName.show \
-       job.AnyJob.name}"]
+      "queue [%{Database.Label.value database_label}]: %{JobName.show job.AnyJob.name}"]
     interval
     (Some database_label)
     periodic_fcn
@@ -254,9 +234,7 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
 
 let start () =
   let tags = Database.Logger.Tags.create Database.Pool.Root.label in
-  let database_labels =
-    Database.(Pool.Tenant.all ~status:[ Status.Active ] ())
-  in
+  let database_labels = Database.(Pool.Tenant.all ~status:[ Status.Active ] ()) in
   Logs.info (fun m ->
     m
       ~tags

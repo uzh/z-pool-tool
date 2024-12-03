@@ -59,8 +59,7 @@ let write action req =
     let events =
       let open Cqrs_command.Organisational_unit_command in
       match action with
-      | `Create ->
-        Create.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags)
+      | `Create -> Create.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags)
       | `Update id ->
         let* ou = Organisational_unit.find database_label id in
         Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags ou)
@@ -104,10 +103,7 @@ let show action req =
 let changelog req =
   let ou_id = id req in
   let url =
-    HttpUtils.Url.Admin.organisational_unit_path
-      ~suffix:"changelog"
-      ~id:ou_id
-      ()
+    HttpUtils.Url.Admin.organisational_unit_path ~suffix:"changelog" ~id:ou_id ()
   in
   let open Organisational_unit in
   Helpers.Changelog.htmx_handler ~url (Id.to_common ou_id) req
@@ -126,9 +122,7 @@ module Access : module type of Helpers.Access = struct
   ;;
 
   let index =
-    Guardian.validate_admin_entity
-      ~any_id:true
-      Organisational_unit.Guard.Access.index
+    Guardian.validate_admin_entity ~any_id:true Organisational_unit.Guard.Access.index
   ;;
 
   let create = Guardian.validate_admin_entity Command.Create.effects

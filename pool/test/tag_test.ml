@@ -37,8 +37,7 @@ module Data = struct
 
     let update =
       [ Field.(Title |> show), [ title_updated |> Tags.Title.value ]
-      ; ( Field.(Description |> show)
-        , [ description_updated |> Tags.Description.value ] )
+      ; Field.(Description |> show), [ description_updated |> Tags.Description.value ]
       ; Field.(Model |> show), [ model |> Tags.Model.show ]
       ]
     ;;
@@ -47,18 +46,12 @@ module Data = struct
       Tags.create ~id ~description title model |> get_or_failwith
     ;;
 
-    let create_without_description () =
-      Tags.create ~id title model |> get_or_failwith
-    ;;
+    let create_without_description () = Tags.create ~id title model |> get_or_failwith
 
     let updated_tag () =
       create_with_description ()
       |> fun tag ->
-      Tags.
-        { tag with
-          title = title_updated
-        ; description = Some description_updated
-        }
+      Tags.{ tag with title = title_updated; description = Some description_updated }
     ;;
   end
 end
@@ -161,8 +154,7 @@ let assign_tag_to_contact _ () =
   in
   let expected = [ tag ] in
   let () =
-    Alcotest.(
-      check (list testable_tag) "all needed tags assigned" expected found_tagged)
+    Alcotest.(check (list testable_tag) "all needed tags assigned" expected found_tagged)
   in
   Lwt.return_unit
 ;;
@@ -179,8 +171,7 @@ let remove_tag_from_contact _ () =
   in
   let expected = [] in
   let () =
-    Alcotest.(
-      check (list testable_tag) "all needed tags assigned" expected found_tagged)
+    Alcotest.(check (list testable_tag) "all needed tags assigned" expected found_tagged)
   in
   Lwt.return_unit
 ;;
@@ -230,8 +221,7 @@ let assign_auto_tag_to_experiment () =
   let expected =
     Ok
       [ Tags.(
-          ParticipationTagAssigned
-            (ParticipationTags.Experiment experiment_id, tag.id))
+          ParticipationTagAssigned (ParticipationTags.Experiment experiment_id, tag.id))
         |> Pool_event.tags
       ]
   in
@@ -251,8 +241,7 @@ let remove_auto_tag_from_experiment () =
   let expected =
     Ok
       [ Tags.(
-          ParticipationTagRemoved
-            (ParticipationTags.Experiment experiment_id, tag.id))
+          ParticipationTagRemoved (ParticipationTags.Experiment experiment_id, tag.id))
         |> Pool_event.tags
       ]
   in

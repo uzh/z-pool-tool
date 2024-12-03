@@ -30,16 +30,14 @@ let htmx_attribs
   let target = target |> CCOption.map (a_user_data "hx-target") in
   let hx_vals =
     let identifier =
-      identifier
-      |> CCOption.map (fun identifier -> "id", format_identifiers identifier)
+      identifier |> CCOption.map (fun identifier -> "id", format_identifiers identifier)
     in
     let allow_empty_values =
       if allow_empty_values then Some ("allow_empty_values", "true") else None
     in
     let templates_disabled =
       templates_disabled
-      |> CCOption.map (fun disabled ->
-        templates_disabled_key, Bool.to_string disabled)
+      |> CCOption.map (fun disabled -> templates_disabled_key, Bool.to_string disabled)
     in
     [ identifier; allow_empty_values; templates_disabled ]
     |> CCList.filter_map CCFun.id
@@ -48,8 +46,7 @@ let htmx_attribs
     then []
     else
       values
-      |> CCList.map (fun (key, value) ->
-        Format.asprintf "\"%s\": \"%s\"" key value)
+      |> CCList.map (fun (key, value) -> Format.asprintf "\"%s\": \"%s\"" key value)
       |> CCString.concat ","
       |> fun values -> [ a_user_data "hx-vals" (Format.asprintf "{%s}" values) ]
   in

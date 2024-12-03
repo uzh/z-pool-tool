@@ -85,9 +85,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     in
     admin_authorizable ~roles admin
   | DetailsUpdated (admin, { firstname; lastname }) ->
-    let%lwt (_ : Pool_user.t) =
-      User.update pool ~lastname ~firstname (user admin)
-    in
+    let%lwt (_ : Pool_user.t) = User.update pool ~lastname ~firstname (user admin) in
     Lwt.return_unit
   | EmailVerified admin ->
     let%lwt (_ : Pool_user.t) = User.confirm pool admin.user in
@@ -102,13 +100,9 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         (Pool_user.Password.to_confirmed password)
       >|- Pool_common.Utils.with_log_error ~src ~tags
     in
-    Repo.update
-      pool
-      { admin with import_pending = Pool_user.ImportPending.create false }
+    Repo.update pool { admin with import_pending = Pool_user.ImportPending.create false }
   | ImportDisabled admin ->
-    Repo.update
-      pool
-      { admin with import_pending = Pool_user.ImportPending.create false }
+    Repo.update pool { admin with import_pending = Pool_user.ImportPending.create false }
   | PromotedContact contact_id ->
     let target =
       Guard.Persistence.Target.find

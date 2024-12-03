@@ -18,14 +18,10 @@ let account_suspension_notification =
   let email_text =
     [ p
         [ txt
-            "due to too many failed login attempts, your account has been \
-             temporarily suspended."
+            "due to too many failed login attempts, your account has been temporarily \
+             suspended."
         ]
-    ; p
-        [ txt
-            "If these attempts were not made by you, please inform an \
-             administrator."
-        ]
+    ; p [ txt "If these attempts were not made by you, please inform an administrator." ]
     ]
     |> add_salutation
     |> html_to_string
@@ -90,15 +86,8 @@ The participation in the session is compulsory.|}
 let assignment_session_change =
   let label = Label.AssignmentSessionChange in
   let email_text =
-    [ p
-        [ txt "You have been assigned to a new session:"
-        ; br ()
-        ; txt "{sessionOverview}"
-        ]
-    ; p
-        [ txt
-            "You are no longer signed up for the session on {oldSessionStart}."
-        ]
+    [ p [ txt "You have been assigned to a new session:"; br (); txt "{sessionOverview}" ]
+    ; p [ txt "You are no longer signed up for the session on {oldSessionStart}." ]
     ]
     |> add_salutation
     |> html_to_string
@@ -139,13 +128,13 @@ let email_verification =
         ]
     ; p
         [ txt
-            "If this action wasn`t performed by you, please ignore this email \
-             or reply to let us know."
+            "If this action wasn`t performed by you, please ignore this email or reply \
+             to let us know."
         ]
     ; p
         [ txt
-            "If the above link does not work, please copy the following link \
-             into your browser manually: {verificationUrl}"
+            "If the above link does not work, please copy the following link into your \
+             browser manually: {verificationUrl}"
         ]
     ]
     |> add_salutation
@@ -187,8 +176,8 @@ let experiment_invitation =
         ]
     ; p
         [ txt
-            "If the above link doesn't work, please copy the following link \
-             into your browser manually: {experimentUrl}"
+            "If the above link doesn't work, please copy the following link into your \
+             browser manually: {experimentUrl}"
         ]
     ]
     |> add_salutation
@@ -221,11 +210,7 @@ let password_change =
   let label = Label.PasswordChange in
   let email_text =
     [ p [ txt {|You recently changed your password for your account.|} ]
-    ; p
-        [ txt
-            "If you did not change your password, please get in contact with \
-             us."
-        ]
+    ; p [ txt "If you did not change your password, please get in contact with us." ]
     ]
     |> add_salutation
     |> html_to_string
@@ -256,9 +241,7 @@ let phone_verification =
     "Your phone number verification code: {token}" |> EmailText.of_string
   in
   let email_subject = "Phone verification" |> EmailSubject.of_string in
-  let sms_text =
-    {|Your phone number verification code: {token}|} |> SmsText.of_string
-  in
+  let sms_text = {|Your phone number verification code: {token}|} |> SmsText.of_string in
   { id = Id.create ()
   ; label
   ; language
@@ -315,14 +298,13 @@ let password_reset =
         ]
     ; p
         [ txt
-            "If you did not request a password reset, please ignore this email \
-             or reply to let us know. This password reset is only valid for \
-             the next hour."
+            "If you did not request a password reset, please ignore this email or reply \
+             to let us know. This password reset is only valid for the next hour."
         ]
     ; p
         [ txt
-            "If the above link doesn't work, please copy the following link \
-             into your browser manually: {resetUrl}"
+            "If the above link doesn't work, please copy the following link into your \
+             browser manually: {resetUrl}"
         ]
     ]
     |> add_salutation
@@ -365,13 +347,13 @@ let signup_verification =
         ]
     ; p
         [ txt
-            "If this action wasn`t performed by you, please ignore this email \
-             or reply to let us know."
+            "If this action wasn`t performed by you, please ignore this email or reply \
+             to let us know."
         ]
     ; p
         [ txt
-            "If the above link does not work, please copy the following link \
-             into your browser manually: {verificationUrl}"
+            "If the above link does not work, please copy the following link into your \
+             browser manually: {verificationUrl}"
         ]
     ]
     |> add_salutation
@@ -521,20 +503,20 @@ let contact_registration_attempt =
         ]
     ; p
         [ txt
-            "If this was you and you forgot your login credentials, you can \
-             reset your password "
+            "If this was you and you forgot your login credentials, you can reset your \
+             password "
         ; a ~a:[ a_href "{resetUrl}" ] [ txt "here" ]
         ; txt "."
         ]
     ; p
         [ txt
-            "If this action was not performed by you, you can ignore this \
-             message or inform the administrators."
+            "If this action was not performed by you, you can ignore this message or \
+             inform the administrators."
         ]
     ; p
         [ txt
-            "If the above link does not work, please copy the following link \
-             into your browser manually: {resetUrl}"
+            "If the above link does not work, please copy the following link into your \
+             browser manually: {resetUrl}"
         ]
     ]
     |> add_salutation
@@ -575,17 +557,15 @@ let user_import =
         ]
     ; p
         [ txt
-            "If the above link does not work, please copy the manually into \
-             your browser: {confirmationUrl}"
+            "If the above link does not work, please copy the manually into your \
+             browser: {confirmationUrl}"
         ]
     ]
     |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject =
-    "Reactivation of your account" |> EmailSubject.of_string
-  in
+  let email_subject = "Reactivation of your account" |> EmailSubject.of_string in
   let sms_text =
     {|Your account was recently migrated. Follow this link to reactivate your account:
 
@@ -609,8 +589,8 @@ let waiting_list_confirmation =
   let email_text =
     [ p
         [ txt
-            "You have successfully enrolled to the waiting list of the \
-             experiment {experimentPublicTitle}."
+            "You have successfully enrolled to the waiting list of the experiment \
+             {experimentPublicTitle}."
         ; br ()
         ; txt "The recruitment team will get in touch with you."
         ]
@@ -619,9 +599,7 @@ let waiting_list_confirmation =
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject =
-    "Waiting list enrollment confirmation" |> EmailSubject.of_string
-  in
+  let email_subject = "Waiting list enrollment confirmation" |> EmailSubject.of_string in
   let sms_text =
     {|You have successfully enrolled to the waiting list of the experiment {experimentPublicTitle}.
 

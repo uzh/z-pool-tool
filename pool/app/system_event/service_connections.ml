@@ -5,13 +5,10 @@ let rerun_migrations_for_connection_issues () =
   let open Utils.Lwt_result.Infix in
   let open Database in
   Logs.debug ~src (fun m ->
-    m
-      ~tags:(Logger.Tags.create Pool.Root.label)
-      "Check migrations for connection issues");
+    m ~tags:(Logger.Tags.create Pool.Root.label) "Check migrations for connection issues");
   let connect_and_migrate pool =
     Pool_database.connect_and_migrate pool
-    >|- Pool_common.Utils.with_log_error
-          ~tags:(Database.Logger.Tags.create pool)
+    >|- Pool_common.Utils.with_log_error ~tags:(Database.Logger.Tags.create pool)
     ||> Utils.ignore_res
   in
   Pool.Tenant.all ~status:Status.[ MigrationsConnectionIssue ] ()

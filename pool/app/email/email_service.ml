@@ -61,9 +61,7 @@ Html:
 ;;
 
 let bypass () =
-  CCOption.get_or
-    ~default:false
-    (Sihl.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
+  CCOption.get_or ~default:false (Sihl.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
 ;;
 
 let intercept_email_address () = Sihl.Configuration.read_string "TEST_EMAIL"
@@ -115,8 +113,8 @@ let intercept_prepare ({ Entity.Job.email; _ } as job) =
   | false, None ->
     Error
       (Pool_message.Error.EmailInterceptionError
-         "Sending email intercepted! As no redirect email is specified it/they \
-          wont be sent. Please define environment variable 'TEST_EMAIL'.")
+         "Sending email intercepted! As no redirect email is specified it/they wont be \
+          sent. Please define environment variable 'TEST_EMAIL'.")
 ;;
 
 let intercept_send sender email =
@@ -125,9 +123,7 @@ let intercept_send sender email =
   | true, _ | _, true -> sender email
   | false, false ->
     Logs.info ~src (fun m ->
-      m
-        ~tags
-        "Sending email intercepted (non production environment -> DevInbox).");
+      m ~tags "Sending email intercepted (non production environment -> DevInbox).");
     email |> DevInbox.add_to_inbox |> Lwt.return
 ;;
 
@@ -142,8 +138,7 @@ let default_sender_of_pool database_label =
     |> Lwt.return
   else
     find_contact_email database_label
-    ||> fun sender ->
-    sender |> ContactEmail.value |> Pool_user.EmailAddress.of_string
+    ||> fun sender -> sender |> ContactEmail.value |> Pool_user.EmailAddress.of_string
 ;;
 
 module Smtp = struct
@@ -219,16 +214,7 @@ module Smtp = struct
 
   let prepare database_label ?smtp_auth_id email =
     let open Utils.Lwt_result.Infix in
-    let%lwt
-        { SmtpAuth.Write.server
-        ; port
-        ; username
-        ; password
-        ; mechanism
-        ; protocol
-        ; _
-        }
-      =
+    let%lwt { SmtpAuth.Write.server; port; username; password; mechanism; protocol; _ } =
       let open Pool_common.Utils in
       let cached =
         match smtp_auth_id with
@@ -265,29 +251,20 @@ module Smtp = struct
 
   let prepare_test_email
         database_label
-        { SmtpAuth.Write.server
-        ; port
-        ; username
-        ; password
-        ; mechanism
-        ; protocol
-        ; _
-        }
+        { SmtpAuth.Write.server; port; username; password; mechanism; protocol; _ }
         test_email
     =
     let%lwt default_sender_of_pool = default_sender_of_pool database_label in
     let%lwt test_email =
       let%lwt sender =
-        Settings.(
-          find_contact_email database_label |> Lwt.map ContactEmail.value)
+        Settings.(find_contact_email database_label |> Lwt.map ContactEmail.value)
       in
       let recipient = test_email |> Pool_user.EmailAddress.value in
       let subject = "Test email" in
       let text = "This is a test" in
       let html = Some text in
       Lwt.return
-        Sihl.Contract.Email.
-          { sender; recipient; subject; text; html; cc = []; bcc = [] }
+        Sihl.Contract.Email.{ sender; recipient; subject; text; html; cc = []; bcc = [] }
     in
     email_from_smtp_auth
       username
@@ -366,22 +343,18 @@ module Job = struct
       Logs.err ~src (fun m ->
         m
           ~tags
-          "Serialized email string was NULL, can not deserialize email. Please \
-           fix the string manually and reset the job instance. Error: %s"
+          "Serialized email string was NULL, can not deserialize email. Please fix the \
+           string manually and reset the job instance. Error: %s"
           str);
       Error Pool_message.(Error.Invalid Field.Input)
   ;;
 
-  let intercept_prepare_of_event =
-    intercept_prepare %> Pool_common.Utils.get_or_failwith
-  ;;
+  let intercept_prepare_of_event = intercept_prepare %> Pool_common.Utils.get_or_failwith
 
   let show_recipient =
     Pool_queue.Instance.input
     %> decode
-    %> CCResult.map_or
-         ~default:"error"
-         (email %> fun x -> x.Sihl_email.recipient)
+    %> CCResult.map_or ~default:"error" (email %> fun x -> x.Sihl_email.recipient)
   ;;
 
   let send =
@@ -413,8 +386,7 @@ let dispatch
       ({ Entity.Job.email; _ } as job)
   =
   let tags = Database.Logger.Tags.create database_label in
-  Logs.debug ~src (fun m ->
-    m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
+  Logs.debug ~src (fun m -> m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
   let job = job |> Job.update ?new_email_address ?new_smtp_auth_id in
   Pool_queue.dispatch
     ?id
@@ -435,8 +407,7 @@ let dispatch_all database_label jobs =
             , ( id
               , job |> Job.intercept_prepare_of_event
               , message_template
-              , CCOption.get_or ~default:(Pool_queue.job_ctx_create []) mappings
-              )
+              , CCOption.get_or ~default:(Pool_queue.job_ctx_create []) mappings )
               :: jobs ))
          ([], [])
   in

@@ -11,11 +11,7 @@ module DlrData = struct
   let error_code = 0
   let error_message = "Success"
   let submit_date_str = "2024-06-24T10:27:56Z"
-
-  let submit_date =
-    Pool_model.Time.parse_time submit_date_str |> CCResult.get_exn
-  ;;
-
+  let submit_date = Pool_model.Time.parse_time submit_date_str |> CCResult.get_exn
   let done_date_str = "2024-06-24T10:27:56Z"
   let done_date = Pool_model.Time.parse_time done_date_str |> CCResult.get_exn
   let plmn = "22801"

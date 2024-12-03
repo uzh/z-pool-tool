@@ -24,22 +24,16 @@ let sql_database_join_on_label
 ;;
 
 let sql_select_columns =
-  [ sql_select_label
-  ; "pool_tenant_databases.url"
-  ; "pool_tenant_databases.status"
-  ]
+  [ sql_select_label; "pool_tenant_databases.url"; "pool_tenant_databases.status" ]
 ;;
 
 let find_request_sql where_fragment =
   let columns = sql_select_columns |> CCString.concat ", " in
-  [%string
-    {sql|SELECT %{columns} FROM pool_tenant_databases %{where_fragment} |sql}]
+  [%string {sql|SELECT %{columns} FROM pool_tenant_databases %{where_fragment} |sql}]
 ;;
 
 let find_request =
-  {sql| WHERE pool_tenant_databases.label = ? |sql}
-  |> find_request_sql
-  |> Label.t ->! t
+  {sql| WHERE pool_tenant_databases.label = ? |sql} |> find_request_sql |> Label.t ->! t
 ;;
 
 let find pool label =
@@ -72,9 +66,7 @@ let find_all_by_status
 
 let find_label_by_url_request ?(allowed_status = []) pt =
   let states =
-    CCList.length allowed_status
-    |> flip CCList.replicate "?"
-    |> CCString.concat ", "
+    CCList.length allowed_status |> flip CCList.replicate "?" |> CCString.concat ", "
   in
   [%string
     {sql|
@@ -89,10 +81,7 @@ let find_label_by_url ?(allowed_status = Status.[ Active ]) label url =
   let open Dynparam in
   let init = empty |> add Url.t url in
   let (Pack (pt, pv)) =
-    CCList.fold_left
-      (fun dyn status -> dyn |> add Status.t status)
-      init
-      allowed_status
+    CCList.fold_left (fun dyn status -> dyn |> add Status.t status) init allowed_status
   in
   Service.find_opt label (find_label_by_url_request ~allowed_status pt) pv
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Url)

@@ -19,8 +19,7 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
                    (mapping.language |> Pool_common.Language.show)
                in
                let path =
-                 contact_file_path location.id mapping
-                 |> Sihl.Web.externalize_path
+                 contact_file_path location.id mapping |> Sihl.Web.externalize_path
                in
                [ a ~a:[ a_href path ] [ txt label ] ])
             files
@@ -58,10 +57,7 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
         description
         |> Description.find_opt language
         |> CCOption.map (fun desc ->
-          desc
-          |> Unsafe.data
-          |> CCList.return
-          |> div ~a:[ a_class [ "gap-lg" ] ]))
+          desc |> Unsafe.data |> CCList.return |> div ~a:[ a_class [ "gap-lg" ] ]))
       |> CCOption.value ~default:(txt "")
     ]
 ;;

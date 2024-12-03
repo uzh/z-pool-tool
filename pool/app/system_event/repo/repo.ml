@@ -94,9 +94,7 @@ module Sql = struct
          ->* RepoEntity.t
     ;;
 
-    let find_by_event_and_host pool =
-      Database.collect pool find_by_event_and_host_request
-    ;;
+    let find_by_event_and_host pool = Database.collect pool find_by_event_and_host_request
 
     let insert_request =
       let open Caqti_request.Infix in

@@ -39,11 +39,7 @@ let create_root () =
     Ok [ Admin.Created create |> Pool_event.admin ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let create_root_with_invalid_password () =
@@ -59,13 +55,7 @@ let create_root_with_invalid_password () =
       ]
     >>= Root_command.Create.handle
   in
-  let expected =
-    Error Error.(Conformist [ Field.Password, PasswordPolicyMinLength 8 ])
-  in
+  let expected = Error Error.(Conformist [ Field.Password, PasswordPolicyMinLength 8 ]) in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;

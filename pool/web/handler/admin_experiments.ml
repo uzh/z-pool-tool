@@ -24,10 +24,7 @@ let find_entity_in_urlencoded urlencoded field fnc =
   | Some id -> id |> fnc >|+ CCOption.return
 ;;
 
-let experiment_boolean_fields =
-  Experiment.boolean_fields |> CCList.map Field.show
-;;
-
+let experiment_boolean_fields = Experiment.boolean_fields |> CCList.map Field.show
 let customizable_message_templates = []
 
 let contact_person_roles experiment_id =
@@ -61,9 +58,7 @@ let contact_person_from_urlencoded database_label urlencoded experiment_id =
       |> Lwt_result.lift
       >>= (fun id ->
       Guard.Persistence.Actor.find database_label id >|- Error.authorization)
-      >>= Guard.Persistence.validate
-            database_label
-            (validation_set experiment_id)
+      >>= Guard.Persistence.validate database_label (validation_set experiment_id)
     in
     id |> Admin.Id.of_string |> Admin.find database_label
   in
@@ -76,9 +71,7 @@ let organisational_unit_from_urlencoded urlencoded database_label =
 ;;
 
 let smtp_auth_from_urlencoded urlencoded database_label =
-  let query auth_id =
-    Email.SmtpAuth.(auth_id |> Id.of_string |> find database_label)
-  in
+  let query auth_id = Email.SmtpAuth.(auth_id |> Id.of_string |> find database_label) in
   find_entity_in_urlencoded urlencoded Field.Smtp query
 ;;
 
@@ -124,10 +117,7 @@ let index req =
       database_label
   in
   let open Page.Admin.Experiments in
-  (if HttpUtils.Htmx.is_hx_request req then list else index)
-    context
-    experiments
-    query
+  (if HttpUtils.Htmx.is_hx_request req then list else index) context experiments query
   |> Lwt_result.return
 ;;
 
@@ -145,9 +135,7 @@ let new_form req =
     let%lwt default_text_msg_reminder_lead_time =
       Settings.find_default_text_msg_reminder_lead_time database_label
     in
-    let%lwt default_sender =
-      Email.Service.default_sender_of_pool database_label
-    in
+    let%lwt default_sender = Email.Service.default_sender_of_pool database_label in
     let%lwt organisational_units = Organisational_unit.all database_label () in
     let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
@@ -176,9 +164,7 @@ let create req =
   in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , "/admin/experiments/create"
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      err, "/admin/experiments/create", [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* organisational_unit =
@@ -210,9 +196,7 @@ let create req =
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Create in
-      let%lwt default_public_title =
-        Experiment.get_default_public_title database_label
-      in
+      let%lwt default_public_title = Experiment.get_default_public_title database_label in
       urlencoded
       |> decode default_public_title
       >>= handle ~tags ~id ?organisational_unit ?smtp_auth
@@ -239,9 +223,7 @@ let detail edit req =
     let id = experiment_id req in
     let* experiment = Experiment.find database_label id in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let%lwt message_templates =
-      experiment_message_templates database_label experiment
-    in
+    let%lwt message_templates = experiment_message_templates database_label experiment in
     let%lwt current_tags =
       Tags.(find_all_of_entity database_label Model.Experiment)
         (id |> Experiment.Id.to_common)
@@ -260,9 +242,7 @@ let detail edit req =
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Email.SmtpAuth.find database_label id >|+ CCOption.return)
        in
-       let* statistics =
-         Experiment.Statistics.create database_label experiment
-       in
+       let* statistics = Experiment.Statistics.create database_label experiment in
        Page.Admin.Experiments.detail
          experiment
          session_count
@@ -282,13 +262,9 @@ let detail edit req =
        let%lwt default_text_msg_reminder_lead_time =
          Settings.find_default_text_msg_reminder_lead_time database_label
        in
-       let%lwt organisational_units =
-         Organisational_unit.all database_label ()
-       in
+       let%lwt organisational_units = Organisational_unit.all database_label () in
        let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
-       let%lwt default_sender =
-         Email.Service.default_sender_of_pool database_label
-       in
+       let%lwt default_sender = Email.Service.default_sender_of_pool database_label in
        let%lwt allowed_to_assign =
          Guard.Persistence.validate
            database_label
@@ -307,9 +283,7 @@ let detail edit req =
        in
        let%lwt experiment_tags = find_tags Tags.Model.Experiment in
        let%lwt participation_tags = find_tags Tags.Model.Contact in
-       let text_messages_enabled =
-         Pool_context.Tenant.text_messages_enabled req
-       in
+       let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
        Page.Admin.Experiments.edit
          ~allowed_to_assign
          ~session_count
@@ -393,31 +367,21 @@ let delete req =
     let experiment_id = experiment_id req in
     let experiments_path = "/admin/experiments" in
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf
-          "%s/%s"
-          experiments_path
-          (Experiment.Id.value experiment_id) ))
+      err, Format.asprintf "%s/%s" experiments_path (Experiment.Id.value experiment_id))
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* experiment = Experiment.find database_label experiment_id in
-    let%lwt session_count =
-      Experiment.session_count database_label experiment_id
-    in
-    let%lwt mailings =
-      Mailing.find_by_experiment database_label experiment_id
-    in
+    let%lwt session_count = Experiment.session_count database_label experiment_id in
+    let%lwt mailings = Mailing.find_by_experiment database_label experiment_id in
     let%lwt assistants =
       Admin.find_all_with_role
         database_label
-        ( `Assistant
-        , Some (Guard.Uuid.target_of Experiment.Id.value experiment_id) )
+        (`Assistant, Some (Guard.Uuid.target_of Experiment.Id.value experiment_id))
     in
     let%lwt experimenters =
       Admin.find_all_with_role
         database_label
-        ( `Experimenter
-        , Some (Guard.Uuid.target_of Experiment.Id.value experiment_id) )
+        (`Experimenter, Some (Guard.Uuid.target_of Experiment.Id.value experiment_id))
     in
     let%lwt templates =
       let open Message_template in
@@ -432,13 +396,7 @@ let delete req =
       let open Cqrs_command.Experiment_command.Delete in
       handle
         ~tags
-        { experiment
-        ; session_count
-        ; mailings
-        ; experimenters
-        ; assistants
-        ; templates
-        }
+        { experiment; session_count; mailings; experimenters; assistants; templates }
       |> Lwt_result.lift
     in
     let handle events =
@@ -468,9 +426,7 @@ module Filter = struct
     | Ok res -> Lwt.return res
     | Error err ->
       let path =
-        Format.asprintf
-          "/admin/experiments/%s/invitations"
-          (Experiment.Id.value id)
+        Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
       in
       Http_utils.redirect_to_with_actions path [ Message.set ~error:[ err ] ]
   ;;
@@ -500,9 +456,7 @@ module Filter = struct
         handle ~tags experiment |> Lwt_result.lift
       in
       let handle events =
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         Http_utils.redirect_to_with_actions
           redirect_path
           [ Message.set ~success:[ Success.Deleted Field.Filter ] ]
@@ -539,11 +493,7 @@ let message_history req =
   @@
   if HttpUtils.Htmx.is_hx_request req
   then
-    Queue.list
-      context
-      queue_table
-      (Experiments.message_history_url experiment)
-      messages
+    Queue.list context queue_table (Experiments.message_history_url experiment) messages
     |> Lwt.return
   else Experiments.message_history context queue_table experiment messages
 ;;
@@ -560,18 +510,9 @@ end = struct
   module ExperimentCommand = Cqrs_command.Experiment_command
   module Guardian = Middleware.Guardian
 
-  let experiment_effects =
-    Guardian.id_effects Experiment.Id.validate Field.Experiment
-  ;;
-
-  let index =
-    Experiment.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
-  ;;
-
-  let create =
-    ExperimentCommand.Create.effects |> Guardian.validate_admin_entity
-  ;;
-
+  let experiment_effects = Guardian.id_effects Experiment.Id.validate Field.Experiment
+  let index = Experiment.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
+  let create = ExperimentCommand.Create.effects |> Guardian.validate_admin_entity
   let read = experiment_effects Experiment.Guard.Access.read
   let update = experiment_effects ExperimentCommand.Update.effects
   let delete = experiment_effects ExperimentCommand.Delete.effects
@@ -598,8 +539,6 @@ end = struct
 
   let message_history =
     experiment_effects (fun id ->
-      Pool_queue.Guard.Access.index
-        ~id:(Guard.Uuid.target_of Experiment.Id.value id)
-        ())
+      Pool_queue.Guard.Access.index ~id:(Guard.Uuid.target_of Experiment.Id.value id) ())
   ;;
 end

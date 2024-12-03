@@ -14,16 +14,15 @@ let experiments pool =
     ; ( "The Wallet Game"
       , "Finance experiment"
       , "Students bid for an object in a first-price auction. Each receives an \
-         independently drawn signal of the value of the object. The actual \
-         value is the sum of the signal."
+         independently drawn signal of the value of the object. The actual value is the \
+         sum of the signal."
       , Some "F-00000-11-22"
       , false
       , None )
     ; ( "The Ultimatum and the Dictator Bargaining Games"
       , "Bidding experiment"
-      , "The experiment illustrates the problem of public good provision as \
-         discussed in most microeconomics lectures or lectures on public \
-         economics."
+      , "The experiment illustrates the problem of public good provision as discussed in \
+         most microeconomics lectures or lectures on public economics."
       , None
       , true
       , Some (60 * 60) )
@@ -40,9 +39,7 @@ let experiments pool =
            , email_session_reminder_lead_time ) ->
          let experiment =
            let title = Title.create title |> get_or_failwith in
-           let public_title =
-             PublicTitle.create public_title |> get_or_failwith
-           in
+           let public_title = PublicTitle.create public_title |> get_or_failwith in
            let internal_description =
              InternalDescription.create description |> get_or_failwith
            in
@@ -58,9 +55,7 @@ let experiments pool =
            in
            let allow_uninvited_signup = AllowUninvitedSignup.create false in
            let external_data_required = ExternalDataRequired.create false in
-           let show_external_data_id_links =
-             ShowExternalDataIdLinks.create false
-           in
+           let show_external_data_id_links = ShowExternalDataIdLinks.create false in
            let registration_disabled = RegistrationDisabled.create false in
            create
              title

@@ -87,14 +87,12 @@ module Pool = struct
       let start_tenant = tap (label %> log_start) %> add in
       match%lwt Repo.find_all_by_status root with
       | [] ->
-        Logs.warn (fun m ->
-          m "%s" Pool_message.Error.(NoTenantsRegistered |> show));
+        Logs.warn (fun m -> m "%s" Pool_message.Error.(NoTenantsRegistered |> show));
         Lwt.return []
       | tenants -> CCList.map start_tenant tenants |> Lwt.return
     ;;
 
-    let all ?(status = Status.[ Active; ConnectionIssue; MigrationsPending ]) ()
-      =
+    let all ?(status = Status.[ Active; ConnectionIssue; MigrationsPending ]) () =
       find_by_status ~exclude:[ root ] status |> CCList.map Entity.label
     ;;
 

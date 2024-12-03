@@ -32,8 +32,7 @@ end = struct
         (fun field ->
            let active = getter field in
            CCList.find_opt
-             (fun selected_id ->
-                selected_id |> Id.of_string |> Id.equal (id field))
+             (fun selected_id -> selected_id |> Id.of_string |> Id.equal (id field))
              selected
            |> function
            | Some (_ : string) when not active ->

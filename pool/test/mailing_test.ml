@@ -46,10 +46,7 @@ module Data = struct
       ; Field.(End |> show), [ end_at |> EndAt.value |> Ptime.to_rfc3339 ]
       ; Field.(Limit |> show), [ limit |> Limit.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
-        , [ distribution
-            |> Distribution.yojson_of_sorted
-            |> Yojson.Safe.to_string
-          ] )
+        , [ distribution |> Distribution.yojson_of_sorted |> Yojson.Safe.to_string ] )
       ]
     ;;
 
@@ -59,10 +56,7 @@ module Data = struct
       ; Field.(End |> show), [ start_at |> StartAt.value |> Ptime.to_rfc3339 ]
       ; Field.(Limit |> show), [ limit |> Limit.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
-        , [ distribution
-            |> Distribution.yojson_of_sorted
-            |> Yojson.Safe.to_string
-          ] )
+        , [ distribution |> Distribution.yojson_of_sorted |> Yojson.Safe.to_string ] )
       ]
     ;;
   end
@@ -81,9 +75,7 @@ let create_mailing () =
     }
 ;;
 
-let mailing_boolean_fields =
-  Field.([ StartNow; RandomOrder ] |> CCList.map show)
-;;
+let mailing_boolean_fields = Field.([ StartNow; RandomOrder ] |> CCList.map show)
 
 let create () =
   let open MailingCommand.Create in
@@ -98,10 +90,7 @@ let create () =
     |> handle ~id:Data.Mailing.id experiment
   in
   let expected =
-    Ok
-      [ Mailing.Created (mailing, experiment.Experiment.id)
-        |> Pool_event.mailing
-      ]
+    Ok [ Mailing.Created (mailing, experiment.Experiment.id) |> Pool_event.mailing ]
   in
   Test_utils.check_result expected events
 ;;
@@ -114,13 +103,9 @@ let create_with_distribution () =
   let mailing = create_mailing () in
   let distribution =
     SortableField.
-      [ InvitationCount, SortOrder.Ascending
-      ; AssignmentCount, SortOrder.Descending
-      ]
+      [ InvitationCount, SortOrder.Ascending; AssignmentCount, SortOrder.Descending ]
   in
-  let mailing =
-    { mailing with distribution = Some (distribution |> create_sorted) }
-  in
+  let mailing = { mailing with distribution = Some (distribution |> create_sorted) } in
   let experiment = Model.create_experiment () in
   let show = Field.show in
   let urlencoded =
@@ -136,19 +121,13 @@ let create_with_distribution () =
     |> of_urlencoded_list
     >|= (function
      | None -> urlencoded
-     | Some distribution ->
-       (show Field.Distribution, distribution) :: urlencoded)
+     | Some distribution -> (show Field.Distribution, distribution) :: urlencoded)
     >|= CCList.map (fun (field, value) -> field, [ value ])
     >|= Http_utils.format_request_boolean_values mailing_boolean_fields
   in
-  let events =
-    () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment
-  in
+  let events = () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment in
   let expected =
-    Ok
-      [ Mailing.Created (mailing, experiment.Experiment.id)
-        |> Pool_event.mailing
-      ]
+    Ok [ Mailing.Created (mailing, experiment.Experiment.id) |> Pool_event.mailing ]
   in
   Test_utils.check_result expected events
 ;;

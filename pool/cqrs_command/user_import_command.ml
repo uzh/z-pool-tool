@@ -22,9 +22,7 @@ end = struct
     ; password_confirmation : User.Password.Confirmation.t [@opaque]
     }
 
-  let command password password_confirmation =
-    { password; password_confirmation }
-  ;;
+  let command password password_confirmation = { password; password_confirmation }
 
   let schema =
     let open Pool_message.Field in
@@ -41,9 +39,7 @@ end = struct
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command ConfirmImport" ~tags);
     let* () =
-      User.Password.validate_confirmation
-        command.password
-        command.password_confirmation
+      User.Password.validate_confirmation command.password command.password_confirmation
     in
     let user_import_confirmed =
       User_import.Confirmed user_import |> Pool_event.user_import
@@ -56,8 +52,7 @@ end = struct
         ]
     | Pool_context.Contact contact ->
       Ok
-        [ Contact.ImportConfirmed (contact, command.password)
-          |> Pool_event.contact
+        [ Contact.ImportConfirmed (contact, command.password) |> Pool_event.contact
         ; user_import_confirmed
         ]
     | Pool_context.Guest -> Error Pool_message.(Error.Invalid Field.User)
@@ -72,10 +67,7 @@ end
 module DisableImport : sig
   type t = Pool_context.user * User_import.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Pool_context.user * User_import.t
 
@@ -87,15 +79,9 @@ end = struct
     in
     match user with
     | Pool_context.Admin admin ->
-      Ok
-        [ Admin.ImportDisabled admin |> Pool_event.admin
-        ; user_import_confirmed
-        ]
+      Ok [ Admin.ImportDisabled admin |> Pool_event.admin; user_import_confirmed ]
     | Pool_context.Contact contact ->
-      Ok
-        [ Contact.ImportDisabled contact |> Pool_event.contact
-        ; user_import_confirmed
-        ]
+      Ok [ Contact.ImportDisabled contact |> Pool_event.contact; user_import_confirmed ]
     | Pool_context.Guest -> Error Pool_message.(Error.Invalid Field.User)
   ;;
 end

@@ -20,11 +20,7 @@ let list
     |> Uri.of_string
   in
   let data_table =
-    Component.DataTable.create_meta
-      ~search:Waiting_list.searchable_by
-      url
-      query
-      language
+    Component.DataTable.create_meta ~search:Waiting_list.searchable_by url query language
   in
   let cols =
     let open Pool_common in
@@ -68,17 +64,11 @@ let list
       |> Component.ButtonGroup.dropdown
       |> CCList.pure
     in
-    [ Page_admin_contact.contact_lastname_firstname
-        access_contact_profiles
-        contact
+    [ Page_admin_contact.contact_lastname_firstname access_contact_profiles contact
     ; txt (Contact.email_address contact |> EmailAddress.value)
+    ; txt (contact.Contact.cell_phone |> CCOption.map_or ~default:"" CellPhone.value)
     ; txt
-        (contact.Contact.cell_phone
-         |> CCOption.map_or ~default:"" CellPhone.value)
-    ; txt
-        (created_at
-         |> Pool_common.CreatedAt.value
-         |> Pool_model.Time.formatted_date_time)
+        (created_at |> Pool_common.CreatedAt.value |> Pool_model.Time.formatted_date_time)
     ; admin_comment
       |> CCOption.map_or ~default:"" Waiting_list.AdminComment.value
       |> HttpUtils.first_n_characters
@@ -120,11 +110,7 @@ let session_row language chronological session =
     if Session.is_fully_booked session
     then span [ txt (Utils.error_to_string language Error.SessionFullyBooked) ]
     else if is_followup
-    then
-      span
-        [ txt
-            (Utils.error_to_string language Error.SessionRegistrationViaParent)
-        ]
+    then span [ txt (Utils.error_to_string language Error.SessionRegistrationViaParent) ]
     else (
       match Session.assignment_creatable session |> CCResult.is_ok with
       | false -> txt ""
@@ -190,12 +176,7 @@ let session_list language chronological sessions =
     ; table
         ~a:
           [ a_class
-              [ "table"
-              ; "break-mobile"
-              ; "session-list"
-              ; "striped"
-              ; "align-last-end"
-              ]
+              [ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
           ]
         ~thead
         rows
@@ -203,8 +184,7 @@ let session_list language chronological sessions =
 ;;
 
 let detail
-      (Waiting_list.{ id; contact; experiment; admin_comment; _ } :
-        Waiting_list.t)
+      (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
       sessions
       experiment_id
       (Pool_context.{ language; csrf; user; _ } as context)
@@ -250,10 +230,7 @@ let detail
   let sessions =
     let content =
       if CCList.is_empty sessions
-      then
-        div
-          [ txt (Utils.text_to_string language (I18n.EmtpyList Field.Sessions))
-          ]
+      then div [ txt (Utils.text_to_string language (I18n.EmtpyList Field.Sessions)) ]
       else
         session_list language chronological sessions
         |> fun content ->
@@ -283,11 +260,7 @@ let detail
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
-      ; p
-          [ txt
-              (I18n.AssignContactFromWaitingList
-               |> Utils.hint_to_string language)
-          ]
+      ; p [ txt (I18n.AssignContactFromWaitingList |> Utils.hint_to_string language) ]
       ; content
       ]
   in

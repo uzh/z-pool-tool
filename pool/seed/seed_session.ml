@@ -3,8 +3,7 @@ module Reminder = Pool_common.Reminder
 let halfhour, hour = CCPair.map_same Ptime.Span.of_int_s (30 * 60, 60 * 60)
 
 let session_data =
-  [ ( Ptime.add_span (Ptime_clock.now ()) hour
-      |> CCOption.get_exn_or "Invalid time"
+  [ ( Ptime.add_span (Ptime_clock.now ()) hour |> CCOption.get_exn_or "Invalid time"
     , hour
     , None
     , Some "Must be healthy"
@@ -13,8 +12,7 @@ let session_data =
     , 4
     , Some 3600
     , Some 1800 )
-  ; ( Ptime.add_span (Ptime_clock.now ()) halfhour
-      |> CCOption.get_exn_or "Invalid time"
+  ; ( Ptime.add_span (Ptime_clock.now ()) halfhour |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
     , None
@@ -23,8 +21,7 @@ let session_data =
     , 0
     , None
     , None )
-  ; ( Ptime.add_span (Ptime_clock.now ()) hour
-      |> CCOption.get_exn_or "Invalid time"
+  ; ( Ptime.add_span (Ptime_clock.now ()) hour |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
     , None
@@ -61,8 +58,7 @@ let create pool =
                   let start = Start.create start in
                   let duration = Duration.create duration |> get_or_failwith in
                   let internal_description =
-                    internal_description
-                    >>= InternalDescription.create %> of_result
+                    internal_description >>= InternalDescription.create %> of_result
                   in
                   let public_description =
                     public_description >>= PublicDescription.create %> of_result
@@ -73,14 +69,9 @@ let create pool =
                   let min_participants =
                     ParticipantAmount.create min |> get_or_failwith
                   in
-                  let overbook =
-                    ParticipantAmount.create overbook |> get_or_failwith
-                  in
+                  let overbook = ParticipantAmount.create overbook |> get_or_failwith in
                   let create_lead_time seconds decoder =
-                    seconds
-                    >|= Ptime.Span.of_int_s
-                    >|= decoder
-                    >|= get_or_failwith
+                    seconds >|= Ptime.Span.of_int_s >|= decoder >|= get_or_failwith
                   in
                   let email_reminder_lead_time =
                     create_lead_time
@@ -114,9 +105,7 @@ let create pool =
   in
   Lwt_list.iter_s
     (fun experiment ->
-       let%lwt sessions =
-         Session.find_all_for_experiment pool experiment.Experiment.id
-       in
+       let%lwt sessions = Session.find_all_for_experiment pool experiment.Experiment.id in
        let parent = CCList.hd sessions in
        let (follow_up : Session.t) =
          let open CCOption in

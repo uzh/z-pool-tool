@@ -10,11 +10,7 @@ module SendCount = struct
 
   let field = Pool_message.Field.Count
   let create m = if m > 0 then Ok m else Error (Error.Invalid field)
-
-  let of_int m =
-    if m > 0 then m else Pool_common.Utils.failwith (Error.Invalid field)
-  ;;
-
+  let of_int m = if m > 0 then m else Pool_common.Utils.failwith (Error.Invalid field)
   let init = 1
   let schema = schema field create
   let increment m = m + 1
@@ -61,33 +57,23 @@ let email_experiment_elements (experiment : Experiment.t) =
   let open Experiment in
   [ "experimentPublicTitle", experiment.public_title |> PublicTitle.value
   ; ( "experimentPublicDescription"
-    , experiment.public_description
-      |> CCOption.map_or ~default:"" PublicDescription.value )
+    , experiment.public_description |> CCOption.map_or ~default:"" PublicDescription.value
+    )
   ]
 ;;
 
 open Pool_message
 
 let searchable_by = Contact.searchable_by
-
-let column_resent_at =
-  Query.Column.create (Field.ResentAt, "pool_invitations.resent_at")
-;;
-
-let column_count =
-  Query.Column.create (Field.Count, "pool_invitations.send_count")
-;;
+let column_resent_at = Query.Column.create (Field.ResentAt, "pool_invitations.resent_at")
+let column_count = Query.Column.create (Field.Count, "pool_invitations.send_count")
 
 let column_created_at =
   Query.Column.create (Field.CreatedAt, "pool_invitations.created_at")
 ;;
 
 let filterable_by = None
-
-let sortable_by =
-  searchable_by @ [ column_count; column_resent_at; column_created_at ]
-;;
-
+let sortable_by = searchable_by @ [ column_count; column_resent_at; column_created_at ]
 let default_query = Query.create ~sort:Contact.default_sort ()
 
 module Statistics = struct

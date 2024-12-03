@@ -50,13 +50,10 @@ let validate_start_end ~start_at ~end_at =
 ;;
 
 let validate_display_bools ~show_to_admins ~show_to_contacts =
-  match
-    ShowToAdmins.value show_to_admins, ShowToContacts.value show_to_contacts
-  with
+  match ShowToAdmins.value show_to_admins, ShowToContacts.value show_to_contacts with
   | false, false ->
     Error
-      Pool_message.(
-        Error.AtLeastOneSelected (Field.ShowToAdmins, Field.ShowToContacts))
+      Pool_message.(Error.AtLeastOneSelected (Field.ShowToAdmins, Field.ShowToContacts))
   | _ -> Ok ()
 ;;
 
@@ -87,9 +84,7 @@ end = struct
     let* () = validate_start_end ~start_at ~end_at in
     let* () = validate_display_bools ~show_to_admins ~show_to_contacts in
     let* text = Text.create text in
-    let announcement =
-      create ?id text start_at end_at show_to_admins show_to_contacts
-    in
+    let announcement = create ?id text start_at end_at show_to_admins show_to_contacts in
     Ok [ Created (announcement, tenant_ids) |> Pool_event.announcement ]
   ;;
 
@@ -131,13 +126,7 @@ end = struct
     let* () = validate_display_bools ~show_to_admins ~show_to_contacts in
     let* text = Text.create text in
     let updated =
-      { announcement with
-        text
-      ; start_at
-      ; end_at
-      ; show_to_admins
-      ; show_to_contacts
-      }
+      { announcement with text; start_at; end_at; show_to_admins; show_to_contacts }
     in
     Ok [ Updated (updated, tenant_ids) |> Pool_event.announcement ]
   ;;
@@ -156,10 +145,7 @@ type hide = Pool_context.user * Announcement.t
 module Hide : sig
   type t = hide
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = hide
 

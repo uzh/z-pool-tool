@@ -28,9 +28,7 @@ module Sql = struct
   ;;
 
   let find_request_sql ?(count = false) where_fragment =
-    let columns =
-      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-    in
+    let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
     Format.asprintf
       {sql|SELECT %s FROM pool_waiting_list %s %s|sql}
       columns
@@ -67,15 +65,11 @@ module Sql = struct
         marked_as_deleted = 0
     |sql}
     |> find_request_sql
-    |> Caqti_type.(t2 Contact.Repo.Id.t Experiment.Repo.Entity.Id.t)
-       ->! RepoEntity.t
+    |> Caqti_type.(t2 Contact.Repo.Id.t Experiment.Repo.Entity.Id.t) ->! RepoEntity.t
   ;;
 
   let find_by_contact_and_experiment pool contact experiment_id =
-    Database.find_opt
-      pool
-      user_is_enlisted_request
-      (contact |> Contact.id, experiment_id)
+    Database.find_opt pool user_is_enlisted_request (contact |> Contact.id, experiment_id)
   ;;
 
   let find_by_experiment ?query pool id =
@@ -100,12 +94,7 @@ module Sql = struct
       in
       sql, dyn
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select:find_request_sql
-      ~where
-      RepoEntity.t
+    Query.collect_and_count pool query ~select:find_request_sql ~where RepoEntity.t
   ;;
 
   let find_experiment_id_request =
@@ -165,9 +154,7 @@ module Sql = struct
 
   let update pool (m : Entity.t) =
     let open Entity in
-    let caqti =
-      m.admin_comment |> AdminComment.value, m.id |> Pool_common.Id.value
-    in
+    let caqti = m.admin_comment |> AdminComment.value, m.id |> Pool_common.Id.value in
     Database.exec pool update_request caqti
   ;;
 
@@ -191,8 +178,7 @@ let find_by_contact_and_experiment = Sql.find_by_contact_and_experiment
 
 let user_is_enlisted pool contact experiment_id =
   let open Utils.Lwt_result.Infix in
-  Sql.find_by_contact_and_experiment pool contact experiment_id
-  ||> CCOption.is_some
+  Sql.find_by_contact_and_experiment pool contact experiment_id ||> CCOption.is_some
 ;;
 
 let find_by_experiment = Sql.find_by_experiment

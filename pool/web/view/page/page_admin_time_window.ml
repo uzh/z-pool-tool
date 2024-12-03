@@ -11,17 +11,14 @@ module Partials = struct
     let open Pool_common in
     let to_string = Utils.text_to_string language in
     let open Component.Table in
-    let closed =
-      I18n.(to_string Closed, legend_color_item "bg-green-lighter")
-    in
+    let closed = I18n.(to_string Closed, legend_color_item "bg-green-lighter") in
     [ closed ] |> table_legend
   ;;
 
   let row_classnames time_window =
     let check opt classname = if opt then Some classname else None in
     [ check
-        (Time_window.ends_at time_window
-         |> Ptime.is_earlier ~than:(Ptime_clock.now ()))
+        (Time_window.ends_at time_window |> Ptime.is_earlier ~than:(Ptime_clock.now ()))
         "bg-green-lighter"
     ]
     |> CCList.filter_map CCFun.id
@@ -38,9 +35,7 @@ module Partials = struct
   ;;
 
   let button_dropdown { Pool_context.language; _ } experiment_id time_window =
-    [ detail_button language experiment_id time_window.Time_window.id
-      |> CCOption.return
-    ]
+    [ detail_button language experiment_id time_window.Time_window.id |> CCOption.return ]
     |> CCList.filter_map CCFun.id
     |> fun buttons ->
     div
@@ -49,12 +44,7 @@ module Partials = struct
   ;;
 end
 
-let time_window_form
-      csrf
-      language
-      ?time_window
-      (experiment : Experiment.t)
-      ~flash_fetcher
+let time_window_form csrf language ?time_window (experiment : Experiment.t) ~flash_fetcher
   =
   let open CCFun in
   let open Session in
@@ -66,8 +56,7 @@ let time_window_form
     in
     match time_window with
     | None -> path (), Create (Some Field.Session)
-    | Some session ->
-      path ~id:session.Time_window.id (), Update (Some Field.Session)
+    | Some session -> path ~id:session.Time_window.id (), Update (Some Field.Session)
   in
   let is_past = function
     | None -> false
@@ -136,9 +125,7 @@ let time_window_form
             ?value:
               CCOption.(
                 bind time_window (fun s ->
-                  map
-                    (ParticipantAmount.value %> CCInt.to_string)
-                    s.max_participants))
+                  map (ParticipantAmount.value %> CCInt.to_string) s.max_participants))
             ~flash_fetcher
         ]
     ; div
@@ -147,11 +134,7 @@ let time_window_form
     ]
 ;;
 
-let new_form
-      ({ Pool_context.language; csrf; _ } as context)
-      experiment
-      flash_fetcher
-  =
+let new_form ({ Pool_context.language; csrf; _ } as context) experiment flash_fetcher =
   time_window_form csrf language experiment ~flash_fetcher
   |> CCList.return
   |> Layout.Experiment.(
@@ -166,26 +149,16 @@ let edit
       flash_fetcher
   =
   let tags_html =
-    Page_admin_session.tags_subform
-      context
-      experiment
-      (`TimeWindow time_window)
-      tags
+    Page_admin_session.tags_subform context experiment (`TimeWindow time_window) tags
   in
-  let form =
-    time_window_form csrf language experiment ~time_window ~flash_fetcher
-  in
+  let form = time_window_form csrf language experiment ~time_window ~flash_fetcher in
   div ~a:[ a_class [ "stack-lg" ] ] [ form; tags_html ]
   |> CCList.return
   |> Layout.Experiment.(
        create context (Control (Edit (Some Field.TimeWindow))) experiment)
 ;;
 
-let data_table
-      ({ Pool_context.language; _ } as context)
-      experiment
-      (time_windows, query)
-  =
+let data_table ({ Pool_context.language; _ } as context) experiment (time_windows, query) =
   let open Session in
   let target_id = "session-list" in
   let time_windows_path ?id ?suffix () =
@@ -229,26 +202,21 @@ let data_table
       ends_at time_window |> Ptime.is_earlier ~than:(Ptime_clock.now ())
     in
     let no_show_count =
-      if is_terminated
-      then no_show_count |> NoShowCount.value |> int_to_txt
-      else txt ""
+      if is_terminated then no_show_count |> NoShowCount.value |> int_to_txt else txt ""
     in
     [ start_end_with_duration_human time_window |> txt
     ; assignment_count |> AssignmentCount.value |> int_to_txt
     ; no_show_count
     ; participant_count |> ParticipantCount.value |> int_to_txt
     ; max_participants
-      |> CCOption.map_or
-           ~default:(txt "")
-           CCFun.(ParticipantAmount.value %> int_to_txt)
+      |> CCOption.map_or ~default:(txt "") CCFun.(ParticipantAmount.value %> int_to_txt)
     ; Partials.button_dropdown context experiment.Experiment.id time_window
     ]
     |> CCList.map CCFun.(CCList.return %> td)
     |> tr ~a:row_attrs
   in
   DataTable.make
-    ~classnames:
-      [ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
+    ~classnames:[ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
     ~target_id
     ~th_class
     ~cols
@@ -307,22 +275,15 @@ let detail
           time_window.internal_description
         |> Http_utils.add_line_breaks )
     ; ( Field.PublicDescription
-      , CCOption.map_or
-          ~default:""
-          PublicDescription.value
-          time_window.public_description
+      , CCOption.map_or ~default:"" PublicDescription.value time_window.public_description
         |> Http_utils.add_line_breaks )
     ; ( Field.MaxParticipants
-      , time_window.max_participants
-        |> CCOption.map_or ~default:"" amount
-        |> txt )
+      , time_window.max_participants |> CCOption.map_or ~default:"" amount |> txt )
     ; ( Field.ParticipantCount
       , time_window.participant_count |> ParticipantCount.value |> int_to_txt )
     ; Field.NoShow, time_window.no_show_count |> NoShowCount.value |> int_to_txt
     ; ( Field.MaxParticipants
-      , time_window.max_participants
-        |> CCOption.map_or ~default:"" amount
-        |> txt )
+      , time_window.max_participants |> CCOption.map_or ~default:"" amount |> txt )
     ]
     |> Table.vertical_table `Striped language ~align_top:true
   in

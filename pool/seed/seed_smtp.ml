@@ -4,13 +4,7 @@ let create database_label =
   let open Email in
   let open Email.SmtpAuth in
   let server, port, username, password, mechanism, protocol, default =
-    ( "smtp.uzh.ch"
-    , 25
-    , None
-    , None
-    , Mechanism.PLAIN
-    , Protocol.STARTTLS
-    , Default.create true )
+    "smtp.uzh.ch", 25, None, None, Mechanism.PLAIN, Protocol.STARTTLS, Default.create true
   in
   Write.create
     (Label.create (database_label |> Database.Label.value) |> get_or_failwith)

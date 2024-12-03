@@ -37,9 +37,7 @@ let t =
     let span, time = encode_time_span m.scheduled_time in
     Ok (m.label, (m.database_label, (time, (span, (m.status, m.last_run)))))
   in
-  let decode _ =
-    Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
-  in
+  let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
   Caqti_type.(
     custom
       ~encode
@@ -50,9 +48,7 @@ let t =
             (option Database.Repo.Label.t)
             (t2
                (option ScheduledTime.t)
-               (t2
-                  (option ScheduledTimeSpan.t)
-                  (t2 Status.t (option LastRunAt.t)))))))
+               (t2 (option ScheduledTimeSpan.t) (t2 Status.t (option LastRunAt.t)))))))
 ;;
 
 let public =
@@ -96,9 +92,7 @@ module Sql = struct
 
   let select_public_fragment ?(count = false) where_fragment =
     let columns =
-      if count
-      then "COUNT(*)"
-      else CCString.concat ", " sql_select_public_columns
+      if count then "COUNT(*)" else CCString.concat ", " sql_select_public_columns
     in
     Format.sprintf
       {sql|
@@ -170,12 +164,7 @@ module Sql = struct
       ( "database_label = ? OR database_label IS NULL"
       , Dynparam.(empty |> add Database.Repo.Label.t database_label) )
     in
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~where
-      ~select:select_public_fragment
-      public
+    Query.collect_and_count pool (Some query) ~where ~select:select_public_fragment public
   ;;
 end
 

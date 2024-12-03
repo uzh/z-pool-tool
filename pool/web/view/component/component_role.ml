@@ -96,8 +96,7 @@ module List = struct
         ~a:
           [ a_method `Post
           ; a_action
-              (roles_path ~suffix:target path target_id
-               |> Sihl.Web.externalize_path)
+              (roles_path ~suffix:target path target_id |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -147,12 +146,7 @@ module List = struct
       let remove_button =
         if is_edit
         then
-          [ button_form
-              "revoke-role"
-              Pool_message.Control.delete
-              `Error
-              I18n.RevokeRole
-          ]
+          [ button_form "revoke-role" Pool_message.Control.delete `Error I18n.RevokeRole ]
         else default
       in
       target_button @ remove_button
@@ -166,13 +160,7 @@ module List = struct
     to_human actor_role title :: [ buttons ]
   ;;
 
-  let create
-        ?is_edit
-        ~path
-        ({ Pool_context.language; _ } as context)
-        target_id
-        roles
-    =
+  let create ?is_edit ~path ({ Pool_context.language; _ } as context) target_id roles =
     let open CCList in
     let thead =
       let open Pool_message in
@@ -246,9 +234,7 @@ module Search = struct
     in
     form
       ~a:
-        [ a_action
-            (action_path path target_id "grant-role"
-             |> Sihl.Web.externalize_path)
+        [ a_action (action_path path target_id "grant-role" |> Sihl.Web.externalize_path)
         ; a_method `Post
         ]
       [ Component_input.csrf_element csrf ()
@@ -267,12 +253,8 @@ module Search = struct
     div
       ~a:[ a_class [ stack; "inset-sm"; "border"; "role-search" ] ]
       [ div
-          ~a:
-            [ a_id "role-search-form"; a_user_data "detect-unsaved-changes" "" ]
-          [ div
-              ~a:[ a_class [ stack; "grow"; "role-search-wrapper" ] ]
-              [ role_form ]
-          ]
+          ~a:[ a_id "role-search-form"; a_user_data "detect-unsaved-changes" "" ]
+          [ div ~a:[ a_class [ stack; "grow"; "role-search-wrapper" ] ] [ role_form ] ]
       ]
   ;;
 end
@@ -368,10 +350,7 @@ module ActorPermissionSearch = struct
     div
       ~a:[ a_class [ "trim"; "actor-search" ] ]
       [ div
-          ~a:
-            [ a_id "actor-search-form"
-            ; a_user_data "detect-unsaved-changes" ""
-            ]
+          ~a:[ a_id "actor-search-form"; a_user_data "detect-unsaved-changes" "" ]
           [ div ~a:[ a_class [ "grow"; "actor-search-wrapper" ] ] [ create ] ]
       ]
   ;;

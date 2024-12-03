@@ -17,11 +17,7 @@ module Create : sig
     ; address : address
     }
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> ?id:Id.t
-    -> t
-    -> (Pool_event.t list, 'a) result
+  val handle : ?tags:Logs.Tag.set -> ?id:Id.t -> t -> (Pool_event.t list, 'a) result
 
   val decode
     :  Description.t option
@@ -47,9 +43,7 @@ end = struct
 
   let schema =
     Conformist.(
-      make
-        Field.[ Name.schema (); Conformist.optional @@ Link.schema () ]
-        command_base)
+      make Field.[ Name.schema (); Conformist.optional @@ Link.schema () ] command_base)
   ;;
 
   let handle
@@ -86,8 +80,7 @@ end = struct
          with
          | true -> Ok Address.Virtual
          | false ->
-           Conformist.decode_and_validate schema_mail_address data
-           >|= Address.physical
+           Conformist.decode_and_validate schema_mail_address data >|= Address.physical
        in
        Ok { name = base.name; description; link = base.link; address }
   ;;
@@ -133,11 +126,7 @@ end = struct
   let schema =
     Conformist.(
       make
-        Field.
-          [ Name.schema ()
-          ; Conformist.optional @@ Link.schema ()
-          ; Status.schema ()
-          ]
+        Field.[ Name.schema (); Conformist.optional @@ Link.schema (); Status.schema () ]
         command_base)
   ;;
 
@@ -158,8 +147,7 @@ end = struct
          with
          | true -> Ok Address.Virtual
          | false ->
-           Conformist.decode_and_validate schema_mail_address data
-           >|= Address.physical
+           Conformist.decode_and_validate schema_mail_address data >|= Address.physical
        in
        Ok
          { name = base.name
@@ -205,11 +193,7 @@ end = struct
         command)
   ;;
 
-  let handle
-        ?(tags = Logs.Tag.empty)
-        location
-        ({ label; language; asset_id } : t)
-    =
+  let handle ?(tags = Logs.Tag.empty) location ({ label; language; asset_id } : t) =
     Logs.info ~src (fun m -> m "Handle command AddFile" ~tags);
     let open CCResult in
     let file =
@@ -217,9 +201,7 @@ end = struct
         label
         language
         (Id.to_common asset_id)
-        (location.Pool_location.id
-         |> Pool_location.Id.value
-         |> Pool_common.Id.of_string)
+        (location.Pool_location.id |> Pool_location.Id.value |> Pool_common.Id.of_string)
     in
     Ok [ FileUploaded file |> Pool_event.pool_location ]
   ;;
@@ -231,9 +213,7 @@ end = struct
 
   let effects id =
     BaseGuard.ValidationSet.And
-      [ Pool_location.Guard.Access.update id
-      ; Pool_location.Guard.Access.File.create
-      ]
+      [ Pool_location.Guard.Access.update id; Pool_location.Guard.Access.File.create ]
   ;;
 end
 

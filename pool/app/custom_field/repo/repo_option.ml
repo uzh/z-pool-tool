@@ -33,9 +33,7 @@ let find_by_multiple_fields_request ids =
       {sql|
       WHERE pool_custom_field_options.custom_field_uuid in ( %s )
     |sql}
-      (CCList.mapi
-         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
-         ids
+      (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
        |> CCString.concat ",")
   in
   select_sql where
@@ -48,15 +46,12 @@ let find_by_multiple_fields pool ids =
     let open Caqti_request.Infix in
     let dyn =
       CCList.fold_left
-        (fun dyn id ->
-           dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+        (fun dyn id -> dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
         Dynparam.empty
         ids
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
-    let request =
-      find_by_multiple_fields_request ids |> pt ->* Repo_entity.Option.t
-    in
+    let request = find_by_multiple_fields_request ids |> pt ->* Repo_entity.Option.t in
     Database.collect pool request pv
 ;;
 
@@ -114,10 +109,7 @@ let insert_request =
 ;;
 
 let insert pool custom_field_id m =
-  Database.exec
-    pool
-    insert_request
-    (Repo_entity.Option.of_entity custom_field_id m)
+  Database.exec pool insert_request (Repo_entity.Option.of_entity custom_field_id m)
 ;;
 
 let update_request =
@@ -159,10 +151,7 @@ let destroy_by_custom_field_request =
 ;;
 
 let destroy_by_custom_field pool field_id =
-  Database.exec
-    pool
-    destroy_by_custom_field_request
-    Entity.(field_id |> Id.value)
+  Database.exec pool destroy_by_custom_field_request Entity.(field_id |> Id.value)
 ;;
 
 let publish_request =
@@ -191,10 +180,7 @@ let publish_by_custom_field_request =
 ;;
 
 let publish_by_custom_field pool field_id =
-  Database.exec
-    pool
-    publish_by_custom_field_request
-    Entity.(field_id |> Id.value)
+  Database.exec pool publish_by_custom_field_request Entity.(field_id |> Id.value)
 ;;
 
 let update_position_request =
@@ -272,8 +258,7 @@ module Public = struct
       in
       let (Dynparam.Pack (pt, pv)) = dyn in
       let request =
-        find_by_multiple_fields_request ids
-        |> pt ->* Repo_entity.Option.Public.t
+        find_by_multiple_fields_request ids |> pt ->* Repo_entity.Option.Public.t
       in
       Database.collect pool request pv
   ;;

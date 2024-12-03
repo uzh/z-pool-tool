@@ -35,10 +35,8 @@ let edit_target_modal
       let checked =
         (match flash_fetcher with
          | Some flash_fetcher ->
-           flash_fetcher name
-           |> CCOption.map_or ~default:false Utils.Bool.of_string
-         | None ->
-           CCList.mem ~eq:Guard.Permission.equal permission current_permissions)
+           flash_fetcher name |> CCOption.map_or ~default:false Utils.Bool.of_string
+         | None -> CCList.mem ~eq:Guard.Permission.equal permission current_permissions)
         |> function
         | true -> [ a_checked () ]
         | false -> []
@@ -46,12 +44,8 @@ let edit_target_modal
       div
         ~a:[ a_class [ "form-group" ] ]
         [ div
-            [ input
-                ~a:([ a_input_type `Checkbox; a_id name; a_name name ] @ checked)
-                ()
-            ; label
-                ~a:[ a_label_for name ]
-                [ txt (CCString.capitalize_ascii name) ]
+            [ input ~a:([ a_input_type `Checkbox; a_id name; a_name name ] @ checked) ()
+            ; label ~a:[ a_label_for name ] [ txt (CCString.capitalize_ascii name) ]
             ]
         ]
     in
@@ -64,9 +58,7 @@ let edit_target_modal
     let permissions = all_permissions |> CCList.map checkbox in
     div
       ~a:[ a_class [ "stack" ] ]
-      [ p
-          Pool_common.
-            [ Utils.hint_to_string language I18n.Permissions |> Unsafe.data ]
+      [ p Pool_common.[ Utils.hint_to_string language I18n.Permissions |> Unsafe.data ]
       ; error
       ; form
           ~a:
@@ -86,12 +78,7 @@ let edit_target_modal
              ])
       ]
   in
-  Component.Modal.create
-    ~active:true
-    language
-    title
-    edit_permission_modal_id
-    html
+  Component.Modal.create ~active:true language title edit_permission_modal_id html
 ;;
 
 let list
@@ -112,9 +99,7 @@ let list
   let cols =
     [ `column RolePermission.column_model
     ; `custom
-        (txt
-           Pool_common.(
-             Utils.field_to_string_capitalized language Field.Permission))
+        (txt Pool_common.(Utils.field_to_string_capitalized language Field.Permission))
     ; `empty
     ]
   in
@@ -139,8 +124,7 @@ let list
     in
     [ txt (Role.Target.show target)
     ; permissions
-      |> CCList.map
-           (Permission.show %> Component.Tag.create_chip ~inline:true `Primary)
+      |> CCList.map (Permission.show %> Component.Tag.create_chip ~inline:true `Primary)
       |> div ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
     ; (if can_manage then edit_button () else txt "")
     ]
@@ -162,11 +146,7 @@ let show (Pool_context.{ language; _ } as context) role rules query =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Role.Role.name role |> CCString.capitalize_ascii) ]
-    ; p
-        [ txt
-            Pool_common.(
-              Utils.hint_to_string language I18n.RolePermissionsModelList)
-        ]
+    ; p [ txt Pool_common.(Utils.hint_to_string language I18n.RolePermissionsModelList) ]
     ; list context role rules query
     ; Component.Modal.create_placeholder edit_permission_modal_id
     ]
@@ -181,22 +161,14 @@ let index Pool_context.{ language; _ } roles =
       ; Input.link_as_button ~icon:Icon.Eye (role_permission_path ~role ())
       ]
     in
-    roles
-    |> CCList.map row
-    |> Table.horizontal_table ~align_last_end:true ~thead `Striped
+    roles |> CCList.map row |> Table.horizontal_table ~align_last_end:true ~thead `Striped
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions)
-        ]
-    ; p
-        [ txt
-            Pool_common.(
-              Utils.hint_to_string language I18n.RolePermissionsRoleList)
-        ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions) ]
+    ; p [ txt Pool_common.(Utils.hint_to_string language I18n.RolePermissionsRoleList) ]
     ; table
     ]
 ;;

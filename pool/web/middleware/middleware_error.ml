@@ -23,8 +23,7 @@ module Report = struct
 
   let to_string { exn; stack; req_id; req } =
     let exn_string = Printexc.to_string exn in
-    [%string
-      "Request id %{req_id}: %{req}\nError: %{exn_string}\nStacktrace: %{stack}"]
+    [%string "Request id %{req_id}: %{req}\nError: %{exn_string}\nStacktrace: %{stack}"]
   ;;
 end
 
@@ -36,27 +35,20 @@ let site_error_handler req =
 let json_error_handler req =
   let request_id = Sihl.Web.Id.find req |> CCOption.value ~default:"-" in
   let msg = "Something went wrong, our administrators have been notified." in
-  let body =
-    [%string {|"{"errors": ["%{msg}"], "request_id": "%{request_id}"}"|}]
-  in
+  let body = [%string {|"{"errors": ["%{msg}"], "request_id": "%{request_id}"}"|}] in
   Opium.Response.of_plain_text body
   |> Opium.Response.set_content_type "application/json; charset=utf-8"
   |> Opium.Response.set_status `Internal_server_error
   |> Lwt.return
 ;;
 
-let issue_reporter
-      (request : Rock.Request.t)
-      { Report.exn; req_id; req; stack; _ }
-  =
+let issue_reporter (request : Rock.Request.t) { Report.exn; req_id; req; stack; _ } =
   let open Format in
   let formatter = str_formatter in
   let additional =
     let error =
       pp_print_string formatter (asprintf "\n\nException:\n");
-      pp_print_text
-        formatter
-        (asprintf "\n```\n%s\n```\n" (Printexc.to_string exn));
+      pp_print_text formatter (asprintf "\n```\n%s\n```\n" (Printexc.to_string exn));
       flush_str_formatter ()
     in
     let trace = asprintf "\nTrace:\n```\n%s\n```\n" stack in
@@ -88,8 +80,7 @@ let reporter req ({ Report.exn; _ } as excn) =
     |> Lwt.return
   | Pool_message.Error.(Exn (DatabaseAddPoolFirst _) as err)
   | Pool_message.Error.(Exn (Connection _) as err) ->
-    Logs.err (fun m -> m "Try again later: %s" (Printexc.to_string err))
-    |> Lwt.return
+    Logs.err (fun m -> m "Try again later: %s" (Printexc.to_string err)) |> Lwt.return
   | _ ->
     (match%lwt issue_reporter req excn with
      | Ok _ -> Lwt.return_unit
@@ -109,8 +100,7 @@ let middleware ?error_handler () =
              (fun () -> reporter req report)
              (fun exn ->
                 let msg = Printexc.to_string exn in
-                Logs.err (fun m ->
-                  m "Failed to run custom error reporter: %s" msg))
+                Logs.err (fun m -> m "Failed to run custom error reporter: %s" msg))
          in
          match error_handler with
          | Some error_handler -> error_handler req

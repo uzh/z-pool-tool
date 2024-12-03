@@ -2,10 +2,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 module Language = Pool_common.Language
 
 let ptime_schema field =
-  Pool_conformist.schema_decoder
-    Pool_model.Time.parse_time
-    Ptime.to_rfc3339
-    field
+  Pool_conformist.schema_decoder Pool_model.Time.parse_time Ptime.to_rfc3339 field
 ;;
 
 let equal_ptime a b = Sihl.Configuration.is_test () || Ptime.equal a b
@@ -22,10 +19,7 @@ module Text = struct
   type t = (Language.t * name) list [@@deriving eq, show, yojson]
 
   let find_opt lang t = CCList.assoc_opt ~eq:Language.equal lang t
-
-  let find lang t =
-    find_opt lang t |> CCOption.value ~default:(CCList.hd t |> snd)
-  ;;
+  let find lang t = find_opt lang t |> CCOption.value ~default:(CCList.hd t |> snd)
 
   let create = function
     | [] -> Error Pool_message.(Error.AtLeastOneLanguageRequired Field.Text)
@@ -84,14 +78,7 @@ type t =
 
 let sexp_of_t { id; _ } = Id.sexp_of_t id
 
-let create
-      ?(id = Id.create ())
-      text
-      start_at
-      end_at
-      show_to_admins
-      show_to_contacts
-  =
+let create ?(id = Id.create ()) text start_at end_at show_to_admins show_to_contacts =
   { id
   ; text
   ; start_at
@@ -108,17 +95,9 @@ type admin = t * Pool_tenant.t list [@@deriving eq, show]
 open Pool_message
 
 let filterable_by = None
-
-let column_start =
-  (Field.Start, "pool_announcements.start_at") |> Query.Column.create
-;;
-
+let column_start = (Field.Start, "pool_announcements.start_at") |> Query.Column.create
 let column_end = (Field.End, "pool_announcements.end_at") |> Query.Column.create
 let searchable_by = []
 let sortable_by = [ column_start; column_end ]
-
-let default_sort =
-  Query.Sort.{ column = column_start; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_start; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

@@ -4,10 +4,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 module Content = struct
   type t = string [@@deriving eq, show, yojson]
 
-  let render text params =
-    Sihl.Contract.Email_template.render params text None |> fst
-  ;;
-
+  let render text params = Sihl.Contract.Email_template.render params text None |> fst
   let of_string m = m
   let value m = m
 end
@@ -20,9 +17,7 @@ type t =
 [@@deriving eq, show, yojson] [@@yojson.allow_extra_fields]
 
 let update ?new_recipient message =
-  { message with
-    recipient = CCOption.get_or ~default:message.recipient new_recipient
-  }
+  { message with recipient = CCOption.get_or ~default:message.recipient new_recipient }
 ;;
 
 let create recipient sender text = { recipient; sender; text }
@@ -36,8 +31,7 @@ module DlrMask = struct
 
   type t =
     | Delivered [@name "delivered"] [@printer Utils.ppx_printer "delivered"]
-    | NonDelivered [@name "non-delivered"]
-    [@printer Utils.ppx_printer "non-delivered"]
+    | NonDelivered [@name "non-delivered"] [@printer Utils.ppx_printer "non-delivered"]
     | Expired [@name "expired"] [@printer Utils.ppx_printer "expired"]
     | Unknown [@name "unknown"] [@printer Utils.ppx_printer "unknown"]
   [@@deriving eq, show { with_path = false }, yojson]
@@ -50,9 +44,7 @@ module DlrMask = struct
   ;;
 
   let to_human =
-    show
-    %> CCString.replace ~which:`All ~sub:"-" ~by:""
-    %> CCString.capitalize_ascii
+    show %> CCString.replace ~which:`All ~sub:"-" ~by:"" %> CCString.capitalize_ascii
   ;;
 end
 

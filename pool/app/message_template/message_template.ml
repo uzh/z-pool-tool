@@ -50,24 +50,16 @@ let sender_of_experiment pool experiment =
 
 let sender_of_public_experiment pool experiment =
   let open Utils.Lwt_result.Infix in
-  experiment
-  |> Experiment.Public.id
-  |> Experiment.find pool
-  |>> sender_of_experiment pool
+  experiment |> Experiment.Public.id |> Experiment.find pool |>> sender_of_experiment pool
 ;;
 
 let filter_languages ?(exclude = []) available templates =
-  let exclude =
-    exclude @ (templates |> CCList.map (fun { language; _ } -> language))
-  in
+  let exclude = exclude @ (templates |> CCList.map (fun { language; _ } -> language)) in
   available |> CCList.filter CCFun.(flip CCList.mem exclude %> not)
 ;;
 
-let missing_template_languages database_label entity_id label ?exclude languages
-  =
-  let%lwt existing =
-    find_all_of_entity_by_label database_label entity_id label
-  in
+let missing_template_languages database_label entity_id label ?exclude languages =
+  let%lwt existing = find_all_of_entity_by_label database_label entity_id label in
   filter_languages ?exclude languages existing |> Lwt.return
 ;;
 
@@ -79,8 +71,7 @@ let prepare_email ?optout_link language template sender email layout params =
     ; recipient = Pool_user.EmailAddress.value email
     ; subject = email_subject
     ; text = combine_plain_text language layout plain_text optout_link
-    ; html =
-        Some (combine_html ?optout_link language layout (Some email_subject))
+    ; html = Some (combine_html ?optout_link language layout (Some email_subject))
     ; cc = []
     ; bcc = []
     }
@@ -90,12 +81,7 @@ let prepare_email ?optout_link language template sender email layout params =
 ;;
 
 let prepare_manual_email
-      { ManualMessage.recipient
-      ; language
-      ; email_subject
-      ; email_text
-      ; plain_text
-      }
+      { ManualMessage.recipient; language; email_subject; email_text; plain_text }
       layout
       params
       sender
@@ -115,9 +101,7 @@ let prepare_manual_email
   Message_utils.render_email_params params mail
 ;;
 
-let layout_params layout =
-  [ "siteTitle", layout.site_title; "siteUrl", layout.link ]
-;;
+let layout_params layout = [ "siteTitle", layout.site_title; "siteUrl", layout.link ]
 
 let global_params layout user =
   Pool_user.
@@ -147,8 +131,7 @@ let public_experiment_params layout experiment =
     | None -> []
   in
   [ "experimentId", experiment_id
-  ; ( "experimentPublicTitle"
-    , experiment |> Public.public_title |> PublicTitle.value )
+  ; "experimentPublicTitle", experiment |> Public.public_title |> PublicTitle.value
   ; ( "experimentPublicDescription"
     , experiment
       |> Public.description
@@ -228,12 +211,9 @@ let session_params
       [ main_session; follow_ups ] |> CCString.concat "\n\n"
   in
   let start = start |> Start.value |> Pool_model.Time.formatted_date_time in
-  let duration =
-    duration |> Duration.value |> Pool_model.Time.formatted_timespan
-  in
+  let duration = duration |> Duration.value |> Pool_model.Time.formatted_timespan in
   let description =
-    session.public_description
-    |> CCOption.map_or ~default:"" PublicDescription.value
+    session.public_description |> CCOption.map_or ~default:"" PublicDescription.value
   in
   let session_params =
     [ "sessionId", session_id
@@ -299,9 +279,7 @@ module AccountSuspensionNotification = struct
         |> Contact.find_by_email database_label
         >|+ contact_language system_languages
     in
-    let%lwt template =
-      find_by_label_and_language_to_send database_label label language
-    in
+    let%lwt template = find_by_label_and_language_to_send database_label label language in
     let%lwt sender = default_sender_of_pool database_label in
     let layout = layout_from_tenant tenant in
     let params = email_params layout user in
@@ -316,18 +294,10 @@ module AssignmentCancellation = struct
   let label = Label.AssignmentCancellation
   let base_params layout contact = contact.Contact.user |> global_params layout
 
-  let email_params
-        ?follow_up_sessions
-        language
-        layout
-        experiment
-        session
-        assignment
-    =
+  let email_params ?follow_up_sessions language layout experiment session assignment =
     let follow_up_sessions =
       CCOption.map
-        (fun lst ->
-           lst, Pool_common.I18n.AssignmentCancellationMessageFollowUps)
+        (fun lst -> lst, Pool_common.I18n.AssignmentCancellationMessageFollowUps)
         follow_up_sessions
     in
     base_params layout assignment.contact
@@ -347,29 +317,17 @@ module AssignmentCancellation = struct
   let create ?follow_up_sessions tenant experiment session assignment =
     let pool = tenant.Pool_tenant.database_label in
     let%lwt sys_langs = Settings.find_languages pool in
-    let language =
-      experiment_message_language sys_langs experiment assignment.contact
-    in
+    let language = experiment_message_language sys_langs experiment assignment.contact in
     let%lwt template = template pool experiment language in
     let layout = layout_from_tenant tenant in
     let%lwt sender = sender_of_experiment pool experiment in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let params =
-      email_params
-        ?follow_up_sessions
-        language
-        layout
-        experiment
-        session
-        assignment
+      email_params ?follow_up_sessions language layout experiment session assignment
     in
     let email_address = assignment.contact |> Contact.email_address in
-    let email =
-      prepare_email language template sender email_address layout params
-    in
-    let entity_uuids =
-      session_message_uuids experiment session assignment.contact
-    in
+    let email = prepare_email language template sender email_address layout params in
+    let entity_uuids = session_message_uuids experiment session assignment.contact in
     create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return
   ;;
 end
@@ -380,18 +338,10 @@ module AssignmentConfirmation = struct
   let label = Label.AssignmentConfirmation
   let base_params layout contact = contact.Contact.user |> global_params layout
 
-  let email_params
-        ?follow_up_sessions
-        language
-        layout
-        experiment
-        session
-        assignment
-    =
+  let email_params ?follow_up_sessions language layout experiment session assignment =
     let follow_up_sessions =
       CCOption.map
-        (fun lst ->
-           lst, Pool_common.I18n.AssignmentConfirmationMessageFollowUps)
+        (fun lst -> lst, Pool_common.I18n.AssignmentConfirmationMessageFollowUps)
         follow_up_sessions
     in
     base_params layout assignment.contact
@@ -418,21 +368,11 @@ module AssignmentConfirmation = struct
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let fnc assignment =
       let params =
-        email_params
-          ?follow_up_sessions
-          language
-          layout
-          experiment
-          session
-          assignment
+        email_params ?follow_up_sessions language layout experiment session assignment
       in
       let email_address = assignment.contact |> Contact.email_address in
-      let email =
-        prepare_email language template sender email_address layout params
-      in
-      let entity_uuids =
-        session_message_uuids experiment session assignment.contact
-      in
+      let email = prepare_email language template sender email_address layout params in
+      let entity_uuids = session_message_uuids experiment session assignment.contact in
       create_email_job ?smtp_auth_id label entity_uuids email
     in
     Lwt.return fnc
@@ -442,8 +382,7 @@ end
 module AssignmentSessionChange = struct
   let label = Label.AssignmentSessionChange
 
-  let message_uuids experiment new_session old_session { Assignment.contact; _ }
-    =
+  let message_uuids experiment new_session old_session { Assignment.contact; _ } =
     [ experiment.Experiment.id |> Experiment.Id.to_common
     ; new_session.Session.id |> Session.Id.to_common
     ; old_session.Session.id |> Session.Id.to_common
@@ -453,14 +392,7 @@ module AssignmentSessionChange = struct
 
   let base_params layout contact = contact.Contact.user |> global_params layout
 
-  let email_params
-        language
-        layout
-        experiment
-        ~new_session
-        ~old_session
-        assignment
-    =
+  let email_params language layout experiment ~new_session ~old_session assignment =
     base_params layout assignment.Assignment.contact
     @ experiment_params layout experiment
     @ session_params layout language new_session
@@ -483,9 +415,7 @@ module AssignmentSessionChange = struct
         assignment
     in
     let email = prepare_manual_email message layout params sender in
-    let entity_uuids =
-      message_uuids experiment new_session old_session assignment
-    in
+    let entity_uuids = message_uuids experiment new_session old_session assignment in
     create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return
   ;;
 end
@@ -550,9 +480,7 @@ module ContactRegistrationAttempt = struct
 
   let create message_language tenant user =
     let pool = tenant.Pool_tenant.database_label in
-    let%lwt template =
-      find_by_label_and_language_to_send pool label message_language
-    in
+    let%lwt template = find_by_label_and_language_to_send pool label message_language in
     let layout = layout_from_tenant tenant in
     let tenant_url = tenant.Pool_tenant.url in
     let%lwt sender = default_sender_of_pool pool in
@@ -574,8 +502,7 @@ module EmailVerification = struct
   let label = Label.EmailVerification
 
   let email_params layout validation_url contact =
-    global_params layout contact.Contact.user
-    @ [ "verificationUrl", validation_url ]
+    global_params layout contact.Contact.user @ [ "verificationUrl", validation_url ]
   ;;
 
   let create pool language layout contact email_address token =
@@ -612,8 +539,7 @@ module ExperimentInvitation = struct
   let optout_link = Verified
 
   let email_params layout experiment contact =
-    global_params layout contact.Contact.user
-    @ experiment_params layout experiment
+    global_params layout contact.Contact.user @ experiment_params layout experiment
   ;;
 
   let prepare tenant experiment =
@@ -632,12 +558,8 @@ module ExperimentInvitation = struct
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) =
       let open CCResult in
-      let message_language =
-        experiment_message_language sys_langs experiment contact
-      in
-      let* lang, template =
-        find_template_by_language templates message_language
-      in
+      let message_language = experiment_message_language sys_langs experiment contact in
+      let* lang, template = find_template_by_language templates message_language in
       let params = email_params layout experiment contact in
       let email =
         prepare_email
@@ -659,9 +581,7 @@ module ExperimentInvitation = struct
     let open Message_utils in
     let%lwt sys_langs = Settings.find_languages database_label in
     let language = experiment_message_language sys_langs experiment contact in
-    let%lwt template =
-      find_by_label_and_language_to_send database_label label language
-    in
+    let%lwt template = find_by_label_and_language_to_send database_label label language in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let%lwt sender = sender_of_experiment database_label experiment in
     let layout = layout_from_tenant tenant in
@@ -701,12 +621,7 @@ module ManualSessionMessage = struct
     Lwt.return
     @@ fun assignment message ->
     let params =
-      email_params
-        message.ManualMessage.language
-        layout
-        experiment
-        session
-        assignment
+      email_params message.ManualMessage.language layout experiment session assignment
     in
     let email = prepare_manual_email message layout params sender in
     let entity_uuids =
@@ -752,9 +667,7 @@ module MatcherNotification = struct
     let%lwt sender = default_sender_of_pool pool in
     let params = email_params layout (Admin.user admin) experiment in
     let email_address = Admin.email_address admin in
-    let email =
-      prepare_email language template sender email_address layout params
-    in
+    let email = prepare_email language template sender email_address layout params in
     let entity_uuids = Experiment.[ experiment.id |> Id.to_common ] in
     create_email_job label entity_uuids email |> Lwt.return
   ;;
@@ -768,8 +681,7 @@ module MatchFilterUpdateNotification = struct
     ; Admin.(id admin |> Id.to_common)
     ]
     @ (sessions
-       |> CCList.map (fun (session, _) ->
-         Session.Id.to_common session.Session.id))
+       |> CCList.map (fun (session, _) -> Session.Id.to_common session.Session.id))
   ;;
 
   let assignment_list assignments =
@@ -780,8 +692,7 @@ module MatchFilterUpdateNotification = struct
         let assignment_title { Assignment.contact; _ } =
           Format.asprintf "- %s" (Contact.fullname contact)
         in
-        session_title :: CCList.map assignment_title assignments
-        |> CCString.concat "\n")
+        session_title :: CCList.map assignment_title assignments |> CCString.concat "\n")
       |> CCString.concat "\n\n"
     in
     [ "assignments", data ]
@@ -795,9 +706,7 @@ module MatchFilterUpdateNotification = struct
     @ [ "trigger", trigger ]
   ;;
 
-  let template pool language =
-    find_by_label_and_language_to_send pool label language
-  ;;
+  let template pool language = find_by_label_and_language_to_send pool label language
 
   let create tenant trigger admin experiment assignments =
     let pool = tenant.Pool_tenant.database_label in
@@ -806,22 +715,10 @@ module MatchFilterUpdateNotification = struct
     let layout = layout_from_tenant tenant in
     let%lwt sender = sender_of_experiment pool experiment in
     let params =
-      email_params
-        layout
-        language
-        trigger
-        (Admin.user admin)
-        experiment
-        assignments
+      email_params layout language trigger (Admin.user admin) experiment assignments
     in
     let email =
-      prepare_email
-        language
-        template
-        sender
-        (Admin.email_address admin)
-        layout
-        params
+      prepare_email language template sender (Admin.email_address admin) layout params
     in
     let entity_uuids = message_uuids experiment assignments admin in
     create_email_job label entity_uuids email |> Lwt.return
@@ -903,10 +800,7 @@ end
 
 module PhoneVerification = struct
   let label = Label.PhoneVerification
-
-  let message_params token =
-    [ "token", Pool_common.VerificationCode.value token ]
-  ;;
+  let message_params token = [ "token", Pool_common.VerificationCode.value token ]
 
   let create_text_message
         pool
@@ -952,9 +846,7 @@ module ProfileUpdateTrigger = struct
     let fnc contact =
       let open CCResult in
       let message_langauge = contact_language sys_langs contact in
-      let* lang, template =
-        find_template_by_language templates message_langauge
-      in
+      let* lang, template = find_template_by_language templates message_langauge in
       let email =
         prepare_email
           lang
@@ -1001,30 +893,13 @@ module SessionCancellation = struct
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) =
       let open CCResult in
-      let message_language =
-        experiment_message_language sys_langs experiment contact
-      in
-      let* lang, template =
-        find_template_by_language templates message_language
-      in
+      let message_language = experiment_message_language sys_langs experiment contact in
+      let* lang, template = find_template_by_language templates message_language in
       let params =
-        email_params
-          lang
-          layout
-          experiment
-          session
-          follow_up_sessions
-          reason
-          contact
+        email_params lang layout experiment session follow_up_sessions reason contact
       in
       let email =
-        prepare_email
-          lang
-          template
-          sender
-          (Contact.email_address contact)
-          layout
-          params
+        prepare_email lang template sender (Contact.email_address contact) layout params
       in
       let smtp_auth_id = experiment.Experiment.smtp_auth_id in
       let entity_uuids = session_message_uuids experiment session contact in
@@ -1049,27 +924,13 @@ module SessionCancellation = struct
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) cell_phone =
       let open CCResult in
-      let message_language =
-        experiment_message_language sys_langs experiment contact
-      in
-      let* lang, template =
-        find_template_by_language templates message_language
-      in
+      let message_language = experiment_message_language sys_langs experiment contact in
+      let* lang, template = find_template_by_language templates message_language in
       let params =
-        email_params
-          lang
-          layout
-          experiment
-          session
-          follow_up_sessions
-          reason
-          contact
+        email_params lang layout experiment session follow_up_sessions reason contact
       in
       let message =
-        Text_message.render_and_create
-          cell_phone
-          sender
-          (template.sms_text, params)
+        Text_message.render_and_create cell_phone sender (template.sms_text, params)
       in
       let entity_uuids = session_message_uuids experiment session contact in
       create_text_message_job ~entity_uuids ~message_template:label message
@@ -1109,21 +970,13 @@ module SessionReminder = struct
         ({ Assignment.contact; _ } as assignment)
     =
     let open Message_utils in
-    let language =
-      experiment_message_language system_languages experiment contact
-    in
+    let language = experiment_message_language system_languages experiment contact in
     let%lwt template = find_template pool experiment session language in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
     let params = email_params language layout experiment session assignment in
     let email =
-      prepare_email
-        language
-        template
-        sender
-        (Contact.email_address contact)
-        layout
-        params
+      prepare_email language template sender (Contact.email_address contact) layout params
     in
     let entity_uuids = session_message_uuids experiment session contact in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
@@ -1146,21 +999,11 @@ module SessionReminder = struct
     let layout = layout_from_tenant tenant in
     let fnc ({ Assignment.contact; _ } as assignment) =
       let open CCResult in
-      let message_language =
-        experiment_message_language sys_langs experiment contact
-      in
-      let* lang, template =
-        find_template_by_language templates message_language
-      in
+      let message_language = experiment_message_language sys_langs experiment contact in
+      let* lang, template = find_template_by_language templates message_language in
       let params = email_params lang layout experiment session assignment in
       let email =
-        prepare_email
-          lang
-          template
-          sender
-          (Contact.email_address contact)
-          layout
-          params
+        prepare_email lang template sender (Contact.email_address contact) layout params
       in
       let entity_uuids = session_message_uuids experiment session contact in
       let smtp_auth_id = experiment.Experiment.smtp_auth_id in
@@ -1169,13 +1012,7 @@ module SessionReminder = struct
     Lwt.return fnc
   ;;
 
-  let prepare_text_messages
-        pool
-        (tenant : Pool_tenant.t)
-        sys_langs
-        experiment
-        session
-    =
+  let prepare_text_messages pool (tenant : Pool_tenant.t) sys_langs experiment session =
     let open Message_utils in
     let%lwt templates =
       find_all_by_label_to_send
@@ -1191,18 +1028,11 @@ module SessionReminder = struct
     let layout = layout_from_tenant tenant in
     let fnc ({ Assignment.contact; _ } as assignment) cell_phone =
       let open CCResult in
-      let message_language =
-        experiment_message_language sys_langs experiment contact
-      in
-      let* lang, template =
-        find_template_by_language templates message_language
-      in
+      let message_language = experiment_message_language sys_langs experiment contact in
+      let* lang, template = find_template_by_language templates message_language in
       let params = email_params lang layout experiment session assignment in
       let message =
-        Text_message.render_and_create
-          cell_phone
-          sender
-          (template.sms_text, params)
+        Text_message.render_and_create cell_phone sender (template.sms_text, params)
       in
       let entity_uuids =
         session_message_uuids experiment session assignment.Assignment.contact
@@ -1217,8 +1047,7 @@ end
 module SessionReschedule = struct
   let label = Label.SessionReschedule
 
-  let email_params lang layout experiment session new_start new_duration contact
-    =
+  let email_params lang layout experiment session new_start new_duration contact =
     let open Pool_model.Time in
     let open Session in
     global_params layout contact.Contact.user
@@ -1236,30 +1065,13 @@ module SessionReschedule = struct
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) new_start new_duration =
       let open CCResult in
-      let message_language =
-        experiment_message_language sys_langs experiment contact
-      in
-      let* lang, template =
-        find_template_by_language templates message_language
-      in
+      let message_language = experiment_message_language sys_langs experiment contact in
+      let* lang, template = find_template_by_language templates message_language in
       let params =
-        email_params
-          lang
-          layout
-          experiment
-          session
-          new_start
-          new_duration
-          contact
+        email_params lang layout experiment session new_start new_duration contact
       in
       let email =
-        prepare_email
-          lang
-          template
-          sender
-          (Contact.email_address contact)
-          layout
-          params
+        prepare_email lang template sender (Contact.email_address contact) layout params
       in
       let entity_uuids = session_message_uuids experiment session contact in
       let smtp_auth_id = experiment.Experiment.smtp_auth_id in
@@ -1302,8 +1114,7 @@ module SignUpVerification = struct
         let signup_code =
           let open Signup_code in
           signup_code
-          |> CCOption.map_or ~default:[] (fun code ->
-            [ url_key, Code.value code ])
+          |> CCOption.map_or ~default:[] (fun code -> [ url_key, Code.value code ])
         in
         Pool_common.
           [ ( Pool_message.Field.Language
@@ -1424,9 +1235,7 @@ module WaitingListConfirmation = struct
     in
     let email_address = contact |> Contact.email_address in
     let params = email_params layout contact experiment in
-    let email =
-      prepare_email language template sender email_address layout params
-    in
+    let email = prepare_email language template sender email_address layout params in
     let entity_uuids = public_experiment_message_uuids experiment contact in
     let smtp_auth_id = Experiment.Public.smtp_auth_id experiment in
     create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return_ok

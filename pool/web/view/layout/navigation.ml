@@ -34,8 +34,7 @@ module NavElements = struct
          ]
        else [])
       @ [ "/user/login-information", LoginInformation ]
-      |> CCList.map (fun (url, field) ->
-        Single (prefixed ?prefix url, field, AlwaysOn))
+      |> CCList.map (fun (url, field) -> Single (prefixed ?prefix url, field, AlwaysOn))
     ;;
 
     let nav ?contact ?prefix () =
@@ -47,8 +46,7 @@ module NavElements = struct
 
   let guest ?(root = false) context =
     let prefix = if root then Some "root" else None in
-    [ NavElement.login ?prefix () ]
-    |> NavUtils.create_nav_with_language_switch context
+    [ NavElement.login ?prefix () ] |> NavUtils.create_nav_with_language_switch context
   ;;
 
   let contact context =
@@ -78,22 +76,10 @@ module NavElements = struct
                 (Set Custom_field.Guard.Access.index)
             ]
         ; single "/admin/filter" Filter (Set Filter.Guard.Access.index)
-        ; single
-            "/admin/locations"
-            Locations
-            (Set Pool_location.Guard.Access.index)
-        ; single
-            "/admin/settings/queue"
-            Queue
-            (Set (Pool_queue.Guard.Access.index ()))
-        ; single
-            "/admin/settings"
-            SystemSettings
-            (Set Settings.Guard.Access.index)
-        ; single
-            "/admin/settings/schedules"
-            Schedules
-            (Set Schedule.Guard.Access.index)
+        ; single "/admin/locations" Locations (Set Pool_location.Guard.Access.index)
+        ; single "/admin/settings/queue" Queue (Set (Pool_queue.Guard.Access.index ()))
+        ; single "/admin/settings" SystemSettings (Set Settings.Guard.Access.index)
+        ; single "/admin/settings/schedules" Schedules (Set Schedule.Guard.Access.index)
         ; single "/admin/settings/smtp" Smtp (Set Email.Guard.Access.Smtp.index)
         ; single
             "/admin/settings/role-permission"
@@ -121,10 +107,7 @@ module NavElements = struct
             "/admin/organisational-unit"
             OrganisationalUnits
             (Set Organisational_unit.Guard.Access.index)
-        ; single
-            (Http_utils.Url.Admin.api_key_path ())
-            ApiKeys
-            (Set Api_key.Access.index)
+        ; single (Http_utils.Url.Admin.api_key_path ()) ApiKeys (Set Api_key.Access.index)
         ]
       in
       Parent (None, Settings, OnChildren, children) |> NavElement.create
@@ -136,14 +119,9 @@ module NavElements = struct
       |> parent Users
       |> NavElement.create
     in
-    let dashboard =
-      single "/admin/dashboard" Dashboard AlwaysOn |> NavElement.create
-    in
+    let dashboard = single "/admin/dashboard" Dashboard AlwaysOn |> NavElement.create in
     let experiments =
-      single
-        "/admin/experiments"
-        Experiments
-        (Set Experiment.Guard.Access.index)
+      single "/admin/experiments" Experiments (Set Experiment.Guard.Access.index)
       |> NavElement.create
     in
     [ dashboard
@@ -163,8 +141,7 @@ module NavElements = struct
       |> NavElement.create
     in
     let users =
-      single "/root/users" Users (Set Admin.Guard.Access.index)
-      |> NavElement.create
+      single "/root/users" Users (Set Admin.Guard.Access.index) |> NavElement.create
     in
     let announcements =
       single
@@ -209,8 +186,7 @@ module NavElements = struct
     Lwt.return
     @@
     match user with
-    | Pool_context.Guest | Pool_context.Contact _ ->
-      guest ~root:true context languages
+    | Pool_context.Guest | Pool_context.Contact _ -> guest ~root:true context languages
     | Pool_context.Admin _ -> root context
   ;;
 end
@@ -222,9 +198,7 @@ let create_main
       title
       tenant_languages
   =
-  let%lwt actor =
-    Pool_context.Utils.find_authorizable_opt database_label user
-  in
+  let%lwt actor = Pool_context.Utils.find_authorizable_opt database_label user in
   let%lwt nav_links =
     let make_links =
       match kind with

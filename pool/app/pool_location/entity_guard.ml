@@ -21,17 +21,13 @@ module FileTarget = struct
   let decorate ?ctx id =
     Persistence.Target.decorate
       ?ctx
-      (Uuid.target_of Entity.Mapping.Id.value
-       %> Guard.Target.create `LocationFile)
+      (Uuid.target_of Entity.Mapping.Id.value %> Guard.Target.create `LocationFile)
       id
     >|- Pool_message.Error.authorization
   ;;
 
   let to_authorizable ?ctx { Entity.Mapping.id; _ } = decorate ?ctx id
-
-  let to_authorizable_of_write ?ctx { Entity.Mapping.Write.id; _ } =
-    decorate ?ctx id
-  ;;
+  let to_authorizable_of_write ?ctx { Entity.Mapping.Write.id; _ } = decorate ?ctx id
 end
 
 module Access = struct
@@ -53,9 +49,7 @@ module Access = struct
   module File = struct
     let file action uuid =
       one_of_tuple
-        ( action
-        , `LocationFile
-        , Some (uuid |> Uuid.target_of Entity.Mapping.Id.value) )
+        (action, `LocationFile, Some (uuid |> Uuid.target_of Entity.Mapping.Id.value))
     ;;
 
     let index = one_of_tuple (Read, `LocationFile, None)

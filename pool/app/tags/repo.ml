@@ -29,10 +29,7 @@ module RepoEntity = struct
       Ok { id; title; description; model }
     in
     Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (t2 Id.t (t2 Title.t (t2 (option Description.t) Model.t))))
+      custom ~encode ~decode (t2 Id.t (t2 Title.t (t2 (option Description.t) Model.t))))
   ;;
 end
 
@@ -131,9 +128,7 @@ module Sql = struct
     function
     | [] -> base
     | ids ->
-      CCList.mapi
-        (fun i _ -> Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2))
-        ids
+      CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2)) ids
       |> CCString.concat ","
       |> Format.asprintf
            {sql|
@@ -193,8 +188,7 @@ module Sql = struct
       CCOption.map_or
         ~default:""
         (Id.value
-         %> Format.asprintf
-              {|AND pool_tags.uuid != UNHEX(REPLACE('%s', '-', ''))|})
+         %> Format.asprintf {|AND pool_tags.uuid != UNHEX(REPLACE('%s', '-', ''))|})
         exclude_id
     in
     Format.asprintf
@@ -228,12 +222,7 @@ module Sql = struct
 
   let find_all_validated ?(permission = Guard.Permission.Read) pool actor =
     let%lwt guardian =
-      Guard.sql_where_fragment
-        ~field:"pool_tags.uuid"
-        pool
-        permission
-        `Tag
-        actor
+      Guard.sql_where_fragment ~field:"pool_tags.uuid" pool permission `Tag actor
     in
     Database.collect pool (find_all_validated_request ?guardian ()) ()
   ;;
@@ -250,24 +239,12 @@ module Sql = struct
     |> RepoEntity.Model.t ->* RepoEntity.t
   ;;
 
-  let find_all_validated_with_model
-        ?(permission = Guard.Permission.Read)
-        pool
-        model
-        actor
+  let find_all_validated_with_model ?(permission = Guard.Permission.Read) pool model actor
     =
     let%lwt guardian =
-      Guard.sql_where_fragment
-        ~field:"pool_tags.uuid"
-        pool
-        permission
-        `Tag
-        actor
+      Guard.sql_where_fragment ~field:"pool_tags.uuid" pool permission `Tag actor
     in
-    Database.collect
-      pool
-      (find_all_validated_with_model_request ?guardian ())
-      model
+    Database.collect pool (find_all_validated_with_model_request ?guardian ()) model
   ;;
 
   let insert_request =
@@ -371,9 +348,7 @@ module Sql = struct
       |sql}
     ;;
 
-    let join_tags =
-      {sql|JOIN pool_tags ON pool_tagging.tag_uuid = pool_tags.uuid|sql}
-    ;;
+    let join_tags = {sql|JOIN pool_tags ON pool_tagging.tag_uuid = pool_tags.uuid|sql}
 
     let create_find_all_tag_sql select_from_model join_model_tablename =
       Format.asprintf

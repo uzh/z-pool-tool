@@ -32,10 +32,6 @@ module Make (Config : Pools_sig.ConfigSig) : Guardian_backend.Pools.Sig = struct
   let collect ?ctx = collect (of_ctx ctx)
   let exec ?ctx = exec (of_ctx ctx)
   let populate ?ctx = populate (of_ctx ctx)
-
-  let transaction ?ctx ?setup ?cleanup =
-    transaction ?setup ?cleanup (of_ctx ctx)
-  ;;
-
+  let transaction ?ctx ?setup ?cleanup = transaction ?setup ?cleanup (of_ctx ctx)
   let transaction_iter ?ctx = transaction_iter (of_ctx ctx)
 end

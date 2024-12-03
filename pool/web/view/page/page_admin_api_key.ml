@@ -8,18 +8,10 @@ let api_key_path = Http_utils.Url.Admin.api_key_path
 let field_to_string = Pool_common.Utils.field_to_string_capitalized
 
 module Partials = struct
-  let roles_list
-        ?is_edit
-        ?top_element
-        ({ Pool_context.language; _ } as context)
-        target_id
+  let roles_list ?is_edit ?top_element ({ Pool_context.language; _ } as context) target_id
     =
     let open Component.Role in
-    List.create
-      ?is_edit
-      ~path:(Http_utils.Url.Admin.api_key_path ())
-      context
-      target_id
+    List.create ?is_edit ~path:(Http_utils.Url.Admin.api_key_path ()) context target_id
     %> CCList.return
     %> roles_section ?top_element language
   ;;
@@ -32,10 +24,7 @@ let list { Pool_context.language; csrf; _ } (api_keys, query) =
   let data_table = Component.DataTable.create_meta url query language in
   let create_btn =
     api_key_path ~suffix:"new" ()
-    |> make_btn
-         ~style:`Success
-         ~icon:Icon.Add
-         ~control:(language, Control.Add None)
+    |> make_btn ~style:`Success ~icon:Icon.Add ~control:(language, Control.Add None)
   in
   let cols =
     [ `column column_name
@@ -51,8 +40,7 @@ let list { Pool_context.language; csrf; _ } (api_keys, query) =
     in
     let classname = if is_expired then [ "bg-red-lighter" ] else [] in
     let edit_btn =
-      api_key_path ~id ~suffix:"edit" ()
-      |> make_btn ~style:`Primary ~icon:Icon.Create
+      api_key_path ~id ~suffix:"edit" () |> make_btn ~style:`Primary ~icon:Icon.Create
     in
     let disable_form =
       match is_expired with
@@ -64,9 +52,7 @@ let list { Pool_context.language; csrf; _ } (api_keys, query) =
         form
           ~a:
             [ a_method `Post
-            ; a_action
-                (Sihl.Web.externalize_path
-                   (api_key_path ~id ~suffix:"disable" ()))
+            ; a_action (Sihl.Web.externalize_path (api_key_path ~id ~suffix:"disable" ()))
             ; a_user_data "confirmable" confirmable
             ]
           [ Input.csrf_element csrf ()
@@ -86,12 +72,7 @@ let list { Pool_context.language; csrf; _ } (api_keys, query) =
     |> CCList.map (CCList.return %> td)
     |> tr ~a:[ a_class classname ]
   in
-  Component.DataTable.make
-    ~cols
-    ~row
-    ~target_id:"api-key-list"
-    data_table
-    api_keys
+  Component.DataTable.make ~cols ~row ~target_id:"api-key-list" data_table api_keys
 ;;
 
 let index (Pool_context.{ language; _ } as context) api_keys =
@@ -125,12 +106,7 @@ let form { Pool_context.csrf; language; _ } ?flash_fetcher ~control ?api_key () 
       div
         ~a:[ a_class [ "form-group" ] ]
         [ label [ txt (field_to_string language Field.ExpiresAt) ]
-        ; p
-            [ txt
-                (expires_at
-                 |> ExpiresAt.value
-                 |> Utils.Ptime.formatted_date_time)
-            ]
+        ; p [ txt (expires_at |> ExpiresAt.value |> Utils.Ptime.formatted_date_time) ]
         ]
   in
   form

@@ -71,8 +71,7 @@ let update_request table =
   table
   |> update_sql
        ~where_fragment:
-         [%string
-           {sql| WHERE %{table}.uuid = %{Entity.Id.sql_value_fragment "$1"} |sql}]
+         [%string {sql| WHERE %{table}.uuid = %{Entity.Id.sql_value_fragment "$1"} |sql}]
   |> Repo_entity.Instance.t ->. Caqti_type.unit
 ;;
 
@@ -81,9 +80,7 @@ let update ?(history = false) label =
 ;;
 
 let find_request table =
-  let columns =
-    Some (sql_table table) |> sql_select_columns |> CCString.concat ", "
-  in
+  let columns = Some (sql_table table) |> sql_select_columns |> CCString.concat ", " in
   [%string
     {sql|
       SELECT %{columns} FROM %{sql_table table}
@@ -176,17 +173,14 @@ let count_workable job_name label =
 
 let poll_n_workable database_label n_instances job_name =
   let find_workable_request =
-    find_workable_query ~limit:n_instances ()
-    |> Repo_entity.(JobName.t ->* Instance.t)
+    find_workable_query ~limit:n_instances () |> Repo_entity.(JobName.t ->* Instance.t)
   in
   Database.query database_label (fun connection ->
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let* () = Connection.start () in
     Lwt.catch
       (fun () ->
-         let* instances =
-           Connection.collect_list find_workable_request job_name
-         in
+         let* instances = Connection.collect_list find_workable_request job_name in
          let%lwt instances =
            CCList.map Entity.Instance.poll instances
            |> Lwt_list.filter_map_s (fun instance ->
@@ -251,10 +245,7 @@ let populatable =
   let open Entity in
   let to_bytes = Id.(to_bytes of_string value) in
   CCList.map (fun ({ Instance.id; clone_of; _ } as job) ->
-    { job with
-      Instance.id = to_bytes id
-    ; clone_of = CCOption.map to_bytes clone_of
-    })
+    { job with Instance.id = to_bytes id; clone_of = CCOption.map to_bytes clone_of })
 ;;
 
 let enqueue_all label = function
@@ -362,12 +353,7 @@ module type ColumnsSig = sig
   val column_run_at : Query.Column.t
   val column_input : Query.Column.t
   val job_name_filter : Query.Filter.Condition.Human.t
-
-  val job_status_filter
-    :  ?history:bool
-    -> unit
-    -> Query.Filter.Condition.Human.t
-
+  val job_status_filter : ?history:bool -> unit -> Query.Filter.Condition.Human.t
   val searchable_by : Query.Column.t list
   val sortable_by : Query.Column.t list
   val filterable_by : Query.Filter.Condition.Human.t list option
@@ -411,25 +397,12 @@ module MakeColumns (Table : sig
   let searchable_by = [ column_input ]
 
   let sortable_by =
-    [ column_job_name
-    ; column_job_status
-    ; column_error
-    ; column_error_at
-    ; column_run_at
-    ]
+    [ column_job_name; column_job_status; column_error; column_error_at; column_run_at ]
   ;;
 
   let filterable_by = Some [ job_name_filter; job_status_filter () ]
-
-  let history_filterable_by =
-    Some [ job_name_filter; job_status_filter ~history:true () ]
-  ;;
-
+  let history_filterable_by = Some [ job_name_filter; job_status_filter ~history:true () ]
   let current_filterable_by = Some [ job_name_filter ]
-
-  let default_sort =
-    Query.Sort.{ column = column_run_at; order = SortOrder.Descending }
-  ;;
-
+  let default_sort = Query.Sort.{ column = column_run_at; order = SortOrder.Descending }
   let default_query = Query.create ~sort:default_sort ()
 end

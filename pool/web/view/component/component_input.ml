@@ -15,12 +15,7 @@ let button_group buttons =
   div
     ~a:
       [ a_class
-          [ "flexrow"
-          ; "justify-end"
-          ; "align-center"
-          ; "items-center"
-          ; "flex-gap-xs"
-          ]
+          [ "flexrow"; "justify-end"; "align-center"; "items-center"; "flex-gap-xs" ]
       ]
     buttons
 ;;
@@ -86,8 +81,7 @@ module Elements = struct
 
   let apply_orientation attributes = function
     | `Vertical -> input ~a:attributes ()
-    | `Horizontal ->
-      div ~a:[ a_class [ "input-group" ] ] [ input ~a:attributes () ]
+    | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ input ~a:attributes () ]
   ;;
 
   let identifier ?identifier name =
@@ -98,8 +92,7 @@ end
 
 let flash_fetched_value fetcher value name =
   let old_value =
-    CCOption.bind fetcher (fun flash_fetcher ->
-      name |> Field.show |> flash_fetcher)
+    CCOption.bind fetcher (fun flash_fetcher -> name |> Field.show |> flash_fetcher)
   in
   let open CCOption.Infix in
   old_value <+> value |> CCOption.get_or ~default:""
@@ -130,9 +123,7 @@ let input_element
   let id = Elements.identifier ?identifier name in
   let attributes =
     let attrs =
-      let additional =
-        if input_type == `Password then [ a_autocomplete `Off ] else []
-      in
+      let additional = if input_type == `Password then [ a_autocomplete `Off ] else [] in
       Elements.attributes input_type name id (a_value value :: additional)
       @ additional_attributes
     in
@@ -148,13 +139,9 @@ let input_element
     let error = Elements.error language error in
     let input_element = Elements.apply_orientation attributes orientation in
     let label =
-      if hide_label
-      then txt ""
-      else label ~a:[ a_label_for id ] [ txt input_label ]
+      if hide_label then txt "" else label ~a:[ a_label_for id ] [ txt input_label ]
     in
-    div
-      ~a:[ a_class group_class ]
-      ([ label; input_element ] @ help @ error @ append_html)
+    div ~a:[ a_class group_class ] ([ label; input_element ] @ help @ error @ append_html)
 ;;
 
 let flatpicker_element
@@ -182,8 +169,7 @@ let flatpicker_element
   let input_label = Elements.input_label language name label_field required in
   let value = flash_fetched_value flash_fetcher value name in
   let flat_picker_help =
-    span ~a:[ a_class [ "help"; "datepicker-msg"; "error-message" ] ] []
-    |> CCList.pure
+    span ~a:[ a_class [ "help"; "datepicker-msg"; "error-message" ] ] [] |> CCList.pure
   in
   let disable_hours =
     match input_type with
@@ -191,26 +177,19 @@ let flatpicker_element
     | `DateTime -> false
   in
   let flatpicker_attributes =
-    let input_class =
-      "datepicker" :: (if success then [ "is-valid" ] else [])
-    in
-    [ a_class input_class
-    ; a_user_data "language" (Pool_common.Language.show language)
-    ]
+    let input_class = "datepicker" :: (if success then [ "is-valid" ] else []) in
+    [ a_class input_class; a_user_data "language" (Pool_common.Language.show language) ]
     @ additional_attributes
     @ CCList.filter_map
-        (fun (flag, key, value) ->
-           if flag then Some (a_user_data key value) else None)
+        (fun (flag, key, value) -> if flag then Some (a_user_data key value) else None)
         [ ( warn_past
           , "warn-past"
-          , Pool_common.(Utils.hint_to_string language I18n.SelectedDateIsPast)
-          )
+          , Pool_common.(Utils.hint_to_string language I18n.SelectedDateIsPast) )
         ; disable_past, "disable-past", "true"
         ; disable_hours, "disable-time", "true"
         ; disable_future, "disable-future", "true"
         ]
-    @ (min_value
-       |> CCOption.map_or ~default:[] CCFun.(flatpickr_min %> CCList.return))
+    @ (min_value |> CCOption.map_or ~default:[] CCFun.(flatpickr_min %> CCList.return))
   in
   let id = Elements.identifier ?identifier name in
   let attributes =
@@ -238,16 +217,13 @@ let flatpicker_element
 
 let date_picker_element ?value =
   let value =
-    value
-    |> CCOption.map (fun date -> Pool_model.Base.Ptime.date_to_flatpickr date)
+    value |> CCOption.map (fun date -> Pool_model.Base.Ptime.date_to_flatpickr date)
   in
   flatpicker_element `Date ?value
 ;;
 
 let date_time_picker_element ?value =
-  let value =
-    value |> CCOption.map Pool_model.Base.Ptime.date_time_to_flatpickr
-  in
+  let value = value |> CCOption.map Pool_model.Base.Ptime.date_time_to_flatpickr in
   flatpicker_element `DateTime ?value
 ;;
 
@@ -287,9 +263,7 @@ let timespan_picker
     let attrs =
       Elements.attributes `Number name id [ a_value value ]
       @ additional_attributes
-      @ [ a_input_min (CCOption.value ~default:(`Number 0) min_value)
-        ; a_step (Some 1.)
-        ]
+      @ [ a_input_min (CCOption.value ~default:(`Number 0) min_value); a_step (Some 1.) ]
     in
     let attrs = if required then a_required () :: attrs else attrs in
     let attrs = if read_only then a_readonly () :: attrs else attrs in
@@ -299,9 +273,7 @@ let timespan_picker
   let help = Elements.hints language hints in
   let error = Elements.error language error in
   let input_element =
-    let unit_field_name =
-      name |> TimeUnit.named_field |> Pool_message.Field.show
-    in
+    let unit_field_name = name |> TimeUnit.named_field |> Pool_message.Field.show in
     let hidden_unit_field =
       if read_only
       then
@@ -336,11 +308,7 @@ let timespan_picker
         option
           ~a:(a_value (TimeUnit.show unit) :: selected)
           (txt (TimeUnit.to_human unit)))
-      |> select
-           ~a:
-             (if read_only
-              then [ a_disabled () ]
-              else [ a_name unit_field_name ])
+      |> select ~a:(if read_only then [ a_disabled () ] else [ a_name unit_field_name ])
       |> CCList.return
       |> div ~a:[ a_class [ "select" ] ]
     in
@@ -355,9 +323,7 @@ let timespan_picker
   in
   div
     ~a:[ a_class group_class ]
-    ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
-     @ help
-     @ error)
+    ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ] @ help @ error)
 ;;
 
 let checkbox_element
@@ -381,8 +347,7 @@ let checkbox_element
   =
   let input_label = Elements.input_label language name label_field required in
   let value =
-    CCOption.bind flash_fetcher (fun flash_fetcher ->
-      name |> Field.show |> flash_fetcher)
+    CCOption.bind flash_fetcher (fun flash_fetcher -> name |> Field.show |> flash_fetcher)
     |> CCOption.map (CCString.equal "true")
     |> CCOption.value ~default:value
   in
@@ -395,9 +360,7 @@ let checkbox_element
   let attributes =
     Elements.attributes `Checkbox name id value_attrs
     |> fun attrs ->
-    if required && not as_switch
-    then CCList.cons (a_required ()) attrs
-    else attrs
+    if required && not as_switch then CCList.cons (a_required ()) attrs else attrs
   in
   let attributes =
     [ disabled, a_disabled (); read_only, a_onclick "return false;" ]
@@ -426,8 +389,7 @@ let checkbox_element
     | `Vertical ->
       (match as_switch with
        | true -> [ label ~a:[ a_label_for id ] [ txt input_label ]; checkbox ]
-       | false ->
-         [ div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ] ])
+       | false -> [ div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ] ])
     | `Horizontal ->
       [ label ~a:[ a_label_for id ] [ txt input_label ]
       ; div ~a:[ a_class [ "input-group" ] ] [ checkbox ]
@@ -467,16 +429,11 @@ let input_element_file
   let accept_attr, accept_hint =
     match accept with
     | [] -> [], None
-    | accept ->
-      [ a_accept accept ], Some [ Pool_common.I18n.FileUploadAcceptMime accept ]
+    | accept -> [ a_accept accept ], Some [ Pool_common.I18n.FileUploadAcceptMime accept ]
   in
   let input_attributes =
-    let attributes =
-      [ a_input_type `File; a_id name; a_name name ] @ accept_attr
-    in
-    let attributes =
-      if allow_multiple then a_multiple () :: attributes else attributes
-    in
+    let attributes = [ a_input_type `File; a_id name; a_name name ] @ accept_attr in
+    let attributes = if allow_multiple then a_multiple () :: attributes else attributes in
     match required with
     | true -> attributes @ [ a_required () ]
     | false -> attributes
@@ -510,8 +467,7 @@ let textarea_element
   let input_label = Elements.input_label language name label_field required in
   let ( <+> ) = CCOption.( <+> ) in
   let old_value =
-    CCOption.bind flash_fetcher (fun flash_fetcher ->
-      name |> Field.show |> flash_fetcher)
+    CCOption.bind flash_fetcher (fun flash_fetcher -> name |> Field.show |> flash_fetcher)
   in
   let value = old_value <+> value |> CCOption.get_or ~default:"" in
   let help = Elements.hints language hints in
@@ -550,9 +506,7 @@ let submit_element
      :: CCOption.map_or ~default:[] (fun _ -> [ "has-icon" ]) has_icon)
     @ if is_text then [ "is-text" ] else []
   in
-  let text_content =
-    span [ txt Pool_common.Utils.(control_to_string lang control) ]
-  in
+  let text_content = span [ txt Pool_common.Utils.(control_to_string lang control) ] in
   let content =
     CCOption.map_or
       ~default:[ text_content ]
@@ -560,17 +514,13 @@ let submit_element
       has_icon
   in
   button
-    ~a:
-      ([ a_button_type `Submit; a_class (classnames @ button_type_class) ]
-       @ attributes)
+    ~a:([ a_button_type `Submit; a_class (classnames @ button_type_class) ] @ attributes)
     content
 ;;
 
 let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
   button
-    ~a:
-      ([ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
-       @ attributes)
+    ~a:([ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ] @ attributes)
     [ Icon.to_html icon_type ]
 ;;
 
@@ -647,8 +597,7 @@ let selector
   let name = Field.(show field) in
   let selected =
     let open CCOption in
-    bind flash_fetcher (fun flash_fetcher ->
-      field |> Field.show |> flash_fetcher)
+    bind flash_fetcher (fun flash_fetcher -> field |> Field.show |> flash_fetcher)
     <+> map show selected
   in
   let attributes =
@@ -699,15 +648,11 @@ let selector
     | true ->
       let base_attr = a_value "" in
       let attrs =
-        if CCOption.is_none selected
-        then [ a_selected (); base_attr ]
-        else [ base_attr ]
+        if CCOption.is_none selected then [ a_selected (); base_attr ] else [ base_attr ]
       in
       let attrs = if required then [ a_disabled () ] @ attrs else attrs in
       let default =
-        Pool_common.Utils.control_to_string
-          language
-          Pool_message.Control.PleaseSelect
+        Pool_common.Utils.control_to_string language Pool_message.Control.PleaseSelect
         |> txt
         |> option ~a:attrs
       in
@@ -744,9 +689,7 @@ let selector
     ([ label
      ; div
          ~a:[ a_class [ "select" ] ]
-         [ select ~a:([ a_name name; a_id name ] @ attributes) options
-         ; hidden_field
-         ]
+         [ select ~a:([ a_name name; a_id name ] @ attributes) options; hidden_field ]
      ]
      @ help
      @ error
@@ -790,9 +733,7 @@ let multi_select
       ()
   =
   let error = Elements.error language error in
-  let help_html =
-    Elements.hints ~classnames:[ "flex-basis-100" ] language hints
-  in
+  let help_html = Elements.hints ~classnames:[ "flex-basis-100" ] language hints in
   CCList.map
     (fun option ->
        let value = to_value option in
@@ -804,8 +745,7 @@ let multi_select
              option
              selected
          | Some flash_values ->
-           CCList.find_opt (CCString.equal value) flash_values
-           |> CCOption.is_some
+           CCList.find_opt (CCString.equal value) flash_values |> CCOption.is_some
        in
        let input_elm =
          let checked = if is_checked then [ a_checked () ] else [] in
@@ -822,9 +762,7 @@ let multi_select
               @ CCOption.value ~default:[] additional_attributes)
            ()
        in
-       let label =
-         label ~a:[ a_label_for value ] [ txt (option |> to_label) ]
-       in
+       let label = label ~a:[ a_label_for value ] [ txt (option |> to_label) ] in
        div [ input_elm; label ])
     options
   |> fun inputs ->
@@ -853,14 +791,9 @@ let multi_select
 
 let reset_form_button language =
   span
-    ~a:
-      [ a_class [ "has-icon"; "color-red"; "pointer" ]
-      ; a_user_data "reset-form" ""
-      ]
+    ~a:[ a_class [ "has-icon"; "color-red"; "pointer" ]; a_user_data "reset-form" "" ]
     [ Icon.(to_html RefreshOutline)
-    ; Pool_common.Utils.control_to_string
-        language
-        Pool_message.Control.(Reset None)
+    ; Pool_common.Utils.control_to_string language Pool_message.Control.(Reset None)
       |> txt
     ]
 ;;
@@ -876,10 +809,7 @@ let cell_phone_input ?(required = false) () =
     ~a:[ a_class [ "flexrow"; "even"; "flex-gap" ] ]
     [ div
         ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:([ a_name Pool_message.Field.(show AreaCode) ] @ attrs)
-            options
-        ]
+        [ select ~a:([ a_name Pool_message.Field.(show AreaCode) ] @ attrs) options ]
     ; div
         ~a:[ a_class [ "form-group" ] ]
         [ input
@@ -899,10 +829,7 @@ let cell_phone_input ?(required = false) () =
 let notify_via_selection language =
   div
     ~a:[ a_class [ "form-group" ] ]
-    (label
-       [ Elements.input_label language Pool_message.Field.NotifyVia None true
-         |> txt
-       ]
+    (label [ Elements.input_label language Pool_message.Field.NotifyVia None true |> txt ]
      :: Pool_common.(
           NotifyVia.all
           |> CCList.map (fun option ->
@@ -963,9 +890,7 @@ let admin_select
         | true -> a_disabled () :: attrs
         | false -> attrs
       in
-      Pool_common.Utils.control_to_string
-        language
-        Pool_message.Control.PleaseSelect
+      Pool_common.Utils.control_to_string language Pool_message.Control.PleaseSelect
       |> txt
       |> option ~a:attrs
     in
@@ -974,9 +899,7 @@ let admin_select
          let is_selected =
            selected
            |> CCOption.map (fun selected ->
-             if Admin.(Id.equal (id admin) selected)
-             then [ a_selected () ]
-             else [])
+             if Admin.(Id.equal (id admin) selected) then [ a_selected () ] else [])
            |> CCOption.value ~default:[]
          in
          option
@@ -988,11 +911,7 @@ let admin_select
   div
     ~a:[ a_class [ "form-group" ] ]
     ([ label
-         [ field
-           |> Utils.(field_to_string language)
-           |> CCString.capitalize_ascii
-           |> txt
-         ]
+         [ field |> Utils.(field_to_string language) |> CCString.capitalize_ascii |> txt ]
      ; div ~a:[ a_class [ "select" ] ] [ select ~a:select_attrs options ]
      ]
      @ help)
@@ -1005,14 +924,7 @@ let custom_field_to_static_input ?flash_fetcher language custom_field =
   let hints = Public.help_elements language custom_field in
   let required = Public.required custom_field |> Required.value in
   let create input_type value =
-    input_element
-      ?flash_fetcher
-      ?value
-      ~hints
-      ~required
-      language
-      input_type
-      field
+    input_element ?flash_fetcher ?value ~hints ~required language input_type field
   in
   match custom_field with
   | Public.Boolean (_, answer) ->

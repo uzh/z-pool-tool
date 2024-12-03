@@ -23,9 +23,7 @@ let show req =
     let%lwt inactive_user_disable_after =
       Settings.find_inactive_user_disable_after database_label
     in
-    let%lwt inactive_user_warning =
-      Settings.find_inactive_user_warning database_label
-    in
+    let%lwt inactive_user_warning = Settings.find_inactive_user_warning database_label in
     let%lwt trigger_profile_update_after =
       Settings.find_trigger_profile_update_after database_label
     in
@@ -99,33 +97,23 @@ let update_settings req =
             let%lwt suffixes = Settings.find_email_suffixes database_label in
             DeleteEmailSuffix.(m |> decode >>= handle ~tags suffixes) |> lift
         | `UpdateDefaultLeadTime ->
-          fun m ->
-            UpdateDefaultEmailLeadTime.(m |> decode >>= handle ~tags) |> lift
+          fun m -> UpdateDefaultEmailLeadTime.(m |> decode >>= handle ~tags) |> lift
         | `UpdateTextMsgDefaultLeadTime ->
-          fun m ->
-            UpdateDefaultTextMessageLeadTime.(m |> decode >>= handle ~tags)
-            |> lift
+          fun m -> UpdateDefaultTextMessageLeadTime.(m |> decode >>= handle ~tags) |> lift
         | `UpdateContactEmail ->
           fun m -> UpdateContactEmail.(m |> decode >>= handle ~tags) |> lift
         | `UpdateInactiveUserDisableAfter ->
-          fun m ->
-            InactiveUser.DisableAfter.(m |> decode >>= handle ~tags) |> lift
+          fun m -> InactiveUser.DisableAfter.(m |> decode >>= handle ~tags) |> lift
         | `UpdateInactiveUserWarning ->
           fun m -> InactiveUser.Warning.(m |> decode >>= handle ~tags) |> lift
         | `UpdateTriggerProfileUpdateAfter ->
-          fun m ->
-            UpdateTriggerProfileUpdateAfter.(m |> decode >>= handle ~tags)
-            |> lift
+          fun m -> UpdateTriggerProfileUpdateAfter.(m |> decode >>= handle ~tags) |> lift
         | `UserImportFirstReminderAfter ->
           fun m ->
-            UserImportReminder.UpdateFirstReminder.(
-              m |> decode >>= handle ~tags)
-            |> lift
+            UserImportReminder.UpdateFirstReminder.(m |> decode >>= handle ~tags) |> lift
         | `UserImportSecondReminderAfter ->
           fun m ->
-            UserImportReminder.UpdateSecondReminder.(
-              m |> decode >>= handle ~tags)
-            |> lift
+            UserImportReminder.UpdateSecondReminder.(m |> decode >>= handle ~tags) |> lift
       in
       Sihl.Web.Router.param req "action"
       |> Settings.action_of_param
@@ -153,10 +141,8 @@ module Access : module type of Helpers.Access = struct
       | `CreateEmailSuffix -> Command.CreateEmailSuffix.effects
       | `DeleteEmailSuffix -> Command.DeleteEmailSuffix.effects
       | `UpdateDefaultLeadTime -> Command.UpdateDefaultEmailLeadTime.effects
-      | `UpdateTextMsgDefaultLeadTime ->
-        Command.UpdateDefaultTextMessageLeadTime.effects
-      | `UpdateInactiveUserDisableAfter ->
-        Command.InactiveUser.DisableAfter.effects
+      | `UpdateTextMsgDefaultLeadTime -> Command.UpdateDefaultTextMessageLeadTime.effects
+      | `UpdateInactiveUserDisableAfter -> Command.InactiveUser.DisableAfter.effects
       | `UpdateInactiveUserWarning -> Command.InactiveUser.Warning.effects
       | `UpdateContactEmail -> Command.UpdateContactEmail.effects
       | `UpdateEmailSuffixes -> Command.UpdateEmailSuffixes.effects

@@ -21,9 +21,7 @@ module Access = struct
 
   let organisational_unit action uuid =
     one_of_tuple
-      ( action
-      , `OrganisationalUnit
-      , Some (uuid |> Uuid.target_of Entity.Id.value) )
+      (action, `OrganisationalUnit, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index = one_of_tuple (Read, `OrganisationalUnit, None)

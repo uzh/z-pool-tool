@@ -171,9 +171,7 @@ end = struct
     let* hint = Custom_field.Hint.create hint in
     let* () =
       if
-        Custom_field.FieldType.equal
-          field_type
-          (Custom_field.field_type custom_field)
+        Custom_field.FieldType.equal field_type (Custom_field.field_type custom_field)
         || CCOption.is_none Custom_field.(published_at custom_field)
       then Ok ()
       else Error Pool_message.Error.CustomFieldTypeChangeNotAllowed
@@ -192,9 +190,7 @@ end = struct
       }
     in
     let updated = Custom_field.update custom_field update validation in
-    Ok
-      [ Custom_field.Updated (custom_field, updated) |> Pool_event.custom_field
-      ]
+    Ok [ Custom_field.Updated (custom_field, updated) |> Pool_event.custom_field ]
   ;;
 
   let effects = Custom_field.Guard.Access.update

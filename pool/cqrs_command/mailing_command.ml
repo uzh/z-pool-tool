@@ -20,8 +20,7 @@ let mailing_effect action id =
     (action, `Mailing, Some (id |> Uuid.target_of Mailing.Id.value))
 ;;
 
-let default_command start_at start_now end_at limit random distribution : create
-  =
+let default_command start_at start_now end_at limit random distribution : create =
   let distribution =
     let open Distribution in
     if random then Some Random else distribution |> CCOption.map create_sorted
@@ -73,10 +72,7 @@ end = struct
     let open CCResult in
     let* start = Start.create start_at start_now in
     let* mailing = Mailing.create ~id start end_at limit distribution in
-    Ok
-      [ Mailing.Created (mailing, experiment.Experiment.id)
-        |> Pool_event.mailing
-      ]
+    Ok [ Mailing.Created (mailing, experiment.Experiment.id) |> Pool_event.mailing ]
   ;;
 
   let effects = Mailing.Guard.Access.create
@@ -109,8 +105,7 @@ end = struct
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let* start_at =
-      Start.create start_at start_now
-      >>= CCFun.flip Mailing.Start.validate end_at
+      Start.create start_at start_now >>= CCFun.flip Mailing.Start.validate end_at
     in
     let update = { start_at; end_at; limit; distribution } in
     match Ptime_clock.now () < Mailing.StartAt.value start_at with
@@ -182,9 +177,7 @@ end = struct
   let command id start_at start_now end_at limit random distribution : t =
     let start_at =
       let default = StartAt.create_now () in
-      if StartNow.value start_now
-      then default
-      else CCOption.value ~default start_at
+      if StartNow.value start_now then default else CCOption.value ~default start_at
     in
     let distribution =
       let open Distribution in

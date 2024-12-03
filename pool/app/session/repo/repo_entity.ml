@@ -51,9 +51,8 @@ let t =
                                       , ( m.closed_at
                                         , ( m.canceled_at
                                           , ( m.created_at
-                                            , ( m.updated_at
-                                              , (m.experiment, location) ) ) )
-                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                            , (m.updated_at, (m.experiment, location)) )
+                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
         ( id
@@ -76,8 +75,7 @@ let t =
                                         , ( closed_at
                                           , ( canceled_at
                                             , ( created_at
-                                              , ( updated_at
-                                                , (experiment, location) ) ) )
+                                              , (updated_at, (experiment, location)) ) )
                                           ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let location = Pool_location.Repo.to_entity location [] in
@@ -136,9 +134,7 @@ let t =
                                        (t2
                                           (option RepoReminder.SentAt.t)
                                           (t2
-                                             (option
-                                                RepoReminder.TextMessageLeadTime
-                                                .t)
+                                             (option RepoReminder.TextMessageLeadTime.t)
                                              (t2
                                                 (option RepoReminder.SentAt.t)
                                                 (t2
@@ -152,20 +148,16 @@ let t =
                                                             (t2
                                                                (option ptime)
                                                                (t2
-                                                                  Pool_common
-                                                                  .Repo
+                                                                  Pool_common.Repo
                                                                   .CreatedAt
                                                                   .t
                                                                   (t2
-                                                                     Pool_common
-                                                                     .Repo
+                                                                     Pool_common.Repo
                                                                      .UpdatedAt
                                                                      .t
                                                                      (t2
-                                                                        Experiment
-                                                                        .t
-                                                                        Pool_location
-                                                                        .Repo
+                                                                        Experiment.t
+                                                                        Pool_location.Repo
                                                                         .t)))))))))))))))))))))))
 ;;
 
@@ -247,8 +239,8 @@ module Write = struct
                             , ( m.email_reminder_sent_at
                               , ( m.text_message_reminder_lead_time
                                 , ( m.text_message_reminder_sent_at
-                                  , (m.closed_at, m.canceled_at) ) ) ) ) ) ) )
-                    ) ) ) ) ) ) )
+                                  , (m.closed_at, m.canceled_at) ) ) ) ) ) ) ) ) ) ) ) )
+          ) )
     in
     let decode
           ( id
@@ -265,8 +257,8 @@ module Write = struct
                               , ( email_reminder_sent_at
                                 , ( text_message_reminder_lead_time
                                   , ( text_message_reminder_sent_at
-                                    , (closed_at, canceled_at) ) ) ) ) ) ) ) )
-                    ) ) ) ) ) )
+                                    , (closed_at, canceled_at) ) ) ) ) ) ) ) ) ) ) ) ) )
+          )
       =
       Ok
         { id
@@ -313,13 +305,9 @@ module Write = struct
                                       int
                                       (t2
                                          (option
-                                            Pool_common.Repo.Reminder
-                                            .EmailLeadTime
-                                            .t)
+                                            Pool_common.Repo.Reminder.EmailLeadTime.t)
                                          (t2
-                                            (option
-                                               Pool_common.Repo.Reminder.SentAt
-                                               .t)
+                                            (option Pool_common.Repo.Reminder.SentAt.t)
                                             (t2
                                                (option
                                                   Pool_common.Repo.Reminder
@@ -327,12 +315,8 @@ module Write = struct
                                                   .t)
                                                (t2
                                                   (option
-                                                     Pool_common.Repo.Reminder
-                                                     .SentAt
-                                                     .t)
-                                                  (t2
-                                                     (option ptime)
-                                                     (option ptime)))))))))))))))))
+                                                     Pool_common.Repo.Reminder.SentAt.t)
+                                                  (t2 (option ptime) (option ptime)))))))))))))))))
   ;;
 end
 
@@ -394,8 +378,7 @@ module Public = struct
                 , ( m.location_id
                   , ( m.max_participants
                     , ( m.min_participants
-                      , (m.overbook, (m.assignment_count, m.canceled_at)) ) ) )
-                ) ) ) ) )
+                      , (m.overbook, (m.assignment_count, m.canceled_at)) ) ) ) ) ) ) ) )
     in
     let decode
           ( id
@@ -405,9 +388,8 @@ module Public = struct
                 , ( description
                   , ( location_id
                     , ( max_participants
-                      , ( min_participants
-                        , (overbook, (assignment_count, canceled_at)) ) ) ) ) )
-              ) ) )
+                      , (min_participants, (overbook, (assignment_count, canceled_at))) )
+                    ) ) ) ) ) )
       =
       Ok
         { id
@@ -448,8 +430,7 @@ module Calendar = struct
   open CCResult.Infix
 
   let read_only =
-    Pool_message.Error.ReadOnlyModel
-    |> Pool_common.(Utils.error_to_string Language.En)
+    Pool_message.Error.ReadOnlyModel |> Pool_common.(Utils.error_to_string Language.En)
   ;;
 
   module Location = struct
@@ -463,10 +444,7 @@ module Calendar = struct
         Ok { id; name; url }
       in
       Caqti_type.(
-        custom
-          ~encode
-          ~decode
-          (t2 Pool_location.Repo.Id.t Pool_location.Repo.Name.t))
+        custom ~encode ~decode (t2 Pool_location.Repo.Id.t Pool_location.Repo.Name.t))
     ;;
   end
 
@@ -481,9 +459,8 @@ module Calendar = struct
                   , ( duration
                     , ( internal_description
                       , ( max_participants
-                        , ( min_participants
-                          , (overbook, (assignment_count, location)) ) ) ) ) )
-                ) ) ) )
+                        , (min_participants, (overbook, (assignment_count, location))) )
+                      ) ) ) ) ) ) )
       =
       let* end_ =
         Entity.End.build start duration

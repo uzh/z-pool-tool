@@ -11,12 +11,7 @@ let update_on_session_signup m sessions =
 
 let update_on_assignment_from_waiting_list = update_on_session_signup
 
-let update_on_session_closing
-      contact
-      no_show
-      participated
-      increment_num_participaton
-  =
+let update_on_session_closing contact no_show participated increment_num_participaton =
   let open Contact in
   let open Assignment in
   match NoShow.value no_show, Participated.value participated with
@@ -34,27 +29,19 @@ let update_on_session_closing
 ;;
 
 let update_on_session_cancellation assignments m =
-  Contact.update_num_assignments
-    ~step:(assignments |> CCList.length |> CCInt.neg)
-    m
+  Contact.update_num_assignments ~step:(assignments |> CCList.length |> CCInt.neg) m
 ;;
 
 let update_on_assignment_cancellation = update_on_session_cancellation
 
-let update_on_assignment_deletion
-      assignments
-      contact
-      decrement_participation_count
-  =
+let update_on_assignment_deletion assignments contact decrement_participation_count =
   CCList.fold_left
     (fun (contact, closed_assignment)
       { Assignment.no_show; participated; canceled_at; _ } ->
        let open Contact in
        let open Assignment in
        let closed_assignment =
-         closed_assignment
-         || CCOption.is_some no_show
-         || CCOption.is_some participated
+         closed_assignment || CCOption.is_some no_show || CCOption.is_some participated
        in
        let contact =
          match no_show with

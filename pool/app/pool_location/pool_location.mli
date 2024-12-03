@@ -264,12 +264,7 @@ val filedeleted : Mapping.Id.t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-
-val handle_event
-  :  ?user_uuid:Pool_common.Id.t
-  -> Database.Label.t
-  -> event
-  -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 
 module Repo : sig
   module Id : sig
@@ -310,10 +305,7 @@ val search
   -> string
   -> (Id.t * Name.t) list Lwt.t
 
-val search_multiple_by_id
-  :  Database.Label.t
-  -> Id.t list
-  -> (Id.t * Name.t) list Lwt.t
+val search_multiple_by_id : Database.Label.t -> Id.t list -> (Id.t * Name.t) list Lwt.t
 
 val find_targets_grantable_by_target
   :  ?exclude:Id.t list

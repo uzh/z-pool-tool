@@ -33,16 +33,13 @@ let body_to_string ?(content_type = "text/plain") ?(max_len = 1000) body =
     | _ -> "application", "octet-stream"
   in
   match lhs, rhs with
-  | "text", _ | "application", "json" | "application", "x-www-form-urlencoded"
-    ->
+  | "text", _ | "application", "json" | "application", "x-www-form-urlencoded" ->
     let%lwt s = Opium.Body.copy body |> Opium.Body.to_string in
     if CCString.length s > max_len
     then
       Lwt.return
       @@ CCString.sub s 0 (min (CCString.length s) max_len)
-      ^ CCFormat.asprintf
-          " [truncated %d characters]"
-          (String.length s - max_len)
+      ^ CCFormat.asprintf " [truncated %d characters]" (String.length s - max_len)
     else Lwt.return s
   | _ -> Lwt.return ("<" ^ content_type ^ ">")
 ;;
@@ -104,9 +101,7 @@ let logger =
   let filter handler req =
     let tags =
       let open Pool_context.Logger in
-      if Http_utils.Api.is_api_request req
-      then Api.Tags.req req
-      else Tags.req req
+      if Http_utils.Api.is_api_request req then Api.Tags.req req else Tags.req req
     in
     let meth = Method.to_string req.Request.meth in
     let uri = req.Request.target |> Uri.of_string |> Uri.path_and_query in

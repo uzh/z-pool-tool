@@ -16,10 +16,7 @@ let list queue_table context =
 let render_email_html html =
   let style = "<style>section { word-break: break-all; } </style>" in
   let html =
-    Format.asprintf
-      "<template shadowrootmode=\"closed\">%s %s</template>"
-      html
-      style
+    Format.asprintf "<template shadowrootmode=\"closed\">%s %s</template>" html style
   in
   div ~a:[ a_class [ "border" ] ] Unsafe.[ data html ]
 ;;
@@ -32,12 +29,9 @@ let email_job_instance_detail instance =
     [ Field.Sender, txt sender
     ; Field.Recipient, txt recipient
     ; Field.EmailSubject, txt subject
-    ; ( Field.EmailText
-      , html |> CCOption.map_or ~default:(txt "") render_email_html )
+    ; Field.EmailText, html |> CCOption.map_or ~default:(txt "") render_email_html
     ; ( Field.PlainText
-      , div
-          ~a:[ a_class [ "word-wrap-break" ] ]
-          [ HttpUtils.add_line_breaks text ] )
+      , div ~a:[ a_class [ "word-wrap-break" ] ] [ HttpUtils.add_line_breaks text ] )
     ])
 ;;
 
@@ -51,9 +45,7 @@ let text_message_job_instance_detail instance =
     ])
 ;;
 
-let matcher_job_instance_detail label =
-  [ Field.Label, txt (Database.Label.value label) ]
-;;
+let matcher_job_instance_detail label = [ Field.Label, txt (Database.Label.value label) ]
 
 let text_message_dlr_detail dlr =
   let open Text_message in
@@ -65,8 +57,7 @@ let text_message_dlr_detail dlr =
   ; "Plmn", dlr.plmn
   ; "Country", dlr.country
   ]
-  |> CCList.map (fun (k, v) ->
-    tr [ th ~a:[ a_class [ "w-2" ] ] [ txt k ]; td [ txt v ] ])
+  |> CCList.map (fun (k, v) -> tr [ th ~a:[ a_class [ "w-2" ] ] [ txt k ]; td [ txt v ] ])
   |> table ~a:[ a_class [ "table"; "striped"; "align-top" ] ]
 ;;
 
@@ -74,11 +65,7 @@ let queue_instance_detail language ?text_message_dlr instance =
   let open Pool_queue.JobName in
   let default = "-" in
   let vertical_table =
-    Component.Table.vertical_table
-      ~align_top:true
-      ~th_class:[ "w-2" ]
-      `Striped
-      language
+    Component.Table.vertical_table ~align_top:true ~th_class:[ "w-2" ] `Striped language
   in
   let clone_link, job_detail =
     let link id =
@@ -88,9 +75,7 @@ let queue_instance_detail language ?text_message_dlr instance =
         ; txt " "
         ; a
             ~a:
-              [ a_href
-                  (Format.asprintf "%s/%s" base_path id
-                   |> Sihl.Web.externalize_path)
+              [ a_href (Format.asprintf "%s/%s" base_path id |> Sihl.Web.externalize_path)
               ]
             [ txt id ]
         ]
@@ -101,9 +86,7 @@ let queue_instance_detail language ?text_message_dlr instance =
     in
     match Pool_queue.Instance.name instance with
     | CheckMatchesFilter ->
-      ( txt ""
-      , matcher_job_instance_detail
-          (Pool_queue.Instance.database_label instance) )
+      txt "", matcher_job_instance_detail (Pool_queue.Instance.database_label instance)
     | SendEmail -> link, email_job_instance_detail instance
     | SendTextMessage -> link, text_message_job_instance_detail instance
   in
@@ -125,10 +108,8 @@ let queue_instance_detail language ?text_message_dlr instance =
           |> Instance.last_error_at
           |> CCOption.map_or ~default formatted_date_time
           |> txt )
-      ; ( Field.LastError
-        , instance |> Instance.last_error |> CCOption.value ~default |> txt )
-      ; ( Field.NextRunAt
-        , instance |> Instance.run_at |> formatted_date_time |> txt )
+      ; Field.LastError, instance |> Instance.last_error |> CCOption.value ~default |> txt
+      ; Field.NextRunAt, instance |> Instance.run_at |> formatted_date_time |> txt
       ]
     |> vertical_table
   in
@@ -157,9 +138,7 @@ let index queue_table (Pool_context.{ language; _ } as context) job =
       | `History -> I18n.QueueHistory
       | `Current -> I18n.Queue
     in
-    h1
-      ~a:[ a_class [ "heading-1" ] ]
-      [ txt (Utils.nav_link_to_string language i18n) ]
+    h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Utils.nav_link_to_string language i18n) ]
   in
   let switch_table =
     (fun (path_table, i18n) ->
@@ -185,9 +164,7 @@ let index queue_table (Pool_context.{ language; _ } as context) job =
   div
     ~a:[ a_class [ "gap-lg"; "trim"; "safety-margin" ] ]
     [ title
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ switch_table; list queue_table context job ]
+    ; div ~a:[ a_class [ "stack" ] ] [ switch_table; list queue_table context job ]
     ]
 ;;
 
@@ -216,10 +193,7 @@ let detail Pool_context.({ language; _ } as context) ?text_message_dlr instance 
   let open Pool_queue in
   let buttons_html =
     if Instance.resendable instance |> CCResult.is_ok
-    then
-      div
-        ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-        [ resend_form context instance ]
+    then div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ resend_form context instance ]
     else txt ""
   in
   let html =

@@ -41,9 +41,7 @@ let to_record
         Entity.t)
   : Record.t
   =
-  let custom_fields =
-    custom_fields |> CCOption.map (CCList.map Custom_field.Public.id)
-  in
+  let custom_fields = custom_fields |> CCOption.map (CCList.map Custom_field.Public.id) in
   Record.
     { id
     ; contact = Contact.id contact

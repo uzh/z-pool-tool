@@ -69,10 +69,7 @@ let rec build_nav_links
     CCOption.map_or
       ~default:[ label_elt ]
       (fun icon ->
-         [ span
-             ~a:[ a_class [ "has-icon" ] ]
-             [ Icon.to_html icon; span [ label_elt ] ]
-         ])
+         [ span ~a:[ a_class [ "has-icon" ] ] [ Icon.to_html icon; span [ label_elt ] ] ])
       icon
   in
   let nav_link : [< Html_types.li_content_fun ] elt list_wrap =
@@ -89,17 +86,14 @@ let rec build_nav_links
       ]
   in
   match children with
-  | [] ->
-    if is_active then li ~a:[ a_class [ "active" ] ] nav_link else li nav_link
+  | [] -> if is_active then li ~a:[ a_class [ "active" ] ] nav_link else li nav_link
   | children ->
     let parent_attrs, list_attrs =
       match layout with
       | Vertical -> [], [ a_class [ "children" ] ]
       | Horizonal ->
         let parent_class =
-          if first_level
-          then [ "has-dropdown" ]
-          else [ "has-dropdown"; "right" ]
+          if first_level then [ "has-dropdown" ] else [ "has-dropdown"; "right" ]
         in
         [ a_class parent_class ], [ a_class [ "dropdown" ] ]
     in
@@ -126,8 +120,7 @@ let create_nav
   =
   let nav_links =
     filter_items ?validate ?actor ~guardian items
-    |> CCList.map
-         (build_nav_links ~layout ?active_navigation language query_parameters)
+    |> CCList.map (build_nav_links ~layout ?active_navigation language query_parameters)
   in
   let nav = [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ] in
   match layout with
@@ -141,21 +134,16 @@ let i18n_links languages query_parameters active_language layout =
   let link_classes = [ "nav-link" ] in
   let nav_class =
     match layout with
-    | Vertical ->
-      [ "language-nav"; "gap"; "flexrow"; "flex-gap"; "justify-center" ]
+    | Vertical -> [ "language-nav"; "gap"; "flexrow"; "flex-gap"; "justify-center" ]
     | Horizonal -> [ "main-nav" ]
   in
   let to_html language =
     let lang = Language.show language in
     let query_parameters =
-      (field, lang)
-      :: CCList.remove_assoc ~eq:Field.equal field query_parameters
+      (field, lang) :: CCList.remove_assoc ~eq:Field.equal field query_parameters
     in
     if Language.equal language active_language
-    then
-      li
-        ~a:[ a_class [ "active" ] ]
-        [ span ~a:[ a_class link_classes ] [ txt lang ] ]
+    then li ~a:[ a_class [ "active" ] ] [ span ~a:[ a_class link_classes ] [ txt lang ] ]
     else
       li
         [ a
@@ -177,12 +165,8 @@ let create_nav_with_language_switch
       ?active_navigation
       layout
   =
-  let language_switch =
-    i18n_links available_languages query_parameters language
-  in
-  let main =
-    create_nav ~validate:false ?active_navigation context elements layout
-  in
+  let language_switch = i18n_links available_languages query_parameters language in
+  let main = create_nav ~validate:false ?active_navigation context elements layout in
   main @ [ language_switch layout ]
 ;;
 
@@ -199,24 +183,17 @@ let create_mobile_nav ?title ~toggle_id navigation =
   in
   let overlay navigation =
     div
-      ~a:
-        [ a_id toggle_id
-        ; a_class [ "fullscreen-overlay"; "mobile-nav"; "bg-white" ]
-        ]
+      ~a:[ a_id toggle_id; a_class [ "fullscreen-overlay"; "mobile-nav"; "bg-white" ] ]
       [ div
           ~a:[ a_class [ "flexcolumn"; "full-height" ] ]
           [ header
               ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
               [ title; div ~a:[ a_class [ "push" ] ] [ label Icon.Close ] ]
-          ; div
-              ~a:[ a_class [ "fade-in"; "inset"; "flexcolumn"; "grow" ] ]
-              navigation
+          ; div ~a:[ a_class [ "fade-in"; "inset"; "flexcolumn"; "grow" ] ] navigation
           ]
       ]
   in
   navigation Vertical
   |> fun items ->
-  div
-    ~a:[ a_class [ "push"; "mobile-only" ] ]
-    [ label Icon.MenuOutline; overlay items ]
+  div ~a:[ a_class [ "push"; "mobile-only" ] ] [ label Icon.MenuOutline; overlay items ]
 ;;

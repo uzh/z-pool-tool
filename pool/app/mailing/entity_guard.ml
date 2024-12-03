@@ -6,9 +6,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-         Guard.Target.create
-           `Mailing
-           (id |> Guard.Uuid.target_of Entity.Id.value))
+         Guard.Target.create `Mailing (id |> Guard.Uuid.target_of Entity.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;
@@ -20,16 +18,14 @@ module Access = struct
   open Permission
 
   let mailing action uuid =
-    one_of_tuple
-      (action, `WaitingList, Some (uuid |> Uuid.target_of Entity.Id.value))
+    one_of_tuple (action, `WaitingList, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index id =
     And
       [ Or
           [ one_of_tuple (Read, `Mailing, None)
-          ; one_of_tuple
-              (Read, `Mailing, Some (Uuid.target_of Experiment.Id.value id))
+          ; one_of_tuple (Read, `Mailing, Some (Uuid.target_of Experiment.Id.value id))
           ]
       ; Experiment.Guard.Access.read id
       ]
@@ -39,8 +35,7 @@ module Access = struct
     And
       [ Or
           [ one_of_tuple (Create, `Mailing, None)
-          ; one_of_tuple
-              (Create, `Mailing, Some (Uuid.target_of Experiment.Id.value id))
+          ; one_of_tuple (Create, `Mailing, Some (Uuid.target_of Experiment.Id.value id))
           ]
       ; Experiment.Guard.Access.update id
       ]
@@ -51,9 +46,7 @@ module Access = struct
       [ Or
           [ mailing Read mailing_id
           ; one_of_tuple
-              ( Read
-              , `Mailing
-              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+              (Read, `Mailing, Some (Uuid.target_of Experiment.Id.value experiment_id))
           ]
       ; Experiment.Guard.Access.read experiment_id
       ]
@@ -64,9 +57,7 @@ module Access = struct
       [ Or
           [ mailing Update mailing_id
           ; one_of_tuple
-              ( Update
-              , `Mailing
-              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+              (Update, `Mailing, Some (Uuid.target_of Experiment.Id.value experiment_id))
           ]
       ; Experiment.Guard.Access.read experiment_id
       ]
@@ -77,9 +68,7 @@ module Access = struct
       [ Or
           [ mailing Delete mailing_id
           ; one_of_tuple
-              ( Delete
-              , `Mailing
-              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+              (Delete, `Mailing, Some (Uuid.target_of Experiment.Id.value experiment_id))
           ]
       ; Experiment.Guard.Access.delete experiment_id
       ]

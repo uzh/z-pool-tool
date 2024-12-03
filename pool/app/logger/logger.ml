@@ -2,10 +2,7 @@ let tag_req : string Logs.Tag.def =
   Logs.Tag.def "request_id" ~doc:"Rock.Request/Response id" CCString.pp
 ;;
 
-let tag_ip : string Logs.Tag.def =
-  Logs.Tag.def "request_ip" ~doc:"X-Real-IP" CCString.pp
-;;
-
+let tag_ip : string Logs.Tag.def = Logs.Tag.def "request_ip" ~doc:"X-Real-IP" CCString.pp
 let tag_database = Database.Logger.Tags.add_label
 
 let tag_user : string Logs.Tag.def =
@@ -108,12 +105,7 @@ let format_reporter
     msgf
     @@ fun ?header ?tags fmt ->
     let ppf = if level = Logs.App then app else dst in
-    Format.kfprintf
-      k
-      ppf
-      ("%a" ^^ fmt ^^ "@.")
-      (pp_header tags src)
-      (level, header)
+    Format.kfprintf k ppf ("%a" ^^ fmt ^^ "@.") (pp_header tags src) (level, header)
   in
   { Logs.report }
 ;;
@@ -127,9 +119,7 @@ let get_log_level () =
 ;;
 
 let logs_dir () =
-  match
-    Sihl.Configuration.root_path (), Sihl.Configuration.read_string "LOGS_DIR"
-  with
+  match Sihl.Configuration.root_path (), Sihl.Configuration.read_string "LOGS_DIR" with
   | _, Some logs_dir -> logs_dir
   | Some root, None -> root ^ "/logs"
   | None, None -> "logs"
@@ -152,8 +142,7 @@ let lwt_file_reporter ?(pp_header = pp_exec_header) () =
       let name =
         match level with
         | Logs.Error -> logs_dir ^ "/error.log"
-        | Logs.App | Logs.Debug | Logs.Info | Logs.Warning ->
-          logs_dir ^ "/app.log"
+        | Logs.App | Logs.Debug | Logs.Info | Logs.Warning -> logs_dir ^ "/app.log"
       in
       let%lwt log =
         Lwt_io.open_file
@@ -173,12 +162,7 @@ let lwt_file_reporter ?(pp_header = pp_exec_header) () =
     msgf
     @@ fun ?header ?tags fmt ->
     let ppf = Format.formatter_of_buffer buf in
-    Format.kfprintf
-      k
-      ppf
-      ("%a" ^^ fmt ^^ "@.")
-      (pp_header tags src)
-      (level, header)
+    Format.kfprintf k ppf ("%a" ^^ fmt ^^ "@.") (pp_header tags src) (level, header)
   in
   { Logs.report }
 ;;
@@ -212,13 +196,7 @@ let log_exception ?prefix ~src ~tags =
   let prefix = CCOption.map_or ~default:"" (Format.asprintf "%s: ") prefix in
   let print ?(error_type = "Exception") error_name =
     Logs.err ~src (fun m ->
-      m
-        ~tags
-        "%s%s caught: %s, Backtrace: %s"
-        prefix
-        error_type
-        error_name
-        backtrace)
+      m ~tags "%s%s caught: %s, Backtrace: %s" prefix error_type error_name backtrace)
   in
   function
   | Caqti_error.(Exn #load_or_connect as exn) ->

@@ -37,9 +37,7 @@ let confirmable_to_string = function
   | Language.En -> I18n_en.confirmable_to_string
 ;;
 
-let field_to_string_capitalized l m =
-  field_to_string l m |> CCString.capitalize_ascii
-;;
+let field_to_string_capitalized l m = field_to_string l m |> CCString.capitalize_ascii
 
 let control_to_string = function
   | Language.De -> Locales_de.control_to_string

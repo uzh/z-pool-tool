@@ -2,9 +2,7 @@ let run_forever () = Lwt.wait () |> fst
 
 let run ?(services = []) () =
   let dependencies =
-    CCList.map
-      (fun { Sihl.Container.Service.lifecycle; _ } -> lifecycle)
-      services
+    CCList.map (fun { Sihl.Container.Service.lifecycle; _ } -> lifecycle) services
   in
   let name = "worker" in
   let description = "Run worker (no server services)" in

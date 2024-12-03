@@ -51,11 +51,7 @@ let joins_tags =
   |sql}
 ;;
 
-let find_request_sql
-      ?(distinct = false)
-      ?additional_joins
-      ?(count = false)
-      where_fragment
+let find_request_sql ?(distinct = false) ?additional_joins ?(count = false) where_fragment
   =
   let columns =
     if count
@@ -63,8 +59,7 @@ let find_request_sql
     else sql_select_columns |> CCString.concat ", "
   in
   let joins =
-    additional_joins
-    |> CCOption.map_or ~default:joins (Format.asprintf "%s\n%s" joins)
+    additional_joins |> CCOption.map_or ~default:joins (Format.asprintf "%s\n%s" joins)
   in
   Format.asprintf
     {sql|SELECT %s %s FROM pool_experiments %s %s|sql}
@@ -335,10 +330,7 @@ module Sql = struct
   let search_request ?conditions ?joins ~limit () =
     let default_contidion = "pool_experiments.title LIKE ?" in
     let joined_select =
-      CCOption.map_or
-        ~default:search_select
-        (Format.asprintf "%s %s" search_select)
-        joins
+      CCOption.map_or ~default:search_select (Format.asprintf "%s %s" search_select) joins
     in
     let where =
       CCOption.map_or
@@ -349,19 +341,9 @@ module Sql = struct
     Format.asprintf "%s WHERE %s LIMIT %i" joined_select where limit
   ;;
 
-  let search
-        ?conditions
-        ?(dyn = Dynparam.empty)
-        ?exclude
-        ?joins
-        ?(limit = 20)
-        pool
-        query
-    =
+  let search ?conditions ?(dyn = Dynparam.empty) ?exclude ?joins ?(limit = 20) pool query =
     let open Caqti_request.Infix in
-    let exclude_ids =
-      Database.exclude_ids "pool_experiments.uuid" Entity.Id.value
-    in
+    let exclude_ids = Database.exclude_ids "pool_experiments.uuid" Entity.Id.value in
     let dyn = Dynparam.(dyn |> add Caqti_type.string ("%" ^ query ^ "%")) in
     let dyn, exclude =
       exclude |> CCOption.map_or ~default:(dyn, None) (exclude_ids dyn)
@@ -434,10 +416,7 @@ module Sql = struct
   ;;
 
   let find_all_ids_of_contact_id pool id =
-    Database.collect
-      pool
-      find_all_ids_of_contact_id_request
-      (Contact.Id.to_common id)
+    Database.collect pool find_all_ids_of_contact_id_request (Contact.Id.to_common id)
   ;;
 
   let find_to_enroll_directly_request where =
@@ -490,8 +469,7 @@ module Sql = struct
           LIMIT 5
         |sql}
       (where |> CCOption.map_or ~default:"" (fun where -> "AND " ^ where))
-    |> Caqti_type.(t2 string Pool_common.Repo.Id.t)
-       ->* Repo_entity.DirectEnrollment.t
+    |> Caqti_type.(t2 string Pool_common.Repo.Id.t) ->* Repo_entity.DirectEnrollment.t
   ;;
 
   let find_to_enroll_directly ?actor pool contact ~query =
@@ -540,13 +518,7 @@ module Sql = struct
     Database.find pool contact_is_enrolled_request (experiment_id, contact_id)
   ;;
 
-  let find_targets_grantable_by_target
-        ?exclude
-        database_label
-        target_id
-        role
-        query
-    =
+  let find_targets_grantable_by_target ?exclude database_label target_id role query =
     let joins =
       {sql|
       LEFT JOIN guardian_actor_role_targets t ON t.target_uuid = pool_experiments.uuid
@@ -565,11 +537,7 @@ module Sql = struct
     search ~conditions ~joins ~dyn ?exclude database_label query
   ;;
 
-  let participation_history_where
-        ?(dyn = Dynparam.empty)
-        ~only_closed
-        contact_id
-    =
+  let participation_history_where ?(dyn = Dynparam.empty) ~only_closed contact_id =
     let joins =
       {sql|
         INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
@@ -594,9 +562,7 @@ module Sql = struct
             pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
             %s
         |sql}
-        (if only_closed
-         then Format.asprintf "AND (%s)" only_closed_condition
-         else "")
+        (if only_closed then Format.asprintf "AND (%s)" only_closed_condition else "")
     in
     Dynparam.(where, dyn |> add Contact.Repo.Id.t contact_id), joins
   ;;

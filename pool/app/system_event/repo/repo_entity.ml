@@ -22,11 +22,7 @@ let t =
     custom
       ~encode
       ~decode
-      (t2
-         Id.t
-         (t2
-            Job.t
-            (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))
+      (t2 Id.t (t2 Job.t (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))
 ;;
 
 module EventLog = struct
@@ -46,9 +42,7 @@ module EventLog = struct
         custom
           ~encode:(Status.show %> CCResult.return)
           ~decode:
-            (of_string
-             %> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
-            )
+            (of_string %> CCResult.map_err Pool_common.(Utils.error_to_string Language.En))
           string)
     ;;
   end
@@ -63,23 +57,13 @@ module EventLog = struct
     let encode m =
       Ok
         ( m.event_id
-        , ( m.service_identifier
-          , (m.status, (m.message, (m.created_at, m.updated_at))) ) )
+        , (m.service_identifier, (m.status, (m.message, (m.created_at, m.updated_at)))) )
     in
     let decode
-          ( event_id
-          , (service_identifier, (status, (message, (created_at, updated_at))))
-          )
+          (event_id, (service_identifier, (status, (message, (created_at, updated_at)))))
       =
       let open CCResult in
-      Ok
-        { event_id
-        ; service_identifier
-        ; status
-        ; message
-        ; created_at
-        ; updated_at
-        }
+      Ok { event_id; service_identifier; status; message; created_at; updated_at }
     in
     Caqti_type.(
       custom
@@ -93,8 +77,6 @@ module EventLog = struct
                  Status.t
                  (t2
                     (option Message.t)
-                    (t2
-                       Pool_common.Repo.CreatedAt.t
-                       Pool_common.Repo.UpdatedAt.t))))))
+                    (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))))
   ;;
 end

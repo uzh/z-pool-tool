@@ -23,14 +23,12 @@ let t =
   let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let decode
         ( id
-        , ( model
-          , (entity_uuid, (user_uuid, (user_email, (changes, (created_at, ())))))
-          ) )
+        , (model, (entity_uuid, (user_uuid, (user_email, (changes, (created_at, ()))))))
+        )
     =
     let user =
       match user_uuid, user_email with
-      | Some user_uuid, Some user_email ->
-        Some { uuid = user_uuid; email = user_email }
+      | Some user_uuid, Some user_email -> Some { uuid = user_uuid; email = user_email }
       | _ -> None
     in
     Ok { id; model; entity_uuid; user; changes; created_at }
@@ -54,19 +52,9 @@ module Write = struct
     let open Database.Caqti_encoders in
     let encode m : ('a Data.t, string) result =
       let open Write in
-      Ok
-        Data.
-          [ m.Write.id
-          ; m.model
-          ; m.entity_uuid
-          ; m.user_uuid
-          ; m.changes
-          ; m.created_at
-          ]
+      Ok Data.[ m.Write.id; m.model; m.entity_uuid; m.user_uuid; m.changes; m.created_at ]
     in
-    let decode _ =
-      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
-    in
+    let decode _ = Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel in
     custom
       ~encode
       ~decode

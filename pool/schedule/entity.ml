@@ -70,20 +70,12 @@ type t =
 [@@deriving eq, show]
 
 let create label scheduled_time database_label fcn =
-  { label
-  ; database_label
-  ; scheduled_time
-  ; status = Status.init
-  ; last_run = None
-  ; fcn
-  }
+  { label; database_label; scheduled_time; status = Status.init; last_run = None; fcn }
 ;;
 
 let run_in = function
-  | At time ->
-    Ptime.diff time (Ptime_clock.now ()) |> Ptime.Span.to_float_s |> max 1.
-  | Every duration ->
-    duration |> ScheduledTimeSpan.value |> Ptime.Span.to_float_s
+  | At time -> Ptime.diff time (Ptime_clock.now ()) |> Ptime.Span.to_float_s |> max 1.
+  | Every duration -> duration |> ScheduledTimeSpan.value |> Ptime.Span.to_float_s
 ;;
 
 type public =
@@ -114,9 +106,7 @@ let is_ok ({ scheduled_time; status; last_run; _ } : public) =
           |> Ptime.Span.of_int_s)
       in
       Ptime.add_span last_run (Ptime.Span.add minimum_interval minimum_interval)
-      |> CCOption.map_or
-           ~default:false
-           (Ptime.is_later ~than:(Ptime_clock.now ()))
+      |> CCOption.map_or ~default:false (Ptime.is_later ~than:(Ptime_clock.now ()))
   in
   is_fine status || did_run ()
 ;;
@@ -129,9 +119,7 @@ let column_scheduled_time =
   (Field.ScheduledTime, "pool_schedules.scheduled_time") |> Query.Column.create
 ;;
 
-let column_status =
-  (Field.Status, "pool_schedules.status") |> Query.Column.create
-;;
+let column_status = (Field.Status, "pool_schedules.status") |> Query.Column.create
 
 let column_last_run_at =
   (Field.LastRunAt, "pool_schedules.last_run_at") |> Query.Column.create
@@ -145,9 +133,5 @@ let filterable_by = None
 let searchable_by = [ column_label ]
 let sortable_by = [ column_scheduled_time; column_status; column_last_run_at ]
 let sortable_by = (column_created_at :: searchable_by) @ sortable_by
-
-let default_sort =
-  Query.Sort.{ column = column_label; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_label; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

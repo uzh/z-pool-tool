@@ -28,8 +28,7 @@ end = struct
       |> Text_message.create_job
            ?message_template:(message_template instance)
            ~job_ctx:(job_ctx_clone (id instance))
-      |> Text_message.sent
-           ?new_recipient:(CCOption.bind contact Contact.cell_phone)
+      |> Text_message.sent ?new_recipient:(CCOption.bind contact Contact.cell_phone)
       |> Pool_event.text_message
       |> CCList.return
       |> CCResult.return
@@ -60,10 +59,7 @@ module CreateTextMessageDeliveryReport : sig
     -> string
     -> (t, Pool_message.Error.t) result
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Text_message.delivery_report
 

@@ -9,8 +9,7 @@ let find_opt = Repo.get_file
 let find label id =
   let%lwt file = Repo.get_file label id in
   match file with
-  | None ->
-    raise (Sihl.Contract.Storage.Exception ("File not found with id " ^ id))
+  | None -> raise (Sihl.Contract.Storage.Exception ("File not found with id " ^ id))
   | Some file -> Lwt.return file
 ;;
 
@@ -22,14 +21,11 @@ let delete label id =
 ;;
 
 let upload_base64 label ?id file base64 =
-  let blob_id =
-    CCOption.value id ~default:Pool_common.Id.(create () |> value)
-  in
+  let blob_id = CCOption.value id ~default:Pool_common.Id.(create () |> value) in
   let%lwt blob =
     match Base64.decode base64 with
     | Error (`Msg msg) ->
-      Logs.err (fun m ->
-        m "Could not upload base64 content of file %a" pp_file file);
+      Logs.err (fun m -> m "Could not upload base64 content of file %a" pp_file file);
       raise (Sihl.Contract.Storage.Exception msg)
     | Ok blob -> Lwt.return blob
   in
@@ -44,8 +40,7 @@ let update_base64 label file base64 =
   let%lwt blob =
     match Base64.decode base64 with
     | Error (`Msg msg) ->
-      Logs.err (fun m ->
-        m "Could not upload base64 content of file %a" pp_stored file);
+      Logs.err (fun m -> m "Could not upload base64 content of file %a" pp_stored file);
       raise (Sihl.Contract.Storage.Exception msg)
     | Ok blob -> Lwt.return blob
   in
@@ -59,8 +54,7 @@ let download_data_base64_opt label file =
   let%lwt blob = Repo.get_blob label blob_id in
   match CCOption.map Base64.encode blob with
   | Some (Error (`Msg msg)) ->
-    Logs.err (fun m ->
-      m "Could not get base64 content of file %a" pp_stored file);
+    Logs.err (fun m -> m "Could not get base64 content of file %a" pp_stored file);
     raise (Sihl.Contract.Storage.Exception msg)
   | Some (Ok blob) -> Lwt.return @@ Some blob
   | None -> Lwt.return None
@@ -71,8 +65,7 @@ let download_data_base64 label file =
   let%lwt blob = Repo.get_blob label blob_id in
   match CCOption.map Base64.encode blob with
   | Some (Error (`Msg msg)) ->
-    Logs.err (fun m ->
-      m "Could not get base64 content of file %a" pp_stored file);
+    Logs.err (fun m -> m "Could not get base64 content of file %a" pp_stored file);
     raise (Sihl.Contract.Storage.Exception msg)
   | Some (Ok blob) -> Lwt.return blob
   | None ->

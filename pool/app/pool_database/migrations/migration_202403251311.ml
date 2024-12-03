@@ -10,6 +10,5 @@ let seed_match_filter_update_notification_template =
 
 let migration () =
   Database.Migration.(
-    empty "202403251311"
-    |> add_step seed_match_filter_update_notification_template)
+    empty "202403251311" |> add_step seed_match_filter_update_notification_template)
 ;;

@@ -21,18 +21,14 @@ let group_by_target query permissions =
       let default = Ascending in
       query.sort
       |> CCOption.map (fun { Sort.column; order } ->
-        if Column.equal column RolePermission.column_model
-        then order
-        else default)
+        if Column.equal column RolePermission.column_model then order else default)
       |> CCOption.value ~default
     in
     match sort with
     | Ascending -> all
     | Descending -> CCList.rev all
   in
-  let tbl : (Role.Target.t, Permission.t list) t =
-    create (CCList.length targets)
-  in
+  let tbl : (Role.Target.t, Permission.t list) t = create (CCList.length targets) in
   let find = find_opt tbl in
   let add = replace tbl in
   let () =
@@ -128,11 +124,7 @@ let show req =
     ||> group_by_target query
   in
   let open Page.Admin.Settings.RolePermission in
-  (if HttpUtils.Htmx.is_hx_request req then list else show)
-    context
-    role
-    permissions
-    query
+  (if HttpUtils.Htmx.is_hx_request req then list else show) context role permissions query
   |> Lwt_result.return
 ;;
 
@@ -146,16 +138,11 @@ let edit_htmx req =
         role
         target
     in
-    Page.Admin.Settings.RolePermission.edit_target_modal
-      context
-      role
-      target
-      permissions
+    Page.Admin.Settings.RolePermission.edit_target_modal context role target permissions
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
-  result
-  |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  result |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 let update req =
@@ -168,15 +155,11 @@ let update req =
     let* target = target_from_request req |> Lwt_result.lift in
     let flash_fetcher value = Sihl.Web.Flash.find value req in
     let%lwt current_permissions =
-      Persistence.RolePermission.permissions_by_role_and_target
-        database_label
-        role
-        target
+      Persistence.RolePermission.permissions_by_role_and_target database_label role target
     in
     let events =
       Sihl.Web.Request.to_urlencoded req
-      ||> HttpUtils.format_request_boolean_values
-            Permission.(all |> CCList.map show)
+      ||> HttpUtils.format_request_boolean_values Permission.(all |> CCList.map show)
       ||> UpdateRolePermissions.decode
       >== UpdateRolePermissions.handle ~tags role target current_permissions
     in
@@ -184,9 +167,7 @@ let update req =
       let open HttpUtils in
       function
       | Ok events ->
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         HttpUtils.Htmx.htmx_redirect
           ~actions:[ Message.set ~success:[ Success.Updated Field.Permission ] ]
           (Url.Admin.role_permission_path ~role ())
@@ -205,8 +186,7 @@ let update req =
     in
     events >|> handle
   in
-  result
-  |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  result |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 let delete req =
@@ -226,9 +206,7 @@ let delete req =
     in
     let handle = function
       | Ok events ->
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         redirect [ Message.set ~success:[ Success.Deleted Field.Rule ] ]
       | Error _ -> redirect [ Message.set ~error:[ Error.NotFound Field.Rule ] ]
     in
@@ -242,8 +220,5 @@ module Access : module type of Helpers.Access = struct
 
   let validate = Middleware.Guardian.validate_admin_entity
   let read = Guard.Access.Permission.read |> validate
-
-  let delete =
-    Cqrs_command.Guardian_command.DeleteRolePermission.effects |> validate
-  ;;
+  let delete = Cqrs_command.Guardian_command.DeleteRolePermission.effects |> validate
 end

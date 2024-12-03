@@ -40,9 +40,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command SignUp" ~tags);
     let open CCResult in
     let* () =
-      Pool_user.EmailAddress.validate
-        allowed_email_suffixes
-        command.User_command.email
+      Pool_user.EmailAddress.validate allowed_email_suffixes command.User_command.email
     in
     let contact =
       let open User_command in
@@ -88,10 +86,7 @@ end
 module UpdateSignInCount : sig
   type t = Contact.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Contact.t
 
@@ -142,10 +137,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) user contact (field : t) =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    Ok
-      [ Custom_field.PartialUpdate (field, contact, user)
-        |> Pool_event.custom_field
-      ]
+    Ok [ Custom_field.PartialUpdate (field, contact, user) |> Pool_event.custom_field ]
   ;;
 
   let effects = Contact.Guard.Access.update
@@ -169,8 +161,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) field contact =
     Logs.info ~src (fun m -> m "Handle command ClearAnswer" ~tags);
     Ok
-      [ Custom_field.AdminAnswerCleared
-          (field, Contact.(id contact |> Id.to_common))
+      [ Custom_field.AdminAnswerCleared (field, Contact.(id contact |> Id.to_common))
         |> Pool_event.custom_field
       ]
   ;;
@@ -235,13 +226,10 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateEmail" ~tags);
     let open CCResult in
     let* () =
-      Pool_user.EmailAddress.validate
-        allowed_email_suffixes
-        (Email.address email)
+      Pool_user.EmailAddress.validate allowed_email_suffixes (Email.address email)
     in
     Ok
-      [ Contact.EmailUpdated (contact, Email.address email)
-        |> Pool_event.contact
+      [ Contact.EmailUpdated (contact, Email.address email) |> Pool_event.contact
       ; Email.EmailVerified email |> Pool_event.email_verification
       ]
   ;;
@@ -277,11 +265,7 @@ module SendProfileUpdateTrigger : sig
     ; emails : Email.dispatch list
     }
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
@@ -314,12 +298,10 @@ end = struct
   type t = Contact.t
 
   let handle ?(tags = Logs.Tag.empty) contact email =
-    Logs.info ~src (fun m ->
-      m "Handle command SendRegistrationAttemptNotifitacion" ~tags);
+    Logs.info ~src (fun m -> m "Handle command SendRegistrationAttemptNotifitacion" ~tags);
     Ok
       [ Email.sent email |> Pool_event.email
-      ; Contact.RegistrationAttemptNotificationSent contact
-        |> Pool_event.contact
+      ; Contact.RegistrationAttemptNotificationSent contact |> Pool_event.contact
       ]
   ;;
 
@@ -329,24 +311,16 @@ end
 module AddCellPhone : sig
   include
     Common.CommandSig
-    with type t =
-      Contact.t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
+    with type t = Contact.t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
 
   let handle ?(tags = Logs.Tag.empty) (contact, cell_phone, token) =
     Logs.info ~src (fun m -> m "Handle command AddCellPhone" ~tags);
-    Ok
-      [ Contact.CellPhoneAdded (contact, cell_phone, token)
-        |> Pool_event.contact
-      ]
+    Ok [ Contact.CellPhoneAdded (contact, cell_phone, token) |> Pool_event.contact ]
   ;;
 
   let effects = Contact.Guard.Access.update
@@ -355,11 +329,7 @@ end
 module VerifyCellPhone : sig
   include Common.CommandSig with type t = Contact.t * Pool_user.CellPhone.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t * Pool_user.CellPhone.t
@@ -375,18 +345,13 @@ end
 module ResetCellPhoneVerification : sig
   include Common.CommandSig with type t = Contact.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t
 
   let handle ?(tags = Logs.Tag.empty) contact =
-    Logs.info ~src (fun m ->
-      m "Handle command ResetCellPhoneVerification" ~tags);
+    Logs.info ~src (fun m -> m "Handle command ResetCellPhoneVerification" ~tags);
     Ok [ Contact.CellPhoneVerificationReset contact |> Pool_event.contact ]
   ;;
 
@@ -412,10 +377,7 @@ end = struct
     Ok
       [ Contact.Updated
           Contact.
-            { contact with
-              paused
-            ; paused_version = contact.paused_version |> increment
-            }
+            { contact with paused; paused_version = contact.paused_version |> increment }
         |> Pool_event.contact
       ]
   ;;
@@ -426,11 +388,7 @@ end
 module MarkAsDeleted : sig
   type t = Contact.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t
@@ -446,11 +404,7 @@ end
 module ToggleVerified : sig
   type t = Contact.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Contact.t

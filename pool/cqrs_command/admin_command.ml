@@ -27,19 +27,11 @@ module CreateAdmin : sig
 end = struct
   type t = User_command.create_user
 
-  let handle
-        ?(tags = Logs.Tag.empty)
-        ?allowed_email_suffixes
-        ?id
-        ?(roles = [])
-        command
-    =
+  let handle ?(tags = Logs.Tag.empty) ?allowed_email_suffixes ?id ?(roles = []) command =
     Logs.info ~src (fun m -> m "Handle command CreateAdmin" ~tags);
     let open CCResult in
     let* () =
-      Pool_user.EmailAddress.validate
-        allowed_email_suffixes
-        command.User_command.email
+      Pool_user.EmailAddress.validate allowed_email_suffixes command.User_command.email
     in
     (* TODO: pass Id or Tenant to Admin.Created function as option to further
        pass down to permissions *)
@@ -83,9 +75,7 @@ end = struct
 
   let schema =
     Pool_conformist.(
-      make
-        Field.[ Pool_user.Firstname.schema (); Pool_user.Lastname.schema () ]
-        command)
+      make Field.[ Pool_user.Firstname.schema (); Pool_user.Lastname.schema () ] command)
   ;;
 
   let handle ?(tags = Logs.Tag.empty) admin update =
@@ -104,10 +94,7 @@ end
 module UpdateSignInCount : sig
   type t = Admin.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Admin.t
 
@@ -122,11 +109,7 @@ module PromoteContact : sig
 
   type t = Pool_user.Id.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = Pool_user.Id.t
@@ -149,9 +132,6 @@ end = struct
   let effects =
     let open Guard in
     let open ValidationSet in
-    Or
-      [ one_of_tuple (Permission.Create, `RoleAdmin, None)
-      ; Admin.Guard.Access.create
-      ]
+    Or [ one_of_tuple (Permission.Create, `RoleAdmin, None); Admin.Guard.Access.create ]
   ;;
 end

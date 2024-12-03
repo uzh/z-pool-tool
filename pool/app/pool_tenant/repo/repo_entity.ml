@@ -55,8 +55,7 @@ module GtxApiKey = struct
     Common.Repo.make_caqti_type
       Caqti_type.string
       (decrypt_from_string
-       %> CCResult.map_err (fun _ ->
-         Pool_message.(Error.Decode Field.GtxApiKey)))
+       %> CCResult.map_err (fun _ -> Pool_message.(Error.Decode Field.GtxApiKey)))
       encrypt_to_string
   ;;
 end
@@ -137,9 +136,8 @@ let t =
                     , ( updated_at
                       , ( status
                         , ( database_label
-                          , ( styles
-                            , (icon, (email_logo, (text_messages_enabled, ())))
-                            ) ) ) ) ) ) ) ) ) ) )
+                          , (styles, (icon, (email_logo, (text_messages_enabled, ())))) )
+                        ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -213,8 +211,8 @@ module Write = struct
                     , ( created_at
                       , ( updated_at
                         , ( database_label
-                          , (styles, (icon, (email_logo, (gtx_api_key, ())))) )
-                        ) ) ) ) ) ) ) )
+                          , (styles, (icon, (email_logo, (gtx_api_key, ())))) ) ) ) ) ) )
+              ) ) )
       =
       Ok
         { id

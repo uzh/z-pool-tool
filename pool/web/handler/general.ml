@@ -11,8 +11,7 @@ let admin_from_session db_pool req =
 let create_tenant_layout req ?active_navigation context children =
   let open Utils.Lwt_result.Infix in
   let* tenant_context = Pool_context.Tenant.find req |> Lwt_result.lift in
-  Layout.Tenant.create ?active_navigation context tenant_context children
-  |> Lwt_result.ok
+  Layout.Tenant.create ?active_navigation context tenant_context children |> Lwt_result.ok
 ;;
 
 let create_root_layout ?active_navigation context =

@@ -28,10 +28,7 @@ let form
   let name_inputs =
     input_by_lang ~required:true Field.Name (fun lang (g, _) ->
       let open CCOption in
-      g.Group.name
-      |> Name.find_opt lang
-      >|= Name.value_name
-      |> value ~default:"")
+      g.Group.name |> Name.find_opt lang >|= Name.value_name |> value ~default:"")
   in
   let sort_fields_form =
     match custom_field_group with
@@ -48,9 +45,7 @@ let form
             ]
         ; p
             Pool_common.
-              [ Utils.hint_to_string
-                  language
-                  I18n.(CustomFieldSort Field.CustomFields)
+              [ Utils.hint_to_string language I18n.(CustomFieldSort Field.CustomFields)
                 |> txt
               ]
         ; form
@@ -69,15 +64,9 @@ let form
                    div
                      ~a:
                        [ a_class
-                           [ "flexrow"
-                           ; "flex-gap"
-                           ; "justify-between"
-                           ; "align-center"
-                           ]
+                           [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ]
                        ]
-                     [ div
-                         [ txt (field |> name |> Name.find_opt_or language "-")
-                         ]
+                     [ div [ txt (field |> name |> Name.find_opt_or language "-") ]
                      ; div
                          [ input
                              ~a:
@@ -172,12 +161,7 @@ let detail
         ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ form
-            ?custom_field_group
-            current_model
-            context
-            sys_langauges
-            flash_fetcher
+        [ form ?custom_field_group current_model context sys_langauges flash_fetcher
         ; changelog_html
         ]
     ]

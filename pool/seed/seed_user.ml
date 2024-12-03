@@ -21,28 +21,21 @@ type persons = person list [@@deriving show, yojson]
 let answer_custom_fields fields contact =
   let open Custom_field in
   let open Public in
-  let select_random options =
-    Random.int (List.length options) |> CCList.nth options
-  in
+  let select_random options = Random.int (List.length options) |> CCList.nth options in
   let entity_uuid = Contact.(contact |> id |> Id.to_common) in
   CCList.filter_map
     (function
       | (Select (public, options, _) : Public.t) ->
-        let answer =
-          Some (select_random options) |> Answer.create entity_uuid
-        in
+        let answer = Some (select_random options) |> Answer.create entity_uuid in
         Public.Select (public, options, Some answer) |> CCOption.pure
       | MultiSelect (public, options, _) ->
-        let answer =
-          Some [ select_random options ] |> Answer.create entity_uuid
-        in
+        let answer = Some [ select_random options ] |> Answer.create entity_uuid in
         Public.MultiSelect (public, options, Some answer) |> CCOption.pure
       | Boolean _ | Date _ | Number _ | Text _ -> None)
     fields
   |> CCList.map (fun field ->
     let open Custom_field in
-    PartialUpdate
-      (PartialUpdate.Custom field, contact, Pool_context.Contact contact))
+    PartialUpdate (PartialUpdate.Custom field, contact, Pool_context.Contact contact))
 ;;
 
 let create_rand_persons ?tags n_persons =
@@ -86,13 +79,9 @@ let create_persons_from_api db_label n_persons =
   let tags = Database.Logger.Tags.create db_label in
   let chunk_size = 100 in
   let sum = fold_left ( + ) 0 in
-  let%lwt contacts =
-    Contact.find_all db_label () ||> fst %> map Contact.email_address
-  in
+  let%lwt contacts = Contact.find_all db_label () ||> fst %> map Contact.email_address in
   let%lwt admins =
-    Admin.find_by db_label
-    ||> fst
-    ||> map (fun admin -> admin |> Admin.email_address)
+    Admin.find_by db_label ||> fst ||> map (fun admin -> admin |> Admin.email_address)
   in
   let flatten_filter_combine a b =
     let filter_existing =
@@ -158,8 +147,7 @@ let admins db_label =
   let ctx = Database.to_ctx db_label in
   let tags = Database.Logger.Tags.create db_label in
   let password =
-    Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
-    |> CCOption.value ~default:"Password1!"
+    Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD" |> CCOption.value ~default:"Password1!"
   in
   Lwt_list.iter_s
     (fun ( given_name
@@ -181,16 +169,12 @@ let admins db_label =
              ; roles = []
              }
            in
-           let%lwt () =
-             Admin.Created create |> Admin.handle_event ~tags db_label
-           in
+           let%lwt () = Admin.Created create |> Admin.handle_event ~tags db_label in
            Admin.find db_label id |> Lwt.map CCResult.get_exn
          in
          let%lwt (_ : Guard.Actor.t) =
            let%lwt (_ : Guard.Target.t) =
-             admin
-             |> Admin.Guard.Target.to_authorizable ~ctx
-             ||> get_or_failwith
+             admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
            in
            admin |> Admin.Guard.Actor.to_authorizable ~ctx ||> get_or_failwith
          in
@@ -208,10 +192,7 @@ let admins db_label =
          Lwt.return_unit
        | Some _ ->
          Logs.debug ~src (fun m ->
-           m
-             ~tags:(Database.Logger.Tags.create db_label)
-             "%s"
-             "Admin user already exists");
+           m ~tags:(Database.Logger.Tags.create db_label) "%s" "Admin user already exists");
          Lwt.return_unit)
     data
 ;;
@@ -254,8 +235,7 @@ let contacts db_label =
       ( person.uid |> Contact.Id.of_string
       , person.first_name |> User.Firstname.of_string
       , person.last_name |> User.Lastname.of_string
-      , CCFormat.asprintf "test+%i@econ.uzh.ch" idx
-        |> User.EmailAddress.of_string
+      , CCFormat.asprintf "test+%i@econ.uzh.ch" idx |> User.EmailAddress.of_string
       , language
       , terms_accepted_at |> CCOption.map User.TermsAccepted.create
       , paused
@@ -271,15 +251,7 @@ let contacts db_label =
     users
     |> Lwt_list.filter_map_s
          (fun
-             ( user_id
-             , firstname
-             , lastname
-             , email
-             , language
-             , terms_accepted_at
-             , _
-             , _
-             , _ )
+             (user_id, firstname, lastname, email, language, terms_accepted_at, _, _, _)
             ->
             match%lwt Pool_user.find_by_email_opt db_label email with
             | None ->
@@ -309,15 +281,13 @@ let contacts db_label =
   Logs.info ~src (fun m -> m ~tags "Seed: add additional infos to contacts");
   let%lwt contact_events, field_events =
     Lwt_list.fold_left_s
-      (fun (contacts, fields)
-        (user_id, _, _, _, _, _, paused, disabled, verified) ->
+      (fun (contacts, fields) (user_id, _, _, _, _, _, paused, disabled, verified) ->
          let%lwt contact = Contact.find db_label user_id in
          let custom_fields contact =
            let open Custom_field in
            find_all_by_contact db_label (Pool_context.Contact contact) user_id
            ||> fun (grouped, ungrouped) ->
-           ungrouped
-           @ CCList.flat_map (fun { Group.Public.fields; _ } -> fields) grouped
+           ungrouped @ CCList.flat_map (fun { Group.Public.fields; _ } -> fields) grouped
          in
          match contact with
          | Ok contact ->
@@ -335,20 +305,15 @@ let contacts db_label =
                      ; disabled = Pool_user.Disabled.create true
                      })
                ]
-             else
-               [] @ if verified then [ Contact.EmailVerified contact ] else []
+             else [] @ if verified then [ Contact.EmailVerified contact ] else []
            in
            (contacts @ contact_events, fields @ field_events) |> Lwt.return
          | Error err ->
-           let _ =
-             Pool_common.Utils.with_log_error ~src ~tags ~level:Logs.Debug err
-           in
+           let _ = Pool_common.Utils.with_log_error ~src ~tags ~level:Logs.Debug err in
            (contacts, fields) |> Lwt.return)
       ([], [])
       users
   in
-  let%lwt () =
-    contact_events |> Lwt_list.iter_s (Contact.handle_event db_label)
-  in
+  let%lwt () = contact_events |> Lwt_list.iter_s (Contact.handle_event db_label) in
   field_events |> Lwt_list.iter_s (Custom_field.handle_event db_label)
 ;;

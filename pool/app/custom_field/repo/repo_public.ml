@@ -10,9 +10,7 @@ let has_options m =
 ;;
 
 let get_options pool m =
-  if has_options m
-  then Repo_option.Public.find_by_field pool (id m)
-  else Lwt.return []
+  if has_options m then Repo_option.Public.find_by_field pool (id m) else Lwt.return []
 ;;
 
 let get_options_of_multiple pool fields =
@@ -25,15 +23,12 @@ let get_options_of_multiple pool fields =
 let to_grouped_public is_admin pool model fields =
   let%lwt groups = Repo_group.find_by_model pool model in
   let%lwt options = get_options_of_multiple pool fields in
-  Repo_entity.Public.to_grouped_entities is_admin options groups fields
-  |> Lwt.return
+  Repo_entity.Public.to_grouped_entities is_admin options groups fields |> Lwt.return
 ;;
 
 let to_ungrouped_entities pool is_admin fields =
   let%lwt options = get_options_of_multiple pool fields in
-  fields
-  |> Repo_entity.Public.to_ungrouped_entities is_admin options
-  |> Lwt.return
+  fields |> Repo_entity.Public.to_ungrouped_entities is_admin options |> Lwt.return
 ;;
 
 let base_filter_conditions is_admin =
@@ -64,14 +59,12 @@ module Sql = struct
     ; "pool_custom_fields.validation"
     ; "pool_custom_fields.field_type"
     ; "pool_custom_fields.required"
-    ; Entity.Id.sql_select_fragment
-        ~field:"pool_custom_fields.custom_field_group_uuid"
+    ; Entity.Id.sql_select_fragment ~field:"pool_custom_fields.custom_field_group_uuid"
     ; "pool_custom_fields.admin_override"
     ; "pool_custom_fields.admin_input_only"
     ; "pool_custom_fields.prompt_on_registration"
     ; Entity.Id.sql_select_fragment ~field:"pool_custom_field_answers.uuid"
-    ; Entity.Id.sql_select_fragment
-        ~field:"pool_custom_field_answers.entity_uuid"
+    ; Entity.Id.sql_select_fragment ~field:"pool_custom_field_answers.entity_uuid"
     ; "pool_custom_field_answers.value"
     ; "pool_custom_field_answers.admin_value"
     ; "pool_custom_field_answers.version"
@@ -187,29 +180,22 @@ module Sql = struct
             |> add Contact.Repo.Id.t contact_id
             |> add Caqti_type.string Entity.Model.(show Contact))
         in
-        CCList.fold_left
-          (fun dyn id -> dyn |> Dynparam.add Contact.Repo.Id.t id)
-          base
-          ids
+        CCList.fold_left (fun dyn id -> dyn |> Dynparam.add Contact.Repo.Id.t id) base ids
       in
       let (Dynparam.Pack (pt, pv)) = dyn in
       let request =
-        find_multiple_by_contact_request is_admin ids
-        |> pt ->* Repo_entity.Public.t
+        find_multiple_by_contact_request is_admin ids |> pt ->* Repo_entity.Public.t
       in
       Database.collect pool request pv
       >|> fun fields ->
       let%lwt options = get_options_of_multiple pool fields in
-      fields
-      |> Repo_entity.Public.to_ungrouped_entities is_admin options
-      |> Lwt.return
+      fields |> Repo_entity.Public.to_ungrouped_entities is_admin options |> Lwt.return
   ;;
 
   let find_by_contacts_and_fields_request contact_ids field_ids =
     let id_list counter ids =
       CCList.mapi
-        (fun i _ ->
-           Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + counter + 1))
+        (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + counter + 1))
         ids
       |> CCString.concat ","
     in
@@ -244,8 +230,7 @@ module Sql = struct
         let dyn =
           let add_ids decode ids dyn =
             CCList.fold_left
-              (fun dyn id ->
-                 dyn |> Dynparam.add Caqti_type.string (id |> decode))
+              (fun dyn id -> dyn |> Dynparam.add Caqti_type.string (id |> decode))
               dyn
               ids
           in
@@ -261,9 +246,7 @@ module Sql = struct
         Database.collect pool request pv
         >|> fun fields ->
         let%lwt options = get_options_of_multiple pool fields in
-        fields
-        |> Repo_entity.Public.to_ungrouped_entities is_admin options
-        |> Lwt.return
+        fields |> Repo_entity.Public.to_ungrouped_entities is_admin options |> Lwt.return
   ;;
 
   let find_by_contact_request is_admin =
@@ -276,8 +259,7 @@ module Sql = struct
     |sql}
       select_sql
       (base_filter_conditions is_admin)
-    |> Caqti_type.(t3 Contact.Repo.Id.t string Repo_entity.Id.t)
-       ->! Repo_entity.Public.t
+    |> Caqti_type.(t3 Contact.Repo.Id.t string Repo_entity.Id.t) ->! Repo_entity.Public.t
   ;;
 
   let find_by_contact ?(is_admin = false) pool contact_id field_id =
@@ -316,8 +298,7 @@ module Sql = struct
      | false -> base
      | true -> Format.asprintf "%s AND pool_custom_fields.required = 1" base)
     |> Caqti_type.(
-         t3 Contact.Repo.Id.t Repo_entity.Model.t Repo_entity.FieldType.t
-         ->! int)
+         t3 Contact.Repo.Id.t Repo_entity.Model.t Repo_entity.FieldType.t ->! int)
   ;;
 
   let all_answered ~required_only pool contact_id =
@@ -346,10 +327,7 @@ module Sql = struct
 
   let all_prompted_on_registration pool =
     let open Utils.Lwt_result.Infix in
-    Database.collect
-      pool
-      all_prompted_on_registration_request
-      Entity.Model.(show Contact)
+    Database.collect pool all_prompted_on_registration_request Entity.Model.(show Contact)
     >|> to_ungrouped_entities pool false
   ;;
 end

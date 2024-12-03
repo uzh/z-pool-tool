@@ -11,9 +11,7 @@ let waiting_list pool =
          let open Experiment in
          let common_id = experiment |> id |> Id.to_common in
          match
-           experiment
-           |> direct_registration_disabled
-           |> DirectRegistrationDisabled.value
+           experiment |> direct_registration_disabled |> DirectRegistrationDisabled.value
          with
          | true ->
            let%lwt filtered_contacts =
@@ -31,8 +29,7 @@ let waiting_list pool =
              @ waiting_lists
            in
            let invitations =
-             Invitation.Created
-               { Invitation.contacts; mailing = None; experiment }
+             Invitation.Created { Invitation.contacts; mailing = None; experiment }
              :: invitations
            in
            (waiting_lists, invitations) |> Lwt.return
@@ -40,11 +37,7 @@ let waiting_list pool =
       ([], [])
       experiments
   in
-  let%lwt () =
-    Lwt_list.iter_s (Invitation.handle_event pool) invitation_events
-  in
-  let%lwt () =
-    Lwt_list.iter_s (Waiting_list.handle_event pool) waiting_list_events
-  in
+  let%lwt () = Lwt_list.iter_s (Invitation.handle_event pool) invitation_events in
+  let%lwt () = Lwt_list.iter_s (Waiting_list.handle_event pool) waiting_list_events in
   Lwt.return_unit
 ;;

@@ -4,9 +4,7 @@ let create pool =
   let open Custom_field in
   let open Pool_common.Language in
   let system_languages = Pool_common.Language.all in
-  let make_names values =
-    values |> Name.create system_languages |> get_or_failwith
-  in
+  let make_names values = values |> Name.create system_languages |> get_or_failwith in
   let admin_hint = None in
   let admin_override = true |> AdminOverride.create in
   let admin_view_only = false |> AdminViewOnly.create in
@@ -24,8 +22,7 @@ let create pool =
   let groups = [ education_group; language_group ] in
   let education_options =
     [ "Bachelor"; "Master"; "Phd" ]
-    |> CCList.map (fun value ->
-      CCList.map (fun lang -> lang, value) system_languages)
+    |> CCList.map (fun value -> CCList.map (fun lang -> lang, value) system_languages)
   in
   let recruitment_channel_options =
     [ [ En, "Friend"; De, "Freund" ]
@@ -142,9 +139,7 @@ let create pool =
       , false )
     ]
   in
-  let group_events =
-    CCList.map (fun group -> Custom_field.GroupCreated group) groups
-  in
+  let group_events = CCList.map (fun group -> Custom_field.GroupCreated group) groups in
   let field_events =
     CCList.map
       (fun ( name
@@ -162,8 +157,7 @@ let create pool =
            let name = make_names name in
            let hint =
              system_languages
-             |> CCList.filter_map (fun lang ->
-               hint |> CCOption.map (fun h -> lang, h))
+             |> CCList.filter_map (fun lang -> hint |> CCOption.map (fun h -> lang, h))
              |> Hint.create
              |> get_or_failwith
            in

@@ -21,16 +21,14 @@ module Access = struct
   open Permission
 
   let invitation action uuid =
-    one_of_tuple
-      (action, `Invitation, Some (uuid |> Uuid.target_of Pool_common.Id.value))
+    one_of_tuple (action, `Invitation, Some (uuid |> Uuid.target_of Pool_common.Id.value))
   ;;
 
   let index id =
     And
       [ Or
           [ one_of_tuple (Read, `Invitation, None)
-          ; one_of_tuple
-              (Read, `Invitation, Some (Uuid.target_of Experiment.Id.value id))
+          ; one_of_tuple (Read, `Invitation, Some (Uuid.target_of Experiment.Id.value id))
           ]
       ; Experiment.Guard.Access.read id
       ]
@@ -52,9 +50,7 @@ module Access = struct
       [ Or
           [ invitation Read invitation_id
           ; one_of_tuple
-              ( Read
-              , `Invitation
-              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+              (Read, `Invitation, Some (Uuid.target_of Experiment.Id.value experiment_id))
           ]
       ; Experiment.Guard.Access.read experiment_id
       ]

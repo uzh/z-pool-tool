@@ -30,14 +30,9 @@ let index req =
 ;;
 
 let admin_detail req is_edit =
-  let result
-        ({ Pool_context.csrf; database_label; language; user; _ } as context)
-    =
+  let result ({ Pool_context.csrf; database_label; language; user; _ } as context) =
     let%lwt actor =
-      Pool_context.Utils.find_authorizable_opt
-        ~admin_only:true
-        database_label
-        user
+      Pool_context.Utils.find_authorizable_opt ~admin_only:true database_label user
     in
     Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
     @@
@@ -72,8 +67,7 @@ let admin_detail req is_edit =
        |> CCList.return
        |> Page.Admin.Admins.edit context admin target_id roles
        |> Lwt.return
-     | false ->
-       Page.Admin.Admins.detail context admin target_id roles |> Lwt.return)
+     | false -> Page.Admin.Admins.detail context admin target_id roles |> Lwt.return)
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -96,8 +90,7 @@ let new_form req =
 let create_admin req =
   let redirect_path = Format.asprintf "/admin/admins" in
   let result { Pool_context.database_label; user; _ } =
-    Lwt_result.map_error (fun err ->
-      err, Format.asprintf "%s/new" redirect_path)
+    Lwt_result.map_error (fun err -> err, Format.asprintf "%s/new" redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let id = Admin.Id.create () in
@@ -146,12 +139,8 @@ let search_role_entities req =
 let grant_role req =
   let open Utils.Lwt_result.Infix in
   let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
-  let to_guardian_id admin =
-    admin |> Admin.id |> Guard.Uuid.actor_of Admin.Id.value
-  in
-  let redirect_path =
-    Format.asprintf "/admin/admins/%s/edit" (Admin.Id.value admin_id)
-  in
+  let to_guardian_id admin = admin |> Admin.id |> Guard.Uuid.actor_of Admin.Id.value in
+  let redirect_path = Format.asprintf "/admin/admins/%s/edit" (Admin.Id.value admin_id) in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -181,9 +170,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
   result |> extract_happy_path req
 ;;
 
-let search =
-  Helpers.Search.htmx_search_helper ~query_field:Field.(SearchOf Admin) `Admin
-;;
+let search = Helpers.Search.htmx_search_helper ~query_field:Field.(SearchOf Admin) `Admin
 
 module Access : sig
   include module type of Helpers.Access
@@ -198,23 +185,17 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let admin_effects = Guardian.id_effects Admin.Id.validate Field.Admin
-
-  let index =
-    Admin.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
-  ;;
-
+  let index = Admin.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   let create = Command.CreateAdmin.effects |> Guardian.validate_admin_entity
   let read = admin_effects Admin.Guard.Access.read
   let update = admin_effects Admin.Guard.Access.update
 
   let grant_role =
-    GuardianCommand.GrantRoles.effects
-    |> Middleware.Guardian.validate_admin_entity
+    GuardianCommand.GrantRoles.effects |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let revoke_role =
-    GuardianCommand.RevokeRole.effects
-    |> Middleware.Guardian.validate_admin_entity
+    GuardianCommand.RevokeRole.effects |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let search = index

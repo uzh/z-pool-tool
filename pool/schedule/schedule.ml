@@ -90,8 +90,7 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
   let open Utils.Lwt_result.Infix in
   let delay = run_in scheduled_time in
   let notify status =
-    Logs.debug ~src (fun m ->
-      m ~tags "%s: Run is %s" label (Status.show status));
+    Logs.debug ~src (fun m -> m ~tags "%s: Run is %s" label (Status.show status));
     Lwt.return_unit
   in
   let run ({ label; scheduled_time; fcn; _ } as schedule) =
@@ -115,8 +114,7 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
         match schedule.database_label with
         | None -> Status.Active
         | Some label ->
-          Pool.Tenant.find_status_by_label label
-          |> CCOption.value ~default:Status.Active
+          Pool.Tenant.find_status_by_label label |> CCOption.value ~default:Status.Active
       in
       let open Status in
       let retry_connection label =
@@ -125,8 +123,7 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
         | Ok () ->
           let%lwt () =
             let open Pool_database in
-            StatusUpdated (label, Status.Active)
-            |> handle_event Database.Pool.Root.label
+            StatusUpdated (label, Status.Active) |> handle_event Database.Pool.Root.label
           in
           Lwt.return_true
         | Error _ -> Lwt.return_false
@@ -134,10 +131,7 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
       match database_status with
       | Active -> Lwt.return true
       | ConnectionIssue ->
-        CCOption.map_or
-          ~default:Lwt.return_false
-          retry_connection
-          schedule.database_label
+        CCOption.map_or ~default:Lwt.return_false retry_connection schedule.database_label
       | Disabled
       | Maintenance
       | MigrationsConnectionIssue
@@ -156,8 +150,7 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
         let%lwt () = Registered.update_status Status.Running schedule in
         process schedule
       | (Every _ | At _), ((Paused | Failed) as status) -> notify status
-      | (Every _ | At _), (Active | Finished | Running | Stopped) ->
-        Lwt.return_unit
+      | (Every _ | At _), (Active | Finished | Running | Stopped) -> Lwt.return_unit
     in
     match%lwt database_ok () with
     | true -> run_schedule ()

@@ -32,9 +32,7 @@ let[@warning "-4"] equal_verification_event
   =
   match one, two with
   | Created (e1, t1, id1), Created (e2, t2, id2) ->
-    User.EmailAddress.equal e1 e2
-    && Token.equal t1 t2
-    && Pool_user.Id.equal id1 id2
+    User.EmailAddress.equal e1 e2 && Token.equal t1 t2 && Pool_user.Id.equal id1 id2
   | EmailVerified m, EmailVerified p -> equal m p
   | _ -> false
 ;;
@@ -74,23 +72,13 @@ let sent ?new_email_address ?new_smtp_auth_id job =
   Sent (job, new_email_address, new_smtp_auth_id)
 ;;
 
-let create_sent
-      ?id
-      ?message_template
-      ?job_ctx
-      ?new_email_address
-      ?new_smtp_auth_id
-      job
-  =
+let create_sent ?id ?message_template ?job_ctx ?new_email_address ?new_smtp_auth_id job =
   create_dispatch ?id ?message_template ?job_ctx job
   |> sent ?new_email_address ?new_smtp_auth_id
 ;;
 
 let handle_event pool : event -> unit Lwt.t = function
-  | Sent
-      ( { job; id; message_template; job_ctx }
-      , new_email_address
-      , new_smtp_auth_id ) ->
+  | Sent ({ job; id; message_template; job_ctx }, new_email_address, new_smtp_auth_id) ->
     Email_service.dispatch
       ?id
       ?new_email_address

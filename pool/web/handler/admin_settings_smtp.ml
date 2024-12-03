@@ -14,8 +14,7 @@ let settings_detail_path location req =
   active_navigation location
   |> fun base ->
   match location with
-  | `Tenant ->
-    Format.asprintf "%s/%s" base (req |> smtp_auth_id |> SmtpAuth.Id.value)
+  | `Tenant -> Format.asprintf "%s/%s" base (req |> smtp_auth_id |> SmtpAuth.Id.value)
   | `Root -> base
 ;;
 
@@ -147,8 +146,7 @@ let update_base location command success_message req =
       match command with
       | `UpdateDetails ->
         let%lwt default_smtp = SmtpAuth.find_default_opt database_label in
-        Command.Update.(
-          decode urlencoded >>= handle ~tags default_smtp smtp_auth)
+        Command.Update.(decode urlencoded >>= handle ~tags default_smtp smtp_auth)
         |> Lwt_result.lift
       | `UpdatePassword ->
         Command.UpdatePassword.(decode urlencoded >>= handle ~tags smtp_auth)
@@ -170,10 +168,7 @@ let update_base location command success_message req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let update_password =
-  update_base `Tenant `UpdatePassword Success.SmtpPasswordUpdated
-;;
-
+let update_password = update_base `Tenant `UpdatePassword Success.SmtpPasswordUpdated
 let update = update_base `Tenant `UpdateDetails Success.SmtpDetailsUpdated
 
 let new_form req =
@@ -223,13 +218,11 @@ let validate location req =
     let* email = email_of_urlencoded urlencoded in
     let* smtp = SmtpAuth.find_full database_label id in
     let redirect actions =
-      Http_utils.redirect_to_with_actions redirect_path actions
-      ||> CCResult.return
+      Http_utils.redirect_to_with_actions redirect_path actions ||> CCResult.return
     in
     Email.Service.test_smtp_config database_label smtp email
     >|> function
-    | Ok () ->
-      redirect [ Message.set ~success:[ Success.Validated Field.Smtp ] ]
+    | Ok () -> redirect [ Message.set ~success:[ Success.Validated Field.Smtp ] ]
     | Error err -> redirect [ Message.set ~error:[ err ] ]
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req

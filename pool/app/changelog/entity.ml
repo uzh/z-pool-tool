@@ -95,8 +95,7 @@ module DefaultSettings = struct
 end
 
 let column_created_at =
-  (Pool_message.Field.CreatedAt, "pool_change_log.created_at")
-  |> Query.Column.create
+  (Pool_message.Field.CreatedAt, "pool_change_log.created_at") |> Query.Column.create
 ;;
 
 let searchable_by = []

@@ -20,6 +20,5 @@ let handle_event =
     in
     Lwt.return_unit
   | Updated m -> Repo.update m
-  | Published m ->
-    Repo.update { m with published_at = Some (PublishedAt.create_now ()) }
+  | Published m -> Repo.update { m with published_at = Some (PublishedAt.create_now ()) }
 ;;

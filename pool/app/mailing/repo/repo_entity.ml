@@ -21,10 +21,7 @@ module Limit = struct
   include Entity.Limit
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.int
-      (of_int %> CCResult.return)
-      value
+    Pool_common.Repo.make_caqti_type Caqti_type.int (of_int %> CCResult.return) value
   ;;
 end
 
@@ -58,32 +55,15 @@ type t =
   }
 [@@deriving show]
 
-let to_entity
-      { id; start_at; end_at; limit; distribution; created_at; updated_at; _ }
-  =
+let to_entity { id; start_at; end_at; limit; distribution; created_at; updated_at; _ } =
   Entity.{ id; start_at; end_at; limit; distribution; created_at; updated_at }
 ;;
 
 let of_entity
       (experiment_id : Experiment.Id.t)
-      { Entity.id
-      ; start_at
-      ; end_at
-      ; limit
-      ; distribution
-      ; created_at
-      ; updated_at
-      }
+      { Entity.id; start_at; end_at; limit; distribution; created_at; updated_at }
   =
-  { id
-  ; experiment_id
-  ; start_at
-  ; end_at
-  ; limit
-  ; distribution
-  ; created_at
-  ; updated_at
-  }
+  { id; experiment_id; start_at; end_at; limit; distribution; created_at; updated_at }
 ;;
 
 let t =
@@ -92,26 +72,16 @@ let t =
       ( m.id
       , ( m.experiment_id
         , ( m.start_at
-          , (m.end_at, (m.limit, (m.distribution, (m.created_at, m.updated_at))))
-          ) ) )
+          , (m.end_at, (m.limit, (m.distribution, (m.created_at, m.updated_at)))) ) ) )
   in
   let decode
         ( id
         , ( experiment_id
-          , ( start_at
-            , (end_at, (limit, (distribution, (created_at, updated_at)))) ) ) )
+          , (start_at, (end_at, (limit, (distribution, (created_at, updated_at))))) ) )
     =
     let open CCResult in
     Ok
-      { id
-      ; experiment_id
-      ; start_at
-      ; end_at
-      ; limit
-      ; distribution
-      ; created_at
-      ; updated_at
-      }
+      { id; experiment_id; start_at; end_at; limit; distribution; created_at; updated_at }
   in
   Caqti_type.(
     custom
@@ -129,9 +99,7 @@ let t =
                      Limit.t
                      (t2
                         (option Distribution.t)
-                        (t2
-                           Pool_common.Repo.CreatedAt.t
-                           Pool_common.Repo.UpdatedAt.t))))))))
+                        (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))))))
 ;;
 
 module Update = struct
@@ -147,16 +115,12 @@ module Update = struct
     let encode { Entity.id; start_at; end_at; limit; distribution; _ } =
       Ok (id, (start_at, (end_at, (limit, distribution))))
     in
-    let decode _ =
-      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
-    in
+    let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
     Caqti_type.(
       custom
         ~encode
         ~decode
-        (t2
-           Id.t
-           (t2 StartAt.t (t2 EndAt.t (t2 Limit.t (option Distribution.t))))))
+        (t2 Id.t (t2 StartAt.t (t2 EndAt.t (t2 Limit.t (option Distribution.t))))))
   ;;
 end
 
@@ -173,17 +137,12 @@ module Status = struct
     include LastRun
 
     let t =
-      Pool_common.Repo.make_caqti_type
-        Caqti_type.bool
-        (create %> CCResult.return)
-        value
+      Pool_common.Repo.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
     ;;
   end
 
   let t =
-    let encode _ =
-      Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
-    in
+    let encode _ = Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith in
     let decode (mailing, (to_handle, last_run)) =
       let mailing = to_entity mailing in
       Ok { mailing; to_handle; last_run }

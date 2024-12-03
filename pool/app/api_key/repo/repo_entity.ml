@@ -17,8 +17,7 @@ module Token = struct
 end
 
 let t =
-  let decode (id, (name, (token, (expires_at, (created_at, (updated_at, ()))))))
-    =
+  let decode (id, (name, (token, (expires_at, (created_at, (updated_at, ())))))) =
     Ok { id; name; token; expires_at; created_at; updated_at }
   in
   let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
@@ -38,16 +37,11 @@ let t =
 
 module Write = struct
   let t =
-    let decode _ =
-      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
-    in
+    let decode _ = Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel in
     let encode m : ('a Data.t, string) result =
       Ok Data.[ m.id; m.name; m.token; m.expires_at ]
     in
     let open Schema in
-    custom
-      ~encode
-      ~decode
-      Caqti_type.[ Pool_common.Repo.Id.t; string; Token.t; ptime ]
+    custom ~encode ~decode Caqti_type.[ Pool_common.Repo.Id.t; string; Token.t; ptime ]
   ;;
 end

@@ -5,6 +5,5 @@ let add_promoted_contacts_table =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202308030850" |> add_step add_promoted_contacts_table)
+  Database.Migration.(empty "202308030850" |> add_step add_promoted_contacts_table)
 ;;

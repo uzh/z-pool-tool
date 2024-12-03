@@ -18,10 +18,7 @@ let experiment_public_description =
   Public.description
   %> CCOption.map_or
        ~default:(txt "")
-       (PublicDescription.value
-        %> HttpUtils.add_line_breaks
-        %> CCList.return
-        %> p)
+       (PublicDescription.value %> HttpUtils.add_line_breaks %> CCList.return %> p)
 ;;
 
 let experiment_title =
@@ -78,9 +75,7 @@ let index
           [ div
               [ txt
                   Pool_common.(
-                    Utils.text_to_string
-                      language
-                      I18n.DashboardProfileCompletionText)
+                    Utils.text_to_string language I18n.DashboardProfileCompletionText)
               ]
           ]
         in
@@ -103,19 +98,15 @@ let index
                 (HttpUtils.Url.Contact.experiment_path ~id ()
                  |> HttpUtils.externalize_path_with_params query_parameters)
             ]
-          [ Control.More |> Pool_common.Utils.control_to_string language |> txt
-          ]
+          [ Control.More |> Pool_common.Utils.control_to_string language |> txt ]
       ]
   in
   let experiment_title exp =
     div
-      ~a:
-        [ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
+      ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
       [ div
           ~a:[ a_class [ "grow" ] ]
-          [ h4
-              ~a:[ a_class [ "word-wrap-break" ] ]
-              [ strong [ exp |> experiment_title ] ]
+          [ h4 ~a:[ a_class [ "word-wrap-break" ] ] [ strong [ exp |> experiment_title ] ]
           ]
       ; exp |> Experiment.Public.id |> experiment_link
       ]
@@ -138,10 +129,7 @@ let index
   let online_studies_html =
     online_studies
     |> CCList.map experiment_item
-    |> list_html
-         i18n.online_studies
-         ~empty_msg:ExperimentOnlineListEmpty
-         [ "striped" ]
+    |> list_html i18n.online_studies ~empty_msg:ExperimentOnlineListEmpty [ "striped" ]
   in
   let past_experiments_html =
     match past_experiments with
@@ -160,8 +148,7 @@ let index
         let open CCOption in
         i
         |> CCList.nth_opt sessions
-        >>= fun s ->
-        s.Session.Public.canceled_at >|= CCFun.const [ "bg-red-lighter" ]
+        >>= fun s -> s.Session.Public.canceled_at >|= CCFun.const [ "bg-red-lighter" ]
       in
       let session_table =
         sessions
@@ -197,10 +184,7 @@ let index
       let open Pool_common.I18n in
       list
       |> CCList.map experiment_item
-      |> list_html
-           i18n.waiting_list
-           ~empty_msg:ContactWaitingListEmpty
-           [ "striped" ]
+      |> list_html i18n.waiting_list ~empty_msg:ContactWaitingListEmpty [ "striped" ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -212,9 +196,7 @@ let index
         [ notification
         ; div
             ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ]
-            [ div
-                ~a:[ a_class [ "stack-lg" ] ]
-                [ session_html; waiting_list_html ]
+            [ div ~a:[ a_class [ "stack-lg" ] ] [ session_html; waiting_list_html ]
             ; experiment_html
             ; online_studies_html
             ; past_experiments_html
@@ -249,14 +231,8 @@ let show
        ]
        @
        if CCList.is_empty sessions
-       then
-         [ p
-             [ Utils.text_to_string language (I18n.EmtpyList Field.Sessions)
-               |> txt
-             ]
-         ]
-       else [ div [ PageSession.public_overview sessions experiment language ] ]
-      )
+       then [ p [ Utils.text_to_string language (I18n.EmtpyList Field.Sessions) |> txt ] ]
+       else [ div [ PageSession.public_overview sessions experiment language ] ])
   in
   let waiting_list_form () =
     let form_action =
@@ -264,15 +240,12 @@ let show
         ~id:(Experiment.Public.id experiment)
         ~suffix:"waiting-list"
         ()
-      |> (fun url ->
-      if user_is_enlisted then Format.asprintf "%s/remove" url else url)
+      |> (fun url -> if user_is_enlisted then Format.asprintf "%s/remove" url else url)
       |> HttpUtils.externalize_path_with_params query_parameters
     in
     let text_blocks =
       let base =
-        (if user_is_enlisted
-         then I18n.ContactOnWaitingList
-         else I18n.SignUpForWaitingList)
+        (if user_is_enlisted then I18n.ContactOnWaitingList else I18n.SignUpForWaitingList)
         |> fun msg -> p [ txt (hint_to_string msg) ]
       in
       let missing_phone =
@@ -296,8 +269,7 @@ let show
       ~a:[ a_class [ "stack" ] ]
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
-          [ txt (Utils.text_to_string language I18n.ExperimentWaitingListTitle)
-          ]
+          [ txt (Utils.text_to_string language I18n.ExperimentWaitingListTitle) ]
       ; text_blocks
       ; form
           ~a:[ a_method `Post; a_action form_action ]
@@ -317,9 +289,7 @@ let show
     | [] -> txt ""
     | sessions ->
       div
-        (h2
-           ~a:[ a_class [ "heading-2" ] ]
-           [ txt (Utils.text_to_string language title) ]
+        (h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Utils.text_to_string language title) ]
          :: Page_contact_sessions.public_detail language sessions)
   in
   let html =
@@ -416,10 +386,7 @@ let show_online_study
   experiment_detail_page experiment html
 ;;
 
-let online_study_completition
-      (experiment : Experiment.Public.t)
-      (_ : Pool_context.t)
-  =
+let online_study_completition (experiment : Experiment.Public.t) (_ : Pool_context.t) =
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1

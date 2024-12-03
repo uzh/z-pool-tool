@@ -1,14 +1,12 @@
 val find_roles
   :  Database.Label.t
   -> Guard.Actor.t option
-  -> (Guard.ActorRole.t * Guard.Persistence.target_model option * string option)
-       list
+  -> (Guard.ActorRole.t * Guard.Persistence.target_model option * string option) list
        Lwt.t
 
 val find_roles_of_ctx
   :  Pool_context.t
-  -> (Guard.ActorRole.t * Guard.Persistence.target_model option * string option)
-       list
+  -> (Guard.ActorRole.t * Guard.Persistence.target_model option * string option) list
        Lwt.t
 
 val has_permission
@@ -51,12 +49,5 @@ val revoke_role
   -> Rock.Request.t
   -> (Rock.Response.t, Pool_message.Error.t) Lwt_result.t
 
-val handle_toggle_role
-  :  Guard.Uuid.Target.t
-  -> Rock.Request.t
-  -> Rock.Response.t Lwt.t
-
-val search_role_entities
-  :  Guard.Target.t
-  -> Rock.Request.t
-  -> Rock.Response.t Lwt.t
+val handle_toggle_role : Guard.Uuid.Target.t -> Rock.Request.t -> Rock.Response.t Lwt.t
+val search_role_entities : Guard.Target.t -> Rock.Request.t -> Rock.Response.t Lwt.t

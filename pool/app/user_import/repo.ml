@@ -41,16 +41,15 @@ module RepoEntity = struct
         , ( m.token
           , ( m.confirmed_at
             , ( m.notified_at
-              , ( m.reminder_count
-                , (m.last_reminded_at, (m.created_at, m.updated_at)) ) ) ) ) )
+              , (m.reminder_count, (m.last_reminded_at, (m.created_at, m.updated_at))) )
+            ) ) )
     in
     let decode
           ( user_uuid
           , ( token
             , ( confirmed_at
               , ( notified_at
-                , (reminder_count, (last_reminded_at, (created_at, updated_at)))
-                ) ) ) )
+                , (reminder_count, (last_reminded_at, (created_at, updated_at))) ) ) ) )
       =
       Ok
         { user_uuid
@@ -89,9 +88,7 @@ module RepoEntity = struct
         ( FirstReminderAfter.value first_reminder
         , SecondReminderAfter.value second_reminder )
     in
-    let decode _ =
-      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
-    in
+    let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
     Caqti_type.(custom ~encode ~decode (t2 ptime_span ptime_span))
   ;;
 
@@ -120,12 +117,9 @@ module RepoEntity = struct
       let encode (m : t) =
         Ok
           ( m.user_uuid
-          , ( m.confirmed_at
-            , (m.notified_at, (m.reminder_count, m.last_reminded_at)) ) )
+          , (m.confirmed_at, (m.notified_at, (m.reminder_count, m.last_reminded_at))) )
       in
-      let decode _ =
-        Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
-      in
+      let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
       Caqti_type.(
         custom
           ~encode
@@ -134,9 +128,7 @@ module RepoEntity = struct
              Pool_user.Repo.Id.t
              (t2
                 (option ConfirmedAt.t)
-                (t2
-                   (option NotifiedAt.t)
-                   (t2 ReminderCount.t (option LastRemindedAt.t))))))
+                (t2 (option NotifiedAt.t) (t2 ReminderCount.t (option LastRemindedAt.t))))))
     ;;
   end
 end
@@ -238,9 +230,7 @@ let update_request =
   |> RepoEntity.Write.t ->. Caqti_type.unit
 ;;
 
-let update pool t =
-  Database.exec pool update_request (RepoEntity.Write.from_entity t)
-;;
+let update pool t = Database.exec pool update_request (RepoEntity.Write.from_entity t)
 
 let find_admins_request ~where limit =
   Format.asprintf
@@ -289,12 +279,9 @@ let find_admins_to_remind reminder_settings pool limit () =
   let request =
     find_admins_request
       ~where:
-        (Format.asprintf
-           "pool_admins.import_pending = 1 AND %s"
-           reminder_where_clause)
+        (Format.asprintf "pool_admins.import_pending = 1 AND %s" reminder_where_clause)
       limit
-    |> Caqti_type.(
-         RepoEntity.reminder_settings_caqti ->* t2 Admin.Repo.t RepoEntity.t)
+    |> Caqti_type.(RepoEntity.reminder_settings_caqti ->* t2 Admin.Repo.t RepoEntity.t)
   in
   Database.collect pool request reminder_settings
 ;;
@@ -312,8 +299,7 @@ let find_contacts_request ~where limit =
         pool_contacts.created_at ASC
       LIMIT %i
     |sql}
-    (Contact.Repo.sql_select_columns @ sql_select_columns
-     |> CCString.concat ", ")
+    (Contact.Repo.sql_select_columns @ sql_select_columns |> CCString.concat ", ")
     ([ Contact.Repo.joins; joins ] |> CCString.concat "\n")
     where
     limit
@@ -344,8 +330,7 @@ let find_contacts_to_remind reminder_settings pool limit () =
          AND %s |sql}
            reminder_where_clause)
       limit
-    |> Caqti_type.(
-         RepoEntity.reminder_settings_caqti ->* t2 Contact.Repo.t RepoEntity.t)
+    |> Caqti_type.(RepoEntity.reminder_settings_caqti ->* t2 Contact.Repo.t RepoEntity.t)
   in
   Database.collect pool request reminder_settings
 ;;
@@ -364,6 +349,4 @@ let insert_request =
   |> Caqti_type.(t2 Pool_user.Repo.Id.t string ->. unit)
 ;;
 
-let insert pool t =
-  Database.exec pool insert_request (t.user_uuid, t.token |> Token.value)
-;;
+let insert pool t = Database.exec pool insert_request (t.user_uuid, t.token |> Token.value)

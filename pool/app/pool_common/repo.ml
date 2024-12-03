@@ -9,8 +9,7 @@ let decode_yojson t_of_yojson field t =
   try Ok (read t) with
   | _ ->
     Error
-      (Pool_message.(Error.Invalid field)
-       |> Utils_to_string.error_to_string Language.En)
+      (Pool_message.(Error.Invalid field) |> Utils_to_string.error_to_string Language.En)
 ;;
 
 module Model = struct
@@ -114,7 +113,5 @@ module ExperimentType = Model.SelectorType (ExperimentType)
 module VerificationCode = struct
   include VerificationCode
 
-  let t =
-    make_caqti_type Caqti_type.string CCFun.(of_string %> CCResult.return) value
-  ;;
+  let t = make_caqti_type Caqti_type.string CCFun.(of_string %> CCResult.return) value
 end

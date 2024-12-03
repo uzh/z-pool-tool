@@ -10,8 +10,7 @@ let changelog_hint language =
   let changelog_url = Version.changelog_url in
   p
     [ Unsafe.data
-        Pool_common.(
-          Utils.hint_to_string language I18n.(ReleaseNotesHint changelog_url))
+        Pool_common.(Utils.hint_to_string language I18n.(ReleaseNotesHint changelog_url))
     ]
 ;;
 
@@ -31,20 +30,13 @@ let list { Pool_context.language; _ } (versions, query) =
     in
     let format_time = Utils.Ptime.formatted_date_time in
     [ txt (Tag.value tag)
-    ; published_at
-      |> map_or ~default:"" CCFun.(PublishedAt.value %> format_time)
-      |> txt
+    ; published_at |> map_or ~default:"" CCFun.(PublishedAt.value %> format_time) |> txt
     ; show_btn
     ]
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make
-    ~target_id:"versions-list"
-    ~cols
-    ~row
-    data_table
-    versions
+  Component.DataTable.make ~target_id:"versions-list" ~cols ~row data_table versions
 ;;
 
 let index (Pool_context.{ language; _ } as context) versions =
@@ -68,9 +60,7 @@ let show { Pool_context.language; _ } { Pool_version.tag; text; _ } =
         [ txt
             (Format.asprintf
                "%s %s"
-               (Pool_common.Utils.field_to_string_capitalized
-                  language
-                  Field.Version)
+               (Pool_common.Utils.field_to_string_capitalized language Field.Version)
                (Tag.value tag))
         ]
     ; changelog_hint language

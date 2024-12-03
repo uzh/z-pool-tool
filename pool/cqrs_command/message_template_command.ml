@@ -97,10 +97,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  Conformist.input
-    -> (Message_template.update, Pool_message.Error.t) result
-
+  val decode : Conformist.input -> (Message_template.update, Pool_message.Error.t) result
   val effects : Message_template.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Message_template.update
@@ -124,9 +121,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) template command =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    Ok
-      Message_template.
-        [ Updated (template, command) |> Pool_event.message_template ]
+    Ok Message_template.[ Updated (template, command) |> Pool_event.message_template ]
   ;;
 
   let decode data =
@@ -140,10 +135,7 @@ end
 module Delete : sig
   type t = Message_template.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Message_template.t
 

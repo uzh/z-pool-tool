@@ -107,10 +107,7 @@ module Data = struct
       FieldType.MultiSelect
   ;;
 
-  let custom_number_field ?validation () =
-    custom_field ?validation FieldType.Number
-  ;;
-
+  let custom_number_field ?validation () = custom_field ?validation FieldType.Number
   let answer_id = Answer.Id.create ()
 
   let to_public ?(field_options = []) entity_uuid (m : Custom_field.t) =
@@ -149,11 +146,7 @@ module Data = struct
         , answer )
     | FieldType.Date ->
       let answer =
-        { Answer.id = answer_id
-        ; entity_uuid
-        ; value = Some (1970, 1, 1)
-        ; admin_value
-        }
+        { Answer.id = answer_id; entity_uuid; value = Some (1970, 1, 1); admin_value }
         |> CCOption.pure
       in
       Public.Date
@@ -266,15 +259,9 @@ let create () =
           Data.hint
           Data.validation_data
   in
-  let expected =
-    Ok [ Custom_field.Created custom_field |> Pool_event.custom_field ]
-  in
+  let expected = Ok [ Custom_field.Created custom_field |> Pool_event.custom_field ] in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let create_with_missing_name () =
@@ -293,11 +280,7 @@ let create_with_missing_name () =
   in
   let expected = Error (Error.AllLanguagesRequired Field.Name) in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let update () =
@@ -315,25 +298,16 @@ let update () =
           Data.validation_data
   in
   let expected =
-    Ok
-      [ Custom_field.Updated (custom_field, custom_field)
-        |> Pool_event.custom_field
-      ]
+    Ok [ Custom_field.Updated (custom_field, custom_field) |> Pool_event.custom_field ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let update_type_of_published_field () =
   let open CCResult in
   let custom_field =
-    Data.custom_text_field
-      ~published_at:(Custom_field.PublishedAt.create_now ())
-      ()
+    Data.custom_text_field ~published_at:(Custom_field.PublishedAt.create_now ()) ()
   in
   let events =
     let data =
@@ -353,19 +327,13 @@ let update_type_of_published_field () =
   in
   let expected = Error Error.CustomFieldTypeChangeNotAllowed in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let create_option () =
   let select_field = Data.custom_select_field () in
   let option_id = Custom_field.SelectOption.Id.create () in
-  let name =
-    Custom_field.Name.create Data.sys_languages Data.name |> CCResult.get_exn
-  in
+  let name = Custom_field.Name.create Data.sys_languages Data.name |> CCResult.get_exn in
   let option = Custom_field.SelectOption.create ~id:option_id name in
   let events =
     CustomFieldOptionCommand.Create.handle
@@ -381,27 +349,17 @@ let create_option () =
       ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let delete_published_field () =
   let custom_field =
-    Data.custom_text_field
-      ~published_at:(Custom_field.PublishedAt.create_now ())
-      ()
+    Data.custom_text_field ~published_at:(Custom_field.PublishedAt.create_now ()) ()
   in
   let events = Cqrs_command.Custom_field_command.Delete.handle custom_field in
   let expected = Error (Error.AlreadyPublished Field.CustomField) in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let delete_published_option () =
@@ -415,11 +373,7 @@ let delete_published_option () =
   in
   let expected = Error (Error.AlreadyPublished Field.CustomFieldOption) in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let publish_field_without_options () =
@@ -427,26 +381,16 @@ let publish_field_without_options () =
   let events = Cqrs_command.Custom_field_command.Publish.handle custom_field in
   let expected = Error Error.CustomFieldNoOptions in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let publish_field_with_options () =
   let select_options = Data.select_option "name" |> CCList.return in
   let custom_field = Data.custom_select_field ~select_options () in
   let events = Cqrs_command.Custom_field_command.Publish.handle custom_field in
-  let expected =
-    Ok [ Custom_field.Published custom_field |> Pool_event.custom_field ]
-  in
+  let expected = Ok [ Custom_field.Published custom_field |> Pool_event.custom_field ] in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 module ValidationTests = struct
@@ -480,11 +424,7 @@ module ValidationTests = struct
       Data.custom_text_field ~validation () |> Data.to_public contact_id
     in
     let validate value =
-      validate_htmx
-        ~is_admin:false
-        ~entity_uuid:contact_id
-        [ value ]
-        custom_field
+      validate_htmx ~is_admin:false ~entity_uuid:contact_id [ value ] custom_field
     in
     let validate_too_short () =
       let result = validate "x" in
@@ -575,12 +515,9 @@ module ValidationTests = struct
         ]
     in
     let select_options =
-      [ 1; 2; 3; 4; 5 ]
-      |> CCList.map (fun i -> Data.select_option (CCInt.to_string i))
+      [ 1; 2; 3; 4; 5 ] |> CCList.map (fun i -> Data.select_option (CCInt.to_string i))
     in
-    let public_options =
-      select_options |> CCList.map Data.select_option_to_public
-    in
+    let public_options = select_options |> CCList.map Data.select_option_to_public in
     let custom_field =
       Data.custom_multi_select_field ~validation ~select_options ()
       |> Data.to_public ~field_options:public_options contact_id
@@ -626,17 +563,13 @@ end
 module Settings = struct
   let update_visibility _ =
     let open Custom_field in
-    let field1 =
-      Data.custom_text_field () |> set_show_on_session_close_page true
-    in
+    let field1 = Data.custom_text_field () |> set_show_on_session_close_page true in
     let field2 = Data.custom_text_field () in
     let field3 = Data.custom_text_field () in
     let selected = [ field2 |> id |> Id.value ] in
     let expected =
       (* Expect fields that have not been updated to be ignored *)
-      let active =
-        [ Updated (field2, field2 |> set_show_on_session_close_page true) ]
-      in
+      let active = [ Updated (field2, field2 |> set_show_on_session_close_page true) ] in
       let inactive =
         [ Updated (field1, field1 |> set_show_on_session_close_page false) ]
       in

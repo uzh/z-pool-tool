@@ -22,9 +22,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-         Guard.Target.create
-           `ApiKey
-           (id |> Guard.Uuid.target_of Pool_common.Id.value))
+         Guard.Target.create `ApiKey (id |> Guard.Uuid.target_of Pool_common.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;

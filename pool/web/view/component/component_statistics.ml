@@ -66,16 +66,12 @@ let create
         | Some hint -> [ field; br (); i [ txt hint ] ]
       in
       tr [ th ~a:[ a_class [ "w-10" ] ] head; td [ value ] ])
-    |> table
-         ~a:
-           [ a_class (Component_table.table_classes `Simple ~align_top:true ())
-           ]
+    |> table ~a:[ a_class (Component_table.table_classes `Simple ~align_top:true ()) ]
     |> fun figures -> div [ title; figures ]
   in
   let contact_counters =
     [ ActiveContacts.(field, to_txt (value active_contacts), None)
-    ; PendingContactImports.(
-        field, to_txt (value pending_contact_imports), None)
+    ; PendingContactImports.(field, to_txt (value pending_contact_imports), None)
     ]
   in
   let user_figures =
@@ -97,9 +93,7 @@ let create
     ; RemindersSent.(field, to_txt (value reminders_sent), None)
     ]
   in
-  let system_figures =
-    [ EmailsSent.(field, to_txt (value emails_sent), None) ]
-  in
+  let system_figures = [ EmailsSent.(field, to_txt (value emails_sent), None) ] in
   div
     ~a:[ a_class [ "flexcolumn"; "stack" ]; a_user_data "statistics" "" ]
     Pool_common.I18n.
@@ -129,10 +123,7 @@ module ExperimentFilter = struct
 
   let create
         language
-        { contacts_meeting_criteria
-        ; invitation_count
-        ; assigned_contacts_not_matching
-        }
+        { contacts_meeting_criteria; invitation_count; assigned_contacts_not_matching }
     =
     let open Pool_common in
     let to_string = Utils.text_to_string language in

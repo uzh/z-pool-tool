@@ -8,9 +8,7 @@ let create_contact i =
   let id = Contact.Id.create () in
   let first_name = Format.asprintf "firstname%i" i |> Firstname.of_string in
   let last_name = Format.asprintf "lastname%i" i |> Lastname.of_string in
-  let email =
-    Format.asprintf "contact-%i@econ.uzh.ch" i |> EmailAddress.of_string
-  in
+  let email = Format.asprintf "contact-%i@econ.uzh.ch" i |> EmailAddress.of_string in
   let lang = Pool_common.Language.En in
   let terms_accepted_at = TermsAccepted.create_now () in
   id, first_name, last_name, email, Some lang, Some terms_accepted_at

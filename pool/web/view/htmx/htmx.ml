@@ -30,10 +30,7 @@ let field_id_key = "field_id"
 let custom_field_htmx_attributes id = [ field_id_key, Custom_field.Id.value id ]
 let multi_select_htmx_key = "multi"
 let multi_select_htmx_value = "true"
-
-let multi_select_htmx_attributes =
-  [ multi_select_htmx_key, multi_select_htmx_value ]
-;;
+let multi_select_htmx_attributes = [ multi_select_htmx_key, multi_select_htmx_value ]
 
 let make_hx_vals vals =
   Format.asprintf
@@ -64,14 +61,7 @@ let base_hx_attributes name version ?action ?(additional_attributes = []) () =
   @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
 ;;
 
-let hx_attributes
-      field
-      version
-      ?action
-      ?additional_attributes
-      ?(disabled = false)
-      ()
-  =
+let hx_attributes field version ?action ?additional_attributes ?(disabled = false) () =
   if disabled
   then [ a_disabled () ]
   else (
@@ -81,9 +71,7 @@ let hx_attributes
 
 let hx_multi_attributes field version ?action ?(additional_attributes = []) () =
   let name = Pool_message.Field.(field |> array_key) in
-  let additional_attributes =
-    additional_attributes @ multi_select_htmx_attributes
-  in
+  let additional_attributes = additional_attributes @ multi_select_htmx_attributes in
   base_hx_attributes name version ?action ~additional_attributes ()
 ;;
 
@@ -214,8 +202,7 @@ let create
       ~classnames
       ~value:
         (CCOption.bind flash_values CCList.head_opt
-         |> CCOption.value
-              ~default:(n |> CCOption.map CCInt.to_string |> default))
+         |> CCOption.value ~default:(n |> CCOption.map CCInt.to_string |> default))
       ~additional_attributes:(additional_attributes ())
       ?append_html
       ?error
@@ -337,8 +324,7 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
     let open Custom_field in
     let open CCFun in
     let prefix =
-      Pool_common.(
-        Utils.field_to_string lang Pool_message.Field.OverriddenValue)
+      Pool_common.(Utils.field_to_string lang Pool_message.Field.OverriddenValue)
       |> CCString.capitalize_ascii
       |> txt
     in
@@ -366,9 +352,7 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
        >>= field_overridden_value
        >|= build_html (Pool_common.Utils.bool_to_string lang %> txt)
      | Public.Date (_, answer) ->
-       answer
-       >>= field_overridden_value
-       >|= build_html (Utils.Ptime.date_to_human %> txt)
+       answer >>= field_overridden_value >|= build_html (Utils.Ptime.date_to_human %> txt)
      | Public.MultiSelect (_, _, answer) ->
        answer
        >>= field_overridden_value
@@ -376,13 +360,10 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
         | `NoValue -> no_value
         | `Overridden lst ->
           lst
-          |> CCList.map
-               (SelectOption.Public.name lang %> txt %> CCList.pure %> li)
+          |> CCList.map (SelectOption.Public.name lang %> txt %> CCList.pure %> li)
              %> ul
              %> (fun html ->
-             [ span [ prefix; txt ":" ]
-             ; div ~a:[ a_class [ "input-group" ] ] [ html ]
-             ])
+             [ span [ prefix; txt ":" ]; div ~a:[ a_class [ "input-group" ] ] [ html ] ])
              %> wrap)
      | Public.Number (_, answer) ->
        answer >>= field_overridden_value >|= build_html (CCInt.to_string %> txt)
@@ -390,8 +371,7 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
        answer
        >>= field_overridden_value
        >|= build_html (SelectOption.Public.name lang %> txt)
-     | Public.Text (_, answer) ->
-       answer >>= field_overridden_value >|= build_html txt)
+     | Public.Text (_, answer) -> answer >>= field_overridden_value >|= build_html txt)
 ;;
 
 let custom_field_to_htmx
@@ -406,9 +386,7 @@ let custom_field_to_htmx
       is_admin
       custom_field
   =
-  let required =
-    Custom_field.(Public.required custom_field |> Required.value)
-  in
+  let required = Custom_field.(Public.required custom_field |> Required.value) in
   let overridden_value =
     custom_field_overridden_value ?hx_delete is_admin language custom_field
   in
@@ -416,19 +394,12 @@ let custom_field_to_htmx
     if
       is_admin
       && Custom_field.(
-           Public.prompt_on_registration custom_field
-           |> PromptOnRegistration.value)
+           Public.prompt_on_registration custom_field |> PromptOnRegistration.value)
     then Some Pool_common.I18n.CustomFieldAnsweredOnRegistration
     else None
   in
   let to_html disabled m =
-    create
-      ~required
-      ~disabled
-      ?promt_in_registration_hint
-      ?overridden_value
-      m
-      language
+    create ~required ~disabled ?promt_in_registration_hint ?overridden_value m language
   in
   let open Custom_field in
   let field_id = Public.id custom_field in

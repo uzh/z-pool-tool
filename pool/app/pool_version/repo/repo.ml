@@ -50,13 +50,8 @@ let update_request =
 let update = Database.exec Database.Pool.Root.label update_request
 
 let find_request_sql ?(count = false) where_fragment =
-  let columns =
-    if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-  in
-  Format.asprintf
-    {sql|SELECT %s FROM pool_versions %s|sql}
-    columns
-    where_fragment
+  let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
+  Format.asprintf {sql|SELECT %s FROM pool_versions %s|sql} columns where_fragment
 ;;
 
 let find_request =

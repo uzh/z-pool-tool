@@ -32,10 +32,7 @@ module Tenant = struct
            if is_test
            then []
            else
-             [ Seed_user.contacts
-             ; Seed_guard.create_role_assignments
-             ; Seed_smtp.create
-             ]
+             [ Seed_user.contacts; Seed_guard.create_role_assignments; Seed_smtp.create ]
          in
          seeds |> Lwt_list.iter_s (fun fnc -> fnc pool))
       db_pools

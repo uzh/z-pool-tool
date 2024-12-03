@@ -27,8 +27,7 @@ let with_empty_message language = function
   | [] ->
     [ span
         ~a:[ a_class [ "data-item" ] ]
-        [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric)
-        ]
+        [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric) ]
     ]
   | html -> html
 ;;
@@ -80,10 +79,7 @@ let multi_search
   let hint = Component_input.Elements.hints language hints in
   let base_attributes =
     let placeholder =
-      CCOption.map_or
-        ~default:[]
-        CCFun.(a_placeholder %> CCList.return)
-        placeholder
+      CCOption.map_or ~default:[] CCFun.(a_placeholder %> CCList.return) placeholder
     in
     let disabled = if disabled then [ a_disabled () ] else [] in
     let js_callback =
@@ -105,10 +101,7 @@ let multi_search
       ~a:
         (a_class [ "form-group" ]
          :: (if is_filter then [ a_user_data "query" "wrapper" ] else []))
-      ((label
-          [ txt
-              (Utils.field_to_string language field |> CCString.capitalize_ascii)
-          ]
+      ((label [ txt (Utils.field_to_string language field |> CCString.capitalize_ascii) ]
         :: html)
        @ hint)
   in
@@ -122,15 +115,12 @@ let multi_search
   match multi_search with
   | Static { Component_input.options; selected; to_label; to_value } ->
     [ input
-        ~a:
-          ((a_user_data "search" "static" :: base_attributes)
-           @ additional_attributes)
+        ~a:((a_user_data "search" "static" :: base_attributes) @ additional_attributes)
         ()
     ; div
         ~a:[ a_class [ "data-list"; "relative" ] ]
         (CCList.map (default_query_results_item ~to_label ~to_value) options)
-    ; selected_items_wrapper
-        (CCList.map (selected_item to_label to_value) selected)
+    ; selected_items_wrapper (CCList.map (selected_item to_label to_value) selected)
     ]
     |> wrap
   | Dynamic { hx_url; hx_method; to_label; to_value; selected } ->
@@ -153,8 +143,7 @@ let multi_search
                @ additional_attributes)
             ()
         ; div ~a:[ a_class [ "data-list"; "relative" ] ] []
-        ; selected_items_wrapper
-            (CCList.map (selected_item to_label to_value) selected)
+        ; selected_items_wrapper (CCList.map (selected_item to_label to_value) selected)
         ]
     ]
     |> wrap
@@ -163,8 +152,7 @@ let multi_search
 let additional_filter_attributes =
   [ a_user_data
       "hx-params"
-      Pool_message.Field.(
-        [ array_key Value; show Search ] |> CCString.concat ", ")
+      Pool_message.Field.([ array_key Value; show Search ] |> CCString.concat ", ")
   ]
 ;;
 
@@ -181,9 +169,7 @@ module Experiment = struct
   ;;
 
   let filter_multi_search ?selected ~disabled language =
-    let dynamic_search =
-      dynamic_search ?selected "/admin/experiments/search" `Post
-    in
+    let dynamic_search = dynamic_search ?selected "/admin/experiments/search" `Post in
     multi_search
       ~disabled
       ~is_filter:true
@@ -265,12 +251,7 @@ module Tag = struct
   ;;
 
   let filter_multi_search ~selected ~disabled language =
-    create
-      ~disabled
-      ~is_filter:true
-      ~selected
-      ~tag_name:Pool_message.Field.Value
-      language
+    create ~disabled ~is_filter:true ~selected ~tag_name:Pool_message.Field.Value language
   ;;
 
   let query_results language items =
@@ -281,10 +262,7 @@ end
 
 module RoleTarget = struct
   let hx_url base_path target_id =
-    Format.asprintf
-      "%s/%s/search-role"
-      base_path
-      (Guard.Uuid.Target.to_string target_id)
+    Format.asprintf "%s/%s/search-role" base_path (Guard.Uuid.Target.to_string target_id)
   ;;
 
   let additional_attributes =
@@ -345,9 +323,7 @@ module Admin = struct
   ;;
 
   let create ?selected ~disabled language =
-    let dynamic_search =
-      dynamic_search ?selected "/admin/admins/search" `Post
-    in
+    let dynamic_search = dynamic_search ?selected "/admin/admins/search" `Post in
     multi_search
       ~query_field:Field.(SearchOf Admin)
       ~disabled

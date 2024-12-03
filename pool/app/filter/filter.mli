@@ -56,11 +56,7 @@ module Key : sig
   val pp : Format.formatter -> t -> unit
   val equal : t -> t -> bool
   val show : t -> string
-
-  val hardcoded_to_single_value_sql
-    :  hardcoded
-    -> (string, Pool_message.Error.t) result
-
+  val hardcoded_to_single_value_sql : hardcoded -> (string, Pool_message.Error.t) result
   val equal_human : human -> human -> bool
   val show_human : human -> string
   val type_of_key : human -> input_type
@@ -165,12 +161,7 @@ module Human : sig
 
   val show : t -> string
   val init : ?key:Key.human -> ?operator:Operator.t -> ?value:value -> unit -> t
-
-  val of_yojson
-    :  Key.human list
-    -> Yojson.Safe.t
-    -> (t, Pool_message.Error.t) result
-
+  val of_yojson : Key.human list -> Yojson.Safe.t -> (t, Pool_message.Error.t) result
   val all_query_experiments : t -> Pool_common.Id.t list
   val all_query_tags : t -> Tags.Id.t list
 end
@@ -190,12 +181,7 @@ val validate_query
   -> (query, Pool_message.Error.t) result
 
 val contains_template : query -> bool
-
-val find
-  :  Database.Label.t
-  -> Pool_common.Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
-
+val find : Database.Label.t -> Pool_common.Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_all_templates : Database.Label.t -> unit -> t list Lwt.t
 val find_templates_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 
@@ -204,10 +190,7 @@ val find_template
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_multiple_templates
-  :  Database.Label.t
-  -> Pool_common.Id.t list
-  -> t list Lwt.t
+val find_multiple_templates : Database.Label.t -> Pool_common.Id.t list -> t list Lwt.t
 
 type event =
   | Created of t
@@ -217,13 +200,7 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-
-val handle_event
-  :  ?user_uuid:Pool_common.Id.t
-  -> Database.Label.t
-  -> event
-  -> unit Lwt.t
-
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val created : t -> event
 val deleted : t -> event
 val updated : t -> t -> event
@@ -259,12 +236,7 @@ val key_of_string
 
 val t_to_human : Key.human list -> t list -> query -> Human.t
 val find_templates_of_query : Database.Label.t -> query -> t list Lwt.t
-
-val toggle_predicate_type
-  :  Human.t
-  -> string
-  -> (Human.t, Pool_message.Error.t) result
-
+val toggle_predicate_type : Human.t -> string -> (Human.t, Pool_message.Error.t) result
 val all_query_experiments : t -> Pool_common.Id.t list
 val all_query_tags : t -> Tags.Id.t list
 
@@ -311,12 +283,7 @@ module Guard : sig
 
   module Access : sig
     val index : Guard.ValidationSet.t
-
-    val create
-      :  ?experiment_id:Pool_common.Id.t
-      -> unit
-      -> Guard.ValidationSet.t
-
+    val create : ?experiment_id:Pool_common.Id.t -> unit -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
     val delete : Id.t -> Guard.ValidationSet.t
   end

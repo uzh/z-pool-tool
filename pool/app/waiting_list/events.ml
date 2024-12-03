@@ -30,7 +30,6 @@ let handle_event pool : event -> unit Lwt.t =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Updated (command, waiting_list) ->
-    { waiting_list with admin_comment = command.admin_comment }
-    |> Repo.update pool
+    { waiting_list with admin_comment = command.admin_comment } |> Repo.update pool
   | Deleted m -> Repo.delete pool m
 ;;

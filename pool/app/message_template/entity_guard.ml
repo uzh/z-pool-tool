@@ -20,8 +20,7 @@ module Access = struct
   open Permission
 
   let message_template action uuid =
-    one_of_tuple
-      (action, `MessageTemplate, Some (uuid |> Uuid.target_of Entity.Id.value))
+    one_of_tuple (action, `MessageTemplate, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index = one_of_tuple (Read, `MessageTemplate, None)

@@ -11,8 +11,7 @@ module InternalDescription = struct
   include Session.InternalDescription
 
   let t =
-    Caqti_type.(
-      custom ~encode:(value %> CCResult.return) ~decode:(map_err create) string)
+    Caqti_type.(custom ~encode:(value %> CCResult.return) ~decode:(map_err create) string)
   ;;
 end
 
@@ -20,8 +19,7 @@ module PublicDescription = struct
   include Session.PublicDescription
 
   let t =
-    Caqti_type.(
-      custom ~encode:(value %> CCResult.return) ~decode:(map_err create) string)
+    Caqti_type.(custom ~encode:(value %> CCResult.return) ~decode:(map_err create) string)
   ;;
 end
 
@@ -29,8 +27,7 @@ module ParticipantAmount = struct
   include Session.ParticipantAmount
 
   let t =
-    Caqti_type.(
-      custom ~encode:(value %> CCResult.return) ~decode:(map_err create) int)
+    Caqti_type.(custom ~encode:(value %> CCResult.return) ~decode:(map_err create) int)
   ;;
 end
 
@@ -38,8 +35,7 @@ module AssignmentCount = struct
   include Session.AssignmentCount
 
   let t =
-    Caqti_type.(
-      custom ~encode:(value %> CCResult.return) ~decode:(map_err create) int)
+    Caqti_type.(custom ~encode:(value %> CCResult.return) ~decode:(map_err create) int)
   ;;
 end
 
@@ -47,8 +43,7 @@ module NoShowCount = struct
   include Session.NoShowCount
 
   let t =
-    Caqti_type.(
-      custom ~encode:(value %> CCResult.return) ~decode:(map_err create) int)
+    Caqti_type.(custom ~encode:(value %> CCResult.return) ~decode:(map_err create) int)
   ;;
 end
 
@@ -56,8 +51,7 @@ module ParticipantCount = struct
   include Session.ParticipantCount
 
   let t =
-    Caqti_type.(
-      custom ~encode:(value %> CCResult.return) ~decode:(map_err create) int)
+    Caqti_type.(custom ~encode:(value %> CCResult.return) ~decode:(map_err create) int)
   ;;
 end
 
@@ -72,9 +66,8 @@ let t =
               , ( m.max_participants
                 , ( m.assignment_count
                   , ( m.no_show_count
-                    , ( m.participant_count
-                      , (m.created_at, (m.updated_at, m.experiment)) ) ) ) ) )
-            ) ) ) )
+                    , (m.participant_count, (m.created_at, (m.updated_at, m.experiment)))
+                    ) ) ) ) ) ) ) )
   in
   let decode
         ( id
@@ -85,9 +78,8 @@ let t =
                 , ( max_participants
                   , ( assignment_count
                     , ( no_show_count
-                      , ( participant_count
-                        , (created_at, (updated_at, experiment)) ) ) ) ) ) ) )
-          ) )
+                      , (participant_count, (created_at, (updated_at, experiment))) ) ) )
+                ) ) ) ) )
     =
     Ok
       { id
@@ -128,9 +120,7 @@ let t =
                                  ParticipantCount.t
                                  (t2
                                     Pool_common.Repo.CreatedAt.t
-                                    (t2
-                                       Pool_common.Repo.UpdatedAt.t
-                                       ExperimentRepo.t))))))))))))
+                                    (t2 Pool_common.Repo.UpdatedAt.t ExperimentRepo.t))))))))))))
 ;;
 
 module Write = struct
@@ -174,12 +164,10 @@ module Write = struct
         , ( m.experiment_id
           , ( m.start
             , ( m.duration
-              , ( m.internal_description
-                , (m.public_description, m.max_participants) ) ) ) ) )
+              , (m.internal_description, (m.public_description, m.max_participants)) ) )
+          ) )
     in
-    let decode _ =
-      Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel
-    in
+    let decode _ = Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel in
     Caqti_type.(
       custom
         ~encode
@@ -194,8 +182,6 @@ module Write = struct
                     Duration.t
                     (t2
                        (option InternalDescription.t)
-                       (t2
-                          (option PublicDescription.t)
-                          (option ParticipantAmount.t))))))))
+                       (t2 (option PublicDescription.t) (option ParticipantAmount.t))))))))
   ;;
 end

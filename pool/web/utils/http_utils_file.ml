@@ -24,8 +24,7 @@ let prepare_import_directory () =
   let open Utils.Lwt_result.Infix in
   Logs.debug ~src (fun m -> m ~tags "IMPORT: Making sure directory exist");
   let message = Format.asprintf "while creating directory %s" import_dir in
-  Lwt_process.exec ("", [| "mkdir"; "-p"; import_dir |])
-  ||> raise_if_failed message
+  Lwt_process.exec ("", [| "mkdir"; "-p"; import_dir |]) ||> raise_if_failed message
 ;;
 
 let save_files allow_list req =
@@ -33,18 +32,13 @@ let save_files allow_list req =
   let files = Hashtbl.create ~random:true 5 in
   let assocs = Hashtbl.create ~random:true 5 in
   let callback ~name ~filename string =
-    if
-      CCString.equal filename ""
-      || not (CCList.mem ~eq:CCString.equal name allow_list)
+    if CCString.equal filename "" || not (CCList.mem ~eq:CCString.equal name allow_list)
     then Lwt.return_unit
     else
       let open Utils.Lwt_result.Infix in
       let filename = Filename.basename filename in
       let write file =
-        string
-        |> CCString.length
-        |> Lwt_unix.write_string file string 0
-        ||> ignore
+        string |> CCString.length |> Lwt_unix.write_string file string 0 ||> ignore
       in
       match Hashtbl.find_opt files filename with
       | Some file -> write file
@@ -149,9 +143,7 @@ let update_files pool files req =
     | None -> Lwt.return_none
   in
   let%lwt result =
-    Lwt_list.filter_map_p
-      (fun (key, assets_id) -> update_asset key assets_id)
-      files
+    Lwt_list.filter_map_p (fun (key, assets_id) -> update_asset key assets_id) files
   in
   result |> CCList.all_ok |> Lwt.return
 ;;

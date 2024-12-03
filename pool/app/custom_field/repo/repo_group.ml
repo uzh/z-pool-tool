@@ -95,9 +95,7 @@ let destroy_request =
   |> Caqti_type.(string ->. unit)
 ;;
 
-let destroy pool m =
-  Database.exec pool destroy_request Entity.Group.(m.id |> Id.value)
-;;
+let destroy pool m = Database.exec pool destroy_request Entity.Group.(m.id |> Id.value)
 
 let update_position_request =
   let open Caqti_request.Infix in

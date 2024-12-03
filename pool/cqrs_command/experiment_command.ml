@@ -29,8 +29,7 @@ type command =
   ; experiment_type : Pool_common.ExperimentType.t option
   ; online_experiment : OnlineExperiment.t option
   ; email_session_reminder_lead_time : Reminder.EmailLeadTime.t option
-  ; text_message_session_reminder_lead_time :
-      Reminder.TextMessageLeadTime.t option
+  ; text_message_session_reminder_lead_time : Reminder.TextMessageLeadTime.t option
   }
 
 let default_command
@@ -213,8 +212,7 @@ end = struct
         ?email_session_reminder_lead_time
         ?experiment_type
         ?organisational_unit
-        ?smtp_auth_id:
-          (CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp_auth)
+        ?smtp_auth_id:(CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp_auth)
         ?text_message_session_reminder_lead_time
         ?online_experiment
         title
@@ -290,8 +288,7 @@ end = struct
           (CCOption.is_some online_experiment)
       with
       | false when session_count > 0 ->
-        Error
-          Pool_message.(Error.CannotBeUpdated Field.AssignmentWithoutSession)
+        Error Pool_message.(Error.CannotBeUpdated Field.AssignmentWithoutSession)
       | true | false -> Ok ()
     in
     let open CCResult in
@@ -306,8 +303,7 @@ end = struct
        ; contact_email
        ; organisational_unit
        ; online_experiment
-       ; smtp_auth_id =
-           CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp_auth
+       ; smtp_auth_id = CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp_auth
        ; direct_registration_disabled
        ; registration_disabled
        ; allow_uninvited_signup
@@ -380,13 +376,7 @@ end = struct
   let handle
         ?(tags = Logs.Tag.empty)
         ?system_event_id
-        { experiment
-        ; session_count
-        ; mailings
-        ; experimenters
-        ; assistants
-        ; templates
-        }
+        { experiment; session_count; mailings; experimenters; assistants; templates }
     =
     let open CCFun in
     let open CCResult in
@@ -394,32 +384,23 @@ end = struct
     let* () =
       session_count
       > 0
-      |> Utils.bool_to_result_not
-           Pool_message.Error.ExperimentSessionCountNotZero
+      |> Utils.bool_to_result_not Pool_message.Error.ExperimentSessionCountNotZero
     in
     let delete_mailing = Mailing.deleted %> Pool_event.mailing in
     let revoke_experimenter admin =
       BaseGuard.RolesRevoked
-        [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target))
-          |> to_role
-        ]
+        [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target)) |> to_role ]
       |> Pool_event.guard
     in
     let revoke_assistant admin =
       BaseGuard.RolesRevoked
-        [ (admin |> to_actor, `Assistant, Some (experiment |> to_target))
-          |> to_role
-        ]
+        [ (admin |> to_actor, `Assistant, Some (experiment |> to_target)) |> to_role ]
       |> Pool_event.guard
     in
     let filter_events =
-      CCOption.map_or
-        ~default:[]
-        (Filter.deleted %> Pool_event.filter %> CCList.return)
+      CCOption.map_or ~default:[] (Filter.deleted %> Pool_event.filter %> CCList.return)
     in
-    let delete_template =
-      Message_template.deleted %> Pool_event.message_template
-    in
+    let delete_template = Message_template.deleted %> Pool_event.message_template in
     Ok
       ([ Experiment.Deleted experiment.Experiment.id |> Pool_event.experiment ]
        @ (experiment.Experiment.filter |> filter_events)
@@ -444,9 +425,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command AssignAssistant" ~tags);
     Ok
       [ BaseGuard.RolesGranted
-          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target))
-            |> to_role
-          ]
+          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target)) |> to_role ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
@@ -469,9 +448,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UnassignAssistant" ~tags);
     Ok
       [ BaseGuard.RolesRevoked
-          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target))
-            |> to_role
-          ]
+          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target)) |> to_role ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
@@ -494,8 +471,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command AssignExperimenter" ~tags);
     Ok
       [ BaseGuard.RolesGranted
-          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target))
-            |> to_role
+          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target)) |> to_role
           ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
@@ -519,8 +495,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UnassignExperimenter" ~tags);
     Ok
       [ BaseGuard.RolesRevoked
-          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target))
-            |> to_role
+          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target)) |> to_role
           ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
@@ -560,12 +535,7 @@ end = struct
     Filter.create ~id None query |> return
   ;;
 
-  let handle
-        ?(tags = Logs.Tag.empty)
-        experiment
-        (assignment_events, emails)
-        filter
-    =
+  let handle ?(tags = Logs.Tag.empty) experiment (assignment_events, emails) filter =
     Logs.info ~src (fun m -> m "Handle command CreateFilter" ~tags);
     let open CCResult in
     let updated =
@@ -574,9 +544,7 @@ end = struct
       ; matcher_notification_sent = MatcherNotificationSent.create false
       }
     in
-    let assignment_events =
-      assignment_events |> CCList.map Pool_event.assignment
-    in
+    let assignment_events = assignment_events |> CCList.map Pool_event.assignment in
     let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
       ([ Filter.Created filter |> Pool_event.filter
@@ -631,18 +599,13 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
-    let assignment_events =
-      assignment_events |> CCList.map Pool_event.assignment
-    in
+    let assignment_events = assignment_events |> CCList.map Pool_event.assignment in
     let email_event = Email.BulkSent emails |> Pool_event.email in
     let updated_experiiment =
-      { experiment with
-        matcher_notification_sent = MatcherNotificationSent.create false
-      }
+      { experiment with matcher_notification_sent = MatcherNotificationSent.create false }
     in
     Ok
-      ([ Experiment.Updated (experiment, updated_experiiment)
-         |> Pool_event.experiment
+      ([ Experiment.Updated (experiment, updated_experiiment) |> Pool_event.experiment
        ; Filter.Updated (filter, updated_fitler) |> Pool_event.filter
        ; email_event
        ]
@@ -663,11 +626,7 @@ end
 module DeleteFilter : sig
   include Common.CommandSig with type t = Experiment.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Id.t -> Filter.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = Experiment.t
@@ -676,8 +635,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     let filter_event =
       experiment.Experiment.filter
-      |> CCOption.map_or ~default:[] (fun f ->
-        [ Filter.Deleted f |> Pool_event.filter ])
+      |> CCOption.map_or ~default:[] (fun f -> [ Filter.Deleted f |> Pool_event.filter ])
     in
     let updated =
       Experiment.

@@ -34,9 +34,7 @@ module Admin = struct
   ;;
 
   let contact_path ?suffix ?id () =
-    "/admin/contacts"
-    |> append_opt (map Contact.Id.value id)
-    |> append_opt suffix
+    "/admin/contacts" |> append_opt (map Contact.Id.value id) |> append_opt suffix
   ;;
 
   let custom_fields_path model ?suffix ?id () =
@@ -63,9 +61,7 @@ module Admin = struct
   ;;
 
   let experiment_path ?suffix ?id () =
-    "/admin/experiments"
-    |> append_opt (map Experiment.Id.value id)
-    |> append_opt suffix
+    "/admin/experiments" |> append_opt (map Experiment.Id.value id) |> append_opt suffix
   ;;
 
   let filter_path ?suffix ?id () =
@@ -73,9 +69,7 @@ module Admin = struct
   ;;
 
   let location_path ?suffix ?id () =
-    "/admin/locations/"
-    |> append_opt Pool_location.(map Id.value id)
-    |> append_opt suffix
+    "/admin/locations/" |> append_opt Pool_location.(map Id.value id) |> append_opt suffix
   ;;
 
   let organisational_unit_path ?suffix ?id () =
@@ -98,9 +92,7 @@ module Admin = struct
   ;;
 
   let session_path ?suffix ?id experiment_id =
-    Format.asprintf
-      "/admin/experiments/%s/sessions"
-      Experiment.(Id.value experiment_id)
+    Format.asprintf "/admin/experiments/%s/sessions" Experiment.(Id.value experiment_id)
     |> append_opt Session.(map Id.value id)
     |> append_opt suffix
   ;;
@@ -138,18 +130,12 @@ end
 
 module Contact = struct
   let experiment_path ?suffix ?id () =
-    "/experiments"
-    |> append_opt (map Experiment.Id.value id)
-    |> append_opt suffix
+    "/experiments" |> append_opt (map Experiment.Id.value id) |> append_opt suffix
   ;;
 end
 
 module Root = struct
   let with_root = Format.asprintf "/root%s"
-
-  let announcement_path ?suffix ?id () =
-    announcement_path ?suffix ?id () |> with_root
-  ;;
-
+  let announcement_path ?suffix ?id () = announcement_path ?suffix ?id () |> with_root
   let version_path ?suffix ?id () = version_path ?suffix ?id () |> with_root
 end

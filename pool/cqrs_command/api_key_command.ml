@@ -83,11 +83,7 @@ end
 module Disable : sig
   type t = Api_key.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Api_key.t

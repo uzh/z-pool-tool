@@ -8,8 +8,7 @@ let assignment pool =
            Invitation.find_by_experiment pool experiment.Experiment.id
          in
          let%lwt session =
-           Session.find_all_for_experiment pool experiment.Experiment.id
-           ||> CCList.hd
+           Session.find_all_for_experiment pool experiment.Experiment.id ||> CCList.hd
          in
          let%lwt follow_ups = Session.find_follow_ups pool session.Session.id in
          Lwt.return (session, follow_ups, experiment_invitations))
@@ -21,9 +20,7 @@ let assignment pool =
          invitations
          |> CCList.take (CCList.length invitations / 2)
          |> CCList.flat_map (fun ({ Invitation.contact; _ } : Invitation.t) ->
-           let assign { Session.id; _ } =
-             Assignment.(Created (create contact, id))
-           in
+           let assign { Session.id; _ } = Assignment.(Created (create contact, id)) in
            assign session :: CCList.map assign follow_ups))
       session_invitations
   in

@@ -24,9 +24,7 @@ let answer_to_html
                 [ i
                     [ txt
                         Pool_common.(
-                          Utils.field_to_string
-                            language
-                            Pool_message.Field.AdminInput
+                          Utils.field_to_string language Pool_message.Field.AdminInput
                           |> CCString.capitalize_ascii)
                     ]
                 ]
@@ -37,10 +35,7 @@ let answer_to_html
         match add_data_label with
         | false -> []
         | true ->
-          [ a_user_data
-              "label"
-              Custom_field.Public.(name_value language custom_field)
-          ]
+          [ a_user_data "label" Custom_field.Public.(name_value language custom_field) ]
       in
       div
         ~a:([ a_class [ "flexcolumn"; "stack-xs" ] ] @ attribs)

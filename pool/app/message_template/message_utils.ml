@@ -19,11 +19,7 @@ type opt_out_link =
 let opt_out_link_url { link; _ } = function
   | Verified -> Format.asprintf "%s/user/pause-account" link
   | Unverified token ->
-    Format.asprintf
-      "%s/unsubscribe?%s=%s"
-      link
-      Pool_message.Field.(show Token)
-      token
+    Format.asprintf "%s/unsubscribe?%s=%s" link Pool_message.Field.(show Token) token
 ;;
 
 let create_public_url_with_params pool_url path =
@@ -100,16 +96,13 @@ let render_email_params params ({ Sihl_email.text; html; subject; _ } as email) 
     }
 ;;
 
-let html_to_string html =
-  Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
-;;
+let html_to_string html = Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
 
 let opt_out_texts language =
   let open Pool_common in
   match language with
   | Language.En ->
-    ( "If you no longer wish to participate in any studies, you can "
-    , "unsubscribe here." )
+    "If you no longer wish to participate in any studies, you can ", "unsubscribe here."
   | Language.De ->
     ( "Falls Sie an keinen weiteren Studien teilnehmen möchten, können Sie sich "
     , "hier abmelden." )
@@ -119,33 +112,20 @@ let opt_out_html language layout opt_out =
   let text, control = opt_out_texts language in
   let url = opt_out_link_url layout opt_out in
   let open Tyxml.Html in
-  p
-    ~a:[ a_style "margin-top: 0;" ]
-    [ txt text; a ~a:[ a_href url ] [ txt control ] ]
+  p ~a:[ a_style "margin-top: 0;" ] [ txt text; a ~a:[ a_href url ] [ txt control ] ]
 ;;
 
 let combine_html ?optout_link language layout html_title =
   let open Tyxml.Html in
   let opt_out_html =
-    optout_link
-    |> CCOption.map_or ~default:(txt "") (opt_out_html language layout)
+    optout_link |> CCOption.map_or ~default:(txt "") (opt_out_html language layout)
   in
   let current_year = () |> Ptime_clock.now |> Ptime.to_year in
   let email_header =
     head
       (title (txt (CCOption.value ~default:"" html_title)))
-      [ meta
-          ~a:
-            [ a_http_equiv "Content-Type"
-            ; a_content "text/html; charset=UTF-8"
-            ]
-          ()
-      ; meta
-          ~a:
-            [ a_name "viewport"
-            ; a_content "width=device-width, initial-scale=1"
-            ]
-          ()
+      [ meta ~a:[ a_http_equiv "Content-Type"; a_content "text/html; charset=UTF-8" ] ()
+      ; meta ~a:[ a_name "viewport"; a_content "width=device-width, initial-scale=1" ] ()
       ; meta ~a:[ a_http_equiv "X-UA-Compatible"; a_content "IE=edge" ] ()
       ; style
           ~a:[ a_mime_type "text/css" ]
@@ -173,29 +153,18 @@ let combine_html ?optout_link language layout html_title =
                       ()
                   ]
               ]
+          ; div ~a:[ a_style "padding-top: 16px; color: #383838;" ] [ txt "{emailText}" ]
           ; div
-              ~a:[ a_style "padding-top: 16px; color: #383838;" ]
-              [ txt "{emailText}" ]
-          ; div
-              ~a:
-                [ a_style "margin-top: 48px; color: #7f7f7f; font-size: 0.8rem;"
-                ]
+              ~a:[ a_style "margin-top: 48px; color: #7f7f7f; font-size: 0.8rem;" ]
               [ opt_out_html
               ; p
                   ~a:[ a_style "text-align: center; margin-bottom: 0;" ]
-                  [ txt
-                      (Format.asprintf
-                         "Copyright © %i {siteTitle}"
-                         current_year)
-                  ]
+                  [ txt (Format.asprintf "Copyright © %i {siteTitle}" current_year) ]
               ]
           ]
       ]
   in
-  html
-    ~a:[ a_lang (Pool_common.Language.show language) ]
-    email_header
-    email_body
+  html ~a:[ a_lang (Pool_common.Language.show language) ] email_header email_body
   |> html_to_string
 ;;
 
@@ -234,8 +203,7 @@ let contact_language sys_langs (contact : Contact.t) =
 ;;
 
 let experiment_or_contact_lang sys_langs contact = function
-  | Some experiment_language ->
-    with_default_language sys_langs experiment_language
+  | Some experiment_language -> with_default_language sys_langs experiment_language
   | None -> contact_language sys_langs contact
 ;;
 
@@ -248,7 +216,5 @@ let experiment_message_language
 ;;
 
 let public_experiment_message_language sys_langs experiment contact =
-  experiment
-  |> Experiment.Public.language
-  |> experiment_or_contact_lang sys_langs contact
+  experiment |> Experiment.Public.language |> experiment_or_contact_lang sys_langs contact
 ;;

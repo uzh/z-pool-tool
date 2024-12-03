@@ -12,14 +12,11 @@ let import_confirmation
       terms_and_conditions
   =
   let action =
-    "/import-confirmation"
-    |> HttpUtils.externalize_path_with_params query_parameters
+    "/import-confirmation" |> HttpUtils.externalize_path_with_params query_parameters
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt_to_string language ImportConfirmationTitle ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt_to_string language ImportConfirmationTitle ]
     ; p [ txt_to_string language ImportConfirmationNote ]
     ; form
         ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]
@@ -31,8 +28,7 @@ let import_confirmation
             ~value:(User_import.Token.value token)
         ; input_element
             ~hints:
-              Pool_common.I18n.
-                [ I18nText (password_policy |> I18n.content_to_string) ]
+              Pool_common.I18n.[ I18nText (password_policy |> I18n.content_to_string) ]
             ~required:true
             language
             `Password
@@ -42,9 +38,7 @@ let import_confirmation
             language
             `Password
             Pool_message.Field.PasswordConfirmation
-        ; Component.Partials.terms_and_conditions_checkbox
-            language
-            terms_and_conditions
+        ; Component.Partials.terms_and_conditions_checkbox language terms_and_conditions
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element

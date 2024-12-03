@@ -5,9 +5,7 @@ module Message = Pool_message
 let list translation_list Pool_context.{ language; csrf; _ } =
   let input translation input_type =
     let orientation = `Horizontal in
-    let label_field =
-      Pool_common.Language.field_of_t (I18n.language translation)
-    in
+    let label_field = Pool_common.Language.field_of_t (I18n.language translation) in
     let identifier = translation |> I18n.id |> Pool_common.Id.value in
     let value = translation |> I18n.content |> I18n.Content.value in
     let field = Pool_message.Field.translation in

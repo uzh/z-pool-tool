@@ -21,8 +21,7 @@ module Access = struct
 
   module Smtp = struct
     let smtp action id =
-      one_of_tuple
-        (action, `Smtp, Some (id |> Uuid.target_of Entity.SmtpAuth.Id.value))
+      one_of_tuple (action, `Smtp, Some (id |> Uuid.target_of Entity.SmtpAuth.Id.value))
     ;;
 
     let index = one_of_tuple (Read, `Smtp, None)

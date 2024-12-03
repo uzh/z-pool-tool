@@ -42,18 +42,11 @@ let update_request =
   |> Caqti_type.(t2 Pool_common.Repo.Id.t string) ->. Caqti_type.unit
 ;;
 
-let update pool Entity.{ id; name; _ } =
-  Database.exec pool update_request (id, name)
-;;
+let update pool Entity.{ id; name; _ } = Database.exec pool update_request (id, name)
 
 let find_request_sql ?(count = false) where_fragment =
-  let columns =
-    if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-  in
-  Format.asprintf
-    {sql|SELECT %s FROM pool_api_keys %s|sql}
-    columns
-    where_fragment
+  let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
+  Format.asprintf {sql|SELECT %s FROM pool_api_keys %s|sql} columns where_fragment
 ;;
 
 let find_request =
@@ -81,9 +74,7 @@ let find_by_token_request =
   |> Repo_entity.Token.t ->! Repo_entity.t
 ;;
 
-let find_by_token pool token =
-  Database.find_opt pool find_by_token_request token
-;;
+let find_by_token pool token = Database.find_opt pool find_by_token_request token
 
 let all ?query pool =
   Query.collect_and_count pool query ~select:find_request_sql Repo_entity.t

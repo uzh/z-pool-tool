@@ -14,6 +14,5 @@ let add_missing_columns_to_contacts =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202306071352" |> add_step add_missing_columns_to_contacts)
+  Database.Migration.(empty "202306071352" |> add_step add_missing_columns_to_contacts)
 ;;

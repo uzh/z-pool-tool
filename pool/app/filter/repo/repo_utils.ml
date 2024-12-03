@@ -45,8 +45,7 @@ let filtered_base_condition ?(include_invited = false) =
   (function
     | MatchesFilter -> [ base ]
     | Matcher _ ->
-      [ base; exclude_assigned ]
-      @ if include_invited then [] else [ exclude_invited ]
+      [ base; exclude_assigned ] @ if include_invited then [] else [ exclude_invited ]
     | MatcherReset _ ->
       [ base; exclude_assigned ]
       @ if include_invited then [] else [ exclude_invited_after ])
@@ -65,9 +64,7 @@ let custom_field_sql =
   |sql}
 ;;
 
-let filter_custom_fields =
-  Format.asprintf {sql| %s AND (%s) |sql} custom_field_sql
-;;
+let filter_custom_fields = Format.asprintf {sql| %s AND (%s) |sql} custom_field_sql
 
 let add_value_to_params operator value dyn =
   let open Operator in
@@ -90,9 +87,7 @@ let add_value_to_params operator value dyn =
        | Option id ->
          add
            Caqti_type.string
-           (id
-            |> Custom_field.SelectOption.Id.value
-            |> wrap_in_percentage operator)
+           (id |> Custom_field.SelectOption.Id.value |> wrap_in_percentage operator)
        | Str s -> add Caqti_type.string (wrap_in_percentage operator s))
 ;;
 
@@ -109,13 +104,10 @@ let add_single_value (key : Key.t) operator dyn value =
   | Key.CustomField id ->
     let* dyn =
       Dynparam.(
-        dyn
-        |> add Custom_field.Repo.Id.t id
-        |> add_value_to_params operator value)
+        dyn |> add Custom_field.Repo.Id.t id |> add_value_to_params operator value)
     in
     let sql =
-      where_clause coalesce_value (Operator.to_sql operator)
-      |> filter_custom_fields
+      where_clause coalesce_value (Operator.to_sql operator) |> filter_custom_fields
     in
     Ok (dyn, sql)
 ;;
@@ -163,20 +155,16 @@ let add_uuid_param dyn ids =
 let add_list_condition subquery dyn ids =
   let open Operator in
   let compare_length (dyn, condition) =
-    (dyn, Format.asprintf "(%s) %s" (subquery ~count:true) condition)
-    |> CCResult.return
+    (dyn, Format.asprintf "(%s) %s" (subquery ~count:true) condition) |> CCResult.return
   in
   function
   | List o ->
     let open ListM in
     (match o with
      | ContainsAll ->
-       (Dynparam.add Caqti_type.int (CCList.length ids) dyn, " = ? ")
-       |> compare_length
-     | ContainsNone ->
-       Ok (dyn, Format.asprintf "NOT EXISTS (%s)" (subquery ~count:false))
-     | ContainsSome ->
-       Ok (dyn, Format.asprintf "EXISTS (%s)" (subquery ~count:false)))
+       (Dynparam.add Caqti_type.int (CCList.length ids) dyn, " = ? ") |> compare_length
+     | ContainsNone -> Ok (dyn, Format.asprintf "NOT EXISTS (%s)" (subquery ~count:false))
+     | ContainsSome -> Ok (dyn, Format.asprintf "EXISTS (%s)" (subquery ~count:false)))
   | Equality _ | String _ | Size _ | Existence _ ->
     Error Message.(Error.Invalid Field.Operator)
 ;;
@@ -290,10 +278,7 @@ let tag_subquery dyn operator ids =
   add_list_condition subquery dyn ids operator
 ;;
 
-let predicate_to_sql
-      (dyn, sql)
-      ({ Predicate.key; operator; value } : Predicate.t)
-  =
+let predicate_to_sql (dyn, sql) ({ Predicate.key; operator; value } : Predicate.t) =
   let open CCResult in
   let open Operator in
   match value with
@@ -307,8 +292,7 @@ let predicate_to_sql
     (match key with
      | Key.Hardcoded _ -> add_value dyn value
      | Key.CustomField _ ->
-       add_value dyn value
-       >|= fun (dyn, sql) -> dyn, Format.asprintf "EXISTS (%s)" sql)
+       add_value dyn value >|= fun (dyn, sql) -> dyn, Format.asprintf "EXISTS (%s)" sql)
   | Lst [] -> Ok (dyn, sql)
   | Lst values ->
     let open Key in
@@ -326,8 +310,7 @@ let predicate_to_sql
         | NumInvitations
         | NumNoShows
         | NumParticipations
-        | NumShowUps ->
-          Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key)))
+        | NumShowUps -> Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key)))
      | CustomField id ->
        let* dyn, subqueries =
          CCList.fold_left
@@ -336,9 +319,7 @@ let predicate_to_sql
               | Error err -> Error err
               | Ok (dyn, lst_sql) ->
                 let* dyn = add_value_to_params operator value dyn in
-                let new_sql =
-                  where_clause coalesce_value (Operator.to_sql operator)
-                in
+                let new_sql = where_clause coalesce_value (Operator.to_sql operator) in
                 Ok (dyn, lst_sql @ [ new_sql ]))
            (Ok (Dynparam.(dyn |> add Custom_field.Repo.Id.t id), []))
            values
@@ -366,9 +347,7 @@ let predicate_to_sql
 let filter_to_sql template_list dyn query =
   let open Entity in
   let open CCResult in
-  let rec query_sql (dyn, sql) query
-    : (Dynparam.t * string, Pool_message.Error.t) result
-    =
+  let rec query_sql (dyn, sql) query : (Dynparam.t * string, Pool_message.Error.t) result =
     let of_list (dyn, sql) queries operator =
       let query =
         CCList.fold_left
@@ -392,8 +371,7 @@ let filter_to_sql template_list dyn query =
     | And queries -> of_list (dyn, sql) queries "AND"
     | Or queries -> of_list (dyn, sql) queries "OR"
     | Not f ->
-      query_sql (dyn, sql) f
-      >|= fun (dyn, sql) -> dyn, Format.asprintf "NOT %s" sql
+      query_sql (dyn, sql) f >|= fun (dyn, sql) -> dyn, Format.asprintf "NOT %s" sql
     | Template id ->
       template_list
       |> CCList.find_opt (fun template -> Pool_common.Id.equal template.id id)
@@ -404,14 +382,7 @@ let filter_to_sql template_list dyn query =
   query_sql (dyn, "") query
 ;;
 
-let filtered_params
-      ?include_invited
-      ?group_by
-      ?order_by
-      use_case
-      template_list
-      filter
-  =
+let filtered_params ?include_invited ?group_by ?order_by use_case template_list filter =
   let open CCResult.Infix in
   let base_dyn =
     let open Dynparam in
@@ -431,8 +402,7 @@ let filtered_params
     | None -> Ok (base_dyn, base_condition)
     | Some filter ->
       filter_to_sql template_list base_dyn filter
-      >|= fun (dyn, sql) ->
-      dyn, Format.asprintf "%s\n AND %s" base_condition sql
+      >|= fun (dyn, sql) -> dyn, Format.asprintf "%s\n AND %s" base_condition sql
   in
   query
   >|= fun (dyn, sql) ->

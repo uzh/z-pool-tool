@@ -2,25 +2,17 @@ open Alcotest_lwt
 open Utils.Lwt_result.Infix
 module PasswordReset = Password_reset_test
 
-let testable_plain_password =
-  Pool_user.Password.Plain.(Alcotest.testable pp equal)
-;;
-
+let testable_plain_password = Pool_user.Password.Plain.(Alcotest.testable pp equal)
 let testable_email = Pool_user.EmailAddress.(Alcotest.testable pp equal)
 let alcotest = Pool_user.(Alcotest.testable pp equal)
 let database_label = Test_utils.Data.database_label
 let created_password = Pool_user.Password.Plain.create "CD&*BA8txf3mRuGF"
-
-let created_password_confirmation =
-  Pool_user.Password.to_confirmed created_password
-;;
+let created_password_confirmation = Pool_user.Password.to_confirmed created_password
 
 let validate_valid_password =
   Test_utils.case
   @@ fun () ->
-  let password =
-    Pool_user.Password.Plain.(create "CD&*BA8txf3mRuGF" |> validate)
-  in
+  let password = Pool_user.Password.Plain.(create "CD&*BA8txf3mRuGF" |> validate) in
   Alcotest.(
     check
       (result testable_plain_password Test_utils.error)
@@ -46,8 +38,7 @@ let validate_invalid_password =
       ; "12345678", PasswordPolicyCapitalLetter
       ; "Abcdefgh", PasswordPolicyNumber
       ; ( "A1234567"
-        , PasswordPolicySpecialChar
-            Pool_user.Password.Policy.default_special_char_set )
+        , PasswordPolicySpecialChar Pool_user.Password.Policy.default_special_char_set )
       ]
   in
   let check_invalid (plain, error) =
@@ -135,16 +126,11 @@ let update_password =
     |> Lwt.map CCResult.get_exn
   in
   let%lwt user =
-    Pool_user.login database_label email_address new_password
-    |> Lwt.map CCResult.get_exn
+    Pool_user.login database_label email_address new_password |> Lwt.map CCResult.get_exn
   in
   let actual_email = user.Pool_user.email in
   Alcotest.(
-    check
-      testable_email
-      "Can login with updated password"
-      email_address
-      actual_email);
+    check testable_email "Can login with updated password" email_address actual_email);
   Lwt.return_ok ()
 ;;
 
@@ -186,8 +172,7 @@ let find_by_email_is_case_insensitive =
   @@ fun () ->
   let open Pool_user in
   let email_addresses =
-    [ "user1@example.com"; "user2@example.com" ]
-    |> CCList.map EmailAddress.of_string
+    [ "user1@example.com"; "user2@example.com" ] |> CCList.map EmailAddress.of_string
   in
   let%lwt (_ : t list) =
     Lwt_list.map_s
@@ -276,9 +261,7 @@ module Web = struct
       |> Opium.Request.add_header ("authorization", token_header)
     in
     let handler req =
-      let%lwt user =
-        Pool_user.Web.user_from_token database_label read_token req
-      in
+      let%lwt user = Pool_user.Web.user_from_token database_label read_token req in
       let email = CCOption.map (fun user -> user.Pool_user.email) user in
       Alcotest.(
         check
@@ -309,8 +292,7 @@ module Web = struct
     in
     let cookie =
       Sihl.Web.Response.of_plain_text ""
-      |> Sihl.Web.Session.set
-           [ "user_id", user.Pool_user.id |> Pool_user.Id.value ]
+      |> Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ]
       |> Sihl.Web.Response.cookie "_session"
       |> CCOption.get_exn_or "undefined session"
     in

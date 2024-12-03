@@ -21,6 +21,4 @@ let create_jobs_table =
     |sql}
 ;;
 
-let migration () =
-  Database.Migration.(empty "202301010000" |> add_step create_jobs_table)
-;;
+let migration () = Database.Migration.(empty "202301010000" |> add_step create_jobs_table)

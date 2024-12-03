@@ -51,16 +51,14 @@ let t =
       ( m.id
       , ( m.label
         , ( m.entity_uuid
-          , ( m.language
-            , (m.email_subject, (m.email_text, (m.plain_text, m.sms_text))) ) )
+          , (m.language, (m.email_subject, (m.email_text, (m.plain_text, m.sms_text)))) )
         ) )
   in
   let decode
         ( id
         , ( label
           , ( entity_uuid
-            , (language, (email_subject, (email_text, (plain_text, sms_text))))
-            ) ) )
+            , (language, (email_subject, (email_text, (plain_text, sms_text)))) ) ) )
     =
     Ok
       { id
@@ -85,7 +83,5 @@ let t =
                (option Common.Id.t)
                (t2
                   Common.Language.t
-                  (t2
-                     EmailSubject.t
-                     (t2 EmailText.t (t2 PlainText.t SmsText.t))))))))
+                  (t2 EmailSubject.t (t2 EmailText.t (t2 PlainText.t SmsText.t))))))))
 ;;

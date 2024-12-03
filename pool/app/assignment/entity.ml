@@ -173,8 +173,7 @@ let validate experiment { no_show; participated; external_data_id; _ } =
   ; ( value no_show && value participated
     , Error.MutuallyExclusive (Field.NoShow, Field.Participated) )
   ]
-  |> CCList.filter_map (fun (condition, error) ->
-    if condition then Some error else None)
+  |> CCList.filter_map (fun (condition, error) -> if condition then Some error else None)
   |> function
   | [] -> Ok ()
   | errors -> Error errors
@@ -198,32 +197,25 @@ let column_canceled_at =
 ;;
 
 let column_external_data_id =
-  (Field.ExternalDataId, "pool_assignments.external_data_id")
-  |> Query.Column.create
+  (Field.ExternalDataId, "pool_assignments.external_data_id") |> Query.Column.create
 ;;
 
 let column_external_data_id_abbr =
-  (Field.ExternalDataIdAbbr, "pool_assignments.external_data_id")
-  |> Query.Column.create
+  (Field.ExternalDataIdAbbr, "pool_assignments.external_data_id") |> Query.Column.create
 ;;
 
-let column_no_show =
-  (Field.NoShowAbr, "pool_assignments.no_show") |> Query.Column.create
-;;
+let column_no_show = (Field.NoShowAbr, "pool_assignments.no_show") |> Query.Column.create
 
 let column_participated =
-  (Field.ParticipatedAbr, "pool_assignments.participated")
-  |> Query.Column.create
+  (Field.ParticipatedAbr, "pool_assignments.participated") |> Query.Column.create
 ;;
 
 let column_marked_as_deleted =
-  Query.Column.create
-    (Field.HideMakedAsDeleted, "pool_assignments.marked_as_deleted = 0")
+  Query.Column.create (Field.HideMakedAsDeleted, "pool_assignments.marked_as_deleted = 0")
 ;;
 
 let column_canceled =
-  Query.Column.create
-    (Field.HideCanceled, "pool_assignments.canceled_at IS NULL")
+  Query.Column.create (Field.HideCanceled, "pool_assignments.canceled_at IS NULL")
 ;;
 
 let filterable_by =
@@ -246,9 +238,5 @@ let sortable_by =
 ;;
 
 let default_sort = Pool_user.default_sort
-
-let default_filter =
-  Query.Filter.Condition.[ Checkbox (column_marked_as_deleted, true) ]
-;;
-
+let default_filter = Query.Filter.Condition.[ Checkbox (column_marked_as_deleted, true) ]
 let default_query = Query.create ~sort:default_sort ~filter:default_filter ()

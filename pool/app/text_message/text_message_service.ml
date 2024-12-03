@@ -101,8 +101,7 @@ let intercept_prepare database_label message =
     else ()
   in
   match
-    ( Sihl.Configuration.is_production () || bypass ()
-    , incercept_text_message_address () )
+    Sihl.Configuration.is_production () || bypass (), incercept_text_message_address ()
   with
   | true, _ -> Lwt.return_ok (TextMessageJob message)
   | false, Some new_recipient ->
@@ -131,8 +130,8 @@ let intercept_prepare database_label message =
   | false, None ->
     Lwt.return_error
       (Pool_message.Error.TextMessageInterceptionError
-         "Sending text message intercepted! As no redirect email is specified \
-          it/they wont be sent. Please define environment variable \
+         "Sending text message intercepted! As no redirect email is specified it/they \
+          wont be sent. Please define environment variable \
           'TEXT_MESSAGE_INTERCEPT_ADDRESS'.")
 ;;
 
@@ -159,9 +158,7 @@ let test_api_key ~tags api_key cell_phone sender =
   match is_production () || bypass () with
   | true ->
     let%lwt resp, body_string = send_message api_key msg in
-    (match
-       resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
-     with
+    (match resp |> Response.status |> Code.code_of_status |> CCInt.equal 200 with
      | false ->
        let error =
          Format.asprintf
@@ -185,16 +182,14 @@ let test_api_key ~tags api_key cell_phone sender =
       Pool_common.Utils.with_log_error
         ~level:Logs.Warning
         (Pool_message.Error.TextMessageInterceptionError
-           "Verifying API Key: Skip validation due to non production \
-            environment!")
+           "Verifying API Key: Skip validation due to non production environment!")
     in
     Lwt.return_ok (api_key, sender)
 ;;
 
 module Job = struct
   module Compatibility = struct
-    type old_job = { message : t }
-    [@@deriving yojson] [@@yojson.allow_extra_fields]
+    type old_job = { message : t } [@@deriving yojson] [@@yojson.allow_extra_fields]
 
     let to_job { message; _ } = message
     let decode = Yojson.Safe.from_string %> old_job_of_yojson %> to_job
@@ -206,9 +201,8 @@ module Job = struct
     let serialization_failed str =
       Logs.err ~src (fun m ->
         m
-          "Serialized text message string was NULL, can not deserialize text \
-           message. Please fix the string manually and reset the job instance. \
-           Error: %s"
+          "Serialized text message string was NULL, can not deserialize text message. \
+           Please fix the string manually and reset the job instance. Error: %s"
           str);
       Error Pool_message.(Error.Invalid Field.Input)
     in
@@ -243,9 +237,7 @@ module Job = struct
         else None
       in
       let%lwt resp, body_string = send_message ?dlr api_key message in
-      (match
-         resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
-       with
+      (match resp |> Response.status |> Code.code_of_status |> CCInt.equal 200 with
        | false ->
          let error =
            Format.asprintf
@@ -265,8 +257,7 @@ module Job = struct
              body_string);
          Lwt.return_ok ())
     | false ->
-      Pool_message.Error.TextMessageError
-        "Intercepted (non production environment)"
+      Pool_message.Error.TextMessageError "Intercepted (non production environment)"
       |> Lwt.return_error
   ;;
 
@@ -300,13 +291,7 @@ let dispatch
   ||> Pool_common.Utils.get_or_failwith
   >|> function
   | TextMessageJob job ->
-    Pool_queue.dispatch
-      ?id
-      ?message_template
-      ~job_ctx
-      database_label
-      job
-      Job.send
+    Pool_queue.dispatch ?id ?message_template ~job_ctx database_label job Job.send
   | EmailJob job ->
     Email.Service.dispatch ?id ?message_template ~job_ctx database_label job
 ;;

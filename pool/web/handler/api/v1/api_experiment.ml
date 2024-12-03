@@ -7,15 +7,10 @@ let src = Logs.Src.create "handler.api.v1.experiment"
 let index req =
   let open Experiment in
   let result { Pool_context.Api.database_label; _ } actor query =
-    find_all
-      ~actor
-      ~query
-      ~permission:Guard.Access.index_permission
-      database_label
+    find_all ~actor ~query ~permission:Guard.Access.index_permission database_label
     |> Lwt_result.ok
   in
-  result
-  |> ApiUtils.index_handler ~query:(module Experiment) ~yojson_of_t ~src req
+  result |> ApiUtils.index_handler ~query:(module Experiment) ~yojson_of_t ~src req
 ;;
 
 let show req =

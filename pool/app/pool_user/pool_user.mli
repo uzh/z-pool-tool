@@ -227,11 +227,7 @@ val fullname : ?reversed:bool -> t -> string
 val status : t -> Status.t
 val is_admin : t -> bool
 val is_confirmed : t -> bool
-
-val find_active_by_email_opt
-  :  Database.Label.t
-  -> EmailAddress.t
-  -> t option Lwt.t
+val find_active_by_email_opt : Database.Label.t -> EmailAddress.t -> t option Lwt.t
 
 module Repo : sig
   module Id : Pool_model.Base.CaqtiSig with type t = Id.t
@@ -298,12 +294,7 @@ module FailedLoginAttempt : sig
     ; blocked_until : BlockedUntil.t option
     }
 
-  val create
-    :  ?id:Id.t
-    -> EmailAddress.t
-    -> Counter.t
-    -> BlockedUntil.t option
-    -> t
+  val create : ?id:Id.t -> EmailAddress.t -> Counter.t -> BlockedUntil.t option -> t
 
   module Repo : sig
     val find_opt : Database.Label.t -> EmailAddress.t -> t option Lwt.t
@@ -358,20 +349,17 @@ module Web : sig
     -> t option Lwt.t
 end
 
-(** [find database_label id] returns a user with [id], [Error NotFound] otherwise.
-*)
+(** [find database_label id] returns a user with [id], [Error NotFound] otherwise. *)
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
-(** [find_exn database_label id] returns a user with [id], throws exception otherwise.
-*)
+(** [find_exn database_label id] returns a user with [id], throws exception otherwise. *)
 val find_exn : Database.Label.t -> Id.t -> t Lwt.t
 
 (** [find_opt database_label id] returns a user with [id], [None] otherwise. *)
 val find_opt : Database.Label.t -> Id.t -> t option Lwt.t
 
 (** [find_by_email database_label email] returns a [User.t] if there is a user with
-    email address [email]. The lookup is case-insensitive. [Error NotFound] otherwise.
-*)
+    email address [email]. The lookup is case-insensitive. [Error NotFound] otherwise. *)
 val find_by_email
   :  Database.Label.t
   -> EmailAddress.t
@@ -398,8 +386,7 @@ val update
   -> t
   -> t Lwt.t
 
-(** [confirm database_label user] stores the [user] as confirmed and returns it.
-*)
+(** [confirm database_label user] stores the [user] as confirmed and returns it. *)
 val confirm : Database.Label.t -> t -> t Lwt.t
 
 (** [create_user ?id label email lastname firstname password password_confirmed] returns

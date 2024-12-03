@@ -25,21 +25,14 @@ let login ?intended Pool_context.{ language; csrf; _ } =
                     [ a
                         ~a:
                           [ a_href
-                              (Sihl.Web.externalize_path
-                                 "/root/request-reset-password")
+                              (Sihl.Web.externalize_path "/root/request-reset-password")
                           ]
                         [ txt
                             Pool_common.(
-                              Utils.text_to_string
-                                language
-                                I18n.ResetPasswordLink)
+                              Utils.text_to_string language I18n.ResetPasswordLink)
                         ]
                     ]
-                ; submit_element
-                    ~classnames:[ "push" ]
-                    language
-                    Control.Login
-                    ()
+                ; submit_element ~classnames:[ "push" ] language Control.Login ()
                 ]
             ]
         ]
@@ -61,12 +54,7 @@ let request_reset_password Pool_context.{ language; csrf; _ } =
         ; input_element `Text Field.Email
         ; div
             ~a:[ a_class [ "flexrow" ] ]
-            [ submit_element
-                ~classnames:[ "push" ]
-                language
-                Control.SendResetLink
-                ()
-            ]
+            [ submit_element ~classnames:[ "push" ] language Control.SendResetLink () ]
         ]
     ]
 ;;

@@ -16,14 +16,9 @@ end
 
 let file =
   let encode m = Ok (m.id, (m.label, (m.language, m.file))) in
-  let decode (id, (label, (language, file))) =
-    Ok { id; label; language; file }
-  in
+  let decode (id, (label, (language, file))) = Ok { id; label; language; file } in
   Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (t2 Id.t (t2 Label.t (t2 Pool_common.Repo.Language.t File.t))))
+    custom ~encode ~decode (t2 Id.t (t2 Label.t (t2 Pool_common.Repo.Language.t File.t))))
 ;;
 
 module Write = struct

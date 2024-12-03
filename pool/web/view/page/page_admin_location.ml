@@ -23,8 +23,7 @@ let make_statistics ?year year_range language location_id t =
     ; AssignmentCount.(field, t |> assignment_count |> value |> int_to_txt)
     ; ShowUpCount.(field, t |> showup_count |> value |> int_to_txt)
     ; NoShowCount.(field, t |> noshow_count |> value |> int_to_txt)
-    ; ParticipationCount.(
-        field, t |> participation_count |> value |> int_to_txt)
+    ; ParticipationCount.(field, t |> participation_count |> value |> int_to_txt)
     ]
     |> Component.Table.vertical_table ~classnames:[ "fixed" ] `Striped language
   in
@@ -41,10 +40,7 @@ let make_statistics ?year year_range language location_id t =
   in
   div
     ~a:[ a_id id ]
-    [ h3
-        [ Pool_common.(Utils.text_to_string language I18n.LocationStatistics)
-          |> txt
-        ]
+    [ h3 [ Pool_common.(Utils.text_to_string language I18n.LocationStatistics) |> txt ]
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ selector
@@ -67,10 +63,7 @@ let descriptions_all_languages (location : Pool_location.t) =
     desc
     |> Description.value
     |> CCList.map (fun (lang, value) ->
-      div
-        [ strong [ txt Pool_common.Language.(show lang) ]
-        ; div [ Unsafe.data value ]
-        ]))
+      div [ strong [ txt Pool_common.Language.(show lang) ]; div [ Unsafe.data value ] ]))
   |> CCOption.value ~default:[]
   |> Utils.Html.concat_html
   |> div
@@ -79,11 +72,7 @@ let descriptions_all_languages (location : Pool_location.t) =
 let list Pool_context.{ language; _ } location_list query =
   let url = Uri.of_string base_path in
   let data_table =
-    Component.DataTable.create_meta
-      ~search:Pool_location.searchable_by
-      url
-      query
-      language
+    Component.DataTable.create_meta ~search:Pool_location.searchable_by url query language
   in
   let cols =
     let create_filter : [ | Html_types.flow5 ] elt =
@@ -133,12 +122,10 @@ let index (Pool_context.{ language; _ } as context) location_list query =
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle)
-        ]
+        [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle) ]
     ; p
         Pool_common.
-          [ Utils.hint_to_string language I18n.LocationsIndex
-            |> HttpUtils.add_line_breaks
+          [ Utils.hint_to_string language I18n.LocationsIndex |> HttpUtils.add_line_breaks
           ]
     ; list context location_list query
     ]
@@ -209,8 +196,7 @@ let form
   let default = "" in
   let action =
     location
-    |> CCOption.map_or ~default:base_path (fun { id; _ } ->
-      location_specific_path id)
+    |> CCOption.map_or ~default:base_path (fun { id; _ } -> location_specific_path id)
   in
   let value field_fcn decode_fcn =
     let open CCOption.Infix in
@@ -267,17 +253,13 @@ let form
         >>= fun { description; _ } ->
         description >>= Description.find_opt description_language
       in
-      let value =
-        flash_fetcher name <+> current |> CCOption.get_or ~default:""
-      in
+      let value = flash_fetcher name <+> current |> CCOption.get_or ~default:"" in
       div
         ~a:[ a_class [ "form_group" ] ]
         [ label
             ~a:[ a_label_for name ]
             [ txt (Pool_common.Language.show description_language) ]
-        ; textarea
-            ~a:[ a_id name; a_name name; a_class [ "rich-text" ] ]
-            (txt value)
+        ; textarea ~a:[ a_id name; a_name name; a_class [ "rich-text" ] ] (txt value)
         ]
     in
     tenant_languages
@@ -296,10 +278,7 @@ let form
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        [ txt
-            Pool_common.(Utils.text_to_string Language.En I18n.LocationNewTitle)
-        ]
+    [ h1 [ txt Pool_common.(Utils.text_to_string Language.En I18n.LocationNewTitle) ]
     ; form
         ~a:
           [ a_method `Post
@@ -345,10 +324,7 @@ let form
                              Virtual |> show |> CCString.capitalize_ascii)
                        ]
                    ; div
-                       ~a:
-                         [ a_id "address-subform"
-                         ; a_class [ "stack"; "flexcolumn" ]
-                         ]
+                       ~a:[ a_id "address-subform"; a_class [ "stack"; "flexcolumn" ] ]
                        [ input_element
                            language
                            `Text
@@ -359,9 +335,7 @@ let form
                                 Address.Mail.(
                                   fun { institution; _ } ->
                                     institution
-                                    |> CCOption.map_or
-                                         ~default:""
-                                         Institution.value))
+                                    |> CCOption.map_or ~default:"" Institution.value))
                        ; div
                            ~a:[ a_class [ "switcher"; "flex-gap" ] ]
                            [ input_element
@@ -384,9 +358,7 @@ let form
                                     Address.Mail.(
                                       fun { building; _ } ->
                                         building
-                                        |> CCOption.map_or
-                                             ~default:""
-                                             Building.value))
+                                        |> CCOption.map_or ~default:"" Building.value))
                            ]
                        ; input_element
                            language
@@ -396,8 +368,7 @@ let form
                            ~flash_fetcher
                            ~value:
                              Address.Mail.(
-                               address_value (fun { street; _ } ->
-                                 Street.value street))
+                               address_value (fun { street; _ } -> Street.value street))
                        ; div
                            ~a:[ a_class [ "switcher"; "flex-gap" ] ]
                            [ input_element
@@ -408,8 +379,7 @@ let form
                                ~flash_fetcher
                                ~value:
                                  Address.Mail.(
-                                   address_value (fun { zip; _ } ->
-                                     Zip.value zip))
+                                   address_value (fun { zip; _ } -> Zip.value zip))
                            ; input_element
                                language
                                `Text
@@ -418,8 +388,7 @@ let form
                                ~flash_fetcher
                                ~value:
                                  Address.Mail.(
-                                   address_value (fun { city; _ } ->
-                                     City.value city))
+                                   address_value (fun { city; _ } -> City.value city))
                            ]
                        ]
                    ]
@@ -475,11 +444,7 @@ module FileList = struct
           |> Sihl.Web.externalize_path
           |> a_href
         ]
-      Message.
-        [ Control.Add (Some Field.File)
-          |> Utils.control_to_string language
-          |> txt
-        ]
+      Message.[ Control.Add (Some Field.File) |> Utils.control_to_string language |> txt ]
   ;;
 
   let add_file_btn language id =
@@ -492,17 +457,11 @@ module FileList = struct
   ;;
 
   let thead language location_id =
-    (Pool_message.Field.[ Label; Language ]
-     |> Component.Table.fields_to_txt language)
+    (Pool_message.Field.[ Label; Language ] |> Component.Table.fields_to_txt language)
     @ [ add_file_btn language location_id ]
   ;;
 
-  let row
-        page_language
-        csrf
-        location_id
-        (Mapping.{ id; label; language; _ } as file)
-    =
+  let row page_language csrf location_id (Mapping.{ id; label; language; _ } as file) =
     let delete_form =
       Tyxml.Html.form
         ~a:
@@ -515,8 +474,7 @@ module FileList = struct
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
-              Pool_common.(
-                Utils.confirmable_to_string page_language I18n.DeleteFile)
+              Pool_common.(Utils.confirmable_to_string page_language I18n.DeleteFile)
           ]
         [ csrf_element csrf ()
         ; submit_element
@@ -541,9 +499,7 @@ module FileList = struct
       | true ->
         div
           [ p
-              [ Pool_common.(
-                  I18n.LocationNoFiles |> Utils.text_to_string language)
-                |> txt
+              [ Pool_common.(I18n.LocationNoFiles |> Utils.text_to_string language) |> txt
               ]
           ; div [ add_file_btn language id ]
           ]
@@ -588,8 +544,7 @@ module SessionList = struct
            |> Pool_model.Time.formatted_timespan
            |> txt
          ; session.canceled_at
-           |> CCOption.map_or ~default:"" (fun t ->
-             Pool_model.Time.formatted_date_time t)
+           |> CCOption.map_or ~default:"" (fun t -> Pool_model.Time.formatted_date_time t)
            |> txt
          ; Format.asprintf
              "/admin/experiments/%s/sessions/%s"
@@ -612,8 +567,7 @@ let detail
     let open Pool_message in
     [ Field.Name, location.name |> Name.value |> txt
     ; Field.Description, descriptions_all_languages location
-    ; ( Field.Location
-      , Component.Partials.address_to_html language location.address )
+    ; Field.Location, Component.Partials.address_to_html language location.address
     ; Field.Link, location.link |> CCOption.map_or ~default:"" Link.value |> txt
     ; Field.Status, location.status |> Status.show |> txt (* TODO: Show files *)
     ]
@@ -640,9 +594,7 @@ let detail
       [ a
           ~a:
             [ a_href
-                (Format.asprintf
-                   "/location/%s"
-                   (location.Pool_location.id |> Id.value)
+                (Format.asprintf "/location/%s" (location.Pool_location.id |> Id.value)
                  |> Sihl.Web.externalize_path)
             ; a_target "_blank"
             ]
@@ -661,9 +613,7 @@ let detail
             ~a:[ a_class [ "stack" ] ]
             [ div
                 [ div
-                    ~a:
-                      [ a_class [ "flexrow"; "justify-between"; "align-center" ]
-                      ]
+                    ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
                     [ div
                         [ h1
                             ~a:[ a_class [ "heading-1" ] ]
@@ -677,8 +627,7 @@ let detail
                         ~a:[ a_class [ "grid-col-3" ] ]
                         [ div ~a:[ a_class [ "span-2" ] ] [ location_details ]
                         ; div
-                            ~a:
-                              [ a_class [ "inset"; "border"; "bg-grey-light" ] ]
+                            ~a:[ a_class [ "inset"; "border"; "bg-grey-light" ] ]
                             [ make_statistics
                                 statistics_year_range
                                 language

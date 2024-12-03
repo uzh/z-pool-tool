@@ -11,10 +11,7 @@ let update_terms_and_conditions () =
     CCList.map
       (fun lang ->
          let system_event_id = System_event.Id.create () in
-         ( I18n.create
-             I18n.Key.TermsAndConditions
-             lang
-             (I18n.Content.of_string content)
+         ( I18n.create I18n.Key.TermsAndConditions lang (I18n.Content.of_string content)
          , system_event_id ))
       languages
   in
@@ -44,9 +41,5 @@ let update_terms_and_conditions () =
     |> CCResult.return
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;

@@ -5,9 +5,7 @@ let migration () =
   |> CCList.map (fun (key, date, sql) ->
     let new_step = Step.create ~label:(Format.asprintf "%s_%s" date key) sql in
     let ptime_to_human time =
-      let (year, month, day), ((hour, minute, _), _) =
-        Ptime.to_date_time time
-      in
+      let (year, month, day), ((hour, minute, _), _) = Ptime.to_date_time time in
       Format.asprintf "%i%02i%02i%02i%02i_guardian" year month day hour minute
     in
     let fst (time, _, _) = time in

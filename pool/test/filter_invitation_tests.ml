@@ -25,12 +25,9 @@ let experiment () =
       external_data_required
       show_external_data_id_links
   in
-  let experiment_created =
-    experiment |> Experiment.created |> Pool_event.experiment
-  in
+  let experiment_created = experiment |> Experiment.created |> Pool_event.experiment in
   let& () =
-    Pool_event.handle_event test_db current_user experiment_created
-    |> Lwt_result.ok
+    Pool_event.handle_event test_db current_user experiment_created |> Lwt_result.ok
   in
   Experiment.find test_db experiment_id
 ;;
@@ -40,10 +37,7 @@ let contact ~prefix () =
   let invited_contact_id = Contact.Id.create () in
   let* email =
     let email =
-      Format.asprintf
-        "%s+%s@domain.test"
-        prefix
-        (Contact.Id.value invited_contact_id)
+      Format.asprintf "%s+%s@domain.test" prefix (Contact.Id.value invited_contact_id)
     in
     Pool_user.EmailAddress.create email
   in
@@ -71,8 +65,7 @@ let contact ~prefix () =
     ]
   in
   let& () =
-    Pool_event.handle_events test_db current_user contact_created
-    |> Lwt_result.ok
+    Pool_event.handle_events test_db current_user contact_created |> Lwt_result.ok
   in
   let& contact = Contact.find test_db invited_contact_id in
   let%lwt token = Email.create_token test_db email in
@@ -87,8 +80,7 @@ let contact ~prefix () =
     Ok (created_email :: verify_events)
   in
   let& () =
-    Pool_event.handle_events test_db current_user verification_events
-    |> Lwt_result.ok
+    Pool_event.handle_events test_db current_user verification_events |> Lwt_result.ok
   in
   let& contact = Contact.find test_db invited_contact_id in
   Lwt_result.lift (Ok contact)
@@ -115,9 +107,7 @@ let invitation ~experiment ~contacts =
         ; mailing = None
         })
   in
-  let& () =
-    Pool_event.handle_events test_db current_user events |> Lwt_result.ok
-  in
+  let& () = Pool_event.handle_events test_db current_user events |> Lwt_result.ok in
   Lwt_result.lift (Ok ())
 ;;
 
@@ -161,10 +151,7 @@ let finds_uninvited_contacts =
     Filter.create None (Pred predicate)
   in
   let& found_contacts =
-    Filter.find_filtered_contacts
-      test_db
-      Filter.MatchesFilter
-      (Some invitation_filter)
+    Filter.find_filtered_contacts test_db Filter.MatchesFilter (Some invitation_filter)
   in
   (* FIXME(@leostera): since tests are not currently running in isolation, when
      we search for things we may find a lot more than we care about. This little
@@ -182,18 +169,10 @@ let finds_uninvited_contacts =
   in
   (* 5. assert on the found contacts *)
   Alcotest.(
-    check
-      int
-      "wrong number of contacts returned"
-      1
-      (CCList.length found_contacts));
+    check int "wrong number of contacts returned" 1 (CCList.length found_contacts));
   let actual_contact = CCList.hd found_contacts in
   Alcotest.(
-    check
-      Test_utils.contact
-      "wrong contact retrieved"
-      expected_contact
-      actual_contact);
+    check Test_utils.contact "wrong contact retrieved" expected_contact actual_contact);
   Lwt_result.lift (Ok ())
 ;;
 
@@ -233,10 +212,7 @@ let filters_out_invited_contacts =
     Filter.create None (Pred predicate)
   in
   let& found_contacts =
-    Filter.find_filtered_contacts
-      test_db
-      Filter.MatchesFilter
-      (Some invitation_filter)
+    Filter.find_filtered_contacts test_db Filter.MatchesFilter (Some invitation_filter)
   in
   (* FIXME(@leostera): since tests are not currently running in isolation, when
      we search for things we may find a lot more than we care about. This little
@@ -253,10 +229,6 @@ let filters_out_invited_contacts =
   in
   (* 4. assert on the found contacts *)
   Alcotest.(
-    check
-      int
-      "wrong number of contacts returned"
-      0
-      (CCList.length found_contacts));
+    check int "wrong number of contacts returned" 0 (CCList.length found_contacts));
   Lwt_result.lift (Ok ())
 ;;

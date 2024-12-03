@@ -2,9 +2,7 @@ open CCFun.Infix
 include Ptime
 
 (* Formatting *)
-let decimal n =
-  if n < 10 then Format.asprintf "0%d" n else Format.asprintf "%d" n
-;;
+let decimal n = if n < 10 then Format.asprintf "0%d" n else Format.asprintf "%d" n
 
 let date_to_human date =
   let year, month, day = date in
@@ -13,9 +11,7 @@ let date_to_human date =
 
 let time_to_human ?(with_seconds = false) time =
   let _, ((h, m, s), _) = time in
-  let seconds =
-    if with_seconds then Format.asprintf ":%s" (decimal s) else ""
-  in
+  let seconds = if with_seconds then Format.asprintf ":%s" (decimal s) else "" in
   Format.asprintf "%s:%s%s" (decimal h) (decimal m) seconds
 ;;
 
@@ -41,9 +37,7 @@ let equal_date ((y1, m1, d1) : Ptime.date) ((y2, m2, d2) : Ptime.date) =
   CCInt.(equal y1 y2 && equal m1 m2 && equal d1 d2)
 ;;
 
-let formatted_date ptime =
-  ptime |> to_local_date |> Ptime.to_date |> date_to_human
-;;
+let formatted_date ptime = ptime |> to_local_date |> Ptime.to_date |> date_to_human
 
 let formatted_time ?with_seconds ptime =
   ptime |> to_local_date |> Ptime.to_date_time |> time_to_human ?with_seconds
@@ -61,8 +55,7 @@ let formatted_timespan timespan =
 let timespan_to_minutes timespan =
   timespan
   |> Ptime.Span.to_int_s
-  |> CCOption.map_or ~default:"" (fun timespan ->
-    timespan / 60 |> CCInt.to_string)
+  |> CCOption.map_or ~default:"" (fun timespan -> timespan / 60 |> CCInt.to_string)
 ;;
 
 let format_start_end start duration =
@@ -74,10 +67,7 @@ let format_start_end start duration =
     then formatted_time ~with_seconds:false
     else formatted_date_time
   in
-  Format.asprintf
-    "%s - %s"
-    (formatted_date_time start)
-    (format_end_date end_time)
+  Format.asprintf "%s - %s" (formatted_date_time start) (format_end_date end_time)
 ;;
 
 let format_start_end_with_duration start duration =
@@ -128,9 +118,7 @@ let ptime_of_yojson m =
   |> CCResult.get_exn
 ;;
 
-let yojson_of_ptime m =
-  m |> Ptime.to_rfc3339 |> Rfc3339.wrap |> Yojson.Safe.from_string
-;;
+let yojson_of_ptime m = m |> Ptime.to_rfc3339 |> Rfc3339.wrap |> Yojson.Safe.from_string
 
 let print_time_span span =
   Ptime.Span.to_int_s span

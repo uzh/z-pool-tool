@@ -18,8 +18,7 @@ let role_assignment
   let column ?hint title lst =
     let html =
       match hint, CCList.is_empty lst with
-      | Some hint, true ->
-        p [ txt (Pool_common.Utils.text_to_string language hint) ]
+      | Some hint, true -> p [ txt (Pool_common.Utils.text_to_string language hint) ]
       | _ -> Component.Table.horizontal_table ~align_last_end:true `Striped lst
     in
     div
@@ -39,10 +38,7 @@ let role_assignment
       if show
       then
         [ form
-            ~a:
-              [ a_action (Format.asprintf "%s/%s" (base_url admin) url)
-              ; a_method `Post
-              ]
+            ~a:[ a_action (Format.asprintf "%s/%s" (base_url admin) url); a_method `Post ]
             [ csrf_element csrf ()
             ; submit_element
                 ~submit_type:style
@@ -76,7 +72,5 @@ let role_assignment
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ main_hint
-    ; div ~a:[ a_class [ "switcher"; "flex-gap" ] ] [ existing; available ]
-    ]
+    [ main_hint; div ~a:[ a_class [ "switcher"; "flex-gap" ] ] [ existing; available ] ]
 ;;

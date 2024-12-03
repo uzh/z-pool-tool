@@ -22,14 +22,10 @@ let index req =
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
   else (
-    let result
-          ({ Pool_context.database_label; language; query_parameters; _ } as
-           context)
+    let result ({ Pool_context.database_label; language; query_parameters; _ } as context)
       =
       let open Utils.Lwt_result.Infix in
-      let error_path =
-        Http_utils.url_with_field_params query_parameters "/error"
-      in
+      let error_path = Http_utils.url_with_field_params query_parameters "/error" in
       Utils.Lwt_result.map_error (fun err -> err, error_path)
       @@ let* tenant = Pool_tenant.find_by_label database_label in
          let%lwt welcome_text =
@@ -54,8 +50,7 @@ let index_css req =
       find req
       |> Lwt_result.lift
       >== fun { tenant; _ } ->
-      tenant.Pool_tenant.styles
-      |> CCOption.to_result (Error.NotFound Field.Styles)
+      tenant.Pool_tenant.styles |> CCOption.to_result (Error.NotFound Field.Styles)
     in
     let* file =
       Http_utils.File.get_storage_file
@@ -75,9 +70,7 @@ let index_css req =
   | Ok res -> Lwt.return res
   | Error _ ->
     Lwt.return
-      (Sihl.Web.Response.set_content_type
-         "text/css"
-         (Sihl.Web.Response.of_plain_text ""))
+      (Sihl.Web.Response.set_content_type "text/css" (Sihl.Web.Response.of_plain_text ""))
 ;;
 
 let email_confirmation_note req =
@@ -86,10 +79,7 @@ let email_confirmation_note req =
 ;;
 
 let not_found req =
-  let result
-        ({ Pool_context.language; query_parameters; database_label; _ } as
-         context)
-    =
+  let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let html = Page.Utils.error_page_not_found language () in
     match Http_utils.is_req_from_root_host req with
@@ -118,8 +108,7 @@ let denied req =
   let open Utils.Lwt_result.Infix in
   let open Common in
   match req |> Pool_context.find with
-  | Error (_ : Pool_message.Error.t) ->
-    Utils.failwith (Error.NotFound Field.Context)
+  | Error (_ : Pool_message.Error.t) -> Utils.failwith (Error.NotFound Field.Context)
   | Ok ({ Pool_context.database_label; language; _ } as context) ->
     let tenant = Pool_context.Tenant.find req in
     let html =
@@ -135,15 +124,7 @@ let denied req =
        let context =
          let open Pool_context in
          let csrf = Sihl.Web.Csrf.find_exn req in
-         create
-           ( []
-           , Pool_common.Language.En
-           , database_label
-           , None
-           , csrf
-           , Guest
-           , []
-           , None )
+         create ([], Pool_common.Language.En, database_label, None, csrf, Guest, [], None)
        in
        Layout.Root.create context html)
     ||> Sihl.Web.Response.of_html
@@ -190,13 +171,8 @@ let error req =
 ;;
 
 let credits req =
-  let result
-        ({ Pool_context.language; query_parameters; database_label; _ } as
-         context)
-    =
-    let error_path =
-      Http_utils.url_with_field_params query_parameters "/error"
-    in
+  let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
+    let error_path = Http_utils.url_with_field_params query_parameters "/error" in
     let open Utils.Lwt_result.Infix in
     let%lwt html =
       I18n.find_by_key database_label I18n.Key.CreditsText language
@@ -211,10 +187,7 @@ let credits req =
 ;;
 
 let privacy_policy req =
-  let result
-        ({ Pool_context.language; query_parameters; database_label; _ } as
-         context)
-    =
+  let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
     let redirect_path = Http_utils.url_with_field_params query_parameters "/" in
     let open Utils.Lwt_result.Infix in
     let%lwt policy =
@@ -233,18 +206,13 @@ let privacy_policy req =
 ;;
 
 let terms_and_conditions req =
-  let result
-        ({ Pool_context.language; query_parameters; database_label; _ } as
-         context)
-    =
+  let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
     let redirect_path = Http_utils.url_with_field_params query_parameters "/" in
     let open Utils.Lwt_result.Infix in
     let%lwt terms =
       I18n.find_by_key database_label I18n.Key.TermsAndConditions language
     in
-    let%lwt terms_last_updated =
-      I18n.terms_and_conditions_last_updated database_label
-    in
+    let%lwt terms_last_updated = I18n.terms_and_conditions_last_updated database_label in
     Page.Public.terms_and_conditions language terms terms_last_updated
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html

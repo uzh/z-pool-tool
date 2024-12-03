@@ -9,6 +9,5 @@ let seed_manual_message_templates =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202403131128" |> add_step seed_manual_message_templates)
+  Database.Migration.(empty "202403131128" |> add_step seed_manual_message_templates)
 ;;

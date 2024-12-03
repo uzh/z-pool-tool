@@ -72,16 +72,9 @@ let column_description =
   (Field.Description, "pool_tags.description") |> Query.Column.create
 ;;
 
-let column_created_at =
-  (Field.CreatedAt, "pool_tags.created_at") |> Query.Column.create
-;;
-
+let column_created_at = (Field.CreatedAt, "pool_tags.created_at") |> Query.Column.create
 let filterable_by = None
 let searchable_by = [ column_title; column_model; column_description ]
 let sortable_by = column_created_at :: searchable_by
-
-let default_sort =
-  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

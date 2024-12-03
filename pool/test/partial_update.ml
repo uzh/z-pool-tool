@@ -1,17 +1,12 @@
 open Pool_message
 module Language = Pool_common.Language
 
-let current_user () =
-  Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
-;;
-
+let current_user () = Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
 let database_label = Test_utils.Data.database_label
 
 let save_custom_fields current_user custom_field contact =
   let public =
-    Custom_field_test.Data.to_public
-      Contact.(contact |> id |> Id.to_common)
-      custom_field
+    Custom_field_test.Data.to_public Contact.(contact |> id |> Id.to_common) custom_field
   in
   let events =
     [ Custom_field.Created custom_field |> Pool_event.custom_field
@@ -30,8 +25,7 @@ let update_with_old_version _ () =
     let contact = Test_utils.Model.create_contact () in
     let language = Language.De in
     let contact =
-      Contact.
-        { contact with language_version = 1 |> Pool_common.Version.of_int }
+      Contact.{ contact with language_version = 1 |> Pool_common.Version.of_int }
     in
     let field = Field.Language in
     let%lwt partial_update =
@@ -61,9 +55,7 @@ let update_custom_field _ () =
     let contact = Test_utils.Model.create_contact () in
     let custom_field = Custom_field_test.Data.custom_text_field () in
     let public =
-      Custom_field_test.Data.to_public
-        Contact.(id contact |> Id.to_common)
-        custom_field
+      Custom_field_test.Data.to_public Contact.(id contact |> Id.to_common) custom_field
     in
     let%lwt () = save_custom_fields current_user custom_field contact in
     let language = Pool_common.Language.En in
@@ -81,8 +73,7 @@ let update_custom_field _ () =
         match public with
         | Public.Text (p, answer) ->
           let answer =
-            answer
-            |> CCOption.map (fun a -> Answer.{ a with value = Some new_value })
+            answer |> CCOption.map (fun a -> Answer.{ a with value = Some new_value })
           in
           Public.Text (p, answer)
         | _ -> failwith "Wrong field type"
@@ -112,9 +103,7 @@ let partial_update_exec
     let%lwt current_user = current_user () in
     let contact = Test_utils.Model.create_contact () in
     let public =
-      Custom_field_test.Data.to_public
-        Contact.(id contact |> Id.to_common)
-        custom_field
+      Custom_field_test.Data.to_public Contact.(id contact |> Id.to_common) custom_field
     in
     let%lwt () = save_custom_fields current_user custom_field contact in
     let language = Pool_common.Language.En in

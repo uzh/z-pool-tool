@@ -32,8 +32,6 @@ let filter pool =
       experiments
   in
   let%lwt () = Lwt_list.iter_s (Filter.handle_event pool) filter_events in
-  let%lwt () =
-    Lwt_list.iter_s (Experiment.handle_event pool) experiment_events
-  in
+  let%lwt () = Lwt_list.iter_s (Experiment.handle_event pool) experiment_events in
   Lwt.return_unit
 ;;

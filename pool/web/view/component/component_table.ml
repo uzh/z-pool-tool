@@ -1,10 +1,7 @@
 open Tyxml.Html
 
 let field_to_txt language =
-  CCFun.(
-    Pool_common.Utils.field_to_string language
-    %> CCString.capitalize_ascii
-    %> txt)
+  CCFun.(Pool_common.Utils.field_to_string language %> CCString.capitalize_ascii %> txt)
 ;;
 
 let fields_to_txt language = CCList.map (field_to_txt language)
@@ -27,17 +24,12 @@ let table_classes layout ?(align_top = false) ?(align_last_end = false) () =
 
 let legend_color_item classname =
   div
-    ~a:
-      [ a_class
-          [ classname; "aspect-ratio"; "square"; "legend-item"; "legend-color" ]
-      ]
+    ~a:[ a_class [ classname; "aspect-ratio"; "square"; "legend-item"; "legend-color" ] ]
     []
 ;;
 
 let legend_icon_item icon =
-  div
-    ~a:[ a_class [ "legend-item"; "justify-center" ] ]
-    [ Component_icon.to_html icon ]
+  div ~a:[ a_class [ "legend-item"; "justify-center" ] ] [ Component_icon.to_html icon ]
 ;;
 
 let legend_text_item text = div ~a:[ a_class [ "legend-item" ] ] [ txt text ]
@@ -53,22 +45,11 @@ let table_legend ?hint items =
     div
       ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
       [ item; span [ label |> txt ] ])
-  |> fun legend ->
-  div ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ] (legend @ [ hint ])
+  |> fun legend -> div ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ] (legend @ [ hint ])
 ;;
 
-let horizontal_table
-      layout
-      ?(classnames = [])
-      ?id
-      ?thead
-      ?align_top
-      ?align_last_end
-      rows
-  =
-  let classes =
-    table_classes layout ?align_top ?align_last_end () @ classnames
-  in
+let horizontal_table layout ?(classnames = []) ?id ?thead ?align_top ?align_last_end rows =
+  let classes = table_classes layout ?align_top ?align_last_end () @ classnames in
   let attributes =
     match id with
     | None -> [ a_class classes ]
@@ -96,13 +77,11 @@ let responsive_horizontal_table
     |> CCList.map
          (CCOption.map
             CCFun.(
-              Pool_common.Utils.field_to_string language
-              %> CCString.capitalize_ascii))
+              Pool_common.Utils.field_to_string language %> CCString.capitalize_ascii))
   in
   let thead =
     header
-    |> CCList.map (fun h ->
-      h |> CCOption.value ~default:"" |> txt |> CCList.pure |> th)
+    |> CCList.map (fun h -> h |> CCOption.value ~default:"" |> txt |> CCList.pure |> th)
     |> tr
     |> CCList.pure
     |> thead
@@ -155,12 +134,9 @@ let vertical_table
     (CCList.map
        (fun (label, value) ->
           let label =
-            Pool_common.Utils.field_to_string language label
-            |> CCString.capitalize_ascii
+            Pool_common.Utils.field_to_string language label |> CCString.capitalize_ascii
           in
-          [ table_head [ label |> txt ]
-          ; td ~a:[ a_user_data "label" label ] [ value ]
-          ]
+          [ table_head [ label |> txt ]; td ~a:[ a_user_data "label" label ] [ value ] ]
           |> tr)
        rows)
 ;;

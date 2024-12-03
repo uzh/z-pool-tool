@@ -13,9 +13,7 @@ let mail_to_html ?(highlight_first_line = true) mail =
     | "" -> None
     | str -> Some str
   in
-  let city_zip =
-    Format.asprintf "%s %s" (zip |> Zip.value) (city |> City.value)
-  in
+  let city_zip = Format.asprintf "%s %s" (zip |> Zip.value) (city |> City.value) in
   let base = [ street |> Street.value; city_zip ] in
   [ institution >|= Institution.value; building_room ]
   |> CCList.filter_map CCFun.id
@@ -25,8 +23,7 @@ let mail_to_html ?(highlight_first_line = true) mail =
        (fun html index str ->
           let str = str |> txt in
           match index with
-          | 0 ->
-            CCList.pure (if highlight_first_line then strong [ str ] else str)
+          | 0 -> CCList.pure (if highlight_first_line then strong [ str ] else str)
           | _ -> html @ [ br (); str ])
        []
   |> span
@@ -53,9 +50,7 @@ let address_to_html
 
 let location_to_html ?(public = false) language (location : Pool_location.t) =
   let open Pool_location in
-  let title =
-    [ strong [ txt (location.name |> Name.value) ] ] |> p |> CCOption.pure
-  in
+  let title = [ strong [ txt (location.name |> Name.value) ] ] |> p |> CCOption.pure in
   let address =
     [ address_to_html ~highlight_first_line:false language location.address ]
     |> p
@@ -69,8 +64,7 @@ let location_to_html ?(public = false) language (location : Pool_location.t) =
           [ txt
               (Format.asprintf
                  "%s: %s"
-                 (Pool_common.(
-                    Utils.field_to_string language Pool_message.Field.Status)
+                 (Pool_common.(Utils.field_to_string language Pool_message.Field.Status)
                   |> CCString.capitalize_ascii)
                  (location.status |> Status.show))
           ]
@@ -109,19 +103,14 @@ let form_title ?(level = `H1) language field m =
 let terms_and_conditions_label language id =
   let open Pool_common.Language in
   let terms lang =
-    Pool_common.(
-      Utils.field_to_string lang Pool_message.Field.TermsAndConditions)
+    Pool_common.(Utils.field_to_string lang Pool_message.Field.TermsAndConditions)
     |> txt
     |> CCList.pure
     |> a ~a:[ a_href "#"; a_user_data "modal" id ]
   in
   match language with
   | En -> [ txt "I have read the "; terms En; txt " and I agree with them. *" ]
-  | De ->
-    [ txt "Ich habe die "
-    ; terms De
-    ; txt " gelesen und bin damit einverstanden. *"
-    ]
+  | De -> [ txt "Ich habe die "; terms De; txt " gelesen und bin damit einverstanden. *" ]
 ;;
 
 let terms_and_conditions_checkbox ?(modal_id = "terms-modal") language terms =
@@ -132,9 +121,7 @@ let terms_and_conditions_checkbox ?(modal_id = "terms-modal") language terms =
       |> Component_modal.create
            language
            CCFun.(
-             flip
-               Pool_common.Utils.field_to_string
-               Pool_message.Field.TermsAndConditions
+             flip Pool_common.Utils.field_to_string Pool_message.Field.TermsAndConditions
              %> CCString.capitalize_ascii)
            modal_id
     ; div

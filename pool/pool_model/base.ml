@@ -22,10 +22,7 @@ module Id = struct
   let compare = CCString.compare
 
   let schema ?(field = Pool_message.Field.Id) () =
-    Pool_conformist.schema_decoder
-      CCFun.(of_string %> CCResult.return)
-      value
-      field
+    Pool_conformist.schema_decoder CCFun.(of_string %> CCResult.return) value field
   ;;
 
   let sql_select_fragment ~field =
@@ -41,9 +38,7 @@ module Id = struct
     |sql}]
   ;;
 
-  let sql_value_fragment name =
-    [%string {sql| UNHEX(REPLACE(%{name}, '-', '')) |sql}]
-  ;;
+  let sql_value_fragment name = [%string {sql| UNHEX(REPLACE(%{name}, '-', '')) |sql}]
 end
 
 module type IdSig = sig
@@ -91,16 +86,11 @@ module Boolean = struct
     | _ -> false
   ;;
 
-  let schema ?default field ()
-    : (Pool_message.Error.t, t) Pool_conformist.Field.t
-    =
+  let schema ?default field () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
     Pool_conformist.schema_decoder
       ?default
       (fun m ->
-         m
-         |> bool_of_string_opt
-         |> CCOption.get_or ~default:false
-         |> CCResult.return)
+         m |> bool_of_string_opt |> CCOption.get_or ~default:false |> CCResult.return)
       string_of_bool
       field
   ;;
@@ -136,9 +126,7 @@ module String = struct
     if CCString.is_empty str then Error Pool_message.Error.NoValue else Ok str
   ;;
 
-  let schema field ?validation ()
-    : (Pool_message.Error.t, t) Pool_conformist.Field.t
-    =
+  let schema field ?validation () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
     let create = CCOption.value ~default:create validation in
     Pool_conformist.schema_decoder create value field
   ;;
@@ -169,8 +157,7 @@ module Integer = struct
   let of_int m = m
   let to_string t = Int.to_string t
 
-  let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t
-    =
+  let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
     let decode str =
       let open CCResult in
       CCInt.of_string str
@@ -212,8 +199,7 @@ module PtimeSpan = struct
   let abs = Ptime.Span.abs
   let compare = Ptime.Span.compare
 
-  let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t
-    =
+  let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
     let open CCResult in
     let decode str = Time.parse_time_span str >>= create in
     let encode = Time.print_time_span in
@@ -279,8 +265,7 @@ module Ptime = struct
 
   let pp_date formatter t = CCString.pp formatter (date_to_string t)
 
-  let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t
-    =
+  let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
     let decode str = CCResult.(Time.parse_time str >>= create) in
     Pool_conformist.schema_decoder decode Ptime.to_rfc3339 field
   ;;
@@ -386,10 +371,7 @@ module TimeUnit = struct
   include Core
 
   let default_unit = Minutes
-
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
+  let read m = m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
 
   let of_string str =
     try Ok (read str) with
@@ -428,15 +410,10 @@ module Duration (Core : DurationCore) = struct
   include Core
 
   let value = PtimeSpan.value
-
-  let to_ptime_span value unit =
-    TimeUnit.to_seconds value unit |> PtimeSpan.of_int_s
-  ;;
+  let to_ptime_span value unit = TimeUnit.to_seconds value unit |> PtimeSpan.of_int_s
 
   let create m =
-    if PtimeSpan.(equal (abs m) m)
-    then Ok m
-    else Error Pool_message.Error.NegativeAmount
+    if PtimeSpan.(equal (abs m) m) then Ok m else Error Pool_message.Error.NegativeAmount
   ;;
 
   let of_int_s s =
@@ -482,10 +459,7 @@ module type DurationSig = sig
   val to_human : t -> string
   val to_ptime_span : int -> TimeUnit.t -> PtimeSpan.t
   val with_largest_unit : t -> TimeUnit.t * int
-
-  val integer_schema
-    :  unit
-    -> (Pool_message.Error.t, int) Pool_conformist.Field.t
+  val integer_schema : unit -> (Pool_message.Error.t, int) Pool_conformist.Field.t
 end
 
 module type CaqtiSig = sig

@@ -44,9 +44,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     let increment_retry pool = { pool with n_retries = pool.n_retries + 1 }
 
     let connect_pool =
-      let pool_config =
-        Caqti_pool_config.create ~max_size:Config.database_pool_size ()
-      in
+      let pool_config = Caqti_pool_config.create ~max_size:Config.database_pool_size () in
       Url.to_uri %> Caqti_lwt_unix.connect_pool ~pool_config
     ;;
 
@@ -55,9 +53,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       CCResult.retry retries (fun () -> pool |> database_url |> connect_pool)
       |> (function
        | Error [] ->
-         raise
-           Pool_message.Error.(
-             Exn (Unsupported "Failed to connect: empty error"))
+         raise Pool_message.Error.(Exn (Unsupported "Failed to connect: empty error"))
        | Error (err :: _) when required -> raise (Caqti_error.Exn err)
        | Error (err :: _ as errors) ->
          Logs.warn ~src (fun m ->
@@ -148,8 +144,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       match Cache.find_opt label with
       | Some _ ->
         let msg =
-          [%string
-            "Failed to add pool: Pool already exists %{Label.value label}"]
+          [%string "Failed to add pool: Pool already exists %{Label.value label}"]
         in
         Logs.err ~src (fun m -> m ~tags:(label |> LogTag.create) "%s" msg);
         failwith msg
@@ -161,8 +156,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | None ->
         let msg =
           [%string
-            "Failed to drop pool: connection to '%{Label.value name}' doesn't \
-             exist"]
+            "Failed to drop pool: connection to '%{Label.value name}' doesn't exist"]
         in
         Logs.info ~src (fun m -> m ~tags:(LogTag.create name) "%s" msg);
         Lwt.return_unit
@@ -183,8 +177,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | Some pool ->
         let rec connect pool =
           match pool.connection with
-          | Fail err ->
-            Error (Pool_message.Error.CaqtiError (Caqti_error.show err))
+          | Fail err -> Error (Pool_message.Error.CaqtiError (Caqti_error.show err))
           | Close -> connect_base pool |> connect
           | Open _ -> Ok ()
         in
@@ -197,8 +190,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       %> function
       | Some pool ->
         let%lwt () = drain_opt pool in
-        Cache.replace
-          { pool with connection = CCOption.map_or ~default:Close fail error }
+        Cache.replace { pool with connection = CCOption.map_or ~default:Close fail error }
         |> Lwt.return
       | None -> Lwt.return_unit
     ;;
@@ -212,11 +204,9 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       let open Caqti_error in
       match%lwt input with
       | Ok resp -> Lwt.return resp
-      | Error `Unsupported ->
-        raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
+      | Error `Unsupported -> raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
       | Error (#load_or_connect as err) ->
-        Logs.info (fun m ->
-          m "ERROR load or connect: %s" (Caqti_error.show err));
+        Logs.info (fun m -> m "ERROR load or connect: %s" (Caqti_error.show err));
         let%lwt () = disconnect ~error:err label in
         let () = Cache.log_pools () in
         raise (Exn err)
@@ -284,11 +274,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
   let populate label table columns request input =
     query label (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.populate
-        ~table
-        ~columns
-        request
-        (Caqti_lwt.Stream.of_list input)
+      Connection.populate ~table ~columns request (Caqti_lwt.Stream.of_list input)
       |> Lwt.map Caqti_error.uncongested)
   ;;
 
@@ -310,11 +296,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
   ;;
 
   let transaction
-        ?(setup :
-            (Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list =
-          [])
-        ?(cleanup :
-            (Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list =
+        ?(setup : (Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list = [])
+        ?(cleanup : (Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list =
           [])
         label
         (f : Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)

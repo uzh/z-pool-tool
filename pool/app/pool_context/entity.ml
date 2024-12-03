@@ -64,10 +64,7 @@ let set_context key req context =
   Opium.Request.{ req with env }
 ;;
 
-let key : t Opium.Context.key =
-  Opium.Context.Key.create ("pool context", sexp_of_t)
-;;
-
+let key : t Opium.Context.key = Opium.Context.Key.create ("pool context", sexp_of_t)
 let find = find_context key
 
 let find_exn req =
@@ -114,11 +111,7 @@ module Tenant = struct
   [@@deriving show, sexp_of]
 
   let create tenant tenant_languages = { tenant; tenant_languages }
-
-  let key : t Opium.Context.key =
-    Opium.Context.Key.create ("tenant context", sexp_of_t)
-  ;;
-
+  let key : t Opium.Context.key = Opium.Context.Key.create ("tenant context", sexp_of_t)
   let find = find_context key
   let set = set_context key
 
@@ -143,22 +136,15 @@ module Api = struct
     }
   [@@deriving show, sexp_of]
 
-  let key : t Opium.Context.key =
-    Opium.Context.Key.create ("api context", sexp_of_t)
-  ;;
-
-  let create api_key database_label guardian =
-    { api_key; database_label; guardian }
-  ;;
-
+  let key : t Opium.Context.key = Opium.Context.Key.create ("api context", sexp_of_t)
+  let create api_key database_label guardian = { api_key; database_label; guardian }
   let find = find_context key
   let set = set_context key
 end
 
 (* Logging *)
 let show_log_user = function
-  | Admin user ->
-    user.Admin.user.Pool_user.email |> Pool_user.EmailAddress.value
+  | Admin user -> user.Admin.user.Pool_user.email |> Pool_user.EmailAddress.value
   | Contact contact ->
     contact.Contact.user.Pool_user.email |> Pool_user.EmailAddress.value
   | Guest -> "anonymous"

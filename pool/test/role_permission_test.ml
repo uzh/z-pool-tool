@@ -14,9 +14,7 @@ module Data = struct
       show permission, [ Utils.Bool.to_string value ])
   ;;
 
-  let handle_booleans =
-    Http_utils.format_request_boolean_values (all |> CCList.map show)
-  ;;
+  let handle_booleans = Http_utils.format_request_boolean_values (all |> CCList.map show)
 end
 
 let update_permissions () =

@@ -18,29 +18,21 @@ let handle req action =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-    let* experiment =
-      Experiment.find_public database_label experiment_id contact
-    in
+    let* experiment = Experiment.find_public database_label experiment_id contact in
     let events =
       let open Cqrs_command.Waiting_list_command in
       match action with
       | `Create ->
         let tenant = Pool_context.Tenant.get_tenant_exn req in
         let* confirmation_email =
-          Message_template.WaitingListConfirmation.create
-            tenant
-            contact
-            experiment
+          Message_template.WaitingListConfirmation.create tenant contact experiment
         in
         { Waiting_list.contact; experiment }
         |> Create.handle ~tags confirmation_email
         |> Lwt_result.lift
       | `Destroy ->
         let%lwt waiting_list =
-          Waiting_list.find_by_contact_and_experiment
-            database_label
-            contact
-            experiment_id
+          Waiting_list.find_by_contact_and_experiment database_label contact experiment_id
         in
         let open CCResult.Infix in
         waiting_list

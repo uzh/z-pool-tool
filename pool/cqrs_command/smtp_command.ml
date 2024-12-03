@@ -89,15 +89,7 @@ end = struct
 
   let smtp_of_command
         ?id
-        { label
-        ; server
-        ; port
-        ; username
-        ; password
-        ; mechanism
-        ; protocol
-        ; default
-        }
+        { label; server; port; username; password; mechanism; protocol; default }
     =
     SmtpAuth.Write.create
       ?id
@@ -123,10 +115,7 @@ end = struct
       |> Default.create
     in
     let smtp = Write.{ smtp_auth with default = is_default } in
-    Ok
-      [ Email.SmtpCreated smtp |> Pool_event.email
-      ; clear_cache_event ?id:event_id ()
-      ]
+    Ok [ Email.SmtpCreated smtp |> Pool_event.email; clear_cache_event ?id:event_id () ]
   ;;
 
   let decode data =
@@ -166,8 +155,7 @@ end = struct
       let open CCFun.Infix in
       let open SmtpAuth in
       let force_default =
-        default_smtp
-        |> CCOption.map_or ~default:true (id %> Id.equal (id smtp_auth))
+        default_smtp |> CCOption.map_or ~default:true (id %> Id.equal (id smtp_auth))
       in
       (force_default || Default.value command.default) |> Default.create
     in
@@ -182,10 +170,7 @@ end = struct
       ; default
       }
     in
-    Ok
-      [ Email.SmtpEdited update |> Pool_event.email
-      ; clear_cache_event ~id:clear_id ()
-      ]
+    Ok [ Email.SmtpEdited update |> Pool_event.email; clear_cache_event ~id:clear_id () ]
   ;;
 
   let decode data =
@@ -218,10 +203,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) (smtp : SmtpAuth.t) (password : t) =
     Logs.info ~src (fun m -> m "Handle command Edit" ~tags);
     let command = SmtpAuth.{ id = smtp.SmtpAuth.id; password } in
-    Ok
-      [ Email.SmtpPasswordEdited command |> Pool_event.email
-      ; clear_cache_event ()
-      ]
+    Ok [ Email.SmtpPasswordEdited command |> Pool_event.email; clear_cache_event () ]
   ;;
 
   let decode data =
@@ -252,9 +234,7 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     Ok
-      [ Email.SmtpDeleted command |> Pool_event.email
-      ; clear_cache_event ~id:clear_id ()
-      ]
+      [ Email.SmtpDeleted command |> Pool_event.email; clear_cache_event ~id:clear_id () ]
   ;;
 
   let effects = Email.Guard.Access.Smtp.update

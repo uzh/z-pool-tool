@@ -18,11 +18,9 @@ let create_failed_login_attempts_table =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202306261642" |> add_step create_failed_login_attempts_table)
+  Database.Migration.(empty "202306261642" |> add_step create_failed_login_attempts_table)
 ;;
 
 let migration_root () =
-  Database.Migration.(
-    empty "202306261642" |> add_step create_failed_login_attempts_table)
+  Database.Migration.(empty "202306261642" |> add_step create_failed_login_attempts_table)
 ;;

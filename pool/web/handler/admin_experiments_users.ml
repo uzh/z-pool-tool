@@ -23,14 +23,9 @@ let index role req =
       | `Experimenter -> `Experimenter, Some id
     in
     let%lwt applicable_admins =
-      Admin.find_all_with_role
-        database_label
-        (`Admin, None)
-        ~exclude:[ current_roles ]
+      Admin.find_all_with_role database_label (`Admin, None) ~exclude:[ current_roles ]
     in
-    let%lwt currently_assigned =
-      Admin.find_all_with_role database_label current_roles
-    in
+    let%lwt currently_assigned = Admin.find_all_with_role database_label current_roles in
     let%lwt hint =
       (match role with
        | `Assistants -> I18n.Key.AssistantRoleHint
@@ -39,9 +34,7 @@ let index role req =
     in
     let* experiment = Experiment.find database_label id in
     let%lwt can_assign, can_unassign =
-      match%lwt
-        Pool_context.Utils.find_authorizable_opt database_label user
-      with
+      match%lwt Pool_context.Utils.find_authorizable_opt database_label user with
       | None -> Lwt.return (false, false)
       | Some actor ->
         let open Guard in
@@ -81,9 +74,7 @@ let toggle_role action req =
   let admin_id = admin_id req in
   let redirect_path =
     let base_path =
-      Format.asprintf
-        "/admin/experiments/%s/%s"
-        (Experiment.Id.value experiment_id)
+      Format.asprintf "/admin/experiments/%s/%s" (Experiment.Id.value experiment_id)
     in
     (match action with
      | `AssignAssistant | `UnassignAssistant -> "assistants"
@@ -115,9 +106,7 @@ let toggle_role action req =
       | `UnassignExperimenter -> UnassignExperimenter.(handle ~tags update)
     in
     let%lwt () = Pool_event.handle_events database_label user events in
-    Http_utils.redirect_to_with_actions
-      redirect_path
-      [ Message.set ~success:[ message ] ]
+    Http_utils.redirect_to_with_actions redirect_path [ Message.set ~success:[ message ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -161,11 +150,7 @@ end = struct
   let index_assistants = index_effects Access.Role.Assignment.Assistant.read
   let assign_assistant = experiment_effects AssignAssistant.effects
   let unassign_assistant = experiment_effects UnassignAssistant.effects
-
-  let index_experimenter =
-    index_effects Access.Role.Assignment.Experimenter.read
-  ;;
-
+  let index_experimenter = index_effects Access.Role.Assignment.Experimenter.read
   let assign_experimenter = experiment_effects AssignExperimenter.effects
   let unassign_experimenter = experiment_effects UnassignExperimenter.effects
 end

@@ -10,10 +10,7 @@ let follow_up_icon language =
   span
     ~a:[ a_class [ "font-bold" ] ]
     [ abbr
-        ~a:
-          [ a_title
-              (Pool_common.Utils.field_to_string language Field.FollowUpSession)
-          ]
+        ~a:[ a_title (Pool_common.Utils.field_to_string language Field.FollowUpSession) ]
         [ txt "(F)" ]
     ]
 ;;
@@ -24,8 +21,7 @@ let session_path = HttpUtils.Url.Admin.session_path
 
 let some_session_is_followup sessions =
   sessions
-  |> CCList.find_opt (fun { Session.follow_up_to; _ } ->
-    CCOption.is_some follow_up_to)
+  |> CCList.find_opt (fun { Session.follow_up_to; _ } -> CCOption.is_some follow_up_to)
   |> CCOption.is_some
 ;;
 
@@ -36,12 +32,8 @@ module Partials = struct
     let open Pool_common in
     let to_string = Utils.text_to_string language in
     let open Component.Table in
-    let canceled =
-      I18n.(to_string Canceled, legend_color_item "bg-red-lighter")
-    in
-    let closed =
-      I18n.(to_string Closed, legend_color_item "bg-green-lighter")
-    in
+    let canceled = I18n.(to_string Canceled, legend_color_item "bg-red-lighter") in
+    let closed = I18n.(to_string Closed, legend_color_item "bg-green-lighter") in
     (if hide_closed then [ canceled ] else [ closed; canceled ]) |> table_legend
   ;;
 
@@ -68,15 +60,12 @@ module Partials = struct
     match CCOption.is_some session.follow_up_to, chronological with
     | false, true | false, false -> date
     | true, true ->
-      div
-        ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-        [ date; follow_up_icon language ]
+      div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ] [ date; follow_up_icon language ]
     | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
   ;;
 
   let session_key_figures
-        ({ Session.min_participants; max_participants; overbook; _ } :
-          Session.t)
+        ({ Session.min_participants; max_participants; overbook; _ } : Session.t)
     =
     let value = ParticipantAmount.value in
     Format.asprintf
@@ -110,8 +99,7 @@ module Partials = struct
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
-              Pool_common.(
-                Utils.confirmable_to_string language I18n.DeleteSession)
+              Pool_common.(Utils.confirmable_to_string language I18n.DeleteSession)
           ]
         [ csrf_element csrf ()
         ; submit_element
@@ -147,11 +135,7 @@ module Partials = struct
     else None
   ;;
 
-  let button_dropdown
-        ({ Pool_context.language; _ } as context)
-        experiment_id
-        session
-    =
+  let button_dropdown ({ Pool_context.language; _ } as context) experiment_id session =
     [ detail_button language experiment_id session.id |> CCOption.return
     ; delete_form context experiment_id (`Session session) |> CCOption.return
     ; close_button language experiment_id session
@@ -180,8 +164,7 @@ module Partials = struct
       div
         [ p [ I18n.SessionIndent |> Utils.text_to_string language |> txt ]
         ; a
-            ~a:
-              [ a_href (Format.asprintf "?%s=true" Field.(show Chronological)) ]
+            ~a:[ a_href (Format.asprintf "?%s=true" Field.(show Chronological)) ]
             [ to_string I18n.SwitchChronological ]
         ]
   ;;
@@ -222,8 +205,7 @@ let session_form
     | None -> None, None
   in
   let has_assignments =
-    session
-    |> CCOption.map_or ~default:false (fun s -> s |> Session.has_assignments)
+    session |> CCOption.map_or ~default:false (fun s -> s |> Session.has_assignments)
   in
   let default_value_session =
     (* Prefill the form with values if making a duplicate, editing a session or
@@ -244,9 +226,7 @@ let session_form
       div
         ~a:[ a_class [ "full-width" ] ]
         [ p [ txt "There are assignments for this session. Please use the " ]
-        ; a
-            ~a:[ a_href action ]
-            [ txt "form provided to reschedule a session." ]
+        ; a ~a:[ a_href action ] [ txt "form provided to reschedule a session." ]
         ]
     | _ -> txt ""
   in
@@ -261,10 +241,7 @@ let session_form
     match session, follow_up_to with
     | None, None -> base, Control.(Create (Some Field.Session))
     | None, Some follow_up_to ->
-      ( Format.asprintf
-          "%s/%s/follow-up"
-          base
-          Session.(follow_up_to.id |> Id.value)
+      ( Format.asprintf "%s/%s/follow-up" base Session.(follow_up_to.id |> Id.value)
       , Control.(Create (Some Field.FollowUpSession)) )
     | Some session, _ ->
       ( Format.asprintf "%s/%s" base Session.(session.id |> Id.value)
@@ -290,9 +267,7 @@ let session_form
           language
           field
           ~hints:[ I18n.DefaultReminderLeadTime (default_value |> encode) ]
-          ?value:
-            (CCOption.bind default_value_session get_value
-             |> CCOption.map encode)
+          ?value:(CCOption.bind default_value_session get_value |> CCOption.map encode)
           ~flash_fetcher
       ]
   in
@@ -320,8 +295,7 @@ let session_form
              Field.Start
              ?min_value:
                (follow_up_to
-                |> CCOption.map
-                     Session.(fun ({ start; _ } : t) -> Start.value start))
+                |> CCOption.map Session.(fun ({ start; _ } : t) -> Start.value start))
              ~required:true
              ~flash_fetcher
              ?value
@@ -400,8 +374,7 @@ let session_form
                 (fun (s : t) -> s.text_message_reminder_lead_time)
                 Reminder.TextMessageLeadTime.value
                 (experiment.Experiment.text_message_session_reminder_lead_time
-                 |> CCOption.value ~default:default_text_msg_reminder_lead_time
-                )
+                 |> CCOption.value ~default:default_text_msg_reminder_lead_time)
                 (if text_messages_enabled then None else Some I18n.GtxKeyMissing)
             ]
         ]
@@ -416,24 +389,14 @@ let session_base_information language session =
   let amount amt = amt |> ParticipantAmount.value |> string_of_int in
   [ Field.Start, session |> Session.start_end_human |> txt
   ; ( Field.Duration
-    , session.duration
-      |> Duration.value
-      |> Pool_model.Time.formatted_timespan
-      |> txt )
+    , session.duration |> Duration.value |> Pool_model.Time.formatted_timespan |> txt )
   ; ( Field.InternalDescription
-    , CCOption.map_or
-        ~default:""
-        InternalDescription.value
-        session.internal_description
+    , CCOption.map_or ~default:"" InternalDescription.value session.internal_description
       |> Http_utils.add_line_breaks )
   ; ( Field.PublicDescription
-    , CCOption.map_or
-        ~default:""
-        PublicDescription.value
-        session.public_description
+    , CCOption.map_or ~default:"" PublicDescription.value session.public_description
       |> Http_utils.add_line_breaks )
-  ; ( Field.Location
-    , Component.Partials.location_to_html language session.Session.location )
+  ; Field.Location, Component.Partials.location_to_html language session.Session.location
   ; Field.MaxParticipants, amount session.max_participants |> txt
   ; Field.MinParticipants, amount session.min_participants |> txt
   ; Field.Overbook, amount session.overbook |> txt
@@ -492,10 +455,7 @@ let reschedule_session
       ]
   ]
   |> Layout.Experiment.(
-       create
-         context
-         (Control Control.(Reschedule (Some Field.Session)))
-         experiment)
+       create context (Control Control.(Reschedule (Some Field.Session))) experiment)
 ;;
 
 let data_table
@@ -544,12 +504,8 @@ let data_table
   in
   let th_class = [ "w-3"; "w-2"; "w-2"; "w-2"; "w-2"; "w-1" ] in
   let row
-        ({ Session.assignment_count
-         ; no_show_count
-         ; participant_count
-         ; closed_at
-         ; _
-         } as session :
+        ({ Session.assignment_count; no_show_count; participant_count; closed_at; _ } as
+         session :
           Session.t)
     =
     let open Partials in
@@ -572,8 +528,7 @@ let data_table
     |> tr ~a:row_attrs
   in
   DataTable.make
-    ~classnames:
-      [ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
+    ~classnames:[ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
     ~target_id
     ~th_class
     ~cols
@@ -582,12 +537,7 @@ let data_table
     sessions
 ;;
 
-let index
-      ({ Pool_context.language; _ } as context)
-      experiment
-      sessions
-      chronological
-  =
+let index ({ Pool_context.language; _ } as context) experiment sessions chronological =
   let open Pool_common in
   let html =
     let hover_script =
@@ -688,18 +638,12 @@ let duplicate_form ?parent_session language session followups form_id =
     then make_button "disabled" [ a_disabled () ]
     else make_button "error" [ a_user_data "remove-group" "" ]
   in
-  let min_date ({ start; _ } : t) =
-    Start.value start |> Component.Input.flatpickr_min
-  in
-  let input_name { id; _ } =
-    Format.asprintf "%s[%i]" (Session.Id.value id) form_id
-  in
+  let min_date ({ start; _ } : t) = Start.value start |> Component.Input.flatpickr_min in
+  let input_name { id; _ } = Format.asprintf "%s[%i]" (Session.Id.value id) form_id in
   let input ?min_input_el ?value session =
     let name = input_name session in
     let label_txt =
-      Format.asprintf
-        "Session from %s"
-        (Session.start_end_with_duration_human session)
+      Format.asprintf "Session from %s" (Session.start_end_with_duration_human session)
       |> txt
     in
     let attrs =
@@ -733,11 +677,7 @@ let duplicate_form ?parent_session language session followups form_id =
   let wrap title html =
     div
       ~a:[ a_class [ "flexcolumn" ] ]
-      [ h4
-          [ Utils.field_to_string language title
-            |> CCString.capitalize_ascii
-            |> txt
-          ]
+      [ h4 [ Utils.field_to_string language title |> CCString.capitalize_ascii |> txt ]
       ; html
       ]
   in
@@ -802,11 +742,7 @@ let duplicate
     in
     div
       ~a:[ a_class [ "gap-lg" ] ]
-      [ p
-          [ txt
-              Pool_common.(
-                Utils.hint_to_string language I18n.DuplicateSessionList)
-          ]
+      [ p [ txt Pool_common.(Utils.hint_to_string language I18n.DuplicateSessionList) ]
       ; session_list
       ]
   in
@@ -840,14 +776,11 @@ let duplicate
           ; hx_trigger "click"
           ; hx_swap "none"
           ; hx_post
-              (Format.sprintf "%s/duplicate" session_path
-               |> Sihl.Web.externalize_path)
+              (Format.sprintf "%s/duplicate" session_path |> Sihl.Web.externalize_path)
           ]
       [ txt
           Pool_common.(
-            Utils.control_to_string
-              language
-              (Control.Create (Some Field.Sessions)))
+            Utils.control_to_string language (Control.Create (Some Field.Sessions)))
       ]
   in
   let form =
@@ -867,10 +800,7 @@ let duplicate
   in
   [ div ~a:[ a_class [ "stack" ] ] [ hint; session_info; form ] ]
   |> Layout.Experiment.(
-       create
-         context
-         (Control Control.(Duplicate (Some Field.Session)))
-         experiment)
+       create context (Control Control.(Duplicate (Some Field.Session))) experiment)
 ;;
 
 let detail
@@ -893,14 +823,11 @@ let detail
   let open Session in
   let experiment_id = experiment.Experiment.id in
   let changelog_url =
-    session_path ~suffix:"changelog" ~id:session.id experiment_id
-    |> Uri.of_string
+    session_path ~suffix:"changelog" ~id:session.id experiment_id |> Uri.of_string
   in
   let session_path = session_path ~id:session.id experiment_id in
   let session_link ?style (show, url, control) =
-    let style, icon =
-      style |> CCOption.map_or ~default:(`Primary, None) CCFun.id
-    in
+    let style, icon = style |> CCOption.map_or ~default:(`Primary, None) CCFun.id in
     match show with
     | false -> None
     | true ->
@@ -933,8 +860,7 @@ let detail
       in
       let inner =
         let resend_action =
-          Format.asprintf "%s/resend-reminders" session_path
-          |> Sihl.Web.externalize_path
+          Format.asprintf "%s/resend-reminders" session_path |> Sihl.Web.externalize_path
         in
         let warning =
           match
@@ -954,8 +880,7 @@ let detail
           [ warning
           ; p
               [ txt
-                  Pool_common.(
-                    Utils.hint_to_string language I18n.ResendRemindersChannel)
+                  Pool_common.(Utils.hint_to_string language I18n.ResendRemindersChannel)
               ]
           ; form
               ~a:[ a_method `Post; a_action resend_action; a_class [ "stack" ] ]
@@ -1011,8 +936,7 @@ let detail
       in
       let no_show_count, participant_count =
         (fun (no_show_count, participant_count) ->
-          ( (Field.NoShowCount, no_show_count)
-          , (Field.Participated, participant_count) ))
+          (Field.NoShowCount, no_show_count), (Field.Participated, participant_count))
         @@
         match CCOption.is_some session.closed_at with
         | true ->
@@ -1041,8 +965,7 @@ let detail
         let time_stamps =
           let format = Component.Utils.format_reminder_sent_opt in
           [ Field.EmailRemindersSentAt, format session.email_reminder_sent_at
-          ; ( Field.TextMessageRemindersSentAt
-            , format session.text_message_reminder_sent_at )
+          ; Field.TextMessageRemindersSentAt, format session.text_message_reminder_sent_at
           ]
         in
         rows @ time_stamps @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
@@ -1057,9 +980,7 @@ let detail
             "/admin/experiments/%s/sessions"
             (Experiment.Id.value experiment_id)
         in
-        let link =
-          Format.asprintf "%s/%s/duplicate" base (Id.value session.id)
-        in
+        let link = Format.asprintf "%s/%s/duplicate" base (Id.value session.id) in
         link_as_button
           ~control:(language, Control.Duplicate (Some Field.Session))
           ~classnames:[ "small" ]
@@ -1095,9 +1016,7 @@ let detail
         |> CCList.filter_map (fun (t, style) -> session_link ?style t)
         |> fun btns -> wrap (resend_reminders_modal :: btns)
       in
-      div
-        ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
-        [ left; right ]
+      div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ] [ left; right ]
     in
     div ~a:[ a_class [ "stack" ] ] [ table; links ]
   in
@@ -1147,9 +1066,7 @@ let detail
     let open Page_admin_assignments in
     let swap_session_modal_id = swap_session_modal_id session.Session.id in
     let legend = Partials.table_legend language in
-    let modal id =
-      div ~a:[ a_id id; a_class [ "fullscreen-overlay"; "modal" ] ] []
-    in
+    let modal id = div ~a:[ a_id id; a_class [ "fullscreen-overlay"; "modal" ] ] [] in
     let assignment_list =
       data_table
         ?access_contact_profiles
@@ -1198,8 +1115,7 @@ let detail
     in
     let header_btn ?(hidden = false) ?(style = "primary") icon control attrs =
       let classnames =
-        [ "btn"; style; "has-icon"; "small" ]
-        @ if hidden then [ "hidden" ] else []
+        [ "btn"; style; "has-icon"; "small" ] @ if hidden then [ "hidden" ] else []
       in
       button
         ~a:(a_class classnames :: attrs)
@@ -1234,8 +1150,7 @@ let detail
                 ; hx_post submit_send_messages_action
                 ; hx_trigger "click"
                 ; hx_swap "outerHTML"
-                ; hx_target
-                    ("#" ^ Page_admin_assignments.direct_message_modal_id)
+                ; hx_target ("#" ^ Page_admin_assignments.direct_message_modal_id)
                 ]
           ; header_btn
               ~hidden:true
@@ -1266,14 +1181,7 @@ let detail
     div
       ~a:[ a_class [ "stack" ] ]
       [ div
-          ~a:
-            [ a_class
-                [ "flexrow"
-                ; "flex-gap"
-                ; "justify-between"
-                ; "flexcolumn-mobile"
-                ]
-            ]
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "flexcolumn-mobile" ] ]
           [ div
               [ h2
                   ~a:[ a_class [ "heading-2" ] ]
@@ -1346,9 +1254,7 @@ let print
   in
   let title =
     Pool_common.(
-      Utils.text_to_string
-        language
-        (HttpUtils.Session.detail_page_title session))
+      Utils.text_to_string language (HttpUtils.Session.detail_page_title session))
   in
   [ div
       ~a:[ a_class [ "safety-margin" ] ]
@@ -1382,9 +1288,7 @@ let tags_subform
     [ h3
         ~a:[ a_class [ "heading-3" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
-    ; p
-        Pool_common.
-          [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt ]
+    ; p Pool_common.[ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt ]
     ; div
         ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
         [ Tag.add_tags_form
@@ -1403,8 +1307,8 @@ let tags_subform
                 ~a:[ a_class [ "border-top"; "inset"; "vertical"; "n-shape" ] ]
                 [ p
                     [ txt
-                        "Every participant of a session of this experiment \
-                         will be tagged with the following tags by default."
+                        "Every participant of a session of this experiment will be \
+                         tagged with the following tags by default."
                     ]
                 ; Component.Tag.tag_list language experiment_tags
                 ]
@@ -1484,20 +1388,12 @@ let follow_up
     ]
   |> CCList.return
   |> Layout.Experiment.(
-       create
-         context
-         (Control Control.(Create (Some Field.FollowUpSession)))
-         experiment)
+       create context (Control Control.(Create (Some Field.FollowUpSession))) experiment)
 ;;
 
-let session_counters
-      language
-      { Assignment.total; num_no_shows; num_participations }
-  =
+let session_counters language { Assignment.total; num_no_shows; num_participations } =
   let field_to_string field =
-    Pool_common.Utils.field_to_string language field
-    |> CCString.capitalize_ascii
-    |> txt
+    Pool_common.Utils.field_to_string language field |> CCString.capitalize_ascii |> txt
   in
   div
     ~a:
@@ -1525,9 +1421,7 @@ module CloseScreen = struct
   open Assignment
 
   let action experiment session { Assignment.id; _ } suffix =
-    let session_path =
-      session_path ~id:session.Session.id experiment.Experiment.id
-    in
+    let session_path = session_path ~id:session.Session.id experiment.Experiment.id in
     Format.asprintf "%s/assignments/%s/%s" session_path (Id.value id) suffix
     |> Sihl.Web.externalize_path
   ;;
@@ -1537,8 +1431,7 @@ module CloseScreen = struct
       [ hx_post (action experiment session assignment suffix)
       ; hx_trigger "change"
       ; hx_swap "outerHTML"
-      ; hx_target
-          (Format.asprintf "[data-assignment=\"%s\"]" (Id.value assignment.id))
+      ; hx_target (Format.asprintf "[data-assignment=\"%s\"]" (Id.value assignment.id))
       ; hx_params
           ([ name; Field.(array_key Verified) ]
            |> CCList.uniq ~eq:CCString.equal
@@ -1559,11 +1452,7 @@ module CloseScreen = struct
     =
     let checked = if value then [ a_checked () ] else [] in
     let classnames =
-      if
-        CCList.mem
-          ~eq:CCString.equal
-          name
-          (CCList.map Field.show updated_fields)
+      if CCList.mem ~eq:CCString.equal name (CCList.map Field.show updated_fields)
       then [ a_class [ "is-valid" ] ]
       else []
     in
@@ -1602,8 +1491,7 @@ let close_assignment_htmx_form
       (experiment : Experiment.t)
       ?(updated_fields = [])
       session
-      ({ Assignment.id; no_show; participated; external_data_id; _ } as
-       assignment)
+      ({ Assignment.id; no_show; participated; external_data_id; _ } as assignment)
   =
   let open Assignment in
   let open Pool_common.Utils in
@@ -1613,22 +1501,16 @@ let close_assignment_htmx_form
     | Ok () -> None
     | Error err -> Some err
   in
-  let checkbox_element =
-    CloseScreen.checkbox_element experiment session assignment
-  in
+  let checkbox_element = CloseScreen.checkbox_element experiment session assignment in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
   let external_data_field =
     match
-      Experiment.(
-        experiment |> external_data_required |> ExternalDataRequired.value)
+      Experiment.(experiment |> external_data_required |> ExternalDataRequired.value)
     with
     | false -> txt ""
     | true ->
       let value =
-        CCOption.map_or
-          ~default:""
-          Assignment.ExternalDataId.value
-          external_data_id
+        CCOption.map_or ~default:"" Assignment.ExternalDataId.value external_data_id
       in
       let field = Field.ExternalDataId in
       let classnames =
@@ -1669,8 +1551,7 @@ let close_assignment_htmx_form
       let error_to_item err =
         error_to_string language err |> txt |> CCList.return |> li
       in
-      CCList.map error_to_item errors
-      |> ul ~a:[ a_class [ "color-red"; "flexcolumn" ] ])
+      CCList.map error_to_item errors |> ul ~a:[ a_class [ "color-red"; "flexcolumn" ] ])
   in
   form
     ~a:
@@ -1715,10 +1596,7 @@ let close_assignments_table
       disabled_verified
   =
   match assignments with
-  | [] ->
-    p
-      [ txt Pool_common.(Utils.text_to_string language I18n.AssignmentListEmpty)
-      ]
+  | [] -> p [ txt Pool_common.(Utils.text_to_string language I18n.AssignmentListEmpty) ]
   | assignments ->
     let identity_width = "w-3" in
     let custom_data_width = "w-4" in
@@ -1768,10 +1646,7 @@ let close_assignments_table
            | None -> div []
            | Some custom_data ->
              let answer_html =
-               Component.CustomField.answer_to_html
-                 ~add_data_label:true
-                 user
-                 language
+               Component.CustomField.answer_to_html ~add_data_label:true user language
              in
              custom_fields
              |> CCList.map (fun field ->
@@ -1785,9 +1660,7 @@ let close_assignments_table
              contact
              (Assignment.Id.to_common id)
          in
-         let disable_verified =
-           CCList.mem ~eq:Assignment.Id.equal id disabled_verified
-         in
+         let disable_verified = CCList.mem ~eq:Assignment.Id.equal id disabled_verified in
          [ div ~a:[ a_class [ identity_width ] ] [ strong [ txt identity ] ]
          ; custom_field_cells
          ; close_assignment_htmx_form
@@ -1803,9 +1676,7 @@ let close_assignments_table
     |> fun rows ->
     div
       ~a:[ a_id form_id ]
-      [ div
-          ~a:[ a_class [ "flexrow"; "inset-sm"; "session-close-header" ] ]
-          thead
+      [ div ~a:[ a_class [ "flexrow"; "inset-sm"; "session-close-header" ] ] thead
       ; div ~a:[ a_class [ "striped" ] ] rows
       ]
 ;;
@@ -1822,24 +1693,17 @@ let close
   =
   let open Pool_common in
   let control = Control.(Close (Some Field.Session)) in
-  let session_path =
-    session_path ~id:session.Session.id experiment.Experiment.id
-  in
+  let session_path = session_path ~id:session.Session.id experiment.Experiment.id in
   let tags_html =
     let participation_tags_list =
       match participation_tags with
       | [] ->
-        Utils.hint_to_string
-          language
-          I18n.SessionCloseNoParticipationTagsSelected
-        |> txt
+        Utils.hint_to_string language I18n.SessionCloseNoParticipationTagsSelected |> txt
       | tags ->
         let tags = Component.Tag.tag_list language tags in
         div
           [ p
-              [ Utils.hint_to_string
-                  language
-                  I18n.SessionCloseParticipationTagsSelected
+              [ Utils.hint_to_string language I18n.SessionCloseParticipationTagsSelected
                 |> txt
               ]
           ; tags
@@ -1905,9 +1769,7 @@ let close
       ~a:
         [ a_method `Post
         ; a_class [ "stack" ]
-        ; a_action
-            (Format.asprintf "%s/close" session_path
-             |> Sihl.Web.externalize_path)
+        ; a_action (Format.asprintf "%s/close" session_path |> Sihl.Web.externalize_path)
         ; a_user_data
             "confirmable"
             Pool_common.(Utils.confirmable_to_string language I18n.CloseSession)
@@ -1921,9 +1783,7 @@ let close
   [ div
       [ p
           [ txt
-              (session
-               |> HttpUtils.Session.session_title
-               |> Utils.text_to_string language)
+              (session |> HttpUtils.Session.session_title |> Utils.text_to_string language)
           ]
       ; tags_html
       ; h4
@@ -1933,9 +1793,7 @@ let close
                |> CCString.capitalize_ascii)
           ]
       ; Page_admin_assignments.Partials.table_legend ~hide_deleted:true language
-      ; p
-          [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data
-          ]
+      ; p [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data ]
       ; table
       ; submit_session_close
       ; script (Unsafe.data htmx_script)

@@ -5,8 +5,7 @@ module Dynparam = Database.Dynparam
 let create_tag = Database.Logger.Tags.create
 
 include
-  Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target)
-    (Database.Guard)
+  Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target) (Database.Guard)
 
 module ActorPermission = struct
   include ActorPermission
@@ -64,17 +63,10 @@ module ActorPermission = struct
 
   let expanded =
     Caqti_type.(
-      t4
-        Entity.ActorPermission.t
-        string
-        (option Entity.TargetModel.t)
-        (option string))
+      t4 Entity.ActorPermission.t string (option Entity.TargetModel.t) (option string))
   ;;
 
-  let find_by query pool =
-    Query.collect_and_count pool (Some query) ~select expanded
-  ;;
-
+  let find_by query pool = Query.collect_and_count pool (Some query) ~select expanded
   let insert pool = insert ~ctx:(Database.to_ctx pool)
 end
 
@@ -104,12 +96,7 @@ module RolePermission = struct
 
   let find_by query pool =
     let where = std_filter_sql, Dynparam.(empty) in
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~where
-      ~select
-      Entity.RolePermission.t
+    Query.collect_and_count pool (Some query) ~where ~select Entity.RolePermission.t
   ;;
 
   let query_by_role ?query ?(include_static_models = false) pool role =
@@ -126,14 +113,11 @@ module RolePermission = struct
           static
           |> CCList.map (CCFun.const "?")
           |> CCString.concat ","
-          |> Format.asprintf
-               "%s AND role_permissions.target_model NOT IN (%s)"
-               sql
+          |> Format.asprintf "%s AND role_permissions.target_model NOT IN (%s)" sql
         in
         let dyn =
           CCList.fold_left
-            (fun dyn target ->
-               dyn |> Dynparam.add Caqti_type.string (show target))
+            (fun dyn target -> dyn |> Dynparam.add Caqti_type.string (show target))
             dyn
             Role.Target.static
         in
@@ -228,8 +212,7 @@ module RolePermission = struct
            permissions
     in
     let request =
-      find_by_target_and_permissions_request permissions
-      |> pt ->* Pool_common.Repo.Id.t
+      find_by_target_and_permissions_request permissions |> pt ->* Pool_common.Repo.Id.t
     in
     Database.collect pool request pv
   ;;
@@ -288,8 +271,7 @@ module Cache = struct
   ;;
 
   let log_cache_size cache label =
-    Logs.info ~src (fun m ->
-      m "Updated size of guard cache %s: %i" label (size cache))
+    Logs.info ~src (fun m -> m "Updated size of guard cache %s: %i" label (size cache))
   ;;
 end
 
@@ -329,8 +311,7 @@ module Actor = struct
              then
                model
                |> Utils.find_assignable_role
-               |> CCResult.map_or ~default:None (fun model ->
-                 Some (model, target_uuid))
+               |> CCResult.map_or ~default:None (fun model -> Some (model, target_uuid))
              else None)
   ;;
 
@@ -440,9 +421,7 @@ let validate
 
 module Role = struct
   let find_by_actor_and_permission_request permissions role_targets =
-    let add_arguments list =
-      CCList.map (fun _ -> "?") list |> CCString.concat ","
-    in
+    let add_arguments list = CCList.map (fun _ -> "?") list |> CCString.concat "," in
     Format.asprintf
       {sql|
         SELECT
@@ -469,8 +448,7 @@ module Role = struct
       Entity.Permission.(Manage :: permissions |> CCList.uniq ~eq:equal)
     in
     let targets =
-      Role.Role.(
-        customizable |> CCList.map Core.Utils.find_assignable_target_role)
+      Role.Role.(customizable |> CCList.map Core.Utils.find_assignable_target_role)
     in
     let open Dynparam in
     let (Pack (pt, pv)) =

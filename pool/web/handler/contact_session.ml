@@ -16,9 +16,7 @@ let show req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let* experiment =
-         Experiment.find_public database_label experiment_id contact
-       in
+       let* experiment = Experiment.find_public database_label experiment_id contact in
        let* () =
          Assignment.Public.find_all_by_experiment
            database_label
@@ -30,8 +28,7 @@ let show req =
        in
        let* session = Session.find_public database_label id in
        let%lwt follow_ups =
-         Session.find_follow_ups database_label id
-         ||> CCList.map Session.to_public
+         Session.find_follow_ups database_label id ||> CCList.map Session.to_public
        in
        Page.Contact.Assignment.detail session follow_ups experiment context
        |> Lwt.return_ok

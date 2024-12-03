@@ -30,9 +30,7 @@ let show usage req =
            |> CCOption.is_some
          in
          let%lwt verification =
-           Contact.find_cell_phone_verification_by_contact
-             database_label
-             contact
+           Contact.find_cell_phone_verification_by_contact database_label contact
          in
          Page.Contact.contact_information contact context verification was_reset
          |> create_layout contact_info_path
@@ -49,16 +47,9 @@ let show usage req =
            >|+ fun c -> c.Pool_context.Tenant.tenant_languages
          in
          let%lwt custom_fields =
-           Custom_field.find_all_by_contact
-             database_label
-             user
-             (Contact.id contact)
+           Custom_field.find_all_by_contact database_label user (Contact.id contact)
          in
-         Page.Contact.personal_details
-           contact
-           custom_fields
-           tenant_languages
-           context
+         Page.Contact.personal_details contact custom_fields tenant_languages context
          |> create_layout "/user/personal-details"
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -72,25 +63,21 @@ let update = Helpers.PartialUpdate.update
 let update_email req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result
-        ({ Pool_context.database_label; query_parameters; language; user; _ } as
-         context)
+        ({ Pool_context.database_label; query_parameters; language; user; _ } as context)
     =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
     Utils.Lwt_result.map_error (fun msg ->
-      HttpUtils.(
-        msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
+      HttpUtils.(msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
          Settings.find_email_suffixes database_label
-         ||> fun suffixes ->
-         if CCList.is_empty suffixes then None else Some suffixes
+         ||> fun suffixes -> if CCList.is_empty suffixes then None else Some suffixes
        in
        let* new_email =
          Pool_user.EmailAddress.create
-           (CCList.assoc ~eq:CCString.equal Field.(Email |> show) urlencoded
-            |> CCList.hd)
+           (CCList.assoc ~eq:CCString.equal Field.(Email |> show) urlencoded |> CCList.hd)
          |> Lwt_result.lift
        in
        let* () =
@@ -106,9 +93,7 @@ let update_email req =
          | Admin admin -> Admin.email_address admin |> equal
          | Contact contact -> Contact.email_address contact |> equal
        in
-       let%lwt existing_user =
-         Pool_user.find_by_email_opt database_label new_email
-       in
+       let%lwt existing_user = Pool_user.find_by_email_opt database_label new_email in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let send_verification_mail unverified_contact =
          let* email_event =
@@ -158,8 +143,7 @@ let update_email req =
               (match contact.Contact.email_verified with
                | Some _ ->
                  let* notification = change_attempt_notification () in
-                 Lwt_result.return
-                   [ Email.sent notification |> Pool_event.email ]
+                 Lwt_result.return [ Email.sent notification |> Pool_event.email ]
                | None -> send_verification_mail (Some contact)))
        in
        let%lwt () = Pool_event.handle_events ~tags database_label user events in
@@ -175,21 +159,16 @@ let update_email req =
 let update_password req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result
-        ({ Pool_context.database_label; query_parameters; language; user; _ } as
-         context)
+        ({ Pool_context.database_label; query_parameters; language; user; _ } as context)
     =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
     Utils.Lwt_result.map_error (fun msg ->
-      HttpUtils.(
-        msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
+      HttpUtils.(msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let%lwt notification =
-         Message_template.PasswordChange.create
-           language
-           tenant
-           contact.Contact.user
+         Message_template.PasswordChange.create language tenant contact.Contact.user
        in
        let* events =
          let open CCResult.Infix in
@@ -211,8 +190,7 @@ let update_password req =
 let update_cell_phone req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result
-        ({ Pool_context.database_label; language; query_parameters; user; _ } as
-         context)
+        ({ Pool_context.database_label; language; query_parameters; user; _ } as context)
     =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
@@ -252,8 +230,7 @@ let update_cell_phone req =
              %> Pool_event.handle_event database_label user
        in
        let* events =
-         Command.AddCellPhone.handle ~tags (contact, cell_phone, token)
-         |> Lwt_result.lift
+         Command.AddCellPhone.handle ~tags (contact, cell_phone, token) |> Lwt_result.lift
        in
        let%lwt () = Pool_event.handle_events ~tags database_label user events in
        HttpUtils.(
@@ -267,9 +244,7 @@ let update_cell_phone req =
 
 let verify_cell_phone req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result
-        ({ Pool_context.database_label; query_parameters; user; _ } as context)
-    =
+  let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
     Utils.Lwt_result.map_error (fun msg ->
@@ -288,8 +263,7 @@ let verify_cell_phone req =
            token
        in
        let* events =
-         Command.VerifyCellPhone.handle ~tags (contact, cell_phone)
-         |> Lwt_result.lift
+         Command.VerifyCellPhone.handle ~tags (contact, cell_phone) |> Lwt_result.lift
        in
        let%lwt () = Pool_event.handle_events ~tags database_label user events in
        HttpUtils.(
@@ -302,16 +276,13 @@ let verify_cell_phone req =
 ;;
 
 let reset_phone_verification req =
-  let result
-        ({ Pool_context.database_label; query_parameters; user; _ } as context)
-    =
+  let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
     Utils.Lwt_result.map_error (fun msg -> msg, contact_info_path, [])
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* events =
-         Command.ResetCellPhoneVerification.handle ~tags contact
-         |> Lwt_result.lift
+         Command.ResetCellPhoneVerification.handle ~tags contact |> Lwt_result.lift
        in
        let%lwt () = Pool_event.handle_events ~tags database_label user events in
        HttpUtils.(
@@ -326,8 +297,7 @@ let reset_phone_verification req =
 
 let resend_token req =
   let result
-        ({ Pool_context.database_label; language; query_parameters; user; _ } as
-         context)
+        ({ Pool_context.database_label; language; query_parameters; user; _ } as context)
     =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun msg -> msg, contact_info_path, [])
@@ -336,9 +306,7 @@ let resend_token req =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
        let* { Pool_user.UnverifiedCellPhone.cell_phone; verification_code; _ } =
-         Contact.find_full_cell_phone_verification_by_contact
-           database_label
-           contact
+         Contact.find_full_cell_phone_verification_by_contact database_label contact
        in
        let* () =
          Message_template.PhoneVerification.create_text_message
@@ -389,8 +357,7 @@ let completion_post req =
     ||> HttpUtils.remove_empty_values
   in
   let result
-        ({ Pool_context.database_label; query_parameters; language; user; _ } as
-         context)
+        ({ Pool_context.database_label; query_parameters; language; user; _ } as context)
     =
     Utils.Lwt_result.map_error (fun err ->
       HttpUtils.(
@@ -434,10 +401,7 @@ let completion_post req =
           redirect_to_with_actions
             "/experiments"
             [ Message.set ~success:[ Success.Updated Field.Profile ] ])
-        ||> Sihl.Web.Session.set_value
-              ~key:Contact.profile_completion_cookie
-              ""
-              req
+        ||> Sihl.Web.Session.set_value ~key:Contact.profile_completion_cookie "" req
       | false ->
         Http_utils.(
           redirect_to_with_actions

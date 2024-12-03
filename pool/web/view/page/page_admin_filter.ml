@@ -5,11 +5,7 @@ open Tyxml.Html
 let list { Pool_context.language; _ } filter_list query =
   let url = Uri.of_string "/admin/filter" in
   let data_table =
-    Component.DataTable.create_meta
-      ~search:Filter.searchable_by
-      url
-      query
-      language
+    Component.DataTable.create_meta ~search:Filter.searchable_by url query language
   in
   let cols =
     let create_filter : [ | Html_types.flow5 ] elt =
@@ -71,10 +67,7 @@ let edit
     | None -> txt ""
     | Some filter ->
       let url =
-        Http_utils.Url.Admin.filter_path
-          ~suffix:"changelog"
-          ~id:filter.Filter.id
-          ()
+        Http_utils.Url.Admin.filter_path ~suffix:"changelog" ~id:filter.Filter.id ()
         |> Uri.of_string
       in
       Component.Changelog.list context url None

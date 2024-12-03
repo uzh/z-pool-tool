@@ -26,6 +26,5 @@ let handle_event pool =
   | Updated ({ start_at; end_at; limit; distribution }, mailing) ->
     { mailing with start_at; end_at; limit; distribution } |> Repo.update pool
   | Deleted { id; _ } -> Repo.delete pool id
-  | Stopped mailing ->
-    { mailing with end_at = Ptime_clock.now () } |> Repo.update pool
+  | Stopped mailing -> { mailing with end_at = Ptime_clock.now () } |> Repo.update pool
 ;;

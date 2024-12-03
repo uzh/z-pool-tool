@@ -73,10 +73,7 @@ module Start = struct
 
   let schema () =
     let decode str = CCResult.(Pool_model.Time.parse_time str >|= create) in
-    Pool_conformist.schema_decoder
-      decode
-      Ptime.to_rfc3339
-      Pool_message.Field.Start
+    Pool_conformist.schema_decoder decode Ptime.to_rfc3339 Pool_message.Field.Start
   ;;
 end
 
@@ -86,8 +83,7 @@ module End = struct
   let schema () = schema Pool_message.Field.End CCResult.return ()
 
   let build start =
-    Ptime.add_span start
-    %> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
+    Ptime.add_span start %> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
   ;;
 end
 
@@ -107,9 +103,7 @@ module AssignmentCount = struct
   let value m = m
 
   let create m =
-    if m < 0
-    then Error Pool_message.(Error.Invalid Field.AssignmentCount)
-    else Ok m
+    if m < 0 then Error Pool_message.(Error.Invalid Field.AssignmentCount) else Ok m
   ;;
 end
 
@@ -125,9 +119,7 @@ module ParticipantCount = struct
   include Pool_model.Base.Integer
 
   let create m =
-    if m < 0
-    then Error Pool_message.(Error.Invalid Field.ParticipantCount)
-    else Ok m
+    if m < 0 then Error Pool_message.(Error.Invalid Field.ParticipantCount) else Ok m
   ;;
 end
 
@@ -135,11 +127,7 @@ module CancellationReason = struct
   include Pool_model.Base.String
 
   let field = Pool_message.Field.Reason
-
-  let validate m =
-    if CCString.is_empty m then Error Pool_message.Error.NoValue else Ok m
-  ;;
-
+  let validate m = if CCString.is_empty m then Error Pool_message.Error.NoValue else Ok m
   let schema = schema ?validation:(Some validate) field
 end
 
@@ -164,8 +152,7 @@ type t =
   ; overbook : ParticipantAmount.t
   ; email_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; email_reminder_sent_at : Pool_common.Reminder.SentAt.t option
-  ; text_message_reminder_lead_time :
-      Pool_common.Reminder.TextMessageLeadTime.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.TextMessageLeadTime.t option
   ; text_message_reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t
@@ -239,13 +226,10 @@ let is_canceled_error canceled_at =
   |> CCResult.fail
 ;;
 
-let is_fully_booked (m : t) =
-  m.assignment_count >= m.max_participants + m.overbook
-;;
+let is_fully_booked (m : t) = m.assignment_count >= m.max_participants + m.overbook
 
 let is_fully_booked_res (m : t) =
-  is_fully_booked m
-  |> Utils.bool_to_result_not Pool_message.Error.SessionFullyBooked
+  is_fully_booked m |> Utils.bool_to_result_not Pool_message.Error.SessionFullyBooked
 ;;
 
 let available_spots (m : t) =
@@ -261,8 +245,7 @@ type notification_log =
 
 type notification_history =
   { session : t
-  ; queue_entries : (Sihl_email.t * Pool_queue.Instance.t) list
-        [@equal fun _ _ -> true]
+  ; queue_entries : (Sihl_email.t * Pool_queue.Instance.t) list [@equal fun _ _ -> true]
   }
 
 let session_date_to_human (session : t) =
@@ -341,13 +324,10 @@ module Public = struct
     | Some canceled_at -> is_canceled_error canceled_at
   ;;
 
-  let is_fully_booked (m : t) =
-    m.assignment_count >= m.max_participants + m.overbook
-  ;;
+  let is_fully_booked (m : t) = m.assignment_count >= m.max_participants + m.overbook
 
   let is_fully_booked_res (m : t) =
-    is_fully_booked m
-    |> Utils.bool_to_result_not Pool_message.Error.SessionFullyBooked
+    is_fully_booked m |> Utils.bool_to_result_not Pool_message.Error.SessionFullyBooked
   ;;
 
   let assignment_creatable session =
@@ -388,9 +368,8 @@ module Public = struct
            | None -> add_parent s
            | Some id
              when CCOption.is_some
-                    (CCList.find_opt
-                       (fun (parent, _) -> Id.equal parent id)
-                       parents) -> parents, follow_ups @ [ id, s ]
+                    (CCList.find_opt (fun (parent, _) -> Id.equal parent id) parents) ->
+             parents, follow_ups @ [ id, s ]
            | Some _ -> add_parent s)
         ([], [])
         sessions
@@ -472,9 +451,7 @@ module Calendar = struct
       Format.asprintf "admin/experiments/%s" (Experiment.Id.value experiment_id)
       |> Sihl.Web.externalize_path
     in
-    let session base_url =
-      Format.asprintf "%s/sessions/%s" base_url session_id
-    in
+    let session base_url = Format.asprintf "%s/sessions/%s" base_url session_id in
     { show_experiment
     ; show_session
     ; show_location_session
@@ -506,8 +483,7 @@ let email_text language start duration location =
   let format label text =
     Format.asprintf
       "%s: %s"
-      (Pool_common.(Utils.field_to_string language label)
-       |> CCString.capitalize_ascii)
+      (Pool_common.(Utils.field_to_string language label) |> CCString.capitalize_ascii)
       text
   in
   let start =
@@ -521,9 +497,7 @@ let email_text language start duration location =
       (Duration.value duration |> Pool_model.Time.formatted_timespan)
   in
   let location =
-    format
-      Pool_message.Field.Location
-      (Pool_location.to_string language location)
+    format Pool_message.Field.Location (Pool_location.to_string language location)
   in
   CCString.concat "\n" [ start; duration; location ]
 ;;
@@ -536,10 +510,7 @@ let follow_up_sessions_to_email_list follow_ups =
   follow_ups |> CCList.map start_end_with_duration_human |> CCString.concat "\n"
 ;;
 
-let public_to_email_text
-      language
-      (Public.{ start; duration; location; _ } : Public.t)
-  =
+let public_to_email_text language (Public.{ start; duration; location; _ } : Public.t) =
   email_text language start duration location
 ;;
 
@@ -566,10 +537,7 @@ let not_closed session =
 ;;
 
 let not_past session =
-  if
-    Ptime.is_later
-      (session |> get_session_end |> Start.value)
-      ~than:Ptime_clock.(now ())
+  if Ptime.is_later (session |> get_session_end |> Start.value) ~than:Ptime_clock.(now ())
   then Ok ()
   else Error Pool_message.Error.SessionInPast
 ;;
@@ -629,9 +597,7 @@ let column_no_assignments =
   (Field.AssignmentCount, "assignment_count") |> Query.Column.create
 ;;
 
-let column_noshow_count =
-  (Field.NoShowCount, "noshow_count") |> Query.Column.create
-;;
+let column_noshow_count = (Field.NoShowCount, "noshow_count") |> Query.Column.create
 
 let column_participation_count =
   (Field.ParticipantCount, "participation_count") |> Query.Column.create
@@ -671,9 +637,7 @@ let column_closed =
 ;;
 
 let filterable_by =
-  Some
-    Query.Filter.Condition.Human.
-      [ Checkbox column_canceled; Checkbox column_closed ]
+  Some Query.Filter.Condition.Human.[ Checkbox column_canceled; Checkbox column_closed ]
 ;;
 
 let default_filter =
@@ -690,6 +654,4 @@ let participation_history_sort =
   Sort.{ column = column_date; order = SortOrder.Descending }
 ;;
 
-let participation_default_query =
-  Query.create ~sort:participation_history_sort ()
-;;
+let participation_default_query = Query.create ~sort:participation_history_sort ()
