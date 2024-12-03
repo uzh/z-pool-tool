@@ -35,7 +35,7 @@ let check_events expected generated =
       generated)
 ;;
 
-let handle_result result =
+let handle_result ?(current_user = current_user) result =
   result
   |> get_or_failwith
   |> Pool_event.handle_events database_label current_user
@@ -73,6 +73,9 @@ let check_contact_email _ () =
 let check_email_suffix _ () =
   let open CCResult.Infix in
   let open Command in
+  let%lwt current_user =
+    Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+  in
   let field = Field.EmailSuffix in
   let suffix = "econ.uzh.ch" in
   let handle_create suffix =
@@ -86,7 +89,7 @@ let check_email_suffix _ () =
       ]
   in
   let () = check_events expected result in
-  let%lwt () = handle_result result in
+  let%lwt () = handle_result ~current_user result in
   let%lwt suffixes = find_email_suffixes database_label in
   let expected = EmailSuffix.of_string suffix |> CCList.return in
   let () =
@@ -109,7 +112,7 @@ let check_email_suffix _ () =
       ]
   in
   let () = check_events expected result in
-  let%lwt () = handle_result result in
+  let%lwt () = handle_result ~current_user result in
   let%lwt suffixes = find_email_suffixes database_label in
   let expected = EmailSuffix.of_string updated |> CCList.return in
   let () =
@@ -126,6 +129,9 @@ let check_email_suffix _ () =
 let check_inactive_user_disable_after _ () =
   let open CCResult.Infix in
   let open Command.InactiveUser in
+  let%lwt current_user =
+    Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+  in
   let field = Field.InactiveUserDisableAfter in
   let handle nr =
     DisableAfter.(
@@ -151,7 +157,7 @@ let check_inactive_user_disable_after _ () =
       ]
   in
   let () = check_events expected result in
-  let%lwt () = handle_result result in
+  let%lwt () = handle_result ~current_user result in
   let%lwt disable_after =
     Settings.find_inactive_user_disable_after database_label
   in
@@ -174,6 +180,9 @@ let check_inactive_user_disable_after _ () =
 let check_inactive_user_warning _ () =
   let open CCResult.Infix in
   let open Command.InactiveUser in
+  let%lwt current_user =
+    Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+  in
   let field = Field.InactiveUserWarning in
   let handle nr =
     Warning.(
@@ -200,7 +209,7 @@ let check_inactive_user_warning _ () =
       ]
   in
   let () = check_events expected result in
-  let%lwt () = handle_result result in
+  let%lwt () = handle_result ~current_user result in
   let%lwt warning_after = Settings.find_inactive_user_warning database_label in
   let expected =
     valid |> days_to_timespan |> InactiveUser.Warning.create |> get_or_failwith
