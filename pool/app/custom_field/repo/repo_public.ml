@@ -209,7 +209,7 @@ module Sql = struct
     let id_list counter ids =
       CCList.mapi
         (fun i _ ->
-          Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + counter + 1))
+           Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + counter + 1))
         ids
       |> CCString.concat ","
     in
@@ -245,7 +245,7 @@ module Sql = struct
           let add_ids decode ids dyn =
             CCList.fold_left
               (fun dyn id ->
-                dyn |> Dynparam.add Caqti_type.string (id |> decode))
+                 dyn |> Dynparam.add Caqti_type.string (id |> decode))
               dyn
               ids
           in

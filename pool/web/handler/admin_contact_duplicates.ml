@@ -21,14 +21,7 @@ let duplicate_id =
 ;;
 
 let get_flat_customfields pool user contact =
-  let open Custom_field in
-  Contact.id contact
-  |> find_all_by_contact pool user
-  ||> fun (groups, ungrouped) ->
-  groups
-  |> CCList.fold_left
-       (fun acc group -> group.Group.Public.fields @ acc)
-       ungrouped
+  Contact.id contact |> Custom_field.find_all_by_contact_flat pool user
 ;;
 
 let index req =
@@ -71,12 +64,12 @@ let show req =
     let%lwt fields =
       Custom_field.find_by_model database_label Custom_field.Model.Contact
     in
-    let with_fields contact =
+    let get_fields contact =
       get_flat_customfields database_label user contact ||> CCPair.make contact
     in
     let* duplicate = duplicate_id req |> find database_label in
-    let%lwt contact_a = with_fields duplicate.contact_a in
-    let%lwt contact_b = with_fields duplicate.contact_b in
+    let%lwt contact_a = get_fields duplicate.contact_a in
+    let%lwt contact_b = get_fields duplicate.contact_b in
     Page.show context fields contact_a contact_b duplicate
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -122,6 +115,9 @@ let merge req =
       Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
     in
     let* duplicate = Duplicate_contacts.find database_label id in
+    let%lwt fields =
+      Custom_field.find_by_model database_label Custom_field.Model.Contact
+    in
     let get_fields contact =
       get_flat_customfields database_label user contact
     in
@@ -129,7 +125,8 @@ let merge req =
     let%lwt fields_b = get_fields duplicate.contact_b in
     let* data =
       let open Cqrs_command.Duplicate_contacts_command.Merge in
-      handle ~tags urlencoded duplicate (fields_a, fields_b) |> Lwt_result.lift
+      handle ~tags urlencoded duplicate fields (fields_a, fields_b)
+      |> Lwt_result.lift
     in
     let handle () =
       Http_utils.redirect_to_with_actions

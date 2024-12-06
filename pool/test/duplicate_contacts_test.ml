@@ -1,4 +1,6 @@
 module ContactRepo = Integration_utils.ContactRepo
+module Command = Cqrs_command.Duplicate_contacts_command
+open Utils.Lwt_result.Infix
 
 let pool = Test_utils.Data.database_label
 let get_exn = Test_utils.get_or_failwith
@@ -49,10 +51,11 @@ let check_similarity _ () =
 ;;
 
 let merge_contacts_command () =
-  let open Cqrs_command.Duplicate_contacts_command.Merge in
+  let open Command.Merge in
   let open Test_utils.Model in
   let open Duplicate_contacts in
   let open Pool_message.Field in
+  let open Filter_test.CustomFieldData in
   let create_duplicate ~contact_a ~contact_b =
     { id = Id.create ()
     ; contact_a
@@ -79,9 +82,7 @@ let merge_contacts_command () =
     Public.id field |> Id.to_common |> Pool_common.Id.value
   in
   let nr_siblings contact =
-    Filter_test.CustomFieldData.NrOfSiblings.public
-      ~entity_uuid:(common_contact_id contact)
-      false
+    NrOfSiblings.public ~entity_uuid:(common_contact_id contact) false
   in
   let contact_a = create_contact ~firstname:"John" ~lastname:"Doe" in
   let contact_b = create_contact ~firstname:"Foo" ~lastname:"Bar" in
@@ -89,7 +90,13 @@ let merge_contacts_command () =
   let siblings_a = nr_siblings contact_a (Some 1) in
   let siblings_b = nr_siblings contact_b (Some 2) in
   let check_result urlencoded expected =
-    let res = handle urlencoded duplicate ([ siblings_a ], [ siblings_b ]) in
+    let res =
+      handle
+        urlencoded
+        duplicate
+        [ NrOfSiblings.field ]
+        ([ siblings_a ], [ siblings_b ])
+    in
     let open Test_utils in
     Alcotest.(
       check
@@ -163,4 +170,188 @@ let merge_contacts_command () =
       }
   in
   check_result urlencoded expected
+;;
+
+module MergeData = struct
+  module Testable = struct
+    (* TODO: Create global testable module *)
+    let email_address = Pool_user.EmailAddress.(Alcotest.testable pp equal)
+    let firstname = Pool_user.Firstname.(Alcotest.testable pp equal)
+    let lastname = Pool_user.Lastname.(Alcotest.testable pp equal)
+  end
+
+  let setup_merge_contacts () =
+    let open Integration_utils in
+    let open Pool_user in
+    let pool = Test_utils.Data.database_label in
+    let%lwt current_user = Integration_utils.create_contact_user () in
+    let make_field name =
+      CustomFieldRepo.create name (fun a -> Custom_field.Text a)
+    in
+    let make_contact ~firstname ~lastname =
+      ContactRepo.create
+        ~firstname:(Firstname.of_string firstname)
+        ~lastname:(Lastname.of_string lastname)
+        ()
+    in
+    let%lwt field_1 = make_field "F1" in
+    let%lwt field_2 = make_field "F2" in
+    let%lwt field_3 = make_field "F3" in
+    let%lwt contact_a = make_contact ~firstname:"John" ~lastname:"Doe" in
+    let%lwt contact_b = make_contact ~firstname:"Jane" ~lastname:"Doe" in
+    let duplicate =
+      Duplicate_contacts.
+        { id = Id.create ()
+        ; contact_a
+        ; contact_b
+        ; score = 1.0
+        ; ignored = Ignored.create false
+        }
+    in
+    let answer field i contact =
+      let open Custom_field in
+      let contact_id = Contact.id contact in
+      let answer_string =
+        Format.asprintf "%s-%i" (Contact.firstname contact |> Firstname.value) i
+      in
+      let%lwt public =
+        find_by_contact pool (Contact.id contact) (id field)
+        ||> get_exn
+        ||> function[@warning "-4"]
+        | Public.Text (field, _) ->
+          let answer =
+            Answer.create (Contact.Id.to_common contact_id) (Some answer_string)
+          in
+          Public.Text (field, Some answer)
+        | _ -> failwith "Invalid custom field"
+      in
+      Custom_field.AnswerUpserted (public, contact_id, current_user)
+      |> Pool_event.custom_field
+      |> Pool_event.handle_event pool current_user
+    in
+    let%lwt () =
+      [ field_1; field_2; field_3 ]
+      |> Lwt_list.iter_s (fun field ->
+        [ contact_a; contact_b ]
+        |> Lwt_list.iteri_s (fun i contact -> answer field i contact))
+    in
+    Lwt.return (current_user, duplicate, [ field_1; field_2; field_3 ])
+  ;;
+
+  let find_public_of_field public field =
+    let open Custom_field in
+    CCList.find (fun f -> Id.equal (id field) (Public.id f)) public
+  ;;
+
+  let fields_by_contact current_user fields contact =
+    let open Custom_field in
+    find_all_by_contact_flat pool current_user (Contact.id contact)
+    ||> CCList.filter (fun field ->
+      fields |> CCList.exists (fun f -> Id.equal (Public.id field) (id f)))
+  ;;
+
+  let make_urlencoded
+        ~email
+        ~firstname
+        ~lastname
+        ~cell_phone
+        ~language
+        custom_fields
+    =
+    let id contact = Contact.id contact |> Contact.Id.value in
+    let open Pool_message in
+    let custom_fields =
+      custom_fields
+      |> CCList.map (fun (field, answer) ->
+        let open Custom_field in
+        let open Id in
+        id field |> value, Public.id answer |> value)
+    in
+    [ Field.(show EmailAddress), id email
+    ; Field.(show Firstname), id firstname
+    ; Field.(show Lastname), id lastname
+    ; Field.(show CellPhone), id cell_phone
+    ; Field.(show Language), id language
+    ]
+    @ custom_fields
+    |> CCList.map (CCPair.map_snd CCList.return)
+  ;;
+
+  module T = Testable
+
+  let compare
+        contact
+        ~email
+        ~firstname
+        ~lastname
+        ~cell_phone
+        ~language
+        public_fields
+    =
+    let%lwt contact = Contact.find pool (Contact.id contact) ||> get_exn in
+    let open Alcotest in
+    let run_check testable msg decode expected =
+      check testable msg (decode contact) (decode expected)
+    in
+    let run_custom_field_check public =
+      let open Custom_field in
+      let%lwt stored =
+        find_by_contact pool (Contact.id contact) (Public.id public) ||> get_exn
+      in
+      check bool "equal custom field" true (Public.equal_answer public stored);
+      Lwt.return ()
+    in
+    run_check T.email_address "equal email" Contact.email_address email;
+    run_check T.firstname "equal firstname" Contact.firstname firstname;
+    run_check T.lastname "equal lastname" Contact.lastname lastname;
+    run_check
+      (option Test_utils.phone_nr)
+      "equal phone"
+      Contact.cell_phone
+      cell_phone;
+    run_check
+      (option Test_utils.language)
+      "equal lang"
+      (fun c -> c.Contact.language)
+      language;
+    let%lwt () = public_fields |> Lwt_list.iter_s run_custom_field_check in
+    Lwt.return ()
+  ;;
+end
+
+let override_a_with_b _ () =
+  let open Duplicate_contacts in
+  let open MergeData in
+  let%lwt current_user, duplicate, fields = setup_merge_contacts () in
+  let { contact_a; contact_b; _ } = duplicate in
+  let fields_by_contact = fields_by_contact current_user fields in
+  let%lwt fields_a = fields_by_contact contact_a in
+  let%lwt fields_b = fields_by_contact contact_b in
+  let urlencoded =
+    fields
+    |> CCList.map (fun field -> field, find_public_of_field fields_b field)
+    |> make_urlencoded
+         ~email:contact_a
+         ~firstname:contact_b
+         ~lastname:contact_b
+         ~cell_phone:contact_b
+         ~language:contact_b
+  in
+  let%lwt () =
+    Command.Merge.handle urlencoded duplicate fields (fields_a, fields_b)
+    |> Lwt_result.lift
+    >>= merge pool
+    ||> get_exn
+  in
+  let%lwt () =
+    compare
+      ~email:contact_a
+      ~firstname:contact_b
+      ~lastname:contact_b
+      ~cell_phone:contact_b
+      ~language:contact_b
+      contact_a
+      fields_b
+  in
+  Lwt.return_unit
 ;;

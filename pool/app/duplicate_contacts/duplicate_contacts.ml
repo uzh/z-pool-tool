@@ -32,7 +32,7 @@ let find_by_contact = Repo.find_by_contact
     Open discussion:
     - duplicates (Or just delete the old ones) *)
 
-let[@warning "-27"] merge pool ({ contact; merged_contact; _ } as merge) =
+let merge pool ({ contact; merged_contact; _ } as merge) =
   let%lwt invitations =
     Invitation.find_by_contact_to_merge pool ~contact ~merged_contact
   in

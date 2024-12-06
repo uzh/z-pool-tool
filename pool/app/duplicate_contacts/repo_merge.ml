@@ -1,13 +1,13 @@
 open Entity
 open Utils.Lwt_result.Infix
 open Caqti_request.Infix
+open Caqti_type
 module Dynparam = Database.Dynparam
 
 let id_select_fragment = Pool_common.Id.sql_select_fragment
 let id_value_fragment = Pool_common.Id.sql_value_fragment
 
 let update_queue =
-  let open Caqti_type in
   {sql|
     UPDATE pool_queue_jobs_mapping
     SET entity_uuid = UNHEX(REPLACE($1, '-', ''))
@@ -17,7 +17,6 @@ let update_queue =
 ;;
 
 let update_changelog =
-  let open Caqti_type in
   {sql|
     UPDATE pool_change_log
     SET entity_uuid = UNHEX(REPLACE($1, '-', ''))
@@ -27,7 +26,6 @@ let update_changelog =
 ;;
 
 let update_tags =
-  let open Caqti_type in
   {sql|
     INSERT IGNORE INTO pool_tagging (model_uuid, tag_uuid)
     SELECT UNHEX(REPLACE($1, '-', '')), tag_uuid
@@ -41,8 +39,8 @@ let uuid_sql dyn items to_id =
   let dyn, sql =
     CCList.foldi
       (fun (dyn, sql) i item ->
-        ( dyn |> Dynparam.add Caqti_type.string (to_id item)
-        , sql @ [ Format.asprintf "$%d" (i + 1) ] ))
+         ( dyn |> Dynparam.add Caqti_type.string (to_id item)
+         , sql @ [ Format.asprintf "$%d" (i + 2) ] ))
       (dyn, [])
       items
   in
@@ -104,7 +102,6 @@ let update_assignments contact_id assignments =
 ;;
 
 let destroy_tags =
-  let open Caqti_type in
   {sql|
     DELETE FROM pool_tagging
     WHERE model_uuid = UNHEX(REPLACE($1, '-', ''))
@@ -112,8 +109,17 @@ let destroy_tags =
   |> Contact.Repo.Id.t ->. unit
 ;;
 
+let destroy_mailing_invitations =
+  {sql|
+    DELETE FROM pool_mailing_invitations
+    WHERE invitation_uuid IN (
+      SELECT uuid FROM pool_invitations WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
+    )
+  |sql}
+  |> Contact.Repo.Id.t ->. unit
+;;
+
 let destroy_invitations =
-  let open Caqti_type in
   {sql|
     DELETE FROM pool_invitations
     WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
@@ -122,7 +128,6 @@ let destroy_invitations =
 ;;
 
 let destroy_waiting_lists =
-  let open Caqti_type in
   {sql|
     DELETE FROM pool_waiting_list
     WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
@@ -131,7 +136,6 @@ let destroy_waiting_lists =
 ;;
 
 let destroy_assignments =
-  let open Caqti_type in
   {sql|
     DELETE FROM pool_assignments
     WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
@@ -161,11 +165,11 @@ module Changelog = struct
 end
 
 let merge
-  pool
-  { contact; merged_contact; kept_fields }
-  invitations
-  waiting_list
-  assignments
+      pool
+      { contact; merged_contact; kept_fields }
+      invitations
+      waiting_list
+      assignments
   =
   let open Contact in
   let* current_contact_state = find pool (id contact) in
@@ -202,7 +206,7 @@ let merge
   let exec_dyn_request connection (sql, dyn) =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let (Dynparam.Pack (pt, pv)) = dyn in
-    let request = sql |> pt ->. Caqti_type.unit in
+    let request = sql |> pt ->. unit in
     Connection.exec request pv
   in
   let override_invitations =
@@ -236,6 +240,10 @@ let merge
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec destroy_tags (id merged_contact)
   in
+  let destroy_mailing_invitations connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_mailing_invitations (id merged_contact)
+  in
   let destroy_invitations connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec destroy_invitations (id merged_contact)
@@ -254,6 +262,7 @@ let merge
   in
   let destroy_requests =
     [ destroy_tags
+    ; destroy_mailing_invitations
     ; destroy_invitations
     ; destroy_waiting_lists
     ; destroy_assignments

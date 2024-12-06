@@ -276,7 +276,8 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
     , {sql|
         language = $3,
         language_version = $4
-      |sql} )
+      |sql}
+    )
     |> update_user_table
   | Custom field ->
     (upsert_answer pool is_admin Contact.(id contact |> Id.to_common)) field

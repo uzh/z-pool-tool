@@ -19,14 +19,16 @@ module Merge : sig
     :  ?tags:Logs.Tag.set
     -> (string * string list) list
     -> t
+    -> Custom_field.t list
     -> Custom_field.Public.t list * Custom_field.Public.t list
     -> (Duplicate_contacts.merge, Pool_message.Error.t) result
 end = struct
   let handle
-    ?(tags = Logs.Tag.empty)
-    urlencoded
-    { contact_a; contact_b; _ }
-    (fields_a, fields_b)
+        ?(tags = Logs.Tag.empty)
+        urlencoded
+        { contact_a; contact_b; _ }
+        custom_fields
+        (fields_a, fields_b)
     =
     Logs.info ~src (fun m -> m "Handle command Merge" ~tags);
     let open CCResult.Infix in
@@ -61,11 +63,11 @@ end = struct
       let open CCOption in
       CCList.map
         (fun (field, create) ->
-          CCList.assoc_opt ~eq:( = ) (Field.show field) urlencoded
-          >>= CCList.head_opt
-          |> to_result (Pool_message.Error.NotFound field)
-          |> Result.map select_contact_by_id
-          |> CCResult.map create)
+           CCList.assoc_opt ~eq:( = ) (Field.show field) urlencoded
+           >>= CCList.head_opt
+           |> to_result (Pool_message.Error.NotFound field)
+           |> Result.map select_contact_by_id
+           |> CCResult.map create)
         read_hardcoded
       |> CCList.all_ok
     in
@@ -74,30 +76,30 @@ end = struct
       let open Custom_field in
       let to_result = CCOption.to_result in
       let error = Pool_message.(Error.NotFound Field.CustomFieldAnswer) in
-      let get_id = Public.id in
       CCList.map
-        (fun field ->
-          let id = get_id field in
-          CCOption.bind
-            (CCList.assoc_opt ~eq:( = ) (Id.value id) urlencoded)
-            CCList.head_opt
-          |> to_result error
-          >|= select_fields
-          >>= fun fields ->
-          CCList.find_opt (fun f -> Id.equal (get_id f) (get_id field)) fields
-          |> to_result error)
-        fields_a
+        (fun (field : t) ->
+           let id = id field in
+           CCOption.bind
+             (CCList.assoc_opt ~eq:( = ) (Id.value id) urlencoded)
+             CCList.head_opt
+           |> to_result error
+           >|= select_fields
+           >>= fun fields ->
+           CCList.find_opt (fun f -> Id.equal (Public.id f) id) fields
+           (* TODO: An empty answer should be crated, not found *)
+           |> to_result error)
+        custom_fields
       |> CCList.all_ok
     in
     let open Contact in
     let selected_contact =
       CCList.fold_left
         (fun contact field ->
-          match field with
-          | Lastname name -> set_lastname contact name
-          | Firstname name -> set_firstname contact name
-          | Language language -> set_language contact language
-          | CellPhone cell_phone -> set_cellphone contact cell_phone)
+           match field with
+           | Lastname name -> set_lastname contact name
+           | Firstname name -> set_firstname contact name
+           | Language language -> set_language contact language
+           | CellPhone cell_phone -> set_cellphone contact cell_phone)
         selected_contact
         hardcoded
     in

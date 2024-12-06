@@ -476,7 +476,6 @@ val create_custom_field_answer_changelog
 
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
-  | AnswerOverridden of Public.t * Contact.t
   | AnswerUpserted of Public.t * Contact.Id.t * Pool_context.user
   | AnsweredOnSignup of Public.t * Pool_common.Id.t
   | Created of t
@@ -527,6 +526,12 @@ val find_all_required_by_contact
   -> Pool_context.user
   -> Contact.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
+
+val find_all_by_contact_flat
+  :  Database.Label.t
+  -> Pool_context.user
+  -> Contact.Id.t
+  -> Public.t list Lwt.t
 
 val find_unanswered_required_by_contact
   :  Database.Label.t
@@ -606,10 +611,10 @@ module Repo : sig
     :  entity_uuid:Pool_common.Id.t
     -> Public.t
     -> [> `Clear of
-          (Id.t * Id.t, unit, [ `Zero ]) Caqti_request.t * (Id.t * Id.t)
+            (Id.t * Id.t, unit, [ `Zero ]) Caqti_request.t * (Id.t * Id.t)
        | `Override of
-         (Repo_entity_answer.Override.t, unit, [ `Zero ]) Caqti_request.t
-         * Repo_entity_answer.Override.t
+           (Repo_entity_answer.Override.t, unit, [ `Zero ]) Caqti_request.t
+           * Repo_entity_answer.Override.t
        ]
 end
 

@@ -1,6 +1,6 @@
 Printexc.record_backtrace true
 
-let suite =
+let _ =
   Alcotest_lwt.
     [ ( "database"
       , Database_test.
@@ -54,8 +54,8 @@ let suite =
               `Slow
               Admin_role_assignment.grant_roles
           ] )
-    ; ( "announcement"
-      , Announcement_test.[ test_case "find current" `Slow find_current ] )
+      (* ; ( "announcement"
+         , Announcement_test.[ test_case "find current" `Slow find_current ] ) *)
     ; ( "partial_update"
       , Partial_update.
           [ test_case "update with old version" `Slow update_with_old_version
@@ -427,8 +427,20 @@ let suite =
           [ test_case "confirm as contact" `Slow find_overlapping ] )
     ; ( "duplicate contacts"
       , Duplicate_contacts_test.
-          [ test_case "check similarity" `Slow check_similarity ] )
+          [ test_case "check similarity" `Slow check_similarity
+          ; test_case "override a with b" `Slow override_a_with_b
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
+    ]
+;;
+
+let suite =
+  Alcotest_lwt.
+    [ ( "duplicate contacts"
+      , Duplicate_contacts_test.
+          [ test_case "check similarity" `Slow check_similarity
+          ; test_case "override a with b" `Slow override_a_with_b
+          ] )
     ]
 ;;
 

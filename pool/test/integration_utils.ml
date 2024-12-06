@@ -4,13 +4,13 @@ let default_current_user = Model.create_admin ()
 
 module AnnouncementRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    ?start_at
-    ?end_at
-    ?show_to_admins
-    ?show_to_contacts
-    tenant_ids
+        ?(current_user = default_current_user)
+        ?id
+        ?start_at
+        ?end_at
+        ?show_to_admins
+        ?show_to_contacts
+        tenant_ids
     =
     let announcement =
       Test_utils.Model.create_announcement
@@ -44,13 +44,13 @@ end
 
 module ContactRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?firstname
-    ?id
-    ?lastname
-    ?language
-    ?(with_terms_accepted = false)
-    ()
+        ?(current_user = default_current_user)
+        ?firstname
+        ?id
+        ?lastname
+        ?language
+        ?(with_terms_accepted = false)
+        ()
     =
     let open Utils.Lwt_result.Infix in
     let contact =
@@ -80,6 +80,23 @@ module ContactRepo = struct
       |> Pool_event.handle_events Data.database_label current_user
     in
     contact |> id |> find Data.database_label ||> get_or_failwith
+  ;;
+end
+
+module CustomFieldRepo = struct
+  let pool = Data.database_label
+
+  open Custom_field_utils
+
+  let create name encoder =
+    let field = create_custom_field name encoder in
+    let%lwt () =
+      [ save_custom_field field
+      ; Custom_field.Published field |> Pool_event.custom_field
+      ]
+      |> Pool_event.handle_events pool default_current_user
+    in
+    Custom_field.find pool (Custom_field.id field) |> Lwt.map get_or_failwith
   ;;
 end
 
@@ -119,11 +136,11 @@ end
 
 module ExperimentRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?(id = Experiment.Id.create ())
-    ?title
-    ?online_experiment
-    ()
+        ?(current_user = default_current_user)
+        ?(id = Experiment.Id.create ())
+        ?title
+        ?online_experiment
+        ()
     =
     let experiment = Model.create_experiment ~id ?title ?online_experiment () in
     let%lwt () =
@@ -137,9 +154,9 @@ end
 
 module LocationRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?(id = Pool_location.Id.create ())
-    ()
+        ?(current_user = default_current_user)
+        ?(id = Pool_location.Id.create ())
+        ()
     =
     let location = Model.create_location ~id () in
     let%lwt () =
@@ -181,15 +198,15 @@ end
 
 module SessionRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    ?location
-    ?follow_up_to
-    ?start
-    ?duration
-    ?email_reminder_sent_at
-    experiment
-    ()
+        ?(current_user = default_current_user)
+        ?id
+        ?location
+        ?follow_up_to
+        ?start
+        ?duration
+        ?email_reminder_sent_at
+        experiment
+        ()
     =
     let%lwt location =
       location |> CCOption.map_or ~default:(LocationRepo.create ()) Lwt.return
@@ -216,12 +233,12 @@ end
 
 module TimeWindowRepo = struct
   let create
-    ?(current_user = default_current_user)
-    ?id
-    start
-    duration
-    experiment
-    ()
+        ?(current_user = default_current_user)
+        ?id
+        start
+        duration
+        experiment
+        ()
     =
     let time_window = Time_window.create ?id start duration experiment in
     let%lwt () =
@@ -232,3 +249,9 @@ module TimeWindowRepo = struct
     Lwt.return time_window
   ;;
 end
+
+let create_admin_user () = AdminRepo.create () |> Lwt.map Pool_context.admin
+
+let create_contact_user () =
+  ContactRepo.create () |> Lwt.map Pool_context.contact
+;;

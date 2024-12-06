@@ -16,8 +16,14 @@ end = struct
     Logs.info (fun m ->
       m "Sending %i migration notifications" (List.length !notifications));
     let send
-      ( sender
-      , { Email.Service.Smtp.reply_to; recipients; subject; body; config; _ } )
+          ( sender
+          , { Email.Service.Smtp.reply_to
+            ; recipients
+            ; subject
+            ; body
+            ; config
+            ; _
+            } )
       =
       Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
       |> function
@@ -29,13 +35,13 @@ end = struct
       Lwt.catch
         (fun () -> send notification)
         (fun exn ->
-          let err = Printexc.to_string exn in
-          let error_message =
-            Format.asprintf
-              "Error while  notifying about failed migration '%s'"
-              err
-          in
-          Logs.err (fun m -> m "%s" error_message) |> Lwt.return))
+           let err = Printexc.to_string exn in
+           let error_message =
+             Format.asprintf
+               "Error while  notifying about failed migration '%s'"
+               err
+           in
+           Logs.err (fun m -> m "%s" error_message) |> Lwt.return))
   ;;
 
   let send () =
@@ -51,7 +57,9 @@ let root =
     let%lwt () =
       Migration.execute Pool.Root.label (Pool_database.Root.steps ())
       ||> function
-      | Ok () -> exit 0
+      | Ok () ->
+        (* TODO: why is exit 0 not stopping the process? *)
+        ()
       | Error _ -> exit 1
     in
     Lwt.return_some ())
@@ -105,15 +113,15 @@ let migrate_tenants db_labels =
     | Ok () ->
       Lwt.catch
         (fun () ->
-          Migration.execute db_label (Pool_database.Tenant.steps ())
-          |>> (fun () -> set_status Status.Active)
-          >|> function
-          | Ok () -> Lwt.return ()
-          | Error err -> handle_error err)
+           Migration.execute db_label (Pool_database.Tenant.steps ())
+           |>> (fun () -> set_status Status.Active)
+           >|> function
+           | Ok () -> Lwt.return ()
+           | Error err -> handle_error err)
         (fun exn ->
-          let exn = Printexc.to_string exn in
-          let err = Pool_message.Error.MigrationFailed exn in
-          handle_error err)
+           let exn = Printexc.to_string exn in
+           let err = Pool_message.Error.MigrationFailed exn in
+           handle_error err)
     | Error _ -> set_status Status.MigrationsConnectionIssue
   in
   db_labels |> Lwt_list.iter_p run >|> Outbox.send
