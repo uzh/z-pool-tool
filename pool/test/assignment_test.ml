@@ -4,8 +4,6 @@ module ContactCommand = Cqrs_command.Contact_command
 module AssignmentCommand = Cqrs_command.Assignment_command
 module SessionCommand = Cqrs_command.Session_command
 
-let current_user = Model.create_admin ()
-
 type assignment_data =
   { session : Session.t
   ; experiment : Experiment.t
@@ -176,7 +174,7 @@ let set_attendance () =
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.Updated assignment |> Pool_event.assignment
+      ; Assignment.Updated (assignment, assignment) |> Pool_event.assignment
       ; updated_contact
       ]
   in
@@ -274,7 +272,7 @@ let set_attendance_with_data_id () =
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.Updated assignment |> Pool_event.assignment
+      ; Assignment.Updated (assignment, assignment) |> Pool_event.assignment
       ; updated_contact
       ]
   in
@@ -790,6 +788,7 @@ let swap_session_to_past_session () =
 let cancel_assignment_with_follow_ups _ () =
   let open Utils.Lwt_result.Infix in
   let%lwt experiment = Integration_utils.ExperimentRepo.create () in
+  let%lwt current_user = Integration_utils.AdminRepo.create () ||> Pool_context.admin in
   let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
   let%lwt location = Repo.first_location () in
   (* Save sessions in Database *)

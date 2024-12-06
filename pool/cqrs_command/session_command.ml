@@ -785,15 +785,17 @@ end = struct
          |> fun ( ({ contact; _ } as assignment : Assignment.t)
                 , increment_num_participaton
                 , follow_ups ) ->
-         let assignment, no_show, participated = set_close_default_values assignment in
+         let updated_assignment, no_show, participated =
+           set_close_default_values assignment
+         in
          let* () =
-           validate experiment assignment
+           validate experiment updated_assignment
            |> CCResult.map_err (CCFun.const Pool_message.Error.AssignmentsHaveErrors)
          in
          let cancel_followups =
            NoShow.value no_show || not (Participated.value participated)
          in
-         let* () = attendance_settable assignment in
+         let* () = attendance_settable updated_assignment in
          let* contact =
            Contact_counter.update_on_session_closing
              contact
@@ -840,7 +842,8 @@ end = struct
            (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
          in
          events
-         @ ((Assignment.Updated assignment |> Pool_event.assignment) :: contact_events)
+         @ ((Assignment.Updated (assignment, updated_assignment) |> Pool_event.assignment)
+            :: contact_events)
          @ tag_events
          |> CCResult.return)
       (Ok [ Closed session |> Pool_event.session ])

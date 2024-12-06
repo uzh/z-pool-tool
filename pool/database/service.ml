@@ -97,11 +97,29 @@ let clean_requests database_label =
   Lwt.return (truncate_reqs @ manual_cleanups)
 ;;
 
+let clean_root_requests () =
+  let open Caqti_request.Infix in
+  let tags = Logger.Tags.create Entity.root in
+  let truncate_table table =
+    Logs.debug (fun m -> m ~tags "Truncate root table '%s'" table);
+    CCFormat.asprintf "TRUNCATE TABLE %s" table |> Caqti_type.(unit ->. unit)
+  in
+  let tables =
+    [ "pool_announcements"; "pool_announcement_users_hide"; "pool_announcement_tenants" ]
+  in
+  CCList.map truncate_table tables
+;;
+
 let clean_all database_label =
   let%lwt clean_reqs = clean_requests database_label in
-  with_disabled_fk_check database_label (fun connection ->
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    Lwt_list.map_s (fun request -> Connection.exec request ()) clean_reqs
-    |> Lwt.map CCResult.flatten_l
-    |> Lwt_result.map Utils.flat_unit)
+  let clean_root_reqs = clean_root_requests () in
+  let exec_clean_req (requests, database_label) =
+    with_disabled_fk_check database_label (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Lwt_list.map_s (fun request -> Connection.exec request ()) requests
+      |> Lwt.map CCResult.flatten_l
+      |> Lwt_result.map Utils.flat_unit)
+  in
+  let%lwt () = exec_clean_req (clean_reqs, database_label) in
+  exec_clean_req (clean_root_reqs, Entity.root)
 ;;

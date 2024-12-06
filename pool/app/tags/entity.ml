@@ -1,7 +1,12 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 open CCFun.Infix
 module Message = Pool_message
 module Ptime = Pool_model.Base.Ptime
 module Id = Pool_common.Id
+
+let model = Pool_message.Field.Tag
+
+include Changelog.DefaultSettings
 
 let printer = Utils.ppx_printer
 
@@ -39,7 +44,7 @@ type t =
   ; description : Description.t option
   ; model : Model.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 let create ?(id = Id.create ()) ?description title model =
   let open CCResult in

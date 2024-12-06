@@ -23,6 +23,15 @@ let make_messages
   =
   let* tenant = Pool_tenant.find_by_label database_label in
   let make_mail assignments admin =
+    let assignments =
+      let open CCList in
+      assignments
+      >|= fun (session, assignments) ->
+      ( session
+      , assignments
+        >|= fun (assignment, matches_filter) ->
+        Assignment.{ assignment with matches_filter } )
+    in
     let trigger = trigger_text context in
     Notification.create tenant trigger admin experiment assignments
   in
@@ -31,7 +40,7 @@ let make_messages
     let open CCList in
     filter_map (fun (session, assignments) ->
       assignments
-      |> filter (fun { matches_filter; _ } -> MatchesFilter.value matches_filter |> not)
+      |> filter (fun (_, matches_filter) -> MatchesFilter.value matches_filter |> not)
       |> function
       | [] -> None
       | assignments -> Some (session, assignments))
@@ -55,7 +64,7 @@ let make_events ?current_user context database_label experiment sessions =
   let filter_and_apply (assignment, matches_filter) =
     match MatchesFilter.equal assignment.matches_filter matches_filter with
     | true -> None
-    | false -> Some { assignment with matches_filter }
+    | false -> Some (assignment, matches_filter)
   in
   let sessions =
     sessions
@@ -69,9 +78,7 @@ let make_events ?current_user context database_label experiment sessions =
   let* messages =
     make_messages context ?current_user database_label experiment sessions
   in
-  let assignments =
-    sessions |> flat_map snd >|= fun assignment -> assignment |> Assignment.updated
-  in
+  let assignments = sessions |> flat_map snd >|= Assignment.matchesfilterupdated in
   Lwt_result.return (assignments, messages)
 ;;
 

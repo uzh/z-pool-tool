@@ -85,7 +85,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Api_key.handle_event ~tags pool event
   | Assignment event ->
     info "assignment" Assignment.pp_event event;
-    Assignment.handle_event pool event
+    Assignment.handle_event ?user_uuid pool event
   | AssignmentJob event ->
     let src = Logs.Src.create "assignment.events" in
     Logs.info ~src (fun m -> m "Handle event %s" (Assignment_job.show_event event) ~tags);
@@ -122,10 +122,10 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Invitation.handle_event pool event
   | Mailing event ->
     info "mailing" Mailing.pp_event event;
-    Mailing.handle_event pool event
+    Mailing.handle_event ?user_uuid pool event
   | MessageTemplate event ->
     info "message_template" Message_template.pp_event event;
-    Message_template.handle_event pool event
+    Message_template.handle_event ?user_uuid pool event
   | OrganisationalUnit event ->
     info "organisational_unit" Organisational_unit.pp_event event;
     Organisational_unit.handle_event ?user_uuid pool event
@@ -143,7 +143,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Session.handle_event ?user_uuid pool event
   | Settings event ->
     info "settings" Settings.pp_event event;
-    Settings.handle_event pool event
+    Settings.handle_event ?user_uuid pool event
   | SignupCode event ->
     info "signup_code" Signup_code.pp_event event;
     Signup_code.handle_event pool event
@@ -153,7 +153,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     System_event.handle_event event
   | Tags event ->
     info "tags" Tags.pp_event event;
-    Tags.handle_event pool event
+    Tags.handle_event ?user_uuid pool event
   | TextMessage event ->
     info "text_message" Text_message.pp_event event;
     Text_message.handle_event pool event
@@ -169,7 +169,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     Pool_user.handle_event pool event
   | WaitingList event ->
     info "waiting_list" Waiting_list.pp_event event;
-    Waiting_list.handle_event pool event
+    Waiting_list.handle_event ?user_uuid pool event
 ;;
 
 let user_uuid =

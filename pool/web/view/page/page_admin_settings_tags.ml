@@ -162,7 +162,16 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
 ;;
 
 let edit ?flash_fetcher ({ Pool_context.language; _ } as context) tag =
-  [ div ~a:[ a_class [ "stack-lg" ] ] [ tag_form ?flash_fetcher ~tag context ] ]
+  let changelog_url =
+    HttpUtils.Url.Admin.Settings.tags_path ~id:tag.Tags.id ~suffix:"changelog" ()
+    |> Uri.of_string
+  in
+  [ div
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ tag_form ?flash_fetcher ~tag context
+      ; Component.Changelog.list context changelog_url None
+      ]
+  ]
   |> layout language
 ;;
 

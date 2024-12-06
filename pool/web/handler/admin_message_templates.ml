@@ -4,7 +4,7 @@ module Message = HttpUtils.Message
 
 let src = Logs.Src.create "handler.admin.message_templates"
 let create_layout req = General.create_tenant_layout req
-let id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encode
+let template_id = HttpUtils.find_id Message_template.Id.of_string Field.MessageTemplate
 
 let template_label req =
   let open Message_template.Label in
@@ -32,7 +32,7 @@ let index req =
 
 let edit req =
   let open Utils.Lwt_result.Infix in
-  let id = id req Field.MessageTemplate Message_template.Id.of_string in
+  let id = template_id req in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
     @@
@@ -99,7 +99,7 @@ let write action req =
 ;;
 
 let update req =
-  let id = id req Field.MessageTemplate Message_template.Id.of_string in
+  let id = template_id req in
   let redirect_path =
     id |> Message_template.Id.value |> Format.asprintf "/admin/message-template/%s/edit"
   in
@@ -231,6 +231,12 @@ let reset_to_default_htmx req =
     |> Lwt_result.return
   in
   result |> HttpUtils.Htmx.handle_error_message ~src req
+;;
+
+let changelog req =
+  let id = template_id req in
+  let url = HttpUtils.Url.Admin.message_template_path ~suffix:"changelog" ~id () in
+  Helpers.Changelog.htmx_handler ~url (Message_template.Id.to_common id) req
 ;;
 
 module Access : module type of Helpers.Access = struct

@@ -3,6 +3,7 @@ include Event
 include Default
 include Message_utils
 module Guard = Entity_guard
+module VersionHistory = Version_history
 
 let src = Logs.Src.create "message_template"
 

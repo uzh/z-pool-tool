@@ -251,8 +251,14 @@ module Admin = struct
   let routes =
     let open Field in
     let open Handler.Admin in
-    let label_specific_template edit update new_form create delete =
-      let specific = [ get "/edit" edit; post "" update; post "/delete" delete ] in
+    let label_specific_template edit update new_form create delete changelog =
+      let specific =
+        [ get "/edit" edit
+        ; post "" update
+        ; post "/delete" delete
+        ; get "/changelog" changelog
+        ]
+      in
       [ get "" new_form
       ; post "" create
       ; choose ~scope:(MessageTemplate |> url_key) specific
@@ -330,6 +336,7 @@ module Admin = struct
       let specific =
         [ get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
+        ; get "/changelog" ~middlewares:[ Access.update ] changelog
         ]
       in
       let label_specific =
@@ -391,7 +398,8 @@ module Admin = struct
                 (label_specific
                    new_session_reminder
                    new_session_reminder_post
-                   delete_message_template)
+                   delete_message_template
+                   message_template_changelog)
             ]
           in
           let assignments =
@@ -407,6 +415,7 @@ module Admin = struct
                   "/mark-as-deleted"
                   ~middlewares:[ Access.mark_as_deleted ]
                   mark_as_deleted
+              ; get "/changelog" ~middlewares:[ Access.update ] changelog
               ; choose
                   ~scope:"swap-session"
                   [ get "" ~middlewares:[ Access.update ] swap_session_get
@@ -476,6 +485,7 @@ module Admin = struct
           [ get "" ~middlewares:[ Access.read ] detail
           ; post "" ~middlewares:[ Access.update ] update
           ; post "/assign" ~middlewares:[ Access.assign ] assign_contact
+          ; get "/changelog" ~middlewares:[ Access.read ] changelog
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index
@@ -490,6 +500,7 @@ module Admin = struct
           ; get "/edit" ~middlewares:[ Access.update ] edit
           ; post "/stop" ~middlewares:[ Access.stop ] stop
           ; post "/delete" ~middlewares:[ Access.delete ] delete
+          ; get "/changelog" ~middlewares:[ Access.read ] changelog
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index
@@ -525,7 +536,11 @@ module Admin = struct
         [ choose
             ~scope:(Label |> url_key)
             ~middlewares:[ Access.message_template ]
-            (label_specific new_message_template new_message_template_post delete)
+            (label_specific
+               new_message_template
+               new_message_template_post
+               delete
+               changelog)
         ]
       in
       let tags =
@@ -823,6 +838,7 @@ module Admin = struct
         let specific =
           [ get "" ~middlewares:[ Access.update ] edit
           ; post "" ~middlewares:[ Access.update ] update
+          ; get "changelog" ~middlewares:[ Access.update ] changelog
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index

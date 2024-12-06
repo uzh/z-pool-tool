@@ -98,6 +98,12 @@ let create = write `Create
 let update req = write (`Update (id req)) req
 let search = Helpers.Search.htmx_search_helper `ContactTag
 
+let changelog req =
+  let id = id req in
+  let url = HttpUtils.Url.Admin.Settings.tags_path ~suffix:"changelog" ~id () in
+  Helpers.Changelog.htmx_handler ~url (Tags.Id.to_common id) req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 

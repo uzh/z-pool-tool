@@ -73,7 +73,7 @@ let list Pool_context.{ language; _ } url changelog =
                   (Http_utils.Url.Admin.user_redirect_path ~id:uuid
                    |> Sihl.Web.externalize_path)
               ]
-            [ txt (Pool_user.EmailAddress.value email) ]
+            [ txt email ]
       in
       [ td [ user_link ]
       ; td ~a:[ a_class [ "changes-cell" ] ] [ changes |> format_changes ]

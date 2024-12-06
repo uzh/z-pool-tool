@@ -24,9 +24,16 @@ let insert_template ?(default = true) db_label t =
   ||> fun (_ : Guard.Target.t) -> ()
 ;;
 
-let handle_event pool : event -> unit Lwt.t = function
+let handle_event ?user_uuid pool : event -> unit Lwt.t =
+  let create_changelog before after =
+    let open Version_history in
+    insert pool ?user_uuid ~entity_uuid:before.id ~before ~after ()
+  in
+  function
   | Created template -> insert_template pool ~default:false template
   | Updated (template, { email_subject; email_text; plain_text; sms_text }) ->
-    { template with email_subject; email_text; plain_text; sms_text } |> Repo.update pool
+    let updated = { template with email_subject; email_text; plain_text; sms_text } in
+    let%lwt () = create_changelog template updated in
+    updated |> Repo.update pool
   | Deleted { id; _ } -> Repo.delete pool id
 ;;

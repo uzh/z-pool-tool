@@ -242,14 +242,16 @@ type event =
   | Canceled of t
   | Created of (t * Session.Id.t)
   | MarkedAsDeleted of t
+  | MatchesFilterUpdated of (t * MatchesFilter.t)
   | ExternalDataIdUpdated of t * ExternalDataId.t option
-  | Updated of t
+  | Updated of t * t
 
 val canceled : t -> event
 val created : t * Session.Id.t -> event
 val markedasdeleted : t -> event
-val updated : t -> event
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val matchesfilterupdated : t * MatchesFilter.t -> event
+val updated : t -> t -> event
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string

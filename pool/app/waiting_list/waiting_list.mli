@@ -60,8 +60,8 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Database.Label.t -> event -> unit Lwt.t
-val find : Database.Label.t -> Pool_common.Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val user_is_enlisted : Database.Label.t -> Contact.t -> Experiment.Id.t -> bool Lwt.t
 
 val find_by_experiment
@@ -104,3 +104,5 @@ module Guard : sig
     val delete : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
   end
 end
+
+module VersionHistory : Changelog.TSig with type record = t

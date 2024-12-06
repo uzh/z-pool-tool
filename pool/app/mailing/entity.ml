@@ -1,5 +1,9 @@
 open Ppx_yojson_conv_lib.Yojson_conv
 
+let model = Pool_message.Field.Mailing
+
+include Changelog.DefaultSettings
+
 module Id = struct
   include Pool_common.Id
 
@@ -204,7 +208,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 let create ?allow_start_in_past ?(id = Id.create ()) start end_at limit distribution =
   let open CCResult in

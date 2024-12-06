@@ -72,6 +72,28 @@ module Admin = struct
     "/admin/locations/" |> append_opt Pool_location.(map Id.value id) |> append_opt suffix
   ;;
 
+  let mailing_path experiment_id ?suffix ?id () =
+    experiment_path ~id:experiment_id ~suffix:"mailings" ()
+    |> append_opt (map Mailing.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let message_template_path ?suffix ?id () =
+    Format.asprintf "/admin/%s" Field.(human_url MessageTemplate)
+    |> append_opt (map Message_template.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let experiment_message_template_path experiment_id label ?suffix ?id () =
+    Format.asprintf
+      "%s/%s/%s"
+      (experiment_path ~id:experiment_id ())
+      Field.(human_url MessageTemplate)
+      (Message_template.Label.show label)
+    |> append_opt (map Message_template.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let organisational_unit_path ?suffix ?id () =
     "/admin/organisational-unit"
     |> append_opt (map Organisational_unit.Id.value id)
@@ -94,6 +116,28 @@ module Admin = struct
   let session_path ?suffix ?id experiment_id =
     Format.asprintf "/admin/experiments/%s/sessions" Experiment.(Id.value experiment_id)
     |> append_opt Session.(map Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let waiting_list_path ?suffix ?id experiment_id =
+    experiment_path ~id:experiment_id ~suffix:"waiting-list" ()
+    |> append_opt (map Waiting_list.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let session_message_template_path experiment_id session_id label ?suffix ?id () =
+    Format.asprintf
+      "%s/%s/%s"
+      (session_path ~id:session_id experiment_id)
+      Field.(human_url MessageTemplate)
+      (Message_template.Label.show label)
+    |> append_opt (map Message_template.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let assignment_path experiment_id session_id ?suffix ?id () =
+    session_path experiment_id ~id:session_id ~suffix:Field.(human_url Assignments)
+    |> append_opt (map Assignment.Id.value id)
     |> append_opt suffix
   ;;
 
@@ -125,6 +169,10 @@ module Admin = struct
     ;;
 
     let signup_codes_path = Field.(human_url SignUpCode) |> with_settings
+
+    let tags_path ?id ?suffix () =
+      "tags" |> with_settings |> append_opt (map Tags.Id.value id) |> append_opt suffix
+    ;;
   end
 end
 
