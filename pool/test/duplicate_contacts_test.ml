@@ -178,7 +178,36 @@ module MergeData = struct
     let email_address = Pool_user.EmailAddress.(Alcotest.testable pp equal)
     let firstname = Pool_user.Firstname.(Alcotest.testable pp equal)
     let lastname = Pool_user.Lastname.(Alcotest.testable pp equal)
+
+    let testable_answer (a, b) test =
+      let open Custom_field.Answer in
+      let open Alcotest in
+      let open CCOption.Infix in
+      check (option test) "equal value" (a >>= value) (b >>= value);
+      check
+        (option test)
+        "equal admin_value"
+        (a >>= admin_value)
+        (b >>= admin_value)
+    ;;
   end
+
+  let test_answer_value (a, b) =
+    let open Custom_field in
+    let open Public in
+    let open Alcotest in
+    let select_option = SelectOption.Public.(testable pp equal) in
+    let run_test = Testable.testable_answer in
+    match[@warning "-4"] a, b with
+    | Public.Boolean (_, a), Public.Boolean (_, b) -> run_test (a, b) bool
+    | Date (_, a), Date (_, b) -> run_test (a, b) Test_utils.date
+    | MultiSelect (_, _, a), MultiSelect (_, _, b) ->
+      run_test (a, b) (list select_option)
+    | Number (_, a), Number (_, b) -> run_test (a, b) int
+    | Select (_, _, a), Select (_, _, b) -> run_test (a, b) select_option
+    | Text (_, a), Text (_, b) -> run_test (a, b) string
+    | _, _ -> failwith "Custom field answer types do not match"
+  ;;
 
   let setup_merge_contacts () =
     let open Integration_utils in
@@ -208,7 +237,7 @@ module MergeData = struct
         ; ignored = Ignored.create false
         }
     in
-    let answer field i contact =
+    let save_answer field i contact =
       let open Custom_field in
       let contact_id = Contact.id contact in
       let answer_string =
@@ -231,9 +260,8 @@ module MergeData = struct
     in
     let%lwt () =
       [ field_1; field_2; field_3 ]
-      |> Lwt_list.iter_s (fun field ->
-        [ contact_a; contact_b ]
-        |> Lwt_list.iteri_s (fun i contact -> answer field i contact))
+      |> Lwt_list.iteri_s (fun i field ->
+        [ contact_a; contact_b ] |> Lwt_list.iter_s (save_answer field i))
     in
     Lwt.return (current_user, duplicate, [ field_1; field_2; field_3 ])
   ;;
@@ -262,10 +290,8 @@ module MergeData = struct
     let open Pool_message in
     let custom_fields =
       custom_fields
-      |> CCList.map (fun (field, answer) ->
-        let open Custom_field in
-        let open Id in
-        id field |> value, Public.id answer |> value)
+      |> CCList.map (fun (field, contact) ->
+        Custom_field.(id field |> Id.value), id contact)
     in
     [ Field.(show EmailAddress), id email
     ; Field.(show Firstname), id firstname
@@ -293,12 +319,12 @@ module MergeData = struct
     let run_check testable msg decode expected =
       check testable msg (decode contact) (decode expected)
     in
-    let run_custom_field_check public =
+    let compare_custom_field_value public =
       let open Custom_field in
       let%lwt stored =
         find_by_contact pool (Contact.id contact) (Public.id public) ||> get_exn
       in
-      check bool "equal custom field" true (Public.equal_answer public stored);
+      test_answer_value (stored, public);
       Lwt.return ()
     in
     run_check T.email_address "equal email" Contact.email_address email;
@@ -314,7 +340,7 @@ module MergeData = struct
       "equal lang"
       (fun c -> c.Contact.language)
       language;
-    let%lwt () = public_fields |> Lwt_list.iter_s run_custom_field_check in
+    let%lwt () = public_fields |> Lwt_list.iter_s compare_custom_field_value in
     Lwt.return ()
   ;;
 end
@@ -329,7 +355,7 @@ let override_a_with_b _ () =
   let%lwt fields_b = fields_by_contact contact_b in
   let urlencoded =
     fields
-    |> CCList.map (fun field -> field, find_public_of_field fields_b field)
+    |> CCList.map (fun field -> field, contact_b)
     |> make_urlencoded
          ~email:contact_a
          ~firstname:contact_b
@@ -345,13 +371,50 @@ let override_a_with_b _ () =
   in
   let%lwt () =
     compare
+      contact_a
       ~email:contact_a
       ~firstname:contact_b
       ~lastname:contact_b
       ~cell_phone:contact_b
       ~language:contact_b
-      contact_a
       fields_b
+  in
+  Lwt.return_unit
+;;
+
+let override_b_with_a _ () =
+  let open Duplicate_contacts in
+  let open MergeData in
+  let%lwt current_user, duplicate, fields = setup_merge_contacts () in
+  let { contact_a; contact_b; _ } = duplicate in
+  let fields_by_contact = fields_by_contact current_user fields in
+  let%lwt fields_a = fields_by_contact contact_a in
+  let%lwt fields_b = fields_by_contact contact_b in
+  let urlencoded =
+    fields
+    |> CCList.map (fun field -> field, contact_a)
+    |> make_urlencoded
+         ~email:contact_b
+         ~firstname:contact_a
+         ~lastname:contact_a
+         ~cell_phone:contact_a
+         ~language:contact_a
+  in
+  let%lwt () =
+    Command.Merge.handle urlencoded duplicate fields (fields_a, fields_b)
+    |> Lwt_result.lift
+    >>= merge pool
+    ||> get_exn
+  in
+  let%lwt () =
+    compare
+      contact_b
+      ~email:contact_b
+      ~firstname:contact_a
+      ~lastname:contact_a
+      ~cell_phone:contact_a
+      ~language:contact_a
+      fields_a
   in
   Lwt.return_unit
 ;;

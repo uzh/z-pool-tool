@@ -158,15 +158,18 @@ let upsert_answer pool is_admin entity_uuid t =
 ;;
 
 let override_answer_request =
+  (* The uuid is generated to make sure the answer is created for the new entity *)
   let open Caqti_request.Infix in
   {sql|
     INSERT INTO pool_custom_field_answers (
+      uuid,
       custom_field_uuid,
       entity_uuid,
       value,
       admin_value,
       version
     ) VALUES (
+      UNHEX(REPLACE(UUID(), '-', '')),
       UNHEX(REPLACE($1, '-', '')),
       UNHEX(REPLACE($2, '-', '')),
       $3,
@@ -174,7 +177,6 @@ let override_answer_request =
       $5
     )
     ON DUPLICATE KEY UPDATE
-      uuid = UNHEX(REPLACE(UUID(), '-', '')),
       value = VALUES(value),
       admin_value = VALUES(admin_value),
       version = VALUES(version)

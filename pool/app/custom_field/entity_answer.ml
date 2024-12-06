@@ -6,7 +6,7 @@ end
 
 type 'a t =
   { id : Id.t
-        [@equal fun a b -> Sihl.Configuration.is_development () || Id.equal a b]
+    (* [@equal fun a b -> Sihl.Configuration.is_test () || Id.equal a b] *)
   ; entity_uuid : Pool_common.Id.t
   ; value : 'a option
   ; admin_value : 'a option
