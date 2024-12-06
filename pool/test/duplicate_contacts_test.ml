@@ -266,11 +266,6 @@ module MergeData = struct
     Lwt.return (current_user, duplicate, [ field_1; field_2; field_3 ])
   ;;
 
-  let find_public_of_field public field =
-    let open Custom_field in
-    CCList.find (fun f -> Id.equal (id field) (Public.id f)) public
-  ;;
-
   let fields_by_contact current_user fields contact =
     let open Custom_field in
     find_all_by_contact_flat pool current_user (Contact.id contact)
