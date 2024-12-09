@@ -101,9 +101,8 @@ let merge req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let id = duplicate_id req in
-  let duplicate_path = duplicate_path ~id () in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, duplicate_path)
+    Utils.Lwt_result.map_error (fun err -> err, duplicate_path ~id ())
     @@
     let open Duplicate_contacts in
     let%lwt urlencoded =
@@ -122,7 +121,7 @@ let merge req =
     in
     let redirect () =
       Http_utils.redirect_to_with_actions
-        duplicate_path
+        (duplicate_path ())
         [ Http_utils.Message.set ~success:Pool_message.[ Success.Updated Field.Duplicate ]
         ]
     in

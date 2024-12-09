@@ -140,6 +140,15 @@ let destroy_assignments =
   |> Contact.Repo.Id.t ->. unit
 ;;
 
+let destroy_possible_duplicates =
+  {sql|
+    DELETE FROM pool_contacts_possible_duplicates
+    WHERE contact_a = UNHEX(REPLACE($1, '-', ''))
+    OR contact_b = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+  |> Contact.Repo.Id.t ->. unit
+;;
+
 module Changelog = struct
   let contact_changelog pool ?user_uuid current_contact_state contact =
     let open Contact in
@@ -288,6 +297,10 @@ let merge
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec destroy_assignments (id merged_contact)
   in
+  let destroy_possible_duplicates connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_possible_duplicates (id merged_contact)
+  in
   let actions =
     [ override_invitations; override_waiting_list; override_assignments ]
     |> CCList.filter_map CCFun.id
@@ -298,6 +311,7 @@ let merge
     ; destroy_invitations
     ; destroy_waiting_lists
     ; destroy_assignments
+    ; destroy_possible_duplicates
     ]
   in
   (* Preparing custom field changelog function before executing transaction *)

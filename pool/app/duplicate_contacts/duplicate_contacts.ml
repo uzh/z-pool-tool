@@ -13,9 +13,6 @@ let find = Repo.find
 let all = Repo.all
 let find_by_contact = Repo.find_by_contact
 
-(** Open discussion:
-    - duplicates (Or just delete the old ones) *)
-
 let merge pool ?user_uuid ({ contact; merged_contact; _ } as merge) =
   let%lwt invitations =
     Invitation.find_by_contact_to_merge pool ~contact ~merged_contact
