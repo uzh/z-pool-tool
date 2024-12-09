@@ -106,7 +106,7 @@ let merge_contacts_command () =
     email @ hardcoded @ custom_fields
   in
   let expected =
-    Ok { contact = contact_a; merged_contact = contact_b; kept_fields = [ siblings_a ] }
+    Ok { contact = contact_a; merged_contact = contact_b; custom_fields = [ siblings_a ] }
   in
   check_result urlencoded expected;
   (* Select all data, except email, of contact_a *)
@@ -135,7 +135,7 @@ let merge_contacts_command () =
       ; language = contact_a.language
       }
     in
-    Ok { contact; merged_contact = contact_a; kept_fields = [ siblings_a ] }
+    Ok { contact; merged_contact = contact_a; custom_fields = [ siblings_a ] }
   in
   check_result urlencoded expected;
   (* Select custom field of contact_b *)
@@ -149,7 +149,7 @@ let merge_contacts_command () =
     email @ hardcoded @ custom_fields
   in
   let expected =
-    Ok { contact = contact_a; merged_contact = contact_b; kept_fields = [ siblings_b ] }
+    Ok { contact = contact_a; merged_contact = contact_b; custom_fields = [ siblings_b ] }
   in
   check_result urlencoded expected
 ;;

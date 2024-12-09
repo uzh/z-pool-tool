@@ -20,7 +20,7 @@ type t =
 type merge =
   { contact : Contact.t
   ; merged_contact : Contact.t
-  ; kept_fields : Custom_field.Public.t list
+  ; custom_fields : Custom_field.Public.t list
   }
 
 val run : Database.Label.t -> Pool_common.Id.t -> unit Lwt.t

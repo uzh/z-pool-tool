@@ -13,23 +13,7 @@ let find = Repo.find
 let all = Repo.all
 let find_by_contact = Repo.find_by_contact
 
-(** Data that has to be moved from the merge_contact to the new one:
-
-    Counts:
-    - invitation_count
-    - show_up_count
-    - no_show_count
-    - participation_count
-
-    Rows:
-    - invitations
-    - waiting list
-    - assignments
-    - tags
-    - x pool_queue_jobs_mapping
-    - x changelog
-
-    Open discussion:
+(** Open discussion:
     - duplicates (Or just delete the old ones) *)
 
 let merge pool ({ contact; merged_contact; _ } as merge) =

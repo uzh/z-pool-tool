@@ -84,6 +84,10 @@ module Repo = struct
     end
   end
 
+  module VersionHistory = struct
+    let find_answer = Repo_version_history.find_answer_opt
+  end
+
   let override_answer = Repo_partial_update.override_answer
 end
 

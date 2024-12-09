@@ -564,6 +564,19 @@ val find_group
 val find_groups_by_model : Database.Label.t -> Model.t -> Group.t list Lwt.t
 val find_names : Database.Label.t -> Id.t list -> (Pool_common.Id.t * Name.t) list Lwt.t
 
+module VersionHistory : Changelog.TSig with type record = t
+module OptionVersionHistory : Changelog.TSig with type record = SelectOption.t
+module GroupVersionHistory : Changelog.TSig with type record = Group.t
+
+module AnswerRecord : sig
+  type t
+
+  val from_public : Public.t -> t
+  val default_record : t -> t
+end
+
+module AnswerVersionHistory : Changelog.TSig with type record = AnswerRecord.t
+
 module Repo : sig
   module Id : sig
     type t = Id.t
@@ -587,6 +600,14 @@ module Repo : sig
            (Repo_entity_answer.Override.t, unit, [ `Zero ]) Caqti_request.t
            * Repo_entity_answer.Override.t
        ]
+
+  module VersionHistory : sig
+    val find_answer
+      :  Database.Label.t
+      -> Contact.Id.t
+      -> Id.t
+      -> AnswerRecord.t option Lwt.t
+  end
 end
 
 val group_fields : Group.t list -> t list -> (Group.t * t list) list * t list
@@ -636,13 +657,3 @@ module Guard : sig
     end
   end
 end
-
-module VersionHistory : Changelog.TSig with type record = t
-module OptionVersionHistory : Changelog.TSig with type record = SelectOption.t
-module GroupVersionHistory : Changelog.TSig with type record = Group.t
-
-module AnswerRecord : sig
-  type t
-end
-
-module AnswerVersionHistory : Changelog.TSig with type record = AnswerRecord.t

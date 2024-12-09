@@ -140,14 +140,6 @@ let destroy_assignments =
   |> Contact.Repo.Id.t ->. unit
 ;;
 
-(** CHANGELOGS
-
-    - Contact
-    - waiting_list
-    - invitations
-    - assignments
-    - Taggins ?? *)
-
 module Changelog = struct
   let contact_changelog pool current_contact_state contact =
     let open Contact in
@@ -159,11 +151,53 @@ module Changelog = struct
       ~after:contact
       ()
   ;;
+
+  let make_custom_field_changelog pool custom_fields contact =
+    let open Custom_field in
+    let contact_id = Contact.id contact in
+    let%lwt fields =
+      custom_fields
+      |> Lwt_list.map_s (fun field ->
+        Repo.VersionHistory.find_answer pool contact_id (Public.id field)
+        ||> CCPair.make field)
+    in
+    Lwt.return (fun () ->
+      fields
+      |> Lwt_list.iter_s (fun (after, before) ->
+        let after = AnswerRecord.from_public after in
+        AnswerVersionHistory.insert
+          pool
+          ~entity_uuid:(Contact.Id.to_common contact_id)
+          ~before:(CCOption.value ~default:(AnswerRecord.default_record after) before)
+          ~after
+          ()))
+  ;;
+
+  let waiting_list_changelogs pool waiting_lists contact =
+    waiting_lists
+    |> Lwt_list.iter_s (fun waiting_list ->
+      let new_contact = contact in
+      let open Waiting_list in
+      let after = ({ waiting_list with contact = new_contact } : t) in
+      VersionHistory.insert
+        pool
+        ~entity_uuid:(id waiting_list |> Id.to_common)
+        ~before:waiting_list
+        ~after
+        ())
+  ;;
+
+  let assignments_changelogs pool assignments contact =
+    let open Assignment in
+    assignments
+    |> Lwt_list.iter_s (fun (assignment : t) ->
+      create_changelog pool assignment ({ assignment with contact } : t))
+  ;;
 end
 
 let merge
       pool
-      { contact; merged_contact; kept_fields }
+      { contact; merged_contact; custom_fields }
       invitations
       waiting_list
       assignments
@@ -180,7 +214,7 @@ let merge
   in
   let store_custom_answers =
     let entity_uuid = id contact |> Id.to_common in
-    kept_fields
+    custom_fields
     |> CCList.map (fun field connection ->
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Custom_field.Repo.override_answer ~entity_uuid field
@@ -262,6 +296,10 @@ let merge
     ; destroy_assignments
     ]
   in
+  (* Preparing custom field changelog function before executing transaction *)
+  let%lwt custom_field_changelog =
+    Changelog.make_custom_field_changelog pool custom_fields contact
+  in
   let%lwt () =
     Database.transaction_iter
       pool
@@ -271,11 +309,11 @@ let merge
        @ destroy_requests)
   in
   let create_changelog () =
-    let%lwt () = Changelog.contact_changelog pool current_contact_state contact in
-    let%lwt () =
-      kept_fields
-      |> Lwt_list.iter_s (Custom_field.create_custom_field_answer_changelog pool contact)
-    in
+    let open Changelog in
+    let%lwt () = contact_changelog pool current_contact_state contact in
+    let%lwt () = custom_field_changelog () in
+    let%lwt () = waiting_list_changelogs pool waiting_list contact in
+    let%lwt () = assignments_changelogs pool assignments contact in
     Lwt.return ()
   in
   () |> create_changelog |> Lwt_result.ok

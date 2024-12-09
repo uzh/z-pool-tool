@@ -94,8 +94,6 @@ end = struct
         selected_contact
         hardcoded
     in
-    Ok
-      Duplicate_contacts.
-        { contact = selected_contact; merged_contact; kept_fields = custom_fields }
+    Ok Duplicate_contacts.{ contact = selected_contact; merged_contact; custom_fields }
   ;;
 end
