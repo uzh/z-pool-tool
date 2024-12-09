@@ -28,9 +28,7 @@ let list { Pool_context.language; _ } (annoucements, query) =
     ; `custom create_btn
     ]
   in
-  let row
-    ({ id; start_at; end_at; text; show_to_admins; show_to_contacts; _ } : t)
-    =
+  let row ({ id; start_at; end_at; text; show_to_admins; show_to_contacts; _ } : t) =
     let open CCOption in
     let edit_btn =
       let open Component in
@@ -74,11 +72,11 @@ let index (Pool_context.{ language; _ } as context) announcements =
 ;;
 
 let form
-  { Pool_context.csrf; language; _ }
-  ?announcement
-  ?(flash_fetcher : (string -> string option) option)
-  available_tenants
-  system_languages
+      { Pool_context.csrf; language; _ }
+      ?announcement
+      ?(flash_fetcher : (string -> string option) option)
+      available_tenants
+      system_languages
   =
   let open Announcement in
   let open CCOption.Infix in
@@ -110,10 +108,7 @@ let form
     system_languages
     |> CCList.map (fun lang ->
       let name =
-        Format.asprintf
-          "%s[%s]"
-          Field.(show Text)
-          (Pool_common.Language.show lang)
+        Format.asprintf "%s[%s]" Field.(show Text) (Pool_common.Language.show lang)
       in
       let value =
         let open CCOption in
@@ -154,9 +149,7 @@ let form
     div
       ~a:[ a_class [ "form-group" ] ]
       [ p
-          [ txt
-              Pool_common.(
-                Utils.text_to_string language I18n.AnnouncementsTenantSelect)
+          [ txt Pool_common.(Utils.text_to_string language I18n.AnnouncementsTenantSelect)
           ]
       ; div ~a:[ a_class [ "input-group" ] ] checkboxes
       ]
@@ -167,16 +160,14 @@ let form
           ?flash_fetcher
           ?value:
             (announcement
-             >|= fun { show_to_admins; _ } -> ShowToAdmins.value show_to_admins
-            )
+             >|= fun { show_to_admins; _ } -> ShowToAdmins.value show_to_admins)
           language
           Field.ShowToAdmins
       ; Input.checkbox_element
           ?flash_fetcher
           ?value:
             (announcement
-             >|= fun { show_to_contacts; _ } ->
-             ShowToContacts.value show_to_contacts)
+             >|= fun { show_to_contacts; _ } -> ShowToContacts.value show_to_contacts)
           language
           Field.ShowToContacts
       ]
@@ -197,8 +188,7 @@ let form
               ~a:[ a_class [ "grid-col-2" ] ]
               [ date_input
                   Field.Start
-                  (announcement
-                   >>= fun { start_at; _ } -> start_at >|= StartAt.value)
+                  (announcement >>= fun { start_at; _ } -> start_at >|= StartAt.value)
               ; date_input
                   Field.End
                   (announcement >>= fun { end_at; _ } -> end_at >|= EndAt.value)

@@ -1,8 +1,5 @@
 let src = Logs.Src.create "middleware.api_tenant"
-
-let respond_error status error =
-  Http_utils.Api.respond_error ~status error |> Lwt.return
-;;
+let respond_error status error = Http_utils.Api.respond_error ~status error |> Lwt.return
 
 let validate_tenant () =
   let open Pool_message in
@@ -42,9 +39,7 @@ let context () =
         |> with_status `Internal_server_error
         |> Lwt_result.lift
       in
-      let* api_key =
-        find_api_key database_label req ||> with_status `Unauthorized
-      in
+      let* api_key = find_api_key database_label req ||> with_status `Unauthorized in
       let%lwt guardian =
         api_key.Api_key.id
         |> Guard.Uuid.actor_of Api_key.Id.value
@@ -61,8 +56,7 @@ let context () =
 
 let api_request () =
   let filter handler req =
-    Opium.Request.add_header (Http_utils.Api.api_request_header, "true") req
-    |> handler
+    Opium.Request.add_header (Http_utils.Api.api_request_header, "true") req |> handler
   in
   Rock.Middleware.create ~name:"api.request" ~filter
 ;;

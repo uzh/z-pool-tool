@@ -3,10 +3,7 @@ module Field = Pool_message.Field
 
 let src = Logs.Src.create "handler.contact.location"
 let create_layout = Contact_general.create_layout
-
-let id req field encode =
-  Sihl.Web.Router.param req @@ Field.show field |> encode
-;;
+let id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encode
 
 let show req =
   let open Utils.Lwt_result.Infix in

@@ -26,6 +26,5 @@ let create_text_message_dlr_table =
 ;;
 
 let migration () =
-  Database.Migration.(
-    empty "202406241055" |> add_step create_text_message_dlr_table)
+  Database.Migration.(empty "202406241055" |> add_step create_text_message_dlr_table)
 ;;

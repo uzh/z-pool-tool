@@ -9,9 +9,7 @@ let experiment_id =
 ;;
 
 let template_id =
-  HttpUtils.find_id
-    Message_template.Id.of_string
-    Pool_message.Field.MessageTemplate
+  HttpUtils.find_id Message_template.Id.of_string Pool_message.Field.MessageTemplate
 ;;
 
 let template_label = Admin_message_templates.template_label
@@ -79,12 +77,9 @@ let new_post label req =
   let open Admin_message_templates in
   let experiment_id = experiment_id req in
   let redirect =
-    form_redirects
-      experiment_id
-      (Message_template.Label.prefixed_human_url label)
+    form_redirects experiment_id (Message_template.Label.prefixed_human_url label)
   in
-  (write (Create (experiment_id |> Experiment.Id.to_common, label, redirect)))
-    req
+  (write (Create (experiment_id |> Experiment.Id.to_common, label, redirect))) req
 ;;
 
 let new_message_template req =
@@ -104,16 +99,11 @@ let update_template req =
   let experiment_id = experiment_id req in
   let template_id = template_id req in
   let%lwt template =
-    req
-    |> database_label_of_req
-    |> Lwt_result.lift
-    >>= CCFun.flip find template_id
+    req |> database_label_of_req |> Lwt_result.lift >>= CCFun.flip find template_id
   in
   match template with
   | Ok template ->
-    let redirect =
-      form_redirects experiment_id (prefixed_template_url template)
-    in
+    let redirect = form_redirects experiment_id (prefixed_template_url template) in
     (write (Update (template_id, redirect))) req
   | Error err ->
     HttpUtils.redirect_to_with_actions
@@ -136,6 +126,22 @@ let delete req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let changelog req =
+  let open Message_template in
+  let experiment_id = experiment_id req in
+  let template_label = template_label req in
+  let id = template_id req in
+  let url =
+    HttpUtils.Url.Admin.experiment_message_template_path
+      experiment_id
+      template_label
+      ~suffix:"changelog"
+      ~id
+      ()
+  in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
@@ -145,9 +151,6 @@ end = struct
   module Field = Pool_message.Field
   module Guardian = Middleware.Guardian
 
-  let experiment_effects =
-    Guardian.id_effects Experiment.Id.validate Field.Experiment
-  ;;
-
+  let experiment_effects = Guardian.id_effects Experiment.Id.validate Field.Experiment
   let message_template = experiment_effects Experiment.Guard.Access.update
 end

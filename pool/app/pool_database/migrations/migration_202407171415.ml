@@ -62,8 +62,7 @@ let archive_queue_jobs_fcn =
       LEFT JOIN pool_message_history hist ON hist.queue_job_uuid = queue_jobs.uuid
       GROUP BY `uuid`
     |sql}
-  |> Database.Migration.Step.create
-       ~label:"define function to archive sihl job queue"
+  |> Database.Migration.Step.create ~label:"define function to archive sihl job queue"
 ;;
 
 let archive_history_name = "CopyRowsArchiveHistory"
@@ -81,20 +80,15 @@ let archive_queue_history_mappings_fcn =
         updated_at
       FROM pool_message_history
     |sql}
-  |> Database.Migration.Step.create
-       ~label:"define function to archive sihl job mappings"
+  |> Database.Migration.Step.create ~label:"define function to archive sihl job mappings"
 ;;
 
 let archive_queue_jobs_call name =
-  Database.Migration.Step.create
-    ~label:[%string "call function with %{name}"]
-    (call name)
+  Database.Migration.Step.create ~label:[%string "call function with %{name}"] (call name)
 ;;
 
 let archive_queue_jobs_drop name =
-  Database.Migration.Step.create
-    ~label:[%string "drop function with %{name}"]
-    (drop name)
+  Database.Migration.Step.create ~label:[%string "drop function with %{name}"] (drop name)
 ;;
 
 let drop_message_history_table =

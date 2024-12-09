@@ -32,7 +32,7 @@ end
 
 type user =
   { uuid : Pool_common.Id.t
-  ; email : Pool_user.EmailAddress.t
+  ; email : string
   }
 [@@deriving eq, show]
 
@@ -95,8 +95,7 @@ module DefaultSettings = struct
 end
 
 let column_created_at =
-  (Pool_message.Field.CreatedAt, "pool_change_log.created_at")
-  |> Query.Column.create
+  (Pool_message.Field.CreatedAt, "pool_change_log.created_at") |> Query.Column.create
 ;;
 
 let searchable_by = []

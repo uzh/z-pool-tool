@@ -99,9 +99,7 @@ let rec field_to_string =
   | ExperimentEmailReminderLeadTime ->
     Format.asprintf "experiment specific email %s" (field_to_string LeadTime)
   | ExperimentTextMessageReminderLeadTime ->
-    Format.asprintf
-      "experiment specific text message %s"
-      (field_to_string LeadTime)
+    Format.asprintf "experiment specific text message %s" (field_to_string LeadTime)
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
   | ExternalDataIdAbbr -> "EID"
@@ -110,8 +108,7 @@ let rec field_to_string =
   | ExternalDataRequired -> "external data is required"
   | Failed -> "failed"
   | FallbackToEmail ->
-    "Do you wish to send the message as an email to contacts without a cell \
-     phone?"
+    "Do you wish to send the message as an email to contacts without a cell phone?"
   | FieldType -> "field type"
   | File -> "file"
   | FileMapping -> "file mapping"
@@ -219,8 +216,7 @@ let rec field_to_string =
   | PendingContactImports -> "pending contact imports"
   | Period -> "period"
   | Permission -> "permission"
-  | PermissionOn (role, target) ->
-    Format.asprintf "permission %s of %s" target role
+  | PermissionOn (role, target) -> Format.asprintf "permission %s of %s" target role
   | PlainText -> "plaintext"
   | Placeholder -> "placeholder"
   | Predicate -> "predicate"
@@ -353,25 +349,21 @@ let success_to_string =
   | AssignmentCreated -> "You have been signed up successfully."
   | Canceled field ->
     field_message "" (field_to_string field) "was successfully canceled."
-  | Closed field ->
-    field_message "" (field_to_string field) "was successfully closed."
+  | Closed field -> field_message "" (field_to_string field) "was successfully closed."
   | ContactMarkedAsDeleted -> "The contact was successfully deleted."
   | ContactPromoted -> "The contact was successfully promoted to an admin."
-  | Created field ->
-    field_message "" (field_to_string field) "was successfully created."
-  | Deleted field ->
-    field_message "" (field_to_string field) "was successfully deleted."
+  | Created field -> field_message "" (field_to_string field) "was successfully created."
+  | Deleted field -> field_message "" (field_to_string field) "was successfully deleted."
   | EmailConfirmationMessage ->
-    "An email has been sent to your email address for verification if the \
-     given email address is still available."
+    "An email has been sent to your email address for verification if the given email \
+     address is still available."
   | EmailUpdateConfirmationMessage ->
     {|If the email address you entered is still available, an email with a confirmation link has been sent to this address. Please confirm the address by opening this link.
 
 As long as the new e-mail address has not been confirmed, the current address will remain in use.|}
   | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
-  | ImportCompleted ->
-    "The import of your account has successfully been completed."
+  | ImportCompleted -> "The import of your account has successfully been completed."
   | MarkedAsDeleted field ->
     field_message "" (field_to_string field) "was marked as deleted."
   | PausedToggled paused ->
@@ -381,11 +373,11 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | PasswordChanged -> "Password successfully changed."
   | PasswordReset -> "Password reset, you can now log in."
   | PasswordResetSuccessMessage ->
-    "You will receive an email with a link to reset your password if an  \
-     account with the provided email is existing."
+    "You will receive an email with a link to reset your password if an  account with \
+     the provided email is existing."
   | CellPhoneTokenSent ->
-    "A text message has been sent to your phone for verification. Please enter \
-     the provided code."
+    "A text message has been sent to your phone for verification. Please enter the \
+     provided code."
   | CellPhoneVerified -> "Your phone number has successfully been verified."
   | Published field ->
     field_message "" (field_to_string field) "was successfully published."
@@ -393,29 +385,24 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | RemindersResent -> "The reminders have been resent."
   | Rescheduled field ->
     field_message "" (field_to_string field) "was successfully rescheduled."
-  | Resent field ->
-    field_message "" (field_to_string field) "was successfully resent."
+  | Resent field -> field_message "" (field_to_string field) "was successfully resent."
   | ResetInvitations ->
-    "Reset Invitations. In upcoming mailings, previous invitations will be \
-     considered to reinvite."
+    "Reset Invitations. In upcoming mailings, previous invitations will be considered to \
+     reinvite."
   | RoleAssigned -> "Role was assigned."
   | RoleUnassigned -> "Role was unassigned."
-  | SentList field ->
-    field_message "" (field_to_string field) "were successfully sent."
-  | Sent field ->
-    field_message "" (field_to_string field) "was successfully sent."
+  | SentList field -> field_message "" (field_to_string field) "were successfully sent."
+  | Sent field -> field_message "" (field_to_string field) "was successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
   | SmtpConfigurationAdded -> "The SMTP configuration was added successfully."
   | SmtpDetailsUpdated -> "SMTP settings successfully updated."
   | SmtpPasswordUpdated -> "SMTP password successfully updated."
-  | Stopped field ->
-    field_message "" (field_to_string field) "was successfully stopped."
+  | Stopped field -> field_message "" (field_to_string field) "was successfully stopped."
   | TagAssigned -> "The tag was successfully assigned."
   | TagRemoved -> "The tag is removed."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
-  | Updated field ->
-    field_message "" (field_to_string field) "was successfully updated."
+  | Updated field -> field_message "" (field_to_string field) "was successfully updated."
   | Validated field ->
     field_message "" (field_to_string field) "was successfully validated."
   | VerificationMessageResent -> "The verification message has been resent."
@@ -434,8 +421,7 @@ let rec error_to_string =
     ptime
     |> Ptime.formatted_date_time
     |> Format.asprintf
-         "Too many failed login attempts. This email address is blocked until \
-          %s"
+         "Too many failed login attempts. This email address is blocked until %s"
   | AccessDenied -> "Access denied"
   | AccessDeniedMessage -> "Access to the requested page is denied"
   | AllLanguagesRequired field ->
@@ -449,12 +435,10 @@ let rec error_to_string =
       (field |> field_to_string |> CCString.trim)
       "' already exists."
   | AlreadyInPast -> "In minimum the starting point is in the past."
-  | AlreadySignedUpForExperiment ->
-    "You are already signed up for this experiment."
+  | AlreadySignedUpForExperiment -> "You are already signed up for this experiment."
   | AssignmentIsCanceled -> "Assignment was canceled."
   | AssignmentIsClosed -> "Assignment is already closed."
-  | AssignmentsHaveErrors ->
-    "Some assignments have errors. Please resolve them first."
+  | AssignmentsHaveErrors -> "Some assignments have errors. Please resolve them first."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | AssignmentAlreadySubmitted -> "This assignment was already submitted."
   | AtLeastOneLanguageRequired field ->
@@ -487,10 +471,10 @@ let rec error_to_string =
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
-        Format.asprintf
-          "%s: %s"
-          (field_to_string field |> CCString.capitalize_ascii)
-          (error_to_string err))
+         Format.asprintf
+           "%s: %s"
+           (field_to_string field |> CCString.capitalize_ascii)
+           (error_to_string err))
       errs
     |> CCString.concat "\n"
   | ConformistModuleErrorType -> failwith "Do not use"
@@ -499,49 +483,41 @@ let rec error_to_string =
   | ContactExperimentNotFound ->
     "Currently, there are no free spots to participate in this experiment."
   | ContactIsInactive -> "This contact is inactive."
-  | ContactSignupInvalidEmail ->
-    "Please provide a valid and unused email address."
+  | ContactSignupInvalidEmail -> "Please provide a valid and unused email address."
   | ContactUnconfirmed -> "Participant isn't confirmed!"
   | CustomFieldNoOptions -> "At least one option must exist."
   | CustomFieldTypeChangeNotAllowed -> "Type of field cannot be changed."
   | DatabaseAddPoolFirst pool ->
     Format.asprintf "Unknown Pool '%s': Please 'add_pool' first!" pool
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
-  | DirectRegistrationIsDisabled ->
-    "You cannot assign yourself to this experiment."
+  | DirectRegistrationIsDisabled -> "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
   | DefaultMustNotBeUnchecked -> "'Default' must not be unchecked."
   | DeleteContactUpcomingSessions ->
-    "Contact cannot be deleted. This contact is signed up to upcoming \
-     sessions. These assignments have to be deleted first."
+    "Contact cannot be deleted. This contact is signed up to upcoming sessions. These \
+     assignments have to be deleted first."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingAdmin -> "Please provide admin email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."
-  | EmailDeleteAlreadyVerified ->
-    "Email address is already verified cannot be deleted."
+  | EmailDeleteAlreadyVerified -> "Email address is already verified cannot be deleted."
   | EmailIdenticalToCurrent ->
     "The provided email address is identical to the current one."
   | EmailMalformed -> "Malformed email"
-  | EmailInterceptionError error ->
-    Format.asprintf "Email interception error: %s" error
+  | EmailInterceptionError error -> Format.asprintf "Email interception error: %s" error
   | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
   | FieldRequired field ->
-    Format.asprintf
-      "%s is required."
-      (field_to_string field |> CCString.capitalize_ascii)
+    Format.asprintf "%s is required." (field_to_string field |> CCString.capitalize_ascii)
   | FilterMustNotContainTemplate -> "Filter must not contain templates."
   | FilterAndOrMustNotBeEmpty -> "'And' and 'Or' predicates must not be empty."
   | FilterListValueMustNotBeEmpty -> "At least one option must be selected."
-  | FollowUpIsEarlierThanMain ->
-    "Follow-up session can't start before main session."
-  | HtmxVersionNotFound field ->
-    Format.asprintf "No version found for field '%s'" field
+  | FollowUpIsEarlierThanMain -> "Follow-up session can't start before main session."
+  | HtmxVersionNotFound field -> Format.asprintf "No version found for field '%s'" field
   | ImportPending ->
-    "The import of your user is not completed yet. Please check your inbox or \
-     contact an administrator."
+    "The import of your user is not completed yet. Please check your inbox or contact an \
+     administrator."
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
   | InvalidEmailSuffix suffixes ->
     Format.asprintf
@@ -550,8 +526,7 @@ let rec error_to_string =
       (CCString.concat ", " suffixes)
   | InvalidJson exn -> Format.asprintf "Invalid Json: %s" exn
   | InvalidOptionSelected -> "Invalid option selected."
-  | InvalidPasswordHashingCount ->
-    "Password hashing count has to be between 4 and 31"
+  | InvalidPasswordHashingCount -> "Password hashing count has to be between 4 and 31"
   | InvalidRequest | InvalidHtmxRequest -> "Invalid request."
   | InvalidWithInfo (field, info) ->
     Format.asprintf "Invalid %s provided (%s)!" (field_to_string field) info
@@ -564,16 +539,12 @@ let rec error_to_string =
   | JobPending -> "The job is still pending."
   | LoginProvideDetails -> "Please provide email and password"
   | MaintenancePending -> "Maintenance work is in progress"
-  | MaxLength max ->
-    Format.asprintf "Must not be longer than %i characters." max
+  | MaxLength max -> Format.asprintf "Must not be longer than %i characters." max
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
   | MigrationFailed exn -> Format.asprintf "Migration failed: %s" exn
   | Missing field ->
-    field_message
-      "The field"
-      (field_to_string field)
-      "is missing or not filled out."
+    field_message "The field" (field_to_string field) "is missing or not filled out."
   | MutuallyExclusive (f1, f2) ->
     Format.asprintf
       "'%s' and '%s' are mutually exclusive."
@@ -603,8 +574,7 @@ let rec error_to_string =
       "%s or %s"
       (error_to_string err1)
       (err2 |> error_to_string |> CCString.uncapitalize_ascii)
-  | OutOfRange (min, max) ->
-    Format.asprintf "Must be between %i and %i." min max
+  | OutOfRange (min, max) -> Format.asprintf "Must be between %i and %i." min max
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicyMinLength n ->
     Format.asprintf "The password must at least contain %i characters." n
@@ -615,8 +585,8 @@ let rec error_to_string =
       "The password must contain one of the following characters: %s"
       (chars |> CCList.map CCString.of_char |> CCString.concat " ")
   | PasswordResetFailMessage ->
-    "You will receive an email with a link to reset your password if an  \
-     account with the provided email is existing."
+    "You will receive an email with a link to reset your password if an  account with \
+     the provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
   | PermissionDeniedCreateRule -> "Permission denied to create the rule"
   | PermissionDeniedGrantRole -> "Permission denied to grant the role"
@@ -632,15 +602,13 @@ let rec error_to_string =
   | ReadOnlyModel -> "Read only model!"
   | RegistrationDisabled -> "registration is disabled."
   | RequestRequiredFields -> "Please provide necessary fields"
-  | RequiredFieldsMissing ->
-    "To continue, you need to answer the following questions."
+  | RequiredFieldsMissing -> "To continue, you need to answer the following questions."
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
   | SessionFullyBooked -> "Session is fully booked"
   | SessionHasAssignments ->
     "There are already assignments for this session. It cannot be deleted."
   | SessionHasFollowUps ->
-    "There is already a follow-up session for this session. It cannot be \
-     deleted."
+    "There is already a follow-up session for this session. It cannot be deleted."
   | SessionInvalid -> "Invalid session, please login."
   | SelectedOptionsCountMax i ->
     Format.asprintf
@@ -664,37 +632,28 @@ let rec error_to_string =
   | SessionTenantNotFound ->
     "Missing tenant: something on our side went wrong, please try again later."
   | Smaller (field1, field2) ->
-    Format.asprintf
-      "%s smaller than %s"
-      (field_to_string field1)
-      (field_to_string field2)
+    Format.asprintf "%s smaller than %s" (field_to_string field1) (field_to_string field2)
   | SessionOverlap -> "This time window overlaps with another."
   | SmtpException exn -> exn
   | SmtpLoginMissingCredentials ->
-    "SMTP auth mechanism cannot be set to LOGIN when no username or password \
-     is set."
+    "SMTP auth mechanism cannot be set to LOGIN when no username or password is set."
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
-  | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
-    "An error occurred"
+  | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle -> "An error occurred"
   | TermsAndConditionsMissing -> "Terms and conditions have to be added first."
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
-  | TextLengthMax i ->
-    Format.asprintf "Must not be longer than %i characters." i
-  | TextLengthMin i ->
-    Format.asprintf "Must not be shorter than %i characters." i
+  | TextLengthMax i -> Format.asprintf "Must not be longer than %i characters." i
+  | TextLengthMin i -> Format.asprintf "Must not be shorter than %i characters." i
   | TextMessageError error -> Format.asprintf "Text message error: %s" error
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
-  | TextMessageDlrAlreadyReceived ->
-    "Text message delivery report already received."
+  | TextMessageDlrAlreadyReceived -> "Text message delivery report already received."
   | TimeInPast -> "Time is in the past!"
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | TooShort -> "The duration specified is too short."
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
-  | Uniqueness field ->
-    field_message "" (field_to_string field) "must be unique."
+  | Uniqueness field -> field_message "" (field_to_string field) "must be unique."
   | Unsupported text -> [%string "'%{text}' is unsupported."]
   | WriteOnlyModel -> "Write only model!"
 ;;

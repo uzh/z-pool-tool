@@ -19,9 +19,7 @@ module Statistics = struct
   let create ?(year = current_year ()) = Repo_statistics.statistics year
 
   let year_select database_label =
-    let%lwt fist_year =
-      Repo_statistics.find_statistics_starting_year database_label
-    in
+    let%lwt fist_year = Repo_statistics.find_statistics_starting_year database_label in
     let current_year = current_year () in
     CCList.range current_year fist_year |> Lwt.return
   ;;

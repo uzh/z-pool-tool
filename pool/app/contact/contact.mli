@@ -131,14 +131,8 @@ val find_all
   -> unit
   -> (t list * Query.t) Lwt.t
 
-val find_to_trigger_profile_update
-  :  Database.Label.t
-  -> (t list, 'a) Lwt_result.t
-
-val should_send_registration_attempt_notification
-  :  Database.Label.t
-  -> t
-  -> bool Lwt.t
+val find_to_trigger_profile_update : Database.Label.t -> (t list, 'a) Lwt_result.t
+val should_send_registration_attempt_notification : Database.Label.t -> t -> bool Lwt.t
 
 val find_cell_phone_verification_by_contact
   :  Database.Label.t
@@ -241,18 +235,8 @@ module Repo : sig
   val t : t Caqti_type.t
   val joins : string
   val sql_select_columns : string list
-
-  val make_sql_select_columns
-    :  user_table:string
-    -> contact_table:string
-    -> string list
-
-  val find_request_sql
-    :  ?additional_joins:string list
-    -> ?count:bool
-    -> string
-    -> string
-
+  val make_sql_select_columns : user_table:string -> contact_table:string -> string list
+  val find_request_sql : ?additional_joins:string list -> ?count:bool -> string -> string
   val update_request : (Write.t, unit, [ `Zero ]) Caqti_request.t
 end
 

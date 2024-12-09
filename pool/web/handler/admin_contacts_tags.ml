@@ -34,13 +34,9 @@ let handle_tag action req =
            >== handle contact
            >|+ CCPair.make Success.TagRemoved
        in
-       let handle =
-         Lwt_list.iter_s (Pool_event.handle_event ~tags database_label user)
-       in
+       let handle = Lwt_list.iter_s (Pool_event.handle_event ~tags database_label user) in
        let return_to_overview () =
-         HttpUtils.redirect_to_with_actions
-           path
-           [ Message.set ~success:[ message ] ]
+         HttpUtils.redirect_to_with_actions path [ Message.set ~success:[ message ] ]
        in
        events |> handle >|> return_to_overview |> Lwt_result.ok
   in

@@ -42,14 +42,12 @@ module Status = struct
 
     type t =
       | Active [@name "active"] [@printer print "active"]
-      | ConnectionIssue [@name "connection_issue"]
-      [@printer print "connection_issue"]
+      | ConnectionIssue [@name "connection_issue"] [@printer print "connection_issue"]
       | Disabled [@name "disabled"] [@printer print "disabled"]
       | Maintenance [@name "maintenance"] [@printer print "maintenance"]
       | MigrationsConnectionIssue [@name "migrations_connection_issue"]
       [@printer print "migrations_connection_issue"]
-      | MigrationsFailed [@name "migrations_failed"]
-      [@printer print "migrations_failed"]
+      | MigrationsFailed [@name "migrations_failed"] [@printer print "migrations_failed"]
       | MigrationsPending [@name "migrations_pending"]
       [@printer print "migrations_pending"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
@@ -90,25 +88,22 @@ let schema =
       Field.
         [ string
             ~meta:
-              "The root database connection url. This is the only string that \
-               Sihl needs to connect to a database."
+              "The root database connection url. This is the only string that Sihl needs \
+               to connect to a database."
             "DATABASE_URL"
         ; Conformist.optional
             ~meta:
-              "The amount of connections in the database connection pool that \
-               Sihl manages. If the number is too high, the server might \
-               struggle. If the number is too low, your Sihl app performs \
-               badly. This can be configured using DATABASE_SIZE and the \
-               default is 10."
+              "The amount of connections in the database connection pool that Sihl \
+               manages. If the number is too high, the server might struggle. If the \
+               number is too low, your Sihl app performs badly. This can be configured \
+               using DATABASE_SIZE and the default is 10."
             (int ~default:10 "DATABASE_SIZE")
         ]
       config)
 ;;
 
 let database_url () =
-  (Sihl.Configuration.read schema).url
-  |> Url.create
-  |> Pool_message.Error.get_or_failwith
+  (Sihl.Configuration.read schema).url |> Url.create |> Pool_message.Error.get_or_failwith
 ;;
 
 let pool_size () =
@@ -123,6 +118,5 @@ let of_ctx_opt : (string * string) list -> Label.t option =
 
 let of_ctx_exn =
   of_ctx_opt
-  %> CCOption.get_exn_or
-       Pool_message.(Error.Undefined Field.DatabaseLabel |> Error.show)
+  %> CCOption.get_exn_or Pool_message.(Error.Undefined Field.DatabaseLabel |> Error.show)
 ;;

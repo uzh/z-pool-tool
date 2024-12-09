@@ -4,13 +4,11 @@ let encode_key_value value =
   (let open Value in
    match value with
    | DefaultReminderLeadTime v ->
-     ( yojson_of_setting_key ReminderLeadTime
-     , yojson_of_default_reminder_lead_time v )
+     yojson_of_setting_key ReminderLeadTime, yojson_of_default_reminder_lead_time v
    | DefaultTextMsgReminderLeadTime v ->
      ( yojson_of_setting_key TextMsgReminderLeadTime
      , yojson_of_default_text_msg_reminder_lead_time v )
-   | TenantLanguages v ->
-     yojson_of_setting_key Languages, yojson_of_tenant_languages v
+   | TenantLanguages v -> yojson_of_setting_key Languages, yojson_of_tenant_languages v
    | TenantEmailSuffixes v ->
      yojson_of_setting_key EmailSuffixes, yojson_of_tenant_email_suffixes v
    | TenantContactEmail v ->
@@ -19,8 +17,7 @@ let encode_key_value value =
      ( yojson_of_setting_key InactiveUserDisableAfter
      , yojson_of_inactive_user_disable_after v )
    | InactiveUserWarning v ->
-     ( yojson_of_setting_key InactiveUserWarning
-     , yojson_of_inactive_user_warning v )
+     yojson_of_setting_key InactiveUserWarning, yojson_of_inactive_user_warning v
    | TriggerProfileUpdateAfter v ->
      ( yojson_of_setting_key TriggerProfileUpdateAfter
      , yojson_of_trigger_profile_update_after v )
@@ -51,20 +48,14 @@ let t =
         |> default_text_msg_reminder_lead_time_of_yojson
         |> defaulttextmsgreminderleadtime
       | Languages -> value |> tenant_languages_of_yojson |> tenantlanguages
-      | EmailSuffixes ->
-        value |> tenant_email_suffixes_of_yojson |> tenantemailsuffixes
-      | ContactEmail ->
-        value |> tenant_contact_email_of_yojson |> tenantcontactemail
+      | EmailSuffixes -> value |> tenant_email_suffixes_of_yojson |> tenantemailsuffixes
+      | ContactEmail -> value |> tenant_contact_email_of_yojson |> tenantcontactemail
       | InactiveUserDisableAfter ->
-        value
-        |> inactive_user_disable_after_of_yojson
-        |> inactiveuserdisableafter
+        value |> inactive_user_disable_after_of_yojson |> inactiveuserdisableafter
       | InactiveUserWarning ->
         value |> inactive_user_warning_of_yojson |> inactiveuserwarning
       | TriggerProfileUpdateAfter ->
-        value
-        |> trigger_profile_update_after_of_yojson
-        |> triggerprofileupdateafter
+        value |> trigger_profile_update_after_of_yojson |> triggerprofileupdateafter
       | UserImportFirstReminderAfter ->
         value
         |> UserImportReminder.FirstReminderAfter.t_of_yojson
@@ -80,11 +71,7 @@ let t =
     custom
       ~encode
       ~decode
-      (t4
-         string
-         string
-         Pool_common.Repo.CreatedAt.t
-         Pool_common.Repo.UpdatedAt.t))
+      (t4 string string Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))
 ;;
 
 module Write = struct
@@ -95,9 +82,7 @@ module Write = struct
       let key, value = encode_key_value m.Write.value in
       Ok (value, key)
     in
-    let decode _ =
-      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
-    in
+    let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
     Caqti_type.(custom ~encode ~decode (t2 string string))
   ;;
 end

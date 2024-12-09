@@ -6,6 +6,7 @@
   contact
   duplicate_contacts
   experiment
+  mailing
   logger
   pool_common
   pool_context
@@ -16,7 +17,8 @@
   sihl-storage
   time_window
   user_import
-  version)
+  version
+  waiting_list)
  (preprocess
   (pps
    lwt_ppx

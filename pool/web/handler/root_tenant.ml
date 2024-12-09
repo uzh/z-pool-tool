@@ -27,8 +27,7 @@ let create req =
     ||> HttpUtils.remove_empty_values_multiplart
   in
   let urlencoded =
-    multipart_encoded
-    |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
+    multipart_encoded |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
   in
   let result { Pool_context.user; _ } =
     Utils.Lwt_result.map_error (fun err ->
@@ -74,14 +73,11 @@ let manage_operators req =
     Utils.Lwt_result.map_error (fun err -> err, tenants_path)
     @@
     let id =
-      HttpUtils.get_field_router_param req Field.tenant
-      |> Pool_tenant.Id.of_string
+      HttpUtils.get_field_router_param req Field.tenant |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
     let%lwt operators =
-      Admin.find_all_with_role
-        tenant.Pool_tenant.database_label
-        (`Operator, None)
+      Admin.find_all_with_role tenant.Pool_tenant.database_label (`Operator, None)
     in
     Page.Root.Tenant.manage_operators tenant operators context
     |> General.create_root_layout context
@@ -93,20 +89,16 @@ let manage_operators req =
 
 let create_operator req =
   let tenant_id =
-    HttpUtils.get_field_router_param req Field.Tenant
-    |> Pool_tenant.Id.of_string
+    HttpUtils.get_field_router_param req Field.Tenant |> Pool_tenant.Id.of_string
   in
   let redirect_path =
     Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value tenant_id)
   in
   let result { Pool_context.user; _ } =
-    Lwt_result.map_error (fun err ->
-      err, Format.asprintf "%s/operator" redirect_path)
+    Lwt_result.map_error (fun err -> err, Format.asprintf "%s/operator" redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* tenant_db =
-      Pool_tenant.(find_full tenant_id >|+ Write.database_label)
-    in
+    let* tenant_db = Pool_tenant.(find_full tenant_id >|+ Write.database_label) in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result Error.EmailAddressMissingAdmin
@@ -117,10 +109,7 @@ let create_operator req =
       let open CCResult.Infix in
       let open Cqrs_command.Admin_command.CreateAdmin in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      urlencoded
-      |> decode
-      >>= handle ~roles:[ `Operator, None ] ~tags
-      |> Lwt_result.lift
+      urlencoded |> decode >>= handle ~roles:[ `Operator, None ] ~tags |> Lwt_result.lift
     in
     let handle events =
       events |> Pool_event.handle_events ~tags tenant_db user |> Lwt_result.ok
@@ -140,8 +129,7 @@ let tenant_detail req =
     Utils.Lwt_result.map_error (fun err -> err, tenants_path)
     @@
     let id =
-      HttpUtils.get_field_router_param req Field.tenant
-      |> Pool_tenant.Id.of_string
+      HttpUtils.get_field_router_param req Field.tenant |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
     let flash_fetcher key = Sihl.Web.Flash.find key req in

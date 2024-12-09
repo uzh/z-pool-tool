@@ -21,8 +21,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command GrantRoles" ~tags);
     let actor_roles =
       CCList.map
-        (fun (role, target_uuid) ->
-          Guard.ActorRole.create ?target_uuid target_id role)
+        (fun (role, target_uuid) -> Guard.ActorRole.create ?target_uuid target_id role)
         roles
     in
     Ok
@@ -115,18 +114,11 @@ end = struct
     all
     |> filter_map (fun permission ->
       assoc_opt ~eq:CCString.equal (show permission) data
-      |> CCOption.map (fun value ->
-        permission, value |> hd |> Utils.Bool.of_string))
+      |> CCOption.map (fun value -> permission, value |> hd |> Utils.Bool.of_string))
     |> CCResult.return
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    role
-    model
-    current_permissions
-    new_permissions
-    =
+  let handle ?(tags = Logs.Tag.empty) role model current_permissions new_permissions =
     Logs.info ~src (fun m -> m "Handle command UpdateRolePermissions" ~tags);
     let create, destroy =
       let open Guard in
@@ -138,8 +130,7 @@ end = struct
         | false -> if value then `Left role_permission else `Drop
         | true -> if value then `Drop else `Right role_permission)
     in
-    Guard.RolePermissionSaved create
-    :: (destroy |> CCList.map Guard.rolepermissiondeleted)
+    Guard.RolePermissionSaved create :: (destroy |> CCList.map Guard.rolepermissiondeleted)
     |> CCList.map Pool_event.guard
     |> CCResult.return
   ;;

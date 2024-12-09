@@ -45,7 +45,6 @@ module String = struct
   let decrypt_from_string value =
     let open Mirage_crypto.Cipher_block.AES.CTR in
     Base64.decode value
-    |> CCResult.map (fun value ->
-      decrypt ~key ~ctr (of_string value) |> to_string)
+    |> CCResult.map (fun value -> decrypt ~key ~ctr (of_string value) |> to_string)
   ;;
 end

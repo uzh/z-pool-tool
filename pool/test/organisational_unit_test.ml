@@ -4,11 +4,7 @@ module Language = Pool_common.Language
 
 let check_result expected generated =
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      generated)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected generated)
 ;;
 
 let create_succeeds () =

@@ -13,22 +13,17 @@ let reminder_settings database_label =
 let run database_label =
   let open Utils.Lwt_result.Infix in
   let%lwt import_message =
-    let%lwt tenant =
-      Pool_tenant.find_by_label database_label ||> get_or_failwith
-    in
+    let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_or_failwith in
     Message_template.UserImport.prepare database_label tenant
   in
   let to_admin = CCList.map (fun (admin, import) -> `Admin admin, import) in
-  let to_contact =
-    CCList.map (fun (contact, import) -> `Contact contact, import)
-  in
+  let to_contact = CCList.map (fun (contact, import) -> `Contact contact, import) in
   let run_limit fcn decode limit = fcn database_label limit () ||> decode in
   let%lwt reminder_settings = reminder_settings database_label in
   let tasks =
     [ run_limit Repo.find_admins_to_notify to_admin, Event.notified
     ; run_limit Repo.find_contacts_to_notify to_contact, Event.notified
-    ; ( run_limit (Repo.find_admins_to_remind reminder_settings) to_admin
-      , Event.reminded )
+    ; run_limit (Repo.find_admins_to_remind reminder_settings) to_admin, Event.reminded
     ; ( run_limit (Repo.find_contacts_to_remind reminder_settings) to_contact
       , Event.reminded )
     ]
@@ -66,8 +61,7 @@ let start () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s interval_s in
   let periodic_fcn () =
-    Logs.debug ~src (fun m ->
-      m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
+    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run_all ()
   in
   create
@@ -83,8 +77,7 @@ let stop () = Lwt.return_unit
 let lifecycle =
   Sihl.Container.create_lifecycle
     "System events"
-    ~dependencies:(fun () ->
-      [ Pool_database.lifecycle; Pool_queue.lifecycle_service ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle; Pool_queue.lifecycle_service ])
     ~start
     ~stop
 ;;

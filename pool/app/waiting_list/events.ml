@@ -14,8 +14,12 @@ type event =
   | Deleted of Entity.t
 [@@deriving eq, show]
 
-let handle_event pool : event -> unit Lwt.t =
+let handle_event ?user_uuid pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
+  let create_changelog before after =
+    let open Version_history in
+    insert pool ?user_uuid ~entity_uuid:before.id ~before ~after ()
+  in
   function
   | Created { experiment; contact } ->
     let write =
@@ -30,7 +34,8 @@ let handle_event pool : event -> unit Lwt.t =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Updated (command, waiting_list) ->
-    { waiting_list with admin_comment = command.admin_comment }
-    |> Repo.update pool
+    let updated = { waiting_list with admin_comment = command.admin_comment } in
+    let%lwt () = Repo.update pool updated in
+    create_changelog waiting_list updated
   | Deleted m -> Repo.delete pool m
 ;;

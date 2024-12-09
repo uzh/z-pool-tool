@@ -38,9 +38,7 @@ let pending_contact_imports_request =
   |> Caqti_type.(unit ->! int)
 ;;
 
-let pending_contact_imports pool =
-  Database.find pool pending_contact_imports_request ()
-;;
+let pending_contact_imports pool = Database.find pool pending_contact_imports_request ()
 
 let login_count_request period =
   let open Caqti_request.Infix in
@@ -80,9 +78,7 @@ let sign_up_count_request period =
   |> Caqti_type.(unit ->! int)
 ;;
 
-let sign_up_count pool period =
-  Database.find pool (sign_up_count_request period) ()
-;;
+let sign_up_count pool period = Database.find pool (sign_up_count_request period) ()
 
 let assignments_created_request period =
   let open Caqti_request.Infix in
@@ -115,9 +111,7 @@ let invitations_sent_request period =
   |> Caqti_type.(unit ->! int)
 ;;
 
-let invitations_sent pool period =
-  Database.find pool (invitations_sent_request period) ()
-;;
+let invitations_sent pool period = Database.find pool (invitations_sent_request period) ()
 
 let reminders_sent_request period =
   let open Caqti_request.Infix in
@@ -137,9 +131,7 @@ let reminders_sent_request period =
   |> Caqti_type.(unit ->! int)
 ;;
 
-let reminders_sent pool period =
-  Database.find pool (reminders_sent_request period) ()
-;;
+let reminders_sent pool period = Database.find pool (reminders_sent_request period) ()
 
 let terms_accepted_count_request period =
   let open Caqti_request.Infix in

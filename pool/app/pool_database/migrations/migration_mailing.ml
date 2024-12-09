@@ -18,6 +18,4 @@ let create_mailing_table =
     |sql}
 ;;
 
-let migration () =
-  Database.Migration.(empty "mailing" |> add_step create_mailing_table)
-;;
+let migration () = Database.Migration.(empty "mailing" |> add_step create_mailing_table)

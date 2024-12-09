@@ -7,8 +7,7 @@ module Target = struct
     let open Utils.Lwt_result.Infix in
     Guard.Persistence.Target.decorate
       ?ctx
-      (Guard.Uuid.target_of Pool_common.Id.value
-       %> Guard.Target.create `SystemSetting)
+      (Guard.Uuid.target_of Pool_common.Id.value %> Guard.Target.create `SystemSetting)
       t
     >|- Pool_message.Error.authorization
   ;;

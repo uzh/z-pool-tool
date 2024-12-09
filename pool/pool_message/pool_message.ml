@@ -82,6 +82,5 @@ let add_field_query_params url params =
   map (CCPair.map_fst Field.human_url) params
   |> add_query_params' (of_string url)
   |> fun uri ->
-  with_query uri (query uri |> rev |> uniq ~eq:Utils.equal_key |> rev)
-  |> to_string
+  with_query uri (query uri |> rev |> uniq ~eq:Utils.equal_key |> rev) |> to_string
 ;;

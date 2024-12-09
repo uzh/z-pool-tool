@@ -36,9 +36,7 @@ let uncanceled_condition = "pool_assignments.canceled_at IS NULL"
 
 module Sql = struct
   let find_request_sql ?(additional_joins = []) ?(count = false) where_fragment =
-    let columns =
-      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-    in
+    let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
     Format.asprintf
       {sql|SELECT %s FROM pool_assignments %s %s|sql}
       columns
@@ -130,9 +128,7 @@ module Sql = struct
         WHERE pool_assignments.session_uuid = UNHEX(REPLACE($1, '-', ''))
         AND pool_assignments.uuid IN ( %s )
       |sql}
-      (CCList.mapi
-         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2))
-         ids
+      (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2)) ids
        |> CCString.concat ",")
     |> find_request_sql
   ;;
@@ -202,8 +198,7 @@ module Sql = struct
     in
     function
     | `Session _ ->
-      {sql| pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-      |> count
+      {sql| pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', '')) |sql} |> count
     | `Experiment _ ->
       Format.asprintf
         {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
@@ -279,10 +274,7 @@ module Sql = struct
   ;;
 
   let find_assigned_contacts_by_experiment pool experiment_id =
-    Database.collect
-      pool
-      find_assigned_contacts_by_experiment_request
-      experiment_id
+    Database.collect pool find_assigned_contacts_by_experiment_request experiment_id
   ;;
 
   let find_public_by_experiment_and_contact_opt_request scope =
@@ -296,8 +288,7 @@ module Sql = struct
           pool_assignments.marked_as_deleted = 0
       |sql}
       |> select_public_sql ~joins
-      |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t
-         ->* Public.t
+      |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t ->* Public.t
     in
     let joins =
       Format.asprintf
@@ -324,8 +315,7 @@ module Sql = struct
     | `All -> "" |> joins |> query
   ;;
 
-  let find_public_by_experiment_and_contact_opt scope pool experiment_id contact
-    =
+  let find_public_by_experiment_and_contact_opt scope pool experiment_id contact =
     Database.collect
       pool
       (find_public_by_experiment_and_contact_opt_request scope)
@@ -335,8 +325,7 @@ module Sql = struct
   let find_by_contact_and_experiment_request =
     let open Caqti_request.Infix in
     let columns =
-      Session.Repo.sql_select_columns @ sql_select_columns
-      |> CCString.concat ", "
+      Session.Repo.sql_select_columns @ sql_select_columns |> CCString.concat ", "
     in
     let joins = Format.asprintf "%s\n%s" Session.Repo.joins joins in
     let where =
@@ -352,8 +341,7 @@ module Sql = struct
       columns
       joins
       where
-    |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t
-       ->* with_session
+    |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t ->* with_session
   ;;
 
   let find_by_contact_and_experiment pool experiment_id contact =
@@ -381,9 +369,7 @@ module Sql = struct
     |> Id.t ->* t
   ;;
 
-  let find_with_follow_ups pool =
-    Database.collect pool find_with_follow_ups_request
-  ;;
+  let find_with_follow_ups pool = Database.collect pool find_with_follow_ups_request
 
   let find_followups_request =
     let open Caqti_request.Infix in
@@ -401,10 +387,7 @@ module Sql = struct
   ;;
 
   let find_follow_ups pool m =
-    Database.collect
-      pool
-      find_followups_request
-      Entity.(m.id, Contact.id m.contact)
+    Database.collect pool find_followups_request Entity.(m.id, Contact.id m.contact)
   ;;
 
   let find_binary_session_id_sql =
@@ -454,10 +437,7 @@ module Sql = struct
 
   let find_by_contact_to_merge pool ~contact ~merged_contact =
     let open Contact in
-    Database.collect
-      pool
-      find_by_contact_to_merge_request
-      (id contact, id merged_contact)
+    Database.collect pool find_by_contact_to_merge_request (id contact, id merged_contact)
   ;;
 
   let insert_request =
@@ -522,9 +502,7 @@ module Sql = struct
                   MatchesFilter.t
                   (t2
                      (option CanceledAt.t)
-                     (t2
-                        (option string)
-                        (option Pool_common.Repo.Reminder.SentAt.t))))))
+                     (t2 (option string) (option Pool_common.Repo.Reminder.SentAt.t))))))
        ->. unit
   ;;
 
@@ -534,8 +512,8 @@ module Sql = struct
     , ( m.no_show
       , ( m.participated
         , ( m.matches_filter
-          , ( m.canceled_at
-            , (m.external_data_id, m.reminder_manually_last_sent_at) ) ) ) ) )
+          , (m.canceled_at, (m.external_data_id, m.reminder_manually_last_sent_at)) ) ) )
+    )
   ;;
 
   let update pool = format_update %> Database.exec pool update_request
@@ -558,8 +536,7 @@ module Sql = struct
   let contact_participation_in_other_assignments_request assignments =
     let ids_sql =
       assignments
-      |> CCList.mapi (fun i _ ->
-        Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 3))
+      |> CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 3))
       |> CCString.concat ","
     in
     Format.asprintf
@@ -585,10 +562,10 @@ module Sql = struct
   ;;
 
   let contact_participation_in_other_assignments
-    pool
-    ~exclude_assignments
-    experiment_uuid
-    contact_uuid
+        pool
+        ~exclude_assignments
+        experiment_uuid
+        contact_uuid
     =
     if CCList.is_empty exclude_assignments
     then Lwt_result.fail Pool_message.Error.InvalidRequest
@@ -622,8 +599,7 @@ let find_closed = Sql.find_closed
 let find_by_session filter pool id =
   match filter with
   | `All -> Sql.find_by_session pool id
-  | `NotDeleted ->
-    Sql.find_by_session ~where_conditions:[ not_deleted_condition ] pool id
+  | `NotDeleted -> Sql.find_by_session ~where_conditions:[ not_deleted_condition ] pool id
   | `Uncanceled ->
     Sql.find_by_session
       ~where_conditions:[ not_deleted_condition; uncanceled_condition ]
@@ -632,18 +608,11 @@ let find_by_session filter pool id =
   | `Deleted -> Sql.find_deleted_by_session pool id
 ;;
 
-let find_by_contact pool contact =
-  contact |> Contact.id |> Sql.find_by_contact pool
-;;
-
+let find_by_contact pool contact = contact |> Contact.id |> Sql.find_by_contact pool
 let find_with_follow_ups = Sql.find_with_follow_ups
 let find_follow_ups = Sql.find_follow_ups
 let find_session_id = Sql.find_session_id
-
-let insert pool session_id model =
-  model |> Write.of_entity session_id |> Sql.insert pool
-;;
-
+let insert pool session_id model = model |> Write.of_entity session_id |> Sql.insert pool
 let update = Sql.update
 
 let find_public_by_experiment_and_contact_opt =
@@ -668,36 +637,27 @@ let enrich_with_customfield_data table_view pool assignments =
   in
   let%lwt custom_fields = Custom_field.find_by_table_view pool table_view in
   let%lwt public_fields =
-    Custom_field.find_public_by_contacts_and_view
-      pool
-      true
-      contact_ids
-      table_view
+    Custom_field.find_public_by_contacts_and_view pool true contact_ids table_view
   in
   let rec assign_custom_fields result custom_fields = function
     | [] -> result
     | hd :: tl ->
-      let contact_id =
-        hd.Entity.contact |> Contact.id |> Contact.Id.to_common
-      in
+      let contact_id = hd.Entity.contact |> Contact.id |> Contact.Id.to_common in
       let current, rest =
         CCList.partition_filter_map
           (fun field ->
-            field
-            |> Custom_field.Public.entity_id
-            |> CCOption.map_or ~default:false (Pool_common.Id.equal contact_id)
-            |> function
-            | true -> `Left field
-            | false -> `Right field)
+             field
+             |> Custom_field.Public.entity_id
+             |> CCOption.map_or ~default:false (Pool_common.Id.equal contact_id)
+             |> function
+             | true -> `Left field
+             | false -> `Right field)
           custom_fields
       in
-      let result =
-        result @ [ Entity.{ hd with custom_fields = Some current } ]
-      in
+      let result = result @ [ Entity.{ hd with custom_fields = Some current } ] in
       assign_custom_fields result rest tl
   in
-  (assign_custom_fields [] public_fields assignments, custom_fields)
-  |> Lwt.return
+  (assign_custom_fields [] public_fields assignments, custom_fields) |> Lwt.return
 ;;
 
 let find_with_custom_field_data table_view pool session_id =
@@ -709,34 +669,25 @@ let find_with_custom_field_data table_view pool session_id =
   in
   let%lwt custom_fields = Custom_field.find_by_table_view pool table_view in
   let%lwt public_fields =
-    Custom_field.find_public_by_contacts_and_view
-      pool
-      true
-      contact_ids
-      table_view
+    Custom_field.find_public_by_contacts_and_view pool true contact_ids table_view
   in
   let rec assign_custom_fields result custom_fields = function
     | [] -> result
     | hd :: tl ->
-      let contact_id =
-        hd.Entity.contact |> Contact.id |> Contact.Id.to_common
-      in
+      let contact_id = hd.Entity.contact |> Contact.id |> Contact.Id.to_common in
       let current, rest =
         CCList.partition_filter_map
           (fun field ->
-            field
-            |> Custom_field.Public.entity_id
-            |> CCOption.map_or ~default:false (Pool_common.Id.equal contact_id)
-            |> function
-            | true -> `Left field
-            | false -> `Right field)
+             field
+             |> Custom_field.Public.entity_id
+             |> CCOption.map_or ~default:false (Pool_common.Id.equal contact_id)
+             |> function
+             | true -> `Left field
+             | false -> `Right field)
           custom_fields
       in
-      let result =
-        result @ [ Entity.{ hd with custom_fields = Some current } ]
-      in
+      let result = result @ [ Entity.{ hd with custom_fields = Some current } ] in
       assign_custom_fields result rest tl
   in
-  (assign_custom_fields [] public_fields assignments, custom_fields)
-  |> Lwt.return
+  (assign_custom_fields [] public_fields assignments, custom_fields) |> Lwt.return
 ;;

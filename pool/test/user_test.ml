@@ -30,15 +30,15 @@ let validate_email_adress () =
   let () =
     CCList.iter
       (fun email ->
-        let expected = Ok (EmailAddress.of_string email) in
-        let result = EmailAddress.create email in
-        check_result expected result)
+         let expected = Ok (EmailAddress.of_string email) in
+         let result = EmailAddress.create email in
+         check_result expected result)
       valid_addresses
   in
   CCList.iter
     (fun email ->
-      let expected = Error Pool_message.(Error.Invalid Field.EmailAddress) in
-      let result = EmailAddress.create email in
-      check_result expected result)
+       let expected = Error Pool_message.(Error.Invalid Field.EmailAddress) in
+       let result = EmailAddress.create email in
+       check_result expected result)
     invalid_addresses
 ;;

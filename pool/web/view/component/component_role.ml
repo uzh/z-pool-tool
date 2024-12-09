@@ -84,21 +84,20 @@ let roles_section ?(top_element = []) language children =
 
 module List = struct
   let row
-    ?(is_edit = false)
-    ~path
-    Pool_context.{ csrf; language; _ }
-    target_id
-    (( ({ Guard.ActorRole.actor_uuid; role; target_uuid } as actor_role)
-     , (_ : Role.Target.t option)
-     , (title : string option) ) as role_element)
+        ?(is_edit = false)
+        ~path
+        Pool_context.{ csrf; language; _ }
+        target_id
+        (( ({ Guard.ActorRole.actor_uuid; role; target_uuid } as actor_role)
+         , (_ : Role.Target.t option)
+         , (title : string option) ) as role_element)
     =
     let button_form target name submit_type confirm_text =
       form
         ~a:
           [ a_method `Post
           ; a_action
-              (roles_path ~suffix:target path target_id
-               |> Sihl.Web.externalize_path)
+              (roles_path ~suffix:target path target_id |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -123,14 +122,14 @@ module List = struct
          @ CCOption.map_or
              ~default:[]
              (fun uuid ->
-               [ input
-                   ~a:
-                     [ a_name Input.Field.(show Target)
-                     ; a_value ([%show: Guard.Uuid.Target.t] uuid)
-                     ; a_hidden ()
-                     ]
-                   ()
-               ])
+                [ input
+                    ~a:
+                      [ a_name Input.Field.(show Target)
+                      ; a_value ([%show: Guard.Uuid.Target.t] uuid)
+                      ; a_hidden ()
+                      ]
+                    ()
+                ])
              target_uuid)
     in
     let buttons =
@@ -148,12 +147,7 @@ module List = struct
       let remove_button =
         if is_edit
         then
-          [ button_form
-              "revoke-role"
-              Pool_message.Control.delete
-              `Error
-              I18n.RevokeRole
-          ]
+          [ button_form "revoke-role" Pool_message.Control.delete `Error I18n.RevokeRole ]
         else default
       in
       target_button @ remove_button
@@ -167,13 +161,7 @@ module List = struct
     to_human actor_role title :: [ buttons ]
   ;;
 
-  let create
-    ?is_edit
-    ~path
-    ({ Pool_context.language; _ } as context)
-    target_id
-    roles
-    =
+  let create ?is_edit ~path ({ Pool_context.language; _ } as context) target_id roles =
     let open CCList in
     let thead =
       let open Pool_message in
@@ -247,9 +235,7 @@ module Search = struct
     in
     form
       ~a:
-        [ a_action
-            (action_path path target_id "grant-role"
-             |> Sihl.Web.externalize_path)
+        [ a_action (action_path path target_id "grant-role" |> Sihl.Web.externalize_path)
         ; a_method `Post
         ]
       [ Component_input.csrf_element csrf ()
@@ -268,12 +254,8 @@ module Search = struct
     div
       ~a:[ a_class [ stack; "inset-sm"; "border"; "role-search" ] ]
       [ div
-          ~a:
-            [ a_id "role-search-form"; a_user_data "detect-unsaved-changes" "" ]
-          [ div
-              ~a:[ a_class [ stack; "grow"; "role-search-wrapper" ] ]
-              [ role_form ]
-          ]
+          ~a:[ a_id "role-search-form"; a_user_data "detect-unsaved-changes" "" ]
+          [ div ~a:[ a_class [ stack; "grow"; "role-search-wrapper" ] ] [ role_form ] ]
       ]
   ;;
 end
@@ -369,10 +351,7 @@ module ActorPermissionSearch = struct
     div
       ~a:[ a_class [ "trim"; "actor-search" ] ]
       [ div
-          ~a:
-            [ a_id "actor-search-form"
-            ; a_user_data "detect-unsaved-changes" ""
-            ]
+          ~a:[ a_id "actor-search-form"; a_user_data "detect-unsaved-changes" "" ]
           [ div ~a:[ a_class [ "grow"; "actor-search-wrapper" ] ] [ create ] ]
       ]
   ;;

@@ -16,10 +16,7 @@ let show req =
     Schedule.find_by_db_label context.Pool_context.database_label query
   in
   let open Page.Admin.Settings.Schedule in
-  (if HttpUtils.Htmx.is_hx_request req then list else index)
-    context
-    schedules
-    query
+  (if HttpUtils.Htmx.is_hx_request req then list else index) context schedules query
   |> Lwt_result.return
 ;;
 

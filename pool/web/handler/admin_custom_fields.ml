@@ -29,18 +29,15 @@ let find_assocs_in_urlencoded urlencoded field encoder =
   let field = Field.show field in
   CCList.filter_map
     (fun (key, values) ->
-      let group, id = CCString.take_drop (CCString.length field) key in
-      let value = CCList.head_opt values in
-      let key =
-        let open CCOption in
-        id
-        |> CCString.chop_prefix ~pre:"["
-        >>= CCString.chop_suffix ~suf:"]"
-        >>= encoder
-      in
-      match key, value with
-      | Some l, Some v when CCString.equal field group -> Some (l, v)
-      | _ -> None)
+       let group, id = CCString.take_drop (CCString.length field) key in
+       let value = CCList.head_opt values in
+       let key =
+         let open CCOption in
+         id |> CCString.chop_prefix ~pre:"[" >>= CCString.chop_suffix ~suf:"]" >>= encoder
+       in
+       match key, value with
+       | Some l, Some v when CCString.equal field group -> Some (l, v)
+       | _ -> None)
     urlencoded
 ;;
 
@@ -50,9 +47,7 @@ let index req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
     @@ let* model = model_from_router req |> Lwt_result.lift in
-       let%lwt group_list =
-         Custom_field.find_groups_by_model database_label model
-       in
+       let%lwt group_list = Custom_field.find_groups_by_model database_label model in
        let%lwt field_list = find_by_model database_label model in
        Page.Admin.CustomFields.index field_list group_list model context
        >|> create_layout ~active_navigation:Url.fallback_path req context
@@ -99,8 +94,7 @@ let new_form req = get_model form req
 
 let edit req =
   let id =
-    HttpUtils.get_field_router_param req Field.CustomField
-    |> Custom_field.Id.of_string
+    HttpUtils.get_field_router_param req Field.CustomField |> Custom_field.Id.of_string
   in
   get_model (form ~id) req
 ;;
@@ -135,9 +129,7 @@ let write ?id req model =
       let open Utils.Lwt_result.Infix in
       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
       let* decoded =
-        urlencoded
-        |> Cqrs_command.Custom_field_command.base_decode
-        |> Lwt_result.lift
+        urlencoded |> Cqrs_command.Custom_field_command.base_decode |> Lwt_result.lift
       in
       match id with
       | None ->
@@ -177,8 +169,7 @@ let create req = get_model write req
 
 let update req =
   let id =
-    HttpUtils.get_field_router_param req Field.CustomField
-    |> Custom_field.Id.of_string
+    HttpUtils.get_field_router_param req Field.CustomField |> Custom_field.Id.of_string
   in
   get_model (write ~id) req
 ;;
@@ -186,8 +177,7 @@ let update req =
 let toggle_action action req =
   let open Utils.Lwt_result.Infix in
   let id =
-    HttpUtils.get_field_router_param req Field.CustomField
-    |> Custom_field.Id.of_string
+    HttpUtils.get_field_router_param req Field.CustomField |> Custom_field.Id.of_string
   in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, Url.fallback_path, [])
@@ -226,8 +216,7 @@ let sort_options req =
   let handler req model =
     let open Utils.Lwt_result.Infix in
     let custom_field_id =
-      HttpUtils.get_field_router_param req Field.CustomField
-      |> Custom_field.Id.of_string
+      HttpUtils.get_field_router_param req Field.CustomField |> Custom_field.Id.of_string
     in
     let redirect_path = Url.Field.edit_path (model, custom_field_id) in
     let result { Pool_context.database_label; user; _ } =
@@ -236,9 +225,7 @@ let sort_options req =
       let tags = Pool_context.Logger.Tags.req req in
       let* custom_field = custom_field_id |> Custom_field.find database_label in
       let%lwt ids =
-        Sihl.Web.Request.urlencoded_list
-          Field.(CustomFieldOption |> array_key)
-          req
+        Sihl.Web.Request.urlencoded_list Field.(CustomFieldOption |> array_key) req
       in
       let%lwt options =
         let open Utils.Lwt_result.Infix in
@@ -247,10 +234,9 @@ let sort_options req =
         ||> fun options ->
         CCList.filter_map
           (fun id ->
-            CCList.find_opt
-              SelectOption.(
-                fun (option : t) -> Id.equal (Id.of_string id) option.id)
-              options)
+             CCList.find_opt
+               SelectOption.(fun (option : t) -> Id.equal (Id.of_string id) option.id)
+               options)
           ids
       in
       let events =
@@ -258,13 +244,10 @@ let sort_options req =
         options |> handle ~tags |> Lwt_result.lift
       in
       let handle events =
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         Http_utils.redirect_to_with_actions
           redirect_path
-          [ HttpUtils.Message.set ~success:[ Success.Updated Field.CustomField ]
-          ]
+          [ HttpUtils.Message.set ~success:[ Success.Updated Field.CustomField ] ]
       in
       events |>> handle
     in
@@ -297,9 +280,9 @@ let sort_fields req ?group () =
       let fields =
         CCList.filter_map
           (fun idx ->
-            CCList.find_opt
-              (fun (field : t) -> Id.equal (Id.of_string idx) (id field))
-              fields)
+             CCList.find_opt
+               (fun (field : t) -> Id.equal (Id.of_string idx) (id field))
+               fields)
           ids
       in
       let events =
@@ -307,14 +290,10 @@ let sort_fields req ?group () =
         fields |> handle ~tags |> Lwt_result.lift
       in
       let handle events =
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         Http_utils.redirect_to_with_actions
           redirect_path
-          [ HttpUtils.Message.set
-              ~success:[ Success.Updated Field.CustomFieldGroup ]
-          ]
+          [ HttpUtils.Message.set ~success:[ Success.Updated Field.CustomFieldGroup ] ]
       in
       events |>> handle
     in
@@ -328,8 +307,7 @@ let sort_ungrouped_fields req = sort_fields req ()
 let changelog req =
   let response req model =
     let custom_field_id =
-      HttpUtils.get_field_router_param req Field.CustomField
-      |> Custom_field.Id.of_string
+      HttpUtils.get_field_router_param req Field.CustomField |> Custom_field.Id.of_string
     in
     let url =
       HttpUtils.Url.Admin.custom_fields_path
@@ -342,11 +320,7 @@ let changelog req =
       Custom_field.changelog_to_human database_label language
     in
     let open Custom_field in
-    Helpers.Changelog.htmx_handler
-      ~to_human
-      ~url
-      (custom_field_id |> Id.to_common)
-      req
+    Helpers.Changelog.htmx_handler ~to_human ~url (custom_field_id |> Id.to_common) req
   in
   get_model response req
 ;;
@@ -366,14 +340,10 @@ end = struct
   ;;
 
   let index =
-    Custom_field.Guard.Access.index
-    |> Guardian.validate_admin_entity ~any_id:true
+    Custom_field.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
-  let create =
-    CustomFieldCommand.Create.effects |> Guardian.validate_admin_entity
-  ;;
-
+  let create = CustomFieldCommand.Create.effects |> Guardian.validate_admin_entity
   let update = custom_field_effects CustomFieldCommand.Update.effects
   let delete = custom_field_effects CustomFieldCommand.Delete.effects
   let publish = custom_field_effects CustomFieldCommand.Publish.effects

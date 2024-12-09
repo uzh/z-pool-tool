@@ -39,16 +39,12 @@ module Name = struct
   let find_opt lang t = CCList.assoc_opt ~eq:Language.equal lang t
   let find_opt_or lang default t = find_opt lang t |> CCOption.value ~default
   let get_hd t = CCList.hd t |> snd
-
-  let find lang t =
-    find_opt lang t |> CCOption.value ~default:(CCList.hd t |> snd)
-  ;;
+  let find lang t = find_opt lang t |> CCOption.value ~default:(CCList.hd t |> snd)
 
   let create sys_languages names =
     CCList.filter
       (fun lang ->
-        CCList.assoc_opt ~eq:Pool_common.Language.equal lang names
-        |> CCOption.is_none)
+         CCList.assoc_opt ~eq:Pool_common.Language.equal lang names |> CCOption.is_none)
       sys_languages
     |> function
     | [] -> Ok names
@@ -148,9 +144,7 @@ module DuplicateWeighting = struct
   let field = Pool_message.Field.DuplicateWeighting
 
   let create i =
-    if i < min || i > max
-    then Error Pool_message.(Error.OutOfRange (min, max))
-    else Ok i
+    if i < min || i > max then Error Pool_message.(Error.OutOfRange (min, max)) else Ok i
   ;;
 
   let schema = schema field create
@@ -174,17 +168,13 @@ module Validation = struct
     rules
     |> snd
     |> CCList.filter_map (fun (key, rule_value) ->
-      read_key key
-      >|= to_hint
-      >>= fun (parse, variant) -> parse rule_value >|= variant)
+      read_key key >|= to_hint >>= fun (parse, variant) -> parse rule_value >|= variant)
   ;;
 
   module Text = struct
     type key =
-      | TextLengthMin [@name "text_length_min"]
-      [@printer printer "text_length_min"]
-      | TextLengthMax [@name "text_length_max"]
-      [@printer printer "text_length_max"]
+      | TextLengthMin [@name "text_length_min"] [@printer printer "text_length_min"]
+      | TextLengthMax [@name "text_length_max"] [@printer printer "text_length_max"]
     [@@deriving show, eq, yojson]
 
     let key_to_human = function
@@ -211,25 +201,23 @@ module Validation = struct
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule_value) ->
-              let map_or = CCOption.map_or ~default:result in
-              match read_key key with
-              | Some TextLengthMin ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_min_length rule)
-              | Some TextLengthMax ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_max_length rule)
-              | None -> result)
+               let map_or = CCOption.map_or ~default:result in
+               match read_key key with
+               | Some TextLengthMin ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_min_length rule)
+               | Some TextLengthMax ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_max_length rule)
+               | None -> result)
             (Ok value)
             data)
       , data )
     ;;
 
-    let all =
-      [ show_key TextLengthMin, `Number; show_key TextLengthMax, `Number ]
-    ;;
+    let all = [ show_key TextLengthMin, `Number; show_key TextLengthMax, `Number ]
 
     let hints =
       let open Pool_common in
@@ -271,17 +259,13 @@ module Validation = struct
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule) ->
-              let map_or = CCOption.map_or ~default:result in
-              match read_key key with
-              | Some NumberMin ->
-                rule
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_min rule)
-              | Some NumberMax ->
-                rule
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_max rule)
-              | None -> result)
+               let map_or = CCOption.map_or ~default:result in
+               match read_key key with
+               | Some NumberMin ->
+                 rule |> CCInt.of_string |> map_or (fun rule -> result >>= check_min rule)
+               | Some NumberMax ->
+                 rule |> CCInt.of_string |> map_or (fun rule -> result >>= check_max rule)
+               | None -> result)
             (Ok value)
             data)
       , data )
@@ -301,10 +285,8 @@ module Validation = struct
 
   module MultiSelect = struct
     type key =
-      | OptionsCountMin [@name "options_count_min"]
-      [@printer printer "options_count_min"]
-      | OptionsCountMax [@name "options_count_max"]
-      [@printer printer "options_count_max"]
+      | OptionsCountMin [@name "options_count_min"] [@printer printer "options_count_min"]
+      | OptionsCountMax [@name "options_count_max"] [@printer printer "options_count_max"]
     [@@deriving show, eq, yojson]
 
     let key_to_human = function
@@ -331,25 +313,23 @@ module Validation = struct
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule_value) ->
-              let map_or = CCOption.map_or ~default:result in
-              match read_key key with
-              | Some OptionsCountMin ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_options_min_count rule)
-              | Some OptionsCountMax ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_options_max_count rule)
-              | None -> result)
+               let map_or = CCOption.map_or ~default:result in
+               match read_key key with
+               | Some OptionsCountMin ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_options_min_count rule)
+               | Some OptionsCountMax ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_options_max_count rule)
+               | None -> result)
             (Ok value)
             data)
       , data )
     ;;
 
-    let all =
-      [ show_key OptionsCountMin, `Number; show_key OptionsCountMax, `Number ]
-    ;;
+    let all = [ show_key OptionsCountMin, `Number; show_key OptionsCountMax, `Number ]
 
     let hints rules =
       let open Pool_common in
@@ -413,9 +393,7 @@ module SelectOption = struct
     |> Pool_common.Utils.get_or_failwith
   ;;
 
-  let create ?(id = Id.create ()) ?published_at name =
-    { id; name; published_at }
-  ;;
+  let create ?(id = Id.create ()) ?published_at name = { id; name; published_at }
 
   let to_common_field language m =
     let name = name language m in
@@ -480,8 +458,7 @@ module Public = struct
     match a, b with
     | Boolean (_, a), Boolean (_, b) -> equal_value ~consider_admin:true a b
     | Date (_, a), Date (_, b) -> equal_value ~consider_admin:true a b
-    | MultiSelect (_, _, a), MultiSelect (_, _, b) ->
-      equal_value ~consider_admin:true a b
+    | MultiSelect (_, _, a), MultiSelect (_, _, b) -> equal_value ~consider_admin:true a b
     | Number (_, a), Number (_, b) -> equal_value ~consider_admin:true a b
     | Select (_, _, a), Select (_, _, b) -> equal_value ~consider_admin:true a b
     | Text (_, a), Text (_, b) -> equal_value ~consider_admin:true a b
@@ -608,8 +585,7 @@ module Public = struct
     | MultiSelect (public, options, answer) ->
       multiselect { public with version } options answer
     | Number (public, answer) -> number { public with version } answer
-    | Select (public, options, answer) ->
-      select { public with version } options answer
+    | Select (public, options, answer) -> select { public with version } options answer
     | Text (public, answer) -> text { public with version } answer
   ;;
 
@@ -621,17 +597,14 @@ module Public = struct
 
   let to_common_hint language m =
     let open CCOption in
-    hint language m
-    >|= Hint.value_hint
-    >|= fun h -> Pool_common.I18n.CustomHtmx h
+    hint language m >|= Hint.value_hint >|= fun h -> Pool_common.I18n.CustomHtmx h
   ;;
 
   let validation_hints =
     let return = CCOption.return in
     function
     | Boolean _ | Date _ | Select _ -> None
-    | Number ({ validation; _ }, _) ->
-      return (Validation.Number.hints validation)
+    | Number ({ validation; _ }, _) -> return (Validation.Number.hints validation)
     | MultiSelect ({ validation; _ }, _, _) ->
       return (Validation.MultiSelect.hints validation)
     | Text ({ validation; _ }, _) -> return (Validation.Text.hints validation)
@@ -719,23 +692,23 @@ type t =
 [@@deriving eq, show, yojson]
 
 let create
-  ?(id = Pool_common.Id.create ())
-  ?(select_options = [])
-  ?published_at
-  ?duplicate_weighting
-  field_type
-  model
-  name
-  hint
-  validation
-  required
-  disabled
-  custom_field_group_id
-  admin_hint
-  admin_override
-  admin_view_only
-  admin_input_only
-  prompt_on_registration
+      ?(id = Pool_common.Id.create ())
+      ?(select_options = [])
+      ?published_at
+      ?duplicate_weighting
+      field_type
+      model
+      name
+      hint
+      validation
+      required
+      disabled
+      custom_field_group_id
+      admin_hint
+      admin_override
+      admin_view_only
+      admin_input_only
+      prompt_on_registration
   =
   let open CCResult in
   let show_on_session_close_page = false in
@@ -792,20 +765,20 @@ type update =
   }
 
 let update_attributes
-  ({ name
-   ; hint
-   ; required
-   ; disabled
-   ; custom_field_group_id
-   ; admin_hint
-   ; admin_override
-   ; admin_view_only
-   ; admin_input_only
-   ; prompt_on_registration
-   ; duplicate_weighting
-   } :
-    update)
-  (field : 'a custom_field)
+      ({ name
+       ; hint
+       ; required
+       ; disabled
+       ; custom_field_group_id
+       ; admin_hint
+       ; admin_override
+       ; admin_view_only
+       ; admin_input_only
+       ; prompt_on_registration
+       ; duplicate_weighting
+       } :
+        update)
+      (field : 'a custom_field)
   : 'a custom_field
   =
   { field with
@@ -1038,8 +1011,7 @@ let validation_strings =
   let open Validation in
   function
   | Boolean _ | Date _ | Select _ -> []
-  | MultiSelect ({ validation; _ }, _) ->
-    validation |> snd |> to_strings MultiSelect.all
+  | MultiSelect ({ validation; _ }, _) -> validation |> snd |> to_strings MultiSelect.all
   | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Text { validation; _ } -> validation |> snd |> to_strings Text.all
 ;;
@@ -1053,13 +1025,7 @@ let validation_to_yojson = function
 
 let boolean_fields =
   Pool_message.Field.
-    [ Required
-    ; Disabled
-    ; Override
-    ; AdminInputOnly
-    ; AdminViewOnly
-    ; PromptOnRegistration
-    ]
+    [ Required; Disabled; Override; AdminInputOnly; AdminViewOnly; PromptOnRegistration ]
 ;;
 
 let has_options = function
@@ -1096,13 +1062,12 @@ end
 let group_fields groups fields =
   let partition group =
     CCList.partition
-      CCFun.(
-        group_id %> CCOption.map_or ~default:false (Id.equal group.Group.id))
+      CCFun.(group_id %> CCOption.map_or ~default:false (Id.equal group.Group.id))
   in
   CCList.fold_left
     (fun (grouped, ungrouped) group ->
-      let of_group, ungrouped = partition group ungrouped in
-      grouped @ [ group, of_group ], ungrouped)
+       let of_group, ungrouped = partition group ungrouped in
+       grouped @ [ group, of_group ], ungrouped)
     ([], fields)
     groups
 ;;

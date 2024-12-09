@@ -28,10 +28,7 @@ let find_pending_waitinglists_by_contact =
   Repo_public.find_pending_waitinglists_by_contact
 ;;
 
-let find_past_experiments_by_contact =
-  Repo_public.find_past_experiments_by_contact
-;;
-
+let find_past_experiments_by_contact = Repo_public.find_past_experiments_by_contact
 let find_of_session = Repo.find_of_session
 let find_of_mailing = Repo.find_of_mailing
 let session_count = Repo.session_count
@@ -64,9 +61,7 @@ let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
   | Some id -> Email.SmtpAuth.find database_label id >|+ CCOption.return
 ;;
 
-let is_sessionless ({ online_experiment; _ } : t) =
-  CCOption.is_some online_experiment
-;;
+let is_sessionless ({ online_experiment; _ } : t) = CCOption.is_some online_experiment
 
 let invitation_count =
   Repo_statistics.SentInvitations.total_invitation_count_by_experiment

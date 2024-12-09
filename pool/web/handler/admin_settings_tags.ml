@@ -57,8 +57,7 @@ let write action req =
     let open Pool_message.Success in
     match action with
     | `Create -> Format.asprintf "%s/create" base_path, Created field
-    | `Update id ->
-      Format.asprintf "%s/%s" base_path (Tags.Id.value id), Updated field
+    | `Update id -> Format.asprintf "%s/%s" base_path (Tags.Id.value id), Updated field
   in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
@@ -74,12 +73,7 @@ let write action req =
       in
       match action with
       | `Create ->
-        Create.(
-          urlencoded
-          |> decode
-          |> Lwt_result.lift
-          >>= is_existing
-          >== handle ~tags)
+        Create.(urlencoded |> decode |> Lwt_result.lift >>= is_existing >== handle ~tags)
       | `Update id ->
         let* ({ Tags.id; _ } as tag) = Tags.find database_label id in
         Update.(
@@ -104,6 +98,12 @@ let create = write `Create
 let update req = write (`Update (id req)) req
 let search = Helpers.Search.htmx_search_helper `ContactTag
 
+let changelog req =
+  let id = id req in
+  let url = HttpUtils.Url.Admin.Settings.tags_path ~suffix:"changelog" ~id () in
+  Helpers.Changelog.htmx_handler ~url (Tags.Id.to_common id) req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
@@ -118,29 +118,15 @@ end = struct
   module Command = Cqrs_command.Tags_command
 
   let contact_effects = Guardian.id_effects Contact.Id.validate Field.Contact
-
-  let experiment_effects =
-    Guardian.id_effects Experiment.Id.validate Field.Experiment
-  ;;
-
+  let experiment_effects = Guardian.id_effects Experiment.Id.validate Field.Experiment
   let tag_effects = Guardian.id_effects Tags.Id.validate Field.Tag
-
-  let index =
-    Tags.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
-  ;;
-
+  let index = Tags.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   let create = Command.Create.effects |> Guardian.validate_admin_entity
   let read = tag_effects Tags.Guard.Access.read
   let update = tag_effects Command.Update.effects
   let assign_tag_to_contact = contact_effects Command.AssignTagToContact.effects
-
-  let remove_tag_from_contact =
-    contact_effects Command.RemoveTagFromContact.effects
-  ;;
-
-  let assign_tag_to_experiment =
-    experiment_effects Command.AssignTagToExperiment.effects
-  ;;
+  let remove_tag_from_contact = contact_effects Command.RemoveTagFromContact.effects
+  let assign_tag_to_experiment = experiment_effects Command.AssignTagToExperiment.effects
 
   let remove_tag_from_experiment =
     experiment_effects Command.RemoveTagFromExperiment.effects

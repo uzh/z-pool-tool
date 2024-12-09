@@ -1,9 +1,5 @@
 # Pool Tool
 
-## Architecture
-
-Follow the [Architecture](./doc/ARCHITECTURE.md) documentation.
-
 ## Development
 
 A guide to setup the project with devcontainers can be found

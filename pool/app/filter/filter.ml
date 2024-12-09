@@ -51,10 +51,7 @@ let rec t_to_human key_list subquery_list (t : query) =
   | Pred { Predicate.key; operator; value } ->
     Human.Pred
       Predicate.
-        { key = Key.to_human key_list key
-        ; operator = Some operator
-        ; value = Some value
-        }
+        { key = Key.to_human key_list key; operator = Some operator; value = Some value }
   | Template filter_id ->
     subquery_list
     |> CCList.find_opt (fun filter -> Pool_common.Id.equal filter.id filter_id)
@@ -105,8 +102,7 @@ let all_in_query_fcn fcn { query; _ } =
 let[@warning "-4"] all_query_experiments =
   let open Entity.Key in
   all_in_query_fcn (function
-    | Hardcoded Participation, Entity.Lst lst ->
-      lst |> Filter_utils.single_val_to_id
+    | Hardcoded Participation, Entity.Lst lst -> lst |> Filter_utils.single_val_to_id
     | _, _ -> [])
 ;;
 

@@ -11,8 +11,7 @@ let create_version_tag () =
     Alcotest.(check Test_utils.(result testable_tag error) msg expected res)
   in
   let () =
-    invalid_tags
-    |> CCList.iter (test "invalid" (Error (Error.Invalid Field.Tag)))
+    invalid_tags |> CCList.iter (test "invalid" (Error (Error.Invalid Field.Tag)))
   in
   let () =
     valid_tags
@@ -64,9 +63,7 @@ let update () =
   let tag_field = Field.(show Tag) in
   let text_field = Field.(show Text) in
   let id = Id.create () in
-  let version =
-    Pool_version.create ~id (Tag.of_string "1.1.1") (Text.of_string "text")
-  in
+  let version = Pool_version.create ~id (Tag.of_string "1.1.1") (Text.of_string "text") in
   let run_test urlencoded expected msg =
     let open CCResult in
     let result =
@@ -78,17 +75,13 @@ let update () =
   let () =
     let urlencoded = [ text_field, [ "updated" ] ] in
     let text = Text.of_string "updated" in
-    let expected =
-      Ok [ Updated { version with text } |> Pool_event.pool_version ]
-    in
+    let expected = Ok [ Updated { version with text } |> Pool_event.pool_version ] in
     run_test urlencoded expected "update version valid"
   in
   let () =
     let urlencoded = [ tag_field, [ "1.2.3" ]; text_field, [ "updated" ] ] in
     let text = Text.of_string "updated" in
-    let expected =
-      Ok [ Updated { version with text } |> Pool_event.pool_version ]
-    in
+    let expected = Ok [ Updated { version with text } |> Pool_event.pool_version ] in
     run_test urlencoded expected "update version valid with tag to ignore"
   in
   ()
@@ -96,9 +89,7 @@ let update () =
 
 let publish () =
   let announcement_id = Announcement.Id.create () in
-  let version =
-    Pool_version.create (Tag.of_string "1.1.1") (Text.of_string "text")
-  in
+  let version = Pool_version.create (Tag.of_string "1.1.1") (Text.of_string "text") in
   let tenant_ids = [ Pool_tenant.Id.create () ] in
   let run_test version expected msg =
     let result =
@@ -115,8 +106,7 @@ let publish () =
       in
       Ok
         [ Published version |> Pool_event.pool_version
-        ; Announcement.Created (announcement, tenant_ids)
-          |> Pool_event.announcement
+        ; Announcement.Created (announcement, tenant_ids) |> Pool_event.announcement
         ]
     in
     run_test version expected "publish version succeeds"
@@ -125,9 +115,7 @@ let publish () =
     let expected = Error Pool_message.(Error.AlreadyPublished Field.Version) in
     let version =
       Pool_version.
-        { version with
-          published_at = Some (PublishedAt.create (Ptime_clock.now ()))
-        }
+        { version with published_at = Some (PublishedAt.create (Ptime_clock.now ())) }
     in
     run_test version expected "pushish published version fails"
   in

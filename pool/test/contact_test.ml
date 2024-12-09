@@ -7,11 +7,7 @@ let current_user = Test_utils.Model.create_admin ()
 
 let check_result expected generated =
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      generated)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected generated)
 ;;
 
 let contact_info email_address =
@@ -28,9 +24,7 @@ let allowed_email_suffixes =
 let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn
 
 let confirmation_mail contact =
-  let email =
-    Contact.(contact |> email_address |> Pool_user.EmailAddress.value)
-  in
+  let email = Contact.(contact |> email_address |> Pool_user.EmailAddress.value) in
   let open Message_template in
   let sender = "test@econ.uzh.ch" in
   let ({ email_subject; email_text; label; _ } : Message_template.t) =
@@ -47,8 +41,7 @@ let confirmation_mail contact =
     }
   |> Email.Service.Job.create
   |> Email.create_dispatch
-       ~job_ctx:
-         (Pool_queue.job_ctx_create Contact.[ contact |> id |> Id.to_common ])
+       ~job_ctx:(Pool_queue.job_ctx_create Contact.[ contact |> id |> Id.to_common ])
        ~message_template:(Message_template.Label.show label)
 ;;
 
@@ -134,8 +127,7 @@ let sign_up_not_allowed_suffix () =
   let token = Email.Token.create "testtoken" in
   let verification_email = verification_email contact_info in
   let events =
-    decoded
-    |> handle ~allowed_email_suffixes [] token email verification_email None
+    decoded |> handle ~allowed_email_suffixes [] token email verification_email None
   in
   let expected =
     Error
@@ -147,25 +139,18 @@ let sign_up_not_allowed_suffix () =
 
 let sign_up () =
   let user_id = Contact.Id.create () in
-  let terms_accepted_at =
-    Pool_user.TermsAccepted.create_now () |> CCOption.pure
-  in
-  let ((email_address, password, firstname, lastname, language) as contact_info)
-    =
+  let terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure in
+  let ((email_address, password, firstname, lastname, language) as contact_info) =
     contact_info "john@gmail.com"
   in
-  let email =
-    "john@gmail.com" |> Pool_user.EmailAddress.create |> CCResult.get_exn
-  in
+  let email = "john@gmail.com" |> Pool_user.EmailAddress.create |> CCResult.get_exn in
   let token = Email.Token.create "testtoken" in
   let verification_email = verification_email contact_info in
   let events =
     let open CCResult in
     let open Contact_command.SignUp in
     let* allowed_email_suffixes =
-      [ "gmail.com" ]
-      |> CCList.map Settings.EmailSuffix.create
-      |> CCResult.flatten_l
+      [ "gmail.com" ] |> CCList.map Settings.EmailSuffix.create |> CCResult.flatten_l
     in
     contact_info
     |> sign_up_contact
@@ -208,9 +193,7 @@ let sign_up () =
 let delete_unverified () =
   let contact = "john@gmail.com" |> contact_info |> create_contact false in
   let events = Contact_command.DeleteUnverified.handle contact in
-  let expected =
-    Ok [ Contact.UnverifiedDeleted contact |> Pool_event.contact ]
-  in
+  let expected = Ok [ Contact.UnverifiedDeleted contact |> Pool_event.contact ] in
   check_result expected events
 ;;
 
@@ -226,17 +209,13 @@ let update_language () =
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let language = Language.De in
   let version = 0 |> Pool_common.Version.of_int in
-  let partial_update =
-    Custom_field.PartialUpdate.(Language (version, Some language))
-  in
+  let partial_update = Custom_field.PartialUpdate.(Language (version, Some language)) in
   let events =
-    partial_update
-    |> Contact_command.Update.handle (Pool_context.Contact contact) contact
+    partial_update |> Contact_command.Update.handle (Pool_context.Contact contact) contact
   in
   let expected =
     Ok
-      [ Custom_field.PartialUpdate
-          (partial_update, contact, Pool_context.Contact contact)
+      [ Custom_field.PartialUpdate (partial_update, contact, Pool_context.Contact contact)
         |> Pool_event.custom_field
       ]
   in
@@ -244,9 +223,7 @@ let update_language () =
 ;;
 
 let update_password () =
-  let ((_, password, _, _, _) as contact_info) =
-    "john@gmail.com" |> contact_info
-  in
+  let ((_, password, _, _, _) as contact_info) = "john@gmail.com" |> contact_info in
   let contact = contact_info |> create_contact true in
   let new_password = "NewPassword2!" in
   let notification = confirmation_mail contact in
@@ -276,8 +253,7 @@ let update_password () =
 
 let validate_password_policy password expected =
   let res = Pool_user.Password.Plain.(password |> create |> validate) in
-  Alcotest.(
-    check Test_utils.(result password_plain error) "succeeds" expected res)
+  Alcotest.(check Test_utils.(result password_plain error) "succeeds" expected res)
 ;;
 
 let password_min_length () =
@@ -285,9 +261,7 @@ let password_min_length () =
 ;;
 
 let password_capital_letter () =
-  validate_password_policy
-    "password9!"
-    (Error Error.PasswordPolicyCapitalLetter)
+  validate_password_policy "password9!" (Error Error.PasswordPolicyCapitalLetter)
 ;;
 
 let password_number () =
@@ -298,15 +272,12 @@ let password_special_char () =
   validate_password_policy
     "Password9"
     (Error
-       (Error.PasswordPolicySpecialChar
-          Pool_user.Password.Policy.default_special_char_set))
+       (Error.PasswordPolicySpecialChar Pool_user.Password.Policy.default_special_char_set))
 ;;
 
 let valid_password () =
   let password = "Password9*" in
-  let expected =
-    password |> Pool_user.Password.Plain.create |> CCResult.return
-  in
+  let expected = password |> Pool_user.Password.Plain.create |> CCResult.return in
   validate_password_policy password expected
 ;;
 
@@ -318,10 +289,7 @@ let validate_cell_phone nr expected =
 let valid_swiss_number () =
   let nr = "+41791234567" in
   let expected =
-    nr
-    |> Pool_user.CellPhone.create
-    |> Test_utils.get_or_failwith
-    |> CCResult.return
+    nr |> Pool_user.CellPhone.create |> Test_utils.get_or_failwith |> CCResult.return
   in
   validate_cell_phone nr expected
 ;;
@@ -329,19 +297,14 @@ let valid_swiss_number () =
 let valid_german_number () =
   let nr = "+491512345678" in
   let expected =
-    nr
-    |> Pool_user.CellPhone.create
-    |> Test_utils.get_or_failwith
-    |> CCResult.return
+    nr |> Pool_user.CellPhone.create |> Test_utils.get_or_failwith |> CCResult.return
   in
   validate_cell_phone nr expected
 ;;
 
 let update_password_wrong_policy () =
   let open CCResult.Infix in
-  let ((_, password, _, _, _) as contact_info) =
-    "john@gmail.com" |> contact_info
-  in
+  let ((_, password, _, _, _) as contact_info) = "john@gmail.com" |> contact_info in
   let contact = contact_info |> create_contact true in
   let new_password = "Short1!" in
   let notification = confirmation_mail contact in
@@ -361,9 +324,7 @@ let update_password_wrong_policy () =
 ;;
 
 let update_password_wrong_confirmation () =
-  let ((_, password, _, _, _) as contact_info) =
-    "john@gmail.com" |> contact_info
-  in
+  let ((_, password, _, _, _) as contact_info) = "john@gmail.com" |> contact_info in
   let contact = contact_info |> create_contact true in
   let new_password = "Password1?" in
   let confirmed_password = "Password1*" in
@@ -456,12 +417,9 @@ let update_email () =
     let open CCResult in
     let open Cqrs_command.User_command in
     let* allowed_email_suffixes =
-      [ "gmail.com" ]
-      |> CCList.map Settings.EmailSuffix.create
-      |> CCResult.flatten_l
+      [ "gmail.com" ] |> CCList.map Settings.EmailSuffix.create |> CCResult.flatten_l
     in
-    email_unverified
-    |> UpdateEmail.handle ~allowed_email_suffixes (Contact contact)
+    email_unverified |> UpdateEmail.handle ~allowed_email_suffixes (Contact contact)
   in
   let expected =
     Ok
@@ -508,9 +466,7 @@ let toggle_verified () =
     let expected = Ok [ expected |> Pool_event.contact ] in
     check_result expected events
   in
-  run_test
-    contact
-    (Updated { contact with verified = Some (create_verified ()) });
+  run_test contact (Updated { contact with verified = Some (create_verified ()) });
   run_test
     { contact with verified = Some (create_verified ()) }
     (Updated { contact with verified = None });
@@ -528,15 +484,12 @@ let should_not_send_registration_notification _ () =
   let database_label = Test_utils.Data.database_label in
   let%lwt () =
     let contact_data = Test_seed.Contacts.create_contact 12 |> CCList.pure in
-    let%lwt () =
-      Test_seed.Contacts.create ~contact_data Test_utils.Data.database_label
-    in
+    let%lwt () = Test_seed.Contacts.create ~contact_data Test_utils.Data.database_label in
     let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 12 in
     let%lwt () =
       Sihl_email.
         { sender = "test@econ.uzh.ch"
-        ; recipient =
-            Contact.email_address contact |> Pool_user.EmailAddress.value
+        ; recipient = Contact.email_address contact |> Pool_user.EmailAddress.value
         ; subject = "subject"
         ; text = ""
         ; html = Some "text"
@@ -544,15 +497,12 @@ let should_not_send_registration_notification _ () =
         ; bcc = []
         }
       |> Email.(Service.Job.create %> create_dispatch)
-      |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
-           contact
+      |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle contact
       |> Test_utils.get_or_failwith
       |> Pool_event.handle_events database_label current_user
     in
     let%lwt res =
-      Contact.should_send_registration_attempt_notification
-        database_label
-        contact
+      Contact.should_send_registration_attempt_notification database_label contact
     in
     let expected = false in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return

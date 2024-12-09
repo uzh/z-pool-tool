@@ -80,11 +80,11 @@ end = struct
     let open Tags in
     if Model.equal tag.Tags.model command.model
     then (
-      let tag : t =
+      let updated : t =
         { tag with title = command.title; description = command.description }
       in
       Logs.info ~src (fun m -> m "Handle command edit" ~tags);
-      Ok [ Updated tag |> Pool_event.tags ])
+      Ok [ Updated (tag, updated) |> Pool_event.tags ])
     else Error Pool_message.(Error.Invalid Field.Model)
   ;;
 
@@ -116,9 +116,7 @@ end = struct
     Ok
       [ Tags.(
           Tagged
-            { Tagged.model_uuid = Contact.id contact |> Contact.Id.to_common
-            ; tag_uuid
-            })
+            { Tagged.model_uuid = Contact.id contact |> Contact.Id.to_common; tag_uuid })
         |> Pool_event.tags
       ]
   ;;
@@ -228,8 +226,7 @@ end = struct
   type t = Tags.Id.t
 
   let handle ?(tags = Logs.Tag.empty) entity (tag_uuid : t) =
-    Logs.info ~src (fun m ->
-      m "Handle command AssignParticipationTagToEntity" ~tags);
+    Logs.info ~src (fun m -> m "Handle command AssignParticipationTagToEntity" ~tags);
     Ok Tags.[ ParticipationTagAssigned (entity, tag_uuid) |> Pool_event.tags ]
   ;;
 
@@ -257,8 +254,7 @@ end = struct
   type t = Tags.t
 
   let handle ?(tags = Logs.Tag.empty) entity tag =
-    Logs.info ~src (fun m ->
-      m "Handle command RemoveParticipationTagFromEntity" ~tags);
+    Logs.info ~src (fun m -> m "Handle command RemoveParticipationTagFromEntity" ~tags);
     Ok Tags.[ ParticipationTagRemoved (entity, tag.Tags.id) |> Pool_event.tags ]
   ;;
 

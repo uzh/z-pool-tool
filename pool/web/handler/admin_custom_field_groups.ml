@@ -74,9 +74,7 @@ let write ?id req model =
         Cqrs_command.Custom_field_group_command.(
           Create.handle ~tags sys_languages field_names model |> Lwt_result.lift)
       | Some id ->
-        let* custom_field_group =
-          id |> Custom_field.find_group database_label
-        in
+        let* custom_field_group = id |> Custom_field.find_group database_label in
         Cqrs_command.Custom_field_group_command.(
           Update.handle ~tags sys_languages custom_field_group field_names model
           |> Lwt_result.lift)
@@ -124,9 +122,7 @@ let delete req =
       let%lwt () = Pool_event.handle_events database_label user events in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ HttpUtils.Message.set
-            ~success:[ Success.Deleted Field.CustomFieldGroup ]
-        ]
+        [ HttpUtils.Message.set ~success:[ Success.Deleted Field.CustomFieldGroup ] ]
       |> Lwt_result.ok
     in
     result |> HttpUtils.extract_happy_path ~src req
@@ -143,9 +139,7 @@ let sort req =
       @@
       let tags = Pool_context.Logger.Tags.req req in
       let%lwt ids =
-        Sihl.Web.Request.urlencoded_list
-          Field.(CustomFieldGroup |> array_key)
-          req
+        Sihl.Web.Request.urlencoded_list Field.(CustomFieldGroup |> array_key) req
       in
       let%lwt groups =
         let open Utils.Lwt_result.Infix in
@@ -153,10 +147,10 @@ let sort req =
         ||> fun options ->
         CCList.filter_map
           (fun id ->
-            CCList.find_opt
-              Custom_field.Group.(
-                fun (option : t) -> Id.equal (Id.of_string id) option.id)
-              options)
+             CCList.find_opt
+               Custom_field.Group.(
+                 fun (option : t) -> Id.equal (Id.of_string id) option.id)
+               options)
           ids
       in
       let events =
@@ -164,14 +158,10 @@ let sort req =
         groups |> handle ~tags |> Lwt_result.lift
       in
       let handle events =
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         Http_utils.redirect_to_with_actions
           redirect_path
-          [ HttpUtils.Message.set
-              ~success:[ Success.Updated Field.CustomFieldGroup ]
-          ]
+          [ HttpUtils.Message.set ~success:[ Success.Updated Field.CustomFieldGroup ] ]
       in
       events |>> handle
     in
@@ -198,10 +188,7 @@ let changelog req =
         ()
     in
     Lwt_result.ok
-    @@ Helpers.Changelog.htmx_handler
-         ~url
-         (Custom_field.Group.Id.to_common group_id)
-         req
+    @@ Helpers.Changelog.htmx_handler ~url (Custom_field.Group.Id.to_common group_id) req
   in
   HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
 ;;

@@ -50,8 +50,7 @@ let uuid_sql dyn items to_id =
 let update_invitations contact_id invitations =
   let dyn = Dynparam.(empty |> add Contact.Repo.Id.t contact_id) in
   let dyn, sql =
-    uuid_sql dyn invitations (fun { Invitation.id; _ } ->
-      Pool_common.Id.value id)
+    uuid_sql dyn invitations (fun { Invitation.id; _ } -> Pool_common.Id.value id)
   in
   let sql =
     Format.asprintf
@@ -68,8 +67,7 @@ let update_invitations contact_id invitations =
 let update_waiting_list contact_id waiting_list =
   let dyn = Dynparam.(empty |> add Contact.Repo.Id.t contact_id) in
   let dyn, sql =
-    uuid_sql dyn waiting_list (fun { Waiting_list.id; _ } ->
-      Waiting_list.Id.value id)
+    uuid_sql dyn waiting_list (fun { Waiting_list.id; _ } -> Waiting_list.Id.value id)
   in
   let sql =
     Format.asprintf
@@ -86,8 +84,7 @@ let update_waiting_list contact_id waiting_list =
 let update_assignments contact_id assignments =
   let dyn = Dynparam.(empty |> add Contact.Repo.Id.t contact_id) in
   let dyn, sql =
-    uuid_sql dyn assignments (fun { Assignment.id; _ } ->
-      Assignment.Id.value id)
+    uuid_sql dyn assignments (fun { Assignment.id; _ } -> Assignment.Id.value id)
   in
   let sql =
     Format.asprintf
@@ -215,8 +212,7 @@ let merge
     | invitations ->
       Some
         (fun connection ->
-          update_invitations (id contact) invitations
-          |> exec_dyn_request connection)
+          update_invitations (id contact) invitations |> exec_dyn_request connection)
   in
   let override_waiting_list =
     match waiting_list with
@@ -224,8 +220,7 @@ let merge
     | waiting_list ->
       Some
         (fun connection ->
-          update_waiting_list (id contact) waiting_list
-          |> exec_dyn_request connection)
+          update_waiting_list (id contact) waiting_list |> exec_dyn_request connection)
   in
   let override_assignments =
     match assignments with
@@ -233,8 +228,7 @@ let merge
     | assignments ->
       Some
         (fun connection ->
-          update_assignments (id contact) assignments
-          |> exec_dyn_request connection)
+          update_assignments (id contact) assignments |> exec_dyn_request connection)
   in
   let destroy_tags connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
@@ -271,24 +265,16 @@ let merge
   let%lwt () =
     Database.transaction_iter
       pool
-      ([ update_contact
-       ; update_user
-       ; override_queue
-       ; override_changelog
-       ; override_tags
-       ]
+      ([ update_contact; update_user; override_queue; override_changelog; override_tags ]
        @ store_custom_answers
        @ actions
        @ destroy_requests)
   in
   let create_changelog () =
-    let%lwt () =
-      Changelog.contact_changelog pool current_contact_state contact
-    in
+    let%lwt () = Changelog.contact_changelog pool current_contact_state contact in
     let%lwt () =
       kept_fields
-      |> Lwt_list.iter_s
-           (Custom_field.create_custom_field_answer_changelog pool contact)
+      |> Lwt_list.iter_s (Custom_field.create_custom_field_answer_changelog pool contact)
     in
     Lwt.return ()
   in

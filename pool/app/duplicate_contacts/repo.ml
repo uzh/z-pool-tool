@@ -123,8 +123,7 @@ let find_similars database_label ~user_uuid custom_fields =
       (make_similarity_name id |> asprintf "`%s`")
   in
   let user_columns =
-    columns
-    >|= fun col -> asprintf "%s as %s" (concat_sql col) col.Column.sql_column
+    columns >|= fun col -> asprintf "%s as %s" (concat_sql col) col.Column.sql_column
   in
   (* Dynparam not required, atm *)
   let dyn =
@@ -156,8 +155,7 @@ let find_similars database_label ~user_uuid custom_fields =
     let coalesce = CCFun.uncurry (asprintf "COALESCE(%s * %d, 0)") in
     let user_similarities =
       columns
-      >|= fun { Column.sql_column; weight; _ } ->
-      make_similarity_name sql_column, weight
+      >|= fun { Column.sql_column; weight; _ } -> make_similarity_name sql_column, weight
     in
     let custom_field_similarities =
       custom_fields
@@ -165,18 +163,13 @@ let find_similars database_label ~user_uuid custom_fields =
       let open Custom_field in
       let weight =
         CCOption.(
-          duplicate_weighting field
-          >|= DuplicateWeighting.value
-          |> value ~default:0)
+          duplicate_weighting field >|= DuplicateWeighting.value |> value ~default:0)
       in
       id field |> Id.value |> make_similarity_name |> asprintf "`%s`", weight
     in
     let similarities = user_similarities @ custom_field_similarities in
     let division =
-      similarities
-      >|= not_null
-      |> CCString.concat " + "
-      |> asprintf "NULLIF(%s, 0)"
+      similarities >|= not_null |> CCString.concat " + " |> asprintf "NULLIF(%s, 0)"
     in
     similarities
     >|= coalesce
@@ -185,11 +178,7 @@ let find_similars database_label ~user_uuid custom_fields =
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let request =
-    similarity_request
-      user_columns
-      custom_field_columns
-      similarities
-      average_similarity
+    similarity_request user_columns custom_field_columns similarities average_similarity
     |> pt ->* raw
   in
   Database.collect database_label request pv
@@ -222,20 +211,20 @@ let insert pool = function
       rows
       |> CCList.fold_left
            (fun (dyn, sql) (target_id, contact_id, score) ->
-             let dyn =
-               dyn
-               |> add id (Pool_common.Id.create ())
-               |> add id target_id
-               |> add id contact_id
-               |> add Caqti_type.float score
-             in
-             let values =
-               [ id_sql; id_sql; id_sql; "?" ]
-               |> CCString.concat ","
-               |> Format.asprintf "(%s)"
-             in
-             let sql = sql @ [ values ] in
-             dyn, sql)
+              let dyn =
+                dyn
+                |> add id (Pool_common.Id.create ())
+                |> add id target_id
+                |> add id contact_id
+                |> add Caqti_type.float score
+              in
+              let values =
+                [ id_sql; id_sql; id_sql; "?" ]
+                |> CCString.concat ","
+                |> Format.asprintf "(%s)"
+              in
+              let sql = sql @ [ values ] in
+              dyn, sql)
            (empty, [])
     in
     let sql = CCString.concat "," sql in
@@ -269,12 +258,7 @@ let find_by_contact ?query pool contact =
     in
     sql, Dynparam.(empty |> add Repo.Id.t (id contact))
   in
-  Query.collect_and_count
-    pool
-    query
-    ~where
-    ~select:find_request_sql
-    Repo_entity.t
+  Query.collect_and_count pool query ~where ~select:find_request_sql Repo_entity.t
 ;;
 
 let all ?query pool =

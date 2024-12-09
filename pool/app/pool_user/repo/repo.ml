@@ -42,8 +42,7 @@ let find_request =
 let find_opt label = Database.find_opt label find_request
 
 let find label id =
-  find_opt label id
-  ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
+  find_opt label id ||> CCOption.to_result Pool_message.(Error.NotFound Field.User)
 ;;
 
 let find_exn label id = find label id ||> Pool_common.Utils.get_or_failwith
@@ -99,23 +98,19 @@ let insert_request =
           EmailAddress.t
           (t2
              Lastname.t
-             (t2
-                Firstname.t
-                (t2 Password.t (t2 Status.t (t2 IsAdmin.t Confirmed.t))))))
+             (t2 Firstname.t (t2 Password.t (t2 Status.t (t2 IsAdmin.t Confirmed.t))))))
      ->. Caqti_type.unit
 ;;
 
 let insert
-  label
-  ( { Entity.id; email; lastname; firstname; status; admin; confirmed }
-  , (password : Password.t) )
+      label
+      ( { Entity.id; email; lastname; firstname; status; admin; confirmed }
+      , (password : Password.t) )
   =
   Database.exec
     label
     insert_request
-    ( id
-    , (email, (lastname, (firstname, (password, (status, (admin, confirmed))))))
-    )
+    (id, (email, (lastname, (firstname, (password, (status, (admin, confirmed)))))))
 ;;
 
 let update_request =

@@ -1,3 +1,8 @@
+open Ppx_yojson_conv_lib.Yojson_conv
+include Changelog.DefaultSettings
+
+let model = Pool_message.Field.WaitingList
+
 module Id = struct
   include Pool_common.Id
 
@@ -5,7 +10,7 @@ module Id = struct
 end
 
 module AdminComment = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, yojson]
 
   let create m = m
   let value m = m
@@ -26,7 +31,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show, fields ~getters]
+[@@deriving eq, show, fields ~getters, yojson_of]
 
 let create ?(id = Pool_common.Id.create ()) contact experiment admin_comment =
   { id
@@ -39,8 +44,7 @@ let create ?(id = Pool_common.Id.create ()) contact experiment admin_comment =
 ;;
 
 let column_signed_up_at =
-  Pool_message.(Field.SignedUpAt, "pool_waiting_list.created_at")
-  |> Query.Column.create
+  Pool_message.(Field.SignedUpAt, "pool_waiting_list.created_at") |> Query.Column.create
 ;;
 
 let default_sort =

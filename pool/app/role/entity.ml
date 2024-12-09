@@ -65,16 +65,7 @@ module Role = struct
     |> CCResult.map_err (CCFun.const Pool_message.(Error.Invalid Field.Target))
   ;;
 
-  let all =
-    [ `Admin
-    ; `Assistant
-    ; `Experimenter
-    ; `LocationManager
-    ; `Operator
-    ; `Recruiter
-    ]
-  ;;
-
+  let all = [ `Admin; `Assistant; `Experimenter; `LocationManager; `Operator; `Recruiter ]
   let static = [ `Operator ]
   let customizable = CCList.sorted_diff ~cmp:compare all static
 

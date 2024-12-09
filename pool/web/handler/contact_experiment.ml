@@ -19,9 +19,7 @@ let index req =
          Experiment.find_upcoming_to_register database_label contact `Online
        in
        let* upcoming_sessions =
-         Session.find_upcoming_public_by_contact
-           database_label
-           (Contact.id contact)
+         Session.find_upcoming_public_by_contact database_label (Contact.id contact)
        in
        let%lwt past_experiments =
          Experiment.find_past_experiments_by_contact database_label contact
@@ -39,9 +37,7 @@ let index req =
          let%lwt experiment_registration =
            find I18n.Key.DashboardExperimentRegistration
          in
-         let%lwt experiment_history =
-           find I18n.Key.DashboardExperimentHistory
-         in
+         let%lwt experiment_history = find I18n.Key.DashboardExperimentHistory in
          let%lwt waiting_list = find I18n.Key.DashboardWaitinglist in
          Lwt.return
            Page.Contact.Experiment.
@@ -68,19 +64,16 @@ let index req =
 ;;
 
 let show_online_study
-  req
-  ({ Pool_context.database_label; _ } as context)
-  experiment
-  contact
+      req
+      ({ Pool_context.database_label; _ } as context)
+      experiment
+      contact
   =
   let open Utils.Lwt_result.Infix in
   let experiment_id = Experiment.Public.id experiment in
   let%lwt assignment =
     let open Utils.Lwt_result.Infix in
-    Assignment.Public.find_all_by_experiment
-      database_label
-      experiment_id
-      contact
+    Assignment.Public.find_all_by_experiment database_label experiment_id contact
     ||> CCList.head_opt
   in
   let%lwt current_time_window =
@@ -143,9 +136,7 @@ let show req =
       let* upcoming_sessions =
         find_sessions Assignment.Public.find_upcoming_by_experiment
       in
-      let* past_sessions =
-        find_sessions Assignment.Public.find_past_by_experiment
-      in
+      let* past_sessions = find_sessions Assignment.Public.find_past_by_experiment in
       let* canceled_sessions =
         find_sessions Assignment.Public.find_canceled_by_experiment
       in
@@ -182,15 +173,10 @@ module OnlineSurvey = struct
       let experiment_id = experiment_id req in
       let tenant = Pool_context.Tenant.get_tenant_exn req in
       let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-      let* experiment =
-        Experiment.find_public database_label experiment_id contact
-      in
+      let* experiment = Experiment.find_public database_label experiment_id contact in
       let%lwt assignment =
         let open Utils.Lwt_result.Infix in
-        Assignment.Public.find_all_by_experiment
-          database_label
-          experiment_id
-          contact
+        Assignment.Public.find_all_by_experiment database_label experiment_id contact
         ||> CCList.head_opt
       in
       let assignment_id =
@@ -227,9 +213,7 @@ module OnlineSurvey = struct
           handle ~id:assignment_id ~tags { contact; time_window; experiment }
       in
       let handle events =
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         Sihl.Web.Response.redirect_to survey_url |> Lwt_result.return
       in
       events |> handle
@@ -248,10 +232,7 @@ module OnlineSurvey = struct
       let experiment_id = experiment_id req in
       let* assignment = Assignment.find database_label assignment_id in
       let* experiment =
-        Experiment.find_public
-          database_label
-          experiment_id
-          assignment.Assignment.contact
+        Experiment.find_public database_label experiment_id assignment.Assignment.contact
       in
       let query = Sihl.Web.Request.query_list req in
       let* events =

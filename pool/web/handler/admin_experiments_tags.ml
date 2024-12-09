@@ -11,9 +11,7 @@ let handle_tag action req =
   let tags = Pool_context.Logger.Tags.req req in
   let experiment_id = experiment_id req in
   let base_path =
-    experiment_id
-    |> Experiment.Id.value
-    |> Format.asprintf "/admin/experiments/%s"
+    experiment_id |> Experiment.Id.value |> Format.asprintf "/admin/experiments/%s"
   in
   let path =
     match action with
@@ -23,10 +21,7 @@ let handle_tag action req =
     | `RemoveExperimentParticipationTag -> Format.asprintf "%s/edit" base_path
     | `AssignSessionParticipationTag | `RemoveSessionParticipationTag ->
       let session_id = session_id req in
-      Format.asprintf
-        "%s/sessions/%s/edit"
-        base_path
-        (Session.Id.value session_id)
+      Format.asprintf "%s/sessions/%s/edit" base_path (Session.Id.value session_id)
   in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
@@ -56,9 +51,7 @@ let handle_tag action req =
            handle_assign decode fnc
          | `AssignExperimentParticipationTag ->
            let open Cqrs_command.Tags_command.AssignParticipationTagToEntity in
-           let fnc =
-             handle ~tags (Experiment (Experiment.Id.to_common experiment_id))
-           in
+           let fnc = handle ~tags (Experiment (Experiment.Id.to_common experiment_id)) in
            handle_assign decode fnc
          | `AssignSessionParticipationTag ->
            let open Cqrs_command.Tags_command.AssignParticipationTagToEntity in
@@ -71,9 +64,7 @@ let handle_tag action req =
            handle_remove fnc
          | `RemoveExperimentParticipationTag ->
            let open Cqrs_command.Tags_command.RemoveParticipationTagFromEntity in
-           let fnc =
-             handle ~tags (Experiment (Experiment.Id.to_common experiment_id))
-           in
+           let fnc = handle ~tags (Experiment (Experiment.Id.to_common experiment_id)) in
            handle_remove fnc
          | `RemoveSessionParticipationTag ->
            let open Cqrs_command.Tags_command.RemoveParticipationTagFromEntity in
@@ -83,9 +74,7 @@ let handle_tag action req =
        in
        let handle = Pool_event.handle_events ~tags database_label user in
        let return_to_edit () =
-         HttpUtils.redirect_to_with_actions
-           path
-           [ Message.set ~success:[ message ] ]
+         HttpUtils.redirect_to_with_actions path [ Message.set ~success:[ message ] ]
        in
        events |> handle >|> return_to_edit |> Lwt_result.ok
   in
@@ -94,14 +83,7 @@ let handle_tag action req =
 
 let assign_tag = handle_tag `Assign
 let remove_tag = handle_tag `Remove
-
-let assign_experiment_participation_tag =
-  handle_tag `AssignExperimentParticipationTag
-;;
-
-let remove_experiment_participation_tag =
-  handle_tag `RemoveExperimentParticipationTag
-;;
-
+let assign_experiment_participation_tag = handle_tag `AssignExperimentParticipationTag
+let remove_experiment_participation_tag = handle_tag `RemoveExperimentParticipationTag
 let assign_session_participation_tag = handle_tag `AssignSessionParticipationTag
 let remove_session_participation_tag = handle_tag `RemoveSessionParticipationTag

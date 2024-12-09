@@ -12,13 +12,8 @@ module Public = struct
     Repo.find_public_by_experiment_and_contact_opt `Upcoming
   ;;
 
-  let find_past_by_experiment =
-    Repo.find_public_by_experiment_and_contact_opt `Past
-  ;;
-
-  let find_all_by_experiment =
-    Repo.find_public_by_experiment_and_contact_opt `All
-  ;;
+  let find_past_by_experiment = Repo.find_public_by_experiment_and_contact_opt `Past
+  let find_all_by_experiment = Repo.find_public_by_experiment_and_contact_opt `All
 
   let find_canceled_by_experiment =
     Repo.find_public_by_experiment_and_contact_opt `Canceled
@@ -60,11 +55,7 @@ let count_unsuitable_by = Repo.Sql.count_unsuitable_by
 let find_with_follow_ups = Repo.find_with_follow_ups
 let find_follow_ups = Repo.find_follow_ups
 let find_upcoming_by_experiment = Repo.Sql.find_upcoming_by_experiment
-
-let find_assigned_contacts_by_experiment =
-  Repo.Sql.find_assigned_contacts_by_experiment
-;;
-
+let find_assigned_contacts_by_experiment = Repo.Sql.find_assigned_contacts_by_experiment
 let find_upcoming = Repo.Sql.find_upcoming
 
 let contact_participation_in_other_assignments =
@@ -79,11 +70,11 @@ let group_by_contact list =
   let tbl = Hashtbl.create 20 in
   CCList.iter
     (fun ({ contact; _ } as m : t) ->
-      let open CCOption in
-      Hashtbl.find_opt tbl contact
-      >|= CCList.cons m
-      |> value ~default:[ m ]
-      |> Hashtbl.replace tbl contact)
+       let open CCOption in
+       Hashtbl.find_opt tbl contact
+       >|= CCList.cons m
+       |> value ~default:[ m ]
+       |> Hashtbl.replace tbl contact)
     list;
   Hashtbl.fold (fun contact lst acc -> (contact, lst) :: acc) tbl []
 ;;
@@ -94,28 +85,21 @@ type session_counters =
   ; num_participations : int
   }
 
-let init_session_counters =
-  { total = 0; num_no_shows = 0; num_participations = 0 }
-;;
+let init_session_counters = { total = 0; num_no_shows = 0; num_participations = 0 }
 
 let assignments_to_session_counters =
   CCList.fold_left
-    (fun { total; num_no_shows; num_participations }
-      ({ no_show; participated; _ } : t) ->
-      let default = CCOption.value ~default:false in
-      { total = total + 1
-      ; num_no_shows =
-          (if default no_show then num_no_shows + 1 else num_no_shows)
-      ; num_participations =
-          (if default participated
-           then num_participations + 1
-           else num_participations)
-      })
+    (fun { total; num_no_shows; num_participations } ({ no_show; participated; _ } : t) ->
+       let default = CCOption.value ~default:false in
+       { total = total + 1
+       ; num_no_shows = (if default no_show then num_no_shows + 1 else num_no_shows)
+       ; num_participations =
+           (if default participated then num_participations + 1 else num_participations)
+       })
     init_session_counters
 ;;
 
 let counters_of_session database_label session_id =
   let open Utils.Lwt_result.Infix in
-  find_uncanceled_by_session database_label session_id
-  ||> assignments_to_session_counters
+  find_uncanceled_by_session database_label session_id ||> assignments_to_session_counters
 ;;

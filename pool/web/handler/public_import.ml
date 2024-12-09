@@ -32,12 +32,8 @@ let user_import_from_req database_label req =
 ;;
 
 let import_confirmation req =
-  let result
-    ({ Pool_context.database_label; language; query_parameters; _ } as context)
-    =
-    let error_path =
-      Http_utils.url_with_field_params query_parameters "/index"
-    in
+  let result ({ Pool_context.database_label; language; query_parameters; _ } as context) =
+    let error_path = Http_utils.url_with_field_params query_parameters "/index" in
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* ({ User_import.token; _ }, _) : User_import.t * Pool_context.user =
          user_import_from_req database_label req
@@ -48,11 +44,7 @@ let import_confirmation req =
        let%lwt terms =
          I18n.find_by_key database_label I18n.Key.TermsAndConditions language
        in
-       Page.Public.Import.import_confirmation
-         context
-         token
-         password_policy
-         terms
+       Page.Public.Import.import_confirmation context token password_policy terms
        |> General.create_tenant_layout req context
        >|+ Sihl.Web.Response.of_html
   in
@@ -108,10 +100,7 @@ let import_confirmation_post req =
   result |> Http_utils.extract_happy_path ~src req
 ;;
 
-let contact_import_from_req
-  ({ Pool_context.database_label; language; _ } as context)
-  req
-  =
+let contact_import_from_req ({ Pool_context.database_label; language; _ } as context) req =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
   let tags = Pool_context.Logger.Tags.req req in
@@ -132,8 +121,7 @@ let contact_import_from_req
     let (_ : Error.t) = Pool_common.Utils.with_log_error ~src ~tags err in
     not_found context
   | Ok (_, Admin _) | Ok (_, Guest) -> not_found context
-  | Ok ({ User_import.token; _ }, Contact contact) ->
-    Lwt_result.return (token, contact)
+  | Ok ({ User_import.token; _ }, Contact contact) -> Lwt_result.return (token, contact)
 ;;
 
 let unsubscribe req =
@@ -155,12 +143,8 @@ let unsubscribe req =
 let unsubscribe_post req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let result
-    ({ Pool_context.database_label; query_parameters; user; _ } as context)
-    =
-    let redirect_path =
-      Http_utils.url_with_field_params query_parameters "/error"
-    in
+  let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
+    let redirect_path = Http_utils.url_with_field_params query_parameters "/error" in
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ (contact_import_from_req context req
         >|> function
@@ -170,9 +154,7 @@ let unsubscribe_post req =
           Cqrs_command.Contact_command.TogglePaused.handle ~tags contact paused
           |> Lwt_result.lift
           |>> fun events ->
-          let%lwt () =
-            Pool_event.handle_events ~tags database_label user events
-          in
+          let%lwt () = Pool_event.handle_events ~tags database_label user events in
           Http_utils.(
             redirect_to_with_actions
               (url_with_field_params query_parameters "/index")

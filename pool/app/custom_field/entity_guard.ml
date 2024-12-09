@@ -10,9 +10,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun field ->
-        Target.create
-          `CustomField
-          (field |> Entity.id |> Uuid.target_of Entity.Id.value))
+         Target.create `CustomField (field |> Entity.id |> Uuid.target_of Entity.Id.value))
       t
     >|- Pool_message.Error.authorization
   ;;
@@ -26,9 +24,7 @@ module Group = struct
       Persistence.Target.decorate
         ?ctx
         (fun { Entity.Group.id; _ } ->
-          Guard.Target.create
-            `CustomField
-            (id |> Uuid.target_of Entity.Group.Id.value))
+           Guard.Target.create `CustomField (id |> Uuid.target_of Entity.Group.Id.value))
         t
       >|- Pool_message.Error.authorization
     ;;
@@ -41,8 +37,7 @@ module Access = struct
   open Permission
 
   let custom_field action uuid =
-    one_of_tuple
-      (action, `CustomField, Some (uuid |> Uuid.target_of Entity.Id.value))
+    one_of_tuple (action, `CustomField, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index = one_of_tuple (Read, `CustomField, None)
@@ -53,9 +48,7 @@ module Access = struct
   module Group = struct
     let group action uuid =
       one_of_tuple
-        ( action
-        , `CustomFieldGroup
-        , Some (uuid |> Uuid.target_of Entity.Group.Id.value) )
+        (action, `CustomFieldGroup, Some (uuid |> Uuid.target_of Entity.Group.Id.value))
     ;;
 
     let index = one_of_tuple (Read, `CustomFieldGroup, None)

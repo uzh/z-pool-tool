@@ -14,8 +14,7 @@ let settings_detail_path location req =
   active_navigation location
   |> fun base ->
   match location with
-  | `Tenant ->
-    Format.asprintf "%s/%s" base (req |> smtp_auth_id |> SmtpAuth.Id.value)
+  | `Tenant -> Format.asprintf "%s/%s" base (req |> smtp_auth_id |> SmtpAuth.Id.value)
   | `Root -> base
 ;;
 
@@ -69,8 +68,8 @@ let smtp_form location req =
         |> SmtpAuth.find_default
         ||> CCResult.to_opt
         ||> (function
-               | Some auth -> show context location flash_fetcher auth
-               | None -> smtp_create_form context location flash_fetcher)
+         | Some auth -> show context location flash_fetcher auth
+         | None -> smtp_create_form context location flash_fetcher)
         >|> General.create_root_layout ~active_navigation context
         ||> CCResult.return
     in
@@ -147,8 +146,7 @@ let update_base location command success_message req =
       match command with
       | `UpdateDetails ->
         let%lwt default_smtp = SmtpAuth.find_default_opt database_label in
-        Command.Update.(
-          decode urlencoded >>= handle ~tags default_smtp smtp_auth)
+        Command.Update.(decode urlencoded >>= handle ~tags default_smtp smtp_auth)
         |> Lwt_result.lift
       | `UpdatePassword ->
         Command.UpdatePassword.(decode urlencoded >>= handle ~tags smtp_auth)
@@ -170,10 +168,7 @@ let update_base location command success_message req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let update_password =
-  update_base `Tenant `UpdatePassword Success.SmtpPasswordUpdated
-;;
-
+let update_password = update_base `Tenant `UpdatePassword Success.SmtpPasswordUpdated
 let update = update_base `Tenant `UpdateDetails Success.SmtpDetailsUpdated
 
 let new_form req =
@@ -202,12 +197,10 @@ let delete_base location req =
   Cqrs_command.Smtp_command.Delete.handle ~tags smtp_id
   |> Lwt_result.lift
   |>> (fun events ->
-        let%lwt () =
-          Pool_event.handle_events ~tags database_label user events
-        in
-        Http_utils.redirect_to_with_actions
-          path
-          [ Message.set ~success:[ Success.Deleted Field.Smtp ] ])
+  let%lwt () = Pool_event.handle_events ~tags database_label user events in
+  Http_utils.redirect_to_with_actions
+    path
+    [ Message.set ~success:[ Success.Deleted Field.Smtp ] ])
   |> Utils.Lwt_result.map_error (fun err -> err, path)
 ;;
 
@@ -225,13 +218,11 @@ let validate location req =
     let* email = email_of_urlencoded urlencoded in
     let* smtp = SmtpAuth.find_full database_label id in
     let redirect actions =
-      Http_utils.redirect_to_with_actions redirect_path actions
-      ||> CCResult.return
+      Http_utils.redirect_to_with_actions redirect_path actions ||> CCResult.return
     in
     Email.Service.test_smtp_config database_label smtp email
     >|> function
-    | Ok () ->
-      redirect [ Message.set ~success:[ Success.Validated Field.Smtp ] ]
+    | Ok () -> redirect [ Message.set ~success:[ Success.Validated Field.Smtp ] ]
     | Error err -> redirect [ Message.set ~error:[ err ] ]
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req

@@ -239,11 +239,7 @@ module Migration : sig
       whether there are too many, not enough or just the right number of
       migrations applied. If there are too many or not enough migrations
       applied, a descriptive warning message is logged. *)
-  val check_migrations_status
-    :  ?migrations:t list
-    -> Label.t
-    -> unit
-    -> unit Lwt.t
+  val check_migrations_status : ?migrations:t list -> Label.t -> unit -> unit Lwt.t
 
   (** [pending_migrations database_label ()] returns a list of migrations that need to be
       executed in order to have all migrations applied on the connection pool.
@@ -275,13 +271,7 @@ module Pool : sig
 
   val connect : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
   val disconnect : ?error:Caqti_error.t -> Entity.Label.t -> unit Lwt.t
-
-  val all
-    :  ?allowed_status:Status.t list
-    -> ?exclude:Label.t list
-    -> unit
-    -> Label.t list
-
+  val all : ?allowed_status:Status.t list -> ?exclude:Label.t list -> unit -> Label.t list
   val is_root : Label.t -> bool
 
   module Root : sig

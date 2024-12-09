@@ -14,30 +14,19 @@ let append_suffied suffix path =
   | Some suffix -> Format.asprintf "%s/%s" path suffix
 ;;
 
-let mailings_path ?suffix experiment_id =
-  Format.asprintf
-    "/admin/experiments/%s/mailings"
-    (Experiment.Id.value experiment_id)
-  |> append_suffied suffix
-;;
-
-let detail_mailing_path ?suffix experiment_id mailing =
-  let open Mailing in
-  mailings_path ~suffix:(Id.value mailing.id) experiment_id
-  |> append_suffied suffix
+let mailings_path ?suffix ?id experiment_id =
+  HttpUtils.Url.Admin.mailing_path ?suffix ?id experiment_id ()
 ;;
 
 let mailing_detail_btn experiment_id mailing =
-  detail_mailing_path experiment_id mailing |> link_as_button ~icon:Icon.Eye
+  mailings_path experiment_id ~id:mailing.Mailing.id |> link_as_button ~icon:Icon.Eye
 ;;
 
 let table_legend language =
   let open Pool_common in
   let open Component.Table in
   table_legend
-    I18n.
-      [ Utils.text_to_string language Past, legend_color_item "bg-green-lighter"
-      ]
+    I18n.[ Utils.text_to_string language Past, legend_color_item "bg-green-lighter" ]
 ;;
 
 let distribution_sort_select language ?field current_order =
@@ -49,24 +38,24 @@ let distribution_sort_select language ?field current_order =
   in
   CCList.map
     (fun order ->
-      let selected =
-        match equal order current_order with
-        | true -> [ a_selected () ]
-        | false -> []
-      in
-      option
-        ~a:
-          ([ a_value
-               (match field with
-                | None -> order |> show
-                | Some field ->
-                  Format.asprintf
-                    "%s,%s"
-                    (Mailing.Distribution.SortableField.show field)
-                    (order |> show))
-           ]
-           @ selected)
-        (order |> to_human language |> CCString.capitalize_ascii |> txt))
+       let selected =
+         match equal order current_order with
+         | true -> [ a_selected () ]
+         | false -> []
+       in
+       option
+         ~a:
+           ([ a_value
+                (match field with
+                 | None -> order |> show
+                 | Some field ->
+                   Format.asprintf
+                     "%s,%s"
+                     (Mailing.Distribution.SortableField.show field)
+                     (order |> show))
+            ]
+            @ selected)
+         (order |> to_human language |> CCString.capitalize_ascii |> txt))
     all
   |> fun options ->
   div ~a:[ a_class [ "select" ] ] [ select ~a:[ a_name select_name ] options ]
@@ -92,9 +81,7 @@ let distribution_form_field language (field, current_order) =
               [ a_class [ "error" ]
               ; a_onclick "removeDistribution(event)"
               ; a_button_type `Button
-              ; a_user_data
-                  "field"
-                  (Mailing.Distribution.SortableField.show field)
+              ; a_user_data "field" (Mailing.Distribution.SortableField.show field)
               ]
             Icon.[ to_html Trash ]
         ]
@@ -110,40 +97,26 @@ module List = struct
         ~a:
           [ a_method `Post
           ; a_action
-              (detail_mailing_path ~suffix:target experiment_id mailing
+              (mailings_path ~suffix:target ~id:mailing.id experiment_id
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
           ]
-        [ csrf_element csrf ()
-        ; submit_element ~submit_type language (name None) ()
-        ]
+        [ csrf_element csrf (); submit_element ~submit_type language (name None) () ]
     in
-    (match
-       StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
-     with
-     | true, true ->
-       [ button_form "stop" Control.stop `Primary I18n.StopMailing ]
-     | false, true ->
-       [ button_form "delete" Control.delete `Error I18n.DeleteMailing ]
+    (match StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at with
+     | true, true -> [ button_form "stop" Control.stop `Primary I18n.StopMailing ]
+     | false, true -> [ button_form "delete" Control.delete `Error I18n.DeleteMailing ]
      | _ -> [ txt "" ])
     @ [ mailing_detail_btn experiment_id mailing ]
     |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
   ;;
 
-  let data_list
-    Pool_context.{ csrf; language; _ }
-    experiment_id
-    (mailings, query)
-    =
+  let data_list Pool_context.{ csrf; language; _ } experiment_id (mailings, query) =
     let url = Uri.of_string (mailings_path experiment_id) in
     let data_table =
-      Component.DataTable.create_meta
-        ?filter:Mailing.filterable_by
-        url
-        query
-        language
+      Component.DataTable.create_meta ?filter:Mailing.filterable_by url query language
     in
     let cols =
       let new_btn () =
@@ -163,9 +136,7 @@ module List = struct
     let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
     let row (mailing, count) =
       let open Mailing in
-      let attrs =
-        if is_past mailing then [ a_class [ "bg-green-lighter" ] ] else []
-      in
+      let attrs = if is_past mailing then [ a_class [ "bg-green-lighter" ] ] else [] in
       let buttons = buttons experiment_id mailing language csrf in
       [ mailing.start_at |> StartAt.to_human |> txt
       ; mailing.end_at |> EndAt.to_human |> txt
@@ -176,13 +147,7 @@ module List = struct
       |> CCList.map CCFun.(CCList.return %> td)
       |> tr ~a:attrs
     in
-    DataTable.make
-      ~th_class
-      ~target_id:"mailing-list"
-      ~cols
-      ~row
-      data_table
-      mailings
+    DataTable.make ~th_class ~target_id:"mailing-list" ~cols ~row data_table mailings
   ;;
 
   let overlapping Pool_context.{ language; _ } experiment_id mailings =
@@ -220,11 +185,15 @@ let index ({ Pool_context.language; _ } as context) experiment mailings =
 ;;
 
 let detail
-  ({ Pool_context.language; _ } as context)
-  experiment
-  ((mailing, count) : Mailing.t * Mailing.InvitationCount.t)
+      ({ Pool_context.language; _ } as context)
+      experiment
+      ((mailing, count) : Mailing.t * Mailing.InvitationCount.t)
   =
   let open Mailing in
+  let changelog_url =
+    mailings_path ~suffix:"changelog" experiment.Experiment.id ~id:mailing.id
+    |> Uri.of_string
+  in
   let mailing_overview =
     div
       ~a:[ a_class [ "stack" ] ]
@@ -233,8 +202,7 @@ let detail
            [ Field.Start, mailing.start_at |> StartAt.to_human
            ; Field.End, mailing.end_at |> EndAt.to_human
            ; Field.Limit, mailing.limit |> Limit.value |> CCInt.to_string
-           ; ( Field.InvitationCount
-             , count |> InvitationCount.value |> CCInt.to_string )
+           ; Field.InvitationCount, count |> InvitationCount.value |> CCInt.to_string
            ; ( Field.Distribution
              , mailing.distribution
                |> CCOption.map_or ~default:"" Mailing.Distribution.show )
@@ -260,27 +228,25 @@ let detail
         ~icon:Icon.Create
         ~classnames:[ "small" ]
         ~control:(language, Control.Edit (Some Field.Mailing))
-        (detail_mailing_path ~suffix:"edit" experiment.Experiment.id mailing)
+        (mailings_path ~suffix:"edit" ~id:mailing.id experiment.Experiment.id)
     else txt ""
   in
-  div ~a:[ a_class [ "stack" ] ] [ mailing_overview ]
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ mailing_overview; Component.Changelog.list context changelog_url None ]
   |> CCList.return
   |> Layout.Experiment.(
-       create
-         ~buttons:edit_button
-         context
-         (I18n (mailing_title mailing))
-         experiment)
+       create ~buttons:edit_button context (I18n (mailing_title mailing)) experiment)
 ;;
 
 let form
-  ?(mailing : Mailing.t option)
-  ?(has_no_upcoming_session = true)
-  ?(fully_booked = false)
-  ~matching_filter_count
-  ({ Pool_context.language; csrf; _ } as context)
-  (experiment : Experiment.t)
-  flash_fetcher
+      ?(mailing : Mailing.t option)
+      ?(has_no_upcoming_session = true)
+      ?(fully_booked = false)
+      ~matching_filter_count
+      ({ Pool_context.language; csrf; _ } as context)
+      (experiment : Experiment.t)
+      flash_fetcher
   =
   let functions =
     {js|
@@ -297,16 +263,11 @@ let form
   |js}
   in
   let notification =
-    match
-      Experiment.(
-        experiment.registration_disabled |> RegistrationDisabled.value)
-    with
+    match Experiment.(experiment.registration_disabled |> RegistrationDisabled.value) with
     | true ->
       txt
         Pool_common.(
-          Utils.hint_to_string
-            language
-            I18n.ExperimentMailingsRegistrationDisabled)
+          Utils.hint_to_string language I18n.ExperimentMailingsRegistrationDisabled)
       |> fun text ->
       [ p [ text ] ] |> Component.Notification.notification language `Warning
     | false -> txt ""
@@ -317,8 +278,7 @@ let form
     let is_disabled field =
       CCOption.map_or
         ~default:false
-        (fun dist ->
-          dist |> find_dist |> CCList.mem_assoc ~eq:SortableField.equal field)
+        (fun dist -> dist |> find_dist |> CCList.mem_assoc ~eq:SortableField.equal field)
         distribution
     in
     let distribution_fncs =
@@ -399,15 +359,10 @@ let form
       in
       CCList.map
         (fun field ->
-          let is_disabled =
-            if is_disabled field then [ a_disabled () ] else []
-          in
-          option
-            ~a:([ a_value (field |> SortableField.show) ] @ is_disabled)
-            (field
-             |> SortableField.to_human language
-             |> CCString.capitalize_ascii
-             |> txt))
+           let is_disabled = if is_disabled field then [ a_disabled () ] else [] in
+           option
+             ~a:([ a_value (field |> SortableField.show) ] @ is_disabled)
+             (field |> SortableField.to_human language |> CCString.capitalize_ascii |> txt))
         SortableField.all
       |> fun options ->
       select
@@ -454,9 +409,7 @@ let form
             ]
           [ Unsafe.data
               Pool_common.(
-                Utils.text_to_string
-                  language
-                  I18n.MailingDistributionDescription)
+                Utils.text_to_string language I18n.MailingDistributionDescription)
             |> Collapsible.create_note language
           ; div
               ~a:
@@ -527,16 +480,12 @@ let form
     | Some i18n ->
       div
         ~a:[ a_class [ "notification"; "warning" ] ]
-        [ Pool_common.Utils.text_to_string language i18n
-          |> HttpUtils.add_line_breaks
-        ]
+        [ Pool_common.Utils.text_to_string language i18n |> HttpUtils.add_line_breaks ]
   in
   let matching_filter_count_note =
     p
       [ strong
-          [ txt
-              Pool_common.(
-                Utils.text_to_string language I18n.FilterNrOfContacts)
+          [ txt Pool_common.(Utils.text_to_string language I18n.FilterNrOfContacts)
           ; txt " "
           ; txt (CCInt.to_string matching_filter_count)
           ]
@@ -544,11 +493,9 @@ let form
   in
   let action, submit =
     match mailing with
-    | None ->
-      ( mailings_path experiment.Experiment.id
-      , Control.Create (Some Field.Mailing) )
+    | None -> mailings_path experiment.Experiment.id, Control.Create (Some Field.Mailing)
     | Some m ->
-      ( m |> detail_mailing_path experiment.Experiment.id
+      ( mailings_path experiment.Experiment.id ~id:m.Mailing.id
       , Control.Save (Some Field.Mailing) )
   in
   let html =
@@ -583,9 +530,7 @@ let form
                    ; hx_trigger "change"
                    ; hx_swap "innerHTML"
                    ; hx_post
-                       (mailings_path
-                          ~suffix:"search-info"
-                          experiment.Experiment.id
+                       (mailings_path ~suffix:"search-info" experiment.Experiment.id
                         |> Sihl.Web.externalize_path)
                    ; make_hx_vals
                        [ ( Field.(show MatchingFilterCount)
@@ -603,7 +548,7 @@ let form
                          ?value:
                            (CCOption.map
                               (fun (m : Mailing.t) ->
-                                m.Mailing.start_at |> Mailing.StartAt.value)
+                                 m.Mailing.start_at |> Mailing.StartAt.value)
                               mailing)
                      ; checkbox_element ~flash_fetcher language Field.StartNow
                      ]
@@ -615,8 +560,7 @@ let form
                      ~required:true
                      ?value:
                        (CCOption.map
-                          (fun (m : Mailing.t) ->
-                            m.Mailing.end_at |> Mailing.EndAt.value)
+                          (fun (m : Mailing.t) -> m.Mailing.end_at |> Mailing.EndAt.value)
                           mailing)
                  ; input_element
                      language
@@ -628,16 +572,14 @@ let form
                      ~value:
                        Mailing.(
                          mailing
-                         |> CCOption.map_or
-                              ~default:Limit.default
-                              (fun (m : t) -> m.limit)
+                         |> CCOption.map_or ~default:Limit.default (fun (m : t) ->
+                           m.limit)
                          |> Limit.value
                          |> CCInt.to_string)
                      ~additional_attributes:[ a_input_min (`Number 1) ]
                  ]
              ; distribution_select
-                 (CCOption.bind mailing (fun (m : Mailing.t) ->
-                    m.Mailing.distribution))
+                 (CCOption.bind mailing (fun (m : Mailing.t) -> m.Mailing.distribution))
                (* TODO: Add detailed description how distribution element
                   works *)
              ; div
@@ -652,29 +594,25 @@ let form
   Layout.Experiment.(create context (Control submit) experiment html)
 ;;
 
-let create context experiment_id flash_fetcher =
-  form context experiment_id flash_fetcher
-;;
+let create context experiment_id flash_fetcher = form context experiment_id flash_fetcher
 
 let edit context experiment_id mailing flash_fetcher =
   form ~mailing context experiment_id flash_fetcher
 ;;
 
 let overlaps
-  ?average_send
-  ~show_limit_warning
-  (Pool_context.{ language; _ } as context)
-  experiment_id
-  mailings
+      ?average_send
+      ~show_limit_warning
+      (Pool_context.{ language; _ } as context)
+      experiment_id
+      mailings
   =
   let notification =
     if show_limit_warning
     then
       [ txt
           Pool_common.(
-            Utils.hint_to_string
-              language
-              I18n.MailingLimitExceedsMatchingContacts)
+            Utils.hint_to_string language I18n.MailingLimitExceedsMatchingContacts)
       ]
       |> Component.Notification.notification language `Warning
     else txt ""
@@ -692,17 +630,11 @@ let overlaps
   let mailings =
     match CCList.is_empty mailings with
     | true ->
-      p
-        [ I18n.RateDependencyWithout
-          |> Pool_common.Utils.hint_to_string language
-          |> txt
-        ]
+      p [ I18n.RateDependencyWithout |> Pool_common.Utils.hint_to_string language |> txt ]
     | false ->
       div
         [ p
-            [ I18n.RateDependencyWith
-              |> Pool_common.Utils.hint_to_string language
-              |> txt
+            [ I18n.RateDependencyWith |> Pool_common.Utils.hint_to_string language |> txt
             ]
         ; List.(overlapping context experiment_id mailings)
         ]

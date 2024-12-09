@@ -26,10 +26,7 @@ let login_get req =
     Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@
     let open Sihl.Web in
-    Page.Public.login
-      ?intended:(HttpUtils.find_intended_opt req)
-      context
-      flash_fetcher
+    Page.Public.login ?intended:(HttpUtils.find_intended_opt req) context flash_fetcher
     |> create_layout req ~active_navigation:"/login" context
     >|+ Response.of_html
   in
@@ -64,14 +61,14 @@ let login_post req =
               ]
               @ actions))
          ||> (fun res ->
-               if set_completion_cookie
-               then
-                 Sihl.Web.Session.set_value
-                   ~key:Contact.profile_completion_cookie
-                   "true"
-                   req
-                   res
-               else res)
+         if set_completion_cookie
+         then
+           Sihl.Web.Session.set_value
+             ~key:Contact.profile_completion_cookie
+             "true"
+             req
+             res
+         else res)
          |> Lwt_result.ok
        in
        let redirect path =
@@ -97,9 +94,7 @@ let login_post req =
        match user |> Pool_user.is_confirmed with
        | false ->
          redirect
-           (Http_utils.url_with_field_params
-              query_parameters
-              "/email-confirmation")
+           (Http_utils.url_with_field_params query_parameters "/email-confirmation")
        | true ->
          user
          |> Admin.user_is_admin database_label
@@ -110,9 +105,7 @@ let login_post req =
           | false ->
             let* contact = user |> find_contact in
             let%lwt required_answers_given =
-              Custom_field.all_required_answered
-                database_label
-                (Contact.id contact)
+              Custom_field.all_required_answered database_label (Contact.id contact)
             in
             let contact = contact |> Pool_context.contact in
             (match required_answers_given with
@@ -122,9 +115,7 @@ let login_post req =
                  contact
                  ~set_completion_cookie:true
                  "/user/completion"
-                 [ Message.set
-                     ~error:[ Pool_message.Error.RequiredFieldsMissing ]
-                 ]))
+                 [ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]))
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
@@ -167,9 +158,7 @@ let request_reset_password_post req =
       | None -> Lwt_result.return ()
       | Some user ->
         let%lwt message_language =
-          match
-            Pool_context.Utils.query_language tenant_languages query_parameters
-          with
+          match Pool_context.Utils.query_language tenant_languages query_parameters with
           | Some lang -> Lwt.return lang
           | None ->
             (match%lwt Admin.user_is_admin database_label user with
@@ -181,22 +170,13 @@ let request_reset_password_post req =
                ||> fun Contact.{ language; _ } ->
                CCOption.value ~default:context.Pool_context.language language)
         in
-        PasswordReset.create
-          database_label
-          message_language
-          (Tenant tenant)
-          user
+        PasswordReset.create database_label message_language (Tenant tenant) user
         >== handle ~tags
-        |>> Pool_event.handle_events
-              ~tags
-              database_label
-              context.Pool_context.user
+        |>> Pool_event.handle_events ~tags database_label context.Pool_context.user
     in
     redirect_to_with_actions
       redirect_path
-      [ Message.set
-          ~success:[ Pool_message.Success.PasswordResetSuccessMessage ]
-      ]
+      [ Message.set ~success:[ Pool_message.Success.PasswordResetSuccessMessage ] ]
     >|> Lwt_result.return
   in
   result |> extract_happy_path_with_actions ~src req
@@ -240,13 +220,9 @@ let reset_password_post req =
       |> CCOption.to_result (Error.PasswordResetInvalidData, redirect)
       |> Lwt_result.lift
     in
-    let go field =
-      field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params
-    in
+    let go field = field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params in
     let token = go Field.Token in
-    let redirect_with_param =
-      add_field_query_params redirect [ Field.Token, token ]
-    in
+    let redirect_with_param = add_field_query_params redirect [ Field.Token, token ] in
     let password = Field.Password |> go |> Pool_user.Password.Plain.create in
     let password_confirmed =
       let open Pool_user.Password.Confirmation in
@@ -269,9 +245,7 @@ let reset_password_post req =
     let* import_events =
       Lwt_result.map_error (fun err -> err, redirect)
       @@
-      let%lwt import =
-        User_import.find_pending_by_user_id_opt database_label user_uuid
-      in
+      let%lwt import = User_import.find_pending_by_user_id_opt database_label user_uuid in
       import
       |> function
       | None -> Lwt_result.return []
@@ -280,17 +254,13 @@ let reset_password_post req =
           Pool_user.find_exn database_label user_uuid
           >|> Pool_context.context_user_of_user database_label
         in
-        Cqrs_command.User_import_command.DisableImport.handle
-          ~tags
-          (user, import)
+        Cqrs_command.User_import_command.DisableImport.handle ~tags (user, import)
         |> Lwt_result.lift
     in
     match reset with
     | Ok () ->
       let%lwt () = Pool_token.deactivate database_label token in
-      let%lwt () =
-        import_events |> Pool_event.handle_events database_label user
-      in
+      let%lwt () = import_events |> Pool_event.handle_events database_label user in
       HttpUtils.(
         redirect_to_with_actions
           (url_with_field_params query_parameters "/login")

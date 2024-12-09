@@ -2,11 +2,7 @@ module ToHandle = struct
   include Pool_model.Base.Integer
 
   let field = Pool_message.Field.ToHandle
-
-  let create m =
-    if m > 0 then Ok m else Error Pool_message.(Error.Invalid field)
-  ;;
-
+  let create m = if m > 0 then Ok m else Error Pool_message.(Error.Invalid field)
   let schema = schema field create
 end
 

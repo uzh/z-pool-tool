@@ -19,13 +19,9 @@ let list Pool_context.{ language; _ } schedules query =
     let scheduled =
       match schedule.scheduled_time with
       | Every span ->
-        Utils.hint_to_string
-          language
-          (I18n.ScheduleEvery (ScheduledTimeSpan.value span))
+        Utils.hint_to_string language (I18n.ScheduleEvery (ScheduledTimeSpan.value span))
       | At time ->
-        Utils.hint_to_string
-          language
-          (I18n.ScheduleAt (ScheduledTime.value time))
+        Utils.hint_to_string language (I18n.ScheduleAt (ScheduledTime.value time))
     in
     [ txt (Label.value schedule.label)
     ; txt scheduled

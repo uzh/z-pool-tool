@@ -28,11 +28,11 @@ module Partials = struct
 end
 
 let notifications
-  ?(can_update_experiment = false)
-  language
-  sys_languages
-  (experiment : Experiment.t)
-  message_templates
+      ?(can_update_experiment = false)
+      language
+      sys_languages
+      (experiment : Experiment.t)
+      message_templates
   =
   let open CCList in
   let open Pool_common in
@@ -47,10 +47,8 @@ let notifications
       else
         filter
           (fun lang ->
-            find_opt
-              (fun { language; _ } -> Language.equal language lang)
-              templates
-            |> CCOption.is_none)
+             find_opt (fun { language; _ } -> Language.equal language lang) templates
+             |> CCOption.is_none)
           sys_languages
         |> function
         | [] -> None
@@ -64,18 +62,14 @@ let notifications
            Format.asprintf
              "%s: [%s]"
              (Label.to_human label)
-             (CCString.concat
-                ", "
-                (CCList.map Pool_common.Language.show languages))
+             (CCString.concat ", " (CCList.map Pool_common.Language.show languages))
            |> txt
            |> CCList.pure
            |> li)
          |> ul
        in
        [ p
-           [ txt
-               Pool_common.(
-                 Utils.hint_to_string language I18n.MissingMessageTemplates)
+           [ txt Pool_common.(Utils.hint_to_string language I18n.MissingMessageTemplates)
            ]
        ; list
        ]
@@ -93,14 +87,10 @@ module Statistics = struct
         [ span [ html ]
         ; div
             ~a:[ a_class [ "tooltip-wrapper" ] ]
-            [ Icon.(to_html HelpOutline)
-            ; p ~a:[ a_class [ "tooltip" ] ] [ tooltip ]
-            ]
+            [ Icon.(to_html HelpOutline); p ~a:[ a_class [ "tooltip" ] ] [ tooltip ] ]
         ]
     in
-    let to_table =
-      Component.Table.vertical_table ~th_class:[ "w-7" ] `Simple language
-    in
+    let to_table = Component.Table.vertical_table ~th_class:[ "w-7" ] `Simple language in
     let registration_possible_html =
       let open RegistrationPossible in
       let html =
@@ -116,16 +106,10 @@ module Statistics = struct
     let sending_invitations_html =
       let open SendingInvitations in
       let html =
-        statistics
-        |> sending_invitations
-        |> show
-        |> CCString.capitalize_ascii
-        |> txt
+        statistics |> sending_invitations |> show |> CCString.capitalize_ascii |> txt
       in
       let tooltip =
-        hint
-        |> Pool_common.Utils.hint_to_string language
-        |> HttpUtils.add_line_breaks
+        hint |> Pool_common.Utils.hint_to_string language |> HttpUtils.add_line_breaks
       in
       with_tooltip html tooltip
     in
@@ -136,9 +120,7 @@ module Statistics = struct
       ]
     in
     let invitations_statistics =
-      statistics
-      |> invitations
-      |> Page_admin_invitations.Partials.statistics language
+      statistics |> invitations |> Page_admin_invitations.Partials.statistics language
     in
     let assignments_statistics =
       [ ShowUpCount.(field, statistics |> showup_count |> value |> int_to_txt)
@@ -148,29 +130,17 @@ module Statistics = struct
       ]
     in
     div
-      [ h3
-          [ txt
-              Pool_common.(
-                Utils.text_to_string language I18n.ExperimentStatistics)
-          ]
+      [ h3 [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentStatistics) ]
       ; experiment_statistics |> to_table
-      ; h4
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Invitations)
-          ]
+      ; h4 [ txt Pool_common.(Utils.nav_link_to_string language I18n.Invitations) ]
       ; invitations_statistics
-      ; h4
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments)
-          ]
+      ; h4 [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments) ]
       ; assignments_statistics |> to_table
       ]
   ;;
 end
 
-let message_template_buttons
-  sys_languages
-  (experiment : Experiment.t)
-  message_templates
-  =
+let message_template_buttons sys_languages (experiment : Experiment.t) message_templates =
   let open Message_template in
   let build_button label =
     build_experiment_path ~suffix:Label.(prefixed_human_url label) experiment
@@ -179,9 +149,7 @@ let message_template_buttons
   let exclude =
     experiment.Experiment.language
     |> CCOption.map (fun experiment_language ->
-      CCList.filter
-        (Pool_common.Language.equal experiment_language %> not)
-        sys_languages)
+      CCList.filter (Pool_common.Language.equal experiment_language %> not) sys_languages)
   in
   message_templates
   |> CCList.filter_map (fun (label, templates) ->
@@ -200,12 +168,12 @@ let message_template_buttons
 ;;
 
 let message_templates_html
-  ?(can_update_experiment = false)
-  language
-  csrf
-  experiment
-  sys_languages
-  message_templates
+      ?(can_update_experiment = false)
+      language
+      csrf
+      experiment
+      sys_languages
+      message_templates
   =
   let open Message_template in
   let experiment_path suffix = build_experiment_path ~suffix experiment in
@@ -231,8 +199,7 @@ let message_templates_html
 let list Pool_context.{ language; guardian; _ } experiments query =
   let can_create_experiment =
     let open Guard in
-    PermissionOnTarget.(
-      validate (create Permission.Create `Experiment) guardian)
+    PermissionOnTarget.(validate (create Permission.Create `Experiment) guardian)
   in
   let url = Uri.of_string "/admin/experiments" in
   let data_table =
@@ -261,9 +228,7 @@ let list Pool_context.{ language; guardian; _ } experiments query =
     let open Experiment in
     let detail_btn = Partials.detail_button experiment in
     let buttons =
-      div
-        ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ]
-        [ detail_btn ]
+      div ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ] [ detail_btn ]
     in
     [ txt (Title.value experiment.title)
     ; txt (PublicTitle.value experiment.public_title)
@@ -272,13 +237,7 @@ let list Pool_context.{ language; guardian; _ } experiments query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  DataTable.make
-    ~target_id:"experiment-list"
-    ~th_class
-    ~cols
-    ~row
-    data_table
-    experiments
+  DataTable.make ~target_id:"experiment-list" ~th_class ~cols ~row data_table experiments
 ;;
 
 let index (Pool_context.{ language; _ } as context) experiments query =
@@ -294,17 +253,17 @@ let index (Pool_context.{ language; _ } as context) experiments query =
 ;;
 
 let experiment_form
-  ?experiment
-  ?session_count
-  Pool_context.{ language; csrf; _ }
-  tenant
-  organisational_units
-  smtp_auth_list
-  default_sender
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  text_messages_enabled
-  flash_fetcher
+      ?experiment
+      ?session_count
+      Pool_context.{ language; csrf; _ }
+      tenant
+      organisational_units
+      smtp_auth_list
+      default_sender
+      default_email_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      text_messages_enabled
+      flash_fetcher
   =
   let open Pool_common in
   let context_language = language in
@@ -316,9 +275,7 @@ let experiment_form
     match experiment with
     | None -> "/admin/experiments"
     | Some experiment ->
-      Format.asprintf
-        "/admin/experiments/%s"
-        (experiment.id |> Experiment.Id.value)
+      Format.asprintf "/admin/experiments/%s" (experiment.id |> Experiment.Id.value)
   in
   let checkbox_element ?hints ?(default = false) ?disabled ?read_only field fnc =
     checkbox_element
@@ -347,23 +304,14 @@ let experiment_form
     let text_elements =
       let open Component.MessageTextElements in
       let hints = online_survey_hints in
-      online_survey_help tenant ?experiment ()
-      |> build_help ~hints context_language
+      online_survey_help tenant ?experiment () |> build_help ~hints context_language
     in
-    let hint =
-      p [ txt (Utils.hint_to_string context_language I18n.OnlineExperiment) ]
-    in
+    let hint = p [ txt (Utils.hint_to_string context_language I18n.OnlineExperiment) ] in
     div
       ~a:
         [ a_id "time-window"
         ; a_class
-            [ "full-width"
-            ; "flexcolumn"
-            ; "hidden"
-            ; "border"
-            ; "inset"
-            ; "bg-grey-light"
-            ]
+            [ "full-width"; "flexcolumn"; "hidden"; "border"; "inset"; "bg-grey-light" ]
         ]
       [ div
           ~a:[ a_class [ "flexcolumn"; "stack" ] ]
@@ -430,8 +378,7 @@ let experiment_form
       CCOption.(
         experiment
         >>= smtp_auth_id
-        >>= fun smtp_id ->
-        CCList.find_opt (id %> Id.equal smtp_id) smtp_auth_list)
+        >>= fun smtp_id -> CCList.find_opt (id %> Id.equal smtp_id) smtp_auth_list)
       ~label_field:Field.Sender
       ~hints:[ I18n.ExperimentSmtp (Label.value default.label) ]
       ~option_formatter:(fun { label; _ } -> Label.value label)
@@ -498,8 +445,7 @@ let experiment_form
                 ?value:
                   (CCOption.bind
                      experiment
-                     (internal_description
-                      %> CCOption.map InternalDescription.value))
+                     (internal_description %> CCOption.map InternalDescription.value))
                 ~flash_fetcher
             ; textarea_element
                 context_language
@@ -543,8 +489,7 @@ let experiment_form
                     ?value:
                       (CCOption.bind
                          experiment
-                         (contact_email
-                          %> CCOption.map Pool_user.EmailAddress.value))
+                         (contact_email %> CCOption.map Pool_user.EmailAddress.value))
                     context_language
                     `Email
                     Field.ContactEmail
@@ -560,8 +505,7 @@ let experiment_form
                 assignment_without_session_value
             ; time_window_subform
             ; checkbox_element
-                ?disabled:
-                  (CCOption.map assignment_without_session_value experiment)
+                ?disabled:(CCOption.map assignment_without_session_value experiment)
                 ~hints:[ I18n.DirectRegistrationDisbled ]
                 Field.DirectRegistrationDisabled
                 direct_registration_disabled_value
@@ -585,9 +529,7 @@ let experiment_form
             ~a:[ a_id "session-reminder" ]
             [ h3
                 ~a:[ a_class [ "heading-3" ] ]
-                [ txt
-                    (Utils.text_to_string context_language I18n.SessionReminder)
-                ]
+                [ txt (Utils.text_to_string context_language I18n.SessionReminder) ]
             ; div
                 ~a:[ a_class [ "stack" ] ]
                 [ p
@@ -609,9 +551,7 @@ let experiment_form
                         text_message_session_reminder_lead_time_value
                         Reminder.TextMessageLeadTime.value
                         default_text_msg_reminder_lead_time
-                        (if text_messages_enabled
-                         then None
-                         else Some I18n.GtxKeyMissing)
+                        (if text_messages_enabled then None else Some I18n.GtxKeyMissing)
                     ]
                 ]
             ]
@@ -636,23 +576,20 @@ let experiment_form
 ;;
 
 let create
-  (Pool_context.{ language; _ } as context)
-  tenant
-  organisational_units
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  smtp_auth_list
-  default_sender
-  text_messages_enabled
-  flash_fetcher
+      (Pool_context.{ language; _ } as context)
+      tenant
+      organisational_units
+      default_email_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      smtp_auth_list
+      default_sender
+      text_messages_enabled
+      flash_fetcher
   =
   let open Pool_common in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
-    [ h1
-        [ txt
-            (Utils.control_to_string language (Create (Some Field.Experiment)))
-        ]
+    [ h1 [ txt (Utils.control_to_string language (Create (Some Field.Experiment))) ]
     ; experiment_form
         context
         tenant
@@ -667,20 +604,20 @@ let create
 ;;
 
 let edit
-  ?(allowed_to_assign = false)
-  ~session_count
-  experiment
-  ({ Pool_context.language; csrf; query_parameters; _ } as context)
-  tenant
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  organisational_units
-  smtp_auth_list
-  default_sender
-  (available_tags, current_tags)
-  (available_participation_tags, current_participation_tags)
-  text_messages_enabled
-  flash_fetcher
+      ?(allowed_to_assign = false)
+      ~session_count
+      experiment
+      ({ Pool_context.language; csrf; query_parameters; _ } as context)
+      tenant
+      default_email_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      organisational_units
+      smtp_auth_list
+      default_sender
+      (available_tags, current_tags)
+      (available_participation_tags, current_participation_tags)
+      text_messages_enabled
+      flash_fetcher
   =
   let form =
     experiment_form
@@ -743,9 +680,7 @@ let edit
                 |> CCString.capitalize_ascii
                 |> txt
               ]
-          ; p
-              [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt
-              ]
+          ; p [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt ]
           ; tags_html
               (available_participation_tags, current_participation_tags)
               Field.ParticipationTag
@@ -758,15 +693,15 @@ let edit
 ;;
 
 let detail
-  experiment
-  session_count
-  message_templates
-  sys_languages
-  smtp_account
-  tags
-  participation_tags
-  statistics
-  ({ Pool_context.language; csrf; guardian; _ } as context)
+      experiment
+      session_count
+      message_templates
+      sys_languages
+      smtp_account
+      tags
+      participation_tags
+      statistics
+      ({ Pool_context.language; csrf; guardian; _ } as context)
   =
   let open Pool_common in
   let experiment_id = Experiment.id experiment in
@@ -805,9 +740,7 @@ let detail
             ()
         ; div
             ~a:[ a_class [ "grow" ] ]
-            [ Error.ExperimentSessionCountNotZero
-              |> Utils.error_to_string language
-              |> txt
+            [ Error.ExperimentSessionCountNotZero |> Utils.error_to_string language |> txt
             ]
         ]
     | false ->
@@ -922,8 +855,7 @@ let detail
                   ]
               ] )
       in
-      [ ( Field.PublicTitle
-        , experiment |> public_title |> PublicTitle.value |> txt )
+      [ Field.PublicTitle, experiment |> public_title |> PublicTitle.value |> txt
       ; ( Field.ExperimentType
         , experiment
           |> experiment_type
@@ -942,15 +874,9 @@ let detail
                ~default:(txt "")
                (PublicDescription.value %> HttpUtils.add_line_breaks) )
       ; ( Field.Language
-        , experiment
-          |> language
-          |> CCOption.map_or ~default Language.show
-          |> txt )
+        , experiment |> language |> CCOption.map_or ~default Language.show |> txt )
       ; ( Field.CostCenter
-        , experiment
-          |> cost_center
-          |> CCOption.map_or ~default CostCenter.value
-          |> txt )
+        , experiment |> cost_center |> CCOption.map_or ~default CostCenter.value |> txt )
       ; ( Field.OrganisationalUnit
         , experiment
           |> organisational_unit
@@ -973,12 +899,9 @@ let detail
       ; ( Field.DirectRegistrationDisabled
         , direct_registration_disabled_value |> boolean_value )
       ; Field.RegistrationDisabled, registration_disabled_value |> boolean_value
-      ; ( Field.AllowUninvitedSignup
-        , allow_uninvited_signup_value |> boolean_value )
-      ; ( Field.ExternalDataRequired
-        , external_data_required_value |> boolean_value )
-      ; ( Field.ShowExteralDataIdLinks
-        , show_external_data_id_links_value |> boolean_value )
+      ; Field.AllowUninvitedSignup, allow_uninvited_signup_value |> boolean_value
+      ; Field.ExternalDataRequired, external_data_required_value |> boolean_value
+      ; Field.ShowExteralDataIdLinks, show_external_data_id_links_value |> boolean_value
       ; ( Field.ExperimentEmailReminderLeadTime
         , email_session_reminder_lead_time_value experiment
           |> CCOption.map_or ~default:"-" Pool_model.Time.formatted_timespan
@@ -1026,9 +949,7 @@ let detail
         ; div
             ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
             [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
-            ; div
-                ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
-                [ statistics ]
+            ; div ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ] [ statistics ]
             ]
         ; message_template
         ; setting
@@ -1058,24 +979,21 @@ let detail
 ;;
 
 let invitations
-  experiment
-  key_list
-  template_list
-  query_experiments
-  query_tags
-  statistics
-  filtered_contacts
-  ({ Pool_context.language; _ } as context)
+      experiment
+      key_list
+      template_list
+      query_experiments
+      query_tags
+      statistics
+      filtered_contacts
+      ({ Pool_context.language; _ } as context)
   =
   let changelog =
     match experiment.Experiment.filter with
     | None -> txt ""
     | Some filter ->
       let url =
-        Http_utils.Url.Admin.filter_path
-          ~suffix:"changelog"
-          ~id:filter.Filter.id
-          ()
+        Http_utils.Url.Admin.filter_path ~suffix:"changelog" ~id:filter.Filter.id ()
         |> Uri.of_string
       in
       Component.Changelog.list context url None
@@ -1113,14 +1031,14 @@ let invitations
 ;;
 
 let users
-  ?hint
-  ?can_assign
-  ?can_unassign
-  role
-  experiment
-  applicable_admins
-  currently_assigned
-  context
+      ?hint
+      ?can_assign
+      ?can_unassign
+      role
+      experiment
+      applicable_admins
+      currently_assigned
+      context
   =
   let base_url field admin =
     let suffix =
@@ -1154,13 +1072,13 @@ let users
 ;;
 
 let message_template_form
-  ({ Pool_context.language; _ } as context)
-  tenant
-  experiment
-  languages
-  label
-  form_context
-  flash_fetcher
+      ({ Pool_context.language; _ } as context)
+      tenant
+      experiment
+      languages
+      label
+      form_context
+      flash_fetcher
   =
   let open Message_template in
   let open Pool_common in
@@ -1183,39 +1101,48 @@ let message_template_form
     | `Update t -> path (prefixed_template_url t)
   in
   let text_elements =
-    Component.MessageTextElements.message_template_help
-      ~experiment
-      language
-      tenant
-      label
+    Component.MessageTextElements.message_template_help ~experiment language tenant label
+  in
+  let changelog =
+    match form_context with
+    | `Create _ -> txt ""
+    | `Update t ->
+      let path =
+        HttpUtils.Url.Admin.experiment_message_template_path
+          experiment.Experiment.id
+          label
+          ~suffix:"changelog"
+          ~id:t.id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context path None
   in
   let open Page_admin_message_template in
-  template_form
-    context
-    ~entity:(Experiment experiment.Experiment.id)
-    ?languages
-    ~text_elements
-    ?fixed_language:experiment.Experiment.language
-    form_context
-    tenant.Pool_tenant.text_messages_enabled
-    action
-    flash_fetcher
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ template_form
+        context
+        ~entity:(Experiment experiment.Experiment.id)
+        ?languages
+        ~text_elements
+        ?fixed_language:experiment.Experiment.language
+        form_context
+        tenant.Pool_tenant.text_messages_enabled
+        action
+        flash_fetcher
+    ; changelog
+    ]
   |> CCList.return
   |> Layout.Experiment.create context (control_to_title control) experiment
 ;;
 
-let message_history_url =
-  build_experiment_path ~suffix:"messages" %> Uri.of_string
-;;
+let message_history_url = build_experiment_path ~suffix:"messages" %> Uri.of_string
 
 let message_history context queue_table experiment messages =
   let open Pool_common in
   let html =
-    Page_admin_queue.list
-      context
-      queue_table
-      (message_history_url experiment)
-      messages
+    Page_admin_queue.list context queue_table (message_history_url experiment) messages
   in
   Layout.Experiment.(
     create

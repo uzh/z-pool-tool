@@ -9,9 +9,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun user ->
-        Target.create
-          `Contact
-          (user |> Entity.id |> Uuid.target_of Entity.Id.value))
+         Target.create `Contact (user |> Entity.id |> Uuid.target_of Entity.Id.value))
       t
     >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
     >|- Pool_message.Error.authorization
@@ -39,8 +37,7 @@ module Access = struct
   open Permission
 
   let contact action uuid =
-    one_of_tuple
-      (action, `Contact, Some (uuid |> Uuid.target_of Entity.Id.value))
+    one_of_tuple (action, `Contact, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index_permission = Read
@@ -53,8 +50,7 @@ module Access = struct
     let open PermissionOnTarget in
     let create ?target_uuid = create ?target_uuid Permission.Read in
     CCList.flat_map
-      (fun target_uuid ->
-        [ create ~target_uuid `Contact; create ~target_uuid model ])
+      (fun target_uuid -> [ create ~target_uuid `Contact; create ~target_uuid model ])
       verify_on_ids
     @ [ create `Contact; create model ]
   ;;
@@ -64,9 +60,7 @@ module Access = struct
 
   let read_of_target target_uuid =
     let open PermissionOnTarget in
-    [ create index_permission `Contact
-    ; create ~target_uuid index_permission `Contact
-    ]
+    [ create index_permission `Contact; create ~target_uuid index_permission `Contact ]
   ;;
 
   let send_direct_message = one_of_tuple (Create, `ContactDirectMessage, None)

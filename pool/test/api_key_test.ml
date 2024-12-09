@@ -66,9 +66,7 @@ let get_current _ () =
   let testable_key = Alcotest.(option Test_utils.api_key) in
   let hour = Ptime.Span.of_int_s 3600 in
   let create_api_key token expires_at =
-    let api_key =
-      Model.create_api_key ~id:(Id.create ()) ~token ~expires_at ()
-    in
+    let api_key = Model.create_api_key ~id:(Id.create ()) ~token ~expires_at () in
     let%lwt () = Created api_key |> handle_event database_label in
     Lwt.return api_key
   in
@@ -80,9 +78,7 @@ let get_current _ () =
   in
   let%lwt valid_api_key = create_api_key valid_token expires_at in
   let%lwt res = find_by_token database_label (Token.value valid_token) in
-  let () =
-    Alcotest.check testable_key "found valid api key" (Some valid_api_key) res
-  in
+  let () = Alcotest.check testable_key "found valid api key" (Some valid_api_key) res in
   let expires_at =
     Ptime.sub_span (Ptime_clock.now ()) hour
     |> CCOption.get_exn_or "Invalid ptime"
@@ -91,8 +87,6 @@ let get_current _ () =
   let invalid_token = Token.generate () in
   let%lwt (_ : Api_key.t) = create_api_key invalid_token expires_at in
   let%lwt res = find_by_token database_label (Token.value invalid_token) in
-  let () =
-    Alcotest.check testable_key "did not find expired api key" None res
-  in
+  let () = Alcotest.check testable_key "did not find expired api key" None res in
   Lwt.return ()
 ;;

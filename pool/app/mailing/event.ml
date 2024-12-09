@@ -15,8 +15,12 @@ type event =
   | Stopped of t
 [@@deriving eq, show, variants]
 
-let handle_event pool =
+let handle_event ?user_uuid pool =
   let open Utils.Lwt_result.Infix in
+  let create_changelog before after =
+    let open Version_history in
+    insert pool ?user_uuid ~entity_uuid:before.id ~before ~after ()
+  in
   function
   | Created (mailing, experiment_id) ->
     let%lwt () = Repo.insert pool experiment_id mailing in
@@ -24,8 +28,12 @@ let handle_event pool =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Updated ({ start_at; end_at; limit; distribution }, mailing) ->
-    { mailing with start_at; end_at; limit; distribution } |> Repo.update pool
+    let updated = { mailing with start_at; end_at; limit; distribution } in
+    let%lwt () = create_changelog mailing updated in
+    updated |> Repo.update pool
   | Deleted { id; _ } -> Repo.delete pool id
   | Stopped mailing ->
-    { mailing with end_at = Ptime_clock.now () } |> Repo.update pool
+    let stopped = { mailing with end_at = Ptime_clock.now () } in
+    let%lwt () = create_changelog mailing stopped in
+    stopped |> Repo.update pool
 ;;

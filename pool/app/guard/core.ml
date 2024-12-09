@@ -19,8 +19,7 @@ module Utils = struct
     | `Recruiter -> `RoleRecruiter
   ;;
 
-  let find_assignable_role
-    : Role.Target.t -> (Role.Role.t, Pool_message.Error.t) result
+  let find_assignable_role : Role.Target.t -> (Role.Role.t, Pool_message.Error.t) result
     = function
     | `RoleAdmin -> Ok `Admin
     | `RoleAssistant -> Ok `Assistant

@@ -103,19 +103,16 @@ val stringify_action
 type event =
   | ContactEmailUpdated of ContactEmail.t
   | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.EmailLeadTime.t
-  | DefaultTextMsgReminderLeadTimeUpdated of
-      Pool_common.Reminder.TextMessageLeadTime.t
+  | DefaultTextMsgReminderLeadTimeUpdated of Pool_common.Reminder.TextMessageLeadTime.t
   | EmailSuffixesUpdated of EmailSuffix.t list
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | LanguagesUpdated of Pool_common.Language.t list
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
-  | UserImportFirstReminderAfterUpdated of
-      UserImportReminder.FirstReminderAfter.t
-  | UserImportSecondReminderAfterUpdated of
-      UserImportReminder.SecondReminderAfter.t
+  | UserImportFirstReminderAfterUpdated of UserImportReminder.FirstReminderAfter.t
+  | UserImportSecondReminderAfterUpdated of UserImportReminder.SecondReminderAfter.t
 
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -127,18 +124,13 @@ val find_inactive_user_disable_after
   :  Database.Label.t
   -> InactiveUser.DisableAfter.t Lwt.t
 
-val find_inactive_user_warning
-  :  Database.Label.t
-  -> InactiveUser.Warning.t Lwt.t
+val find_inactive_user_warning : Database.Label.t -> InactiveUser.Warning.t Lwt.t
 
 val find_trigger_profile_update_after
   :  Database.Label.t
   -> TriggerProfileUpdateAfter.t Lwt.t
 
-val default_language_of_list
-  :  Pool_common.Language.t list
-  -> Pool_common.Language.t
-
+val default_language_of_list : Pool_common.Language.t list -> Pool_common.Language.t
 val default_language : Database.Label.t -> Pool_common.Language.t Lwt.t
 
 val find_default_reminder_lead_time

@@ -11,9 +11,7 @@ let index req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/custom-fields")
     @@
-    let%lwt contact_fields =
-      Custom_field.(find_by_model database_label Model.Contact)
-    in
+    let%lwt contact_fields = Custom_field.(find_by_model database_label Model.Contact) in
     Page.Admin.CustomFieldSettings.show context contact_fields
     |> create_layout ~active_navigation:settings_path req context
     >|+ Sihl.Web.Response.of_html
@@ -29,9 +27,7 @@ let update setting req =
     let open Custom_field in
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt selected =
-      Sihl.Web.Request.urlencoded_list
-        Pool_message.Field.(array_key CustomField)
-        req
+      Sihl.Web.Request.urlencoded_list Pool_message.Field.(array_key CustomField) req
     in
     let%lwt contact_fields = find_by_model database_label Model.Contact in
     let events =
@@ -64,11 +60,6 @@ module Access : module type of Helpers.Access = struct
   module Guardian = Middleware.Guardian
   include Helpers.Access
 
-  let index =
-    Command.UpdateVisibilitySettings.effects |> Guardian.validate_admin_entity
-  ;;
-
-  let update =
-    Command.UpdateVisibilitySettings.effects |> Guardian.validate_admin_entity
-  ;;
+  let index = Command.UpdateVisibilitySettings.effects |> Guardian.validate_admin_entity
+  let update = Command.UpdateVisibilitySettings.effects |> Guardian.validate_admin_entity
 end

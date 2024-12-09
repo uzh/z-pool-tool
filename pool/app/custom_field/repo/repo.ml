@@ -1,8 +1,7 @@
 module Database = Database
 
 let has_options field_type m =
-  Entity.FieldType.(
-    equal Select (field_type m) || equal MultiSelect (field_type m))
+  Entity.FieldType.(equal Select (field_type m) || equal MultiSelect (field_type m))
 ;;
 
 let to_entity pool to_entity field_type id m =
@@ -15,8 +14,7 @@ let to_entity pool to_entity field_type id m =
 
 let get_options_of_multiple pool field_type id fields =
   fields
-  |> CCList.filter_map (fun m ->
-    if has_options field_type m then Some (id m) else None)
+  |> CCList.filter_map (fun m -> if has_options field_type m then Some (id m) else None)
   |> Repo_option.find_by_multiple_fields pool
 ;;
 
@@ -118,10 +116,7 @@ module Sql = struct
 
   let find_ungrouped_by_model pool model =
     let open Utils.Lwt_result.Infix in
-    Database.collect
-      pool
-      find_ungrouped_by_model_request
-      (Entity.Model.show model)
+    Database.collect pool find_ungrouped_by_model_request (Entity.Model.show model)
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
@@ -191,9 +186,7 @@ module Sql = struct
     insert_sql |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool t =
-    Database.exec pool insert_request (t |> Repo_entity.Write.of_entity)
-  ;;
+  let insert pool t = Database.exec pool insert_request (t |> Repo_entity.Write.of_entity)
 
   let update_request =
     let open Caqti_request.Infix in
@@ -222,9 +215,7 @@ module Sql = struct
     |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool t =
-    Database.exec pool update_request (t |> Repo_entity.Write.of_entity)
-  ;;
+  let update pool t = Database.exec pool update_request (t |> Repo_entity.Write.of_entity)
 
   let publish_request =
     let open Caqti_request.Infix in
@@ -239,9 +230,7 @@ module Sql = struct
   ;;
 
   let publish pool t =
-    let%lwt () =
-      Database.exec pool publish_request (t |> Entity.id |> Entity.Id.value)
-    in
+    let%lwt () = Database.exec pool publish_request (t |> Entity.id |> Entity.Id.value) in
     Repo_option.publish_by_custom_field pool (Entity.id t)
   ;;
 
@@ -268,9 +257,7 @@ module Sql = struct
   ;;
 
   let delete pool t =
-    let%lwt () =
-      Database.exec pool delete_request (t |> Entity.id |> Entity.Id.value)
-    in
+    let%lwt () = Database.exec pool delete_request (t |> Entity.id |> Entity.Id.value) in
     Repo_option.destroy_by_custom_field pool (Entity.id t)
   ;;
 
@@ -328,7 +315,7 @@ let sort_fields pool ids =
   let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
-      Database.exec pool Sql.update_position_request (index, Entity.Id.value id))
+       Database.exec pool Sql.update_position_request (index, Entity.Id.value id))
     ids
   ||> CCFun.const ()
 ;;

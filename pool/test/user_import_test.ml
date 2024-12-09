@@ -30,8 +30,7 @@ let create_user_import ?(token = Data.token) user =
 
 let confirm_without_matching_password () =
   let contact =
-    Test_utils.Model.create_contact ~with_terms_accepted:false ()
-    |> Pool_context.contact
+    Test_utils.Model.create_contact ~with_terms_accepted:false () |> Pool_context.contact
   in
   let user_import = create_user_import contact in
   let urlencoded =
@@ -68,8 +67,7 @@ let confirm_as_contact () =
   in
   let expected =
     Ok
-      [ Contact.ImportConfirmed
-          (contact, Pool_user.Password.Plain.create Data.password)
+      [ Contact.ImportConfirmed (contact, Pool_user.Password.Plain.create Data.password)
         |> Pool_event.contact
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
@@ -100,8 +98,7 @@ let confirm_as_admin () =
   in
   let expected =
     Ok
-      [ Admin.ImportConfirmed
-          (admin, Pool_user.Password.Plain.create Data.password)
+      [ Admin.ImportConfirmed (admin, Pool_user.Password.Plain.create Data.password)
         |> Pool_event.admin
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
@@ -110,9 +107,7 @@ let confirm_as_admin () =
 ;;
 
 let confirm_as_contact_integration _ () =
-  let%lwt contact =
-    Integration_utils.ContactRepo.create ~with_terms_accepted:false ()
-  in
+  let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:false () in
   let user = contact |> Pool_context.contact in
   let user_import = create_user_import user in
   let urlencoded =
@@ -132,8 +127,7 @@ let confirm_as_contact_integration _ () =
     |> Pool_event.handle_events Test_utils.Data.database_label user
   in
   let%lwt contact =
-    Contact.find Test_utils.Data.database_label (Contact.id contact)
-    |> Lwt.map get_exn
+    Contact.find Test_utils.Data.database_label (Contact.id contact) |> Lwt.map get_exn
   in
   let () =
     Alcotest.(
@@ -145,11 +139,7 @@ let confirm_as_contact_integration _ () =
   in
   let () =
     Alcotest.(
-      check
-        bool
-        "succeeds"
-        true
-        (contact.Contact.terms_accepted_at |> CCOption.is_some))
+      check bool "succeeds" true (contact.Contact.terms_accepted_at |> CCOption.is_some))
   in
   Lwt.return_unit
 ;;
@@ -192,19 +182,12 @@ module Repo = struct
   type testable_import = Contact.t * User_import.t [@@deriving eq, show]
 
   let user_import = Alcotest.testable pp_testable_import equal_testable_import
-
-  let create_contact =
-    Integration_utils.ContactRepo.create ~with_terms_accepted:true
-  ;;
-
+  let create_contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true
   let limit = 5
   let database_label = Test_utils.Data.database_label
   let contact_id_1 = Contact.Id.create ()
   let contact_id_2 = Contact.Id.create ()
-
-  let sort_testable =
-    CCList.stable_sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
-  ;;
+  let sort_testable = CCList.stable_sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
 
   let reminder_settings database_label =
     let open Settings in
@@ -217,12 +200,8 @@ module Repo = struct
     let token () = Pool_common.Id.(() |> create |> value) in
     let%lwt contact1 = create_contact ~id:contact_id_1 () in
     let%lwt contact2 = create_contact ~id:contact_id_2 () in
-    let import1 =
-      create_user_import ~token:(token ()) (Pool_context.Contact contact1)
-    in
-    let import2 =
-      create_user_import ~token:(token ()) (Pool_context.Contact contact2)
-    in
+    let import1 = create_user_import ~token:(token ()) (Pool_context.Contact contact1) in
+    let import2 = create_user_import ~token:(token ()) (Pool_context.Contact contact2) in
     let%lwt () =
       [ contact_id_1; contact_id_2 ]
       |> Lwt_list.iter_s (set_contact_import_pending database_label)
@@ -243,17 +222,12 @@ module Repo = struct
   let find_contacts_to_notify _ () =
     let%lwt () = init () in
     let%lwt contacts_to_notify =
-      User_import.find_contacts_to_notify database_label limit ()
-      ||> sort_testable
+      User_import.find_contacts_to_notify database_label limit () ||> sort_testable
     in
     let%lwt expected =
-      [ contact_id_1; contact_id_2 ]
-      |> Lwt_list.map_s import_of_contact
-      ||> sort_testable
+      [ contact_id_1; contact_id_2 ] |> Lwt_list.map_s import_of_contact ||> sort_testable
     in
-    let () =
-      Alcotest.(check (list user_import) "succeeds" expected contacts_to_notify)
-    in
+    let () = Alcotest.(check (list user_import) "succeeds" expected contacts_to_notify) in
     let%lwt () =
       contacts_to_notify
       |> CCList.map (fun (_, import) -> User_import.Notified import)
@@ -263,25 +237,17 @@ module Repo = struct
     let%lwt contacts_to_notify =
       User_import.find_contacts_to_notify database_label limit ()
     in
-    let () =
-      Alcotest.(check (list user_import) "succeeds" [] contacts_to_notify)
-    in
+    let () = Alcotest.(check (list user_import) "succeeds" [] contacts_to_notify) in
     Lwt.return_unit
   ;;
 
   let find_contacts_to_remind _ () =
     let%lwt reminder_settings = reminder_settings database_label in
     let%lwt contacts_to_remind =
-      User_import.find_contacts_to_remind
-        reminder_settings
-        database_label
-        limit
-        ()
+      User_import.find_contacts_to_remind reminder_settings database_label limit ()
     in
     (* Expect list to be empty *)
-    let () =
-      Alcotest.(check (list user_import) "succeeds" [] contacts_to_remind)
-    in
+    let () = Alcotest.(check (list user_import) "succeeds" [] contacts_to_remind) in
     let%lwt () =
       [ contact_id_1; contact_id_2 ]
       |> Lwt_list.iter_s
@@ -289,21 +255,13 @@ module Repo = struct
     in
     (* Expect both imports to be returned *)
     let%lwt contacts_to_remind =
-      User_import.find_contacts_to_remind
-        reminder_settings
-        database_label
-        limit
-        ()
+      User_import.find_contacts_to_remind reminder_settings database_label limit ()
       ||> sort_testable
     in
     let%lwt expected =
-      [ contact_id_1; contact_id_2 ]
-      |> Lwt_list.map_s import_of_contact
-      ||> sort_testable
+      [ contact_id_1; contact_id_2 ] |> Lwt_list.map_s import_of_contact ||> sort_testable
     in
-    let () =
-      Alcotest.(check (list user_import) "succeeds" expected contacts_to_remind)
-    in
+    let () = Alcotest.(check (list user_import) "succeeds" expected contacts_to_remind) in
     (* Expect list to be empty with increased duration *)
     let first_reminder_after =
       Settings.UserImportReminder.FirstReminderAfter.of_int_s (60 * 60 * 24 * 10)
@@ -316,9 +274,7 @@ module Repo = struct
         limit
         ()
     in
-    let () =
-      Alcotest.(check (list user_import) "succeeds" [] contacts_to_remind)
-    in
+    let () = Alcotest.(check (list user_import) "succeeds" [] contacts_to_remind) in
     Lwt.return_unit
   ;;
 end

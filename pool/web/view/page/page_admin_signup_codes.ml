@@ -20,12 +20,7 @@ let list Pool_context.{ language; _ } (admins, query) =
     |> CCList.map (fun x -> td [ txt x ])
     |> tr
   in
-  Component.DataTable.make
-    ~target_id:"signup-codes-list"
-    ~cols
-    ~row
-    data_table
-    admins
+  Component.DataTable.make ~target_id:"signup-codes-list" ~cols ~row data_table admins
 ;;
 
 let generate_code langauge tenant_url =

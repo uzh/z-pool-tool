@@ -83,14 +83,10 @@ type merge =
 let searchable_by = []
 
 let column_ignore =
-  Column.create
-    (Field.HideIgnored, "pool_contacts_possible_duplicates.ignore = 0")
+  Column.create (Field.HideIgnored, "pool_contacts_possible_duplicates.ignore = 0")
 ;;
 
-let column_score =
-  Column.create (Field.Score, "pool_contacts_possible_duplicates.score")
-;;
-
+let column_score = Column.create (Field.Score, "pool_contacts_possible_duplicates.score")
 let filterable_by = Some Filter.Condition.Human.[ Checkbox column_ignore ]
 let sortable_by = [ column_score ]
 

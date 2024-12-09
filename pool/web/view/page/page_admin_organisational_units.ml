@@ -5,14 +5,11 @@ open Pool_message
 open Control
 
 let ou_path ?suffix ?id () =
-  let base_path =
-    Format.asprintf "/admin/%s" Field.(human_url OrganisationalUnit)
-  in
+  let base_path = Format.asprintf "/admin/%s" Field.(human_url OrganisationalUnit) in
   let default =
     match id with
     | None -> base_path
-    | Some id ->
-      Format.asprintf "%s/%s" base_path (Organisational_unit.Id.value id)
+    | Some id -> Format.asprintf "%s/%s" base_path (Organisational_unit.Id.value id)
   in
   CCOption.map_or ~default (Format.asprintf "%s/%s" default) suffix
 ;;
@@ -35,8 +32,7 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
         [ Input.csrf_element csrf ()
         ; Input.input_element
             ?value:
-              (organisational_unit
-               |> CCOption.map (fun { name; _ } -> Name.value name))
+              (organisational_unit |> CCOption.map (fun { name; _ } -> Name.value name))
             language
             `Text
             Field.Name
@@ -47,25 +43,18 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
     ]
 ;;
 
-let create context =
-  div ~a:[ a_class [ "trim"; "safety-margin" ] ] [ form context None ]
-;;
+let create context = div ~a:[ a_class [ "trim"; "safety-margin" ] ] [ form context None ]
 
 let detail context ou =
   let open Organisational_unit in
   let url =
-    Http_utils.Url.Admin.organisational_unit_path
-      ~suffix:"changelog"
-      ~id:ou.id
-      ()
+    Http_utils.Url.Admin.organisational_unit_path ~suffix:"changelog" ~id:ou.id ()
     |> Uri.of_string
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ form context (Some ou)
-    ; div
-        ~a:[ a_class [ "gap-lg" ] ]
-        [ Component.Changelog.list context url None ]
+    ; div ~a:[ a_class [ "gap-lg" ] ] [ Component.Changelog.list context url None ]
     ]
 ;;
 
@@ -91,9 +80,7 @@ let list { Pool_context.language; _ } organizations query =
   in
   let row (org : Organisational_unit.t) =
     let open Organisational_unit in
-    [ txt (Name.value org.name)
-    ; Input.edit_link (ou_path ~id:org.id ~suffix:"edit" ())
-    ]
+    [ txt (Name.value org.name); Input.edit_link (ou_path ~id:org.id ~suffix:"edit" ()) ]
     |> CCList.map (CCList.return %> td)
     |> tr
   in
@@ -110,10 +97,7 @@ let index ({ Pool_context.language; _ } as context) organizations query =
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            Pool_common.(
-              Utils.nav_link_to_string language I18n.OrganisationalUnits)
-        ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.OrganisationalUnits) ]
     ; list context organizations query
     ]
 ;;

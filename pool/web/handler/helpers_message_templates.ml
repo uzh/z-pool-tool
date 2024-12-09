@@ -6,11 +6,9 @@ let delete database_label user template_id redirect =
   >== handle
   |>> Pool_event.handle_events database_label user
   |>> (fun () ->
-        let open Http_utils in
-        redirect_to_with_actions
-          redirect
-          [ Message.set
-              ~success:[ Pool_message.(Success.Deleted Field.MessageTemplate) ]
-          ])
+  let open Http_utils in
+  redirect_to_with_actions
+    redirect
+    [ Message.set ~success:[ Pool_message.(Success.Deleted Field.MessageTemplate) ] ])
   >|- fun err -> err, redirect
 ;;

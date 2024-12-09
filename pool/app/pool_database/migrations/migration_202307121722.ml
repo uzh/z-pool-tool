@@ -56,6 +56,5 @@ let migration () =
 ;;
 
 let migration_root () =
-  Database.Migration.(
-    empty "202306231722" |> add_step add_default_flag_to_smtp_accounts)
+  Database.Migration.(empty "202306231722" |> add_step add_default_flag_to_smtp_accounts)
 ;;

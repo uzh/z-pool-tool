@@ -107,10 +107,7 @@ module Data = struct
       FieldType.MultiSelect
   ;;
 
-  let custom_number_field ?validation () =
-    custom_field ?validation FieldType.Number
-  ;;
-
+  let custom_number_field ?validation () = custom_field ?validation FieldType.Number
   let answer_id = Answer.Id.create ()
 
   let to_public ?(field_options = []) entity_uuid (m : Custom_field.t) =
@@ -149,11 +146,7 @@ module Data = struct
         , answer )
     | FieldType.Date ->
       let answer =
-        { Answer.id = answer_id
-        ; entity_uuid
-        ; value = Some (1970, 1, 1)
-        ; admin_value
-        }
+        { Answer.id = answer_id; entity_uuid; value = Some (1970, 1, 1); admin_value }
         |> CCOption.pure
       in
       Public.Date
@@ -281,10 +274,7 @@ let save_options field =
 
 module NrOfSiblings = struct
   let answer_value = 3
-
-  let field =
-    create_custom_field "Nr of siblings" (fun a -> Custom_field.Number a)
-  ;;
+  let field = create_custom_field "Nr of siblings" (fun a -> Custom_field.Number a)
 
   let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer_value =
     let open Custom_field in
@@ -313,23 +303,16 @@ module NrOfSiblings = struct
   let save_answers ~answer_value ?admin contacts =
     CCList.map
       (fun contact ->
-         let user =
-           admin |> CCOption.value ~default:(Pool_context.Contact contact)
-         in
+         let user = admin |> CCOption.value ~default:(Pool_context.Contact contact) in
          Custom_field.AnswerUpserted
-           ( public (CCOption.is_some admin) answer_value
-           , Contact.id contact
-           , user )
+           (public (CCOption.is_some admin) answer_value, Contact.id contact, user)
          |> Pool_event.custom_field)
       contacts
   ;;
 end
 
 module Birthday = struct
-  let answer_value =
-    "1990-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn
-  ;;
-
+  let answer_value = "1990-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn
   let field = create_custom_field "Birthday" (fun a -> Custom_field.Date a)
 
   let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer_value =
@@ -359,13 +342,9 @@ module Birthday = struct
   let save_answers ~answer_value ?admin contacts =
     CCList.map
       (fun contact ->
-         let user =
-           admin |> CCOption.value ~default:(Pool_context.Contact contact)
-         in
+         let user = admin |> CCOption.value ~default:(Pool_context.Contact contact) in
          Custom_field.AnswerUpserted
-           ( public (CCOption.is_some admin) answer_value
-           , Contact.id contact
-           , user )
+           (public (CCOption.is_some admin) answer_value, Contact.id contact, user)
          |> Pool_event.custom_field)
       contacts
   ;;
@@ -395,18 +374,12 @@ module SelectField = struct
     |> CCList.map
          Custom_field.(
            fun label ->
-             [ lang, label ]
-             |> Name.create [ lang ]
-             |> get_exn
-             |> SelectOption.create)
+             [ lang, label ] |> Name.create [ lang ] |> get_exn |> SelectOption.create)
   ;;
 
   let public_options = options |> CCList.map option_to_public
   let default_answer = CCList.hd options
-
-  let field =
-    create_custom_field "Select" (fun a -> Custom_field.Select (a, options))
-  ;;
+  let field = create_custom_field "Select" (fun a -> Custom_field.Select (a, options))
 
   let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer =
     let open Custom_field in
@@ -436,9 +409,7 @@ module SelectField = struct
   let save_answer answer ?admin contacts =
     CCList.map
       (fun contact ->
-         let user =
-           admin |> CCOption.value ~default:(Pool_context.Contact contact)
-         in
+         let user = admin |> CCOption.value ~default:(Pool_context.Contact contact) in
          Custom_field.AnswerUpserted
            (public (CCOption.is_some admin) answer, Contact.id contact, user)
          |> Pool_event.custom_field)
@@ -471,8 +442,7 @@ let admin_override_nr_field =
     Number
       { id = Id.create ()
       ; model = Model.Contact
-      ; name =
-          Name.create [ lang ] [ lang, "admin_override_nr_field" ] |> get_exn
+      ; name = Name.create [ lang ] [ lang, "admin_override_nr_field" ] |> get_exn
       ; hint = [] |> Hint.create |> get_exn
       ; validation = Validation.pure
       ; required = false |> Required.create
@@ -523,9 +493,7 @@ let create_admin_override_nr_field () =
 let answer_admin_override_nr_field ?admin ~answer_value contacts =
   CCList.map
     (fun contact ->
-       let user =
-         admin |> CCOption.value ~default:(Pool_context.Contact contact)
-       in
+       let user = admin |> CCOption.value ~default:(Pool_context.Contact contact) in
        Custom_field.AnswerUpserted
          ( admin_override_nr_field_public (CCOption.is_some admin) answer_value
          , Contact.id contact
@@ -552,8 +520,7 @@ let multi_select_options =
 
 let multi_select_options_public =
   multi_select_option_data
-  |> CCList.map (fun (id, name) ->
-    Custom_field.SelectOption.Public.create ~id name)
+  |> CCList.map (fun (id, name) -> Custom_field.SelectOption.Public.create ~id name)
 ;;
 
 let multi_select_options_by_index = CCList.map (CCList.nth multi_select_options)
@@ -635,6 +602,5 @@ let answer_multi_select contacts answer_index =
 
 let publish_fields () =
   [ multi_select_custom_field; NrOfSiblings.field ]
-  |> CCList.map (fun field ->
-    Custom_field.Published field |> Pool_event.custom_field)
+  |> CCList.map (fun field -> Custom_field.Published field |> Pool_event.custom_field)
 ;;

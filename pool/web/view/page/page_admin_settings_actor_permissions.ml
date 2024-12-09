@@ -36,21 +36,18 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
   in
   let th_class = [ "w-3"; "w-3"; "w-3"; "w-3" ] in
   let row
-    (( ({ Guard.ActorPermission.actor_uuid; permission; target } as
-        actor_permission)
-     , actor_name
-     , target_model
-     , target_name ) :
-      Guard.ActorPermission.t * string * Role.Target.t option * string option)
+        (( ({ Guard.ActorPermission.actor_uuid; permission; target } as actor_permission)
+         , actor_name
+         , target_model
+         , target_name ) :
+          Guard.ActorPermission.t * string * Role.Target.t option * string option)
     =
     let open Component.Role in
     let button_form target name submit_type confirm_text actor_permission =
       form
         ~a:
           [ a_method `Post
-          ; a_action
-              (actor_permission_path ~suffix:target ()
-               |> Sihl.Web.externalize_path)
+          ; a_action (actor_permission_path ~suffix:target () |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -88,8 +85,7 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
         create_target_path ~uuid target_model |> create_link name
       | Guard.TargetEntity.Model model ->
         create_target_path (Some model)
-        |> create_link
-             (CCOption.value ~default:(Role.Target.show model) target_name)
+        |> create_link (CCOption.value ~default:(Role.Target.show model) target_name)
     in
     [ actor_link
     ; txt (Guard.Permission.show permission)
@@ -120,9 +116,7 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
 ;;
 
 let read_hint =
-  CCOption.map_or
-    ~default:[]
-    (I18n.content_to_string %> Unsafe.data %> CCList.return)
+  CCOption.map_or ~default:[] (I18n.content_to_string %> Unsafe.data %> CCList.return)
 ;;
 
 let index ?hint (Pool_context.{ language; _ } as context) rules query =

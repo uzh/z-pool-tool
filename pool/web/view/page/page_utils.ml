@@ -3,9 +3,7 @@ open Tyxml.Html
 let i18n_page ?(narrow = true) i18n =
   let classnames = [ "trim"; "safety-margin" ] in
   let classnames = if narrow then classnames @ [ "narrow" ] else classnames in
-  div
-    ~a:[ a_class classnames ]
-    I18n.[ i18n |> content |> Content.value |> Unsafe.data ]
+  div ~a:[ a_class classnames ] I18n.[ i18n |> content |> Content.value |> Unsafe.data ]
 ;;
 
 let note page_title info =
@@ -36,8 +34,8 @@ let error request_id =
        ; p
            [ txt
                [%string
-                 "Our administrators have been notified. Please note your \
-                  request ID <b>%{request_id}</b> when contacting us."]
+                 "Our administrators have been notified. Please note your request ID \
+                  <b>%{request_id}</b> when contacting us."]
            ]
        ]
 ;;

@@ -23,17 +23,15 @@ let filter pool =
   let filter_events, experiment_events =
     CCList.fold_left
       (fun (filter_events, experiment_events) experiment ->
-        let open Experiment in
-        let filter = Filter.create None test_filter in
-        ( Filter.Created filter :: filter_events
-        , Updated (experiment, { experiment with filter = Some filter })
-          :: experiment_events ))
+         let open Experiment in
+         let filter = Filter.create None test_filter in
+         ( Filter.Created filter :: filter_events
+         , Updated (experiment, { experiment with filter = Some filter })
+           :: experiment_events ))
       ([], [])
       experiments
   in
   let%lwt () = Lwt_list.iter_s (Filter.handle_event pool) filter_events in
-  let%lwt () =
-    Lwt_list.iter_s (Experiment.handle_event pool) experiment_events
-  in
+  let%lwt () = Lwt_list.iter_s (Experiment.handle_event pool) experiment_events in
   Lwt.return_unit
 ;;

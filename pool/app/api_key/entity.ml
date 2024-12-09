@@ -13,10 +13,7 @@ module Token = struct
   include Pool_model.Base.String
 
   let length = 64
-
-  let charset =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_."
-  ;;
+  let charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_."
 
   let generate () =
     let charset_length = CCString.length charset in
@@ -71,9 +68,5 @@ let column_created_at =
 
 let searchable_by = []
 let sortable_by = [ column_name; column_created_at ]
-
-let default_sort =
-  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

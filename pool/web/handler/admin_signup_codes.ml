@@ -13,9 +13,7 @@ let index req =
   let tenant = Pool_context.Tenant.get_tenant_exn req in
   let%lwt codes = Signup_code.all ~query database_label in
   let open Page.Admin.SignupCodes in
-  (if Http_utils.Htmx.is_hx_request req
-   then list
-   else index tenant.Pool_tenant.url)
+  (if Http_utils.Htmx.is_hx_request req then list else index tenant.Pool_tenant.url)
     context
     codes
   |> Lwt_result.return

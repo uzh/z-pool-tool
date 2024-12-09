@@ -25,8 +25,7 @@ let check_similarity _ () =
     find_by_contact pool target
     ||> fst
     ||> CCList.find_opt (fun { contact_a; contact_b; _ } ->
-      Id.equal (id contact_a) (id comparison)
-      || Id.equal (id contact_b) (id comparison))
+      Id.equal (id contact_a) (id comparison) || Id.equal (id contact_b) (id comparison))
   in
   let%lwt contact_1 = create_contact ~firstname:"John" ~lastname:"Doe" in
   let%lwt contact_2 = create_contact ~firstname:"John" ~lastname:"Doe" in
@@ -34,10 +33,7 @@ let check_similarity _ () =
     find_duplicate ~target:contact_1 ~comparison:contact_2
     ||> CCOption.map (fun { score; _ } -> score)
   in
-  check
-    ~result:duplicate_score
-    ~expected:(Some 1.0)
-    "found duplicate with score 1";
+  check ~result:duplicate_score ~expected:(Some 1.0) "found duplicate with score 1";
   let%lwt contact_3 = create_contact ~firstname:"Jane" ~lastname:"Doe" in
   let%lwt duplicate_score =
     find_duplicate ~target:contact_1 ~comparison:contact_3
@@ -74,9 +70,7 @@ let merge_contacts_command () =
     let open Contact in
     id contact |> Id.to_common
   in
-  let contact_id contact =
-    contact |> common_contact_id |> Pool_common.Id.value
-  in
+  let contact_id contact = contact |> common_contact_id |> Pool_common.Id.value in
   let field_id field =
     let open Custom_field in
     Public.id field |> Id.to_common |> Pool_common.Id.value
@@ -91,11 +85,7 @@ let merge_contacts_command () =
   let siblings_b = nr_siblings contact_b (Some 2) in
   let check_result urlencoded expected =
     let res =
-      handle
-        urlencoded
-        duplicate
-        [ NrOfSiblings.field ]
-        ([ siblings_a ], [ siblings_b ])
+      handle urlencoded duplicate [ NrOfSiblings.field ] ([ siblings_a ], [ siblings_b ])
     in
     let open Test_utils in
     Alcotest.(
@@ -116,11 +106,7 @@ let merge_contacts_command () =
     email @ hardcoded @ custom_fields
   in
   let expected =
-    Ok
-      { contact = contact_a
-      ; merged_contact = contact_b
-      ; kept_fields = [ siblings_a ]
-      }
+    Ok { contact = contact_a; merged_contact = contact_b; kept_fields = [ siblings_a ] }
   in
   check_result urlencoded expected;
   (* Select all data, except email, of contact_a *)
@@ -163,11 +149,7 @@ let merge_contacts_command () =
     email @ hardcoded @ custom_fields
   in
   let expected =
-    Ok
-      { contact = contact_a
-      ; merged_contact = contact_b
-      ; kept_fields = [ siblings_b ]
-      }
+    Ok { contact = contact_a; merged_contact = contact_b; kept_fields = [ siblings_b ] }
   in
   check_result urlencoded expected
 ;;
@@ -184,11 +166,7 @@ module MergeData = struct
       let open Alcotest in
       let open CCOption.Infix in
       check (option test) "equal value" (a >>= value) (b >>= value);
-      check
-        (option test)
-        "equal admin_value"
-        (a >>= admin_value)
-        (b >>= admin_value)
+      check (option test) "equal admin_value" (a >>= admin_value) (b >>= admin_value)
     ;;
   end
 
@@ -201,8 +179,7 @@ module MergeData = struct
     match[@warning "-4"] a, b with
     | Public.Boolean (_, a), Public.Boolean (_, b) -> run_test (a, b) bool
     | Date (_, a), Date (_, b) -> run_test (a, b) Test_utils.date
-    | MultiSelect (_, _, a), MultiSelect (_, _, b) ->
-      run_test (a, b) (list select_option)
+    | MultiSelect (_, _, a), MultiSelect (_, _, b) -> run_test (a, b) (list select_option)
     | Number (_, a), Number (_, b) -> run_test (a, b) int
     | Select (_, _, a), Select (_, _, b) -> run_test (a, b) select_option
     | Text (_, a), Text (_, b) -> run_test (a, b) string
@@ -214,9 +191,7 @@ module MergeData = struct
     let open Pool_user in
     let pool = Test_utils.Data.database_label in
     let%lwt current_user = Integration_utils.create_contact_user () in
-    let make_field name =
-      CustomFieldRepo.create name (fun a -> Custom_field.Text a)
-    in
+    let make_field name = CustomFieldRepo.create name (fun a -> Custom_field.Text a) in
     let make_contact ~firstname ~lastname =
       ContactRepo.create
         ~firstname:(Firstname.of_string firstname)
@@ -273,14 +248,7 @@ module MergeData = struct
       fields |> CCList.exists (fun f -> Id.equal (Public.id field) (id f)))
   ;;
 
-  let make_urlencoded
-        ~email
-        ~firstname
-        ~lastname
-        ~cell_phone
-        ~language
-        custom_fields
-    =
+  let make_urlencoded ~email ~firstname ~lastname ~cell_phone ~language custom_fields =
     let id contact = Contact.id contact |> Contact.Id.value in
     let open Pool_message in
     let custom_fields =
@@ -300,15 +268,7 @@ module MergeData = struct
 
   module T = Testable
 
-  let compare
-        contact
-        ~email
-        ~firstname
-        ~lastname
-        ~cell_phone
-        ~language
-        public_fields
-    =
+  let compare contact ~email ~firstname ~lastname ~cell_phone ~language public_fields =
     let%lwt contact = Contact.find pool (Contact.id contact) ||> get_exn in
     let open Alcotest in
     let run_check testable msg decode expected =
@@ -325,11 +285,7 @@ module MergeData = struct
     run_check T.email_address "equal email" Contact.email_address email;
     run_check T.firstname "equal firstname" Contact.firstname firstname;
     run_check T.lastname "equal lastname" Contact.lastname lastname;
-    run_check
-      (option Test_utils.phone_nr)
-      "equal phone"
-      Contact.cell_phone
-      cell_phone;
+    run_check (option Test_utils.phone_nr) "equal phone" Contact.cell_phone cell_phone;
     run_check
       (option Test_utils.language)
       "equal lang"

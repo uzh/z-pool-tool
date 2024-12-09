@@ -1,5 +1,7 @@
 module Id : sig
   include module type of Pool_common.Id
+
+  val to_common : t -> Pool_common.Id.t
 end
 
 module Label : sig
@@ -107,7 +109,7 @@ val show_event : event -> string
 val created : t -> event
 val updated : t -> update -> event
 val deleted : t -> event
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_default_by_label_and_language
@@ -188,6 +190,8 @@ module Guard : sig
     val delete : Id.t -> Guard.ValidationSet.t
   end
 end
+
+module VersionHistory : Changelog.TSig with type record = t
 
 val create_public_url_with_params
   :  Pool_tenant.Url.t
@@ -300,11 +304,7 @@ module ContactRegistrationAttempt : sig
 end
 
 module EmailVerification : sig
-  val email_params
-    :  email_layout
-    -> string
-    -> Contact.t
-    -> (string * string) list
+  val email_params : email_layout -> string -> Contact.t -> (string * string) list
 
   val create
     :  Database.Label.t
@@ -317,17 +317,8 @@ module EmailVerification : sig
 end
 
 module ExperimentInvitation : sig
-  val email_params
-    :  email_layout
-    -> Experiment.t
-    -> Contact.t
-    -> (string * string) list
-
-  val create
-    :  Pool_tenant.t
-    -> Experiment.t
-    -> Contact.t
-    -> Email.dispatch Lwt.t
+  val email_params : email_layout -> Experiment.t -> Contact.t -> (string * string) list
+  val create : Pool_tenant.t -> Experiment.t -> Contact.t -> Email.dispatch Lwt.t
 
   val prepare
     :  Pool_tenant.t
@@ -360,11 +351,7 @@ module ManualSessionMessage : sig
 end
 
 module MatcherNotification : sig
-  val email_params
-    :  email_layout
-    -> Pool_user.t
-    -> Experiment.t
-    -> (string * string) list
+  val email_params : email_layout -> Pool_user.t -> Experiment.t -> (string * string) list
 
   val create
     :  Pool_tenant.t
@@ -404,11 +391,7 @@ module PasswordChange : sig
 end
 
 module PasswordReset : sig
-  val email_params
-    :  email_layout
-    -> string
-    -> Pool_user.t
-    -> (string * string) list
+  val email_params : email_layout -> string -> Pool_user.t -> (string * string) list
 
   val create
     :  Database.Label.t
@@ -574,10 +557,7 @@ module UserImport : sig
   val prepare
     :  Database.Label.t
     -> Pool_tenant.t
-    -> ([< `Admin of Admin.t | `Contact of Contact.t ]
-        -> string
-        -> Email.dispatch)
-         Lwt.t
+    -> ([< `Admin of Admin.t | `Contact of Contact.t ] -> string -> Email.dispatch) Lwt.t
 end
 
 module WaitingListConfirmation : sig

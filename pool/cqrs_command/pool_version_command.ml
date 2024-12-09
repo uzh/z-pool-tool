@@ -9,11 +9,7 @@ type command =
   }
 
 let command tag text = { tag; text }
-
-let create_schema =
-  Pool_conformist.(make Field.[ Tag.schema (); Text.schema () ] command)
-;;
-
+let create_schema = Pool_conformist.(make Field.[ Tag.schema (); Text.schema () ] command)
 let update_schema = Pool_conformist.(make Field.[ Text.schema () ] CCFun.id)
 
 module Create : sig

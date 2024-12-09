@@ -1,9 +1,6 @@
 let database_label = Test_utils.Data.database_label
 let created_password = Pool_user.Password.Plain.create "CD&*BA8txf3mRuGF"
-
-let created_password_confirmation =
-  Pool_user.Password.to_confirmed created_password
-;;
+let created_password_confirmation = Pool_user.Password.to_confirmed created_password
 
 let reset_password_suceeds =
   Test_utils.case (fun () ->
@@ -33,15 +30,11 @@ let reset_password_suceeds =
         (new_password |> Password.to_confirmed)
       ||> Test_utils.get_or_failwith
     in
-    let%lwt (_ : t) =
-      login database_label email new_password ||> CCResult.get_exn
-    in
+    let%lwt (_ : t) = login database_label email new_password ||> CCResult.get_exn in
     Lwt.return_ok ())
 ;;
 
 let suite =
   Alcotest_lwt.
-    [ ( "password reset"
-      , [ test_case "password reset" `Quick reset_password_suceeds ] )
-    ]
+    [ "password reset", [ test_case "password reset" `Quick reset_password_suceeds ] ]
 ;;

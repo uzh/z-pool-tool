@@ -23,31 +23,16 @@ let () =
             `Quick
             Contact_test.sign_up_not_allowed_suffix
         ; test_case "sign up" `Quick Contact_test.sign_up
-        ; test_case
-            "delete with unverified email"
-            `Quick
-            Contact_test.delete_unverified
-        ; test_case
-            "try delete with verified email"
-            `Quick
-            Contact_test.delete_verified
-        ; test_case
-            "update language of user"
-            `Quick
-            Contact_test.update_language
+        ; test_case "delete with unverified email" `Quick Contact_test.delete_unverified
+        ; test_case "try delete with verified email" `Quick Contact_test.delete_verified
+        ; test_case "update language of user" `Quick Contact_test.update_language
         ; test_case "update password" `Quick Contact_test.update_password
-        ; test_case
-            "password policy: min length"
-            `Quick
-            Contact_test.password_min_length
+        ; test_case "password policy: min length" `Quick Contact_test.password_min_length
         ; test_case
             "password policy: capital letter"
             `Quick
             Contact_test.password_capital_letter
-        ; test_case
-            "password policy: number"
-            `Quick
-            Contact_test.password_number
+        ; test_case "password policy: number" `Quick Contact_test.password_number
         ; test_case
             "password policy: special character"
             `Quick
@@ -60,10 +45,7 @@ let () =
             "phone number: valid german number"
             `Quick
             Contact_test.valid_german_number
-        ; test_case
-            "password policy: valid password"
-            `Quick
-            Contact_test.valid_password
+        ; test_case "password policy: valid password" `Quick Contact_test.valid_password
         ; test_case
             "update to short password according to policy"
             `Quick
@@ -92,31 +74,16 @@ let () =
       , Duplicate_contacts_test.
           [ test_case "merge contacts" `Quick merge_contacts_command ] )
     ; ( "tenant"
-      , [ test_case
-            "create tenant smtp auth"
-            `Quick
-            Tenant_test.create_smtp_auth
+      , [ test_case "create tenant smtp auth" `Quick Tenant_test.create_smtp_auth
         ; test_case
             "create tenant smtp auth and force default"
             `Quick
             Tenant_test.create_smtp_force_defaut
-        ; test_case
-            "update tenant smtp auth"
-            `Quick
-            Tenant_test.update_smtp_auth
-        ; test_case
-            "delete tenant smtp auth"
-            `Quick
-            Tenant_test.delete_smtp_auth
+        ; test_case "update tenant smtp auth" `Quick Tenant_test.update_smtp_auth
+        ; test_case "delete tenant smtp auth" `Quick Tenant_test.delete_smtp_auth
         ; test_case "create tenant" `Quick Tenant_test.create_tenant
-        ; test_case
-            "update tenant details"
-            `Quick
-            Tenant_test.update_tenant_details
-        ; test_case
-            "update tenant database"
-            `Quick
-            Tenant_test.update_tenant_database
+        ; test_case "update tenant details" `Quick Tenant_test.update_tenant_details
+        ; test_case "update tenant database" `Quick Tenant_test.update_tenant_database
         ; test_case "create operator" `Quick Tenant_test.create_operator
         ] )
     ; ( "root"
@@ -146,27 +113,18 @@ let () =
               `Quick
               canceled_with_closed_session
           ; test_case "set attendance on assignment" `Quick set_attendance
-          ; test_case
-              "set invalid attendance on assignment"
-              `Quick
-              set_invalid_attendance
+          ; test_case "set invalid attendance on assignment" `Quick set_invalid_attendance
           ; test_case "assignment validation" `Quick assignment_validation
           ; test_case
               "set attendance missing data id"
               `Quick
               set_attendance_missing_data_id
-          ; test_case
-              "set attendance with data id"
-              `Quick
-              set_attendance_with_data_id
+          ; test_case "set attendance with data id" `Quick set_attendance_with_data_id
           ; test_case
               "assign to fully booked session"
               `Quick
               assign_to_fully_booked_session
-          ; test_case
-              "assign to canceled session"
-              `Quick
-              assign_to_canceled_session
+          ; test_case "assign to canceled session" `Quick assign_to_canceled_session
           ; test_case
               "assign to session contact is already assigned"
               `Quick
@@ -174,8 +132,7 @@ let () =
           ; test_case
               "assign to experiment with direct registration disabled"
               `Quick
-              Assignment_test
-              .assign_to_experiment_with_direct_registration_disabled
+              Assignment_test.assign_to_experiment_with_direct_registration_disabled
           ; test_case
               "assign to experiment with direct registration disabled as admin"
               `Quick
@@ -192,28 +149,18 @@ let () =
           ; test_case
               "assign contact from waiting list to disabled experiment"
               `Quick
-              Assignment_test
-              .assign_contact_from_waiting_list_to_disabled_experiment
+              Assignment_test.assign_contact_from_waiting_list_to_disabled_experiment
           ; test_case
               "assign to session with follow ups"
               `Quick
               assign_to_session_with_follow_ups
-          ; test_case
-              "mark uncanceled as deleted"
-              `Quick
-              mark_uncanceled_as_deleted
-          ; test_case
-              "mark canceled as deleted"
-              `Quick
-              marked_canceled_as_deleted
+          ; test_case "mark uncanceled as deleted" `Quick mark_uncanceled_as_deleted
+          ; test_case "mark canceled as deleted" `Quick marked_canceled_as_deleted
           ; test_case
               "marked closed assignment with followup as deleted"
               `Quick
               marked_closed_with_followups_as_deleted
-          ; test_case
-              "cancel deleted assignment"
-              `Quick
-              cancel_deleted_assignment
+          ; test_case "cancel deleted assignment" `Quick cancel_deleted_assignment
           ; test_case "send reminder invalid" `Quick send_reminder_invalid
           ; test_case
               "swap session without notification"
@@ -223,26 +170,14 @@ let () =
               "swap session with notification"
               `Quick
               swap_session_with_notification
-          ; test_case
-              "swap session to past session"
-              `Quick
-              swap_session_to_past_session
-          ; test_case
-              "close session: decode invalid"
-              `Quick
-              CloseSession.decode_invalid
-          ; test_case
-              "close session: decode data id"
-              `Quick
-              CloseSession.decode_data_id
+          ; test_case "swap session to past session" `Quick swap_session_to_past_session
+          ; test_case "close session: decode invalid" `Quick CloseSession.decode_invalid
+          ; test_case "close session: decode data id" `Quick CloseSession.decode_data_id
           ; test_case
               "close session: decode booleans"
               `Quick
               CloseSession.decode_boolean_fields
-          ; test_case
-              "close session: handle update"
-              `Quick
-              CloseSession.handle_update
+          ; test_case "close session: handle update" `Quick CloseSession.handle_update
           ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create
@@ -288,11 +223,7 @@ let () =
         ; test_case "update comment" `Quick Waiting_list_test.update
         ] )
     ; ( "user"
-      , [ test_case
-            "validate email addresses"
-            `Quick
-            User_test.validate_email_adress
-        ] )
+      , [ test_case "validate email addresses" `Quick User_test.validate_email_adress ] )
     ; "location", [ test_case "create location" `Quick Location_test.create ]
     ; ( "mailing"
       , [ test_case "create mailing" `Quick Mailing_test.create
@@ -312,13 +243,9 @@ let () =
     ; ( "session"
       , Session_test.
           [ test_case "create session empty data fails" `Quick create_empty_data
+          ; test_case "create session invalid data fails" `Quick create_invalid_data
           ; test_case
-              "create session invalid data fails"
-              `Quick
-              create_invalid_data
-          ; test_case
-              "create session min participants greater than max participants \
-               fails"
+              "create session min participants greater than max participants fails"
               `Quick
               create_min_gt_max
           ; test_case
@@ -331,13 +258,9 @@ let () =
               `Quick
               create_min_eq_max
           ; test_case "update session empty data fails" `Quick update_empty_data
+          ; test_case "update session invalid data fails" `Quick update_invalid_data
           ; test_case
-              "update session invalid data fails"
-              `Quick
-              update_invalid_data
-          ; test_case
-              "update session min participants greater than max participants \
-               fails"
+              "update session min participants greater than max participants fails"
               `Quick
               update_min_gt_max
           ; test_case
@@ -346,8 +269,7 @@ let () =
               update_no_optional
           ; test_case "update session all info succeeds" `Quick update_full
           ; test_case
-              "update session min participants greater than max participants \
-               succeeds"
+              "update session min participants greater than max participants succeeds"
               `Quick
               update_min_eq_max
           ; test_case "delete session succeeds" `Quick delete
@@ -360,10 +282,7 @@ let () =
               "delete session with follow ups fails"
               `Quick
               delete_session_with_follow_ups
-          ; test_case
-              "cancel session without reason fails"
-              `Quick
-              cancel_no_reason
+          ; test_case "cancel session without reason fails" `Quick cancel_no_reason
           ; test_case
               "cancel session without message channels fails"
               `Quick
@@ -430,18 +349,9 @@ let () =
               reschedule_with_experiment_smtp
           ; test_case "resend reminders invalid" `Quick resend_reminders_invalid
           ; test_case "resend reminders valid" `Quick resend_reminders_valid
-          ; test_case
-              "duplicate single session"
-              `Quick
-              Duplication.single_session
-          ; test_case
-              "duplicate session with followup"
-              `Quick
-              Duplication.with_followup
-          ; test_case
-              "duplicate with missing value "
-              `Quick
-              Duplication.missing_value
+          ; test_case "duplicate single session" `Quick Duplication.single_session
+          ; test_case "duplicate session with followup" `Quick Duplication.with_followup
+          ; test_case "duplicate with missing value " `Quick Duplication.missing_value
           ; test_case
               "duplicate with followup starting before main "
               `Quick
@@ -467,10 +377,7 @@ let () =
             "update field type of published field"
             `Quick
             Custom_field_test.update_type_of_published_field
-        ; test_case
-            "crate custom field option"
-            `Quick
-            Custom_field_test.create_option
+        ; test_case "crate custom field option" `Quick Custom_field_test.create_option
         ; test_case
             "delete published field"
             `Quick
@@ -505,24 +412,14 @@ let () =
             Custom_field_test.Settings.update_visibility
         ] )
     ; ( "matcher"
-      , [ test_case
-            "create invitations"
-            `Quick
-            Matcher_test.create_invitations_model
-        ] )
+      , [ test_case "create invitations" `Quick Matcher_test.create_invitations_model ] )
     ; ( "message template"
-      , [ test_case
-            "create message template"
-            `Quick
-            Message_template_test.create
+      , [ test_case "create message template" `Quick Message_template_test.create
         ; test_case
             "create message template with invalid language"
             `Quick
             Message_template_test.create_with_unavailable_language
-        ; test_case
-            "delete with entity uuid"
-            `Quick
-            Message_template_test.delete_valid
+        ; test_case "delete with entity uuid" `Quick Message_template_test.delete_valid
         ; test_case
             "delete without entity uuid"
             `Quick
@@ -551,10 +448,7 @@ let () =
             `Quick
             User_import_test.confirm_without_matching_password
         ; test_case "confirm as admin" `Quick User_import_test.confirm_as_admin
-        ; test_case
-            "confirm as contact"
-            `Quick
-            User_import_test.confirm_as_contact
+        ; test_case "confirm as contact" `Quick User_import_test.confirm_as_contact
         ] )
     ; Smtp_test.(
         ( "smtp auth"
@@ -587,12 +481,7 @@ let () =
           ; test_case "publish" `Quick publish
           ] )
     ; ( "queue"
-      , [ test_case
-            "create delivery report"
-            `Quick
-            Queue_test.create_text_message_dlr
-        ] )
-    ; ( "time window"
-      , Time_window_test.[ test_case "create" `Slow create_timewindow ] )
+      , [ test_case "create delivery report" `Quick Queue_test.create_text_message_dlr ] )
+    ; ("time window", Time_window_test.[ test_case "create" `Slow create_timewindow ])
     ]
 ;;

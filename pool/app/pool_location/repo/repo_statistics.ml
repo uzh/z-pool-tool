@@ -1,12 +1,10 @@
 open Entity_statistics
 
 let statistics =
-  let encode _ =
-    Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith
-  in
+  let encode _ = Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith in
   let decode
-    ( experiment_count
-    , (assignment_count, (showup_count, (noshow_count, participation_count))) )
+        ( experiment_count
+        , (assignment_count, (showup_count, (noshow_count, participation_count))) )
     =
     Ok
       { experiment_count

@@ -16,9 +16,7 @@ let contact_id =
   %> CCResult.to_opt
 ;;
 
-let duplicate_id =
-  HttpUtils.find_id Duplicate_contacts.Id.of_string Field.Duplicate
-;;
+let duplicate_id = HttpUtils.find_id Duplicate_contacts.Id.of_string Field.Duplicate
 
 let get_flat_customfields pool user contact =
   Contact.id contact |> Custom_field.find_all_by_contact_flat pool user
@@ -45,8 +43,7 @@ let index req =
   in
   let%lwt possible_duplicates =
     match contact with
-    | Some contact ->
-      Duplicate_contacts.find_by_contact ~query database_label contact
+    | Some contact -> Duplicate_contacts.find_by_contact ~query database_label contact
     | None -> Duplicate_contacts.all ~query database_label
   in
   (if Http_utils.Htmx.is_hx_request req then Page.list else Page.index)
@@ -94,9 +91,7 @@ let ignore req =
     in
     Http_utils.redirect_to_with_actions
       duplicate_path
-      [ Http_utils.Message.set
-          ~success:Pool_message.[ Success.Updated Field.Duplicate ]
-      ]
+      [ Http_utils.Message.set ~success:Pool_message.[ Success.Updated Field.Duplicate ] ]
     |> Lwt_result.ok
   in
   result |> Http_utils.extract_happy_path ~src req
@@ -118,21 +113,17 @@ let merge req =
     let%lwt fields =
       Custom_field.find_by_model database_label Custom_field.Model.Contact
     in
-    let get_fields contact =
-      get_flat_customfields database_label user contact
-    in
+    let get_fields contact = get_flat_customfields database_label user contact in
     let%lwt fields_a = get_fields duplicate.contact_a in
     let%lwt fields_b = get_fields duplicate.contact_b in
     let* data =
       let open Cqrs_command.Duplicate_contacts_command.Merge in
-      handle ~tags urlencoded duplicate fields (fields_a, fields_b)
-      |> Lwt_result.lift
+      handle ~tags urlencoded duplicate fields (fields_a, fields_b) |> Lwt_result.lift
     in
     let handle () =
       Http_utils.redirect_to_with_actions
         duplicate_path
-        [ Http_utils.Message.set
-            ~success:Pool_message.[ Success.Updated Field.Duplicate ]
+        [ Http_utils.Message.set ~success:Pool_message.[ Success.Updated Field.Duplicate ]
         ]
     in
     data |> merge database_label |>> handle
@@ -154,8 +145,7 @@ end = struct
   ;;
 
   let index =
-    Duplicate_contacts.Access.index
-    |> Guardian.validate_admin_entity ~any_id:true
+    Duplicate_contacts.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let read = duplicate_effect Duplicate_contacts.Access.read

@@ -27,23 +27,14 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
     ~help
     (let open Utils.Lwt_result.Infix in
      function
-     | [ db_pool
-       ; email
-       ; password
-       ; firstname
-       ; lastname
-       ; language
-       ; terms_accepted
-       ]
+     | [ db_pool; email; password; firstname; lastname; language; terms_accepted ]
        when CCString.equal terms_accepted "accept" ->
        let%lwt pool = Command_utils.is_available_exn db_pool in
        let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
        let user_id = Contact.Id.create () in
        let%lwt events =
          let open Cqrs_command in
-         let language =
-           Pool_common.Language.create language |> CCResult.to_opt
-         in
+         let language = Pool_common.Language.create language |> CCResult.to_opt in
          let ({ User_command.firstname; lastname; email; _ } as decoded) =
            [ "email", [ email ]
            ; "password", [ password ]
@@ -88,13 +79,9 @@ let trigger_profile_update_by_tenant pool =
   match contacts with
   | [] -> Lwt_result.return ()
   | contacts ->
-    let%lwt create_message =
-      Message_template.ProfileUpdateTrigger.prepare pool tenant
-    in
+    let%lwt create_message = Message_template.ProfileUpdateTrigger.prepare pool tenant in
     let* emails =
-      CCList.map create_message contacts
-      |> CCResult.flatten_l
-      |> Lwt_result.lift
+      CCList.map create_message contacts |> CCResult.flatten_l |> Lwt_result.lift
     in
     Cqrs_command.Contact_command.SendProfileUpdateTrigger.(
       { contacts; emails }
@@ -109,9 +96,7 @@ let tenant_specific_profile_update_trigger =
     "Send profile update triggers of all tenants"
     (fun pool ->
        let open Utils.Lwt_result.Infix in
-       pool
-       |> trigger_profile_update_by_tenant
-       ||> get_or_failwith %> CCOption.return)
+       pool |> trigger_profile_update_by_tenant ||> get_or_failwith %> CCOption.return)
 ;;
 
 let all_profile_update_triggers =

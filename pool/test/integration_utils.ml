@@ -54,13 +54,7 @@ module ContactRepo = struct
     =
     let open Utils.Lwt_result.Infix in
     let contact =
-      Model.create_contact
-        ?id
-        ?firstname
-        ?lastname
-        ?language
-        ~with_terms_accepted
-        ()
+      Model.create_contact ?id ?firstname ?lastname ?language ~with_terms_accepted ()
     in
     let open Contact in
     let confirm = [ EmailVerified contact ] in
@@ -91,9 +85,7 @@ module CustomFieldRepo = struct
   let create name encoder =
     let field = create_custom_field name encoder in
     let%lwt () =
-      [ save_custom_field field
-      ; Custom_field.Published field |> Pool_event.custom_field
-      ]
+      [ save_custom_field field; Custom_field.Published field |> Pool_event.custom_field ]
       |> Pool_event.handle_events pool default_current_user
     in
     Custom_field.find pool (Custom_field.id field) |> Lwt.map get_or_failwith
@@ -112,9 +104,7 @@ module AdminRepo = struct
       email
       |> CCOption.value
            ~default:
-             (Format.asprintf
-                "test+%s@econ.uzh.ch"
-                Pool_common.Id.(create () |> value))
+             (Format.asprintf "test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value))
       |> Pool_user.EmailAddress.of_string
     in
     let admin =
@@ -153,11 +143,7 @@ module ExperimentRepo = struct
 end
 
 module LocationRepo = struct
-  let create
-        ?(current_user = default_current_user)
-        ?(id = Pool_location.Id.create ())
-        ()
-    =
+  let create ?(current_user = default_current_user) ?(id = Pool_location.Id.create ()) () =
     let location = Model.create_location ~id () in
     let%lwt () =
       Pool_location.Created location
@@ -172,8 +158,7 @@ module MailingRepo = struct
   let create ?(id = Mailing.Id.create ()) ?start ?limit experiment_id =
     let mailing = Model.create_mailing ~id ?start ?limit () in
     let%lwt () =
-      Mailing.(
-        Created (mailing, experiment_id) |> handle_event Data.database_label)
+      Mailing.(Created (mailing, experiment_id) |> handle_event Data.database_label)
     in
     Mailing.find Data.database_label id |> Lwt.map get_or_failwith
   ;;
@@ -186,9 +171,7 @@ module WaitingListRepo = struct
     let%lwt () =
       Waiting_list.Created { Waiting_list.experiment; contact }
       |> Pool_event.waiting_list
-      |> Pool_event.handle_event
-           Data.database_label
-           (Pool_context.Contact contact)
+      |> Pool_event.handle_event Data.database_label (Pool_context.Contact contact)
     in
     experiment
     |> Experiment.Public.id
@@ -232,14 +215,7 @@ module SessionRepo = struct
 end
 
 module TimeWindowRepo = struct
-  let create
-        ?(current_user = default_current_user)
-        ?id
-        start
-        duration
-        experiment
-        ()
-    =
+  let create ?(current_user = default_current_user) ?id start duration experiment () =
     let time_window = Time_window.create ?id start duration experiment in
     let%lwt () =
       Time_window.(Created time_window)
@@ -251,7 +227,4 @@ module TimeWindowRepo = struct
 end
 
 let create_admin_user () = AdminRepo.create () |> Lwt.map Pool_context.admin
-
-let create_contact_user () =
-  ContactRepo.create () |> Lwt.map Pool_context.contact
-;;
+let create_contact_user () = ContactRepo.create () |> Lwt.map Pool_context.contact

@@ -147,9 +147,7 @@ module ExperimentFilter = struct
     let open Filter in
     let contacts_not_matching query =
       let%lwt contacts =
-        Assignment.find_assigned_contacts_by_experiment
-          pool
-          experiment.Experiment.id
+        Assignment.find_assigned_contacts_by_experiment pool experiment.Experiment.id
       in
       let%lwt matching =
         Lwt_list.filter_s (Filter.contact_matches_filter pool query) contacts
@@ -170,9 +168,6 @@ module ExperimentFilter = struct
       query |> CCOption.map_or ~default:(Lwt.return 0) contacts_not_matching
     in
     Lwt_result.return
-      { contacts_meeting_criteria
-      ; invitation_count
-      ; assigned_contacts_not_matching
-      }
+      { contacts_meeting_criteria; invitation_count; assigned_contacts_not_matching }
   ;;
 end

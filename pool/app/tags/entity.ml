@@ -1,7 +1,12 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 open CCFun.Infix
 module Message = Pool_message
 module Ptime = Pool_model.Base.Ptime
 module Id = Pool_common.Id
+
+let model = Pool_message.Field.Tag
+
+include Changelog.DefaultSettings
 
 let printer = Utils.ppx_printer
 
@@ -39,7 +44,7 @@ type t =
   ; description : Description.t option
   ; model : Model.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 let create ?(id = Id.create ()) ?description title model =
   let open CCResult in
@@ -72,16 +77,9 @@ let column_description =
   (Field.Description, "pool_tags.description") |> Query.Column.create
 ;;
 
-let column_created_at =
-  (Field.CreatedAt, "pool_tags.created_at") |> Query.Column.create
-;;
-
+let column_created_at = (Field.CreatedAt, "pool_tags.created_at") |> Query.Column.create
 let filterable_by = None
 let searchable_by = [ column_title; column_model; column_description ]
 let sortable_by = column_created_at :: searchable_by
-
-let default_sort =
-  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

@@ -52,22 +52,16 @@ module Override = struct
 
   let t =
     let encode (m : t) =
-      Ok
-        ( m.custom_field_uuid
-        , (m.entity_uuid, (m.value, (m.admin_value, m.version))) )
+      Ok (m.custom_field_uuid, (m.entity_uuid, (m.value, (m.admin_value, m.version))))
     in
-    let decode _ =
-      Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith
-    in
+    let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
     Caqti_type.(
       custom
         ~encode
         ~decode
         (t2
            Repo.Id.t
-           (t2
-              Repo.Id.t
-              (t2 (option Value.t) (t2 (option Value.t) Repo.Version.t)))))
+           (t2 Repo.Id.t (t2 (option Value.t) (t2 (option Value.t) Repo.Version.t)))))
   ;;
 end
 
@@ -81,9 +75,7 @@ module VersionHistory = struct
 
   let t =
     let ( %> ) = CCFun.( %> ) in
-    let encode _ =
-      Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel
-    in
+    let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
     let decode (field_type, custom_field_uuid, value, admin_value) =
       let make_anwer decode =
         let decode_opt value = CCOption.bind value decode in

@@ -3,11 +3,7 @@ module GenerateStatusReport : sig
 
   type t = { tenant_id : Pool_tenant.Id.t }
 
-  val handle
-    :  t
-    -> Pool_tenant.t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : t -> Pool_tenant.t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = { tenant_id : Pool_tenant.Id.t }

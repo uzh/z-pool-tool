@@ -3,10 +3,7 @@ open Duplicate_contacts
 let src = Logs.Src.create "duplicate_contacts.cqrs"
 
 module Ignore : sig
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   let handle ?(tags = Logs.Tag.empty) t =
     Logs.info ~src (fun m -> m "Handle command Ignore" ~tags);
@@ -36,9 +33,7 @@ end = struct
     let open Duplicate_contacts in
     let select_contact_by_id id =
       let id = Contact.Id.of_string id in
-      if Contact.Id.equal id (Contact.id contact_a)
-      then contact_a
-      else contact_b
+      if Contact.Id.equal id (Contact.id contact_a) then contact_a else contact_b
     in
     let select_fields id =
       let id = Contact.Id.of_string id in
@@ -52,9 +47,7 @@ end = struct
       |> to_result (Pool_message.Error.NotFound Field.EmailAddress)
     in
     let merged_contact =
-      let email =
-        CCFun.(Contact.email_address %> Pool_user.EmailAddress.value)
-      in
+      let email = CCFun.(Contact.email_address %> Pool_user.EmailAddress.value) in
       if CCString.equal (email selected_contact) (email contact_a)
       then contact_b
       else contact_a
@@ -105,9 +98,6 @@ end = struct
     in
     Ok
       Duplicate_contacts.
-        { contact = selected_contact
-        ; merged_contact
-        ; kept_fields = custom_fields
-        }
+        { contact = selected_contact; merged_contact; kept_fields = custom_fields }
   ;;
 end

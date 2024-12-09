@@ -37,8 +37,7 @@ module List = struct
   let create { Pool_context.language; _ } tags =
     let thead =
       let open Input in
-      (Field.[ Title; Description; Model ]
-       |> Component.Table.fields_to_txt language)
+      (Field.[ Title; Description; Model ] |> Component.Table.fields_to_txt language)
       @ [ link_as_button
             ~style:`Success
             ~icon:Icon.Add
@@ -54,11 +53,7 @@ end
 let list Pool_context.{ language; _ } tags query =
   let url = Uri.of_string (tags_path ()) in
   let data_table =
-    Component.DataTable.create_meta
-      ~search:Tags.searchable_by
-      url
-      query
-      language
+    Component.DataTable.create_meta ~search:Tags.searchable_by url query language
   in
   let cols =
     let create_tag : [ | Html_types.flow5 ] elt =
@@ -91,13 +86,7 @@ let list Pool_context.{ language; _ } tags query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make
-    ~th_class
-    ~target_id:"tags-table"
-    ~cols
-    ~row
-    data_table
-    tags
+  Component.DataTable.make ~th_class ~target_id:"tags-table" ~cols ~row data_table tags
 ;;
 
 let index (Pool_context.{ language; _ } as context) tags query =
@@ -139,8 +128,7 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
             language
             `Text
             Field.Description
-            ?value:
-              CCOption.(bind tag (fun m -> m.description) >|= Description.value)
+            ?value:CCOption.(bind tag (fun m -> m.description) >|= Description.value)
             ?flash_fetcher
         ; Input.selector
             ~add_empty:(CCOption.is_none tag)
@@ -174,7 +162,16 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
 ;;
 
 let edit ?flash_fetcher ({ Pool_context.language; _ } as context) tag =
-  [ div ~a:[ a_class [ "stack-lg" ] ] [ tag_form ?flash_fetcher ~tag context ] ]
+  let changelog_url =
+    HttpUtils.Url.Admin.Settings.tags_path ~id:tag.Tags.id ~suffix:"changelog" ()
+    |> Uri.of_string
+  in
+  [ div
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ tag_form ?flash_fetcher ~tag context
+      ; Component.Changelog.list context changelog_url None
+      ]
+  ]
   |> layout language
 ;;
 

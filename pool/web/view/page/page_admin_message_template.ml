@@ -25,12 +25,12 @@ let template_label_url label suffix =
 ;;
 
 let table
-  ?(buttons = txt "")
-  ?(can_update_experiment = false)
-  ?delete_path
-  language
-  templates
-  to_edit_path
+      ?(buttons = txt "")
+      ?(can_update_experiment = false)
+      ?delete_path
+      language
+      templates
+      to_edit_path
   =
   let open Message_template in
   let empty_hint =
@@ -39,9 +39,7 @@ let table
       p
         [ txt
             Pool_common.(
-              Utils.text_to_string
-                language
-                (I18n.NoEntries Field.MessageTemplates))
+              Utils.text_to_string language (I18n.NoEntries Field.MessageTemplates))
         ]
     | _ -> txt ""
   in
@@ -51,40 +49,38 @@ let table
   in
   CCList.map
     (fun template ->
-      let buttons = edit_link (template |> to_edit_path) in
-      let buttons =
-        match delete_path with
-        | None -> buttons
-        | Some (delete_path, csrf) ->
-          let delete =
-            let action = delete_path template in
-            form
-              ~a:
-                [ a_method `Post
-                ; a_action action
-                ; a_user_data
-                    "confirmable"
-                    Pool_common.(
-                      Utils.confirmable_to_string
-                        language
-                        I18n.DeleteMessageTemplate)
-                ]
-              [ csrf_element csrf ()
-              ; submit_element
-                  ~has_icon:Icon.TrashOutline
-                  ~submit_type:`Error
-                  language
-                  Pool_message.(Control.Delete None)
-                  ()
-              ]
-          in
-          (if can_update_experiment then [ buttons; delete ] else [])
-          |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-      in
-      [ txt (to_human_label template)
-      ; txt (template.language |> Pool_common.Language.show)
-      ; buttons
-      ])
+       let buttons = edit_link (to_edit_path template) in
+       let buttons =
+         match delete_path with
+         | None -> buttons
+         | Some (delete_path, csrf) ->
+           let delete =
+             let action = delete_path template in
+             form
+               ~a:
+                 [ a_method `Post
+                 ; a_action action
+                 ; a_user_data
+                     "confirmable"
+                     Pool_common.(
+                       Utils.confirmable_to_string language I18n.DeleteMessageTemplate)
+                 ]
+               [ csrf_element csrf ()
+               ; submit_element
+                   ~has_icon:Icon.TrashOutline
+                   ~submit_type:`Error
+                   language
+                   Pool_message.(Control.Delete None)
+                   ()
+               ]
+           in
+           (if can_update_experiment then [ buttons; delete ] else [])
+           |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+       in
+       [ txt (to_human_label template)
+       ; txt (template.language |> Pool_common.Language.show)
+       ; buttons
+       ])
     templates
   |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
   |> fun table -> div ~a:[ a_class [ "stack" ] ] [ table; empty_hint ]
@@ -108,17 +104,17 @@ let index { Pool_context.language; _ } templates =
 ;;
 
 let template_inputs
-  { Pool_context.language; _ }
-  ?entity
-  ?(hide_text_message_input = false)
-  ?languages
-  ?language_select_attriutes
-  ?flash_fetcher
-  ?fixed_language
-  ?selected_language
-  text_messages_enabled
-  form_context
-  template_label
+      { Pool_context.language; _ }
+      ?entity
+      ?(hide_text_message_input = false)
+      ?languages
+      ?language_select_attriutes
+      ?flash_fetcher
+      ?fixed_language
+      ?selected_language
+      text_messages_enabled
+      form_context
+      template_label
   =
   let id = "message-template-inputs" in
   let open Message_template in
@@ -141,9 +137,7 @@ let template_inputs
           match form_context with
           | `Create _ -> []
           | `Update { id; _ } ->
-            [ ( Pool_message.Field.(show MessageTemplate)
-              , Message_template.Id.value id )
-            ]
+            [ Pool_message.Field.(show MessageTemplate), Message_template.Id.value id ]
         in
         let language_vals =
           languages
@@ -165,26 +159,19 @@ let template_inputs
               ; hx_target ("#" ^ id)
               ; hx_trigger "click"
               ; hx_post (template_label_url template_label "reset")
-              ; hx_confirm
-                  (Utils.confirmable_to_string
-                     language
-                     I18n.LoadDefaultTemplate)
+              ; hx_confirm (Utils.confirmable_to_string language I18n.LoadDefaultTemplate)
               ; hx_vals
               ; a_class [ "btn"; "small"; "primary"; "has-icon"; "push" ]
               ]
             [ Icon.(to_html RefreshOutline)
-            ; Utils.control_to_string
-                language
-                Pool_message.Control.LoadDefaultTemplate
+            ; Utils.control_to_string language Pool_message.Control.LoadDefaultTemplate
               |> txt
             ]
         ]
   in
   let language_select =
     let open Pool_common.Language in
-    let selected =
-      CCOption.value ~default:template.language selected_language
-    in
+    let selected = CCOption.value ~default:template.language selected_language in
     let languages_select () =
       match languages with
       | None -> div []
@@ -201,14 +188,7 @@ let template_inputs
     in
     fixed_language
     |> CCOption.map_or ~default:(languages_select ()) (fun lang ->
-      selector
-        ~read_only:true
-        language
-        Field.Language
-        show
-        [ lang ]
-        (Some lang)
-        ())
+      selector ~read_only:true language Field.Language show [ lang ] (Some lang) ())
   in
   let textarea_element ?rich_text ~value =
     textarea_element language ?rich_text ~value ?flash_fetcher ~required:true
@@ -231,9 +211,7 @@ let template_inputs
                 [ a_class [ "flexrow"; "flex-gap-sm"; "pointer" ]
                 ; a_user_data "toggle-reset-plaintext" Field.(show EmailText)
                 ]
-              [ Utils.control_to_string
-                  language
-                  Pool_message.Control.ResetPlainText
+              [ Utils.control_to_string language Pool_message.Control.ResetPlainText
                 |> txt
               ; Component.Icon.(to_html RefreshOutline)
               ]
@@ -248,8 +226,7 @@ let template_inputs
           (txt (template.plain_text |> PlainText.value))
       ; span
           ~a:[ a_class [ "help" ] ]
-          [ Utils.hint_to_string language I18n.EmailPlainText
-            |> HttpUtils.add_line_breaks
+          [ Utils.hint_to_string language I18n.EmailPlainText |> HttpUtils.add_line_breaks
           ]
       ]
   in
@@ -299,16 +276,16 @@ let template_inputs
 ;;
 
 let template_form
-  ({ Pool_context.language; query_parameters; csrf; _ } as context)
-  ?entity
-  ?(hide_text_message_input = false)
-  ?languages
-  ?text_elements
-  ?fixed_language
-  form_context
-  text_messages_disabled
-  action
-  flash_fetcher
+      ({ Pool_context.language; query_parameters; csrf; _ } as context)
+      ?entity
+      ?(hide_text_message_input = false)
+      ?languages
+      ?text_elements
+      ?fixed_language
+      form_context
+      text_messages_disabled
+      action
+      flash_fetcher
   =
   let open Message_template in
   let externalize = Http_utils.externalize_path_with_params query_parameters in
@@ -359,34 +336,34 @@ let template_form
 ;;
 
 let edit
-  ({ Pool_context.language; _ } as context)
-  template
-  (tenant : Pool_tenant.t)
-  flash_fetcher
+      ({ Pool_context.language; _ } as context)
+      template
+      (tenant : Pool_tenant.t)
+      flash_fetcher
   =
   let open Message_template in
-  let action =
-    template.id |> Id.value |> Format.asprintf "/admin/message-template/%s/"
-  in
+  let action = template.id |> Id.value |> Format.asprintf "/admin/message-template/%s/" in
   let text_elements =
-    Component.MessageTextElements.message_template_help
-      language
-      tenant
-      template.label
+    Component.MessageTextElements.message_template_help language tenant template.label
+  in
+  let changelog_url =
+    HttpUtils.Url.Admin.message_template_path ~id:template.id ~suffix:"changelog" ()
+    |> Uri.of_string
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ Component.Partials.form_title
-        language
-        Field.MessageTemplate
-        (Some template)
-    ; template_form
-        context
-        ~text_elements
-        (`Update template)
-        tenant.Pool_tenant.text_messages_enabled
-        action
-        flash_fetcher
+    [ Component.Partials.form_title language Field.MessageTemplate (Some template)
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ template_form
+            context
+            ~text_elements
+            (`Update template)
+            tenant.Pool_tenant.text_messages_enabled
+            action
+            flash_fetcher
+        ; Component.Changelog.list context changelog_url None
+        ]
     ]
 ;;
 
@@ -398,38 +375,37 @@ let preview_template_modal language (label, templates) =
   let field_to_string = Utils.field_to_string_capitalized language in
   let html =
     templates
-    |> CCList.map
-         (fun ({ language; email_subject; email_text; sms_text; _ } : t) ->
-            let email_html =
-              div
-                [ h4 [ txt (field_to_string Field.Email) ]
-                ; div
-                    ~a:[ a_class [ "stack-sm" ] ]
-                    [ p
-                        ~a:[ a_class [ "border-bottom" ] ]
-                        [ strong [ txt (EmailSubject.value email_subject) ] ]
-                    ; div
-                        ~a:[ a_class [ "force-normalize-fonts" ] ]
-                        [ EmailText.value email_text |> Unsafe.data ]
-                    ]
-                ]
-            in
-            let text_message_html =
-              div
-                [ h4 [ txt (field_to_string Field.TextMessage) ]
-                ; p [ SmsText.value sms_text |> HttpUtils.add_line_breaks ]
-                ]
-            in
-            div
-              [ h3
-                  [ txt
-                      (Format.asprintf
-                         "%s: %s"
-                         (field_to_string Field.Language)
-                         (Language.show language))
-                  ]
-              ; div ~a:[ a_class [ "stack" ] ] [ email_html; text_message_html ]
-              ])
+    |> CCList.map (fun ({ language; email_subject; email_text; sms_text; _ } : t) ->
+      let email_html =
+        div
+          [ h4 [ txt (field_to_string Field.Email) ]
+          ; div
+              ~a:[ a_class [ "stack-sm" ] ]
+              [ p
+                  ~a:[ a_class [ "border-bottom" ] ]
+                  [ strong [ txt (EmailSubject.value email_subject) ] ]
+              ; div
+                  ~a:[ a_class [ "force-normalize-fonts" ] ]
+                  [ EmailText.value email_text |> Unsafe.data ]
+              ]
+          ]
+      in
+      let text_message_html =
+        div
+          [ h4 [ txt (field_to_string Field.TextMessage) ]
+          ; p [ SmsText.value sms_text |> HttpUtils.add_line_breaks ]
+          ]
+      in
+      div
+        [ h3
+            [ txt
+                (Format.asprintf
+                   "%s: %s"
+                   (field_to_string Field.Language)
+                   (Language.show language))
+            ]
+        ; div ~a:[ a_class [ "stack" ] ] [ email_html; text_message_html ]
+        ])
     |> div ~a:[ a_class [ "stack" ] ]
   in
   Component.Modal.create
@@ -445,8 +421,7 @@ let experiment_help ~entity language labels =
   let modal = div ~a:[ a_id preview_modal_id ] [] in
   let help_text =
     p
-      [ Pool_common.(
-          Utils.hint_to_string language I18n.ExperimentMessageTemplates)
+      [ Pool_common.(Utils.hint_to_string language I18n.ExperimentMessageTemplates)
         |> HttpUtils.add_line_breaks
       ]
   in

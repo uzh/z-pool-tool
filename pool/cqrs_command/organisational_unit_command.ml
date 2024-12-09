@@ -1,10 +1,7 @@
 module Conformist = Pool_conformist
 
 let src = Logs.Src.create "organisational_unit.cqrs"
-
-let schema =
-  Conformist.(make Field.[ Organisational_unit.Name.schema () ] CCFun.id)
-;;
+let schema = Conformist.(make Field.[ Organisational_unit.Name.schema () ] CCFun.id)
 
 let decode data =
   Conformist.decode_and_validate schema data
@@ -48,9 +45,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) ou name =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    Ok
-      [ Organisational_unit.Updated (ou, name) |> Pool_event.organisational_unit
-      ]
+    Ok [ Organisational_unit.Updated (ou, name) |> Pool_event.organisational_unit ]
   ;;
 
   let effects = Organisational_unit.Guard.Access.update

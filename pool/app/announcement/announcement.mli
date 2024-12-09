@@ -33,22 +33,14 @@ end
 module ShowToAdmins : sig
   include Pool_model.Base.BooleanSig
 
-  val schema
-    :  ?default:t
-    -> unit
-    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
-
+  val schema : ?default:t -> unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val init : t
 end
 
 module ShowToContacts : sig
   include Pool_model.Base.BooleanSig
 
-  val schema
-    :  ?default:t
-    -> unit
-    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
-
+  val schema : ?default:t -> unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   val init : t
 end
 
@@ -90,11 +82,7 @@ val find_by_user
   -> [< `Admin | `Contact ] * Pool_common.Id.t
   -> t option Lwt.t
 
-val find_of_tenant
-  :  Database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
-
+val find_of_tenant : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val column_start : Query.Column.t
 val column_end : Query.Column.t
 val filterable_by : Query.Filter.human option

@@ -11,7 +11,7 @@ let yojson_response ?status json =
 ;;
 
 let schedule_to_json
-  ({ Schedule.label; scheduled_time; status; last_run; _ } : Schedule.public)
+      ({ Schedule.label; scheduled_time; status; last_run; _ } : Schedule.public)
   =
   let open Schedule in
   let label = Label.value label in
@@ -51,21 +51,21 @@ let show _ =
     let%lwt tenant_job_count =
       Lwt_list.map_s
         (fun { Pool_tenant.database_label; status; _ } ->
-          let open Database.Status in
-          let%lwt count =
-            match status with
-            | Active ->
-              Pool_queue.count_all_workable database_label
-              >|+ CCInt.to_string
-              ||> CCResult.to_opt
-            | ConnectionIssue
-            | Disabled
-            | Maintenance
-            | MigrationsConnectionIssue
-            | MigrationsFailed
-            | MigrationsPending -> Lwt.return_none
-          in
-          Lwt.return (database_label, CCOption.get_or ~default count))
+           let open Database.Status in
+           let%lwt count =
+             match status with
+             | Active ->
+               Pool_queue.count_all_workable database_label
+               >|+ CCInt.to_string
+               ||> CCResult.to_opt
+             | ConnectionIssue
+             | Disabled
+             | Maintenance
+             | MigrationsConnectionIssue
+             | MigrationsFailed
+             | MigrationsPending -> Lwt.return_none
+           in
+           Lwt.return (database_label, CCOption.get_or ~default count))
         databases
     in
     let is_ok =
@@ -73,15 +73,11 @@ let show _ =
       CCList.(map is_ok %> for_all id)
     in
     let schedules_of database_label =
-      Schedule.find_by_db_label database_label (Query.empty ())
-      ||> fst
-      ||> is_ok
+      Schedule.find_by_db_label database_label (Query.empty ()) ||> fst ||> is_ok
     in
     let%lwt list_schedules =
       let%lwt schedules = find_all () in
-      create_entry
-        "schedules"
-        (`List (schedules |> CCList.map schedule_to_json))
+      create_entry "schedules" (`List (schedules |> CCList.map schedule_to_json))
       |> CCList.return
       |> Lwt.return
     in
@@ -106,9 +102,7 @@ let show _ =
         ||> create_entry ~database_label "ok")
     in
     let%lwt ok_root =
-      schedules_of Database.Pool.Root.label
-      ||> Utils.Bool.to_string
-      ||> create_entry "ok"
+      schedules_of Database.Pool.Root.label ||> Utils.Bool.to_string ||> create_entry "ok"
     in
     (ok_root :: ok_tenants) @ list_database_status @ list_job_counts
     |> CCList.map (fun (k, v) -> k, `String v)

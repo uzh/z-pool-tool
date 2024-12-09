@@ -42,10 +42,7 @@ let create_unchanged () =
       ~after:location
       ()
   in
-  Alcotest.(check (option testable_changelog))
-    "changelog is none"
-    changelog
-    None
+  Alcotest.(check (option testable_changelog)) "changelog is none" changelog None
 ;;
 
 let create () =
@@ -63,8 +60,7 @@ let create () =
   in
   let expected =
     let open Changelog.Changes in
-    Assoc
-      [ "name", Change (`String (Name.value location.name), `String new_name) ]
+    Assoc [ "name", Change (`String (Name.value location.name), `String new_name) ]
     |> create_changelog
     |> CCOption.return
   in
@@ -82,9 +78,7 @@ let create_nested () =
   let after =
     let open Mail in
     let institution = Institution.of_string institution in
-    { location with
-      address = Physical { address with institution = Some institution }
-    }
+    { location with address = Physical { address with institution = Some institution } }
   in
   let changelog =
     VersionHistory.create
@@ -97,9 +91,7 @@ let create_nested () =
   in
   let expected =
     let open Changelog.Changes in
-    Assoc
-      [ "address", Assoc [ "institution", Change (`Null, `String institution) ]
-      ]
+    Assoc [ "address", Assoc [ "institution", Change (`Null, `String institution) ] ]
     |> create_changelog
     |> CCOption.return
   in
@@ -117,12 +109,8 @@ let update_filter () =
   let firstname name =
     Pred (Predicate.create Key.(Hardcoded Firstname) equal (Single (Str name)))
   in
-  let before =
-    And [ firstname "one"; firstname "two" ] |> create ~id:filter_id None
-  in
-  let after =
-    And [ firstname "one"; firstname "three" ] |> create ~id:filter_id None
-  in
+  let before = And [ firstname "one"; firstname "two" ] |> create ~id:filter_id None in
+  let after = And [ firstname "one"; firstname "three" ] |> create ~id:filter_id None in
   let changelog =
     VersionHistory.create
       ~id:changelog_id
@@ -143,10 +131,7 @@ let update_filter () =
                     [ ( "1"
                       , Assoc
                           [ ( "first_name"
-                            , Assoc
-                                [ ( "value"
-                                  , Change (`String "two", `String "three") )
-                                ] )
+                            , Assoc [ "value", Change (`String "two", `String "three") ] )
                           ] )
                     ] )
               ] )
@@ -178,11 +163,7 @@ let update_list_value () =
   let make_filter options =
     let options = List.map (fun option -> Option option) options in
     let query =
-      Pred
-        (Predicate.create
-           Key.(CustomField custom_field_id)
-           operator
-           (Lst options))
+      Pred (Predicate.create Key.(CustomField custom_field_id) operator (Lst options))
     in
     create ~id:filter_id None query
   in
@@ -205,8 +186,7 @@ let update_list_value () =
       Assoc
         [ ( "query"
           , Assoc
-              [ ( Custom_field.Id.value custom_field_id
-                , Assoc [ "value", expected_changes ] )
+              [ Custom_field.Id.value custom_field_id, Assoc [ "value", expected_changes ]
               ] )
         ]
     in
@@ -239,8 +219,7 @@ let update_list_value () =
   let options = [ opt1 ] in
   let expected_changes =
     let open Changelog.Changes in
-    Change
-      (`List [ opt_id_json opt1; opt_id_json opt2 ], `List [ opt_id_json opt1 ])
+    Change (`List [ opt_id_json opt1; opt_id_json opt2 ], `List [ opt_id_json opt1 ])
   in
   let () = run_test "remove an option" options expected_changes in
   (* Add and remove an option *)

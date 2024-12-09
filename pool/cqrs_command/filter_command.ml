@@ -45,10 +45,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* query = validate_query key_list template_list query in
-    Ok
-      [ Filter.Created (Filter.create ?id (Some title) query)
-        |> Pool_event.filter
-      ]
+    Ok [ Filter.Created (Filter.create ?id (Some title) query) |> Pool_event.filter ]
   ;;
 
   let effects = Filter.Guard.Access.create

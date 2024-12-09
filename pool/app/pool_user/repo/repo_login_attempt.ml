@@ -7,9 +7,7 @@ module RepoEntity = struct
   module Id = struct
     include Id
 
-    let t =
-      make_caqti_type Caqti_type.string (of_string %> CCResult.return) value
-    ;;
+    let t = make_caqti_type Caqti_type.string (of_string %> CCResult.return) value
   end
 
   module Counter = struct
@@ -33,11 +31,7 @@ module RepoEntity = struct
       custom
         ~encode
         ~decode
-        (t2
-           Id.t
-           (t2
-              Repo_entity.EmailAddress.t
-              (t2 Counter.t (option BlockedUntil.t)))))
+        (t2 Id.t (t2 Repo_entity.EmailAddress.t (t2 Counter.t (option BlockedUntil.t)))))
   ;;
 end
 
@@ -65,9 +59,7 @@ let select_sql =
 ;;
 
 let find_opt_request =
-  {sql| email = ? |sql}
-  |> select_sql
-  |> Repo_entity.EmailAddress.t ->! RepoEntity.t
+  {sql| email = ? |sql} |> select_sql |> Repo_entity.EmailAddress.t ->! RepoEntity.t
 ;;
 
 let find_opt pool = Database.find_opt pool find_opt_request

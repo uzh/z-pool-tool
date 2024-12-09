@@ -19,9 +19,7 @@ module Step = struct
       ]
   ;;
 
-  let create ~label ?(check_fk = true) statement =
-    { label; check_fk; statement }
-  ;;
+  let create ~label ?(check_fk = true) statement = { label; check_fk; statement }
 end
 
 type steps = Step.t list [@@deriving eq, show]

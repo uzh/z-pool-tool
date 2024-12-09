@@ -53,10 +53,7 @@ module EmailAddress = struct
     CCOption.bind tail CCList.head_opt
   ;;
 
-  let validate_suffix
-    (allowed_email_suffixes : Settings.EmailSuffix.t list option)
-    email
-    =
+  let validate_suffix (allowed_email_suffixes : Settings.EmailSuffix.t list option) email =
     match allowed_email_suffixes with
     | None -> Ok ()
     | Some allowed_email_suffixes ->
@@ -66,25 +63,18 @@ module EmailAddress = struct
        | Some suffix ->
          let open CCResult in
          let* suffix = suffix |> Settings.EmailSuffix.create in
-         if CCList.mem
-              ~eq:Settings.EmailSuffix.equal
-              suffix
-              allowed_email_suffixes
+         if CCList.mem ~eq:Settings.EmailSuffix.equal suffix allowed_email_suffixes
          then Ok ()
          else
            Error
              Pool_message.Error.(
                InvalidEmailSuffix
-                 (allowed_email_suffixes
-                  |> CCList.map Settings.EmailSuffix.value)))
+                 (allowed_email_suffixes |> CCList.map Settings.EmailSuffix.value)))
   ;;
 
   let validate = validate_suffix
   let create = CCFun.(Utils.remove_whitespaces %> validate_characters)
-
-  let schema ?(field = Pool_message.Field.Email) =
-    schema field ~validation:create
-  ;;
+  let schema ?(field = Pool_message.Field.Email) = schema field ~validation:create
 end
 
 module CellPhone = struct
@@ -205,16 +195,15 @@ let is_admin user = user.admin |> IsAdmin.value
 let is_confirmed user = user.confirmed |> Confirmed.value
 
 let create
-  ?(id = Id.create ())
-  ?(admin = IsAdmin.create false)
-  ?(confirmed = Confirmed.create false)
-  email
-  lastname
-  firstname
+      ?(id = Id.create ())
+      ?(admin = IsAdmin.create false)
+      ?(confirmed = Confirmed.create false)
+      email
+      lastname
+      firstname
   : (t, Pool_message.Error.t) result
   =
-  Ok
-    { id; email; lastname; firstname; admin; confirmed; status = Status.Active }
+  Ok { id; email; lastname; firstname; admin; confirmed; status = Status.Active }
 ;;
 
 let confirm user = { user with confirmed = Confirmed.create true }
@@ -233,14 +222,8 @@ let update ?email ?lastname ?firstname ?status ?confirmed user =
 open Pool_message
 
 let column_email = (Field.Email, "user_users.email") |> Query.Column.create
-
-let column_first_name =
-  (Field.Firstname, "user_users.given_name") |> Query.Column.create
-;;
-
-let column_last_name =
-  (Field.Lastname, "user_users.name") |> Query.Column.create
-;;
+let column_first_name = (Field.Firstname, "user_users.given_name") |> Query.Column.create
+let column_last_name = (Field.Lastname, "user_users.name") |> Query.Column.create
 
 let column_name =
   (Field.Name, "CONCAT_WS(' ', user_users.name, user_users.given_name)")
@@ -249,8 +232,7 @@ let column_name =
 
 let column_inactive =
   Query.Column.create
-    ( Field.HideInactive
-    , Format.asprintf "user_users.status != '%s'" Field.(show Inactive) )
+    (Field.HideInactive, Format.asprintf "user_users.status != '%s'" Field.(show Inactive))
 ;;
 
 let searchable_and_sortable_by =
@@ -261,16 +243,14 @@ let searchable_and_sortable_by =
 ;;
 
 let searchable_by =
-  ( Field.Name
-  , "CONCAT_WS(' ', user_users.name, user_users.given_name, user_users.name)" )
+  (Field.Name, "CONCAT_WS(' ', user_users.name, user_users.given_name, user_users.name)")
   :: searchable_and_sortable_by
   |> Query.Column.create_list
 ;;
 
 let sortable_by =
   column_name
-  :: (searchable_and_sortable_by
-      @ [ Field.CreatedAt, "pool_contacts.created_at" ]
+  :: (searchable_and_sortable_by @ [ Field.CreatedAt, "pool_contacts.created_at" ]
       |> Query.Column.create_list)
 ;;
 

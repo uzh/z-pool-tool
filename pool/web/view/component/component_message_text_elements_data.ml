@@ -20,8 +20,7 @@ let create_contact () =
     ; paused = Paused.create false
     ; disabled = Disabled.create false
     ; verified = None
-    ; email_verified =
-        () |> Ptime_clock.now |> EmailVerified.create |> CCOption.pure
+    ; email_verified = () |> Ptime_clock.now |> EmailVerified.create |> CCOption.pure
     ; num_invitations = NumberOfInvitations.init
     ; num_assignments = NumberOfAssignments.init
     ; num_show_ups = NumberOfShowUps.init
@@ -69,12 +68,11 @@ let location =
   let name = "SNS Lab" |> Name.create |> get_exn in
   let description =
     let text_en =
-      "The Laboratory for Social and Neural Systems Research (SNS Lab) is the \
-       heart of the ZNE."
+      "The Laboratory for Social and Neural Systems Research (SNS Lab) is the heart of \
+       the ZNE."
     in
     let text_de =
-      "Das Labor für Soziale und Neuronale Systeme (SNS Lab) ist das Herzstück \
-       des ZNE."
+      "Das Labor für Soziale und Neuronale Systeme (SNS Lab) ist das Herzstück des ZNE."
     in
     let languages = Pool_common.Language.all in
     Pool_common.Language.[ En, text_en; De, text_de ]
@@ -83,9 +81,7 @@ let location =
     |> CCOption.return
   in
   let address = address in
-  let link =
-    "https://www.zne.uzh.ch/en/facilities.html" |> Link.create |> get_exn
-  in
+  let link = "https://www.zne.uzh.ch/en/facilities.html" |> Link.create |> get_exn in
   let status = Status.Active in
   let files = [] in
   { id = Id.create ()
@@ -112,9 +108,7 @@ let create_session experiment =
         |> Start.create
     ; duration = Duration.create hour |> get_or_failwith
     ; internal_description =
-        "Internal description"
-        |> InternalDescription.of_string
-        |> CCOption.return
+        "Internal description" |> InternalDescription.of_string |> CCOption.return
     ; public_description =
         "Public description" |> PublicDescription.of_string |> CCOption.return
     ; location
@@ -147,13 +141,9 @@ let create_experiment () =
   ; title = Title.create "The Wallet Game\t" |> get_exn
   ; public_title = PublicTitle.create "public_title" |> get_exn
   ; internal_description =
-      InternalDescription.create "An internal description"
-      |> get_exn
-      |> CCOption.return
+      InternalDescription.create "An internal description" |> get_exn |> CCOption.return
   ; public_description =
-      PublicDescription.create "A description for everyone"
-      |> get_exn
-      |> CCOption.return
+      PublicDescription.create "A description for everyone" |> get_exn |> CCOption.return
   ; language = None
   ; organisational_unit = None
   ; smtp_auth_id = None

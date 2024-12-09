@@ -2,8 +2,7 @@ open Tyxml.Html
 
 let external_data_ids language external_data_ids =
   match external_data_ids with
-  | [] ->
-    p [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric) ]
+  | [] -> p [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric) ]
   | external_data_ids ->
     let thead =
       let open Pool_common in
@@ -21,11 +20,9 @@ let external_data_ids language external_data_ids =
                ; session_start
                ; session_duration
                }
-           ->
+            ->
             let experiment_path =
-              Format.asprintf
-                "/admin/experiments/%s"
-                Experiment.(Id.value experiment_id)
+              Format.asprintf "/admin/experiments/%s" Experiment.(Id.value experiment_id)
             in
             [ a
                 ~a:[ a_href (experiment_path |> Sihl.Web.externalize_path) ]

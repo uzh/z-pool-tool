@@ -20,8 +20,7 @@ let detail req =
     let* instance = find database_label id in
     let%lwt text_message_dlr =
       match Instance.name instance with
-      | SendTextMessage ->
-        Text_message.find_report_by_queue_id database_label id
+      | SendTextMessage -> Text_message.find_report_by_queue_id database_label id
       | SendEmail | CheckMatchesFilter -> Lwt.return_none
     in
     Page.Admin.Settings.Queue.detail context ?text_message_dlr instance
@@ -75,8 +74,7 @@ end = struct
   module Guardian = Middleware.Guardian
 
   let index =
-    Pool_queue.Guard.Access.index ()
-    |> Guardian.validate_admin_entity ~any_id:true
+    Pool_queue.Guard.Access.index () |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let read = Pool_queue.Guard.Access.read |> Guardian.validate_admin_entity

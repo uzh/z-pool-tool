@@ -110,17 +110,9 @@ type session_counters =
   ; num_participations : int
   }
 
-val counters_of_session
-  :  Database.Label.t
-  -> Session.Id.t
-  -> session_counters Lwt.t
-
+val counters_of_session : Database.Label.t -> Session.Id.t -> session_counters Lwt.t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-
-val find_closed
-  :  Database.Label.t
-  -> Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
+val find_closed : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 module Public : sig
   type t =
@@ -171,12 +163,7 @@ val find_by_contact_and_experiment
   -> (Session.t * t) list Lwt.t
 
 val find_by_contact : Database.Label.t -> Contact.Id.t -> t list Lwt.t
-
-val find_not_deleted_by_session
-  :  Database.Label.t
-  -> Session.Id.t
-  -> t list Lwt.t
-
+val find_not_deleted_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 val find_all_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val find_multiple_by_session
@@ -197,10 +184,7 @@ val query_by_session
   -> Session.Id.t
   -> (t list * Query.t) Lwt.t
 
-val find_uncanceled_by_session
-  :  Database.Label.t
-  -> Session.Id.t
-  -> t list Lwt.t
+val find_uncanceled_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val find_for_session_close_screen
   :  Database.Label.t
@@ -226,9 +210,7 @@ val find_follow_ups : Database.Label.t -> t -> t list Lwt.t
 val find_upcoming_by_experiment
   :  Database.Label.t
   -> Experiment.Id.t
-  -> ( Experiment.t * (Session.t * t list) list
-       , Pool_message.Error.t )
-       Lwt_result.t
+  -> (Experiment.t * (Session.t * t list) list, Pool_message.Error.t) Lwt_result.t
 
 val find_assigned_contacts_by_experiment
   :  Database.Label.t
@@ -267,14 +249,16 @@ type event =
   | Canceled of t
   | Created of (t * Session.Id.t)
   | MarkedAsDeleted of t
+  | MatchesFilterUpdated of (t * MatchesFilter.t)
   | ExternalDataIdUpdated of t * ExternalDataId.t option
-  | Updated of t
+  | Updated of t * t
 
 val canceled : t -> event
 val created : t * Session.Id.t -> event
 val markedasdeleted : t -> event
-val updated : t -> event
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val matchesfilterupdated : t * MatchesFilter.t -> event
+val updated : t -> t -> event
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string

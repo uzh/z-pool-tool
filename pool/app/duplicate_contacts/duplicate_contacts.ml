@@ -47,16 +47,9 @@ let merge pool ({ contact; merged_contact; _ } as merge) =
     contact
     |> update_num_invitations ~step:(CCList.length invitations)
     |> update_num_assignments ~step:(CCList.length assignments)
-    |> update_num_no_shows
-         ~step:(merged_contact.num_no_shows |> NumberOfNoShows.value)
+    |> update_num_no_shows ~step:(merged_contact.num_no_shows |> NumberOfNoShows.value)
     |> update_num_participations
-         ~step:
-           (merged_contact.num_participations |> NumberOfParticipations.value)
+         ~step:(merged_contact.num_participations |> NumberOfParticipations.value)
   in
-  Repo_merge.merge
-    pool
-    { merge with contact }
-    invitations
-    waiting_list
-    assignments
+  Repo_merge.merge pool { merge with contact } invitations waiting_list assignments
 ;;

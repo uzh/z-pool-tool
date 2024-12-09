@@ -1,15 +1,15 @@
 open Tyxml.Html
 
 let toggle_status_form
-  csrf
-  language
-  query_params
-  ?has_icon
-  ~action
-  ?confirmable
-  ~submit_type
-  ~control
-  ()
+      csrf
+      language
+      query_params
+      ?has_icon
+      ~action
+      ?confirmable
+      ~submit_type
+      ~control
+      ()
   =
   let open Component.Input in
   let externalize = Http_utils.externalize_path_with_params query_params in
@@ -24,22 +24,14 @@ let toggle_status_form
   form
     ~a:([ a_method `Post; a_action (externalize action) ] @ confirmable)
     [ csrf_element csrf ()
-    ; submit_element
-        ?has_icon
-        ~classnames:[ "nobr" ]
-        ~submit_type
-        language
-        control
-        ()
+    ; submit_element ?has_icon ~classnames:[ "nobr" ] ~submit_type language control ()
     ]
 ;;
 
 let promote_form csrf language query_language contact =
   let open Pool_common in
   let action =
-    Format.asprintf
-      "/admin/contacts/%s/promote"
-      Contact.(contact |> id |> Id.value)
+    Format.asprintf "/admin/contacts/%s/promote" Contact.(contact |> id |> Id.value)
   in
   let hint : I18n.hint = I18n.PromoteContact in
   let confirmable : I18n.confirmable = I18n.PromoteContact in
@@ -60,9 +52,7 @@ let promote_form csrf language query_language contact =
 let mark_as_deleted_form csrf language query_language contact =
   let open Pool_common in
   let action =
-    Format.asprintf
-      "/admin/contacts/%s/delete"
-      Contact.(contact |> id |> Id.value)
+    Format.asprintf "/admin/contacts/%s/delete" Contact.(contact |> id |> Id.value)
   in
   let hint : I18n.hint = I18n.DeleteContact in
   let confirmable : I18n.confirmable = I18n.DeleteContact in
@@ -86,8 +76,7 @@ let pause_form csrf language query_language contact form_context =
   let action, hint =
     match form_context with
     | `Contact -> Htmx.contact_profile_hx_post, I18n.PauseAccountContact
-    | `Admin ->
-      Htmx.admin_profile_hx_post (Contact.id contact), I18n.PauseAccountAdmin
+    | `Admin -> Htmx.admin_profile_hx_post (Contact.id contact), I18n.PauseAccountAdmin
   in
   let action = Format.asprintf "%s/pause" action in
   let control, confirmable, submit_type =
@@ -115,10 +104,7 @@ let pause_form csrf language query_language contact form_context =
 let verify_form csrf language query_language contact =
   let open Pool_common in
   let action =
-    Http_utils.Url.Admin.contact_path
-      ~suffix:"verify"
-      ~id:(Contact.id contact)
-      ()
+    Http_utils.Url.Admin.contact_path ~suffix:"verify" ~id:(Contact.id contact) ()
   in
   let control, submit_type =
     match contact.Contact.verified with
@@ -150,10 +136,7 @@ let status_form_table language forms =
         ]
     ; forms
       |> CCList.map (fun (form, hint) ->
-        tr
-          [ td [ form ]
-          ; td [ txt Pool_common.(Utils.hint_to_string language hint) ]
-          ])
+        tr [ td [ form ]; td [ txt Pool_common.(Utils.hint_to_string language hint) ] ])
       |> table ~a:[ a_class [ "table" ] ]
     ]
 ;;

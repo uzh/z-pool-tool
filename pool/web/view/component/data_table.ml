@@ -24,13 +24,13 @@ type data_table =
   }
 
 let create_meta
-  ?additional_url_params
-  ?filter
-  ?search
-  ?(push_url = true)
-  url
-  query
-  language
+      ?additional_url_params
+      ?filter
+      ?search
+      ?(push_url = true)
+      url
+      query
+      language
   =
   { url; query; language; filter; search; additional_url_params; push_url }
 ;;
@@ -58,9 +58,7 @@ let direction ({ query; _ } as sort) column =
     | Some sort -> Sort.(sort.order)
     | None -> SortOrder.Ascending
   in
-  if is_selected sort column
-  then Query.Sort.SortOrder.flip direction
-  else direction
+  if is_selected sort column then Query.Sort.SortOrder.flip direction else direction
 ;;
 
 let make_url ({ additional_url_params; url; query; _ } as sort) column =
@@ -74,9 +72,7 @@ let make_url ({ additional_url_params; url; query; _ } as sort) column =
   Format.asprintf "%a" Uri.pp url
 ;;
 
-let make_name { language; _ } field =
-  span [ Component_table.field_to_txt language field ]
-;;
+let make_name { language; _ } field = span [ Component_table.field_to_txt language field ]
 
 let sort_icon sort col =
   let icon =
@@ -88,11 +84,7 @@ let sort_icon sort col =
   Component_icon.to_html icon
 ;;
 
-let filter
-  { additional_url_params; language; url; query; push_url; _ }
-  target_id
-  filter
-  =
+let filter { additional_url_params; language; url; query; push_url; _ } target_id filter =
   let open Query in
   let hx_attribs filter =
     let url =
@@ -117,9 +109,9 @@ let filter
         conditions
         |> CCList.fold_left
              (fun (params, current) cur ->
-               match Column.equal (column cur) (Human.column condition) with
-               | true -> params, Some cur
-               | false -> params @ [ cur ], current)
+                match Column.equal (column cur) (Human.column condition) with
+                | true -> params, Some cur
+                | false -> params @ [ cur ], current)
              default
     in
     let checkbox_filter col =
@@ -178,9 +170,9 @@ let filter
 ;;
 
 let pagination
-  ~target_id
-  { additional_url_params; language; url; query; push_url; _ }
-  { Query.Pagination.page; page_count; _ }
+      ~target_id
+      { additional_url_params; language; url; query; push_url; _ }
+      { Query.Pagination.page; page_count; _ }
   =
   let max_button_count = 7 in
   let button_count_threshold = 3 in
@@ -190,8 +182,7 @@ let pagination
   let add_page_param page =
     let page = [ Pool_message.Field.Page, CCInt.to_string page ] in
     let additional_params =
-      additional_url_params
-      |> CCOption.map_or ~default:page (CCList.append page)
+      additional_url_params |> CCOption.map_or ~default:page (CCList.append page)
     in
     Query.to_uri_query ~additional_params { query with pagination = None }
     |> Uri.with_query url
@@ -205,9 +196,7 @@ let pagination
   in
   let arrow_classes = [ "has-icon"; "undecorated"; "pointer" ] in
   let previous =
-    let label =
-      Utils.control_to_string language Pool_message.Control.PreviousPage
-    in
+    let label = Utils.control_to_string language Pool_message.Control.PreviousPage in
     let icon = Icon.(to_html ~classnames:[ "icon-lg" ] PrevCircleOutline) in
     if Page.(value page > value default)
     then
@@ -219,9 +208,7 @@ let pagination
     else span ~a:[ a_class [ "has-icon" ] ] [ icon ]
   in
   let next =
-    let label =
-      Utils.control_to_string language Pool_message.Control.NextPage
-    in
+    let label = Utils.control_to_string language Pool_message.Control.NextPage in
     let icon = Icon.(to_html ~classnames:[ "icon-lg" ] NextCircleOutline) in
     if PageCount.value page_count > Page.value page
     then
@@ -238,13 +225,9 @@ let pagination
       |> CCList.map (fun i ->
         if CCInt.equal i (Page.value page)
         then
-          span
-            ~a:[ a_class ("primary" :: page_list_classes) ]
-            [ txt (CCInt.to_string i) ]
+          span ~a:[ a_class ("primary" :: page_list_classes) ] [ txt (CCInt.to_string i) ]
         else
-          a
-            ~a:([ a_class page_list_classes ] @ hx_params i)
-            [ txt (CCInt.to_string i) ])
+          a ~a:([ a_class page_list_classes ] @ hx_params i) [ txt (CCInt.to_string i) ])
     in
     let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ] in
     let create_grouped (buttons : int list list) =
@@ -269,9 +252,7 @@ let pagination
          [ left; right ] |> create_grouped
        | _ when current >= page_count - button_count_threshold ->
          let left = [ 1 ] in
-         let right =
-           range (page_count - button_count_threshold - 1) page_count
-         in
+         let right = range (page_count - button_count_threshold - 1) page_count in
          [ left; right ] |> create_grouped
        | _ ->
          let left = [ 1 ] in
@@ -283,24 +264,19 @@ let pagination
   div
     ~a:[ a_class [ "trim"; "measure" ] ]
     [ div
-        ~a:
-          [ a_class
-              [ "flexrow"; "pagination"; "justify-between"; "align-center" ]
-          ]
+        ~a:[ a_class [ "flexrow"; "pagination"; "justify-between"; "align-center" ] ]
         [ previous; page_list; next ]
     ]
 ;;
 
 let searchbar
-  ~target_id
-  { additional_url_params; url; query; language; push_url; _ }
-  searchable_by
+      ~target_id
+      { additional_url_params; url; query; language; push_url; _ }
+      searchable_by
   =
   let open Pool_common in
   let open Query in
-  let search_field, search_label =
-    Pool_message.Field.(Search, Search |> show)
-  in
+  let search_field, search_label = Pool_message.Field.(Search, Search |> show) in
   let url =
     Uri.with_query
       url
@@ -322,9 +298,7 @@ let searchbar
               ([ a_name search_label
                ; a_id search_label
                ; a_input_type `Search
-               ; a_value
-                   (query.search
-                    |> CCOption.map_or ~default:"" Search.query_string)
+               ; a_value (query.search |> CCOption.map_or ~default:"" Search.query_string)
                ; a_user_data "hx-trigger" "input changed delay:300ms, search"
                ]
                @ hx_get ~url ~target_id ~push_url)
@@ -377,8 +351,7 @@ let make_head ?classname target_id sort column =
        | `custom el -> el
        | `empty -> txt ""
        | `field (field, col) -> make_sortable_head target_id sort col field
-       | `column col ->
-         make_sortable_head target_id sort col (Query.Column.field col))
+       | `column col -> make_sortable_head target_id sort col (Query.Column.field col))
     ]
 ;;
 
@@ -393,26 +366,22 @@ let make_header ?th_class target_id cols sort =
 ;;
 
 let make
-  ?(align_last_end = true)
-  ?align_top
-  ?(classnames = [])
-  ?(execute_onload = false)
-  ?(layout = `Striped)
-  ?(prepend_html = txt "")
-  ?th_class
-  ~target_id
-  ~cols
-  ~row
-  data_table
-  items
+      ?(align_last_end = true)
+      ?align_top
+      ?(classnames = [])
+      ?(execute_onload = false)
+      ?(layout = `Striped)
+      ?(prepend_html = txt "")
+      ?th_class
+      ~target_id
+      ~cols
+      ~row
+      data_table
+      items
   =
   let default = txt "" in
-  let search_bar =
-    data_table.search |> CCOption.map (searchbar ~target_id data_table)
-  in
-  let filter_bar =
-    data_table.filter |> CCOption.map (filter data_table target_id)
-  in
+  let search_bar = data_table.search |> CCOption.map (searchbar ~target_id data_table) in
+  let filter_bar = data_table.filter |> CCOption.map (filter data_table target_id) in
   let filter_parts =
     match search_bar, filter_bar with
     | Some search, Some filter -> Some (search :: filter)
@@ -425,10 +394,7 @@ let make
     |> CCOption.map_or ~default:(txt "") (fun parts ->
       div
         ~a:[ a_class [ "border"; "inset-sm" ] ]
-        [ div
-            ~a:[ a_class [ "grid-col-4" ] ]
-            (parts @ [ resetbar data_table.language ])
-        ])
+        [ div ~a:[ a_class [ "grid-col-4" ] ] (parts @ [ resetbar data_table.language ]) ])
   in
   let pagination =
     data_table.query.Query.pagination
@@ -443,17 +409,14 @@ let make
   in
   let classes =
     a_class
-      (Component_table.table_classes ?align_top layout ~align_last_end ()
-       @ classnames)
+      (Component_table.table_classes ?align_top layout ~align_last_end () @ classnames)
   in
   let trigger_onload =
     if execute_onload
     then (
       let { additional_url_params; url; push_url; _ } = data_table in
       let url =
-        Query.to_uri_query
-          ?additional_params:additional_url_params
-          data_table.query
+        Query.to_uri_query ?additional_params:additional_url_params data_table.query
         |> Uri.with_query url
         |> Format.asprintf "%a" Uri.pp
         |> Sihl.Web.externalize_path

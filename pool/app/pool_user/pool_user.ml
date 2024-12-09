@@ -19,20 +19,10 @@ module Password = struct
     Lwt.return_ok ()
   ;;
 
-  let update
-    label
-    user_id
-    ~old_password
-    ~new_password
-    ~new_password_confirmation
-    =
+  let update label user_id ~old_password ~new_password ~new_password_confirmation =
     let* hashed_password = Repo_password.find label user_id in
     let* new_password' =
-      update
-        hashed_password
-        ~old_password
-        ~new_password
-        ~new_password_confirmation
+      update hashed_password ~old_password ~new_password ~new_password_confirmation
       |> Lwt_result.lift
     in
     let%lwt () = Repo_password.update label (user_id, new_password') in
@@ -49,8 +39,7 @@ module Password = struct
         |> Lwt.map CCOption.return
       | None ->
         let tags = Database.Logger.Tags.create label in
-        Logs.warn (fun m ->
-          m ~tags "No user found with email %a" EmailAddress.pp email);
+        Logs.warn (fun m -> m ~tags "No user found with email %a" EmailAddress.pp email);
         Lwt.return_none
     ;;
 
@@ -58,8 +47,7 @@ module Password = struct
       let%lwt user_id = Pool_token.read label token ~k:"user_id" in
       match user_id with
       | None -> Lwt.return_error Pool_message.(Error.Invalid Field.Token)
-      | Some user_id ->
-        define label (Id.of_string user_id) password password_confirmation
+      | Some user_id -> define label (Id.of_string user_id) password password_confirmation
     ;;
 
     let lifecycle =
@@ -83,8 +71,7 @@ let login label email password =
 
 type event =
   | PasswordUpdated of
-      Id.t * Password.Plain.t * Password.Plain.t * Password.Confirmation.t
-  [@opaque]
+      Id.t * Password.Plain.t * Password.Plain.t * Password.Confirmation.t [@opaque]
 [@@deriving eq, show]
 
 let handle_event ?tags pool : event -> unit Lwt.t =

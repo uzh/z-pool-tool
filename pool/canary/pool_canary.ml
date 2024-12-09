@@ -20,20 +20,16 @@ let schema =
     make
       Field.
         [ string
-            ~meta:
-              "Used by canary (Exception Notifier) to create an issue in GitLab"
+            ~meta:"Used by canary (Exception Notifier) to create an issue in GitLab"
             "GITLAB_TOKEN"
         ; string
-            ~meta:
-              "Used by canary (Exception Notifier) to create an issue in GitLab"
+            ~meta:"Used by canary (Exception Notifier) to create an issue in GitLab"
             "GITLAB_API_BASE"
         ; int
-            ~meta:
-              "Used by canary (Exception Notifier) to create an issue in GitLab"
+            ~meta:"Used by canary (Exception Notifier) to create an issue in GitLab"
             "GITLAB_PROJECT_ID"
         ; string
-            ~meta:
-              "Used by canary (Exception Notifier) to create an issue in GitLab"
+            ~meta:"Used by canary (Exception Notifier) to create an issue in GitLab"
             "GITLAB_PROJECT_NAME"
         ]
       t)
@@ -83,8 +79,7 @@ let start () =
     in
     Gitlab_notify.connection_test ()
     |> Lwt_result.map_error
-         (CCFun.tap (fun err ->
-            Logs.err (fun m -> m "Canary connection: %s" err)))
+         (CCFun.tap (fun err -> Logs.err (fun m -> m "Canary connection: %s" err)))
     |> Lwt.map (CCResult.get_or ~default:()))
   else Lwt.return_unit
 ;;

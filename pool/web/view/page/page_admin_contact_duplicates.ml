@@ -18,14 +18,11 @@ let list { Pool_context.language; _ } ?contact (possible_duplicates, query) =
     Component.DataTable.create_meta ?filter:filterable_by url query language
   in
   let button id =
-    Http_utils.Url.Admin.duplicate_path ~id ()
-    |> Input.link_as_button ~icon:Icon.Eye
+    Http_utils.Url.Admin.duplicate_path ~id () |> Input.link_as_button ~icon:Icon.Eye
   in
   let cols =
     let base = [ `column column_score; `empty ] in
-    let field_to_string =
-      Pool_common.Utils.field_to_string_capitalized language
-    in
+    let field_to_string = Pool_common.Utils.field_to_string_capitalized language in
     if CCOption.is_some contact
     then `custom (field_to_string Field.Contact |> txt) :: base
     else
@@ -35,15 +32,10 @@ let list { Pool_context.language; _ } ?contact (possible_duplicates, query) =
       @ base
   in
   let row ({ id; contact_a; contact_b; score; ignored; _ } : t) =
-    let attrs =
-      if Ignored.value ignored then [ a_class [ "bg-red-lighter" ] ] else []
-    in
+    let attrs = if Ignored.value ignored then [ a_class [ "bg-red-lighter" ] ] else [] in
     let contact_link contact =
       a
-        ~a:
-          [ a_href
-              (Http_utils.Url.Admin.contact_path ~id:(Contact.id contact) ())
-          ]
+        ~a:[ a_href (Http_utils.Url.Admin.contact_path ~id:(Contact.id contact) ()) ]
         [ txt (fullname contact) ]
     in
     let base = [ CCFloat.to_string score |> txt; button id ] in
@@ -67,12 +59,10 @@ let list { Pool_context.language; _ } ?contact (possible_duplicates, query) =
     possible_duplicates
 ;;
 
-let index ({ Pool_context.language; _ } as context) ?contact possible_duplicates
-  =
+let index ({ Pool_context.language; _ } as context) ?contact possible_duplicates =
   let title =
     match contact with
-    | None ->
-      Pool_common.(Utils.nav_link_to_string language I18n.ManageDuplicates)
+    | None -> Pool_common.(Utils.nav_link_to_string language I18n.ManageDuplicates)
     | Some contact -> Contact.fullname contact
   in
   div
@@ -81,30 +71,24 @@ let index ({ Pool_context.language; _ } as context) ?contact possible_duplicates
 ;;
 
 let show
-  { Pool_context.language; user; csrf; _ }
-  fields
-  (contact_a, fields_a)
-  (contact_b, fields_b)
-  duplicate
+      { Pool_context.language; user; csrf; _ }
+      fields
+      (contact_a, fields_a)
+      (contact_b, fields_b)
+      duplicate
   =
   let open Duplicate_contacts in
   let is_merge = Ignored.value duplicate.ignored |> not in
   let title =
     Pool_common.(
-      Utils.control_to_string
-        language
-        Pool_message.(Control.Manage Field.Duplicate))
+      Utils.control_to_string language Pool_message.(Control.Manage Field.Duplicate))
   in
   let highlighted = [ a_class [ "bg-red-lighter" ] ] in
   let label = label ~a:[ a_class [ "flexrow"; "flex-gap" ] ] in
-  let field_to_string =
-    Pool_common.Utils.field_to_string_capitalized language
-  in
+  let field_to_string = Pool_common.Utils.field_to_string_capitalized language in
   let make_radio ~name contact =
     let value = Contact.(id contact |> Id.value) in
-    input
-      ~a:[ a_name name; a_value value; a_input_type `Radio; a_required () ]
-      ()
+    input ~a:[ a_name name; a_value value; a_input_type `Radio; a_required () ] ()
   in
   let path ?suffix () =
     Http_utils.Url.Admin.duplicate_path ~id:duplicate.id ?suffix ()
@@ -126,9 +110,7 @@ let show
             ]
       in
       div
-        ~a:
-          [ a_class [ "flexrow"; "justify-between"; "align-center"; "flex-gap" ]
-          ]
+        ~a:[ a_class [ "flexrow"; "justify-between"; "align-center"; "flex-gap" ] ]
         [ div [ h1 [ txt title ] ]; ignore_btn ])
     else
       h1
@@ -178,8 +160,7 @@ let show
       ; Field.Firstname, firstname %> Firstname.value
       ; Field.Lastname, lastname %> Lastname.value
       ; Field.CellPhone, cell_phone %> map_or ~default CellPhone.value
-      ; ( Field.Language
-        , fun c -> c.language |> map_or ~default Pool_common.Language.show )
+      ; (Field.Language, fun c -> c.language |> map_or ~default Pool_common.Language.show)
       ]
   in
   let table =
@@ -188,9 +169,7 @@ let show
       |> CCList.map (fun (field, fnc) ->
         let value_a = fnc contact_a in
         let value_b = fnc contact_b in
-        let attr =
-          if value_a = value_b && value_a != "" then highlighted else []
-        in
+        let attr = if value_a = value_b && value_a != "" then highlighted else [] in
         let cells =
           if is_merge
           then (
@@ -217,21 +196,14 @@ let show
             ~a:
               [ a_method `Post
               ; a_action
-                  (Http_utils.Url.Admin.duplicate_path
-                     ~suffix:"merge"
-                     ~id:duplicate.id
-                     ()
+                  (Http_utils.Url.Admin.duplicate_path ~suffix:"merge" ~id:duplicate.id ()
                    |> Sihl.Web.externalize_path)
               ]
             [ Input.csrf_element csrf ()
             ; table
             ; div
                 ~a:[ a_class [ "gap"; "flexrow"; "justify-end" ] ]
-                [ Input.submit_element
-                    language
-                    Pool_message.Control.(Save None)
-                    ()
-                ]
+                [ Input.submit_element language Pool_message.Control.(Save None) () ]
             ]
         ]
     else table

@@ -12,10 +12,7 @@ end
 module PublicTitle : sig
   include Pool_model.Base.StringSig
 
-  val schema
-    :  ?default:t
-    -> unit
-    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  val schema : ?default:t -> unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module InternalDescription : sig
@@ -131,8 +128,7 @@ type t =
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; online_experiment : OnlineExperiment.t option
-  ; email_session_reminder_lead_time :
-      Pool_common.Reminder.EmailLeadTime.t option
+  ; email_session_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
   ; invitation_reset_at : InvitationResetAt.t option
@@ -162,10 +158,7 @@ val allow_uninvited_signup : t -> AllowUninvitedSignup.t
 val external_data_required : t -> ExternalDataRequired.t
 val show_external_data_id_links : t -> ShowExternalDataIdLinks.t
 val experiment_type : t -> Pool_common.ExperimentType.t option
-
-val email_session_reminder_lead_time
-  :  t
-  -> Pool_common.Reminder.EmailLeadTime.t option
+val email_session_reminder_lead_time : t -> Pool_common.Reminder.EmailLeadTime.t option
 
 val text_message_session_reminder_lead_time
   :  t
@@ -188,8 +181,7 @@ val create
   -> ?invitation_reset_at:Ptime.t
   -> ?organisational_unit:Organisational_unit.t
   -> ?smtp_auth_id:Email.SmtpAuth.Id.t
-  -> ?text_message_session_reminder_lead_time:
-       Pool_common.Reminder.TextMessageLeadTime.t
+  -> ?text_message_session_reminder_lead_time:Pool_common.Reminder.TextMessageLeadTime.t
   -> ?online_experiment:OnlineExperiment.t
   -> Title.t
   -> PublicTitle.t
@@ -227,11 +219,7 @@ module Public : sig
   val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
   val online_experiment : t -> OnlineExperiment.t option
   val is_sessionless : t -> bool
-
-  val update_direct_registration_disabled
-    :  t
-    -> DirectRegistrationDisabled.t
-    -> t
+  val update_direct_registration_disabled : t -> DirectRegistrationDisabled.t -> t
 end
 
 val to_public : t -> Public.t
@@ -261,12 +249,7 @@ type event =
   | ResetInvitations of t
   | Deleted of Id.t
 
-val handle_event
-  :  ?user_uuid:Pool_common.Id.t
-  -> Database.Label.t
-  -> event
-  -> unit Lwt.t
-
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -284,10 +267,7 @@ val find_all
   -> Database.Label.t
   -> (t list * Query.t) Lwt.t
 
-val find_all_ids_of_contact_id
-  :  Database.Label.t
-  -> Contact.Id.t
-  -> Id.t list Lwt.t
+val find_all_ids_of_contact_id : Database.Label.t -> Contact.Id.t -> Id.t list Lwt.t
 
 val find_public
   :  Database.Label.t
@@ -456,10 +436,7 @@ module Statistics : sig
       ; sent_by_count : sent_by_count list
       }
 
-    val create
-      :  Database.Label.t
-      -> t
-      -> (statistics, Pool_message.Error.t) Lwt_result.t
+    val create : Database.Label.t -> t -> (statistics, Pool_message.Error.t) Lwt_result.t
   end
 
   module RegistrationPossible : sig
@@ -521,11 +498,7 @@ module Statistics : sig
   val showup_count : statistics -> ShowUpCount.t
   val noshow_count : statistics -> NoShowCount.t
   val participation_count : statistics -> ParticipationCount.t
-
-  val create
-    :  Database.Label.t
-    -> t
-    -> (statistics, Pool_message.Error.t) Lwt_result.t
+  val create : Database.Label.t -> t -> (statistics, Pool_message.Error.t) Lwt_result.t
 end
 
 val column_title : Query.Column.t

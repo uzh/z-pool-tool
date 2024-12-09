@@ -75,10 +75,8 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) option =
     Logs.info ~src (fun m -> m "Handle command Destroy" ~tags);
     match option.Custom_field.SelectOption.published_at with
-    | None ->
-      Ok [ Custom_field.OptionDestroyed option |> Pool_event.custom_field ]
-    | Some _ ->
-      Error Pool_message.(Error.AlreadyPublished Field.CustomFieldOption)
+    | None -> Ok [ Custom_field.OptionDestroyed option |> Pool_event.custom_field ]
+    | Some _ -> Error Pool_message.(Error.AlreadyPublished Field.CustomFieldOption)
   ;;
 
   let effects = Custom_field.Guard.Access.delete

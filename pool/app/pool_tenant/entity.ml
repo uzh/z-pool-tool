@@ -42,9 +42,7 @@ module GtxSender = struct
 
   (* The GTX Rest API does not allow more than 11 characters *)
   let validation str =
-    if CCString.length str > 11
-    then Error (Pool_message.Error.MaxLength 11)
-    else Ok str
+    if CCString.length str > 11 then Error (Pool_message.Error.MaxLength 11) else Ok str
   ;;
 
   let schema () = schema ~validation field ()
@@ -186,15 +184,15 @@ module Write = struct
   [@@deriving eq, show]
 
   let create
-    title
-    description
-    url
-    database_label
-    gtx_sender
-    styles
-    icon
-    email_logo
-    default_language
+        title
+        description
+        url
+        database_label
+        gtx_sender
+        styles
+        icon
+        email_logo
+        default_language
     =
     { id = Id.create ()
     ; title
@@ -216,6 +214,5 @@ module Write = struct
 end
 
 let file_fields =
-  Pool_message.Field.(
-    [ Styles; Icon; EmailLogo ] @ LogoMapping.LogoType.all_fields)
+  Pool_message.Field.([ Styles; Icon; EmailLogo ] @ LogoMapping.LogoType.all_fields)
 ;;

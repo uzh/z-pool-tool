@@ -73,9 +73,7 @@ module Sql = struct
 
   let find_all_templates_request =
     let open Caqti_request.Infix in
-    component_base_query
-    |> find_request_sql
-    |> Caqti_type.unit ->* Repo_entity.t
+    component_base_query |> find_request_sql |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
   let find_all_templates pool = Database.collect pool find_all_templates_request
@@ -95,9 +93,7 @@ module Sql = struct
       {sql|
         WHERE pool_filter.uuid IN ( %s )
       |sql}
-      (CCList.mapi
-         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
-         ids
+      (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
        |> CCString.concat ",")
     |> find_request_sql
   ;;
@@ -110,7 +106,7 @@ module Sql = struct
       let dyn =
         CCList.fold_left
           (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
           Dynparam.empty
           ids
       in
@@ -261,17 +257,13 @@ module Sql = struct
       | Some query ->
         query :: template_queries
         |> CCList.fold_left
-             (fun acc cur ->
-               acc @ Repo_utils.find_experiments_by_key Key.Invitation cur)
+             (fun acc cur -> acc @ Repo_utils.find_experiments_by_key Key.Invitation cur)
              []
         |> (function
          | [] -> Lwt_result.return ()
          | ids ->
            let (Pack (pt, pv)) =
-             CCList.fold_left
-               (fun dyn id -> dyn |> add Caqti_type.string id)
-               empty
-               ids
+             CCList.fold_left (fun dyn id -> dyn |> add Caqti_type.string id) empty ids
            in
            let (module Connection : Caqti_lwt.CONNECTION) = connection in
            let request = create_request ids |> pt ->. Caqti_type.unit in
@@ -309,17 +301,13 @@ module Sql = struct
       | Some query ->
         query :: template_queries
         |> CCList.fold_left
-             (fun acc cur ->
-               acc @ Repo_utils.find_experiments_by_key Key.Assignment cur)
+             (fun acc cur -> acc @ Repo_utils.find_experiments_by_key Key.Assignment cur)
              []
         |> (function
          | [] -> Lwt_result.return ()
          | ids ->
            let (Pack (pt, pv)) =
-             CCList.fold_left
-               (fun dyn id -> dyn |> add Caqti_type.string id)
-               empty
-               ids
+             CCList.fold_left (fun dyn id -> dyn |> add Caqti_type.string id) empty ids
            in
            let (module Connection : Caqti_lwt.CONNECTION) = connection in
            let request = create_request ids |> pt ->. Caqti_type.unit in
@@ -361,16 +349,13 @@ module Sql = struct
         query :: template_queries
         |> CCList.fold_left
              (fun acc cur ->
-               acc @ Repo_utils.find_experiments_by_key Key.Participation cur)
+                acc @ Repo_utils.find_experiments_by_key Key.Participation cur)
              []
         |> (function
          | [] -> Lwt_result.return ()
          | ids ->
            let (Pack (pt, pv)) =
-             CCList.fold_left
-               (fun dyn id -> dyn |> add Caqti_type.string id)
-               empty
-               ids
+             CCList.fold_left (fun dyn id -> dyn |> add Caqti_type.string id) empty ids
            in
            let (module Connection : Caqti_lwt.CONNECTION) = connection in
            let request = create_request ids |> pt ->. Caqti_type.unit in
@@ -450,8 +435,7 @@ module Sql = struct
     ||> CCResult.return
   ;;
 
-  let contact_matches_filter ?(default = false) pool query (contact : Contact.t)
-    =
+  let contact_matches_filter ?(default = false) pool query (contact : Contact.t) =
     let open Utils.Lwt_result.Infix in
     let tags = Database.Logger.Tags.create pool in
     let find_sql where_fragment =
@@ -469,10 +453,8 @@ module Sql = struct
     in
     let%lwt template_list = find_templates_of_query pool query in
     filtered_params MatchesFilter template_list (Some query)
-    |> CCResult.map_err
-         (Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags)
-    |> CCResult.get_or
-         ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
+    |> CCResult.map_err (Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags)
+    |> CCResult.get_or ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
     |> fun (dyn, sql) ->
     let (Dynparam.Pack (pt, pv)) =
       Dynparam.(dyn |> add Contact.Repo.Id.t Contact.(contact |> id))

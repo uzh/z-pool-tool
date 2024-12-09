@@ -85,8 +85,7 @@ module Sql = struct
   ;;
 
   let find_request =
-    select_from_tenant_logo_mappings_sql where_fragment
-    |> Pool_common.Repo.Id.t ->! t
+    select_from_tenant_logo_mappings_sql where_fragment |> Pool_common.Repo.Id.t ->! t
   ;;
 
   let find pool = Database.collect pool find_request

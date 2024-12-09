@@ -2,6 +2,11 @@
  (name waiting_list)
  (libraries contact experiment pool_common sihl sihl-email)
  (preprocess
-  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_fields_conv)))
+  (pps
+   lwt_ppx
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_fields_conv
+   ppx_yojson_conv)))
 
 (include_subdirs unqualified)

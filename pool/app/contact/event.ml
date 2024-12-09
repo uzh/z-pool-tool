@@ -21,11 +21,7 @@ type session_participation =
 
 let set_password pool { user; _ } password password_confirmation =
   let open Utils.Lwt_result.Infix in
-  Pool_user.Password.define
-    pool
-    user.Pool_user.id
-    password
-    password_confirmation
+  Pool_user.Password.define pool user.Pool_user.id password password_confirmation
   >|+ ignore
 ;;
 
@@ -50,15 +46,8 @@ type event =
 let handle_event ?tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   function
-  | Created
-      { user_id
-      ; email
-      ; lastname
-      ; firstname
-      ; password
-      ; terms_accepted_at
-      ; language
-      } ->
+  | Created { user_id; email; lastname; firstname; password; terms_accepted_at; language }
+    ->
     let open Pool_common.Utils in
     let%lwt user =
       let id = user_id |> Id.to_user in
@@ -87,29 +76,21 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     let%lwt (_ : Pool_user.t) = contact |> user |> Pool_user.confirm pool in
     Repo.update
       pool
-      { contact with
-        email_verified = Some (Pool_user.EmailVerified.create_now ())
-      }
+      { contact with email_verified = Some (Pool_user.EmailVerified.create_now ()) }
   | TermsAccepted contact ->
     Repo.update
       pool
-      { contact with
-        terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ())
-      }
+      { contact with terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ()) }
   | MarkedAsDeleted contact ->
     let%lwt () = Repo.set_inactive pool contact in
     Repo.update pool { contact with disabled = Pool_user.Disabled.create true }
-  | UnverifiedDeleted contact ->
-    contact |> Entity.id |> Repo.delete_unverified pool
+  | UnverifiedDeleted contact -> contact |> Entity.id |> Repo.delete_unverified pool
   | CellPhoneAdded (contact, cell_phone, token) ->
     Repo.add_cell_phone pool contact cell_phone token
   | CellPhoneVerified (contact, cell_phone) ->
-    let%lwt () =
-      { contact with cell_phone = Some cell_phone } |> Repo.update pool
-    in
+    let%lwt () = { contact with cell_phone = Some cell_phone } |> Repo.update pool in
     Repo.delete_unverified_cell_phone pool contact
-  | CellPhoneVerificationReset contact ->
-    Repo.delete_unverified_cell_phone pool contact
+  | CellPhoneVerificationReset contact -> Repo.delete_unverified_cell_phone pool contact
   | ImportConfirmed (contact, password) ->
     let%lwt (_ : (unit, Pool_message.Error.t) result) =
       Pool_user.Password.define

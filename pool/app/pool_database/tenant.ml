@@ -140,8 +140,7 @@ let report err =
       in
       let tags = Database.Logger.Tags.create database_label in
       Logs.err (fun m -> m ~tags "%s" printed_error);
-      Pool.Tenant.update_status database_label Status.ConnectionIssue
-      >|> Lwt.return_ok
+      Pool.Tenant.update_status database_label Status.ConnectionIssue >|> Lwt.return_ok
     | None ->
       Logs.err (fun m -> m "%s" printed_error);
       Lwt.return_ok ()
@@ -152,9 +151,7 @@ let report err =
 let start () =
   let open Database in
   let db_pools =
-    Pool.Tenant.all
-      ~status:Status.[ Active; ConnectionIssue; MigrationsPending ]
-      ()
+    Pool.Tenant.all ~status:Status.[ Active; ConnectionIssue; MigrationsPending ] ()
   in
   Lwt_list.iter_p (check_migration_status %> flip Lwt.catch report) db_pools
 ;;

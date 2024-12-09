@@ -108,9 +108,7 @@ module Sql = struct
   ;;
 
   let find_request_sql ?(count = false) where_fragment =
-    let columns =
-      if count then "1" else sql_select_columns |> CCString.concat ", "
-    in
+    let columns = if count then "1" else sql_select_columns |> CCString.concat ", " in
     let query =
       Format.asprintf
         {sql| SELECT %s FROM pool_sessions %s %s GROUP BY pool_sessions.uuid |sql}
@@ -189,9 +187,7 @@ module Sql = struct
       {sql|
         WHERE pool_sessions.uuid IN ( %s )
       |sql}
-      (CCList.mapi
-         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
-         ids
+      (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
        |> CCString.concat ",")
     |> find_request_sql
   ;;
@@ -203,8 +199,7 @@ module Sql = struct
     else (
       let (Dynparam.Pack (pt, pv)) =
         CCList.fold_left
-          (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value))
+          (fun dyn id -> dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value))
           Dynparam.empty
           ids
       in
@@ -212,9 +207,7 @@ module Sql = struct
       Database.collect pool request pv)
   ;;
 
-  let find_multiple pool ids =
-    prepare_find_multiple pool find_multiple_request ids
-  ;;
+  let find_multiple pool ids = prepare_find_multiple pool find_multiple_request ids
 
   let find_contact_is_assigned_by_experiment_request =
     let open Caqti_request.Infix in
@@ -235,8 +228,7 @@ module Sql = struct
             pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
             AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       |sql}
-    |> Caqti_type.(t2 Contact.Repo.Id.t Experiment.Repo.Entity.Id.t)
-       ->* RepoEntity.Id.t
+    |> Caqti_type.(t2 Contact.Repo.Id.t Experiment.Repo.Entity.Id.t) ->* RepoEntity.Id.t
   ;;
 
   let find_contact_is_assigned_by_experiment pool contact_id experiment_id =
@@ -260,10 +252,7 @@ module Sql = struct
   ;;
 
   let find_all_for_experiment pool id =
-    Database.collect
-      pool
-      (find_all_for_experiment_request ())
-      (Experiment.Id.value id)
+    Database.collect pool (find_all_for_experiment_request ()) (Experiment.Id.value id)
   ;;
 
   let find_upcoming_for_experiment pool id =
@@ -279,9 +268,7 @@ module Sql = struct
       {sql|
         WHERE pool_sessions.follow_up_to IN ( %s )
       |sql}
-      (CCList.mapi
-         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
-         ids
+      (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
        |> CCString.concat ",")
     |> find_request_sql
     |> order_by_start
@@ -306,8 +293,7 @@ module Sql = struct
         let followups =
           CCList.filter
             (fun { follow_up_to; _ } ->
-              follow_up_to
-              |> CCOption.map_or ~default:false (Entity.Id.equal session.id))
+               follow_up_to |> CCOption.map_or ~default:false (Entity.Id.equal session.id))
             followups
         in
         session, followups)
@@ -320,18 +306,12 @@ module Sql = struct
         {sql| pool_sessions.follow_up_to IS NULL AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
       in
       let dyn =
-        Dynparam.(
-          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+        Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
       in
       sql, dyn
     in
     let%lwt sessions, query =
-      Query.collect_and_count
-        pool
-        query
-        ~select:find_request_sql
-        ~where
-        Repo_entity.t
+      Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
     in
     let%lwt sessions = to_grouped_sessions pool sessions in
     Lwt.return (sessions, query)
@@ -339,21 +319,13 @@ module Sql = struct
 
   let query_by_experiment ?query pool id =
     let where =
-      let sql =
-        {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-      in
+      let sql = {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
       let dyn =
-        Dynparam.(
-          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+        Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
       in
       sql, dyn
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select:find_request_sql
-      ~where
-      Repo_entity.t
+    Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
   ;;
 
   let find_all_to_assign_from_waitinglist_request =
@@ -431,10 +403,7 @@ module Sql = struct
 
   let find_public_by_assignment pool id =
     let open Utils.Lwt_result.Infix in
-    Database.find_opt
-      pool
-      find_public_by_assignment_request
-      (Pool_common.Id.value id)
+    Database.find_opt pool find_public_by_assignment_request (Pool_common.Id.value id)
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
@@ -490,10 +459,7 @@ module Sql = struct
   ;;
 
   let find_all_public_for_experiment pool id =
-    Database.collect
-      pool
-      find_all_public_for_experiment_request
-      (Experiment.Id.value id)
+    Database.collect pool find_all_public_for_experiment_request (Experiment.Id.value id)
   ;;
 
   let find_all_public_by_location_request =
@@ -507,10 +473,7 @@ module Sql = struct
   ;;
 
   let find_all_public_by_location pool id =
-    Database.collect
-      pool
-      find_all_public_by_location_request
-      (Pool_location.Id.value id)
+    Database.collect pool find_all_public_by_location_request (Pool_location.Id.value id)
   ;;
 
   let find_experiment_id_and_title_request =
@@ -535,10 +498,7 @@ module Sql = struct
 
   let find_experiment_id_and_title pool id =
     let open Utils.Lwt_result.Infix in
-    Database.find_opt
-      pool
-      find_experiment_id_and_title_request
-      (Pool_common.Id.value id)
+    Database.find_opt pool find_experiment_id_and_title_request (Pool_common.Id.value id)
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
@@ -553,10 +513,7 @@ module Sql = struct
 
   let find_public_experiment pool id =
     let open Utils.Lwt_result.Infix in
-    Database.find_opt
-      pool
-      find_public_experiment_request
-      (Pool_common.Id.value id)
+    Database.find_opt pool find_public_experiment_request (Pool_common.Id.value id)
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
@@ -598,9 +555,7 @@ module Sql = struct
     |> Caqti_type.(string) ->* RepoEntity.t
   ;;
 
-  let find_sessions_to_remind
-    { Pool_tenant.database_label; text_messages_enabled; _ }
-    =
+  let find_sessions_to_remind { Pool_tenant.database_label; text_messages_enabled; _ } =
     let email_default_lead_time =
       Settings.default_email_session_reminder_lead_time_key_yojson
     in
@@ -676,10 +631,7 @@ module Sql = struct
   ;;
 
   let find_open_with_follow_ups pool id =
-    Database.collect
-      pool
-      find_open_with_follow_ups_request
-      (Pool_common.Id.value id)
+    Database.collect pool find_open_with_follow_ups_request (Pool_common.Id.value id)
   ;;
 
   let find_binary_experiment_id_sql =
@@ -781,9 +733,7 @@ module Sql = struct
     |> Caqti_type.(string ->. unit)
   ;;
 
-  let delete pool id =
-    Database.exec pool delete_request (Pool_common.Id.value id)
-  ;;
+  let delete pool id = Database.exec pool delete_request (Pool_common.Id.value id)
 
   let find_for_calendar_by_location_request =
     let open Caqti_request.Infix in
@@ -840,12 +790,7 @@ module Sql = struct
       let sql = Format.asprintf "%s AND %s" guardian_conditions where in
       sql, Dynparam.empty
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select:find_request_sql
-      ~where
-      Repo_entity.t
+    Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
   ;;
 
   let find_incomplete_by_admin =
@@ -914,12 +859,8 @@ module Sql = struct
     let request = find_sessions_to_update_matcher_request context in
     match context with
     | `Experiment id ->
-      Database.collect
-        pool
-        (request |> Experiment.Repo.Entity.Id.t ->* RepoEntity.t)
-        id
-    | `Upcoming ->
-      Database.collect pool (request |> Caqti_type.unit ->* RepoEntity.t) ()
+      Database.collect pool (request |> Experiment.Repo.Entity.Id.t ->* RepoEntity.t) id
+    | `Upcoming -> Database.collect pool (request |> Caqti_type.unit ->* RepoEntity.t) ()
   ;;
 end
 
@@ -932,10 +873,7 @@ let location_to_public_repo_entity pool session =
 
 let find = Sql.find
 let find_multiple = Sql.find_multiple
-
-let find_contact_is_assigned_by_experiment =
-  Sql.find_contact_is_assigned_by_experiment
-;;
+let find_contact_is_assigned_by_experiment = Sql.find_contact_is_assigned_by_experiment
 
 (* TODO [aerben] these queries are very inefficient, how to circumvent? *)
 let find_all_public_by_location pool location_id =
@@ -951,10 +889,7 @@ let find_public pool id =
 ;;
 
 let find_all_for_experiment = Sql.find_all_for_experiment
-
-let find_all_to_assign_from_waitinglist =
-  Sql.find_all_to_assign_from_waitinglist
-;;
+let find_all_to_assign_from_waitinglist = Sql.find_all_to_assign_from_waitinglist
 
 let find_all_public_for_experiment pool contact experiment_id =
   let open Utils.Lwt_result.Infix in
@@ -969,8 +904,7 @@ let find_all_public_for_experiment pool contact experiment_id =
 
 let find_public_by_assignment pool assignment_id =
   let open Utils.Lwt_result.Infix in
-  Sql.find_public_by_assignment pool assignment_id
-  >>= location_to_public_repo_entity pool
+  Sql.find_public_by_assignment pool assignment_id >>= location_to_public_repo_entity pool
 ;;
 
 let find_by_assignment = Sql.find_by_assignment
@@ -1002,8 +936,7 @@ let find_upcoming_public_by_contact pool contact_id =
   >>= fun lst ->
   lst
   |> Lwt_list.map_s (fun (parent, follow_ups) ->
-    Sql.find_public_experiment pool parent.id
-    >|+ fun exp -> exp, parent, follow_ups)
+    Sql.find_public_experiment pool parent.id >|+ fun exp -> exp, parent, follow_ups)
   ||> CCResult.flatten_l
 ;;
 

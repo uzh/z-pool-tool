@@ -1,6 +1,6 @@
 Printexc.record_backtrace true
 
-let _ =
+let suite =
   Alcotest_lwt.
     [ ( "database"
       , Database_test.
@@ -8,8 +8,7 @@ let _ =
           ; test_case "find tenants" `Slow check_find_tenant_database
           ; test_case "access tenant" `Slow check_tenant_database
           ] )
-    ; ( "api_key"
-      , Api_key_test.[ test_case "get current api_key" `Slow get_current ] )
+    ; ("api_key", Api_key_test.[ test_case "get current api_key" `Slow get_current ])
     ; ( "settings"
       , Tenant_settings_test.
           [ test_case "read contact email" `Slow check_contact_email
@@ -18,32 +17,19 @@ let _ =
               "read inactive user disable after"
               `Slow
               check_inactive_user_disable_after
-          ; test_case
-              "read inactive user warning after"
-              `Slow
-              check_inactive_user_warning
+          ; test_case "read inactive user warning after" `Slow check_inactive_user_warning
           ; test_case "read languages" `Slow check_languages
-          ; test_case
-              "has terms and conditions"
-              `Slow
-              check_terms_and_conditions
+          ; test_case "has terms and conditions" `Slow check_terms_and_conditions
           ; test_case "login after terms update" `Slow login_after_terms_update
           ; test_case "can create smtp auth" `Slow create_smtp_auth
           ; test_case "can delete smtp auth" `Slow delete_smtp_auth
           ; test_case "update gtx settings" `Slow update_gtx_settings
           ] )
-    ; ( "dev/test"
-      , [ test_case "intercept email" `Slow Common_test.validate_email ] )
+    ; "dev/test", [ test_case "intercept email" `Slow Common_test.validate_email ]
     ; ( "authorization"
       , Authorization_test.
-          [ test_case
-              "permit valid operation"
-              `Slow
-              recruiter_can_update_contact_language
-          ; test_case
-              "deny invalid operation"
-              `Slow
-              guest_cannot_update_language
+          [ test_case "permit valid operation" `Slow recruiter_can_update_contact_language
+          ; test_case "deny invalid operation" `Slow guest_cannot_update_language
           ; test_case "use parametric roles" `Slow operator_works
           ; test_case
               "test adding of role assignments"
@@ -54,8 +40,7 @@ let _ =
               `Slow
               Admin_role_assignment.grant_roles
           ] )
-      (* ; ( "announcement"
-         , Announcement_test.[ test_case "find current" `Slow find_current ] ) *)
+    ; ("announcement", Announcement_test.[ test_case "find current" `Slow find_current ])
     ; ( "partial_update"
       , Partial_update.
           [ test_case "update with old version" `Slow update_with_old_version
@@ -119,26 +104,17 @@ let _ =
               "no admin values shown to contacts"
               `Slow
               no_admin_values_shown_to_contacts
-          ; test_case
-              "filter ignore admin value"
-              `Slow
-              filter_ignore_admin_value
+          ; test_case "filter ignore admin value" `Slow filter_ignore_admin_value
           ; test_case
               "filter by experiment participation"
               `Slow
               filter_by_experiment_participation
-          ; test_case
-              "filter by empty language"
-              `Slow
-              filter_by_empty_hardcoded_value
+          ; test_case "filter by empty language" `Slow filter_by_empty_hardcoded_value
           ; test_case
               "filter by non-empty language"
               `Slow
               filter_by_non_empty_hardcoded_value
-          ; test_case
-              "filter by empty custom field"
-              `Slow
-              filter_by_empty_custom_field
+          ; test_case "filter by empty custom field" `Slow filter_by_empty_custom_field
           ; test_case
               "filter by nonempty custom field"
               `Slow
@@ -147,10 +123,7 @@ let _ =
               "filter by empty custom field with deleted answer"
               `Slow
               filter_by_empty_custom_field_with_deleted_value
-          ; test_case
-              "filter by date type custom field"
-              `Slow
-              filter_by_date_custom_field
+          ; test_case "filter by date type custom field" `Slow filter_by_date_custom_field
           ] )
     ; ( "matcher"
       , Matcher_test.
@@ -233,16 +206,10 @@ let _ =
               "email verification attempt message mapping"
               `Slow
               email_verification
-          ; test_case
-              "experiment invitation message mapping"
-              `Slow
-              experiment_invitation
+          ; test_case "experiment invitation message mapping" `Slow experiment_invitation
           ; test_case "password change message mapping" `Slow password_change
           ; test_case "password reset message mapping" `Slow password_reset
-          ; test_case
-              "phone verification message mapping"
-              `Slow
-              phone_verification
+          ; test_case "phone verification message mapping" `Slow phone_verification
           ; test_case "session reminder message mapping" `Slow session_reminder
           ] ))
     ; ( "assignment"
@@ -288,8 +255,7 @@ let _ =
           ; test_case
               "exclude experiment after registration for session"
               `Slow
-              AvailableExperiments
-              .exclude_experiment_after_registration_for_session
+              AvailableExperiments.exclude_experiment_after_registration_for_session
           ; test_case
               "cancel session contact is assigned to"
               `Slow
@@ -303,25 +269,13 @@ let _ =
       , let open Filter_invitation_tests in
         let open Filter_assignment_tests in
         [ test_case "uninvited contact is listed" `Slow finds_uninvited_contacts
-        ; test_case
-            "invited contact is not listed"
-            `Slow
-            filters_out_invited_contacts
-        ; test_case
-            "unassigned contact is listed"
-            `Slow
-            finds_unassigned_contacts
-        ; test_case
-            "assigned contact is not listed"
-            `Slow
-            filters_out_assigned_contacts
+        ; test_case "invited contact is not listed" `Slow filters_out_invited_contacts
+        ; test_case "unassigned contact is listed" `Slow finds_unassigned_contacts
+        ; test_case "assigned contact is not listed" `Slow filters_out_assigned_contacts
         ] )
     ; ( "contact counter"
       , Contact_counter_test.
-          [ test_case
-              "invite contact: ssend invitation"
-              `Slow
-              InviteContact.invite
+          [ test_case "invite contact: ssend invitation" `Slow InviteContact.invite
           ; test_case
               "attend all: register for session"
               `Slow
@@ -338,10 +292,7 @@ let _ =
               "delete attended: delete follow up"
               `Slow
               DeleteAttended.delete_follow_up
-          ; test_case
-              "delete attended: delete main"
-              `Slow
-              DeleteAttended.delete_main
+          ; test_case "delete attended: delete main" `Slow DeleteAttended.delete_main
           ; test_case
               "cancel session: without follow up"
               `Slow
@@ -355,14 +306,8 @@ let _ =
               "Do not attend: register for session"
               `Slow
               DoNotAttend.register_for_session
-          ; test_case
-              "Do not attend: close main session"
-              `Slow
-              DoNotAttend.close_main
-          ; test_case
-              "no show: register for session"
-              `Slow
-              NoShow.register_for_session
+          ; test_case "Do not attend: close main session" `Slow DoNotAttend.close_main
+          ; test_case "no show: register for session" `Slow NoShow.register_for_session
           ; test_case "no show: close main" `Slow NoShow.close_main
           ; test_case
               "delete unattended: register"
@@ -413,35 +358,18 @@ let _ =
     ; ( "user import"
       , User_import_test.
           [ test_case "confirm as contact" `Slow confirm_as_contact_integration
-          ; test_case
-              "find contacts to notify"
-              `Slow
-              Repo.find_contacts_to_notify
-          ; test_case
-              "find contacts to remind"
-              `Slow
-              Repo.find_contacts_to_remind
+          ; test_case "find contacts to notify" `Slow Repo.find_contacts_to_notify
+          ; test_case "find contacts to remind" `Slow Repo.find_contacts_to_remind
           ] )
     ; ( "time window"
-      , Time_window_test.
-          [ test_case "confirm as contact" `Slow find_overlapping ] )
+      , Time_window_test.[ test_case "confirm as contact" `Slow find_overlapping ] )
     ; ( "duplicate contacts"
-      , Duplicate_contacts_test.
-          [ test_case "check similarity" `Slow check_similarity
-          ; test_case "override a with b" `Slow override_a_with_b
-          ] )
-    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
-    ]
-;;
-
-let suite =
-  Alcotest_lwt.
-    [ ( "duplicate contacts"
       , Duplicate_contacts_test.
           [ test_case "check similarity" `Slow check_similarity
           ; test_case "override a with b" `Slow override_a_with_b
           ; test_case "override b with a" `Slow override_b_with_a
           ] )
+    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;
 

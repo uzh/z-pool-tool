@@ -234,9 +234,5 @@ let rest =
 let prioritized = [ 41, "Switzerland"; 49, "Germany" ]
 let all = prioritized @ rest
 let find_code c = CCList.find_opt (fun (code, _) -> CCInt.equal code c) all
-
-let to_human (code, name) =
-  code, Format.asprintf "%s (+%s)" name (CCInt.to_string code)
-;;
-
+let to_human (code, name) = code, Format.asprintf "%s (+%s)" name (CCInt.to_string code)
 let all_human = CCList.map to_human all

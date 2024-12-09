@@ -118,8 +118,8 @@ depends: [
   "ocaml-version" {= "3.6.9"}
   "ocamlbuild" {= "0.15.0"}
   "ocamlfind" {= "1.9.6"}
-  "ocamlformat" {= "0.26.2"}
-  "ocamlformat-lib" {= "0.26.2"}
+  "ocamlformat" {= "0.27.0"}
+  "ocamlformat-lib" {= "0.27.0"}
   "ocp-indent" {= "1.8.1"}
   "ocplib-endian" {= "1.2"}
   "octavius" {= "1.2.2"}

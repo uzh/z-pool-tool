@@ -26,8 +26,7 @@ let to_string = function
 
 let read_variable fcn env =
   fcn (env |> to_string)
-  |> CCOption.get_exn_or
-       (Format.asprintf "Variable not defined: %s" (env |> to_string))
+  |> CCOption.get_exn_or (Format.asprintf "Variable not defined: %s" (env |> to_string))
 ;;
 
 let read_int = read_variable Sihl.Configuration.read_int
@@ -45,9 +44,7 @@ let schema =
       ; int
           ~meta:"Rate limit of the mail server to external mail addresses"
           ~validator:(fun m ->
-            if m >= 0
-            then None
-            else Some "Rate limit cannot have a value below zero.")
+            if m >= 0 then None else Some "Rate limit cannot have a value below zero.")
           (EmailRateLimit |> to_string)
       ; int
           ~meta:"maximum percentage of the rate limit used for invitations"
@@ -72,10 +69,7 @@ let for_interval interval rate =
   CCFloat.(rate / 3600. * (interval |> Ptime.Span.to_float_s))
 ;;
 
-let experiment_has_bookable_spots
-  database_label
-  { Experiment.id; online_experiment; _ }
-  =
+let experiment_has_bookable_spots database_label { Experiment.id; online_experiment; _ } =
   let open Utils.Lwt_result.Infix in
   let open Session in
   match CCOption.is_some online_experiment with
@@ -100,16 +94,13 @@ let sort_contacts contacts =
   match Sihl.Configuration.is_test () with
   | false -> contacts
   | true ->
-    CCList.stable_sort
-      (fun c1 c2 -> Contact.(Id.compare (id c1) (id c2)))
-      contacts
+    CCList.stable_sort (fun c1 c2 -> Contact.(Id.compare (id c1) (id c2))) contacts
 ;;
 
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
   let%lwt ({ Experiment.id; filter; invitation_reset_at; _ } as experiment) =
-    Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
-    ||> get_or_failwith
+    Experiment.find_of_mailing pool (id |> Mailing.Id.to_common) ||> get_or_failwith
   in
   let use_case =
     let id = id |> Experiment.Id.to_common in
@@ -118,9 +109,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
       Filter.MatcherReset (id, Experiment.InvitationResetAt.value reset_at)
     | None -> Filter.Matcher id
   in
-  let order_by =
-    distribution |> CCOption.map Mailing.Distribution.get_order_element
-  in
+  let order_by = distribution |> CCOption.map Mailing.Distribution.get_order_element in
   let* contacts =
     let limit = max limit 0 in
     Filter.find_filtered_contacts ?order_by ~limit pool use_case filter
@@ -129,22 +118,19 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
 ;;
 
 let calculate_mailing_limits
-  interval
-  (pool_based_mailings : ('a * Mailing.Status.status list) list)
+      interval
+      (pool_based_mailings : ('a * Mailing.Status.status list) list)
   =
   let open CCList in
   let open CCFloat in
   let rate_limit = read_int EmailRateLimit |> CCInt.to_float in
   let factor = read_int MaxCapacity |> CCInt.to_float in
-  let max_total_invitations =
-    rate_limit * (factor / 100.) |> for_interval interval
-  in
+  let max_total_invitations = rate_limit * (factor / 100.) |> for_interval interval in
   let total =
     let open Mailing.Status in
     pool_based_mailings
     |> fold_left
-         (fun init (_, status) ->
-           init :: (status >|= to_handle %> ToHandle.value) |> sum)
+         (fun init (_, status) -> init :: (status >|= to_handle %> ToHandle.value) |> sum)
          0
   in
   let reduce_factor =
@@ -170,9 +156,7 @@ let notify_all_invited pool tenant experiment =
   | true -> Lwt.return []
   | false ->
     let%lwt email_event =
-      Experiment.find_admins_to_notify_about_invitations
-        pool
-        experiment.Experiment.id
+      Experiment.find_admins_to_notify_about_invitations pool experiment.Experiment.id
       >|> Lwt_list.map_s (fun admin ->
         admin
         |> Message_template.MatcherNotification.create
@@ -183,21 +167,16 @@ let notify_all_invited pool tenant experiment =
       ||> Pool_event.email
     in
     let updated =
-      { experiment with
-        matcher_notification_sent = MatcherNotificationSent.create true
-      }
+      { experiment with matcher_notification_sent = MatcherNotificationSent.create true }
     in
-    let experiment_event =
-      Updated (experiment, updated) |> Pool_event.experiment
-    in
+    let experiment_event = Updated (experiment, updated) |> Pool_event.experiment in
     Lwt.return [ email_event; experiment_event ]
 ;;
 
 let events_of_mailings =
   let ok_or_log_error = function
     | Ok (pool, events) when CCList.is_empty events ->
-      Logs.info ~src (fun m ->
-        m ~tags:(Database.Logger.Tags.create pool) "No action");
+      Logs.info ~src (fun m -> m ~tags:(Database.Logger.Tags.create pool) "No action");
       None
     | Ok m -> Some m
     | Error err ->
@@ -236,11 +215,7 @@ let events_of_mailings =
             invitations
             |> CCList.map (fun invitation ->
               Resend.(
-                handle
-                  ~tags
-                  ~mailing_id:mailing.Mailing.id
-                  create_message
-                  invitation))
+                handle ~tags ~mailing_id:mailing.Mailing.id create_message invitation))
             |> CCList.all_ok
             |> CCResult.map CCList.flatten
           in
@@ -251,20 +226,17 @@ let events_of_mailings =
              contacts
              |> Lwt_list.fold_left_s
                   (fun (invitations, contacts) contact ->
-                    contact
-                    |> Contact.id
-                    |> Invitation.find_by_contact_and_experiment_opt
-                         pool
-                         experiment.Experiment.id
-                    |> Lwt.map (function
-                      | None -> invitations, contacts @ [ contact ]
-                      | Some invitation ->
-                        invitations @ [ invitation ], contacts))
+                     contact
+                     |> Contact.id
+                     |> Invitation.find_by_contact_and_experiment_opt
+                          pool
+                          experiment.Experiment.id
+                     |> Lwt.map (function
+                       | None -> invitations, contacts @ [ contact ]
+                       | Some invitation -> invitations @ [ invitation ], contacts))
                   ([], [])
              >|> fun (invitations, contacts) ->
-             let* resend_events =
-               resend_existing invitations |> Lwt_result.lift
-             in
+             let* resend_events = resend_existing invitations |> Lwt_result.lift in
              let* create_events = create_new contacts |> Lwt_result.lift in
              Lwt_result.return (create_events @ resend_events)))
       ||> CCList.all_ok
@@ -278,24 +250,23 @@ let create_invitation_events interval pools =
   let%lwt pool_based_mailings =
     Lwt_list.map_s
       (fun pool ->
-        Mailing.Status.find_current pool interval
-        >|> Lwt_list.filter_map_s
-              (fun ({ Mailing.Status.mailing; _ } as status) ->
-                 let find_experiment { Mailing.id; _ } =
-                   Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
-                 in
-                 let has_spots = experiment_has_bookable_spots pool in
-                 let validate = function
-                   | true -> Ok status
-                   | false -> Error Pool_message.Error.SessionFullyBooked
-                 in
-                 mailing
-                 |> find_experiment
-                 |>> has_spots
-                 >== validate
-                 >|- Pool_common.Utils.with_log_error ~level:Logs.Warning
-                 ||> CCResult.to_opt)
-        ||> fun m -> pool, m)
+         Mailing.Status.find_current pool interval
+         >|> Lwt_list.filter_map_s (fun ({ Mailing.Status.mailing; _ } as status) ->
+           let find_experiment { Mailing.id; _ } =
+             Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
+           in
+           let has_spots = experiment_has_bookable_spots pool in
+           let validate = function
+             | true -> Ok status
+             | false -> Error Pool_message.Error.SessionFullyBooked
+           in
+           mailing
+           |> find_experiment
+           |>> has_spots
+           >== validate
+           >|- Pool_common.Utils.with_log_error ~level:Logs.Warning
+           ||> CCResult.to_opt)
+         ||> fun m -> pool, m)
       pools
   in
   pool_based_mailings |> calculate_mailing_limits interval |> events_of_mailings
@@ -329,17 +300,11 @@ let start_matcher () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s (5 * 60) in
   let periodic_fcn () =
-    Logs.debug ~src (fun m ->
-      m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
-    Database.(Pool.Tenant.all ~status:Status.[ Active ] ())
-    |> match_invitations interval
+    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
+    Database.(Pool.Tenant.all ~status:Status.[ Active ] ()) |> match_invitations interval
   in
   let schedule =
-    create
-      "matcher"
-      (Every (interval |> ScheduledTimeSpan.of_span))
-      None
-      periodic_fcn
+    create "matcher" (Every (interval |> ScheduledTimeSpan.of_span)) None periodic_fcn
   in
   Schedule.add_and_start schedule
 ;;

@@ -17,13 +17,9 @@ module Partials = struct
     in
     let url = url |> Format.asprintf "/admin/dashboard/%s" |> Uri.of_string in
     let session_path session =
-      Http_utils.Url.Admin.session_path
-        ~id:session.id
-        session.experiment.Experiment.id
+      Http_utils.Url.Admin.session_path ~id:session.id session.experiment.Experiment.id
     in
-    let data_table =
-      Component.DataTable.create_meta url query language ~push_url:false
-    in
+    let data_table = Component.DataTable.create_meta url query language ~push_url:false in
     let th_class = [ "w-4"; "w-4"; "w-4" ] in
     let cols =
       [ `column column_date
@@ -62,9 +58,7 @@ end
 
 let index statistics layout Pool_context.{ language; _ } =
   let heading_2 title =
-    h2
-      ~a:[ a_class [ "heading-2" ] ]
-      [ txt (Utils.text_to_string language title) ]
+    h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Utils.text_to_string language title) ]
   in
   let information_section incomplete_sessions =
     let statistics_html =
@@ -83,31 +77,23 @@ let index statistics layout Pool_context.{ language; _ } =
     in
     div
       ~a:[ a_class [ "grid-col-3"; "stretch-only-child" ] ]
-      [ statistics_html
-      ; div ~a:[ a_class [ "span-2" ] ] [ incomplete_sessions_html ]
-      ]
+      [ statistics_html; div ~a:[ a_class [ "span-2" ] ] [ incomplete_sessions_html ] ]
   in
   let upcoming_section children =
     div
-      [ heading_2 I18n.UpcomingSessionsTitle
-      ; div ~a:[ a_class [ "stack-lg" ] ] children
-      ]
+      [ heading_2 I18n.UpcomingSessionsTitle; div ~a:[ a_class [ "stack-lg" ] ] children ]
   in
   let calendar_html = Component.Calendar.(create User) in
   let html =
     match layout with
     | Clean incomplete_sessions ->
-      [ information_section incomplete_sessions
-      ; upcoming_section [ calendar_html ]
-      ]
+      [ information_section incomplete_sessions; upcoming_section [ calendar_html ] ]
     | Admin (incomplete_sessions, upcoming_sessions) ->
       let upcoming_sessions =
         let sessions =
           div
             ~a:[ a_class [ "stack" ] ]
-            [ Page_admin_session.Partials.table_legend
-                ~hide_closed:true
-                language
+            [ Page_admin_session.Partials.table_legend ~hide_closed:true language
             ; Partials.upcoming_sessions_list language upcoming_sessions
             ]
         in

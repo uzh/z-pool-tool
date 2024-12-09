@@ -16,11 +16,7 @@ module Url = struct
     let field_key = "field"
     let create_path m = [ index_path m; field_key ] |> concat
     let new_path m = [ index_path m; field_key; "new" ] |> concat
-
-    let detail_path (m, id) =
-      [ index_path m; field_key; id |> Id.value ] |> concat
-    ;;
-
+    let detail_path (m, id) = [ index_path m; field_key; id |> Id.value ] |> concat
     let edit_path (m, id) = [ detail_path (m, id); "edit" ] |> concat
   end
 
@@ -31,11 +27,7 @@ module Url = struct
     let index_path = Field.detail_path
     let new_path field = [ index_path field; options_key; "new" ] |> concat
     let create_path field = [ Field.detail_path field; options_key ] |> concat
-
-    let detail_path field id =
-      [ index_path field; options_key; id |> Id.value ] |> concat
-    ;;
-
+    let detail_path field id = [ index_path field; options_key; id |> Id.value ] |> concat
     let edit_path field id = [ detail_path field id; "edit" ] |> concat
   end
 
@@ -70,71 +62,61 @@ let model_subtitle language model =
 ;;
 
 let input_by_lang
-  ?(required = false)
-  language
-  tenant_languages
-  flash_fetcher
-  elm
-  field
-  value_fnc
+      ?(required = false)
+      language
+      tenant_languages
+      flash_fetcher
+      elm
+      field
+      value_fnc
   =
   let open Pool_common in
   let group_class = Elements.group_class [] `Horizontal in
   CCList.map
     (fun lang ->
-      let required =
-        required && CCList.mem ~eq:Language.equal lang tenant_languages
-      in
-      let label_text =
-        lang
-        |> Language.field_of_t
-        |> Utils.field_to_string language
-        |> CCString.capitalize_ascii
-      in
-      let id =
-        Format.asprintf "%s-%s" (Field.show field) (Language.show lang)
-      in
-      let value =
-        let open CCOption in
-        flash_fetcher
-          (Format.asprintf "%s[%s]" (Field.show field) (Language.show lang))
-        <+> (elm >|= value_fnc lang)
-        |> value ~default:""
-      in
-      let input_element =
-        let attrs =
-          [ a_input_type `Text
-          ; a_id id
-          ; a_name
-              (Format.asprintf "%s[%s]" (Field.show field) (Language.show lang))
-          ; a_value value
-          ]
-        in
-        div
-          ~a:[ a_class [ "input-group" ] ]
-          [ input ~a:(if required then a_required () :: attrs else attrs) () ]
-      in
-      div
-        ~a:[ a_class group_class ]
-        [ label
-            ~a:[ a_label_for id ]
-            [ txt
-                (if required
-                 then Format.asprintf "%s *" label_text
-                 else label_text)
-            ]
-        ; input_element
-        ])
+       let required = required && CCList.mem ~eq:Language.equal lang tenant_languages in
+       let label_text =
+         lang
+         |> Language.field_of_t
+         |> Utils.field_to_string language
+         |> CCString.capitalize_ascii
+       in
+       let id = Format.asprintf "%s-%s" (Field.show field) (Language.show lang) in
+       let value =
+         let open CCOption in
+         flash_fetcher (Format.asprintf "%s[%s]" (Field.show field) (Language.show lang))
+         <+> (elm >|= value_fnc lang)
+         |> value ~default:""
+       in
+       let input_element =
+         let attrs =
+           [ a_input_type `Text
+           ; a_id id
+           ; a_name (Format.asprintf "%s[%s]" (Field.show field) (Language.show lang))
+           ; a_value value
+           ]
+         in
+         div
+           ~a:[ a_class [ "input-group" ] ]
+           [ input ~a:(if required then a_required () :: attrs else attrs) () ]
+       in
+       div
+         ~a:[ a_class group_class ]
+         [ label
+             ~a:[ a_label_for id ]
+             [ txt (if required then Format.asprintf "%s *" label_text else label_text) ]
+         ; input_element
+         ])
     Language.all
 ;;
 
 let field_form
-  ?(custom_field : Custom_field.t option)
-  current_model
-  Pool_context.{ language; csrf; _ }
-  groups
-  tenant_languages
-  flash_fetcher
+      ?(custom_field : Custom_field.t option)
+      current_model
+      Pool_context.{ language; csrf; _ }
+      groups
+      tenant_languages
+      flash_fetcher
   =
   let open CCFun in
   let open Custom_field in
@@ -145,13 +127,13 @@ let field_form
     | Some f -> Url.Field.detail_path (model f, id f)
   in
   let checkbox_element
-    ?(disabled = false)
-    ?orientation
-    ?hints
-    ?(default = false)
-    ?append_html
-    field
-    fnc
+        ?(disabled = false)
+        ?orientation
+        ?hints
+        ?(default = false)
+        ?append_html
+        field
+        fnc
     =
     checkbox_element
       language
@@ -187,20 +169,12 @@ let field_form
       f |> hint |> Hint.find_opt lang >|= Hint.value_hint |> value ~default:"")
   in
   let validation_subform =
-    let current_values =
-      custom_field |> CCOption.map_or ~default:[] validation_strings
-    in
+    let current_values = custom_field |> CCOption.map_or ~default:[] validation_strings in
     let rule_input field_type name input_type value disabled =
-      let prefixed_name =
-        Format.asprintf "%s[%s]" Field.(show Validation) name
-      in
+      let prefixed_name = Format.asprintf "%s[%s]" Field.(show Validation) name in
       let wrapper_class = [ "form-group"; "horizontal"; "flex-gap" ] in
       let input_attributes =
-        [ a_input_type input_type
-        ; a_name prefixed_name
-        ; a_id name
-        ; a_value value
-        ]
+        [ a_input_type input_type; a_name prefixed_name; a_id name; a_value value ]
       in
       let attrs, classes =
         match disabled with
@@ -208,13 +182,8 @@ let field_form
         | false -> input_attributes, wrapper_class
       in
       div
-        ~a:
-          [ a_class classes
-          ; a_user_data "field-type" (FieldType.show field_type)
-          ]
-        [ label
-            ~a:[ a_label_for name ]
-            [ txt (name |> Validation.key_to_human) ]
+        ~a:[ a_class classes; a_user_data "field-type" (FieldType.show field_type) ]
+        [ label ~a:[ a_label_for name ] [ txt (name |> Validation.key_to_human) ]
         ; div ~a:[ a_class [ "input-group" ] ] [ input ~a:attrs () ]
         ]
     in
@@ -249,16 +218,16 @@ let field_form
           ~a:[ a_class [ "flexcolumn"; "stack" ] ]
           (CCList.map
              (fun (key, input_type, validation_type) ->
-               let value =
-                 CCList.assoc_opt ~eq:CCString.equal key current_values
-                 |> CCOption.value ~default:""
-               in
-               let disabled =
-                 field_type_opt
-                 |> CCOption.map_or ~default:false (fun t ->
-                   FieldType.equal validation_type t |> not)
-               in
-               rule_input validation_type key input_type value disabled)
+                let value =
+                  CCList.assoc_opt ~eq:CCString.equal key current_values
+                  |> CCOption.value ~default:""
+                in
+                let disabled =
+                  field_type_opt
+                  |> CCOption.map_or ~default:false (fun t ->
+                    FieldType.equal validation_type t |> not)
+                in
+                rule_input validation_type key input_type value disabled)
              Validation.all)
       ; script (Unsafe.data functions)
       ]
@@ -274,9 +243,7 @@ let field_form
            if CCList.is_empty options
            then
              [ p
-                 [ Utils.text_to_string
-                     language
-                     (I18n.NoEntries Field.CustomFieldOptions)
+                 [ Utils.text_to_string language (I18n.NoEntries Field.CustomFieldOptions)
                    |> txt
                  ]
              ]
@@ -300,38 +267,33 @@ let field_form
                  (CCList.cons
                     (CCList.map
                        (fun option ->
-                         [ td [ txt (SelectOption.name language option) ]
-                         ; td
-                             [ txt
-                                 (if CCOption.is_some
-                                       option.SelectOption.published_at
-                                  then
-                                    Utils.field_to_string
-                                      language
-                                      Field.PublishedAt
-                                  else "")
-                             ]
-                         ; td
-                             [ input
-                                 ~a:
-                                   [ a_input_type `Hidden
-                                   ; a_name
-                                       Field.(CustomFieldOption |> array_key)
-                                   ; a_value SelectOption.(Id.value option.id)
-                                   ]
-                                 ()
-                             ]
-                         ; td
-                             ~a:[ a_class [ "flexrow"; "justify-end" ] ]
-                             [ Url.Option.edit_path
-                                 (model m, id m)
-                                 option.SelectOption.id
-                               |> Component.Input.edit_link
-                             ]
-                         ])
+                          [ td [ txt (SelectOption.name language option) ]
+                          ; td
+                              [ txt
+                                  (if CCOption.is_some option.SelectOption.published_at
+                                   then Utils.field_to_string language Field.PublishedAt
+                                   else "")
+                              ]
+                          ; td
+                              [ input
+                                  ~a:
+                                    [ a_input_type `Hidden
+                                    ; a_name Field.(CustomFieldOption |> array_key)
+                                    ; a_value SelectOption.(Id.value option.id)
+                                    ]
+                                  ()
+                              ]
+                          ; td
+                              ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+                              [ Url.Option.edit_path
+                                  (model m, id m)
+                                  option.SelectOption.id
+                                |> Component.Input.edit_link
+                              ]
+                          ])
                        options
-                     |> Component.Sortable.create_table
-                          ~classnames:[ "table"; "simple" ])
+                     |> Component.Sortable.create_table ~classnames:[ "table"; "simple" ]
+                    )
                     [ div
                         ~a:[ a_class [ "flexrow" ] ]
                         [ submit_element
@@ -347,14 +309,7 @@ let field_form
          in
          div
            [ div
-               ~a:
-                 [ a_class
-                     [ "flexrow"
-                     ; "flex-gap"
-                     ; "justify-between"
-                     ; "align-center"
-                     ]
-                 ]
+               ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
                [ div
                    [ h2
                        ~a:[ a_class [ "heading-2" ] ]
@@ -369,8 +324,7 @@ let field_form
                        ~style:`Success
                        ~icon:Icon.Create
                        ~classnames:[ "small" ]
-                       ~control:
-                         (language, Control.(Add (Some Field.CustomFieldOption)))
+                       ~control:(language, Control.(Add (Some Field.CustomFieldOption)))
                        (Url.Option.new_path (model m, id m))
                    ]
                ]
@@ -380,9 +334,7 @@ let field_form
                   language
                   `Warning
                   [ txt
-                      (Utils.hint_to_string
-                         language
-                         I18n.CustomFieldOptionsCompleteness)
+                      (Utils.hint_to_string language I18n.CustomFieldOptionsCompleteness)
                   ]
                 :: list)
            ]
@@ -424,13 +376,10 @@ let field_form
       let hidden =
         let published =
           custom_field
-          |> CCOption.map_or
-               ~default:false
-               (Custom_field.published_at %> CCOption.is_some)
+          |> CCOption.map_or ~default:false (Custom_field.published_at %> CCOption.is_some)
         in
         let equal_type =
-          field_type_opt
-          |> CCOption.map_or ~default:false FieldType.(equal field_type)
+          field_type_opt |> CCOption.map_or ~default:false FieldType.(equal field_type)
         in
         if published || not equal_type then [ "hidden" ] else []
       in
@@ -451,9 +400,7 @@ let field_form
       [ csrf_element csrf ()
       ; div
           ~a:[ a_class [ "grid-col-2" ] ]
-          [ div
-              ~a:[ a_class [ "stack-xs" ] ]
-              (field_type_selector :: field_type_hints)
+          [ div ~a:[ a_class [ "stack-xs" ] ] (field_type_selector :: field_type_hints)
           ; Group.(
               selector
                 language
@@ -530,27 +477,25 @@ let field_form
               `Text
               Field.AdminHint
               ~orientation:`Horizontal
-              ~value:
-                (value
-                   (admin_hint %> CCOption.map_or ~default:"" AdminHint.value))
+              ~value:(value (admin_hint %> CCOption.map_or ~default:"" AdminHint.value))
               ~flash_fetcher
           ; checkbox_element
               Field.Override
               ~hints:[ I18n.CustomFieldAdminOverride ]
               ?append_html:
-                (if custom_field
-                    |> CCOption.map_or
-                         ~default:false
-                         (admin_override %> AdminOverride.value)
+                (if
+                   custom_field
+                   |> CCOption.map_or
+                        ~default:false
+                        (admin_override %> AdminOverride.value)
                  then Some (warning I18n.CustomFieldAdminOverrideUpdate)
                  else None)
               (admin_override %> AdminOverride.value)
           ; checkbox_element
               ~disabled:
                 (custom_field
-                 |> CCOption.map_or
-                      ~default:false
-                      (admin_view_only %> AdminViewOnly.value))
+                 |> CCOption.map_or ~default:false (admin_view_only %> AdminViewOnly.value)
+                )
               ~hints:[ I18n.CustomFieldAdminInputOnly ]
               Field.AdminInputOnly
               (admin_input_only %> AdminInputOnly.value)
@@ -634,16 +579,13 @@ let field_buttons language csrf current_model field =
     let button_attribs =
       match disabled_reason with
       | None -> []
-      | Some err ->
-        [ a_disabled (); a_title Utils.(error_to_string language err) ]
+      | Some err -> [ a_disabled (); a_title Utils.(error_to_string language err) ]
     in
     form
       ~a:
         [ a_action action
         ; a_method `Post
-        ; a_user_data
-            "confirmable"
-            (Utils.confirmable_to_string language confirmable)
+        ; a_user_data "confirmable" (Utils.confirmable_to_string language confirmable)
         ]
       [ csrf_element csrf ()
       ; submit_element ~attributes:button_attribs language msg ~submit_type ()
@@ -659,10 +601,7 @@ let field_buttons language csrf current_model field =
              (Utils.field_to_string language Field.PublishedAt
               |> CCString.capitalize_ascii)
          ; txt ": "
-         ; txt
-             (published_at
-              |> PublishedAt.value
-              |> Pool_model.Time.formatted_date_time)
+         ; txt (published_at |> PublishedAt.value |> Pool_model.Time.formatted_date_time)
          ]
      | None ->
        let disable_publish =
@@ -688,12 +627,12 @@ let field_buttons language csrf current_model field =
 ;;
 
 let detail
-  ?custom_field
-  current_model
-  (Pool_context.{ language; csrf; _ } as context)
-  groups
-  sys_languages
-  flash_fetcher
+      ?custom_field
+      current_model
+      (Pool_context.{ language; csrf; _ } as context)
+      groups
+      sys_languages
+      flash_fetcher
   =
   let changelog_html =
     match custom_field with
@@ -701,11 +640,7 @@ let detail
     | Some field ->
       let url =
         let id = Custom_field.id field in
-        HttpUtils.Url.Admin.custom_fields_path
-          current_model
-          ~suffix:"changelog"
-          ~id
-          ()
+        HttpUtils.Url.Admin.custom_fields_path current_model ~suffix:"changelog" ~id ()
         |> Uri.of_string
       in
       Component.Changelog.list context url None
@@ -715,34 +650,25 @@ let detail
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ Partials.form_title language Field.CustomField custom_field
     ; div
-        ~a:
-          [ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ]
-          ]
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
         [ model_subtitle language current_model; button_form ]
     ; div
         ~a:[ a_class [ "stack-lg"; "gap-lg" ] ]
-        (field_form
-           ?custom_field
-           current_model
-           context
-           groups
-           sys_languages
-           flash_fetcher
+        (field_form ?custom_field current_model context groups sys_languages flash_fetcher
          @ [ changelog_html ])
     ]
 ;;
 
 let index
-  field_list
-  group_list
-  current_model
-  Pool_context.({ language; csrf; _ } as context)
+      field_list
+      group_list
+      current_model
+      Pool_context.({ language; csrf; _ } as context)
   =
   let open Pool_common in
   let grouped, ungrouped = Custom_field.group_fields group_list field_list in
   let thead =
-    (Field.[ Title; CustomFieldGroup; PublishedAt ]
-     |> Table.fields_to_txt language)
+    (Field.[ Title; CustomFieldGroup; PublishedAt ] |> Table.fields_to_txt language)
     @ [ link_as_button
           ~style:`Success
           ~icon:Icon.Add
@@ -784,16 +710,10 @@ let index
     let sort_form =
       if CCList.is_empty ungrouped
       then
-        [ p
-            [ Utils.text_to_string language (I18n.NoEntries Field.CustomFields)
-              |> txt
-            ]
-        ]
+        [ p [ Utils.text_to_string language (I18n.NoEntries Field.CustomFields) |> txt ] ]
       else
         [ p
-            [ Utils.hint_to_string
-                language
-                I18n.(CustomFieldSort Field.CustomFields)
+            [ Utils.hint_to_string language I18n.(CustomFieldSort Field.CustomFields)
               |> HttpUtils.add_line_breaks
             ]
         ; form
@@ -808,17 +728,17 @@ let index
             [ csrf_element csrf ()
             ; CCList.map
                 (fun field ->
-                  div
-                    ~a:[ a_class [ "flexrow"; "align-center" ] ]
-                    [ txt (field |> field_name)
-                    ; input
-                        ~a:
-                          [ a_input_type `Hidden
-                          ; a_name Field.(CustomField |> array_key)
-                          ; a_value Custom_field.(field |> id |> Id.value)
-                          ]
-                        ()
-                    ])
+                   div
+                     ~a:[ a_class [ "flexrow"; "align-center" ] ]
+                     [ txt (field |> field_name)
+                     ; input
+                         ~a:
+                           [ a_input_type `Hidden
+                           ; a_name Field.(CustomField |> array_key)
+                           ; a_value Custom_field.(field |> id |> Id.value)
+                           ]
+                         ()
+                     ])
                 ungrouped
               |> Component.Sortable.create_sortable
             ; div
@@ -844,17 +764,13 @@ let index
       if CCList.is_empty group_list
       then
         [ p
-            [ Utils.text_to_string
-                language
-                (I18n.NoEntries Field.CustomFieldGroups)
+            [ Utils.text_to_string language (I18n.NoEntries Field.CustomFieldGroups)
               |> txt
             ]
         ]
       else
         [ p
-            [ Utils.hint_to_string
-                language
-                (I18n.CustomFieldSort Field.CustomFieldGroups)
+            [ Utils.hint_to_string language (I18n.CustomFieldSort Field.CustomFieldGroups)
               |> txt
             ]
         ; form
@@ -869,29 +785,25 @@ let index
               ]
             [ CCList.map
                 (fun group ->
-                  let open Custom_field in
-                  div
-                    ~a:
-                      [ a_class
-                          [ "flexrow"
-                          ; "flex-gap"
-                          ; "justify-between"
-                          ; "align-center"
-                          ]
-                      ]
-                    [ div [ txt Group.(group |> name language) ]
-                    ; div
-                        [ input
-                            ~a:
-                              [ a_input_type `Hidden
-                              ; a_name Field.(CustomFieldGroup |> array_key)
-                              ; a_value Group.(Id.value group.id)
-                              ]
-                            ()
-                        ]
-                    ; Url.Group.edit_path Group.(group.model, group.id)
-                      |> edit_link ~classnames:[ "small" ]
-                    ])
+                   let open Custom_field in
+                   div
+                     ~a:
+                       [ a_class
+                           [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ]
+                       ]
+                     [ div [ txt Group.(group |> name language) ]
+                     ; div
+                         [ input
+                             ~a:
+                               [ a_input_type `Hidden
+                               ; a_name Field.(CustomFieldGroup |> array_key)
+                               ; a_value Group.(Id.value group.id)
+                               ]
+                             ()
+                         ]
+                     ; Url.Group.edit_path Group.(group.model, group.id)
+                       |> edit_link ~classnames:[ "small" ]
+                     ])
                 group_list
               |> Component.Sortable.create_sortable
             ; div
