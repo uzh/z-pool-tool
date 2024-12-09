@@ -38,7 +38,11 @@ let list { Pool_context.language; _ } ?contact (possible_duplicates, query) =
         ~a:[ a_href (Http_utils.Url.Admin.contact_path ~id:(Contact.id contact) ()) ]
         [ txt (fullname contact) ]
     in
-    let base = [ CCFloat.to_string score |> txt; button id ] in
+    let base =
+      [ CCFloat.(score *. 100. |> round |> to_int) |> Format.asprintf "%i%%" |> txt
+      ; button id
+      ]
+    in
     let columns =
       match contact with
       | Some contact ->
