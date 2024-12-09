@@ -73,11 +73,6 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
       ~field_id:(Public.id m)
       ~entity_uuid
       ()
-  (*| AnswerOverridden _ ->
-    Lwt.return_unit
-    let%lwt () = create_custom_field_answer_changelog contact m in let
-    entity_uuid = Contact.(id contact |> Id.to_common) in
-    Repo_partial_update.override_answer pool entity_uuid m *)
   | AnswerUpserted (m, entity_uuid, user) ->
     let is_admin = Pool_context.user_is_admin user in
     Repo_partial_update.upsert_answer pool is_admin (Contact.Id.to_common entity_uuid) m

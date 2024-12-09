@@ -5,7 +5,7 @@ module Id = struct
 end
 
 type 'a t =
-  { id : Id.t (* [@equal fun a b -> Sihl.Configuration.is_test () || Id.equal a b] *)
+  { id : Id.t
   ; entity_uuid : Pool_common.Id.t
   ; value : 'a option
   ; admin_value : 'a option

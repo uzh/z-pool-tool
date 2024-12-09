@@ -78,9 +78,7 @@ end = struct
            |> to_result error
            >|= select_fields
            >>= fun fields ->
-           CCList.find_opt (fun f -> Id.equal (Public.id f) id) fields
-           (* TODO: An empty answer should be crated, not found *)
-           |> to_result error)
+           CCList.find_opt (fun f -> Id.equal (Public.id f) id) fields |> to_result error)
         custom_fields
       |> CCList.all_ok
     in
