@@ -145,6 +145,7 @@ type nav_link =
   | Login
   | LoginInformation
   | Logout
+  | ManageDuplicates
   | Mailings
   | MessageHistory
   | MessageTemplates
@@ -244,6 +245,7 @@ type hint =
   | LocationsIndex
   | MailingLimit
   | MailingLimitExceedsMatchingContacts
+  | MergeContacts
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentCancellation
   | MessageTemplateAssignmentConfirmation

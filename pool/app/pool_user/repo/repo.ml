@@ -3,16 +3,14 @@ open Utils.Lwt_result.Infix
 open Repo_entity
 module Password = Repo_password_entity
 
-let sql_select_columns =
-  [ Pool_common.Id.sql_select_fragment ~field:"user_users.uuid"
-  ; "user_users.email"
-  ; "user_users.name"
-  ; "user_users.given_name"
-  ; "user_users.status"
-  ; "user_users.admin"
-  ; "user_users.confirmed"
-  ]
+let make_sql_select_columns ~tablename =
+  let with_tablemame = Format.asprintf "%s.%s" tablename in
+  [ Pool_common.Id.sql_select_fragment ~field:(with_tablemame "uuid") ]
+  @ ([ "email"; "name"; "given_name"; "status"; "admin"; "confirmed" ]
+     |> CCList.map with_tablemame)
 ;;
+
+let sql_select_columns = make_sql_select_columns ~tablename:"user_users"
 
 let sql_select_password_columns =
   [ Pool_common.Id.sql_select_fragment ~field:"user_users.uuid"

@@ -4,7 +4,7 @@ open Utils.Lwt_result.Infix
 open Pool_message
 
 let database_label = Data.database_label
-let current_user () = Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+let current_user = Integration_utils.create_admin_user
 let get_exn = get_or_failwith
 let get_contact contact_id = contact_id |> Contact.find database_label |> Lwt.map get_exn
 let get_session session_id = session_id |> Session.find database_label |> Lwt.map get_exn

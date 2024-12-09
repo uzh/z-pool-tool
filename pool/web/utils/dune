@@ -4,6 +4,7 @@
   announcement
   api_key
   contact
+  duplicate_contacts
   experiment
   mailing
   logger

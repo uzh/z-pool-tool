@@ -68,7 +68,8 @@ module Sql = struct
         pool_custom_fields.prompt_on_registration,
         pool_custom_fields.published_at,
         pool_custom_fields.show_on_session_close_screen,
-        pool_custom_fields.show_on_session_detail_screen
+        pool_custom_fields.show_on_session_detail_screen,
+        pool_custom_fields.possible_duplicates_weight
       FROM pool_custom_fields
       %s
       %s
@@ -152,6 +153,7 @@ module Sql = struct
         prompt_on_registration,
         show_on_session_close_screen,
         show_on_session_detail_screen,
+        possible_duplicates_weight,
         position
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
@@ -170,6 +172,7 @@ module Sql = struct
         $14,
         $15,
         $16,
+        $17,
         (SELECT
           COUNT(*)
           FROM pool_custom_fields AS f
@@ -204,7 +207,8 @@ module Sql = struct
         admin_input_only = $13,
         prompt_on_registration = $14,
         show_on_session_close_screen = $15,
-        show_on_session_detail_screen = $16
+        show_on_session_detail_screen = $16,
+        possible_duplicates_weight = $17
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -280,6 +284,20 @@ module Sql = struct
       pool
       (find_by_table_view_request table_view)
       Entity.Model.(show Contact)
+    >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+  ;;
+
+  let find_for_duplicate_check pool =
+    let open Utils.Lwt_result.Infix in
+    let open Caqti_request.Infix in
+    let where =
+      {sql|
+      WHERE pool_custom_fields.published_at IS NOT NULL
+      AND pool_custom_fields.possible_duplicates_weight > 0
+      |sql}
+    in
+    let request = select_sql where |> Caqti_type.unit ->* Repo_entity.t in
+    Database.collect pool request ()
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 end

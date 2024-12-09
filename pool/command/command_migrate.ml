@@ -48,7 +48,9 @@ let root =
     let%lwt () =
       Migration.execute Pool.Root.label (Pool_database.Root.steps ())
       ||> function
-      | Ok () -> exit 0
+      | Ok () ->
+        (* TODO: why is exit 0 not stopping the process? *)
+        ()
       | Error _ -> exit 1
     in
     Lwt.return_some ())
