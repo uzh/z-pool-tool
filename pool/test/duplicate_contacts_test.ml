@@ -21,7 +21,7 @@ let check_similarity _ () =
   in
   let find_duplicate ~target ~comparison =
     let open Contact in
-    let%lwt () = run pool (id target |> Id.to_common) in
+    let%lwt () = Service.run pool (id target |> Id.to_common) in
     find_by_contact pool target
     ||> fst
     ||> CCList.find_opt (fun { contact_a; contact_b; _ } ->

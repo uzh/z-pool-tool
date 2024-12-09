@@ -21,6 +21,7 @@ let worker_services =
   ; Reminder.Service.register ()
   ; Assignment_job.register ()
   ; System_event.Service.ConnectionWatcher.register ()
+  ; Duplicate_contacts.Service.register ()
   ]
 ;;
 

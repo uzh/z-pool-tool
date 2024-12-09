@@ -131,6 +131,6 @@ Provide all fields to sign up a new contact:
       let%lwt () = Database.Pool.initialize () in
       let user_uuid = Pool_common.Id.of_string user_uuid in
       let db_pool = Database.Label.of_string db_pool in
-      Duplicate_contacts.run db_pool user_uuid ||> CCOption.return
+      Duplicate_contacts.Service.run db_pool user_uuid ||> CCOption.return
     | _ -> Command_utils.failwith_missmatch help)
 ;;

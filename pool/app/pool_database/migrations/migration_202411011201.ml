@@ -48,11 +48,21 @@ let create_duplicate_contact_permissions =
   |sql}
 ;;
 
+let add_last_checked_timestamp =
+  Database.Migration.Step.create
+    ~label:"add last_checked timestamp"
+    {sql|
+      ALTER TABLE pool_contacts
+        ADD COLUMN duplicates_last_checked TIMESTAMP NULL AFTER smtp_bounces_count
+    |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202411011201"
     |> add_step create_custom_field_answer_index
     |> add_step create_duplicates_table
     |> add_step add_weight_to_custom_fields
-    |> add_step create_duplicate_contact_permissions)
+    |> add_step create_duplicate_contact_permissions
+    |> add_step add_last_checked_timestamp)
 ;;

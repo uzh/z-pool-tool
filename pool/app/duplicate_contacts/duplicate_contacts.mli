@@ -23,7 +23,6 @@ type merge =
   ; custom_fields : Custom_field.Public.t list
   }
 
-val run : Database.Label.t -> Pool_common.Id.t -> unit Lwt.t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 
@@ -65,6 +64,11 @@ val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val filterable_by : Query.Filter.Condition.Human.t list option
 val default_query : Query.t
+
+module Service : sig
+  val run : Database.Label.t -> Pool_common.Id.t -> unit Lwt.t
+  val register : unit -> Sihl.Container.Service.t
+end
 
 module Access : sig
   val index : Guard.ValidationSet.t

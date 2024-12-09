@@ -125,7 +125,6 @@ let find_similars database_label ~user_uuid custom_fields =
   let user_columns =
     columns >|= fun col -> asprintf "%s as %s" (concat_sql col) col.Column.sql_column
   in
-  (* Dynparam not required, atm *)
   let dyn =
     Dynparam.(
       empty
@@ -280,3 +279,42 @@ let ingore_request =
 ;;
 
 let ignore pool { Entity.id; _ } = Database.exec pool ingore_request id
+
+let find_to_check pool =
+  let open Caqti_request.Infix in
+  let open Contact.Repo in
+  let request =
+    Format.asprintf
+      {sql|
+        SELECT
+          %s
+        FROM pool_contacts
+          %s
+        WHERE 
+          (duplicates_last_checked IS NULL
+            OR 
+          duplicates_last_checked < NOW() - INTERVAL 1 WEEK)
+          AND disabled = 0
+        ORDER BY duplicates_last_checked IS NULL DESC, duplicates_last_checked ASC
+        LIMIT 1
+      |sql}
+      (CCString.concat ", " sql_select_columns)
+      joins
+    |> Caqti_type.unit ->! t
+  in
+  Database.find_opt pool request ()
+;;
+
+let mark_as_checked pool contact =
+  let open Caqti_request.Infix in
+  let request =
+    Format.asprintf
+      {sql|
+        UPDATE pool_contacts
+        SET duplicates_last_checked = NOW()
+        WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
+      |sql}
+    |> Contact.Repo.Id.t ->. Caqti_type.unit
+  in
+  Database.exec pool request (Contact.id contact)
+;;
