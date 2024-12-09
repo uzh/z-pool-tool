@@ -16,7 +16,7 @@ let find_by_contact = Repo.find_by_contact
 (** Open discussion:
     - duplicates (Or just delete the old ones) *)
 
-let merge pool ({ contact; merged_contact; _ } as merge) =
+let merge pool ?user_uuid ({ contact; merged_contact; _ } as merge) =
   let%lwt invitations =
     Invitation.find_by_contact_to_merge pool ~contact ~merged_contact
   in
@@ -35,5 +35,11 @@ let merge pool ({ contact; merged_contact; _ } as merge) =
     |> update_num_participations
          ~step:(merged_contact.num_participations |> NumberOfParticipations.value)
   in
-  Repo_merge.merge pool { merge with contact } invitations waiting_list assignments
+  Repo_merge.merge
+    pool
+    ?user_uuid
+    { merge with contact }
+    invitations
+    waiting_list
+    assignments
 ;;

@@ -33,7 +33,12 @@ val find_by_contact
   -> Contact.t
   -> (t list * Query.t) Lwt.t
 
-val merge : Database.Label.t -> merge -> (unit, Pool_message.Error.t) Lwt_result.t
+val merge
+  :  Database.Label.t
+  -> ?user_uuid:Pool_common.Id.t
+  -> merge
+  -> (unit, Pool_message.Error.t) Lwt_result.t
+
 val show_merge : merge -> string
 val pp_merge : Format.formatter -> merge -> unit
 val equal_merge : merge -> merge -> bool

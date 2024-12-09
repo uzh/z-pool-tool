@@ -262,7 +262,13 @@ val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> u
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val create_changelog : ?user_uuid:Id.t -> Database.Label.t -> t -> t -> unit Lwt.t
+
+val create_changelog
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> t
+  -> t
+  -> unit Lwt.t
 
 module Guard : sig
   module Target : sig

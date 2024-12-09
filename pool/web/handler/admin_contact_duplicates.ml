@@ -120,13 +120,13 @@ let merge req =
       let open Cqrs_command.Duplicate_contacts_command.Merge in
       handle ~tags urlencoded duplicate fields (fields_a, fields_b) |> Lwt_result.lift
     in
-    let handle () =
+    let redirect () =
       Http_utils.redirect_to_with_actions
         duplicate_path
         [ Http_utils.Message.set ~success:Pool_message.[ Success.Updated Field.Duplicate ]
         ]
     in
-    data |> merge database_label |>> handle
+    data |> merge ?user_uuid:(Pool_event.user_uuid user) database_label |>> redirect
   in
   result |> Http_utils.extract_happy_path ~src req
 ;;

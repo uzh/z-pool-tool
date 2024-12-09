@@ -67,6 +67,7 @@ val time_window : Time_window.event -> t
 val user_import : User_import.event -> t
 val user : Pool_user.event -> t
 val waiting_list : Waiting_list.event -> t
+val user_uuid : Pool_context.user -> Pool_common.Id.t option
 
 val handle_event
   :  ?tags:Logs.Tag.set

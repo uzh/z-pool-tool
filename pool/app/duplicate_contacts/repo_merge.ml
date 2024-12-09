@@ -141,18 +141,19 @@ let destroy_assignments =
 ;;
 
 module Changelog = struct
-  let contact_changelog pool current_contact_state contact =
+  let contact_changelog pool ?user_uuid current_contact_state contact =
     let open Contact in
     let open VersionHistory in
     insert
       pool
+      ?user_uuid
       ~entity_uuid:(id contact |> Id.to_common)
       ~before:current_contact_state
       ~after:contact
       ()
   ;;
 
-  let make_custom_field_changelog pool custom_fields contact =
+  let make_custom_field_changelog pool ?user_uuid custom_fields contact =
     let open Custom_field in
     let contact_id = Contact.id contact in
     let%lwt fields =
@@ -167,13 +168,14 @@ module Changelog = struct
         let after = AnswerRecord.from_public after in
         AnswerVersionHistory.insert
           pool
+          ?user_uuid
           ~entity_uuid:(Contact.Id.to_common contact_id)
           ~before:(CCOption.value ~default:(AnswerRecord.default_record after) before)
           ~after
           ()))
   ;;
 
-  let waiting_list_changelogs pool waiting_lists contact =
+  let waiting_list_changelogs pool ?user_uuid waiting_lists contact =
     waiting_lists
     |> Lwt_list.iter_s (fun waiting_list ->
       let new_contact = contact in
@@ -181,21 +183,23 @@ module Changelog = struct
       let after = ({ waiting_list with contact = new_contact } : t) in
       VersionHistory.insert
         pool
+        ?user_uuid
         ~entity_uuid:(id waiting_list |> Id.to_common)
         ~before:waiting_list
         ~after
         ())
   ;;
 
-  let assignments_changelogs pool assignments contact =
+  let assignments_changelogs pool ?user_uuid assignments contact =
     let open Assignment in
     assignments
     |> Lwt_list.iter_s (fun (assignment : t) ->
-      create_changelog pool assignment ({ assignment with contact } : t))
+      create_changelog pool ?user_uuid assignment ({ assignment with contact } : t))
   ;;
 end
 
 let merge
+      ?user_uuid
       pool
       { contact; merged_contact; custom_fields }
       invitations
@@ -298,7 +302,7 @@ let merge
   in
   (* Preparing custom field changelog function before executing transaction *)
   let%lwt custom_field_changelog =
-    Changelog.make_custom_field_changelog pool custom_fields contact
+    Changelog.make_custom_field_changelog pool ?user_uuid custom_fields contact
   in
   let%lwt () =
     Database.transaction_iter
@@ -310,10 +314,10 @@ let merge
   in
   let create_changelog () =
     let open Changelog in
-    let%lwt () = contact_changelog pool current_contact_state contact in
+    let%lwt () = contact_changelog pool ?user_uuid current_contact_state contact in
     let%lwt () = custom_field_changelog () in
-    let%lwt () = waiting_list_changelogs pool waiting_list contact in
-    let%lwt () = assignments_changelogs pool assignments contact in
+    let%lwt () = waiting_list_changelogs pool ?user_uuid waiting_list contact in
+    let%lwt () = assignments_changelogs pool ?user_uuid assignments contact in
     Lwt.return ()
   in
   () |> create_changelog |> Lwt_result.ok
