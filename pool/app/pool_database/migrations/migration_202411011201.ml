@@ -38,6 +38,15 @@ let add_weight_to_custom_fields =
     |sql}
 ;;
 
+let insert_default_weight =
+  Database.Migration.Step.create
+    ~label:"insert default weight"
+    {sql|
+      UPDATE pool_custom_fields
+        SET possible_duplicates_weight = 1
+    |sql}
+;;
+
 let create_duplicate_contact_permissions =
   Database.Migration.Step.create
     ~label:"add duplicate_contacts permission"
@@ -63,6 +72,7 @@ let migration () =
     |> add_step create_custom_field_answer_index
     |> add_step create_duplicates_table
     |> add_step add_weight_to_custom_fields
+    |> add_step insert_default_weight
     |> add_step create_duplicate_contact_permissions
     |> add_step add_last_checked_timestamp)
 ;;
