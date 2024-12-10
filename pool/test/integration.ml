@@ -363,6 +363,12 @@ let suite =
           ] )
     ; ( "time window"
       , Time_window_test.[ test_case "confirm as contact" `Slow find_overlapping ] )
+    ; ( "duplicate contacts"
+      , Duplicate_contacts_test.
+          [ test_case "check similarity" `Slow check_similarity
+          ; test_case "override a with b" `Slow override_a_with_b
+          ; test_case "override b with a" `Slow override_b_with_a
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;

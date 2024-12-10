@@ -4,7 +4,7 @@ open Utils.Lwt_result.Infix
 open Pool_message
 
 let database_label = Data.database_label
-let current_user () = Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+let current_user = Integration_utils.create_admin_user
 let get_exn = get_or_failwith
 let get_contact contact_id = contact_id |> Contact.find database_label |> Lwt.map get_exn
 let get_session session_id = session_id |> Session.find database_label |> Lwt.map get_exn
@@ -430,7 +430,7 @@ module DeleteUnattended = struct
   let followup_session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
   let initialize = initialize contact_id experiment_id session_id ~followup_session_id
-  let num_assignments = 4
+  let assignment_count = 4
 
   let register_for_session _ () =
     let%lwt contact, experiment, _, _, current_user = initialize () in
@@ -440,7 +440,7 @@ module DeleteUnattended = struct
           num_participations = NumberOfParticipations.of_int 2
         ; num_no_shows = NumberOfNoShows.of_int 2
         ; num_show_ups = NumberOfShowUps.of_int 2
-        ; num_assignments = NumberOfAssignments.of_int num_assignments
+        ; num_assignments = NumberOfAssignments.of_int assignment_count
         }
     in
     let%lwt () =
@@ -453,7 +453,7 @@ module DeleteUnattended = struct
     let%lwt expected =
       Lwt.return
         Contact.
-          { res with num_assignments = NumberOfAssignments.of_int (num_assignments + 2) }
+          { res with num_assignments = NumberOfAssignments.of_int (assignment_count + 2) }
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" expected res) in
     let%lwt () = set_sessions_to_past [ session_id; followup_session_id ] in
@@ -474,7 +474,7 @@ module DeleteUnattended = struct
           num_participations = NumberOfParticipations.of_int 2
         ; num_no_shows = NumberOfNoShows.of_int 2
         ; num_show_ups = NumberOfShowUps.of_int 2
-        ; num_assignments = NumberOfAssignments.of_int num_assignments
+        ; num_assignments = NumberOfAssignments.of_int assignment_count
         }
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" expected res) in

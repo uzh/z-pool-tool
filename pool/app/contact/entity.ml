@@ -91,6 +91,11 @@ let lastname m = m.user |> Pool_user.lastname
 let lastname_firstname m = m.user |> Pool_user.fullname ~reversed:true
 let email_address m = m.user.Pool_user.email
 
+let set_email_address m updated_email_address =
+  let user = Pool_user.{ m.user with email = updated_email_address } in
+  { m with user }
+;;
+
 let set_firstname m updated_firstname =
   let user = Pool_user.{ m.user with firstname = updated_firstname } in
   { m with user }
@@ -102,6 +107,7 @@ let set_lastname m updated_lastname =
 ;;
 
 let set_language m language = { m with language }
+let set_cellphone m cell_phone = { m with cell_phone }
 
 let create ?terms_accepted_at ?language user =
   { user

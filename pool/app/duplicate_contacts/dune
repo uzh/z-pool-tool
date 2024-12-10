@@ -1,0 +1,28 @@
+(library
+ (name duplicate_contacts)
+ (libraries
+  archived_email
+  assignment
+  guard
+  custom_field
+  invitation
+  pool_common
+  pool_context
+  contact
+  utils
+  query
+  waiting_list)
+ (preprocess
+  (pps
+   lwt_ppx
+   ppx_string
+   ppx_deriving.enum
+   ppx_deriving.eq
+   ppx_deriving.ord
+   ppx_deriving.show
+   ppx_fields_conv
+   ppx_sexp_conv
+   ppx_variants_conv
+   ppx_yojson_conv)))
+
+(include_subdirs unqualified)

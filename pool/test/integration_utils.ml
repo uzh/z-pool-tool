@@ -45,6 +45,7 @@ end
 module ContactRepo = struct
   let create
         ?(current_user = default_current_user)
+        ?firstname
         ?id
         ?lastname
         ?language
@@ -52,7 +53,9 @@ module ContactRepo = struct
         ()
     =
     let open Utils.Lwt_result.Infix in
-    let contact = Model.create_contact ?id ?lastname ?language ~with_terms_accepted () in
+    let contact =
+      Model.create_contact ?id ?firstname ?lastname ?language ~with_terms_accepted ()
+    in
     let open Contact in
     let confirm = [ EmailVerified contact ] in
     let%lwt () =
@@ -71,6 +74,21 @@ module ContactRepo = struct
       |> Pool_event.handle_events Data.database_label current_user
     in
     contact |> id |> find Data.database_label ||> get_or_failwith
+  ;;
+end
+
+module CustomFieldRepo = struct
+  let pool = Data.database_label
+
+  open Custom_field_utils
+
+  let create name encoder =
+    let field = create_custom_field name encoder in
+    let%lwt () =
+      [ save_custom_field field; Custom_field.Published field |> Pool_event.custom_field ]
+      |> Pool_event.handle_events pool default_current_user
+    in
+    Custom_field.find pool (Custom_field.id field) |> Lwt.map get_or_failwith
   ;;
 end
 
@@ -207,3 +225,6 @@ module TimeWindowRepo = struct
     Lwt.return time_window
   ;;
 end
+
+let create_admin_user () = AdminRepo.create () |> Lwt.map Pool_context.admin
+let create_contact_user () = ContactRepo.create () |> Lwt.map Pool_context.contact

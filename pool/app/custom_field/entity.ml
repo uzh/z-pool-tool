@@ -39,6 +39,7 @@ module Name = struct
   let find_opt lang t = CCList.assoc_opt ~eq:Language.equal lang t
   let find_opt_or lang default t = find_opt lang t |> CCOption.value ~default
   let get_hd t = CCList.hd t |> snd
+  let find lang t = find_opt lang t |> CCOption.value ~default:(CCList.hd t |> snd)
 
   let create sys_languages names =
     CCList.filter
@@ -132,6 +133,21 @@ module PromptOnRegistration = struct
   include Pool_model.Base.Boolean
 
   let schema = schema Pool_message.Field.PromptOnRegistration
+end
+
+module DuplicateWeighting = struct
+  include Pool_model.Base.Integer
+
+  let min = 0
+  let max = 10
+  let init = 0
+  let field = Pool_message.Field.DuplicateWeighting
+
+  let create i =
+    if i < min || i > max then Error Pool_message.(Error.OutOfRange (min, max)) else Ok i
+  ;;
+
+  let schema = schema field create
 end
 
 module Validation = struct
@@ -437,6 +453,18 @@ module Public = struct
     | Text of string public * string Answer.t option
   [@@deriving eq, show, variants]
 
+  let[@warning "-4"] equal_answer a b =
+    let open Answer in
+    match a, b with
+    | Boolean (_, a), Boolean (_, b) -> equal_value ~consider_admin:true a b
+    | Date (_, a), Date (_, b) -> equal_value ~consider_admin:true a b
+    | MultiSelect (_, _, a), MultiSelect (_, _, b) -> equal_value ~consider_admin:true a b
+    | Number (_, a), Number (_, b) -> equal_value ~consider_admin:true a b
+    | Select (_, _, a), Select (_, _, b) -> equal_value ~consider_admin:true a b
+    | Text (_, a), Text (_, b) -> equal_value ~consider_admin:true a b
+    | _ -> false
+  ;;
+
   let id (t : t) =
     match t with
     | Boolean ({ id; _ }, _)
@@ -650,6 +678,7 @@ type 'a custom_field =
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
+  ; duplicate_weighting : DuplicateWeighting.t option
   }
 [@@deriving eq, show, yojson]
 
@@ -666,6 +695,7 @@ let create
       ?(id = Pool_common.Id.create ())
       ?(select_options = [])
       ?published_at
+      ?duplicate_weighting
       field_type
       model
       name
@@ -685,132 +715,39 @@ let create
   let show_on_session_detail_page = false in
   let required = if admin_input_only then false else required in
   let admin_input_only = admin_view_only || admin_input_only in
+  let make_field validation =
+    { id
+    ; model
+    ; name
+    ; hint
+    ; validation
+    ; required
+    ; disabled
+    ; custom_field_group_id
+    ; admin_hint
+    ; admin_override
+    ; admin_view_only
+    ; admin_input_only
+    ; published_at
+    ; prompt_on_registration
+    ; show_on_session_close_page
+    ; show_on_session_detail_page
+    ; duplicate_weighting
+    }
+  in
   match (field_type : FieldType.t) with
-  | FieldType.Boolean ->
-    Ok
-      (Boolean
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation = Validation.pure
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         })
-  | FieldType.Date ->
-    Ok
-      (Date
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation = Validation.pure
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         })
+  | FieldType.Boolean -> Ok (Boolean (make_field Validation.pure))
+  | FieldType.Date -> Ok (Date (make_field Validation.pure))
   | FieldType.Number ->
     let validation = Validation.Number.schema validation in
-    Ok
-      (Number
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         })
+    Ok (Number (make_field validation))
   | FieldType.Text ->
     let validation = Validation.Text.schema validation in
-    Ok
-      (Text
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         })
+    Ok (Text (make_field validation))
   | FieldType.MultiSelect ->
     let validation = Validation.MultiSelect.schema validation in
-    Ok
-      (MultiSelect
-         ( { id
-           ; model
-           ; name
-           ; hint
-           ; validation
-           ; required
-           ; disabled
-           ; custom_field_group_id
-           ; admin_hint
-           ; admin_override
-           ; admin_view_only
-           ; admin_input_only
-           ; published_at
-           ; prompt_on_registration
-           ; show_on_session_close_page
-           ; show_on_session_detail_page
-           }
-         , select_options ))
-  | FieldType.Select ->
-    Ok
-      (Select
-         ( { id
-           ; model
-           ; name
-           ; hint
-           ; validation = Validation.pure
-           ; required
-           ; disabled
-           ; custom_field_group_id
-           ; admin_hint
-           ; admin_override
-           ; admin_view_only
-           ; admin_input_only
-           ; published_at
-           ; prompt_on_registration
-           ; show_on_session_close_page
-           ; show_on_session_detail_page
-           }
-         , select_options ))
+    Ok (MultiSelect (make_field validation, select_options))
+  | FieldType.Select -> Ok (Select (make_field Validation.pure, select_options))
 ;;
 
 type update =
@@ -824,6 +761,7 @@ type update =
   ; admin_view_only : AdminViewOnly.t
   ; admin_input_only : AdminInputOnly.t
   ; prompt_on_registration : PromptOnRegistration.t
+  ; duplicate_weighting : DuplicateWeighting.t option
   }
 
 let update_attributes
@@ -837,6 +775,7 @@ let update_attributes
        ; admin_view_only
        ; admin_input_only
        ; prompt_on_registration
+       ; duplicate_weighting
        } :
         update)
       (field : 'a custom_field)
@@ -853,6 +792,7 @@ let update_attributes
   ; admin_view_only
   ; admin_input_only
   ; prompt_on_registration
+  ; duplicate_weighting
   }
 ;;
 
@@ -1049,6 +989,15 @@ let set_show_on_session_close_page status = function
   | Text field -> Text { field with show_on_session_close_page = status }
 ;;
 
+let duplicate_weighting = function
+  | Boolean { duplicate_weighting; _ }
+  | Date { duplicate_weighting; _ }
+  | Number { duplicate_weighting; _ }
+  | MultiSelect ({ duplicate_weighting; _ }, _)
+  | Select ({ duplicate_weighting; _ }, _)
+  | Text { duplicate_weighting; _ } -> duplicate_weighting
+;;
+
 let field_type = function
   | Boolean _ -> FieldType.Boolean
   | Date _ -> FieldType.Date
@@ -1105,6 +1054,7 @@ module Write = struct
     ; prompt_on_registration : PromptOnRegistration.t
     ; show_on_session_close_page : bool
     ; show_on_session_detail_page : bool
+    ; duplicate_weighting : int option
     }
   [@@deriving eq, show]
 end
