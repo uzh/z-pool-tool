@@ -100,6 +100,11 @@ val lastname_firstname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
 val cell_phone : t -> Pool_user.CellPhone.t option
 val is_inactive : t -> bool
+val num_participations : t -> NumberOfParticipations.t
+val num_invitations : t -> NumberOfInvitations.t
+val num_assignments : t -> NumberOfAssignments.t
+val num_show_ups : t -> NumberOfShowUps.t
+val num_no_shows : t -> NumberOfNoShows.t
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val yojson_of_t : t -> Yojson.Safe.t
 val show : t -> string

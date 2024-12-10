@@ -82,6 +82,7 @@ let show
       duplicate
   =
   let open Duplicate_contacts in
+  let map_or = CCOption.map_or in
   let is_merge = Ignored.value duplicate.ignored |> not in
   let title =
     Pool_common.(
@@ -157,7 +158,6 @@ let show
     let open Pool_user in
     let open Contact in
     let open CCFun.Infix in
-    let map_or = CCOption.map_or in
     let default = "" in
     Pool_message.
       [ Field.EmailAddress, email_address %> EmailAddress.value
@@ -166,6 +166,32 @@ let show
       ; Field.CellPhone, cell_phone %> map_or ~default CellPhone.value
       ; (Field.Language, fun c -> c.language |> map_or ~default Pool_common.Language.show)
       ]
+  in
+  let informative_cells =
+    let open Contact in
+    let open CCFun.Infix in
+    let to_s = CCInt.to_string in
+    let format_date = Utils.Ptime.formatted_date_time in
+    Pool_message.Field.
+      [ AssignmentCount, num_assignments %> NumberOfAssignments.value %> to_s
+      ; Participated, num_participations %> NumberOfParticipations.value %> to_s
+      ; NoShowCount, num_no_shows %> NumberOfNoShows.value %> to_s
+      ; ShowUpCount, num_show_ups %> NumberOfShowUps.value %> to_s
+      ; InvitationCount, num_invitations %> NumberOfInvitations.value %> to_s
+      ; ( EmailAddressVerified
+        , fun c ->
+            c.email_verified
+            |> map_or ~default:"" (Pool_user.EmailVerified.value %> format_date) )
+      ; ( Verified
+        , fun c ->
+            c.verified |> map_or ~default:"" (Pool_user.Verified.value %> format_date) )
+      ]
+    |> CCList.map (fun (field, show) ->
+      tr
+        [ th [ txt (field_to_string field) ]
+        ; td [ txt (show contact_a) ]
+        ; td [ txt (show contact_b) ]
+        ])
   in
   let table =
     let rows =
@@ -185,7 +211,7 @@ let show
         in
         th [ txt (field_to_string field) ] :: cells |> tr ~a:attr)
     in
-    rows @ field_rows |> table ~a:[ a_class [ "table"; "striped" ] ]
+    rows @ field_rows @ informative_cells |> table ~a:[ a_class [ "table"; "striped" ] ]
   in
   let body =
     if is_merge
