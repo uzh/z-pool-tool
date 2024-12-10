@@ -12,7 +12,7 @@ let update_queue =
     UPDATE pool_queue_jobs_mapping
     SET entity_uuid = UNHEX(REPLACE($1, '-', ''))
     WHERE entity_uuid = UNHEX(REPLACE($2, '-', ''))
-    |sql}
+  |sql}
   |> Contact.Repo.Id.(t2 t t ->. unit)
 ;;
 
@@ -21,7 +21,7 @@ let update_changelog =
     UPDATE pool_change_log
     SET entity_uuid = UNHEX(REPLACE($1, '-', ''))
     WHERE entity_uuid = UNHEX(REPLACE($2, '-', ''))
-    |sql}
+  |sql}
   |> Contact.Repo.Id.(t2 t t ->. unit)
 ;;
 
@@ -102,7 +102,7 @@ let destroy_tags =
   {sql|
     DELETE FROM pool_tagging
     WHERE model_uuid = UNHEX(REPLACE($1, '-', ''))
-    |sql}
+  |sql}
   |> Contact.Repo.Id.t ->. unit
 ;;
 
@@ -120,7 +120,7 @@ let destroy_invitations =
   {sql|
     DELETE FROM pool_invitations
     WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
-    |sql}
+  |sql}
   |> Contact.Repo.Id.t ->. unit
 ;;
 
@@ -128,7 +128,7 @@ let destroy_waiting_lists =
   {sql|
     DELETE FROM pool_waiting_list
     WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
-    |sql}
+  |sql}
   |> Contact.Repo.Id.t ->. unit
 ;;
 
@@ -136,7 +136,7 @@ let destroy_assignments =
   {sql|
     DELETE FROM pool_assignments
     WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
-    |sql}
+  |sql}
   |> Contact.Repo.Id.t ->. unit
 ;;
 
@@ -145,7 +145,23 @@ let destroy_possible_duplicates =
     DELETE FROM pool_contacts_possible_duplicates
     WHERE contact_a = UNHEX(REPLACE($1, '-', ''))
     OR contact_b = UNHEX(REPLACE($1, '-', ''))
-    |sql}
+  |sql}
+  |> Contact.Repo.Id.t ->. unit
+;;
+
+let destroy_contact =
+  {sql|
+    DELETE FROM pool_contacts
+    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.t ->. unit
+;;
+
+let destroy_user =
+  {sql|
+    DELETE FROM user_users
+    WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
   |> Contact.Repo.Id.t ->. unit
 ;;
 
@@ -301,6 +317,22 @@ let merge
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec destroy_possible_duplicates (id merged_contact)
   in
+  let insert_archived_email connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    let open Archived_email in
+    Connection.exec
+      insert_request
+      ( Contact.email_address merged_contact |> Pool_user.EmailAddress.value
+      , Reason.MergedDuplicate )
+  in
+  let destroy_contact connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_contact (id merged_contact)
+  in
+  let destroy_user connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_user (id merged_contact)
+  in
   let actions =
     [ override_invitations; override_waiting_list; override_assignments ]
     |> CCList.filter_map CCFun.id
@@ -312,6 +344,9 @@ let merge
     ; destroy_waiting_lists
     ; destroy_assignments
     ; destroy_possible_duplicates
+    ; insert_archived_email
+    ; destroy_contact
+    ; destroy_user
     ]
   in
   (* Preparing custom field changelog function before executing transaction *)

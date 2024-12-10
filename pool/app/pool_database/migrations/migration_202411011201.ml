@@ -66,6 +66,23 @@ let add_last_checked_timestamp =
     |sql}
 ;;
 
+let create_archived_emails_table =
+  Database.Migration.Step.create
+    ~label:"create archived_email table"
+    {sql|
+      CREATE TABLE IF NOT EXISTS pool_archived_email_addresses (
+        `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        `uuid` binary(16) NOT NULL,
+        `email` varchar(512) NOT NULL,
+        `reason` varchar(255) NOT NULL,
+        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY `unique_uuid` (`uuid`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202411011201"
@@ -74,5 +91,6 @@ let migration () =
     |> add_step add_weight_to_custom_fields
     |> add_step insert_default_weight
     |> add_step create_duplicate_contact_permissions
-    |> add_step add_last_checked_timestamp)
+    |> add_step add_last_checked_timestamp
+    |> add_step create_archived_emails_table)
 ;;

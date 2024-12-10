@@ -1,17 +1,6 @@
 (library
- (name duplicate_contacts)
- (libraries
-  archived_email
-  assignment
-  guard
-  custom_field
-  invitation
-  pool_common
-  pool_context
-  contact
-  utils
-  query
-  waiting_list)
+ (name archived_email)
+ (libraries pool_common pool_user utils)
  (preprocess
   (pps
    lwt_ppx
