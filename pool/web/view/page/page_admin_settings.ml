@@ -324,7 +324,8 @@ let show
           ]
       ]
     in
-    title, columns, None
+    let hint = Pool_common.(Utils.hint_to_string language I18n.SettingsPageScripts) in
+    title, columns, Some hint
   in
   let page_scripts =
     let open Settings.PageScript in

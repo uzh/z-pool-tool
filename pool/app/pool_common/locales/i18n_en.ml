@@ -640,6 +640,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SettingsNoEmailSuffixes ->
     "There are no email suffixes defined that are allowed. This means that all email \
      suffixes are allowed."
+  | SettingsPageScripts ->
+    "Here you can insert JavaScript code that is rendered on every page in the head or \
+     body tag, e.g. a Matomo analytics code."
   | SignUpCodeHint ->
     Format.asprintf
       "URLs with codes can be sent to track the channels through which contacts register \
