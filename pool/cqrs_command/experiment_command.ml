@@ -33,25 +33,25 @@ type command =
   }
 
 let default_command
-  title
-  public_title
-  internal_description
-  public_description
-  language
-  cost_center
-  contact_email
-  direct_registration_disabled
-  registration_disabled
-  allow_uninvited_signup
-  external_data_required
-  show_external_data_id_links
-  experiment_type
-  assignment_without_session
-  survey_url
-  email_session_reminder_lead_time
-  email_session_reminder_lead_time_unit
-  text_message_session_reminder_lead_time
-  text_message_session_reminder_lead_time_unit
+      title
+      public_title
+      internal_description
+      public_description
+      language
+      cost_center
+      contact_email
+      direct_registration_disabled
+      registration_disabled
+      allow_uninvited_signup
+      external_data_required
+      show_external_data_id_links
+      experiment_type
+      assignment_without_session
+      survey_url
+      email_session_reminder_lead_time
+      email_session_reminder_lead_time_unit
+      text_message_session_reminder_lead_time
+      text_message_session_reminder_lead_time_unit
   : (command, Pool_message.Error.t) Result.t
   =
   let open CCResult in
@@ -176,28 +176,28 @@ end = struct
   type t = command
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?(id = Id.create ())
-    ?organisational_unit
-    ?smtp_auth
-    ({ title
-     ; public_title
-     ; internal_description
-     ; public_description
-     ; language
-     ; cost_center
-     ; contact_email
-     ; direct_registration_disabled
-     ; registration_disabled
-     ; allow_uninvited_signup
-     ; external_data_required
-     ; show_external_data_id_links
-     ; experiment_type
-     ; online_experiment
-     ; email_session_reminder_lead_time
-     ; text_message_session_reminder_lead_time
-     } :
-      command)
+        ?(tags = Logs.Tag.empty)
+        ?(id = Id.create ())
+        ?organisational_unit
+        ?smtp_auth
+        ({ title
+         ; public_title
+         ; internal_description
+         ; public_description
+         ; language
+         ; cost_center
+         ; contact_email
+         ; direct_registration_disabled
+         ; registration_disabled
+         ; allow_uninvited_signup
+         ; external_data_required
+         ; show_external_data_id_links
+         ; experiment_type
+         ; online_experiment
+         ; email_session_reminder_lead_time
+         ; text_message_session_reminder_lead_time
+         } :
+          command)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
@@ -255,29 +255,29 @@ end = struct
   type t = command
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ~session_count
-    experiment
-    organisational_unit
-    smtp_auth
-    ({ title
-     ; public_title
-     ; internal_description
-     ; public_description
-     ; language
-     ; cost_center
-     ; contact_email
-     ; direct_registration_disabled
-     ; registration_disabled
-     ; allow_uninvited_signup
-     ; external_data_required
-     ; show_external_data_id_links
-     ; experiment_type
-     ; online_experiment
-     ; email_session_reminder_lead_time
-     ; text_message_session_reminder_lead_time
-     } :
-      t)
+        ?(tags = Logs.Tag.empty)
+        ~session_count
+        experiment
+        organisational_unit
+        smtp_auth
+        ({ title
+         ; public_title
+         ; internal_description
+         ; public_description
+         ; language
+         ; cost_center
+         ; contact_email
+         ; direct_registration_disabled
+         ; registration_disabled
+         ; allow_uninvited_signup
+         ; external_data_required
+         ; show_external_data_id_links
+         ; experiment_type
+         ; online_experiment
+         ; email_session_reminder_lead_time
+         ; text_message_session_reminder_lead_time
+         } :
+          t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
@@ -374,9 +374,9 @@ end = struct
     }
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?system_event_id
-    { experiment; session_count; mailings; experimenters; assistants; templates }
+        ?(tags = Logs.Tag.empty)
+        ?system_event_id
+        { experiment; session_count; mailings; experimenters; assistants; templates }
     =
     let open CCFun in
     let open CCResult in
@@ -591,11 +591,11 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    experiment
-    (assignment_events, emails)
-    filter
-    updated_fitler
+        ?(tags = Logs.Tag.empty)
+        experiment
+        (assignment_events, emails)
+        filter
+        updated_fitler
     =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in

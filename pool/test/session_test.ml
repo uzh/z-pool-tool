@@ -1590,8 +1590,8 @@ module Duplication = struct
   let equal_session (a : t) (b : t) =
     let open Session in
     let open Pool_common.Reminder in
-    (* The ID's are generated in the command handle function, therefore we do
-       not compare the ids but check wheater 'follow_up_to is set or not' *)
+    (* The ID's are generated in the command handle function, therefore we do not compare
+       the ids but check wheater 'follow_up_to is set or not' *)
     let equal_id _ _ = true in
     let amount_equal = ParticipantAmount.equal in
     CCOption.equal equal_id a.follow_up_to b.follow_up_to

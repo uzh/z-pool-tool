@@ -2,8 +2,8 @@ open Caqti_request.Infix
 open Utils.Lwt_result.Infix
 module Dynparam = Database.Dynparam
 
-(* MariaDB expects uuid to be bytes, since we can't unhex when using caqti's
-   populate, we have to do that manually. *)
+(* MariaDB expects uuid to be bytes, since we can't unhex when using caqti's populate, we
+   have to do that manually. *)
 let to_bytes encode decode id =
   match id |> decode |> Uuidm.of_string with
   | Some uuid -> Uuidm.to_binary_string uuid |> encode

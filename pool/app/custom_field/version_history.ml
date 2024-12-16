@@ -50,8 +50,8 @@ module AnswerRecord = struct
   let yojson_of_t record =
     let field_uuid = "custom_field_uuid" in
     let json = yojson_of_t record in
-    (* Wrap the record json in an assoc, where the uuid is the key, to make sure
-       the field name is visible in the changelog *)
+    (* Wrap the record json in an assoc, where the uuid is the key, to make sure the field
+       name is visible in the changelog *)
     match json with
     | `List [ `String _; `Assoc answer ] ->
       CCList.assoc_opt ~eq:CCString.equal field_uuid answer

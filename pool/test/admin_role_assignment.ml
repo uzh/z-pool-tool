@@ -123,8 +123,7 @@ let assignable_roles _ () =
     >|> target_has_role db target role
     ||> Alcotest.(check bool) (role_message msg role) should_success
   in
-  (* As the assignable role isn't created yet, the first validation should
-     fail *)
+  (* As the assignable role isn't created yet, the first validation should fail *)
   let%lwt () = validate_role_assignment targetOne false in
   (* Add the role assignment to the database *)
   let%lwt () =

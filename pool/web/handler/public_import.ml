@@ -88,8 +88,7 @@ let import_confirmation_post req =
       |> Lwt_result.lift
       >|- fun err -> err, error_path (Some token)
     in
-    (* TODO: This takes the imported user as argument, but there is no logged in
-       user *)
+    (* TODO: This takes the imported user as argument, but there is no logged in user *)
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.(
       redirect_to_with_actions

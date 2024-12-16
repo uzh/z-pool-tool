@@ -227,8 +227,7 @@ let validate_partial_update
     custom_field |> custom |> check_version old_v |> Lwt_result.lift
 ;;
 
-(* Replace all ids with the names of the custom_fields and
-   custom_field_options *)
+(* Replace all ids with the names of the custom_fields and custom_field_options *)
 let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
   let open Changelog.Changes in
   let id_of_string = CCFun.(Id.validate %> CCOption.of_result) in

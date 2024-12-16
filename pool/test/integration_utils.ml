@@ -147,8 +147,8 @@ module MailingRepo = struct
 end
 
 module WaitingListRepo = struct
-  (* TODO: Is there a case where admins create waiting list entries? Or will it
-     always be the contact *)
+  (* TODO: Is there a case where admins create waiting list entries? Or will it always be
+     the contact *)
   let create experiment contact () =
     let%lwt () =
       Waiting_list.Created { Waiting_list.experiment; contact }

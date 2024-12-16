@@ -98,8 +98,8 @@ module Sql = struct
 
     let insert_request =
       let open Caqti_request.Infix in
-      (* TODO: Consider using UPDATE ON DUPLICATE when event_id/service_id pair
-         should be unique *)
+      (* TODO: Consider using UPDATE ON DUPLICATE when event_id/service_id pair should be
+         unique *)
       {sql|
         INSERT INTO pool_system_event_logs (
           event_uuid,

@@ -96,9 +96,9 @@ module T (R : RecordSig) = struct
 
   let make_write ?(id = Id.create ()) ?user_uuid ~entity_uuid (before : R.t) (after : R.t)
     =
-    (*** the entity_uuid could also be part of the Reord module, as a function.
-      This would probably require us to create a Record module for each model,
-      but provide more flexibility *)
+    (*** the entity_uuid could also be part of the Reord module, as a function. This would
+      probably require us to create a Record module for each model, but provide more
+      flexibility *)
     make_changes before after
     |> CCOption.map (fun changes ->
       Write.

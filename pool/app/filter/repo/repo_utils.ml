@@ -169,8 +169,7 @@ let add_list_condition subquery dyn ids =
     Error Message.(Error.Invalid Field.Operator)
 ;;
 
-(* The subquery returns any contacts that has been an assignment to an
-   experiment. *)
+(* The subquery returns any contacts that has been an assignment to an experiment. *)
 let assignment_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in
@@ -226,9 +225,8 @@ let invitation_subquery dyn operator ids =
   add_list_condition subquery dyn ids operator
 ;;
 
-(* The subquery does not return any contacts that have shown up at a session of
-   the current experiment. It does not make a difference, if they
-   participated. *)
+(* The subquery does not return any contacts that have shown up at a session of the
+   current experiment. It does not make a difference, if they participated. *)
 let participation_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in

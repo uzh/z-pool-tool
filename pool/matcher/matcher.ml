@@ -118,8 +118,8 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
 ;;
 
 let calculate_mailing_limits
-  interval
-  (pool_based_mailings : ('a * Mailing.Status.status list) list)
+      interval
+      (pool_based_mailings : ('a * Mailing.Status.status list) list)
   =
   let open CCList in
   let open CCFloat in
@@ -225,14 +225,14 @@ let events_of_mailings =
              contacts
              |> Lwt_list.fold_left_s
                   (fun (invitations, contacts) contact ->
-                    contact
-                    |> Contact.id
-                    |> Invitation.find_by_contact_and_experiment_opt
-                         pool
-                         experiment.Experiment.id
-                    |> Lwt.map (function
-                      | None -> invitations, contacts @ [ contact ]
-                      | Some invitation -> invitations @ [ invitation ], contacts))
+                     contact
+                     |> Contact.id
+                     |> Invitation.find_by_contact_and_experiment_opt
+                          pool
+                          experiment.Experiment.id
+                     |> Lwt.map (function
+                       | None -> invitations, contacts @ [ contact ]
+                       | Some invitation -> invitations @ [ invitation ], contacts))
                   ([], [])
              >|> fun (invitations, contacts) ->
              let* resend_events = resend_existing invitations |> Lwt_result.lift in
@@ -249,23 +249,23 @@ let create_invitation_events interval pools =
   let%lwt pool_based_mailings =
     Lwt_list.map_s
       (fun pool ->
-        Mailing.Status.find_current pool interval
-        >|> Lwt_list.filter_map_s (fun ({ Mailing.Status.mailing; _ } as status) ->
-          let find_experiment { Mailing.id; _ } =
-            Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
-          in
-          let has_spots = experiment_has_bookable_spots pool in
-          let validate = function
-            | true -> Ok status
-            | false -> Error Pool_message.Error.SessionFullyBooked
-          in
-          mailing
-          |> find_experiment
-          |>> has_spots
-          >== validate
-          >|- Pool_common.Utils.with_log_error ~level:Logs.Warning
-          ||> CCResult.to_opt)
-        ||> fun m -> pool, m)
+         Mailing.Status.find_current pool interval
+         >|> Lwt_list.filter_map_s (fun ({ Mailing.Status.mailing; _ } as status) ->
+           let find_experiment { Mailing.id; _ } =
+             Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
+           in
+           let has_spots = experiment_has_bookable_spots pool in
+           let validate = function
+             | true -> Ok status
+             | false -> Error Pool_message.Error.SessionFullyBooked
+           in
+           mailing
+           |> find_experiment
+           |>> has_spots
+           >== validate
+           >|- Pool_common.Utils.with_log_error ~level:Logs.Warning
+           ||> CCResult.to_opt)
+         ||> fun m -> pool, m)
       pools
   in
   pool_based_mailings |> calculate_mailing_limits interval |> events_of_mailings

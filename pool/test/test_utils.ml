@@ -551,10 +551,10 @@ module Repo = struct
   ;;
 
   (* TODO: This belongs to the intergration utils *)
-  (* let create_experiment ?(id = Experiment.Id.create ()) ?filter () = let
-     experiment = Model.create_experiment ~id ?filter () in let%lwt () =
-     Experiment.Created experiment |> Pool_event.experiment |>
-     Pool_event.handle_event Data.database_label in Lwt.return experiment ;; *)
+  (* let create_experiment ?(id = Experiment.Id.create ()) ?filter () = let experiment =
+     Model.create_experiment ~id ?filter () in let%lwt () = Experiment.Created experiment
+     |> Pool_event.experiment |> Pool_event.handle_event Data.database_label in Lwt.return
+     experiment ;; *)
 
   let first_location () =
     let open Utils.Lwt_result.Infix in

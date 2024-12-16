@@ -150,8 +150,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) ?notification user_id command =
     Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
-    (* NOTE use 'Pool_user.validate_current_password' in handler before this
-       command. *)
+    (* NOTE use 'Pool_user.validate_current_password' in handler before this command. *)
     let open CCResult in
     let* () =
       Pool_user.Password.validate_confirmation

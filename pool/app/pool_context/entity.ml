@@ -1,7 +1,7 @@
 open Sexplib.Conv
 
-(* TODO: Service.User.t for Admin and Root are placeholders and should be
-   replaced, when guadrian is implemented *)
+(* TODO: Service.User.t for Admin and Root are placeholders and should be replaced, when
+   guadrian is implemented *)
 type user =
   | Admin of Admin.t
   | Contact of Contact.t
