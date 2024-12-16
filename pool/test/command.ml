@@ -479,6 +479,9 @@ let () =
           ] )
     ; ( "queue"
       , [ test_case "create delivery report" `Quick Queue_test.create_text_message_dlr ] )
+    ; ( "syste m settings"
+      , [ test_case "update page scripts" `Quick Tenant_settings_test.update_page_scripts
+        ] )
     ; ("time window", Time_window_test.[ test_case "create" `Slow create_timewindow ])
     ]
 ;;
