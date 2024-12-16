@@ -66,6 +66,27 @@ end
 
 type t
 
+module PageScript : sig
+  include Pool_model.Base.StringSig
+
+  type location =
+    | Head
+    | Body
+
+  type page_scripts =
+    { head : t option
+    ; body : t option
+    }
+
+  val schema
+    :  Pool_message.Field.t
+    -> unit
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+
+  val find : Database.Label.t -> page_scripts Lwt.t
+  val clear_cache : unit -> unit
+end
+
 val action_of_param
   :  string
   -> ( [> `CreateEmailSuffix
@@ -80,6 +101,8 @@ val action_of_param
        | `UpdateTriggerProfileUpdateAfter
        | `UserImportFirstReminderAfter
        | `UserImportSecondReminderAfter
+       | `UpdateHeadScripts
+       | `UpdateBodyScripts
        ]
        , Pool_message.Error.t )
        result
@@ -97,6 +120,8 @@ val stringify_action
      | `UpdateTriggerProfileUpdateAfter
      | `UserImportFirstReminderAfter
      | `UserImportSecondReminderAfter
+     | `UpdateHeadScripts
+     | `UpdateBodyScripts
      ]
   -> string
 
@@ -111,6 +136,7 @@ type event =
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
   | UserImportFirstReminderAfterUpdated of UserImportReminder.FirstReminderAfter.t
   | UserImportSecondReminderAfterUpdated of UserImportReminder.SecondReminderAfter.t
+  | PageScriptUpdated of (PageScript.t option * PageScript.location)
 
 val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

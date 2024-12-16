@@ -20,6 +20,7 @@ let show
       default_text_msg_reminder_lead_time
       user_import_first_reminder
       user_import_second_reminder
+      page_scripts
       Pool_context.{ language; csrf; _ }
       text_messages_enabled
       flash_fetcher
@@ -323,6 +324,28 @@ let show
           ]
       ]
     in
+    let hint = Pool_common.(Utils.hint_to_string language I18n.SettingsPageScripts) in
+    title, columns, Some hint
+  in
+  let page_scripts =
+    let open Settings.PageScript in
+    let title = "Page scripts" in
+    let make_form field script action =
+      form
+        ~a:(form_attrs action)
+        [ csrf_element csrf ()
+        ; Component.Input.textarea_element
+            ?value:(CCOption.map value script)
+            language
+            field
+        ; submit ()
+        ]
+    in
+    let columns =
+      [ make_form Pool_message.Field.PageScriptsHead page_scripts.head `UpdateHeadScripts
+      ; make_form Pool_message.Field.PageScriptsBody page_scripts.body `UpdateBodyScripts
+      ]
+    in
     title, columns, None
   in
   let body_html =
@@ -333,6 +356,7 @@ let show
     ; trigger_profile_update_after_html
     ; default_lead_time
     ; user_import_reminder
+    ; page_scripts
     ]
     |> CCList.map (fun (title, columns, hint) -> make_columns title ?hint columns)
     |> div ~a:[ a_class [ "stack" ] ]

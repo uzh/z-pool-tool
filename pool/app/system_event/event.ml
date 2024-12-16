@@ -22,6 +22,9 @@ let handle_system_event identifier system_event =
   | I18nPageUpdated ->
     let () = I18n.I18nCache.clear () in
     success_log ()
+  | PageScriptsUpdated ->
+    let () = Settings.PageScript.clear_cache () in
+    success_log ()
   | SmtpAccountUpdated ->
     let () = Email.Service.Cache.clear () in
     success_log ()

@@ -354,3 +354,61 @@ let update_gtx_settings _ () =
   in
   Lwt.return_unit
 ;;
+
+let update_page_scripts () =
+  let open Settings in
+  let open CCResult.Infix in
+  let script = "console.log('hello world')" in
+  let to_urlencoded ?(script = script) location =
+    let field =
+      let open PageScript in
+      match location with
+      | Head -> Field.PageScriptsHead
+      | Body -> Field.PageScriptsBody
+    in
+    [ Field.show field, [ script ] ]
+  in
+  let open Command.UpdatePageScript in
+  let system_event_id = System_event.Id.create () in
+  let cache_event =
+    System_event.(Job.I18nPageUpdated |> create ~id:system_event_id |> created)
+    |> Pool_event.system_event
+  in
+  let handle location urlencoded =
+    urlencoded
+    |> Http_utils.remove_empty_values
+    |> decode location
+    >>= handle ~system_event_id location
+  in
+  let script = PageScript.of_string script in
+  (* Head Script *)
+  let location = PageScript.Head in
+  let result = location |> to_urlencoded |> handle location in
+  let expected =
+    [ Settings.PageScriptUpdated (Some script, location) |> Pool_event.settings
+    ; cache_event
+    ]
+  in
+  let () = check_events (Ok expected) result in
+  let result = location |> to_urlencoded ~script:"" |> handle location in
+  let expected =
+    [ Settings.PageScriptUpdated (None, location) |> Pool_event.settings; cache_event ]
+  in
+  let () = check_events (Ok expected) result in
+  (* Body Script *)
+  let location = PageScript.Body in
+  let result = location |> to_urlencoded |> handle location in
+  let expected =
+    [ Settings.PageScriptUpdated (Some script, location) |> Pool_event.settings
+    ; cache_event
+    ]
+  in
+  let () = check_events (Ok expected) result in
+  (* Body Script *)
+  let result = location |> to_urlencoded ~script:"" |> handle location in
+  let expected =
+    [ Settings.PageScriptUpdated (None, location) |> Pool_event.settings; cache_event ]
+  in
+  let () = check_events (Ok expected) result in
+  ()
+;;
