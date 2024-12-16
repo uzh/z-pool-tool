@@ -257,7 +257,10 @@ module Smtp = struct
     let%lwt default_sender_of_pool = default_sender_of_pool database_label in
     let%lwt test_email =
       let%lwt sender =
-        Settings.(find_contact_email database_label |> Lwt.map ContactEmail.value)
+        match Database.Pool.is_root database_label with
+        | true -> default_sender_of_pool |> Pool_user.EmailAddress.value |> Lwt.return
+        | false ->
+          Settings.(find_contact_email database_label |> Lwt.map ContactEmail.value)
       in
       let recipient = test_email |> Pool_user.EmailAddress.value in
       let subject = "Test email" in
@@ -301,6 +304,7 @@ let test_smtp_config database_label config test_email_address =
   let%lwt { sender; reply_to; recipients; subject; body; config } =
     prepare_test_email database_label config test_email_address
   in
+  print_endline "Testing SMTP configuration";
   let send_mail () =
     let message =
       Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
