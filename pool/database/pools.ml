@@ -206,7 +206,6 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | Ok resp -> Lwt.return resp
       | Error `Unsupported -> raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
       | Error (#load_or_connect as err) ->
-        Logs.info (fun m -> m "ERROR load or connect: %s" (Caqti_error.show err));
         let%lwt () = disconnect ~error:err label in
         let () = Cache.log_pools () in
         raise (Exn err)
