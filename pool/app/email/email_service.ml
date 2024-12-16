@@ -304,7 +304,6 @@ let test_smtp_config database_label config test_email_address =
   let%lwt { sender; reply_to; recipients; subject; body; config } =
     prepare_test_email database_label config test_email_address
   in
-  print_endline "Testing SMTP configuration";
   let send_mail () =
     let message =
       Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
