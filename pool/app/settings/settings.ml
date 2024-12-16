@@ -125,3 +125,10 @@ let default_language pool =
   let open Utils.Lwt_result.Infix in
   find_languages pool ||> default_language_of_list
 ;;
+
+module PageScript = struct
+  include PageScript
+
+  let find = Repo.PageScripts.find
+  let clear_cache = Repo.PageScripts.Cache.clear
+end
