@@ -139,3 +139,71 @@ let upsert pool ?(id = Pool_common.Id.create ()) (value : Entity.Value.t) =
 let delete pool key =
   Sql.delete pool (key |> Entity.yojson_of_setting_key |> Yojson.Safe.to_string)
 ;;
+
+module PageScripts = struct
+  open Entity.PageScript
+
+  module Cache = struct
+    open Hashtbl
+
+    let tbl : (Database.Label.t, page_scripts) t = create 5
+    let find = find_opt tbl
+    let add database_label = replace tbl database_label
+    let update = add
+    let clear () = clear tbl
+  end
+
+  let update_request =
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO pool_tenant_page_scripts (
+        uuid,
+        location,
+        script
+      ) VALUES (
+        UNHEX(REPLACE(UUID(), '-', '')),
+        $1,
+        $2
+      ) ON DUPLICATE KEY UPDATE
+        script = VALUES(script)
+    |sql}
+    |> Caqti_type.(t2 string string ->. Caqti_type.unit)
+  ;;
+
+  let clear_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_tenant_page_scripts
+      SET script = NULL
+      WHERE location = ?
+    |sql}
+    |> Caqti_type.(string ->. unit)
+  ;;
+
+  let update pool (script, location) =
+    match script with
+    | None -> Database.exec pool clear_request (show_location location)
+    | Some script -> Database.exec pool update_request (show_location location, script)
+  ;;
+
+  let find_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        script
+      FROM
+        pool_tenant_page_scripts
+      WHERE
+        location = ?
+    |sql}
+    |> Caqti_type.(string ->! option string)
+  ;;
+
+  let find pool location = Database.find pool find_request (show_location location)
+
+  let find pool =
+    let%lwt head = find pool Head in
+    let%lwt body = find pool Body in
+    Lwt.return { head; body }
+  ;;
+end

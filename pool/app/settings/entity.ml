@@ -179,6 +179,23 @@ module Write = struct
   type t = { value : Value.t }
 end
 
+module PageScript = struct
+  include Pool_model.Base.String
+
+  type location =
+    | Head [@name "head"] [@printer Utils.ppx_printer "head"]
+    | Body [@name "body"] [@printer Utils.ppx_printer "body"]
+  [@@deriving eq, show { with_path = false }, yojson]
+
+  let schema field () = schema field ()
+  let of_string m = m
+
+  type page_scripts =
+    { head : t option
+    ; body : t option
+    }
+end
+
 let action_of_param = function
   | "create_emailsuffix" -> Ok `CreateEmailSuffix
   | "delete_emailsuffix" -> Ok `DeleteEmailSuffix
@@ -192,6 +209,8 @@ let action_of_param = function
   | "update_trigger_profile_update_after" -> Ok `UpdateTriggerProfileUpdateAfter
   | "user_import_first_reminder_after" -> Ok `UserImportFirstReminderAfter
   | "user_import_second_reminder_after" -> Ok `UserImportSecondReminderAfter
+  | "update_head_scripts" -> Ok `UpdateHeadScripts
+  | "update_body_scripts" -> Ok `UpdateBodyScripts
   | _ -> Error Pool_message.Error.DecodeAction
 ;;
 
@@ -208,6 +227,8 @@ let stringify_action = function
   | `UpdateTriggerProfileUpdateAfter -> "update_trigger_profile_update_after"
   | `UserImportFirstReminderAfter -> "user_import_first_reminder_after"
   | `UserImportSecondReminderAfter -> "user_import_second_reminder_after"
+  | `UpdateHeadScripts -> "update_head_scripts"
+  | `UpdateBodyScripts -> "update_body_scripts"
 ;;
 
 let default_email_session_reminder_lead_time_key_yojson =
