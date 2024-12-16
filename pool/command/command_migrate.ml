@@ -48,9 +48,7 @@ let root =
     let%lwt () =
       Migration.execute Pool.Root.label (Pool_database.Root.steps ())
       ||> function
-      | Ok () ->
-        (* TODO: why is exit 0 not stopping the process? *)
-        ()
+      | Ok () -> ()
       | Error _ -> exit 1
     in
     Lwt.return_some ())
@@ -133,6 +131,5 @@ let tenant_migration_pending =
        let () = Pool.Root.add () in
        let%lwt db_pools = Pool.Tenant.setup () in
        let%lwt () = Pool.Tenant.set_migration_pending db_pools in
-       let%lwt () = exit 0 in
        Lwt.return_some ())
 ;;
