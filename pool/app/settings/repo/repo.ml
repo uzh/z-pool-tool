@@ -196,10 +196,10 @@ module PageScripts = struct
       WHERE
         location = ?
     |sql}
-    |> Caqti_type.(string ->! option string)
+    |> Caqti_type.(string ->? string)
   ;;
 
-  let find pool location = Database.find pool find_request (show_location location)
+  let find pool location = Database.find_opt pool find_request (show_location location)
 
   let find pool =
     let%lwt head = find pool Head in
