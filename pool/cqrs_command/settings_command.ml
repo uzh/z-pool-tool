@@ -142,6 +142,7 @@ module UpdatePageScript : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
     -> PageScript.location
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -154,9 +155,13 @@ end = struct
     Conformist.(make Field.[ Conformist.optional @@ PageScript.schema field () ] CCFun.id)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) placement script =
+  let handle ?(tags = Logs.Tag.empty) ?system_event_id placement script =
     Logs.info ~src (fun m -> m "Handle command PageScript" ~tags);
-    Ok [ Settings.PageScriptUpdated (script, placement) |> Pool_event.settings ]
+    Ok
+      [ Settings.PageScriptUpdated (script, placement) |> Pool_event.settings
+      ; System_event.(Job.I18nPageUpdated |> create ?id:system_event_id |> created)
+        |> Pool_event.system_event
+      ]
   ;;
 
   let decode context =

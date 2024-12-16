@@ -202,8 +202,13 @@ module PageScripts = struct
   let find pool location = Database.find_opt pool find_request (show_location location)
 
   let find pool =
-    let%lwt head = find pool Head in
-    let%lwt body = find pool Body in
-    Lwt.return { head; body }
+    match Cache.find pool with
+    | Some scripts -> Lwt.return scripts
+    | None ->
+      let%lwt head = find pool Head in
+      let%lwt body = find pool Body in
+      let scripts = { head; body } in
+      Cache.add pool scripts;
+      Lwt.return scripts
   ;;
 end

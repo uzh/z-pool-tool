@@ -9,6 +9,7 @@ module Job : sig
   type t =
     | GuardianCacheCleared
     | I18nPageUpdated
+    | PageScriptsUpdated
     | SmtpAccountUpdated
     | TenantDatabaseReset of Database.Label.t
     | TenantCacheCleared

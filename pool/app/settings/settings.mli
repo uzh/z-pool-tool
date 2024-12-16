@@ -84,6 +84,7 @@ module PageScript : sig
     -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 
   val find : Database.Label.t -> page_scripts Lwt.t
+  val clear_cache : unit -> unit
 end
 
 val action_of_param
