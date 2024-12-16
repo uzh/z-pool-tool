@@ -168,6 +168,7 @@ let create pool =
            in
            Custom_field.create
              ~id:field_id
+             ~duplicate_weighting:(DuplicateWeighting.of_int 1)
              field_type
              model
              name
