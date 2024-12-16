@@ -41,6 +41,7 @@ let sql_select_columns ?(decode = true) table =
   ; go "last_error_at"
   ; go "database_label"
   ; go_binary "clone_of"
+  ; go "created_at"
   ]
 ;;
 
@@ -157,7 +158,11 @@ let count_all_workable_request =
 ;;
 
 let count_all_workable label =
-  Database.find_opt label count_all_workable_request ()
+  Lwt.catch
+    (fun () -> Database.find_opt label count_all_workable_request ())
+    (function
+      | Caqti_error.(Exn #load_or_connect) -> Lwt.return_none
+      | exn -> Lwt.reraise exn)
   ||> CCOption.get_or ~default:0
   ||> CCResult.return
 ;;

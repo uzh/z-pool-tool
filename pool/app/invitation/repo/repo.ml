@@ -222,7 +222,7 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
     |sql}
   in
   let invitations = CCList.map CCFun.(uncurry (fun id -> Entity.create ~id)) contacts in
-  let values, value_insert =
+  let Dynparam.Pack (pt, pv), value_insert =
     CCList.fold_left
       (fun (dyn, sql) entity ->
          let sql_line =
@@ -244,10 +244,10 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
       (Dynparam.empty, [])
       invitations
   in
-  let (Dynparam.Pack (pt, pv)) = values in
   let prepare_request =
     let open Caqti_request.Infix in
-    Format.asprintf "%s \n %s" insert_sql (CCString.concat ",\n" value_insert)
+    let values = CCString.concat ",\n" value_insert in
+    [%string "%{insert_sql} \n %{values} \n ON DUPLICATE KEY UPDATE updated_at = now()"]
     |> (pt ->. Caqti_type.unit) ~oneshot:true
   in
   let%lwt () = Database.exec pool prepare_request pv in

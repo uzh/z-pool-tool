@@ -58,10 +58,7 @@ let dev_dispatch
     m ?tags "Environment is not 'production' and/or var `QUEUE_FORCE_ASYNC` not set");
   match%lwt decode input |> Lwt_result.lift >>= handle database_label with
   | Ok () -> callback instance
-  | Error msg ->
-    let job = Instance.(instance |> add_error msg |> failed) in
-    Logs.err (fun m -> m ?tags "Job failed: %s" ([%show: Instance.t] job));
-    Lwt.return_unit
+  | Error msg -> Instance.default_error_handler database_label msg instance
 ;;
 
 let dispatch
@@ -234,12 +231,6 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
 
 let start () =
   let tags = Database.Logger.Tags.create Database.Pool.Root.label in
-  let database_labels = Database.(Pool.Tenant.all ~status:[ Status.Active ] ()) in
-  Logs.info (fun m ->
-    m
-      ~tags
-      "Start queue for databases: %s"
-      ([%show: Database.Label.t list] database_labels));
   let archive_and_reset database_label =
     let%lwt () = Repo.archive_all_processed database_label in
     Repo.reset_pending_jobs database_label
@@ -254,12 +245,18 @@ let start () =
       Lwt.return_unit
     | err -> raise err
   in
-  let%lwt () = Lwt_list.iter_s (handle archive_and_reset) database_labels in
   match !registered_jobs with
   | [] ->
     Logs.warn (fun m -> m ~tags "No jobs registered");
     Lwt.return_unit
   | jobs ->
+    let database_labels = Database.Pool.Tenant.all () in
+    Logs.info (fun m ->
+      m
+        ~tags
+        "Start queue for databases: %s"
+        ([%show: Database.Label.t list] database_labels));
+    let%lwt () = Lwt_list.iter_s (handle archive_and_reset) database_labels in
     let jobs_per_database =
       let open CCList in
       fold_left

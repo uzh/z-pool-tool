@@ -270,7 +270,7 @@ module Pool : sig
     -> (t, Pool_message.Error.t) Lwt_result.t
 
   val connect : Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
-  val disconnect : ?error:Caqti_error.t -> Entity.Label.t -> unit Lwt.t
+  val disconnect : ?error:Caqti_error.t -> Label.t -> unit Lwt.t
   val all : ?allowed_status:Status.t list -> ?exclude:Label.t list -> unit -> Label.t list
   val is_root : Label.t -> bool
 
