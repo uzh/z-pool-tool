@@ -211,6 +211,7 @@ type hint =
   | CustomFieldTypeSelect
   | CustomFieldTypeText
   | CustomHtmx of string
+  | DashboardDuplicateContactsNotification of int
   | DefaultReminderLeadTime of Ptime.Span.t
   | DeleteContact
   | DirectRegistrationDisbled

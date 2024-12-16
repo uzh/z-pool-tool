@@ -318,3 +318,19 @@ let mark_as_checked pool contact =
   in
   Database.exec pool request (Contact.id contact)
 ;;
+
+let count pool =
+  let open Caqti_request.Infix in
+  let request =
+    {sql|
+      SELECT
+        COUNT(id)
+      FROM
+        pool_contacts_possible_duplicates
+      WHERE
+        `ignore` = 0
+    |sql}
+    |> Caqti_type.(unit ->! int)
+  in
+  Database.find pool request ()
+;;

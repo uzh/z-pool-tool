@@ -352,6 +352,13 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
      Falls die Daten in einer anderen Form erhoben werden können, ist dies zu \
      bevorzugen."
   | CustomHtmx s -> s
+  | DashboardDuplicateContactsNotification count ->
+    let text =
+      if count = 1
+      then "Es wurde 1 neues mögliches Kontakt-Duplikat gefunden."
+      else "Es wurden %i neue mögliche Kontakt-Duplikate gefunden."
+    in
+    Format.asprintf "%s. Bitte ergreiffen Sie die nötigen Massnahmen." text
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."

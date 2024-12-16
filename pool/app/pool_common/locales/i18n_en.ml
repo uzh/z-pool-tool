@@ -346,6 +346,11 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "Please take into account that the data quality is lower for text entries. If the \
      data can be collected in another form, this is preferable."
   | CustomHtmx s -> s
+  | DashboardDuplicateContactsNotification count ->
+    Format.asprintf
+      "%i possible diplicate %s have been found. Please take the necessary measures."
+      count
+      (if count = 1 then "contact" else "contacts")
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "If left blank, the default lead time of %s is applied."

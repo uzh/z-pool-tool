@@ -32,6 +32,8 @@ val find_by_contact
   -> Contact.t
   -> (t list * Query.t) Lwt.t
 
+val count : Database.Label.t -> int Lwt.t
+
 val merge
   :  Database.Label.t
   -> ?user_uuid:Pool_common.Id.t

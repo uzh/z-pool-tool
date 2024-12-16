@@ -36,6 +36,11 @@ let index req =
       | true -> statistics_from_request req database_label ||> CCOption.pure
       | false -> Lwt.return_none
     in
+    let%lwt duplicate_contacts_count =
+      match%lwt Helpers.Guard.can_manage_duplicate_contacts context with
+      | false -> Lwt.return_none
+      | true -> Duplicate_contacts.count database_label ||> CCOption.pure
+    in
     let query = sessions_query_from_req req in
     let%lwt incomplete_sessions =
       Session.find_incomplete_by_admin ~query actor database_label
@@ -50,7 +55,7 @@ let index req =
         in
         Admin (incomplete_sessions, upcoming_sessions) |> Lwt.return)
     in
-    index statistics layout context
+    index statistics duplicate_contacts_count layout context
     |> create_layout req ~active_navigation:"/admin/dashboard" context
     >|+ Sihl.Web.Response.of_html
   in
