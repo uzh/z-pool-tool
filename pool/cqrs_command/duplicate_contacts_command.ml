@@ -35,7 +35,7 @@ end = struct
       let id = Contact.Id.of_string id in
       if Contact.Id.equal id (Contact.id contact_a) then contact_a else contact_b
     in
-    let select_fields id =
+    let select_fields_by_id id =
       let id = Contact.Id.of_string id in
       if Contact.Id.equal id (Contact.id contact_a) then fields_a else fields_b
     in
@@ -76,7 +76,7 @@ end = struct
              (CCList.assoc_opt ~eq:( = ) (Id.value id) urlencoded)
              CCList.head_opt
            |> to_result error
-           >|= select_fields
+           >|= select_fields_by_id
            >>= fun fields ->
            CCList.find_opt (fun f -> Id.equal (Public.id f) id) fields |> to_result error)
         custom_fields

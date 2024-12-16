@@ -348,9 +348,9 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | CustomHtmx s -> s
   | DashboardDuplicateContactsNotification count ->
     Format.asprintf
-      "%i possible diplicate %s have been found. Please take the necessary measures."
+      "%i possible duplicate %s been found. Please take the necessary measures."
       count
-      (if count = 1 then "contact" else "contacts")
+      (if count = 1 then "contact has" else "contacts have")
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "If left blank, the default lead time of %s is applied."

@@ -1,3 +1,11 @@
+let add_missing_user_users_uuid_index =
+  Database.Migration.Step.create
+    ~label:"add user_users uuid index"
+    {sql| 
+      CREATE INDEX user_users_uuid_index ON user_users (uuid);
+    |sql}
+;;
+
 let create_custom_field_answer_index =
   Database.Migration.Step.create
     ~label:"create custom_field_answer index"
@@ -86,6 +94,7 @@ let create_archived_emails_table =
 let migration () =
   Database.Migration.(
     empty "202411011201"
+    |> add_step add_missing_user_users_uuid_index
     |> add_step create_custom_field_answer_index
     |> add_step create_duplicates_table
     |> add_step add_weight_to_custom_fields

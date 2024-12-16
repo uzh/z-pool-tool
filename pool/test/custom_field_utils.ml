@@ -126,41 +126,31 @@ module Data = struct
     let prompt_on_registration = prompt_on_registration m in
     let version = 0 |> Pool_common.Version.of_int in
     let admin_value = None in
+    let field ?(validation = Validation.pure) () =
+      { Public.id
+      ; name
+      ; hint
+      ; validation
+      ; required
+      ; admin_override
+      ; admin_input_only
+      ; prompt_on_registration
+      ; version
+      }
+    in
     match field_type with
     | FieldType.Boolean ->
       let answer =
         { Answer.id = answer_id; entity_uuid; value = Some true; admin_value }
         |> CCOption.pure
       in
-      Public.Boolean
-        ( { Public.id
-          ; name
-          ; hint
-          ; validation = Validation.pure
-          ; required
-          ; admin_override
-          ; admin_input_only
-          ; prompt_on_registration
-          ; version
-          }
-        , answer )
+      Public.Boolean (field (), answer)
     | FieldType.Date ->
       let answer =
         { Answer.id = answer_id; entity_uuid; value = Some (1970, 1, 1); admin_value }
         |> CCOption.pure
       in
-      Public.Date
-        ( { Public.id
-          ; name
-          ; hint
-          ; validation = Validation.pure
-          ; required
-          ; admin_override
-          ; admin_input_only
-          ; prompt_on_registration
-          ; version
-          }
-        , answer )
+      Public.Date (field (), answer)
     | FieldType.MultiSelect ->
       let answer =
         field_options
@@ -169,37 +159,14 @@ module Data = struct
         |> Answer.create ~id:answer_id entity_uuid
       in
       let validation = validation_schema Validation.MultiSelect.schema in
-      Public.MultiSelect
-        ( { Public.id
-          ; name
-          ; hint
-          ; validation
-          ; required
-          ; admin_override
-          ; admin_input_only
-          ; prompt_on_registration
-          ; version
-          }
-        , field_options
-        , Some answer )
+      Public.MultiSelect (field ~validation (), field_options, Some answer)
     | FieldType.Number ->
       let answer =
         { Answer.id = answer_id; entity_uuid; value = Some 3; admin_value }
         |> CCOption.pure
       in
       let validation = validation_schema Validation.Number.schema in
-      Public.Number
-        ( { Public.id
-          ; name
-          ; hint
-          ; validation
-          ; required
-          ; admin_override
-          ; admin_input_only
-          ; prompt_on_registration
-          ; version
-          }
-        , answer )
+      Public.Number (field ~validation (), answer)
     | FieldType.Select ->
       let answer =
         CCList.head_opt field_options
@@ -207,37 +174,14 @@ module Data = struct
         { Answer.id = answer_id; entity_uuid; value = option; admin_value }
         |> CCOption.pure
       in
-      Public.Select
-        ( { Public.id
-          ; name
-          ; hint
-          ; validation = Validation.pure
-          ; required
-          ; admin_override
-          ; admin_input_only
-          ; prompt_on_registration
-          ; version
-          }
-        , field_options
-        , answer )
+      Public.Select (field (), field_options, answer)
     | FieldType.Text ->
       let answer =
         { Answer.id = answer_id; entity_uuid; value = Some "test"; admin_value }
         |> CCOption.pure
       in
       let validation = validation_schema Validation.Text.schema in
-      Public.Text
-        ( { Public.id
-          ; name
-          ; hint
-          ; validation
-          ; required
-          ; admin_override
-          ; admin_input_only
-          ; prompt_on_registration
-          ; version
-          }
-        , answer )
+      Public.Text (field ~validation (), answer)
   ;;
 end
 

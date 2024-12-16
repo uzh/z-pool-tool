@@ -17,15 +17,6 @@ let create_changelog_table =
     |sql}
 ;;
 
-(* TODO: Fix manually on staging *)
-let add_user_users_uuid_index =
-  Database.Migration.Step.create
-    ~label:"add user_users uuid index"
-    {sql| 
-      CREATE INDEX user_users_uuid_index ON user_users (uuid);
-    |sql}
-;;
-
 let add_fk_contraint_to_users =
   Database.Migration.Step.create
     ~label:"add fk contraint to users"
@@ -39,6 +30,5 @@ let migration () =
   Database.Migration.(
     empty "202408081359"
     |> add_step create_changelog_table
-    |> add_step add_user_users_uuid_index
     |> add_step add_fk_contraint_to_users)
 ;;

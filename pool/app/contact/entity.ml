@@ -4,6 +4,16 @@ open CCFun.Infix
 
 let model = Pool_message.Field.Contact
 
+module type CounterSig = sig
+  type t
+
+  val init : t
+  val of_int : int -> t
+  val equal : t -> t -> bool
+  val update : int -> t -> t
+  val value : t -> int
+end
+
 module Id = struct
   include Pool_model.Base.Id
 

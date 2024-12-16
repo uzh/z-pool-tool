@@ -8,53 +8,23 @@ module Id : sig
 end
 
 module NumberOfInvitations : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
-  val value : t -> int
+  include Entity.CounterSig
 end
 
 module NumberOfAssignments : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
-  val value : t -> int
+  include Entity.CounterSig
 end
 
 module NumberOfShowUps : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
-  val value : t -> int
+  include Entity.CounterSig
 end
 
 module NumberOfNoShows : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
-  val value : t -> int
+  include Entity.CounterSig
 end
 
 module NumberOfParticipations : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
-  val value : t -> int
+  include Entity.CounterSig
 end
 
 module AdminComment : sig

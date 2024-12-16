@@ -88,7 +88,7 @@ module Repo = struct
     let find_answer = Repo_version_history.find_answer_opt
   end
 
-  let override_answer = Repo_partial_update.override_answer
+  let override_answer = Repo_answer.override_answer
 end
 
 let create_answer is_admin entity_uuid answer new_value =

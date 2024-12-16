@@ -25,6 +25,7 @@ let entity_uuid { entity_uuid; _ } = entity_uuid
 
 let equal_value ?(consider_admin = false) a b =
   let open CCOption.Infix in
+  (* Expected behavior: only check answered fields *)
   match a, b with
   | Some a, Some b ->
     let a_val, b_val =

@@ -24,14 +24,12 @@ let joins =
   |sql}
 ;;
 
-let find_request_sql ?(count = false) =
+let find_request_sql ?(count = false) where =
   let columns =
     if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
   in
-  Format.asprintf
-    {sql| SELECT %s FROM pool_contacts_possible_duplicates %s %s |sql}
-    columns
-    joins
+  [%string
+    {sql| SELECT %{columns} FROM pool_contacts_possible_duplicates %{joins} %{where} |sql}]
 ;;
 
 let similarity_request user_columns custom_field_columns similarities average =
