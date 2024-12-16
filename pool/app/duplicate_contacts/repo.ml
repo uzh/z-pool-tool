@@ -250,7 +250,7 @@ let find_by_contact ?query pool contact =
       {sql|
         pool_contacts_possible_duplicates.contact_a = UNHEX(REPLACE($1, '-', ''))
           OR 
-        pool_contacts_possible_duplicates.contact_a = UNHEX(REPLACE($1, '-', ''))
+        pool_contacts_possible_duplicates.contact_b = UNHEX(REPLACE($1, '-', ''))
       |sql}
     in
     sql, Dynparam.(empty |> add Repo.Id.t (id contact))
