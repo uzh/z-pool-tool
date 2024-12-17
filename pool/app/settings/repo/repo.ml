@@ -74,10 +74,27 @@ end
 module SettingRepo (T : SettingRepoSig) = struct
   include T
 
-  let t = make_caqti ~encode:yojson_of_t ~decode:t_of_yojson
-  let find pool = Sql.find pool t key
+  module Changelog = Changelog.T (struct
+      include Changelog.DefaultSettings
+      include T
+
+      let model = Pool_message.Field.Setting
+    end)
+
+  let caqti_type = make_caqti ~encode:yojson_of_t ~decode:t_of_yojson
+  let find pool = Sql.find pool caqti_type key
   let find_id pool = Sql.find_setting_id pool key
-  let update pool = Sql.exec_update pool t key
+
+  let create_changelog ?user_uuid pool after =
+    let%lwt before = find pool in
+    let%lwt entity_uuid = Sql.find_setting_id pool key in
+    Changelog.insert pool ?user_uuid ~entity_uuid ~before ~after ()
+  ;;
+
+  let update ?user_uuid pool m =
+    let%lwt () = create_changelog ?user_uuid pool m in
+    Sql.exec_update pool caqti_type key m
+  ;;
 end
 
 module DefaultReminderLeadTime = SettingRepo (EmailReminderLeadTime)
