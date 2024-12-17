@@ -220,6 +220,8 @@ type t =
   | Override [@name "override"] [@printer go "override"]
   | Page [@name "page"] [@printer go "page"]
   | PageCount [@name "page_count"] [@printer go "page_count"]
+  | PageScriptsHead [@name "page_scripts_head"] [@printer go "page_scripts_head"]
+  | PageScriptsBody [@name "page_scripts_body"] [@printer go "page_scripts_body"]
   | Participant [@name "participant"] [@printer go "participant"]
   | ParticipantCount [@name "participant_count"] [@printer go "participant_count"]
   | Participants [@name "participants"] [@printer go "participants"]

@@ -11,6 +11,7 @@ type event =
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
   | UserImportFirstReminderAfterUpdated of UserImportReminder.FirstReminderAfter.t
   | UserImportSecondReminderAfterUpdated of UserImportReminder.SecondReminderAfter.t
+  | PageScriptUpdated of (PageScript.t option * PageScript.location)
 [@@deriving eq, show]
 
 let handle_event ?user_uuid pool : event -> unit Lwt.t =
@@ -46,4 +47,5 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     handle_update (Value.UserImportFirstReminder first_reminder_after)
   | UserImportSecondReminderAfterUpdated second_reminder_after ->
     handle_update (Value.UserImportSecondReminder second_reminder_after)
+  | PageScriptUpdated script -> Repo.PageScripts.update pool script
 ;;

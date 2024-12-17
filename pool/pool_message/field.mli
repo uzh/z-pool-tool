@@ -189,6 +189,8 @@ type t =
   | Override
   | Page
   | PageCount
+  | PageScriptsHead
+  | PageScriptsBody
   | Participant
   | ParticipantCount
   | Participants

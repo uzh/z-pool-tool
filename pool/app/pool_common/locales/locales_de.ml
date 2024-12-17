@@ -200,6 +200,8 @@ let rec field_to_string =
   | Override -> "Überschreiben"
   | Page -> "Seite"
   | PageCount -> "Anzahl Seiten"
+  | PageScriptsHead -> "Seiten Head Scripts"
+  | PageScriptsBody -> "Seiten Body Scripts"
   | Participant | Participants -> "Teilnehmer"
   | ParticipantCount -> "Teilnehmer"
   | Participated -> "teilgenommen"

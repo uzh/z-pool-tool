@@ -64,7 +64,15 @@ module Tenant = struct
 
   let create
         ?active_navigation
-        ({ csrf; language; query_parameters; message; user; announcement; _ } as context)
+        ({ csrf
+         ; language
+         ; query_parameters
+         ; message
+         ; user
+         ; announcement
+         ; database_label
+         ; _
+         } as context)
         Tenant.{ tenant_languages; tenant }
         children
     =
@@ -76,9 +84,20 @@ module Tenant = struct
        | None -> [ `GlobalStylesheet ])
       |> CCList.map css_link_tag
     in
+    let%lwt head_script, body_script =
+      let open Settings.PageScript in
+      let%lwt page_scripts = find database_label in
+      let make_script =
+        CCOption.map_or ~default:[] (value %> Unsafe.data %> script %> CCList.return)
+      in
+      let head = make_script page_scripts.head in
+      let body = make_script page_scripts.body in
+      Lwt.return (head, body)
+    in
     let scripts =
-      (if user_is_admin user then [ `IndexJs; `AdminJs ] else [ `IndexJs ])
-      |> CCList.map js_script_tag
+      body_script
+      @ ((if user_is_admin user then [ `IndexJs; `AdminJs ] else [ `IndexJs ])
+         |> CCList.map js_script_tag)
     in
     let message = Message.create message language () in
     let htmx_notification = div ~a:[ a_id Http_utils.Htmx.notification_id ] [] in
@@ -92,7 +111,7 @@ module Tenant = struct
         tenant.icon
         |> CCOption.(map (Icon.value %> File.externalized_path %> favicon) %> to_list)
       in
-      [ charset; viewport ] @ stylesheets @ favicon
+      [ charset; viewport ] @ stylesheets @ favicon @ head_script
     in
     let%lwt navbar_content =
       let title = App.create_title query_parameters title_text in

@@ -15,6 +15,8 @@ module Job = struct
     [@printer Utils.ppx_printer "guardiancachecleared"]
     | I18nPageUpdated [@name "i18npageupdated"]
     [@printer Utils.ppx_printer "i18npageupdated"]
+    | PageScriptsUpdated [@name "pagescriptsupdated"]
+    [@printer Utils.ppx_printer "pagescriptsupdated"]
     | SmtpAccountUpdated [@name "smtpaccountupdated"]
     [@printer Utils.ppx_printer "smtpaccountupdated"]
     | TenantDatabaseReset of Database.Label.t [@name "tenantdatabasereset"]

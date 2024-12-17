@@ -1,4 +1,7 @@
 module Conformist = Pool_conformist
+
+type validation_set = Guard.ValidationSet.t
+
 open Settings
 open CCFun.Infix
 
@@ -123,6 +126,53 @@ end = struct
 
   let decode =
     Conformist.decode_and_validate schema
+    %> CCResult.map_err Pool_message.to_conformist_error
+  ;;
+
+  let effects = Settings.Guard.Access.update
+end
+
+module UpdatePageScript : sig
+  type t = PageScript.t option
+
+  val decode
+    :  PageScript.location
+    -> (string * string list) list
+    -> (t, Pool_message.Error.t) result
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
+    -> PageScript.location
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val effects : validation_set
+end = struct
+  type t = PageScript.t option
+
+  let schema field =
+    Conformist.(make Field.[ Conformist.optional @@ PageScript.schema field () ] CCFun.id)
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) ?system_event_id placement script =
+    Logs.info ~src (fun m -> m "Handle command PageScript" ~tags);
+    Ok
+      [ Settings.PageScriptUpdated (script, placement) |> Pool_event.settings
+      ; System_event.(Job.I18nPageUpdated |> create ?id:system_event_id |> created)
+        |> Pool_event.system_event
+      ]
+  ;;
+
+  let decode context =
+    let field =
+      let open Pool_message in
+      let open Settings.PageScript in
+      match context with
+      | Head -> Field.PageScriptsHead
+      | Body -> Field.PageScriptsBody
+    in
+    Conformist.decode_and_validate (schema field)
     %> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
