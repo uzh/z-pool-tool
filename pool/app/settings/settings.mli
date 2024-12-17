@@ -60,12 +60,6 @@ module UserImportReminder : sig
   end
 end
 
-module Value : sig
-  type t
-end
-
-type t
-
 module PageScript : sig
   include Pool_model.Base.StringSig
 

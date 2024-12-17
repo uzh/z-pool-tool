@@ -1,7 +1,8 @@
 open CCFun.Infix
 
 module Target = struct
-  type t = Entity.t [@@deriving eq, show]
+  (* TODO: Make sure this works *)
+  type t = Entity.Value.t [@@deriving eq, show]
 
   let to_authorizable ?ctx t =
     let open Utils.Lwt_result.Infix in
