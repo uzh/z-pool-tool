@@ -493,6 +493,13 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
      Konto-E-Mail-Adresse zu verifizieren. Sie können die SMS-Texteingabe ignorieren."
   | MessageTemplateExperimentInvitation ->
     "Diese Nachricht wird gesendet, um Kontakte zu Experimenten einzuladen."
+  | MessageTemplateInactiveContactWarning ->
+    "Diese Nachricht wird an Kontakte gesendet, die sich seit längerer Zeit nicht mehr \
+     angemeldet haben, um sie darüber zu informieren, dass ihr Konto bald deaktiviert \
+     wird."
+  | MessageTemplateInactiveContactDeactivation ->
+    "Diese Nachricht wird an Kontakte gesendet, deren Konto aufgrund Inaktivität \
+     deaktiviert wurde."
   | MessageTemplateManualSessionMessage ->
     "Diese Vorlage dient als Vorlage für manuell versendete Nachrichten im Rahmen einer \
      Session."

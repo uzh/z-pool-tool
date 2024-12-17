@@ -16,6 +16,8 @@ let message_template_hints =
   | ContactEmailChangeAttempt
   | ContactRegistrationAttempt
   | EmailVerification
+  | InactiveContactWarning
+  | InactiveContactDeactivation
   | ManualSessionMessage
   | MatcherNotification
   | MatchFilterUpdateNotification
@@ -161,6 +163,21 @@ let message_template_help
     EmailVerification.email_params layout validation_url (create_contact ())
   | ExperimentInvitation ->
     ExperimentInvitation.email_params layout (create_experiment ()) (create_contact ())
+  | InactiveContactDeactivation ->
+    InactiveContactDeactivation.email_params layout (create_contact ())
+  | InactiveContactWarning ->
+    let open Ptime in
+    let half_year = Span.of_int_s (60 * 60 * 24 * 365 / 2) in
+    let now = Ptime_clock.now () in
+    let last_login = sub_span now half_year |> CCOption.get_exn_or "Invalid ptime span" in
+    let deactivation_at =
+      add_span now half_year |> CCOption.get_exn_or "Invalid ptime span"
+    in
+    InactiveContactWarning.email_params
+      layout
+      (create_contact ())
+      ~deactivation_at
+      ~last_login
   | ManualSessionMessage ->
     ManualSessionMessage.email_params
       language

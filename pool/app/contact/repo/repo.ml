@@ -1,4 +1,5 @@
 open CCFun.Infix
+open Utils.Lwt_result.Infix
 open Repo_entity
 module Dynparam = Database.Dynparam
 
@@ -63,7 +64,6 @@ let find_request =
 ;;
 
 let find pool id =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt pool find_request id
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
@@ -79,7 +79,6 @@ let find_admin_comment_request =
 ;;
 
 let find_admin_comment pool id =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt pool find_admin_comment_request id ||> CCOption.flatten
 ;;
 
@@ -94,7 +93,6 @@ let find_by_email_request =
 ;;
 
 let find_by_email pool email =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt pool find_by_email_request email
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
@@ -111,7 +109,6 @@ let find_confirmed_request =
 ;;
 
 let find_confirmed pool email =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt pool find_confirmed_request email
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
@@ -154,7 +151,6 @@ let select_count where_fragment =
 ;;
 
 let find_all ?query ?actor ?permission pool () =
-  let open Utils.Lwt_result.Infix in
   let checks =
     [ Format.asprintf
         {sql|
@@ -468,7 +464,6 @@ let find_cell_phone_verification_by_contact_and_code_request =
 ;;
 
 let find_cell_phone_verification_by_contact_and_code pool contact code =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt
     pool
     find_cell_phone_verification_by_contact_and_code_request
@@ -491,7 +486,6 @@ let find_full_cell_phone_verification_by_contact_request =
 ;;
 
 let find_full_cell_phone_verification_by_contact pool contact =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt
     pool
     find_full_cell_phone_verification_by_contact_request
@@ -544,3 +538,39 @@ let set_inactive_request =
 ;;
 
 let set_inactive pool = Entity.id %> Database.exec pool set_inactive_request
+
+let find_by_last_sign_earlier_than pool time_span =
+  let request =
+    let open Caqti_request.Infix in
+    find_request_sql
+      {sql|
+        WHERE
+          last_sign_in_at <= (NOW() - INTERVAL $1 SECOND)
+          AND pool_contacts.paused = 0
+          AND pool_contacts.disabled = 0
+          AND user_users.status = "active"
+          AND pool_contacts.email_verified IS NOT NULL
+          AND pool_contacts.import_pending = 0
+        LIMIT 100
+      |sql}
+    |> Caqti_type.int ->* t
+  in
+  time_span
+  |> Ptime.Span.to_int_s
+  |> CCOption.get_exn_or "Invalid time span provided"
+  |> Database.collect pool request
+;;
+
+let find_last_signin_at pool contact =
+  let request =
+    let open Caqti_request.Infix in
+    find_request_sql
+      {sql|
+        SELECT last_sign_in_at
+        FROM pool_contacts
+        WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+    |> Repo_entity.Id.t ->! Caqti_type.ptime
+  in
+  contact |> Entity.id |> Database.find pool request
+;;

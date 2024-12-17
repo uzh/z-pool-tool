@@ -17,6 +17,8 @@ let has_terms_accepted pool (contact : t) =
   |> Lwt.return
 ;;
 
+let find_last_signin_at = Repo.find_last_signin_at
+
 module Repo = struct
   include Repo_entity
 

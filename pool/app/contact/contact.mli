@@ -144,6 +144,8 @@ val find_full_cell_phone_verification_by_contact
   -> (Pool_user.UnverifiedCellPhone.full, Pool_message.Error.t) Lwt_result.t
 
 val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
+val find_by_last_sign_earlier_than : Database.Label.t -> Ptime.Span.t -> t list Lwt.t
+val find_last_signin_at : Database.Label.t -> t -> Ptime.t Lwt.t
 
 type create =
   { user_id : Id.t

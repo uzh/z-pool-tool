@@ -9,6 +9,7 @@
   ptime
   role
   settings
+  schedule
   sihl
   utils
   query)

@@ -252,6 +252,8 @@ type hint =
   | MessageTemplateContactRegistrationAttempt
   | MessageTemplateEmailVerification
   | MessageTemplateExperimentInvitation
+  | MessageTemplateInactiveContactWarning
+  | MessageTemplateInactiveContactDeactivation
   | MessageTemplateManualSessionMessage
   | MessageTemplateMatcherNotification
   | MessageTemplateMatchFilterUpdateNotification
