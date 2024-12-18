@@ -41,7 +41,6 @@ let sql_select_columns ?(decode = true) table =
   ; go "last_error_at"
   ; go "database_label"
   ; go_binary "clone_of"
-  ; go "created_at"
   ]
 ;;
 
@@ -296,8 +295,8 @@ let archive_insert_request =
   let columns = sql_select_columns ~decode:false None |> CCString.concat "," in
   [%string
     {sql|
-      INSERT INTO %{sql_table `History} (%{columns})
-      SELECT %{columns} FROM %{sql_table `Current}
+      INSERT INTO %{sql_table `History} (%{columns}, created_at)
+      SELECT %{columns}, created_at FROM %{sql_table `Current}
       WHERE uuid = %{Entity.Id.sql_value_fragment "?"}
     |sql}]
   |> Repo_entity.Id.t ->. Caqti_type.unit
