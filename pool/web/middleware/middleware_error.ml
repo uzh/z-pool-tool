@@ -114,9 +114,8 @@ let middleware ?error_handler () =
             (* Default to text/html *)
             | Some _ | None -> site_error_handler req))
   in
-  (* In a production setting we don't want to use the built in debugger
-     middleware of opium. It is useful for development but it exposed too much
-     information. *)
+  (* In a production setting we don't want to use the built in debugger middleware of
+     opium. It is useful for development but it exposed too much information. *)
   if Sihl.Configuration.is_production ()
   then Rock.Middleware.create ~name:"error" ~filter
   else Opium.Middleware.debugger

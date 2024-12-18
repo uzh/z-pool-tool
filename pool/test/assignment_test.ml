@@ -735,7 +735,7 @@ let swap_session_without_notification () =
       [ MarkedAsDeleted assignment
       ; Created ({ assignment with id = assignment_id }, new_session.Session.id)
       ]
-    |> CCList.map Pool_event.assignment
+    |> Pool_event.(map assignment)
     |> CCResult.return
   in
   check_result expected result
@@ -777,7 +777,7 @@ let swap_session_to_past_session () =
       [ MarkedAsDeleted assignment
       ; Created ({ assignment with id = assignment_id }, new_session.Session.id)
       ]
-    |> CCList.map Pool_event.assignment
+    |> Pool_event.(map assignment)
     |> CCResult.return
   in
   check_result expected result

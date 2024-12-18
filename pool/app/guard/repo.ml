@@ -243,9 +243,8 @@ end
 let src = Logs.Src.create "guard"
 
 module Cache = struct
-  (* TODO: Once the guardian package has a cached version, this implementation
-     can be updated/removed (Issue:
-     https://github.com/uzh/guardian/issues/11) *)
+  (* TODO: Once the guardian package has a cached version, this implementation can be
+     updated/removed (Issue: https://github.com/uzh/guardian/issues/11) *)
   open CCCache
 
   let equal_find_actor (l1, a1) (l2, a2) =

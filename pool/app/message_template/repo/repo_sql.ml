@@ -210,8 +210,8 @@ let find_by_label_and_language_to_send pool ?entity_uuids label language =
   Database.find pool request pv
 ;;
 
-(* The template are prioritised according to the entity_uuids list, from left to
-   right. If none are found, the default template will be returned. *)
+(* The template are prioritised according to the entity_uuids list, from left to right. If
+   none are found, the default template will be returned. *)
 let find_all_by_label_to_send pool ?entity_uuids languages label =
   let open Utils.Lwt_result.Infix in
   if CCList.is_empty languages
@@ -233,8 +233,7 @@ let find_all_by_label_to_send pool ?entity_uuids languages label =
 ;;
 
 let find_entity_defaults_by_label pool ?entity_uuids languages label =
-  (* Removing the last uuid from the entity_uuids to so the entity default is
-     returned *)
+  (* Removing the last uuid from the entity_uuids to so the entity default is returned *)
   let entity_uuids =
     match entity_uuids with
     | None | Some [] | Some (_ :: []) -> []

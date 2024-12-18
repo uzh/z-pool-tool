@@ -162,8 +162,8 @@ let get_template_without_experiment_language_and_templates _ () =
   let%lwt default_template_en = find_default_by_label_and_language en label in
   let%lwt res_de = find_template contact_de in
   let%lwt res_en = find_template contact_en in
-  (* As no experiment language is defined, always expect a template in the
-     contat language to be returned *)
+  (* As no experiment language is defined, always expect a template in the contat language
+     to be returned *)
   check_template default_template_de res_de;
   check_template default_template_en res_en;
   Lwt.return_unit
@@ -232,8 +232,7 @@ let get_template_with_language_missing _ () =
               ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
               label)
     in
-    (* When one entity specific template exists, expect this to be returned
-       every time *)
+    (* When one entity specific template exists, expect this to be returned every time *)
     let expected = [ template; template ] in
     Alcotest.(check (list Test_utils.message_template) "succeeds" expected res)
     |> Lwt.return

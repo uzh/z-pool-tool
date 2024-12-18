@@ -35,8 +35,8 @@ let make_value_nullable =
     |sql}
 ;;
 
-(* To keep the migrations clean, I added a default value (Versions only matter
-   when mutliple people are updating) *)
+(* To keep the migrations clean, I added a default value (Versions only matter when
+   mutliple people are updating) *)
 let add_versions_and_admin_values =
   Database.Migration.Step.create
     ~label:"add versions and admin values"

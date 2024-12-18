@@ -61,8 +61,7 @@ let list Pool_context.{ language; _ } url changelog =
     in
     let th_class = [ "w-3"; "w-7"; "w-2" ] in
     let row ({ user; changes; created_at; _ } : t) =
-      (* TODO: differ between admins and users, maybe create a route that
-         redirects *)
+      (* TODO: differ between admins and users, maybe create a route that redirects *)
       let user_link =
         match user with
         | None -> txt ""

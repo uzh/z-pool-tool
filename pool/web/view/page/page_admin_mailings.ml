@@ -580,8 +580,7 @@ let form
                  ]
              ; distribution_select
                  (CCOption.bind mailing (fun (m : Mailing.t) -> m.Mailing.distribution))
-               (* TODO: Add detailed description how distribution element
-                  works *)
+               (* TODO: Add detailed description how distribution element works *)
              ; div
                  ~a:[ a_class [ "flexrow" ] ]
                  [ submit_element ~classnames:[ "push" ] language submit () ]

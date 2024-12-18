@@ -544,14 +544,14 @@ end = struct
       ; matcher_notification_sent = MatcherNotificationSent.create false
       }
     in
-    let assignment_events = assignment_events |> CCList.map Pool_event.assignment in
-    let email_event = Email.BulkSent emails |> Pool_event.email in
+    let assignment_events = assignment_events |> Pool_event.(map assignment) in
+    let email_event = Email.bulksent_opt emails |> Pool_event.(map email) in
     Ok
       ([ Filter.Created filter |> Pool_event.filter
        ; Experiment.Updated (experiment, updated) |> Pool_event.experiment
        ]
        @ assignment_events
-       @ [ email_event ])
+       @ email_event)
   ;;
 
   let effects id =
@@ -599,16 +599,16 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
-    let assignment_events = assignment_events |> CCList.map Pool_event.assignment in
-    let email_event = Email.BulkSent emails |> Pool_event.email in
+    let assignment_events = assignment_events |> Pool_event.(map assignment) in
+    let email_event = Email.bulksent_opt emails |> Pool_event.(map email) in
     let updated_experiiment =
       { experiment with matcher_notification_sent = MatcherNotificationSent.create false }
     in
     Ok
       ([ Experiment.Updated (experiment, updated_experiiment) |> Pool_event.experiment
        ; Filter.Updated (filter, updated_fitler) |> Pool_event.filter
-       ; email_event
        ]
+       @ email_event
        @ assignment_events)
   ;;
 
