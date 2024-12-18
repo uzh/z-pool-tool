@@ -78,9 +78,8 @@ let ignore req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let id = duplicate_id req in
-  let duplicate_path = duplicate_path ~id () in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, duplicate_path)
+    Utils.Lwt_result.map_error (fun err -> err, duplicate_path ~id ())
     @@
     let* duplicate = Duplicate_contacts.find database_label id in
     let* () =
@@ -90,7 +89,7 @@ let ignore req =
       |>> Pool_event.handle_events ~tags database_label user
     in
     Http_utils.redirect_to_with_actions
-      duplicate_path
+      (duplicate_path ())
       [ Http_utils.Message.set ~success:Pool_message.[ Success.Updated Field.Duplicate ] ]
     |> Lwt_result.ok
   in
