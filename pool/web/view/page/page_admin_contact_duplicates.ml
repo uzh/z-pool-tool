@@ -193,6 +193,32 @@ let show
         ; td [ txt (show contact_b) ]
         ])
   in
+  let js_script =
+    {js|
+    document.querySelectorAll('[data-toggle]').forEach(function (element) {
+      element.addEventListener('click', function () {
+        var id = element.dataset.toggle;
+        var radios = document.querySelectorAll('input[type="radio"][value="' + id + '"]');
+        radios.forEach(function (radio) {
+          radio.checked = true;
+        });
+      });
+    });
+  |js}
+  in
+  let head =
+    let toggle contact =
+      td
+        [ span
+            ~a:
+              [ a_class [ "font-bold"; "pointer" ]
+              ; a_user_data "toggle" Contact.(id contact |> Id.value)
+              ]
+            [ txt "Select all" ]
+        ]
+    in
+    [ tr [ th []; toggle contact_a; toggle contact_b ] ]
+  in
   let table =
     let rows =
       cells
@@ -211,7 +237,8 @@ let show
         in
         th [ txt (field_to_string field) ] :: cells |> tr ~a:attr)
     in
-    rows @ field_rows @ informative_cells |> table ~a:[ a_class [ "table"; "striped" ] ]
+    head @ rows @ field_rows @ informative_cells
+    |> table ~a:[ a_class [ "table"; "striped" ] ]
   in
   let body =
     if is_merge
@@ -231,6 +258,7 @@ let show
               ]
             [ Input.csrf_element csrf ()
             ; table
+            ; script (Unsafe.data js_script)
             ; div
                 ~a:[ a_class [ "gap"; "flexrow"; "justify-end" ] ]
                 [ Input.submit_element language Pool_message.Control.(Save None) () ]
