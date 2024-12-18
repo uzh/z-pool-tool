@@ -1,14 +1,20 @@
-module RepoEntity = Repo_entity
+open CCFun.Infix
+open Entity
 module Database = Database
+
+let make_caqti ~encode ~decode =
+  let encode = encode %> Yojson.Safe.to_string %> CCResult.return in
+  let decode = Yojson.Safe.from_string %> decode %> CCResult.return in
+  Caqti_type.(custom ~encode ~decode Caqti_type.string)
+;;
+
+let key_to_string = Entity.Key.yojson_of_t %> Yojson.Safe.to_string
 
 module Sql = struct
   let select_from_settings_sql =
     {sql|
       SELECT
-         settings_key,
-         value,
-         created_at,
-         updated_at
+         value
       FROM
         pool_system_settings
       WHERE
@@ -22,10 +28,7 @@ module Sql = struct
   ;;
 
   let find pool out_type key =
-    Database.find
-      pool
-      (find_request out_type)
-      (key |> Entity.yojson_of_setting_key |> Yojson.Safe.to_string)
+    Database.find pool (find_request out_type) (key_to_string key)
   ;;
 
   let update_sql =
@@ -39,106 +42,71 @@ module Sql = struct
     |sql}
   ;;
 
-  let update_request =
+  let exec_update pool caqti_type key value =
     let open Caqti_request.Infix in
-    update_sql |> RepoEntity.Write.t ->. Caqti_type.unit
+    let request = update_sql |> Caqti_type.(t2 caqti_type string ->. unit) in
+    Database.exec pool request (value, key_to_string key)
   ;;
 
-  let update pool = Database.exec pool update_request
-
-  let upsert_request =
-    let open Caqti_request.Infix in
-    {sql|
-      INSERT INTO pool_system_settings (
-        uuid,
-        settings_key,
-        value,
-        created_at,
-        updated_at
-      ) VALUES (
-        UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
-        ?,
-        ?
-      ) ON DUPLICATE KEY UPDATE
-        id = id
-    |sql}
-    |> Caqti_type.(t2 Pool_common.Repo.Id.t RepoEntity.t ->. unit)
+  let find_setting_id pool key =
+    let request =
+      let open Caqti_request.Infix in
+      [%string
+        {sql|
+        SELECT %{Pool_model.Base.Id.sql_select_fragment ~field:"uuid"}
+        FROM pool_system_settings
+        WHERE settings_key = ?
+      |sql}]
+      |> Caqti_type.(string ->! Pool_common.Repo.Id.t)
+    in
+    key |> Entity.Key.yojson_of_t |> Yojson.Safe.to_string |> Database.find pool request
   ;;
-
-  let upsert pool = Database.exec pool upsert_request
-
-  let delete_request =
-    let open Caqti_request.Infix in
-    {sql|
-      DELETE FROM pool_system_settings
-      WHERE settings_key = ?
-    |sql}
-    |> Caqti_type.(string ->. unit)
-  ;;
-
-  let delete pool = Database.exec pool delete_request
 end
 
-let find_languages pool = Sql.find pool RepoEntity.t Entity.Languages
-let find_email_suffixes pool = Sql.find pool RepoEntity.t Entity.EmailSuffixes
-let find_contact_email pool = Sql.find pool RepoEntity.t Entity.ContactEmail
+module type SettingRepoSig = sig
+  type t
 
-let find_inactive_user_disable_after pool =
-  Sql.find pool RepoEntity.t Entity.InactiveUserDisableAfter
-;;
+  val key : Entity.Key.t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val t_of_yojson : Yojson.Safe.t -> t
+end
 
-let find_inactive_user_warning pool =
-  Sql.find pool RepoEntity.t Entity.InactiveUserWarning
-;;
+module SettingRepo (T : SettingRepoSig) = struct
+  include T
 
-let find_trigger_profile_update_after pool =
-  Sql.find pool RepoEntity.t Entity.TriggerProfileUpdateAfter
-;;
+  module Changelog = Changelog.T (struct
+      include Changelog.DefaultSettings
+      include T
 
-let find_default_reminder_lead_time pool =
-  Sql.find pool RepoEntity.t Entity.ReminderLeadTime
-;;
+      let model = Pool_message.Field.Setting
+    end)
 
-let find_default_text_msg_reminder_lead_time pool =
-  Sql.find pool RepoEntity.t Entity.TextMsgReminderLeadTime
-;;
+  let caqti_type = make_caqti ~encode:yojson_of_t ~decode:t_of_yojson
+  let find pool = Sql.find pool caqti_type key
+  let find_id pool = Sql.find_setting_id pool key
 
-let find_by_key pool key = Sql.find pool RepoEntity.t key
+  let create_changelog ?user_uuid pool after =
+    let%lwt before = find pool in
+    let%lwt entity_uuid = Sql.find_setting_id pool key in
+    Changelog.insert pool ?user_uuid ~entity_uuid ~before ~after ()
+  ;;
 
-let find_setting_id pool key =
-  let request =
-    let open Caqti_request.Infix in
-    [%string
-      {sql|
-      SELECT %{Pool_model.Base.Id.sql_select_fragment ~field:"uuid"}
-      FROM pool_system_settings
-      WHERE settings_key = ?
-    |sql}]
-    |> Caqti_type.(string ->! Pool_common.Repo.Id.t)
-  in
-  key
-  |> Entity.yojson_of_setting_key
-  |> Yojson.Safe.to_string
-  |> Database.find pool request
-;;
+  let update ?user_uuid pool m =
+    let%lwt () = create_changelog ?user_uuid pool m in
+    Sql.exec_update pool caqti_type key m
+  ;;
+end
 
-let update pool value = Sql.update pool Entity.Write.{ value }
-
-let upsert pool ?(id = Pool_common.Id.create ()) (value : Entity.Value.t) =
-  Sql.upsert
-    pool
-    ( id
-    , { Entity.value
-      ; created_at = Pool_common.CreatedAt.create_now ()
-      ; updated_at = Pool_common.UpdatedAt.create_now ()
-      } )
-;;
-
-let delete pool key =
-  Sql.delete pool (key |> Entity.yojson_of_setting_key |> Yojson.Safe.to_string)
-;;
+module DefaultReminderLeadTime = SettingRepo (EmailReminderLeadTime)
+module DefaultTextMsgReminderLeadTime = SettingRepo (TextMsgReminderLeadTime)
+module TenantLanguages = SettingRepo (TenantLanguages)
+module TenantEmailSuffixes = SettingRepo (EmailSuffixes)
+module TenantContactEmail = SettingRepo (ContactEmail)
+module InactiveUserDisableAfter = SettingRepo (InactiveUser.DisableAfter)
+module InactiveUserWarning = SettingRepo (InactiveUser.Warning)
+module TriggerProfileUpdateAfter = SettingRepo (TriggerProfileUpdateAfter)
+module UserImportFirstReminder = SettingRepo (UserImportReminder.FirstReminderAfter)
+module UserImportSecondReminder = SettingRepo (UserImportReminder.SecondReminderAfter)
 
 module PageScripts = struct
   open Entity.PageScript
@@ -193,8 +161,8 @@ module PageScripts = struct
         script
       FROM
         pool_tenant_page_scripts
-      WHERE
-        location = ?
+      WHERE location = ?
+      AND script IS NOT NULL  
     |sql}
     |> Caqti_type.(string ->? string)
   ;;

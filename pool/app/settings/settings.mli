@@ -60,12 +60,6 @@ module UserImportReminder : sig
   end
 end
 
-module Value : sig
-  type t
-end
-
-type t
-
 module PageScript : sig
   include Pool_model.Base.StringSig
 
@@ -180,19 +174,6 @@ val default_text_message_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val trigger_profile_update_after_key_yojson : Yojson.Safe.t
 
 module Guard : sig
-  module Target : sig
-    val to_authorizable
-      :  ?ctx:(string * string) list
-      -> Pool_common.Id.t
-      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
-
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-  end
-
   module Access : sig
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
