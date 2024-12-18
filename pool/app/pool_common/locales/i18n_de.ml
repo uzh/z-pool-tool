@@ -328,6 +328,10 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | CustomFieldContactModel ->
     "Fragen, die Kontakte beantworten können, bzw. müssen. Anhand dieser Informationen \
      werden die Kontakte zu Experimenten eingeladen."
+  | CustomFieldDuplicateWeight ->
+    "Die Gewichtung beim Vergleichen von Kontakten bei der Suche nach möglichen \
+     Dupliktaten. Kann ein Wert zwischen 1 und 10 sein. Wird das Feld leer gelassen, \
+     wird dieses Feld nicht für die Duplikaterkennung verwendet."
   | CustomFieldExperimentModel -> "Anpassbare Attribute für Experimente."
   | CustomFieldGroups ->
     {|Gruppen, nach denen benutzerdefinierte Felder gruppiert werden können. Das Gruppieren von benutzerdefinierten Feldern hat keine keine Auswirkungen auf ihre Funktionalität. Sie hat lediglich grafische Auswirkungen.|}

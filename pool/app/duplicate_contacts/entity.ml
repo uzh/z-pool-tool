@@ -4,7 +4,7 @@ module Field = Pool_message.Field
    users are. The alert_threshold is the value from which it will be seen as a
    possible duplicate *)
 
-let alert_threshold = 0.7
+let alert_threshold = 0.75
 
 module Id = struct
   include Pool_model.Base.Id
@@ -33,9 +33,9 @@ module Column = struct
 end
 
 let columns =
-  [ Field.Name, SimilarityCriteria.Exact, "user_users", "name", 5
-  ; Field.Firstname, SimilarityCriteria.Exact, "user_users", "given_name", 4
-  ; Field.CellPhone, SimilarityCriteria.Exact, "pool_contacts", "cell_phone", 3
+  [ Field.Name, SimilarityCriteria.Exact, "user_users", "name", 4
+  ; Field.Firstname, SimilarityCriteria.Exact, "user_users", "given_name", 5
+  ; Field.CellPhone, SimilarityCriteria.Exact, "pool_contacts", "cell_phone", 5
   ]
   |> CCList.map (fun (field, criteria, sql_table, sql_column, weight) ->
     { Column.field; criteria; sql_table; sql_column; weight })

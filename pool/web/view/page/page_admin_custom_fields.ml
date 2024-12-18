@@ -453,16 +453,24 @@ let field_form
                    |> Utils.field_to_string language
                    |> CCString.capitalize_ascii)
               ]
+          ; input_element
+              language
+              `Text
+              Field.AdminHint
+              ~orientation:`Horizontal
+              ~value:(value (admin_hint %> CCOption.map_or ~default:"" AdminHint.value))
+              ~flash_fetcher
           ; div
               ~a:[ a_class [ "grid-col-2" ] ]
               [ input_element
                   ~additional_attributes:
                     DuplicateWeighting.
                       [ a_input_min (`Number min); a_input_max (`Number max) ]
+                  ~hints:[ I18n.CustomFieldDuplicateWeight ]
                   language
                   `Number
                   Field.DuplicateWeighting
-                  ~orientation:`Horizontal
+                  ~orientation:`Vertical
                   ~value:
                     (value
                        CCOption.(
@@ -472,13 +480,6 @@ let field_form
                            |> map_or ~default:"" CCInt.to_string))
                   ~flash_fetcher
               ]
-          ; input_element
-              language
-              `Text
-              Field.AdminHint
-              ~orientation:`Horizontal
-              ~value:(value (admin_hint %> CCOption.map_or ~default:"" AdminHint.value))
-              ~flash_fetcher
           ; checkbox_element
               Field.Override
               ~hints:[ I18n.CustomFieldAdminOverride ]

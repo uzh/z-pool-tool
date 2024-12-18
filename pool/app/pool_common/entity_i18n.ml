@@ -200,6 +200,7 @@ type hint =
   | CustomFieldAdminViewOnly
   | CustomFieldAnsweredOnRegistration
   | CustomFieldContactModel
+  | CustomFieldDuplicateWeight
   | CustomFieldExperimentModel
   | CustomFieldGroups
   | CustomFieldNoContactValue

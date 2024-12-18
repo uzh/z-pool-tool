@@ -323,6 +323,10 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | CustomFieldContactModel ->
     "Questions that contacts can, or must, answer. Based on this information, contacts \
      are invited to take part in experiments."
+  | CustomFieldDuplicateWeight ->
+    "The weighting when comparing contacts in the search for possible duplicates. Can be \
+     a value between 1 and 10. If the field is left empty, this custom field is not used \
+     for duplicate detection."
   | CustomFieldExperimentModel -> "Customziable attributes for experiments."
   | CustomFieldGroups ->
     {|Groups to group custom fields by. Grouping custom fields does not have any effect on their functionality. It only has a graphical impact.|}
