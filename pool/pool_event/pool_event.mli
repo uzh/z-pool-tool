@@ -85,3 +85,4 @@ val handle_events
 
 val handle_system_event : ?tags:Logs.Tag.set -> Database.Label.t -> t -> unit Lwt.t
 val handle_system_events : ?tags:Logs.Tag.set -> Database.Label.t -> t list -> unit Lwt.t
+val map : ('a -> t) -> 'a list -> t list

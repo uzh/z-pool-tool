@@ -143,8 +143,8 @@ let execute_migration database_label migration =
       else
         Lwt.return (state, Migration_repo.Migration.(steps_to_apply steps (version state)))
     | None ->
-      (* If currently no state exists, an new one will be created. If there are
-         steps to execute, it is dirty *)
+      (* If currently no state exists, an new one will be created. If there are steps to
+         execute, it is dirty *)
       Logs.debug (fun m -> m ~tags "Setting up table for %s" namespace);
       let dirty = CCList.is_empty steps |> not in
       let state = Migration_repo.Migration.create ~namespace ~dirty in

@@ -684,6 +684,9 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SettingsNoEmailSuffixes ->
     "Es sind keine Email-Endungen definiert, die zugelassen sind. Das bedeutet, dass \
      alle Email-Endungen erlaubt sind."
+  | SettingsPageScripts ->
+    "Hier können Sie JavaScript Code einfügen, der auf jeder Seite im Head, bzw. im Body \
+     Tag gerendered wird, zum Beispiel ein Matomo Analytics Code."
   | SignUpCodeHint ->
     Format.asprintf
       "Um zu verfolgen, über welche Kanäle sich Kontakte beim Pool registrieren, können \

@@ -318,6 +318,7 @@ type hint =
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
   | SettingsNoEmailSuffixes
+  | SettingsPageScripts
   | SignUpCodeHint
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag

@@ -442,8 +442,7 @@ module AvailableExperiments = struct
       Integration_utils.AssignmentRepo.create session contact
     in
     let%lwt experiment_not_available =
-      (* Expect the experiment not to be found after registration for a
-         session *)
+      (* Expect the experiment not to be found after registration for a session *)
       let open Experiment in
       find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (fun public -> Id.equal (Public.id public) experiment.id)
@@ -474,8 +473,8 @@ module AvailableExperiments = struct
       |> Pool_event.handle_event database_label current_user
     in
     let find_available_experiment () =
-      (* Expect the experiment not to be found after session cancellation as
-         there is no upcoming uncanceled session *)
+      (* Expect the experiment not to be found after session cancellation as there is no
+         upcoming uncanceled session *)
       let open Experiment in
       find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
@@ -484,8 +483,8 @@ module AvailableExperiments = struct
     let%lwt experiment_available = find_available_experiment () in
     let () = Alcotest.(check bool "not listed as available" false experiment_available) in
     let%lwt upcoming_session_found =
-      (* Expect the session to be listed among the upcoming sessions, but to be
-         marked as canceled *)
+      (* Expect the session to be listed among the upcoming sessions, but to be marked as
+         canceled *)
       Session.find_upcoming_public_by_contact database_label (Contact.id contact)
       ||> get_exn
       ||> CCList.find_opt (fun (_, upcoming, _) ->
@@ -495,8 +494,7 @@ module AvailableExperiments = struct
       ||> CCOption.is_some
     in
     let () = Alcotest.(check bool "canceled session found" true upcoming_session_found) in
-    (* Expect the experiment to be listed as available, as an upcoming session
-       exists *)
+    (* Expect the experiment to be listed as available, as an upcoming session exists *)
     let%lwt (_ : Session.t) = Integration_utils.SessionRepo.create experiment () in
     let%lwt experiment_available = find_available_experiment () in
     let () = Alcotest.(check bool "listed as available" true experiment_available) in
@@ -516,16 +514,14 @@ module AvailableExperiments = struct
       >|> Pool_event.handle_events database_label current_user
     in
     let%lwt experiment_available =
-      (* Expect the experiment not to be found after marking the assignment as
-         deleted *)
+      (* Expect the experiment not to be found after marking the assignment as deleted *)
       let open Experiment in
       find_upcoming_to_register database_label contact `OnSite
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
     let%lwt upcoming_session_not_found =
-      (* Expect the session not to be listed, as the assignments are marked as
-         deleted *)
+      (* Expect the session not to be listed, as the assignments are marked as deleted *)
       Session.find_upcoming_public_by_contact database_label (Contact.id contact)
       ||> get_exn
       ||> CCList.find_opt (fun (_, upcoming, _) ->

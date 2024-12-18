@@ -60,11 +60,26 @@ module UserImportReminder : sig
   end
 end
 
-module Value : sig
-  type t
-end
+module PageScript : sig
+  include Pool_model.Base.StringSig
 
-type t
+  type location =
+    | Head
+    | Body
+
+  type page_scripts =
+    { head : t option
+    ; body : t option
+    }
+
+  val schema
+    :  Pool_message.Field.t
+    -> unit
+    -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+
+  val find : Database.Label.t -> page_scripts Lwt.t
+  val clear_cache : unit -> unit
+end
 
 val action_of_param
   :  string
@@ -80,6 +95,8 @@ val action_of_param
        | `UpdateTriggerProfileUpdateAfter
        | `UserImportFirstReminderAfter
        | `UserImportSecondReminderAfter
+       | `UpdateHeadScripts
+       | `UpdateBodyScripts
        ]
        , Pool_message.Error.t )
        result
@@ -97,6 +114,8 @@ val stringify_action
      | `UpdateTriggerProfileUpdateAfter
      | `UserImportFirstReminderAfter
      | `UserImportSecondReminderAfter
+     | `UpdateHeadScripts
+     | `UpdateBodyScripts
      ]
   -> string
 
@@ -111,6 +130,7 @@ type event =
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
   | UserImportFirstReminderAfterUpdated of UserImportReminder.FirstReminderAfter.t
   | UserImportSecondReminderAfterUpdated of UserImportReminder.SecondReminderAfter.t
+  | PageScriptUpdated of (PageScript.t option * PageScript.location)
 
 val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -154,19 +174,6 @@ val default_text_message_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val trigger_profile_update_after_key_yojson : Yojson.Safe.t
 
 module Guard : sig
-  module Target : sig
-    val to_authorizable
-      :  ?ctx:(string * string) list
-      -> Pool_common.Id.t
-      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
-
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-  end
-
   module Access : sig
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t

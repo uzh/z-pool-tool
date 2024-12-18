@@ -474,8 +474,7 @@ let textarea_element
   let textarea_attributes =
     let base = [ a_name (name |> Field.show); a_id id ] in
     let base = if rich_text then a_class [ "rich-text" ] :: base else base in
-    (* Chrome has problems with CKEditor, when field is required and initially
-       empty *)
+    (* Chrome has problems with CKEditor, when field is required and initially empty *)
     match rich_text, required, CCString.(trim value |> length) > 0 with
     | false, true, _ | true, true, true -> base @ [ a_required () ]
     | true, _, _ | _, false, _ -> base

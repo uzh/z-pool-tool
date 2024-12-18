@@ -33,8 +33,8 @@ end = struct
     let* () =
       Pool_user.EmailAddress.validate allowed_email_suffixes command.User_command.email
     in
-    (* TODO: pass Id or Tenant to Admin.Created function as option to further
-       pass down to permissions *)
+    (* TODO: pass Id or Tenant to Admin.Created function as option to further pass down to
+       permissions *)
     let admin : Admin.create =
       User_command.
         { id

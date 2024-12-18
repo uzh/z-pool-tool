@@ -5,8 +5,8 @@ let src = Logs.Src.create "middleware.tenant"
 
 let tenant_url_of_request =
   let open CCFun in
-  (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same
-     host cannot be handled at the moment *)
+  (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same host cannot
+     be handled at the moment *)
   Sihl.Web.Request.header "host"
   %> CCOption.to_result Pool_message.(Error.NotFound Field.Host)
   %> flip CCResult.( >>= ) Pool_tenant.Url.create

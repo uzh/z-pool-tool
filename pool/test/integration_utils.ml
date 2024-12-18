@@ -70,7 +70,7 @@ module ContactRepo = struct
           }
       ]
       @ confirm
-      |> CCList.map Pool_event.contact
+      |> Pool_event.(map contact)
       |> Pool_event.handle_events Data.database_label current_user
     in
     contact |> id |> find Data.database_label ||> get_or_failwith
@@ -165,8 +165,8 @@ module MailingRepo = struct
 end
 
 module WaitingListRepo = struct
-  (* TODO: Is there a case where admins create waiting list entries? Or will it
-     always be the contact *)
+  (* TODO: Is there a case where admins create waiting list entries? Or will it always be
+     the contact *)
   let create experiment contact () =
     let%lwt () =
       Waiting_list.Created { Waiting_list.experiment; contact }

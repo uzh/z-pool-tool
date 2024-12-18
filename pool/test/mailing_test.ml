@@ -170,7 +170,7 @@ let create_with_start_now () =
     Mailing.create start_at end_at limit distribution)
     |> CCResult.is_ok
   in
-  (* Only testing if mailing is Ok, as comparison of timestampts with
-     Ptime_clock.now () fails *)
+  (* Only testing if mailing is Ok, as comparison of timestampts with Ptime_clock.now ()
+     fails *)
   Alcotest.(check bool "succeeds" true res)
 ;;

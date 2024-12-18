@@ -208,9 +208,9 @@ let session_form
     session |> CCOption.map_or ~default:false (fun s -> s |> Session.has_assignments)
   in
   let default_value_session =
-    (* Prefill the form with values if making a duplicate, editing a session or
-       creating a follow up to a parent. The importance is 1. duplicate, 2.
-       session editing, 3. follow_up_to *)
+    (* Prefill the form with values if making a duplicate, editing a session or creating a
+       follow up to a parent. The importance is 1. duplicate, 2. session editing, 3.
+       follow_up_to *)
     CCOption.(duplicate_parent <+> session <+> follow_up_to)
   in
   let reschedule_hint () =
@@ -282,8 +282,7 @@ let session_form
     ; div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ (let value =
-             (* Don't want start date filled out in form if creating follow
-                up *)
+             (* Don't want start date filled out in form if creating follow up *)
              if CCOption.is_some follow_up_to
              then None
              else
@@ -1457,8 +1456,8 @@ module CloseScreen = struct
       else []
     in
     let value =
-      (* If the field is disabled, add its id as the value to include it in the
-         htmx request *)
+      (* If the field is disabled, add its id as the value to include it in the htmx
+         request *)
       match id_value && disabled with
       | true -> [ a_value (Id.value assignment.id) ]
       | false -> []

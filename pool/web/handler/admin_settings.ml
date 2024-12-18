@@ -39,6 +39,7 @@ let show req =
     let%lwt user_import_second_reminder =
       Settings.find_user_import_second_reminder_after database_label
     in
+    let%lwt page_scripts = Settings.PageScript.find database_label in
     let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Settings.show
@@ -52,6 +53,7 @@ let show req =
       default_text_msg_reminder_lead_time
       user_import_first_reminder
       user_import_second_reminder
+      page_scripts
       context
       text_messages_enabled
       flash_fetcher
@@ -66,7 +68,9 @@ let update_settings req =
   let open Cqrs_command.Settings_command in
   let lift = Lwt_result.lift in
   let tags = Pool_context.Logger.Tags.req req in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+  in
   let redirect_path = "/admin/settings" in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
@@ -114,6 +118,14 @@ let update_settings req =
         | `UserImportSecondReminderAfter ->
           fun m ->
             UserImportReminder.UpdateSecondReminder.(m |> decode >>= handle ~tags) |> lift
+        | `UpdateHeadScripts ->
+          let location = Settings.PageScript.Head in
+          fun m ->
+            UpdatePageScript.(m |> decode location >>= handle ~tags location) |> lift
+        | `UpdateBodyScripts ->
+          let location = Settings.PageScript.Body in
+          fun m ->
+            UpdatePageScript.(m |> decode location >>= handle ~tags location) |> lift
       in
       Sihl.Web.Router.param req "action"
       |> Settings.action_of_param
@@ -153,6 +165,7 @@ module Access : module type of Helpers.Access = struct
         Command.UserImportReminder.UpdateFirstReminder.effects
       | `UserImportSecondReminderAfter ->
         Command.UserImportReminder.UpdateSecondReminder.effects
+      | `UpdateHeadScripts | `UpdateBodyScripts -> Command.UpdatePageScript.effects
     in
     flip Sihl.Web.Router.param "action"
     %> Settings.action_of_param

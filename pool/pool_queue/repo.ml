@@ -2,8 +2,8 @@ open Caqti_request.Infix
 open Utils.Lwt_result.Infix
 module Dynparam = Database.Dynparam
 
-(* MariaDB expects uuid to be bytes, since we can't unhex when using caqti's
-   populate, we have to do that manually. *)
+(* MariaDB expects uuid to be bytes, since we can't unhex when using caqti's populate, we
+   have to do that manually. *)
 let to_bytes encode decode id =
   match id |> decode |> Uuidm.of_string with
   | Some uuid -> Uuidm.to_binary_string uuid |> encode
@@ -157,7 +157,11 @@ let count_all_workable_request =
 ;;
 
 let count_all_workable label =
-  Database.find_opt label count_all_workable_request ()
+  Lwt.catch
+    (fun () -> Database.find_opt label count_all_workable_request ())
+    (function
+      | Caqti_error.(Exn #load_or_connect) -> Lwt.return_none
+      | exn -> Lwt.reraise exn)
   ||> CCOption.get_or ~default:0
   ||> CCResult.return
 ;;
@@ -291,8 +295,8 @@ let archive_insert_request =
   let columns = sql_select_columns ~decode:false None |> CCString.concat "," in
   [%string
     {sql|
-      INSERT INTO %{sql_table `History} (%{columns})
-      SELECT %{columns} FROM %{sql_table `Current}
+      INSERT INTO %{sql_table `History} (%{columns}, created_at)
+      SELECT %{columns}, created_at FROM %{sql_table `Current}
       WHERE uuid = %{Entity.Id.sql_value_fragment "?"}
     |sql}]
   |> Repo_entity.Id.t ->. Caqti_type.unit

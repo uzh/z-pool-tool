@@ -156,8 +156,8 @@ module Key = struct
     match read_hardcoded yojson with
     | Some h -> Ok (Hardcoded h)
     | None ->
-      (* The "validate_query" function will check, if the id belongs to an
-         existing custom field *)
+      (* The "validate_query" function will check, if the id belongs to an existing custom
+         field *)
       (match yojson with
        | `String id -> Ok (CustomField (id |> Custom_field.Id.of_string))
        | _ -> Error Pool_message.(Error.Invalid Field.Key))
@@ -359,8 +359,8 @@ module Operator = struct
     ;;
 
     let to_sql = function
-      (* List operators are used to query custom field answers by their value
-         which store json arrays *)
+      (* List operators are used to query custom field answers by their value which store
+         json arrays *)
       | ContainsSome | ContainsAll -> "LIKE"
       | ContainsNone -> "NOT LIKE"
     ;;
