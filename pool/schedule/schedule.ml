@@ -86,8 +86,9 @@ module Registered = struct
   ;;
 end
 
-let run ({ label; scheduled_time; status; _ } as schedule : t) =
+let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
   let open Utils.Lwt_result.Infix in
+  let tags = CCOption.map_or ~default:tags Database.Logger.Tags.create database_label in
   let delay = run_in scheduled_time in
   let notify status =
     Logs.debug ~src (fun m -> m ~tags "%s: Run is %s" label (Status.show status));
@@ -110,26 +111,28 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
     let rerun () = Lwt_unix.sleep delay >|> loop in
     let database_ok () =
       let open Database in
-      let database_status =
-        match schedule.database_label with
-        | None -> Status.Active
-        | Some label ->
-          Pool.Tenant.find_status_by_label label |> CCOption.value ~default:Status.Active
-      in
       let open Status in
+      let database_status =
+        CCOption.map_or ~default:Active (fun label ->
+          match Pool.Tenant.find label with
+          | Ok database -> status database
+          | Error _ -> Disabled)
+      in
       let retry_connection label =
-        Database.Pool.connect label
+        (* Reset database connection to "Close" before retry *)
+        let%lwt () = Pool.disconnect label in
+        Pool.connect label
         >|> function
         | Ok () ->
           let%lwt () =
             let open Pool_database in
-            StatusUpdated (label, Status.Active) |> handle_event Database.Pool.Root.label
+            StatusUpdated (label, Active) |> handle_event Pool.Root.label
           in
           Lwt.return_true
         | Error _ -> Lwt.return_false
       in
-      match database_status with
-      | Active -> Lwt.return true
+      match database_status database_label with
+      | Active -> Lwt.return_true
       | ConnectionIssue ->
         CCOption.map_or ~default:Lwt.return_false retry_connection schedule.database_label
       | Disabled
