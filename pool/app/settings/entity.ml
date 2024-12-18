@@ -18,7 +18,6 @@ module TermsAndConditions = struct
     include Pool_model.Base.String
 
     let field = Pool_message.Field.TermsAndConditions
-    (* TODO: email address validation *)
 
     let schema () = schema field ()
     let of_string m = m
