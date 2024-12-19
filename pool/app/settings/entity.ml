@@ -106,11 +106,15 @@ module InactiveUser = struct
   end
 
   module Warning = struct
-    module Core = struct
-      let name = Pool_message.Field.InactiveUserWarning
+    module TimeSpan = struct
+      module Core = struct
+        let name = Pool_message.Field.InactiveUserWarning
+      end
+
+      include Pool_model.Base.Duration (Core)
     end
 
-    include Pool_model.Base.Duration (Core)
+    type t = TimeSpan.t list [@@deriving eq, show, yojson]
 
     let key = Key.InactiveUserWarning
   end

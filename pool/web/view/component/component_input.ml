@@ -233,8 +233,8 @@ let timespan_picker
       ?(orientation = `Vertical)
       ?(classnames = [])
       ?hints
+      ?(hide_label = false)
       ?identifier
-      ?label_field
       ?min_value
       ?(read_only = false)
       ?(required = false)
@@ -244,8 +244,7 @@ let timespan_picker
       language
       name
   =
-  let human_field = CCOption.value ~default:name label_field in
-  let input_label = Elements.input_label language human_field None required in
+  let input_label = Elements.input_label language name None required in
   let time_unit, value =
     let open CCOption.Infix in
     flash_fetcher
@@ -258,7 +257,7 @@ let timespan_picker
     | None -> None, ""
     | Some (unit, value) -> Some unit, CCInt.to_string value
   in
-  let id = Elements.identifier ?identifier human_field in
+  let id = Elements.identifier ?identifier name in
   let attributes =
     let attrs =
       Elements.attributes `Number name id [ a_value value ]
@@ -321,9 +320,10 @@ let timespan_picker
     | `Vertical -> input_group
     | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ input_group ]
   in
-  div
-    ~a:[ a_class group_class ]
-    ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ] @ help @ error)
+  let label =
+    if hide_label then txt "" else label ~a:[ a_label_for id ] [ txt input_label ]
+  in
+  div ~a:[ a_class group_class ] ([ label; input_element ] @ help @ error)
 ;;
 
 let checkbox_element
