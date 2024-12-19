@@ -2,6 +2,7 @@ open Test_utils
 open Pool_message
 module TestSeed = Test_seed
 module Operator = Filter.Operator
+module CustomFieldData = Custom_field_utils
 
 let equal_operator = FilterHelper.equal
 let get_exn = get_or_failwith
@@ -36,381 +37,6 @@ module TestContacts = struct
     |> Pool_event.contact
     |> Pool_event.handle_event Data.database_label current_user
     |> Lwt.map (CCFun.const contact)
-  ;;
-end
-
-module CustomFieldData = struct
-  let published = () |> Custom_field.PublishedAt.create_now |> CCOption.pure
-
-  let create_custom_field field_name encoder =
-    let open Custom_field_test in
-    Custom_field.
-      { id = Id.create ()
-      ; model = Model.Contact
-      ; name = Name.create [ lang ] [ lang, field_name ] |> get_exn
-      ; hint = [] |> Hint.create |> get_exn
-      ; validation = Validation.pure
-      ; required = false |> Required.create
-      ; disabled = false |> Disabled.create
-      ; custom_field_group_id = None
-      ; admin_hint = Data.admin_hint
-      ; admin_override = Data.admin_override
-      ; admin_view_only = Data.admin_view_only
-      ; admin_input_only = Data.admin_input_only
-      ; published_at = published
-      ; prompt_on_registration = false |> PromptOnRegistration.create
-      ; show_on_session_close_page = false
-      ; show_on_session_detail_page = false
-      }
-    |> encoder
-  ;;
-
-  let save_custom_field t = Custom_field.Created t |> Pool_event.custom_field
-
-  let save_options field =
-    let field_id = Custom_field.id field in
-    CCList.map (fun option ->
-      Custom_field.OptionCreated (field_id, option) |> Pool_event.custom_field)
-  ;;
-
-  module NrOfSiblings = struct
-    let answer_value = 3
-    let field = create_custom_field "Nr of siblings" (fun a -> Custom_field.Number a)
-
-    let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer_value =
-      let open Custom_field in
-      let open Custom_field_test in
-      let answer =
-        match is_admin with
-        | true -> Answer.create ?admin_value:answer_value entity_uuid None
-        | false -> Answer.create entity_uuid answer_value
-      in
-      let version = 0 |> Pool_common.Version.of_int in
-      Public.Number
-        ( { Public.id = id field
-          ; name = name field
-          ; hint = hint field
-          ; validation = Validation.pure
-          ; required = required field
-          ; admin_override = Data.admin_override
-          ; admin_input_only = Data.admin_input_only
-          ; prompt_on_registration = Data.prompt_on_registration
-          ; version
-          }
-        , Some answer )
-    ;;
-
-    let save () = save_custom_field field
-
-    let save_answers ~answer_value ?admin contacts =
-      CCList.map
-        (fun contact ->
-           let user = admin |> CCOption.value ~default:(Pool_context.Contact contact) in
-           Custom_field.AnswerUpserted
-             (public (CCOption.is_some admin) answer_value, Contact.id contact, user)
-           |> Pool_event.custom_field)
-        contacts
-    ;;
-  end
-
-  module Birthday = struct
-    let answer_value = "1990-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn
-    let field = create_custom_field "Birthday" (fun a -> Custom_field.Date a)
-
-    let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer_value =
-      let open Custom_field in
-      let open Custom_field_test in
-      let answer =
-        match is_admin with
-        | true -> Answer.create ?admin_value:answer_value entity_uuid None
-        | false -> Answer.create entity_uuid answer_value
-      in
-      let version = 0 |> Pool_common.Version.of_int in
-      Public.Date
-        ( { Public.id = id field
-          ; name = name field
-          ; hint = hint field
-          ; validation = Validation.pure
-          ; required = required field
-          ; admin_override = Data.admin_override
-          ; admin_input_only = Data.admin_input_only
-          ; prompt_on_registration = Data.prompt_on_registration
-          ; version
-          }
-        , Some answer )
-    ;;
-
-    let save () = save_custom_field field
-
-    let save_answers ~answer_value ?admin contacts =
-      CCList.map
-        (fun contact ->
-           let user = admin |> CCOption.value ~default:(Pool_context.Contact contact) in
-           Custom_field.AnswerUpserted
-             (public (CCOption.is_some admin) answer_value, Contact.id contact, user)
-           |> Pool_event.custom_field)
-        contacts
-    ;;
-
-    let filter ?date operator () =
-      let open Filter in
-      let value = date |> CCOption.value ~default:answer_value in
-      let query =
-        Pred
-          (Predicate.create
-             Key.(CustomField (field |> Custom_field.id))
-             operator
-             (Single (Date value)))
-      in
-      create None query
-    ;;
-  end
-
-  module SelectField = struct
-    let option_to_public =
-      let open Custom_field in
-      fun { SelectOption.id; name; _ } -> SelectOption.Public.create ~id name
-    ;;
-
-    let options =
-      [ "1"; "2" ]
-      |> CCList.map
-           Custom_field.(
-             fun label ->
-               [ lang, label ]
-               |> Name.create [ lang ]
-               |> get_or_failwith
-               |> SelectOption.create)
-    ;;
-
-    let public_options = options |> CCList.map option_to_public
-    let default_answer = CCList.hd options
-    let field = create_custom_field "Select" (fun a -> Custom_field.Select (a, options))
-
-    let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer =
-      let open Custom_field in
-      let open Custom_field_test in
-      let answer =
-        match is_admin with
-        | true -> Answer.create ?admin_value:answer entity_uuid None
-        | false -> Answer.create entity_uuid answer
-      in
-      let version = 0 |> Pool_common.Version.of_int in
-      Public.Select
-        ( { Public.id = id field
-          ; name = name field
-          ; hint = hint field
-          ; validation = Validation.pure
-          ; required = required field
-          ; admin_override = Data.admin_override
-          ; admin_input_only = Data.admin_input_only
-          ; prompt_on_registration = Data.prompt_on_registration
-          ; version
-          }
-        , public_options
-        , Some answer )
-    ;;
-
-    let save () = save_custom_field field
-
-    let save_answer answer ?admin contacts =
-      CCList.map
-        (fun contact ->
-           let user = admin |> CCOption.value ~default:(Pool_context.Contact contact) in
-           Custom_field.AnswerUpserted
-             (public (CCOption.is_some admin) answer, Contact.id contact, user)
-           |> Pool_event.custom_field)
-        contacts
-    ;;
-
-    let filter answers operator () =
-      let open Filter in
-      let value =
-        answers |> CCList.map (fun opt -> Option opt.Custom_field.SelectOption.id)
-      in
-      let query =
-        Pred
-          (Predicate.create
-             Key.(CustomField (field |> Custom_field.id))
-             operator
-             (Lst value))
-      in
-      create None query
-    ;;
-
-    let init current_user =
-      save () :: save_options field options
-      |> Pool_event.handle_events Test_utils.Data.database_label current_user
-    ;;
-  end
-
-  let admin_override_nr_field =
-    let open Custom_field_test in
-    Custom_field.(
-      Number
-        { id = Id.create ()
-        ; model = Model.Contact
-        ; name = Name.create [ lang ] [ lang, "admin_override_nr_field" ] |> get_exn
-        ; hint = [] |> Hint.create |> get_exn
-        ; validation = Validation.pure
-        ; required = false |> Required.create
-        ; disabled = false |> Disabled.create
-        ; custom_field_group_id = None
-        ; admin_hint = Data.admin_hint
-        ; admin_override = true |> AdminOverride.create
-        ; admin_view_only = Data.admin_view_only
-        ; admin_input_only = Data.admin_input_only
-        ; published_at = published
-        ; prompt_on_registration = false |> PromptOnRegistration.create
-        ; show_on_session_close_page = false
-        ; show_on_session_detail_page = false
-        })
-  ;;
-
-  let admin_override_nr_field_public
-        ?(entity_uuid = Pool_common.Id.create ())
-        is_admin
-        answer_value
-    =
-    let open Custom_field in
-    let answer =
-      match is_admin with
-      | true -> Answer.create ~admin_value:answer_value entity_uuid None
-      | false -> Answer.create entity_uuid (Some answer_value)
-    in
-    let version = 0 |> Pool_common.Version.of_int in
-    Public.Number
-      ( { Public.id = id admin_override_nr_field
-        ; name = name admin_override_nr_field
-        ; hint = hint admin_override_nr_field
-        ; validation = Validation.pure
-        ; required = required admin_override_nr_field
-        ; admin_override = admin_override admin_override_nr_field
-        ; admin_input_only = admin_input_only admin_override_nr_field
-        ; prompt_on_registration = prompt_on_registration admin_override_nr_field
-        ; version
-        }
-      , Some answer )
-  ;;
-
-  let create_admin_override_nr_field () =
-    Custom_field.Created admin_override_nr_field |> Pool_event.custom_field
-  ;;
-
-  let answer_admin_override_nr_field ?admin ~answer_value contacts =
-    CCList.map
-      (fun contact ->
-         let user = admin |> CCOption.value ~default:(Pool_context.Contact contact) in
-         Custom_field.AnswerUpserted
-           ( admin_override_nr_field_public (CCOption.is_some admin) answer_value
-           , Contact.id contact
-           , user )
-         |> Pool_event.custom_field)
-      contacts
-  ;;
-
-  let multi_select_option_data =
-    let open Custom_field in
-    let open CCList in
-    range 0 5
-    |> map (fun i -> [ lang, CCInt.to_string i ])
-    |> map (Name.create [ lang ])
-    |> CCList.all_ok
-    |> get_exn
-    |> map (fun name -> Custom_field.SelectOption.Id.create (), name)
-  ;;
-
-  let multi_select_options =
-    multi_select_option_data
-    |> CCList.map (fun (id, name) -> Custom_field.SelectOption.create ~id name)
-  ;;
-
-  let multi_select_options_public =
-    multi_select_option_data
-    |> CCList.map (fun (id, name) -> Custom_field.SelectOption.Public.create ~id name)
-  ;;
-
-  let multi_select_options_by_index = CCList.map (CCList.nth multi_select_options)
-
-  let multi_select_options_public_by_index =
-    CCList.map (CCList.nth multi_select_options_public)
-  ;;
-
-  let multi_select_custom_field =
-    let open Custom_field in
-    let open Custom_field_test in
-    MultiSelect
-      ( { id = Id.create ()
-        ; model = Model.Contact
-        ; name = Name.create [ lang ] [ lang, "Multi select" ] |> get_exn
-        ; hint = [] |> Hint.create |> get_exn
-        ; validation = Validation.pure
-        ; required = false |> Required.create
-        ; disabled = false |> Disabled.create
-        ; custom_field_group_id = None
-        ; admin_hint = Data.admin_hint
-        ; admin_override = Data.admin_override
-        ; admin_view_only = Data.admin_view_only
-        ; admin_input_only = Data.admin_input_only
-        ; published_at = published
-        ; prompt_on_registration = false |> PromptOnRegistration.create
-        ; show_on_session_close_page = false
-        ; show_on_session_detail_page = false
-        }
-      , multi_select_options )
-  ;;
-
-  let multi_select_custom_field_public
-        ?(entity_uuid = Pool_common.Id.create ())
-        answer_index
-    =
-    let open Custom_field in
-    let open Custom_field_test in
-    let answer =
-      multi_select_options_public_by_index answer_index
-      |> CCOption.pure
-      |> Answer.create entity_uuid
-      |> CCOption.pure
-    in
-    let version = 0 |> Pool_common.Version.of_int in
-    Public.MultiSelect
-      ( { Public.id = id multi_select_custom_field
-        ; name = name multi_select_custom_field
-        ; hint = hint multi_select_custom_field
-        ; validation = Validation.pure
-        ; required = required multi_select_custom_field
-        ; admin_override = Data.admin_override
-        ; admin_input_only = Data.admin_input_only
-        ; prompt_on_registration = Data.prompt_on_registration
-        ; version
-        }
-      , multi_select_options_public
-      , answer )
-  ;;
-
-  let create_multi_select () =
-    let open Custom_field in
-    CCList.cons
-      (Created multi_select_custom_field)
-      (multi_select_options
-       |> CCList.map (fun o -> OptionCreated (id multi_select_custom_field, o)))
-    |> Pool_event.(map custom_field)
-  ;;
-
-  let answer_multi_select contacts answer_index =
-    CCList.map
-      (fun contact ->
-         Custom_field.AnswerUpserted
-           ( multi_select_custom_field_public answer_index
-           , Contact.id contact
-           , Pool_context.Contact contact )
-         |> Pool_event.custom_field)
-      contacts
-  ;;
-
-  let publish_fields () =
-    [ multi_select_custom_field; NrOfSiblings.field ]
-    |> CCList.map (fun field -> Custom_field.Published field |> Pool_event.custom_field)
   ;;
 end
 
@@ -540,9 +166,9 @@ let filter_contacts _ () =
     let%lwt contacts = TestContacts.all () in
     let%lwt experiment = Repo.first_experiment () in
     let%lwt () =
-      let open CustomFieldData in
       (* Save field and answer with 3 *)
-      NrOfSiblings.(save_answers ~answer_value:(Some answer_value) contacts)
+      CustomFieldData.NrOfSiblings.(
+        save_answers ~answer_value:(Some answer_value) contacts)
       |> Pool_event.handle_events Data.database_label current_user
     in
     let filter = Filter.create None (nr_of_siblings_filter ()) in
@@ -734,7 +360,7 @@ let filter_by_select_field _ () =
   let%lwt experiment = Repo.first_experiment () in
   let%lwt () =
     SelectField.(save_answer (Some (option_to_public default_answer)) [ contact ])
-    |> Pool_event.handle_events Data.database_label current_user
+    |> Pool_event.handle_events Test_utils.Data.database_label current_user
   in
   let test_select_filter operator expected =
     let filter = SelectField.(filter [ default_answer ] operator) () in
@@ -911,7 +537,7 @@ let filter_ignore_admin_value _ () =
       in
       (Updated (admin_override_nr_field, override_field) |> Pool_event.custom_field)
       :: answer_admin_override_nr_field ~answer_value [ contact ]
-      |> Pool_event.handle_events Data.database_label current_user
+      |> Pool_event.handle_events Test_utils.Data.database_label current_user
     in
     let search = find_contact_in_filtered_list contact (Filter.Matcher id) in
     let%lwt res =
@@ -1095,7 +721,7 @@ let filter_by_non_empty_custom_field _ () =
   let%lwt () =
     let open CustomFieldData in
     NrOfSiblings.(save_answers ~answer_value:(Some answer_value) [ contact ])
-    |> Pool_event.handle_events Data.database_label current_user
+    |> Pool_event.handle_events Test_utils.Data.database_label current_user
   in
   let%lwt experiment = Repo.first_experiment () in
   let filter operator =
@@ -1147,7 +773,7 @@ let filter_by_date_custom_field _ () =
   let%lwt experiment = Repo.first_experiment () in
   let%lwt () =
     Birthday.(save () :: save_answers ~answer_value:(Some answer_value) [ contact ])
-    |> Pool_event.handle_events Data.database_label current_user
+    |> Pool_event.handle_events Test_utils.Data.database_label current_user
   in
   let date = "1985-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn in
   let greater_filter = Birthday.filter ~date Operator.(Size.Greater |> size) () in

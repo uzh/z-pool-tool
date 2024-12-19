@@ -460,6 +460,26 @@ let field_form
               ~orientation:`Horizontal
               ~value:(value (admin_hint %> CCOption.map_or ~default:"" AdminHint.value))
               ~flash_fetcher
+          ; div
+              ~a:[ a_class [ "grid-col-2" ] ]
+              [ input_element
+                  ~additional_attributes:
+                    DuplicateWeighting.
+                      [ a_input_min (`Number min); a_input_max (`Number max) ]
+                  ~hints:[ I18n.CustomFieldDuplicateWeight ]
+                  language
+                  `Number
+                  Field.DuplicateWeighting
+                  ~orientation:`Vertical
+                  ~value:
+                    (value
+                       CCOption.(
+                         fun field ->
+                           duplicate_weighting field
+                           >|= DuplicateWeighting.value
+                           |> map_or ~default:"" CCInt.to_string))
+                  ~flash_fetcher
+              ]
           ; checkbox_element
               Field.Override
               ~hints:[ I18n.CustomFieldAdminOverride ]
@@ -488,10 +508,7 @@ let field_form
               ~hints:[ I18n.CustomFieldPromptOnRegistration ]
               Field.PromptOnRegistration
               (prompt_on_registration %> PromptOnRegistration.value)
-          ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ checkbox_element
+          ; checkbox_element
               ~disabled:
                 (custom_field
                  |> CCOption.map_or ~default:false (fun f ->

@@ -421,6 +421,25 @@ module Sql = struct
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
+  let find_by_contact_to_merge_request =
+    let open Caqti_request.Infix in
+    {sql| 
+      WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pool_assignments AS merge
+        WHERE pool_assignments.session_uuid = merge.session_uuid
+          AND merge.contact_uuid = UNHEX(REPLACE($2, '-', '')))
+    |sql}
+    |> find_request_sql
+    |> Caqti_type.(t2 Contact.Repo.Id.t Contact.Repo.Id.t) ->* t
+  ;;
+
+  let find_by_contact_to_merge pool ~contact ~merged_contact =
+    let open Contact in
+    Database.collect pool find_by_contact_to_merge_request (id contact, id merged_contact)
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|

@@ -89,6 +89,7 @@ module Write = struct
       ; prompt_on_registration = prompt_on_registration t
       ; show_on_session_close_page = show_on_session_close_page t
       ; show_on_session_detail_page = show_on_session_detail_page t
+      ; duplicate_weighting = duplicate_weighting t
       }
   ;;
 
@@ -111,8 +112,9 @@ module Write = struct
                               , ( m.admin_input_only
                                 , ( m.prompt_on_registration
                                   , ( m.show_on_session_close_page
-                                    , m.show_on_session_detail_page ) ) ) ) ) ) ) ) ) ) )
-              ) ) ) )
+                                    , ( m.show_on_session_detail_page
+                                      , m.duplicate_weighting ) ) ) ) ) ) ) ) ) ) ) ) ) )
+          ) )
     in
     let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
     Caqti_type.(
@@ -145,7 +147,9 @@ module Write = struct
                                             AdminViewOnly.t
                                             (t2
                                                AdminInputOnly.t
-                                               (t2 PromptOnRegistration.t (t2 bool bool))))))))))))))))
+                                               (t2
+                                                  PromptOnRegistration.t
+                                                  (t2 bool (t2 bool (option int))))))))))))))))))
   ;;
 end
 
@@ -525,6 +529,7 @@ type repo =
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
+  ; duplicate_weighting : int option
   }
 
 let t =
@@ -546,8 +551,8 @@ let t =
                                 , ( prompt_on_registration
                                   , ( published_at
                                     , ( show_on_session_close_page
-                                      , show_on_session_detail_page ) ) ) ) ) ) ) ) ) ) )
-                ) ) ) ) )
+                                      , (show_on_session_detail_page, duplicate_weighting)
+                                      ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -568,6 +573,7 @@ let t =
       ; published_at
       ; show_on_session_close_page
       ; show_on_session_detail_page
+      ; duplicate_weighting
       }
   in
   Caqti_type.(
@@ -602,7 +608,9 @@ let t =
                                              AdminInputOnly.t
                                              (t2
                                                 PromptOnRegistration.t
-                                                (t2 (option PublishedAt.t) (t2 bool bool)))))))))))))))))
+                                                (t2
+                                                   (option PublishedAt.t)
+                                                   (t2 bool (t2 bool (option int)))))))))))))))))))
 ;;
 
 let to_entity
@@ -624,68 +632,36 @@ let to_entity
       ; published_at
       ; show_on_session_close_page
       ; show_on_session_detail_page
+      ; duplicate_weighting
       }
   =
   let validation_schema schema = Validation.(validation |> raw_of_yojson |> schema) in
+  let make_field validation =
+    { id
+    ; model
+    ; name
+    ; hint
+    ; validation
+    ; required
+    ; disabled
+    ; custom_field_group_id
+    ; admin_hint
+    ; admin_override
+    ; admin_view_only
+    ; admin_input_only
+    ; prompt_on_registration
+    ; published_at
+    ; show_on_session_close_page
+    ; show_on_session_detail_page
+    ; duplicate_weighting
+    }
+  in
   match field_type with
-  | FieldType.Boolean ->
-    Boolean
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation = Validation.pure
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      }
-  | FieldType.Date ->
-    Date
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation = Validation.pure
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      }
+  | FieldType.Boolean -> Boolean (make_field Validation.pure)
+  | FieldType.Date -> Date (make_field Validation.pure)
   | FieldType.Number ->
     let validation = validation_schema Validation.Number.schema in
-    Number
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      }
+    Number (make_field validation)
   | FieldType.Select ->
     let options =
       CCList.filter_map
@@ -693,25 +669,7 @@ let to_entity
            if Pool_common.Id.equal field_id id then Some option else None)
         select_options
     in
-    Select
-      ( { id
-        ; model
-        ; name
-        ; hint
-        ; validation = Validation.pure
-        ; required
-        ; disabled
-        ; custom_field_group_id
-        ; admin_hint
-        ; admin_override
-        ; admin_view_only
-        ; admin_input_only
-        ; prompt_on_registration
-        ; published_at
-        ; show_on_session_close_page
-        ; show_on_session_detail_page
-        }
-      , options )
+    Select (make_field Validation.pure, options)
   | FieldType.MultiSelect ->
     let options =
       CCList.filter_map
@@ -720,43 +678,8 @@ let to_entity
         select_options
     in
     let validation = validation_schema Validation.MultiSelect.schema in
-    MultiSelect
-      ( { id
-        ; model
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; disabled
-        ; custom_field_group_id
-        ; admin_hint
-        ; admin_override
-        ; admin_view_only
-        ; admin_input_only
-        ; prompt_on_registration
-        ; published_at
-        ; show_on_session_close_page
-        ; show_on_session_detail_page
-        }
-      , options )
+    MultiSelect (make_field validation, options)
   | FieldType.Text ->
     let validation = validation_schema Validation.Text.schema in
-    Text
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      }
+    Text (make_field validation)
 ;;

@@ -65,6 +65,12 @@ val find_by_experiment
 
 val find_by_contact : Database.Label.t -> Contact.t -> t list Lwt.t
 
+val find_by_contact_to_merge
+  :  Database.Label.t
+  -> contact:Contact.t
+  -> merged_contact:Contact.t
+  -> t list Lwt.t
+
 val find_experiment_id_of_invitation
   :  Database.Label.t
   -> t

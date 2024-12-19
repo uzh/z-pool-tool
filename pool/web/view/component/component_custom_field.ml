@@ -37,7 +37,7 @@ let answer_to_html
         | true ->
           [ a_user_data "label" Custom_field.Public.(name_value language custom_field) ]
       in
-      div
+      span
         ~a:([ a_class [ "flexcolumn"; "stack-xs" ] ] @ attribs)
         [ value |> CCOption.map to_html |> map_or CCFun.(CCList.return %> span)
         ; admin_input

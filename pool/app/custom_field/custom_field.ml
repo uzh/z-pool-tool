@@ -13,6 +13,7 @@ let find_by_group = Repo.find_by_group
 let find_ungrouped_by_model = Repo.find_ungrouped_by_model
 let find = Repo.find
 let find_by_table_view = Repo.Sql.find_by_table_view
+let find_for_duplicate_check = Repo.Sql.find_for_duplicate_check
 
 let find_of_contact ?(required = false) pool user id =
   let open Pool_context in
@@ -25,6 +26,13 @@ let find_of_contact ?(required = false) pool user id =
 
 let find_all_by_contact = find_of_contact ~required:false
 let find_all_required_by_contact = find_of_contact ~required:true
+
+let find_all_by_contact_flat pool user contact_id =
+  let open Utils.Lwt_result.Infix in
+  find_all_by_contact pool user contact_id
+  ||> fun (groups, ungrouped) ->
+  groups |> CCList.fold_left (fun acc group -> group.Group.Public.fields @ acc) ungrouped
+;;
 
 let find_unanswered_required_by_contact database_label user id =
   let open Pool_context in
@@ -75,6 +83,12 @@ module Repo = struct
       include Repo_entity.Option.Id
     end
   end
+
+  module VersionHistory = struct
+    let find_answer = Repo_version_history.find_answer_opt
+  end
+
+  let override_answer = Repo_answer.override_answer
 end
 
 let create_answer is_admin entity_uuid answer new_value =

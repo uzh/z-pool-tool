@@ -56,7 +56,7 @@ module Partials = struct
   ;;
 end
 
-let index statistics layout Pool_context.{ language; _ } =
+let index statistics duplicate_contacts_count layout Pool_context.{ language; _ } =
   let heading_2 title =
     h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Utils.text_to_string language title) ]
   in
@@ -83,11 +83,31 @@ let index statistics layout Pool_context.{ language; _ } =
     div
       [ heading_2 I18n.UpcomingSessionsTitle; div ~a:[ a_class [ "stack-lg" ] ] children ]
   in
+  let duplicate_contacts =
+    match duplicate_contacts_count with
+    | None | Some 0 -> txt ""
+    | Some duplicates ->
+      let open Pool_common in
+      [ p
+          [ Utils.hint_to_string
+              language
+              (I18n.DashboardDuplicateContactsNotification duplicates)
+            |> txt
+          ]
+      ]
+      |> Component.Notification.notification
+           ~link:(Http_utils.Url.Admin.duplicate_path (), I18n.ManageDuplicates)
+           language
+           `Warning
+  in
   let calendar_html = Component.Calendar.(create User) in
   let html =
     match layout with
     | Clean incomplete_sessions ->
-      [ information_section incomplete_sessions; upcoming_section [ calendar_html ] ]
+      [ duplicate_contacts
+      ; information_section incomplete_sessions
+      ; upcoming_section [ calendar_html ]
+      ]
     | Admin (incomplete_sessions, upcoming_sessions) ->
       let upcoming_sessions =
         let sessions =
@@ -99,7 +119,7 @@ let index statistics layout Pool_context.{ language; _ } =
         in
         upcoming_section [ sessions; calendar_html ]
       in
-      [ upcoming_sessions; information_section incomplete_sessions ]
+      [ duplicate_contacts; upcoming_sessions; information_section incomplete_sessions ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
