@@ -37,7 +37,19 @@ let seed_inactive_contact_message_templates =
         |sql}
 ;;
 
+let make_reminder_setting_a_list =
+  Database.Migration.Step.create
+    ~label:"make reminder after setting a list"
+    {sql|
+      UPDATE pool_system_settings
+      SET value = CONCAT('[', value, ']')
+      WHERE settings_key = "[\"inactive_user_warning\"]";
+    |sql}
+;;
+
 let migration () =
   Database.Migration.(
-    empty "202412170838" |> add_step seed_inactive_contact_message_templates)
+    empty "202412170838"
+    |> add_step seed_inactive_contact_message_templates
+    |> add_step make_reminder_setting_a_list)
 ;;
