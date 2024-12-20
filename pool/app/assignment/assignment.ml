@@ -28,9 +28,11 @@ let assignment_to_experiment_exists database_label experiment_id contact =
 ;;
 
 let find_by_contact_and_experiment = Repo.Sql.find_by_contact_and_experiment
+let find_by_contact = Repo.Sql.find_by_contact
 let find_not_deleted_by_session = Repo.find_not_deleted_by_session
 let find_all_by_session = Repo.find_all_by_session
 let find_multiple_by_session = Repo.Sql.find_multiple_by_session
+let find_by_contact_to_merge = Repo.Sql.find_by_contact_to_merge
 let query_by_session = Repo.query_by_session
 let find_uncanceled_by_session = Repo.find_uncanceled_by_session
 

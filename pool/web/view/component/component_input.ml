@@ -79,9 +79,9 @@ module Elements = struct
       ]
   ;;
 
-  let apply_orientation attributes = function
+  let apply_orientation attributes hints = function
     | `Vertical -> input ~a:attributes ()
-    | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ input ~a:attributes () ]
+    | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] (input ~a:attributes () :: hints)
   ;;
 
   let identifier ?identifier name =
@@ -137,11 +137,11 @@ let input_element
     let group_class = Elements.group_class classnames orientation in
     let help = Elements.hints language hints in
     let error = Elements.error language error in
-    let input_element = Elements.apply_orientation attributes orientation in
+    let input_element = Elements.apply_orientation attributes error orientation in
     let label =
       if hide_label then txt "" else label ~a:[ a_label_for id ] [ txt input_label ]
     in
-    div ~a:[ a_class group_class ] ([ label; input_element ] @ help @ error @ append_html)
+    div ~a:[ a_class group_class ] ([ label; input_element ] @ help @ append_html)
 ;;
 
 let flatpicker_element
@@ -205,13 +205,13 @@ let flatpicker_element
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.hints language hints in
   let error = Elements.error language error in
-  let input_element = Elements.apply_orientation attributes orientation in
+  let input_element =
+    Elements.apply_orientation attributes (flat_picker_help @ error) orientation
+  in
   div
     ~a:[ a_class group_class ]
     ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
      @ help
-     @ error
-     @ flat_picker_help
      @ append_html)
 ;;
 

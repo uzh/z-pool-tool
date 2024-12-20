@@ -19,6 +19,7 @@ val can_read_contact : Guard.PermissionOnTarget.t list -> Pool_context.t -> bool
 val can_read_contact_name : Pool_context.t -> Guard.Uuid.Target.t list -> bool
 val can_read_contact_info : Pool_context.t -> Guard.Uuid.Target.t list -> bool
 val can_access_contact_profile : Pool_context.t -> Experiment.Id.t -> bool
+val can_manage_duplicate_contacts : Pool_context.t -> bool Lwt.t
 
 val target_model_for_actor_role
   :  Database.Label.t

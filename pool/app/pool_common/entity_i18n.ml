@@ -145,6 +145,7 @@ type nav_link =
   | Login
   | LoginInformation
   | Logout
+  | ManageDuplicates
   | Mailings
   | MessageHistory
   | MessageTemplates
@@ -199,6 +200,7 @@ type hint =
   | CustomFieldAdminViewOnly
   | CustomFieldAnsweredOnRegistration
   | CustomFieldContactModel
+  | CustomFieldDuplicateWeight
   | CustomFieldExperimentModel
   | CustomFieldGroups
   | CustomFieldNoContactValue
@@ -210,6 +212,7 @@ type hint =
   | CustomFieldTypeSelect
   | CustomFieldTypeText
   | CustomHtmx of string
+  | DashboardDuplicateContactsNotification of int
   | DefaultReminderLeadTime of Ptime.Span.t
   | DeleteContact
   | DirectRegistrationDisbled
@@ -244,6 +247,7 @@ type hint =
   | LocationsIndex
   | MailingLimit
   | MailingLimitExceedsMatchingContacts
+  | MergeContacts
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentCancellation
   | MessageTemplateAssignmentConfirmation

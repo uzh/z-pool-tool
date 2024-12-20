@@ -454,6 +454,8 @@ let message_history req =
   |> Lwt_result.return
 ;;
 
+module Duplicates = Admin_contact_duplicates
+
 let changelog req =
   let id = contact_id req in
   let url = HttpUtils.Url.Admin.contact_path ~suffix:"changelog" ~id () in

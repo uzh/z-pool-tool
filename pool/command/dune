@@ -2,6 +2,7 @@
  (name command)
  (libraries
   cqrs_command
+  duplicate_contacts
   guard
   matcher
   pool_event

@@ -37,6 +37,7 @@ let create_target_path ?uuid =
     | `ContactInfo
     | `ContactDirectMessage
     | `ContactName
+    | `DuplicateContact
     | `I18n
     | `Invitation
     | `InvitationNotification

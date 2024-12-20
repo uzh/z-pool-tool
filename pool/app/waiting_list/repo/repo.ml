@@ -72,6 +72,24 @@ module Sql = struct
     Database.find_opt pool user_is_enlisted_request (contact |> Contact.id, experiment_id)
   ;;
 
+  let find_by_contact_to_merge_request =
+    let open Caqti_request.Infix in
+    {sql| 
+      WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pool_waiting_list AS merge
+        WHERE pool_waiting_list.experiment_uuid = merge.experiment_uuid
+          AND merge.contact_uuid = UNHEX(REPLACE($2, '-', '')))|sql}
+    |> find_request_sql
+    |> Caqti_type.(t2 Contact.Repo.Id.t Contact.Repo.Id.t) ->* RepoEntity.t
+  ;;
+
+  let find_by_contact_to_merge pool ~contact ~merged_contact =
+    let open Contact in
+    Database.collect pool find_by_contact_to_merge_request (id contact, id merged_contact)
+  ;;
+
   let find_by_experiment ?query pool id =
     let where =
       let sql =
@@ -175,6 +193,7 @@ end
 
 let find = Sql.find
 let find_by_contact_and_experiment = Sql.find_by_contact_and_experiment
+let find_by_contact_to_merge = Sql.find_by_contact_to_merge
 
 let user_is_enlisted pool contact experiment_id =
   let open Utils.Lwt_result.Infix in
