@@ -29,7 +29,7 @@ let check_result ?(msg = "succeeds") =
 
 (* Helper functions *)
 
-let setup_test ?(log_level = Logs.Info) ?(reporter = Logger.lwt_file_reporter ()) () =
+let setup_test ?(log_level = Logs.Info) ?(reporter = Logger.reporter) () =
   let open Sihl.Configuration in
   let () = read_env_file () |> CCOption.value ~default:[] |> store in
   let () = Logs.set_level (Some log_level) in
