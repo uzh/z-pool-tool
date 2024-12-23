@@ -1,30 +1,5 @@
 module Dynparam = Database.Dynparam
 
-let deactivation_notification_count pool contact =
-  let open Caqti_request.Infix in
-  let request =
-    {sql|
-     COUNT(id) 
-     FROM pool_contact_deactivation_notification 
-     WHERE contact_id = UNHEX(REPLACE(?, '-', ''))
-    |sql}
-    |> Contact.Repo.Id.t ->. Caqti_type.unit
-  in
-  Database.exec pool request (Contact.id contact)
-;;
-
-let insert_notification pool contact =
-  let open Caqti_request.Infix in
-  let request =
-    {sql|
-     INSERT INTO pool_contact_deactivation_notification (contact_uuid)
-     VALUES (UNHEX(REPLACE(?, '-', '')))
-    |sql}
-    |> Contact.Repo.Id.t ->. Caqti_type.unit
-  in
-  Database.exec pool request (Contact.id contact)
-;;
-
 let additional_joins =
   [ {sql|
     LEFT JOIN (

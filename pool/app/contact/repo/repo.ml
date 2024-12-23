@@ -585,3 +585,17 @@ let find_last_signin_at pool contact =
   in
   contact |> Entity.id |> Database.find pool request
 ;;
+
+module InactivityNotification = struct
+  let insert_notification pool contact =
+    let open Caqti_request.Infix in
+    let request =
+      {sql|
+       INSERT INTO pool_contact_deactivation_notification (contact_uuid)
+       VALUES (UNHEX(REPLACE(?, '-', '')))
+      |sql}
+      |> Repo_entity.Id.t ->. Caqti_type.unit
+    in
+    Database.exec pool request (Entity.id contact)
+  ;;
+end

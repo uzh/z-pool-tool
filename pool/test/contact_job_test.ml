@@ -44,7 +44,7 @@ let find_contacts_to_remind _ () =
   Alcotest.(check (list Test_utils.contact) "Notify contact 2" to_notify [ c2 ]);
   (* Handle notification event, do not expect any returns *)
   let%lwt () =
-    let open Contact_job in
+    let open Contact in
     to_notify
     |> Lwt_list.iter_s (fun contact ->
       NotifiedAbountInactivity contact |> handle_event pool)

@@ -177,6 +177,7 @@ type event =
   | RegistrationAttemptNotificationSent of t
   | Updated of t
   | SignInCounterUpdated of t
+  | NotifiedAbountInactivity of t
 
 val created : create -> event
 val updated : t -> event

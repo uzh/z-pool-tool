@@ -47,7 +47,7 @@ let warning_notification_events pool = function
           make_message hd
           >>= fun message ->
           make_events
-            (messages @ [ message ], events @ [ Event.NotifiedAbountInactivity hd ])
+            (messages @ [ message ], events @ [ Contact.NotifiedAbountInactivity hd ])
             tl
       in
       make_events ([], []) contacts
@@ -65,7 +65,7 @@ let handle_contact_warnings pool warn_after =
   warning_notification_events pool contacts_to_warn
 ;;
 
-let handle_events pool message handle_event = function
+let handle_events pool message = function
   | Error err ->
     let open Pool_common in
     Logs.err (fun m ->
@@ -81,7 +81,7 @@ let handle_events pool message handle_event = function
     Logs.info (fun m ->
       m "%s: Found %i contacts to notify due to inactiviey" message (CCList.length events));
     let%lwt () = Email.handle_event pool bulk_sent in
-    events |> Lwt_list.iter_s (handle_event pool)
+    events |> Lwt_list.iter_s (Contact.handle_event pool)
 ;;
 
 let run_by_tenant pool =
@@ -90,11 +90,11 @@ let run_by_tenant pool =
   let%lwt warn_after = find_inactive_user_warning pool in
   let%lwt () =
     disable_contact_events pool disable_after warn_after
-    >|> handle_events pool "Pausing inactive users:" Contact.handle_event
+    >|> handle_events pool "Pausing inactive users:"
   in
   let%lwt () =
     handle_contact_warnings pool warn_after
-    >|> handle_events pool "Notify inactive users:" Event.handle_event
+    >|> handle_events pool "Notify inactive users:"
   in
   Lwt.return_unit
 ;;
