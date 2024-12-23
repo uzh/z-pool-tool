@@ -346,8 +346,10 @@ module InactiveContactDeactivation : sig
   val email_params : email_layout -> Contact.t -> (string * string) list
 
   val prepare
-    :  Pool_tenant.t
-    -> (Contact.t -> (Email.dispatch, Pool_message.Error.t) result) Lwt.t
+    :  Database.Label.t
+    -> ( Contact.t -> (Email.dispatch, Pool_message.Error.t) result
+         , Pool_message.Error.t )
+         Lwt_result.t
 end
 
 module ManualSessionMessage : sig

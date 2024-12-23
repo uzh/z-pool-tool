@@ -141,6 +141,9 @@ let suite =
           ; test_case "update without filter" `Slow update_without_filter
           ; test_case "exclude contact" `Slow exclude_contact
           ] )
+    ; ( "contact job"
+      , Contact_job_test.
+          [ test_case "find contacts to remind" `Slow find_contacts_to_remind ] )
     ; ( "contact"
       , Contact_test.
           [ test_case

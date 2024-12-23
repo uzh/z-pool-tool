@@ -5,6 +5,7 @@ type t =
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
+  | ContactJob of Contact_job.event
   | CustomField of Custom_field.event
   | Database of Pool_database.event
   | Email of Email.event
@@ -40,6 +41,7 @@ val api_key : Api_key.event -> t
 val assignment : Assignment.event -> t
 val assignmentjob : Assignment_job.event -> t
 val contact : Contact.event -> t
+val contactjob : Contact_job.event -> t
 val custom_field : Custom_field.event -> t
 val database : Pool_database.event -> t
 val email : Email.event -> t

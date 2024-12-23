@@ -115,5 +115,8 @@ let handle_event ?tags pool : event -> unit Lwt.t =
   | RegistrationAttemptNotificationSent t ->
     Repo.set_registration_attempt_notification_sent_at pool t
   | Updated contact -> contact |> Repo.update pool
-  | SignInCounterUpdated contact -> Repo.update_sign_in_count pool contact
+  | SignInCounterUpdated contact ->
+    let%lwt () = Repo.update_sign_in_count pool contact in
+    let%lwt () = Repo.remove_deactivation_notifications pool contact in
+    Lwt.return_unit
 ;;

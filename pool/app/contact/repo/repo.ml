@@ -524,6 +524,18 @@ let update_sign_in_count pool =
   Entity.id %> Database.exec pool update_sign_in_count_request
 ;;
 
+let remove_deactivation_notifications pool contact =
+  let open Caqti_request.Infix in
+  let request =
+    {sql|
+      DELETE FROM pool_contact_deactivation_notification
+      WHERE contact_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Id.t ->. Caqti_type.unit
+  in
+  Database.exec pool request (Entity.id contact)
+;;
+
 let set_inactive_request =
   let open Caqti_request.Infix in
   {sql|
@@ -564,12 +576,11 @@ let find_by_last_sign_earlier_than pool time_span =
 let find_last_signin_at pool contact =
   let request =
     let open Caqti_request.Infix in
-    find_request_sql
-      {sql|
-        SELECT last_sign_in_at
-        FROM pool_contacts
-        WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
-      |sql}
+    {sql|
+      SELECT last_sign_in_at
+      FROM pool_contacts
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
     |> Repo_entity.Id.t ->! Caqti_type.ptime
   in
   contact |> Entity.id |> Database.find pool request

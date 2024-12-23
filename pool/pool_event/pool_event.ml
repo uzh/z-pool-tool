@@ -7,6 +7,7 @@ type t =
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
   | Contact of Contact.event
+  | ContactJob of Contact_job.event
   | CustomField of Custom_field.event
   | Database of Pool_database.event
   | Email of Email.event
@@ -41,6 +42,7 @@ let api_key events = ApiKey events
 let assignment events = Assignment events
 let assignmentjob events = AssignmentJob events
 let contact events = Contact events
+let contactjob events = ContactJob events
 let custom_field events = CustomField events
 let database events = Database events
 let email events = Email events
@@ -93,6 +95,9 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   | Contact event ->
     info "contact" Contact.pp_event event;
     Contact.handle_event pool event
+  | ContactJob event ->
+    info "contact job" Contact_job.pp_event event;
+    Contact_job.handle_event pool event
   | CustomField event ->
     info "custom_field" Custom_field.pp_event event;
     Custom_field.handle_event ?user_uuid pool event

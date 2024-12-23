@@ -1,43 +1,102 @@
 open Utils.Lwt_result.Infix
+module Repo = Contact_job_repo
 
 let src = Logs.Src.create "contacts.service"
+
+let disable_contact_events pool disable_after warn_after =
+  let* make_message = Message_template.InactiveContactDeactivation.prepare pool in
+  let%lwt contacts =
+    Repo.find_to_disable
+      pool
+      (Settings.InactiveUser.DisableAfter.value disable_after)
+      (CCList.length warn_after)
+  in
+  let* bulk_sent, events =
+    let rec make_events (messages, events) = function
+      | [] -> Lwt_result.return (messages, events)
+      | contact :: tl ->
+        make_message contact
+        |> Lwt_result.lift
+        >>= fun message ->
+        let contact =
+          Contact.
+            { contact with
+              paused = Pool_user.Paused.create true
+            ; paused_version = Pool_common.Version.increment contact.paused_version
+            }
+        in
+        make_events (messages @ [ message ], events @ [ Contact.Updated contact ]) tl
+    in
+    make_events ([], []) contacts
+  in
+  Lwt_result.return (Some (Email.BulkSent bulk_sent, events))
+;;
 
 let warning_notification_events pool = function
   | [] -> Lwt_result.return None
   | contacts ->
     let* tenant = Pool_tenant.find_by_label pool in
-    (* TODO: deactivation_at *)
     let deactivation_at = Ptime_clock.now () in
     let%lwt make_message =
       Message_template.InactiveContactWarning.prepare tenant ~deactivation_at
     in
-    let* messages = contacts |> Lwt_list.map_s make_message ||> CCList.all_ok in
-    Lwt_result.return (Some messages)
+    let* bulk_sent, events =
+      let rec make_events (messages, events) = function
+        | [] -> Lwt_result.return (messages, events)
+        | hd :: tl ->
+          make_message hd
+          >>= fun message ->
+          make_events
+            (messages @ [ message ], events @ [ Event.NotifiedAbountInactivity hd ])
+            tl
+      in
+      make_events ([], []) contacts
+    in
+    Lwt_result.return (Some (Email.BulkSent bulk_sent, events))
 ;;
 
-let run_by_tenant pool =
+let handle_contact_warnings pool warn_after =
   let open Settings in
-  let%lwt warn_after =
-    Settings.find_inactive_user_warning pool ||> InactiveUser.Warning.value
+  let%lwt contacts_to_warn =
+    warn_after
+    |> CCList.map InactiveUser.Warning.TimeSpan.value
+    |> Repo.find_to_warn_about_inactivity pool
   in
-  (* let%lwt disable_after = Settings.find_inactive_user_warning pool in *)
-  let%lwt contacts_to_warn = Contact.find_by_last_sign_earlier_than pool warn_after in
   warning_notification_events pool contacts_to_warn
-  >|> function
+;;
+
+let handle_events pool message handle_event = function
   | Error err ->
     let open Pool_common in
     Logs.err (fun m ->
       m
-        "An error occurred while trying to warn contacts about account inavtivity: %s"
+        "%s: An error occurred while making events: %s"
+        message
         (Utils.error_to_string Language.En err));
     Utils.failwith err
   | Ok None ->
-    Logs.info (fun m -> m "No contacts found to warn due to account inavtivity");
+    Logs.info (fun m -> m "%s: No contacts found to take action" message);
     Lwt.return_unit
-  | Ok (Some messages) ->
+  | Ok (Some (bulk_sent, events)) ->
     Logs.info (fun m ->
-      m "Warning %i contacts about account inavtivity" (CCList.length messages));
-    Email.BulkSent messages |> Email.handle_event pool
+      m "%s: Found %i contacts to notify due to inactiviey" message (CCList.length events));
+    let%lwt () = Email.handle_event pool bulk_sent in
+    events |> Lwt_list.iter_s (handle_event pool)
+;;
+
+let run_by_tenant pool =
+  let open Settings in
+  let%lwt disable_after = find_inactive_user_disable_after pool in
+  let%lwt warn_after = find_inactive_user_warning pool in
+  let%lwt () =
+    disable_contact_events pool disable_after warn_after
+    >|> handle_events pool "Pausing inactive users:" Contact.handle_event
+  in
+  let%lwt () =
+    handle_contact_warnings pool warn_after
+    >|> handle_events pool "Notify inactive users:" Event.handle_event
+  in
+  Lwt.return_unit
 ;;
 
 let run () =

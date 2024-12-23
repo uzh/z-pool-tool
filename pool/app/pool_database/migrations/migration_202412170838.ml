@@ -47,9 +47,37 @@ let make_reminder_setting_a_list =
     |sql}
 ;;
 
+let create_pool_contact_deactivation_notification_table =
+  Database.Migration.Step.create
+    ~label:"create pool_contact_deactivation_notification table"
+    {sql|
+     CREATE TABLE IF NOT EXISTS pool_contact_deactivation_notification (
+        id BIGINT UNSIGNED AUTO_INCREMENT,
+        contact_uuid BINARY(16) NOT NULL,
+        created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    |sql}
+;;
+
+let add_pool_contact_deactivation_notification_fk =
+  Database.Migration.Step.create
+    ~label:"add pool_contact_deactivation_notification fk"
+    {sql|
+      ALTER TABLE pool_contact_deactivation_notification
+      ADD CONSTRAINT fk_contact_uuid
+      FOREIGN KEY (contact_uuid)
+      REFERENCES user_users(uuid)
+      ON DELETE CASCADE;
+    |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202412170838"
     |> add_step seed_inactive_contact_message_templates
-    |> add_step make_reminder_setting_a_list)
+    |> add_step make_reminder_setting_a_list
+    |> add_step create_pool_contact_deactivation_notification_table
+    |> add_step add_pool_contact_deactivation_notification_fk)
 ;;
