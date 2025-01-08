@@ -297,6 +297,8 @@ type dispatch =
   ; job_ctx : Pool_queue.job_ctx option
   }
 
+val equal_dispatch : dispatch -> dispatch -> bool
+val pp_dispatch : Format.formatter -> dispatch -> unit
 val yojson_of_dispatch : dispatch -> Yojson.Safe.t
 val job : dispatch -> Service.Job.t
 val id : dispatch -> Pool_queue.Id.t option

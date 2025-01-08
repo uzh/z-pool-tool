@@ -551,28 +551,6 @@ let set_inactive_request =
 
 let set_inactive pool = Entity.id %> Database.exec pool set_inactive_request
 
-let find_by_last_sign_earlier_than pool time_span =
-  let request =
-    let open Caqti_request.Infix in
-    find_request_sql
-      {sql|
-        WHERE
-          last_sign_in_at <= (NOW() - INTERVAL $1 SECOND)
-          AND pool_contacts.paused = 0
-          AND pool_contacts.disabled = 0
-          AND user_users.status = "active"
-          AND pool_contacts.email_verified IS NOT NULL
-          AND pool_contacts.import_pending = 0
-        LIMIT 100
-      |sql}
-    |> Caqti_type.int ->* t
-  in
-  time_span
-  |> Ptime.Span.to_int_s
-  |> CCOption.get_exn_or "Invalid time span provided"
-  |> Database.collect pool request
-;;
-
 let find_last_signin_at pool contact =
   let request =
     let open Caqti_request.Infix in

@@ -332,14 +332,14 @@ module InactiveContactWarning : sig
   val email_params
     :  email_layout
     -> Contact.t
-    -> deactivation_at:Ptime.t
     -> last_login:Ptime.t
     -> (string * string) list
 
   val prepare
-    :  Pool_tenant.t
-    -> deactivation_at:Ptime.t
-    -> (Contact.t -> (Email.dispatch, Pool_message.Error.t) Lwt_result.t) Lwt.t
+    :  Database.Label.t
+    -> ( Contact.t -> (Email.dispatch, Pool_message.Error.t) Lwt_result.t
+         , Pool_message.Error.t )
+         Lwt_result.t
 end
 
 module InactiveContactDeactivation : sig

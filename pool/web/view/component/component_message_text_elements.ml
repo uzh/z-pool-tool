@@ -170,14 +170,7 @@ let message_template_help
     let half_year = Span.of_int_s (60 * 60 * 24 * 365 / 2) in
     let now = Ptime_clock.now () in
     let last_login = sub_span now half_year |> CCOption.get_exn_or "Invalid ptime span" in
-    let deactivation_at =
-      add_span now half_year |> CCOption.get_exn_or "Invalid ptime span"
-    in
-    InactiveContactWarning.email_params
-      layout
-      (create_contact ())
-      ~deactivation_at
-      ~last_login
+    InactiveContactWarning.email_params layout (create_contact ()) ~last_login
   | ManualSessionMessage ->
     ManualSessionMessage.email_params
       language

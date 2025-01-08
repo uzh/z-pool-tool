@@ -143,7 +143,7 @@ let suite =
           ] )
     ; ( "contact job"
       , Contact_job_test.
-          [ test_case "find contacts to remind" `Slow find_contacts_to_remind ] )
+          [ test_case "find contacts to remind about inactivity" `Slow find_contacts_to_remind ] )
     ; ( "contact"
       , Contact_test.
           [ test_case

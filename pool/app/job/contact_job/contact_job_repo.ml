@@ -51,7 +51,6 @@ let find_to_warn_about_inactivity_request latest_notification_timestamps =
 ;;
 
 let find_to_warn_about_inactivity pool warn_after =
-  (* TODO: Add check that no more then warn_after length reminders are set *)
   match warn_after with
   | [] -> Lwt.return []
   | warn_after ->
@@ -82,8 +81,6 @@ let find_to_warn_about_inactivity pool warn_after =
     let request = find_to_warn_about_inactivity_request sql in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request = request |> pt ->* Contact.Repo.t in
-    let () = Caqti_request.make_pp_with_param () Format.std_formatter (request, pv) in
-    print_endline "";
     Database.collect pool request pv
 ;;
 
@@ -107,8 +104,8 @@ let find_to_disable pool disable_after n_reminders =
   in
   let needs_reminders =
     {sql|
-      pcdn.latest_notification <= NOW() - INTERVAL $2 SECOND
-      AND pcdn.notification_count = $1
+      pcdn.latest_notification <= NOW() - INTERVAL $1 SECOND
+      AND pcdn.notification_count = $2
   |sql}
   in
   let check_last_login =

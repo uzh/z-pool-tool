@@ -3,7 +3,7 @@ module Repo = Contact_job_repo
 
 let src = Logs.Src.create "contacts.service"
 
-let disable_contact_events pool disable_after warn_after =
+let handle_disable_contacts pool disable_after warn_after =
   let* make_message = Message_template.InactiveContactDeactivation.prepare pool in
   let%lwt contacts =
     Repo.find_to_disable
@@ -11,7 +11,7 @@ let disable_contact_events pool disable_after warn_after =
       (Settings.InactiveUser.DisableAfter.value disable_after)
       (CCList.length warn_after)
   in
-  let* bulk_sent, events =
+  let* messages, events =
     let rec make_events (messages, events) = function
       | [] -> Lwt_result.return (messages, events)
       | contact :: tl ->
@@ -29,18 +29,16 @@ let disable_contact_events pool disable_after warn_after =
     in
     make_events ([], []) contacts
   in
-  Lwt_result.return (Some (Email.BulkSent bulk_sent, events))
+  Lwt_result.return (messages, events)
 ;;
 
 let warning_notification_events pool = function
-  | [] -> Lwt_result.return None
+  | [] ->
+    Logs.info ~src (fun m -> m "No 'warning after' timestamp defined.");
+    Lwt_result.return ([], [])
   | contacts ->
-    let* tenant = Pool_tenant.find_by_label pool in
-    let deactivation_at = Ptime_clock.now () in
-    let%lwt make_message =
-      Message_template.InactiveContactWarning.prepare tenant ~deactivation_at
-    in
-    let* bulk_sent, events =
+    let* make_message = Message_template.InactiveContactWarning.prepare pool in
+    let* messages, events =
       let rec make_events (messages, events) = function
         | [] -> Lwt_result.return (messages, events)
         | hd :: tl ->
@@ -52,44 +50,38 @@ let warning_notification_events pool = function
       in
       make_events ([], []) contacts
     in
-    Lwt_result.return (Some (Email.BulkSent bulk_sent, events))
+    Lwt_result.return (messages, events)
 ;;
 
 let handle_contact_warnings pool warn_after =
-  let open Settings in
-  let%lwt contacts_to_warn =
-    warn_after
-    |> CCList.map InactiveUser.Warning.TimeSpan.value
-    |> Repo.find_to_warn_about_inactivity pool
-  in
+  let%lwt contacts_to_warn = warn_after |> Repo.find_to_warn_about_inactivity pool in
   warning_notification_events pool contacts_to_warn
 ;;
 
 let handle_events pool message = function
   | Error err ->
     let open Pool_common in
-    Logs.err (fun m ->
+    Logs.err ~src (fun m ->
       m
         "%s: An error occurred while making events: %s"
         message
         (Utils.error_to_string Language.En err));
     Utils.failwith err
-  | Ok None ->
-    Logs.info (fun m -> m "%s: No contacts found to take action" message);
-    Lwt.return_unit
-  | Ok (Some (bulk_sent, events)) ->
-    Logs.info (fun m ->
+  | Ok (emails, events) ->
+    Logs.info ~src (fun m ->
       m "%s: Found %i contacts to notify due to inactiviey" message (CCList.length events));
-    let%lwt () = Email.handle_event pool bulk_sent in
+    let%lwt () = Email.handle_event pool (Email.BulkSent emails) in
     events |> Lwt_list.iter_s (Contact.handle_event pool)
 ;;
 
 let run_by_tenant pool =
   let open Settings in
   let%lwt disable_after = find_inactive_user_disable_after pool in
-  let%lwt warn_after = find_inactive_user_warning pool in
+  let%lwt warn_after =
+    find_inactive_user_warning pool ||> CCList.map InactiveUser.Warning.TimeSpan.value
+  in
   let%lwt () =
-    disable_contact_events pool disable_after warn_after
+    handle_disable_contacts pool disable_after warn_after
     >|> handle_events pool "Pausing inactive users:"
   in
   let%lwt () =

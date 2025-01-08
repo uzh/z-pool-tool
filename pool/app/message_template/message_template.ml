@@ -605,16 +605,15 @@ end
 module InactiveContactWarning = struct
   let label = Label.InactiveContactWarning
 
-  let email_params layout contact ~deactivation_at ~last_login =
+  let email_params layout contact ~last_login =
     global_params layout contact.Contact.user
-    @ [ "lastLogin", Pool_model.Time.formatted_date last_login
-      ; "deactivationAt", Pool_model.Time.formatted_date deactivation_at
-      ]
+    @ [ "lastLogin", Pool_model.Time.formatted_date last_login ]
   ;;
 
-  let prepare tenant ~deactivation_at =
+  let prepare pool =
+    let open Utils.Lwt_result.Infix in
     let open Message_utils in
-    let pool = tenant.Pool_tenant.database_label in
+    let* tenant = Pool_tenant.find_by_label pool in
     let%lwt sys_langs = Settings.find_languages pool in
     let%lwt templates = find_all_by_label_to_send pool sys_langs label in
     let%lwt sender = default_sender_of_pool pool in
@@ -626,14 +625,14 @@ module InactiveContactWarning = struct
         find_template_by_language templates message_language |> Lwt_result.lift
       in
       let%lwt last_login = Contact.find_last_signin_at pool contact in
-      let params = email_params layout contact ~deactivation_at ~last_login in
+      let params = email_params layout contact ~last_login in
       let email =
         prepare_email lang template sender (Contact.email_address contact) layout params
       in
       let entity_uuids = user_message_uuids (Contact.user contact) in
       Lwt_result.return (create_email_job label entity_uuids email)
     in
-    Lwt.return fnc
+    Lwt_result.return fnc
   ;;
 end
 
