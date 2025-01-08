@@ -5,6 +5,7 @@
   component
   contact
   custom_field
+  duplicate_contacts
   experiment
   htmx
   http_utils

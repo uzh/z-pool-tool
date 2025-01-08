@@ -111,3 +111,26 @@ let all_profile_update_triggers =
        ||> CCList.all_ok
        ||> get_or_failwith %> Utils.flat_unit %> CCOption.return)
 ;;
+
+let find_duplicates =
+  let help =
+    {|<database_label> <user_uuid>
+
+Provide all fields to sign up a new contact:
+        <database_label>      : string
+        <user_uuid>           : string
+        |}
+  in
+  Sihl.Command.make
+    ~name:"find_duplicates"
+    ~description:"Finds duplicate contacts"
+    ~help
+    (function
+    | [ db_pool; user_uuid ] ->
+      let open Utils.Lwt_result.Infix in
+      let%lwt () = Database.Pool.initialize () in
+      let user_uuid = Pool_common.Id.of_string user_uuid in
+      let db_pool = Database.Label.of_string db_pool in
+      Duplicate_contacts.Service.run db_pool user_uuid ||> CCOption.return
+    | _ -> Command_utils.failwith_missmatch help)
+;;

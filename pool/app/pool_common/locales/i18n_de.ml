@@ -225,6 +225,7 @@ let nav_link_to_string = function
   | Login -> "Login"
   | LoginInformation -> "Anmeldeinformationen"
   | Logout -> "Logout"
+  | ManageDuplicates -> "Duplikate verwalten"
   | Mailings -> "Versand"
   | MessageHistory -> "Nachrichtenverlauf"
   | MessageTemplates -> "Nachrichtentemplates"
@@ -327,6 +328,10 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | CustomFieldContactModel ->
     "Fragen, die Kontakte beantworten können, bzw. müssen. Anhand dieser Informationen \
      werden die Kontakte zu Experimenten eingeladen."
+  | CustomFieldDuplicateWeight ->
+    "Die Gewichtung beim Vergleichen von Kontakten bei der Suche nach möglichen \
+     Dupliktaten. Kann ein Wert zwischen 1 und 10 sein. Wird das Feld leer gelassen, \
+     wird dieses Feld nicht für die Duplikaterkennung verwendet."
   | CustomFieldExperimentModel -> "Anpassbare Attribute für Experimente."
   | CustomFieldGroups ->
     {|Gruppen, nach denen benutzerdefinierte Felder gruppiert werden können. Das Gruppieren von benutzerdefinierten Feldern hat keine keine Auswirkungen auf ihre Funktionalität. Sie hat lediglich grafische Auswirkungen.|}
@@ -351,6 +356,13 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
      Falls die Daten in einer anderen Form erhoben werden können, ist dies zu \
      bevorzugen."
   | CustomHtmx s -> s
+  | DashboardDuplicateContactsNotification count ->
+    let text =
+      if count = 1
+      then "Es wurde 1 neues mögliches Kontakt-Duplikat gefunden."
+      else "Es wurden %i neue mögliche Kontakt-Duplikate gefunden."
+    in
+    Format.asprintf "%s. Bitte ergreiffen Sie die nötigen Massnahmen." text
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
@@ -470,6 +482,10 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | MailingLimitExceedsMatchingContacts ->
     "Die angegebene Limite ist grösser als die Anzahl Kontakt, die die Kriterien dieses \
      Experiments erfüllen."
+  | MergeContacts ->
+    {|Wählen Sie, von welchem Kontakt die Attribute übernommen werden. 
+    
+Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert vorhanden, wird dieser vor dem Kontaktwert berücksichtig.|}
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen zu vieler \
      fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."

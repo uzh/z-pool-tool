@@ -68,6 +68,8 @@ type t =
   | Distribution
   | DistributionField
   | Duration
+  | Duplicate
+  | DuplicateWeighting
   | Email
   | EmailAddress
   | EmailAddressUnverified
@@ -111,6 +113,7 @@ type t =
   | HideCanceled
   | HideClosed
   | HideInactive
+  | HideIgnored
   | HideMakedAsDeleted
   | HidePast
   | HidePaused
@@ -236,6 +239,7 @@ type t =
   | RunAt
   | ScheduledTime
   | ScheduledTimeSpan
+  | Score
   | Search
   | SearchOf of t
   | SecondReminder

@@ -7,6 +7,7 @@
   contact
   component
   cqrs_command
+  duplicate_contacts
   email
   guard
   htmx

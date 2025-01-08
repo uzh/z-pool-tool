@@ -622,6 +622,18 @@ module Admin = struct
     in
     let contacts =
       let open Contacts in
+      let duplicates =
+        let open Duplicates in
+        let specific =
+          [ get "" ~middlewares:[ Access.read ] show
+          ; post "ignore" ~middlewares:[ Access.ignore ] ignore
+          ; post "merge" ~middlewares:[ Access.merge ] merge
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index ] index
+        ; choose ~scope:(Duplicate |> url_key) specific
+        ]
+      in
       let specific =
         let field_specific =
           [ post "/delete" ~middlewares:[ Access.update ] delete_answer ]
@@ -637,6 +649,10 @@ module Admin = struct
           ; get (Experiment |> url_key) htmx_experiment_modal
           ; post (Experiment |> url_key) enroll_contact_post
           ]
+        in
+        let duplicates =
+          let open Duplicates in
+          [ get "" ~middlewares:[ Access.index ] index ]
         in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
@@ -657,9 +673,11 @@ module Admin = struct
             ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))
             field_specific
         ; choose ~scope:(Tag |> human_url) tags
+        ; choose ~scope:(Duplicate |> human_url) duplicates
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
+      ; choose ~scope:(Duplicate |> human_url) duplicates
       ; choose ~scope:(Contact |> url_key) specific
       ]
     in

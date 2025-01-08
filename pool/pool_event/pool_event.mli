@@ -7,6 +7,7 @@ type t =
   | Contact of Contact.event
   | CustomField of Custom_field.event
   | Database of Pool_database.event
+  | DuplicateContacts of Duplicate_contacts.event
   | Email of Email.event
   | EmailVerification of Email.verification_event
   | Experiment of Experiment.event
@@ -42,6 +43,7 @@ val assignmentjob : Assignment_job.event -> t
 val contact : Contact.event -> t
 val custom_field : Custom_field.event -> t
 val database : Pool_database.event -> t
+val duplicate_contacts : Duplicate_contacts.event -> t
 val email : Email.event -> t
 val email_verification : Email.verification_event -> t
 val experiment : Experiment.event -> t
@@ -65,6 +67,7 @@ val time_window : Time_window.event -> t
 val user_import : User_import.event -> t
 val user : Pool_user.event -> t
 val waiting_list : Waiting_list.event -> t
+val user_uuid : Pool_context.user -> Pool_common.Id.t option
 
 val handle_event
   :  ?tags:Logs.Tag.set

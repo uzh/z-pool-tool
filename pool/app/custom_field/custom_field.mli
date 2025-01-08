@@ -60,6 +60,7 @@ module Name : sig
   val yojson_of_t : t -> Yojson.Safe.t
   val find_opt : Pool_common.Language.t -> t -> name option
   val find_opt_or : Pool_common.Language.t -> string -> t -> string
+  val find : Pool_common.Language.t -> t -> string
   val get_hd : t -> name
 
   val create
@@ -138,6 +139,15 @@ end
 
 module PromptOnRegistration : sig
   include Pool_model.Base.BooleanSig
+end
+
+module DuplicateWeighting : sig
+  include Pool_model.Base.IntegerSig
+
+  val init : t
+  val min : int
+  val max : int
+  val field : Pool_message.Field.t
 end
 
 module Validation : sig
@@ -263,6 +273,7 @@ module Public : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val equal_answer : t -> t -> bool
   val id : t -> Id.t
   val entity_id : t -> Pool_common.Id.t option
   val name_value : Pool_common.Language.t -> t -> string
@@ -332,6 +343,7 @@ type 'a custom_field =
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
+  ; duplicate_weighting : DuplicateWeighting.t option
   }
 
 type t =
@@ -350,6 +362,7 @@ val create
   :  ?id:Id.t
   -> ?select_options:SelectOption.t list
   -> ?published_at:PublishedAt.t
+  -> ?duplicate_weighting:DuplicateWeighting.t
   -> FieldType.t
   -> Model.t
   -> Name.t
@@ -376,6 +389,7 @@ type update =
   ; admin_view_only : AdminViewOnly.t
   ; admin_input_only : AdminInputOnly.t
   ; prompt_on_registration : PromptOnRegistration.t
+  ; duplicate_weighting : DuplicateWeighting.t option
   }
 
 val update : t -> update -> Validation.raw -> t
@@ -399,6 +413,7 @@ val show_on_session_close_page : t -> bool
 val set_show_on_session_close_page : bool -> t -> t
 val show_on_session_detail_page : t -> bool
 val set_show_on_session_detail_page : bool -> t -> t
+val duplicate_weighting : t -> DuplicateWeighting.t option
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
 val validation_to_yojson : t -> Yojson.Safe.t
@@ -437,6 +452,13 @@ val changelog_to_human
   -> Changelog.t
   -> Changelog.t Lwt.t
 
+val create_custom_field_answer_changelog
+  :  ?user_uuid:Id.t
+  -> Database.Label.t
+  -> Contact.t
+  -> Public.t
+  -> unit Lwt.t
+
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
   | AnswerUpserted of Public.t * Contact.Id.t * Pool_context.user
@@ -465,6 +487,7 @@ val find_by_model : Database.Label.t -> Model.t -> t list Lwt.t
 val find_by_group : Database.Label.t -> Group.Id.t -> t list Lwt.t
 val find_ungrouped_by_model : Database.Label.t -> Model.t -> t list Lwt.t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_for_duplicate_check : Database.Label.t -> t list Lwt.t
 
 val find_by_table_view
   :  Database.Label.t
@@ -482,6 +505,12 @@ val find_all_required_by_contact
   -> Pool_context.user
   -> Contact.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
+
+val find_all_by_contact_flat
+  :  Database.Label.t
+  -> Pool_context.user
+  -> Contact.Id.t
+  -> Public.t list Lwt.t
 
 val find_unanswered_required_by_contact
   :  Database.Label.t
@@ -535,6 +564,19 @@ val find_group
 val find_groups_by_model : Database.Label.t -> Model.t -> Group.t list Lwt.t
 val find_names : Database.Label.t -> Id.t list -> (Pool_common.Id.t * Name.t) list Lwt.t
 
+module VersionHistory : Changelog.TSig with type record = t
+module OptionVersionHistory : Changelog.TSig with type record = SelectOption.t
+module GroupVersionHistory : Changelog.TSig with type record = Group.t
+
+module AnswerRecord : sig
+  type t
+
+  val from_public : Public.t -> t
+  val default_record : t -> t
+end
+
+module AnswerVersionHistory : Changelog.TSig with type record = AnswerRecord.t
+
 module Repo : sig
   module Id : sig
     type t = Id.t
@@ -548,6 +590,23 @@ module Repo : sig
 
       val t : t Caqti_type.t
     end
+  end
+
+  val override_answer
+    :  entity_uuid:Pool_common.Id.t
+    -> Public.t
+    -> [> `Clear of (Id.t * Id.t, unit, [ `Zero ]) Caqti_request.t * (Id.t * Id.t)
+       | `Override of
+           (Repo_entity_answer.Override.t, unit, [ `Zero ]) Caqti_request.t
+           * Repo_entity_answer.Override.t
+       ]
+
+  module VersionHistory : sig
+    val find_answer
+      :  Database.Label.t
+      -> Contact.Id.t
+      -> Id.t
+      -> AnswerRecord.t option Lwt.t
   end
 end
 
@@ -598,13 +657,3 @@ module Guard : sig
     end
   end
 end
-
-module VersionHistory : Changelog.TSig with type record = t
-module OptionVersionHistory : Changelog.TSig with type record = SelectOption.t
-module GroupVersionHistory : Changelog.TSig with type record = Group.t
-
-module AnswerRecord : sig
-  type t
-end
-
-module AnswerVersionHistory : Changelog.TSig with type record = AnswerRecord.t

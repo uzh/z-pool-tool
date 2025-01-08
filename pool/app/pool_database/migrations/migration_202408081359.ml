@@ -22,7 +22,7 @@ let add_fk_contraint_to_users =
     ~label:"add fk contraint to users"
     {sql| 
       ALTER TABLE pool_change_log ADD CONSTRAINT `fk_pool_changelog_user_users` 
-        FOREIGN KEY (user_uuid) REFERENCES user_users (uuid)
+        FOREIGN KEY (user_uuid) REFERENCES user_users(uuid)
     |sql}
 ;;
 

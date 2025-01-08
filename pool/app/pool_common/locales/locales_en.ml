@@ -76,6 +76,8 @@ let rec field_to_string =
   | Distribution -> "distribution"
   | DistributionField -> "field"
   | Duration -> "duration"
+  | Duplicate -> "possible duplicate"
+  | DuplicateWeighting -> "weighting regarding duplicates"
   | Email -> "email"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
@@ -124,6 +126,7 @@ let rec field_to_string =
   | HideMakedAsDeleted -> "Hide marked as deleted"
   | HidePaused -> "Hide paused"
   | HideInactive -> "Hide inactive"
+  | HideIgnored -> "Hide ignored"
   | HidePast -> "Hide past"
   | HideUnverified -> "Hide unverified"
   | Hint -> "hint"
@@ -247,6 +250,7 @@ let rec field_to_string =
   | RunAt -> "run at"
   | ScheduledTime -> "scheduled time"
   | ScheduledTimeSpan -> "scheduled interval"
+  | Score -> "score"
   | Search -> "search"
   | SearchOf field -> combine Search field
   | SecondReminder -> "second reminder"
@@ -572,6 +576,7 @@ let rec error_to_string =
       "%s or %s"
       (error_to_string err1)
       (err2 |> error_to_string |> CCString.uncapitalize_ascii)
+  | OutOfRange (min, max) -> Format.asprintf "Must be between %i and %i." min max
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicyMinLength n ->
     Format.asprintf "The password must at least contain %i characters." n
@@ -690,6 +695,7 @@ let control_to_string =
   | Filter field -> format_submit "filter" field
   | Generate -> format_submit "generate" None
   | Hide field -> format_submit "hide" field
+  | Ignore field -> format_submit "ignore" field
   | Login -> format_submit "login" None
   | LoadDefaultTemplate -> format_submit "load default template" None
   | Manage field -> format_submit "manage" (Some field)

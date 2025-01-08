@@ -162,6 +162,7 @@ val find_by_contact_and_experiment
   -> Contact.t
   -> (Session.t * t) list Lwt.t
 
+val find_by_contact : Database.Label.t -> Contact.Id.t -> t list Lwt.t
 val find_not_deleted_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 val find_all_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 
@@ -169,6 +170,12 @@ val find_multiple_by_session
   :  Database.Label.t
   -> Session.Id.t
   -> Id.t list
+  -> t list Lwt.t
+
+val find_by_contact_to_merge
+  :  Database.Label.t
+  -> contact:Contact.t
+  -> merged_contact:Contact.t
   -> t list Lwt.t
 
 val query_by_session
@@ -255,6 +262,13 @@ val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> u
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
+
+val create_changelog
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> t
+  -> t
+  -> unit Lwt.t
 
 module Guard : sig
   module Target : sig

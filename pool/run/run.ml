@@ -22,6 +22,7 @@ let worker_services =
   ; Assignment_job.register ()
   ; Contact_job.Inactivity.register ()
   ; System_event.Service.ConnectionWatcher.register ()
+  ; Duplicate_contacts.Service.register ()
   ]
 ;;
 
@@ -59,6 +60,7 @@ let commands =
   ; SystemEvent.handle_system_events_command
   ; Contact.all_profile_update_triggers
   ; Contact.tenant_specific_profile_update_trigger
+  ; Contact.find_duplicates
   ; Matcher.run_tenant
   ; Matcher.run_all
   ; Mail.send_mail

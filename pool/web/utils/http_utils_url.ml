@@ -37,6 +37,18 @@ module Admin = struct
     "/admin/contacts" |> append_opt (map Contact.Id.value id) |> append_opt suffix
   ;;
 
+  let contact_duplicate_path contact_id ?suffix ?id () =
+    (contact_path ~id:contact_id () ^ "/" ^ Field.(show Duplicate))
+    |> append_opt (map Duplicate_contacts.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let duplicate_path ?suffix ?id () =
+    (contact_path ~suffix:Field.(show Duplicate)) ()
+    |> append_opt (map Duplicate_contacts.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let custom_fields_path model ?suffix ?id () =
     "/admin/custom-fields"
     |> append (Custom_field.Model.show model)

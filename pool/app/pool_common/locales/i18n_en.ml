@@ -221,6 +221,7 @@ let nav_link_to_string = function
   | Locations -> "Locations"
   | Login -> "Login"
   | LoginInformation -> "Login information"
+  | ManageDuplicates -> "Manage duplicates"
   | Logout -> "Logout"
   | Mailings -> "Mailings"
   | MessageHistory -> "Message history"
@@ -322,6 +323,10 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | CustomFieldContactModel ->
     "Questions that contacts can, or must, answer. Based on this information, contacts \
      are invited to take part in experiments."
+  | CustomFieldDuplicateWeight ->
+    "The weighting when comparing contacts in the search for possible duplicates. Can be \
+     a value between 1 and 10. If the field is left empty, this custom field is not used \
+     for duplicate detection."
   | CustomFieldExperimentModel -> "Customziable attributes for experiments."
   | CustomFieldGroups ->
     {|Groups to group custom fields by. Grouping custom fields does not have any effect on their functionality. It only has a graphical impact.|}
@@ -345,6 +350,11 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "Please take into account that the data quality is lower for text entries. If the \
      data can be collected in another form, this is preferable."
   | CustomHtmx s -> s
+  | DashboardDuplicateContactsNotification count ->
+    Format.asprintf
+      "%i possible duplicate %s been found. Please take the necessary measures."
+      count
+      (if count = 1 then "contact has" else "contacts have")
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "If left blank, the default lead time of %s is applied."
@@ -456,6 +466,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MailingLimitExceedsMatchingContacts ->
     "The given limit is larger than the number of contacts meeting the criteria of this \
      experiment."
+  | MergeContacts ->
+    {|Select which attributes are to be transferred from which contact. 
+      
+  The fields that are considered to be the same are marked. If an admin value exists, this is taken into account before the contact value.|}
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been temporarily \
      suspended because of too many failed login attempts."

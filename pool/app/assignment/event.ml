@@ -9,13 +9,15 @@ type event =
   | Updated of t * t
 [@@deriving eq, show, variants]
 
+let create_changelog ?user_uuid pool before after =
+  let open Version_history in
+  let before = to_record before in
+  let after = to_record after in
+  insert pool ?user_uuid ~entity_uuid:before.Record.id ~before ~after ()
+;;
+
 let handle_event ?user_uuid pool : event -> unit Lwt.t =
-  let create_changelog before after =
-    let open Version_history in
-    let before = to_record before in
-    let after = to_record after in
-    insert pool ?user_uuid ~entity_uuid:before.Record.id ~before ~after ()
-  in
+  let create_changelog = create_changelog ?user_uuid pool in
   function
   | Canceled assignment ->
     let canceleled =

@@ -46,6 +46,10 @@ let can_access_contact_profile context id =
     context
 ;;
 
+let can_manage_duplicate_contacts { Pool_context.user; database_label; _ } =
+  has_permission database_label user Duplicate_contacts.Access.index
+;;
+
 let target_model_for_actor_role pool ({ Guard.ActorRole.target_uuid; _ } as role) =
   let find_target_model =
     CCOption.map_or ~default:Lwt.return_none (fun uuid ->

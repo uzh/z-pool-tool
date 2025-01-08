@@ -7,11 +7,13 @@ let annoncement = Announcement.(Alcotest.testable pp equal)
 let api_key = Api_key.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let database_label = Database.Label.(Alcotest.testable pp equal)
+let date = Pool_model.Base.Ptime.(Alcotest.testable pp_date equal_date)
 let error = Pool_message.Error.(Alcotest.testable pp equal)
 let event = Pool_event.(Alcotest.testable pp equal)
 let filter = Filter.(Alcotest.testable pp equal)
 let language = Pool_common.Language.(Alcotest.testable pp equal)
 let message_template = Message_template.(Alcotest.testable pp equal)
+let merge_contact = Duplicate_contacts.(Alcotest.testable pp_merge equal_merge)
 let partial_update = Custom_field.PartialUpdate.(Alcotest.testable pp equal)
 let password = Pool_user.Password.(Alcotest.testable pp equal)
 let password_plain = Pool_user.Password.Plain.(Alcotest.testable pp equal)
@@ -27,7 +29,7 @@ let check_result ?(msg = "succeeds") =
 
 (* Helper functions *)
 
-let setup_test ?(log_level = Logs.Info) ?(reporter = Logger.lwt_file_reporter ()) () =
+let setup_test ?(log_level = Logs.Info) ?(reporter = Logger.reporter) () =
   let open Sihl.Configuration in
   let () = read_env_file () |> CCOption.value ~default:[] |> store in
   let () = Logs.set_level (Some log_level) in
@@ -124,6 +126,7 @@ module Model = struct
 
   let create_user
         ?(id = Pool_user.Id.create ())
+        ?(firstname = Pool_user.Firstname.of_string "Jane")
         ?(email =
           Format.asprintf "test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
           |> Pool_user.EmailAddress.of_string)
@@ -133,15 +136,17 @@ module Model = struct
     { Pool_user.id
     ; email
     ; lastname
-    ; firstname = Pool_user.Firstname.of_string "Jane"
+    ; firstname
     ; status = Pool_user.Status.Active
     ; admin = Pool_user.IsAdmin.create false
     ; confirmed = Pool_user.Confirmed.create true
     }
   ;;
 
-  let create_contact ?id ?language ?lastname ?(with_terms_accepted = true) () =
-    let user = create_user ?id:(CCOption.map Contact.Id.to_user id) ?lastname () in
+  let create_contact ?id ?language ?firstname ?lastname ?(with_terms_accepted = true) () =
+    let user =
+      create_user ?id:(CCOption.map Contact.Id.to_user id) ?firstname ?lastname ()
+    in
     { Contact.user
     ; terms_accepted_at =
         (if with_terms_accepted

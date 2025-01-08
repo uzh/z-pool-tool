@@ -8,48 +8,23 @@ module Id : sig
 end
 
 module NumberOfInvitations : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module NumberOfAssignments : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module NumberOfShowUps : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module NumberOfNoShows : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module NumberOfParticipations : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module AdminComment : sig
@@ -95,13 +70,20 @@ val lastname_firstname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
 val cell_phone : t -> Pool_user.CellPhone.t option
 val is_inactive : t -> bool
+val num_participations : t -> NumberOfParticipations.t
+val num_invitations : t -> NumberOfInvitations.t
+val num_assignments : t -> NumberOfAssignments.t
+val num_show_ups : t -> NumberOfShowUps.t
+val num_no_shows : t -> NumberOfNoShows.t
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val yojson_of_t : t -> Yojson.Safe.t
 val show : t -> string
 val compare : t -> t -> int
+val set_email_address : t -> Pool_user.EmailAddress.t -> t
 val set_firstname : t -> Pool_user.Firstname.t -> t
 val set_lastname : t -> Pool_user.Lastname.t -> t
 val set_language : t -> Pool_common.Language.t option -> t
+val set_cellphone : t -> Pool_user.CellPhone.t option -> t
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_admin_comment : Database.Label.t -> Id.t -> AdminComment.t option Lwt.t
 val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
@@ -193,6 +175,12 @@ val update_num_show_ups : step:int -> t -> t
 val update_num_no_shows : step:int -> t -> t
 val update_num_participations : step:int -> t -> t
 
+module Write : sig
+  type t
+end
+
+val to_write : t -> Write.t
+
 module Preview : sig
   type t =
     { user : Pool_user.t
@@ -224,7 +212,9 @@ module Repo : sig
   val t : t Caqti_type.t
   val joins : string
   val sql_select_columns : string list
+  val make_sql_select_columns : user_table:string -> contact_table:string -> string list
   val find_request_sql : ?additional_joins:string list -> ?count:bool -> string -> string
+  val update_request : (Write.t, unit, [ `Zero ]) Caqti_request.t
 end
 
 module VersionHistory : Changelog.TSig with type record = t
