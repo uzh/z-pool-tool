@@ -135,6 +135,7 @@ module ExperimentFilter = struct
         sent_by_count
         |> CCList.map (fun (count, nr_invitations) ->
           tr
+            ~a:[ a_class [ "font-italic" ] ]
             [ td
                 [ span ~a:[ a_class [ "inset"; "left" ] ] [ txt (CCInt.to_string count) ]
                 ]
