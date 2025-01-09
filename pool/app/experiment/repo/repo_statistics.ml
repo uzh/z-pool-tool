@@ -51,16 +51,13 @@ module SentInvitations = struct
         in
         Database.find pool request pv |> Lwt.map (fun count -> send_count, count))
     in
-    let* total_match_filter =
-      let query = experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query) in
+    let query = experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query) in
+    let count_filtered_contacts ~include_invited =
       Filter.(
-        count_filtered_contacts
-          ~include_invited:true
-          pool
-          (Matcher (Id.to_common id))
-          query)
+        count_filtered_contacts ~include_invited pool (Matcher (Id.to_common id)) query)
     in
-    let total_uninvited_matching = total_match_filter - total_sent in
+    let* total_match_filter = count_filtered_contacts ~include_invited:true in
+    let* total_uninvited_matching = count_filtered_contacts ~include_invited:false in
     Lwt.return_ok
       Statistics.SentInvitations.
         { total_sent; total_match_filter; total_uninvited_matching; sent_by_count }
