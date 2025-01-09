@@ -124,7 +124,7 @@ module ExperimentFilter = struct
   let create language { invitations; assigned_contacts_not_matching } =
     let open Pool_common in
     let Experiment.Statistics.SentInvitations.
-          { total_sent; total_match_filter; sent_by_count }
+          { total_sent; total_match_filter; total_uninvited_matching; sent_by_count }
       =
       invitations
     in
@@ -142,22 +142,17 @@ module ExperimentFilter = struct
             ])
     in
     let to_string = Utils.text_to_string language in
+    let make_row i18n num =
+      tr [ th [ txt (to_string i18n) ]; td [ span [ txt (CCInt.to_string num) ] ] ]
+    in
     table
       ~a:[ a_class [ "table"; "simple"; "width-auto" ] ]
-      ([ tr
-           [ th [ txt (to_string I18n.FilterNrOfContacts) ]
-           ; td [ span [ txt (CCInt.to_string total_match_filter) ] ]
-           ]
-       ; tr
-           [ th [ txt (to_string I18n.FilterNrOfSentInvitations) ]
-           ; td [ txt (CCInt.to_string total_sent) ]
-           ]
+      ([ make_row I18n.FilterNrOfContacts total_match_filter
+       ; make_row I18n.FilterNrOfSentInvitations total_sent
        ]
        @ sent_by_count
-       @ [ tr
-             [ th [ txt (to_string I18n.FilterNrOfUnsuitableAssignments) ]
-             ; td [ txt (CCInt.to_string assigned_contacts_not_matching) ]
-             ]
+       @ [ make_row I18n.FilterNuberMatchingUninvited total_uninvited_matching
+         ; make_row I18n.FilterNrOfUnsuitableAssignments assigned_contacts_not_matching
          ])
   ;;
 end

@@ -155,6 +155,7 @@ module Partials = struct
         { Experiment.Statistics.SentInvitations.total_sent
         ; sent_by_count
         ; total_match_filter
+        ; _
         }
     =
     let open Pool_common in

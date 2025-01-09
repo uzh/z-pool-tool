@@ -60,8 +60,10 @@ module SentInvitations = struct
           (Matcher (Id.to_common id))
           query)
     in
+    let total_uninvited_matching = total_match_filter - total_sent in
     Lwt.return_ok
-      Statistics.SentInvitations.{ total_sent; total_match_filter; sent_by_count }
+      Statistics.SentInvitations.
+        { total_sent; total_match_filter; total_uninvited_matching; sent_by_count }
   ;;
 end
 

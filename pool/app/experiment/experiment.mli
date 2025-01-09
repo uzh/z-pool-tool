@@ -433,6 +433,7 @@ module Statistics : sig
     type statistics =
       { total_sent : int
       ; total_match_filter : int
+      ; total_uninvited_matching : int
       ; sent_by_count : sent_by_count list
       }
 
