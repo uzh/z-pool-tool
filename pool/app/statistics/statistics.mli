@@ -82,8 +82,7 @@ val yojson_of_t : t -> Yojson.Safe.t
 
 module ExperimentFilter : sig
   type t =
-    { contacts_meeting_criteria : int
-    ; invitation_count : int
+    { invitations : Experiment.Statistics.SentInvitations.statistics
     ; assigned_contacts_not_matching : int
     }
 
