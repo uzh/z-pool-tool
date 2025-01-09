@@ -7,8 +7,9 @@ let get_exn = Test_utils.get_or_failwith
 module Utils = struct
   let init () =
     let open ContactRepo in
-    let%lwt c1 = create () in
-    let%lwt c2 = create () in
+    let open Pool_user in
+    let%lwt c1 = create ~firstname:(Firstname.of_string "C1") () in
+    let%lwt c2 = create ~firstname:(Firstname.of_string "C2") () in
     Lwt.return (c1, c2)
   ;;
 
@@ -50,14 +51,17 @@ let find_contacts_to_remind _ () =
   in
   let disable_after = Settings.InactiveUser.DisableAfter.create (n_days 10) |> get_exn in
   let warn_after = [ n_days 5 ] in
-  (* Dont expect anyone to be disabled*)
+  (* Dont expect anyone to be disabled *)
   let%lwt events =
     Contact_job.Inactivity.handle_disable_contacts pool disable_after warn_after
   in
-  Alcotest.check testable "No contact found to deactivage" (Ok ([], [])) events;
+  Alcotest.check testable "No contact found to deactivate" (Ok ([], [])) events;
+  (* Expect contact 2 to be notified *)
   let%lwt () = update_sign_in_at c1 (time_ago (n_days 1)) in
   let%lwt () = update_sign_in_at c2 (time_ago (n_days 6)) in
-  (* Expect 1 contact to be notified *)
+  let%lwt to_notify = find_to_warn warn_after in
+  Alcotest.(
+    check (list Test_utils.contact) "Contact 2 has to be notified" [ c2 ] to_notify);
   let%lwt events = Contact_job.Inactivity.handle_contact_warnings pool warn_after in
   let%lwt expected =
     let%lwt msg = make_warning_msg c2 ||> get_exn in
@@ -65,8 +69,6 @@ let find_contacts_to_remind _ () =
     Lwt_result.return ([ msg ], [ event ])
   in
   Alcotest.check testable "Notify c2 about inactivity" expected events;
-  let%lwt to_notify = find_to_warn warn_after in
-  Alcotest.(check (list Test_utils.contact) "Notify contact 2" to_notify [ c2 ]);
   (* Handle notification event, do not expect any returns *)
   let%lwt () =
     let open Contact in
@@ -75,10 +77,11 @@ let find_contacts_to_remind _ () =
       NotifiedAbountInactivity contact |> handle_event pool)
   in
   let%lwt to_notify = find_to_warn warn_after in
-  Alcotest.(check (list Test_utils.contact) "Notify no one " to_notify []);
+  Alcotest.(check (list Test_utils.contact) "Notify no one " [] to_notify);
   (* Expect contact 1 to be returned *)
   let%lwt () = update_sign_in_at c1 (time_ago (n_days 6)) in
   let%lwt to_notify = find_to_warn warn_after in
-  Alcotest.(check (list Test_utils.contact) "Notify contact 1" to_notify []);
+  Alcotest.(
+    check (list Test_utils.contact) "Contact 1 has to be notified" [ c1 ] to_notify);
   Lwt.return_unit
 ;;

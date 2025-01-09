@@ -39,7 +39,7 @@ let find_to_warn_about_inactivity_request latest_notification_timestamps =
                   pcdn.notification_count IS NULL
                 )
             ) OR (
-              pcdn.latest_notification <= NOW() - INTERVAL ( %s ) SECOND 
+              pcdn.latest_notification <= NOW() - INTERVAL %s SECOND 
               AND
               pcdn.notification_count < ?
               )
@@ -65,11 +65,17 @@ let find_to_warn_about_inactivity pool warn_after =
       CCList.fold_left (fun dyn span -> dyn |> add Caqti_type.int span) empty warn_after_s
     in
     let sql =
-      (* Ignoring the first element, as this is hardcoded in the query *)
-      warn_after
-      |> CCList.tl
-      |> CCList.mapi (fun i _ ->
-        Format.asprintf "WHEN pcdn.notification_count = %i THEN ?" (i + 1))
+      match warn_after with
+      | [] -> failwith "Emtpy list provided"
+      | [ _ ] -> "?"
+      | tl_warn ->
+        (* Ignoring the first element, as this case is hardcoded in the first condition *)
+        tl_warn
+        |> CCList.tl
+        |> CCList.mapi (fun i _ ->
+          Format.asprintf "WHEN pcdn.notification_count = %i THEN ?" (i + 1))
+        |> CCString.concat "\n"
+        |> Format.asprintf "( CASE %s ELSE ? END )"
     in
     (* Adding the last timestampt as the default case *)
     let dyn =
@@ -77,7 +83,6 @@ let find_to_warn_about_inactivity pool warn_after =
       add Caqti_type.int (CCList.rev warn_after_s |> CCList.hd) dyn
       |> add Caqti_type.int (CCList.length warn_after)
     in
-    let sql = sql |> CCString.concat "\n" |> Format.asprintf "CASE %s ELSE ? END" in
     let request = find_to_warn_about_inactivity_request sql in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request = request |> pt ->* Contact.Repo.t in
