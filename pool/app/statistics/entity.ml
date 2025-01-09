@@ -157,6 +157,7 @@ module ExperimentFilter = struct
     in
     let* contacts_meeting_criteria =
       count_filtered_contacts
+        ~include_invited:true
         pool
         (Matcher Experiment.(experiment |> id |> Id.to_common))
         query
