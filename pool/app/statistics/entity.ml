@@ -153,7 +153,9 @@ module ExperimentFilter = struct
       in
       Lwt.return CCList.(length contacts - matching)
     in
-    let* invitations = Experiment.Statistics.SentInvitations.create pool experiment in
+    let* invitations =
+      Experiment.Statistics.SentInvitations.create ?query pool experiment
+    in
     let%lwt assigned_contacts_not_matching =
       query |> CCOption.map_or ~default:(Lwt.return 0) contacts_not_matching
     in
