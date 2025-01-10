@@ -99,7 +99,7 @@ let create
     Pool_common.I18n.
       [ create_table contact_counters
       ; div
-          ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
+          ~a:[ a_class [ "border"; "inset"; "bg-grey-lightest" ] ]
           [ h3
               ~a:[ a_class [ "heading-3" ] ]
               Pool_common.

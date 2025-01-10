@@ -627,7 +627,7 @@ let detail
                         ~a:[ a_class [ "grid-col-3" ] ]
                         [ div ~a:[ a_class [ "span-2" ] ] [ location_details ]
                         ; div
-                            ~a:[ a_class [ "inset"; "border"; "bg-grey-light" ] ]
+                            ~a:[ a_class [ "inset"; "border"; "bg-grey-lightest" ] ]
                             [ make_statistics
                                 statistics_year_range
                                 language

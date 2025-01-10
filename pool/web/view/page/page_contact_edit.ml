@@ -108,7 +108,7 @@ let personal_details_form
     match is_admin with
     | true ->
       div
-        ~a:[ a_class [ "inset"; "border"; "bg-grey-light" ] ]
+        ~a:[ a_class [ "inset"; "border"; "bg-grey-lightest" ] ]
         [ p
             [ txt
                 Pool_common.(

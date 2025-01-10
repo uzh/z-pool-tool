@@ -49,17 +49,11 @@ module App = struct
 
   let navbar ?(children = []) query_parameters title =
     header
-      ~a:
-        [ a_class
-            [ "inset"
-            ; "flexrow"
-            ; "justify-between"
-            ; "align-center"
-            ; "bg-grey-light"
-            ; "border-bottom"
-            ]
-        ]
-      [ create_title query_parameters title; div children ]
+      ~a:[ a_class [ "app-header" ] ]
+      [ div
+          ~a:[ a_class [ "safety-margin"; "trim"; "flexrow"; "justify-between" ] ]
+          [ create_title query_parameters title; div children ]
+      ]
   ;;
 
   let version = Format.asprintf "Z-Pool-Tool %s" Version.to_string
@@ -86,7 +80,9 @@ module App = struct
   let root_footer =
     let html = [ txt app_name; txt version ] |> combine_footer_fragments in
     footer
-      ~a:[ a_class [ "inset"; "justify-center"; "bg-grey-light"; "border-top"; "push" ] ]
+      ~a:
+        [ a_class [ "inset"; "justify-center"; "bg-grey-lightest"; "border-top"; "push" ]
+        ]
       [ html ]
   ;;
 end

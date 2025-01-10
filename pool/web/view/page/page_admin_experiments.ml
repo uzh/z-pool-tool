@@ -311,7 +311,7 @@ let experiment_form
       ~a:
         [ a_id "time-window"
         ; a_class
-            [ "full-width"; "flexcolumn"; "hidden"; "border"; "inset"; "bg-grey-light" ]
+            [ "full-width"; "flexcolumn"; "hidden"; "border"; "inset"; "bg-grey-lighter" ]
         ]
       [ div
           ~a:[ a_class [ "flexcolumn"; "stack" ] ]
@@ -949,7 +949,7 @@ let detail
         ; div
             ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
             [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
-            ; div ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ] [ statistics ]
+            ; div ~a:[ a_class [ "border"; "inset"; "bg-grey-lightest" ] ] [ statistics ]
             ]
         ; message_template
         ; setting

@@ -105,7 +105,7 @@ let index
     [ div
         ~a:[ a_class [ "flexrow"; "flex-gap-lg"; "index-page" ] ]
         [ div
-            ~a:[ a_class [ "bg-grey-light"; "border"; "border-radius"; "inset-lg" ] ]
+            ~a:[ a_class [ "bg-grey-lightest"; "border"; "border-radius"; "inset-lg" ] ]
             ((div [ welcome_text |> I18n.content_to_string |> Unsafe.data ] :: sign_up_cta)
              @ partner_html)
         ; div

@@ -53,7 +53,7 @@ module Tenant = struct
             ; "flex-gap"
             ; "flexcolumn-mobile"
             ; "justify-center"
-            ; "bg-grey-light"
+            ; "bg-grey-lightest"
             ; "border-top"
             ; "push"
             ]

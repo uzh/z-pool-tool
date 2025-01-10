@@ -801,7 +801,7 @@ let edit
       | `TimeWindow _ -> txt ""
     in
     div
-      ~a:[ a_class [ "stack"; "inset"; "border"; " bg-grey-light" ] ]
+      ~a:[ a_class [ "stack"; "inset"; "border"; " bg-grey-lightest" ] ]
       [ h3
           [ txt
               Pool_common.(

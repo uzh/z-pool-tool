@@ -189,7 +189,7 @@ let assign_contact_experiment_modal
 
 let assign_contact_experiment_list { Pool_context.language; _ } contact_id experiments =
   let base_class = [ "data-item" ] in
-  let disabled = [ a_class ([ "bg-grey-light"; "not-allowed" ] @ base_class) ] in
+  let disabled = [ a_class ([ "bg-grey-lightest"; "not-allowed" ] @ base_class) ] in
   let htmx_attribs experiment_id =
     [ a_user_data "hx-trigger" "click"
     ; a_user_data

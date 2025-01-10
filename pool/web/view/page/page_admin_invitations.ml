@@ -218,7 +218,7 @@ let sent_invitations
     [ div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ div
-            ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
+            ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-lightest"; "border" ] ]
             [ h3
                 [ txt
                     Pool_common.(Utils.text_to_string language I18n.InvitationsStatistics)
