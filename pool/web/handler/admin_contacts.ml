@@ -80,80 +80,79 @@ let detail_view action req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/contacts")
-    @@
-    let* actor = Pool_context.Utils.find_authorizable database_label user in
-    let* contact =
-      HttpUtils.get_field_router_param req Field.Contact
-      |> Contact.Id.of_string
-      |> Contact.find database_label
-    in
-    let%lwt contact_tags =
-      Tags.(find_all_of_entity database_label Model.Contact)
-        (Contact.id contact |> Contact.Id.to_common)
-    in
-    match action with
-    | `Show ->
-      let%lwt external_data_ids =
-        Assignment.find_external_data_identifiers_by_contact
-          database_label
-          (Contact.id contact)
-      in
-      let%lwt admin_comment =
-        Contact.find_admin_comment database_label (Contact.id contact)
-      in
-      let%lwt custom_fields =
-        Custom_field.find_all_by_contact database_label user (Contact.id contact)
-      in
-      let%lwt past_experiments =
-        let query = experiments_query_from_req req in
-        Experiment.query_participation_history_by_contact ~query database_label contact
-      in
-      Page.Admin.Contact.detail
-        ?admin_comment
-        context
-        contact
-        contact_tags
-        external_data_ids
-        custom_fields
-        past_experiments
-      |> create_layout req context
-      >|+ Sihl.Web.Response.of_html
-    | `Edit ->
-      let%lwt allowed_to_assign =
-        Guard.Persistence.validate
-          database_label
-          (Contact.id contact |> Cqrs_command.Tags_command.AssignTagToContact.effects)
-          actor
-        ||> CCResult.is_ok
-      in
-      let%lwt allowed_to_promote =
-        Guard.Persistence.validate
-          database_label
-          Cqrs_command.Admin_command.PromoteContact.effects
-          actor
-        ||> CCResult.is_ok
-      in
-      let%lwt all_tags =
-        let open Tags in
-        if allowed_to_assign
-        then find_all_validated_with_model database_label Model.Contact actor
-        else Lwt.return []
-      in
-      let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-      let%lwt custom_fields =
-        Custom_field.find_all_by_contact database_label user (Contact.id contact)
-      in
-      Page.Admin.Contact.edit
-        ~allowed_to_assign
-        ~allowed_to_promote
-        context
-        tenant_languages
-        contact
-        custom_fields
-        contact_tags
-        all_tags
-      |> create_layout req context
-      >|+ Sihl.Web.Response.of_html
+    @@ let* actor = Pool_context.Utils.find_authorizable database_label user in
+       let* contact =
+         HttpUtils.get_field_router_param req Field.Contact
+         |> Contact.Id.of_string
+         |> Contact.find database_label
+       in
+       let%lwt contact_tags =
+         Tags.(find_all_of_entity database_label Model.Contact)
+           (Contact.id contact |> Contact.Id.to_common)
+       in
+       match action with
+       | `Show ->
+         let%lwt external_data_ids =
+           Assignment.find_external_data_identifiers_by_contact
+             database_label
+             (Contact.id contact)
+         in
+         let%lwt admin_comment =
+           Contact.find_admin_comment database_label (Contact.id contact)
+         in
+         let%lwt custom_fields =
+           Custom_field.find_all_by_contact database_label user (Contact.id contact)
+         in
+         let%lwt past_experiments =
+           let query = experiments_query_from_req req in
+           Experiment.query_participation_history_by_contact ~query database_label contact
+         in
+         Page.Admin.Contact.detail
+           ?admin_comment
+           context
+           contact
+           contact_tags
+           external_data_ids
+           custom_fields
+           past_experiments
+         |> create_layout req context
+         >|+ Sihl.Web.Response.of_html
+       | `Edit ->
+         let%lwt allowed_to_assign =
+           Guard.Persistence.validate
+             database_label
+             (Contact.id contact |> Cqrs_command.Tags_command.AssignTagToContact.effects)
+             actor
+           ||> CCResult.is_ok
+         in
+         let%lwt allowed_to_promote =
+           Guard.Persistence.validate
+             database_label
+             Cqrs_command.Admin_command.PromoteContact.effects
+             actor
+           ||> CCResult.is_ok
+         in
+         let%lwt all_tags =
+           let open Tags in
+           if allowed_to_assign
+           then find_all_validated_with_model database_label Model.Contact actor
+           else Lwt.return []
+         in
+         let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+         let%lwt custom_fields =
+           Custom_field.find_all_by_contact database_label user (Contact.id contact)
+         in
+         Page.Admin.Contact.edit
+           ~allowed_to_assign
+           ~allowed_to_promote
+           context
+           tenant_languages
+           contact
+           custom_fields
+           contact_tags
+           all_tags
+         |> create_layout req context
+         >|+ Sihl.Web.Response.of_html
   in
   result |> extract_happy_path req
 ;;
