@@ -1,7 +1,13 @@
 @use "sass:color";
-$font-path: "../node_modules/@econ/frontend-framework/dist/font";
-@import "../node_modules/@econ/frontend-framework/dist/main.scss";
-@import "./admin/calendar";
+@use "sass:math";
+@use "@econ/frontend-framework/dist/main" with (
+  $font-path: "../node_modules/@econ/frontend-framework/dist/font"
+);
+@use "@econ/frontend-framework/dist/sass/colors" as c;
+@use "@econ/frontend-framework/dist/sass/variables" as vars;
+@use "@econ/frontend-framework/dist/sass/breakpoints";
+
+@use "./admin/calendar";
 
 $orange: rgb(226, 117, 0) !default;
 
@@ -15,7 +21,7 @@ code {
     font-size: inherit;
 }
 
-@include mobile {
+@include breakpoints.econ-mobile {
 
     *+h1,
     h1+*,
@@ -23,7 +29,7 @@ code {
     *+.heading-1,
     .heading-1+*,
     *+.heading-2 {
-        margin-top: $space-md;
+        margin-top: vars.$space-md;
     }
 }
 
@@ -55,9 +61,9 @@ ul.no-style {
     padding-right: 0;
 }
 
-@include mobile {
+@include breakpoints.econ-mobile {
     .sm-inset-lg {
-        padding: $space-lg;
+        padding: vars.$space-lg;
     }
 }
 
@@ -78,8 +84,8 @@ form[class*="stack"] input[type="hidden"]+* {
 }
 
 .grouped-input {
-    border-radius: $border-radius;
-    border: 1px solid $grey;
+    border-radius: vars.$border-radius;
+    border: 1px solid c.$grey;
     overflow: hidden;
 
     select,
@@ -93,21 +99,21 @@ form[class*="stack"] input[type="hidden"]+* {
     }
 
     &>.select select {
-        padding-right: $space-base * 2;
+        padding-right: vars.$space-base * 2;
         width: auto;
-        background-color: $grey-light;
-        border-left: 1px solid $grey;
+        background-color: c.$grey-light;
+        border-left: 1px solid c.$grey;
     }
 }
 
 input[readonly],
 select[readonly] {
-    background-color: $grey-light;
-    color: $grey-dark;
+    background-color: c.$grey-light;
+    color: c.$grey-dark;
     cursor: not-allowed;
 
     &:hover {
-        background-color: $grey-light;
+        background-color: c.$grey-light;
     }
 }
 
@@ -117,7 +123,7 @@ select[readonly] {
     flex-shrink: 0;
 }
 
-@include mobile {
+@include breakpoints.econ-mobile {
     .index-page {
         flex-direction: column;
     }
@@ -138,11 +144,11 @@ select[readonly] {
     label,
     input,
     select {
-        font-size: $small-font-size;
+        font-size: vars.$font-size-sm;
     }
 
     .key-select {
-        flex-basis: calc(calc(100% - (2 * $space-base)) / 3);
+        flex-basis: calc(calc(100% - (2 * vars.$space-base)) / 3);
     }
 
     .border {
@@ -156,35 +162,35 @@ select[readonly] {
         &[data-predicate="and"],
         &[data-predicate="or"] {
             &>.predicate-inner>.predicate-wrapper {
-                padding-left: $space-sm;
-                border-left: 2px solid $grey-border;
+                padding-left: vars.$space-sm;
+                border-left: 2px solid c.$grey-border;
             }
         }
     }
 
     [data-delete-predicate] {
-        color: $red;
+        color: c.$red;
         cursor: pointer;
     }
 
     [data-new-predicate] button {
-        padding: $space-xs $space-sm;
+        padding: vars.$space-xs vars.$space-sm;
     }
 }
 
 .filter-bar-reset {
     grid-column: 4;
 
-    @include until($desktop-breakpoint) {
+    @include breakpoints.econ-until(breakpoints.$desktop-breakpoint) {
         grid-column: 2;
     }
 
-    @include until($tablet-breakpoint) {
+    @include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
         grid-column: 1;
     }
 }
 
-@include until($tablet-breakpoint) {
+@include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
     [class*="grid-"] .search-bar {
         grid-column: span 1;
     }
@@ -204,10 +210,10 @@ select[readonly] {
 
     .data-list>[data-selection-item] {
         @extend .has-icon;
-        padding: $space-sm;
+        padding: vars.$space-sm;
 
         &:hover {
-            background-color: $grey-light;
+            background-color: c.$grey-light;
         }
 
         .toggle-item {
@@ -221,8 +227,8 @@ select[readonly] {
 }
 
 [data-search-selection] {
-    row-gap: $space-xs;
-    column-gap: $space-sm;
+    row-gap: vars.$space-xs;
+    column-gap: vars.$space-sm;
 }
 
 // Flex
@@ -231,7 +237,7 @@ select[readonly] {
         flex-basis: 50%;
     }
 
-    @include until($tablet-breakpoint) {
+    @include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
         flex-direction: column-reverse;
     }
 }
@@ -242,7 +248,7 @@ abbr[title] {
 
 // CK Editor
 .form-group:not(.horizontal)>*~.ck {
-    margin-top: $space-xs;
+    margin-top: vars.$space-xs;
 }
 
 .ck-content {
@@ -260,11 +266,11 @@ abbr[title] {
 
 // Color
 .table.striped tr:nth-child(1n).bg-green-lighter {
-    background-color: $green-lighter;
+    background-color: c.$green-lighter;
 }
 
 .table.striped tr:nth-child(1n).bg-red-lighter {
-    background-color: $red-lighter;
+    background-color: c.$red-lighter;
 }
 
 .table tr.highlighted {
@@ -277,7 +283,7 @@ abbr[title] {
         right: 0;
         top: 0;
         bottom: 0;
-        background-color: $black;
+        background-color: c.$black;
         opacity: 0.05;
     }
 
@@ -288,7 +294,7 @@ abbr[title] {
 }
 
 .legend-item {
-    width: $space-base;
+    width: vars.$space-base;
     display: flex;
 }
 
@@ -299,11 +305,11 @@ abbr[title] {
 button.as-link {
     padding: 0;
     border: none;
-    color: $color-primary;
+    color: c.$color-primary;
     background-color: transparent;
 
     &:hover {
-        color: $color-primary;
+        color: c.$color-primary;
         background-color: transparent;
     }
 }
@@ -324,11 +330,11 @@ button.as-link {
 
 // Logo
 .app-title {
-    font-weight: $font-weight-bold;
+    font-weight: vars.$font-weight-bold;
     font-size: ms-font-size(2);
 
     a {
-        color: $color-text-dark;
+        color: c.$color-text-dark;
         text-decoration: none;
     }
 }
@@ -342,7 +348,7 @@ table.width-auto {
     width: auto;
 }
 
-@include mobile {
+@include breakpoints.econ-mobile {
     .table.break-mobile th {
         display: none;
     }
@@ -372,12 +378,12 @@ table.width-auto {
 
 table.simple {
     tbody tr:not(:last-child) th {
-        border-bottom: $border-width solid $grey-border;
+        border-bottom: vars.$border-width solid c.$grey-border;
     }
 }
 
 [data-statistics] .table.simple th {
-    font-weight: $font-weight-normal;
+    font-weight: vars.$font-weight-normal;
     padding-left: 0;
 }
 
@@ -385,7 +391,7 @@ table.simple {
     display: flex;
     width: 9rem;
     justify-content: flex-end;
-    padding-top: $space-xs;
+    padding-top: vars.$space-xs;
     margin-left: auto;
 
     &>* {
@@ -410,7 +416,7 @@ table.simple {
     }
 
     &>*+* {
-        margin-top: $space-xs;
+        margin-top: vars.$space-xs;
     }
 
     [data-label]:before {
@@ -420,7 +426,7 @@ table.simple {
     }
 }
 
-@include mobile {
+@include breakpoints.econ-mobile {
 
     .session-close-header .custom-data>* {
         display: none;
@@ -431,7 +437,7 @@ table.simple {
             flex-direction: column;
 
             &>*+* {
-                margin-top: $space-sm;
+                margin-top: vars.$space-sm;
             }
         }
 
@@ -461,7 +467,7 @@ table.simple {
 
     &,
     &:hover {
-        background-color: $red-lighter;
+        background-color: c.$red-lighter;
     }
 }
 
@@ -487,11 +493,11 @@ table.simple {
 }
 
 .note+* {
-    margin-top: $space-base;
+    margin-top: vars.$space-base;
 }
 
 .collapsible.note .collapsible-title {
-    gap: $space-base;
+    gap: vars.$space-base;
 }
 
 .note.active .collapsible-header i[class*="icon-help"] {
@@ -499,11 +505,11 @@ table.simple {
 }
 
 .has-icon.flex-gap-xs {
-    gap: $space-xs;
+    gap: vars.$space-xs;
 }
 
 // Session list
-@include mobile {
+@include breakpoints.econ-mobile {
     .session-list.break-mobile {
         td>.inset.left {
             padding: 0;
@@ -511,7 +517,7 @@ table.simple {
 
         td[data-label] {
             flex-direction: row;
-            gap: $space-sm;
+            gap: vars.$space-sm;
 
             &:before {
                 width: 50%;
@@ -519,7 +525,7 @@ table.simple {
         }
 
         .follow-up {
-            padding-left: $space-base;
+            padding-left: vars.$space-base;
         }
 
         .button-list {
@@ -553,7 +559,7 @@ table.simple {
             }
 
             li+li {
-                margin-top: $space-sm;
+                margin-top: vars.$space-sm;
             }
         }
     }
@@ -567,7 +573,7 @@ table.simple {
     h3,
     h4,
     h5 {
-        font-size: $body-font-size;
+        font-size: vars.$body-font-size;
     }
 }
 
@@ -576,15 +582,15 @@ table.simple {
 $i: 1;
 $n: 12;
 
-@while $i < $n +1 {
+@while $i < $n + 1 {
     .w-#{$i} {
-        width: percentage(calc(1 / $n) * $i);
+        width: math.percentage(calc(1 / $n) * $i);
     }
 
     $i: $i + 1;
 }
 
-@include until($tablet-breakpoint) {
+@include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
     [class*='grid-col-'] [class*='span-'] {
         grid-column: span 1;
     }
@@ -601,16 +607,16 @@ $n: 12;
 .announcement {
     .close {
         float: right;
-        margin-left: $space-sm;
+        margin-left: vars.$space-sm;
     }
 
-    @include mobile {
+    @include breakpoints.econ-mobile {
         display: flex;
         flex-direction: column-reverse;
 
         .close {
             margin-left: 0;
-            margin-top: $space-sm;
+            margin-top: vars.$space-sm;
             float: none;
         }
     }
@@ -618,7 +624,7 @@ $n: 12;
 
 .notification.error a,
 .notification.success a {
-    color: $white;
+    color: c.$white;
 }
 
 input[type="checkbox"][readonly] {
@@ -638,8 +644,8 @@ input[type="checkbox"][readonly] {
     }
 
     .changelog-separator {
-        padding-left: $space-xs;
-        padding-right: $space-xs;
+        padding-left: vars.$space-xs;
+        padding-right: vars.$space-xs;
     }
 
     .changelog-key {

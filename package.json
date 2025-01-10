@@ -20,11 +20,12 @@
     "parcel": "^2.0.0",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
+    "svgo": "^3",
     "vm-browserify": "^1.1.2"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^36.0.0",
-    "@econ/frontend-framework": "^3.4.1",
+    "@econ/frontend-framework": "^4.0.0",
     "@fullcalendar/core": "^6.1.8",
     "@fullcalendar/daygrid": "^6.1.8",
     "@fullcalendar/list": "^6.1.8",
