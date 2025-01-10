@@ -379,6 +379,7 @@ let override_with_participations _ () =
   let%lwt contact_b = make_contact ~firstname:"Jane22" ~lastname:"Doe22" in
   let%lwt experiment = Integration_utils.ExperimentRepo.create () in
   let%lwt session = Integration_utils.SessionRepo.create experiment () in
+  let%lwt tag = Integration_utils.TagRepo.create Tags.Model.Contact in
   let assignment = Assignment.create contact_a in
   (* Store participation of contact 1 *)
   let%lwt () =
@@ -398,6 +399,13 @@ let override_with_participations _ () =
             ; no_show = Some (NoShow.create false)
             } )
         |> Pool_event.assignment
+      ; Tags.(
+          Tagged
+            Tagged.
+              { tag_uuid = tag.id
+              ; model_uuid = Contact.(contact_a |> id |> Id.to_common)
+              })
+        |> Pool_event.tags
       ]
       |> handle
     in
@@ -447,5 +455,9 @@ let override_with_participations _ () =
     Assignment.assignment_to_experiment_exists pool experiment.Experiment.id contact_b
   in
   check bool "contact_b is enrolled" true is_enrolled;
+  let%lwt tags =
+    Tags.(find_all_of_entity pool Model.Contact) Contact.(id contact_b |> Id.to_common)
+  in
+  check (list Test_utils.tag) "contact_b has tag" [ tag ] tags;
   Lwt.return_unit
 ;;
