@@ -40,7 +40,7 @@ let uuid_sql dyn items to_id =
     CCList.foldi
       (fun (dyn, sql) i item ->
          ( dyn |> Dynparam.add Caqti_type.string (to_id item)
-         , sql @ [ Format.asprintf "$%d" (i + 2) ] ))
+         , sql @ [ Format.asprintf "UNHEX(REPLACE($%d, '-', ''))" (i + 2) ] ))
       (dyn, [])
       items
   in
@@ -145,6 +145,14 @@ let destroy_possible_duplicates =
     DELETE FROM pool_contacts_possible_duplicates
     WHERE contact_a = UNHEX(REPLACE($1, '-', ''))
     OR contact_b = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.t ->. unit
+;;
+
+let destroy_user_import =
+  {sql|
+    DELETE FROM pool_user_imports
+    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
   |> Contact.Repo.Id.t ->. unit
 ;;
@@ -317,6 +325,10 @@ let merge
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec destroy_possible_duplicates (id merged_contact)
   in
+  let destroy_user_import connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_user_import (id merged_contact)
+  in
   let insert_archived_email connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let open Archived_email in
@@ -345,6 +357,7 @@ let merge
     ; destroy_assignments
     ; destroy_possible_duplicates
     ; insert_archived_email
+    ; destroy_user_import
     ; destroy_contact
     ; destroy_user
     ]
