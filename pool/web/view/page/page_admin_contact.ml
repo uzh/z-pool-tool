@@ -394,7 +394,7 @@ let experiment_history_modal
   let title (_ : Language.t) = Experiment.(Title.value experiment.title) in
   let html =
     let thead =
-      Pool_message.Field.[ Start; NoShow; Participant ]
+      Pool_message.Field.[ Start; NoShow; Participated ]
       |> CCList.map CCFun.(Utils.field_to_string_capitalized language %> txt)
     in
     let to_icon value =
