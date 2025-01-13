@@ -396,7 +396,7 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
 ;;
 
 let experiment_history_modal
-      { Pool_context.language; _ }
+      { Pool_context.csrf; language; _ }
       (experiment : Experiment.t)
       assignments
   =
@@ -404,25 +404,72 @@ let experiment_history_modal
   let title (_ : Language.t) = Experiment.(Title.value experiment.title) in
   let html =
     let thead =
-      Pool_message.Field.[ Start; NoShow; Participant ]
+      Pool_message.Field.[ Start; NoShow; Participated ]
       |> CCList.map CCFun.(Utils.field_to_string_capitalized language %> txt)
     in
+    let thead = thead @ [ txt "" ] in
     let to_icon value =
       CCOption.map_or ~default:(txt "") CCFun.(value %> Component.Icon.bool_to_icon)
     in
     let rows =
       let open Assignment in
+      let open Session in
       assignments
-      |> CCList.map (fun (session, { no_show; participated; _ }) ->
-        let start = Session.start_end_with_duration_human session |> txt in
+      |> CCList.map (fun (session, { id; no_show; participated; _ }) ->
+        let start = start_end_with_duration_human session |> txt in
         let start =
-          if CCOption.is_some session.Session.follow_up_to
+          if CCOption.is_some session.follow_up_to
           then div ~a:[ a_class [ "inset"; "left" ] ] [ start ]
           else start
         in
-        [ start; to_icon NoShow.value no_show; to_icon Participated.value participated ])
+        let forms =
+          match session.closed_at with
+          | Some _ -> txt ""
+          | None ->
+            let action suffix =
+              Http_utils.Url.Admin.assignment_path
+                experiment.Experiment.id
+                session.id
+                ~id
+                ~suffix
+                ()
+              |> Sihl.Web.externalize_path
+            in
+            Pool_message.
+              [ ( "cancel"
+                , Pool_common.I18n.CancelAssignment
+                , Control.(Cancel (Some Field.Assignment))
+                , Icon.Close )
+              ; ( "mark-as-deleted"
+                , Pool_common.I18n.MarkAssignmentWithFollowUpsAsDeleted
+                , Control.MarkAsDeleted
+                , Icon.TrashOutline )
+              ]
+            |> CCList.map (fun (suffix, confirmable, control, icon) ->
+              form
+                ~a:
+                  [ a_method `Post
+                  ; a_action (action suffix)
+                  ; a_user_data
+                      "confirmable"
+                      (Utils.confirmable_to_string language confirmable)
+                  ]
+                Component.Input.
+                  [ csrf_element csrf ()
+                  ; submit_icon
+                      ~attributes:[ a_title (Utils.control_to_string language control) ]
+                      ~classnames:[ "error" ]
+                      icon
+                  ])
+            |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ]
+        in
+        [ start
+        ; to_icon NoShow.value no_show
+        ; to_icon Participated.value participated
+        ; forms
+        ])
     in
-    Component.Table.horizontal_table ~thead `Striped rows
+    Component.Table.horizontal_table ~align_last_end:true ~thead `Striped rows
   in
   Modal.create ~active:true language title experiment_history_modal_id html
 ;;

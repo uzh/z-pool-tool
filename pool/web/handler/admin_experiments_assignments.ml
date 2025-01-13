@@ -71,8 +71,8 @@ let cancel req =
 
 let mark_as_deleted req =
   let open Utils.Lwt_result.Infix in
-  let experiment_id, session_id, assignment_id = ids_from_request req in
-  let redirect_path = Url.session_path ~id:session_id experiment_id in
+  let experiment_id, _, assignment_id = ids_from_request req in
+  let redirect_path = HttpUtils.find_referer req |> CCOption.value ~default:"/" in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
