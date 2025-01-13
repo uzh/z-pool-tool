@@ -25,7 +25,15 @@ module InactiveUser : sig
   end
 
   module Warning : sig
-    include Pool_model.Base.DurationSig
+    module TimeSpan : sig
+      include Pool_model.Base.DurationSig
+    end
+
+    type t = TimeSpan.t list
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
   end
 end
 

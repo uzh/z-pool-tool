@@ -14,6 +14,8 @@ module Label : sig
     | ContactRegistrationAttempt
     | EmailVerification
     | ExperimentInvitation
+    | InactiveContactWarning
+    | InactiveContactDeactivation
     | ManualSessionMessage
     | MatcherNotification
     | MatchFilterUpdateNotification
@@ -324,6 +326,30 @@ module ExperimentInvitation : sig
     :  Pool_tenant.t
     -> Experiment.t
     -> (Contact.t -> (Email.dispatch, Pool_message.Error.t) result) Lwt.t
+end
+
+module InactiveContactWarning : sig
+  val email_params
+    :  email_layout
+    -> Contact.t
+    -> last_login:Ptime.t
+    -> (string * string) list
+
+  val prepare
+    :  Database.Label.t
+    -> ( Contact.t -> (Email.dispatch, Pool_message.Error.t) Lwt_result.t
+         , Pool_message.Error.t )
+         Lwt_result.t
+end
+
+module InactiveContactDeactivation : sig
+  val email_params : email_layout -> Contact.t -> (string * string) list
+
+  val prepare
+    :  Database.Label.t
+    -> ( Contact.t -> (Email.dispatch, Pool_message.Error.t) result
+         , Pool_message.Error.t )
+         Lwt_result.t
 end
 
 module ManualSessionMessage : sig

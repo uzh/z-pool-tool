@@ -602,6 +602,67 @@ module ExperimentInvitation = struct
   ;;
 end
 
+module InactiveContactWarning = struct
+  let label = Label.InactiveContactWarning
+
+  let email_params layout contact ~last_login =
+    global_params layout contact.Contact.user
+    @ [ "lastLogin", Pool_model.Time.formatted_date last_login ]
+  ;;
+
+  let prepare pool =
+    let open Utils.Lwt_result.Infix in
+    let open Message_utils in
+    let* tenant = Pool_tenant.find_by_label pool in
+    let%lwt sys_langs = Settings.find_languages pool in
+    let%lwt templates = find_all_by_label_to_send pool sys_langs label in
+    let%lwt sender = default_sender_of_pool pool in
+    let layout = layout_from_tenant tenant in
+    let fnc (contact : Contact.t) =
+      let open Utils.Lwt_result.Infix in
+      let message_language = contact_language sys_langs contact in
+      let* lang, template =
+        find_template_by_language templates message_language |> Lwt_result.lift
+      in
+      let%lwt last_login = Contact.find_last_signin_at pool contact in
+      let params = email_params layout contact ~last_login in
+      let email =
+        prepare_email lang template sender (Contact.email_address contact) layout params
+      in
+      let entity_uuids = user_message_uuids (Contact.user contact) in
+      Lwt_result.return (create_email_job label entity_uuids email)
+    in
+    Lwt_result.return fnc
+  ;;
+end
+
+module InactiveContactDeactivation = struct
+  let label = Label.InactiveContactDeactivation
+  let email_params layout contact = global_params layout contact.Contact.user
+
+  let prepare pool =
+    let open Utils.Lwt_result.Infix in
+    let open Message_utils in
+    let* tenant = Pool_tenant.find_by_label pool in
+    let%lwt sys_langs = Settings.find_languages pool in
+    let%lwt templates = find_all_by_label_to_send pool sys_langs label in
+    let%lwt sender = default_sender_of_pool pool in
+    let layout = layout_from_tenant tenant in
+    let fnc (contact : Contact.t) =
+      let open CCResult in
+      let message_language = contact_language sys_langs contact in
+      let* lang, template = find_template_by_language templates message_language in
+      let params = email_params layout contact in
+      let email =
+        prepare_email lang template sender (Contact.email_address contact) layout params
+      in
+      let entity_uuids = user_message_uuids (Contact.user contact) in
+      Ok (create_email_job label entity_uuids email)
+    in
+    Lwt_result.return fnc
+  ;;
+end
+
 module ManualSessionMessage = struct
   let label = Label.ManualSessionMessage
   let base_params layout contact = contact.Contact.user |> global_params layout
