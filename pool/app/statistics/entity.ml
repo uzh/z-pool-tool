@@ -137,14 +137,12 @@ type t =
 
 module ExperimentFilter = struct
   type t =
-    { contacts_meeting_criteria : int
-    ; invitation_count : int
+    { invitations : Experiment.Statistics.SentInvitations.statistics
     ; assigned_contacts_not_matching : int
     }
 
   let create pool experiment query =
     let open Utils.Lwt_result.Infix in
-    let open Filter in
     let contacts_not_matching query =
       let%lwt contacts =
         Assignment.find_assigned_contacts_by_experiment pool experiment.Experiment.id
@@ -155,19 +153,12 @@ module ExperimentFilter = struct
       in
       Lwt.return CCList.(length contacts - matching)
     in
-    let* contacts_meeting_criteria =
-      count_filtered_contacts
-        pool
-        (Matcher Experiment.(experiment |> id |> Id.to_common))
-        query
-    in
-    let%lwt invitation_count =
-      experiment |> Experiment.id |> Experiment.invitation_count pool
+    let* invitations =
+      Experiment.Statistics.SentInvitations.create ?query pool experiment
     in
     let%lwt assigned_contacts_not_matching =
       query |> CCOption.map_or ~default:(Lwt.return 0) contacts_not_matching
     in
-    Lwt_result.return
-      { contacts_meeting_criteria; invitation_count; assigned_contacts_not_matching }
+    Lwt_result.return { invitations; assigned_contacts_not_matching }
   ;;
 end

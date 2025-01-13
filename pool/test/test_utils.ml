@@ -21,6 +21,7 @@ let phone_nr = Pool_user.CellPhone.(Alcotest.testable pp equal)
 let pool_version = Pool_version.(Alcotest.testable pp equal)
 let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
 let time_window_testable = Time_window.(Alcotest.testable pp equal)
+let tag = Tags.(Alcotest.testable pp equal)
 
 let check_result ?(msg = "succeeds") =
   let open Alcotest in

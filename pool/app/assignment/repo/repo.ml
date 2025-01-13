@@ -265,7 +265,7 @@ module Sql = struct
           AND pool_assignments.canceled_at IS NULL
           AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
     	  GROUP BY
-		      pool_assignments.contact_uuid    
+		      pool_assignments.contact_uuid
       |sql}
       (Contact.Repo.sql_select_columns |> CCString.concat ",")
       joins
@@ -437,7 +437,7 @@ module Sql = struct
 
   let find_by_contact_to_merge pool ~contact ~merged_contact =
     let open Contact in
-    Database.collect pool find_by_contact_to_merge_request (id contact, id merged_contact)
+    Database.collect pool find_by_contact_to_merge_request (id merged_contact, id contact)
   ;;
 
   let insert_request =

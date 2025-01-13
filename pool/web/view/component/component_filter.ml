@@ -76,9 +76,9 @@ let value_input
          | NoValue | Single _ -> []
          | Lst lst ->
            CCList.filter_map
-             (function[@warning "-4"]
+             (function
                | Option id -> find_in_options options id
-               | _ -> None)
+               | Bool _ | Date _ | Language _ | Nr _ | Str _ -> None)
              lst)
       value
   in
@@ -92,9 +92,9 @@ let value_input
      | Key.Str ->
        let value =
          single_value
-         >>= function[@warning "-4"]
+         >>= function
          | Str s -> Some s
-         | _ -> None
+         | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None
        in
        Input.input_element
          ~additional_attributes
@@ -106,9 +106,9 @@ let value_input
      | Key.Nr ->
        let value =
          single_value
-         >>= (function[@warning "-4"]
+         >>= (function
           | Nr n -> Some n
-          | _ -> None)
+          | Bool _ | Date _ | Language _ | Option _ | Str _ -> None)
          |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
        in
        Input.input_element
@@ -123,9 +123,9 @@ let value_input
          CCOption.map_or
            ~default:false
            (fun value ->
-              match[@warning "-4"] value with
+              match value with
               | Bool b -> b
-              | _ -> false)
+              | Date _ | Language _ | Nr _ | Option _ | Str _ -> false)
            single_value
        in
        Input.checkbox_element
@@ -138,9 +138,9 @@ let value_input
      | Key.Date ->
        let value =
          single_value
-         >>= function[@warning "-4"]
+         >>= function
          | Date d -> Some d
-         | _ -> None
+         | Bool _ | Language _ | Nr _ | Option _ | Str _ -> None
        in
        Input.date_picker_element ~additional_attributes ?value language field_name
      | Key.Select options ->
@@ -167,9 +167,9 @@ let value_input
      | Key.Languages languages ->
        let selected =
          single_value
-         >>= function[@warning "-4"]
+         >>= function
          | Language lang -> CCList.find_opt (Pool_common.Language.equal lang) languages
-         | _ -> None
+         | Bool _ | Date _ | Nr _ | Option _ | Str _ -> None
        in
        Input.selector
          ~attributes:additional_attributes
@@ -207,13 +207,13 @@ let value_input
            | NoValue | Single _ -> []
            | Lst lst ->
              CCList.filter_map
-               (function[@warning "-4"]
+               (function
                  | Str id ->
                    let experiment_id = id |> Experiment.Id.of_string in
                    CCList.find_opt
                      (fun (id, _) -> Experiment.Id.equal id experiment_id)
                      query_experiments
-                 | _ -> None)
+                 | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
                lst)
        in
        Component_search.Experiment.filter_multi_search ~selected ~disabled language
@@ -224,11 +224,11 @@ let value_input
            | NoValue | Single _ -> []
            | Lst lst ->
              CCList.filter_map
-               (function[@warning "-4"]
+               (function
                  | Str id ->
                    let tag_id = id |> Tags.Id.of_string in
                    CCList.find_opt (fun (id, _) -> Tags.Id.equal id tag_id) query_tags
-                 | _ -> None)
+                 | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
                lst)
        in
        Component_search.Tag.filter_multi_search ~selected ~disabled language ())

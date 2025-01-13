@@ -1,6 +1,6 @@
 module Message = Http_utils.Message
 
-let[@warning "-4"] confirmed_and_terms_agreed () =
+let confirmed_and_terms_agreed () =
   let open Http_utils in
   let open Pool_message.Error in
   let filter handler req =
@@ -37,7 +37,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
         in
         contact |> import_closed >>= is_confirmed >>= terms_agreed
       in
-      (match confirmed_and_terms_agreed with
+      (match[@warning "-4"] confirmed_and_terms_agreed with
        | Ok _ -> handler req
        | Error (NotFound Pool_message.Field.User)
        | Error (NotFound Pool_message.Field.Contact) ->

@@ -232,9 +232,6 @@ const updateStatistics = async (form) => {
 
     if (target) {
         const action = target.dataset.action;
-        const spinner = icon(["icon-spinner-outline", "rotate"])
-        target.innerHTML = "";
-        target.appendChild(spinner);
         try {
             const query = parseQuery();
             const body = { query: JSON.stringify(query), _csrf: csrfToken(form) }

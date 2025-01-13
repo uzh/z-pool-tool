@@ -433,10 +433,15 @@ module Statistics : sig
     type statistics =
       { total_sent : int
       ; total_match_filter : int
+      ; total_uninvited_matching : int
       ; sent_by_count : sent_by_count list
       }
 
-    val create : Database.Label.t -> t -> (statistics, Pool_message.Error.t) Lwt_result.t
+    val create
+      :  ?query:Filter.query
+      -> Database.Label.t
+      -> t
+      -> (statistics, Pool_message.Error.t) Lwt_result.t
   end
 
   module RegistrationPossible : sig

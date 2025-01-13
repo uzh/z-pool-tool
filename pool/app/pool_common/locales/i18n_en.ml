@@ -87,6 +87,7 @@ let to_string = function
   | FilterNrOfSentInvitations -> "Number of contacts already invited:"
   | FilterNrOfUnsuitableAssignments ->
     "Number of assigned contacts not meeting the criteria of this filter:"
+  | FilterNuberMatchingUninvited -> "Possible new invitations:"
   | FollowUpSessionFor -> "Follow-up for:"
   | Help -> "Help"
   | ImportConfirmationNote ->
