@@ -87,7 +87,7 @@ module Sql = struct
 
   let find_by_contact_to_merge pool ~contact ~merged_contact =
     let open Contact in
-    Database.collect pool find_by_contact_to_merge_request (id contact, id merged_contact)
+    Database.collect pool find_by_contact_to_merge_request (id merged_contact, id contact)
   ;;
 
   let find_by_experiment ?query pool id =

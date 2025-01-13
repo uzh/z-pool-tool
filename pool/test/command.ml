@@ -72,7 +72,7 @@ let () =
         ] )
     ; ( "duplicate_contacts"
       , Duplicate_contacts_test.
-          [ test_case "merge contacts" `Quick merge_contacts_command ] )
+          [ test_case "merge contacts" `Quick merge_contact_fields_command ] )
     ; ( "tenant"
       , [ test_case "create tenant smtp auth" `Quick Tenant_test.create_smtp_auth
         ; test_case

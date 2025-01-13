@@ -17,6 +17,9 @@ type t =
   ; ignored : Ignored.t
   }
 
+val equal : t -> t -> bool
+val show : t -> string
+
 type merge =
   { contact : Contact.t
   ; merged_contact : Contact.t

@@ -214,6 +214,15 @@ module SessionRepo = struct
   ;;
 end
 
+module TagRepo = struct
+  let create ?(id = Tags.Id.create ()) ?(name = "Tag") model =
+    let open Tags in
+    let tag = Tags.create ~id (Title.of_string name) model |> get_or_failwith in
+    let%lwt () = Tags.(Created tag |> handle_event Data.database_label) in
+    Tags.find Data.database_label id |> Lwt.map get_or_failwith
+  ;;
+end
+
 module TimeWindowRepo = struct
   let create ?(current_user = default_current_user) ?id start duration experiment () =
     let time_window = Time_window.create ?id start duration experiment in
