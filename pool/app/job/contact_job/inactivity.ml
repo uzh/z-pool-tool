@@ -69,7 +69,7 @@ let handle_events pool message = function
     Utils.failwith err
   | Ok (emails, events) ->
     Logs.info ~src (fun m ->
-      m "%s: Found %i contacts to notify due to inactiviey" message (CCList.length events));
+      m "%s: Found %i contacts to notify due to inactivity" message (CCList.length events));
     let%lwt () = Email.handle_event pool (Email.BulkSent emails) in
     events |> Lwt_list.iter_s (Contact.handle_event pool)
 ;;
@@ -91,9 +91,7 @@ let run_by_tenant pool =
   Lwt.return_unit
 ;;
 
-let run () =
-  Database.(Pool.Tenant.all ~status:[ Status.Active ] ()) |> Lwt_list.iter_s run_by_tenant
-;;
+let run () = Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s run_by_tenant
 
 let start_handler () =
   let open Schedule in
@@ -113,7 +111,7 @@ let start_handler () =
 let start () =
   let open Sihl.Configuration in
   match
-    CCOption.get_or ~default:false (read_bool "RUN_HANDLE_INACTIVE_CONTCATS")
+    CCOption.get_or ~default:false (read_bool "RUN_HANDLE_INACTIVE_CONTACTS")
     || is_production ()
   with
   | true -> start_handler ()

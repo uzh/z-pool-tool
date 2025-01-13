@@ -1,4 +1,5 @@
 module Dynparam = Database.Dynparam
+open CCFun.Infix
 
 let additional_joins =
   [ {sql|
@@ -54,24 +55,23 @@ let find_to_warn_about_inactivity pool warn_after =
   match warn_after with
   | [] -> Lwt.return []
   | warn_after ->
+    let open Dynparam in
     let open Caqti_request.Infix in
     let warn_after_s =
       CCList.map
-        (fun span -> Ptime.Span.to_int_s span |> CCOption.get_exn_or "Invalid time span")
+        (Ptime.Span.to_int_s %> CCOption.get_exn_or "Invalid time span")
         warn_after
     in
     let dyn =
-      let open Dynparam in
       CCList.fold_left (fun dyn span -> dyn |> add Caqti_type.int span) empty warn_after_s
     in
     let sql =
       match warn_after with
       | [] -> failwith "Emtpy list provided"
       | [ _ ] -> "?"
-      | tl_warn ->
+      | _ :: tl_warn ->
         (* Ignoring the first element, as this case is hardcoded in the first condition *)
         tl_warn
-        |> CCList.tl
         |> CCList.mapi (fun i _ ->
           Format.asprintf "WHEN pcdn.notification_count = %i THEN ?" (i + 1))
         |> CCString.concat "\n"
@@ -79,17 +79,17 @@ let find_to_warn_about_inactivity pool warn_after =
     in
     (* Adding the last timestampt as the default case *)
     let dyn =
-      let open Dynparam in
       add Caqti_type.int (CCList.rev warn_after_s |> CCList.hd) dyn
       |> add Caqti_type.int (CCList.length warn_after)
     in
     let request = find_to_warn_about_inactivity_request sql in
-    let (Dynparam.Pack (pt, pv)) = dyn in
+    let (Pack (pt, pv)) = dyn in
     let request = request |> pt ->* Contact.Repo.t in
     Database.collect pool request pv
 ;;
 
 let find_to_disable pool disable_after n_reminders =
+  let open Dynparam in
   let request where =
     Format.asprintf
       {sql|
@@ -118,16 +118,15 @@ let find_to_disable pool disable_after n_reminders =
       last_sign_in_at <= NOW() - INTERVAL $1 SECOND
    |sql}
   in
-  let dyn, where =
+  let Pack (pt, pv), where =
     let disable_after =
       disable_after |> Ptime.Span.to_int_s |> CCOption.get_exn_or "Invalid time span"
     in
-    let dyn = Dynparam.empty |> Dynparam.add Caqti_type.int disable_after in
+    let dyn = empty |> add Caqti_type.int disable_after in
     match n_reminders with
     | 0 -> dyn, check_last_login
-    | _ -> Dynparam.add Caqti_type.int n_reminders dyn, needs_reminders
+    | _ -> add Caqti_type.int n_reminders dyn, needs_reminders
   in
-  let (Dynparam.Pack (pt, pv)) = dyn in
   let request =
     let open Caqti_request.Infix in
     request where |> pt ->* Contact.Repo.t

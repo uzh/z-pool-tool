@@ -227,10 +227,8 @@ module InactiveUser = struct
       let open CCResult.Infix in
       let* values =
         map
-          (fun s ->
-             s
-             |> CCInt.of_string
-             |> CCOption.to_result Pool_message.(Error.Invalid Field.TimeSpan))
+          (CCInt.of_string
+           %> CCOption.to_result Pool_message.(Error.Invalid Field.TimeSpan))
           values
         |> all_ok
       in

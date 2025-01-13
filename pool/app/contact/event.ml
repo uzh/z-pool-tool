@@ -126,5 +126,5 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     let%lwt () = Repo.update_sign_in_count pool contact in
     let%lwt () = Repo.remove_deactivation_notifications pool contact in
     Lwt.return_unit
-  | NotifiedAbountInactivity t -> Repo.InactivityNotification.insert_notification pool t
+  | NotifiedAbountInactivity t -> Repo.InactivityNotification.insert pool t
 ;;

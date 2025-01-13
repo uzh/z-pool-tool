@@ -571,7 +571,7 @@ let find_last_signin_at pool contact =
 ;;
 
 module InactivityNotification = struct
-  let insert_notification pool contact =
+  let insert pool contact =
     let open Caqti_request.Infix in
     let request =
       {sql|
