@@ -425,12 +425,17 @@ let experiment_history_modal
                 ()
               |> Sihl.Web.externalize_path
             in
-            [ "cancel", Pool_common.I18n.CancelAssignment, Icon.Close
-            ; ( "mark-as-deleted"
-              , Pool_common.I18n.MarkAssignmentWithFollowUpsAsDeleted
-              , Icon.TrashOutline )
-            ]
-            |> CCList.map (fun (suffix, confirmable, icon) ->
+            Pool_message.
+              [ ( "cancel"
+                , Pool_common.I18n.CancelAssignment
+                , Control.(Cancel (Some Field.Assignment))
+                , Icon.Close )
+              ; ( "mark-as-deleted"
+                , Pool_common.I18n.MarkAssignmentWithFollowUpsAsDeleted
+                , Control.MarkAsDeleted
+                , Icon.TrashOutline )
+              ]
+            |> CCList.map (fun (suffix, confirmable, control, icon) ->
               form
                 ~a:
                   [ a_method `Post
@@ -442,12 +447,7 @@ let experiment_history_modal
                 Component.Input.
                   [ csrf_element csrf ()
                   ; submit_icon
-                      ~attributes:
-                        [ a_title
-                            (Utils.control_to_string
-                               language
-                               Pool_message.Control.MarkAsDeleted)
-                        ]
+                      ~attributes:[ a_title (Utils.control_to_string language control) ]
                       ~classnames:[ "error" ]
                       icon
                   ])
