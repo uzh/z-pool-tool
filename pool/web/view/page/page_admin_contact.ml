@@ -44,14 +44,6 @@ let personal_detail ?admin_comment ?custom_fields ?tags current_user language co
   let field_to_string =
     CCFun.(Pool_common.Utils.field_to_string language %> CCString.capitalize_ascii)
   in
-  let with_comment =
-    match admin_comment with
-    | None -> []
-    | Some comment ->
-      [ ( field_to_string Field.AdminComment
-        , comment |> AdminComment.value |> Http_utils.add_line_breaks )
-      ]
-  in
   let tags =
     tags
     |> CCOption.map_or ~default:[] (fun tags ->
@@ -75,28 +67,46 @@ let personal_detail ?admin_comment ?custom_fields ?tags current_user language co
       in
       ungrouped @ grouped)
   in
-  Pool_message.(
-    [ field_to_string Field.Name, fullname contact |> txt
-    ; ( field_to_string Field.Email
-      , email_address contact |> Pool_user.EmailAddress.value |> txt )
-    ; ( field_to_string Field.CellPhone
-      , contact.cell_phone |> CCOption.map_or ~default:"" Pool_user.CellPhone.value |> txt
-      )
-    ; ( field_to_string Field.Language
-      , contact.language |> CCOption.map_or ~default:"" Pool_common.Language.show |> txt )
-    ; ( field_to_string Field.TermsAndConditionsLastAccepted
-      , contact.terms_accepted_at
-        |> CCOption.map_or
-             ~default:""
-             (Pool_user.TermsAccepted.value %> Pool_model.Time.formatted_date_time)
-        |> txt )
+  let table_row (label, value) = tr [ th [ txt label ]; td [ value ] ] in
+  let counter_rows =
+    [ Field.InvitationCount, num_invitations %> NumberOfInvitations.value
+    ; Field.AssignmentCount, num_assignments %> NumberOfAssignments.value
+    ; Field.NoShowCount, num_no_shows %> NumberOfNoShows.value
+    ; Field.ShowUpCount, num_show_ups %> NumberOfShowUps.value
+    ; Field.Participated, num_participations %> NumberOfParticipations.value
     ]
-    @ with_comment
-    @ tags)
-  |> fun rows ->
+    |> CCList.map (fun (field, value) ->
+      field_to_string field, value contact |> string_of_int |> txt)
+  in
+  let info_rows =
+    Pool_message.
+      [ Field.Name, fullname contact |> txt
+      ; Field.Email, email_address contact |> Pool_user.EmailAddress.value |> txt
+      ; ( Field.CellPhone
+        , contact.cell_phone
+          |> CCOption.map_or ~default:"" Pool_user.CellPhone.value
+          |> txt )
+      ; ( Field.Language
+        , contact.language |> CCOption.map_or ~default:"" Pool_common.Language.show |> txt
+        )
+      ; ( Field.TermsAndConditionsLastAccepted
+        , contact.terms_accepted_at
+          |> CCOption.map_or
+               ~default:""
+               (Pool_user.TermsAccepted.value %> Pool_model.Time.formatted_date_time)
+          |> txt )
+      ; ( Field.AdminComment
+        , admin_comment
+          |> CCOption.map_or
+               ~default:(txt "")
+               (AdminComment.value %> Http_utils.add_line_breaks) )
+      ]
+    |> CCList.map (fun (field, value) -> field_to_string field, value)
+  in
   let rows =
-    CCList.map (fun (label, value) -> tr [ th [ txt label ]; td [ value ] ]) rows
+    (info_rows @ tags |> CCList.map table_row)
     @ custom_field_rows
+    @ (counter_rows |> CCList.map table_row)
   in
   table ~a:[ a_class (Table.table_classes `Striped ~align_top:true ()) ] rows
   |> fun html ->

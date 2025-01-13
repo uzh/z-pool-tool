@@ -368,6 +368,7 @@ let suite =
           [ test_case "check similarity" `Slow check_similarity
           ; test_case "override a with b" `Slow override_a_with_b
           ; test_case "override b with a" `Slow override_b_with_a
+          ; test_case "override with participations" `Slow override_with_participations
           ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
