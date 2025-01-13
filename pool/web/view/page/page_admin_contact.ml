@@ -412,46 +412,51 @@ let experiment_history_modal
           then div ~a:[ a_class [ "inset"; "left" ] ] [ start ]
           else start
         in
-        let mark_as_deleted =
+        let forms =
           match session.closed_at with
           | Some _ -> txt ""
           | None ->
-            let action =
+            let action suffix =
               Http_utils.Url.Admin.assignment_path
                 experiment.Experiment.id
                 session.id
                 ~id
-                ~suffix:"mark-as-deleted"
+                ~suffix
                 ()
               |> Sihl.Web.externalize_path
             in
-            form
-              ~a:
-                [ a_method `Post
-                ; a_action action
-                ; a_user_data
-                    "confirmable"
-                    (Utils.confirmable_to_string
-                       language
-                       Pool_common.I18n.MarkAssignmentWithFollowUpsAsDeleted)
-                ]
-              Component.Input.
-                [ csrf_element csrf ()
-                ; submit_icon
-                    ~attributes:
-                      [ a_title
-                          (Utils.control_to_string
-                             language
-                             Pool_message.Control.MarkAsDeleted)
-                      ]
-                    ~classnames:[ "error" ]
-                    Icon.TrashOutline
-                ]
+            [ "cancel", Pool_common.I18n.CancelAssignment, Icon.Close
+            ; ( "mark-as-deleted"
+              , Pool_common.I18n.MarkAssignmentWithFollowUpsAsDeleted
+              , Icon.TrashOutline )
+            ]
+            |> CCList.map (fun (suffix, confirmable, icon) ->
+              form
+                ~a:
+                  [ a_method `Post
+                  ; a_action (action suffix)
+                  ; a_user_data
+                      "confirmable"
+                      (Utils.confirmable_to_string language confirmable)
+                  ]
+                Component.Input.
+                  [ csrf_element csrf ()
+                  ; submit_icon
+                      ~attributes:
+                        [ a_title
+                            (Utils.control_to_string
+                               language
+                               Pool_message.Control.MarkAsDeleted)
+                        ]
+                      ~classnames:[ "error" ]
+                      icon
+                  ])
+            |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ]
         in
         [ start
         ; to_icon NoShow.value no_show
         ; to_icon Participated.value participated
-        ; mark_as_deleted
+        ; forms
         ])
     in
     Component.Table.horizontal_table ~align_last_end:true ~thead `Striped rows
