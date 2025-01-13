@@ -886,6 +886,7 @@ module Admin = struct
       ; choose ~scope:"/tags" tags
       ; choose ~scope:"/text-messages" text_messages
       ; choose ~scope:Field.(human_url SignUpCode) signup_codes
+      ; get "/inactive-user-warnings" inactive_user_warning_subform
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]

@@ -474,6 +474,12 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been temporarily \
      suspended because of too many failed login attempts."
+  | MessageTemplateInactiveContactWarning ->
+    "This message is sent to contacts who have not logged in for a long time to inform \
+     them that their account will soon be deactivated."
+  | MessageTemplateInactiveContactDeactivation ->
+    "This message is sent to contacts whose account has been deactivated due to \
+     inactivity."
   | MessageTemplateAssignmentCancellation ->
     "This message is used to notify contacts about the cancellation of an assignment."
   | MessageTemplateAssignmentConfirmation ->

@@ -9,6 +9,31 @@ module Smtp = Page_admin_settings_smtp
 module Tags = Page_admin_settings_tags
 module TextMessage = Page_admin_settings_text_messages
 
+let inactive_user_warning_input language warning =
+  let open Settings.InactiveUser in
+  let remove_btn =
+    button
+      ~a:
+        [ a_class [ "error" ]
+        ; a_button_type `Button
+        ; a_onclick "this.parentElement.remove()"
+        ]
+      [ Component.Icon.(TrashOutline |> to_html) ]
+  in
+  div
+    ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+    [ timespan_picker
+        ~classnames:[ "grow" ]
+        ~hide_label:true
+        ~enabled_time_units:[ Pool_model.Base.TimeUnit.Days ]
+        ~required:true
+        language
+        Pool_message.Field.InactiveUserWarning
+        ?value:(CCOption.map Warning.TimeSpan.value warning)
+    ; remove_btn
+    ]
+;;
+
 let show
       tenant_languages
       email_suffixes
@@ -212,15 +237,47 @@ let show
         ]
     in
     let warn_after_form =
-      form
-        ~a:(form_attrs `UpdateInactiveUserWarning)
-        [ csrf_element csrf ()
-        ; timespan_picker
-            ~required:true
-            language
-            Pool_message.Field.InactiveUserWarning
-            ~value:(inactive_user_warning |> Warning.value)
-        ; submit ()
+      let subforms_id = "inactive-user-warnings" in
+      let subforms =
+        CCList.map
+          (fun warning ->
+             warning |> CCOption.return |> inactive_user_warning_input language)
+          inactive_user_warning
+        |> div ~a:[ a_class [ "stack" ]; a_id subforms_id ]
+      in
+      let buttons =
+        div
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+          [ button
+              ~a:
+                Htmx.
+                  [ a_button_type `Button
+                  ; a_class [ "success" ]
+                  ; hx_get
+                      (HttpUtils.Url.Admin.settings_path "inactive-user-warnings"
+                       |> Sihl.Web.externalize_path)
+                  ; hx_trigger "click"
+                  ; hx_target ("#" ^ subforms_id)
+                  ; hx_swap "beforeend"
+                  ]
+              [ txt
+                  (Pool_common.Utils.control_to_string
+                     language
+                     Message.Control.(Add None))
+              ]
+          ; submit ()
+          ]
+      in
+      div
+        [ p
+            [ txt
+                (Pool_common.Utils.field_to_string_capitalized
+                   language
+                   Pool_message.Field.InactiveUserWarning)
+            ]
+        ; form
+            ~a:(form_attrs `UpdateInactiveUserWarning)
+            [ csrf_element csrf (); subforms; buttons ]
         ]
     in
     "Inactive Users", [ disable_after_form; warn_after_form ], None

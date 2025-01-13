@@ -20,6 +20,7 @@ let worker_services =
   ; User_import.Service.register ()
   ; Reminder.Service.register ()
   ; Assignment_job.register ()
+  ; Contact_job.Inactivity.register ()
   ; System_event.Service.ConnectionWatcher.register ()
   ; Duplicate_contacts.Service.register ()
   ]
