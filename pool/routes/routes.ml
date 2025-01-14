@@ -41,6 +41,7 @@ let web_middlewares =
 module Public = struct
   let global_routes =
     choose
+      ~middlewares:web_middlewares
       [ get "/" Handler.Public.root_redirect
       ; get "/custom/assets/:id/:filename" Handler.Public.asset
       ; get "/error" Handler.Public.error
