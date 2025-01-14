@@ -452,6 +452,7 @@ module Sql = struct
       WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       AND start > NOW()
       AND canceled_at IS NULL
+      AND closed_at IS NULL
       ORDER BY start
     |sql}
     |> find_public_sql
