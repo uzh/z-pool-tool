@@ -53,9 +53,7 @@ let run database_label =
   import_events |> Lwt_list.iter_s (Event.handle_event database_label)
 ;;
 
-let run_all () =
-  Database.(Pool.Tenant.all ~status:Status.[ Active ] ()) |> Lwt_list.iter_s run
-;;
+let run_all () = Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s run
 
 let start () =
   let open Schedule in

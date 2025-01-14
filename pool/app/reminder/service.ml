@@ -137,10 +137,7 @@ let send_tenant_reminder database_label =
           m "%s sent for the following sessions: %s" label (sessions |> get_ids)))
 ;;
 
-let run =
-  Database.(Pool.Tenant.all ~status:[ Status.Active ])
-  %> Lwt_list.iter_s send_tenant_reminder
-;;
+let run = Database.(Pool.Tenant.all) %> Lwt_list.iter_s send_tenant_reminder
 
 let start_handler () =
   let open Schedule in

@@ -152,9 +152,7 @@ let report err =
 
 let start () =
   let open Database in
-  let db_pools =
-    Pool.Tenant.all ~status:Status.[ Active; ConnectionIssue; MigrationsPending ] ()
-  in
+  let db_pools = Pool.Tenant.all () in
   Lwt_list.iter_p (check_migration_status %> flip Lwt.catch report) db_pools
 ;;
 

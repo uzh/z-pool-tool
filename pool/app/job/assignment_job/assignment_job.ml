@@ -35,8 +35,7 @@ module Job = struct
 end
 
 let run_all () =
-  Database.(Pool.Tenant.all ~status:Status.[ Active ] ())
-  |> Lwt_list.iter_s update_upcoming_assignments
+  Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s update_upcoming_assignments
 ;;
 
 let start () =
