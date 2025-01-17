@@ -145,6 +145,22 @@ module AnyJob : sig
   val name : t -> JobName.t
 end
 
+module History : sig
+  type model =
+    | Admin
+    | Assignment
+    | Contact
+    | Experiment
+    | Invitation
+    | Session
+
+  type item = model * Pool_common.Id.t
+
+  val pp_item : Format.formatter -> item -> unit
+  val equal_item : item -> item -> bool
+  val sort : item list -> item list
+end
+
 val find : Database.Label.t -> Id.t -> (Instance.t, Pool_message.Error.t) Lwt_result.t
 
 val find_by
@@ -157,7 +173,7 @@ val find_instances_by_entity
   :  [< `Current | `History ]
   -> ?query:Query.t
   -> Database.Label.t
-  -> Pool_common.Id.t
+  -> History.item
   -> (Instance.t list * Query.t) Lwt.t
 
 val find_related
@@ -174,22 +190,6 @@ val count_workable
 val count_all_workable : Database.Label.t -> (int, Pool_message.Error.t) result Lwt.t
 
 include Repo.ColumnsSig
-
-module History : sig
-  type model =
-    | Admin
-    | Assignment
-    | Contact
-    | Experiment
-    | Invitation
-    | Session
-
-  type item = model * Pool_common.Id.t
-
-  val pp_item : Format.formatter -> item -> unit
-  val equal_item : item -> item -> bool
-  val sort : item list -> item list
-end
 
 type job_ctx =
   | Create of History.item list

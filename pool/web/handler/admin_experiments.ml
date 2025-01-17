@@ -482,11 +482,12 @@ let message_history req =
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
   let%lwt messages =
-    Pool_queue.find_instances_by_entity
+    let open Pool_queue in
+    find_instances_by_entity
       queue_table
       ~query
       database_label
-      (Experiment.Id.to_common experiment_id)
+      (History.Experiment, Experiment.Id.to_common experiment_id)
   in
   let open Page.Admin in
   Lwt_result.ok

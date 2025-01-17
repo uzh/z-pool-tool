@@ -66,15 +66,14 @@ let duplicate_for_new_job label _ =
          Connection.rollback ()))
 ;;
 
-let find_instances_by_entity queue_table ?query pool entity_uuid =
+let find_instances_by_entity queue_table ?query pool (model, entity_uuid) =
+  let join_table, join_column = Entity.History.model_sql model in
   let where =
     let open Pool_common.Repo in
-    ( [%string {sql| entity_uuid = %{Pool_common.Id.sql_value_fragment "?"} |sql}]
+    ( [%string {sql| %{join_column} = %{Pool_common.Id.sql_value_fragment "?"} |sql}]
     , Dynparam.(empty |> add Id.t entity_uuid) )
   in
-  let joins =
-    "JOIN pool_queue_jobs_mapping ON pool_queue_jobs_mapping.queue_uuid = uuid"
-  in
+  let joins = [%string {sql| JOIN %{join_table} M ON M.queue_uuid = uuid |sql}] in
   Query.collect_and_count
     pool
     query
