@@ -1,5 +1,5 @@
-open CCFun.Infix
 open Utils.Lwt_result.Infix
+open Entity_mapping
 module Dynparam = Database.Dynparam
 
 let sql_select_columns =
@@ -9,43 +9,24 @@ let sql_select_columns =
 
 let sql_write_columns = [ "queue_uuid"; "entity_uuid" ]
 
-let insert_request =
+let insert_request { entity; _ } =
   let open Caqti_request.Infix in
+  let table, column = Entity.History.model_sql entity in
   [%string
     {sql|
-      INSERT INTO pool_queue_jobs_mapping (
+      INSERT INTO %{table} (
         queue_uuid,
-        entity_uuid
+        %{column}
       ) VALUES (
         %{Entity.Id.sql_value_fragment "$1"},
         %{Entity.Id.sql_value_fragment "$2"}
       )
     |sql}]
-  |> Repo_entity.Mapping.Write.t ->. Caqti_type.unit
+  |> Repo_entity.Mapping.t ->. Caqti_type.unit
 ;;
 
-let insert pool t = Database.exec pool insert_request t
-
-let populatable =
-  let open Entity_mapping.Write in
-  fun { queue_uuid; entity_uuid; _ } ->
-    { queue_uuid = Entity.Id.(Repo.to_bytes of_string value queue_uuid)
-    ; entity_uuid = Pool_common.Id.(Repo.to_bytes of_string value entity_uuid)
-    }
-;;
-
-let to_stream = CCList.rev %> Caqti_lwt.Stream.of_list
-
-let insert_all label mappings =
-  Database.query label (fun connection ->
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    Connection.populate
-      ~table:"pool_queue_jobs_mapping"
-      ~columns:sql_write_columns
-      Repo_entity.Mapping.Write.t
-      (mappings |> CCList.map (Entity_mapping.to_write %> populatable) |> to_stream)
-    |> Lwt.map Caqti_error.uncongested)
-;;
+let insert pool t = Database.exec pool (insert_request t) t
+let insert_all label = Lwt_list.iter_s (insert label)
 
 let find_all_by_queue_request =
   let open Caqti_request.Infix in
@@ -58,26 +39,26 @@ let find_all_by_queue_request =
   |> Repo_entity.Id.t ->? Pool_common.Repo.Id.t
 ;;
 
-let duplicate_for_new_job label queue_uuid =
+let duplicate_for_new_job label _ =
   Database.query label (fun connection ->
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let* () = Connection.start () in
     Lwt.catch
       (fun () ->
-         let%lwt mappings =
-           Connection.collect_list find_all_by_queue_request queue_uuid
-           >|- Caqti_error.show
-           ||> CCResult.get_or_failwith
-           ||> CCList.map (Repo_entity.Mapping.Write.create queue_uuid)
-         in
-         let* () =
-           Connection.populate
-             ~table:"pool_queue_jobs_mapping"
-             ~columns:sql_write_columns
-             Repo_entity.Mapping.Write.t
-             (mappings |> CCList.map populatable |> to_stream)
-           |> Lwt.map Caqti_error.uncongested
-         in
+         (* let%lwt mappings =
+            Connection.collect_list find_all_by_queue_request queue_uuid
+            >|- Caqti_error.show
+            ||> CCResult.get_or_failwith
+            ||> CCList.map (Repo_entity.Mapping.create queue_uuid)
+
+            let* () =
+            Connection.populate
+            ~table:"pool_queue_jobs_mapping"
+            ~columns:sql_write_columns
+            Repo_entity.Mapping.t
+            (mappings |> CCList.map populatable |> to_stream)
+            |> Lwt.map Caqti_error.uncongested
+            in *)
          Connection.commit ())
       (fun exn ->
          Logs.err (fun m ->

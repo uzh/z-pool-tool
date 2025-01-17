@@ -7,6 +7,7 @@ module Dynparam = Database.Dynparam
 let id_select_fragment = Pool_common.Id.sql_select_fragment
 let id_value_fragment = Pool_common.Id.sql_value_fragment
 
+(* TODO: update correct mapping table *)
 let update_queue =
   {sql|
     UPDATE pool_queue_jobs_mapping

@@ -209,6 +209,15 @@ type email_layout =
 val layout_from_tenant : Pool_tenant.t -> email_layout
 val template_hint : Label.t -> Pool_common.I18n.hint
 
+module History : sig
+  val admin_item : Admin.t -> Pool_queue.History.item
+  val assignment_item : Assignment.t -> Pool_queue.History.item
+  val contact_item : Contact.t -> Pool_queue.History.item
+  val experiment_item : Experiment.t -> Pool_queue.History.item
+  val public_experiment_item : Experiment.Public.t -> Pool_queue.History.item
+  val session_item : Session.t -> Pool_queue.History.item
+end
+
 module AccountSuspensionNotification : sig
   val email_params : email_layout -> Pool_user.t -> (string * string) list
 

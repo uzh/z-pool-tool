@@ -93,10 +93,10 @@ let dispatch
         ~default:Lwt.return_unit
         (function
           | Clone id -> Repo_mapping.duplicate_for_new_job label id
-          | Create entity_uuids ->
+          | Create history_items ->
             Lwt_list.iter_s
-              (Entity_mapping.(create instance %> to_write) %> Repo_mapping.insert label)
-              entity_uuids)
+              (Entity_mapping.create instance %> Repo_mapping.insert label)
+              history_items)
         job_ctx
     in
     callback instance)

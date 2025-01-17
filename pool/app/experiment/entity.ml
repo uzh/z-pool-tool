@@ -385,6 +385,15 @@ let show_external_data_id_links_value (m : t) =
   ShowExternalDataIdLinks.value m.show_external_data_id_links
 ;;
 
+module InvitationReset = struct
+  type t =
+    { created_at : Pool_common.CreatedAt.t
+    ; iteration : int
+    ; contacts_matching_filter : int
+    ; invitations_sent : int
+    }
+end
+
 let boolean_fields =
   Pool_message.Field.
     [ AllowUninvitedSignup

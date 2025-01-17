@@ -2,6 +2,7 @@ open CCFun.Infix
 open Pool_message
 module Contact_command = Cqrs_command.Contact_command
 module Language = Pool_common.Language
+module JobHistory = Message_template.History
 
 let current_user = Test_utils.Model.create_admin ()
 
@@ -24,7 +25,8 @@ let allowed_email_suffixes =
 let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn
 
 let confirmation_mail contact =
-  let email = Contact.(contact |> email_address |> Pool_user.EmailAddress.value) in
+  let open Contact in
+  let email = contact |> email_address |> Pool_user.EmailAddress.value in
   let open Message_template in
   let sender = "test@econ.uzh.ch" in
   let ({ email_subject; email_text; label; _ } : Message_template.t) =
@@ -41,7 +43,7 @@ let confirmation_mail contact =
     }
   |> Email.Service.Job.create
   |> Email.create_dispatch
-       ~job_ctx:(Pool_queue.job_ctx_create Contact.[ contact |> id |> Id.to_common ])
+       ~job_ctx:Pool_queue.(job_ctx_create JobHistory.[ contact_item contact ])
        ~message_template:(Message_template.Label.show label)
 ;;
 

@@ -175,8 +175,24 @@ val count_all_workable : Database.Label.t -> (int, Pool_message.Error.t) result 
 
 include Repo.ColumnsSig
 
+module History : sig
+  type model =
+    | Admin
+    | Assignment
+    | Contact
+    | Experiment
+    | Invitation
+    | Session
+
+  type item = model * Pool_common.Id.t
+
+  val pp_item : Format.formatter -> item -> unit
+  val equal_item : item -> item -> bool
+  val sort : item list -> item list
+end
+
 type job_ctx =
-  | Create of Pool_common.Id.t list
+  | Create of History.item list
   | Clone of Id.t
 
 val equal_job_ctx : job_ctx -> job_ctx -> bool
@@ -184,7 +200,7 @@ val pp_job_ctx : Format.formatter -> job_ctx -> unit
 val show_job_ctx : job_ctx -> string
 val job_ctx_of_yojson : Yojson.Safe.t -> job_ctx
 val yojson_of_job_ctx : job_ctx -> Yojson.Safe.t
-val job_ctx_create : Pool_common.Id.t list -> job_ctx
+val job_ctx_create : History.item list -> job_ctx
 val job_ctx_clone : Id.t -> job_ctx
 
 val dispatch

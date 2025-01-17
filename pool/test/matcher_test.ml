@@ -2,6 +2,7 @@ open CCFun
 module InvitationCommand = Cqrs_command.Invitation_command
 module Field = Pool_message.Field
 module Model = Test_utils.Model
+module JobHistory = Message_template.History
 
 let get_or_failwith = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
@@ -22,7 +23,7 @@ let expected_events experiment mailing contacts create_message =
   Ok events
 ;;
 
-let create_message ?sender (contact : Contact.t) =
+let create_message ?sender contact =
   let sender =
     sender |> CCOption.map_or ~default:"it@econ.uzh.ch" Pool_user.EmailAddress.value
   in
@@ -37,7 +38,7 @@ let create_message ?sender (contact : Contact.t) =
     }
   |> Email.Service.Job.create
   |> Email.create_dispatch
-       ~job_ctx:Pool_queue.(job_ctx_create [ Contact.(contact |> id |> Id.to_common) ])
+       ~job_ctx:Pool_queue.(job_ctx_create JobHistory.[ contact_item contact ])
   |> CCResult.return
 ;;
 

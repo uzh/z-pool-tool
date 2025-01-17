@@ -259,12 +259,36 @@ module Job = struct
   ;;
 end
 
+module History = struct
+  type model =
+    | Admin
+    | Assignment
+    | Contact
+    | Experiment
+    | Invitation
+    | Session
+  [@@deriving eq, ord, show, yojson]
+
+  let model_sql = function
+    | Admin -> "pool_queue_job_admin", "admin_uuid"
+    | Assignment -> "pool_queue_job_assignment", "assignment_uuid"
+    | Contact -> "pool_queue_job_contact", "contact_uuid"
+    | Experiment -> "pool_queue_job_experiment", "experiment_uuid"
+    | Invitation -> "pool_queue_job_invitation", "invitation_uuid"
+    | Session -> "pool_queue_job_session", "session_uuid"
+  ;;
+
+  type item = model * Pool_common.Id.t [@@deriving eq, ord, show, yojson]
+
+  let sort = CCList.stable_sort compare_item
+end
+
 type job_ctx =
-  | Create of Pool_common.Id.t list
+  | Create of History.item list
   | Clone of Id.t
 [@@deriving eq, show, yojson]
 
-let job_ctx_create ids = Create (ids |> CCList.stable_sort Pool_common.Id.compare)
+let job_ctx_create items = Create (History.sort items)
 let job_ctx_clone id = Clone id
 
 module AnyJob = struct

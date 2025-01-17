@@ -3,6 +3,7 @@ open Test_utils
 open Pool_message
 module SessionC = Cqrs_command.Session_command
 module TimeUnit = Pool_model.Base.TimeUnit
+module JobHistory = Message_template.History
 
 let current_user () = Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
 
@@ -514,10 +515,8 @@ let create_cancellation_message experiment reason contact =
   create_email_job experiment email
   |> Email.create_dispatch
        ~job_ctx:
-         (Pool_queue.job_ctx_create
-            [ Contact.(contact |> id |> Id.to_common)
-            ; Experiment.(experiment |> id |> Id.to_common)
-            ])
+         Pool_queue.(
+           job_ctx_create JobHistory.[ contact_item contact; experiment_item experiment ])
   |> CCResult.return
 ;;
 
@@ -1206,10 +1205,9 @@ let reschedule_to_past () =
     |> create_email_job experiment
     |> Email.create_dispatch
          ~job_ctx:
-           (Pool_queue.job_ctx_create
-              [ Session.(session.id |> Id.to_common)
-              ; Experiment.(experiment |> id |> Id.to_common)
-              ])
+           Pool_queue.(
+             job_ctx_create
+               JobHistory.[ session_item session; experiment_item experiment ])
     |> CCResult.return
   in
   let command =
@@ -1238,10 +1236,8 @@ let reschedule_with_experiment_smtp () =
   let email_to_job =
     Email.create_dispatch
       ~job_ctx:
-        (Pool_queue.job_ctx_create
-           [ Session.(session.id |> Id.to_common)
-           ; Experiment.(experiment |> id |> Id.to_common)
-           ])
+        Pool_queue.(
+          job_ctx_create JobHistory.[ session_item session; experiment_item experiment ])
   in
   let create_message _ _ _ =
     Test_utils.Model.create_email ()
@@ -1286,12 +1282,11 @@ let resend_reminders_invalid () =
   let create_email assignment =
     Model.create_email ()
     |> create_email_job experiment
-    |> Email.create_dispatch
+    |> Email.create_dispatch (* TODO: Thought assignments do not have history so far *)
          ~job_ctx:
-           (Pool_queue.job_ctx_create
-              [ Assignment.(assignment.id |> Id.to_common)
-              ; Experiment.(experiment |> id |> Id.to_common)
-              ])
+           Pool_queue.(
+             job_ctx_create
+               JobHistory.[ assignment_item assignment; experiment_item experiment ])
     |> CCResult.return
   in
   let create_text_message _ cell_phone = Ok (Model.create_text_message_job cell_phone) in
@@ -1338,10 +1333,9 @@ let resend_reminders_valid () =
     |> create_email_job experiment
     |> Email.create_dispatch
          ~job_ctx:
-           (Pool_queue.job_ctx_create
-              [ Session.(session.id |> Id.to_common)
-              ; Experiment.(experiment |> id |> Id.to_common)
-              ])
+           Pool_queue.(
+             job_ctx_create
+               JobHistory.[ session_item session; experiment_item experiment ])
     |> CCResult.return
   in
   let create_text_message _ cell_phone = Ok (Model.create_text_message_job cell_phone) in
