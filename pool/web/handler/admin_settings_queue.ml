@@ -32,22 +32,23 @@ let detail req =
 
 let resend req =
   let open Utils.Lwt_result.Infix in
+  let open Pool_queue in
   let id = job_id req in
-  let path = Format.asprintf "%s/%s" base_path (Pool_queue.Id.value id) in
+  let path = Format.asprintf "%s/%s" base_path (Id.value id) in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* job = Pool_queue.find database_label id in
-    let find_related = Pool_queue.find_related database_label job in
+    let* job = find database_label id in
+    let find_related = find_related database_label job in
     let%lwt job_contact =
-      find_related `Contact
+      find_related History.Contact
       >|> CCOption.map_or ~default:Lwt.return_none (fun contact_id ->
         let open Contact in
         contact_id |> Id.of_common |> find database_label ||> CCResult.to_opt)
     in
     let%lwt job_experiment =
-      find_related `Experiment
+      find_related History.Experiment
       >|> CCOption.map_or ~default:Lwt.return_none (fun experiment_id ->
         let open Experiment in
         experiment_id |> Id.of_common |> find database_label ||> CCResult.to_opt)

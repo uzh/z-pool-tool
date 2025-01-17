@@ -2,11 +2,6 @@ open Utils.Lwt_result.Infix
 open Entity_mapping
 module Dynparam = Database.Dynparam
 
-let sql_select_columns =
-  Pool_common.Id.sql_select_fragment ~field:"pool_queue_jobs_mapping.entity_uuid"
-  :: Repo.sql_select_columns None
-;;
-
 let sql_write_columns = [ "queue_uuid"; "entity_uuid" ]
 
 let insert_request { entity; _ } =
@@ -82,20 +77,13 @@ let find_instances_by_entity queue_table ?query pool (model, entity_uuid) =
     Repo_entity.Instance.t
 ;;
 
-let find_related_request entity =
-  let joins =
-    match entity with
-    | `Contact ->
-      {sql| INNER JOIN pool_contacts ON entity_uuid = pool_contacts.user_uuid |sql}
-    | `Experiment ->
-      {sql| INNER JOIN pool_experiments ON entity_uuid = pool_experiments.uuid |sql}
-  in
+let find_related_request model =
+  let table, column = Entity.History.model_sql model in
   let open Caqti_request.Infix in
   [%string
     {sql|
-      SELECT %{Pool_common.Id.sql_select_fragment ~field:"entity_uuid"}
-      FROM pool_queue_jobs_mapping
-      %{joins}
+      SELECT %{Pool_common.Id.sql_select_fragment ~field:column}
+      FROM %{table}
       WHERE queue_uuid = %{Entity.Id.sql_value_fragment "?"}
     |sql}]
   |> Repo_entity.Id.t ->? Pool_common.Repo.Id.t

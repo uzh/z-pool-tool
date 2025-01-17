@@ -179,7 +179,7 @@ val find_instances_by_entity
 val find_related
   :  Database.Label.t
   -> Instance.t
-  -> [< `Contact | `Experiment ]
+  -> History.model
   -> Pool_common.Id.t option Lwt.t
 
 val count_workable
