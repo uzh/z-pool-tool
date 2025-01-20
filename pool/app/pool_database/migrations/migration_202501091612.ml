@@ -226,6 +226,20 @@ let create_experimenet_invitation_reset_table =
   |sql}
 ;;
 
+let drop_procedure =
+  Database.Migration.Step.create
+    ~label:"drop procedure"
+    (Format.asprintf
+       {sql| DROP PROCEDURE IF EXISTS %s |sql}
+       populate_invitations_mapping_table_name)
+;;
+
+let drop_mapping_table =
+  Database.Migration.Step.create
+    ~label:"drop pool_queue_jobs_mapping"
+    {sql| DROP TABLE IF EXISTS pool_queue_jobs_mapping |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202501091612"
@@ -241,5 +255,7 @@ let migration () =
     |> add_step populate_pool_queue_job_admin_table
     |> add_step create_pool_queue_job_invitations_table
     |> add_step make_populate_pool_queue_job_invitations_table_procedure
-    |> add_step call_pool_queue_job_invitations_table_procedure)
+    |> add_step call_pool_queue_job_invitations_table_procedure
+    |> add_step drop_procedure
+    |> add_step drop_mapping_table)
 ;;

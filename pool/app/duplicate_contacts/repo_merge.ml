@@ -7,12 +7,13 @@ module Dynparam = Database.Dynparam
 let id_select_fragment = Pool_common.Id.sql_select_fragment
 let id_value_fragment = Pool_common.Id.sql_value_fragment
 
-(* TODO: update correct mapping table *)
-let update_queue =
+let update_queue_history =
   {sql|
-    UPDATE pool_queue_jobs_mapping
-    SET entity_uuid = UNHEX(REPLACE($1, '-', ''))
-    WHERE entity_uuid = UNHEX(REPLACE($2, '-', ''))
+    INSERT INTO pool_queue_job_contact (queue_uuid, contact_uuid)
+    SELECT queue_uuid, UNHEX(REPLACE($1, '-', ''))
+    FROM pool_queue_job_contact
+    WHERE contact_uuid = UNHEX(REPLACE($2, '-', ''))
+    ON DUPLICATE KEY UPDATE updated_at = NOW();
   |sql}
   |> Contact.Repo.Id.(t2 t t ->. unit)
 ;;
@@ -97,6 +98,14 @@ let update_assignments contact_id assignments =
       sql
   in
   sql, dyn
+;;
+
+let destroy_queue_history =
+  {sql|
+    DELETE FROM pool_queue_job_contact
+    WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.t ->. unit
 ;;
 
 let destroy_tags =
@@ -254,7 +263,7 @@ let merge
   in
   let override_queue connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
-    Connection.exec update_queue (id contact, id merged_contact)
+    Connection.exec update_queue_history (id contact, id merged_contact)
   in
   let override_changelog connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
@@ -293,6 +302,10 @@ let merge
       Some
         (fun connection ->
           update_assignments (id contact) assignments |> exec_dyn_request connection)
+  in
+  let destroy_queue_history connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_queue_history (id merged_contact)
   in
   let destroy_tags connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
@@ -339,7 +352,8 @@ let merge
     |> CCList.filter_map CCFun.id
   in
   let destroy_requests =
-    [ destroy_tags
+    [ destroy_queue_history
+    ; destroy_tags
     ; destroy_mailing_invitations
     ; destroy_invitations
     ; destroy_waiting_lists
