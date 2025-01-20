@@ -5,7 +5,6 @@ include Message_utils
 module Guard = Entity_guard
 module VersionHistory = Version_history
 module Queue = Pool_queue
-open CCFun.Infix
 
 let src = Logs.Src.create "message_template"
 
@@ -693,10 +692,15 @@ module MatchFilterUpdateNotification = struct
   let label = Label.MatchFilterUpdateNotification
 
   let message_uuids experiment sessions admin =
-    (* TODO: Create assignment history? *)
     let open History in
     [ experiment_item experiment; admin_item admin ]
-    @ (sessions |> CCList.map (fst %> session_item))
+    @ (sessions
+       |> CCList.fold_left
+            (fun acc (session, assignments) ->
+               let session_item = session_item session in
+               let assignment_items = CCList.map assignment_item assignments in
+               acc @ (session_item :: assignment_items))
+            [])
   ;;
 
   let assignment_list assignments =
