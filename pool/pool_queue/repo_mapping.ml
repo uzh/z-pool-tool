@@ -1,4 +1,3 @@
-open Utils.Lwt_result.Infix
 open Entity_mapping
 module Dynparam = Database.Dynparam
 
@@ -23,42 +22,26 @@ let insert_request { entity; _ } =
 let insert pool t = Database.exec pool (insert_request t) t
 let insert_all label = Lwt_list.iter_s (insert label)
 
-let find_all_by_queue_request =
+let duplicate_mapping_request model =
   let open Caqti_request.Infix in
+  let table, column = Entity.History.model_sql model in
   [%string
     {sql|
-      SELECT %{Entity.Id.sql_select_fragment ~field:"entity_uuid"}
-      FROM pool_queue_job_mapping
-      WHERE queue_uuid = %{Entity.Id.sql_value_fragment "$1"}
+      INSERT INTO %{table} (queue_uuid, %{column})
+      SELECT UNHEX(REPLACE(?, '-', '')), %{column}
+      FROM %{table}
+      WHERE queue_uuid = UNHEX(REPLACE(?, '-', ''));
     |sql}]
-  |> Repo_entity.Id.t ->? Pool_common.Repo.Id.t
+  |> Caqti_type.(t2 Repo_entity.Id.t Repo_entity.Id.t ->. unit)
 ;;
 
-let duplicate_for_new_job label _ =
-  Database.query label (fun connection ->
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let* () = Connection.start () in
-    Lwt.catch
-      (fun () ->
-         (* let%lwt mappings =
-            Connection.collect_list find_all_by_queue_request queue_uuid
-            >|- Caqti_error.show
-            ||> CCResult.get_or_failwith
-            ||> CCList.map (Repo_entity.Mapping.create queue_uuid)
-
-            let* () =
-            Connection.populate
-            ~table:"pool_queue_jobs_mapping"
-            ~columns:sql_write_columns
-            Repo_entity.Mapping.t
-            (mappings |> CCList.map populatable |> to_stream)
-            |> Lwt.map Caqti_error.uncongested
-            in *)
-         Connection.commit ())
-      (fun exn ->
-         Logs.err (fun m ->
-           m "Job mapping duplication failed: %s" (Printexc.to_string exn));
-         Connection.rollback ()))
+let duplicate_for_new_job pool { Entity.Instance.id; clone_of; _ } =
+  match clone_of with
+  | None -> Lwt.return_unit
+  | Some clone_of ->
+    Entity.History.all_models
+    |> Lwt_list.iter_s (fun model ->
+      Database.exec pool (duplicate_mapping_request model) (id, clone_of))
 ;;
 
 let find_instances_by_entity queue_table ?query pool (model, entity_uuid) =

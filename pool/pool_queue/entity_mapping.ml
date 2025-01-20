@@ -7,6 +7,6 @@ type t =
   }
 [@@deriving eq, show, fields]
 
-let create { Instance.id; _ } ((entity, entity_uuid) : History.item) =
+let create { Instance.id; _ } (entity, entity_uuid) =
   { entity_uuid; queue_uuid = id; entity }
 ;;

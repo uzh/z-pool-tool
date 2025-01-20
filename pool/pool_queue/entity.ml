@@ -267,7 +267,7 @@ module History = struct
     | Experiment
     | Invitation
     | Session
-  [@@deriving eq, ord, show, yojson]
+  [@@deriving enum, eq, ord, show, yojson]
 
   let model_sql = function
     | Admin -> "pool_queue_job_admin", "admin_uuid"
@@ -276,6 +276,17 @@ module History = struct
     | Experiment -> "pool_queue_job_experiment", "experiment_uuid"
     | Invitation -> "pool_queue_job_invitation", "invitation_uuid"
     | Session -> "pool_queue_job_session", "session_uuid"
+  ;;
+
+  let all_models : model list =
+    let open CCList in
+    range min_model max_model
+    |> map model_of_enum
+    |> all_some
+    |> CCOption.get_exn_or
+         (Format.asprintf
+            "%s: Could not create list of all keys!"
+            (Pool_message.Field.show Field.Model))
   ;;
 
   type item = model * Pool_common.Id.t [@@deriving eq, ord, show, yojson]

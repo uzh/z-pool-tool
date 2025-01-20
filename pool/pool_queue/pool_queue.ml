@@ -92,7 +92,7 @@ let dispatch
       CCOption.map_or
         ~default:Lwt.return_unit
         (function
-          | Clone id -> Repo_mapping.duplicate_for_new_job label id
+          | Clone (_ : Id.t) -> Repo_mapping.duplicate_for_new_job label instance
           | Create history_items ->
             Lwt_list.iter_s
               (Entity_mapping.create instance %> Repo_mapping.insert label)
@@ -110,14 +110,23 @@ let dispatch_all ?(callback = fun (_ : 'a) -> Lwt.return_unit) ?run_at label inp
     CCList.fold_left
       (fun (init_instances, init_create, init_clone)
         (id, input, message_template, job_ctx) ->
-         let instance = Job.to_instance ~id ?message_template ?run_at label input job in
+         let clone_of =
+           match job_ctx with
+           | Create _ -> None
+           | Clone id -> Some id
+         in
+         let instance =
+           Job.to_instance ~id ?message_template ?run_at ?clone_of label input job
+         in
          match job_ctx with
          | Create uuids ->
            ( CCList.cons' init_instances instance
            , init_create @ CCList.map (Entity_mapping.create instance) uuids
            , init_clone )
-         | Clone uuid ->
-           CCList.cons' init_instances instance, init_create, CCList.cons' init_clone uuid)
+         | Clone _ ->
+           ( CCList.cons' init_instances instance
+           , init_create
+           , CCList.cons' init_clone instance ))
       ([], [], [])
       inputs
   in
