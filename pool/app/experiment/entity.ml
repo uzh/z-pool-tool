@@ -123,6 +123,7 @@ module SurveyUrl = struct
   let schema () = schema ~validation field ()
 end
 
+(* TODO: Remove this module *)
 module InvitationResetAt = struct
   include Pool_model.Base.Ptime
 
@@ -386,12 +387,22 @@ let show_external_data_id_links_value (m : t) =
 ;;
 
 module InvitationReset = struct
+  module Write = struct
+    type t =
+      { experiment_id : Id.t
+      ; contacts_matching_filter : int
+      ; invitations_sent : int
+      }
+    [@@deriving eq, show]
+  end
+
   type t =
     { created_at : Pool_common.CreatedAt.t
     ; iteration : int
     ; contacts_matching_filter : int
     ; invitations_sent : int
     }
+  [@@deriving eq, show]
 end
 
 let boolean_fields =

@@ -7,7 +7,8 @@ module SentInvitations = struct
   type statistics =
     { total_sent : int
     ; total_match_filter : int
-    ; sent_by_count : sent_by_count list
+    ; invitation_resets : Entity.InvitationReset.t list
+    ; sent_since_last_reset : int
     }
   [@@deriving eq, show]
 end

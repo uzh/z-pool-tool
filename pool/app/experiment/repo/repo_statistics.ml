@@ -37,20 +37,11 @@ module SentInvitations = struct
 
   let by_experiment pool ({ id; _ } as experiment) =
     let open Utils.Lwt_result.Infix in
-    let%lwt counts = Database.collect pool find_unique_counts_request (Id.value id) in
-    let base_dyn = Dynparam.(empty |> add Caqti_type.string (Id.value id)) in
-    let%lwt total_sent = total_invitation_count_by_experiment pool id in
-    let%lwt sent_by_count =
-      counts
-      |> Lwt_list.map_s (fun send_count ->
-        let (Dynparam.Pack (pt, pv)) =
-          base_dyn |> Dynparam.add Caqti_type.int send_count
-        in
-        let request =
-          count_invitations_request ~by_count:true () |> pt ->! Caqti_type.int
-        in
-        Database.find pool request pv |> Lwt.map (fun count -> send_count, count))
+    let%lwt invitation_resets = Repo_invitation_reset.find_by_experiment pool id in
+    let%lwt sent_since_last_reset =
+      Repo_invitation_reset.invitations_sent_since_last_reset pool id
     in
+    let%lwt total_sent = total_invitation_count_by_experiment pool id in
     let* total_match_filter =
       let query = experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query) in
       Filter.(
@@ -61,7 +52,8 @@ module SentInvitations = struct
           query)
     in
     Lwt.return_ok
-      Statistics.SentInvitations.{ total_sent; total_match_filter; sent_by_count }
+      Statistics.SentInvitations.
+        { total_sent; total_match_filter; invitation_resets; sent_since_last_reset }
   ;;
 end
 

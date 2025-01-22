@@ -67,6 +67,13 @@ let invitation_count =
   Repo_statistics.SentInvitations.total_invitation_count_by_experiment
 ;;
 
+module InvitationReset = struct
+  include InvitationReset
+
+  let create = Repo_invitation_reset.create
+  let insert = Repo_invitation_reset.insert
+end
+
 module Statistics = struct
   include Statistics
   module Repo = Repo_statistics

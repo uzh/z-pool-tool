@@ -328,15 +328,15 @@ end = struct
 end
 
 module ResetInvitations : sig
-  include Common.CommandSig with type t = Experiment.t
+  include Common.CommandSig with type t = Experiment.InvitationReset.Write.t
 
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
-  type t = Experiment.t
+  type t = Experiment.InvitationReset.Write.t
 
-  let handle ?(tags = Logs.Tag.empty) (experiment : t) =
+  let handle ?(tags = Logs.Tag.empty) reset =
     Logs.info ~src (fun m -> m "Handle command ResetInvitations" ~tags);
-    Ok [ Experiment.ResetInvitations experiment |> Pool_event.experiment ]
+    Ok [ Experiment.ResetInvitations reset |> Pool_event.experiment ]
   ;;
 
   let effects id = Experiment.Guard.Access.update id

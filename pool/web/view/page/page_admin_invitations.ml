@@ -153,8 +153,9 @@ module Partials = struct
   let statistics
         language
         { Experiment.Statistics.SentInvitations.total_sent
-        ; sent_by_count
+        ; invitation_resets
         ; total_match_filter
+        ; sent_since_last_reset
         }
     =
     let open Pool_common in
@@ -181,15 +182,27 @@ module Partials = struct
       |> to_row ~classnames:[ "font-bold" ]
     in
     let table =
-      match sent_by_count with
-      | [] -> p [ strong [ txt (text_to_string I18n.NoInvitationsSent) ] ]
-      | sent_by_count ->
-        sent_by_count
-        |> CCList.map (fun (key, value) ->
-          (to_string key, Format.asprintf "%s / %i" (to_string value) total_match_filter)
-          |> to_row)
-        |> fun rows ->
-        rows @ [ total ] |> table ~thead ~a:[ a_class [ "table"; "simple" ] ]
+      let make_row interation (num_invitations, num_matching_filter) =
+        tr
+          [ td [ txt interation ]
+          ; td [ txt (Format.asprintf "%i / %i" num_invitations num_matching_filter) ]
+          ]
+      in
+      match invitation_resets, sent_since_last_reset with
+      | [], 0 -> p [ strong [ txt (text_to_string I18n.NoInvitationsSent) ] ]
+      | resets, _ ->
+        let resets_rows =
+          CCList.map
+            (fun Experiment.InvitationReset.
+                   { iteration; contacts_matching_filter; invitations_sent; _ } ->
+               make_row (to_string iteration) (invitations_sent, contacts_matching_filter))
+            resets
+        in
+        let current_row =
+          make_row "Current" (sent_since_last_reset, total_match_filter)
+        in
+        resets_rows @ [ current_row; total ]
+        |> table ~thead ~a:[ a_class [ "table"; "simple" ] ]
     in
     div
       [ p [ txt (text_to_string I18n.InvitationsStatisticsIntro) ]

@@ -243,10 +243,26 @@ module DirectEnrollment : sig
   val assignable : t -> bool
 end
 
+module InvitationReset : sig
+  module Write : sig
+    type t
+  end
+
+  val create : Database.Label.t -> t -> (Write.t, Pool_message.Error.t) Lwt_result.t
+  val insert : Database.Label.t -> Write.t -> unit Lwt.t
+
+  type t =
+    { created_at : Pool_common.CreatedAt.t
+    ; iteration : int
+    ; contacts_matching_filter : int
+    ; invitations_sent : int
+    }
+end
+
 type event =
   | Created of t
   | Updated of t * t
-  | ResetInvitations of t
+  | ResetInvitations of InvitationReset.Write.t
   | Deleted of Id.t
 
 val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
@@ -255,7 +271,7 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val created : t -> event
 val updated : t -> t -> event
-val resetinvitations : t -> event
+val resetinvitations : InvitationReset.Write.t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_message.Field.t list
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
@@ -433,7 +449,8 @@ module Statistics : sig
     type statistics =
       { total_sent : int
       ; total_match_filter : int
-      ; sent_by_count : sent_by_count list
+      ; invitation_resets : InvitationReset.t list
+      ; sent_since_last_reset : int
       }
 
     val create : Database.Label.t -> t -> (statistics, Pool_message.Error.t) Lwt_result.t

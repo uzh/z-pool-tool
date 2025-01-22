@@ -196,9 +196,10 @@ let reset req =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let* experiment = Experiment.find database_label experiment_id in
+    let* reset = Experiment.InvitationReset.create database_label experiment in
     let events =
       let open Cqrs_command.Experiment_command.ResetInvitations in
-      handle ~tags experiment |> Lwt.return
+      handle ~tags reset |> Lwt.return
     in
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in

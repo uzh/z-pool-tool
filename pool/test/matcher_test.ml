@@ -125,7 +125,10 @@ let create_invitations_repo _ () =
       in
       Alcotest.(check bool msg true is_less_or_equal)
     in
-    let%lwt () = Experiment.handle_event pool (Experiment.ResetInvitations experiment) in
+    let%lwt reset =
+      Experiment.InvitationReset.create database_label experiment ||> get_or_failwith
+    in
+    let%lwt () = Experiment.handle_event pool (Experiment.ResetInvitations reset) in
     let%lwt experiment, contacts, _ = find_by_mailing mailing in
     let%lwt expected = create_expected mailing experiment contacts in
     let%lwt events = find_events () in

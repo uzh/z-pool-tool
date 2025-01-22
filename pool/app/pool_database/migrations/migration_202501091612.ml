@@ -29,7 +29,7 @@ let create_pool_queue_job_experiment_table =
   let table_suffix = "experiment" in
   let column_name = "experiment_uuid" in
   let fk_constraint =
-    {|CONSTRAINT fk_experiment FOREIGN KEY (experiment_uuid) REFERENCES pool_experiments(uuid)|}
+    {|CONSTRAINT fk_pool_queue_job_experiment FOREIGN KEY (experiment_uuid) REFERENCES pool_experiments(uuid)|}
   in
   create_mapping_table ~table_suffix ~column_name ~fk_constraint
 ;;
@@ -51,7 +51,7 @@ let create_pool_queue_job_contact_table =
   let table_suffix = "contact" in
   let column_name = "contact_uuid" in
   let fk_constraint =
-    {|CONSTRAINT fk_contact FOREIGN KEY (contact_uuid) REFERENCES pool_contacts(user_uuid)|}
+    {|CONSTRAINT fk_pool_queue_job_contact FOREIGN KEY (contact_uuid) REFERENCES pool_contacts(user_uuid)|}
   in
   create_mapping_table ~table_suffix ~column_name ~fk_constraint
 ;;
@@ -73,7 +73,7 @@ let create_pool_queue_job_sessions_table =
   let table_suffix = "session" in
   let column_name = "session_uuid" in
   let fk_constraint =
-    {|CONSTRAINT fk_session FOREIGN KEY (session_uuid) REFERENCES pool_sessions(uuid)|}
+    {|CONSTRAINT fk_pool_queue_job_session FOREIGN KEY (session_uuid) REFERENCES pool_sessions(uuid)|}
   in
   create_mapping_table ~table_suffix ~column_name ~fk_constraint
 ;;
@@ -95,7 +95,7 @@ let create_pool_queue_job_invitations_table =
   let table_suffix = "invitation" in
   let column_name = "invitation_uuid" in
   let fk_constraint =
-    {|CONSTRAINT fk_invitation FOREIGN KEY (invitation_uuid) REFERENCES pool_invitations(uuid)|}
+    {|CONSTRAINT fk_pool_queue_job_invitation FOREIGN KEY (invitation_uuid) REFERENCES pool_invitations(uuid)|}
   in
   create_mapping_table ~table_suffix ~column_name ~fk_constraint
 ;;
@@ -137,7 +137,7 @@ let create_pool_queue_job_assignments_table =
   let table_suffix = "assignment" in
   let column_name = "assignment_uuid" in
   let fk_constraint =
-    {|CONSTRAINT fk_assignment FOREIGN KEY (assignment_uuid) REFERENCES pool_assignments(uuid)|}
+    {|CONSTRAINT fk_pool_queue_job_assignment FOREIGN KEY (assignment_uuid) REFERENCES pool_assignments(uuid)|}
   in
   create_mapping_table ~table_suffix ~column_name ~fk_constraint
 ;;
@@ -190,6 +190,23 @@ let drop_mapping_table =
     {sql| DROP TABLE IF EXISTS pool_queue_jobs_mapping |sql}
 ;;
 
+let create_experimenet_invitation_reset_table =
+  Database.Migration.Step.create
+    ~label:"create pool_experiment_invitation_reset table"
+    {sql|
+      CREATE TABLE IF NOT EXISTS pool_experiment_invitation_reset (
+        id BIGINT UNSIGNED AUTO_INCREMENT,
+        experiment_uuid BINARY(16) NOT NULL,
+        contacts_matching_filter INT UNSIGNED NOT NULL,
+        sent_invitations INT UNSIGNED NOT NULL,
+        created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        CONSTRAINT fk_experiment_invitation_reset_xperiment FOREIGN KEY (experiment_uuid) REFERENCES pool_experiments(uuid)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202501091612"
@@ -207,5 +224,6 @@ let migration () =
     |> add_step make_populate_pool_queue_job_invitations_table_procedure
     |> add_step call_pool_queue_job_invitations_table_procedure
     |> add_step drop_procedure
-    |> add_step drop_mapping_table)
+    |> add_step drop_mapping_table
+    |> add_step create_experimenet_invitation_reset_table)
 ;;
