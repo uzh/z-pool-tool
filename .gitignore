@@ -37,6 +37,7 @@ _opam/
 *.log
 !.log/.gitkeep
 .parcel-cache
+*.ctf
 
 # NPM
 node_modules
