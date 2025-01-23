@@ -23,7 +23,7 @@ depends: [
   "logs" {>= "0.7.0"}
   "containers" {>= "3.14"}
   "containers-data" {>= "3.14"}
-  "mariadb" {>= "1.1.6" & < "2.0.0"}
+  "mariadb" {>= "1.2.0" & < "2.0.0"}
   "caqti-driver-mariadb" {>= "2.0.1"}
   "caqti-lwt" {>= "2.0.1"}
   "caqti" {>= "2.0.1"}
@@ -31,8 +31,9 @@ depends: [
   "ppx_deriving" {>= "5.2.1"}
   "ppx_string" {>= "0.16.0"}
   "ppx_yojson_conv" {>= "0.14.0"}
-  "ppx_variants_conv" {= "v0.16.0"}
+  "ppx_variants_conv" {= "v0.17.0"}
   "tyxml-ppx" {>= "4.6.0"}
+  "digestif"
   "canary"
   "guardian" {= "0.3.2"}
   "alcotest-lwt" {with-test}

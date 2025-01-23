@@ -5,46 +5,41 @@ module Secret : sig
   type t
 
   val find_exn : unit -> t
-  val value : t -> Cstruct.t
+  val value : t -> string
 end = struct
-  type t = Cstruct.t
+  type t = string
 
   let find_exn () =
     Sihl.Configuration.read_secret ()
-    |> Cstruct.of_string
-    |> Mirage_crypto.Hash.SHA256.digest
+    |> Digestif.SHA256.digest_string
+    |> Digestif.SHA256.to_raw_string
   ;;
 
   let value = CCFun.id
 end
 
 module String = struct
-  open Cstruct
-
-  type t = Cstruct.t
-
   let key =
-    let open Mirage_crypto.Cipher_block.AES.CTR in
+    let open Mirage_crypto.AES.CTR in
     Secret.(find_exn () |> value |> of_secret)
   ;;
 
   let ctr =
     let open Mirage_crypto_pk.Z_extra in
     let open Z in
-    to_cstruct_be
+    to_octets_be
       ~size:block_size
       (Sihl.Configuration.read_secret () |> CCString.length |> of_int)
-    |> Mirage_crypto.Cipher_block.AES.CTR.ctr_of_cstruct
+    |> Mirage_crypto.AES.CTR.ctr_of_octets
   ;;
 
   let encrypt_to_string value =
-    let open Mirage_crypto.Cipher_block.AES.CTR in
-    encrypt ~key ~ctr (of_string value) |> to_string |> Base64.encode_string
+    let open Mirage_crypto.AES.CTR in
+    encrypt ~key ~ctr value |> Base64.encode_string
   ;;
 
   let decrypt_from_string value =
-    let open Mirage_crypto.Cipher_block.AES.CTR in
-    Base64.decode value
-    |> CCResult.map (fun value -> decrypt ~key ~ctr (of_string value) |> to_string)
+    let open Mirage_crypto.AES.CTR in
+    Base64.decode value |> CCResult.map (decrypt ~key ~ctr)
   ;;
 end

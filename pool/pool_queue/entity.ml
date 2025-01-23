@@ -321,7 +321,7 @@ let schema =
           "QUEUE_PROCESS"
       ; int
           ~meta:"Number of jobs which are pulled and handled at once."
-          ~default:50
+          ~default:10
           "QUEUE_BATCH_SIZE"
       ]
     config
