@@ -6,9 +6,13 @@ let t =
   let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let decode (created_at, iteration, contacts_matching_filter, invitations_sent) =
     let open CCResult in
+    (* TODO: Could be solved using a join instead *)
+    let created_at =
+      Utils.Ptime.to_local_date created_at |> Pool_common.CreatedAt.create
+    in
     Ok { created_at; iteration; contacts_matching_filter; invitations_sent }
   in
-  Caqti_type.(custom ~encode ~decode (t4 Pool_common.Repo.CreatedAt.t int int int))
+  Caqti_type.(custom ~encode ~decode (t4 ptime int int int))
 ;;
 
 let write =
@@ -35,16 +39,26 @@ let select_sql where =
     where
 ;;
 
-let find_by_experiment_request =
+let find_by_experiment_sql =
   {sql|
     WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-    ORDER BY created_at DESC
   |sql}
   |> select_sql
+;;
+
+let find_by_experiment_request =
+  Format.asprintf "%s ORDER BY created_at ASC" find_by_experiment_sql
   |> Repo_entity.Id.t ->* t
 ;;
 
+let find_by_experiment_opt_request =
+  find_by_experiment_sql
+  |> Format.asprintf "%s ORDER BY created_at DESC LIMIT 1"
+  |> Repo_entity.Id.t ->? t
+;;
+
 let find_by_experiment pool = Database.collect pool find_by_experiment_request
+let find_latest_by_experiment pool = Database.find_opt pool find_by_experiment_opt_request
 
 let insert_request =
   {sql|

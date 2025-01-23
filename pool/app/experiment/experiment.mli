@@ -257,6 +257,10 @@ module InvitationReset : sig
     ; contacts_matching_filter : int
     ; invitations_sent : int
     }
+
+  val show : t -> string
+  val equal : t -> t -> bool
+  val find_latest_by_experiment : Database.Label.t -> Id.t -> t option Lwt.t
 end
 
 type event =

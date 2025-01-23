@@ -4,6 +4,7 @@ module Reminder = Pool_common.Reminder
 type event =
   | Created of t
   | Updated of t * t
+  (* TODO: Should I move this into the event, and throw an exception, if it fails? *)
   | ResetInvitations of InvitationReset.Write.t
   | Deleted of Pool_common.Id.t
 [@@deriving eq, show, variants]

@@ -26,8 +26,7 @@ let filtered_base_condition ?(include_invited = false) =
   let exclude_invited = {sql| AND pool_invitations.uuid IS NULL |sql} in
   let exclude_invited_after =
     {sql| AND(pool_invitations.created_at IS NULL
-          OR (pool_invitations.resent_at IS NULL
-            OR COALESCE(pool_invitations.resent_at, pool_invitations.created_at) < ?))
+          OR COALESCE(pool_invitations.resent_at, pool_invitations.created_at) < ?)
     |sql}
   in
   let exclude_assigned =
@@ -390,6 +389,7 @@ let filtered_params ?include_invited ?group_by ?order_by use_case template_list 
     | Matcher experiment_id ->
       let id = experiment_id |> Pool_common.Id.value in
       dyn |> add Caqti_type.string id
+      (* TODO: Join with the invitations queue jobs history table *)
     | MatcherReset (experiment_id, allow_before) ->
       let id = experiment_id |> Pool_common.Id.value in
       dyn |> add Caqti_type.string id |> add Caqti_type.ptime allow_before

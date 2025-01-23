@@ -10,11 +10,13 @@ val sort_contacts : Contact.t list -> Contact.t list
 val experiment_has_bookable_spots : Database.Label.t -> Experiment.t -> bool Lwt.t
 
 val events_of_mailings
-  :  (Database.Label.t * (Mailing.t * int) list) list
+  :  ?invitation_ids:Pool_common.Id.t list
+  -> (Database.Label.t * (Mailing.t * int) list) list
   -> (Database.Label.t, Pool_event.t list) CCPair.t list Lwt.t
 
 val create_invitation_events
-  :  Ptime.Span.t
+  :  ?invitation_ids:Pool_common.Id.t list
+  -> Ptime.Span.t
   -> Database.Label.t list
   -> (Database.Label.t * Pool_event.t list) list Lwt.t
 

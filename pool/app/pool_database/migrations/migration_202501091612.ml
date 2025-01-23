@@ -197,13 +197,59 @@ let create_experimenet_invitation_reset_table =
       CREATE TABLE IF NOT EXISTS pool_experiment_invitation_reset (
         id BIGINT UNSIGNED AUTO_INCREMENT,
         experiment_uuid BINARY(16) NOT NULL,
-        contacts_matching_filter INT UNSIGNED NOT NULL,
+        contacts_matching_filter INT NOT NULL,
         sent_invitations INT UNSIGNED NOT NULL,
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         CONSTRAINT fk_experiment_invitation_reset_xperiment FOREIGN KEY (experiment_uuid) REFERENCES pool_experiments(uuid)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  |sql}
+;;
+
+let populate_pool_experiment_invitation_reset =
+  Database.Migration.Step.create
+    ~label:"populate pool_experiment_invitation_reset"
+    {sql|
+      INSERT INTO
+        pool_experiment_invitation_reset (experiment_uuid, contacts_matching_filter, sent_invitations, created_at, updated_at)
+      WITH
+        experiment_max_sent AS (
+          SELECT
+            experiment_uuid,
+            MAX(send_count) AS max_count
+          FROM
+            pool_invitations
+          GROUP BY
+            experiment_uuid
+        ),
+        computed_resets AS (
+          SELECT
+            pool_invitations.experiment_uuid,
+            send_count,
+            ems.max_count,
+            COUNT(send_count) AS sent_invitations,
+            updated_at
+          FROM
+            pool_invitations
+            LEFT JOIN experiment_max_sent ems ON pool_invitations.experiment_uuid = ems.experiment_uuid
+          WHERE
+            send_count != ems.max_count
+          GROUP BY
+            experiment_uuid,
+            send_count
+          ORDER BY
+            experiment_uuid,
+            updated_at ASC
+        )
+      SELECT
+        experiment_uuid,
+        -1,
+        sent_invitations,
+        updated_at,
+        updated_at
+      FROM
+        computed_resets
   |sql}
 ;;
 
