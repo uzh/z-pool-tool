@@ -161,7 +161,7 @@ let update_list_value () =
   let custom_field_id = Custom_field.Id.create () in
   let operator = Operator.(List ListM.ContainsSome) in
   let make_filter options =
-    let options = List.map (fun option -> Option option) options in
+    let options = CCList.map (fun option -> Option option) options in
     let query =
       Pred (Predicate.create Key.(CustomField custom_field_id) operator (Lst options))
     in
