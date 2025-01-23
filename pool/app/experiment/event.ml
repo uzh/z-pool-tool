@@ -4,8 +4,7 @@ module Reminder = Pool_common.Reminder
 type event =
   | Created of t
   | Updated of t * t
-  (* TODO: Should I move this into the event, and throw an exception, if it fails? *)
-  | ResetInvitations of InvitationReset.Write.t
+  | ResetInvitations of t
   | Deleted of Pool_common.Id.t
 [@@deriving eq, show, variants]
 
@@ -25,7 +24,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
   | Updated (experiment, updated) ->
     let%lwt () = create_changelog experiment updated in
     Repo.update pool updated
-  | ResetInvitations reset -> Repo_invitation_reset.insert pool reset
+  | ResetInvitations m -> Repo_invitation_reset.insert pool m
   | Deleted experiment_id -> Repo.delete pool experiment_id
 [@@deriving eq, show]
 ;;

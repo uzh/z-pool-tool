@@ -70,7 +70,6 @@ let invitation_count =
 module InvitationReset = struct
   include InvitationReset
 
-  let create = Repo_invitation_reset.create
   let insert = Repo_invitation_reset.insert
   let find_latest_by_experiment = Repo_invitation_reset.find_latest_by_experiment
 end

@@ -72,10 +72,8 @@ let insert_request =
       ?
     )
   |sql}
-  |> write ->. Caqti_type.unit
+  |> Caqti_type.(t3 Repo_entity.Id.t int int ->. unit)
 ;;
-
-let insert pool = Database.exec pool insert_request
 
 let sent_invitations_request =
   {sql|
@@ -103,9 +101,9 @@ let sent_invitations_request =
 
 let invitations_sent_since_last_reset pool = Database.find pool sent_invitations_request
 
-let create pool { Entity.id; filter; _ } =
-  let%lwt invitations_sent = invitations_sent_since_last_reset pool id in
-  let* contacts_matching_filter =
+let insert pool { Entity.id; filter; _ } =
+  let%lwt sent_invitations = invitations_sent_since_last_reset pool id in
+  let%lwt contacts_matching_filter =
     let open Filter in
     filter
     |> CCOption.map (fun { query; _ } -> query)
@@ -113,8 +111,7 @@ let create pool { Entity.id; filter; _ } =
          ~include_invited:true
          pool
          (Matcher (Entity.Id.to_common id))
+    ||> Pool_common.Utils.get_or_failwith
   in
-  Lwt_result.return
-    Entity.InvitationReset.Write.
-      { experiment_id = id; contacts_matching_filter; invitations_sent }
+  Database.exec pool insert_request (id, contacts_matching_filter, sent_invitations)
 ;;
