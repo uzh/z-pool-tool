@@ -57,7 +57,7 @@ jobs:
             sudo chown -R opam .
 
             # link opam version
-            sudo ln -fs /bin/opam-2.3 /bin/opam
+            sudo ln -fs /usr/bin/opam-2.3 /usr/bin/opam
 
             # Build and test executable
             /app/scripts/build.sh || exit 1

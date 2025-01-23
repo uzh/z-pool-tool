@@ -26,6 +26,4 @@ opam pin add -yn rock https://github.com/mabiede/opium.git#upgrade-packages
 opam pin add -yn guardian $repo_uzh/guardian.git#287bab9baf9b346efe47999e8b7f456bfefe8c13
 opam pin add -yn canary $repo_uzh/canary.git#0.0.3
 
-opam install . --working-dir --with-test --with-doc --deps-only
-
 eval $(opam env)
