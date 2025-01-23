@@ -102,16 +102,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let%lwt ({ Experiment.id; filter; _ } as experiment) =
     Experiment.find_of_mailing pool (id |> Mailing.Id.to_common) ||> get_or_failwith
   in
-  let%lwt invitation_reset =
-    Experiment.InvitationReset.find_latest_by_experiment pool id
-  in
-  let use_case =
-    let id = id |> Experiment.Id.to_common in
-    match invitation_reset with
-    | Some { Experiment.InvitationReset.created_at; _ } ->
-      Filter.MatcherReset (id, Pool_common.CreatedAt.value created_at)
-    | None -> Filter.Matcher id
-  in
+  let use_case = Filter.Matcher (Experiment.Id.to_common id) in
   let order_by = distribution |> CCOption.map Mailing.Distribution.get_order_element in
   let* contacts =
     let limit = max limit 0 in
@@ -224,13 +215,11 @@ let events_of_mailings ?invitation_ids =
           in
           (match use_case with
            | Filter.MatchesFilter -> failwith "Invalid use case"
-           | Filter.Matcher _ -> create_new contacts |> Lwt_result.lift
-           | Filter.MatcherReset _ ->
+           | Filter.Matcher _ ->
              contacts
              |> Lwt_list.fold_left_s
                   (fun (invitations, contacts) contact ->
-                     contact
-                     |> Contact.id
+                     Contact.id contact
                      |> Invitation.find_by_contact_and_experiment_opt
                           pool
                           experiment.Experiment.id

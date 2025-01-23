@@ -383,9 +383,6 @@ module Sql = struct
     | Matcher experiment_id ->
       let id = experiment_id |> Pool_common.Id.value in
       dyn |> prefix Caqti_type.string id, [ invitation_join ]
-    | MatcherReset (experiment_id, _) ->
-      let id = experiment_id |> Pool_common.Id.value in
-      dyn |> prefix Caqti_type.string id, [ invitation_join ]
   ;;
 
   let find_filtered_request_sql ?limit use_case dyn where_fragment =
@@ -404,17 +401,11 @@ module Sql = struct
       | None -> Lwt.return []
       | Some filter -> find_templates_of_query pool filter
     in
-    let order_by =
-      match use_case with
-      | MatcherReset _ when CCOption.is_none order_by ->
-        Some "ORDER BY pool_invitations.created_at ASC"
-      | MatchesFilter | Matcher _ | MatcherReset _ -> order_by
-    in
     filtered_params
       use_case
       template_list
       ~group_by:"pool_contacts.user_uuid"
-      ?order_by
+      ?order_by (* TODO: Make sure stays the same *)
       filter
     |> Lwt_result.lift
     >>= fun (dyn, sql) ->

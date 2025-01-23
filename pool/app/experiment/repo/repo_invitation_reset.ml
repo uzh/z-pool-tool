@@ -83,10 +83,11 @@ let sent_invitations_request =
     FROM
       pool_queue_job_invitation
       INNER JOIN pool_invitations ON pool_queue_job_invitation.invitation_uuid = pool_invitations.uuid
-      INNER JOIN ((SELECT uuid, clone_of FROM pool_queue_jobs) UNION (SELECT uuid, clone_of FROM pool_queue_jobs_history)) as queue ON pool_queue_job_invitation.queue_uuid = queue.uuid      WHERE
-      pool_invitations.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
-      AND queue.clone_of IS NULL
-      AND pool_queue_job_invitation.created_at > COALESCE(
+      INNER JOIN ((SELECT uuid, clone_of FROM pool_queue_jobs) UNION (SELECT uuid, clone_of FROM pool_queue_jobs_history)) as queue ON pool_queue_job_invitation.queue_uuid = queue.uuid
+      WHERE
+        pool_invitations.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND queue.clone_of IS NULL
+        AND pool_queue_job_invitation.created_at > COALESCE(
     (
       SELECT created_at
       FROM pool_experiment_invitation_reset
