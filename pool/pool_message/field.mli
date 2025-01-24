@@ -163,6 +163,7 @@ type t =
   | MainSession
   | MarkedAsDeleted
   | MatchingFilterCount
+  | MatchingFilterCountShort
   | MaxParticipants
   | MaxTries
   | Message

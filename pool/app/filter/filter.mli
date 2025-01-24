@@ -243,7 +243,6 @@ val all_query_tags : t -> Tags.Id.t list
 type base_condition =
   | MatchesFilter
   | Matcher of Pool_common.Id.t
-  | MatcherReset of Pool_common.Id.t * Ptime.t
 
 val find_filtered_contacts
   :  Database.Label.t

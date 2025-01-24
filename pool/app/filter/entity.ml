@@ -698,7 +698,6 @@ let rec contains_template = function
 type base_condition =
   | MatchesFilter
   | Matcher of Pool_common.Id.t
-  | MatcherReset of Pool_common.Id.t * Ptime.t
 [@@deriving eq, show]
 
 open Pool_message

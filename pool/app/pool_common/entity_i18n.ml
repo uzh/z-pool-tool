@@ -86,6 +86,7 @@ type t =
   | ProfileCompletionText
   | Reminder
   | ResendReminders
+  | Reset
   | ResetPasswordLink
   | ResetPasswordTitle
   | RoleApplicableToAssign

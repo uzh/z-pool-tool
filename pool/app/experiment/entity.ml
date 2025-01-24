@@ -123,15 +123,6 @@ module SurveyUrl = struct
   let schema () = schema ~validation field ()
 end
 
-(* TODO: Remove this module *)
-module InvitationResetAt = struct
-  include Pool_model.Base.Ptime
-
-  let create m = Ok m
-  let schema = schema Pool_message.Field.InvitationResetAt create
-  let of_ptime m = m
-end
-
 module MatcherNotificationSent = struct
   type t = bool [@@deriving show, eq, yojson]
 
@@ -195,7 +186,6 @@ type t =
   ; email_session_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
-  ; invitation_reset_at : InvitationResetAt.t option
   ; matcher_notification_sent : MatcherNotificationSent.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -212,7 +202,6 @@ let create
       ?email_session_reminder_lead_time
       ?experiment_type
       ?filter
-      ?invitation_reset_at
       ?organisational_unit
       ?smtp_auth_id
       ?text_message_session_reminder_lead_time
@@ -246,7 +235,6 @@ let create
     ; experiment_type
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
-    ; invitation_reset_at
     ; online_experiment
     ; matcher_notification_sent = false
     ; created_at = Pool_common.CreatedAt.create_now ()
@@ -387,15 +375,6 @@ let show_external_data_id_links_value (m : t) =
 ;;
 
 module InvitationReset = struct
-  module Write = struct
-    type t =
-      { experiment_id : Id.t
-      ; contacts_matching_filter : int
-      ; invitations_sent : int
-      }
-    [@@deriving eq, show]
-  end
-
   type t =
     { created_at : Pool_common.CreatedAt.t
     ; iteration : int

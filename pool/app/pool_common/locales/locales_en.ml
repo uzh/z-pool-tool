@@ -173,6 +173,7 @@ let rec field_to_string =
   | MainSession -> "main session"
   | MarkedAsDeleted -> "marked as deleted"
   | MatchingFilterCount -> "Number of contacts meeting criteria"
+  | MatchingFilterCountShort -> "No. matching"
   | MaxParticipants -> "maximum participants"
   | MaxTries -> "maximum tries"
   | Message -> "message"
