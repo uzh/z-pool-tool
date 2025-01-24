@@ -5,14 +5,9 @@ open Utils.Lwt_result.Infix
 let t =
   let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
   let decode (created_at, iteration, contacts_matching_filter, invitations_sent) =
-    let open CCResult in
-    (* TODO: Could be solved using a join instead *)
-    let created_at =
-      Utils.Ptime.to_local_date created_at |> Pool_common.CreatedAt.create
-    in
     Ok { created_at; iteration; contacts_matching_filter; invitations_sent }
   in
-  Caqti_type.(custom ~encode ~decode (t4 ptime int int int))
+  Caqti_type.(custom ~encode ~decode (t4 Pool_common.Repo.CreatedAt.t int int int))
 ;;
 
 let write =
