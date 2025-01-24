@@ -10,15 +10,6 @@ let t =
   Caqti_type.(custom ~encode ~decode (t4 Pool_common.Repo.CreatedAt.t int int int))
 ;;
 
-let write =
-  let open Write in
-  let decode _ = Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel in
-  let encode ({ experiment_id; contacts_matching_filter; invitations_sent } : t) =
-    Ok (experiment_id, contacts_matching_filter, invitations_sent)
-  in
-  Caqti_type.(custom ~encode ~decode (t3 Repo_entity.Id.t int int))
-;;
-
 let sql_select_columns =
   [ "pool_experiment_invitation_reset.created_at"
   ; "ROW_NUMBER() OVER (ORDER BY pool_experiment_invitation_reset.created_at ASC)"

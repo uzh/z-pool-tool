@@ -243,7 +243,11 @@ let detail edit req =
            Email.SmtpAuth.find database_label id >|+ CCOption.return)
        in
        let* statistics = Experiment.Statistics.create database_label experiment in
+       let%lwt invitation_reset =
+         Experiment.InvitationReset.find_latest_by_experiment database_label id
+       in
        Page.Admin.Experiments.detail
+         ?invitation_reset
          experiment
          session_count
          message_templates

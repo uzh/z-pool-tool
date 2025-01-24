@@ -95,13 +95,6 @@ module OnlineExperiment : sig
     -> string
 end
 
-module InvitationResetAt : sig
-  include Pool_model.Base.PtimeSig
-
-  val of_ptime : Ptime.t -> t
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
-end
-
 module MatcherNotificationSent : sig
   type t
 
@@ -131,7 +124,6 @@ type t =
   ; email_session_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
-  ; invitation_reset_at : InvitationResetAt.t option
   ; matcher_notification_sent : MatcherNotificationSent.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -164,7 +156,6 @@ val text_message_session_reminder_lead_time
   :  t
   -> Pool_common.Reminder.TextMessageLeadTime.t option
 
-val invitation_reset_at : t -> InvitationResetAt.t option
 val created_at : t -> Pool_common.CreatedAt.t
 val updated_at : t -> Pool_common.UpdatedAt.t
 
@@ -178,7 +169,6 @@ val create
   -> ?email_session_reminder_lead_time:Pool_common.Reminder.EmailLeadTime.t
   -> ?experiment_type:Pool_common.ExperimentType.t
   -> ?filter:Filter.t
-  -> ?invitation_reset_at:Ptime.t
   -> ?organisational_unit:Organisational_unit.t
   -> ?smtp_auth_id:Email.SmtpAuth.Id.t
   -> ?text_message_session_reminder_lead_time:Pool_common.Reminder.TextMessageLeadTime.t
@@ -244,10 +234,6 @@ module DirectEnrollment : sig
 end
 
 module InvitationReset : sig
-  module Write : sig
-    type t
-  end
-
   val insert : Database.Label.t -> t -> unit Lwt.t
 
   type t =

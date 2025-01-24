@@ -693,6 +693,7 @@ let edit
 ;;
 
 let detail
+      ?invitation_reset
       experiment
       session_count
       message_templates
@@ -769,14 +770,13 @@ let detail
   in
   let reset_invitation_form =
     let last_reset_at =
-      match experiment |> Experiment.invitation_reset_at with
+      match invitation_reset with
       | None -> txt ""
-      | Some reset_at ->
+      | Some { Experiment.InvitationReset.created_at; _ } ->
         span
           [ Utils.hint_to_string
               language
-              (I18n.ResetInvitationsLastReset
-                 (Experiment.InvitationResetAt.value reset_at))
+              (I18n.ResetInvitationsLastReset (Pool_common.CreatedAt.value created_at))
             |> Unsafe.data
           ]
     in
@@ -909,11 +909,6 @@ let detail
       ; ( Field.ExperimentTextMessageReminderLeadTime
         , text_message_session_reminder_lead_time_value experiment
           |> CCOption.map_or ~default:"-" Pool_model.Time.formatted_timespan
-          |> txt )
-      ; ( Field.InvitationResetAt
-        , experiment
-          |> invitation_reset_at
-          |> CCOption.map_or ~default:"-" InvitationResetAt.to_human
           |> txt )
       ; Field.Tags, tag_list tags
       ; Field.ParticipationTags, tag_list participation_tags
