@@ -44,7 +44,7 @@ module App = struct
       Http_utils.url_with_field_params query_parameters "/index"
       |> Sihl.Web.externalize_path
     in
-    div ~a:[ a_class [ "app-title" ] ] [ a ~a:[ a_href path ] [ txt title ] ]
+    a ~a:[ a_href path; a_class [ "app-title" ] ] [ txt title ]
   ;;
 
   let navbar ?(children = []) query_parameters title =

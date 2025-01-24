@@ -1,6 +1,7 @@
 @use "sass:color";
 @use "sass:math";
 @use "@econ/frontend-framework/dist/main" with (
+  $notification-position: 7rem 0 0 auto,
   $font-path: "../node_modules/@econ/frontend-framework/dist/font"
 );
 @use "@econ/frontend-framework/dist/sass/colors" as c;
@@ -10,6 +11,10 @@
 @use "./admin/calendar";
 
 $orange: rgb(226, 117, 0) !default;
+.color-orange,
+[class*="orange-on-"] {
+    color: $orange;
+}
 
 // Typography
 h1,
@@ -17,12 +22,12 @@ h1,
     word-wrap: break-word;
 }
 
-code {
-    font-size: inherit;
+// Experimental
+.btn {
+    white-space: nowrap
 }
 
 @include breakpoints.econ-mobile {
-
     *+h1,
     h1+*,
     *+h2,
@@ -33,28 +38,7 @@ code {
     }
 }
 
-
-.word-wrap-break {
-    -ms-word-break: break-word;
-
-    /* Non standard for webkit */
-    word-break: break-word;
-    -webkit-hyphens: auto;
-    -moz-hyphens: auto;
-    -ms-hyphens: auto;
-    hyphens: auto;
-}
-
-.color-orange,
-[class*="orange-on-"] {
-    color: $orange;
-}
-
-ul.no-style {
-    list-style: none;
-    padding: 0;
-}
-
+// TODO: Remove
 [class*="inset"].top {
     padding-left: 0;
     padding-bottom: 0;
@@ -196,10 +180,6 @@ select[readonly] {
     }
 }
 
-.hide-empty:empty {
-    display: none;
-}
-
 #filter-form,
 #role-search-form {
     [data-query="input"] {
@@ -253,15 +233,6 @@ abbr[title] {
 
 .ck-content {
     @extend textarea;
-}
-
-// Typography
-.nobr {
-    white-space: nowrap;
-}
-
-.word-break-all {
-    word-break: break-all;
 }
 
 // Color
@@ -325,17 +296,6 @@ button.as-link {
 
     &:hover {
         background-color: transparent;
-    }
-}
-
-// Logo
-.app-title {
-    font-weight: vars.$font-weight-bold;
-    font-size: ms-font-size(2);
-
-    a {
-        color: c.$color-text-dark;
-        text-decoration: none;
     }
 }
 

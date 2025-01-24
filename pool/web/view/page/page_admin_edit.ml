@@ -10,7 +10,7 @@ let profile_layout language title html =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Pool_common.Utils.nav_link_to_string language title) ]
     ; html
     ]
@@ -35,7 +35,7 @@ let login_information
     in
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ control_to_string language Control.(Update (Some Field.Name)) |> txt ]
       ; form
           ~a:(form_attrs "/user/update-details")
@@ -64,7 +64,7 @@ let login_information
   let password_form =
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ control_to_string language Control.(Update (Some Field.password)) |> txt ]
       ; form
           ~a:(form_attrs "/user/update-password")

@@ -9,7 +9,7 @@ let make_tabs ~actor ?overlay_title ?active_navigation context html nav_elements
   let overlay_title =
     overlay_title
     |> CCOption.map (fun title ->
-      div ~a:[ a_class [ "app-title"; "flex-grow"; "word-break-all" ] ] [ txt title ])
+      div ~a:[ a_class [ "app-title"; "flex-grow"; "word-wrap-break-all" ] ] [ txt title ])
   in
   let nav =
     div
@@ -29,7 +29,7 @@ let make_tabs ~actor ?overlay_title ?active_navigation context html nav_elements
 
 let make_body ?buttons ?hint language title children =
   let title =
-    let base = h2 ~a:[ a_class [ "heading-2" ] ] [ txt title ] in
+    let base = h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt title ] in
     let title =
       let classnames =
         [ "flexrow"; "justify-between"; "flex-gap"; "flexcolumn-mobile" ]
@@ -56,5 +56,5 @@ let make_body ?buttons ?hint language title children =
 let with_heading title children =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    (h1 ~a:[ a_class [ "heading-1" ] ] [ txt title ] :: children)
+    (h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt title ] :: children)
 ;;

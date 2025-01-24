@@ -312,7 +312,7 @@ let field_form
                ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
                [ div
                    [ h2
-                       ~a:[ a_class [ "heading-2" ] ]
+                       ~a:[ a_class [ "heading-2"; "has-gap" ] ]
                        [ txt
                            (Field.CustomFieldOption
                             |> Utils.field_to_string language

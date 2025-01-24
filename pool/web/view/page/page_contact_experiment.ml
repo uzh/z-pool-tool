@@ -30,7 +30,7 @@ let experiment_detail_page experiment html =
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap"; "word-wrap-break" ] ]
         [ experiment |> experiment_title ]
     ; experiment |> experiment_public_description
     ; html
@@ -49,7 +49,9 @@ let index
   =
   let list_html ?empty_msg ?note title classnames list =
     div
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (I18n.content_to_string title) ]
+      [ h2
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
+          [ txt (I18n.content_to_string title) ]
       ; CCOption.map_or
           ~default:(txt "")
           (fun hint ->
@@ -189,7 +191,7 @@ let index
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.DashboardTitle) ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
@@ -225,7 +227,7 @@ let show
   let session_list sessions =
     div
       ([ h2
-           ~a:[ a_class [ "heading-2" ] ]
+           ~a:[ a_class [ "heading-2"; "has-gap" ] ]
            [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
        ; p [ txt (hint_to_string I18n.ExperimentSessionsPublic) ]
        ]
@@ -268,7 +270,7 @@ let show
     div
       ~a:[ a_class [ "stack" ] ]
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ txt (Utils.text_to_string language I18n.ExperimentWaitingListTitle) ]
       ; text_blocks
       ; form
@@ -289,7 +291,9 @@ let show
     | [] -> txt ""
     | sessions ->
       div
-        (h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Utils.text_to_string language title) ]
+        (h2
+           ~a:[ a_class [ "heading-2"; "has-gap" ] ]
+           [ txt (Utils.text_to_string language title) ]
          :: Page_contact_sessions.public_detail language sessions)
   in
   let html =
@@ -390,7 +394,7 @@ let online_study_completition (experiment : Experiment.Public.t) (_ : Pool_conte
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap"; "word-wrap-break" ] ]
         [ experiment |> experiment_title ]
     ; p [ txt "Thanks for participating" ]
     ]

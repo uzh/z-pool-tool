@@ -64,7 +64,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
          in
          div
            [ h2
-               ~a:[ a_class [ "heading-2" ] ]
+               ~a:[ a_class [ "heading-2"; "has-gap" ] ]
                [ txt
                    (key
                     |> I18n.Key.show
@@ -79,7 +79,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
   div
     ~a:[ a_class [ "safety-margin"; "trim" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string Language.En I18n.I18n) ]
     ; div ~a:[ a_class [ "stack-lg" ] ] translations
     ]

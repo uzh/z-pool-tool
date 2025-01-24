@@ -173,7 +173,7 @@ let data_table ({ Pool_context.language; _ } as context) experiment (time_window
       link_as_button
         ~style:`Success
         ~icon:Icon.Add
-        ~classnames:[ "small"; "nobr" ]
+        ~classnames:[ "small"; "nowrap" ]
         ~control:(language, Add (Some Field.Session))
         (time_windows_path ~suffix:"create" ())
     in
@@ -302,7 +302,7 @@ let detail
   let tags_html =
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
       ; Component.Tag.tag_list language participation_tags
       ]

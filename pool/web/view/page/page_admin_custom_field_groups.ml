@@ -37,7 +37,7 @@ let form
       let open Custom_field in
       div
         [ h2
-            ~a:[ a_class [ "heading-2" ] ]
+            ~a:[ a_class [ "heading-2"; "has-gap" ] ]
             [ txt
                 (Field.CustomField
                  |> Pool_common.Utils.field_to_string language

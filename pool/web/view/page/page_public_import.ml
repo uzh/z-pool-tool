@@ -16,7 +16,9 @@ let import_confirmation
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt_to_string language ImportConfirmationTitle ]
+    [ h1
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
+        [ txt_to_string language ImportConfirmationTitle ]
     ; p [ txt_to_string language ImportConfirmationNote ]
     ; form
         ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]

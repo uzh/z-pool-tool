@@ -40,7 +40,9 @@ let make_statistics ?year year_range language location_id t =
   in
   div
     ~a:[ a_id id ]
-    [ h3 [ Pool_common.(Utils.text_to_string language I18n.LocationStatistics) |> txt ]
+    [ h3
+        ~a:[ a_class [ "has-gap" ] ]
+        [ Pool_common.(Utils.text_to_string language I18n.LocationStatistics) |> txt ]
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ selector
@@ -79,7 +81,7 @@ let list Pool_context.{ language; _ } location_list query =
       Component.Input.link_as_button
         ~style:`Success
         ~icon:Component.Icon.Add
-        ~classnames:[ "small"; "nobr" ]
+        ~classnames:[ "small"; "nowrap" ]
         ~control:(language, Pool_message.(Control.Add (Some Field.Location)))
         (Format.asprintf "%s/create" base_path)
     in
@@ -121,7 +123,7 @@ let index (Pool_context.{ language; _ } as context) location_list query =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle) ]
     ; p
         Pool_common.
@@ -616,7 +618,7 @@ let detail
                     ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
                     [ div
                         [ h1
-                            ~a:[ a_class [ "heading-1" ] ]
+                            ~a:[ a_class [ "heading-1"; "has-gap" ] ]
                             [ txt (location.name |> Name.value) ]
                         ]
                     ; div [ edit_button ]

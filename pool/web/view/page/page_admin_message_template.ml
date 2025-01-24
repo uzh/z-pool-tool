@@ -94,7 +94,7 @@ let index { Pool_context.language; _ } templates =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt
             (Pool_common.(Utils.field_to_string language Field.MessageTemplate)
              |> CCString.capitalize_ascii)

@@ -36,9 +36,10 @@ ClassicEditor.defaultConfig = {
 };
 
 export function initRichTextEditor(container = document) {
-    container.querySelectorAll(".rich-text").forEach(element => {
+    container.querySelectorAll("textarea.rich-text").forEach(element => {
         ClassicEditor.create(element)
             .then((editor) => {
+                editor.ui.view.editable.element.classList.add('rich-text');
                 const id = editor.sourceElement.id;
                 const toggle = document.querySelector(`[data-toggle-reset-plaintext="${id}"]`)
                 const plainText = document.querySelector(`[data-plain-text-for="${id}"]`)

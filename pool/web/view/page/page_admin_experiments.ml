@@ -130,11 +130,17 @@ module Statistics = struct
       ]
     in
     div
-      [ h3 [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentStatistics) ]
+      [ h3
+          ~a:[ a_class [ "has-gap" ] ]
+          [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentStatistics) ]
       ; experiment_statistics |> to_table
-      ; h4 [ txt Pool_common.(Utils.nav_link_to_string language I18n.Invitations) ]
+      ; h4
+          ~a:[ a_class [ "has-gap" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Invitations) ]
       ; invitations_statistics
-      ; h4 [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments) ]
+      ; h4
+          ~a:[ a_class [ "has-gap" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments) ]
       ; assignments_statistics |> to_table
       ]
   ;;
@@ -161,7 +167,7 @@ let message_template_buttons sys_languages (experiment : Experiment.t) message_t
     ~a:[ a_class [ "flexrow" ] ]
     [ Component.ButtonGroup.dropdown
         ~icon:Icon.Add
-        ~icon_style:[ "small"; "success" ]
+        ~icon_style:[ "small"; "success"; "is-icon" ]
         ~classnames:[ "push" ]
         buttons
     ]
@@ -246,7 +252,7 @@ let index (Pool_context.{ language; _ } as context) experiments query =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
     ; experiment_list
     ]
@@ -670,7 +676,7 @@ let edit
     div
       ~a:[ a_class [ "stack" ] ]
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ Utils.nav_link_to_string language I18n.Tags |> txt ]
       ; tags_html (available_tags, current_tags) Field.Tag
       ; div
@@ -814,7 +820,7 @@ let detail
       div
         ~a:[ a_class [ "stack-md" ] ]
         [ h2
-            ~a:[ a_class [ "heading-2" ] ]
+            ~a:[ a_class [ "heading-2"; "has-gap" ] ]
             [ txt
                 (Utils.field_to_string language Field.Settings
                  |> CCString.capitalize_ascii)
