@@ -153,6 +153,7 @@ let to_string = function
     You will be considered for more experiments, the more complete your profile is.|}
   | Reminder -> "Reminder"
   | ResendReminders -> "Resend reminders"
+  | Reset -> "Reset"
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | RoleApplicableToAssign -> "Applicable users"
   | RoleCurrentlyAssigned -> "Currently assigned"
