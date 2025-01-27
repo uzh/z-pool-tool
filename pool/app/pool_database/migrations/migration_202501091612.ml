@@ -190,7 +190,7 @@ let drop_mapping_table =
     {sql| DROP TABLE IF EXISTS pool_queue_jobs_mapping |sql}
 ;;
 
-let create_experimenet_invitation_reset_table =
+let create_experiment_invitation_reset_table =
   Database.Migration.Step.create
     ~label:"create pool_experiment_invitation_reset table"
     {sql|
@@ -271,5 +271,6 @@ let migration () =
     |> add_step call_pool_queue_job_invitations_table_procedure
     |> add_step drop_procedure
     |> add_step drop_mapping_table
-    |> add_step create_experimenet_invitation_reset_table)
+    |> add_step create_experiment_invitation_reset_table
+    |> add_step populate_pool_experiment_invitation_reset)
 ;;
