@@ -223,24 +223,36 @@ let populate_pool_experiment_invitation_reset =
           GROUP BY
             experiment_uuid
         ),
+        experiment_reset_at AS (
+          SELECT
+            experiment_uuid,
+            send_count,
+            MIN(updated_at) AS updated_at
+          FROM
+            pool_invitations
+          GROUP BY
+            experiment_uuid,
+            send_count
+        ),
         computed_resets AS (
           SELECT
             pool_invitations.experiment_uuid,
-            send_count,
+            pool_invitations.send_count,
             ems.max_count,
-            COUNT(send_count) AS sent_invitations,
-            updated_at
+            COUNT(pool_invitations.send_count) AS sent_invitations,
+            experiment_reset_at.updated_at
           FROM
             pool_invitations
             LEFT JOIN experiment_max_sent ems ON pool_invitations.experiment_uuid = ems.experiment_uuid
+            INNER JOIN experiment_reset_at ON pool_invitations.experiment_uuid = experiment_reset_at.experiment_uuid
           WHERE
-            send_count != ems.max_count
+            pool_invitations.send_count != ems.max_count
           GROUP BY
             experiment_uuid,
             send_count
           ORDER BY
             experiment_uuid,
-            updated_at ASC
+            updated_at DESC
         )
       SELECT
         experiment_uuid,
