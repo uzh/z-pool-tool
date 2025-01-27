@@ -24,8 +24,7 @@ module Tenant = struct
       |> Sihl.Web.externalize_path
     in
     let text_fragments =
-      [ txt title_text; txt App.version ]
-      |> App.combine_footer_fragments ~classnames:[ "footer-static" ]
+      [ txt title_text; txt App.version ] |> App.combine_footer_fragments
     in
     let footer_nav =
       let nav_to_string = Utils.nav_link_to_string language in
@@ -53,7 +52,6 @@ module Tenant = struct
             ; "flex-gap"
             ; "flexcolumn-mobile"
             ; "justify-center"
-            ; "bg-grey-lightest"
             ; "border-top"
             ; "push"
             ]

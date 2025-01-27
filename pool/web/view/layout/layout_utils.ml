@@ -51,8 +51,11 @@ module App = struct
     header
       ~a:[ a_class [ "app-header" ] ]
       [ div
-          ~a:[ a_class [ "safety-margin"; "trim"; "flexrow"; "justify-between" ] ]
-          [ create_title query_parameters title; div children ]
+          ~a:[ a_class [ "safety-margin"; "trim"; "flexcolumn"; "justify-between" ] ]
+          [ div
+              ~a:[ a_class [ "app-header-top" ] ]
+              [ create_title query_parameters title; div children ]
+          ]
       ]
   ;;
 
@@ -79,10 +82,6 @@ module App = struct
 
   let root_footer =
     let html = [ txt app_name; txt version ] |> combine_footer_fragments in
-    footer
-      ~a:
-        [ a_class [ "inset"; "justify-center"; "bg-grey-lightest"; "border-top"; "push" ]
-        ]
-      [ html ]
+    footer ~a:[ a_class [ "inset"; "justify-center"; "border-top"; "push" ] ] [ html ]
   ;;
 end

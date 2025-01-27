@@ -134,8 +134,8 @@ let i18n_links languages query_parameters active_language layout =
   let link_classes = [ "nav-link" ] in
   let nav_class =
     match layout with
-    | Vertical -> [ "language-nav"; "gap"; "flexrow"; "flex-gap"; "justify-center" ]
-    | Horizonal -> [ "main-nav" ]
+    | Vertical -> []
+    | Horizonal -> [ "secondary-nav" ]
   in
   let to_html language =
     let lang = Language.show language in
@@ -154,7 +154,7 @@ let i18n_links languages query_parameters active_language layout =
             [ txt lang ]
         ]
   in
-  [ languages |> CCList.map to_html |> ul ] |> nav ~a:[ a_class nav_class ]
+  [ languages |> CCList.map to_html |> ul ~a:[ a_class nav_class ] ] |> nav
 ;;
 
 let create_nav_with_language_switch
@@ -171,7 +171,8 @@ let create_nav_with_language_switch
 ;;
 
 let create_desktop_nav fcn =
-  fcn Horizonal |> div ~a:[ a_class [ "hidden-mobile"; "flexrow"; "flex-gap" ] ]
+  fcn Horizonal
+  |> div ~a:[ a_class [ "hidden-mobile"; "flexrow"; "flex-gap-lg"; "align-center" ] ]
 ;;
 
 let create_mobile_nav ?title ~toggle_id navigation =

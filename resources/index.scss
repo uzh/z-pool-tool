@@ -1,7 +1,7 @@
 @use "sass:color";
 @use "sass:math";
 @use "@econ/frontend-framework/dist/main" with (
-  $notification-position: 7rem 0 0 auto,
+  $notification-position: 7rem 0 auto 0,
   $font-path: "../node_modules/@econ/frontend-framework/dist/font"
 );
 @use "@econ/frontend-framework/dist/sass/colors" as c;
@@ -612,4 +612,3 @@ input[type="checkbox"][readonly] {
         text-transform: capitalize;
     }
 }
-
