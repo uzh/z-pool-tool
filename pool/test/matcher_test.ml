@@ -92,7 +92,7 @@ let create_invitations _ () =
     Invitation.find_by_experiment pool id ||> fst ||> CCList.length
   in
   let%lwt ({ Experiment.id; _ } as experiment) =
-    Integration_utils.ExperimentRepo.create ~title:"asfasdfasfd" ()
+    Integration_utils.ExperimentRepo.create ()
   in
   let%lwt (_ : Session.t) = Integration_utils.SessionRepo.create experiment () in
   let limit = Limit.create 100 |> get_or_failwith in
@@ -130,9 +130,8 @@ let create_invitations _ () =
     let msg = "count generated invitations -> equal to before reset" in
     Alcotest.(check int msg after after_reset)
   in
-  (* Stop mailing for upcoming tests. Alternatively, the check for bookable_stops could be moved inside the mailing_events fnc *)
+  (* Stop mailing for upcoming tests *)
   let%lwt () = Stopped mailing |> Mailing.handle_event pool in
-  Unix.sleepf 0.1;
   Lwt.return_unit
 ;;
 

@@ -234,7 +234,7 @@ module Sql = struct
               `end` <= TIMESTAMPADD(SECOND, $1, `start`) AS last_run
             FROM pool_mailing
           ) AS pool_mailing
-          WHERE NOW() <= pool_mailing.`end`
+          WHERE NOW() < pool_mailing.`end`
             AND NOW() >= pool_mailing.`start`
             AND pool_mailing.`open`
           ORDER BY pool_mailing.`start`
