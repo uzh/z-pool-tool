@@ -157,12 +157,11 @@ let notify_all_invited pool tenant experiment =
   | false ->
     let%lwt email_event =
       Experiment.find_admins_to_notify_about_invitations pool experiment.Experiment.id
-      >|> Lwt_list.map_s (fun admin ->
-        admin
-        |> Message_template.MatcherNotification.create
-             tenant
-             Pool_common.Language.En
-             experiment)
+      >|> Lwt_list.map_s
+            (Message_template.MatcherNotification.create
+               tenant
+               Pool_common.Language.En
+               experiment)
       ||> Email.bulksent_opt %> Pool_event.(map email)
     in
     let updated =
