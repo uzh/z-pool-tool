@@ -277,7 +277,14 @@ module Model = struct
     }
   ;;
 
-  let create_mailing ?id ?start ?(limit = Mailing.Limit.default) () =
+  let create_mailing
+        ?id
+        ?start
+        ?(duration = Sihl.Time.(OneHour |> duration_to_span))
+        ?(limit = Mailing.Limit.default)
+        ?distribution
+        ()
+    =
     let open Mailing in
     let start =
       let default () =
@@ -292,12 +299,12 @@ module Model = struct
       CCOption.value ~default:(default ()) start
     in
     let deadline =
-      Ptime.add_span (Ptime_clock.now ()) Sihl.Time.(OneHour |> duration_to_span)
+      Ptime.add_span (Ptime_clock.now ()) duration
       |> CCOption.get_exn_or "Time calculation failed!"
       |> EndAt.create
       |> get_or_failwith
     in
-    create ?id start deadline limit None |> get_or_failwith
+    create ?id start deadline limit distribution |> get_or_failwith
   ;;
 
   let create_email ?(sender = "sender@mail.com") ?(recipient = "recipient@mail.com") () =
@@ -555,12 +562,6 @@ module Repo = struct
     let open Utils.Lwt_result.Infix in
     all_experiments () ||> CCList.hd
   ;;
-
-  (* TODO: This belongs to the intergration utils *)
-  (* let create_experiment ?(id = Experiment.Id.create ()) ?filter () = let experiment =
-     Model.create_experiment ~id ?filter () in let%lwt () = Experiment.Created experiment
-     |> Pool_event.experiment |> Pool_event.handle_event Data.database_label in Lwt.return
-     experiment ;; *)
 
   let first_location () =
     let open Utils.Lwt_result.Infix in
