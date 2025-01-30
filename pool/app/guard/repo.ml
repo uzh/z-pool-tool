@@ -7,6 +7,93 @@ let create_tag = Database.Logger.Tags.create
 include
   Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target) (Database.Guard)
 
+let related_target_models = function
+  | `Assignment -> [ `Experiment; `Session; `Assignment; `Location ]
+  | `Session -> [ `Experiment; `Session; `Location ]
+  | target -> [ target ]
+;;
+
+let with_user_permission
+      ?(dyn = Dynparam.empty)
+      ?permissions
+      actor
+      uuid_column
+      target_model
+  =
+  let permissions =
+    let open Entity.Permission in
+    let format_conditon permissions =
+      permissions
+      |> CCList.map show
+      |> CCString.concat ", "
+      |> Format.asprintf "AND permission IN (%s)"
+    in
+    match permissions with
+    | None -> ""
+    | Some permissions ->
+      Manage :: permissions |> CCList.uniq ~eq:equal |> format_conditon
+  in
+  let models =
+    let open Role in
+    target_model
+    |> related_target_models
+    |> CCList.map CCFun.(Target.show %> Format.asprintf "'%s'")
+    |> CCString.concat ", "
+    |> Format.asprintf "(%s)"
+  in
+  let dyn =
+    let add =
+      let open Core in
+      Dynparam.add Caqti_type.string (actor.Actor.uuid |> Uuid.Actor.to_string)
+    in
+    dyn |> add |> add
+  in
+  let joins =
+    Format.asprintf
+      {sql|
+        INNER JOIN user_permissions ON %s = user_permissions.target_uuid
+          OR target_uuid IS NULL
+      |sql}
+      uuid_column
+  in
+  let sql =
+    [%string
+      {sql|
+      WITH user_permissions AS (
+      -- SELECT GLOBAL PERMISSIONS OF USER
+        SELECT 
+          permission,
+          NULL as target_uuid
+        FROM guardian_role_permissions
+        LEFT JOIN guardian_actor_roles 
+          ON guardian_actor_roles.role = guardian_role_permissions.role
+          AND target_model IN %{models}
+        WHERE 
+          actor_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND guardian_role_permissions.mark_as_deleted IS NULL
+          AND guardian_actor_roles.mark_as_deleted IS NULL
+          %{permissions}
+      UNION
+      -- ENTITY SPECIFIC PERMISSION
+        SELECT 
+          permission,
+          target_uuid AS target_uuid
+        FROM guardian_actor_role_targets
+        INNER JOIN guardian_role_permissions 
+          ON guardian_role_permissions.role = guardian_actor_role_targets.role
+        WHERE 
+          actor_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND guardian_actor_role_targets.mark_as_deleted IS NULL
+      		AND guardian_role_permissions.mark_as_deleted IS NULL
+          AND target_model IN %{models}
+          %{permissions}
+          GROUP BY target_uuid 
+        ) 
+      |sql}]
+  in
+  dyn, sql, joins
+;;
+
 module ActorPermission = struct
   include ActorPermission
 

@@ -222,6 +222,18 @@ module Sql = struct
       Repo_entity.t
   ;;
 
+  let list_by_user ?query pool actor =
+    let open CCFun.Infix in
+    let dyn, sql, joins =
+      Guard.Persistence.with_user_permission actor "pool_experiments.uuid" `Experiment
+    in
+    let select ?count =
+      find_request_sql ?count ~distinct:true ~additional_joins:joins
+      %> Format.asprintf "%s %s" sql
+    in
+    Query.__collect_and_count pool query ~select ~dyn Repo_entity.t
+  ;;
+
   let find_request =
     let open Caqti_request.Infix in
     {sql|

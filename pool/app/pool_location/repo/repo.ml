@@ -62,9 +62,13 @@ module Sql = struct
       where_fragment
   ;;
 
-  let find_request_sql ?(count = false) where_fragment =
+  let find_request_sql ?(count = false) ?(additional_joins = "") where_fragment =
     let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
-    Format.asprintf {sql|SELECT %s FROM pool_locations %s|sql} columns where_fragment
+    Format.asprintf
+      {sql|SELECT %s FROM pool_locations %s %s|sql}
+      columns
+      additional_joins
+      where_fragment
   ;;
 
   let search_select =
@@ -286,8 +290,28 @@ let find_all ?query ?actor ?permission pool =
     ||> CCOption.map (fun m -> m, Dynparam.empty)
   in
   let%lwt locations, query =
-    Query.collect_and_count pool query ~select:Sql.find_request_sql ?where t
+    Query.collect_and_count
+      pool
+      query
+      ~select:(Sql.find_request_sql ?additional_joins:None)
+      ?where
+      t
   in
+  let%lwt locations = Lwt_list.map_s (files_to_location pool) locations in
+  Lwt.return (locations, query)
+;;
+
+let list_by_user ?query pool actor =
+  let open Utils.Lwt_result.Infix in
+  let open CCFun.Infix in
+  let dyn, sql, joins =
+    Guard.Persistence.with_user_permission actor "pool_locations.uuid" `Location
+  in
+  let select ?count =
+    Sql.find_request_sql ?count ~additional_joins:joins %> Format.asprintf "%s %s" sql
+  in
+  Query.__collect_and_count pool query ~select ~dyn t
+  >|> fun (locations, query) ->
   let%lwt locations = Lwt_list.map_s (files_to_location pool) locations in
   Lwt.return (locations, query)
 ;;

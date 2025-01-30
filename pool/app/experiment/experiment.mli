@@ -267,6 +267,12 @@ val find_all
   -> Database.Label.t
   -> (t list * Query.t) Lwt.t
 
+val list_by_user
+  :  ?query:Query.t
+  -> Database.Label.t
+  -> Guard.Actor.t
+  -> (t list * Query.t) Lwt.t
+
 val find_all_ids_of_contact_id : Database.Label.t -> Contact.Id.t -> Id.t list Lwt.t
 
 val find_public
