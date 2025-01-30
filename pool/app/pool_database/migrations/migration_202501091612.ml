@@ -15,6 +15,16 @@ let create_mapping_table ~table_suffix ~column_name ~fk_constraint =
     |sql}]
 ;;
 
+(* This migration does not work, due to the promoted contacts. Should we use a FOREIGN KEY to the user table? *)
+let add_pool_invitations_contacts_fk =
+  Database.Migration.Step.create
+    ~label:"add unique combination to pool_queue_jobs_mapping"
+    {sql|
+      ALTER TABLE pool_invitations
+        ADD CONSTRAINT FOREIGN KEY (contact_uuid) REFERENCES pool_contacts(user_uuid);
+  |sql}
+;;
+
 let add_unique_combination =
   Database.Migration.Step.create
     ~label:"add unique combination to pool_queue_jobs_mapping"
@@ -100,12 +110,9 @@ let create_pool_queue_job_invitations_table =
   create_mapping_table ~table_suffix ~column_name ~fk_constraint
 ;;
 
-let populate_invitations_mapping_table_name = "PopulateInvitationsMappingTable"
-
-let make_populate_pool_queue_job_invitations_table_procedure =
-  Migration_utils.chunked
-    ~name:populate_invitations_mapping_table_name
-    ~count_from:"pool_queue_job_contact"
+let populate_pool_queue_job_invitations_table =
+  Database.Migration.Step.create
+    ~label:"populate pool_queue_job_invitations table"
     {sql|
       INSERT INTO pool_queue_job_invitation
       SELECT
@@ -122,14 +129,7 @@ let make_populate_pool_queue_job_invitations_table_procedure =
           Q.message_template = "experiment_invitation"
       ORDER BY
           C.queue_uuid
-    |sql}
-  |> Database.Migration.Step.create ~label:"populate pool_queue_job_invitations table"
-;;
-
-let call_pool_queue_job_invitations_table_procedure =
-  Database.Migration.Step.create
-    ~label:"call populate_pool_queue_job_invitations function"
-    (Format.asprintf {sql| CALL %s(10000); |sql} populate_invitations_mapping_table_name)
+  |sql}
 ;;
 
 (* Assignment mapping table *)
@@ -176,14 +176,6 @@ let populate_pool_queue_job_admin_table =
   |sql}
 ;;
 
-let drop_procedure =
-  Database.Migration.Step.create
-    ~label:"drop procedure"
-    (Format.asprintf
-       {sql| DROP PROCEDURE IF EXISTS %s |sql}
-       populate_invitations_mapping_table_name)
-;;
-
 let drop_mapping_table =
   Database.Migration.Step.create
     ~label:"drop pool_queue_jobs_mapping"
@@ -207,7 +199,7 @@ let create_experiment_invitation_reset_table =
   |sql}
 ;;
 
-let populate_pool_experiment_invitation_reset =
+let ___populate_pool_experiment_invitation_reset =
   Database.Migration.Step.create
     ~label:"populate pool_experiment_invitation_reset"
     {sql|
@@ -265,6 +257,53 @@ let populate_pool_experiment_invitation_reset =
   |sql}
 ;;
 
+let populate_pool_experiment_invitation_reset =
+  Database.Migration.Step.create
+    ~label:"populate pool_experiment_invitation_reset"
+    {sql|
+      INSERT INTO
+        pool_experiment_invitation_reset (experiment_uuid, contacts_matching_filter, sent_invitations, created_at, updated_at)
+      WITH
+        experiment_reset_at AS (
+          SELECT
+            title,
+            experiment_uuid,
+            invitation_reset_at,
+            pool_experiments.created_at,
+            MAX(send_count) AS max_count
+          FROM
+            pool_invitations
+            INNER JOIN pool_experiments ON pool_experiments.uuid = pool_invitations.experiment_uuid
+          GROUP BY
+            experiment_uuid
+          HAVING
+            max_count = 2
+            AND invitation_reset_at IS NOT NULL
+        ),
+        computed_resets AS (
+          SELECT
+            E.uuid,
+            E.invitation_reset_at,
+            COUNT(I.uuid) AS sent_invitations
+          FROM
+            experiment_reset_at
+            INNER JOIN pool_experiments E ON E.uuid = experiment_reset_at.experiment_uuid
+            INNER JOIN pool_invitations I ON I.experiment_uuid = E.uuid
+            AND I.created_at >= E.invitation_reset_at
+          GROUP BY
+            E.uuid
+        )
+      SELECT
+        uuid,
+        -1,
+        sent_invitations,
+        invitation_reset_at,
+        invitation_reset_at
+      FROM
+        computed_resets
+  |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202501091612"
@@ -279,10 +318,7 @@ let migration () =
     |> add_step create_pool_queue_job_admin_table
     |> add_step populate_pool_queue_job_admin_table
     |> add_step create_pool_queue_job_invitations_table
-    |> add_step make_populate_pool_queue_job_invitations_table_procedure
-    |> add_step call_pool_queue_job_invitations_table_procedure
-    |> add_step drop_procedure
-    |> add_step drop_mapping_table
+    |> add_step populate_pool_queue_job_invitations_table
     |> add_step create_experiment_invitation_reset_table
     |> add_step populate_pool_experiment_invitation_reset)
 ;;
