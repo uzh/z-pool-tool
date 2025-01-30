@@ -82,14 +82,24 @@ let new_post label req =
   (write (Create (experiment_id |> Experiment.Id.to_common, label, redirect))) req
 ;;
 
+let redirect_back req err =
+  let open HttpUtils in
+  redirect_back
+    ~fallback:(Url.Admin.experiment_path ())
+    req
+    [ Message.set ~error:[ err ] ]
+;;
+
 let new_message_template req =
-  let label = template_label req in
-  form (New label) req
+  match template_label req with
+  | Ok label -> form (New label) req
+  | Error err -> redirect_back req err
 ;;
 
 let new_message_template_post req =
-  let label = template_label req in
-  new_post label req
+  match template_label req with
+  | Ok label -> new_post label req
+  | Error err -> redirect_back req err
 ;;
 
 let update_template req =
@@ -127,19 +137,23 @@ let delete req =
 ;;
 
 let changelog req =
+  let open Utils.Lwt_result.Infix in
   let open Message_template in
-  let experiment_id = experiment_id req in
-  let template_label = template_label req in
-  let id = template_id req in
-  let url =
-    HttpUtils.Url.Admin.experiment_message_template_path
-      experiment_id
-      template_label
-      ~suffix:"changelog"
-      ~id
-      ()
+  let result (_ : Pool_context.t) =
+    let experiment_id = experiment_id req in
+    let* template_label = template_label req |> Lwt_result.lift in
+    let id = template_id req in
+    let url =
+      HttpUtils.Url.Admin.experiment_message_template_path
+        experiment_id
+        template_label
+        ~suffix:"changelog"
+        ~id
+        ()
+    in
+    Helpers.Changelog.htmx_handler ~url (Id.to_common id) req |> Lwt_result.ok
   in
-  Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
+  HttpUtils.Htmx.handle_error_message req result
 ;;
 
 module Access : sig
