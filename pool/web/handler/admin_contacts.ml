@@ -8,10 +8,11 @@ let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
+let contact_path = HttpUtils.Url.Admin.contact_path
 
 let index req =
   HttpUtils.Htmx.handler
-    ~active_navigation:"/admin/contacts"
+    ~active_navigation:(contact_path ())
     ~error_path:"/admin/dashboard"
     ~query:(module Contact)
     ~create_layout:General.create_tenant_layout
@@ -167,7 +168,7 @@ let edit req =
 let update req =
   let redirect err =
     HttpUtils.Htmx.htmx_redirect
-      "/admin/contacts"
+      (contact_path ())
       ~actions:[ Message.set ~error:[ err ] ]
       ()
   in
@@ -190,9 +191,7 @@ let update req =
 let promote req =
   let tags = Pool_context.Logger.Tags.req req in
   let contact_id = contact_id req in
-  let error_path =
-    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value contact_id)
-  in
+  let error_path = contact_path ~id:contact_id ~suffix:"edit" () in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
@@ -206,15 +205,13 @@ let promote req =
       (Format.asprintf "/admin/admins/%s" (Contact.Id.value contact_id))
       [ Message.set ~success:[ Pool_message.Success.ContactPromoted ] ]
   in
-  result |> HttpUtils.Htmx.extract_happy_path ~src req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let delete_answer req =
   let tags = Pool_context.Logger.Tags.req req in
   let contact_id = contact_id req in
-  let error_path =
-    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value contact_id)
-  in
+  let error_path = contact_path ~id:contact_id ~suffix:"edit" () in
   let result { Pool_context.database_label; user; language; _ } =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
@@ -249,7 +246,7 @@ let delete_answer req =
 
 let toggle_paused req =
   let id = contact_id req in
-  let redirect_path = Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id) in
+  let redirect_path = contact_path ~id ~suffix:"edit" () in
   let tags = Pool_context.Logger.Tags.req req in
   let result ({ Pool_context.database_label; _ } as context) =
     let* contact = Contact.find database_label id >|- fun err -> err, redirect_path in
@@ -260,7 +257,7 @@ let toggle_paused req =
 
 let mark_as_deleted req =
   let id = contact_id req in
-  let redirect_path = Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id) in
+  let redirect_path = contact_path ~id ~suffix:"edit" () in
   let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err -> err, redirect_path)
@@ -278,7 +275,7 @@ let mark_as_deleted req =
     |>> Pool_event.handle_events database_label user
     |>> fun () ->
     HttpUtils.redirect_to_with_actions
-      (Format.asprintf "/admin/contacts")
+      (contact_path ())
       [ Message.set ~success:[ Pool_message.Success.ContactMarkedAsDeleted ] ]
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -286,7 +283,7 @@ let mark_as_deleted req =
 
 let toggle_verified req =
   let id = contact_id req in
-  let redirect_path = Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id) in
+  let redirect_path = contact_path ~id ~suffix:"edit" () in
   let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err -> err, redirect_path)
@@ -304,8 +301,7 @@ let toggle_verified req =
 let external_data_ids req =
   let contact_id = contact_id req in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err ->
-      err, Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id))
+    Utils.Lwt_result.map_error (fun err -> err, contact_path ~id:contact_id ())
     @@
     let* contact = Contact.find database_label contact_id in
     let%lwt external_data_ids =
@@ -368,9 +364,7 @@ let htmx_experiment_modal req =
 let enroll_contact_post req =
   let contact_id = contact_id req in
   let experiment_id = experiment_id req in
-  let redirect_path =
-    Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id)
-  in
+  let redirect_path = contact_path ~id:contact_id () in
   let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; user; _ } =
     Lwt_result.map_error (fun err -> err, redirect_path)
@@ -426,7 +420,7 @@ let enroll_contact_post req =
 let message_history req =
   let queue_table = `History in
   let contact_id = contact_id req in
-  let error_path = Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id) in
+  let error_path = contact_path ~id:contact_id () in
   HttpUtils.Htmx.handler
     ~error_path
     ~query:(module Pool_queue)
