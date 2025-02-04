@@ -107,8 +107,12 @@ let detail_view action req =
            let query = experiments_query_from_req req in
            Experiment.query_participation_history_by_contact ~query database_label contact
          in
+         let%lwt can_manage_duplicates =
+           Helpers.Guard.can_manage_duplicate_contacts context
+         in
          Page.Admin.Contact.detail
            ?admin_comment
+           ~can_manage_duplicates
            context
            contact
            contact_tags
