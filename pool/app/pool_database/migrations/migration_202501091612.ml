@@ -125,8 +125,6 @@ let populate_pool_queue_job_invitations_table =
           INNER JOIN pool_queue_job_experiment E ON C.queue_uuid = E.queue_uuid
           INNER JOIN (SELECT uuid, message_template FROM pool_queue_jobs UNION SELECT uuid, message_template FROM pool_queue_jobs_history) as Q ON Q.uuid = C.queue_uuid
           INNER JOIN pool_invitations I ON I.experiment_uuid = E.experiment_uuid AND I.contact_uuid = C.contact_uuid
-      WHERE
-          Q.message_template = "experiment_invitation"
       ORDER BY
           C.queue_uuid
   |sql}
@@ -199,7 +197,7 @@ let create_experiment_invitation_reset_table =
   |sql}
 ;;
 
-let ___populate_pool_experiment_invitation_reset =
+(* let ___populate_pool_experiment_invitation_reset =
   Database.Migration.Step.create
     ~label:"populate pool_experiment_invitation_reset"
     {sql|
@@ -255,7 +253,7 @@ let ___populate_pool_experiment_invitation_reset =
       FROM
         computed_resets
   |sql}
-;;
+;; *)
 
 let populate_pool_experiment_invitation_reset =
   Database.Migration.Step.create
@@ -289,7 +287,7 @@ let populate_pool_experiment_invitation_reset =
             experiment_reset_at
             INNER JOIN pool_experiments E ON E.uuid = experiment_reset_at.experiment_uuid
             INNER JOIN pool_invitations I ON I.experiment_uuid = E.uuid
-            AND I.created_at >= E.invitation_reset_at
+            AND I.created_at <= E.invitation_reset_at
           GROUP BY
             E.uuid
         )
