@@ -130,8 +130,9 @@ let create_invitations _ () =
     let msg = "count generated invitations -> equal to before reset" in
     Alcotest.(check int msg after after_reset)
   in
-  (* Stop mailing for upcoming tests *)
+  (* Stop mailing for upcoming tests - and wait for a second, as mailings refer to timestamps *)
   let%lwt () = Stopped mailing |> Mailing.handle_event pool in
+  Unix.sleep 1;
   Lwt.return_unit
 ;;
 
