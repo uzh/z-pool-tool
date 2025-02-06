@@ -8,7 +8,7 @@ let role_assignment
       ?(can_unassign = false)
       base_url
       field
-      { Pool_context.language; csrf; _ }
+      ({ Pool_context.language; csrf; _ } as context)
       ~assign
       ~unassign
       ~applicable:available
@@ -29,40 +29,29 @@ let role_assignment
       ]
   in
   let form action admin =
-    let show, url, control, style =
+    let url, control, style =
       match action with
-      | `Assign -> can_assign, assign, Assign None, `Success
-      | `Unassign -> can_unassign, unassign, Unassign None, `Error
+      | `Assign -> assign, Assign None, `Success
+      | `Unassign -> unassign, Unassign None, `Error
     in
-    let button =
-      if show
-      then
-        [ form
-            ~a:[ a_action (Format.asprintf "%s/%s" (base_url admin) url); a_method `Post ]
-            [ csrf_element csrf ()
-            ; submit_element
-                ~submit_type:style
-                ~classnames:[ "small" ]
-                language
-                control
-                ()
-            ]
-        ]
-      else []
-    in
-    [ admin |> Admin.email_address |> Pool_user.EmailAddress.value |> txt
-    ; admin |> Admin.fullname |> txt
-    ]
-    @ button
+    form
+      ~a:[ a_action (Format.asprintf "%s/%s" (base_url admin) url); a_method `Post ]
+      [ csrf_element csrf ()
+      ; submit_element ~submit_type:style ~classnames:[ "small" ] language control ()
+      ]
   in
   let open Pool_common.I18n in
   let existing =
-    existing
-    |> CCList.map (form `Unassign)
-    |> column ~hint:(RoleCurrentlyNoneAssigned field) RoleCurrentlyAssigned
+    Page_admin_admins.list
+      ~buttons:(if can_unassign then [ form `Unassign ] else [])
+      context
+      existing
   in
   let available =
-    available |> CCList.map (form `Assign) |> column RoleApplicableToAssign
+    Page_admin_admins.list
+      ~buttons:(if can_assign then [ form `Assign ] else [])
+      context
+      []
   in
   let main_hint =
     CCOption.map_or

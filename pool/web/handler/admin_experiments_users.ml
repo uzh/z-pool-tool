@@ -25,7 +25,7 @@ let index role req =
     let%lwt applicable_admins =
       Admin.find_all_with_role database_label (`Admin, None) ~exclude:[ current_roles ]
     in
-    let%lwt currently_assigned = Admin.find_all_with_role database_label current_roles in
+    let%lwt currently_assigned = Admin.query_by_role database_label current_roles in
     let%lwt hint =
       (match role with
        | `Assistants -> I18n.Key.AssistantRoleHint

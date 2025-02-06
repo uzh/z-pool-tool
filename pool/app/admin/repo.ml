@@ -32,10 +32,11 @@ let insert_request =
 
 let insert pool = Write.of_entity %> Database.exec pool insert_request
 
-let find_request_sql ?(count = false) =
+let find_request_sql ?(additional_joins = []) ?(count = false) =
   let columns =
     if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
   in
+  let joins = joins :: additional_joins |> CCString.concat "\n" in
   Format.asprintf {sql|SELECT %s FROM pool_admins %s %s|sql} columns joins
 ;;
 
@@ -67,7 +68,9 @@ let find_all_request =
   {sql| WHERE user_users.admin = 1 |sql} |> find_request_sql |> Caqti_type.unit ->* t
 ;;
 
-let find_by ?query pool = Query.collect_and_count pool query ~select:find_request_sql t
+let find_by ?query pool =
+  Query.collect_and_count pool query ~select:(find_request_sql ?additional_joins:None) t
+;;
 
 let find_multiple_request ids =
   Format.asprintf
@@ -89,6 +92,39 @@ let find_multiple pool ids =
     in
     let request = find_multiple_request ids |> pt ->* t in
     Database.collect pool request pv)
+;;
+
+let query_by_role ?query pool (role, target_uuid) =
+  let dyn = Dynparam.(empty |> add Caqti_type.string (Role.Role.show role)) in
+  match target_uuid with
+  | None ->
+    let joins =
+      [ {sql| INNER JOIN guardian_actor_roles ON guardian_actor_roles.actor_uuid = pool_admins.user_uuid |sql}
+      ]
+    in
+    let where = "guardian_actor_roles.role = ?", dyn in
+    Query.collect_and_count
+      pool
+      query
+      ~where
+      ~select:(find_request_sql ~additional_joins:joins)
+      t
+  | Some target_uuid ->
+    let joins =
+      [ {sql| INNER JOIN guardian_actor_role_targets ON guardian_actor_role_targets.actor_uuid = pool_admins.user_uuid |sql}
+      ]
+    in
+    let where =
+      ( {sql| guardian_actor_role_targets.role = ? AND guardian_actor_role_targets.target_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      , Dynparam.(dyn |> add Caqti_type.string (Guard.Uuid.Target.to_string target_uuid))
+      )
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~where
+      ~select:(find_request_sql ~additional_joins:joins)
+      t
 ;;
 
 let update_request =

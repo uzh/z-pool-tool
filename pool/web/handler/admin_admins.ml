@@ -25,8 +25,10 @@ let index req =
   @@ fun (Pool_context.{ database_label; _ } as context) query ->
   let%lwt admins = Admin.find_by ~query database_label in
   let open Page.Admin.Admins in
-  (if HttpUtils.Htmx.is_hx_request req then list else index) context admins
-  |> Lwt_result.return
+  Lwt_result.return
+  @@ (if HttpUtils.Htmx.is_hx_request req then list ?buttons:None else index)
+       context
+       admins
 ;;
 
 let admin_detail req is_edit =

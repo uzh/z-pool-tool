@@ -4,7 +4,11 @@ open Component
 open Pool_message
 module Status = UserStatus.Admin
 
-let list Pool_context.{ language; guardian; _ } (admins, query) =
+let list
+      ?(buttons : (Admin.t -> [> Html_types.form ] elt) list option)
+      Pool_context.{ language; guardian; _ }
+      (admins, query)
+  =
   let open Guard in
   let open Admin in
   let can_add_admin =
@@ -30,14 +34,24 @@ let list Pool_context.{ language; guardian; _ } (admins, query) =
   in
   let th_class = [ "w-5"; "w-5"; "w-2" ] in
   let row admin =
-    let button =
+    let detail_button =
       admin
       |> id
       |> Id.value
       |> Format.asprintf "/admin/admins/%s"
       |> Input.link_as_button ~icon:Icon.Eye
     in
-    [ txt (fullname_reversed admin); Status.email_with_icons admin; button ]
+    let additional_buttons =
+      match buttons with
+      | Some buttons -> CCList.map (fun f -> f admin) buttons
+      | None -> []
+    in
+    let buttons =
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+        (detail_button :: additional_buttons)
+    in
+    [ txt (fullname_reversed admin); Status.email_with_icons admin; buttons ]
     |> CCList.map (CCList.return %> td)
     |> tr
   in
