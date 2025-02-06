@@ -293,11 +293,12 @@ module Sql = struct
     let where =
       {sql|
       WHERE pool_custom_fields.published_at IS NOT NULL
+      AND pool_custom_fields.model = ?
       AND pool_custom_fields.possible_duplicates_weight > 0
       |sql}
     in
-    let request = select_sql where |> Caqti_type.unit ->* Repo_entity.t in
-    Database.collect pool request ()
+    let request = select_sql where |> Repo_entity.Model.t ->* Repo_entity.t in
+    Database.collect pool request Entity.Model.Contact
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 end
