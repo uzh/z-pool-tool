@@ -114,7 +114,7 @@ end = struct
           ; string "to"
           ; string "message-id"
           ; int "dlr-mask"
-          ; int "error-code"
+          ; string "error-code"
           ; string "error-message"
           ; ptime "submit-date"
           ; ptime "done-date"

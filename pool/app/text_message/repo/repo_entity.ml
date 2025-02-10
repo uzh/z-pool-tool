@@ -59,7 +59,7 @@ let delivery_report =
       ; string
       ; string
       ; int
-      ; int
+      ; string
       ; string
       ; ptime
       ; ptime
