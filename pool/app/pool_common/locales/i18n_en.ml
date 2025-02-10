@@ -655,6 +655,10 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SessionRegistrationHint -> "The registration for a session is binding."
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."
+  | SettigsInactiveUsers ->
+    "The durations specified here are totaled. This means that an account is only \
+     deactivated after the total of 'Warn inactive users' and 'Deactivate inactive \
+     users'."
   | SessionReminderLeadTime ->
     "The lead time determines how long before the start of the session the reminders are \
      sent to the contacts"

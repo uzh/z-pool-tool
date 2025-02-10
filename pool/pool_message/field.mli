@@ -128,6 +128,7 @@ type t =
   | Inactive
   | InactiveUserDisableAfter
   | InactiveUserWarning
+  | InactiveUserDisableService
   | Input
   | Institution
   | InternalDescription
