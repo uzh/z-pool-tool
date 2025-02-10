@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.9.1](https://github.com/uzh/z-pool-tool/tree/0.9.1) - 2025-02-10
+
+### Added
+
+- allow contact deactivation service to be disabled
+
+### Fixed
+
+- some anonymous exception
+- text message dlr error codes
+
+## [0.9.0](https://github.com/uzh/z-pool-tool/tree/0.9.0) - 2025-02-06
+
 ### Added
 
 - service to detect possibly duplicated contacts, and merge them
