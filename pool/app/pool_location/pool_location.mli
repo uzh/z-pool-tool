@@ -290,6 +290,12 @@ val find_all
   -> Database.Label.t
   -> (t list * Query.t) Lwt.t
 
+val list_by_user
+  :  ?query:Query.t
+  -> Database.Label.t
+  -> Guard.Actor.t
+  -> (t list * Query.t) Lwt.t
+
 val find_location_file
   :  Database.Label.t
   -> Pool_common.Repo.Id.t

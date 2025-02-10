@@ -19,6 +19,7 @@ end
 
 let find = Repo.find
 let find_all = Repo.find_all
+let list_by_user = Repo.Sql.list_by_user
 let find_all_ids_of_contact_id = Repo.find_all_ids_of_contact_id
 let find_public = Repo_public.find
 let find_full_by_contact = Repo_public.find_full_by_contact

@@ -120,3 +120,28 @@ let collect_and_count
   let query = CCOption.value ~default:(empty ()) query in
   Lwt.return (rows, set_page_count query count)
 ;;
+
+let __collect_and_count
+      database_label
+      query
+      ~(select : ?count:bool -> string -> string)
+      ?where
+      ?(dyn = Dynparam.empty)
+      caqti_type
+  =
+  let open Caqti_request.Infix in
+  let Dynparam.Pack (pt, pv), where, paginate_and_sort =
+    append_query_to_sql dyn where query
+  in
+  let request =
+    let base = select where in
+    paginate_and_sort
+    |> CCOption.map_or ~default:base (Format.asprintf "%s %s" base)
+    |> pt ->* caqti_type
+  in
+  let count_request = select ~count:true where |> pt ->! Caqti_type.int in
+  let%lwt rows = Database.collect database_label request pv in
+  let%lwt count = Database.find database_label count_request pv in
+  let query = CCOption.value ~default:(empty ()) query in
+  Lwt.return (rows, set_page_count query count)
+;;
