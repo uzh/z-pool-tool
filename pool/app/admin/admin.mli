@@ -73,6 +73,7 @@ val find_by : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 
 val query_by_role
   :  ?query:Query.t
+  -> ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
   -> Database.Label.t
   -> Role.Role.t * Guard.Uuid.Target.t option
   -> (t list * Query.t) Lwt.t

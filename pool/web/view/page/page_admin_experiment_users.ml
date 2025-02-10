@@ -2,57 +2,77 @@ open Tyxml.Html
 open Component.Input
 open Pool_message.Control
 
+let field_of_role = function
+  | `Assistants -> Field.Assistants
+  | `Experimenter -> Field.Experimenter
+;;
+
+let experiment_user_path experiment role =
+  let field = field_of_role role in
+  HttpUtils.Url.Admin.experiment_user_path experiment.Experiment.id field
+;;
+
+let assign_form
+      { Pool_context.csrf; language; _ }
+      (url : ?admin_id:Admin.Id.t -> ?suffix:uri -> unit -> string)
+      action
+      admin
+  =
+  let suffix, control, style =
+    match action with
+    | `Assign -> "assign", Assign None, `Success
+    | `Unassign -> "unassign", Unassign None, `Error
+  in
+  form
+    ~a:
+      [ a_action (url ~admin_id:(Admin.id admin) ~suffix () |> Sihl.Web.externalize_path)
+      ; a_method `Post
+      ]
+    [ csrf_element csrf ()
+    ; submit_element ~submit_type:style ~classnames:[ "small" ] language control ()
+    ]
+;;
+
+let list_existing context experiment role ~can_unassign =
+  let button_url = experiment_user_path experiment role in
+  let query_url =
+    HttpUtils.Url.Admin.experiment_user_path
+      experiment.Experiment.id
+      (field_of_role role)
+      ~suffix:"assigned"
+      ()
+  in
+  Page_admin_admins.list
+    ~buttons:(if can_unassign then [ assign_form context button_url `Unassign ] else [])
+    ~hide_create:true
+    ~table_id:"existing-admins"
+    ~url:query_url
+    context
+;;
+
+let list_available context experiment role ~can_assign =
+  let url = experiment_user_path experiment role in
+  Page_admin_admins.list
+    ~buttons:(if can_assign then [ assign_form context url `Assign ] else [])
+    ~hide_create:true
+    ~table_id:"available-admins"
+    context
+;;
+
 let role_assignment
       ?hint
       ?(can_assign = false)
       ?(can_unassign = false)
-      base_url
-      field
-      ({ Pool_context.language; csrf; _ } as context)
-      ~assign
-      ~unassign
+      context
+      experiment
+      role
       ~applicable:available
       ~current:existing
   =
   let open CCFun in
-  let column ?hint title lst =
-    let html =
-      match hint, CCList.is_empty lst with
-      | Some hint, true -> p [ txt (Pool_common.Utils.text_to_string language hint) ]
-      | _ -> Component.Table.horizontal_table ~align_last_end:true `Striped lst
-    in
-    div
-      [ h3
-          ~a:[ a_class [ "heading-3" ] ]
-          [ Pool_common.Utils.text_to_string language title |> txt ]
-      ; html
-      ]
-  in
-  let form action admin =
-    let url, control, style =
-      match action with
-      | `Assign -> assign, Assign None, `Success
-      | `Unassign -> unassign, Unassign None, `Error
-    in
-    form
-      ~a:[ a_action (Format.asprintf "%s/%s" (base_url admin) url); a_method `Post ]
-      [ csrf_element csrf ()
-      ; submit_element ~submit_type:style ~classnames:[ "small" ] language control ()
-      ]
-  in
-  let open Pool_common.I18n in
-  let existing =
-    Page_admin_admins.list
-      ~buttons:(if can_unassign then [ form `Unassign ] else [])
-      context
-      existing
-  in
-  let available =
-    Page_admin_admins.list
-      ~buttons:(if can_assign then [ form `Assign ] else [])
-      context
-      []
-  in
+  (* let open Pool_common.I18n in *)
+  let existing = list_existing context experiment role ~can_unassign existing in
+  let available = list_available context experiment role ~can_assign available in
   let main_hint =
     CCOption.map_or
       ~default:(txt "")

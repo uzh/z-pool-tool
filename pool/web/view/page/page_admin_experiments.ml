@@ -8,6 +8,7 @@ module Icon = Component.Icon
 module DataTable = Component.DataTable
 module Notification = Component.Notification
 module HttpUtils = Http_utils
+module User = Page_admin_experiment_users
 
 let build_experiment_path ?suffix experiment =
   let base =
@@ -1040,12 +1041,6 @@ let users
       currently_assigned
       context
   =
-  let base_url field admin =
-    let suffix =
-      Format.asprintf "%s/%s" (Field.show field) Admin.(id admin |> Id.value)
-    in
-    build_experiment_path ~suffix experiment |> Sihl.Web.externalize_path
-  in
   let field =
     match role with
     | `Assistants -> Field.Assistants
@@ -1055,11 +1050,9 @@ let users
     ?hint
     ?can_assign
     ?can_unassign
-    (base_url field)
-    field
     context
-    ~assign:"assign"
-    ~unassign:"unassign"
+    experiment
+    role
     ~applicable:applicable_admins
     ~current:currently_assigned
   |> CCList.return

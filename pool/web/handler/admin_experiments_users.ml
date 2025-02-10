@@ -23,7 +23,7 @@ let index role req =
       | `Experimenter -> `Experimenter, Some id
     in
     let%lwt applicable_admins =
-      Admin.find_all_with_role database_label (`Admin, None) ~exclude:[ current_roles ]
+      Admin.query_by_role database_label (`Admin, None) ~exclude:[ current_roles ]
     in
     let%lwt currently_assigned = Admin.query_by_role database_label current_roles in
     let%lwt hint =
@@ -68,6 +68,75 @@ let index role req =
 
 let index_assistants = index `Assistants
 let index_experimenter = index `Experimenter
+
+let query_admin role state req =
+  let open Utils.Lwt_result.Infix in
+  let result ({ Pool_context.database_label; user; _ } as context) =
+    let id = experiment_id req in
+    let* experiment = Experiment.find database_label id in
+    let current_roles : Role.Role.t * Guard.Uuid.Target.t option =
+      let id = id |> Guard.Uuid.target_of Experiment.Id.value in
+      match role with
+      | `Assistants -> `Assistant, Some id
+      | `Experimenter -> `Experimenter, Some id
+    in
+    let%lwt admins =
+      let open Admin in
+      let query =
+        Query.from_request
+          ?filterable_by
+          ~searchable_by
+          ~sortable_by
+          ~default:default_query
+          req
+      in
+      match state with
+      | `Assigned -> query_by_role database_label ~query ?exclude:None current_roles
+      | `Available ->
+        query_by_role database_label ~query ~exclude:[ current_roles ] (`Admin, None)
+    in
+    let%lwt permission =
+      let open Guard in
+      let permission =
+        match state with
+        | `Assigned -> Permission.Delete
+        | `Available -> Permission.Create
+      in
+      match%lwt Pool_context.Utils.find_authorizable_opt database_label user with
+      | None -> Lwt.return false
+      | Some actor ->
+        let open Guard in
+        let role, target_uuid = current_roles in
+        let check permission =
+          PermissionOnTarget.create
+            ?target_uuid
+            permission
+            (role |> Utils.find_assignable_target_role)
+          |> ValidationSet.one
+          |> CCFun.flip (Guard.Persistence.validate database_label) actor
+          ||> CCResult.is_ok
+        in
+        check permission
+    in
+    let open Page.Admin.Experiments.User in
+    (match state with
+     | `Assigned -> list_existing context experiment role ~can_unassign:permission admins
+     | `Available -> list_available context experiment role ~can_assign:permission admins)
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result |> HttpUtils.Htmx.handle_error_message ~src req
+;;
+
+module Assistant = struct
+  let assigned = query_admin `Assistants `Assigned
+  let available = query_admin `Assistants `Available
+end
+
+module Experimenter = struct
+  let assigned = query_admin `Experimenter `Assigned
+  let available = query_admin `Experimenter `Available
+end
 
 let toggle_role action req =
   let experiment_id = experiment_id req in
