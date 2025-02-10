@@ -24,6 +24,9 @@ let show req =
       Settings.find_inactive_user_disable_after database_label
     in
     let%lwt inactive_user_warning = Settings.find_inactive_user_warning database_label in
+    let%lwt inactive_user_service_disabled =
+      Settings.find_inactive_user_service_disabled database_label
+    in
     let%lwt trigger_profile_update_after =
       Settings.find_trigger_profile_update_after database_label
     in
@@ -48,6 +51,7 @@ let show req =
       contact_email
       inactive_user_disable_after
       inactive_user_warning
+      inactive_user_service_disabled
       trigger_profile_update_after
       default_reminder_lead_time
       default_text_msg_reminder_lead_time
@@ -111,6 +115,8 @@ let update_settings req =
           let%lwt values = urlencoded_list Field.(show InactiveUserWarning) in
           let%lwt units = urlencoded_list Field.(show (TimeUnitOf InactiveUserWarning)) in
           InactiveUser.Warning.(handle ~tags ~values ~units ()) |> lift
+        | `UpdateUnactiveUserServiceDisabled ->
+          InactiveUser.DisableService.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UpdateTriggerProfileUpdateAfter ->
           UpdateTriggerProfileUpdateAfter.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UserImportFirstReminderAfter ->
@@ -166,6 +172,7 @@ module Access : module type of Helpers.Access = struct
       | `UpdateTextMsgDefaultLeadTime -> Command.UpdateDefaultTextMessageLeadTime.effects
       | `UpdateInactiveUserDisableAfter -> Command.InactiveUser.DisableAfter.effects
       | `UpdateInactiveUserWarning -> Command.InactiveUser.Warning.effects
+      | `UpdateUnactiveUserServiceDisabled -> Command.InactiveUser.DisableService.effects
       | `UpdateContactEmail -> Command.UpdateContactEmail.effects
       | `UpdateEmailSuffixes -> Command.UpdateEmailSuffixes.effects
       | `UpdateLanguages -> Command.UpdateLanguages.effects

@@ -75,6 +75,7 @@ let steps =
       ; Migration_202412131612.migration ()
       ; Migration_202412170838.migration ()
       ; Migration_202502041812.migration ()
+      ; Migration_202502100919.migration ()
       ]
     |> sort
   in

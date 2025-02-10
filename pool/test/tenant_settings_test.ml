@@ -190,6 +190,51 @@ let check_inactive_user_warning _ () =
   Lwt.return ()
 ;;
 
+let disable_inactive_user_service _ () =
+  let open Command.InactiveUser in
+  let%lwt current_user =
+    Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+  in
+  let command disabled =
+    let open CCResult.Infix in
+    let values =
+      [ ( Pool_message.Field.(show InactiveUserDisableService)
+        , [ Pool_model.Base.Boolean.stringify disabled ] )
+      ]
+    in
+    DisableService.decode values >>= DisableService.handle
+  in
+  let event disabled =
+    Settings.InactiveUserServiceDisabled
+      (Settings.InactiveUser.ServiceDisabled.create disabled)
+    |> Pool_event.settings
+  in
+  let handle_events events =
+    events |> get_or_failwith |> Pool_event.handle_events database_label current_user
+  in
+  let open Utils.Lwt_result.Infix in
+  let run_test disable =
+    let msg = if disable then "disabled" else "enabled" in
+    let events = command disable in
+    let () =
+      Test_utils.check_result
+        ~msg:(Format.asprintf "%s service events" msg)
+        events
+        (Ok [ event disable ])
+    in
+    let%lwt () = handle_events events in
+    let%lwt disabled =
+      Settings.find_inactive_user_service_disabled database_label
+      ||> InactiveUser.ServiceDisabled.value
+    in
+    Alcotest.(check bool) (Format.asprintf "Service is %s" msg) disable disabled
+    |> Lwt.return
+  in
+  let%lwt () = run_test true in
+  let%lwt () = run_test false in
+  Lwt.return_unit
+;;
+
 let check_languages _ () =
   let%lwt language = Settings.find_languages database_label in
   Alcotest.(

@@ -18,6 +18,7 @@ let suite =
               `Slow
               check_inactive_user_disable_after
           ; test_case "read inactive user warning after" `Slow check_inactive_user_warning
+          ; test_case "disable inactive user service" `Slow disable_inactive_user_service
           ; test_case "read languages" `Slow check_languages
           ; test_case "has terms and conditions" `Slow check_terms_and_conditions
           ; test_case "login after terms update" `Slow login_after_terms_update
