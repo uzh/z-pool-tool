@@ -207,11 +207,12 @@ module Sql = struct
 
   let validate_experiment_sql m = Format.asprintf " AND %s " m, Dynparam.empty
 
-  let find_all ?query ?actor ?permission pool =
-    let checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
-    let%lwt where = Guard.create_where ?actor ?permission ~checks pool `Experiment in
-    let select = find_request_sql ~distinct:true ~additional_joins:joins_tags in
-    Query.collect_and_count pool query ~select ?where Repo_entity.t
+  let all pool =
+    let open Caqti_request.Infix in
+    let request =
+      find_request_sql ~distinct:true "" |> Caqti_type.unit ->* Repo_entity.t
+    in
+    Database.collect pool request ()
   ;;
 
   let list_by_user ?query pool actor =
@@ -603,7 +604,7 @@ module Sql = struct
 end
 
 let find = Sql.find
-let find_all = Sql.find_all
+let all = Sql.all
 let find_all_ids_of_contact_id = Sql.find_all_ids_of_contact_id
 let find_of_session = Sql.find_of_session
 let find_of_mailing = Sql.find_of_mailing

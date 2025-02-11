@@ -108,6 +108,8 @@ type t =
   }
 [@@deriving show, yojson]
 
+let compare a b = Id.compare a.id b.id
+
 let to_string language location =
   let address =
     CCString.concat ", " (Address.address_rows_human language location.address)

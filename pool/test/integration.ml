@@ -41,6 +41,11 @@ let suite =
               `Slow
               Admin_role_assignment.grant_roles
           ] )
+    ; ( "authorization index lists"
+      , Authorization_lists_test.
+          [ test_case "experiments" `Slow experiments
+          ; test_case "locations" `Slow locations
+          ] )
     ; ("announcement", Announcement_test.[ test_case "find current" `Slow find_current ])
     ; ( "partial_update"
       , Partial_update.

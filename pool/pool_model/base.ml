@@ -3,7 +3,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 module Id = struct
   open Sexplib.Conv
 
-  type t = string [@@deriving eq, show, sexp, yojson]
+  type t = string [@@deriving eq, show, sexp, yojson, ord]
 
   let random_state = Random.State.make_self_init ()
   let create () = Uuidm.v4_gen random_state () |> Uuidm.to_string
