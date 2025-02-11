@@ -59,7 +59,9 @@ let find_request_sql ?(distinct = false) ?additional_joins ?(count = false) wher
     else sql_select_columns |> CCString.concat ", "
   in
   let joins =
-    additional_joins |> CCOption.map_or ~default:joins (Format.asprintf "%s\n%s" joins)
+    additional_joins
+    |> CCOption.map_or ~default:joins (fun add_joins ->
+      add_joins |> CCString.concat "\n" |> Format.asprintf "%s\n%s" joins)
   in
   Format.asprintf
     {sql|SELECT %s %s FROM pool_experiments %s %s|sql}
@@ -221,7 +223,7 @@ module Sql = struct
       Guard.Persistence.with_user_permission actor "pool_experiments.uuid" `Experiment
     in
     let select ?count =
-      find_request_sql ?count ~distinct:true ~additional_joins:joins
+      find_request_sql ?count ~distinct:true ~additional_joins:[ joins; joins_tags ]
       %> Format.asprintf "%s %s" sql
     in
     Query.collect_and_count pool query ~select ~dyn Repo_entity.t

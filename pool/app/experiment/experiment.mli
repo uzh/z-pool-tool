@@ -383,7 +383,7 @@ module Repo : sig
 
   val find_request_sql
     :  ?distinct:bool
-    -> ?additional_joins:string
+    -> ?additional_joins:string list
     -> ?count:bool
     -> string
     -> string
