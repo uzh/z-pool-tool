@@ -11,6 +11,7 @@ let list
       ?(table_id = "admin-list")
       ?(hide_create = false)
       ?(url = admin_path ())
+      ?push_url
       Pool_context.{ language; guardian; _ }
       (admins, query)
   =
@@ -21,7 +22,12 @@ let list
   in
   let url = Uri.of_string url in
   let data_table =
-    Component.DataTable.create_meta ~search:Contact.searchable_by url query language
+    Component.DataTable.create_meta
+      ~search:Contact.searchable_by
+      ?push_url
+      url
+      query
+      language
   in
   let cols =
     let create : [ | Html_types.flow5 ] elt =

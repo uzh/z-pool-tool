@@ -103,55 +103,57 @@ let find_multiple pool ids =
 ;;
 
 let query_by_role ?query ?exclude pool (role, target_uuid) =
-  let dyn = Dynparam.(empty |> add Caqti_type.string (Role.Role.show role)) in
+  let open Dynparam in
   let joins =
-    [ {sql| INNER JOIN guardian_actor_roles ON guardian_actor_roles.actor_uuid = pool_admins.user_uuid |sql}
-    ; {sql| INNER JOIN guardian_actor_role_targets ON guardian_actor_role_targets.actor_uuid = pool_admins.user_uuid |sql}
-    ]
+    {sql| 
+      LEFT JOIN guardian_actor_roles 
+        ON guardian_actor_roles.actor_uuid = pool_admins.user_uuid 
+        AND guardian_actor_roles.mark_as_deleted IS NULL
+      LEFT JOIN guardian_actor_role_targets 
+        ON guardian_actor_role_targets.actor_uuid = pool_admins.user_uuid 
+        AND guardian_actor_role_targets.mark_as_deleted IS NULL
+    |sql}
   in
   let where, dyn =
+    let dyn = empty |> add Caqti_type.string (Role.Role.show role) in
     match target_uuid with
     | None -> "guardian_actor_roles.role = ?", dyn
     | Some target_uuid ->
       ( {sql| guardian_actor_role_targets.role = ? AND guardian_actor_role_targets.target_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-      , Dynparam.(dyn |> add Caqti_type.string (Guard.Uuid.Target.to_string target_uuid))
-      )
+      , dyn |> add Caqti_type.string (Guard.Uuid.Target.to_string target_uuid) )
   in
-  let exclude_sql, dyn =
+  let exclude, dyn =
+    let not_exists =
+      Format.asprintf
+        {sql| NOT EXISTS (SELECT 1 FROM %s t WHERE t.actor_uuid = pool_admins.user_uuid AND t.mark_as_deleted IS NULL AND %s) |sql}
+    in
     match exclude with
-    | None -> None, dyn
+    | None -> [], dyn
     | Some exclude ->
-      let exclude, dyn =
-        exclude
-        |> CCList.fold_left
-             (fun (sql, dyn) (role, target_uuid) ->
-                let dyn = Dynparam.(dyn |> add Caqti_type.string (Role.Role.show role)) in
-                match target_uuid with
-                | None -> sql @ [ "guardian_actor_role_targets.role != ?" ], dyn
-                | Some target_uuid ->
-                  let dyn =
-                    Dynparam.(
-                      dyn
-                      |> add Caqti_type.string (Guard.Uuid.Target.to_string target_uuid))
-                  in
-                  ( sql
-                    @ [ {sql| (guardian_actor_role_targets.role != ? AND guardian_actor_role_targets.target_uuid != UNHEX(REPLACE(?, '-', ''))) |sql}
-                      ]
-                  , dyn ))
-             ([], dyn)
-      in
-      Some exclude, dyn
+      exclude
+      |> CCList.fold_left
+           (fun (sql, dyn) (role, target_uuid) ->
+              let dyn = dyn |> add Caqti_type.string (Role.Role.show role) in
+              match target_uuid with
+              | None -> sql @ [ not_exists "guardian_actor_roles" "t.role = ?" ], dyn
+              | Some target_uuid ->
+                let dyn =
+                  add Caqti_type.string (Guard.Uuid.Target.to_string target_uuid) dyn
+                in
+                ( sql
+                  @ [ not_exists
+                        "guardian_actor_role_targets"
+                        "t.role = ? AND t.target_uuid = UNHEX(REPLACE(?, '-', ''))"
+                    ]
+                , dyn ))
+           ([], dyn)
   in
-  let where =
-    match exclude_sql with
-    | None -> where, dyn
-    | Some exclude -> where :: exclude |> CCString.concat " AND ", dyn
-  in
+  let where = where :: exclude |> CCString.concat " AND ", dyn in
   Query.collect_and_count
     pool
     query
     ~where
-    ~select:(find_request_sql ~distinct:true ~additional_joins:joins)
+    ~select:(find_request_sql ~distinct:true ~additional_joins:[ joins ])
     t
 ;;
 

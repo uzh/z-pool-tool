@@ -16,16 +16,32 @@ let index role req =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
     @@
     let id = experiment_id req in
-    let current_roles : Role.Role.t * Guard.Uuid.Target.t option =
+    let current_roles, exclude =
       let id = id |> Guard.Uuid.target_of Experiment.Id.value in
       match role with
-      | `Assistants -> `Assistant, Some id
-      | `Experimenter -> `Experimenter, Some id
+      | `Assistants -> (`Assistant, Some id), [ `Assistant, None ]
+      | `Experimenter -> (`Experimenter, Some id), [ `Experimenter, None ]
+    in
+    let query =
+      let open Admin in
+      Query.from_request
+        ?filterable_by
+        ~searchable_by
+        ~sortable_by
+        ~default:default_query
+        req
     in
     let%lwt applicable_admins =
-      Admin.query_by_role database_label (`Admin, None) ~exclude:[ current_roles ]
+      Admin.(
+        query_by_role
+          ~query
+          database_label
+          (`Admin, None)
+          ~exclude:(current_roles :: exclude))
     in
-    let%lwt currently_assigned = Admin.query_by_role database_label current_roles in
+    let%lwt currently_assigned =
+      Admin.(query_by_role ~query database_label current_roles ~exclude)
+    in
     let%lwt hint =
       (match role with
        | `Assistants -> I18n.Key.AssistantRoleHint

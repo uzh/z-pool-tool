@@ -47,15 +47,25 @@ let list_existing context experiment role ~can_unassign =
     ~hide_create:true
     ~table_id:"existing-admins"
     ~url:query_url
+    ~push_url:false
     context
 ;;
 
 let list_available context experiment role ~can_assign =
   let url = experiment_user_path experiment role in
+  let query_url =
+    HttpUtils.Url.Admin.experiment_user_path
+      experiment.Experiment.id
+      (field_of_role role)
+      ~suffix:"available"
+      ()
+  in
   Page_admin_admins.list
     ~buttons:(if can_assign then [ assign_form context url `Assign ] else [])
     ~hide_create:true
     ~table_id:"available-admins"
+    ~url:query_url
+    ~push_url:false
     context
 ;;
 
