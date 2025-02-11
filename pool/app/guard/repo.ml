@@ -9,7 +9,10 @@ include
 
 let related_target_models = function
   | `Assignment -> [ `Experiment; `Session; `Assignment; `Location ]
-  | `Session -> [ `Experiment; `Session; `Location ]
+  | `WaitingList -> [ `Experiment; `WaitingList ]
+  | `LocationFile -> [ `Location; `LocationFile ]
+  | `Filter -> [ `Experiment; `Filter ]
+  | `Mailing -> [ `Experiment; `Mailing ]
   | target -> [ target ]
 ;;
 
