@@ -106,6 +106,13 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let experiment_user_path id role ?admin_id ?suffix () =
+    experiment_path ~id ()
+    |> append (Field.show role)
+    |> append_opt (map Admin.Id.value admin_id)
+    |> append_opt suffix
+  ;;
+
   let organisational_unit_path ?suffix ?id () =
     "/admin/organisational-unit"
     |> append_opt (map Organisational_unit.Id.value id)

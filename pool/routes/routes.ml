@@ -359,6 +359,8 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index_assistants ] index_assistants
+        ; get "assigned" ~middlewares:[ Access.index_assistants ] Assistant.assigned
+        ; get "available" ~middlewares:[ Access.index_assistants ] Assistant.available
         ; choose ~scope:(url_key Admin) specific
         ]
       in
@@ -373,6 +375,8 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index_experimenter ] index_experimenter
+        ; get "assigned" ~middlewares:[ Access.index_assistants ] Experimenter.assigned
+        ; get "available" ~middlewares:[ Access.index_assistants ] Experimenter.available
         ; choose ~scope:(url_key Admin) specific
         ]
       in
