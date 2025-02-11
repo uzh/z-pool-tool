@@ -320,6 +320,7 @@ type hint =
   | SessionRegistrationHint
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
+  | SettigsInactiveUsers
   | SettingsNoEmailSuffixes
   | SettingsPageScripts
   | SignUpCodeHint

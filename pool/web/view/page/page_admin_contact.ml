@@ -476,6 +476,7 @@ let experiment_history_modal
 
 let detail
       ?admin_comment
+      ~can_manage_duplicates
       (Pool_context.{ language; user; _ } as context)
       contact
       tags
@@ -512,8 +513,11 @@ let detail
       make_link (Format.asprintf "%s/messages" contact_path) Icon.Mail I18n.MessageHistory
     in
     let duplicate =
-      let path = Http_utils.Url.Admin.contact_duplicate_path (Contact.id contact) () in
-      make_link path Icon.Person I18n.ManageDuplicates
+      if can_manage_duplicates
+      then (
+        let path = Http_utils.Url.Admin.contact_duplicate_path (Contact.id contact) () in
+        make_link path Icon.Person I18n.ManageDuplicates)
+      else txt ""
     in
     div
       ~a:[ a_class [ "flexrow"; "flex-gap" ] ]

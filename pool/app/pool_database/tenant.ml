@@ -74,6 +74,9 @@ let steps =
       ; Migration_202411011201.migration ()
       ; Migration_202412131612.migration ()
       ; Migration_202412170838.migration ()
+      ; Migration_202502041812.migration ()
+      ; Migration_202502100919.migration ()
+      ; Migration_202502101715.migration ()
       ]
     |> sort
   in
@@ -152,9 +155,7 @@ let report err =
 
 let start () =
   let open Database in
-  let db_pools =
-    Pool.Tenant.all ~status:Status.[ Active; ConnectionIssue; MigrationsPending ] ()
-  in
+  let db_pools = Pool.Tenant.all () in
   Lwt_list.iter_p (check_migration_status %> flip Lwt.catch report) db_pools
 ;;
 
