@@ -62,10 +62,16 @@ module Sql = struct
       where_fragment
   ;;
 
-  let find_request_sql ?(count = false) ?(additional_joins = "") where_fragment =
+  let find_request_sql
+        ?(distinct = true)
+        ?(count = false)
+        ?(additional_joins = "")
+        where_fragment
+    =
     let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
     Format.asprintf
-      {sql|SELECT %s FROM pool_locations %s %s|sql}
+      {sql|SELECT %s %s FROM pool_locations %s %s|sql}
+      (if distinct then "DISTINCT" else "")
       columns
       additional_joins
       where_fragment
@@ -101,15 +107,6 @@ module Sql = struct
     Database.find_opt pool find_request id
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Location)
   ;;
-
-  let find_all_request =
-    let open Caqti_request.Infix in
-    {sql|ORDER BY pool_locations.name|sql}
-    |> Format.asprintf "%s\n%s" select_sql
-    |> Caqti_type.unit ->* t
-  ;;
-
-  let find_all pool = Database.collect pool find_all_request ()
 
   let insert_request =
     let open Caqti_request.Infix in
@@ -282,13 +279,12 @@ let find pool id =
   Sql.find pool id |>> files_to_location pool
 ;;
 
-let find_all ?query ?actor ?permission pool =
-  let checks = [ Format.asprintf "pool_locations.uuid IN %s" ] in
-  let%lwt where = Guard.create_where ?actor ?permission ~checks pool `Location in
-  let select = Sql.find_request_sql ?additional_joins:None in
-  let%lwt locations, query = Query.collect_and_count pool query ~select ?where t in
+let all pool =
+  let open Caqti_request.Infix in
+  let request = Sql.find_request_sql "" |> Caqti_type.unit ->* Repo_entity.t in
+  let%lwt locations = Database.collect pool request () in
   let%lwt locations = Lwt_list.map_s (files_to_location pool) locations in
-  Lwt.return (locations, query)
+  Lwt.return locations
 ;;
 
 let list_by_user ?query pool actor =

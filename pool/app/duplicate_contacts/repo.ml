@@ -1,4 +1,4 @@
-(* module Dynparam = Database.Dynparam *)
+module Dynparam = Database.Dynparam
 open Repo_entity
 
 let id_select_fragment = Pool_common.Id.sql_select_fragment

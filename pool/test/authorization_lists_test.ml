@@ -14,6 +14,10 @@ let experiment_target { Experiment.id; _ } =
   id |> Guard.Uuid.target_of Experiment.Id.value
 ;;
 
+let location_target { Pool_location.id; _ } =
+  id |> Guard.Uuid.target_of Pool_location.Id.value
+;;
+
 let assign_role { Guard.Actor.uuid; _ } role target =
   let open Guard in
   RolesGranted [ (uuid, role, target) |> to_role ] |> handle_event pool
@@ -56,6 +60,10 @@ let experiments _ () =
   let%lwt () = revoke_role actor `Experimenter (Some (experiment_target second)) in
   let%lwt experiments = get_by_user () in
   check testable "first experiment returned" [ first ] experiments;
+  (* Assign experimenter experiment 1 (assistant still exists) *)
+  let%lwt () = assign_role actor `Experimenter (Some (experiment_target first)) in
+  let%lwt experiments = get_by_user () in
+  check testable "first experiment returned" [ first ] experiments;
   Lwt.return ()
 ;;
 
@@ -64,9 +72,28 @@ let locations _ () =
   let testable = list Test_utils.location in
   let sort = CCList.sort Pool_location.compare in
   let%lwt actor = create_actor () in
+  let%lwt all_locations = Pool_location.all pool ||> sort in
   let get_by_user () = Pool_location.list_by_user pool actor ||> fst ||> sort in
   (* Without any roles *)
   let%lwt locations = get_by_user () in
   check testable "No locations returned" [] locations;
+  (* Assign location_manager location 1 *)
+  let first = CCList.hd all_locations in
+  let%lwt () = assign_role actor `LocationManager (Some (location_target first)) in
+  let%lwt locations = get_by_user () in
+  check testable "first location returned" [ first ] locations;
+  (* Assign location_manager location 2 *)
+  let second = CCList.nth all_locations 2 in
+  let%lwt () = assign_role actor `LocationManager (Some (location_target second)) in
+  let%lwt locations = get_by_user () in
+  check testable "first and second location returned" [ first; second ] locations;
+  (* Assign location_manager globally *)
+  let%lwt () = assign_role actor `LocationManager None in
+  let%lwt locations = get_by_user () in
+  check testable "all locations returned" all_locations locations;
+  (* Revoke global location_manager *)
+  let%lwt () = revoke_role actor `LocationManager None in
+  let%lwt locations = get_by_user () in
+  check testable "first and second location returned" [ first; second ] locations;
   Lwt.return ()
 ;;

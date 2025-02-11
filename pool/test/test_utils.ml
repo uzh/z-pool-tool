@@ -555,7 +555,7 @@ module Repo = struct
 
   let first_location () =
     let open Utils.Lwt_result.Infix in
-    Pool_location.find_all Data.database_label ||> fst ||> CCList.hd
+    Pool_location.all Data.database_label ||> CCList.hd
   ;;
 end
 

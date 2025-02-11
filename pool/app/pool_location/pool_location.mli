@@ -283,13 +283,7 @@ module Repo : sig
 end
 
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-
-val find_all
-  :  ?query:Query.t
-  -> ?actor:Guard.Actor.t
-  -> ?permission:Guard.Permission.t
-  -> Database.Label.t
-  -> (t list * Query.t) Lwt.t
+val all : Database.Label.t -> t list Lwt.t
 
 val list_by_user
   :  ?query:Query.t

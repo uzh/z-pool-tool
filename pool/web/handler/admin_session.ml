@@ -86,7 +86,7 @@ let new_helper req page =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find database_label id in
-       let%lwt locations = Pool_location.find_all database_label in
+       let%lwt locations = Pool_location.all database_label in
        let flash_fetcher = flip Sihl.Web.Flash.find req in
        let%lwt default_leadtime_settings = default_lead_time_settings database_label in
        let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
@@ -100,7 +100,7 @@ let new_helper req page =
              experiment
              default_leadtime_settings
              parent_session
-             (fst locations)
+             locations
              text_messages_enabled
              flash_fetcher
            |> Lwt_result.ok
@@ -113,7 +113,7 @@ let new_helper req page =
                  context
                  experiment
                  default_leadtime_settings
-                 (fst locations)
+                 locations
                  text_messages_enabled
                  flash_fetcher
              | true -> Page.Admin.TimeWindow.new_form context experiment flash_fetcher)
@@ -270,7 +270,7 @@ let session_page database_label req context session experiment =
   function
   | `Edit ->
     let%lwt current_tags = current_tags () in
-    let%lwt locations = Pool_location.find_all database_label in
+    let%lwt locations = Pool_location.all database_label in
     let%lwt default_leadtime_settings = default_lead_time_settings database_label in
     let%lwt available_tags =
       Tags.ParticipationTags.(
@@ -286,7 +286,7 @@ let session_page database_label req context session experiment =
       experiment
       default_leadtime_settings
       session
-      (fst locations)
+      locations
       (current_tags, available_tags, experiment_participation_tags)
       text_messages_enabled
       flash_fetcher
