@@ -184,16 +184,9 @@ let find_all ?query ?actor ?permission pool () =
     ; Format.asprintf "user_users.uuid IN %s"
     ]
   in
-  let%lwt where =
-    Guard.create_where ?actor ?permission ~checks pool `Contact
-    ||> CCOption.map (fun m -> m, Dynparam.empty)
-  in
-  Query.collect_and_count
-    pool
-    query
-    ~select:(find_request_sql ?additional_joins:None)
-    ?where
-    t
+  let%lwt where = Guard.create_where ?actor ?permission ~checks pool `Contact in
+  let select = find_request_sql ?additional_joins:None in
+  Query.collect_and_count pool query ~select ?where t
 ;;
 
 let insert_request =

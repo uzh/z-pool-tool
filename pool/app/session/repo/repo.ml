@@ -302,30 +302,26 @@ module Sql = struct
 
   let query_grouped_by_experiment ?query pool id =
     let where =
-      let sql =
-        {sql| pool_sessions.follow_up_to IS NULL AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-      in
-      let dyn =
-        Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
-      in
-      sql, dyn
+      {sql| pool_sessions.follow_up_to IS NULL AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
     in
+    let dyn =
+      Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+    in
+    let select = find_request_sql in
     let%lwt sessions, query =
-      Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
+      Query.collect_and_count pool query ~select ~where ~dyn Repo_entity.t
     in
     let%lwt sessions = to_grouped_sessions pool sessions in
     Lwt.return (sessions, query)
   ;;
 
   let query_by_experiment ?query pool id =
-    let where =
-      let sql = {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
-      let dyn =
-        Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
-      in
-      sql, dyn
+    let where = {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
+    let dyn =
+      Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
     in
-    Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
+    let select = find_request_sql in
+    Query.collect_and_count pool query ~select ~where ~dyn Repo_entity.t
   ;;
 
   let find_all_to_assign_from_waitinglist_request =
@@ -787,10 +783,7 @@ module Sql = struct
 
   let query_by_admin where ?query actor pool =
     let%lwt guardian_conditions = find_by_user_params pool actor in
-    let where =
-      let sql = Format.asprintf "%s AND %s" guardian_conditions where in
-      sql, Dynparam.empty
-    in
+    let where = Format.asprintf "%s AND %s" guardian_conditions where in
     Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
   ;;
 

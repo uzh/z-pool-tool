@@ -283,20 +283,10 @@ let find pool id =
 ;;
 
 let find_all ?query ?actor ?permission pool =
-  let open Utils.Lwt_result.Infix in
   let checks = [ Format.asprintf "pool_locations.uuid IN %s" ] in
-  let%lwt where =
-    Guard.create_where ?actor ?permission ~checks pool `Location
-    ||> CCOption.map (fun m -> m, Dynparam.empty)
-  in
-  let%lwt locations, query =
-    Query.collect_and_count
-      pool
-      query
-      ~select:(Sql.find_request_sql ?additional_joins:None)
-      ?where
-      t
-  in
+  let%lwt where = Guard.create_where ?actor ?permission ~checks pool `Location in
+  let select = Sql.find_request_sql ?additional_joins:None in
+  let%lwt locations, query = Query.collect_and_count pool query ~select ?where t in
   let%lwt locations = Lwt_list.map_s (files_to_location pool) locations in
   Lwt.return (locations, query)
 ;;
@@ -310,7 +300,7 @@ let list_by_user ?query pool actor =
   let select ?count =
     Sql.find_request_sql ?count ~additional_joins:joins %> Format.asprintf "%s %s" sql
   in
-  Query.__collect_and_count pool query ~select ~dyn t
+  Query.collect_and_count pool query ~select ~dyn t
   >|> fun (locations, query) ->
   let%lwt locations = Lwt_list.map_s (files_to_location pool) locations in
   Lwt.return (locations, query)

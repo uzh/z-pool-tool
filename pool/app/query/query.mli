@@ -170,14 +170,6 @@ val collect_and_count
   :  Database.Label.t
   -> t option
   -> select:(?count:bool -> string -> string)
-  -> ?where:string * Database.Dynparam.t
-  -> 'a Caqti_type.t
-  -> ('a list * t) Lwt.t
-
-val __collect_and_count
-  :  Database.Label.t
-  -> t option
-  -> select:(?count:bool -> string -> string)
   -> ?where:string
   -> ?dyn:Database.Dynparam.t
   -> 'a Caqti_type.t

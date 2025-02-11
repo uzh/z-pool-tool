@@ -61,34 +61,34 @@ let with_user_permission
       {sql|
       WITH user_permissions AS (
       -- SELECT GLOBAL PERMISSIONS OF USER
-        SELECT 
+        SELECT
           permission,
           NULL as target_uuid
         FROM guardian_role_permissions
-        LEFT JOIN guardian_actor_roles 
+        LEFT JOIN guardian_actor_roles
           ON guardian_actor_roles.role = guardian_role_permissions.role
           AND target_model IN %{models}
-        WHERE 
+        WHERE
           actor_uuid = UNHEX(REPLACE(?, '-', ''))
           AND guardian_role_permissions.mark_as_deleted IS NULL
           AND guardian_actor_roles.mark_as_deleted IS NULL
           %{permissions}
       UNION
       -- ENTITY SPECIFIC PERMISSION
-        SELECT 
+        SELECT
           permission,
           target_uuid AS target_uuid
         FROM guardian_actor_role_targets
-        INNER JOIN guardian_role_permissions 
+        INNER JOIN guardian_role_permissions
           ON guardian_role_permissions.role = guardian_actor_role_targets.role
-        WHERE 
+        WHERE
           actor_uuid = UNHEX(REPLACE(?, '-', ''))
           AND guardian_actor_role_targets.mark_as_deleted IS NULL
       		AND guardian_role_permissions.mark_as_deleted IS NULL
           AND target_model IN %{models}
           %{permissions}
-          GROUP BY target_uuid 
-        ) 
+          GROUP BY target_uuid
+        )
       |sql}]
   in
   dyn, sql, joins
@@ -182,7 +182,7 @@ module RolePermission = struct
   ;;
 
   let find_by query pool =
-    let where = std_filter_sql, Dynparam.(empty) in
+    let where = std_filter_sql in
     Query.collect_and_count pool (Some query) ~where ~select Entity.RolePermission.t
   ;;
 
@@ -191,7 +191,7 @@ module RolePermission = struct
       ( Format.asprintf "role_permissions.role = ? AND %s" std_filter_sql
       , Dynparam.(empty |> add Caqti_type.string (Role.Role.show role)) )
     in
-    let where =
+    let where, dyn =
       match include_static_models with
       | false ->
         let open Role.Target in
@@ -211,7 +211,7 @@ module RolePermission = struct
         sql, dyn
       | true -> where
     in
-    Query.collect_and_count pool query ~where ~select Entity.RolePermission.t
+    Query.collect_and_count pool query ~where ~dyn ~select Entity.RolePermission.t
   ;;
 
   let insert pool = insert ~ctx:(Database.to_ctx pool)

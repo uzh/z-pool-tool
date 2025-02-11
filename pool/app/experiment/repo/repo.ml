@@ -208,18 +208,10 @@ module Sql = struct
   let validate_experiment_sql m = Format.asprintf " AND %s " m, Dynparam.empty
 
   let find_all ?query ?actor ?permission pool =
-    let open Utils.Lwt_result.Infix in
     let checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
-    let%lwt where =
-      Guard.create_where ?actor ?permission ~checks pool `Experiment
-      ||> CCOption.map (fun m -> m, Dynparam.empty)
-    in
-    Query.collect_and_count
-      pool
-      query
-      ~select:(find_request_sql ~distinct:true ~additional_joins:joins_tags)
-      ?where
-      Repo_entity.t
+    let%lwt where = Guard.create_where ?actor ?permission ~checks pool `Experiment in
+    let select = find_request_sql ~distinct:true ~additional_joins:joins_tags in
+    Query.collect_and_count pool query ~select ?where Repo_entity.t
   ;;
 
   let list_by_user ?query pool actor =
@@ -231,7 +223,7 @@ module Sql = struct
       find_request_sql ?count ~distinct:true ~additional_joins:joins
       %> Format.asprintf "%s %s" sql
     in
-    Query.__collect_and_count pool query ~select ~dyn Repo_entity.t
+    Query.collect_and_count pool query ~select ~dyn Repo_entity.t
   ;;
 
   let find_request =
@@ -576,20 +568,16 @@ module Sql = struct
         |sql}
         (if only_closed then Format.asprintf "AND (%s)" only_closed_condition else "")
     in
-    Dynparam.(where, dyn |> add Contact.Repo.Id.t contact_id), joins
+    where, Dynparam.(dyn |> add Contact.Repo.Id.t contact_id), joins
   ;;
 
   let query_participation_history_by_contact ?query pool contact =
-    let contact_id = Contact.id contact in
-    let where, additional_joins =
-      participation_history_where ~only_closed:false contact_id
+    let where, dyn, additional_joins =
+      Contact.id contact |> participation_history_where ~only_closed:false
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select:(participation_history_sql additional_joins)
-      ~where
-      Caqti_type.(t2 Repo_entity.t bool)
+    let select = participation_history_sql additional_joins in
+    Caqti_type.(t2 Repo_entity.t bool)
+    |> Query.collect_and_count pool query ~select ~where ~dyn
   ;;
 
   let count_invitations_request ?(by_count = false) () =
