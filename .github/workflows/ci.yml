@@ -56,6 +56,9 @@ jobs:
             # Reclaim required directory permissions
             sudo chown -R opam .
 
+            # link opam version
+            sudo ln -fs /usr/bin/opam-2.2 /usr/bin/opam
+
             # Build and test executable
             /app/scripts/build.sh || exit 1
 

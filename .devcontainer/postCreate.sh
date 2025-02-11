@@ -1,5 +1,5 @@
 #!/bin/sh
- 
+
 # immediately when a command fails and print each command
 set -ex
 
