@@ -10,6 +10,8 @@ let create_actor () =
   ||> Test_utils.get_or_failwith
 ;;
 
+let admin_target admin = admin |> Admin.id |> Guard.Uuid.target_of Admin.Id.value
+
 let contact_target contact =
   contact |> Contact.id |> Guard.Uuid.target_of Contact.Id.value
 ;;
@@ -145,7 +147,7 @@ let contacts _ () =
   let%lwt contacts = get_by_user () in
   let expected = [ contact1; contact2 ] |> sort in
   check testable "Contacts 1, 2 returned" expected contacts;
-  (* As location manager *)
+  (* With actor permission *)
   let%lwt contact3 = ContactRepo.create () in
   let%lwt () =
     create_actor_permission actor Guard.Permission.Read (contact_target contact3)
@@ -178,6 +180,11 @@ let admins _ () =
   let%lwt () = assign_role actor `Assistant None in
   let%lwt admins = get_by_user () in
   check testable "No admins returned" [] admins;
+  (* With actor permission *)
+  let%lwt admin = Integration_utils.AdminRepo.create () in
+  let%lwt () = create_actor_permission actor Guard.Permission.Read (admin_target admin) in
+  let%lwt admins = get_by_user () in
+  check testable "One admin returned" [ admin ] admins;
   (* As recruiter *)
   let%lwt () = assign_role actor `Recruiter None in
   let query =
