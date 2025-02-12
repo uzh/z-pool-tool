@@ -81,7 +81,7 @@ let create_persons_from_api db_label n_persons =
   let sum = fold_left ( + ) 0 in
   let%lwt contacts = Contact.all db_label ||> fst ||> map Contact.email_address in
   let%lwt admins =
-    Admin.find_by db_label ||> fst ||> map (fun admin -> admin |> Admin.email_address)
+    Admin.all db_label ||> fst ||> map (fun admin -> admin |> Admin.email_address)
   in
   let flatten_filter_combine a b =
     let filter_existing =

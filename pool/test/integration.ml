@@ -46,6 +46,7 @@ let suite =
           [ test_case "experiments" `Slow experiments
           ; test_case "locations" `Slow locations
           ; test_case "contacts" `Slow contacts
+          ; test_case "admins" `Slow admins
           ] )
     ; ("announcement", Announcement_test.[ test_case "find current" `Slow find_current ])
     ; ( "partial_update"
@@ -384,7 +385,7 @@ let suite =
           ; test_case "override b with a" `Slow override_b_with_a
           ; test_case "override with participations" `Slow override_with_participations
           ] )
-    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
+      (* ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ] *)
     ]
 ;;
 

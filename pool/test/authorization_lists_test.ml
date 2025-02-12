@@ -164,3 +164,28 @@ let contacts _ () =
   check int "All contacts are returned" expected contact_count;
   Lwt.return_unit
 ;;
+
+let admins _ () =
+  let open Alcotest in
+  let testable = list Test_utils.admin in
+  let sort = CCList.sort Admin.compare in
+  let%lwt actor = create_actor () in
+  let get_by_user () = Admin.list_by_user pool actor ||> fst ||> sort in
+  (* Without any roles *)
+  let%lwt admins = get_by_user () in
+  check testable "No admins returned" [] admins;
+  (* As assistant *)
+  let%lwt () = assign_role actor `Assistant None in
+  let%lwt admins = get_by_user () in
+  check testable "No admins returned" [] admins;
+  (* As recruiter *)
+  let%lwt () = assign_role actor `Recruiter None in
+  let query =
+    let open Query in
+    create ~pagination:(Pagination.create ~item_count:1 ()) ()
+  in
+  let%lwt expected = Admin.all ~query pool ||> query_item_count in
+  let%lwt admin_count = Admin.list_by_user ~query pool actor ||> query_item_count in
+  check int "All admins are returned" expected admin_count;
+  Lwt.return_unit
+;;

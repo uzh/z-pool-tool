@@ -70,7 +70,7 @@ let with_user_permission
           target_model,
           NULL as target_uuid
         FROM guardian_actor_roles
-        LEFT JOIN guardian_role_permissions
+        INNER JOIN guardian_role_permissions
           ON guardian_actor_roles.role = guardian_role_permissions.role
           AND target_model IN %{models}
         WHERE

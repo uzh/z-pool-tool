@@ -3,6 +3,7 @@ module Data = struct
 end
 
 (* Testable *)
+let admin = Admin.(Alcotest.testable pp equal)
 let annoncement = Announcement.(Alcotest.testable pp equal)
 let api_key = Api_key.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)

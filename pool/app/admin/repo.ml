@@ -8,7 +8,7 @@ let sql_select_columns =
   @ [ "pool_admins.email_verified"; "pool_admins.import_pending" ]
 ;;
 
-let joins =
+let user_join =
   {sql|
     LEFT JOIN user_users
       ON pool_admins.user_uuid = user_users.uuid
@@ -32,11 +32,14 @@ let insert_request =
 
 let insert pool = Write.of_entity %> Database.exec pool insert_request
 
-let find_request_sql ?(count = false) =
+let find_request_sql ?(joins = []) ?(count = false) =
   let columns =
-    if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+    if count
+    then "COUNT(DISTINCT pool_admins.user_uuid)"
+    else sql_select_columns |> CCString.concat ", "
   in
-  Format.asprintf {sql|SELECT %s FROM pool_admins %s %s|sql} columns joins
+  let joins = user_join :: joins |> CCString.concat "\n" in
+  Format.asprintf {sql|SELECT DISTINCT %s FROM pool_admins %s %s|sql} columns joins
 ;;
 
 let find_request =
@@ -67,7 +70,20 @@ let find_all_request =
   {sql| WHERE user_users.admin = 1 |sql} |> find_request_sql |> Caqti_type.unit ->* t
 ;;
 
-let find_by ?query pool = Query.collect_and_count pool query ~select:find_request_sql t
+let all ?query pool =
+  Query.collect_and_count pool query ~select:(find_request_sql ?joins:None) t
+;;
+
+let list_by_user ?query pool actor =
+  let open CCFun.Infix in
+  let dyn, sql, joins =
+    Guard.Persistence.with_user_permission actor "pool_admins.user_uuid" `Admin
+  in
+  let select ?count =
+    find_request_sql ?count ~joins:[ joins ] %> Format.asprintf "%s %s" sql
+  in
+  Query.collect_and_count pool query ~select ~dyn Repo_entity.t
+;;
 
 let find_multiple_request ids =
   Format.asprintf
@@ -252,7 +268,7 @@ let search_by_name_and_email_request ?conditions =
   Format.asprintf
     "SELECT %s FROM pool_admins %s WHERE %s LIMIT %i"
     (sql_select_columns |> CCString.concat ", ")
-    joins
+    user_join
     where
 ;;
 
