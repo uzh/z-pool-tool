@@ -9,6 +9,7 @@ include
 
 let related_target_models = function
   | `Assignment -> [ `Experiment; `Session; `Assignment; `Location ]
+  | `Contact -> [ `Contact; `ContactInfo; `Experiment; `Session; `Location ]
   | `WaitingList -> [ `Experiment; `WaitingList ]
   | `LocationFile -> [ `Location; `LocationFile ]
   | `Filter -> [ `Experiment; `Filter ]
@@ -49,13 +50,13 @@ let with_user_permission
       let open Core in
       Dynparam.add Caqti_type.string (actor.Actor.uuid |> Uuid.Actor.to_string)
     in
-    dyn |> add |> add
+    dyn |> add |> add |> add
   in
   let joins =
     Format.asprintf
       {sql|
         INNER JOIN user_permissions ON %s = user_permissions.target_uuid
-          OR target_uuid IS NULL
+          OR user_permissions.target_uuid IS NULL
       |sql}
       uuid_column
   in
@@ -63,12 +64,13 @@ let with_user_permission
     [%string
       {sql|
       WITH user_permissions AS (
-      -- SELECT GLOBAL PERMISSIONS OF USER
+      -- GLOBAL ROLE PERMISSIONS
         SELECT
           permission,
+          target_model,
           NULL as target_uuid
-        FROM guardian_role_permissions
-        LEFT JOIN guardian_actor_roles
+        FROM guardian_actor_roles
+        LEFT JOIN guardian_role_permissions
           ON guardian_actor_roles.role = guardian_role_permissions.role
           AND target_model IN %{models}
         WHERE
@@ -77,9 +79,10 @@ let with_user_permission
           AND guardian_actor_roles.mark_as_deleted IS NULL
           %{permissions}
       UNION
-      -- ENTITY SPECIFIC PERMISSION
+      -- ENTITY SPECIFIC ROLE PERMISSION
         SELECT
           permission,
+          target_model,
           target_uuid AS target_uuid
         FROM guardian_actor_role_targets
         INNER JOIN guardian_role_permissions
@@ -90,7 +93,17 @@ let with_user_permission
       		AND guardian_role_permissions.mark_as_deleted IS NULL
           AND target_model IN %{models}
           %{permissions}
-          GROUP BY target_uuid
+        UNION
+          -- USER SPECIFIC PERMISSION
+          SELECT
+            permission,
+            target_model,
+            target_uuid AS target_uuid
+          FROM guardian_actor_permissions
+          WHERE
+            actor_uuid = UNHEX(REPLACE(?, '-', ''))
+            AND guardian_actor_permissions.mark_as_deleted IS NULL
+            %{permissions}
         )
       |sql}]
   in

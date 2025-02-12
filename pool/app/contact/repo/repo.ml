@@ -44,10 +44,20 @@ let joins =
   |sql}
 ;;
 
-let find_request_sql ?(additional_joins = []) ?(count = false) where_fragment =
-  let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
+let find_request_sql
+      ?(distinct = true)
+      ?(additional_joins = [])
+      ?(count = false)
+      where_fragment
+  =
+  let columns =
+    if count
+    then "COUNT(DISTINCT user_users.uuid)"
+    else CCString.concat ", " sql_select_columns
+  in
   Format.asprintf
-    {sql|SELECT %s FROM pool_contacts %s %s|sql}
+    {sql|SELECT %s %s FROM pool_contacts %s %s|sql}
+    (if distinct && not count then "DISTINCT" else "")
     columns
     (joins :: additional_joins |> CCString.concat "\n")
     where_fragment
@@ -156,37 +166,88 @@ let select_count where_fragment =
   Format.asprintf "%s %s" select_from where_fragment
 ;;
 
-let find_all ?query ?actor ?permission pool () =
-  let checks =
-    [ Format.asprintf
-        {sql|
-          user_users.uuid IN (
-            SELECT contact_uuid FROM pool_sessions
-            JOIN pool_assignments ON pool_sessions.uuid = pool_assignments.session_uuid
-            WHERE pool_sessions.experiment_uuid IN %s
-            )
-        |sql}
-    ; Format.asprintf
-        {sql|
-          user_users.uuid IN (
-            SELECT contact_uuid FROM pool_assignments
-            WHERE pool_assignments.session_uuid IN %s
-            )
-        |sql}
-    ; Format.asprintf
-        {sql|
-          user_users.uuid IN (
-            SELECT contact_uuid FROM pool_sessions
-            JOIN pool_assignments ON pool_sessions.uuid = pool_assignments.session_uuid
-            WHERE pool_sessions.location_uuid IN %s
-            )
-        |sql}
-    ; Format.asprintf "user_users.uuid IN %s"
-    ]
+let list_by_user ?query pool actor =
+  let open CCFun.Infix in
+  let target_sql = CCFun.(Role.Target.show %> Format.asprintf "'%s'") in
+  let targets_to_sql targets = targets |> CCList.map target_sql |> CCString.concat "," in
+  (* Ignoring default permission joins *)
+  let dyn, sql, _ =
+    Guard.Persistence.with_user_permission actor "pool_experiments.uuid" `Contact
   in
-  let%lwt where = Guard.create_where ?actor ?permission ~checks pool `Contact in
-  let select = find_request_sql ?additional_joins:None in
-  Query.collect_and_count pool query ~select ?where t
+  let contact_targets = targets_to_sql [ `Contact; `ContactInfo ] in
+  (* TODO: Make sure this is considered as well *)
+  let joins =
+    [%string
+      {sql|
+        LEFT JOIN user_permissions 
+          ON pool_contacts.user_uuid = user_permissions.target_uuid
+          OR (
+            user_permissions.target_uuid IS NULL
+            AND user_permissions.target_model IN (%{contact_targets})
+          )
+    |sql}]
+  in
+  let join_assignment_with =
+    targets_to_sql [ `Assignment; `Session; `Experiment; `Location ]
+  in
+  let where =
+    [%string
+      {sql|
+        (
+          EXISTS (
+            SELECT
+              1
+            FROM
+              user_permissions
+            WHERE
+              (target_model = %{target_sql `Contact} AND target_uuid IS NULL)
+              OR target_uuid = pool_contacts.user_uuid
+          )
+          OR EXISTS (
+            SELECT
+              1
+            FROM
+              pool_assignments
+              INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
+              INNER JOIN user_permissions ON
+              (
+                -- ASSIGNMENT PERMISSION
+                user_permissions.target_uuid = pool_assignments.uuid 
+
+                -- SESSION PERMISSION
+                OR user_permissions.target_uuid = pool_sessions.uuid
+      
+                -- LOCATION PERMISSION
+                OR (
+                  pool_sessions.location_uuid IS NOT NULL
+                  AND pool_sessions.location_uuid = user_permissions.target_uuid
+                )
+
+                -- EXPERIMENT PERMISSION
+                OR user_permissions.target_uuid = pool_sessions.experiment_uuid
+
+                -- GLOBAL PERMISSIONS
+                OR (
+                  user_permissions.target_uuid IS NULL
+                  AND user_permissions.target_model IN (%{join_assignment_with})
+                )
+              )
+            WHERE
+              pool_assignments.contact_uuid = pool_contacts.user_uuid
+          )
+        )
+  |sql}]
+  in
+  let select ?count =
+    find_request_sql ?count ~distinct:true ~additional_joins:[ joins ]
+    %> Format.asprintf "%s %s" sql
+  in
+  Query.collect_and_count pool query ~select ~dyn ~where Repo_entity.t
+;;
+
+let all ?query pool =
+  let select = find_request_sql ~distinct:true ?additional_joins:None in
+  Query.collect_and_count pool query ~select t
 ;;
 
 let insert_request =

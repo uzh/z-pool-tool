@@ -45,6 +45,7 @@ let suite =
       , Authorization_lists_test.
           [ test_case "experiments" `Slow experiments
           ; test_case "locations" `Slow locations
+          ; test_case "contacts" `Slow contacts
           ] )
     ; ("announcement", Announcement_test.[ test_case "find current" `Slow find_current ])
     ; ( "partial_update"

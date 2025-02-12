@@ -88,6 +88,12 @@ val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_admin_comment : Database.Label.t -> Id.t -> AdminComment.t option Lwt.t
 val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
 
+val list_by_user
+  :  ?query:Query.t
+  -> Database.Label.t
+  -> Guard.Actor.t
+  -> (t list * Query.t) Lwt.t
+
 val find_by_email
   :  Database.Label.t
   -> Pool_user.EmailAddress.t
@@ -98,14 +104,7 @@ val find_by_user
   -> Pool_user.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_all
-  :  ?query:Query.t
-  -> ?actor:Guard.Actor.t
-  -> ?permission:Guard.Permission.t
-  -> Database.Label.t
-  -> unit
-  -> (t list * Query.t) Lwt.t
-
+val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 val find_to_trigger_profile_update : Database.Label.t -> (t list, 'a) Lwt_result.t
 val should_send_registration_attempt_notification : Database.Label.t -> t -> bool Lwt.t
 
@@ -213,7 +212,14 @@ module Repo : sig
   val joins : string
   val sql_select_columns : string list
   val make_sql_select_columns : user_table:string -> contact_table:string -> string list
-  val find_request_sql : ?additional_joins:string list -> ?count:bool -> string -> string
+
+  val find_request_sql
+    :  ?distinct:bool
+    -> ?additional_joins:string list
+    -> ?count:bool
+    -> string
+    -> string
+
   val update_request : (Write.t, unit, [ `Zero ]) Caqti_request.t
 end
 

@@ -79,7 +79,7 @@ let create_persons_from_api db_label n_persons =
   let tags = Database.Logger.Tags.create db_label in
   let chunk_size = 100 in
   let sum = fold_left ( + ) 0 in
-  let%lwt contacts = Contact.find_all db_label () ||> fst %> map Contact.email_address in
+  let%lwt contacts = Contact.all db_label ||> fst ||> map Contact.email_address in
   let%lwt admins =
     Admin.find_by db_label ||> fst ||> map (fun admin -> admin |> Admin.email_address)
   in

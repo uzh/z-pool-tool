@@ -538,9 +538,8 @@ end
 
 module Repo = struct
   let first_contact () =
-    let open CCFun.Infix in
     let open Utils.Lwt_result.Infix in
-    Contact.find_all Data.database_label () ||> fst %> CCList.hd
+    Contact.all Data.database_label ||> fst ||> CCList.hd
   ;;
 
   let first_tag () =
