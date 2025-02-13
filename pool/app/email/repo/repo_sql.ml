@@ -256,12 +256,11 @@ module Smtp = struct
   ;;
 
   let find_by query pool =
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select:(fun ?(count = false) fragment ->
-        if count then select_count fragment else select_smtp_sql fragment)
-      RepoEntity.SmtpAuth.t
+    let select =
+      fun ?(count = false) fragment ->
+      if count then select_count fragment else select_smtp_sql fragment
+    in
+    Query.collect_and_count pool (Some query) ~select RepoEntity.SmtpAuth.t
   ;;
 
   let unset_default_flags pool =

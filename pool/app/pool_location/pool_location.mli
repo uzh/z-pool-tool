@@ -224,6 +224,7 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 val yojson_of_t : t -> Yojson.Safe.t
 val t_of_yojson : Yojson.Safe.t -> t
+val compare : t -> t -> int
 
 val create
   :  ?id:Id.t
@@ -282,12 +283,12 @@ module Repo : sig
 end
 
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val all : Database.Label.t -> t list Lwt.t
 
-val find_all
+val list_by_user
   :  ?query:Query.t
-  -> ?actor:Guard.Actor.t
-  -> ?permission:Guard.Permission.t
   -> Database.Label.t
+  -> Guard.Actor.t
   -> (t list * Query.t) Lwt.t
 
 val find_location_file

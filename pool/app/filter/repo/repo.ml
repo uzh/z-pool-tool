@@ -79,13 +79,9 @@ module Sql = struct
   let find_all_templates pool = Database.collect pool find_all_templates_request
 
   let find_templates_by query pool =
-    let where = template_condition, Dynparam.empty in
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select:(find_request_sql ~joins:joins_experiment)
-      ~where
-      Repo_entity.t
+    let select = find_request_sql ~joins:joins_experiment in
+    let where = template_condition in
+    Query.collect_and_count pool (Some query) ~select ~where Repo_entity.t
   ;;
 
   let find_multiple_request ids =

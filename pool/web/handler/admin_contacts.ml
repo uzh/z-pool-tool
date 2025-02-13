@@ -21,14 +21,7 @@ let index req =
   let* actor =
     Pool_context.Utils.find_authorizable ~admin_only:true database_label user
   in
-  let%lwt contacts, query =
-    Contact.find_all
-      ~query
-      ~actor
-      ~permission:Contact.Guard.Access.index_permission
-      database_label
-      ()
-  in
+  let%lwt contacts, query = Contact.list_by_user ~query database_label actor in
   let open Page.Admin.Contact in
   (if HttpUtils.Htmx.is_hx_request req then list else index) context contacts query
   |> Lwt_result.return

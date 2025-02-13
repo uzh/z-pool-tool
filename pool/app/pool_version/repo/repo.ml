@@ -78,11 +78,10 @@ let all ?query () =
 ;;
 
 let all_on_tenant ?query () =
-  let where = "published_at IS NOT NULL", Dynparam.empty in
   Query.collect_and_count
     Database.Pool.Root.label
     query
-    ~where
+    ~where:"published_at IS NOT NULL"
     ~select:find_request_sql
     Repo_entity.t
 ;;

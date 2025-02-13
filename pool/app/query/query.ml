@@ -96,15 +96,10 @@ let collect_and_count
       query
       ~(select : ?count:bool -> string -> string)
       ?where
+      ?(dyn = Dynparam.empty)
       caqti_type
   =
   let open Caqti_request.Infix in
-  let where, dyn =
-    CCOption.map_or
-      ~default:(None, Dynparam.empty)
-      (fun (where, dyn) -> Some where, dyn)
-      where
-  in
   let Dynparam.Pack (pt, pv), where, paginate_and_sort =
     append_query_to_sql dyn where query
   in

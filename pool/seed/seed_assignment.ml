@@ -1,6 +1,6 @@
 let assignment pool =
   let open Utils.Lwt_result.Infix in
-  let%lwt experiments, (_ : Query.t) = Experiment.find_all pool in
+  let%lwt experiments = Experiment.all pool in
   let%lwt session_invitations =
     Lwt_list.map_s
       (fun experiment ->

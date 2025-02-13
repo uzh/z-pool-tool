@@ -140,6 +140,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val compare : t -> t -> int
 val yojson_of_t : t -> Yojson.Safe.t
 val id : t -> Id.t
 val title : t -> Title.t
@@ -259,12 +260,12 @@ val resetinvitations : t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_message.Field.t list
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val all : Database.Label.t -> t list Lwt.t
 
-val find_all
+val list_by_user
   :  ?query:Query.t
-  -> ?actor:Guard.Actor.t
-  -> ?permission:Guard.Permission.t
   -> Database.Label.t
+  -> Guard.Actor.t
   -> (t list * Query.t) Lwt.t
 
 val find_all_ids_of_contact_id : Database.Label.t -> Contact.Id.t -> Id.t list Lwt.t
@@ -379,6 +380,13 @@ val is_sessionless : t -> bool
 module Repo : sig
   val sql_select_columns : string list
   val joins : string
+
+  val find_request_sql
+    :  ?distinct:bool
+    -> ?additional_joins:string list
+    -> ?count:bool
+    -> string
+    -> string
 
   module Public : sig
     val select_from_experiments_sql : ?distinct:bool -> string -> string

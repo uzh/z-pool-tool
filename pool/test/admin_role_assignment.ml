@@ -99,7 +99,7 @@ let handle_delete_role_permission_events db role_permission =
 let assignable_roles _ () =
   let open Guard in
   let db = Test_utils.Data.database_label in
-  let%lwt exp1, exp2 = Repo.all_experiments () ||> CCList.(fun e -> hd e, nth e 1) in
+  let%lwt exp1, exp2 = Experiment.all db ||> CCList.(fun e -> hd e, nth e 1) in
   let%lwt recruiter =
     Data.create_recruiter ~firstname:"RecruiterAssignable" db >|> to_actor db
   in
@@ -143,7 +143,7 @@ let assignable_roles _ () =
 let grant_roles _ () =
   let open Guard in
   let db = Test_utils.Data.database_label in
-  let%lwt exp1, exp2 = Repo.all_experiments () ||> CCList.(fun e -> hd e, nth e 1) in
+  let%lwt exp1, exp2 = Experiment.all db ||> CCList.(fun e -> hd e, nth e 1) in
   let%lwt operator = Data.create_operator db >|> to_actor db in
   let%lwt actor = Data.create_assistant db "Assistant1" exp1 >|> to_actor db in
   let%lwt target = Data.create_assistant db "Assistant2" exp2 in

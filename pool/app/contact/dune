@@ -22,6 +22,7 @@
    ppx_deriving.show
    ppx_fields_conv
    ppx_sexp_conv
+   ppx_string
    ppx_variants_conv
    ppx_yojson_conv)))
 

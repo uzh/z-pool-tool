@@ -160,11 +160,10 @@ module Sql = struct
   ;;
 
   let find_by_db_label pool database_label query =
-    let where =
-      ( "database_label = ? OR database_label IS NULL"
-      , Dynparam.(empty |> add Database.Repo.Label.t database_label) )
-    in
-    Query.collect_and_count pool (Some query) ~where ~select:select_public_fragment public
+    let where = "database_label = ? OR database_label IS NULL" in
+    let dyn = Dynparam.(empty |> add Database.Repo.Label.t database_label) in
+    let select = select_public_fragment in
+    Query.collect_and_count pool (Some query) ~where ~dyn ~select public
   ;;
 end
 

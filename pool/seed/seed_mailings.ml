@@ -49,8 +49,7 @@ let create pool =
   if Sihl.Configuration.is_test ()
   then Lwt.return_unit
   else
-    Experiment.find_all pool
-    ||> fst
+    Experiment.all pool
     ||> CCList.map (fun m -> m.Experiment.id)
     ||> generate_events
     >|> Lwt_list.iter_s (Mailing.handle_event pool)

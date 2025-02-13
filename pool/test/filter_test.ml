@@ -554,7 +554,7 @@ let filter_by_experiment_participation _ () =
   let hd = CCList.hd in
   let database_label = Data.database_label in
   let%lwt current_user = current_user () in
-  let%lwt all_experiments = Repo.all_experiments () in
+  let%lwt all_experiments = Experiment.all database_label in
   let first_experiment = CCList.nth all_experiments 0 |> Experiment.(fun exp -> exp.id) in
   let second_experiment =
     CCList.nth all_experiments 2 |> Experiment.(fun exp -> exp.id)

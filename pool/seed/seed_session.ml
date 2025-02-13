@@ -36,8 +36,8 @@ let session_data =
 let create pool =
   let open CCFun in
   let open Pool_common.Utils in
-  let%lwt experiments, (_ : Query.t) = Experiment.find_all pool in
-  let%lwt locations = Pool_location.find_all pool in
+  let%lwt experiments = Experiment.all pool in
+  let%lwt locations = Pool_location.all pool in
   let%lwt () =
     Lwt_list.iter_s
       (fun experiment ->
@@ -83,7 +83,7 @@ let create pool =
                       text_message_reminder_lead_time
                       Reminder.TextMessageLeadTime.create
                   in
-                  let location = CCList.hd (fst locations) in
+                  let location = CCList.hd locations in
                   create
                     ?internal_description
                     ?public_description

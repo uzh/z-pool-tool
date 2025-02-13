@@ -91,14 +91,9 @@ let find pool id =
 ;;
 
 let find_by_experiment ?query pool id =
-  let where =
-    let sql = {sql| pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
-    let dyn =
-      Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
-    in
-    sql, dyn
-  in
-  Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
+  let where = {sql| pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
+  let dyn = Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id)) in
+  Query.collect_and_count pool query ~select:find_request_sql ~where ~dyn Repo_entity.t
 ;;
 
 let find_by_contact_request =
@@ -112,14 +107,14 @@ let find_by_contact pool = Contact.id %> Database.collect pool find_by_contact_r
 
 let find_by_contact_to_merge_request =
   let open Caqti_request.Infix in
-  {sql| 
+  {sql|
     WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
     AND NOT EXISTS (
       SELECT 1
       FROM pool_invitations AS merge
       WHERE pool_invitations.experiment_uuid = merge.experiment_uuid
         AND merge.contact_uuid = UNHEX(REPLACE($2, '-', '')))
-    |sql}
+  |sql}
   |> find_request_sql
   |> Caqti_type.(t2 Contact.Repo.Id.t Contact.Repo.Id.t) ->* RepoEntity.t
 ;;

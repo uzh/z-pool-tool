@@ -237,6 +237,7 @@ module Calendar : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val yojson_of_t : t -> Yojson.Safe.t
+  val compare : t -> t -> int
 end
 
 val group_and_sort : t list -> (t * t list) list
@@ -318,11 +319,19 @@ val find_open_with_follow_ups
 
 val find_open : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_for_calendar_by_location
-  :  Pool_location.Id.t
+val calendar_by_user
+  :  start_time:Ptime.t
+  -> end_time:Ptime.t
   -> Database.Label.t
+  -> Guard.Persistence.actor
+  -> Calendar.t list Lwt.t
+
+val calendar_by_location
+  :  location_uuid:Pool_location.Id.t
   -> start_time:Ptime.t
   -> end_time:Ptime.t
+  -> Database.Label.t
+  -> Guard.Persistence.actor
   -> Calendar.t list Lwt.t
 
 val query_grouped_by_experiment
@@ -341,13 +350,6 @@ val find_sessions_to_update_matcher
   :  Database.Label.t
   -> [< `Experiment of Experiment.Id.t | `Upcoming ]
   -> t list Lwt.t
-
-val find_for_calendar_by_user
-  :  Guard.Actor.t
-  -> Database.Label.t
-  -> start_time:Ptime.t
-  -> end_time:Ptime.t
-  -> Calendar.t list Lwt.t
 
 val find_incomplete_by_admin
   :  ?query:Query.t

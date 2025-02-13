@@ -154,12 +154,9 @@ let delete_request =
 let delete pool time_window = Database.exec pool delete_request time_window.Entity.id
 
 let query_by_experiment ?query pool id =
-  let where =
-    let sql = {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
-    let dyn = Dynparam.(empty |> add Experiment.Repo.Entity.Id.t id) in
-    sql, dyn
-  in
-  Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
+  let where = {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
+  let dyn = Dynparam.(empty |> add Experiment.Repo.Entity.Id.t id) in
+  Query.collect_and_count pool query ~select:find_request_sql ~where ~dyn Repo_entity.t
 ;;
 
 let find_by_experiment_and_time_request time =
@@ -187,7 +184,7 @@ let find_by_experiment_and_time_request time =
       let limit =
         {sql|
           ORDER BY pool_sessions.start ASC
-          LIMIT 1 
+          LIMIT 1
         |sql}
       in
       where, limit

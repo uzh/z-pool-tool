@@ -111,11 +111,8 @@ let find_all_request table ?(joins = "") ?(count = false) where_fragment =
 ;;
 
 let find_by table ?query pool =
-  Query.collect_and_count
-    pool
-    query
-    ~select:(find_all_request ?joins:None table)
-    Repo_entity.Instance.t
+  let select = find_all_request ?joins:None table in
+  Query.collect_and_count pool query ~select Repo_entity.Instance.t
 ;;
 
 let workable_where =

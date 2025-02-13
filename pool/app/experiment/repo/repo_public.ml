@@ -29,7 +29,7 @@ let select_from_experiments_sql ?(distinct = false) where_fragment =
 
 let pool_sessions_inner_join =
   {sql|
-    INNER JOIN pool_sessions 
+    INNER JOIN pool_sessions
     ON pool_sessions.experiment_uuid = pool_experiments.uuid
   |sql}
 ;;
@@ -91,7 +91,7 @@ let find_upcoming_to_register_request experiment_type () =
   let timewindow_exists =
     {sql|
       (DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW()
-        AND 
+        AND
       pool_sessions.canceled_at IS NULL)
     |sql}
   in
@@ -117,7 +117,7 @@ let find_upcoming_to_register_request experiment_type () =
         pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND
         pool_waiting_list.experiment_uuid = pool_experiments.uuid
-      AND 
+      AND
         pool_waiting_list.marked_as_deleted = 0
       )
       |sql}
@@ -193,7 +193,7 @@ let find_pending_waitinglists_by_contact pool contact =
 
 let find_past_experiments_by_contact pool contact =
   let open Caqti_request.Infix in
-  let (where, Dynparam.Pack (pt, pv)), joins =
+  let where, Dynparam.Pack (pt, pv), joins =
     Repo.Sql.participation_history_where ~only_closed:true (Contact.id contact)
   in
   let request =
@@ -215,7 +215,7 @@ let where_contact_can_access =
   |sql}
   in
   let waiting_list_exists =
-    {sql| 
+    {sql|
       (pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND pool_waiting_list.marked_as_deleted = 0)
       |sql}
