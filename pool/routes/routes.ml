@@ -1109,13 +1109,7 @@ let router =
     ; get
         "/**"
         ~middlewares:
-          [ Middleware.csrf
-              ~not_allowed_handler:CustomMiddleware.NotAllowed.handle
-              ~expires:session_expiration
-              ()
-          ; CustomMiddleware.Context.context ()
-          ; CustomMiddleware.Logger.logger
-          ]
+          [ CustomMiddleware.Context.context (); CustomMiddleware.Logger.logger ]
         Handler.Public.not_found
     ]
 ;;
