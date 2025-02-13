@@ -35,7 +35,7 @@ let services =
   ; Email.Service.register ()
   ; Text_message.Service.register ()
   ; Storage.register ()
-  ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
+  ; Sihl.Web.Http.register Routes.router
   ; System_event.Service.register `Server ()
   ]
 ;;

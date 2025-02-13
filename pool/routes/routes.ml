@@ -1097,6 +1097,7 @@ end
 
 let router =
   choose
+    ~middlewares:global_middlewares
     [ Public.routes
     ; Contact.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
