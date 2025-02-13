@@ -38,6 +38,14 @@ let web_middlewares =
   ]
 ;;
 
+let tenant_middlewares =
+  web_middlewares
+  @ [ CustomMiddleware.Tenant.validate ()
+    ; CustomMiddleware.Context.context ()
+    ; CustomMiddleware.Logger.logger
+    ]
+;;
+
 module Public = struct
   let global_routes =
     choose
@@ -45,14 +53,6 @@ module Public = struct
       [ get "/" Handler.Public.root_redirect
       ; get "/custom/assets/:id/:filename" Handler.Public.asset
       ; get "/error" Handler.Public.error
-      ]
-  ;;
-
-  let middlewares =
-    web_middlewares
-    @ [ CustomMiddleware.Tenant.validate ()
-      ; CustomMiddleware.Context.context ()
-      ; CustomMiddleware.Logger.logger
       ]
   ;;
 
@@ -88,7 +88,7 @@ module Public = struct
     in
     Handler.Public.(
       choose
-        ~middlewares
+        ~middlewares:tenant_middlewares
         [ choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
@@ -199,17 +199,9 @@ module Contact = struct
     ]
   ;;
 
-  let middlewares =
-    web_middlewares
-    @ [ CustomMiddleware.Tenant.validate ()
-      ; CustomMiddleware.Context.context ()
-      ; CustomMiddleware.Logger.logger
-      ]
-  ;;
-
   let routes =
     choose
-      ~middlewares
+      ~middlewares:tenant_middlewares
       [ choose
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
@@ -240,14 +232,7 @@ module Contact = struct
 end
 
 module Admin = struct
-  let middlewares =
-    web_middlewares
-    @ [ CustomMiddleware.Tenant.validate ()
-      ; CustomMiddleware.Context.context ()
-      ; CustomMiddleware.Logger.logger
-      ; CustomMiddleware.Admin.require_admin ()
-      ]
-  ;;
+  let middlewares = tenant_middlewares @ [ CustomMiddleware.Admin.require_admin () ]
 
   let routes =
     let open Field in
