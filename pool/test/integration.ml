@@ -387,7 +387,7 @@ let suite =
           ; test_case "override b with a" `Slow override_b_with_a
           ; test_case "override with participations" `Slow override_with_participations
           ] )
-      (* ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ] *)
+    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;
 
