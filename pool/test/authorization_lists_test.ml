@@ -1,4 +1,5 @@
 open Utils.Lwt_result.Infix
+open Alcotest
 
 let pool = Test_utils.Data.database_label
 let to_role (admin, role, target_uuid) = Guard.ActorRole.create ?target_uuid admin role
@@ -24,6 +25,8 @@ let location_target { Pool_location.id; _ } =
   id |> Guard.Uuid.target_of Pool_location.Id.value
 ;;
 
+let session_target { Session.id; _ } = id |> Guard.Uuid.target_of Session.Id.value
+
 let assign_role { Guard.Actor.uuid; _ } role target =
   let open Guard in
   RolesGranted [ (uuid, role, target) |> to_role ] |> handle_event pool
@@ -47,7 +50,6 @@ let query_item_count (_, { Query.pagination; _ }) =
 ;;
 
 let experiments _ () =
-  let open Alcotest in
   let testable = list Test_utils.experiment in
   let sort = CCList.sort Experiment.compare in
   let%lwt actor = create_actor () in
@@ -86,7 +88,6 @@ let experiments _ () =
 ;;
 
 let locations _ () =
-  let open Alcotest in
   let testable = list Test_utils.location in
   let sort = CCList.sort Pool_location.compare in
   let%lwt actor = create_actor () in
@@ -117,7 +118,6 @@ let locations _ () =
 ;;
 
 let contacts _ () =
-  let open Alcotest in
   let open Integration_utils in
   let testable = list Test_utils.contact in
   let sort = CCList.sort Contact.compare in
@@ -168,7 +168,6 @@ let contacts _ () =
 ;;
 
 let admins _ () =
-  let open Alcotest in
   let testable = list Test_utils.admin in
   let sort = CCList.sort Admin.compare in
   let%lwt actor = create_actor () in
@@ -194,5 +193,90 @@ let admins _ () =
   let%lwt expected = Admin.all ~query pool ||> query_item_count in
   let%lwt admin_count = Admin.list_by_user ~query pool actor ||> query_item_count in
   check int "All admins are returned" expected admin_count;
+  Lwt.return_unit
+;;
+
+module CalendarUtils = struct
+  open Session
+
+  let testable = list Id.(testable pp equal)
+  let sort = CCList.sort Id.compare
+  let session_ids = CCList.map (fun { id; _ } -> id)
+  let calendar_session_ids = CCList.map (fun (t : Calendar.t) -> t.Calendar.id)
+  let start_time = Ptime_clock.now ()
+
+  let end_time =
+    Ptime.add_span start_time Sihl.Time.(duration_to_span OneWeek)
+    |> CCOption.get_exn_or "Invalid timespan"
+  ;;
+
+  let start = Test_utils.Model.in_an_hour ()
+end
+
+let dashboard_calendar _ () =
+  (* TODO: Compare generated links *)
+  let open Session in
+  let open Integration_utils in
+  let open CalendarUtils in
+  let%lwt actor = create_actor () in
+  let get_by_user () =
+    calendar_by_user ~start_time ~end_time pool actor ||> calendar_session_ids ||> sort
+  in
+  (* Without any roles *)
+  let%lwt sessions = get_by_user () in
+  check testable "No sessions returned" [] sessions;
+  (* With session specific role *)
+  let%lwt exp1 = ExperimentRepo.create () in
+  let%lwt session1 = SessionRepo.create ~start exp1 () in
+  let%lwt () = assign_role actor `Assistant (Some (session_target session1)) in
+  let%lwt sessions = get_by_user () in
+  check testable "session1 returned" [ session1.id ] sessions;
+  (* With experiment specific role *)
+  let%lwt exp2 = ExperimentRepo.create () in
+  let%lwt session2 = SessionRepo.create ~start exp2 () in
+  let%lwt () = assign_role actor `Assistant (Some (experiment_target exp2)) in
+  let%lwt sessions = get_by_user () in
+  let expected = [ session1; session2 ] |> session_ids |> sort in
+  check testable "session1 & session2 returned" expected sessions;
+  (* As location manager *)
+  let%lwt location = LocationRepo.create () in
+  let%lwt exp3 = ExperimentRepo.create () in
+  let%lwt session3 = SessionRepo.create ~start ~location exp3 () in
+  let%lwt () = assign_role actor `LocationManager (Some (location_target location)) in
+  let%lwt sessions = get_by_user () in
+  let expected = [ session1; session2; session3 ] |> session_ids |> sort in
+  check testable "session 1 - 3 returned" expected sessions;
+  Lwt.return_unit
+;;
+
+let location_calendar _ () =
+  let open Session in
+  let open Integration_utils in
+  let open CalendarUtils in
+  let%lwt actor = create_actor () in
+  let%lwt location = LocationRepo.create () in
+  let get_by_user () =
+    calendar_by_location
+      ~location_uuid:location.Pool_location.id
+      ~start_time
+      ~end_time
+      pool
+      actor
+    ||> calendar_session_ids
+    ||> sort
+  in
+  (* Without any roles *)
+  let%lwt sessions = get_by_user () in
+  check testable "No sessions returned" [] sessions;
+  (* As location manager *)
+  let%lwt () = assign_role actor `LocationManager (Some (location_target location)) in
+  let%lwt exp = ExperimentRepo.create () in
+  let%lwt session1 = SessionRepo.create ~start ~location exp () in
+  let%lwt sessions = get_by_user () in
+  check testable "session1 returned" [ session1.id ] sessions;
+  (* With additional session specific access, at another location *)
+  let%lwt session2 = SessionRepo.create ~start exp () in
+  let%lwt () = assign_role actor `Assistant (Some (session_target session2)) in
+  check testable "session1 returned" [ session1.id ] sessions;
   Lwt.return_unit
 ;;

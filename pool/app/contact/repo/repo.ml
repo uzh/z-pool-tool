@@ -175,7 +175,6 @@ let list_by_user ?query pool actor =
     Guard.Persistence.with_user_permission actor "pool_experiments.uuid" `Contact
   in
   let contact_targets = targets_to_sql [ `Contact; `ContactInfo ] in
-  (* TODO: Make sure this is considered as well *)
   let joins =
     [%string
       {sql|

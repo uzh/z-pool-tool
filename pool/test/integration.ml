@@ -47,6 +47,8 @@ let suite =
           ; test_case "locations" `Slow locations
           ; test_case "contacts" `Slow contacts
           ; test_case "admins" `Slow admins
+          ; test_case "dashboard calendar" `Slow dashboard_calendar
+          ; test_case "location calendar" `Slow location_calendar
           ] )
     ; ("announcement", Announcement_test.[ test_case "find current" `Slow find_current ])
     ; ( "partial_update"

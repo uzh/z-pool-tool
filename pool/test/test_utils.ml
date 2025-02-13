@@ -6,6 +6,7 @@ end
 let admin = Admin.(Alcotest.testable pp equal)
 let annoncement = Announcement.(Alcotest.testable pp equal)
 let api_key = Api_key.(Alcotest.testable pp equal)
+let calendar_session = Session.Calendar.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let database_label = Database.Label.(Alcotest.testable pp equal)
 let date = Pool_model.Base.Ptime.(Alcotest.testable pp_date equal_date)
