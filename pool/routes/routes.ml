@@ -1091,7 +1091,11 @@ let router =
     ; get
         "/**"
         ~middlewares:
-          [ CustomMiddleware.Context.context (); CustomMiddleware.Logger.logger ]
+          (web_middlewares
+           @ [ CustomMiddleware.Context.not_found ()
+             ; CustomMiddleware.Context.context ()
+             ; CustomMiddleware.Logger.logger
+             ])
         Handler.Public.not_found
     ]
 ;;
