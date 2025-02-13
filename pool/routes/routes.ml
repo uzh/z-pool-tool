@@ -1058,8 +1058,13 @@ end
 module Api = struct
   open Api
 
-  let global_middlewares =
-    CustomMiddleware.[ Api.api_request (); Api.context (); Logger.logger ]
+  let api_middlewares =
+    CustomMiddleware.
+      [ CustomMiddleware.Api.validate_tenant ()
+      ; Api.api_request ()
+      ; Api.context ()
+      ; Logger.logger
+      ]
   ;;
 
   module V1 = struct
@@ -1080,21 +1085,13 @@ module Api = struct
       choose ~scope:Field.(human_url OrganisationalUnit) [ get "" index ]
     ;;
 
-    let routes =
-      choose
-        [ experiment
-        ; organisational_unit
-        ; get "/**" ~middlewares:global_middlewares not_found
-        ]
-    ;;
+    let routes = choose [ experiment; organisational_unit; get "/**" not_found ]
   end
 
   let routes =
     choose
-      ~middlewares:(CustomMiddleware.Api.validate_tenant () :: global_middlewares)
-      [ choose ~scope:"/v1" [ V1.routes ]
-      ; get "/**" ~middlewares:global_middlewares not_found
-      ]
+      ~middlewares:api_middlewares
+      [ choose ~scope:"/v1" [ V1.routes ]; get "/**" not_found ]
   ;;
 end
 
