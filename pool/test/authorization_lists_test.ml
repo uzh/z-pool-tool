@@ -197,6 +197,10 @@ let admins _ () =
 ;;
 
 module CalendarUtils = struct
+  let actor_permissions actor =
+    actor.Guard.Actor.uuid |> Guard.Persistence.ActorRole.permissions_of_actor pool
+  ;;
+
   open Session
 
   let testable = list Id.(testable pp equal)
@@ -220,7 +224,10 @@ let dashboard_calendar _ () =
   let open CalendarUtils in
   let%lwt actor = create_actor () in
   let get_by_user () =
-    calendar_by_user ~start_time ~end_time pool actor ||> calendar_session_ids ||> sort
+    actor_permissions actor
+    >|> Session.calendar_by_user ~start_time ~end_time pool actor
+    ||> calendar_session_ids
+    ||> sort
   in
   (* Without any roles *)
   let%lwt sessions = get_by_user () in
@@ -256,12 +263,13 @@ let location_calendar _ () =
   let%lwt actor = create_actor () in
   let%lwt location = LocationRepo.create () in
   let get_by_user () =
-    calendar_by_location
-      ~location_uuid:location.Pool_location.id
-      ~start_time
-      ~end_time
-      pool
-      actor
+    actor_permissions actor
+    >|> calendar_by_location
+          ~location_uuid:location.Pool_location.id
+          ~start_time
+          ~end_time
+          pool
+          actor
     ||> calendar_session_ids
     ||> sort
   in

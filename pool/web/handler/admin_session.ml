@@ -1141,32 +1141,6 @@ let update_matches_filter req =
 ;;
 
 module Api = struct
-  let calendar_link_permission
-        actor
-        guardian
-        (Session.Calendar.{ id; experiment_id; location; links; _ } as cal)
-    =
-    let open Guard in
-    let open Session.Calendar in
-    let session = Uuid.target_of Session.Id.value id in
-    let experiment = Uuid.target_of Experiment.Id.value experiment_id in
-    let location = Uuid.target_of Pool_location.Id.value location.id in
-    let check_guardian model target =
-      let open ValidationSet in
-      Persistence.PermissionOnTarget.validate_set
-        guardian
-        Error.authorization
-        (one_of_tuple (Permission.Read, model, Some target))
-        actor
-      |> CCResult.is_ok
-    in
-    let show_experiment = check_guardian `Experiment experiment in
-    let show_session = check_guardian `Session session in
-    let show_location_session = check_guardian `Location location in
-    let links = { links with show_session; show_experiment; show_location_session } in
-    { cal with links }
-  ;;
-
   let handle_request query_sessions req =
     let open Utils.Lwt_result.Infix in
     let query_params = Sihl.Web.Request.query_list req in
@@ -1182,8 +1156,7 @@ module Api = struct
       let* actor =
         Pool_context.Utils.find_authorizable ~admin_only:true database_label user
       in
-      query_sessions ~start_time ~end_time database_label actor
-      ||> CCList.map (calendar_link_permission actor guardian)
+      query_sessions ~start_time ~end_time database_label actor guardian
       ||> CCList.map Session.Calendar.yojson_of_t
       ||> (fun json -> `List json)
       |> Lwt_result.ok

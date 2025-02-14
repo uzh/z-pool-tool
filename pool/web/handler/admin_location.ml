@@ -302,17 +302,16 @@ end = struct
   let file_effects = Guardian.id_effects Pool_location.Mapping.Id.validate Field.File
   let location_effects = Guardian.id_effects Pool_location.Id.validate Field.Location
 
-  let combined_effects validation_set =
+  let combined_file_effects validation_set =
     let open CCResult.Infix in
-    let find = HttpUtils.find_id in
     Guardian.validate_generic
     @@ fun req ->
-    let* location_id = find Pool_location.Id.validate Field.Location req in
-    let* file_id = find Pool_location.Mapping.Id.validate Field.File req in
+    let* location_id = id req Field.Location Pool_location.Id.validate in
+    let* file_id = id req Field.File Pool_location.Mapping.Id.validate in
     validation_set location_id file_id |> CCResult.return
   ;;
 
-  let combined_with_location_effects validation_set =
+  let combined_ocation_effects validation_set =
     let open CCResult.Infix in
     Guardian.validate_generic
     @@ fun req ->
@@ -330,7 +329,7 @@ end = struct
   let read = location_effects Pool_location.Guard.Access.read
   let read_file = file_effects Pool_location.Guard.Access.File.read
   let update = location_effects LocationCommand.Update.effects
-  let delete_file = combined_effects LocationCommand.DeleteFile.effects
+  let delete_file = combined_file_effects LocationCommand.DeleteFile.effects
   let search = index
-  let read_session = combined_with_location_effects Session.Guard.Access.read_by_location
+  let read_session = combined_ocation_effects Session.Guard.Access.read_by_location
 end

@@ -196,26 +196,12 @@ module Calendar : sig
   type location =
     { id : Pool_location.Id.t
     ; name : Pool_location.Name.t
-    ; url : string
     }
 
   type links =
-    { show_experiment : bool
-    ; show_session : bool
-    ; show_location_session : bool
-    ; experiment : string
-    ; session : string
-    ; location_session : string
+    { experiment : string option
+    ; session : string option
     }
-
-  val create_links
-    :  ?show_experiment:bool
-    -> ?show_session:bool
-    -> ?show_location_session:bool
-    -> Experiment.Id.t
-    -> Id.t
-    -> location
-    -> links
 
   type t =
     { id : Id.t
@@ -324,6 +310,7 @@ val calendar_by_user
   -> end_time:Ptime.t
   -> Database.Label.t
   -> Guard.Persistence.actor
+  -> Guard.PermissionOnTarget.t list
   -> Calendar.t list Lwt.t
 
 val calendar_by_location
@@ -332,6 +319,7 @@ val calendar_by_location
   -> end_time:Ptime.t
   -> Database.Label.t
   -> Guard.Persistence.actor
+  -> Guard.PermissionOnTarget.t list
   -> Calendar.t list Lwt.t
 
 val query_grouped_by_experiment

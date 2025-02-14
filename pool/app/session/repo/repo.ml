@@ -772,7 +772,7 @@ module Sql = struct
     |> query_by_admin
   ;;
 
-  let calendar_query ?location_uuid ~start_time ~end_time pool actor =
+  let calendar_query ?location_uuid ~start_time ~end_time pool actor guardian =
     let open Caqti_request.Infix in
     let dyn, sql, _ =
       Guard.Persistence.with_user_permission actor "pool_sessions.uuid" `Session
@@ -813,7 +813,7 @@ module Sql = struct
         where
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
-    let request = sql |> (pt ->* RepoEntity.Calendar.t) ~oneshot:true in
+    let request = sql |> (pt ->* RepoEntity.Calendar.t actor guardian) ~oneshot:true in
     Database.collect pool request pv
   ;;
 
