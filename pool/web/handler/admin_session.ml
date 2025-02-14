@@ -327,7 +327,6 @@ let session_page database_label req context session experiment =
       ~view_contact_name
       ~view_contact_info
       context
-      experiment
       (`Session session)
       assignments
     |> Lwt_result.return
@@ -370,7 +369,6 @@ let time_window_page database_label req context time_window experiment =
       ~view_contact_name
       ~view_contact_info
       context
-      experiment
       (`TimeWindow time_window)
       assignments
     |> Lwt_result.return
@@ -464,7 +462,6 @@ let show req =
         ~view_contact_name
         ~view_contact_info
         context
-        experiment
         session
         text_messages_enabled
         assignments)
@@ -1215,7 +1212,6 @@ end
 module Access : sig
   include module type of Helpers.Access
 
-  val read_by_location : Rock.Middleware.t
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
   val close : Rock.Middleware.t
@@ -1238,22 +1234,9 @@ end = struct
     validation_set experiment_id session_id |> CCResult.return
   ;;
 
-  let combined_with_location_effects validation_set =
-    Guardian.validate_generic
-    @@ fun req ->
-    let* location_id = find_id Pool_location.Id.validate Field.Location req in
-    let* session_id = find_id Session.Id.validate Field.Session req in
-    validation_set location_id session_id |> CCResult.return
-  ;;
-
   let index = experiment_effects Session.Guard.Access.index
   let create = experiment_effects SessionCommand.Create.effects
   let read = combined_effects Session.Guard.Access.read
-
-  let read_by_location =
-    combined_with_location_effects Session.Guard.Access.read_by_location
-  ;;
-
   let update = combined_effects SessionCommand.Update.effects
   let delete = combined_effects SessionCommand.Delete.effects
   let reschedule = combined_effects SessionCommand.Reschedule.effects

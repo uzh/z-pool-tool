@@ -84,6 +84,12 @@ module Admin = struct
     "/admin/locations/" |> append_opt Pool_location.(map Id.value id) |> append_opt suffix
   ;;
 
+  let location_session_path ?suffix id session_id () =
+    location_path ~id ()
+    |> append (Format.asprintf "sessions/%s" (Session.Id.value session_id))
+    |> append_opt suffix
+  ;;
+
   let mailing_path experiment_id ?suffix ?id () =
     experiment_path ~id:experiment_id ~suffix:"mailings" ()
     |> append_opt (map Mailing.Id.value id)
