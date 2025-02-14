@@ -27,6 +27,10 @@ let location_target { Pool_location.id; _ } =
 
 let session_target { Session.id; _ } = id |> Guard.Uuid.target_of Session.Id.value
 
+let calendar_target ({ Session.Calendar.id; _ } : Session.Calendar.t) =
+  id |> Guard.Uuid.target_of Session.Id.value
+;;
+
 let assign_role { Guard.Actor.uuid; _ } role target =
   let open Guard in
   RolesGranted [ (uuid, role, target) |> to_role ] |> handle_event pool
@@ -203,8 +207,8 @@ module CalendarUtils = struct
 
   open Session
 
-  let testable = list Id.(testable pp equal)
-  let sort = CCList.sort Id.compare
+  let testable = list Calendar.(testable pp equal)
+  let sort = CCList.sort Calendar.compare
   let session_ids = CCList.map (fun { id; _ } -> id)
   let calendar_session_ids = CCList.map (fun (t : Calendar.t) -> t.Calendar.id)
   let start_time = Ptime_clock.now ()
@@ -215,64 +219,115 @@ module CalendarUtils = struct
   ;;
 
   let start = Test_utils.Model.in_an_hour ()
+
+  let make_links
+        ?(experiment_link = true)
+        ?(session_link = true)
+        ?(location_link = true)
+        session
+    =
+    let open Http_utils.Url.Admin in
+    let experiment_id = session.experiment.Experiment.id in
+    let location_id = session.location.Pool_location.id in
+    let experiment_link =
+      if experiment_link then Some (experiment_path ~id:experiment_id ()) else None
+    in
+    let session_link =
+      match session_link, location_link with
+      | true, _ -> Some (session_path experiment_id ~id:session.id)
+      | _, true -> Some (location_session_path location_id session.id ())
+      | false, false -> None
+    in
+    Calendar.{ experiment = experiment_link; session = session_link }
+  ;;
+
+  let to_calendar
+        ?(experiment_link = true)
+        ?(session_link = true)
+        ?(location_link = true)
+        ({ experiment; _ } as session)
+    =
+    let open Calendar in
+    let open Experiment in
+    let location =
+      Pool_location.{ id = session.location.id; name = session.location.name }
+    in
+    let links = make_links ~experiment_link ~session_link ~location_link session in
+    { id = session.id
+    ; experiment_id = experiment.id
+    ; title = experiment.title
+    ; contact_email = experiment.contact_email
+    ; start = session.start
+    ; end_ =
+        Duration.value session.duration
+        |> End.build session.start
+        |> Test_utils.get_or_failwith
+    ; links
+    ; max_participants = session.max_participants
+    ; min_participants = session.min_participants
+    ; overbook = session.overbook
+    ; assignment_count = session.assignment_count
+    ; internal_description = session.internal_description
+    ; location
+    }
+  ;;
+
+  let calendar_by_user actor =
+    actor_permissions actor
+    >|> Session.calendar_by_user ~start_time ~end_time pool actor
+    ||> sort
+  ;;
+
+  let calendar_by_location { Pool_location.id; _ } actor =
+    actor_permissions actor
+    >|> calendar_by_location ~location_uuid:id ~start_time ~end_time pool actor
+    ||> sort
+  ;;
 end
 
 let dashboard_calendar _ () =
-  (* TODO: Compare generated links *)
-  let open Session in
   let open Integration_utils in
   let open CalendarUtils in
   let%lwt actor = create_actor () in
-  let get_by_user () =
-    actor_permissions actor
-    >|> Session.calendar_by_user ~start_time ~end_time pool actor
-    ||> calendar_session_ids
-    ||> sort
-  in
+  let get_by_user () = calendar_by_user actor in
   (* Without any roles *)
   let%lwt sessions = get_by_user () in
   check testable "No sessions returned" [] sessions;
   (* With session specific role *)
   let%lwt exp1 = ExperimentRepo.create () in
-  let%lwt session1 = SessionRepo.create ~start exp1 () in
-  let%lwt () = assign_role actor `Assistant (Some (session_target session1)) in
+  let%lwt session1 =
+    SessionRepo.create ~start exp1 () ||> to_calendar ~experiment_link:false
+  in
+  let%lwt () = assign_role actor `Assistant (Some (calendar_target session1)) in
   let%lwt sessions = get_by_user () in
-  check testable "session1 returned" [ session1.id ] sessions;
+  check testable "session1 returned" [ session1 ] sessions;
   (* With experiment specific role *)
   let%lwt exp2 = ExperimentRepo.create () in
-  let%lwt session2 = SessionRepo.create ~start exp2 () in
+  let%lwt session2 = SessionRepo.create ~start exp2 () ||> to_calendar in
   let%lwt () = assign_role actor `Assistant (Some (experiment_target exp2)) in
   let%lwt sessions = get_by_user () in
-  let expected = [ session1; session2 ] |> session_ids |> sort in
+  let expected = [ session1; session2 ] |> sort in
   check testable "session1 & session2 returned" expected sessions;
   (* As location manager *)
   let%lwt location = LocationRepo.create () in
   let%lwt exp3 = ExperimentRepo.create () in
-  let%lwt session3 = SessionRepo.create ~start ~location exp3 () in
+  let%lwt session3 =
+    SessionRepo.create ~start ~location exp3 ()
+    ||> to_calendar ~experiment_link:false ~session_link:false
+  in
   let%lwt () = assign_role actor `LocationManager (Some (location_target location)) in
   let%lwt sessions = get_by_user () in
-  let expected = [ session1; session2; session3 ] |> session_ids |> sort in
+  let expected = [ session1; session2; session3 ] |> sort in
   check testable "session 1 - 3 returned" expected sessions;
   Lwt.return_unit
 ;;
 
 let location_calendar _ () =
-  let open Session in
   let open Integration_utils in
   let open CalendarUtils in
   let%lwt actor = create_actor () in
   let%lwt location = LocationRepo.create () in
-  let get_by_user () =
-    actor_permissions actor
-    >|> calendar_by_location
-          ~location_uuid:location.Pool_location.id
-          ~start_time
-          ~end_time
-          pool
-          actor
-    ||> calendar_session_ids
-    ||> sort
-  in
+  let get_by_user () = calendar_by_location location actor in
   (* Without any roles *)
   let%lwt sessions = get_by_user () in
   check testable "No sessions returned" [] sessions;
@@ -281,10 +336,11 @@ let location_calendar _ () =
   let%lwt exp = ExperimentRepo.create () in
   let%lwt session1 = SessionRepo.create ~start ~location exp () in
   let%lwt sessions = get_by_user () in
-  check testable "session1 returned" [ session1.id ] sessions;
+  let expected = [ to_calendar ~experiment_link:false ~session_link:false session1 ] in
+  check testable "session1 returned" expected sessions;
   (* With additional session specific access, at another location *)
   let%lwt session2 = SessionRepo.create ~start exp () in
   let%lwt () = assign_role actor `Assistant (Some (session_target session2)) in
-  check testable "session1 returned" [ session1.id ] sessions;
+  check testable "session1 returned" expected sessions;
   Lwt.return_unit
 ;;

@@ -32,6 +32,7 @@ module End : sig
 
   val value : t -> Ptime.t
   val create : Ptime.t -> t
+  val build : Start.t -> Ptime.Span.t -> (t, Pool_message.Error.t) Result.t
 end
 
 module Duration : sig

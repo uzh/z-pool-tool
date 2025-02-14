@@ -817,8 +817,8 @@ module Sql = struct
     Database.collect pool request pv
   ;;
 
-  let calendar_by_user ~start_time ~end_time pool actor =
-    calendar_query ~start_time ~end_time pool actor
+  let calendar_by_user ~start_time ~end_time pool =
+    calendar_query ~start_time ~end_time pool
   ;;
 
   let calendar_by_location ~location_uuid = calendar_query ~location_uuid
