@@ -116,7 +116,8 @@ let create_invitations _ () =
   let%lwt () = Pool_event.handle_events pool current_user events in
   let%lwt after = find_invitation_count experiment in
   let () =
-    let limit = per_interval interval mailing |> CCFloat.(round %> to_int) in
+    (* NOTE: Status.find_current uses "ceil" for calculating the current "to_handle" amount *)
+    let limit = per_interval interval mailing |> CCFloat.(ceil %> to_int) in
     let is_less_or_equal = after - before <= limit in
     let msg =
       Format.asprintf
