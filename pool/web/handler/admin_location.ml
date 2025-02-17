@@ -32,13 +32,7 @@ let index req =
   let* actor =
     Pool_context.Utils.find_authorizable ~admin_only:true database_label user
   in
-  let%lwt location_list, query =
-    Pool_location.find_all
-      ~query
-      ~actor
-      ~permission:Pool_location.Guard.Access.index_permission
-      database_label
-  in
+  let%lwt location_list, query = Pool_location.list_by_user ~query database_label actor in
   let open Page.Admin.Location in
   (if HttpUtils.Htmx.is_hx_request req then list else index) context location_list query
   |> Lwt_result.return

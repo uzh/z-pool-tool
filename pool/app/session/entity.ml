@@ -477,6 +477,8 @@ module Calendar = struct
     ; location : location
     }
   [@@deriving eq, show, yojson]
+
+  let compare (a : t) (b : t) = Id.compare a.id b.id
 end
 
 let email_text language start duration location =

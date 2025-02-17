@@ -201,6 +201,8 @@ type t =
   }
 [@@deriving eq, fields ~getters, show, yojson]
 
+let compare a b = Id.compare a.id b.id
+
 let create
       ?id
       ?contact_email

@@ -48,5 +48,5 @@ module Repo = struct
   include Repo_entity
 
   let sql_select_columns = Repo.sql_select_columns
-  let joins = Repo.joins
+  let joins = Repo.user_join
 end

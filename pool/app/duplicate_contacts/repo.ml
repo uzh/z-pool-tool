@@ -36,7 +36,7 @@ let similarity_request user_columns custom_field_columns similarities average =
   let columns = user_columns @ custom_field_columns |> CCString.concat "," in
   let similarities = similarities |> CCString.concat "," in
   let contact_joins =
-    {sql| 
+    {sql|
       INNER JOIN user_users ON pool_contacts.user_uuid = user_users.uuid
       LEFT JOIN pool_custom_field_answers ON pool_contacts.user_uuid = pool_custom_field_answers.entity_uuid
     |sql}
@@ -50,7 +50,7 @@ let similarity_request user_columns custom_field_columns similarities average =
         FROM
           pool_contacts
         %{contact_joins}
-        WHERE 
+        WHERE
           pool_contacts.email_verified IS NOT NULL
           AND pool_contacts.disabled = 0
         GROUP BY user_users.uuid
@@ -80,7 +80,7 @@ let similarity_request user_columns custom_field_columns similarities average =
         CAST(similarity_score AS FLOAT)
       FROM
         average_similarity
-      WHERE 
+      WHERE
         similarity_score >= $2
       ORDER BY
         similarity_score DESC;
@@ -137,9 +137,9 @@ let find_similars database_label ~user_uuid custom_fields =
     let id = id field |> Id.value in
     asprintf
       {sql| MAX(
-        CASE WHEN pool_custom_field_answers.custom_field_uuid = %s 
-        THEN COALESCE(pool_custom_field_answers.admin_value, pool_custom_field_answers.value) 
-        END) AS %s 
+        CASE WHEN pool_custom_field_answers.custom_field_uuid = %s
+        THEN COALESCE(pool_custom_field_answers.admin_value, pool_custom_field_answers.value)
+        END) AS %s
       |sql}
       (id |> asprintf "\"%s\"" |> id_value_fragment)
       (asprintf "`%s`" id)
@@ -185,11 +185,11 @@ let insert_request =
   Format.asprintf
     {sql|
     INSERT INTO pool_contacts_possible_duplicates (
-      uuid, 
-      contact_a, 
+      uuid,
+      contact_a,
       contact_b,
       score
-    ) VALUES 
+    ) VALUES
       %s
     ON DUPLICATE KEY UPDATE
       score = VALUES(score),
@@ -245,17 +245,14 @@ let find pool id =
 
 let find_by_contact ?query pool contact =
   let where =
-    let open Contact in
-    let sql =
-      {sql|
-        pool_contacts_possible_duplicates.contact_a = UNHEX(REPLACE($1, '-', ''))
-          OR 
-        pool_contacts_possible_duplicates.contact_b = UNHEX(REPLACE($1, '-', ''))
-      |sql}
-    in
-    sql, Dynparam.(empty |> add Repo.Id.t (id contact))
+    {sql|
+      pool_contacts_possible_duplicates.contact_a = UNHEX(REPLACE($1, '-', ''))
+        OR
+      pool_contacts_possible_duplicates.contact_b = UNHEX(REPLACE($1, '-', ''))
+    |sql}
   in
-  Query.collect_and_count pool query ~where ~select:find_request_sql Repo_entity.t
+  let dyn = Dynparam.(empty |> add Contact.Repo.Id.t (Contact.id contact)) in
+  Query.collect_and_count pool query ~where ~dyn ~select:find_request_sql Repo_entity.t
 ;;
 
 let all ?query pool =
@@ -266,12 +263,12 @@ let ingore_request =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql|
-      UPDATE 
+      UPDATE
         pool_contacts_possible_duplicates
       SET
         `ignore` = 1
       WHERE
-        uuid = UNHEX(REPLACE($1, '-', '')) 
+        uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
   |> Repo_entity.Id.t ->. Caqti_type.unit
 ;;
@@ -288,9 +285,9 @@ let find_to_check pool =
           %s
         FROM pool_contacts
           %s
-        WHERE 
+        WHERE
           (duplicates_last_checked IS NULL
-            OR 
+            OR
           duplicates_last_checked < NOW() - INTERVAL 1 WEEK)
           AND disabled = 0
         ORDER BY duplicates_last_checked IS NULL DESC, duplicates_last_checked ASC

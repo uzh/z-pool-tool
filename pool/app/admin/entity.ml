@@ -27,6 +27,7 @@ let email_address ({ user; _ } : t) = user.Pool_user.email
 let sexp_of_t t = t |> id |> Id.sexp_of_t
 let fullname { user; _ } = Pool_user.fullname user
 let fullname_reversed { user; _ } = Pool_user.fullname ~reversed:true user
+let compare a b = Id.compare (id a) (id b)
 let filterable_by = None
 let searchable_by = Pool_user.searchable_by
 let sortable_by = Pool_user.sortable_by
