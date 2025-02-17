@@ -116,9 +116,14 @@ let create_invitations _ () =
   let%lwt () = Pool_event.handle_events pool current_user events in
   let%lwt after = find_invitation_count experiment in
   let () =
-    let msg = "count generated invitations -> smaller or equal limit" in
-    let is_less_or_equal =
-      after - before <= (per_interval interval mailing |> CCFloat.(round %> to_int))
+    let limit = per_interval interval mailing |> CCFloat.(round %> to_int) in
+    let is_less_or_equal = after - before <= limit in
+    let msg =
+      Format.asprintf
+        "count generated invitations (%d - %d <= %d) -> smaller or equal limit"
+        after
+        before
+        limit
     in
     Alcotest.(check bool msg true is_less_or_equal)
   in
@@ -127,7 +132,12 @@ let create_invitations _ () =
   let%lwt () = Pool_event.handle_events pool current_user events in
   let%lwt after_reset = find_invitation_count experiment in
   let () =
-    let msg = "count generated invitations -> equal to before reset" in
+    let msg =
+      Format.asprintf
+        "count generated invitations (%d == %d) -> equal to before reset"
+        after
+        after_reset
+    in
     Alcotest.(check int msg after after_reset)
   in
   (* Stop mailing for upcoming tests - and wait for a second, as mailings refer to timestamps *)
