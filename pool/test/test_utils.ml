@@ -281,7 +281,14 @@ module Model = struct
     }
   ;;
 
-  let create_mailing ?id ?start ?(limit = Mailing.Limit.default) () =
+  let create_mailing
+        ?id
+        ?start
+        ?(duration = Sihl.Time.(OneHour |> duration_to_span))
+        ?(limit = Mailing.Limit.default)
+        ?distribution
+        ()
+    =
     let open Mailing in
     let start =
       let default () =
@@ -296,12 +303,12 @@ module Model = struct
       CCOption.value ~default:(default ()) start
     in
     let deadline =
-      Ptime.add_span (Ptime_clock.now ()) Sihl.Time.(OneHour |> duration_to_span)
+      Ptime.add_span (Ptime_clock.now ()) duration
       |> CCOption.get_exn_or "Time calculation failed!"
       |> EndAt.create
       |> get_or_failwith
     in
-    create ?id start deadline limit None |> get_or_failwith
+    create ?id start deadline limit distribution |> get_or_failwith
   ;;
 
   let create_email ?(sender = "sender@mail.com") ?(recipient = "recipient@mail.com") () =
