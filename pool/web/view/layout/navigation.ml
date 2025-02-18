@@ -1,9 +1,77 @@
 module Translations = I18n
 module I18nGuard = I18n.Guard
 module NavUtils = Navigation_utils
-open Entity
+include Entity
 
 module NavElements = struct
+  module AdminTenantItems = struct
+    open I18n
+
+    let dashboard = single "/admin/dashboard" Dashboard AlwaysOn |> NavElement.create
+
+    let settings =
+      let children =
+        [ parent
+            ~url:"/admin/custom-fields"
+            ~validation:(Set Custom_field.Guard.Access.index)
+            CustomFields
+            [ single
+                "/admin/custom-fields/settings"
+                Settings
+                (Set Custom_field.Guard.Access.index)
+            ]
+        ; single "/admin/filter" Filter (Set Filter.Guard.Access.index)
+        ; single "/admin/locations" Locations (Set Pool_location.Guard.Access.index)
+        ; single "/admin/settings/queue" Queue (Set (Pool_queue.Guard.Access.index ()))
+        ; single "/admin/settings" SystemSettings (Set Settings.Guard.Access.index)
+        ; single "/admin/settings/schedules" Schedules (Set Schedule.Guard.Access.index)
+        ; single "/admin/settings/smtp" Smtp (Set Email.Guard.Access.Smtp.index)
+        ; single
+            "/admin/settings/role-permission"
+            RolePermissions
+            (Set Guard.Access.Permission.read)
+        ; single
+            "/admin/settings/actor-permission"
+            ActorPermissions
+            (Set Guard.Access.Permission.read)
+        ; single "/admin/settings/tags" Tags (Set Tags.Guard.Access.index)
+        ; single
+            "/admin/message-template"
+            MessageTemplates
+            (Set Message_template.Guard.Access.index)
+        ; single "/admin/i18n" I18n (Set I18nGuard.Access.index)
+        ; single
+            "/admin/settings/text-messages"
+            TextMessages
+            (Set Settings.Guard.Access.update)
+        ; single
+            Http_utils.Url.Admin.Settings.signup_codes_path
+            SignupCodes
+            (Set Signup_code.Access.index)
+        ; single
+            "/admin/organisational-unit"
+            OrganisationalUnits
+            (Set Organisational_unit.Guard.Access.index)
+        ; single (Http_utils.Url.Admin.api_key_path ()) ApiKeys (Set Api_key.Access.index)
+        ]
+      in
+      Parent (None, Settings, OnChildren, children) |> NavElement.create
+    ;;
+
+    let user =
+      [ single "/admin/contacts" Contacts (Set Contact.Guard.Access.index)
+      ; single "/admin/admins" Admins (Set Admin.Guard.Access.index)
+      ]
+      |> parent Users
+      |> NavElement.create
+    ;;
+
+    let experiments =
+      single "/admin/experiments" Experiments (Set Experiment.Guard.Access.index)
+      |> NavElement.create
+    ;;
+  end
+
   let read_entity entity =
     Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
   ;;
@@ -63,71 +131,10 @@ module NavElements = struct
   ;;
 
   let admin context =
-    let open I18n in
-    let settings =
-      let children =
-        [ parent
-            ~url:"/admin/custom-fields"
-            ~validation:(Set Custom_field.Guard.Access.index)
-            CustomFields
-            [ single
-                "/admin/custom-fields/settings"
-                Settings
-                (Set Custom_field.Guard.Access.index)
-            ]
-        ; single "/admin/filter" Filter (Set Filter.Guard.Access.index)
-        ; single "/admin/locations" Locations (Set Pool_location.Guard.Access.index)
-        ; single "/admin/settings/queue" Queue (Set (Pool_queue.Guard.Access.index ()))
-        ; single "/admin/settings" SystemSettings (Set Settings.Guard.Access.index)
-        ; single "/admin/settings/schedules" Schedules (Set Schedule.Guard.Access.index)
-        ; single "/admin/settings/smtp" Smtp (Set Email.Guard.Access.Smtp.index)
-        ; single
-            "/admin/settings/role-permission"
-            RolePermissions
-            (Set Guard.Access.Permission.read)
-        ; single
-            "/admin/settings/actor-permission"
-            ActorPermissions
-            (Set Guard.Access.Permission.read)
-        ; single "/admin/settings/tags" Tags (Set Tags.Guard.Access.index)
-        ; single
-            "/admin/message-template"
-            MessageTemplates
-            (Set Message_template.Guard.Access.index)
-        ; single "/admin/i18n" I18n (Set I18nGuard.Access.index)
-        ; single
-            "/admin/settings/text-messages"
-            TextMessages
-            (Set Settings.Guard.Access.update)
-        ; single
-            Http_utils.Url.Admin.Settings.signup_codes_path
-            SignupCodes
-            (Set Signup_code.Access.index)
-        ; single
-            "/admin/organisational-unit"
-            OrganisationalUnits
-            (Set Organisational_unit.Guard.Access.index)
-        ; single (Http_utils.Url.Admin.api_key_path ()) ApiKeys (Set Api_key.Access.index)
-        ]
-      in
-      Parent (None, Settings, OnChildren, children) |> NavElement.create
-    in
-    let user =
-      [ single "/admin/contacts" Contacts (Set Contact.Guard.Access.index)
-      ; single "/admin/admins" Admins (Set Admin.Guard.Access.index)
-      ]
-      |> parent Users
-      |> NavElement.create
-    in
-    let dashboard = single "/admin/dashboard" Dashboard AlwaysOn |> NavElement.create in
-    let experiments =
-      single "/admin/experiments" Experiments (Set Experiment.Guard.Access.index)
-      |> NavElement.create
-    in
-    [ dashboard
-    ; experiments
-    ; settings
-    ; user
+    [ AdminTenantItems.dashboard
+    ; AdminTenantItems.experiments
+    ; AdminTenantItems.settings
+    ; AdminTenantItems.user
     ; Profile.nav ~prefix:"/admin" ()
     ; NavElement.logout ()
     ]
