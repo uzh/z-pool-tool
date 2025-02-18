@@ -4,17 +4,13 @@ open Caqti_request.Infix
 open Entity
 
 module SentInvitations = struct
-  let count_invitations_request ?(by_count = false) () =
-    let base =
-      {sql|
+  let count_invitations_request =
+    {sql|
       SELECT COUNT(1)
       FROM pool_invitations
       WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    in
-    match by_count with
-    | false -> base
-    | true -> Format.asprintf "%s \n %s" base "AND send_count = ?"
+    |> Caqti_type.(string ->! int)
   ;;
 
   let find_unique_counts_request =
@@ -28,11 +24,7 @@ module SentInvitations = struct
   ;;
 
   let total_invitation_count_by_experiment pool experiment_id =
-    let open Caqti_request.Infix in
-    Database.find
-      pool
-      (count_invitations_request () |> Caqti_type.(string ->! int))
-      (Id.value experiment_id)
+    Database.find pool count_invitations_request (Id.value experiment_id)
   ;;
 
   let by_experiment pool ({ id; _ } as experiment) =

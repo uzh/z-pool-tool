@@ -152,13 +152,15 @@ let email_verification _ () =
 let experiment_invitation _ () =
   let%lwt contact = find_contact () in
   let%lwt experiment = find_experiment () in
-  let%lwt res = ExperimentInvitation.create tenant experiment contact in
+  let invitation = Invitation.create contact in
+  let%lwt res = ExperimentInvitation.create tenant experiment invitation in
   let () = check_message_template ~label:Label.ExperimentInvitation res in
   let () =
     check_mapped_uuids
       History.
         [ Experiment, Experiment.Id.to_common experiment_id
         ; Contact, Contact.Id.to_common contact_id
+        ; Invitation, invitation.Invitation.id
         ]
       res
   in

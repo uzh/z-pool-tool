@@ -24,6 +24,7 @@ module History = struct
     Experiment, Experiment.(Experiment.Public.id experiment |> Id.to_common)
   ;;
 
+  let invitation_item invitation = Invitation, invitation.Invitation.id |> Id.to_common
   let session_item session = Session, Session.(session.Session.id |> Id.to_common)
 end
 
@@ -264,8 +265,8 @@ let assignment_params { Assignment.id; external_data_id; _ } =
 
 let user_message_uuids user = History.[ Queue.History.Contact, user_uuid user ]
 
-let experiment_message_uuids experiment contact =
-  History.[ contact_item contact; experiment_item experiment ]
+let invitation_message_uuids experiment contact invitation =
+  History.[ contact_item contact; experiment_item experiment; invitation_item invitation ]
 ;;
 
 let public_experiment_message_uuids experiment contact =
@@ -571,7 +572,7 @@ module ExperimentInvitation = struct
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
-    let fnc (contact : Contact.t) =
+    let fnc ({ Invitation.contact; _ } as invitation) =
       let open CCResult in
       let message_language = experiment_message_language sys_langs experiment contact in
       let* lang, template = find_template_by_language templates message_language in
@@ -586,13 +587,17 @@ module ExperimentInvitation = struct
           layout
           params
       in
-      let entity_uuids = experiment_message_uuids experiment contact in
+      let entity_uuids = invitation_message_uuids experiment contact invitation in
       Ok (create_email_job ?smtp_auth_id label entity_uuids email)
     in
     Lwt.return fnc
   ;;
 
-  let create ({ Pool_tenant.database_label; _ } as tenant) experiment contact =
+  let create
+        ({ Pool_tenant.database_label; _ } as tenant)
+        experiment
+        ({ Invitation.contact; _ } as invitation)
+    =
     let open Message_utils in
     let%lwt sys_langs = Settings.find_languages database_label in
     let language = experiment_message_language sys_langs experiment contact in
@@ -611,7 +616,7 @@ module ExperimentInvitation = struct
         layout
         params
     in
-    let entity_uuids = experiment_message_uuids experiment contact in
+    let entity_uuids = invitation_message_uuids experiment contact invitation in
     create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return
   ;;
 end

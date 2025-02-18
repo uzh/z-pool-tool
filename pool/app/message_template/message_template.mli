@@ -216,6 +216,7 @@ module History : sig
   val experiment_item : Experiment.t -> Pool_queue.History.item
   val public_experiment_item : Experiment.Public.t -> Pool_queue.History.item
   val session_item : Session.t -> Pool_queue.History.item
+  val invitation_item : Invitation.t -> Pool_queue.History.item
 end
 
 module AccountSuspensionNotification : sig
@@ -327,12 +328,12 @@ end
 
 module ExperimentInvitation : sig
   val email_params : email_layout -> Experiment.t -> Contact.t -> (string * string) list
-  val create : Pool_tenant.t -> Experiment.t -> Contact.t -> Email.dispatch Lwt.t
+  val create : Pool_tenant.t -> Experiment.t -> Invitation.t -> Email.dispatch Lwt.t
 
   val prepare
     :  Pool_tenant.t
     -> Experiment.t
-    -> (Contact.t -> (Email.dispatch, Pool_message.Error.t) result) Lwt.t
+    -> (Invitation.t -> (Email.dispatch, Pool_message.Error.t) result) Lwt.t
 end
 
 module ManualSessionMessage : sig
