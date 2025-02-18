@@ -240,3 +240,5 @@ let hide_announcement req =
   in
   result |> Htmx.handle_error_message ~src req
 ;;
+
+let health _ = Sihl.Web.Response.of_plain_text "OK" |> Lwt.return

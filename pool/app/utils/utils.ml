@@ -1,8 +1,9 @@
 module Countries = Countries
-module LanguageCodes = Language_codes
-module PhoneCodes = Phone_codes
+module Healthcheck = Healthcheck
 module Json = Json
+module LanguageCodes = Language_codes
 module Message = Message
+module PhoneCodes = Phone_codes
 
 module Lwt_result : sig
   module Infix : sig
