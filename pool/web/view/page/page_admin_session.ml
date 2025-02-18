@@ -802,6 +802,69 @@ let duplicate
        create context (Control Control.(Duplicate (Some Field.Session))) experiment)
 ;;
 
+let session_details { Pool_context.language; _ } session =
+  let open Session in
+  let experiment_id = session.experiment.Experiment.id in
+  let parent =
+    CCOption.map
+      (fun follow_up_to ->
+         ( Field.MainSession
+         , a
+             ~a:
+               [ a_href
+                   (Format.asprintf
+                      "/admin/experiments/%s/sessions/%s"
+                      (Experiment.Id.value experiment_id)
+                      (Id.value follow_up_to)
+                    |> Sihl.Web.externalize_path)
+               ]
+             [ Control.Show
+               |> Pool_common.Utils.control_to_string language
+               |> CCString.capitalize_ascii
+               |> txt
+             ] ))
+      session.follow_up_to
+  in
+  let no_show_count, participant_count =
+    (fun (no_show_count, participant_count) ->
+      (Field.NoShowCount, no_show_count), (Field.Participated, participant_count))
+    @@
+    match CCOption.is_some session.closed_at with
+    | true ->
+      ( session.no_show_count |> NoShowCount.value |> int_to_txt
+      , session.participant_count |> ParticipantCount.value |> int_to_txt )
+    | false -> txt "", txt ""
+  in
+  let rows =
+    session_base_information language session
+    @ [ ( Field.AssignmentCount
+        , session.assignment_count |> AssignmentCount.value |> int_to_txt )
+      ; no_show_count
+      ; participant_count
+      ]
+    |> fun rows ->
+    let canceled =
+      session.canceled_at
+      |> CCOption.map (fun c ->
+        Field.CanceledAt, Pool_model.Time.formatted_date_time c |> txt)
+    in
+    let closed =
+      session.closed_at
+      |> CCOption.map (fun c ->
+        Field.ClosedAt, Pool_model.Time.formatted_date_time c |> txt)
+    in
+    let time_stamps =
+      let format = Component.Utils.format_reminder_sent_opt in
+      [ Field.EmailRemindersSentAt, format session.email_reminder_sent_at
+      ; Field.TextMessageRemindersSentAt, format session.text_message_reminder_sent_at
+      ]
+    in
+    rows @ time_stamps @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
+  in
+  Table.vertical_table `Striped language ~align_top:true
+  @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
+;;
+
 let detail
       ?access_contact_profiles
       ~not_matching_filter_count
@@ -912,66 +975,7 @@ let detail
       div [ modal; button ])
   in
   let session_overview =
-    let table =
-      let parent =
-        CCOption.map
-          (fun follow_up_to ->
-             ( Field.MainSession
-             , a
-                 ~a:
-                   [ a_href
-                       (Format.asprintf
-                          "/admin/experiments/%s/sessions/%s"
-                          (Experiment.Id.value experiment_id)
-                          (Id.value follow_up_to)
-                        |> Sihl.Web.externalize_path)
-                   ]
-                 [ Control.Show
-                   |> Utils.control_to_string language
-                   |> CCString.capitalize_ascii
-                   |> txt
-                 ] ))
-          session.follow_up_to
-      in
-      let no_show_count, participant_count =
-        (fun (no_show_count, participant_count) ->
-          (Field.NoShowCount, no_show_count), (Field.Participated, participant_count))
-        @@
-        match CCOption.is_some session.closed_at with
-        | true ->
-          ( session.no_show_count |> NoShowCount.value |> int_to_txt
-          , session.participant_count |> ParticipantCount.value |> int_to_txt )
-        | false -> txt "", txt ""
-      in
-      let rows =
-        session_base_information language session
-        @ [ ( Field.AssignmentCount
-            , session.assignment_count |> AssignmentCount.value |> int_to_txt )
-          ; no_show_count
-          ; participant_count
-          ]
-        |> fun rows ->
-        let canceled =
-          session.canceled_at
-          |> CCOption.map (fun c ->
-            Field.CanceledAt, Pool_model.Time.formatted_date_time c |> txt)
-        in
-        let closed =
-          session.closed_at
-          |> CCOption.map (fun c ->
-            Field.ClosedAt, Pool_model.Time.formatted_date_time c |> txt)
-        in
-        let time_stamps =
-          let format = Component.Utils.format_reminder_sent_opt in
-          [ Field.EmailRemindersSentAt, format session.email_reminder_sent_at
-          ; Field.TextMessageRemindersSentAt, format session.text_message_reminder_sent_at
-          ]
-        in
-        rows @ time_stamps @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
-      in
-      Table.vertical_table `Striped language ~align_top:true
-      @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
-    in
+    let table = session_details context session in
     let links =
       let duplicate =
         let base =
@@ -1073,7 +1077,6 @@ let detail
         ?view_contact_name
         ?view_contact_info
         context
-        experiment
         (`Session session)
         text_messages_enabled
         (assignments, query)
@@ -1235,7 +1238,6 @@ let print
       ?view_contact_name
       ?view_contact_info
       ({ Pool_context.language; _ } as context)
-      experiment
       session
       assignments
   =
@@ -1246,7 +1248,6 @@ let print
       ?view_contact_info
       ~is_print:true
       context
-      experiment
       session
       false
       assignments
