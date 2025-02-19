@@ -16,6 +16,7 @@ module Navigation : sig
     val equal : t -> t -> bool
     val show : t -> string
     val pp : Format.formatter -> t -> unit
+    val logout : ?prefix:string -> unit -> t
   end
 
   module NavUtils : sig
@@ -28,11 +29,16 @@ module Navigation : sig
   end
 
   module NavElements : sig
+    module Profile : sig
+      val nav : ?contact:bool -> ?prefix:string -> unit -> NavElement.t
+    end
+
     module AdminTenantItems : sig
       val dashboard : NavElement.t
       val settings : NavElement.t
       val user : NavElement.t
       val experiments : NavElement.t
+      val all : NavElement.t list
     end
   end
 end

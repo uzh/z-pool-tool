@@ -4,6 +4,46 @@ module NavUtils = Navigation_utils
 include Entity
 
 module NavElements = struct
+  let read_entity entity =
+    Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
+  ;;
+
+  let contact_experiment_title context =
+    let%lwt experiments_title =
+      Translations.find_by_key
+        context.Pool_context.database_label
+        Translations.Key.ExperimentNavigationTitle
+        context.Pool_context.language
+      |> Lwt.map Translations.content_to_string
+    in
+    Lwt.return (I18n.ExperimentsCustom experiments_title)
+  ;;
+
+  module Profile = struct
+    open I18n
+
+    let prefixed ?(prefix = "") = Format.asprintf "%s%s" prefix
+    let nav_link = Profile
+    let icon = Icon.Person
+
+    let dropdown ?(contact = false) ?prefix () =
+      (if contact
+       then
+         [ "/user/personal-details", PersonalDetails
+         ; "/user/contact-information", ContactInformation
+         ]
+       else [])
+      @ [ "/user/login-information", LoginInformation ]
+      |> CCList.map (fun (url, field) -> Single (prefixed ?prefix url, field, AlwaysOn))
+    ;;
+
+    let nav ?contact ?prefix () =
+      dropdown ?contact ?prefix ()
+      |> parent ~validation:AlwaysOn nav_link
+      |> NavElement.create ~icon
+    ;;
+  end
+
   module AdminTenantItems = struct
     open I18n
 
@@ -70,45 +110,15 @@ module NavElements = struct
       single "/admin/experiments" Experiments (Set Experiment.Guard.Access.index)
       |> NavElement.create
     ;;
-  end
 
-  let read_entity entity =
-    Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
-  ;;
-
-  let contact_experiment_title context =
-    let%lwt experiments_title =
-      Translations.find_by_key
-        context.Pool_context.database_label
-        Translations.Key.ExperimentNavigationTitle
-        context.Pool_context.language
-      |> Lwt.map Translations.content_to_string
-    in
-    Lwt.return (I18n.ExperimentsCustom experiments_title)
-  ;;
-
-  module Profile = struct
-    open I18n
-
-    let prefixed ?(prefix = "") = Format.asprintf "%s%s" prefix
-    let nav_link = Profile
-    let icon = Icon.Person
-
-    let dropdown ?(contact = false) ?prefix () =
-      (if contact
-       then
-         [ "/user/personal-details", PersonalDetails
-         ; "/user/contact-information", ContactInformation
-         ]
-       else [])
-      @ [ "/user/login-information", LoginInformation ]
-      |> CCList.map (fun (url, field) -> Single (prefixed ?prefix url, field, AlwaysOn))
-    ;;
-
-    let nav ?contact ?prefix () =
-      dropdown ?contact ?prefix ()
-      |> parent ~validation:AlwaysOn nav_link
-      |> NavElement.create ~icon
+    let all =
+      [ dashboard
+      ; experiments
+      ; settings
+      ; user
+      ; Profile.nav ~prefix:"/admin" ()
+      ; NavElement.logout ()
+      ]
     ;;
   end
 
@@ -130,16 +140,7 @@ module NavElements = struct
     |> Lwt.return
   ;;
 
-  let admin context =
-    [ AdminTenantItems.dashboard
-    ; AdminTenantItems.experiments
-    ; AdminTenantItems.settings
-    ; AdminTenantItems.user
-    ; Profile.nav ~prefix:"/admin" ()
-    ; NavElement.logout ()
-    ]
-    |> NavUtils.create_nav ~validate:true context
-  ;;
+  let admin context = AdminTenantItems.all |> NavUtils.create_nav ~validate:true context
 
   let root context =
     let open I18n in
