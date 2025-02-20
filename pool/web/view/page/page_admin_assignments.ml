@@ -495,13 +495,14 @@ module Partials = struct
 end
 
 let data_table
+      ?(table_context : [> `SessionDetail | `LocationSession ] = `SessionDetail)
       ?(access_contact_profiles = false)
       ?(send_direct_message = false)
       ?(view_contact_name = false)
       ?(view_contact_info = false)
       ?(is_print = false)
+      ?url
       (Pool_context.{ language; csrf; user; _ } as context)
-      experiment
       (session : [ `Session of Session.t | `TimeWindow of Time_window.t ])
       text_messages_enabled
       ((assignments, custom_fields), query)
@@ -509,8 +510,18 @@ let data_table
   let open Pool_common in
   let open Partials in
   let open Assignment in
+  let experiment =
+    match session with
+    | `Session session -> session.Session.experiment
+    | `TimeWindow time_window -> time_window.Time_window.experiment
+  in
   let url =
-    HttpUtils.Url.Admin.session_path ~id:(session_id session) experiment.Experiment.id
+    url
+    |> CCOption.value
+         ~default:
+           (HttpUtils.Url.Admin.session_path
+              ~id:(session_id session)
+              experiment.Experiment.id)
     |> Uri.of_string
   in
   let data_table =
@@ -724,22 +735,31 @@ let data_table
         if check then Some (to_html assignment) else None)
     in
     let buttons =
-      [ true, edit
-      ; access_contact_profiles, profile_link
-      ; create_reminder_modal assignment, ReminderModal.button context
-      ; Experiment.(show_external_data_id_links_value experiment), external_data_ids
-      ; session_changeable assignment, session_change_toggle
-      ; send_direct_message, direct_message_toggle
-      ; cancelable assignment, cancel
-      ; deletable assignment, mark_as_deleted
-      ]
+      match table_context with
+      | `SessionDetail ->
+        [ access_contact_profiles, edit
+        ; access_contact_profiles, profile_link
+        ; create_reminder_modal assignment, ReminderModal.button context
+        ; Experiment.(show_external_data_id_links_value experiment), external_data_ids
+        ; session_changeable assignment, session_change_toggle
+        ; send_direct_message, direct_message_toggle
+        ; cancelable assignment, cancel
+        ; deletable assignment, mark_as_deleted
+        ]
+      | `LocationSession -> [ access_contact_profiles, profile_link ]
+    in
+    let buttons =
+      buttons
       |> CCList.filter_map (fun (active, form) ->
         if not active then None else Some (form assignment))
-      |> Component.ButtonGroup.dropdown
-      |> CCList.pure
+      |> function
+      | [] -> txt ""
+      | buttons -> Component.ButtonGroup.dropdown buttons
     in
     let base = (name_column :: left) @ center @ right in
-    (if is_print then base else base @ buttons) |> CCList.map (CCList.return %> td) |> tr
+    (if is_print then base else base @ [ buttons ])
+    |> CCList.map (CCList.return %> td)
+    |> tr
   in
   let modals =
     CCList.filter_map

@@ -436,19 +436,13 @@ module Calendar = struct
   module Location = struct
     let t =
       let encode (_ : location) = failwith read_only in
-      let decode (id, name) =
-        let url =
-          Format.asprintf "admin/locations/%s" (Pool_location.Id.value id)
-          |> Sihl.Web.externalize_path
-        in
-        Ok { id; name; url }
-      in
+      let decode (id, name) = Ok { id; name } in
       Caqti_type.(
         custom ~encode ~decode (t2 Pool_location.Repo.Id.t Pool_location.Repo.Name.t))
     ;;
   end
 
-  let t =
+  let t actor guardian =
     let encode (_ : t) = failwith read_only in
     let decode
           ( id
@@ -466,7 +460,7 @@ module Calendar = struct
         Entity.End.build start duration
         |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
       in
-      let links = Entity.Calendar.create_links experiment_id id location in
+      let links = Entity.Calendar.make_links actor guardian experiment_id id location in
       Ok
         { id
         ; title
