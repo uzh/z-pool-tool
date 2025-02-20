@@ -25,6 +25,15 @@ let update_changelog =
   |> Contact.Repo.Id.(t2 t t ->. unit)
 ;;
 
+let update_changelog_user =
+  {sql|
+    UPDATE pool_change_log
+    SET user_uuid = UNHEX(REPLACE($1, '-', ''))
+    WHERE user_uuid = UNHEX(REPLACE($2, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.(t2 t t ->. unit)
+;;
+
 let update_tags =
   {sql|
     INSERT IGNORE INTO pool_tagging (model_uuid, tag_uuid)
@@ -267,6 +276,10 @@ let merge
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec update_changelog (id contact, id merged_contact)
   in
+  let override_changelog_user connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec update_changelog_user (id contact, id merged_contact)
+  in
   let override_tags connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec update_tags (id contact, id merged_contact)
@@ -369,7 +382,13 @@ let merge
   let%lwt () =
     Database.transaction_iter
       pool
-      ([ update_contact; update_user; override_queue; override_changelog; override_tags ]
+      ([ update_contact
+       ; update_user
+       ; override_queue
+       ; override_changelog
+       ; override_changelog_user
+       ; override_tags
+       ]
        @ store_custom_answers
        @ actions
        @ destroy_requests)
