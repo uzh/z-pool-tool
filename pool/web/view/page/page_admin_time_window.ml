@@ -294,7 +294,6 @@ let detail
       ?view_contact_name
       ?view_contact_info
       context
-      experiment
       (`TimeWindow time_window)
       text_messages_enabled
       assignments

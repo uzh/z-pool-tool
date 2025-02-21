@@ -77,11 +77,17 @@ module Admin = struct
   ;;
 
   let filter_path ?suffix ?id () =
-    "/admin/filter/" |> append_opt Filter.(map Id.value id) |> append_opt suffix
+    "/admin/filter" |> append_opt Filter.(map Id.value id) |> append_opt suffix
   ;;
 
   let location_path ?suffix ?id () =
-    "/admin/locations/" |> append_opt Pool_location.(map Id.value id) |> append_opt suffix
+    "/admin/locations" |> append_opt Pool_location.(map Id.value id) |> append_opt suffix
+  ;;
+
+  let location_session_path ?suffix id session_id () =
+    location_path ~id ()
+    |> append (Format.asprintf "sessions/%s" (Session.Id.value session_id))
+    |> append_opt suffix
   ;;
 
   let mailing_path experiment_id ?suffix ?id () =

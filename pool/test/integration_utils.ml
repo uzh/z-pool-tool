@@ -217,7 +217,8 @@ module SessionRepo = struct
       |> Pool_event.session
       |> Pool_event.handle_event Data.database_label current_user
     in
-    Lwt.return session
+    (* To compare the start time it is required to read the session from the database again *)
+    Session.find Data.database_label session.Session.id |> Lwt.map get_or_failwith
   ;;
 end
 
@@ -244,3 +245,19 @@ end
 
 let create_admin_user () = AdminRepo.create () |> Lwt.map Pool_context.admin
 let create_contact_user () = ContactRepo.create () |> Lwt.map Pool_context.contact
+
+let create_admin_actor () =
+  let open Utils.Lwt_result.Infix in
+  AdminRepo.create ()
+  ||> Pool_context.admin
+  >|> Pool_context.Utils.find_authorizable Test_utils.Data.database_label
+  ||> Test_utils.get_or_failwith
+;;
+
+let create_contact_actor () =
+  let open Utils.Lwt_result.Infix in
+  ContactRepo.create ()
+  ||> Pool_context.contact
+  >|> Pool_context.Utils.find_authorizable Test_utils.Data.database_label
+  ||> Test_utils.get_or_failwith
+;;

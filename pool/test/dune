@@ -26,6 +26,7 @@
   handler
   http_utils
   invitation
+  layout
   matcher
   pool_database
   pool_event

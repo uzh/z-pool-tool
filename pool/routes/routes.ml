@@ -268,9 +268,7 @@ module Admin = struct
         ; choose ~scope:(add_key File) [ get "" ~middlewares:[ Access.read_file ] asset ]
         ]
       in
-      let sessions =
-        [ get "" ~middlewares:[ Session.Access.read_by_location ] Session.show ]
-      in
+      let sessions = [ get "" ~middlewares:[ Access.read_session ] session ] in
       let specific =
         [ get "" ~middlewares:[ Access.read ] show
         ; get "/statistics" ~middlewares:[ Access.read ] statistics
