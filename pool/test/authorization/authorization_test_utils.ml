@@ -36,6 +36,12 @@ let create_actor_permission { Guard.Actor.uuid; _ } permission target =
   |> handle_event pool
 ;;
 
+let create_actor_model_permission { Guard.Actor.uuid; _ } permission model =
+  let open Guard in
+  ActorPermissionSaved [ ActorPermission.create_for_model uuid permission model ]
+  |> handle_event pool
+;;
+
 let actor_permissions actor =
   actor.Guard.Actor.uuid |> Guard.Persistence.ActorRole.permissions_of_actor pool
 ;;

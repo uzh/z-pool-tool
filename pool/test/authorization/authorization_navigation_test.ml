@@ -58,7 +58,45 @@ let admin_navigation _ () =
     [ dashboard; settings; profile_nav; NavElement.logout () ]
   in
   let%lwt () = run_test "As location manager" ~expected in
+  (* With specific role *)
+  let open Pool_common.I18n in
+  let test_cases : (Role.Target.t * nav_link list) list =
+    [ `CustomField, [ CustomFields ]
+    ; `Filter, [ Filter ]
+    ; `Queue, [ Queue ]
+    ; `SystemSetting, [ SystemSettings; TextMessages ]
+    ; `Schedule, [ Schedules ]
+    ; `Smtp, [ Smtp ]
+    ; `Permission, [ RolePermissions; ActorPermissions ]
+    ; `Tag, [ Tags ]
+    ; `MessageTemplate, [ MessageTemplates ]
+    ; `I18n, [ I18n ]
+    ; `SignupCode, [ SignupCodes ]
+    ; `OrganisationalUnit, [ OrganisationalUnits ]
+    ; `ApiKey, [ ApiKeys ]
+    ]
+  in
+  let%lwt (_ : nav_link list) =
+    Lwt_list.fold_left_s
+      (fun nav_links (target, labels) ->
+         let%lwt () =
+           create_actor_model_permission actor Guard.Permission.Manage target
+         in
+         let nav_links = nav_links @ labels in
+         let expected =
+           let settings =
+             filter_children settings (fun x -> CCList.mem x.NavElement.label nav_links)
+           in
+           [ dashboard; settings; profile_nav; NavElement.logout () ]
+         in
+         let msg = Format.asprintf "With %a access" Role.Target.pp target in
+         let%lwt () = run_test msg ~expected in
+         Lwt.return nav_links)
+      [ Locations ]
+      test_cases
+  in
   (* As operator *)
+  (* let%lwt actor = create_admin_actor () in *)
   let%lwt () = assign_role actor `Operator None in
   let%lwt () = run_test "As operator" ~expected:NavLinks.all in
   Lwt.return ()
