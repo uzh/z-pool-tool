@@ -197,64 +197,6 @@ let create_experiment_invitation_reset_table =
   |sql}
 ;;
 
-(* let ___populate_pool_experiment_invitation_reset =
-  Database.Migration.Step.create
-    ~label:"populate pool_experiment_invitation_reset"
-    {sql|
-      INSERT INTO
-        pool_experiment_invitation_reset (experiment_uuid, contacts_matching_filter, sent_invitations, created_at, updated_at)
-      WITH
-        experiment_max_sent AS (
-          SELECT
-            experiment_uuid,
-            MAX(send_count) AS max_count
-          FROM
-            pool_invitations
-          GROUP BY
-            experiment_uuid
-        ),
-        experiment_reset_at AS (
-          SELECT
-            experiment_uuid,
-            send_count,
-            MIN(updated_at) AS updated_at
-          FROM
-            pool_invitations
-          GROUP BY
-            experiment_uuid,
-            send_count
-        ),
-        computed_resets AS (
-          SELECT
-            pool_invitations.experiment_uuid,
-            pool_invitations.send_count,
-            ems.max_count,
-            COUNT(pool_invitations.send_count) AS sent_invitations,
-            experiment_reset_at.updated_at
-          FROM
-            pool_invitations
-            LEFT JOIN experiment_max_sent ems ON pool_invitations.experiment_uuid = ems.experiment_uuid
-            INNER JOIN experiment_reset_at ON pool_invitations.experiment_uuid = experiment_reset_at.experiment_uuid
-          WHERE
-            pool_invitations.send_count != ems.max_count
-          GROUP BY
-            experiment_uuid,
-            send_count
-          ORDER BY
-            experiment_uuid,
-            updated_at DESC
-        )
-      SELECT
-        experiment_uuid,
-        -1,
-        sent_invitations,
-        updated_at,
-        updated_at
-      FROM
-        computed_resets
-  |sql}
-;; *)
-
 let populate_pool_experiment_invitation_reset =
   Database.Migration.Step.create
     ~label:"populate pool_experiment_invitation_reset"
@@ -318,5 +260,5 @@ let migration () =
     |> add_step create_pool_queue_job_invitations_table
     |> add_step populate_pool_queue_job_invitations_table
     |> add_step create_experiment_invitation_reset_table
-    |> add_step populate_pool_experiment_invitation_reset)
+    (* |> add_step populate_pool_experiment_invitation_reset *))
 ;;

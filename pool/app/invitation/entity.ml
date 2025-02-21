@@ -18,7 +18,6 @@ end
 
 type t =
   { id : Pool_common.Id.t
-    (* [@equal fun a b -> Pool_common.Id.equal a b || Sihl.Configuration.is_test ()] *)
   ; contact : Contact.t
   ; resent_at : ResentAt.t option
   ; send_count : SendCount.t
