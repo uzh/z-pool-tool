@@ -442,6 +442,9 @@ module Statistics : sig
       }
 
     val create : Database.Label.t -> t -> (statistics, Pool_message.Error.t) Lwt_result.t
+    val equal_statistics : statistics -> statistics -> bool
+    val pp_statistics : Format.formatter -> statistics -> unit
+    val show_statistics : statistics -> string
   end
 
   module RegistrationPossible : sig

@@ -377,6 +377,7 @@ let show_external_data_id_links_value (m : t) =
 module InvitationReset = struct
   type t =
     { created_at : Pool_common.CreatedAt.t
+          [@equal fun a b -> Sihl.Configuration.is_test () || a = b]
     ; iteration : int
     ; contacts_matching_filter : int
     ; invitations_sent : int
