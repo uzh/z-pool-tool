@@ -173,13 +173,14 @@ module Partials = struct
               ]
           ]
     in
-    let to_row ?(classnames = []) (key, value) =
-      let td = td ~a:[ a_class classnames ] in
-      tr [ td [ txt key ]; td [ txt value ] ]
-    in
     let total =
-      (field_to_string Field.Total, to_string total_sent)
-      |> to_row ~classnames:[ "font-bold" ]
+      tr
+        ~a:[ a_class [ "font-bold" ] ]
+        [ td
+            ~a:[ a_colspan 2 ]
+            [ txt (text_to_string Pool_common.I18n.TotalSentInvitations) ]
+        ; td [ txt (to_string total_sent) ]
+        ]
     in
     let table =
       let make_row reset_at (num_invitations, num_matching_filter) =

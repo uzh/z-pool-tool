@@ -189,6 +189,7 @@ let to_string = function
   | TenantMaintenanceTitle -> "Maintenance"
   | TextTemplates -> "text templates"
   | TimeWindowDetailTitle string -> string
+  | TotalSentInvitations -> "Total invited contacts"
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
   | UpcomingSessionsTitle -> "Your upcoming sessions"

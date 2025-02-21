@@ -115,6 +115,7 @@ type t =
   | TenantMaintenanceTitle
   | TextTemplates
   | TimeWindowDetailTitle of string
+  | TotalSentInvitations
   | UpcomingSessionsListEmpty
   | UpcomingSessionsTitle
   | UserProfileDetailsSubtitle

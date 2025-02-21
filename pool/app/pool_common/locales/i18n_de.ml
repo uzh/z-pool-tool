@@ -191,6 +191,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | TenantMaintenanceTitle -> "Wartungsarbeiten"
   | TextTemplates -> "Textelemente"
   | TimeWindowDetailTitle string -> string
+  | TotalSentInvitations -> "Total eingeladene Kontakte"
   | UpcomingSessionsListEmpty ->
     "Sie sind aktuell an keine kommenden Sessions angemeldet."
   | UpcomingSessionsTitle -> "Ihre nächsten Sessions"
