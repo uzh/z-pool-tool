@@ -17,7 +17,7 @@ let confirmation_mail (_ : Assignment.t) =
   Common_test.Data.create_email () |> Email.Service.Job.create |> Email.create_dispatch
 ;;
 
-let invitation_mail (_ : Contact.t) =
+let invitation_mail (_ : Invitation.t) =
   Common_test.Data.create_email ()
   |> Email.Service.Job.create
   |> Email.create_dispatch

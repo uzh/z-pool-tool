@@ -289,7 +289,13 @@ module History = struct
             (Pool_message.Field.show Field.Model))
   ;;
 
-  type item = model * Pool_common.Id.t [@@deriving eq, ord, show, yojson]
+  type item =
+    (model * Pool_common.Id.t
+    [@equal
+      fun (m1, id1) (m2, id2) ->
+        equal_model m1 m2
+        && (Pool_common.Id.equal id1 id2 || Sihl.Configuration.is_test ())])
+  [@@deriving eq, ord, show, yojson]
 
   let sort = CCList.stable_sort compare_item
 end

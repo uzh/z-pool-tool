@@ -24,7 +24,6 @@ let sql_select_columns =
   ; "pool_experiments.survey_url"
   ; "pool_experiments.email_session_reminder_lead_time"
   ; "pool_experiments.text_message_session_reminder_lead_time"
-  ; "pool_experiments.invitation_reset_at"
   ; "pool_experiments.matcher_notification_sent"
   ; "pool_experiments.created_at"
   ; "pool_experiments.updated_at"
@@ -133,7 +132,6 @@ module Sql = struct
         survey_url,
         email_session_reminder_lead_time,
         text_message_session_reminder_lead_time,
-        invitation_reset_at,
         matcher_notification_sent
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
@@ -147,7 +145,6 @@ module Sql = struct
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
-        ?,
         ?,
         ?,
         ?,
@@ -306,8 +303,7 @@ module Sql = struct
         survey_url = $19,
         email_session_reminder_lead_time = $20,
         text_message_session_reminder_lead_time = $21,
-        invitation_reset_at = $22,
-        matcher_notification_sent = $23
+        matcher_notification_sent = $22
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -578,27 +574,6 @@ module Sql = struct
       ~select:(participation_history_sql additional_joins)
       ~where
       Caqti_type.(t2 Repo_entity.t bool)
-  ;;
-
-  let count_invitations_request ?(by_count = false) () =
-    let base =
-      {sql|
-      SELECT COUNT(1)
-      FROM pool_invitations
-      WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
-    in
-    match by_count with
-    | false -> base
-    | true -> Format.asprintf "%s \n %s" base "AND send_count = ?"
-  ;;
-
-  let total_invitation_count_by_experiment pool experiment_id =
-    let open Caqti_request.Infix in
-    Database.find
-      pool
-      (count_invitations_request () |> Caqti_type.(string ->! int))
-      (Entity.Id.value experiment_id)
   ;;
 end
 

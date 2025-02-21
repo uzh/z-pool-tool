@@ -95,13 +95,6 @@ module OnlineExperiment : sig
     -> string
 end
 
-module InvitationResetAt : sig
-  include Pool_model.Base.PtimeSig
-
-  val of_ptime : Ptime.t -> t
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
-end
-
 module MatcherNotificationSent : sig
   type t
 
@@ -131,7 +124,6 @@ type t =
   ; email_session_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
-  ; invitation_reset_at : InvitationResetAt.t option
   ; matcher_notification_sent : MatcherNotificationSent.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -164,7 +156,6 @@ val text_message_session_reminder_lead_time
   :  t
   -> Pool_common.Reminder.TextMessageLeadTime.t option
 
-val invitation_reset_at : t -> InvitationResetAt.t option
 val created_at : t -> Pool_common.CreatedAt.t
 val updated_at : t -> Pool_common.UpdatedAt.t
 
@@ -178,7 +169,6 @@ val create
   -> ?email_session_reminder_lead_time:Pool_common.Reminder.EmailLeadTime.t
   -> ?experiment_type:Pool_common.ExperimentType.t
   -> ?filter:Filter.t
-  -> ?invitation_reset_at:Ptime.t
   -> ?organisational_unit:Organisational_unit.t
   -> ?smtp_auth_id:Email.SmtpAuth.Id.t
   -> ?text_message_session_reminder_lead_time:Pool_common.Reminder.TextMessageLeadTime.t
@@ -244,12 +234,7 @@ module DirectEnrollment : sig
 end
 
 module InvitationReset : sig
-  module Write : sig
-    type t
-  end
-
-  val create : Database.Label.t -> t -> (Write.t, Pool_message.Error.t) Lwt_result.t
-  val insert : Database.Label.t -> Write.t -> unit Lwt.t
+  val insert : Database.Label.t -> t -> unit Lwt.t
 
   type t =
     { created_at : Pool_common.CreatedAt.t
@@ -257,12 +242,16 @@ module InvitationReset : sig
     ; contacts_matching_filter : int
     ; invitations_sent : int
     }
+
+  val show : t -> string
+  val equal : t -> t -> bool
+  val find_latest_by_experiment : Database.Label.t -> Id.t -> t option Lwt.t
 end
 
 type event =
   | Created of t
   | Updated of t * t
-  | ResetInvitations of InvitationReset.Write.t
+  | ResetInvitations of t
   | Deleted of Id.t
 
 val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
@@ -271,7 +260,6 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val created : t -> event
 val updated : t -> t -> event
-val resetinvitations : InvitationReset.Write.t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_message.Field.t list
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
@@ -454,6 +442,9 @@ module Statistics : sig
       }
 
     val create : Database.Label.t -> t -> (statistics, Pool_message.Error.t) Lwt_result.t
+    val equal_statistics : statistics -> statistics -> bool
+    val pp_statistics : Format.formatter -> statistics -> unit
+    val show_statistics : statistics -> string
   end
 
   module RegistrationPossible : sig

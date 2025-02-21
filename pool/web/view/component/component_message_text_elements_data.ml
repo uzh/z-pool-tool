@@ -159,7 +159,6 @@ let create_experiment () =
   ; online_experiment = Some online_experiment
   ; email_session_reminder_lead_time = None
   ; text_message_session_reminder_lead_time = None
-  ; invitation_reset_at = None
   ; matcher_notification_sent = MatcherNotificationSent.create false
   ; created_at = Pool_common.CreatedAt.create_now ()
   ; updated_at = Pool_common.UpdatedAt.create_now ()

@@ -99,16 +99,10 @@ let sort_contacts contacts =
 
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
-  let%lwt ({ Experiment.id; filter; invitation_reset_at; _ } as experiment) =
+  let%lwt ({ Experiment.id; filter; _ } as experiment) =
     Experiment.find_of_mailing pool (id |> Mailing.Id.to_common) ||> get_or_failwith
   in
-  let use_case =
-    let id = id |> Experiment.Id.to_common in
-    match invitation_reset_at with
-    | Some reset_at ->
-      Filter.MatcherReset (id, Experiment.InvitationResetAt.value reset_at)
-    | None -> Filter.Matcher id
-  in
+  let use_case = Filter.Matcher (Experiment.Id.to_common id) in
   let order_by = distribution |> CCOption.map Mailing.Distribution.get_order_element in
   let* contacts =
     let limit = max limit 0 in
@@ -172,7 +166,7 @@ let notify_all_invited pool tenant experiment =
     Lwt.return (experiment_event :: email_event)
 ;;
 
-let events_of_mailings =
+let events_of_mailings ?invitation_ids =
   let ok_or_log_error = function
     | Ok (pool, events) when CCList.is_empty events ->
       Logs.info ~src (fun m -> m ~tags:(Database.Logger.Tags.create pool) "No action");
@@ -202,6 +196,7 @@ let events_of_mailings =
           let create_new contacts =
             Create.(
               handle
+                ?ids:invitation_ids
                 ~tags
                 { experiment
                 ; mailing = Some mailing
@@ -220,13 +215,11 @@ let events_of_mailings =
           in
           (match use_case with
            | Filter.MatchesFilter -> failwith "Invalid use case"
-           | Filter.Matcher _ -> create_new contacts |> Lwt_result.lift
-           | Filter.MatcherReset _ ->
+           | Filter.Matcher _ ->
              contacts
              |> Lwt_list.fold_left_s
                   (fun (invitations, contacts) contact ->
-                     contact
-                     |> Contact.id
+                     Contact.id contact
                      |> Invitation.find_by_contact_and_experiment_opt
                           pool
                           experiment.Experiment.id
@@ -245,7 +238,7 @@ let events_of_mailings =
     events >|= CCPair.make pool |> ok_or_log_error |> Lwt.return)
 ;;
 
-let create_invitation_events interval pools =
+let create_invitation_events ?invitation_ids interval pools =
   let%lwt pool_based_mailings =
     Lwt_list.map_s
       (fun pool ->
@@ -268,7 +261,9 @@ let create_invitation_events interval pools =
          ||> fun m -> pool, m)
       pools
   in
-  pool_based_mailings |> calculate_mailing_limits interval |> events_of_mailings
+  pool_based_mailings
+  |> calculate_mailing_limits interval
+  |> events_of_mailings ?invitation_ids
 ;;
 
 let match_invitations interval pools =

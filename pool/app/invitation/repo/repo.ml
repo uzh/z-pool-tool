@@ -226,7 +226,7 @@ let find_multiple_by_experiment_and_contacts pool ids experiment =
   Database.collect pool request pv
 ;;
 
-let bulk_insert ?mailing_id pool contacts experiment_id =
+let bulk_insert ?mailing_id pool invitations experiment_id =
   let insert_sql =
     {sql|
       INSERT INTO pool_invitations (
@@ -240,7 +240,6 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
       ) VALUES
     |sql}
   in
-  let invitations = CCList.map CCFun.(uncurry (fun id -> Entity.create ~id)) contacts in
   let Dynparam.Pack (pt, pv), value_insert =
     CCList.fold_left
       (fun (dyn, sql) entity ->

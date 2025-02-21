@@ -23,11 +23,21 @@ let filtered_base_condition ?(include_invited = false) =
     AND pool_contacts.email_verified IS NOT NULL
     |sql}
   in
-  let exclude_invited = {sql| AND pool_invitations.uuid IS NULL |sql} in
-  let exclude_invited_after =
-    {sql| AND(pool_invitations.created_at IS NULL
-          OR (pool_invitations.resent_at IS NULL
-            OR COALESCE(pool_invitations.resent_at, pool_invitations.created_at) < ?))
+  let exclude_invited =
+    {sql|
+    	AND (
+        pool_invitations.uuid IS NULL
+        OR (
+          EXISTS ( SELECT 1 FROM  pool_experiment_invitation_reset WHERE experiment_uuid = pool_invitations.experiment_uuid )
+          AND COALESCE(pool_invitations.resent_at, pool_invitations.created_at) <= (
+            SELECT created_at
+            FROM pool_experiment_invitation_reset
+            WHERE experiment_uuid = pool_invitations.experiment_uuid
+            ORDER BY created_at DESC
+            LIMIT 1
+          )
+        )
+      )
     |sql}
   in
   let exclude_assigned =
@@ -45,10 +55,7 @@ let filtered_base_condition ?(include_invited = false) =
   (function
     | MatchesFilter -> [ base ]
     | Matcher _ ->
-      [ base; exclude_assigned ] @ if include_invited then [] else [ exclude_invited ]
-    | MatcherReset _ ->
-      [ base; exclude_assigned ]
-      @ if include_invited then [] else [ exclude_invited_after ])
+      [ base; exclude_assigned ] @ if include_invited then [] else [ exclude_invited ])
   %> CCString.concat "\n"
 ;;
 
@@ -390,9 +397,6 @@ let filtered_params ?include_invited ?group_by ?order_by use_case template_list 
     | Matcher experiment_id ->
       let id = experiment_id |> Pool_common.Id.value in
       dyn |> add Caqti_type.string id
-    | MatcherReset (experiment_id, allow_before) ->
-      let id = experiment_id |> Pool_common.Id.value in
-      dyn |> add Caqti_type.string id |> add Caqti_type.ptime allow_before
   in
   let query =
     let base_condition = filtered_base_condition ?include_invited use_case in
