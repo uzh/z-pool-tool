@@ -245,3 +245,19 @@ end
 
 let create_admin_user () = AdminRepo.create () |> Lwt.map Pool_context.admin
 let create_contact_user () = ContactRepo.create () |> Lwt.map Pool_context.contact
+
+let create_admin_actor () =
+  let open Utils.Lwt_result.Infix in
+  AdminRepo.create ()
+  ||> Pool_context.admin
+  >|> Pool_context.Utils.find_authorizable Test_utils.Data.database_label
+  ||> Test_utils.get_or_failwith
+;;
+
+let create_contact_actor () =
+  let open Utils.Lwt_result.Infix in
+  ContactRepo.create ()
+  ||> Pool_context.contact
+  >|> Pool_context.Utils.find_authorizable Test_utils.Data.database_label
+  ||> Test_utils.get_or_failwith
+;;

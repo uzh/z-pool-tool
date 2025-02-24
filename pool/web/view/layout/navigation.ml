@@ -1,7 +1,7 @@
 module Translations = I18n
 module I18nGuard = I18n.Guard
 module NavUtils = Navigation_utils
-open Entity
+include Entity
 
 module NavElements = struct
   let read_entity entity =
@@ -44,26 +44,11 @@ module NavElements = struct
     ;;
   end
 
-  let guest ?(root = false) context =
-    let prefix = if root then Some "root" else None in
-    [ NavElement.login ?prefix () ] |> NavUtils.create_nav_with_language_switch context
-  ;;
+  module AdminTenantItems = struct
+    open I18n
 
-  let contact context =
-    let%lwt experiments_title = contact_experiment_title context in
-    let links =
-      [ Single ("/experiments", experiments_title, Set Guard.ValidationSet.empty)
-        |> NavElement.create
-      ; Profile.nav ~contact:true ()
-      ]
-    in
-    links @ [ NavElement.logout () ]
-    |> NavUtils.create_nav_with_language_switch context
-    |> Lwt.return
-  ;;
+    let dashboard = single "/admin/dashboard" Dashboard AlwaysOn |> NavElement.create
 
-  let admin context =
-    let open I18n in
     let settings =
       let children =
         [ parent
@@ -111,28 +96,51 @@ module NavElements = struct
         ]
       in
       Parent (None, Settings, OnChildren, children) |> NavElement.create
-    in
+    ;;
+
     let user =
       [ single "/admin/contacts" Contacts (Set Contact.Guard.Access.index)
       ; single "/admin/admins" Admins (Set Admin.Guard.Access.index)
       ]
       |> parent Users
       |> NavElement.create
-    in
-    let dashboard = single "/admin/dashboard" Dashboard AlwaysOn |> NavElement.create in
+    ;;
+
     let experiments =
       single "/admin/experiments" Experiments (Set Experiment.Guard.Access.index)
       |> NavElement.create
-    in
-    [ dashboard
-    ; experiments
-    ; settings
-    ; user
-    ; Profile.nav ~prefix:"/admin" ()
-    ; NavElement.logout ()
-    ]
-    |> NavUtils.create_nav ~validate:true context
+    ;;
+
+    let all =
+      [ dashboard
+      ; experiments
+      ; settings
+      ; user
+      ; Profile.nav ~prefix:"/admin" ()
+      ; NavElement.logout ()
+      ]
+    ;;
+  end
+
+  let guest ?(root = false) context =
+    let prefix = if root then Some "root" else None in
+    [ NavElement.login ?prefix () ] |> NavUtils.create_nav_with_language_switch context
   ;;
+
+  let contact context =
+    let%lwt experiments_title = contact_experiment_title context in
+    let links =
+      [ Single ("/experiments", experiments_title, Set Guard.ValidationSet.empty)
+        |> NavElement.create
+      ; Profile.nav ~contact:true ()
+      ]
+    in
+    links @ [ NavElement.logout () ]
+    |> NavUtils.create_nav_with_language_switch context
+    |> Lwt.return
+  ;;
+
+  let admin context = AdminTenantItems.all |> NavUtils.create_nav ~validate:true context
 
   let root context =
     let open I18n in

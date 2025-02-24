@@ -50,6 +50,11 @@ let suite =
           ; test_case "dashboard calendar" `Slow dashboard_calendar
           ; test_case "location calendar" `Slow location_calendar
           ] )
+    ; ( "authorization navigation"
+      , Authorization_navigation_test.
+          [ test_case "admin navigation" `Slow admin_navigation
+          ; test_case "operator navigation" `Slow operator_navigation
+          ] )
     ; ("announcement", Announcement_test.[ test_case "find current" `Slow find_current ])
     ; ( "partial_update"
       , Partial_update.
