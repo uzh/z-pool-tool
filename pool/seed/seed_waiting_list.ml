@@ -29,7 +29,9 @@ let waiting_list pool =
              @ waiting_lists
            in
            let invitations =
-             Invitation.Created { Invitation.contacts; mailing = None; experiment }
+             let open Invitation in
+             Invitation.Created
+               { invitations = CCList.map create contacts; mailing = None; experiment }
              :: invitations
            in
            (waiting_lists, invitations) |> Lwt.return

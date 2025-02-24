@@ -403,7 +403,8 @@ module AvailableExperiments = struct
     in
     let%lwt () =
       let invitation experiment =
-        Invitation.(Created { contacts = [ contact ]; mailing = None; experiment })
+        let open Invitation in
+        Created { invitations = [ create contact ]; mailing = None; experiment }
         |> Pool_event.invitation
       in
       [ on_site_experiment; online_experiment ]

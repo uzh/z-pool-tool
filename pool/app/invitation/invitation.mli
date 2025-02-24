@@ -40,7 +40,7 @@ val email_experiment_elements : Experiment.t -> (string * string) list
 type create =
   { experiment : Experiment.t
   ; mailing : Mailing.t option
-  ; contacts : Contact.t list
+  ; invitations : t list
   }
 
 val equal_create : create -> create -> bool
