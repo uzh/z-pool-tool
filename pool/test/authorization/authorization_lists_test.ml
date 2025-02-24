@@ -158,6 +158,10 @@ let admins _ () =
 ;;
 
 module CalendarUtils = struct
+  let actor_permissions actor =
+    actor.Guard.Actor.uuid |> Guard.Persistence.ActorRole.permissions_of_actor pool
+  ;;
+
   open Session
 
   let testable = list Calendar.(testable pp equal)

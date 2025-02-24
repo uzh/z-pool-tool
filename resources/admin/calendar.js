@@ -40,7 +40,7 @@ const tooltipContent = ({ _instance, _def }, hideLocation) => {
     const counterHtml = `<p><strong>Participants: ${assignment_count} / ${max_participants}</strong><br>Overbook: ${overbook}<br>Min. participants: ${min_participants}</p>`;
     const sessionLink = session && `<a href="${session}">Session details</a>`;
     const experimentLink = experiment && `<a href="${experiment}">Experiment details</a>`;
-    var linkList = [sessionLink, experimentLink].filter(x => Boolean(x));
+    var linkList = [sessionLink, experimentLink].filter(Boolean);
     const linksHtml = !linkList.lenght ? `<p>${linkList.join(`<br/>`)}</p>` : '';
     const contactPersonHtml = contactEmail ? `<a href="mailto:${contactEmail}">${contactEmail}</a><br>` : ''
     const header = `<div class="card-header">${title}</div>`
