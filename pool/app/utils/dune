@@ -1,12 +1,6 @@
 (library
  (name utils)
  (public_name pool.utils)
- (libraries
-  containers
-  mirage-crypto-pk
-  mirage-crypto-rng-lwt
-  pool.canary
-  digestif
-  sihl)
+ (libraries containers mirage-crypto-pk pool.canary digestif sihl)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_variants_conv)))
