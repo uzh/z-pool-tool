@@ -327,7 +327,6 @@ let session_page database_label req context session experiment =
       ~view_contact_name
       ~view_contact_info
       context
-      experiment
       (`Session session)
       assignments
     |> Lwt_result.return
@@ -370,7 +369,6 @@ let time_window_page database_label req context time_window experiment =
       ~view_contact_name
       ~view_contact_info
       context
-      experiment
       (`TimeWindow time_window)
       assignments
     |> Lwt_result.return
@@ -464,7 +462,6 @@ let show req =
         ~view_contact_name
         ~view_contact_info
         context
-        experiment
         session
         text_messages_enabled
         assignments)
@@ -1144,32 +1141,6 @@ let update_matches_filter req =
 ;;
 
 module Api = struct
-  let calendar_link_permission
-        actor
-        guardian
-        (Session.Calendar.{ id; experiment_id; location; links; _ } as cal)
-    =
-    let open Guard in
-    let open Session.Calendar in
-    let session = Uuid.target_of Session.Id.value id in
-    let experiment = Uuid.target_of Experiment.Id.value experiment_id in
-    let location = Uuid.target_of Pool_location.Id.value location.id in
-    let check_guardian model target =
-      let open ValidationSet in
-      Persistence.PermissionOnTarget.validate_set
-        guardian
-        Error.authorization
-        (one_of_tuple (Permission.Read, model, Some target))
-        actor
-      |> CCResult.is_ok
-    in
-    let show_experiment = check_guardian `Experiment experiment in
-    let show_session = check_guardian `Session session in
-    let show_location_session = check_guardian `Location location in
-    let links = { links with show_session; show_experiment; show_location_session } in
-    { cal with links }
-  ;;
-
   let handle_request query_sessions req =
     let open Utils.Lwt_result.Infix in
     let query_params = Sihl.Web.Request.query_list req in
@@ -1185,8 +1156,7 @@ module Api = struct
       let* actor =
         Pool_context.Utils.find_authorizable ~admin_only:true database_label user
       in
-      query_sessions ~start_time ~end_time database_label actor
-      ||> CCList.map (calendar_link_permission actor guardian)
+      query_sessions ~start_time ~end_time database_label actor guardian
       ||> CCList.map Session.Calendar.yojson_of_t
       ||> (fun json -> `List json)
       |> Lwt_result.ok
@@ -1215,7 +1185,6 @@ end
 module Access : sig
   include module type of Helpers.Access
 
-  val read_by_location : Rock.Middleware.t
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
   val close : Rock.Middleware.t
@@ -1238,22 +1207,9 @@ end = struct
     validation_set experiment_id session_id |> CCResult.return
   ;;
 
-  let combined_with_location_effects validation_set =
-    Guardian.validate_generic
-    @@ fun req ->
-    let* location_id = find_id Pool_location.Id.validate Field.Location req in
-    let* session_id = find_id Session.Id.validate Field.Session req in
-    validation_set location_id session_id |> CCResult.return
-  ;;
-
   let index = experiment_effects Session.Guard.Access.index
   let create = experiment_effects SessionCommand.Create.effects
   let read = combined_effects Session.Guard.Access.read
-
-  let read_by_location =
-    combined_with_location_effects Session.Guard.Access.read_by_location
-  ;;
-
   let update = combined_effects SessionCommand.Update.effects
   let delete = combined_effects SessionCommand.Delete.effects
   let reschedule = combined_effects SessionCommand.Reschedule.effects

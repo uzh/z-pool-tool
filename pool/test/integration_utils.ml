@@ -217,7 +217,8 @@ module SessionRepo = struct
       |> Pool_event.session
       |> Pool_event.handle_event Data.database_label current_user
     in
-    Lwt.return session
+    (* To compare the start time it is required to read the session from the database again *)
+    Session.find Data.database_label session.Session.id |> Lwt.map get_or_failwith
   ;;
 end
 
