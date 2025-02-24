@@ -7,18 +7,20 @@ let pool = Test_utils.Data.database_label
 let testable = NavElement.(testable pp equal)
 let filter = NavUtils.filter_items ~validate:true
 
+let filter_links actor links =
+  let%lwt guardian = actor_permissions actor in
+  filter ~actor ~guardian links |> Lwt.return
+;;
+
+let run_test msg actor ~expected =
+  let%lwt result = filter_links actor NavLinks.all in
+  check (Alcotest.list testable) msg expected result |> Lwt.return
+;;
+
 let admin_navigation _ () =
   let open Integration_utils in
   let open NavLinks in
   let%lwt actor = create_admin_actor () in
-  let filter links =
-    let%lwt guardian = actor_permissions actor in
-    filter ~actor ~guardian links |> Lwt.return
-  in
-  let run_test msg ~expected =
-    let%lwt result = filter NavLinks.all in
-    check (Alcotest.list testable) msg expected result |> Lwt.return
-  in
   let filter_children item compare =
     let open NavElement in
     let children = item.children |> List.filter compare in
@@ -32,12 +34,12 @@ let admin_navigation _ () =
     ; NavElement.logout ()
     ]
   in
-  let%lwt () = run_test "Without any roles" ~expected in
+  let%lwt () = run_test "Without any roles" actor ~expected in
   (* As experimenter *)
   let%lwt experiment = ExperimentRepo.create () in
   let%lwt () = assign_role actor `Experimenter (Some (experiment_target experiment)) in
   let expected = [ dashboard; experiments; profile_nav; NavElement.logout () ] in
-  let%lwt () = run_test "As experimenter" ~expected in
+  let%lwt () = run_test "As experimenter" actor ~expected in
   (* As assistant *)
   let%lwt () = assign_role actor `Assistant (Some (experiment_target experiment)) in
   let expected =
@@ -46,7 +48,7 @@ let admin_navigation _ () =
     in
     [ dashboard; experiments; user; profile_nav; NavElement.logout () ]
   in
-  let%lwt () = run_test "As assistant" ~expected in
+  let%lwt () = run_test "As assistant" actor ~expected in
   (* As location manager *)
   let%lwt () = revoke_role actor `Assistant (Some (experiment_target experiment)) in
   let%lwt () = revoke_role actor `Experimenter (Some (experiment_target experiment)) in
@@ -57,7 +59,7 @@ let admin_navigation _ () =
     in
     [ dashboard; settings; profile_nav; NavElement.logout () ]
   in
-  let%lwt () = run_test "As location manager" ~expected in
+  let%lwt () = run_test "As location manager" actor ~expected in
   (* With specific role *)
   let open Pool_common.I18n in
   let test_cases : (Role.Target.t * nav_link list) list =
@@ -90,14 +92,18 @@ let admin_navigation _ () =
            [ dashboard; settings; profile_nav; NavElement.logout () ]
          in
          let msg = Format.asprintf "With %a access" Role.Target.pp target in
-         let%lwt () = run_test msg ~expected in
+         let%lwt () = run_test msg actor ~expected in
          Lwt.return nav_links)
       [ Locations ]
       test_cases
   in
-  (* As operator *)
-  (* let%lwt actor = create_admin_actor () in *)
-  let%lwt () = assign_role actor `Operator None in
-  let%lwt () = run_test "As operator" ~expected:NavLinks.all in
   Lwt.return ()
+;;
+
+let operator_navigation _ () =
+  let open Integration_utils in
+  let%lwt actor = create_admin_actor () in
+  let%lwt () = assign_role actor `Operator None in
+  let%lwt () = run_test "As operator" actor ~expected:NavLinks.all in
+  Lwt.return_unit
 ;;
