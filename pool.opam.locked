@@ -221,8 +221,14 @@ pin-depends: [
     "git+https://github.com/uzh/guardian.git#287bab9baf9b346efe47999e8b7f456bfefe8c13"
   ]
   ["letters.0.4.0" "git+https://github.com/oxidizing/letters.git#0.4.0"]
-  ["opium.0.20.0" "git+https://github.com/mabiede/opium.git#upgrade-packages"]
-  ["rock.0.20.0" "git+https://github.com/mabiede/opium.git#upgrade-packages"]
+  [
+  "opium.0.20.0"
+  "git+https://github.com/rgrinberg/opium.git#73b16f0487497e02750c1123ead377a56be3be43"
+]
+  [
+  "rock.0.20.0"
+  "git+https://github.com/rgrinberg/opium.git#73b16f0487497e02750c1123ead377a56be3be43"
+]
   ["sihl.4.0.0" "git+https://github.com/mabiede/sihl.git#maintenance-2501"]
   [
   "sihl-email.4.0.0"
