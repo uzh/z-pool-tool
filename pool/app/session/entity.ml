@@ -458,10 +458,6 @@ module Calendar = struct
       | true -> Some (asprintf "/admin/experiments/%s" (id_string experiment_id))
       | false -> None
     in
-    (* TODO: Having access to the experiment gives access to the session, as well?
-
-       - This could probably be solved on the database lvl
-    *)
     let session =
       externalize_opt
       @@
