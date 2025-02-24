@@ -1,6 +1,6 @@
 FROM node:lts AS node
 FROM hadolint/hadolint:latest-alpine AS hadolint
-FROM ocaml/opam:debian-12-ocaml-5.3
+FROM ocaml/opam:debian-10-ocaml-5.2
 
 USER root
 
@@ -52,7 +52,7 @@ RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' \
   && bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
 
 # link opam version
-RUN ln -fs /usr/bin/opam-2.3 /usr/bin/opam
+RUN ln -fs /usr/bin/opam-2.2 /usr/bin/opam
 
 USER opam
 

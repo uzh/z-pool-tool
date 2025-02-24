@@ -50,7 +50,7 @@ jobs:
           SMTP_SENDER: test@econ.uzh.ch
           TEST_EMAIL: test@econ.uzh.ch
         with:
-          image: ocaml/opam:debian-10-ocaml-5.3
+          image: ocaml/opam:debian-10-ocaml-5.2
           options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_ONE -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV -e EMAIL_RATE_LIMIT -e MATCHER_MAX_CAPACITY
           run: |
             # Reclaim required directory permissions
