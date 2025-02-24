@@ -231,13 +231,16 @@ pin-depends: [
   "rock.0.20.0"
   "git+https://github.com/rgrinberg/opium.git#73b16f0487497e02750c1123ead377a56be3be43"
 ]
-  ["sihl.4.0.0" "git+https://github.com/mabiede/sihl.git#maintenance-2501"]
+  [
+  "sihl.4.0.0"
+  "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
+]
   [
   "sihl-email.4.0.0"
-  "git+https://github.com/mabiede/sihl.git#maintenance-2501"
+  "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
 ]
   [
   "sihl-storage.4.0.0"
-  "git+https://github.com/mabiede/sihl.git#maintenance-2501"
+  "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
 ]
 ]
