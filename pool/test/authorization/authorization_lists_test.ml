@@ -187,12 +187,16 @@ module CalendarUtils = struct
     let experiment_id = session.experiment.Experiment.id in
     let location_id = session.location.Pool_location.id in
     let experiment_link =
-      if experiment_link then Some (experiment_path ~id:experiment_id ()) else None
+      if experiment_link
+      then Some (experiment_path ~id:experiment_id () |> Sihl.Web.externalize_path)
+      else None
     in
     let session_link =
       match session_link, location_link with
-      | true, _ -> Some (session_path experiment_id ~id:session.id)
-      | _, true -> Some (location_session_path location_id session.id ())
+      | true, _ ->
+        Some (session_path experiment_id ~id:session.id |> Sihl.Web.externalize_path)
+      | _, true ->
+        Some (location_session_path location_id session.id () |> Sihl.Web.externalize_path)
       | false, false -> None
     in
     Calendar.{ experiment = experiment_link; session = session_link }
