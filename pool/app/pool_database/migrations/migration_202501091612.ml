@@ -4,8 +4,8 @@ let create_mapping_table ~table_suffix ~column_name ~fk_constraint =
     [%string
       {sql|
       CREATE TABLE pool_queue_job_%{table_suffix} (
-        queue_uuid binary(16),
-        %{column_name} binary(16),
+        queue_uuid binary(16) NOT NULL,
+        %{column_name} binary(16) NOT NULL,
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY `unique_queue_uuid` (`queue_uuid`),
