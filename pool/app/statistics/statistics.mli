@@ -104,7 +104,7 @@ end
 
 module ExperimentFilter : sig
   type t =
-    { total_sent : int
+    { invited_contacts_count : int
     ; total_match_filter : int
     ; total_uninvited_matching : int
     ; assigned_contacts_not_matching : int

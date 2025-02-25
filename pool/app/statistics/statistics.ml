@@ -65,7 +65,7 @@ module ExperimentFilter = struct
       let open CCOption.Infix in
       query <+> (filter |> CCOption.map (fun { Filter.query; _ } -> query))
     in
-    let%lwt total_sent = Experiment.invitation_count pool id in
+    let%lwt invited_contacts_count = Experiment.invited_contacts_count pool id in
     let count_filtered_contacts ~include_invited =
       Filter.(
         count_filtered_contacts
@@ -93,7 +93,7 @@ module ExperimentFilter = struct
       ExperimentInvitations.create ~total_match_filter pool experiment
     in
     Lwt_result.return
-      { total_sent
+      { invited_contacts_count
       ; total_match_filter
       ; total_uninvited_matching
       ; assigned_contacts_not_matching

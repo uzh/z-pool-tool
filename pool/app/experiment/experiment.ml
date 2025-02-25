@@ -67,10 +67,7 @@ let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
 ;;
 
 let is_sessionless ({ online_experiment; _ } : t) = CCOption.is_some online_experiment
-
-let invitation_count =
-  Repo_statistics.FilterStatistics.total_invitation_count_by_experiment
-;;
+let invited_contacts_count = Repo_statistics.FilterStatistics.invited_contacts_count
 
 module InvitationReset = struct
   include InvitationReset

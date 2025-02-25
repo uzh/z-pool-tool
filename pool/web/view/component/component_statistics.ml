@@ -170,7 +170,7 @@ module ExperimentFilter = struct
 
   let create
         language
-        { total_sent
+        { invited_contacts_count
         ; total_match_filter
         ; total_uninvited_matching
         ; assigned_contacts_not_matching
@@ -203,7 +203,7 @@ module ExperimentFilter = struct
       in
       let open Pool_common in
       [ table_row (I18n.FilterNrOfContacts, total_match_filter)
-      ; table_row (I18n.FilterNrOfSentInvitations, total_sent)
+      ; table_row (I18n.FilterNrOfSentInvitations, invited_contacts_count)
       ]
       @ sent_invitations
       @ [ table_row (I18n.FilterNuberMatchingUninvited, total_uninvited_matching)

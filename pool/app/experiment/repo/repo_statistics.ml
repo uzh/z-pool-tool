@@ -4,11 +4,17 @@ open Caqti_request.Infix
 open Entity
 
 module FilterStatistics = struct
-  let count_invitations_request =
+  let count_invited_contacts_request =
     {sql|
       SELECT COUNT(1)
       FROM pool_invitations
-      WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        INNER JOIN pool_contacts ON pool_contacts.user_uuid = pool_invitations.contact_uuid
+        INNER JOIN user_users ON user_users.uuid = pool_contacts.user_uuid
+      WHERE 
+        experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_contacts.paused != 1
+        AND pool_contacts.disabled = 0
+        AND user_users.status = "active"
     |sql}
     |> Caqti_type.(string ->! int)
   ;;
@@ -23,8 +29,8 @@ module FilterStatistics = struct
     |> Caqti_type.(string ->* int)
   ;;
 
-  let total_invitation_count_by_experiment pool experiment_id =
-    Database.find pool count_invitations_request (Id.value experiment_id)
+  let invited_contacts_count pool experiment_id =
+    Database.find pool count_invited_contacts_request (Id.value experiment_id)
   ;;
 end
 
