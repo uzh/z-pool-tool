@@ -47,35 +47,34 @@ let invitation_statistics _ () =
     ||> CCList.hd
     >|> fun (pool, events) -> Pool_event.handle_events pool current_user events
   in
-  let check_result msg expected =
+  let check_invitations msg expected =
     let%lwt result =
       ExperimentInvitations.create pool experiment ||> Test_utils.get_or_failwith
     in
-    check testable msg expected result;
-    Lwt.return ()
+    let msg = Format.asprintf "Invitations statistics: %s" msg in
+    check testable msg expected result |> Lwt.return
   in
-  (* TODO: Also check total sent *)
+  let check_total_invited msg expected =
+    let%lwt result = Experiment.invited_contacts_count pool experiment.id in
+    let msg = Format.asprintf "Total invited count: %s" msg in
+    check int msg expected result |> Lwt.return
+  in
   (* Invite 5 contacts *)
   let%lwt () = invite_contacts 5 in
   let expected =
     ExperimentInvitations.
-      { (* SentInvitations.total_sent = 5  ; *)
-        total_match_filter = n_contacts
+      { total_match_filter = n_contacts
       ; invitation_resets = []
       ; sent_since_last_reset = 5
       }
   in
-  let%lwt () = check_result "5 contacts invited" expected in
+  let%lwt () = check_invitations "5 contacts invited" expected in
+  let%lwt () = check_total_invited "5 contacts invited" 5 in
   (* Invite 10 more contacts *)
   let%lwt () = invite_contacts 10 in
-  let expected =
-    ExperimentInvitations.
-      { expected with
-        (* total_sent = 10; *)
-        sent_since_last_reset = 10
-      }
-  in
-  let%lwt () = check_result "10 more contacts invited" expected in
+  let expected = ExperimentInvitations.{ expected with sent_since_last_reset = 10 } in
+  let%lwt () = check_invitations "10 more contacts invited" expected in
+  let%lwt () = check_total_invited "10 more contacts invited" 10 in
   (* Reset invitations *)
   let%lwt () = Experiment.ResetInvitations experiment |> Experiment.handle_event pool in
   let expected =
@@ -93,12 +92,12 @@ let invitation_statistics _ () =
       ; invitation_resets = [ invitation_reset ]
       }
   in
-  let%lwt () = check_result "Reset invitations" expected in
+  let%lwt () = check_invitations "Reset invitations" expected in
   Unix.sleep 1;
   (* Invite 5 more contacts *)
   let%lwt () = invite_contacts 5 in
   let expected = ExperimentInvitations.{ expected with sent_since_last_reset = 5 } in
-  let%lwt () = check_result "Invite 5 more contacts after reset" expected in
+  let%lwt () = check_invitations "Invite 5 more contacts after reset" expected in
   (* Reset invitations again *)
   let%lwt () = Experiment.ResetInvitations experiment |> Experiment.handle_event pool in
   let expected =
@@ -116,6 +115,6 @@ let invitation_statistics _ () =
       ; invitation_resets = expected.invitation_resets @ [ invitation_reset ]
       }
   in
-  let%lwt () = check_result "Reset invitations again" expected in
+  let%lwt () = check_invitations "Reset invitations again" expected in
   Lwt.return ()
 ;;
