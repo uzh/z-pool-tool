@@ -1,6 +1,5 @@
 open Tyxml.Html
 open Statistics
-open Experiment
 module Field = Pool_message.Field
 
 type title =
@@ -123,7 +122,7 @@ module Pool = struct
 end
 
 module SentInvitations = struct
-  open Statistics.SentInvitations
+  open Statistics.ExperimentInvitations
 
   let create language { invitation_resets; sent_since_last_reset; total_match_filter } =
     let text_to_string = Pool_common.Utils.text_to_string language in
@@ -152,7 +151,7 @@ module SentInvitations = struct
     | resets, _ ->
       let resets_rows =
         CCList.map
-          (fun InvitationReset.
+          (fun Experiment.InvitationReset.
                  { created_at; contacts_matching_filter; invitations_sent; _ } ->
              make_row
                (created_at
@@ -182,8 +181,9 @@ module ExperimentFilter = struct
     let text_to_string = Pool_common.Utils.text_to_string language in
     let table =
       let sent_invitations =
+        let open Experiment in
         let open InvitationReset in
-        let open Statistics.SentInvitations in
+        let open Statistics.ExperimentInvitations in
         let row key value =
           tr
             ~a:[ a_class [ "font-italic" ] ]
@@ -216,7 +216,9 @@ module ExperimentFilter = struct
 end
 
 module ExperimentOverview = struct
-  let make language statistics =
+  open Statistics.ExperimentOverview
+
+  let make language (statistics : Statistics.ExperimentOverview.t) =
     let int_to_txt i = i |> CCInt.to_string |> txt in
     let with_tooltip html tooltip =
       div
@@ -231,11 +233,9 @@ module ExperimentOverview = struct
     in
     let to_table = Component_table.vertical_table ~th_class:[ "w-7" ] `Simple language in
     let registration_possible_html =
-      let open Statistics in
       let open RegistrationPossible in
       let html =
-        statistics
-        |> registration_possible
+        statistics.registration_possible
         |> value
         |> Pool_common.Utils.bool_to_string language
         |> txt
@@ -244,10 +244,9 @@ module ExperimentOverview = struct
       with_tooltip html tooltip
     in
     let sending_invitations_html =
-      let open Statistics in
-      let open SendingInvitations in
+      let open Experiment.SendingInvitations in
       let html =
-        statistics |> sending_invitations |> show |> CCString.capitalize_ascii |> txt
+        statistics.sending_invitations |> show |> CCString.capitalize_ascii |> txt
       in
       let tooltip =
         hint |> Pool_common.Utils.hint_to_string language |> Http_utils.add_line_breaks
@@ -255,21 +254,18 @@ module ExperimentOverview = struct
       with_tooltip html tooltip
     in
     let experiment_statistics =
-      let open Statistics in
       [ RegistrationPossible.field, registration_possible_html
-      ; SendingInvitations.field, sending_invitations_html
-      ; SessionCount.(field, statistics |> session_count |> value |> int_to_txt)
+      ; Experiment.SendingInvitations.field, sending_invitations_html
+      ; SessionCount.(field, statistics.session_count |> value |> int_to_txt)
       ]
     in
     let invitations_statistics =
-      statistics.Statistics.invitations |> SentInvitations.create language
+      statistics.invitations |> SentInvitations.create language
     in
     let assignments_statistics =
-      let open Statistics in
-      [ ShowUpCount.(field, statistics |> showup_count |> value |> int_to_txt)
-      ; NoShowCount.(field, statistics |> noshow_count |> value |> int_to_txt)
-      ; ParticipationCount.(
-          field, statistics |> participation_count |> value |> int_to_txt)
+      [ ShowUpCount.(field, statistics.showup_count |> value |> int_to_txt)
+      ; NoShowCount.(field, statistics.noshow_count |> value |> int_to_txt)
+      ; ParticipationCount.(field, statistics.participation_count |> value |> int_to_txt)
       ]
     in
     div

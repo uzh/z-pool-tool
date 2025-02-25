@@ -44,6 +44,10 @@ let query_participation_history_by_contact =
   Repo.Sql.query_participation_history_by_contact
 ;;
 
+let registration_possible = Repo_statistics.registration_possible
+let sending_invitations = Repo_statistics.sending_invitations
+let assignment_counts = Repo_statistics.assignment_counts
+
 let find_admins_to_notify_about_invitations database_label experiment_id =
   Admin.find_all_with_permissions_on_target
     database_label
@@ -72,36 +76,10 @@ module InvitationReset = struct
   include InvitationReset
 
   let insert = Repo_invitation_reset.insert
+  let find_by_experiment = Repo_invitation_reset.find_by_experiment
   let find_latest_by_experiment = Repo_invitation_reset.find_latest_by_experiment
-end
 
-module Statistics = struct
-  include Statistics
-  module Repo = Repo_statistics
-
-  module SentInvitations = struct
-    include SentInvitations
-
-    let create = Repo.SentInvitations.create
-  end
-
-  let create pool ({ id; _ } as experiment) =
-    let open Utils.Lwt_result.Infix in
-    let%lwt registration_possible = Repo.registration_possible pool id in
-    let* sending_invitations = Repo.sending_invitations pool id in
-    let%lwt session_count = Repo.session_count pool id in
-    let* invitations = SentInvitations.create pool experiment in
-    let%lwt showup_count, noshow_count, participation_count =
-      Repo.assignment_counts pool id
-    in
-    Lwt_result.return
-      { registration_possible
-      ; sending_invitations
-      ; session_count
-      ; invitations
-      ; showup_count
-      ; noshow_count
-      ; participation_count
-      }
+  let invitations_sent_since_last_reset =
+    Repo_invitation_reset.invitations_sent_since_last_reset
   ;;
 end

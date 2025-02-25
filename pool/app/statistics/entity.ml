@@ -134,7 +134,16 @@ module Pool = struct
     ; reminders_sent : RemindersSent.t
     ; emails_sent : EmailsSent.t
     }
-  [@@deriving eq, show, yojson]
+  [@@deriving eq, show]
+end
+
+module ExperimentInvitations = struct
+  type t =
+    { invitation_resets : Experiment.InvitationReset.t list
+    ; sent_since_last_reset : int
+    ; total_match_filter : int
+    }
+  [@@deriving eq, show]
 end
 
 module ExperimentFilter = struct
@@ -143,48 +152,63 @@ module ExperimentFilter = struct
     ; total_match_filter : int
     ; total_uninvited_matching : int
     ; assigned_contacts_not_matching : int
-    ; sent_invitations : Experiment.Statistics.SentInvitations.statistics
+    ; sent_invitations : ExperimentInvitations.t
     }
+  [@@deriving eq, show]
+end
 
-  let create pool ({ Experiment.id; filter; _ } as experiment) query =
-    let open Utils.Lwt_result.Infix in
-    let query =
-      let open CCOption.Infix in
-      query <+> (filter |> CCOption.map (fun { Filter.query; _ } -> query))
-    in
-    let%lwt total_sent = Experiment.invitation_count pool id in
-    let count_filtered_contacts ~include_invited =
-      Filter.(
-        count_filtered_contacts
-          ~include_invited
-          pool
-          (Matcher (Experiment.Id.to_common id))
-          query)
-    in
-    let* total_match_filter = count_filtered_contacts ~include_invited:true in
-    let* total_uninvited_matching = count_filtered_contacts ~include_invited:false in
-    let contacts_not_matching query =
-      let%lwt contacts =
-        Assignment.find_assigned_contacts_by_experiment pool experiment.Experiment.id
-      in
-      let%lwt matching =
-        Lwt_list.filter_s (Filter.contact_matches_filter pool query) contacts
-        ||> CCList.length
-      in
-      Lwt.return CCList.(length contacts - matching)
-    in
-    let%lwt assigned_contacts_not_matching =
-      query |> CCOption.map_or ~default:(Lwt.return 0) contacts_not_matching
-    in
-    let* sent_invitations =
-      Experiment.Statistics.SentInvitations.create ~total_match_filter pool experiment
-    in
-    Lwt_result.return
-      { total_sent
-      ; total_match_filter
-      ; total_uninvited_matching
-      ; assigned_contacts_not_matching
-      ; sent_invitations
-      }
-  ;;
+module ExperimentOverview = struct
+  module Field = Pool_message.Field
+  module Model = Pool_model.Base
+
+  module RegistrationPossible = struct
+    include Model.Boolean
+
+    let field = Field.RegistrationPossible
+    let schema = schema field
+    let hint = Pool_common.I18n.ExperimentStatisticsRegistrationPossible
+  end
+
+  module SessionCount = struct
+    include Model.Integer
+
+    let field = Field.SessionCount
+    let create = CCResult.return
+    let schema = schema field create
+  end
+
+  module ShowUpCount = struct
+    include Model.Integer
+
+    let field = Field.ShowUpCount
+    let create = CCResult.return
+    let schema = schema field create
+  end
+
+  module NoShowCount = struct
+    include Model.Integer
+
+    let field = Field.NoShowCount
+    let create = CCResult.return
+    let schema = schema field create
+  end
+
+  module ParticipationCount = struct
+    include Model.Integer
+
+    let field = Field.ParticipantCount
+    let create = CCResult.return
+    let schema = schema field create
+  end
+
+  type t =
+    { registration_possible : RegistrationPossible.t
+    ; sending_invitations : Experiment.SendingInvitations.t
+    ; session_count : SessionCount.t
+    ; invitations : ExperimentInvitations.t
+    ; showup_count : ShowUpCount.t
+    ; noshow_count : NoShowCount.t
+    ; participation_count : ParticipationCount.t
+    }
+  [@@deriving eq, show, fields ~getters]
 end

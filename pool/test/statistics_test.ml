@@ -25,7 +25,7 @@ let invitation_statistics _ () =
   let open Experiment in
   let open Statistics in
   let n_contacts = 10 in
-  let testable = SentInvitations.(testable pp_statistics equal_statistics) in
+  let testable = ExperimentInvitations.(testable pp equal) in
   let pool = Test_utils.Data.database_label in
   let%lwt current_user = create_admin_user () in
   let title = Pool_common.Id.(create () |> value) in
@@ -49,15 +49,16 @@ let invitation_statistics _ () =
   in
   let check_result msg expected =
     let%lwt result =
-      SentInvitations.create pool experiment ||> Test_utils.get_or_failwith
+      ExperimentInvitations.create pool experiment ||> Test_utils.get_or_failwith
     in
     check testable msg expected result;
     Lwt.return ()
   in
+  (* TODO: Also check total sent *)
   (* Invite 5 contacts *)
   let%lwt () = invite_contacts 5 in
   let expected =
-    SentInvitations.
+    ExperimentInvitations.
       { (* SentInvitations.total_sent = 5  ; *)
         total_match_filter = n_contacts
       ; invitation_resets = []
@@ -68,7 +69,7 @@ let invitation_statistics _ () =
   (* Invite 10 more contacts *)
   let%lwt () = invite_contacts 10 in
   let expected =
-    SentInvitations.
+    ExperimentInvitations.
       { expected with
         (* total_sent = 10; *)
         sent_since_last_reset = 10
@@ -86,7 +87,7 @@ let invitation_statistics _ () =
         ; invitations_sent = n_contacts
         }
     in
-    SentInvitations.
+    ExperimentInvitations.
       { expected with
         sent_since_last_reset = 0
       ; invitation_resets = [ invitation_reset ]
@@ -96,7 +97,7 @@ let invitation_statistics _ () =
   Unix.sleep 1;
   (* Invite 5 more contacts *)
   let%lwt () = invite_contacts 5 in
-  let expected = SentInvitations.{ expected with sent_since_last_reset = 5 } in
+  let expected = ExperimentInvitations.{ expected with sent_since_last_reset = 5 } in
   let%lwt () = check_result "Invite 5 more contacts after reset" expected in
   (* Reset invitations again *)
   let%lwt () = Experiment.ResetInvitations experiment |> Experiment.handle_event pool in
@@ -109,7 +110,7 @@ let invitation_statistics _ () =
         ; invitations_sent = 5
         }
     in
-    SentInvitations.
+    ExperimentInvitations.
       { expected with
         sent_since_last_reset = 0
       ; invitation_resets = expected.invitation_resets @ [ invitation_reset ]

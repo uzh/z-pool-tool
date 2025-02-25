@@ -235,7 +235,7 @@ let detail edit req =
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Email.SmtpAuth.find database_label id >|+ CCOption.return)
        in
-       let* statistics = Experiment.Statistics.create database_label experiment in
+       let* statistics = Statistics.ExperimentOverview.create database_label experiment in
        let%lwt invitation_reset =
          Experiment.InvitationReset.find_latest_by_experiment database_label id
        in

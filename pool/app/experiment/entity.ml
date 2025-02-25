@@ -244,6 +244,28 @@ let create
     }
 ;;
 
+module SendingInvitations = struct
+  module Core = struct
+    let field = Pool_message.Field.SendingInvitations
+
+    type t =
+      | No [@name "no"] [@printer Utils.ppx_printer "no"]
+      | Sending [@name "sending"] [@printer Utils.ppx_printer "sending"]
+      | Scheduled [@name "scheduled"] [@printer Utils.ppx_printer "scheduled"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
+
+  include Pool_model.Base.SelectorType (Core)
+  include Core
+
+  let read str =
+    try Ok (Utils.Json.read_variant t_of_yojson str) with
+    | _ -> Error (Pool_message.Error.Invalid field)
+  ;;
+
+  let hint = Pool_common.I18n.ExperimentStatisticsSendingInvitations
+end
+
 module DirectEnrollment = struct
   type t =
     { id : Id.t
@@ -376,7 +398,6 @@ let show_external_data_id_links_value (m : t) =
   ShowExternalDataIdLinks.value m.show_external_data_id_links
 ;;
 
-(* TODO: Move to statistics? *)
 module InvitationReset = struct
   type t =
     { created_at : Pool_common.CreatedAt.t

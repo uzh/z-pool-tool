@@ -183,6 +183,19 @@ val create
   -> ShowExternalDataIdLinks.t
   -> (t, Pool_message.Error.t) result
 
+module SendingInvitations : sig
+  type t =
+    | No
+    | Sending
+    | Scheduled
+
+  val show : t -> string
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val field : Pool_message.Field.t
+  val hint : Pool_common.I18n.hint
+end
+
 module Public : sig
   type t
 
@@ -246,7 +259,10 @@ module InvitationReset : sig
 
   val show : t -> string
   val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val find_by_experiment : Database.Label.t -> Id.t -> t list Lwt.t
   val find_latest_by_experiment : Database.Label.t -> Id.t -> t option Lwt.t
+  val invitations_sent_since_last_reset : Database.Label.t -> Id.t -> int Lwt.t
 end
 
 type event =
@@ -354,6 +370,16 @@ val query_participation_history_by_contact
   -> Contact.t
   -> ((t * bool) list * Query.t) Lwt.t
 
+val registration_possible : Database.Label.t -> Id.t -> bool Lwt.t
+
+val sending_invitations
+  :  Database.Label.t
+  -> Id.t
+  -> (SendingInvitations.t, Pool_message.Error.t) Lwt_result.t
+
+(* TODO: Type *)
+val assignment_counts : Database.Label.t -> Id.t -> (int * int * int) Lwt.t
+
 val find_admins_to_notify_about_invitations
   :  Database.Label.t
   -> Id.t
@@ -436,87 +462,6 @@ module Guard : sig
     val update : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
     val delete : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
   end
-end
-
-module Statistics : sig
-  module SentInvitations : sig
-    type statistics =
-      { invitation_resets : InvitationReset.t list
-      ; sent_since_last_reset : int
-      ; total_match_filter : int
-      }
-
-    val equal_statistics : statistics -> statistics -> bool
-    val pp_statistics : Format.formatter -> statistics -> unit
-    val show_statistics : statistics -> string
-
-    val create
-      :  ?total_match_filter:int
-      -> Database.Label.t
-      -> t
-      -> (statistics, Pool_message.Error.t) Lwt_result.t
-  end
-
-  module RegistrationPossible : sig
-    include Pool_model.Base.BooleanSig
-
-    val field : Pool_message.Field.t
-    val hint : Pool_common.I18n.hint
-  end
-
-  module SendingInvitations : sig
-    type t =
-      | No
-      | Sending
-      | Scheduled
-
-    val show : t -> string
-    val field : Pool_message.Field.t
-    val hint : Pool_common.I18n.hint
-  end
-
-  module SessionCount : sig
-    include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
-  end
-
-  module ShowUpCount : sig
-    include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
-  end
-
-  module NoShowCount : sig
-    include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
-  end
-
-  module ParticipationCount : sig
-    include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
-  end
-
-  type statistics =
-    { registration_possible : RegistrationPossible.t
-    ; sending_invitations : SendingInvitations.t
-    ; session_count : SessionCount.t
-    ; invitations : SentInvitations.statistics
-    ; showup_count : ShowUpCount.t
-    ; noshow_count : NoShowCount.t
-    ; participation_count : ParticipationCount.t
-    }
-
-  val registration_possible : statistics -> RegistrationPossible.t
-  val sending_invitations : statistics -> SendingInvitations.t
-  val session_count : statistics -> SessionCount.t
-  val invitations : statistics -> SentInvitations.statistics
-  val showup_count : statistics -> ShowUpCount.t
-  val noshow_count : statistics -> NoShowCount.t
-  val participation_count : statistics -> ParticipationCount.t
-  val create : Database.Label.t -> t -> (statistics, Pool_message.Error.t) Lwt_result.t
 end
 
 val column_title : Query.Column.t

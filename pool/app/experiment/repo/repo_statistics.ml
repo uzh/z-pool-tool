@@ -3,31 +3,6 @@ module Dynparam = Database.Dynparam
 open Caqti_request.Infix
 open Entity
 
-module SentInvitations = struct
-  let create ?total_match_filter pool { id; filter; _ } =
-    let open Utils.Lwt_result.Infix in
-    let%lwt invitation_resets = Repo_invitation_reset.find_by_experiment pool id in
-    let%lwt sent_since_last_reset =
-      Repo_invitation_reset.invitations_sent_since_last_reset pool id
-    in
-    let* total_match_filter =
-      match total_match_filter with
-      | Some total -> Lwt_result.return total
-      | None ->
-        let query = filter |> CCOption.map (fun { Filter.query; _ } -> query) in
-        Filter.(
-          count_filtered_contacts
-            ~include_invited:true
-            pool
-            (Matcher (Id.to_common id))
-            query)
-    in
-    Lwt.return_ok
-      Statistics.SentInvitations.
-        { invitation_resets; sent_since_last_reset; total_match_filter }
-  ;;
-end
-
 module FilterStatistics = struct
   let count_invitations_request =
     {sql|
@@ -124,8 +99,7 @@ let sending_invitations_request =
 
 let sending_invitations pool id =
   let open Utils.Lwt_result.Infix in
-  let open Statistics.SendingInvitations in
-  Database.find pool sending_invitations_request id ||> read
+  Database.find pool sending_invitations_request id ||> SendingInvitations.read
 ;;
 
 let session_count_request =
