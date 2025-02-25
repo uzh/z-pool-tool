@@ -57,17 +57,22 @@ let invitation_statistics _ () =
   (* Invite 5 contacts *)
   let%lwt () = invite_contacts 5 in
   let expected =
-    { SentInvitations.total_sent = 5
-    ; total_match_filter = n_contacts
-    ; invitation_resets = []
-    ; sent_since_last_reset = 5
-    }
+    SentInvitations.
+      { (* SentInvitations.total_sent = 5  ; *)
+        total_match_filter = n_contacts
+      ; invitation_resets = []
+      ; sent_since_last_reset = 5
+      }
   in
   let%lwt () = check_result "5 contacts invited" expected in
   (* Invite 10 more contacts *)
   let%lwt () = invite_contacts 10 in
   let expected =
-    SentInvitations.{ expected with total_sent = 10; sent_since_last_reset = 10 }
+    SentInvitations.
+      { expected with
+        (* total_sent = 10; *)
+        sent_since_last_reset = 10
+      }
   in
   let%lwt () = check_result "10 more contacts invited" expected in
   (* Reset invitations *)

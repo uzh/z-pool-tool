@@ -20,9 +20,7 @@ let run_by_tenant database_label =
     Repo.mark_as_checked database_label contact
 ;;
 
-let run_all () =
-  Database.(Pool.Tenant.all ~status:Status.[ Active ] ()) |> Lwt_list.iter_s run_by_tenant
-;;
+let run_all () = Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s run_by_tenant
 
 let start () =
   let open Schedule in

@@ -7,8 +7,7 @@ module DlrData = struct
   let message_id = "0f32bc8f-7271-4228-bf05-ba32403af065"
   let dlr_mask_str = "1"
   let dlr_mask = 1
-  let error_code_str = "0000"
-  let error_code = 0
+  let error_code = "0"
   let error_message = "Success"
   let submit_date_str = "2024-06-24T10:27:56Z"
   let submit_date = Pool_model.Time.parse_time submit_date_str |> CCResult.get_exn
@@ -24,7 +23,7 @@ module DlrData = struct
     ; "to", [ to_ ]
     ; "message-id", [ message_id ]
     ; "dlr-mask", [ dlr_mask_str ]
-    ; "error-code", [ error_code_str ]
+    ; "error-code", [ error_code ]
     ; "error-message", [ error_message ]
     ; "submit-date", [ submit_date_str ]
     ; "done-date", [ done_date_str ]

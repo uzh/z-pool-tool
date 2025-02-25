@@ -46,6 +46,7 @@ type t =
   | FilterNrOfContacts
   | FilterNrOfSentInvitations
   | FilterNrOfUnsuitableAssignments
+  | FilterNuberMatchingUninvited
   | FollowUpSessionFor
   | Help
   | ImportConfirmationNote
@@ -258,6 +259,8 @@ type hint =
   | MessageTemplateContactRegistrationAttempt
   | MessageTemplateEmailVerification
   | MessageTemplateExperimentInvitation
+  | MessageTemplateInactiveContactWarning
+  | MessageTemplateInactiveContactDeactivation
   | MessageTemplateManualSessionMessage
   | MessageTemplateMatcherNotification
   | MessageTemplateMatchFilterUpdateNotification
@@ -319,6 +322,7 @@ type hint =
   | SessionRegistrationHint
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
+  | SettigsInactiveUsers
   | SettingsNoEmailSuffixes
   | SettingsPageScripts
   | SignUpCodeHint

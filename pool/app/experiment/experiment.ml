@@ -18,7 +18,8 @@ module Repo = struct
 end
 
 let find = Repo.find
-let find_all = Repo.find_all
+let all = Repo.all
+let list_by_user = Repo.Sql.list_by_user
 let find_all_ids_of_contact_id = Repo.find_all_ids_of_contact_id
 let find_public = Repo_public.find
 let find_full_by_contact = Repo_public.find_full_by_contact
@@ -64,7 +65,7 @@ let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
 let is_sessionless ({ online_experiment; _ } : t) = CCOption.is_some online_experiment
 
 let invitation_count =
-  Repo_statistics.SentInvitations.total_invitation_count_by_experiment
+  Repo_statistics.FilterStatistics.total_invitation_count_by_experiment
 ;;
 
 module InvitationReset = struct
@@ -81,7 +82,7 @@ module Statistics = struct
   module SentInvitations = struct
     include SentInvitations
 
-    let create = Repo.SentInvitations.by_experiment
+    let create = Repo.SentInvitations.create
   end
 
   let create pool ({ id; _ } as experiment) =

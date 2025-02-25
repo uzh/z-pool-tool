@@ -27,6 +27,15 @@ let update_changelog =
   |> Contact.Repo.Id.(t2 t t ->. unit)
 ;;
 
+let update_changelog_user =
+  {sql|
+    UPDATE pool_change_log
+    SET user_uuid = UNHEX(REPLACE($1, '-', ''))
+    WHERE user_uuid = UNHEX(REPLACE($2, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.(t2 t t ->. unit)
+;;
+
 let update_tags =
   {sql|
     INSERT IGNORE INTO pool_tagging (model_uuid, tag_uuid)
@@ -42,7 +51,7 @@ let uuid_sql dyn items to_id =
     CCList.foldi
       (fun (dyn, sql) i item ->
          ( dyn |> Dynparam.add Caqti_type.string (to_id item)
-         , sql @ [ Format.asprintf "$%d" (i + 2) ] ))
+         , sql @ [ Format.asprintf "UNHEX(REPLACE($%d, '-', ''))" (i + 2) ] ))
       (dyn, [])
       items
   in
@@ -159,6 +168,14 @@ let destroy_possible_duplicates =
   |> Contact.Repo.Id.t ->. unit
 ;;
 
+let destroy_user_import =
+  {sql|
+    DELETE FROM pool_user_imports
+    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.t ->. unit
+;;
+
 let destroy_contact =
   {sql|
     DELETE FROM pool_contacts
@@ -269,6 +286,10 @@ let merge
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec update_changelog (id contact, id merged_contact)
   in
+  let override_changelog_user connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec update_changelog_user (id contact, id merged_contact)
+  in
   let override_tags connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec update_tags (id contact, id merged_contact)
@@ -331,6 +352,10 @@ let merge
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec destroy_possible_duplicates (id merged_contact)
   in
+  let destroy_user_import connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_user_import (id merged_contact)
+  in
   let insert_archived_email connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let open Archived_email in
@@ -360,6 +385,7 @@ let merge
     ; destroy_assignments
     ; destroy_possible_duplicates
     ; insert_archived_email
+    ; destroy_user_import
     ; destroy_contact
     ; destroy_user
     ]
@@ -371,7 +397,13 @@ let merge
   let%lwt () =
     Database.transaction_iter
       pool
-      ([ update_contact; update_user; override_queue; override_changelog; override_tags ]
+      ([ update_contact
+       ; update_user
+       ; override_queue
+       ; override_changelog
+       ; override_changelog_user
+       ; override_tags
+       ]
        @ store_custom_answers
        @ actions
        @ destroy_requests)

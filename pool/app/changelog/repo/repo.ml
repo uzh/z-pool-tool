@@ -25,13 +25,9 @@ let find_request_sql ?(count = false) =
 
 let find_by_model ?query pool entity_uuid =
   let open Repo_entity in
-  let where =
-    ( {sql| 
-        pool_change_log.entity_uuid = UNHEX(REPLACE($1, '-', ''))
-      |sql}
-    , Dynparam.(empty |> add RepoId.t entity_uuid) )
-  in
-  Query.collect_and_count pool query ~select:find_request_sql ~where t
+  let where = {sql| pool_change_log.entity_uuid = UNHEX(REPLACE($1, '-', '')) |sql} in
+  let dyn = Dynparam.(empty |> add RepoId.t entity_uuid) in
+  Query.collect_and_count pool query ~select:find_request_sql ~where ~dyn t
 ;;
 
 let insert_request =

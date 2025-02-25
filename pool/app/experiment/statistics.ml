@@ -2,13 +2,10 @@ module Field = Pool_message.Field
 module Model = Pool_model.Base
 
 module SentInvitations = struct
-  type sent_by_count = int * int [@@deriving eq, show]
-
   type statistics =
-    { total_sent : int
-    ; total_match_filter : int
-    ; invitation_resets : Entity.InvitationReset.t list
+    { invitation_resets : Entity.InvitationReset.t list
     ; sent_since_last_reset : int
+    ; total_match_filter : int
     }
   [@@deriving eq, show]
 end

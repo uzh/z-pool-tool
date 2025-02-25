@@ -149,16 +149,10 @@ module Sql = struct
   ;;
 
   let query_by_session ?query pool id =
-    let where =
-      ( "pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))"
-      , Dynparam.(empty |> add Session.Repo.Id.t id) )
-    in
-    Query.collect_and_count
-      pool
-      query
-      ~select:(find_request_sql ?additional_joins:None)
-      ~where
-      t
+    let where = "pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))" in
+    let dyn = Dynparam.(empty |> add Session.Repo.Id.t id) in
+    let select = find_request_sql ?additional_joins:None in
+    Query.collect_and_count pool query ~select ~where ~dyn t
   ;;
 
   let find_deleted_by_session_request () =
@@ -253,7 +247,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     Format.asprintf
       {sql|
-        SELECT 
+        SELECT
           %s
         FROM pool_assignments
           %s
@@ -265,7 +259,7 @@ module Sql = struct
           AND pool_assignments.canceled_at IS NULL
           AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
     	  GROUP BY
-		      pool_assignments.contact_uuid    
+		      pool_assignments.contact_uuid
       |sql}
       (Contact.Repo.sql_select_columns |> CCString.concat ",")
       joins
@@ -423,7 +417,7 @@ module Sql = struct
 
   let find_by_contact_to_merge_request =
     let open Caqti_request.Infix in
-    {sql| 
+    {sql|
       WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND NOT EXISTS (
         SELECT 1
@@ -437,7 +431,7 @@ module Sql = struct
 
   let find_by_contact_to_merge pool ~contact ~merged_contact =
     let open Contact in
-    Database.collect pool find_by_contact_to_merge_request (id contact, id merged_contact)
+    Database.collect pool find_by_contact_to_merge_request (id merged_contact, id contact)
   ;;
 
   let insert_request =

@@ -4,9 +4,9 @@ module Api = Http_utils_api
 module File = Http_utils_file
 module Filter = Http_utils_filter
 module Message = Http_utils_message
+module Session = Http_utils_session
 module StringMap = CCMap.Make (CCString)
 module Url = Http_utils_url
-module Session = Http_utils_session
 
 let src = Logs.Src.create "http_utils"
 
@@ -96,6 +96,11 @@ let find_query_param req field decode =
   >>= decode
 ;;
 
+let find_referer req =
+  let open CCOption.Infix in
+  Httpaf.Headers.get req.Opium.Request.headers "referer" >|= Uri.of_string >|= Uri.path
+;;
+
 let redirect_to_with_actions ?(skip_externalize = false) path actions =
   let externalize_path path =
     if skip_externalize then path else Sihl.Web.externalize_path path
@@ -105,6 +110,11 @@ let redirect_to_with_actions ?(skip_externalize = false) path actions =
   |> Sihl.Web.Response.redirect_to
   |> CCList.fold_left ( % ) id actions
   |> Lwt.return
+;;
+
+let redirect_back ~fallback req actions =
+  let redirect = find_referer req |> CCOption.value ~default:fallback in
+  redirect_to_with_actions redirect actions
 ;;
 
 let redirect_to path = redirect_to_with_actions path []

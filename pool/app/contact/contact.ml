@@ -4,6 +4,8 @@ include Repo
 include Entity
 include Event
 
+let list_by_user = Repo.list_by_user
+
 let find_by_user pool (user : Pool_user.t) =
   user.Pool_user.id |> Id.of_user |> Repo.find pool
 ;;

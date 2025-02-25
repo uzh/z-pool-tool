@@ -64,27 +64,31 @@ val all_periods : period list
 val read_period : string -> period option
 val period_to_human : Pool_common.Language.t -> period -> string
 
-type t =
-  { active_contacts : ActiveContacts.t
-  ; pending_contact_imports : PendingContactImports.t
-  ; login_count : LoginCount.t
-  ; sign_up_count : SignUpCount.t
-  ; terms_accepted_count : TermsAcceptedCount.t
-  ; terms_last_changed : Pool_model.Base.Ptime.t
-  ; assignments_created : AssignmentsCreated.t
-  ; invitations_sent : InvitationsSent.t
-  ; reminders_sent : RemindersSent.t
-  ; emails_sent : EmailsSent.t
-  }
+module Pool : sig
+  type t =
+    { active_contacts : ActiveContacts.t
+    ; pending_contact_imports : PendingContactImports.t
+    ; login_count : LoginCount.t
+    ; sign_up_count : SignUpCount.t
+    ; terms_accepted_count : TermsAcceptedCount.t
+    ; terms_last_changed : Pool_model.Base.Ptime.t
+    ; assignments_created : AssignmentsCreated.t
+    ; invitations_sent : InvitationsSent.t
+    ; reminders_sent : RemindersSent.t
+    ; emails_sent : EmailsSent.t
+    }
 
-val create : Database.Label.t -> ?period:period -> unit -> t Lwt.t
-val yojson_of_t : t -> Yojson.Safe.t
+  val create : Database.Label.t -> ?period:period -> unit -> t Lwt.t
+  val yojson_of_t : t -> Yojson.Safe.t
+end
 
 module ExperimentFilter : sig
   type t =
-    { contacts_meeting_criteria : int
-    ; invitation_count : int
+    { total_sent : int
+    ; total_match_filter : int
+    ; total_uninvited_matching : int
     ; assigned_contacts_not_matching : int
+    ; sent_invitations : Experiment.Statistics.SentInvitations.statistics
     }
 
   val create

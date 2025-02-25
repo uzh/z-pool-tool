@@ -28,6 +28,10 @@ module Label = struct
     | EmailVerification [@name "email_verification"] [@printer print "email_verification"]
     | ExperimentInvitation [@name "experiment_invitation"]
     [@printer print "experiment_invitation"]
+    | InactiveContactWarning [@name "inactive_contact_warning"]
+    [@printer print "inactive_contact_warning"]
+    | InactiveContactDeactivation [@name "inactive_contact_deactivation"]
+    [@printer print "inactive_contact_deactivation"]
     | ManualSessionMessage [@name "manual_session_message"]
     [@printer print "manual_session_message"]
     | MatcherNotification [@name "matcher_notification"]
@@ -159,6 +163,8 @@ let template_hint label =
   | ContactRegistrationAttempt -> MessageTemplateContactRegistrationAttempt
   | EmailVerification -> MessageTemplateEmailVerification
   | ExperimentInvitation -> MessageTemplateExperimentInvitation
+  | InactiveContactWarning -> MessageTemplateInactiveContactWarning
+  | InactiveContactDeactivation -> MessageTemplateInactiveContactWarning
   | ManualSessionMessage -> MessageTemplateManualSessionMessage
   | MatcherNotification -> MessageTemplateMatcherNotification
   | MatchFilterUpdateNotification -> MessageTemplateMatchFilterUpdateNotification

@@ -443,15 +443,15 @@ let find_experiments_by_key expected_key query =
     | Template _ -> ids
     | Pred { Predicate.key; value; _ } ->
       let open Key in
-      (match[@warning "-4"] key with
+      (match key with
        | Hardcoded key ->
          if equal_hardcoded key expected_key
          then (
            match value with
            | Lst values -> values @ ids
-           | _ -> ids)
+           | Single _ | NoValue -> ids)
          else ids
-       | _ -> ids)
+       | CustomField _ -> ids)
   in
   search [] query
   |> CCList.filter_map (fun value ->

@@ -48,13 +48,9 @@ let joins =
 ;;
 
 module Sql = struct
-  let select_for_calendar ?order_by where =
-    let order_by =
-      order_by |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
-    in
-    Format.asprintf
-      {sql|
-      SELECT
+  let select_for_calendar =
+    {sql|
+      SELECT DISTINCT
         LOWER(CONCAT(
           SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
           SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
@@ -99,12 +95,7 @@ module Sql = struct
         AND pool_experiments.assignment_without_session = 0
       INNER JOIN pool_locations
         ON pool_sessions.location_uuid = pool_locations.uuid
-      WHERE
-        %s
-        %s
     |sql}
-      where
-      order_by
   ;;
 
   let find_request_sql ?(count = false) where_fragment =
@@ -302,30 +293,26 @@ module Sql = struct
 
   let query_grouped_by_experiment ?query pool id =
     let where =
-      let sql =
-        {sql| pool_sessions.follow_up_to IS NULL AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-      in
-      let dyn =
-        Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
-      in
-      sql, dyn
+      {sql| pool_sessions.follow_up_to IS NULL AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
     in
+    let dyn =
+      Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+    in
+    let select = find_request_sql in
     let%lwt sessions, query =
-      Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
+      Query.collect_and_count pool query ~select ~where ~dyn Repo_entity.t
     in
     let%lwt sessions = to_grouped_sessions pool sessions in
     Lwt.return (sessions, query)
   ;;
 
   let query_by_experiment ?query pool id =
-    let where =
-      let sql = {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
-      let dyn =
-        Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
-      in
-      sql, dyn
+    let where = {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
+    let dyn =
+      Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
     in
-    Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
+    let select = find_request_sql in
+    Query.collect_and_count pool query ~select ~where ~dyn Repo_entity.t
   ;;
 
   let find_all_to_assign_from_waitinglist_request =
@@ -452,6 +439,7 @@ module Sql = struct
       WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       AND start > NOW()
       AND canceled_at IS NULL
+      AND closed_at IS NULL
       ORDER BY start
     |sql}
     |> find_public_sql
@@ -735,29 +723,6 @@ module Sql = struct
 
   let delete pool id = Database.exec pool delete_request (Pool_common.Id.value id)
 
-  let find_for_calendar_by_location_request =
-    let open Caqti_request.Infix in
-    {sql|
-        pool_sessions.canceled_at IS NULL
-        AND pool_sessions.start > $2
-        AND pool_sessions.start < $3
-        AND pool_sessions.location_uuid = UNHEX(REPLACE($1, '-', ''))
-      |sql}
-    |> select_for_calendar ~order_by:"pool_sessions.start"
-    |> Caqti_type.(t3 string ptime ptime ->* RepoEntity.Calendar.t)
-  ;;
-
-  let find_for_calendar_by_location location_id pool ~start_time ~end_time =
-    Database.collect
-      pool
-      find_for_calendar_by_location_request
-      (Pool_location.Id.value location_id, start_time, end_time)
-  ;;
-
-  let find_for_calendar_by_user_request =
-    select_for_calendar ~order_by:"pool_sessions.start"
-  ;;
-
   let find_by_user_params pool actor =
     let open Utils.Lwt_result.Infix in
     let experiment_checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
@@ -786,10 +751,7 @@ module Sql = struct
 
   let query_by_admin where ?query actor pool =
     let%lwt guardian_conditions = find_by_user_params pool actor in
-    let where =
-      let sql = Format.asprintf "%s AND %s" guardian_conditions where in
-      sql, Dynparam.empty
-    in
+    let where = Format.asprintf "%s AND %s" guardian_conditions where in
     Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
   ;;
 
@@ -810,30 +772,56 @@ module Sql = struct
     |> query_by_admin
   ;;
 
-  let find_for_calendar_by_user actor pool ~start_time ~end_time =
+  let calendar_query ?location_uuid ~start_time ~end_time pool actor guardian =
     let open Caqti_request.Infix in
-    let%lwt guardian_conditions = find_by_user_params pool actor in
-    let sql =
-      [ "pool_sessions.start > ?"
-      ; "pool_sessions.start < ?"
-      ; "pool_sessions.canceled_at IS NULL"
-      ; guardian_conditions
-      ]
-      |> CCString.concat " AND "
+    let dyn, sql, _ =
+      Guard.Persistence.with_user_permission actor "pool_sessions.uuid" `Session
     in
-    let (Dynparam.Pack (pt, pv)) =
+    let dyn =
       let open Dynparam in
       CCList.fold_left
         (fun dyn p -> dyn |> add Caqti_type.ptime p)
-        empty
+        dyn
         [ start_time; end_time ]
     in
-    let request =
-      find_for_calendar_by_user_request sql
-      |> (pt ->* RepoEntity.Calendar.t) ~oneshot:true
+    let where, dyn =
+      match location_uuid with
+      | None -> "", dyn
+      | Some location_uuid ->
+        ( "AND pool_sessions.location_uuid = UNHEX(REPLACE(?, '-', ''))"
+        , dyn |> Dynparam.add Caqti_type.string (Pool_location.Id.value location_uuid) )
     in
+    let sql =
+      Format.asprintf
+        {sql|
+          %s
+          %s
+          INNER JOIN user_permissions 
+            ON pool_sessions.uuid = user_permissions.target_uuid
+            OR pool_sessions.location_uuid = user_permissions.target_uuid
+            OR pool_sessions.experiment_uuid = user_permissions.target_uuid
+            OR user_permissions.target_uuid IS NULL
+          WHERE
+          pool_sessions.start > ?
+          AND pool_sessions.start < ?
+          AND pool_sessions.canceled_at IS NULL
+          %s
+          ORDER BY pool_sessions.start
+        |sql}
+        sql
+        select_for_calendar
+        where
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request = sql |> (pt ->* RepoEntity.Calendar.t actor guardian) ~oneshot:true in
     Database.collect pool request pv
   ;;
+
+  let calendar_by_user ~start_time ~end_time pool =
+    calendar_query ~start_time ~end_time pool
+  ;;
+
+  let calendar_by_location ~location_uuid = calendar_query ~location_uuid
 
   let find_sessions_to_update_matcher_request context =
     let base_condition =
@@ -944,6 +932,4 @@ let find_sessions_to_remind = Sql.find_sessions_to_remind
 let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete
-let find_for_calendar_by_location = Sql.find_for_calendar_by_location
-let find_for_calendar_by_user = Sql.find_for_calendar_by_user
 let find_all_ids_of_contact_id = Sql.find_all_ids_of_contact_id

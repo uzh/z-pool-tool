@@ -79,13 +79,9 @@ module Sql = struct
   let find_all_templates pool = Database.collect pool find_all_templates_request
 
   let find_templates_by query pool =
-    let where = template_condition, Dynparam.empty in
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select:(find_request_sql ~joins:joins_experiment)
-      ~where
-      Repo_entity.t
+    let select = find_request_sql ~joins:joins_experiment in
+    let where = template_condition in
+    Query.collect_and_count pool (Some query) ~select ~where Repo_entity.t
   ;;
 
   let find_multiple_request ids =
@@ -212,15 +208,15 @@ module Sql = struct
       | Template _ -> ids
       | Pred { Predicate.key; value; _ } ->
         let open Key in
-        (match[@warning "-4"] key with
+        (match key with
          | Hardcoded key ->
            if equal_hardcoded key Participation
            then (
              match value with
              | Lst values -> values @ ids
-             | _ -> ids)
+             | Single _ | NoValue -> ids)
            else ids
-         | _ -> ids)
+         | CustomField _ -> ids)
     in
     search [] query
     |> CCList.filter_map (fun value ->

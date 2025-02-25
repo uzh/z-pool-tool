@@ -192,6 +192,8 @@ type t =
   }
 [@@deriving eq, fields ~getters, show, yojson]
 
+let compare a b = Id.compare a.id b.id
+
 let create
       ?id
       ?contact_email
@@ -374,6 +376,7 @@ let show_external_data_id_links_value (m : t) =
   ShowExternalDataIdLinks.value m.show_external_data_id_links
 ;;
 
+(* TODO: Move to statistics? *)
 module InvitationReset = struct
   type t =
     { created_at : Pool_common.CreatedAt.t

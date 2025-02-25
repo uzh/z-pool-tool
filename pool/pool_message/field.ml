@@ -155,6 +155,8 @@ type t =
   [@printer go "inactive_user_disable_after"]
   | InactiveUserWarning [@name "inactive_user_warning"]
   [@printer go "inactive_user_warning"]
+  | InactiveUserDisableService [@name "inactive_user_disable_service"]
+  [@printer go "inactive_user_disable_service"]
   | Input [@name "input"] [@printer go "input"]
   | Institution [@name "institution"] [@printer go "institution"]
   | InternalDescription [@name "internal_description"]

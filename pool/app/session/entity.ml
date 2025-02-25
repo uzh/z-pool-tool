@@ -424,41 +424,61 @@ module Calendar = struct
   type location =
     { id : Pool_location.Id.t
     ; name : Pool_location.Name.t
-    ; url : string
     }
   [@@deriving eq, show, yojson]
 
   type links =
-    { show_experiment : bool
-    ; show_session : bool
-    ; show_location_session : bool
-    ; experiment : string
-    ; session : string
-    ; location_session : string
+    { experiment : string option
+    ; session : string option
     }
   [@@deriving eq, show, yojson]
 
-  let create_links
-        ?(show_experiment = false)
-        ?(show_session = false)
-        ?(show_location_session = false)
-        experiment_id
-        session_id
-        ({ url; _ } : location)
-    =
-    let session_id = Id.value session_id in
-    let experiment =
-      Format.asprintf "admin/experiments/%s" (Experiment.Id.value experiment_id)
-      |> Sihl.Web.externalize_path
+  let make_links actor guardian experiment_id session_id (location : location) : links =
+    let open Guard in
+    let externalize_opt = CCOption.map Sihl.Web.externalize_path in
+    let id_string = Uuid.Target.to_string in
+    let session_id = Uuid.target_of Id.value session_id in
+    let experiment_id = Uuid.target_of Experiment.Id.value experiment_id in
+    let location_id = Uuid.target_of Pool_location.Id.value location.id in
+    let check_guardian model target =
+      let open ValidationSet in
+      Persistence.PermissionOnTarget.validate_set
+        guardian
+        Pool_message.Error.authorization
+        (one_of_tuple (Permission.Read, model, Some target))
+        actor
+      |> CCResult.is_ok
     in
-    let session base_url = Format.asprintf "%s/sessions/%s" base_url session_id in
-    { show_experiment
-    ; show_session
-    ; show_location_session
-    ; experiment
-    ; session = session experiment
-    ; location_session = session url
-    }
+    let open Format in
+    let access_experiment = check_guardian `Experiment experiment_id in
+    let experiment =
+      externalize_opt
+      @@
+      match access_experiment with
+      | true -> Some (asprintf "/admin/experiments/%s" (id_string experiment_id))
+      | false -> None
+    in
+    let session =
+      externalize_opt
+      @@
+      match access_experiment || check_guardian `Session session_id with
+      | true ->
+        asprintf
+          "/admin/experiments/%s/sessions/%s"
+          (id_string experiment_id)
+          (id_string session_id)
+        |> CCOption.return
+      | false ->
+        (match check_guardian `Location location_id with
+         | true ->
+           asprintf
+             "/admin/locations/%s/sessions/%s"
+             (id_string location_id)
+             (id_string session_id)
+           |> CCOption.return
+         | false -> None)
+    in
+    { experiment; session }
   ;;
 
   type t =
@@ -477,6 +497,8 @@ module Calendar = struct
     ; location : location
     }
   [@@deriving eq, show, yojson]
+
+  let compare (a : t) (b : t) = Id.compare a.id b.id
 end
 
 let email_text language start duration location =

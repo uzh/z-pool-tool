@@ -87,6 +87,7 @@ let to_string = function
   | FilterNrOfSentInvitations -> "Number of contacts already invited:"
   | FilterNrOfUnsuitableAssignments ->
     "Number of assigned contacts not meeting the criteria of this filter:"
+  | FilterNuberMatchingUninvited -> "Possible new invitations:"
   | FollowUpSessionFor -> "Follow-up for:"
   | Help -> "Help"
   | ImportConfirmationNote ->
@@ -475,6 +476,12 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been temporarily \
      suspended because of too many failed login attempts."
+  | MessageTemplateInactiveContactWarning ->
+    "This message is sent to contacts who have not logged in for a long time to inform \
+     them that their account will soon be deactivated."
+  | MessageTemplateInactiveContactDeactivation ->
+    "This message is sent to contacts whose account has been deactivated due to \
+     inactivity."
   | MessageTemplateAssignmentCancellation ->
     "This message is used to notify contacts about the cancellation of an assignment."
   | MessageTemplateAssignmentConfirmation ->
@@ -650,6 +657,10 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SessionRegistrationHint -> "The registration for a session is binding."
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."
+  | SettigsInactiveUsers ->
+    "The durations specified here are totaled. This means that an account is only \
+     deactivated after the total of 'Warn inactive users' and 'Deactivate inactive \
+     users'."
   | SessionReminderLeadTime ->
     "The lead time determines how long before the start of the session the reminders are \
      sent to the contacts"

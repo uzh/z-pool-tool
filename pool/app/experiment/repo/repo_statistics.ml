@@ -4,6 +4,66 @@ open Caqti_request.Infix
 open Entity
 
 module SentInvitations = struct
+  (* let by_experiment ?query pool ({ id; _ } as experiment) =
+    let query =
+      let open CCOption.Infix in
+      query <+> (experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query))
+    in
+    let open Utils.Lwt_result.Infix in
+    let%lwt invitation_resets = Repo_invitation_reset.find_by_experiment pool id in
+    let%lwt sent_since_last_reset =
+      Repo_invitation_reset.invitations_sent_since_last_reset pool id
+    in
+    let%lwt total_sent = total_invitation_count_by_experiment pool id in
+    let* total_match_filter =
+      let query = experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query) in
+      Filter.(
+        count_filtered_contacts
+          ~include_invited:true
+          pool
+          (Matcher (Id.to_common id))
+          query)
+    in
+    let count_filtered_contacts ~include_invited =
+      Filter.(
+        count_filtered_contacts ~include_invited pool (Matcher (Id.to_common id)) query)
+    in
+    let* total_uninvited_matching = count_filtered_contacts ~include_invited:false in
+    Lwt.return_ok
+      Statistics.SentInvitations.
+        { total_sent
+        ; total_match_filter
+        ; total_uninvited_matching
+        ; invitation_resets
+        ; sent_since_last_reset
+        }
+  ;; *)
+
+  let create ?total_match_filter pool { id; filter; _ } =
+    let open Utils.Lwt_result.Infix in
+    let%lwt invitation_resets = Repo_invitation_reset.find_by_experiment pool id in
+    let%lwt sent_since_last_reset =
+      Repo_invitation_reset.invitations_sent_since_last_reset pool id
+    in
+    let* total_match_filter =
+      match total_match_filter with
+      | Some total -> Lwt_result.return total
+      | None ->
+        let query = filter |> CCOption.map (fun { Filter.query; _ } -> query) in
+        Filter.(
+          count_filtered_contacts
+            ~include_invited:true
+            pool
+            (Matcher (Id.to_common id))
+            query)
+    in
+    Lwt.return_ok
+      Statistics.SentInvitations.
+        { invitation_resets; sent_since_last_reset; total_match_filter }
+  ;;
+end
+
+module FilterStatistics = struct
   let count_invitations_request =
     {sql|
       SELECT COUNT(1)
@@ -25,27 +85,6 @@ module SentInvitations = struct
 
   let total_invitation_count_by_experiment pool experiment_id =
     Database.find pool count_invitations_request (Id.value experiment_id)
-  ;;
-
-  let by_experiment pool ({ id; _ } as experiment) =
-    let open Utils.Lwt_result.Infix in
-    let%lwt invitation_resets = Repo_invitation_reset.find_by_experiment pool id in
-    let%lwt sent_since_last_reset =
-      Repo_invitation_reset.invitations_sent_since_last_reset pool id
-    in
-    let%lwt total_sent = total_invitation_count_by_experiment pool id in
-    let* total_match_filter =
-      let query = experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query) in
-      Filter.(
-        count_filtered_contacts
-          ~include_invited:true
-          pool
-          (Matcher (Id.to_common id))
-          query)
-    in
-    Lwt.return_ok
-      Statistics.SentInvitations.
-        { total_sent; total_match_filter; invitation_resets; sent_since_last_reset }
   ;;
 end
 

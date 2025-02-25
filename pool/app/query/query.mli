@@ -24,8 +24,10 @@ module Pagination : sig
     { limit : Limit.t
     ; page : Page.t
     ; page_count : PageCount.t
+    ; item_count : int
     }
 
+  val create : ?limit:int -> ?page:int -> ?page_count:int -> ?item_count:int -> unit -> t
   val to_query_parts : t -> (Pool_message.Field.t * string) list
   val yojson_of_t : t -> Yojson.Safe.t
 end
@@ -170,7 +172,8 @@ val collect_and_count
   :  Database.Label.t
   -> t option
   -> select:(?count:bool -> string -> string)
-  -> ?where:string * Database.Dynparam.t
+  -> ?where:string
+  -> ?dyn:Database.Dynparam.t
   -> 'a Caqti_type.t
   -> ('a list * t) Lwt.t
 

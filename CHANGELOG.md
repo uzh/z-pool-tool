@@ -4,6 +4,42 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.9.1](https://github.com/uzh/z-pool-tool/tree/0.9.1) - 2025-02-10
+
+### Added
+
+- allow contact deactivation service to be disabled
+
+### Fixed
+
+- some anonymous exception
+- text message dlr error codes
+
+## [0.9.0](https://github.com/uzh/z-pool-tool/tree/0.9.0) - 2025-02-06
+
+### Added
+
+- service to detect possibly duplicated contacts, and merge them
+- utility functions, authorization and logging for API
+- settings to add JavaScript snippets to head or body
+- allow contacts to be signed of from a session on the contact page
+- automatically warn and disable inactive users
+- add changelog history for entities (e.g. experiments, sessions, contacts)
+
+### Changed
+
+- run tenant migrations in parallel
+- improve information of filter statistics
+- improve worker reconnection with databases
+- reduce unneeded empty bulk sent events
+
+### Fixed
+
+- update filter statistics after every change
+- paused condition for filters
+- shown error message typos
+- text message DLR
+
 ## [0.8.3](https://github.com/uzh/z-pool-tool/tree/0.8.3) - 2024-10-24
 
 ### Fixed

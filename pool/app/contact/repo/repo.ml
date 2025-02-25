@@ -1,4 +1,5 @@
 open CCFun.Infix
+open Utils.Lwt_result.Infix
 open Repo_entity
 module Dynparam = Database.Dynparam
 
@@ -43,10 +44,20 @@ let joins =
   |sql}
 ;;
 
-let find_request_sql ?(additional_joins = []) ?(count = false) where_fragment =
-  let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
+let find_request_sql
+      ?(distinct = true)
+      ?(additional_joins = [])
+      ?(count = false)
+      where_fragment
+  =
+  let columns =
+    if count
+    then "COUNT(DISTINCT user_users.uuid)"
+    else CCString.concat ", " sql_select_columns
+  in
   Format.asprintf
-    {sql|SELECT %s FROM pool_contacts %s %s|sql}
+    {sql|SELECT %s %s FROM pool_contacts %s %s|sql}
+    (if distinct && not count then "DISTINCT" else "")
     columns
     (joins :: additional_joins |> CCString.concat "\n")
     where_fragment
@@ -69,7 +80,6 @@ let find_request =
 ;;
 
 let find pool id =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt pool find_request id
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
@@ -85,7 +95,6 @@ let find_admin_comment_request =
 ;;
 
 let find_admin_comment pool id =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt pool find_admin_comment_request id ||> CCOption.flatten
 ;;
 
@@ -100,7 +109,6 @@ let find_by_email_request =
 ;;
 
 let find_by_email pool email =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt pool find_by_email_request email
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
@@ -117,7 +125,6 @@ let find_confirmed_request =
 ;;
 
 let find_confirmed pool email =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt pool find_confirmed_request email
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
@@ -159,45 +166,87 @@ let select_count where_fragment =
   Format.asprintf "%s %s" select_from where_fragment
 ;;
 
-let find_all ?query ?actor ?permission pool () =
-  let open Utils.Lwt_result.Infix in
-  let checks =
-    [ Format.asprintf
-        {sql|
-          user_users.uuid IN (
-            SELECT contact_uuid FROM pool_sessions
-            JOIN pool_assignments ON pool_sessions.uuid = pool_assignments.session_uuid
-            WHERE pool_sessions.experiment_uuid IN %s
-            )
-        |sql}
-    ; Format.asprintf
-        {sql|
-          user_users.uuid IN (
-            SELECT contact_uuid FROM pool_assignments
-            WHERE pool_assignments.session_uuid IN %s
-            )
-        |sql}
-    ; Format.asprintf
-        {sql|
-          user_users.uuid IN (
-            SELECT contact_uuid FROM pool_sessions
-            JOIN pool_assignments ON pool_sessions.uuid = pool_assignments.session_uuid
-            WHERE pool_sessions.location_uuid IN %s
-            )
-        |sql}
-    ; Format.asprintf "user_users.uuid IN %s"
-    ]
+let list_by_user ?query pool actor =
+  let open CCFun.Infix in
+  let target_sql = CCFun.(Role.Target.show %> Format.asprintf "'%s'") in
+  let targets_to_sql targets = targets |> CCList.map target_sql |> CCString.concat "," in
+  (* Ignoring default permission joins *)
+  let dyn, sql, _ =
+    Guard.Persistence.with_user_permission actor "pool_experiments.uuid" `Contact
   in
-  let%lwt where =
-    Guard.create_where ?actor ?permission ~checks pool `Contact
-    ||> CCOption.map (fun m -> m, Dynparam.empty)
+  let contact_targets = targets_to_sql [ `Contact; `ContactInfo ] in
+  let joins =
+    [%string
+      {sql|
+        LEFT JOIN user_permissions 
+          ON pool_contacts.user_uuid = user_permissions.target_uuid
+          OR (
+            user_permissions.target_uuid IS NULL
+            AND user_permissions.target_model IN (%{contact_targets})
+          )
+    |sql}]
   in
-  Query.collect_and_count
-    pool
-    query
-    ~select:(find_request_sql ?additional_joins:None)
-    ?where
-    t
+  let join_assignment_with =
+    targets_to_sql [ `Assignment; `Session; `Experiment; `Location ]
+  in
+  let where =
+    [%string
+      {sql|
+        (
+          EXISTS (
+            SELECT
+              1
+            FROM
+              user_permissions
+            WHERE
+              (target_model = %{target_sql `Contact} AND target_uuid IS NULL)
+              OR target_uuid = pool_contacts.user_uuid
+          )
+          OR EXISTS (
+            SELECT
+              1
+            FROM
+              pool_assignments
+              INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
+              INNER JOIN user_permissions ON
+              (
+                -- ASSIGNMENT PERMISSION
+                user_permissions.target_uuid = pool_assignments.uuid 
+
+                -- SESSION PERMISSION
+                OR user_permissions.target_uuid = pool_sessions.uuid
+      
+                -- LOCATION PERMISSION
+                OR (
+                  pool_sessions.location_uuid IS NOT NULL
+                  AND pool_sessions.location_uuid = user_permissions.target_uuid
+                )
+
+                -- EXPERIMENT PERMISSION
+                OR user_permissions.target_uuid = pool_sessions.experiment_uuid
+
+                -- GLOBAL PERMISSIONS
+                OR (
+                  user_permissions.target_uuid IS NULL
+                  AND user_permissions.target_model IN (%{join_assignment_with})
+                )
+              )
+            WHERE
+              pool_assignments.contact_uuid = pool_contacts.user_uuid
+          )
+        )
+  |sql}]
+  in
+  let select ?count =
+    find_request_sql ?count ~distinct:true ~additional_joins:[ joins ]
+    %> Format.asprintf "%s %s" sql
+  in
+  Query.collect_and_count pool query ~select ~dyn ~where Repo_entity.t
+;;
+
+let all ?query pool =
+  let select = find_request_sql ~distinct:true ?additional_joins:None in
+  Query.collect_and_count pool query ~select t
 ;;
 
 let insert_request =
@@ -474,7 +523,6 @@ let find_cell_phone_verification_by_contact_and_code_request =
 ;;
 
 let find_cell_phone_verification_by_contact_and_code pool contact code =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt
     pool
     find_cell_phone_verification_by_contact_and_code_request
@@ -497,7 +545,6 @@ let find_full_cell_phone_verification_by_contact_request =
 ;;
 
 let find_full_cell_phone_verification_by_contact pool contact =
-  let open Utils.Lwt_result.Infix in
   Database.find_opt
     pool
     find_full_cell_phone_verification_by_contact_request
@@ -536,6 +583,18 @@ let update_sign_in_count pool =
   Entity.id %> Database.exec pool update_sign_in_count_request
 ;;
 
+let remove_deactivation_notifications pool contact =
+  let open Caqti_request.Infix in
+  let request =
+    {sql|
+      DELETE FROM pool_contact_deactivation_notification
+      WHERE contact_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Id.t ->. Caqti_type.unit
+  in
+  Database.exec pool request (Entity.id contact)
+;;
+
 let set_inactive_request =
   let open Caqti_request.Infix in
   {sql|
@@ -550,3 +609,30 @@ let set_inactive_request =
 ;;
 
 let set_inactive pool = Entity.id %> Database.exec pool set_inactive_request
+
+let find_last_signin_at pool contact =
+  let request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT last_sign_in_at
+      FROM pool_contacts
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Repo_entity.Id.t ->! Caqti_type.ptime
+  in
+  contact |> Entity.id |> Database.find pool request
+;;
+
+module InactivityNotification = struct
+  let insert pool contact =
+    let open Caqti_request.Infix in
+    let request =
+      {sql|
+       INSERT INTO pool_contact_deactivation_notification (contact_uuid)
+       VALUES (UNHEX(REPLACE(?, '-', '')))
+      |sql}
+      |> Repo_entity.Id.t ->. Caqti_type.unit
+    in
+    Database.exec pool request (Entity.id contact)
+  ;;
+end

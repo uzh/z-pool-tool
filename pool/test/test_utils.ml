@@ -3,17 +3,21 @@ module Data = struct
 end
 
 (* Testable *)
+let admin = Admin.(Alcotest.testable pp equal)
 let annoncement = Announcement.(Alcotest.testable pp equal)
 let api_key = Api_key.(Alcotest.testable pp equal)
+let calendar_session = Session.Calendar.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let database_label = Database.Label.(Alcotest.testable pp equal)
 let date = Pool_model.Base.Ptime.(Alcotest.testable pp_date equal_date)
 let error = Pool_message.Error.(Alcotest.testable pp equal)
 let event = Pool_event.(Alcotest.testable pp equal)
+let experiment = Experiment.(Alcotest.testable pp equal)
 let filter = Filter.(Alcotest.testable pp equal)
 let language = Pool_common.Language.(Alcotest.testable pp equal)
-let message_template = Message_template.(Alcotest.testable pp equal)
+let location = Pool_location.(Alcotest.testable pp equal)
 let merge_contact = Duplicate_contacts.(Alcotest.testable pp_merge equal_merge)
+let message_template = Message_template.(Alcotest.testable pp equal)
 let partial_update = Custom_field.PartialUpdate.(Alcotest.testable pp equal)
 let password = Pool_user.Password.(Alcotest.testable pp equal)
 let password_plain = Pool_user.Password.Plain.(Alcotest.testable pp equal)
@@ -21,6 +25,7 @@ let phone_nr = Pool_user.CellPhone.(Alcotest.testable pp equal)
 let pool_version = Pool_version.(Alcotest.testable pp equal)
 let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
 let time_window_testable = Time_window.(Alcotest.testable pp equal)
+let tag = Tags.(Alcotest.testable pp equal)
 
 let check_result ?(msg = "succeeds") =
   let open Alcotest in
@@ -276,7 +281,14 @@ module Model = struct
     }
   ;;
 
-  let create_mailing ?id ?start ?(limit = Mailing.Limit.default) () =
+  let create_mailing
+        ?id
+        ?start
+        ?(duration = Sihl.Time.(OneHour |> duration_to_span))
+        ?(limit = Mailing.Limit.default)
+        ?distribution
+        ()
+    =
     let open Mailing in
     let start =
       let default () =
@@ -291,12 +303,12 @@ module Model = struct
       CCOption.value ~default:(default ()) start
     in
     let deadline =
-      Ptime.add_span (Ptime_clock.now ()) Sihl.Time.(OneHour |> duration_to_span)
+      Ptime.add_span (Ptime_clock.now ()) duration
       |> CCOption.get_exn_or "Time calculation failed!"
       |> EndAt.create
       |> get_or_failwith
     in
-    create ?id start deadline limit None |> get_or_failwith
+    create ?id start deadline limit distribution |> get_or_failwith
   ;;
 
   let create_email ?(sender = "sender@mail.com") ?(recipient = "recipient@mail.com") () =
@@ -535,9 +547,8 @@ end
 
 module Repo = struct
   let first_contact () =
-    let open CCFun.Infix in
     let open Utils.Lwt_result.Infix in
-    Contact.find_all Data.database_label () ||> fst %> CCList.hd
+    Contact.all Data.database_label ||> fst ||> CCList.hd
   ;;
 
   let first_tag () =
@@ -545,25 +556,14 @@ module Repo = struct
     Tags.find_by Data.database_label ||> fst ||> CCList.hd
   ;;
 
-  let all_experiments () =
-    let open Utils.Lwt_result.Infix in
-    Experiment.find_all Data.database_label ||> fst
-  ;;
-
   let first_experiment () =
     let open Utils.Lwt_result.Infix in
-    all_experiments () ||> CCList.hd
+    Experiment.all Data.database_label ||> CCList.hd
   ;;
-
-  (* TODO: This belongs to the intergration utils *)
-  (* let create_experiment ?(id = Experiment.Id.create ()) ?filter () = let experiment =
-     Model.create_experiment ~id ?filter () in let%lwt () = Experiment.Created experiment
-     |> Pool_event.experiment |> Pool_event.handle_event Data.database_label in Lwt.return
-     experiment ;; *)
 
   let first_location () =
     let open Utils.Lwt_result.Infix in
-    Pool_location.find_all Data.database_label ||> fst ||> CCList.hd
+    Pool_location.all Data.database_label ||> CCList.hd
   ;;
 end
 

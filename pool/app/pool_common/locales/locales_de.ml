@@ -138,6 +138,8 @@ let rec field_to_string =
   | ImportPending -> "Import pendent"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
+  | InactiveUserDisableService ->
+    "Service deaktivieren (Kontakte werden weder erinnert noch deaktiviert)"
   | Inactive -> "Inaktiv"
   | Input -> "Input"
   | Institution -> "Institution"

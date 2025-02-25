@@ -155,8 +155,15 @@ module LocationRepo = struct
 end
 
 module MailingRepo = struct
-  let create ?(id = Mailing.Id.create ()) ?start ?limit experiment_id =
-    let mailing = Model.create_mailing ~id ?start ?limit () in
+  let create
+        ?(id = Mailing.Id.create ())
+        ?start
+        ?duration
+        ?distribution
+        ?limit
+        experiment_id
+    =
+    let mailing = Model.create_mailing ~id ?start ?duration ?distribution ?limit () in
     let%lwt () =
       Mailing.(Created (mailing, experiment_id) |> handle_event Data.database_label)
     in
@@ -210,7 +217,17 @@ module SessionRepo = struct
       |> Pool_event.session
       |> Pool_event.handle_event Data.database_label current_user
     in
-    Lwt.return session
+    (* To compare the start time it is required to read the session from the database again *)
+    Session.find Data.database_label session.Session.id |> Lwt.map get_or_failwith
+  ;;
+end
+
+module TagRepo = struct
+  let create ?(id = Tags.Id.create ()) ?(name = "Tag") model =
+    let open Tags in
+    let tag = Tags.create ~id (Title.of_string name) model |> get_or_failwith in
+    let%lwt () = Tags.(Created tag |> handle_event Data.database_label) in
+    Tags.find Data.database_label id |> Lwt.map get_or_failwith
   ;;
 end
 

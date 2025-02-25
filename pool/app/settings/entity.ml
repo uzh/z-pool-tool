@@ -40,6 +40,7 @@ module Key = struct
     | EmailSuffixes [@name "email_suffixes"]
     | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
     | InactiveUserWarning [@name "inactive_user_warning"]
+    | InactiveUserServiceDisabled [@name "inactive_user_service_disabled"]
     | Languages [@name "languages"]
     | ReminderLeadTime [@name "default_reminder_lead_time"]
     | TextMsgReminderLeadTime [@name "default_text_msg_reminder_lead_time"]
@@ -106,13 +107,26 @@ module InactiveUser = struct
   end
 
   module Warning = struct
-    module Core = struct
-      let name = Pool_message.Field.InactiveUserWarning
+    module TimeSpan = struct
+      module Core = struct
+        let name = Pool_message.Field.InactiveUserWarning
+      end
+
+      include Pool_model.Base.Duration (Core)
     end
 
-    include Pool_model.Base.Duration (Core)
+    type t = TimeSpan.t list [@@deriving eq, show, yojson]
 
     let key = Key.InactiveUserWarning
+  end
+
+  module ServiceDisabled = struct
+    let field = Pool_message.Field.InactiveUserDisableService
+
+    include Pool_model.Base.Boolean
+
+    let schema = schema ~default:false field
+    let key = Key.InactiveUserServiceDisabled
   end
 end
 
@@ -168,21 +182,6 @@ module UserImportReminder = struct
   end
 end
 
-module Value = struct
-  type t =
-    | DefaultReminderLeadTime of EmailReminderLeadTime.t
-    | DefaultTextMsgReminderLeadTime of TextMsgReminderLeadTime.t
-    | TenantLanguages of TenantLanguages.t
-    | TenantEmailSuffixes of EmailSuffixes.t
-    | TenantContactEmail of ContactEmail.t
-    | InactiveUserDisableAfter of InactiveUser.DisableAfter.t
-    | InactiveUserWarning of InactiveUser.Warning.t
-    | TriggerProfileUpdateAfter of TriggerProfileUpdateAfter.t
-    | UserImportFirstReminder of UserImportReminder.FirstReminderAfter.t
-    | UserImportSecondReminder of UserImportReminder.SecondReminderAfter.t
-  [@@deriving eq, show, yojson, variants]
-end
-
 module PageScript = struct
   include Pool_model.Base.String
 
@@ -207,6 +206,7 @@ let action_of_param = function
   | "update_text_msg_default_lead_time" -> Ok `UpdateTextMsgDefaultLeadTime
   | "update_inactive_user_disable_after" -> Ok `UpdateInactiveUserDisableAfter
   | "update_inactive_user_warning" -> Ok `UpdateInactiveUserWarning
+  | "disable_inactive_user_service" -> Ok `UpdateUnactiveUserServiceDisabled
   | "update_contact_email" -> Ok `UpdateContactEmail
   | "update_emailsuffix" -> Ok `UpdateEmailSuffixes
   | "update_languages" -> Ok `UpdateLanguages
@@ -225,6 +225,7 @@ let stringify_action = function
   | `UpdateTextMsgDefaultLeadTime -> "update_text_msg_default_lead_time"
   | `UpdateInactiveUserDisableAfter -> "update_inactive_user_disable_after"
   | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
+  | `UpdateUnactiveUserServiceDisabled -> "disable_inactive_user_service"
   | `UpdateContactEmail -> "update_contact_email"
   | `UpdateEmailSuffixes -> "update_emailsuffix"
   | `UpdateLanguages -> "update_languages"

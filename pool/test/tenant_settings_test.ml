@@ -144,20 +144,14 @@ let check_inactive_user_disable_after _ () =
 ;;
 
 let check_inactive_user_warning _ () =
-  let open CCResult.Infix in
   let open Command.InactiveUser in
   let%lwt current_user =
     Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
   in
-  let field = Field.InactiveUserWarning in
   let handle nr =
-    Warning.(
-      Field.
-        [ show field, [ CCInt.to_string nr ]
-        ; (show (TimeUnitOf field), Pool_model.Base.TimeUnit.[ show Days ])
-        ]
-      |> decode
-      >>= handle)
+    let values = [ CCInt.to_string nr ] in
+    let units = Pool_model.Base.TimeUnit.[ show Days ] in
+    Warning.handle ~values ~units ()
   in
   let result = handle (-1) in
   let expected = Error Error.NegativeAmount in
@@ -167,7 +161,11 @@ let check_inactive_user_warning _ () =
   let expected =
     Ok
       [ Settings.InactiveUserWarningUpdated
-          (valid |> days_to_timespan |> InactiveUser.Warning.create |> get_or_failwith)
+          (valid
+           |> days_to_timespan
+           |> InactiveUser.Warning.TimeSpan.create
+           |> get_or_failwith
+           |> CCList.return)
         |> Pool_event.settings
       ]
   in
@@ -175,7 +173,11 @@ let check_inactive_user_warning _ () =
   let%lwt () = handle_result ~current_user result in
   let%lwt warning_after = Settings.find_inactive_user_warning database_label in
   let expected =
-    valid |> days_to_timespan |> InactiveUser.Warning.create |> get_or_failwith
+    valid
+    |> days_to_timespan
+    |> InactiveUser.Warning.TimeSpan.create
+    |> get_or_failwith
+    |> CCList.return
   in
   let () =
     Alcotest.(
@@ -186,6 +188,51 @@ let check_inactive_user_warning _ () =
         expected)
   in
   Lwt.return ()
+;;
+
+let disable_inactive_user_service _ () =
+  let open Command.InactiveUser in
+  let%lwt current_user =
+    Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+  in
+  let command disabled =
+    let open CCResult.Infix in
+    let values =
+      [ ( Pool_message.Field.(show InactiveUserDisableService)
+        , [ Pool_model.Base.Boolean.stringify disabled ] )
+      ]
+    in
+    DisableService.decode values >>= DisableService.handle
+  in
+  let event disabled =
+    Settings.InactiveUserServiceDisabled
+      (Settings.InactiveUser.ServiceDisabled.create disabled)
+    |> Pool_event.settings
+  in
+  let handle_events events =
+    events |> get_or_failwith |> Pool_event.handle_events database_label current_user
+  in
+  let open Utils.Lwt_result.Infix in
+  let run_test disable =
+    let msg = if disable then "disabled" else "enabled" in
+    let events = command disable in
+    let () =
+      Test_utils.check_result
+        ~msg:(Format.asprintf "%s service events" msg)
+        events
+        (Ok [ event disable ])
+    in
+    let%lwt () = handle_events events in
+    let%lwt disabled =
+      Settings.find_inactive_user_service_disabled database_label
+      ||> InactiveUser.ServiceDisabled.value
+    in
+    Alcotest.(check bool) (Format.asprintf "Service is %s" msg) disable disabled
+    |> Lwt.return
+  in
+  let%lwt () = run_test true in
+  let%lwt () = run_test false in
+  Lwt.return_unit
 ;;
 
 let check_languages _ () =

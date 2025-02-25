@@ -85,19 +85,12 @@ module Sql = struct
 
   let find_by_experiment_with_count pool query id =
     let select = select_with_count in
-    let where =
-      let sql = {sql| pool_mailing.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
-      let dyn =
-        Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
-      in
-      sql, dyn
+    let where = {sql| pool_mailing.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
+    let dyn =
+      Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select
-      ~where
-      RepoEntity.(Caqti_type.t2 t InvitationCount.t)
+    RepoEntity.(Caqti_type.t2 t InvitationCount.t)
+    |> Query.collect_and_count pool query ~select ~where ~dyn
   ;;
 
   let find_current_request =

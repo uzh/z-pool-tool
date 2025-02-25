@@ -46,7 +46,7 @@ let check_similarity _ () =
   Lwt.return ()
 ;;
 
-let merge_contacts_command () =
+let merge_contact_fields_command () =
   let open Command.Merge in
   let open Test_utils.Model in
   let open Duplicate_contacts in
@@ -186,18 +186,19 @@ module MergeData = struct
     | _, _ -> failwith "Custom field answer types do not match"
   ;;
 
+  let make_contact ~firstname ~lastname =
+    ContactRepo.create
+      ~firstname:(Pool_user.Firstname.of_string firstname)
+      ~lastname:(Pool_user.Lastname.of_string lastname)
+      ()
+  ;;
+
   let setup_merge_contacts () =
     let open Integration_utils in
     let open Pool_user in
     let pool = Test_utils.Data.database_label in
     let%lwt current_user = Integration_utils.create_contact_user () in
     let make_field name = CustomFieldRepo.create name (fun a -> Custom_field.Text a) in
-    let make_contact ~firstname ~lastname =
-      ContactRepo.create
-        ~firstname:(Firstname.of_string firstname)
-        ~lastname:(Lastname.of_string lastname)
-        ()
-    in
     let%lwt field_1 = make_field "F1" in
     let%lwt field_2 = make_field "F2" in
     let%lwt field_3 = make_field "F3" in
@@ -367,5 +368,97 @@ let override_b_with_a _ () =
       ~language:contact_a
       fields_a
   in
+  Lwt.return_unit
+;;
+
+let override_with_participations _ () =
+  let open Duplicate_contacts in
+  let open MergeData in
+  let%lwt current_user = Integration_utils.create_contact_user () in
+  let%lwt contact_a = make_contact ~firstname:"John11" ~lastname:"Doe11" in
+  let%lwt contact_b = make_contact ~firstname:"Jane22" ~lastname:"Doe22" in
+  let%lwt experiment = Integration_utils.ExperimentRepo.create () in
+  let%lwt session = Integration_utils.SessionRepo.create experiment () in
+  let%lwt tag = Integration_utils.TagRepo.create Tags.Model.Contact in
+  let assignment = Assignment.create contact_a in
+  (* Store participation of contact 1 *)
+  let%lwt () =
+    let open Assignment in
+    let handle = Pool_event.handle_events pool current_user in
+    let invitations = [ Invitation.create contact_a ] in
+    let%lwt () =
+      [ Invitation.(Created { experiment; mailing = None; invitations })
+        |> Pool_event.invitation
+      ; Contact.(
+          Updated { contact_a with num_invitations = NumberOfInvitations.of_int 1 }
+          |> Pool_event.contact)
+      ; Created (assignment, session.Session.id) |> Pool_event.assignment
+      ; Updated
+          ( assignment
+          , { assignment with
+              participated = Some (Participated.create true)
+            ; no_show = Some (NoShow.create false)
+            } )
+        |> Pool_event.assignment
+      ; Tags.(
+          Tagged
+            Tagged.
+              { tag_uuid = tag.id
+              ; model_uuid = Contact.(contact_a |> id |> Id.to_common)
+              })
+        |> Pool_event.tags
+      ]
+      |> handle
+    in
+    let%lwt assignment = find pool assignment.id ||> get_exn in
+    Cqrs_command.Session_command.Close.handle
+      experiment
+      session
+      []
+      [ assignment, IncrementParticipationCount.create true, None ]
+    |> get_exn
+    |> handle
+  in
+  (* Merge contacts: override b with a *)
+  let%lwt contact_a = Contact.find pool (Contact.id contact_a) ||> get_exn in
+  let duplicate =
+    Duplicate_contacts.
+      { id = Id.create ()
+      ; contact_a
+      ; contact_b
+      ; score = 1.0
+      ; ignored = Ignored.create false
+      }
+  in
+  let urlencoded =
+    make_urlencoded
+      ~email:contact_b
+      ~firstname:contact_b
+      ~lastname:contact_b
+      ~cell_phone:contact_b
+      ~language:contact_b
+      []
+  in
+  let%lwt () =
+    Command.Merge.handle urlencoded duplicate [] ([], [])
+    |> Lwt_result.lift
+    >>= merge pool
+    ||> get_exn
+  in
+  let open Contact in
+  let open Alcotest in
+  let%lwt result = find pool (id contact_b) ||> get_exn in
+  check int "no invites" 1 (num_invitations result |> NumberOfInvitations.value);
+  check int "no assignments" 1 (num_assignments result |> NumberOfAssignments.value);
+  check int "participations" 1 (num_participations result |> NumberOfParticipations.value);
+  check int "no shows" 0 (num_no_shows result |> NumberOfNoShows.value);
+  let%lwt is_enrolled =
+    Assignment.assignment_to_experiment_exists pool experiment.Experiment.id contact_b
+  in
+  check bool "contact_b is enrolled" true is_enrolled;
+  let%lwt tags =
+    Tags.(find_all_of_entity pool Model.Contact) Contact.(id contact_b |> Id.to_common)
+  in
+  check (list Test_utils.tag) "contact_b has tag" [ tag ] tags;
   Lwt.return_unit
 ;;

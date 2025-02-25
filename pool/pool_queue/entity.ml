@@ -354,7 +354,7 @@ let schema =
     Field.
       [ bool
           ~meta:"If set to true, the queue is used even in development."
-          ~default:false
+          ~default:true
           "QUEUE_FORCE_ASYNC"
       ; bool
           ~meta:"If set to false, jobs can be dispatched but won't be handled."

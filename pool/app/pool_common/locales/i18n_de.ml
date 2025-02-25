@@ -89,6 +89,7 @@ let to_string = function
   | FilterNrOfSentInvitations -> "Anzahl bereits eingeladener Kontakte:"
   | FilterNrOfUnsuitableAssignments ->
     "Anzahl angemeldeter Kontakte, die nicht den Kriterien entsprechen:"
+  | FilterNuberMatchingUninvited -> "Anzahl mögliche neue Einladungen:"
   | FollowUpSessionFor -> "Folgesession für:"
   | Help -> "Hilfe"
   | ImportConfirmationNote ->
@@ -511,6 +512,13 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
      Konto-E-Mail-Adresse zu verifizieren. Sie können die SMS-Texteingabe ignorieren."
   | MessageTemplateExperimentInvitation ->
     "Diese Nachricht wird gesendet, um Kontakte zu Experimenten einzuladen."
+  | MessageTemplateInactiveContactWarning ->
+    "Diese Nachricht wird an Kontakte gesendet, die sich seit längerer Zeit nicht mehr \
+     angemeldet haben, um sie darüber zu informieren, dass ihr Konto bald deaktiviert \
+     wird."
+  | MessageTemplateInactiveContactDeactivation ->
+    "Diese Nachricht wird an Kontakte gesendet, deren Konto aufgrund Inaktivität \
+     deaktiviert wurde."
   | MessageTemplateManualSessionMessage ->
     "Diese Vorlage dient als Vorlage für manuell versendete Nachrichten im Rahmen einer \
      Session."
@@ -680,6 +688,10 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SessionRegistrationHint -> "Die Registrierung für eine Session ist verbindlich."
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen Sprache hier."
+  | SettigsInactiveUsers ->
+    "Die hier angegebenen Zeitdauern werden summiert. Das heisst, dass ein Account erst \
+     nach der Summe aller 'Warnung an inaktive Benutzer' und 'Deaktiviere inaktiven \
+     Benutzer' deaktiviert wird."
   | SessionReminderLeadTime ->
     "Die Vorlaufzeit bestimmt, wie lange vor dem Start der Session die Erinnerungen an \
      die Kontakte verschickt wird."

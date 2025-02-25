@@ -149,80 +149,6 @@ module Partials = struct
       ; div ~a:[ a_class [ "gap-lg" ] ] [ filtered_contacts_form ]
       ]
   ;;
-
-  let statistics
-        language
-        { Experiment.Statistics.SentInvitations.total_sent
-        ; invitation_resets
-        ; total_match_filter
-        ; sent_since_last_reset
-        }
-    =
-    let to_string = CCInt.to_string in
-    let field_to_string field =
-      Pool_common.Utils.field_to_string language field |> CCString.capitalize_ascii
-    in
-    let text_to_string = Pool_common.Utils.text_to_string language in
-    let thead =
-      thead
-        Field.
-          [ tr
-              [ td [ text_to_string Pool_common.I18n.Reset |> txt ]
-              ; td [ field_to_string InvitationCount |> txt ]
-              ; td [ field_to_string MatchingFilterCountShort |> txt ]
-              ]
-          ]
-    in
-    let total =
-      tr
-        ~a:[ a_class [ "font-bold" ] ]
-        [ td
-            ~a:[ a_colspan 2 ]
-            [ txt (text_to_string Pool_common.I18n.TotalSentInvitations) ]
-        ; td [ txt (to_string total_sent) ]
-        ]
-    in
-    let table =
-      let make_row reset_at (num_invitations, num_matching_filter) =
-        tr
-          [ td [ reset_at |> txt ]
-          ; td [ num_invitations |> CCInt.to_string |> txt ]
-          ; td [ num_matching_filter |> CCInt.to_string |> txt ]
-          ]
-      in
-      match invitation_resets, sent_since_last_reset with
-      | [], 0 -> p [ strong [ txt (text_to_string Pool_common.I18n.NoInvitationsSent) ] ]
-      | resets, _ ->
-        let resets_rows =
-          CCList.map
-            (fun Experiment.InvitationReset.
-                   { created_at; contacts_matching_filter; invitations_sent; _ } ->
-               make_row
-                 (created_at
-                  |> Pool_common.CreatedAt.value
-                  |> Utils.Ptime.formatted_date_time)
-                 (invitations_sent, contacts_matching_filter))
-            resets
-        in
-        let current_row =
-          make_row "Current" (sent_since_last_reset, total_match_filter)
-        in
-        resets_rows @ [ current_row; total ]
-        |> table ~thead ~a:[ a_class [ "table"; "simple" ] ]
-    in
-    div
-      [ p [ txt (text_to_string Pool_common.I18n.InvitationsStatisticsIntro) ]
-      ; p
-          [ txt
-              Pool_common.(
-                Format.asprintf
-                  "%s %i"
-                  (text_to_string I18n.FilterNrOfContacts)
-                  total_match_filter)
-          ]
-      ; table
-      ]
-  ;;
 end
 
 let sent_invitations
@@ -232,17 +158,16 @@ let sent_invitations
       statistics
   =
   let open Pool_common in
+  let text_to_string = Utils.text_to_string language in
   div
     ~a:[ a_class [ "stack-lg" ] ]
     [ div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ div
             ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
-            [ h3
-                [ txt
-                    Pool_common.(Utils.text_to_string language I18n.InvitationsStatistics)
-                ]
-            ; Partials.statistics language statistics
+            [ h3 [ txt (text_to_string I18n.InvitationsStatistics) ]
+            ; p [ txt (text_to_string I18n.InvitationsStatisticsIntro) ]
+            ; Component.Statistics.SentInvitations.create language statistics
             ]
         ]
     ; Partials.list context experiment invitations
