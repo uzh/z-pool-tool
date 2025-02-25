@@ -116,5 +116,18 @@ let invitation_statistics _ () =
       }
   in
   let%lwt () = check_invitations "Reset invitations again" expected in
+  let%lwt invitations = Invitation.find_by_experiment pool experiment.id ||> fst in
+  let open Contact in
+  (* Disable a contact *)
+  let invitation = CCList.nth invitations 0 in
+  let%lwt () = MarkedAsDeleted invitation.Invitation.contact |> handle_event pool in
+  let%lwt () = check_total_invited "9 contacts invited after disabling one" 9 in
+  (* Pause a contact *)
+  let invitation = CCList.nth invitations 1 in
+  let%lwt () =
+    Updated { invitation.Invitation.contact with paused = Pool_user.Paused.create true }
+    |> handle_event pool
+  in
+  let%lwt () = check_total_invited "8 contacts invited after pausing one" 8 in
   Lwt.return ()
 ;;
