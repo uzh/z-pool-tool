@@ -3,6 +3,14 @@ module Dynparam = Database.Dynparam
 open Caqti_request.Infix
 open Entity
 
+let assignment_counts =
+  let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
+  let decode (show_up_count, no_show_count, participation_count) =
+    Ok { show_up_count; no_show_count; participation_count }
+  in
+  Caqti_type.(custom ~encode ~decode (t3 int int int))
+;;
+
 module FilterStatistics = struct
   let count_invited_contacts_request =
     {sql|
@@ -156,7 +164,7 @@ let assignment_counts_request =
         AND pool_assignments.marked_as_deleted = 0
         AND pool_assignments.canceled_at IS NULL
     |sql}
-  |> Caqti_type.(Repo_entity.Id.t ->! t3 int int int)
+  |> Repo_entity.Id.t ->! assignment_counts
 ;;
 
 let assignment_counts pool = Database.find pool assignment_counts_request

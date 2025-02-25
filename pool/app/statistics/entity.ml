@@ -206,8 +206,8 @@ module ExperimentOverview = struct
     ; sending_invitations : Experiment.SendingInvitations.t
     ; session_count : SessionCount.t
     ; invitations : ExperimentInvitations.t
-    ; showup_count : ShowUpCount.t
-    ; noshow_count : NoShowCount.t
+    ; show_up_count : ShowUpCount.t
+    ; no_show_count : NoShowCount.t
     ; participation_count : ParticipationCount.t
     }
   [@@deriving eq, show, fields ~getters]

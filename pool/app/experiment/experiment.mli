@@ -228,6 +228,12 @@ end
 
 val to_public : t -> Public.t
 
+type assignment_counts =
+  { show_up_count : int
+  ; no_show_count : int
+  ; participation_count : int
+  }
+
 module DirectEnrollment : sig
   type t =
     { id : Id.t
@@ -377,8 +383,7 @@ val sending_invitations
   -> Id.t
   -> (SendingInvitations.t, Pool_message.Error.t) Lwt_result.t
 
-(* TODO: Type *)
-val assignment_counts : Database.Label.t -> Id.t -> (int * int * int) Lwt.t
+val assignment_counts : Database.Label.t -> Id.t -> assignment_counts Lwt.t
 
 val find_admins_to_notify_about_invitations
   :  Database.Label.t

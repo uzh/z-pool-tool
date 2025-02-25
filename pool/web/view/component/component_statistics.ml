@@ -263,8 +263,8 @@ module ExperimentOverview = struct
       statistics.invitations |> SentInvitations.create language
     in
     let assignments_statistics =
-      [ ShowUpCount.(field, statistics.showup_count |> value |> int_to_txt)
-      ; NoShowCount.(field, statistics.noshow_count |> value |> int_to_txt)
+      [ ShowUpCount.(field, statistics.show_up_count |> value |> int_to_txt)
+      ; NoShowCount.(field, statistics.no_show_count |> value |> int_to_txt)
       ; ParticipationCount.(field, statistics.participation_count |> value |> int_to_txt)
       ]
     in

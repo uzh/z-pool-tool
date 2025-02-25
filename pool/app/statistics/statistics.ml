@@ -111,7 +111,7 @@ module ExperimentOverview = struct
     let* sending_invitations = Experiment.sending_invitations pool id in
     let%lwt session_count = Experiment.session_count pool id in
     let* invitations = ExperimentInvitations.create pool experiment in
-    let%lwt showup_count, noshow_count, participation_count =
+    let%lwt Experiment.{ show_up_count; no_show_count; participation_count } =
       Experiment.assignment_counts pool id
     in
     Lwt_result.return
@@ -119,8 +119,8 @@ module ExperimentOverview = struct
       ; sending_invitations
       ; session_count
       ; invitations
-      ; showup_count
-      ; noshow_count
+      ; show_up_count
+      ; no_show_count
       ; participation_count
       }
   ;;

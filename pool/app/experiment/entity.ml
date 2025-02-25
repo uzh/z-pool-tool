@@ -266,6 +266,12 @@ module SendingInvitations = struct
   let hint = Pool_common.I18n.ExperimentStatisticsSendingInvitations
 end
 
+type assignment_counts =
+  { show_up_count : int
+  ; no_show_count : int
+  ; participation_count : int
+  }
+
 module DirectEnrollment = struct
   type t =
     { id : Id.t
