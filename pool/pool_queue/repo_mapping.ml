@@ -46,7 +46,6 @@ let duplicate_for_new_job pool { Entity.Instance.id; clone_of; _ } =
 
 let find_instances_by_entity queue_table ?query pool (model, entity_uuid) =
   let join_table, join_column = Entity.History.model_sql model in
-  (* TODO: Test *)
   let where, dyn =
     let open Pool_common.Repo in
     ( [%string {sql| %{join_column} = %{Pool_common.Id.sql_value_fragment "?"} |sql}]

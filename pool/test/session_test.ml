@@ -1282,7 +1282,7 @@ let resend_reminders_invalid () =
   let create_email assignment =
     Model.create_email ()
     |> create_email_job experiment
-    |> Email.create_dispatch (* TODO: Thought assignments do not have history so far *)
+    |> Email.create_dispatch
          ~job_ctx:
            Pool_queue.(
              job_ctx_create

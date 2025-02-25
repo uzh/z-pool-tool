@@ -401,7 +401,7 @@ module Sql = struct
       use_case
       template_list
       ~group_by:"pool_contacts.user_uuid"
-      ?order_by (* TODO: Make sure stays the same *)
+      ?order_by
       filter
     |> Lwt_result.lift
     >>= fun (dyn, sql) ->
