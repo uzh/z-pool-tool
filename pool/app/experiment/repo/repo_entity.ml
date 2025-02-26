@@ -63,12 +63,6 @@ module ShowExternalDataIdLinks = struct
   let t = Common.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
 end
 
-module InvitationResetAt = struct
-  include InvitationResetAt
-
-  let t = Common.make_caqti_type Caqti_type.ptime create value
-end
-
 module OnlineExperimentRepo = struct
   type t =
     { assignment_without_session : AssignmentWithoutSession.t
@@ -106,12 +100,10 @@ let t =
                                           { assignment_without_session; survey_url }
                                       , ( email_session_reminder_lead_time
                                         , ( text_message_session_reminder_lead_time
-                                          , ( invitation_reset_at
-                                            , ( matcher_notification_sent
-                                              , ( created_at
-                                                , ( updated_at
-                                                  , (filter, organisational_unit) ) ) ) )
-                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                          , ( matcher_notification_sent
+                                            , ( created_at
+                                              , (updated_at, (filter, organisational_unit))
+                                              ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     let online_experiment =
@@ -138,7 +130,6 @@ let t =
       ; online_experiment
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
-      ; invitation_reset_at
       ; matcher_notification_sent
       ; created_at
       ; updated_at
@@ -189,22 +180,18 @@ let t =
                                                                .TextMessageLeadTime
                                                                .t)
                                                             (t2
-                                                               (option
-                                                                  InvitationResetAt.t)
+                                                               bool
                                                                (t2
-                                                                  bool
+                                                                  CreatedAt.t
                                                                   (t2
-                                                                     CreatedAt.t
+                                                                     UpdatedAt.t
                                                                      (t2
-                                                                        UpdatedAt.t
-                                                                        (t2
-                                                                           (option
-                                                                              Filter.Repo
-                                                                              .t)
-                                                                           (option
-                                                                              Organisational_unit
-                                                                              .Repo
-                                                                              .t)))))))))))))))))))))))))
+                                                                        (option
+                                                                           Filter.Repo.t)
+                                                                        (option
+                                                                           Organisational_unit
+                                                                           .Repo
+                                                                           .t))))))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -242,9 +229,8 @@ module Write = struct
                                         , ( online_experiment
                                           , ( m.email_session_reminder_lead_time
                                             , ( m.text_message_session_reminder_lead_time
-                                              , ( m.invitation_reset_at
-                                                , m.matcher_notification_sent ) ) ) ) ) )
-                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                              , m.matcher_notification_sent ) ) ) ) ) ) )
+                                ) ) ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ = Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel in
     let open Common in
@@ -297,11 +283,7 @@ module Write = struct
                                                                        Reminder
                                                                        .TextMessageLeadTime
                                                                        .t)
-                                                                    (t2
-                                                                       (option
-                                                                          InvitationResetAt
-                                                                          .t)
-                                                                       bool))))))))))))))))))))))
+                                                                    bool)))))))))))))))))))))
   ;;
 end
 

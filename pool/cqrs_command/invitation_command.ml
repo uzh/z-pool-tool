@@ -20,10 +20,15 @@ module Create : sig
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
     ; invited_contacts : Contact.Id.t list
-    ; create_message : Contact.t -> (Email.dispatch, Pool_message.Error.t) result
+    ; create_message : Invitation.t -> (Email.dispatch, Pool_message.Error.t) result
     }
 
-  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
+  val handle
+    :  ?ids:Pool_common.Id.t list
+    -> ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
@@ -31,27 +36,30 @@ end = struct
     ; mailing : Mailing.t option
     ; contacts : Contact.t list
     ; invited_contacts : Contact.Id.t list
-    ; create_message : Contact.t -> (Email.dispatch, Pool_message.Error.t) result
+    ; create_message : Invitation.t -> (Email.dispatch, Pool_message.Error.t) result
     }
 
   let handle
+        ?(ids = [])
         ?(tags = Logs.Tag.empty)
         { invited_contacts; contacts; create_message; experiment; mailing }
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
-    let open CCFun in
+    let open CCFun.Infix in
+    let open CCList in
     let errors, contacts = contact_partition invited_contacts contacts in
-    let errors = CCList.map Contact.(id %> Id.value) errors in
-    let emails = contacts |> CCList.map create_message in
-    if CCList.is_empty errors |> not
+    let errors = errors >|= Contact.(id %> Id.value) in
+    let invitations = mapi (fun i -> Invitation.create ?id:(nth_opt ids i)) contacts in
+    let emails = invitations >|= create_message in
+    if is_empty errors |> not
     then Error Pool_message.(Error.AlreadyInvitedToExperiment errors)
     else (
-      match CCList.all_ok emails with
-      | Ok emails when CCList.is_empty emails -> Ok []
+      match all_ok emails with
+      | Ok emails when is_empty emails -> Ok []
       | Ok emails ->
         Ok
-          ([ Invitation.(Created { contacts; mailing; experiment })
+          ([ Invitation.(Created { invitations; mailing; experiment })
              |> Pool_event.invitation
            ]
            @ (Email.bulksent_opt emails |> Pool_event.(map email))
@@ -70,7 +78,7 @@ module Resend : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?mailing_id:Mailing.Id.t
-    -> (Contact.t -> (Email.dispatch, Pool_message.Error.t) result)
+    -> (t -> (Email.dispatch, Pool_message.Error.t) result)
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
@@ -81,7 +89,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) ?mailing_id create_email (invitation : t) =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Resend" ~tags);
-    let* email = create_email invitation.Invitation.contact in
+    let* email = create_email invitation in
     Ok
       [ Invitation.Resent (invitation, mailing_id) |> Pool_event.invitation
       ; Email.sent email |> Pool_event.email

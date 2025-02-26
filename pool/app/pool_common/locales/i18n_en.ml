@@ -154,6 +154,7 @@ let to_string = function
     You will be considered for more experiments, the more complete your profile is.|}
   | Reminder -> "Reminder"
   | ResendReminders -> "Resend reminders"
+  | Reset -> "Reset"
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | RoleApplicableToAssign -> "Applicable users"
   | RoleCurrentlyAssigned -> "Currently assigned"
@@ -189,6 +190,7 @@ let to_string = function
   | TenantMaintenanceTitle -> "Maintenance"
   | TextTemplates -> "text templates"
   | TimeWindowDetailTitle string -> string
+  | TotalSentInvitations -> "Total invited contacts"
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
   | UpcomingSessionsTitle -> "Your upcoming sessions"

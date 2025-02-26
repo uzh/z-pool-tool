@@ -288,6 +288,9 @@ let suite =
               `Slow
               AvailableExperiments.mark_assignment_as_deleted
           ] )
+    ; ( "statistics"
+      , [ test_case "invitation statistics" `Slow Statistics_test.invitation_statistics ]
+      )
     ; ( "filtering"
       , let open Filter_invitation_tests in
         let open Filter_assignment_tests in

@@ -422,11 +422,12 @@ let message_history req =
   @@ fun (Pool_context.{ database_label; _ } as context) query ->
   let* contact = Contact.find database_label contact_id in
   let%lwt messages =
-    Pool_queue.find_instances_by_entity
+    let open Pool_queue in
+    find_instances_by_entity
       queue_table
       ~query
       database_label
-      (Contact.Id.to_common contact_id)
+      (History.Contact, Contact.Id.to_common contact_id)
   in
   let open Page.Admin in
   (if HttpUtils.Htmx.is_hx_request req

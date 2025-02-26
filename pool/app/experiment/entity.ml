@@ -123,14 +123,6 @@ module SurveyUrl = struct
   let schema () = schema ~validation field ()
 end
 
-module InvitationResetAt = struct
-  include Pool_model.Base.Ptime
-
-  let create m = Ok m
-  let schema = schema Pool_message.Field.InvitationResetAt create
-  let of_ptime m = m
-end
-
 module MatcherNotificationSent = struct
   type t = bool [@@deriving show, eq, yojson]
 
@@ -194,7 +186,6 @@ type t =
   ; email_session_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
-  ; invitation_reset_at : InvitationResetAt.t option
   ; matcher_notification_sent : MatcherNotificationSent.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -213,7 +204,6 @@ let create
       ?email_session_reminder_lead_time
       ?experiment_type
       ?filter
-      ?invitation_reset_at
       ?organisational_unit
       ?smtp_auth_id
       ?text_message_session_reminder_lead_time
@@ -247,13 +237,40 @@ let create
     ; experiment_type
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
-    ; invitation_reset_at
     ; online_experiment
     ; matcher_notification_sent = false
     ; created_at = Pool_common.CreatedAt.create_now ()
     ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
+
+module SendingInvitations = struct
+  module Core = struct
+    let field = Pool_message.Field.SendingInvitations
+
+    type t =
+      | No [@name "no"] [@printer Utils.ppx_printer "no"]
+      | Sending [@name "sending"] [@printer Utils.ppx_printer "sending"]
+      | Scheduled [@name "scheduled"] [@printer Utils.ppx_printer "scheduled"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
+
+  include Pool_model.Base.SelectorType (Core)
+  include Core
+
+  let read str =
+    try Ok (Utils.Json.read_variant t_of_yojson str) with
+    | _ -> Error (Pool_message.Error.Invalid field)
+  ;;
+
+  let hint = Pool_common.I18n.ExperimentStatisticsSendingInvitations
+end
+
+type assignment_counts =
+  { show_up_count : int
+  ; no_show_count : int
+  ; participation_count : int
+  }
 
 module DirectEnrollment = struct
   type t =
@@ -386,6 +403,17 @@ let external_data_required_value (m : t) =
 let show_external_data_id_links_value (m : t) =
   ShowExternalDataIdLinks.value m.show_external_data_id_links
 ;;
+
+module InvitationReset = struct
+  type t =
+    { created_at : Pool_common.CreatedAt.t
+          [@equal fun a b -> Sihl.Configuration.is_test () || a = b]
+    ; iteration : int
+    ; contacts_matching_filter : int
+    ; invitations_sent : int
+    }
+  [@@deriving eq, show]
+end
 
 let boolean_fields =
   Pool_message.Field.

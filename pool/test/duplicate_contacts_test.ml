@@ -385,8 +385,9 @@ let override_with_participations _ () =
   let%lwt () =
     let open Assignment in
     let handle = Pool_event.handle_events pool current_user in
+    let invitations = [ Invitation.create contact_a ] in
     let%lwt () =
-      [ Invitation.(Created { experiment; mailing = None; contacts = [ contact_a ] })
+      [ Invitation.(Created { experiment; mailing = None; invitations })
         |> Pool_event.invitation
       ; Contact.(
           Updated { contact_a with num_invitations = NumberOfInvitations.of_int 1 }

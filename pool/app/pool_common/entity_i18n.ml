@@ -87,6 +87,7 @@ type t =
   | ProfileCompletionText
   | Reminder
   | ResendReminders
+  | Reset
   | ResetPasswordLink
   | ResetPasswordTitle
   | RoleApplicableToAssign
@@ -115,6 +116,7 @@ type t =
   | TenantMaintenanceTitle
   | TextTemplates
   | TimeWindowDetailTitle of string
+  | TotalSentInvitations
   | UpcomingSessionsListEmpty
   | UpcomingSessionsTitle
   | UserProfileDetailsSubtitle

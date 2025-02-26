@@ -4,20 +4,41 @@ include Default
 include Message_utils
 module Guard = Entity_guard
 module VersionHistory = Version_history
+module Queue = Pool_queue
 
 let src = Logs.Src.create "message_template"
+
+module History = struct
+  open Queue.History
+
+  let user_uuid user = user.Pool_user.id |> Pool_user.Id.to_common
+  let admin_item { Admin.user; _ } = Admin, user_uuid user
+  let assignment_item { Assignment.id; _ } = Assignment, Assignment.(id |> Id.to_common)
+  let contact_item { Contact.user; _ } = Contact, user_uuid user
+
+  let experiment_item experiment =
+    Experiment, Experiment.(experiment.Experiment.id |> Id.to_common)
+  ;;
+
+  let public_experiment_item experiment =
+    Experiment, Experiment.(Experiment.Public.id experiment |> Id.to_common)
+  ;;
+
+  let invitation_item invitation = Invitation, invitation.Invitation.id |> Id.to_common
+  let session_item session = Session, Session.(session.Session.id |> Id.to_common)
+end
 
 let create_email_job ?smtp_auth_id label mapping_uuids email =
   Email.Service.Job.create ?smtp_auth_id email
   |> Email.create_dispatch
        ~message_template:(Label.show label)
-       ~job_ctx:(Pool_queue.job_ctx_create mapping_uuids)
+       ~job_ctx:(Queue.job_ctx_create mapping_uuids)
 ;;
 
 let create_text_message_job ?message_template ?(entity_uuids = []) =
   Text_message.create_job
     ?message_template:(CCOption.map Label.show message_template)
-    ~job_ctx:(Pool_queue.job_ctx_create entity_uuids)
+    ~job_ctx:(Queue.job_ctx_create entity_uuids)
 ;;
 
 let find = Repo.find
@@ -242,25 +263,18 @@ let assignment_params { Assignment.id; external_data_id; _ } =
   [ "assignmentId", assignment_id; "externalDataId", external_data_id ]
 ;;
 
-let user_message_uuids user = [ user.Pool_user.id |> Pool_user.Id.to_common ]
+let user_message_uuids user = History.[ Queue.History.Contact, user_uuid user ]
 
-let experiment_message_uuids experiment contact =
-  [ Contact.(id contact |> Id.to_common)
-  ; Experiment.(experiment.Experiment.id |> Id.to_common)
-  ]
+let invitation_message_uuids experiment contact invitation =
+  History.[ contact_item contact; experiment_item experiment; invitation_item invitation ]
 ;;
 
 let public_experiment_message_uuids experiment contact =
-  [ Contact.(id contact |> Id.to_common)
-  ; Experiment.(experiment |> Public.id |> Id.to_common)
-  ]
+  History.[ contact_item contact; public_experiment_item experiment ]
 ;;
 
 let session_message_uuids experiment session contact =
-  [ Contact.(id contact |> Id.to_common)
-  ; Session.(session.Session.id |> Id.to_common)
-  ; Experiment.(experiment.Experiment.id |> Id.to_common)
-  ]
+  History.[ contact_item contact; session_item session; experiment_item experiment ]
 ;;
 
 module AccountSuspensionNotification = struct
@@ -384,11 +398,12 @@ module AssignmentSessionChange = struct
   let label = Label.AssignmentSessionChange
 
   let message_uuids experiment new_session old_session { Assignment.contact; _ } =
-    [ experiment.Experiment.id |> Experiment.Id.to_common
-    ; new_session.Session.id |> Session.Id.to_common
-    ; old_session.Session.id |> Session.Id.to_common
-    ; contact |> Contact.id |> Contact.Id.to_common
-    ]
+    History.
+      [ experiment_item experiment
+      ; session_item new_session
+      ; session_item old_session
+      ; contact_item contact
+      ]
   ;;
 
   let base_params layout contact = contact.Contact.user |> global_params layout
@@ -557,7 +572,7 @@ module ExperimentInvitation = struct
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
-    let fnc (contact : Contact.t) =
+    let fnc ({ Invitation.contact; _ } as invitation) =
       let open CCResult in
       let message_language = experiment_message_language sys_langs experiment contact in
       let* lang, template = find_template_by_language templates message_language in
@@ -572,13 +587,17 @@ module ExperimentInvitation = struct
           layout
           params
       in
-      let entity_uuids = experiment_message_uuids experiment contact in
+      let entity_uuids = invitation_message_uuids experiment contact invitation in
       Ok (create_email_job ?smtp_auth_id label entity_uuids email)
     in
     Lwt.return fnc
   ;;
 
-  let create ({ Pool_tenant.database_label; _ } as tenant) experiment contact =
+  let create
+        ({ Pool_tenant.database_label; _ } as tenant)
+        experiment
+        ({ Invitation.contact; _ } as invitation)
+    =
     let open Message_utils in
     let%lwt sys_langs = Settings.find_languages database_label in
     let language = experiment_message_language sys_langs experiment contact in
@@ -597,7 +616,7 @@ module ExperimentInvitation = struct
         layout
         params
     in
-    let entity_uuids = experiment_message_uuids experiment contact in
+    let entity_uuids = invitation_message_uuids experiment contact invitation in
     create_email_job ?smtp_auth_id label entity_uuids email |> Lwt.return
   ;;
 end
@@ -730,7 +749,7 @@ module MatcherNotification = struct
     let params = email_params layout (Admin.user admin) experiment in
     let email_address = Admin.email_address admin in
     let email = prepare_email language template sender email_address layout params in
-    let entity_uuids = Experiment.[ experiment.id |> Id.to_common ] in
+    let entity_uuids = [ History.experiment_item experiment ] in
     create_email_job label entity_uuids email |> Lwt.return
   ;;
 end
@@ -739,11 +758,15 @@ module MatchFilterUpdateNotification = struct
   let label = Label.MatchFilterUpdateNotification
 
   let message_uuids experiment sessions admin =
-    [ experiment.Experiment.id |> Experiment.Id.to_common
-    ; Admin.(id admin |> Id.to_common)
-    ]
+    let open History in
+    [ experiment_item experiment; admin_item admin ]
     @ (sessions
-       |> CCList.map (fun (session, _) -> Session.Id.to_common session.Session.id))
+       |> CCList.fold_left
+            (fun acc (session, assignments) ->
+               let session_item = session_item session in
+               let assignment_items = CCList.map assignment_item assignments in
+               acc @ (session_item :: assignment_items))
+            [])
   ;;
 
   let assignment_list assignments =
@@ -1188,7 +1211,9 @@ module SignUpVerification = struct
       create_public_url_with_params url "/email-verified" params
     in
     let layout = layout_from_tenant tenant in
-    let entity_uuids = [ user_id |> Contact.Id.to_common |> Id.of_common ] in
+    let entity_uuids =
+      [ Queue.History.Contact, user_id |> Contact.Id.to_common |> Id.of_common ]
+    in
     let email =
       prepare_email
         language

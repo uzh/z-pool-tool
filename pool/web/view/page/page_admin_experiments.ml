@@ -76,70 +76,6 @@ let notifications
        |> Notification.notification language `Warning)
 ;;
 
-module Statistics = struct
-  open Experiment.Statistics
-
-  let make language statistics =
-    let int_to_txt i = i |> CCInt.to_string |> txt in
-    let with_tooltip html tooltip =
-      div
-        ~a:[ a_class [ "has-icon flex-gap-sm" ] ]
-        [ span [ html ]
-        ; div
-            ~a:[ a_class [ "tooltip-wrapper" ] ]
-            [ Icon.(to_html HelpOutline); p ~a:[ a_class [ "tooltip" ] ] [ tooltip ] ]
-        ]
-    in
-    let to_table = Component.Table.vertical_table ~th_class:[ "w-7" ] `Simple language in
-    let registration_possible_html =
-      let open RegistrationPossible in
-      let html =
-        statistics
-        |> registration_possible
-        |> value
-        |> Pool_common.Utils.bool_to_string language
-        |> txt
-      in
-      let tooltip = hint |> Pool_common.Utils.hint_to_string language |> txt in
-      with_tooltip html tooltip
-    in
-    let sending_invitations_html =
-      let open SendingInvitations in
-      let html =
-        statistics |> sending_invitations |> show |> CCString.capitalize_ascii |> txt
-      in
-      let tooltip =
-        hint |> Pool_common.Utils.hint_to_string language |> HttpUtils.add_line_breaks
-      in
-      with_tooltip html tooltip
-    in
-    let experiment_statistics =
-      [ RegistrationPossible.field, registration_possible_html
-      ; SendingInvitations.field, sending_invitations_html
-      ; SessionCount.(field, statistics |> session_count |> value |> int_to_txt)
-      ]
-    in
-    let invitations_statistics =
-      statistics |> invitations |> Page_admin_invitations.Partials.statistics language
-    in
-    let assignments_statistics =
-      [ ShowUpCount.(field, statistics |> showup_count |> value |> int_to_txt)
-      ; NoShowCount.(field, statistics |> noshow_count |> value |> int_to_txt)
-      ; ParticipationCount.(
-          field, statistics |> participation_count |> value |> int_to_txt)
-      ]
-    in
-    div
-      [ h3 [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentStatistics) ]
-      ; experiment_statistics |> to_table
-      ; h4 [ txt Pool_common.(Utils.nav_link_to_string language I18n.Invitations) ]
-      ; invitations_statistics
-      ; h4 [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments) ]
-      ; assignments_statistics |> to_table
-      ]
-  ;;
-end
-
 let message_template_buttons sys_languages (experiment : Experiment.t) message_templates =
   let open Message_template in
   let build_button label =
@@ -693,6 +629,7 @@ let edit
 ;;
 
 let detail
+      ?invitation_reset
       experiment
       session_count
       message_templates
@@ -769,14 +706,13 @@ let detail
   in
   let reset_invitation_form =
     let last_reset_at =
-      match experiment |> Experiment.invitation_reset_at with
+      match invitation_reset with
       | None -> txt ""
-      | Some reset_at ->
+      | Some { Experiment.InvitationReset.created_at; _ } ->
         span
           [ Utils.hint_to_string
               language
-              (I18n.ResetInvitationsLastReset
-                 (Experiment.InvitationResetAt.value reset_at))
+              (I18n.ResetInvitationsLastReset (Pool_common.CreatedAt.value created_at))
             |> Unsafe.data
           ]
     in
@@ -910,17 +846,12 @@ let detail
         , text_message_session_reminder_lead_time_value experiment
           |> CCOption.map_or ~default:"-" Pool_model.Time.formatted_timespan
           |> txt )
-      ; ( Field.InvitationResetAt
-        , experiment
-          |> invitation_reset_at
-          |> CCOption.map_or ~default:"-" InvitationResetAt.to_human
-          |> txt )
       ; Field.Tags, tag_list tags
       ; Field.ParticipationTags, tag_list participation_tags
       ]
       |> vertical_table
     in
-    let statistics = Statistics.make language statistics in
+    let statistics = Component.Statistics.ExperimentOverview.make language statistics in
     let message_template =
       div
         [ h3

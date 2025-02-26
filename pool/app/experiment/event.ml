@@ -24,11 +24,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
   | Updated (experiment, updated) ->
     let%lwt () = create_changelog experiment updated in
     Repo.update pool updated
-  | ResetInvitations t ->
-    let%lwt experiment = Repo.find pool t.id ||> Pool_common.Utils.get_or_failwith in
-    Repo.update
-      pool
-      { experiment with invitation_reset_at = Some (InvitationResetAt.create_now ()) }
+  | ResetInvitations m -> Repo_invitation_reset.insert pool m
   | Deleted experiment_id -> Repo.delete pool experiment_id
 [@@deriving eq, show]
 ;;

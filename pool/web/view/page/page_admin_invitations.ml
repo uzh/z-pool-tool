@@ -149,62 +149,6 @@ module Partials = struct
       ; div ~a:[ a_class [ "gap-lg" ] ] [ filtered_contacts_form ]
       ]
   ;;
-
-  let statistics
-        language
-        { Experiment.Statistics.SentInvitations.total_sent
-        ; sent_by_count
-        ; total_match_filter
-        ; _
-        }
-    =
-    let open Pool_common in
-    let to_string = CCInt.to_string in
-    let field_to_string field =
-      Utils.field_to_string language field |> CCString.capitalize_ascii
-    in
-    let text_to_string = Utils.text_to_string language in
-    let thead =
-      thead
-        Field.
-          [ tr
-              [ td ~a:[ a_class [ "w-7" ] ] [ text_to_string I18n.Iteration |> txt ]
-              ; td [ field_to_string InvitationCount |> txt ]
-              ]
-          ]
-    in
-    let to_row ?(classnames = []) (key, value) =
-      let td = td ~a:[ a_class classnames ] in
-      tr [ td [ txt key ]; td [ txt value ] ]
-    in
-    let total =
-      (field_to_string Field.Total, to_string total_sent)
-      |> to_row ~classnames:[ "font-bold" ]
-    in
-    let table =
-      match sent_by_count with
-      | [] -> p [ strong [ txt (text_to_string I18n.NoInvitationsSent) ] ]
-      | sent_by_count ->
-        sent_by_count
-        |> CCList.map (fun (key, value) ->
-          (to_string key, Format.asprintf "%s / %i" (to_string value) total_match_filter)
-          |> to_row)
-        |> fun rows ->
-        rows @ [ total ] |> table ~thead ~a:[ a_class [ "table"; "simple" ] ]
-    in
-    div
-      [ p [ txt (text_to_string I18n.InvitationsStatisticsIntro) ]
-      ; p
-          [ txt
-              Pool_common.(
-                Format.asprintf
-                  "%s %i"
-                  (text_to_string I18n.FilterNrOfContacts)
-                  total_match_filter)
-          ]
-      ; table
-      ]
-  ;;
 end
 
 let sent_invitations
@@ -214,17 +158,16 @@ let sent_invitations
       statistics
   =
   let open Pool_common in
+  let text_to_string = Utils.text_to_string language in
   div
     ~a:[ a_class [ "stack-lg" ] ]
     [ div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ div
             ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
-            [ h3
-                [ txt
-                    Pool_common.(Utils.text_to_string language I18n.InvitationsStatistics)
-                ]
-            ; Partials.statistics language statistics
+            [ h3 [ txt (text_to_string I18n.InvitationsStatistics) ]
+            ; p [ txt (text_to_string I18n.InvitationsStatisticsIntro) ]
+            ; Component.Statistics.SentInvitations.create language statistics
             ]
         ]
     ; Partials.list context experiment invitations

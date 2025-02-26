@@ -3,6 +3,7 @@ open Utils.Lwt_result.Infix
 module InvitationCommand = Cqrs_command.Invitation_command
 module Field = Pool_message.Field
 module Model = Test_utils.Model
+module JobHistory = Message_template.History
 
 let get_or_failwith = Test_utils.get_or_failwith
 let pool = Test_utils.Data.database_label
@@ -33,10 +34,15 @@ let create_no_match_found_events experiment =
   Lwt.return [ emails; updated ]
 ;;
 
-let expected_events experiment mailing contacts create_message =
-  let emails = CCList.map create_message contacts |> CCResult.(flatten_l %> get_exn) in
+let expected_events ?(ids = []) experiment mailing contacts create_message =
+  let invitations =
+    CCList.mapi
+      (fun i contact -> Invitation.create ?id:(CCList.nth_opt ids i) contact)
+      contacts
+  in
+  let emails = CCList.map create_message invitations |> CCResult.(flatten_l %> get_exn) in
   let events =
-    [ Invitation.(Created { contacts; mailing; experiment }) |> Pool_event.invitation
+    [ Invitation.(Created { invitations; mailing; experiment }) |> Pool_event.invitation
     ; Email.BulkSent emails |> Pool_event.email
     ]
     @ CCList.map
@@ -47,7 +53,7 @@ let expected_events experiment mailing contacts create_message =
   Ok events
 ;;
 
-let create_message ?sender (contact : Contact.t) =
+let create_message ?sender invitation =
   let sender =
     sender |> CCOption.map_or ~default:"it@econ.uzh.ch" Pool_user.EmailAddress.value
   in
@@ -62,7 +68,11 @@ let create_message ?sender (contact : Contact.t) =
     }
   |> Email.Service.Job.create
   |> Email.create_dispatch
-       ~job_ctx:Pool_queue.(job_ctx_create [ Contact.(contact |> id |> Id.to_common) ])
+       ~job_ctx:
+         Pool_queue.(
+           job_ctx_create
+             JobHistory.
+               [ contact_item invitation.Invitation.contact; invitation_item invitation ])
   |> CCResult.return
 ;;
 
@@ -70,6 +80,7 @@ let create_invitations_model () =
   let open InvitationCommand.Create in
   let mailing = Model.create_mailing () in
   let experiment = Model.create_experiment () in
+  let ids = [ Pool_common.Id.create (); Pool_common.Id.create () ] in
   let contacts = Model.[ create_contact (); create_contact () ] in
   let events =
     { mailing = Some mailing
@@ -78,10 +89,10 @@ let create_invitations_model () =
     ; create_message
     ; invited_contacts = []
     }
-    |> handle
+    |> handle ~ids
     |> CCResult.map sort_events
   in
-  let expected = expected_events experiment (Some mailing) contacts create_message in
+  let expected = expected_events ~ids experiment (Some mailing) contacts create_message in
   Test_utils.check_result expected events
 ;;
 
@@ -106,7 +117,6 @@ let create_invitations _ () =
   let run_matcher () =
     Matcher.create_invitation_events interval [ pool ]
     ||> CCList.assoc ~eq:Database.Label.equal pool
-    ||> sort_events
   in
   let%lwt current = Status.find_current pool interval in
   let () = Alcotest.(check int "count mailings" 1 (CCList.length current)) in
@@ -149,13 +159,23 @@ let create_invitations _ () =
 
 open Integration_utils
 
-let expected_create_events contacts mailing experiment invitation_mail =
-  let emails = contacts |> CCList.map CCFun.(invitation_mail %> get_or_failwith) in
-  [ Invitation.(Created { contacts; mailing = Some mailing; experiment })
+let expected_create_events
+      ?(invitation_ids = [])
+      contacts
+      mailing
+      experiment
+      invitation_mail
+  =
+  let open CCList in
+  let invitations =
+    mapi (fun i -> Invitation.create ?id:(nth_opt invitation_ids i)) contacts
+  in
+  let emails = invitations >|= CCFun.(invitation_mail %> get_or_failwith) in
+  [ Invitation.(Created { invitations; mailing = Some mailing; experiment })
     |> Pool_event.invitation
   ; Email.BulkSent emails |> Pool_event.email
   ]
-  @ CCList.map
+  @ map
       (fun contact ->
          Contact.(Updated (update_num_invitations ~step:1 contact)) |> Pool_event.contact)
       contacts
@@ -175,8 +195,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
   invitations
   |> CCList.flat_map (fun invitation ->
     [ Invitation.Resent (invitation, Some mailing.Mailing.id) |> Pool_event.invitation
-    ; Email.sent (invitation_mail invitation.Invitation.contact |> get_or_failwith)
-      |> Pool_event.email
+    ; Email.sent (invitation_mail invitation |> get_or_failwith) |> Pool_event.email
     ])
   |> Lwt.return
 ;;
@@ -237,13 +256,17 @@ let send_invitations _ () =
   let%lwt experiment, contacts =
     setup_experiment_filter_with_matching_contacts current_user experiment contact_ids
   in
+  let invitation_ids = CCList.map (fun _ -> Pool_common.Id.create ()) contact_ids in
   let%lwt mailing = MailingRepo.create experiment_id in
   let%lwt events =
-    Matcher.events_of_mailings [ pool, [ mailing, limit ] ] ||> CCList.hd ||> snd
+    Matcher.events_of_mailings ~invitation_ids [ pool, [ mailing, limit ] ]
+    ||> CCList.hd
+    ||> snd
   in
   let%lwt expected =
     let%lwt create_email = invitation_mail tenant experiment in
-    expected_create_events contacts mailing experiment create_email |> Lwt.return
+    expected_create_events ~invitation_ids contacts mailing experiment create_email
+    |> Lwt.return
   in
   let () = Alcotest.(check (list Test_utils.event) "succeeds" expected events) in
   let%lwt () = Pool_event.handle_events pool current_user expected in
@@ -254,15 +277,10 @@ let reset_invitations _ () =
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
   let%lwt current_user = current_user () in
   let%lwt experiment = Experiment.find pool experiment_id ||> get_or_failwith in
-  let experiment =
+  let%lwt () =
     let open Experiment in
-    let invitation_reset_at =
-      Ptime.sub_span (Ptime_clock.now ()) (Ptime.Span.of_int_s 3600)
-      |> CCOption.map InvitationResetAt.of_ptime
-    in
-    { experiment with invitation_reset_at }
+    handle_event pool (ResetInvitations experiment)
   in
-  let%lwt () = Experiment.(Updated (experiment, experiment) |> handle_event pool) in
   let%lwt contacts =
     Lwt_list.map_s (fun id -> Contact.find pool id ||> get_or_failwith) contact_ids
     ||> Matcher.sort_contacts
@@ -333,6 +351,7 @@ let create_invitations_for_online_experiment _ () =
   let%lwt current_user = current_user () in
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
   let contact_ids = [ Contact.Id.create () ] in
+  let invitation_ids = CCList.map (fun _ -> Pool_common.Id.create ()) contact_ids in
   let%lwt experiment =
     ExperimentRepo.create
       ~online_experiment:Experiment_test.Data.online_experiment
@@ -348,7 +367,10 @@ let create_invitations_for_online_experiment _ () =
   in
   let run_test expected message =
     let%lwt events =
-      Matcher.create_invitation_events (Ptime.Span.of_int_s (5 * 60)) [ pool ]
+      Matcher.create_invitation_events
+        ~invitation_ids
+        (Ptime.Span.of_int_s (5 * 60))
+        [ pool ]
       ||> CCList.assoc_opt ~eq:Database.Label.equal pool
       ||> CCOption.value ~default:[]
     in
@@ -357,7 +379,8 @@ let create_invitations_for_online_experiment _ () =
       | `Empty -> Lwt.return []
       | `Events ->
         let%lwt create_email = invitation_mail tenant experiment in
-        expected_create_events contacts mailing experiment create_email |> Lwt.return
+        expected_create_events ~invitation_ids contacts mailing experiment create_email
+        |> Lwt.return
     in
     Alcotest.(check (list Test_utils.event) message expected events) |> Lwt.return
   in

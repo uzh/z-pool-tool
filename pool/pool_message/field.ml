@@ -195,6 +195,8 @@ type t =
   | MarkedAsDeleted [@name "marked_as_deleted"] [@printer go "marked_as_deleted"]
   | MatchingFilterCount [@name "matching_filter_count"]
   [@printer go "matching_filter_count"]
+  | MatchingFilterCountShort [@name "matching_filter_count_short"]
+  [@printer go "matching_filter_count_short"]
   | MaxParticipants [@name "max_participants"] [@printer go "max_participants"]
   | MaxTries [@name "max_tries"] [@printer go "max_tries"]
   | Message [@name "message"] [@printer go "message"]

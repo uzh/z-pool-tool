@@ -334,9 +334,9 @@ module ResetInvitations : sig
 end = struct
   type t = Experiment.t
 
-  let handle ?(tags = Logs.Tag.empty) (experiment : t) =
+  let handle ?(tags = Logs.Tag.empty) reset =
     Logs.info ~src (fun m -> m "Handle command ResetInvitations" ~tags);
-    Ok [ Experiment.ResetInvitations experiment |> Pool_event.experiment ]
+    Ok [ Experiment.ResetInvitations reset |> Pool_event.experiment ]
   ;;
 
   let effects id = Experiment.Guard.Access.update id

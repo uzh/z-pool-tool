@@ -176,6 +176,7 @@ let rec field_to_string =
   | MainSession -> "Hauptsession"
   | MarkedAsDeleted -> "Als gelöscht markiert"
   | MatchingFilterCount -> "Anzahl passender Kontakte"
+  | MatchingFilterCountShort -> "Anz. Passende"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MaxTries -> "Maximum an Versuchen"
   | Message -> "Nachricht"

@@ -6,7 +6,7 @@ let statistics_from_request req database_label =
   let period =
     Sihl.Web.Request.query Pool_message.Field.(show Period) req >>= Statistics.read_period
   in
-  let%lwt statistics = Statistics.create ?period database_label () in
+  let%lwt statistics = Statistics.Pool.create ?period database_label () in
   Lwt.return (period, statistics)
 ;;
 
@@ -93,7 +93,7 @@ let upcoming_sessions = htmx_session_helper `upcoming
 let statistics req =
   let result { Pool_context.database_label; language; _ } =
     let%lwt statistics = statistics_from_request req database_label in
-    Component.Statistics.create language statistics
+    Component.Statistics.Pool.create language statistics
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
