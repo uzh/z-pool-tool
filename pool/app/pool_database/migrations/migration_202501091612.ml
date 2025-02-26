@@ -260,5 +260,5 @@ let migration () =
     |> add_step create_pool_queue_job_invitations_table
     |> add_step populate_pool_queue_job_invitations_table
     |> add_step create_experiment_invitation_reset_table
-    (* |> add_step populate_pool_experiment_invitation_reset *))
+    |> add_step populate_pool_experiment_invitation_reset)
 ;;
