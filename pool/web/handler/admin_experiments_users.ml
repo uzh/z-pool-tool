@@ -11,6 +11,22 @@ let experiment_id =
 let session_id = HttpUtils.find_id Session.Id.of_string Pool_message.Field.Session
 let admin_id = HttpUtils.find_id Admin.Id.of_string Pool_message.Field.Admin
 
+let has_permission_on_role database_label actor role permission =
+  let open Utils.Lwt_result.Infix in
+  let open Guard in
+  let role, target_uuid = role in
+  let check permission =
+    PermissionOnTarget.create
+      ?target_uuid
+      permission
+      (role |> Utils.find_assignable_target_role)
+    |> ValidationSet.one
+    |> CCFun.flip (Guard.Persistence.validate database_label) actor
+    ||> CCResult.is_ok
+  in
+  check permission
+;;
+
 let field_of_role =
   let open Pool_message in
   function
@@ -77,16 +93,7 @@ let index entity role req =
       | None -> Lwt.return (false, false)
       | Some actor ->
         let open Guard in
-        let role, target_uuid = current_roles in
-        let check permission =
-          PermissionOnTarget.create
-            ?target_uuid
-            permission
-            (role |> Utils.find_assignable_target_role)
-          |> ValidationSet.one
-          |> CCFun.flip (Guard.Persistence.validate database_label) actor
-          ||> CCResult.is_ok
-        in
+        let check = has_permission_on_role database_label actor current_roles in
         Lwt.both (check Permission.Create) (check Permission.Delete)
     in
     Page.Admin.Experiments.users
@@ -112,7 +119,6 @@ let index_experimenter = index `Experiment `Experimenter
 let index_session_assistants = index `Session `Assistants
 
 let query_admin entity role state req =
-  let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
     let id = experiment_id req in
     let form_path, guard_id = entity_path_and_guard id req role entity in
@@ -145,19 +151,7 @@ let query_admin entity role state req =
       in
       match%lwt Pool_context.Utils.find_authorizable_opt database_label user with
       | None -> Lwt.return false
-      | Some actor ->
-        let open Guard in
-        let role, target_uuid = current_roles in
-        let check permission =
-          PermissionOnTarget.create
-            ?target_uuid
-            permission
-            (role |> Utils.find_assignable_target_role)
-          |> ValidationSet.one
-          |> CCFun.flip (Guard.Persistence.validate database_label) actor
-          ||> CCResult.is_ok
-        in
-        check permission
+      | Some actor -> has_permission_on_role database_label actor current_roles permission
     in
     let open Page.Admin.Experiments.User in
     (match state with

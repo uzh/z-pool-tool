@@ -34,17 +34,27 @@ let default_lead_time_settings database_label =
     (Settings.find_default_text_msg_reminder_lead_time database_label)
 ;;
 
+let can_access_session_assistants pool actor experiment_id =
+  let id = experiment_id |> Guard.Uuid.target_of Experiment.Id.value in
+  let role = `Assistant, Some id in
+  Admin_experiments_users.has_permission_on_role pool actor role Guard.Permission.Read
+;;
+
 let list req =
   let experiment_id = experiment_id req in
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
   in
   HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Session) req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
   let flatten_sessions =
     CCList.fold_left (fun acc (parent, follow_ups) -> acc @ (parent :: follow_ups)) []
+  in
+  let* actor = Pool_context.Utils.find_authorizable database_label user in
+  let%lwt can_access_session_assistants =
+    can_access_session_assistants database_label actor experiment_id
   in
   Lwt_result.ok
   @@
@@ -53,8 +63,10 @@ let list req =
     let to_html time_windows =
       let open Page.Admin.TimeWindow in
       match HttpUtils.Htmx.is_hx_request req with
-      | true -> data_table context experiment time_windows |> Lwt.return
-      | false -> index context experiment time_windows
+      | true ->
+        data_table ~can_access_session_assistants context experiment time_windows
+        |> Lwt.return
+      | false -> index ~can_access_session_assistants context experiment time_windows
     in
     Time_window.query_by_experiment ~query database_label experiment_id >|> to_html
   | false ->
@@ -65,8 +77,16 @@ let list req =
     let to_html sessions =
       let open Page.Admin.Session in
       match HttpUtils.Htmx.is_hx_request req with
-      | true -> data_table context experiment sessions chronological |> Lwt.return
-      | false -> index context experiment sessions chronological
+      | true ->
+        data_table
+          context
+          ~can_access_session_assistants
+          experiment
+          sessions
+          chronological
+        |> Lwt.return
+      | false ->
+        index context ~can_access_session_assistants experiment sessions chronological
     in
     (match chronological with
      | true -> Session.query_by_experiment ~query database_label experiment_id >|> to_html
@@ -383,7 +403,7 @@ let show req =
   in
   let experiment_target_id = [ Guard.Uuid.target_of Experiment.Id.value experiment_id ] in
   HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Assignment) req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
   let* session =
@@ -424,10 +444,15 @@ let show req =
     let%lwt rerun_session_filter =
       Helpers.Guard.can_rerun_session_filter context experiment_id session_id
     in
+    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let%lwt can_access_session_assistants =
+      can_access_session_assistants database_label actor experiment_id
+    in
     (match session with
      | `Session session ->
        Page.Admin.Session.detail
          ~access_contact_profiles
+         ~can_access_session_assistants
          ~not_matching_filter_count
          ~rerun_session_filter
          ~send_direct_message
@@ -445,6 +470,7 @@ let show req =
      | `TimeWindow time_window ->
        Page.Admin.TimeWindow.detail
          ~access_contact_profiles
+         ~can_access_session_assistants
          ~send_direct_message
          ~view_contact_name
          ~view_contact_info
