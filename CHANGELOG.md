@@ -4,6 +4,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Added
+
+- store all invitation resets
+- possibility to assign assistants per session
+
+### Changed
+
+- refactor statistics
+- refactor permission handling of page navigation
+
+### Fixed
+
+- csrf issues on error pages
+- matcher test cases
+- missing default permissions
+- update changelog when merging contacts
+- fix session links in calendar view
+
 ## [0.9.1](https://github.com/uzh/z-pool-tool/tree/0.9.1) - 2025-02-10
 
 ### Added
