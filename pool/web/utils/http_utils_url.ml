@@ -144,6 +144,13 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let session_user_path experiment_id id role ?admin_id ?suffix () =
+    session_path ~id experiment_id
+    |> append (Field.show role)
+    |> append_opt (map Admin.Id.value admin_id)
+    |> append_opt suffix
+  ;;
+
   let waiting_list_path ?suffix ?id experiment_id =
     experiment_path ~id:experiment_id ~suffix:"waiting-list" ()
     |> append_opt (map Waiting_list.Id.value id)

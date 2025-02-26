@@ -119,6 +119,8 @@ val default_sort : Query.Sort.t
 val default_query : Query.t
 
 module Guard : sig
+  val to_actor : t -> Guard.Uuid.Actor.t
+
   module Actor : sig
     val to_authorizable
       :  ?ctx:(string * string) list

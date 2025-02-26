@@ -10,6 +10,8 @@ type reschedule =
   }
 
 let src = Logs.Src.create "session.cqrs"
+let to_target { Session.id; _ } = Guard.Uuid.target_of Session.Id.value id
+let to_role (admin, role, target_uuid) = Guard.ActorRole.create ?target_uuid admin role
 
 let command
       start
@@ -1054,4 +1056,59 @@ end = struct
   ;;
 
   let effects id = Session.Guard.Access.update id
+end
+
+type update_role =
+  { admin : Admin.t
+  ; session : Session.t
+  }
+
+module AssignAssistant : sig
+  include Common.CommandSig with type t = update_role
+
+  val effects : Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = update_role
+
+  let handle ?(tags = Logs.Tag.empty) { admin; session } =
+    Logs.info ~src (fun m -> m "Handle command AssignAssistant" ~tags);
+    Ok
+      [ Guard.RolesGranted
+          [ (admin |> Admin.Guard.to_actor, `Assistant, Some (to_target session))
+            |> to_role
+          ]
+        |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
+      ]
+  ;;
+
+  let effects id =
+    let target_uuid = Guard.Uuid.target_of Session.Id.value id in
+    Guard.Access.Role.Assignment.Assistant.create ~target_uuid ()
+  ;;
+end
+
+module UnassignAssistant : sig
+  include Common.CommandSig with type t = update_role
+
+  val effects : Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = update_role
+
+  let handle ?(tags = Logs.Tag.empty) { admin; session } =
+    Logs.info ~src (fun m -> m "Handle command UnassignAssistant" ~tags);
+    Ok
+      [ Guard.RolesRevoked
+          [ (admin |> Admin.Guard.to_actor, `Assistant, Some (to_target session))
+            |> to_role
+          ]
+        |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
+      ]
+  ;;
+
+  let effects id =
+    let target_uuid = Guard.Uuid.target_of Session.Id.value id in
+    Guard.Access.Role.Assignment.Assistant.delete ~target_uuid ()
+  ;;
 end

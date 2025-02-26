@@ -1035,33 +1035,35 @@ let users
       ?hint
       ?can_assign
       ?can_unassign
+      entity
       role
       experiment
+      form_path
       applicable_admins
       currently_assigned
       context
   =
+  let open Layout.Experiment in
   let field =
     match role with
     | `Assistants -> Field.Assistants
     | `Experimenter -> Field.Experimenter
+  in
+  let active_navigation =
+    match entity with
+    | `Experiment -> Some (Field.show field)
+    | `Session -> None
   in
   Page_admin_experiment_users.role_assignment
     ?hint
     ?can_assign
     ?can_unassign
     context
-    experiment
-    role
+    form_path
     ~applicable:applicable_admins
     ~current:currently_assigned
   |> CCList.return
-  |> Layout.Experiment.(
-       create
-         ~active_navigation:(Field.show field)
-         context
-         (NavLink (Pool_common.I18n.Field field))
-         experiment)
+  |> create ?active_navigation context (NavLink (Pool_common.I18n.Field field)) experiment
 ;;
 
 let message_template_form

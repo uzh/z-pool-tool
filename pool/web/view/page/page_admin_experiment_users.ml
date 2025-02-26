@@ -33,17 +33,14 @@ let assign_form
     ]
 ;;
 
-let list_existing context experiment role ~can_unassign =
-  let button_url = experiment_user_path experiment role in
-  let query_url =
-    HttpUtils.Url.Admin.experiment_user_path
-      experiment.Experiment.id
-      (field_of_role role)
-      ~suffix:"assigned"
-      ()
-  in
+let list_existing
+      context
+      (form_url : ?admin_id:Admin.Id.t -> ?suffix:string -> unit -> string)
+      ~can_unassign
+  =
+  let query_url = form_url ~suffix:"assigned" () in
   Page_admin_admins.list
-    ~buttons:(if can_unassign then [ assign_form context button_url `Unassign ] else [])
+    ~buttons:(if can_unassign then [ assign_form context form_url `Unassign ] else [])
     ~hide_create:true
     ~table_id:"existing-admins"
     ~url:query_url
@@ -51,17 +48,14 @@ let list_existing context experiment role ~can_unassign =
     context
 ;;
 
-let list_available context experiment role ~can_assign =
-  let url = experiment_user_path experiment role in
-  let query_url =
-    HttpUtils.Url.Admin.experiment_user_path
-      experiment.Experiment.id
-      (field_of_role role)
-      ~suffix:"available"
-      ()
-  in
+let list_available
+      context
+      (form_url : ?admin_id:Admin.Id.t -> ?suffix:string -> unit -> string)
+      ~can_assign
+  =
+  let query_url = form_url ~suffix:"available" () in
   Page_admin_admins.list
-    ~buttons:(if can_assign then [ assign_form context url `Assign ] else [])
+    ~buttons:(if can_assign then [ assign_form context form_url `Assign ] else [])
     ~hide_create:true
     ~table_id:"available-admins"
     ~url:query_url
@@ -74,15 +68,13 @@ let role_assignment
       ?(can_assign = false)
       ?(can_unassign = false)
       context
-      experiment
-      role
+      form_path
       ~applicable:available
       ~current:existing
   =
   let open CCFun in
-  (* let open Pool_common.I18n in *)
-  let existing = list_existing context experiment role ~can_unassign existing in
-  let available = list_available context experiment role ~can_assign available in
+  let existing = list_existing context form_path ~can_unassign existing in
+  let available = list_available context form_path ~can_assign available in
   let main_hint =
     CCOption.map_or
       ~default:(txt "")

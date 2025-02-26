@@ -135,10 +135,26 @@ module Partials = struct
     else None
   ;;
 
+  (* TODO: Check if can assign assistants *)
+  let assistants_button language experiment_id session =
+    let field = Field.Assistants in
+    let url =
+      HttpUtils.Url.Admin.session_user_path experiment_id session.id Field.Assistants ()
+      |> Sihl.Web.externalize_path
+    in
+    a
+      ~a:[ a_href url; a_class [ "btn"; "is-text"; "has-icon"; "primary" ] ]
+      [ Component.Icon.(to_html Person)
+      ; txt (Pool_common.Utils.field_to_string_capitalized language field)
+      ]
+    |> CCOption.return
+  ;;
+
   let button_dropdown ({ Pool_context.language; _ } as context) experiment_id session =
     [ detail_button language experiment_id session.id |> CCOption.return
     ; delete_form context experiment_id (`Session session) |> CCOption.return
     ; close_button language experiment_id session
+    ; assistants_button language experiment_id session
     ]
     |> CCList.filter_map CCFun.id
     |> fun buttons ->

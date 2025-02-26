@@ -6,7 +6,7 @@ module TimeUnit = Pool_model.Base.TimeUnit
 
 let opt = Conformist.optional
 let src = Logs.Src.create "experiment_command.cqrs"
-let to_actor = CCFun.(Admin.id %> BaseGuard.Uuid.actor_of Admin.Id.value)
+let to_actor = Admin.Guard.to_actor
 let to_target { id; _ } = BaseGuard.Uuid.target_of Id.value id
 
 let to_role (admin, role, target_uuid) =
