@@ -40,6 +40,7 @@ let show
       contact_email
       inactive_user_disable_after
       inactive_user_warning
+      inactive_user_service_disabled
       trigger_profile_update_after
       default_reminder_lead_time
       default_text_msg_reminder_lead_time
@@ -70,9 +71,7 @@ let show
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt title ]
       ; hint |> CCOption.map_or ~default:(txt "") (fun hint -> p [ txt hint ])
-      ; div
-          ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
-          (columns |> CCList.map (fun column -> div [ column ]))
+      ; div ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ] columns
       ]
   in
   let languages_html =
@@ -224,6 +223,23 @@ let show
   in
   let inactive_user_html =
     let open Settings.InactiveUser in
+    let disable_servive_form =
+      div
+        ~a:[ a_class [ "full-width" ] ]
+        [ form
+            ~a:(form_attrs `UpdateUnactiveUserServiceDisabled)
+            [ csrf_element csrf ()
+            ; div
+                ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+                [ checkbox_element
+                    ~value:(ServiceDisabled.value inactive_user_service_disabled)
+                    language
+                    Field.InactiveUserDisableService
+                ; submit ()
+                ]
+            ]
+        ]
+    in
     let disable_after_form =
       form
         ~a:(form_attrs `UpdateInactiveUserDisableAfter)
@@ -280,7 +296,10 @@ let show
             [ csrf_element csrf (); subforms; buttons ]
         ]
     in
-    "Inactive Users", [ disable_after_form; warn_after_form ], None
+    let hint = Pool_common.(I18n.SettigsInactiveUsers |> Utils.hint_to_string language) in
+    ( "Inactive Users"
+    , [ disable_servive_form; disable_after_form; warn_after_form ]
+    , Some hint )
   in
   let trigger_profile_update_after_html =
     let open Settings.TriggerProfileUpdateAfter in

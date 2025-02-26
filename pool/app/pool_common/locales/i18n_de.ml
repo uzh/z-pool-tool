@@ -686,6 +686,10 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SessionRegistrationHint -> "Die Registrierung für eine Session ist verbindlich."
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen Sprache hier."
+  | SettigsInactiveUsers ->
+    "Die hier angegebenen Zeitdauern werden summiert. Das heisst, dass ein Account erst \
+     nach der Summe aller 'Warnung an inaktive Benutzer' und 'Deaktiviere inaktiven \
+     Benutzer' deaktiviert wird."
   | SessionReminderLeadTime ->
     "Die Vorlaufzeit bestimmt, wie lange vor dem Start der Session die Erinnerungen an \
      die Kontakte verschickt wird."

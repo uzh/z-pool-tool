@@ -39,7 +39,7 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE 
+      WHERE
         pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         pool_waiting_list.marked_as_deleted = 0
@@ -61,7 +61,7 @@ module Sql = struct
         contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND
         experiment_uuid = UNHEX(REPLACE($2, '-', ''))
-      AND 
+      AND
         marked_as_deleted = 0
     |sql}
     |> find_request_sql
@@ -74,7 +74,7 @@ module Sql = struct
 
   let find_by_contact_to_merge_request =
     let open Caqti_request.Infix in
-    {sql| 
+    {sql|
       WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND NOT EXISTS (
         SELECT 1
@@ -92,8 +92,7 @@ module Sql = struct
 
   let find_by_experiment ?query pool id =
     let where =
-      let sql =
-        {sql|
+      {sql|
           pool_waiting_list.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
           AND pool_waiting_list.marked_as_deleted = 0
           AND NOT EXISTS (
@@ -104,15 +103,13 @@ module Sql = struct
             WHERE pool_assignments.contact_uuid = user_users.uuid
               AND pool_assignments.marked_as_deleted != 1)
         |sql}
-      in
-      let dyn =
-        let open Dynparam in
-        let add_id = add Pool_common.Repo.Id.t (Experiment.Id.to_common id) in
-        empty |> add_id |> add_id
-      in
-      sql, dyn
     in
-    Query.collect_and_count pool query ~select:find_request_sql ~where RepoEntity.t
+    let dyn =
+      let open Dynparam in
+      let add_id = add Pool_common.Repo.Id.t (Experiment.Id.to_common id) in
+      empty |> add_id |> add_id
+    in
+    Query.collect_and_count pool query ~select:find_request_sql ~where ~dyn RepoEntity.t
   ;;
 
   let find_experiment_id_request =

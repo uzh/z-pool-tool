@@ -222,6 +222,7 @@ let create_where
       model
   =
   let open Utils.Lwt_result.Infix in
+  let open Pool_message in
   let tags = Database.Logger.Tags.create pool in
   let log_warning = Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags in
   match actor, permission with
@@ -235,10 +236,10 @@ let create_where
        |> CCOption.return
      | None -> all)
   | None, Some _ ->
-    let _ = log_warning Pool_message.(Error.Undefined Field.Actor) in
+    let (_ : Error.t) = log_warning (Error.Undefined Field.Actor) in
     Lwt.return_some "FALSE"
   | Some _, None ->
-    let _ = log_warning Pool_message.(Error.Undefined Field.Permission) in
+    let (_ : Error.t) = log_warning (Error.Undefined Field.Permission) in
     Lwt.return_some "FALSE"
   | None, None -> Lwt.return_none
 ;;

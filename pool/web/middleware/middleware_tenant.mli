@@ -1,3 +1,8 @@
+val web_filter
+  :  (Rock.Request.t -> Rock.Response.t Lwt.t)
+  -> Rock.Request.t
+  -> Rock.Response.t Lwt.t
+
 val make
   :  string
   -> maintenance_handler:(unit -> Rock.Response.t Lwt.t)

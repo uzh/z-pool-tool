@@ -86,20 +86,15 @@ let duplicate_for_new_job label queue_uuid =
 ;;
 
 let find_instances_by_entity queue_table ?query pool entity_uuid =
-  let where =
-    let open Pool_common.Repo in
-    ( [%string {sql| entity_uuid = %{Pool_common.Id.sql_value_fragment "?"} |sql}]
-    , Dynparam.(empty |> add Id.t entity_uuid) )
-  in
   let joins =
     "JOIN pool_queue_jobs_mapping ON pool_queue_jobs_mapping.queue_uuid = uuid"
   in
-  Query.collect_and_count
-    pool
-    query
-    ~select:(Repo.find_all_request queue_table ~joins)
-    ~where
-    Repo_entity.Instance.t
+  let select = Repo.find_all_request queue_table ~joins in
+  let where =
+    [%string {sql| entity_uuid = %{Pool_common.Id.sql_value_fragment "?"} |sql}]
+  in
+  let dyn = Dynparam.(empty |> add Pool_common.Repo.Id.t entity_uuid) in
+  Query.collect_and_count pool query ~select ~where ~dyn Repo_entity.Instance.t
 ;;
 
 let find_related_request entity =

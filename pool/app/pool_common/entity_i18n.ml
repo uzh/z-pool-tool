@@ -173,7 +173,7 @@ type nav_link =
   | Users
   | WaitingList
   | Versions
-[@@deriving eq]
+[@@deriving eq, show]
 
 type hint =
   | AdminOverwriteContactValues
@@ -320,6 +320,7 @@ type hint =
   | SessionRegistrationHint
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
+  | SettigsInactiveUsers
   | SettingsNoEmailSuffixes
   | SettingsPageScripts
   | SignUpCodeHint

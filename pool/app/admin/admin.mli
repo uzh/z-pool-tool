@@ -17,6 +17,7 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val sexp_of_t : t -> Sexplib0.Sexp.t
+val compare : t -> t -> int
 val user : t -> Pool_user.t
 val create : email_verified:Pool_user.EmailVerified.t option -> Pool_user.t -> t
 val id : t -> Id.t
@@ -69,7 +70,13 @@ val find_by_email
   -> Pool_user.EmailAddress.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_by : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+
+val list_by_user
+  :  ?query:Query.t
+  -> Database.Label.t
+  -> Guard.Actor.t
+  -> (t list * Query.t) Lwt.t
 
 val query_by_role
   :  ?query:Query.t

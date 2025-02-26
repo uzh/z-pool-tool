@@ -7,6 +7,7 @@ let find_email_suffixes = Repo.TenantEmailSuffixes.find
 let find_contact_email = Repo.TenantContactEmail.find
 let find_inactive_user_disable_after = Repo.InactiveUserDisableAfter.find
 let find_inactive_user_warning = Repo.InactiveUserWarning.find
+let find_inactive_user_service_disabled = Repo.InactiveUserServiceDisabled.find
 let find_trigger_profile_update_after = Repo.TriggerProfileUpdateAfter.find
 let find_default_reminder_lead_time = Repo.DefaultReminderLeadTime.find
 let find_default_text_msg_reminder_lead_time = Repo.DefaultTextMsgReminderLeadTime.find

@@ -246,6 +246,36 @@ module InactiveUser = struct
 
     let effects = Settings.Guard.Access.update
   end
+
+  module DisableService : sig
+    type t = Settings.InactiveUser.ServiceDisabled.t
+
+    val handle
+      :  ?tags:Logs.Tag.set
+      -> t
+      -> (Pool_event.t list, Pool_message.Error.t) result
+
+    val decode : (string * string list) list -> (t, Pool_message.Error.t) result
+    val effects : validation_set
+  end = struct
+    type t = Settings.InactiveUser.ServiceDisabled.t
+
+    let handle ?(tags = Logs.Tag.empty) disabled =
+      Logs.info ~src (fun m -> m "Handle command DisableService" ~tags);
+      Ok [ Settings.InactiveUserServiceDisabled disabled |> Pool_event.settings ]
+    ;;
+
+    let schema =
+      Conformist.(make Field.[ Settings.InactiveUser.ServiceDisabled.schema () ] CCFun.id)
+    ;;
+
+    let decode data =
+      Pool_conformist.decode_and_validate schema data
+      |> CCResult.map_err Pool_message.to_conformist_error
+    ;;
+
+    let effects = Settings.Guard.Access.update
+  end
 end
 
 module UpdateTriggerProfileUpdateAfter : sig

@@ -1,3 +1,4 @@
+open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_message.Field
@@ -28,24 +29,16 @@ let index req =
     ~create_layout
     req
   @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
-  let open Utils.Lwt_result.Infix in
   let* actor =
     Pool_context.Utils.find_authorizable ~admin_only:true database_label user
   in
-  let%lwt location_list, query =
-    Pool_location.find_all
-      ~query
-      ~actor
-      ~permission:Pool_location.Guard.Access.index_permission
-      database_label
-  in
+  let%lwt location_list, query = Pool_location.list_by_user ~query database_label actor in
   let open Page.Admin.Location in
   (if HttpUtils.Htmx.is_hx_request req then list else index) context location_list query
   |> Lwt_result.return
 ;;
 
 let new_form req =
-  let open Utils.Lwt_result.Infix in
   let result context =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/locations")
     @@
@@ -59,7 +52,6 @@ let new_form req =
 ;;
 
 let create req =
-  let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
@@ -93,7 +85,6 @@ let create req =
 ;;
 
 let new_file req =
-  let open Utils.Lwt_result.Infix in
   let open Pool_location in
   let id = id req Field.Location Id.of_string in
   let result ({ Pool_context.database_label; _ } as context) =
@@ -110,7 +101,6 @@ let new_file req =
 ;;
 
 let add_file req =
-  let open Utils.Lwt_result.Infix in
   let id =
     HttpUtils.get_field_router_param req Field.Location |> Pool_location.Id.of_string
   in
@@ -158,7 +148,6 @@ let add_file req =
 let asset = Contact_location.asset
 
 let detail edit req =
-  let open Utils.Lwt_result.Infix in
   let open Pool_location in
   let error_path = "/admin/locations" in
   let result ({ Pool_context.database_label; _ } as context) =
@@ -195,7 +184,6 @@ let show = detail false
 let edit = detail true
 
 let statistics req =
-  let open Utils.Lwt_result.Infix in
   let open Pool_location in
   let id = id req Field.Location Id.of_string in
   let result { Pool_context.database_label; language; _ } =
@@ -217,7 +205,6 @@ let statistics req =
 ;;
 
 let update req =
-  let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =
     let id = id req Field.Location Pool_location.Id.of_string in
     let%lwt urlencoded =
@@ -262,7 +249,6 @@ let delete req =
     in
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
-    let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     let* events =
       mapping_id
@@ -278,6 +264,26 @@ let delete req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let session req =
+  let location_id = id req Field.Location Pool_location.Id.of_string in
+  let error_path = HttpUtils.Url.Admin.location_path ~id:location_id () in
+  HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Assignment) req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let* location = Pool_location.find database_label location_id in
+  let session_id = id req Field.Session Session.Id.of_string in
+  let* session = Session.find database_label session_id in
+  let%lwt assignments =
+    Assignment.find_for_session_detail_screen ~query database_label session_id
+  in
+  Page.Admin.Location.(
+    if HttpUtils.Htmx.is_hx_request req then assignment_list else session)
+    context
+    location
+    session
+    assignments
+  |> Lwt_result.return
+;;
+
 let search = Helpers.Search.htmx_search_helper `Location
 
 module Access : sig
@@ -287,6 +293,7 @@ module Access : sig
   val read_file : Rock.Middleware.t
   val delete_file : Rock.Middleware.t
   val search : Rock.Middleware.t
+  val read_session : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module LocationCommand = Cqrs_command.Location_command
@@ -295,14 +302,22 @@ end = struct
   let file_effects = Guardian.id_effects Pool_location.Mapping.Id.validate Field.File
   let location_effects = Guardian.id_effects Pool_location.Id.validate Field.Location
 
-  let combined_effects validation_set =
+  let combined_file_effects validation_set =
     let open CCResult.Infix in
-    let find = HttpUtils.find_id in
     Guardian.validate_generic
     @@ fun req ->
-    let* location_id = find Pool_location.Id.validate Field.Location req in
-    let* file_id = find Pool_location.Mapping.Id.validate Field.File req in
+    let* location_id = id req Field.Location Pool_location.Id.validate in
+    let* file_id = id req Field.File Pool_location.Mapping.Id.validate in
     validation_set location_id file_id |> CCResult.return
+  ;;
+
+  let combined_ocation_effects validation_set =
+    let open CCResult.Infix in
+    Guardian.validate_generic
+    @@ fun req ->
+    let* location_id = id req Field.Location Pool_location.Id.validate in
+    let* session_id = id req Field.Session Session.Id.validate in
+    validation_set location_id session_id |> CCResult.return
   ;;
 
   let index =
@@ -314,6 +329,7 @@ end = struct
   let read = location_effects Pool_location.Guard.Access.read
   let read_file = file_effects Pool_location.Guard.Access.File.read
   let update = location_effects LocationCommand.Update.effects
-  let delete_file = combined_effects LocationCommand.DeleteFile.effects
+  let delete_file = combined_file_effects LocationCommand.DeleteFile.effects
   let search = index
+  let read_session = combined_ocation_effects Session.Guard.Access.read_by_location
 end

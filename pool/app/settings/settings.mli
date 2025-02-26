@@ -35,6 +35,10 @@ module InactiveUser : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
   end
+
+  module ServiceDisabled : sig
+    include Pool_model.Base.BooleanSig
+  end
 end
 
 module TriggerProfileUpdateAfter : sig
@@ -97,6 +101,7 @@ val action_of_param
        | `UpdateTextMsgDefaultLeadTime
        | `UpdateInactiveUserDisableAfter
        | `UpdateInactiveUserWarning
+       | `UpdateUnactiveUserServiceDisabled
        | `UpdateContactEmail
        | `UpdateEmailSuffixes
        | `UpdateLanguages
@@ -116,6 +121,7 @@ val stringify_action
      | `UpdateTextMsgDefaultLeadTime
      | `UpdateInactiveUserDisableAfter
      | `UpdateInactiveUserWarning
+     | `UpdateUnactiveUserServiceDisabled
      | `UpdateContactEmail
      | `UpdateEmailSuffixes
      | `UpdateLanguages
@@ -134,6 +140,7 @@ type event =
   | EmailSuffixesUpdated of EmailSuffix.t list
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
+  | InactiveUserServiceDisabled of InactiveUser.ServiceDisabled.t
   | LanguagesUpdated of Pool_common.Language.t list
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
   | UserImportFirstReminderAfterUpdated of UserImportReminder.FirstReminderAfter.t
@@ -153,6 +160,10 @@ val find_inactive_user_disable_after
   -> InactiveUser.DisableAfter.t Lwt.t
 
 val find_inactive_user_warning : Database.Label.t -> InactiveUser.Warning.t Lwt.t
+
+val find_inactive_user_service_disabled
+  :  Database.Label.t
+  -> InactiveUser.ServiceDisabled.t Lwt.t
 
 val find_trigger_profile_update_after
   :  Database.Label.t

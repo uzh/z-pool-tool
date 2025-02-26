@@ -58,37 +58,53 @@ let handle_contact_warnings pool warn_after =
   warning_notification_events pool contacts_to_warn
 ;;
 
-let handle_events pool message = function
+let handle_events pool message =
+  let tags = Database.(Logger.Tags.create pool) in
+  function
   | Error err ->
     let open Pool_common in
     Logs.err ~src (fun m ->
       m
+        ~tags
         "%s: An error occurred while making events: %s"
         message
         (Utils.error_to_string Language.En err));
     Utils.failwith err
   | Ok (emails, events) ->
     Logs.info ~src (fun m ->
-      m "%s: Found %i contacts to notify due to inactivity" message (CCList.length events));
+      m
+        ~tags
+        "%s: Found %i contacts to notify due to inactivity"
+        message
+        (CCList.length events));
     let%lwt () = Email.handle_event pool (Email.BulkSent emails) in
     events |> Lwt_list.iter_s (Contact.handle_event pool)
 ;;
 
 let run_by_tenant pool =
   let open Settings in
-  let%lwt disable_after = find_inactive_user_disable_after pool in
-  let%lwt warn_after =
-    find_inactive_user_warning pool ||> CCList.map InactiveUser.Warning.TimeSpan.value
+  let%lwt service_disabled =
+    find_inactive_user_service_disabled pool ||> InactiveUser.ServiceDisabled.value
   in
-  let%lwt () =
-    handle_disable_contacts pool disable_after warn_after
-    >|> handle_events pool "Pausing inactive users:"
-  in
-  let%lwt () =
-    handle_contact_warnings pool warn_after
-    >|> handle_events pool "Notify inactive users:"
-  in
-  Lwt.return_unit
+  match service_disabled with
+  | true ->
+    Logs.info (fun m ->
+      m ~tags:Database.(Logger.Tags.create pool) "%s" "Inactive user service is disabled");
+    Lwt.return_unit
+  | false ->
+    let%lwt disable_after = find_inactive_user_disable_after pool in
+    let%lwt warn_after =
+      find_inactive_user_warning pool ||> CCList.map InactiveUser.Warning.TimeSpan.value
+    in
+    let%lwt () =
+      handle_disable_contacts pool disable_after warn_after
+      >|> handle_events pool "Pausing inactive users"
+    in
+    let%lwt () =
+      handle_contact_warnings pool warn_after
+      >|> handle_events pool "Notify inactive users"
+    in
+    Lwt.return_unit
 ;;
 
 let run () = Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s run_by_tenant

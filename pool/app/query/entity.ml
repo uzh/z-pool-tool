@@ -1,3 +1,4 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 module Common = Pool_common
 module Dynparam = Database.Dynparam
 
@@ -45,17 +46,18 @@ module Pagination = struct
     { limit : Limit.t
     ; page : Page.t
     ; page_count : PageCount.t
+    ; item_count : int
     }
   [@@deriving eq, show, yojson]
 
-  let to_query_parts { limit; page; page_count } =
+  let to_query_parts { limit; page; page_count; _ } =
     [ Pool_message.Field.Limit, Limit.to_string limit
     ; Pool_message.Field.Page, Page.to_string page
     ; Pool_message.Field.PageCount, PageCount.to_string page_count
     ]
   ;;
 
-  let create ?limit ?page ?(page_count = 1) () =
+  let create ?limit ?page ?(page_count = 1) ?(item_count = 0) () =
     let open CCOption in
     let open CCFun in
     let build input create default =
@@ -63,13 +65,13 @@ module Pagination = struct
     in
     let page = Page.(build page create default) in
     let limit = value ~default:Limit.default limit in
-    { limit; page; page_count }
+    { limit; page; page_count; item_count }
   ;;
 
   let set_page_count row_count t =
     let open CCFloat in
     let page_count = ceil (of_int row_count /. of_int t.limit) |> to_int |> CCInt.max 1 in
-    { t with page_count }
+    { t with page_count; item_count = row_count }
   ;;
 
   let to_sql { limit; page; _ } =

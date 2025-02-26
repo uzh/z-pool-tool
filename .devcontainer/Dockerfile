@@ -52,6 +52,9 @@ RUN ln -fs /usr/share/zoneinfo/Europe/Zurich /etc/localtime
 RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' \
   && bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
 
+# link opam version
+RUN ln -fs /usr/bin/opam-2.2 /usr/bin/opam
+
 USER opam
 
 # install oh-my-zsh
