@@ -18,7 +18,6 @@ services:
       # Add database folders to dev container
       - db-root:/databases/db-root/:ro
       - db-tenant:/databases/db-tenant/:ro
-
     environment:
       - DATABASE_URL=mariadb://root@database-root:3306/development
       - DATABASE_URL_TENANT_TEST=mariadb://root@database-tenant:3306/test_econ
@@ -34,6 +33,7 @@ services:
     depends_on:
       - database-root
       - database-tenant
+      - mailtrap
     ports:
       - 3016:3000
       - 3017:3000
@@ -42,7 +42,7 @@ services:
   database-root:
     image: mariadb:10.6
     command: --max_allowed_packet=629145600
-    ports: [3316:3306]
+    ports: [ 3316:3306 ]
     environment:
       - TZ=Europe/Zurich
       - MYSQL_ALLOW_EMPTY_PASSWORD='yes'
@@ -56,7 +56,7 @@ services:
   database-tenant:
     image: mariadb:10.6
     command: --max_allowed_packet=629145600
-    ports: [3317:3306]
+    ports: [ 3317:3306 ]
     environment:
       - TZ=Europe/Zurich
       - MYSQL_ALLOW_EMPTY_PASSWORD='yes'
@@ -70,7 +70,7 @@ services:
   adminer:
     image: adminer:standalone
     restart: always
-    ports: [8080:8080]
+    ports: [ 8080:8080 ]
     depends_on:
       - database-root
       - database-tenant
@@ -85,6 +85,14 @@ services:
     depends_on:
       - database-root
       - database-tenant
+
+  mailtrap:
+    image: mailhog/mailhog
+    container_name: mailtrap-pool
+    hostname: mailtrap-pool
+    ports:
+      - "1026:1025"
+      - "8026:8025"
 
 volumes:
   opam:
