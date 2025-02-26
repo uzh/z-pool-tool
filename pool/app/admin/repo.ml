@@ -70,11 +70,6 @@ let find_all_request =
   {sql| WHERE user_users.admin = 1 |sql} |> find_request_sql |> Caqti_type.unit ->* t
 ;;
 
-(* TODO: One is not required, find_by / list_by_user *)
-let find_by ?query pool =
-  Query.collect_and_count pool query ~select:(find_request_sql ?joins:None) t
-;;
-
 let all ?query pool =
   Query.collect_and_count pool query ~select:(find_request_sql ?joins:None) t
 ;;
