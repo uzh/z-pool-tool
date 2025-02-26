@@ -8,6 +8,7 @@ module Icon = Component.Icon
 module DataTable = Component.DataTable
 module Notification = Component.Notification
 module HttpUtils = Http_utils
+module User = Page_admin_experiment_users
 
 let build_experiment_path ?suffix experiment =
   let base =
@@ -965,41 +966,35 @@ let users
       ?hint
       ?can_assign
       ?can_unassign
+      entity
       role
       experiment
+      form_path
       applicable_admins
       currently_assigned
       context
   =
-  let base_url field admin =
-    let suffix =
-      Format.asprintf "%s/%s" (Field.show field) Admin.(id admin |> Id.value)
-    in
-    build_experiment_path ~suffix experiment |> Sihl.Web.externalize_path
-  in
+  let open Layout.Experiment in
   let field =
     match role with
     | `Assistants -> Field.Assistants
     | `Experimenter -> Field.Experimenter
   in
+  let active_navigation =
+    match entity with
+    | `Experiment -> Some (Field.show field)
+    | `Session -> None
+  in
   Page_admin_experiment_users.role_assignment
     ?hint
     ?can_assign
     ?can_unassign
-    (base_url field)
-    field
     context
-    ~assign:"assign"
-    ~unassign:"unassign"
+    form_path
     ~applicable:applicable_admins
     ~current:currently_assigned
   |> CCList.return
-  |> Layout.Experiment.(
-       create
-         ~active_navigation:(Field.show field)
-         context
-         (NavLink (Pool_common.I18n.Field field))
-         experiment)
+  |> create ?active_navigation context (NavLink (Pool_common.I18n.Field field)) experiment
 ;;
 
 let message_template_form

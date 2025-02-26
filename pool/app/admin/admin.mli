@@ -78,6 +78,13 @@ val list_by_user
   -> Guard.Actor.t
   -> (t list * Query.t) Lwt.t
 
+val query_by_role
+  :  ?query:Query.t
+  -> ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
+  -> Database.Label.t
+  -> Role.Role.t * Guard.Uuid.Target.t option
+  -> (t list * Query.t) Lwt.t
+
 val find_all_with_role
   :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
   -> Database.Label.t
@@ -112,6 +119,8 @@ val default_sort : Query.Sort.t
 val default_query : Query.t
 
 module Guard : sig
+  val to_actor : t -> Guard.Uuid.Actor.t
+
   module Actor : sig
     val to_authorizable
       :  ?ctx:(string * string) list

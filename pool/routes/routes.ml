@@ -342,6 +342,8 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index_assistants ] index_assistants
+        ; get "assigned" ~middlewares:[ Access.index_assistants ] Assistant.assigned
+        ; get "available" ~middlewares:[ Access.index_assistants ] Assistant.available
         ; choose ~scope:(url_key Admin) specific
         ]
       in
@@ -356,6 +358,8 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index_experimenter ] index_experimenter
+        ; get "assigned" ~middlewares:[ Access.index_assistants ] Experimenter.assigned
+        ; get "available" ~middlewares:[ Access.index_assistants ] Experimenter.available
         ; choose ~scope:(url_key Admin) specific
         ]
       in
@@ -413,6 +417,31 @@ module Admin = struct
             in
             [ choose ~scope:(Assignment |> url_key) specific ]
           in
+          let assistants =
+            let open Experiments.Users in
+            let specific =
+              [ post
+                  "assign"
+                  ~middlewares:[ Access.assign_assistant ]
+                  assign_session_assistant
+              ; post
+                  "unassign"
+                  ~middlewares:[ Access.unassign_assistant ]
+                  unassign_session_assistant
+              ]
+            in
+            [ get "" ~middlewares:[ Access.index_assistants ] index_session_assistants
+            ; get
+                "assigned"
+                ~middlewares:[ Access.index_assistants ]
+                SessionAssistant.assigned
+            ; get
+                "available"
+                ~middlewares:[ Access.index_assistants ]
+                SessionAssistant.available
+            ; choose ~scope:(url_key Admin) specific
+            ]
+          in
           let participation_tags =
             let open Handler.Admin.Experiments.Tags in
             tag_routes_helper
@@ -455,6 +484,7 @@ module Admin = struct
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ; choose ~scope:(ParticipationTag |> human_url) participation_tags
           ; choose ~scope:"direct-message" direct_message
+          ; choose ~scope:"/assistants" assistants
           ]
         in
         [ get "" ~middlewares:[ Access.index ] list

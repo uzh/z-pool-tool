@@ -135,10 +135,36 @@ module Partials = struct
     else None
   ;;
 
-  let button_dropdown ({ Pool_context.language; _ } as context) experiment_id session =
+  let assistants_button ?classes language experiment_id session_id = function
+    | false -> None
+    | true ->
+      let field = Field.Assistants in
+      let classes =
+        let base = [ "btn"; "has-icon" ] in
+        CCOption.value ~default:[ "is-text"; "primary" ] classes @ base
+      in
+      let url =
+        HttpUtils.Url.Admin.session_user_path experiment_id session_id Field.Assistants ()
+        |> Sihl.Web.externalize_path
+      in
+      a
+        ~a:[ a_href url; a_class classes ]
+        [ Component.Icon.(to_html Person)
+        ; txt (Pool_common.Utils.field_to_string_capitalized language field)
+        ]
+      |> CCOption.return
+  ;;
+
+  let button_dropdown
+        ({ Pool_context.language; _ } as context)
+        experiment_id
+        session
+        ~can_access_session_assistants
+    =
     [ detail_button language experiment_id session.id |> CCOption.return
     ; delete_form context experiment_id (`Session session) |> CCOption.return
     ; close_button language experiment_id session
+    ; assistants_button language experiment_id session.id can_access_session_assistants
     ]
     |> CCList.filter_map CCFun.id
     |> fun buttons ->
@@ -167,6 +193,27 @@ module Partials = struct
             ~a:[ a_href (Format.asprintf "?%s=true" Field.(show Chronological)) ]
             [ to_string I18n.SwitchChronological ]
         ]
+  ;;
+
+  let title_buttons language session_id experiment_id can_access_session_assistants =
+    let edit_button =
+      link_as_button
+        ~icon:Icon.Create
+        ~classnames:[ "small" ]
+        ~control:(language, Control.(Edit (Some Field.Session)))
+        (session_path ~id:session_id experiment_id ~suffix:"edit"
+         |> Sihl.Web.externalize_path)
+    in
+    let assistants_button =
+      assistants_button
+        ~classes:[ "is-text"; "small"; "primary" ]
+        language
+        experiment_id
+        session_id
+        can_access_session_assistants
+      |> CCOption.value ~default:(txt "")
+    in
+    div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ assistants_button; edit_button ]
   ;;
 end
 
@@ -459,6 +506,7 @@ let reschedule_session
 
 let data_table
       ({ Pool_context.language; _ } as context)
+      ?(can_access_session_assistants = false)
       experiment
       (sessions, query)
       chronological
@@ -521,7 +569,11 @@ let data_table
     ; no_show_count
     ; participant_count
     ; Partials.session_key_figures session |> txt
-    ; Partials.button_dropdown context experiment.Experiment.id session
+    ; Partials.button_dropdown
+        context
+        experiment.Experiment.id
+        session
+        ~can_access_session_assistants
     ]
     |> CCList.map CCFun.(CCList.return %> td)
     |> tr ~a:row_attrs
@@ -536,7 +588,13 @@ let data_table
     sessions
 ;;
 
-let index ({ Pool_context.language; _ } as context) experiment sessions chronological =
+let index
+      ({ Pool_context.language; _ } as context)
+      ?can_access_session_assistants
+      experiment
+      sessions
+      chronological
+  =
   let open Pool_common in
   let html =
     let hover_script =
@@ -587,7 +645,12 @@ let index ({ Pool_context.language; _ } as context) experiment sessions chronolo
       ~a:[ a_class [ "stack" ] ]
       [ chronological_toggle
       ; Partials.table_legend language
-      ; data_table context experiment sessions chronological
+      ; data_table
+          ?can_access_session_assistants
+          context
+          experiment
+          sessions
+          chronological
       ; hover_script
       ]
   in
@@ -867,6 +930,7 @@ let session_details { Pool_context.language; _ } session =
 
 let detail
       ?access_contact_profiles
+      ?(can_access_session_assistants = false)
       ~not_matching_filter_count
       ?(rerun_session_filter = false)
       ?(send_direct_message = false)
@@ -1207,12 +1271,12 @@ let detail
       ; script (Unsafe.data message_modal_scripts)
       ]
   in
-  let edit_button =
-    link_as_button
-      ~icon:Icon.Create
-      ~classnames:[ "small" ]
-      ~control:(language, Control.(Edit (Some Field.Session)))
-      (Format.asprintf "%s/edit" session_path)
+  let buttons =
+    Partials.title_buttons
+      language
+      session.id
+      session.experiment.Experiment.id
+      can_access_session_assistants
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
@@ -1227,11 +1291,7 @@ let detail
     ]
   |> CCList.return
   |> Layout.Experiment.(
-       create
-         ~buttons:edit_button
-         context
-         (I18n (HttpUtils.Session.session_title session))
-         experiment)
+       create ~buttons context (I18n (HttpUtils.Session.session_title session)) experiment)
 ;;
 
 let print

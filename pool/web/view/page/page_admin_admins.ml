@@ -4,15 +4,30 @@ open Component
 open Pool_message
 module Status = UserStatus.Admin
 
-let list Pool_context.{ language; guardian; _ } (admins, query) =
+let admin_path = Http_utils.Url.Admin.admin_path
+
+let list
+      ?(buttons : (Admin.t -> [ | Html_types.flow5 ] elt) list option)
+      ?(table_id = "admin-list")
+      ?(hide_create = false)
+      ?(url = admin_path ())
+      ?push_url
+      Pool_context.{ language; guardian; _ }
+      (admins, query)
+  =
   let open Guard in
   let open Admin in
   let can_add_admin =
     PermissionOnTarget.(validate (create Permission.Create `Admin) guardian)
   in
-  let url = Uri.of_string "/admin/admins" in
+  let url = Uri.of_string url in
   let data_table =
-    Component.DataTable.create_meta ~search:Contact.searchable_by url query language
+    Component.DataTable.create_meta
+      ~search:Contact.searchable_by
+      ?push_url
+      url
+      query
+      language
   in
   let cols =
     let create : [ | Html_types.flow5 ] elt =
@@ -20,28 +35,34 @@ let list Pool_context.{ language; guardian; _ } (admins, query) =
         ~style:`Success
         ~icon:Icon.Add
         ~control:(language, Control.Add (Some Field.Admin))
-        "/admin/admins/new"
+        (admin_path ~suffix:"new" ())
     in
     Pool_user.
       [ `column column_name
       ; `column column_email
-      ; (if can_add_admin then `custom create else `empty)
+      ; (if can_add_admin && not hide_create then `custom create else `empty)
       ]
   in
   let th_class = [ "w-5"; "w-5"; "w-2" ] in
   let row admin =
-    let button =
-      admin
-      |> id
-      |> Id.value
-      |> Format.asprintf "/admin/admins/%s"
-      |> Input.link_as_button ~icon:Icon.Eye
+    let detail_button =
+      admin_path ~id:(id admin) () |> Input.link_as_button ~icon:Icon.Eye
     in
-    [ txt (fullname_reversed admin); Status.email_with_icons admin; button ]
+    let additional_buttons =
+      match buttons with
+      | Some buttons -> CCList.map (fun f -> f admin) buttons
+      | None -> []
+    in
+    let buttons =
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+        (detail_button :: additional_buttons)
+    in
+    [ txt (fullname_reversed admin); Status.email_with_icons admin; buttons ]
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make ~th_class ~target_id:"admin-list" ~cols ~row data_table admins
+  Component.DataTable.make ~th_class ~target_id:table_id ~cols ~row data_table admins
 ;;
 
 let static_overview ?(disable_edit = false) language admins =

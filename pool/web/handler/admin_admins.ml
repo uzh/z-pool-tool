@@ -28,8 +28,9 @@ let index req =
   in
   let%lwt admins = Admin.list_by_user ~query database_label actor in
   let open Page.Admin.Admins in
-  (if HttpUtils.Htmx.is_hx_request req then list else index) context admins
-  |> Lwt_result.return
+  Lwt_result.return
+  @@
+  if HttpUtils.Htmx.is_hx_request req then list context admins else index context admins
 ;;
 
 let admin_detail req is_edit =
