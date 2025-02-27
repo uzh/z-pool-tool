@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.9.3](https://github.com/uzh/z-pool-tool/tree/0.9.3) - 2025-02-27
+
+### Added
+
+- search bar for "find duplicates" overview
+
+### Fixed
+
+- password reset for admins
+
 ## [0.9.2](https://github.com/uzh/z-pool-tool/tree/0.9.2) - 2025-02-27
 
 ### Added
