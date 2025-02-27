@@ -166,7 +166,7 @@ let filter { additional_url_params; language; url; query; push_url; _ } target_i
     | [] -> txt ""
     | html -> div ~a:[ a_class ("stack-sm" :: classname) ] html
   in
-  [ wrap checkboxes; wrap ~classname:[ "toggle-list" ] selects ]
+  [ wrap checkboxes; wrap ~classname:[ "flexcolumn"; "justify-center" ] selects ]
 ;;
 
 let pagination
