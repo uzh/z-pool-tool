@@ -380,7 +380,7 @@ module Job = struct
 end
 
 let dispatch
-      ?id
+      ?(id = Pool_queue.Id.create ())
       ?new_email_address
       ?new_smtp_auth_id
       ?message_template
@@ -388,16 +388,39 @@ let dispatch
       database_label
       ({ Entity.Job.email; _ } as job)
   =
+  let open Lwt.Infix in
+  let open Amqp_client_lwt in
   let tags = Database.Logger.Tags.create database_label in
   Logs.debug ~src (fun m -> m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
   let job = job |> Job.update ?new_email_address ?new_smtp_auth_id in
-  Pool_queue.dispatch
-    ?id
-    ?message_template
-    ~job_ctx
-    database_label
-    (job |> Job.intercept_prepare_of_event)
-    Job.send
+  let prepared_job = job |> Job.intercept_prepare_of_event in
+  let job_str = Job.encode prepared_job in
+  let%lwt connection =
+    Connection.connect ~id:"email_service" ~credentials:("user", "password") "rabbitmq"
+  in
+  let%lwt channel =
+    Connection.open_channel ~id:"email_channel" Channel.no_confirm connection
+  in
+  let%lwt queue =
+    Queue.declare
+      ~arguments:[ "x-overflow", Amqp.Types.VLongstr "reject-publish" ]
+      channel
+      "email_jobs"
+  in
+  let%lwt resp =
+    Queue.publish
+      channel
+      queue
+      (Message.make ~message_id:(Pool_queue.Id.value id) job_str)
+  in
+  let%lwt () =
+    match resp with
+    | `Ok ->
+      Channel.close channel
+      >>= fun () -> Connection.close connection >>= fun () -> Lwt.return ()
+  in
+  (* Dispatch the job to the local queue as well *)
+  Pool_queue.dispatch ~id ?message_template ~job_ctx database_label prepared_job Job.send
 ;;
 
 let dispatch_all database_label jobs =
