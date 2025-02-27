@@ -15,7 +15,12 @@ let list { Pool_context.language; _ } ?contact (possible_duplicates, query) =
     | None -> Url.duplicate_path ()
   in
   let data_table =
-    Component.DataTable.create_meta ?filter:filterable_by url query language
+    Component.DataTable.create_meta
+      ?filter:filterable_by
+      ~search:searchable_by
+      url
+      query
+      language
   in
   let button id =
     Http_utils.Url.Admin.duplicate_path ~id () |> Input.link_as_button ~icon:Icon.Eye

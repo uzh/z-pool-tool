@@ -80,7 +80,16 @@ type merge =
   }
 [@@deriving eq, show]
 
-let searchable_by = []
+let searchable_by =
+  [ Field.Name, "user_a.name"
+  ; Field.Name, "user_b.name"
+  ; Field.Firstname, "user_a.given_name"
+  ; Field.Firstname, "user_b.given_name"
+  ; Field.Email, "user_a.email"
+  ; Field.Email, "user_b.email"
+  ]
+  |> CCList.map Query.Column.create
+;;
 
 let column_ignore =
   Column.create (Field.HideIgnored, "pool_contacts_possible_duplicates.ignore = 0")
