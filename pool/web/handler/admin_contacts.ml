@@ -427,7 +427,7 @@ let message_history req =
       queue_table
       ~query
       database_label
-      (History.Contact, Contact.Id.to_common contact_id)
+      (History.User, Contact.Id.to_common contact_id)
   in
   let open Page.Admin in
   (if HttpUtils.Htmx.is_hx_request req

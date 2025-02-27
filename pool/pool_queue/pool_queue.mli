@@ -147,12 +147,11 @@ end
 
 module History : sig
   type model =
-    | Admin
     | Assignment
-    | Contact
     | Experiment
     | Invitation
     | Session
+    | User
 
   type item = model * Pool_common.Id.t
 

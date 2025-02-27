@@ -9,10 +9,10 @@ let id_value_fragment = Pool_common.Id.sql_value_fragment
 
 let update_queue_history =
   {sql|
-    INSERT INTO pool_queue_job_contact (queue_uuid, contact_uuid)
+    INSERT INTO pool_queue_job_user (queue_uuid, user_uuid)
     SELECT queue_uuid, UNHEX(REPLACE($1, '-', ''))
-    FROM pool_queue_job_contact
-    WHERE contact_uuid = UNHEX(REPLACE($2, '-', ''))
+    FROM pool_queue_job_user
+    WHERE user_uuid = UNHEX(REPLACE($2, '-', ''))
     ON DUPLICATE KEY UPDATE updated_at = NOW();
   |sql}
   |> Contact.Repo.Id.(t2 t t ->. unit)
@@ -111,8 +111,8 @@ let update_assignments contact_id assignments =
 
 let destroy_queue_history =
   {sql|
-    DELETE FROM pool_queue_job_contact
-    WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
+    DELETE FROM pool_queue_job_user
+    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
   |> Contact.Repo.Id.t ->. unit
 ;;
