@@ -261,21 +261,19 @@ end
 
 module History = struct
   type model =
-    | Admin
     | Assignment
-    | Contact
     | Experiment
     | Invitation
     | Session
+    | User
   [@@deriving enum, eq, ord, show, yojson]
 
   let model_sql = function
-    | Admin -> "pool_queue_job_admin", "admin_uuid"
     | Assignment -> "pool_queue_job_assignment", "assignment_uuid"
-    | Contact -> "pool_queue_job_contact", "contact_uuid"
     | Experiment -> "pool_queue_job_experiment", "experiment_uuid"
     | Invitation -> "pool_queue_job_invitation", "invitation_uuid"
     | Session -> "pool_queue_job_session", "session_uuid"
+    | User -> "pool_queue_job_user", "user_uuid"
   ;;
 
   let all_models : model list =

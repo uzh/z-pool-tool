@@ -12,9 +12,9 @@ module History = struct
   open Queue.History
 
   let user_uuid user = user.Pool_user.id |> Pool_user.Id.to_common
-  let admin_item { Admin.user; _ } = Admin, user_uuid user
+  let admin_item { Admin.user; _ } = User, user_uuid user
   let assignment_item { Assignment.id; _ } = Assignment, Assignment.(id |> Id.to_common)
-  let contact_item { Contact.user; _ } = Contact, user_uuid user
+  let contact_item { Contact.user; _ } = User, user_uuid user
 
   let experiment_item experiment =
     Experiment, Experiment.(experiment.Experiment.id |> Id.to_common)
@@ -263,7 +263,7 @@ let assignment_params { Assignment.id; external_data_id; _ } =
   [ "assignmentId", assignment_id; "externalDataId", external_data_id ]
 ;;
 
-let user_message_uuids user = History.[ Queue.History.Contact, user_uuid user ]
+let user_message_uuids user = History.[ Queue.History.User, user_uuid user ]
 
 let invitation_message_uuids experiment contact invitation =
   History.[ contact_item contact; experiment_item experiment; invitation_item invitation ]
@@ -1212,7 +1212,7 @@ module SignUpVerification = struct
     in
     let layout = layout_from_tenant tenant in
     let entity_uuids =
-      [ Queue.History.Contact, user_id |> Contact.Id.to_common |> Id.of_common ]
+      [ Queue.History.User, user_id |> Contact.Id.to_common |> Id.of_common ]
     in
     let email =
       prepare_email

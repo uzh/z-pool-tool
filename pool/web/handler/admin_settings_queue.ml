@@ -42,7 +42,7 @@ let resend req =
     let* job = find database_label id in
     let find_related = find_related database_label job in
     let%lwt job_contact =
-      find_related History.Contact
+      find_related History.User
       >|> CCOption.map_or ~default:Lwt.return_none (fun contact_id ->
         let open Contact in
         contact_id |> Id.of_common |> find database_label ||> CCResult.to_opt)
