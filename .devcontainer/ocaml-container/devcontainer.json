@@ -2,10 +2,10 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/master/containers/python-3 or the
 // devcontainer docu https://code.visualstudio.com/docs/remote/containers#_devcontainerjson-reference
 {
-  "name": "Pool Tool",
+  "name": "Z-Pool OCaml",
   "dockerComposeFile": [
-    "./docker-compose.yml",
-    "./docker-compose.override.yml"
+    "./../docker-compose.yml",
+    "./../docker-compose.override.yml"
   ],
   "service": "dev",
   "runServices": [
@@ -15,7 +15,7 @@
     // "phpmyadmin"
   ],
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "/bin/bash .devcontainer/wait-for-database.sh -d db-root/test -d db-tenant/dev_zhaw -d db-tenant/test_econ .devcontainer/postCreate.sh",
+  "postCreateCommand": "/bin/bash .devcontainer/wait-for-database.sh -d db-root/test -d db-tenant/dev_zhaw -d db-tenant/test_econ .devcontainer/ocaml-container/postCreate.sh",
   // Use 'settings' to set *default* container specific settings.json values on container create.
   // You can edit these settings after create using File > Preferences > Settings > Remote.
   "customizations": {

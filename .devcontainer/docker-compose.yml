@@ -2,9 +2,10 @@ version: "3.8"
 
 services:
   dev:
+    container_name: pool-tool-dev
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ocaml-container/Dockerfile
     volumes:
       # default user is "opam"
       - ..:/workspace:cached
@@ -34,9 +35,31 @@ services:
       - database-root
       - database-tenant
       - mailtrap
+      - rabbitmq
     ports:
       - 3016:3000
       - 3017:3000
+    command: sleep infinity
+
+  worker:
+    container_name: pool-tool-worker
+    build:
+      context: .
+      dockerfile: worker-container/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - ${HOME}${USERPROFILE}/.ssh:/home/opam/.ssh
+      - ${HOME}${USERPROFILE}/.gitconfig:/home/opam/.gitconfig
+      - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
+    environment:
+      - PYTHONPATH=/workspace/worker-src
+      - FLASK_APP=worker.app
+      - FLASK_ENV=development
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASSWORD=password
+    depends_on: [ rabbitmq ]
+    ports: [ "5016:5016" ]
     command: sleep infinity
 
   database-root:
@@ -66,6 +89,16 @@ services:
     volumes:
       - db-tenant:/var/lib/mysql
       - ./init_tenant:/docker-entrypoint-initdb.d/:ro
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
 
   adminer:
     image: adminer:standalone

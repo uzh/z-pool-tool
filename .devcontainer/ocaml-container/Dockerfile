@@ -64,7 +64,7 @@ RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -
   && sed -i "/^plugins=/c\plugins=(git dotenv)" ~/.zshrc \
   #
   # link make to devcontainer makefile
-  && echo 'alias make="make -f /workspace/.devcontainer/Makefile"' >> ~/.zshrc
+  && echo 'alias make="make -f /workspace/.devcontainer/ocaml-container/Makefile"' >> ~/.zshrc
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
