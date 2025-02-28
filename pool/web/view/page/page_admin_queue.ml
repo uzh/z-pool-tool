@@ -3,7 +3,7 @@ open CCFun
 open Tyxml.Html
 module Field = Pool_message.Field
 
-let formatted_date_time = Pool_model.Time.formatted_date_time
+let formatted_date_time = Time.formatted_date_time
 let path = Contact.id %> Contact.Id.value %> Format.asprintf "/admin/contacts/%s"
 
 let data_table_head language =

@@ -8,7 +8,7 @@ module Record = struct
   (* This function provides a more human readable json representation than the
      yojson_ppx *)
   let yojson_of_t { id; query; title; created_at; updated_at } =
-    let open Utils.Ptime in
+    let open Time in
     let open Pool_common in
     let predicate_key : Key.t -> string =
       let open Key in
@@ -41,8 +41,8 @@ module Record = struct
       [ "id", `String (Pool_common.Id.value id)
       ; "query", yojson_of_query query
       ; "title", `String (title |> Option.value ~default:"")
-      ; "created_at", CreatedAt.value created_at |> yojson_of_ptime
-      ; "updated_at", UpdatedAt.value updated_at |> yojson_of_ptime
+      ; "created_at", CreatedAt.value created_at |> yojson_of_t
+      ; "updated_at", UpdatedAt.value updated_at |> yojson_of_t
       ]
   ;;
 

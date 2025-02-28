@@ -64,8 +64,7 @@ let list
     [ Page_admin_contact.contact_lastname_firstname access_contact_profiles contact
     ; txt (Contact.email_address contact |> EmailAddress.value)
     ; txt (contact.Contact.cell_phone |> CCOption.map_or ~default:"" CellPhone.value)
-    ; txt
-        (created_at |> Pool_common.CreatedAt.value |> Pool_model.Time.formatted_date_time)
+    ; txt (created_at |> Pool_common.CreatedAt.value |> Time.formatted_date_time)
     ; admin_comment
       |> CCOption.map_or ~default:"" Waiting_list.AdminComment.value
       |> HttpUtils.first_n_characters

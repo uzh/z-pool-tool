@@ -24,23 +24,26 @@ let to_zurich_tz_offset_s =
   %> CCInt.mul (60 * 60)
 ;;
 
-let to_local_date date =
-  let open Ptime in
-  date
-  |> to_zurich_tz_offset_s
-  |> Span.of_int_s
-  |> add_span date
-  |> CCOption.get_exn_or "Invalid ptime provided"
+let now () =
+  let to_local_date date =
+    let open Ptime in
+    date
+    |> to_zurich_tz_offset_s
+    |> Span.of_int_s
+    |> add_span date
+    |> CCOption.get_exn_or "Invalid ptime provided"
+  in
+  Ptime_clock.now () |> to_local_date
 ;;
 
 let equal_date ((y1, m1, d1) : Ptime.date) ((y2, m2, d2) : Ptime.date) =
   CCInt.(equal y1 y2 && equal m1 m2 && equal d1 d2)
 ;;
 
-let formatted_date ptime = ptime |> to_local_date |> Ptime.to_date |> date_to_human
+let formatted_date ptime = ptime |> Ptime.to_date |> date_to_human
 
 let formatted_time ?with_seconds ptime =
-  ptime |> to_local_date |> Ptime.to_date_time |> time_to_human ?with_seconds
+  ptime |> Ptime.to_date_time |> time_to_human ?with_seconds
 ;;
 
 let formatted_date_time (date : Ptime.t) =
@@ -78,12 +81,12 @@ let format_start_end_with_duration start duration =
 ;;
 
 (* Utilities *)
-let ptime_to_sexp p =
+let sexp_of_t p =
   let formatted = p |> formatted_date_time in
   Sexplib0.Sexp.Atom formatted
 ;;
 
-let ptime_span_to_sexp p =
+let sexp_of_span p =
   let formatted = p |> formatted_timespan in
   Sexplib0.Sexp.Atom formatted
 ;;
@@ -128,11 +131,11 @@ let print_time_span span =
   |> CCOption.get_or ~default:"Session duration too long!"
 ;;
 
-let yojson_of_ptime_date (y, m, d) : Yojson.Safe.t =
+let yojson_of_date (y, m, d) : Yojson.Safe.t =
   `String (Format.asprintf "%d-%02d-%02d" y m d)
 ;;
 
-let ptime_date_of_yojson json : Ptime.date =
+let date_of_yojson json : Ptime.date =
   let error = "Invalid date format" in
   let str =
     match json with
@@ -153,4 +156,49 @@ let ptime_date_of_yojson json : Ptime.date =
 
 let t_of_yojson = ptime_of_yojson
 let yojson_of_t = yojson_of_ptime
-let sexp_of_t = ptime_to_sexp
+
+module Parsing = struct
+  let parse_date_time str =
+    let open CCResult in
+    Ptime.of_rfc3339 str
+    |> Ptime.rfc3339_error_to_msg
+    |> CCResult.map_err (fun (`Msg e) -> e)
+    >|= fun (time, _, _) -> time
+  ;;
+
+  let time_span str =
+    let error = "Invalid time span" in
+    if CCString.is_empty str
+    then Error error
+    else
+      let open CCResult.Infix in
+      str
+      |> CCFloat.of_string_opt
+      |> CCOption.to_result error
+      >|= fun h -> h *. 60. |> CCInt.of_float |> Ptime.Span.of_int_s
+  ;;
+
+  let date str =
+    let open CCOption in
+    let error = "Invalid date" in
+    let split_date_string date =
+      date |> CCString.split_on_char '-' |> CCList.map CCInt.of_string |> sequence_l
+    in
+    split_date_string str
+    >>= (function
+     | [ y; m; d ] -> (y, m, d) |> Ptime.of_date >|= Ptime.to_date
+     | _ -> None)
+    |> CCOption.to_result error
+  ;;
+
+  (* TODO: Naming *)
+  let from_calendar str =
+    let open CCFun.Infix in
+    let open CCResult.Infix in
+    str
+    |> CCString.split ~by:"T"
+    |> CCList.hd
+    |> date
+    >>= Ptime.of_date %> CCOption.to_result "Invalid date"
+  ;;
+end

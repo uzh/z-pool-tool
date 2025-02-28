@@ -56,15 +56,15 @@ let to_string = function
   | ExperimentOnlineParticipationDeadline end_at ->
     Format.asprintf
       "Sie können noch bis zum %s an diesem Experiment teilnehmen."
-      (Pool_model.Time.formatted_date_time end_at)
+      (Time.formatted_date_time end_at)
   | ExperimentOnlineParticiated submitted ->
     Format.asprintf
       "Sie haben diese Umfrage am %s abgeschlossen."
-      (Utils.Ptime.formatted_date submitted)
+      (Time.formatted_date submitted)
   | ExperimentOnlineParticipationUpcoming start_at ->
     Format.asprintf
       "Das nächste Zeitfenster für die Teilnahme an dieser Umfrage beginnt am %s."
-      (Pool_model.Time.formatted_date_time start_at)
+      (Time.formatted_date_time start_at)
   | ExperimentOnlineParticipationNoUpcoming ->
     "Es sind zur Zeit keine weiteren Zeitfenster für die Teilnahme an dieser Umfrage \
      geplant."
@@ -116,7 +116,7 @@ let to_string = function
   | LocationStatistics -> "Standortstatistik"
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
-    Format.asprintf "Versand vom %s" (Pool_model.Time.formatted_date_time start)
+    Format.asprintf "Versand vom %s" (Time.formatted_date_time start)
   | MailingDistributionDescription ->
     {|<ol>
       <li>Wählen Sie aus, nach welchem Feld und in welcher Reihenfolge Sie die Kontakte sortieren möchten.</li>
@@ -170,7 +170,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SessionCloseScreen -> "Bildschirm zum Beenden der Sessions"
   | SessionDetailScreen -> "Session-Detailansicht"
   | SessionDetailTitle start ->
-    Format.asprintf "Session am %s" (Pool_model.Time.formatted_date_time start)
+    Format.asprintf "Session am %s" (Time.formatted_date_time start)
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SessionReminder -> "Sessionerinnerung"
@@ -183,7 +183,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | System -> "System"
   | TermsAndConditionsLastUpdated ptime ->
-    Format.asprintf "Zuletzt angepasst: %s" (Pool_model.Time.formatted_date ptime)
+    Format.asprintf "Zuletzt angepasst: %s" (Time.formatted_date ptime)
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
   | TermsAndConditionsUpdated ->
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. Bitte lesen \
@@ -369,7 +369,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
-      (lead_time |> Pool_model.Time.formatted_timespan)
+      (lead_time |> Time.formatted_timespan)
   | DeleteContact ->
     "Der Benutzer wird als gelöscht markiert und kann sich nicht mehr anmelden. Diese \
      Aktion kann nicht rückgängig gemacht werden."
@@ -629,7 +629,7 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | ResetInvitationsLastReset reset_at ->
     Format.asprintf
       "Die Einladungen wirden zuletzt am <strong>%s</strong> zurückgesetzt."
-      (Pool_model.Time.formatted_date_time reset_at)
+      (Time.formatted_date_time reset_at)
   | RoleIntro (singular, plural) ->
     Format.asprintf
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
@@ -644,14 +644,12 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | RolePermissionsModelList ->
     "Wählen Sie das Objekt, für welches Sie die Berechtigungen anpassen wollen."
   | RolePermissionsRoleList -> "Alle anpassparen Rollen des Teants."
-  | ScheduleAt time ->
-    time |> Pool_model.Time.formatted_date_time |> Format.asprintf "Am %s"
+  | ScheduleAt time -> time |> Time.formatted_date_time |> Format.asprintf "Am %s"
   | ScheduledIntro ->
     {|Informationen über alle periodischen Hintergrund-Prozesse.
 
     Beachte: Wenn die Applikation neugestartet wird, werden alle auf "stopped" gesetzt|}
-  | ScheduleEvery sec ->
-    sec |> Pool_model.Time.formatted_timespan |> Format.asprintf "alle %s"
+  | ScheduleEvery sec -> sec |> Time.formatted_timespan |> Format.asprintf "alle %s"
   | SearchByFields fields ->
     Format.asprintf
       "Suche nach: %s"

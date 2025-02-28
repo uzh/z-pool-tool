@@ -1,7 +1,13 @@
 (library
  (name pool_message)
  (public_name pool.message)
- (libraries containers caqti-lwt.unix lwt pool.utils)
+ (libraries
+  containers
+  caqti-lwt.unix
+  lwt
+  pool.utils
+  pool.time
+  ppx_deriving_yojson.runtime)
  (wrapped true)
  (preprocess
   (pps

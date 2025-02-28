@@ -28,7 +28,7 @@ module Partials = struct
     in
     let th_class = [ "w-2"; "w-3"; "w-2"; "w-1"; "w-2"; "w-2" ] in
     let row ({ id; contact; resent_at; send_count; created_at; _ } : t) =
-      let formatted_date = Pool_model.Time.formatted_date_time in
+      let formatted_date = Time.formatted_date_time in
       let resend_form =
         let open Component.Input in
         form
@@ -50,9 +50,7 @@ module Partials = struct
       ; txt (Contact.email_address contact |> Pool_user.EmailAddress.value)
       ; txt
           (resent_at
-           |> CCOption.map_or
-                ~default:""
-                (ResentAt.value %> Pool_model.Time.formatted_date_time))
+           |> CCOption.map_or ~default:"" (ResentAt.value %> Time.formatted_date_time))
       ; txt (send_count |> SendCount.value |> CCInt.to_string)
       ; txt (created_at |> Pool_common.CreatedAt.value |> formatted_date)
       ; resend_form

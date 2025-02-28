@@ -76,7 +76,7 @@ let list Pool_context.{ language; _ } url changelog =
       in
       [ td [ user_link ]
       ; td ~a:[ a_class [ "changes-cell" ] ] [ changes |> format_changes ]
-      ; td [ txt (created_at |> CreatedAt.value |> Pool_model.Time.formatted_date_time) ]
+      ; td [ txt (created_at |> CreatedAt.value |> Time.formatted_date_time) ]
       ]
       |> tr
     in

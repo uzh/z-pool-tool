@@ -93,7 +93,7 @@ let personal_detail ?admin_comment ?custom_fields ?tags current_user language co
         , contact.terms_accepted_at
           |> CCOption.map_or
                ~default:""
-               (Pool_user.TermsAccepted.value %> Pool_model.Time.formatted_date_time)
+               (Pool_user.TermsAccepted.value %> Time.formatted_date_time)
           |> txt )
       ; ( Field.AdminComment
         , admin_comment

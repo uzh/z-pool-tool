@@ -7,7 +7,7 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 module Data = struct
   let norm_ptime m =
-    m |> Ptime.to_rfc3339 |> Pool_model.Time.parse_time |> get_or_failwith
+    m |> Ptime.to_rfc3339 |> Time.Parsing.parse_date_time |> CCResult.get_exn
   ;;
 
   module Mailing = struct

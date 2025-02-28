@@ -83,7 +83,7 @@ let field_buttons language csrf custom_field option =
              (Utils.field_to_string language Field.PublishedAt
               |> CCString.capitalize_ascii)
          ; txt ": "
-         ; txt (published_at |> PublishedAt.value |> Pool_model.Time.formatted_date_time)
+         ; txt (published_at |> PublishedAt.value |> Time.formatted_date_time)
          ]
      | None ->
        div

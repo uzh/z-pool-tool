@@ -49,14 +49,14 @@ module Data = struct
     let start1 = Raw.start1 |> Ptime.to_rfc3339 ~frac_s:12
     let start2 = Raw.start2 |> Ptime.to_rfc3339 ~frac_s:12
     let start3 = Raw.start3 |> Ptime.to_rfc3339 ~frac_s:12
-    let duration = Raw.duration |> Pool_model.Time.timespan_to_minutes
+    let duration = Raw.duration |> Time.timespan_to_minutes
     let duration_unit = Raw.duration_unit |> TimeUnit.show
     let internal_description = Raw.internal_description
     let public_description = Raw.public_description
     let max_participants = Raw.max_participants |> string_of_int
     let min_participants = Raw.min_participants |> string_of_int
     let overbook = Raw.overbook |> string_of_int
-    let lead_time = Raw.lead_time |> Pool_model.Time.timespan_to_minutes
+    let lead_time = Raw.lead_time |> Time.timespan_to_minutes
     let sent_at = Raw.sent_at |> Ptime.to_rfc3339 ~frac_s:12
     let assignment_count = Raw.assignment_count |> string_of_int
   end
@@ -474,10 +474,7 @@ let delete_closed_session () =
   let session = Session.{ session with closed_at = Some closed_at } in
   let res = SessionC.Delete.(handle { session; follow_ups = []; templates = [] }) in
   check_result
-    (closed_at
-     |> Pool_model.Time.formatted_date_time
-     |> Error.sessionalreadyclosed
-     |> CCResult.fail)
+    (closed_at |> Time.formatted_date_time |> Error.sessionalreadyclosed |> CCResult.fail)
     res
 ;;
 
@@ -636,10 +633,7 @@ let cancel_already_canceled () =
             [ Pool_common.NotifyVia.Email ])
   in
   check_result
-    (now
-     |> Pool_model.Time.formatted_date_time
-     |> Error.sessionalreadycanceled
-     |> CCResult.fail)
+    (now |> Time.formatted_date_time |> Error.sessionalreadycanceled |> CCResult.fail)
     res
 ;;
 
@@ -1302,14 +1296,13 @@ let resend_reminders_invalid () =
   let res1 = handle session1 in
   let () =
     check_result
-      (Error
-         (Error.SessionAlreadyCanceled (Pool_model.Time.formatted_date_time canceled_at)))
+      (Error (Error.SessionAlreadyCanceled (Time.formatted_date_time canceled_at)))
       res1
   in
   let res2 = handle session2 in
   let () =
     check_result
-      (Error (Error.SessionAlreadyClosed (Pool_model.Time.formatted_date_time closed_at)))
+      (Error (Error.SessionAlreadyClosed (Time.formatted_date_time closed_at)))
       res2
   in
   ()

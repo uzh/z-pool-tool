@@ -1,5 +1,27 @@
 open Ppx_yojson_conv_lib.Yojson_conv
 
+module Time = struct
+  include Time
+
+  let parse_date_time s =
+    s
+    |> Parsing.parse_date_time
+    |> CCResult.map_err (fun e -> Pool_message.Error.NotADatetime (s, e))
+  ;;
+
+  let parse_time_span s =
+    s
+    |> Parsing.time_span
+    |> CCResult.map_err (fun _ -> Pool_message.(Error.Invalid Field.Duration))
+  ;;
+
+  let parse_date s =
+    s
+    |> Parsing.date
+    |> CCResult.map_err (fun _ -> Pool_message.(Error.Invalid Field.Date))
+  ;;
+end
+
 module Id = struct
   open Sexplib.Conv
 
@@ -188,7 +210,7 @@ end
 module PtimeSpan = struct
   type t = Ptime.Span.t [@@deriving eq, show]
 
-  let sexp_of_t = Time.ptime_span_to_sexp
+  let sexp_of_t = Time.sexp_of_span
   let t_of_yojson = Time.ptime_span_of_yojson
   let yojson_of_t = Time.yojson_of_ptime_span
   let value m = m
@@ -226,18 +248,18 @@ module type PtimeSpanSig = sig
 end
 
 module Ptime = struct
-  type t = Ptime.t [@@deriving eq, show]
+  type t = Time.t [@@deriving eq, show]
   type date = Ptime.date
 
-  let sexp_of_t = Time.ptime_to_sexp
-  let t_of_yojson = Utils.Ptime.ptime_of_yojson
-  let yojson_of_t = Utils.Ptime.yojson_of_ptime
-  let date_of_yojson = Utils.Ptime.ptime_date_of_yojson
-  let yojson_of_date = Utils.Ptime.yojson_of_ptime_date
+  let sexp_of_t = Time.sexp_of_t
+  let t_of_yojson = Time.t_of_yojson
+  let yojson_of_t = Time.yojson_of_t
+  let date_of_yojson = Time.date_of_yojson
+  let yojson_of_date = Time.yojson_of_date
   let value m = m
   let create m = m
   let create_now = Ptime_clock.now
-  let to_human = Utils.Ptime.formatted_date_time
+  let to_human = Time.formatted_date_time
   let date_time_to_flatpickr = Ptime.to_rfc3339
   let compare = Ptime.compare
   let to_rfc3339 = Ptime.to_rfc3339
@@ -252,7 +274,7 @@ module Ptime = struct
   let date_of_string = Time.parse_date
 
   let date_to_string (y, m, d) =
-    let decimal = Utils.Ptime.decimal in
+    let decimal = Time.decimal in
     Format.asprintf "%s-%s-%s" (decimal y) (decimal m) (decimal d)
   ;;
 
@@ -266,7 +288,7 @@ module Ptime = struct
   let pp_date formatter t = CCString.pp formatter (date_to_string t)
 
   let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
-    let decode str = CCResult.(Time.parse_time str >>= create) in
+    let decode str = CCResult.(Time.parse_date_time str >>= create) in
     Pool_conformist.schema_decoder decode Ptime.to_rfc3339 field
   ;;
 end

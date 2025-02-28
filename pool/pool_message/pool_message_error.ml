@@ -4,7 +4,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 type t =
   | AccessDenied
   | AccessDeniedMessage
-  | AccountTemporarilySuspended of Utils.Ptime.t
+  | AccountTemporarilySuspended of Time.t
   | AllLanguagesRequired of Field.t
   | AlreadyExisting of Field.t
   | AlreadyInPast

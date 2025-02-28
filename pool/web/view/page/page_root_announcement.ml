@@ -35,7 +35,7 @@ let list { Pool_context.language; _ } (annoucements, query) =
       announcement_path ~id ~suffix:"edit" ()
       |> Input.link_as_button ~style:`Primary ~icon:Icon.Create
     in
-    let format_time = Utils.Ptime.formatted_date_time in
+    let format_time = Time.formatted_date_time in
     let bool_icon =
       let open Component.Icon in
       function

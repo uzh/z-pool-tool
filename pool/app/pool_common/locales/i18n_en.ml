@@ -53,17 +53,15 @@ let to_string = function
     "Currently, there are no online surveys you can participate in."
   | ExperimentOnlineListPublicTitle -> "Available online surveys"
   | ExperimentOnlineParticiated submitted ->
-    Format.asprintf
-      "You completed this survey on %s."
-      (Utils.Ptime.formatted_date submitted)
+    Format.asprintf "You completed this survey on %s." (Time.formatted_date submitted)
   | ExperimentOnlineParticipationDeadline end_at ->
     Format.asprintf
       "You can participate in this experiment until %s."
-      (Pool_model.Time.formatted_date_time end_at)
+      (Time.formatted_date_time end_at)
   | ExperimentOnlineParticipationUpcoming start_at ->
     Format.asprintf
       "The next window for participation in this survey begins on %s."
-      (Pool_model.Time.formatted_date_time start_at)
+      (Time.formatted_date_time start_at)
   | ExperimentOnlineParticipationNoUpcoming ->
     "There are currently no further time windows for participation in this survey are \
      planned."
@@ -113,7 +111,7 @@ let to_string = function
   | LocationStatistics -> "Location statistics"
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
-    Format.asprintf "Mailing at %s" (Pool_model.Time.formatted_date_time start)
+    Format.asprintf "Mailing at %s" (Time.formatted_date_time start)
   | MailingDistributionDescription ->
     {|<ol>
     <li>Select by which field and in which order you want to sort the contacts.</li>
@@ -168,7 +166,7 @@ let to_string = function
   | SessionCloseScreen -> "Session close screen"
   | SessionDetailScreen -> "Session detail screen"
   | SessionDetailTitle start ->
-    Format.asprintf "Session at %s" (Pool_model.Time.formatted_date_time start)
+    Format.asprintf "Session at %s" (Time.formatted_date_time start)
   | SessionIndent -> "Indentations group follow-up sessions."
   | SessionRegistrationTitle -> "Registering for this session"
   | SessionReminder -> "Session reminder"
@@ -181,7 +179,7 @@ let to_string = function
   | SwitchGrouped -> "Switch to grouped view"
   | System -> "System"
   | TermsAndConditionsLastUpdated ptime ->
-    Format.asprintf "Last updated: %s" (Pool_model.Time.formatted_date ptime)
+    Format.asprintf "Last updated: %s" (Time.formatted_date ptime)
   | TermsAndConditionsTitle -> "Terms and Conditions"
   | TermsAndConditionsUpdated ->
     "We have recently changed our terms and conditions. Please read and accept them to \
@@ -361,7 +359,7 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "If left blank, the default lead time of %s is applied."
-      (lead_time |> Pool_model.Time.formatted_timespan)
+      (lead_time |> Time.formatted_timespan)
   | DeleteContact ->
     "The user is marked as deleted and can no longer log in. This action cannot be \
      undone."
@@ -597,7 +595,7 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | ResetInvitationsLastReset reset_at ->
     Format.asprintf
       "The invitations were last reset on <strong>%s</strong>."
-      (Pool_model.Time.formatted_date_time reset_at)
+      (Time.formatted_date_time reset_at)
   | ReleaseNotesHint repo_url ->
     Format.asprintf
       "Here you can find the changes relevant to you for each version of the tool. You \
@@ -611,15 +609,13 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | RolePermissionsModelList ->
     "Select the target for which you want to adjust the permissions."
   | RolePermissionsRoleList -> "All customizable roles of the tenant."
-  | ScheduleAt time ->
-    time |> Pool_model.Time.formatted_date_time |> Format.asprintf "at %s"
+  | ScheduleAt time -> time |> Time.formatted_date_time |> Format.asprintf "at %s"
   | ScheduledIntro ->
     {|Information about all periodic background processes.
 
       Note: When the application restarts all active schedules get stopped.
       |}
-  | ScheduleEvery sec ->
-    sec |> Pool_model.Time.formatted_timespan |> Format.asprintf "every %s"
+  | ScheduleEvery sec -> sec |> Time.formatted_timespan |> Format.asprintf "every %s"
   | SearchByFields fields ->
     Format.asprintf
       "Search by: %s"

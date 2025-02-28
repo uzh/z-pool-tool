@@ -28,7 +28,7 @@ let list { Pool_context.language; _ } (versions, query) =
       let open Component in
       version_path ~id () |> Input.link_as_button ~style:`Primary ~icon:Icon.Eye
     in
-    let format_time = Utils.Ptime.formatted_date_time in
+    let format_time = Time.formatted_date_time in
     [ txt (Tag.value tag)
     ; published_at |> map_or ~default:"" CCFun.(PublishedAt.value %> format_time) |> txt
     ; show_btn

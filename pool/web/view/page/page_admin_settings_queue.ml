@@ -3,7 +3,7 @@ open Component
 open Pool_message
 module HttpUtils = Http_utils
 
-let formatted_date_time = Pool_model.Time.formatted_date_time
+let formatted_date_time = Time.formatted_date_time
 let base_path = "/admin/settings/queue"
 
 let list queue_table context =
@@ -52,8 +52,8 @@ let text_message_dlr_detail dlr =
   [ "Dlr status", dlr.dlr_mask |> DlrMask.of_int |> DlrMask.to_human
   ; "Error code", dlr.error_code
   ; "Error message", dlr.error_message
-  ; "Submit date", dlr.submit_date |> Pool_model.Time.formatted_date_time
-  ; "Done date", dlr.done_date |> Pool_model.Time.formatted_date_time
+  ; "Submit date", dlr.submit_date |> Time.formatted_date_time
+  ; "Done date", dlr.done_date |> Time.formatted_date_time
   ; "Plmn", dlr.plmn
   ; "Country", dlr.country
   ]

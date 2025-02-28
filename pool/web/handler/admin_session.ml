@@ -1173,7 +1173,10 @@ module Api = struct
     let find_param field =
       let open CCResult.Infix in
       HttpUtils.find_in_urlencoded field query_params
-      >>= Pool_model.Time.parse_date_from_calendar
+      >>= (fun str ->
+      str
+      |> Time.Parsing.from_calendar
+      |> CCResult.map_err (fun e -> Pool_message.Error.NotADatetime (str, e)))
       |> Lwt_result.lift
     in
     let result { Pool_context.database_label; user; guardian; _ } =

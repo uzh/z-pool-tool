@@ -54,10 +54,7 @@ let pp_header ~pp_h ppf (l, h) =
 let pp_exec_header ?(tags = Tag.empty) src =
   let find tag = Tag.find tag tags |> CCOption.get_or ~default:"-" in
   let pp_h ppf style level =
-    let now =
-      let now = Ptime_clock.now () in
-      Ptime.to_rfc3339 ~tz_offset_s:(Utils.Ptime.to_zurich_tz_offset_s now) now
-    in
+    let now = Time.now () |> Ptime.to_rfc3339 in
     let pp_styled_values ppf values =
       CCList.iter
         (fun (color, value) -> fprintf ppf "[%a]" Fmt.(styled color string) value)

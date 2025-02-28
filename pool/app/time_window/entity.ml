@@ -61,5 +61,5 @@ let is_deletable (m : t) = m |> has_assignments |> not
 let is_closed m = ends_at m |> Ptime.is_earlier ~than:(Ptime_clock.now ())
 
 let start_end_with_duration_human ({ start; duration; _ } : t) =
-  Utils.Ptime.format_start_end (Start.value start) (Duration.value duration)
+  Time.format_start_end (Start.value start) (Duration.value duration)
 ;;

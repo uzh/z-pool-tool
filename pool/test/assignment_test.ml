@@ -149,7 +149,7 @@ let canceled_with_closed_session () =
     AssignmentCommand.Cancel.handle notification_email ([ assignment ], session)
   in
   let expected =
-    Error (Error.SessionAlreadyClosed (Pool_model.Time.formatted_date_time closed_at))
+    Error (Error.SessionAlreadyClosed (Time.formatted_date_time closed_at))
   in
   check_result expected events
 ;;
@@ -367,7 +367,7 @@ let assign_to_canceled_session () =
     AssignmentCommand.Create.handle command confirmation_email already_assigned
   in
   let expected =
-    Error (Error.SessionAlreadyCanceled (Pool_model.Time.formatted_date_time canceled_at))
+    Error (Error.SessionAlreadyCanceled (Time.formatted_date_time canceled_at))
   in
   Test_utils.check_result expected events
 ;;

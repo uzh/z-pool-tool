@@ -40,7 +40,11 @@ module Start = struct
         else Ok start_at
       | StartNow -> Ok (Ptime_clock.now ())
     in
-    let* () = Pool_model.Time.start_is_before_end ~start:start_at ~end_at in
+    let* () =
+      if Ptime.is_later start_at ~than:end_at
+      then Error Pool_message.Error.EndBeforeStart
+      else Ok ()
+    in
     Ok start_at
   ;;
 

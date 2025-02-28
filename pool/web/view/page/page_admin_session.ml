@@ -434,8 +434,7 @@ let session_base_information language session =
   let open Session in
   let amount amt = amt |> ParticipantAmount.value |> string_of_int in
   [ Field.Start, session |> Session.start_end_human |> txt
-  ; ( Field.Duration
-    , session.duration |> Duration.value |> Pool_model.Time.formatted_timespan |> txt )
+  ; Field.Duration, session.duration |> Duration.value |> Time.formatted_timespan |> txt
   ; ( Field.InternalDescription
     , CCOption.map_or ~default:"" InternalDescription.value session.internal_description
       |> Http_utils.add_line_breaks )
@@ -908,13 +907,11 @@ let session_details { Pool_context.language; _ } session =
     |> fun rows ->
     let canceled =
       session.canceled_at
-      |> CCOption.map (fun c ->
-        Field.CanceledAt, Pool_model.Time.formatted_date_time c |> txt)
+      |> CCOption.map (fun c -> Field.CanceledAt, Time.formatted_date_time c |> txt)
     in
     let closed =
       session.closed_at
-      |> CCOption.map (fun c ->
-        Field.ClosedAt, Pool_model.Time.formatted_date_time c |> txt)
+      |> CCOption.map (fun c -> Field.ClosedAt, Time.formatted_date_time c |> txt)
     in
     let time_stamps =
       let format = Component.Utils.format_reminder_sent_opt in

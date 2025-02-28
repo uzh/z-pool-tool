@@ -232,8 +232,8 @@ let session_params
       in
       [ main_session; follow_ups ] |> CCString.concat "\n\n"
   in
-  let start = start |> Start.value |> Pool_model.Time.formatted_date_time in
-  let duration = duration |> Duration.value |> Pool_model.Time.formatted_timespan in
+  let start = start |> Start.value |> Time.formatted_date_time in
+  let duration = duration |> Duration.value |> Time.formatted_timespan in
   let description =
     session.public_description |> CCOption.map_or ~default:"" PublicDescription.value
   in
@@ -626,7 +626,7 @@ module InactiveContactWarning = struct
 
   let email_params layout contact ~last_login =
     global_params layout contact.Contact.user
-    @ [ "lastLogin", Pool_model.Time.formatted_date last_login ]
+    @ [ "lastLogin", Time.formatted_date last_login ]
   ;;
 
   let prepare pool =
@@ -1133,7 +1133,7 @@ module SessionReschedule = struct
   let label = Label.SessionReschedule
 
   let email_params lang layout experiment session new_start new_duration contact =
-    let open Pool_model.Time in
+    let open Time in
     let open Session in
     global_params layout contact.Contact.user
     @ [ "newStart", new_start |> Start.value |> formatted_date_time

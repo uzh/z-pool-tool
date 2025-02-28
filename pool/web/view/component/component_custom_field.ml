@@ -47,7 +47,7 @@ let answer_to_html
   match custom_field with
   | Boolean (_, answer) ->
     answer_to_html (Pool_common.Utils.bool_to_string language %> txt) answer
-  | Date (_, answer) -> answer_to_html (Utils.Ptime.date_to_human %> txt) answer
+  | Date (_, answer) -> answer_to_html (Time.date_to_human %> txt) answer
   | MultiSelect (_, _, answer) ->
     answer_to_html
       (CCList.map select_option_to_html %> CCList.intersperse (br ()) %> span)

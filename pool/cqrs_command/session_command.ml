@@ -257,11 +257,7 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command CreateTimeWindow" ~tags);
     let open CCResult in
-    let* () =
-      Pool_model.Time.start_is_before_end
-        ~start:(Session.Start.value start)
-        ~end_at:(Session.End.value end_at)
-    in
+    let* () = Session.start_is_before_end ~start ~end_at in
     let* () =
       if CCList.is_empty overlapps then Ok () else Error Pool_message.Error.SessionOverlap
     in
@@ -316,12 +312,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateTimeWindow" ~tags);
     let open CCResult in
     let open Time_window in
-    let* () =
-      let open Session in
-      Pool_model.Time.start_is_before_end
-        ~start:(Start.value start)
-        ~end_at:(End.value end_at)
-    in
+    let* () = Session.start_is_before_end ~start ~end_at in
     let* () =
       if CCList.is_empty overlapps then Ok () else Error Pool_message.Error.SessionOverlap
     in
@@ -366,7 +357,11 @@ end = struct
     =
     let error = Pool_message.Error.InvalidRequest in
     let open CCResult in
-    let start_of_string str = Pool_model.Time.parse_time str >|= Session.Start.create in
+    let start_of_string str =
+      Time.Parsing.parse_date_time str
+      |> CCResult.map_err (fun e -> Pool_message.Error.NotADatetime (str, e))
+      >|= Session.Start.create
+    in
     let parse_row id group value =
       let to_result = CCOption.to_result in
       let* group = CCInt.of_string group |> to_result error in

@@ -35,7 +35,7 @@ let list { Pool_context.language; _ } (versions, query) =
       version_path ~id ~suffix:"edit" ()
       |> Input.link_as_button ~style:`Primary ~icon:Icon.Create
     in
-    let format_time = Utils.Ptime.formatted_date_time in
+    let format_time = Time.formatted_date_time in
     [ txt (Tag.value tag)
     ; published_at |> map_or ~default:"" CCFun.(PublishedAt.value %> format_time) |> txt
     ; created_at |> Pool_common.CreatedAt.value |> format_time |> txt

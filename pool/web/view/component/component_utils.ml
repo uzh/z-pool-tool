@@ -61,8 +61,6 @@ let htmx_attribs
 let format_reminder_sent_opt ?(default = "") value =
   let open Pool_common in
   value
-  |> CCOption.map_or
-       ~default
-       CCFun.(Reminder.SentAt.value %> Pool_model.Time.formatted_date_time)
+  |> CCOption.map_or ~default CCFun.(Reminder.SentAt.value %> Time.formatted_date_time)
   |> txt
 ;;

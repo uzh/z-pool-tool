@@ -103,7 +103,10 @@ end = struct
            values
            |> CCList.head_opt
            |> CCOption.to_result Pool_message.Error.NoValue
-           >>= Pool_model.Time.parse_time)
+           >>= fun str ->
+           str
+           |> Time.Parsing.parse_date_time
+           |> CCResult.map_err (fun e -> Pool_message.Error.NotADatetime (str, e)))
         (fun date -> date |> Ptime.to_rfc3339 |> CCList.return)
         name
     in

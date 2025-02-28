@@ -1,4 +1,3 @@
-module Ptime = Utils.Ptime
 open Pool_message
 
 let rec field_to_string =
@@ -433,7 +432,7 @@ let rec error_to_string =
   function
   | AccountTemporarilySuspended ptime ->
     ptime
-    |> Ptime.formatted_date_time
+    |> Time.formatted_date_time
     |> Format.asprintf
          "Zu viele fehlgeschlagene Anmeldeversuche. Diese E-Mail-Adresse ist gesperrt, \
           bis %s"

@@ -143,6 +143,12 @@ val create
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+
+val start_is_before_end
+  :  start:Start.t
+  -> end_at:End.t
+  -> (unit, Pool_message.Error.t) result
+
 val is_canceled_error : Ptime.t -> ('a, Pool_message.Error.t) result
 val is_fully_booked : t -> bool
 val available_spots : t -> int

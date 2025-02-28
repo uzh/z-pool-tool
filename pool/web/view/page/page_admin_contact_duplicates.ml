@@ -171,7 +171,7 @@ let show
     let open Contact in
     let open CCFun.Infix in
     let to_s = CCInt.to_string in
-    let format_date = Utils.Ptime.formatted_date_time in
+    let format_date = Time.formatted_date_time in
     Pool_message.Field.
       [ AssignmentCount, num_assignments %> NumberOfAssignments.value %> to_s
       ; Participated, num_participations %> NumberOfParticipations.value %> to_s

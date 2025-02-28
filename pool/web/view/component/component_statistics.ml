@@ -154,9 +154,7 @@ module SentInvitations = struct
           (fun Experiment.InvitationReset.
                  { created_at; contacts_matching_filter; invitations_sent; _ } ->
              make_row
-               (created_at
-                |> Pool_common.CreatedAt.value
-                |> Utils.Ptime.formatted_date_time)
+               (created_at |> Pool_common.CreatedAt.value |> Time.formatted_date_time)
                (invitations_sent, contacts_matching_filter))
           resets
       in

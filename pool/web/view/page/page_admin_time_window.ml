@@ -292,7 +292,7 @@ let detail
     let open Session in
     let int_to_txt i = i |> CCInt.to_string |> txt in
     let amount amt = amt |> ParticipantAmount.value |> string_of_int in
-    let date date = Pool_model.Time.formatted_date_time date in
+    let date date = Time.formatted_date_time date in
     [ Field.Start, time_window.start |> Start.value |> date |> txt
     ; Field.End, ends_at time_window |> date |> txt
     ; ( Field.InternalDescription

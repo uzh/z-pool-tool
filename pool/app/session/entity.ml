@@ -70,17 +70,13 @@ module Start = struct
   include Pool_model.Base.Ptime
 
   let create m = m
-
-  let schema () =
-    let decode str = CCResult.(Pool_model.Time.parse_time str >|= create) in
-    Pool_conformist.schema_decoder decode Ptime.to_rfc3339 Pool_message.Field.Start
-  ;;
+  let schema = schema Pool_message.Field.Start CCResult.return
 end
 
 module End = struct
   include Pool_model.Base.Ptime
 
-  let schema () = schema Pool_message.Field.End CCResult.return ()
+  let schema = schema Pool_message.Field.End CCResult.return
 
   let build start =
     Ptime.add_span start %> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
@@ -218,12 +214,15 @@ let create
   }
 ;;
 
+let start_is_before_end ~start ~end_at =
+  if Ptime.is_later start ~than:end_at
+  then Error Pool_message.Error.EndBeforeStart
+  else Ok ()
+;;
+
 let is_canceled_error canceled_at =
   let open Pool_message in
-  canceled_at
-  |> Pool_model.Time.formatted_date_time
-  |> Error.sessionalreadycanceled
-  |> CCResult.fail
+  canceled_at |> Time.formatted_date_time |> Error.sessionalreadycanceled |> CCResult.fail
 ;;
 
 let is_fully_booked (m : t) = m.assignment_count >= m.max_participants + m.overbook
@@ -249,17 +248,14 @@ type notification_history =
   }
 
 let session_date_to_human (session : t) =
-  session.start |> Start.value |> Pool_model.Time.formatted_date_time
+  session.start |> Start.value |> Time.formatted_date_time
 ;;
 
 let start_end_with_duration_human ({ start; duration; _ } : t) =
-  Utils.Ptime.format_start_end_with_duration start duration
+  Time.format_start_end_with_duration start duration
 ;;
 
-let start_end_human ({ start; duration; _ } : t) =
-  Utils.Ptime.format_start_end start duration
-;;
-
+let start_end_human ({ start; duration; _ } : t) = Time.format_start_end start duration
 let compare_start (s1 : t) (s2 : t) = Start.compare s1.start s2.start
 
 let add_follow_ups_to_parents groups (parent, session) =
@@ -383,7 +379,7 @@ module Public = struct
   ;;
 
   let start_end_with_duration_human ({ start; duration; _ } : t) =
-    Utils.Ptime.format_start_end_with_duration start duration
+    Time.format_start_end_with_duration start duration
   ;;
 end
 
@@ -509,14 +505,10 @@ let email_text language start duration location =
       text
   in
   let start =
-    format
-      Pool_message.Field.Start
-      (Start.value start |> Pool_model.Time.formatted_date_time)
+    format Pool_message.Field.Start (Start.value start |> Time.formatted_date_time)
   in
   let duration =
-    format
-      Pool_message.Field.Duration
-      (Duration.value duration |> Pool_model.Time.formatted_timespan)
+    format Pool_message.Field.Duration (Duration.value duration |> Time.formatted_timespan)
   in
   let location =
     format Pool_message.Field.Location (Pool_location.to_string language location)
@@ -552,10 +544,7 @@ let not_closed session =
   match session.closed_at with
   | None -> Ok ()
   | Some closed_at ->
-    closed_at
-    |> Pool_model.Time.formatted_date_time
-    |> Error.sessionalreadyclosed
-    |> CCResult.fail
+    closed_at |> Time.formatted_date_time |> Error.sessionalreadyclosed |> CCResult.fail
 ;;
 
 let not_past session =

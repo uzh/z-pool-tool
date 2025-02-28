@@ -1,10 +1,6 @@
 open Ppx_yojson_conv_lib.Yojson_conv
 module Language = Pool_common.Language
 
-let ptime_schema field =
-  Pool_conformist.schema_decoder Pool_model.Time.parse_time Ptime.to_rfc3339 field
-;;
-
 let equal_ptime a b = Sihl.Configuration.is_test () || Ptime.equal a b
 
 module Id = struct
@@ -36,7 +32,7 @@ module StartAt = struct
   include Pool_model.Base.Ptime
 
   let create m = m
-  let schema () = ptime_schema Pool_message.Field.Start
+  let schema = schema Pool_message.Field.Start CCResult.return
   let equal = equal_ptime
 end
 
@@ -44,7 +40,7 @@ module EndAt = struct
   include Pool_model.Base.Ptime
 
   let create m = m
-  let schema () = ptime_schema Pool_message.Field.End
+  let schema = schema Pool_message.Field.End CCResult.return
   let equal = equal_ptime
 end
 

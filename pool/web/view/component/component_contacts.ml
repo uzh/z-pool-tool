@@ -38,7 +38,7 @@ let external_data_ids language external_data_ids =
                   ]
                 [ txt
                     Session.(
-                      Utils.Ptime.format_start_end_with_duration
+                      Time.format_start_end_with_duration
                         (Start.value session_start)
                         (Duration.value session_duration))
                 ]
