@@ -69,7 +69,7 @@ form[class*="stack"] input[type="hidden"]+* {
 
 .grouped-input {
     border-radius: vars.$border-radius;
-    border: 1px solid c.$grey;
+    border: 1px solid c.$grey-light;
     overflow: hidden;
 
     select,
@@ -85,8 +85,8 @@ form[class*="stack"] input[type="hidden"]+* {
     &>.select select {
         padding-right: vars.$space-base * 2;
         width: auto;
-        background-color: c.$grey-light;
-        border-left: 1px solid c.$grey;
+        background-color: c.$grey-lighter;
+        border-left: 1px solid c.$grey-lighter;
     }
 }
 
@@ -610,5 +610,15 @@ input[type="checkbox"][readonly] {
 
     .changelog-key {
         text-transform: capitalize;
+    }
+}
+
+
+// Statistics
+
+.stretch-table-cells .table tr { 
+    td, th {
+        padding-left: 0;
+        padding-right: 0;
     }
 }

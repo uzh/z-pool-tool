@@ -881,7 +881,12 @@ let detail
         ; div
             ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
             [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
-            ; div ~a:[ a_class [ "border"; "inset"; "bg-grey-lightest" ] ] [ statistics ]
+            ; div
+                ~a:
+                  [ a_class
+                      [ "border"; "inset"; "bg-grey-lightest"; "stretch-table-cells" ]
+                  ]
+                [ statistics ]
             ]
         ; message_template
         ; setting
