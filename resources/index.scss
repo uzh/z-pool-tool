@@ -1,21 +1,14 @@
 @use "sass:color";
 @use "sass:math";
-// @use "@econ/frontend-framework/dist/main" with (
-//   $notification-position: 7rem 0 auto 0,
-//   $font-path: "../node_modules/@econ/frontend-framework/dist/font"
-// );
-// @use "@econ/frontend-framework/dist/sass/colors" as c;
-// @use "@econ/frontend-framework/dist/sass/variables" as vars;
-// @use "@econ/frontend-framework/dist/sass/breakpoints";
-
-@use "../frontend/main" with (
+@use "@econ/frontend-framework/dist/main" with (
   $notification-position: 7rem 0 auto 0,
-  $font-path: "../frontend/font"
+  $font-path: "../node_modules/@econ/frontend-framework/dist/font",
+  $header-height: 124px,
+  $header-height-mobile: 96px,
 );
-@use "../frontend/sass/colors" as c;
-@use "../frontend/sass/variables" as vars;
-@use "../frontend/sass/breakpoints";
-
+@use "@econ/frontend-framework/dist/sass/colors" as c;
+@use "@econ/frontend-framework/dist/sass/variables" as vars;
+@use "@econ/frontend-framework/dist/sass/breakpoints";
 
 @use "./admin/calendar";
 
@@ -94,6 +87,7 @@ form[class*="stack"] input[type="hidden"]+* {
     &>.select select {
         padding-right: vars.$space-base * 2;
         width: auto;
+        min-width: 7.5rem;
         background-color: c.$grey-lighter;
         border-left: 1px solid c.$grey-lighter;
     }
@@ -632,10 +626,3 @@ input[type="checkbox"][readonly] {
     }
 }
 
-
-.mobile-nav {
-    position: fixed;
-    top: 97px;
-    left: 0;
-    right: 0;
-}

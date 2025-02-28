@@ -26,10 +26,12 @@ class OverlayNavigation {
             this.closeNavigation(previous);
         }
         if (current) {
+            document.body.setAttribute('data-noscroll', '');
             this.openNavigation(current);
             hideToggle(this.toggleOpen);
             showToggle(this.toggleClose);
         } else {
+            document.body.removeAttribute('data-noscroll', '');
             showToggle(this.toggleOpen);
             hideToggle(this.toggleClose);
         }
