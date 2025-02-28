@@ -52,20 +52,23 @@ let index
       [ h2
           ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ txt (I18n.content_to_string title) ]
-      ; CCOption.map_or
-          ~default:(txt "")
-          (fun hint ->
-             hint
-             |> Pool_common.Utils.hint_to_string language
-             |> txt
-             |> CCList.return
-             |> p)
-          note
-      ; (match list, empty_msg with
-         | [], Some empty_msg ->
-           p Pool_common.[ Utils.text_to_string language empty_msg |> txt ]
-         | [], None -> txt ""
-         | list, _ -> div ~a:[ a_class classnames ] list)
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ CCOption.map_or
+              ~default:(txt "")
+              (fun hint ->
+                 hint
+                 |> Pool_common.Utils.hint_to_string language
+                 |> txt
+                 |> CCList.return
+                 |> p)
+              note
+          ; (match list, empty_msg with
+             | [], Some empty_msg ->
+               p Pool_common.[ Utils.text_to_string language empty_msg |> txt ]
+             | [], None -> txt ""
+             | list, _ -> div ~a:[ a_class classnames ] list)
+          ]
       ]
   in
   let notification =
@@ -142,9 +145,21 @@ let index
       |> list_html i18n.experiment_history [ "striped" ]
   in
   let session_html =
-    let experiment_overview ((exp : Experiment.Public.t), parent, follow_ups) =
+    let upcoming_session_list ((exp : Experiment.Public.t), parent, follow_ups) =
+      let open Session in
       let thead = Field.[ Some Start; Some Location ] in
-      let session_item = PageSession.session_item `Upcoming language exp in
+      let session_item session =
+        [ div
+            ((if CCOption.is_some session.Public.canceled_at
+              then
+                [ strong [ txt Pool_common.(Utils.text_to_string language I18n.Canceled) ]
+                ; br ()
+                ]
+              else [])
+             @ [ txt (Session.Public.start_end_with_duration_human session) ])
+        ; session.Public.location |> Component.Location.preview
+        ]
+      in
       let sessions = parent :: follow_ups in
       let row_formatter i =
         let open CCOption in
@@ -173,7 +188,7 @@ let index
     in
     let open Pool_common.I18n in
     upcoming_sessions
-    |> CCList.map experiment_overview
+    |> CCList.map upcoming_session_list
     |> list_html
          i18n.upcoming_sessions
          ~empty_msg:UpcomingSessionsListEmpty
@@ -197,7 +212,7 @@ let index
         ~a:[ a_class [ "stack-lg" ] ]
         [ notification
         ; div
-            ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ]
+            ~a:[ a_class [ "grid-col-2"; "grid-gap-lg"; "gap-lg" ] ]
             [ div ~a:[ a_class [ "stack-lg" ] ] [ session_html; waiting_list_html ]
             ; experiment_html
             ; online_studies_html
@@ -208,7 +223,7 @@ let index
 ;;
 
 let show
-      (experiment : Experiment.Public.t)
+      experiment
       grouped_sessions
       upcoming_sessions
       past_sessions
@@ -310,7 +325,7 @@ let show
     | upcoming_sessions, past_sessions, canceled_sessions ->
       let open Pool_common.I18n in
       div
-        ~a:[ a_class [ "stack-lg" ] ]
+        ~a:[ a_class [ "gap-lg"; "stack-lg" ] ]
         [ sessions_html UpcomingSessionsTitle upcoming_sessions
         ; sessions_html PastSessionsTitle past_sessions
         ; sessions_html CanceledSessionsTitle canceled_sessions
