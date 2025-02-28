@@ -25,16 +25,12 @@ let handle_verification_event pool : verification_event -> unit Lwt.t = function
     Lwt.return_unit
 ;;
 
-let[@warning "-4"] equal_verification_event
-                     (one : verification_event)
-                     (two : verification_event)
-  : bool
-  =
+let equal_verification_event (one : verification_event) (two : verification_event) : bool =
   match one, two with
   | Created (e1, t1, id1), Created (e2, t2, id2) ->
     User.EmailAddress.equal e1 e2 && Token.equal t1 t2 && Pool_user.Id.equal id1 id2
   | EmailVerified m, EmailVerified p -> equal m p
-  | _ -> false
+  | Created _, EmailVerified _ | EmailVerified _, Created _ -> false
 ;;
 
 let pp_verification_event formatter (event : verification_event) : unit =

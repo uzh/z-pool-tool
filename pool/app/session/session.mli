@@ -32,6 +32,7 @@ module End : sig
 
   val value : t -> Ptime.t
   val create : Ptime.t -> t
+  val build : Start.t -> Ptime.Span.t -> (t, Pool_message.Error.t) Result.t
 end
 
 module Duration : sig
@@ -196,26 +197,12 @@ module Calendar : sig
   type location =
     { id : Pool_location.Id.t
     ; name : Pool_location.Name.t
-    ; url : string
     }
 
   type links =
-    { show_experiment : bool
-    ; show_session : bool
-    ; show_location_session : bool
-    ; experiment : string
-    ; session : string
-    ; location_session : string
+    { experiment : string option
+    ; session : string option
     }
-
-  val create_links
-    :  ?show_experiment:bool
-    -> ?show_session:bool
-    -> ?show_location_session:bool
-    -> Experiment.Id.t
-    -> Id.t
-    -> location
-    -> links
 
   type t =
     { id : Id.t
@@ -237,6 +224,7 @@ module Calendar : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val yojson_of_t : t -> Yojson.Safe.t
+  val compare : t -> t -> int
 end
 
 val group_and_sort : t list -> (t * t list) list
@@ -318,11 +306,21 @@ val find_open_with_follow_ups
 
 val find_open : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_for_calendar_by_location
-  :  Pool_location.Id.t
+val calendar_by_user
+  :  start_time:Ptime.t
+  -> end_time:Ptime.t
   -> Database.Label.t
+  -> Guard.Persistence.actor
+  -> Guard.PermissionOnTarget.t list
+  -> Calendar.t list Lwt.t
+
+val calendar_by_location
+  :  location_uuid:Pool_location.Id.t
   -> start_time:Ptime.t
   -> end_time:Ptime.t
+  -> Database.Label.t
+  -> Guard.Persistence.actor
+  -> Guard.PermissionOnTarget.t list
   -> Calendar.t list Lwt.t
 
 val query_grouped_by_experiment
@@ -341,13 +339,6 @@ val find_sessions_to_update_matcher
   :  Database.Label.t
   -> [< `Experiment of Experiment.Id.t | `Upcoming ]
   -> t list Lwt.t
-
-val find_for_calendar_by_user
-  :  Guard.Actor.t
-  -> Database.Label.t
-  -> start_time:Ptime.t
-  -> end_time:Ptime.t
-  -> Calendar.t list Lwt.t
 
 val find_incomplete_by_admin
   :  ?query:Query.t

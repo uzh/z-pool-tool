@@ -5,6 +5,7 @@
   (pps lwt_ppx ppx_deriving.show))
  (libraries
   assignment_job
+  contact_job
   caqti-driver-mariadb
   command
   guard

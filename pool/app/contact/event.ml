@@ -41,6 +41,7 @@ type event =
   | RegistrationAttemptNotificationSent of t
   | Updated of t
   | SignInCounterUpdated of t
+  | NotifiedAbountInactivity of t
 [@@deriving eq, show, variants]
 
 let handle_event ?tags pool : event -> unit Lwt.t =
@@ -121,5 +122,9 @@ let handle_event ?tags pool : event -> unit Lwt.t =
       Pool_user.update pool ~email ~lastname ~firstname contact.user
     in
     Lwt.return_unit
-  | SignInCounterUpdated contact -> Repo.update_sign_in_count pool contact
+  | SignInCounterUpdated contact ->
+    let%lwt () = Repo.update_sign_in_count pool contact in
+    let%lwt () = Repo.remove_deactivation_notifications pool contact in
+    Lwt.return_unit
+  | NotifiedAbountInactivity t -> Repo.InactivityNotification.insert pool t
 ;;

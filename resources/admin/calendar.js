@@ -36,18 +36,11 @@ const tooltipContent = ({ _instance, _def }, hideLocation) => {
     const { title, extendedProps } = _def;
     const contactEmail = extendedProps.contact_email
     const { assignment_count, max_participants, min_participants, overbook, links } = extendedProps;
-    const { show_experiment, show_session, show_location_session, experiment, session, location_session } = links;
+    const { experiment, session } = links;
     const counterHtml = `<p><strong>Participants: ${assignment_count} / ${max_participants}</strong><br>Overbook: ${overbook}<br>Min. participants: ${min_participants}</p>`;
-    const sessionLink = show_session ? `<a href="${session}">Session details</a>` : '';
-    const locationSessionLink = show_location_session ? `<a href="${location_session}">Session details</a>` : '';
-    const experimentLink = show_experiment ? `<a href="${experiment}">Experiment details</a>` : '';
-    var linkList = [];
-    if (show_session) {
-        linkList.push(sessionLink);
-    } else if (show_location_session) {
-        linkList.push(locationSessionLink);
-    }
-    show_experiment ? linkList.push(experimentLink) : null;
+    const sessionLink = session && `<a href="${session}">Session details</a>`;
+    const experimentLink = experiment && `<a href="${experiment}">Experiment details</a>`;
+    var linkList = [sessionLink, experimentLink].filter(Boolean);
     const linksHtml = !linkList.lenght ? `<p>${linkList.join(`<br/>`)}</p>` : '';
     const contactPersonHtml = contactEmail ? `<a href="mailto:${contactEmail}">${contactEmail}</a><br>` : ''
     const header = `<div class="card-header">${title}</div>`

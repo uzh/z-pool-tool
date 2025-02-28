@@ -166,7 +166,7 @@ let filter { additional_url_params; language; url; query; push_url; _ } target_i
     | [] -> txt ""
     | html -> div ~a:[ a_class ("stack-sm" :: classname) ] html
   in
-  [ wrap checkboxes; wrap ~classname:[ "toggle-list" ] selects ]
+  [ wrap checkboxes; wrap ~classname:[ "flexcolumn"; "justify-center" ] selects ]
 ;;
 
 let pagination
@@ -277,6 +277,7 @@ let searchbar
   let open Pool_common in
   let open Query in
   let search_field, search_label = Pool_message.Field.(Search, Search |> show) in
+  let equal_field a b = Pool_message.Field.equal (Column.field a) (Column.field b) in
   let url =
     Uri.with_query
       url
@@ -305,7 +306,8 @@ let searchbar
             ()
         ; span
             ~a:[ a_class [ "help" ] ]
-            [ I18n.SearchByFields (CCList.map Column.field searchable_by)
+            [ I18n.SearchByFields
+                (searchable_by |> CCList.uniq ~eq:equal_field |> CCList.map Column.field)
               |> Utils.hint_to_string language
               |> txt
             ]

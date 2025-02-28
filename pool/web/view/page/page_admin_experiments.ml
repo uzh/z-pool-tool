@@ -8,6 +8,7 @@ module Icon = Component.Icon
 module DataTable = Component.DataTable
 module Notification = Component.Notification
 module HttpUtils = Http_utils
+module User = Page_admin_experiment_users
 
 let build_experiment_path ?suffix experiment =
   let base =
@@ -75,76 +76,6 @@ let notifications
        ]
        |> Notification.notification language `Warning)
 ;;
-
-module Statistics = struct
-  open Experiment.Statistics
-
-  let make language statistics =
-    let int_to_txt i = i |> CCInt.to_string |> txt in
-    let with_tooltip html tooltip =
-      div
-        ~a:[ a_class [ "has-icon flex-gap-sm" ] ]
-        [ span [ html ]
-        ; div
-            ~a:[ a_class [ "tooltip-wrapper" ] ]
-            [ Icon.(to_html HelpOutline); p ~a:[ a_class [ "tooltip" ] ] [ tooltip ] ]
-        ]
-    in
-    let to_table = Component.Table.vertical_table ~th_class:[ "w-7" ] `Simple language in
-    let registration_possible_html =
-      let open RegistrationPossible in
-      let html =
-        statistics
-        |> registration_possible
-        |> value
-        |> Pool_common.Utils.bool_to_string language
-        |> txt
-      in
-      let tooltip = hint |> Pool_common.Utils.hint_to_string language |> txt in
-      with_tooltip html tooltip
-    in
-    let sending_invitations_html =
-      let open SendingInvitations in
-      let html =
-        statistics |> sending_invitations |> show |> CCString.capitalize_ascii |> txt
-      in
-      let tooltip =
-        hint |> Pool_common.Utils.hint_to_string language |> HttpUtils.add_line_breaks
-      in
-      with_tooltip html tooltip
-    in
-    let experiment_statistics =
-      [ RegistrationPossible.field, registration_possible_html
-      ; SendingInvitations.field, sending_invitations_html
-      ; SessionCount.(field, statistics |> session_count |> value |> int_to_txt)
-      ]
-    in
-    let invitations_statistics =
-      statistics |> invitations |> Page_admin_invitations.Partials.statistics language
-    in
-    let assignments_statistics =
-      [ ShowUpCount.(field, statistics |> showup_count |> value |> int_to_txt)
-      ; NoShowCount.(field, statistics |> noshow_count |> value |> int_to_txt)
-      ; ParticipationCount.(
-          field, statistics |> participation_count |> value |> int_to_txt)
-      ]
-    in
-    div
-      [ h3
-          ~a:[ a_class [ "has-gap" ] ]
-          [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentStatistics) ]
-      ; experiment_statistics |> to_table
-      ; h4
-          ~a:[ a_class [ "has-gap" ] ]
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Invitations) ]
-      ; invitations_statistics
-      ; h4
-          ~a:[ a_class [ "has-gap" ] ]
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments) ]
-      ; assignments_statistics |> to_table
-      ]
-  ;;
-end
 
 let message_template_buttons sys_languages (experiment : Experiment.t) message_templates =
   let open Message_template in
@@ -699,6 +630,7 @@ let edit
 ;;
 
 let detail
+      ?invitation_reset
       experiment
       session_count
       message_templates
@@ -775,14 +707,13 @@ let detail
   in
   let reset_invitation_form =
     let last_reset_at =
-      match experiment |> Experiment.invitation_reset_at with
+      match invitation_reset with
       | None -> txt ""
-      | Some reset_at ->
+      | Some { Experiment.InvitationReset.created_at; _ } ->
         span
           [ Utils.hint_to_string
               language
-              (I18n.ResetInvitationsLastReset
-                 (Experiment.InvitationResetAt.value reset_at))
+              (I18n.ResetInvitationsLastReset (Pool_common.CreatedAt.value created_at))
             |> Unsafe.data
           ]
     in
@@ -916,17 +847,12 @@ let detail
         , text_message_session_reminder_lead_time_value experiment
           |> CCOption.map_or ~default:"-" Pool_model.Time.formatted_timespan
           |> txt )
-      ; ( Field.InvitationResetAt
-        , experiment
-          |> invitation_reset_at
-          |> CCOption.map_or ~default:"-" InvitationResetAt.to_human
-          |> txt )
       ; Field.Tags, tag_list tags
       ; Field.ParticipationTags, tag_list participation_tags
       ]
       |> vertical_table
     in
-    let statistics = Statistics.make language statistics in
+    let statistics = Component.Statistics.ExperimentOverview.make language statistics in
     let message_template =
       div
         [ h3
@@ -1040,41 +966,35 @@ let users
       ?hint
       ?can_assign
       ?can_unassign
+      entity
       role
       experiment
+      form_path
       applicable_admins
       currently_assigned
       context
   =
-  let base_url field admin =
-    let suffix =
-      Format.asprintf "%s/%s" (Field.show field) Admin.(id admin |> Id.value)
-    in
-    build_experiment_path ~suffix experiment |> Sihl.Web.externalize_path
-  in
+  let open Layout.Experiment in
   let field =
     match role with
     | `Assistants -> Field.Assistants
     | `Experimenter -> Field.Experimenter
   in
+  let active_navigation =
+    match entity with
+    | `Experiment -> Some (Field.show field)
+    | `Session -> None
+  in
   Page_admin_experiment_users.role_assignment
     ?hint
     ?can_assign
     ?can_unassign
-    (base_url field)
-    field
     context
-    ~assign:"assign"
-    ~unassign:"unassign"
+    form_path
     ~applicable:applicable_admins
     ~current:currently_assigned
   |> CCList.return
-  |> Layout.Experiment.(
-       create
-         ~active_navigation:(Field.show field)
-         context
-         (NavLink (Pool_common.I18n.Field field))
-         experiment)
+  |> create ?active_navigation context (NavLink (Pool_common.I18n.Field field)) experiment
 ;;
 
 let message_template_form

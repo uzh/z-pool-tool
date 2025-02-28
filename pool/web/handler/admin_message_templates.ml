@@ -8,8 +8,12 @@ let template_id = HttpUtils.find_id Message_template.Id.of_string Field.MessageT
 
 let template_label req =
   let open Message_template.Label in
-  HttpUtils.find_id read_from_url Field.Label req
-  |> fun label -> CCList.find (equal label) customizable_by_experiment
+  try
+    Ok
+      (HttpUtils.find_id read_from_url Field.Label req
+       |> fun label -> CCList.find (equal label) customizable_by_experiment)
+  with
+  | _ -> Error Pool_message.(Error.Invalid Field.Label)
 ;;
 
 let database_label_of_req req =
@@ -110,7 +114,7 @@ let update req =
 let default_templates_from_request req ?languages database_label params =
   let open Utils.Lwt_result.Infix in
   let open Page.Admin.MessageTemplate in
-  let label = template_label req in
+  let* label = template_label req |> Lwt_result.lift in
   let languages =
     languages
     |> CCOption.value ~default:(Pool_context.Tenant.get_tenant_languages_exn req)
@@ -154,9 +158,9 @@ let default_templates_from_request req ?languages database_label params =
 
 let preview_default req =
   let open Utils.Lwt_result.Infix in
-  let label = template_label req in
   let result { Pool_context.database_label; language; _ } =
     let query_params = Sihl.Web.Request.query_list req in
+    let* label = template_label req |> Lwt_result.lift in
     let* message_templates, _ =
       default_templates_from_request req database_label query_params
     in

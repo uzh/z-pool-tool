@@ -103,3 +103,14 @@ let context () =
   in
   Rock.Middleware.create ~name:"tenant.context" ~filter
 ;;
+
+(* Dynamically apply tenant middleware *)
+let not_found () =
+  let filter handler req =
+    let is_root = Http_utils.is_req_from_root_host req in
+    match is_root with
+    | true -> handler req
+    | false -> Middleware_tenant.web_filter handler req
+  in
+  Rock.Middleware.create ~name:"not_found.context" ~filter
+;;

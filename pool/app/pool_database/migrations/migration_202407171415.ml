@@ -1,25 +1,3 @@
-let chunked name count_from query =
-  [%string
-    {sql|
-      CREATE PROCEDURE %{name}(IN chunk_size INT)
-      DETERMINISTIC
-      BEGIN
-          DECLARE offset_value INT DEFAULT 0;
-          DECLARE total_rows INT DEFAULT 0;
-
-          SELECT COUNT(*) INTO total_rows FROM %{count_from};
-
-          WHILE offset_value < total_rows DO
-              %{query}
-              LIMIT chunk_size OFFSET offset_value
-              ON DUPLICATE KEY UPDATE updated_at = NOW();
-
-              SET offset_value = offset_value + chunk_size;
-          END WHILE;
-      END
-    |sql}]
-;;
-
 let call ?(chunk_size = 10000) name =
   [%string {sql|CALL %{name}(%{CCInt.to_string chunk_size});|sql}]
 ;;
@@ -35,9 +13,9 @@ let archive_queue_jobs_fcn =
       GROUP BY `uuid`) as queued_jobs
     |sql}
   in
-  chunked
-    archive_jobs_name
-    count_from
+  Migration_utils.chunked
+    ~name:archive_jobs_name
+    ~count_from
     {sql|
       INSERT INTO pool_queue_jobs_history
         (uuid, name, input, message_template, tries, max_tries, run_at, status,
@@ -68,9 +46,9 @@ let archive_queue_jobs_fcn =
 let archive_history_name = "CopyRowsArchiveHistory"
 
 let archive_queue_history_mappings_fcn =
-  chunked
-    archive_history_name
-    "pool_message_history"
+  Migration_utils.chunked
+    ~name:archive_history_name
+    ~count_from:"pool_message_history"
     {sql|
       INSERT INTO pool_queue_jobs_mapping (entity_uuid, queue_uuid, created_at, updated_at)
       SELECT

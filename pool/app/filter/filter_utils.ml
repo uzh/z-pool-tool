@@ -33,8 +33,9 @@ let all_filter_labels : filter_label list =
   |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
 ;;
 
-let[@warning "-4"] single_val_to_id =
+let single_val_to_id =
+  let open Entity in
   CCList.filter_map (function
-    | Entity.Str id -> Some (Pool_common.Id.of_string id)
-    | _ -> None)
+    | Str id -> Some (Pool_common.Id.of_string id)
+    | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
 ;;

@@ -22,41 +22,36 @@ let tenant_of_request req =
   tenant_url_of_request req |> Lwt_result.lift >>= Pool_tenant.find_by_url ~should_cache
 ;;
 
-let make name ~maintenance_handler ~connection_issue_handler ~error_handler () =
-  let filter handler req =
-    let open Pool_context in
-    let open Status in
-    match%lwt tenant_of_request req with
-    | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
-      let handle_request =
-        Settings.find_languages database_label
-        ||> Tenant.create tenant
-        ||> Tenant.set req
-        >|> handler
-      in
-      (match status with
-       | Active -> handle_request
-       | Maintenance | MigrationsConnectionIssue | MigrationsFailed | MigrationsPending ->
-         maintenance_handler ()
-       | Disabled -> connection_issue_handler ()
-       | ConnectionIssue ->
-         (match%lwt Pool.connect database_label with
-          | Ok () ->
-            let%lwt () =
-              let open Pool_database in
-              StatusUpdated (database_label, Status.Active)
-              |> handle_event Pool.Root.label
-            in
-            handle_request
-          | Error err -> error_handler err))
-    | Error err ->
-      Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err
-      |> error_handler
-  in
-  Rock.Middleware.create ~name ~filter
+let filter ~maintenance_handler ~connection_issue_handler ~error_handler handler req =
+  let open Pool_context in
+  let open Status in
+  match%lwt tenant_of_request req with
+  | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
+    let handle_request =
+      Settings.find_languages database_label
+      ||> Tenant.create tenant
+      ||> Tenant.set req
+      >|> handler
+    in
+    (match status with
+     | Active -> handle_request
+     | Maintenance | MigrationsConnectionIssue | MigrationsFailed | MigrationsPending ->
+       maintenance_handler ()
+     | Disabled -> connection_issue_handler ()
+     | ConnectionIssue ->
+       (match%lwt Pool.connect database_label with
+        | Ok () ->
+          let%lwt () =
+            let open Pool_database in
+            StatusUpdated (database_label, Status.Active) |> handle_event Pool.Root.label
+          in
+          handle_request
+        | Error err -> error_handler err))
+  | Error err ->
+    Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err |> error_handler
 ;;
 
-let validate () =
+let web_filter handler req =
   let maintenance_handler () =
     let open Pool_common in
     let language = Language.En in
@@ -70,5 +65,12 @@ let validate () =
   in
   let connection_issue_handler () = Http_utils.redirect_to "/error" in
   let error_handler (_ : Pool_message.Error.t) = Http_utils.redirect_to "/not-found" in
-  make "tenant.valid" ~maintenance_handler ~connection_issue_handler ~error_handler ()
+  filter ~maintenance_handler ~connection_issue_handler ~error_handler handler req
 ;;
+
+let make name ~maintenance_handler ~connection_issue_handler ~error_handler () =
+  let filter = filter ~maintenance_handler ~connection_issue_handler ~error_handler in
+  Rock.Middleware.create ~name ~filter
+;;
+
+let validate () = Rock.Middleware.create ~name:"tenant.valid" ~filter:web_filter

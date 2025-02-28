@@ -128,6 +128,7 @@ type t =
   | Inactive
   | InactiveUserDisableAfter
   | InactiveUserWarning
+  | InactiveUserDisableService
   | Input
   | Institution
   | InternalDescription
@@ -163,6 +164,7 @@ type t =
   | MainSession
   | MarkedAsDeleted
   | MatchingFilterCount
+  | MatchingFilterCountShort
   | MaxParticipants
   | MaxTries
   | Message

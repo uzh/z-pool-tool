@@ -68,7 +68,7 @@ let index statistics duplicate_contacts_count layout Pool_context.{ language; _ 
       |> CCOption.map_or ~default:(txt "") (fun statistics ->
         div
           [ heading_2 I18n.PoolStatistics
-          ; Component.Statistics.create language statistics
+          ; Component.Statistics.Pool.create language statistics
           ])
     in
     let incomplete_sessions_html =

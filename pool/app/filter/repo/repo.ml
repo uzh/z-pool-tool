@@ -79,13 +79,9 @@ module Sql = struct
   let find_all_templates pool = Database.collect pool find_all_templates_request
 
   let find_templates_by query pool =
-    let where = template_condition, Dynparam.empty in
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select:(find_request_sql ~joins:joins_experiment)
-      ~where
-      Repo_entity.t
+    let select = find_request_sql ~joins:joins_experiment in
+    let where = template_condition in
+    Query.collect_and_count pool (Some query) ~select ~where Repo_entity.t
   ;;
 
   let find_multiple_request ids =
@@ -212,15 +208,15 @@ module Sql = struct
       | Template _ -> ids
       | Pred { Predicate.key; value; _ } ->
         let open Key in
-        (match[@warning "-4"] key with
+        (match key with
          | Hardcoded key ->
            if equal_hardcoded key Participation
            then (
              match value with
              | Lst values -> values @ ids
-             | _ -> ids)
+             | Single _ | NoValue -> ids)
            else ids
-         | _ -> ids)
+         | CustomField _ -> ids)
     in
     search [] query
     |> CCList.filter_map (fun value ->
@@ -383,9 +379,6 @@ module Sql = struct
     | Matcher experiment_id ->
       let id = experiment_id |> Pool_common.Id.value in
       dyn |> prefix Caqti_type.string id, [ invitation_join ]
-    | MatcherReset (experiment_id, _) ->
-      let id = experiment_id |> Pool_common.Id.value in
-      dyn |> prefix Caqti_type.string id, [ invitation_join ]
   ;;
 
   let find_filtered_request_sql ?limit use_case dyn where_fragment =
@@ -403,12 +396,6 @@ module Sql = struct
       match filter with
       | None -> Lwt.return []
       | Some filter -> find_templates_of_query pool filter
-    in
-    let order_by =
-      match use_case with
-      | MatcherReset _ when CCOption.is_none order_by ->
-        Some "ORDER BY pool_invitations.created_at ASC"
-      | MatchesFilter | Matcher _ | MatcherReset _ -> order_by
     in
     filtered_params
       use_case

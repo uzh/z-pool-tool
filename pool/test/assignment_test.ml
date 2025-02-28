@@ -3,6 +3,7 @@ open Pool_message
 module ContactCommand = Cqrs_command.Contact_command
 module AssignmentCommand = Cqrs_command.Assignment_command
 module SessionCommand = Cqrs_command.Session_command
+module JobHistory = Message_template.History
 
 type assignment_data =
   { session : Session.t
@@ -40,11 +41,10 @@ let confirmation_email experiment (session : Session.t) assignment =
   |> Email.create_dispatch
        ~message_template:(Label.show label)
        ~job_ctx:
-         (Pool_queue.job_ctx_create
-            [ Contact.(contact |> id |> Id.to_common)
-            ; Session.(session.id |> Id.to_common)
-            ; Experiment.(experiment |> id |> Id.to_common)
-            ])
+         Pool_queue.(
+           job_ctx_create
+             JobHistory.
+               [ contact_item contact; session_item session; experiment_item experiment ])
 ;;
 
 let update_assignment_count_event ~step contact =

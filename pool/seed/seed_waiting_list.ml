@@ -3,7 +3,7 @@ let take_n n contacts =
 ;;
 
 let waiting_list pool =
-  let%lwt experiments, (_ : Query.t) = Experiment.find_all pool in
+  let%lwt experiments = Experiment.all pool in
   let%lwt waiting_list_events, invitation_events =
     let open Utils.Lwt_result.Infix in
     Lwt_list.fold_left_s
@@ -29,7 +29,9 @@ let waiting_list pool =
              @ waiting_lists
            in
            let invitations =
-             Invitation.Created { Invitation.contacts; mailing = None; experiment }
+             let open Invitation in
+             Invitation.Created
+               { invitations = CCList.map create contacts; mailing = None; experiment }
              :: invitations
            in
            (waiting_lists, invitations) |> Lwt.return

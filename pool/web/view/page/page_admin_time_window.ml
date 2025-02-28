@@ -34,8 +34,19 @@ module Partials = struct
     |> link_as_button ~is_text:true ~icon:Icon.Eye ~control:(language, Details)
   ;;
 
-  let button_dropdown { Pool_context.language; _ } experiment_id time_window =
-    [ detail_button language experiment_id time_window.Time_window.id |> CCOption.return ]
+  let button_dropdown
+        { Pool_context.language; _ }
+        experiment_id
+        time_window
+        ~can_access_session_assistants
+    =
+    [ detail_button language experiment_id time_window.Time_window.id |> CCOption.return
+    ; Page_admin_session.Partials.assistants_button
+        language
+        experiment_id
+        time_window.Time_window.id
+        can_access_session_assistants
+    ]
     |> CCList.filter_map CCFun.id
     |> fun buttons ->
     div
@@ -158,7 +169,12 @@ let edit
        create context (Control (Edit (Some Field.TimeWindow))) experiment)
 ;;
 
-let data_table ({ Pool_context.language; _ } as context) experiment (time_windows, query) =
+let data_table
+      ({ Pool_context.language; _ } as context)
+      ?(can_access_session_assistants = false)
+      experiment
+      (time_windows, query)
+  =
   let open Session in
   let target_id = "session-list" in
   let time_windows_path ?id ?suffix () =
@@ -174,7 +190,7 @@ let data_table ({ Pool_context.language; _ } as context) experiment (time_window
         ~style:`Success
         ~icon:Icon.Add
         ~classnames:[ "small"; "nowrap" ]
-        ~control:(language, Add (Some Field.Session))
+        ~control:(language, Add (Some Field.TimeWindow))
         (time_windows_path ~suffix:"create" ())
     in
     [ `column column_date
@@ -210,7 +226,11 @@ let data_table ({ Pool_context.language; _ } as context) experiment (time_window
     ; participant_count |> ParticipantCount.value |> int_to_txt
     ; max_participants
       |> CCOption.map_or ~default:(txt "") CCFun.(ParticipantAmount.value %> int_to_txt)
-    ; Partials.button_dropdown context experiment.Experiment.id time_window
+    ; Partials.button_dropdown
+        context
+        experiment.Experiment.id
+        time_window
+        ~can_access_session_assistants
     ]
     |> CCList.map CCFun.(CCList.return %> td)
     |> tr ~a:row_attrs
@@ -225,11 +245,18 @@ let data_table ({ Pool_context.language; _ } as context) experiment (time_window
     time_windows
 ;;
 
-let index ({ Pool_context.language; _ } as context) experiment sessions =
+let index
+      ({ Pool_context.language; _ } as context)
+      ?(can_access_session_assistants = false)
+      experiment
+      sessions
+  =
   let open Pool_common in
   div
     ~a:[ a_class [ "stack" ] ]
-    [ Partials.table_legend language; data_table context experiment sessions ]
+    [ Partials.table_legend language
+    ; data_table ~can_access_session_assistants context experiment sessions
+    ]
   |> CCList.return
   |> Layout.Experiment.(
        create
@@ -242,6 +269,7 @@ let index ({ Pool_context.language; _ } as context) experiment sessions =
 
 let detail
       ?access_contact_profiles
+      ?(can_access_session_assistants = false)
       ?send_direct_message
       ?view_contact_name
       ?view_contact_info
@@ -253,13 +281,12 @@ let detail
       assignments
   =
   let open Time_window in
-  let session_path = session_path ~id:time_window.id experiment.Experiment.id in
-  let edit_button =
-    link_as_button
-      ~icon:Icon.Create
-      ~classnames:[ "small" ]
-      ~control:(language, Edit (Some Field.Session))
-      (Format.asprintf "%s/edit" session_path)
+  let buttons =
+    Page_admin_session.Partials.title_buttons
+      language
+      time_window.id
+      time_window.experiment.Experiment.id
+      can_access_session_assistants
   in
   let overview =
     let open Session in
@@ -294,7 +321,6 @@ let detail
       ?view_contact_name
       ?view_contact_info
       context
-      experiment
       (`TimeWindow time_window)
       text_messages_enabled
       assignments
@@ -311,7 +337,7 @@ let detail
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~buttons:edit_button
+         ~buttons
          context
          (I18n (HttpUtils.Session.timewindow_title time_window))
          experiment)

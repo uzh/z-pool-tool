@@ -24,7 +24,6 @@ let sql_select_columns =
   ; "pool_experiments.survey_url"
   ; "pool_experiments.email_session_reminder_lead_time"
   ; "pool_experiments.text_message_session_reminder_lead_time"
-  ; "pool_experiments.invitation_reset_at"
   ; "pool_experiments.matcher_notification_sent"
   ; "pool_experiments.created_at"
   ; "pool_experiments.updated_at"
@@ -59,7 +58,9 @@ let find_request_sql ?(distinct = false) ?additional_joins ?(count = false) wher
     else sql_select_columns |> CCString.concat ", "
   in
   let joins =
-    additional_joins |> CCOption.map_or ~default:joins (Format.asprintf "%s\n%s" joins)
+    additional_joins
+    |> CCOption.map_or ~default:joins (fun add_joins ->
+      add_joins |> CCString.concat "\n" |> Format.asprintf "%s\n%s" joins)
   in
   Format.asprintf
     {sql|SELECT %s %s FROM pool_experiments %s %s|sql}
@@ -133,7 +134,6 @@ module Sql = struct
         survey_url,
         email_session_reminder_lead_time,
         text_message_session_reminder_lead_time,
-        invitation_reset_at,
         matcher_notification_sent
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
@@ -147,7 +147,6 @@ module Sql = struct
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
-        ?,
         ?,
         ?,
         ?,
@@ -207,19 +206,24 @@ module Sql = struct
 
   let validate_experiment_sql m = Format.asprintf " AND %s " m, Dynparam.empty
 
-  let find_all ?query ?actor ?permission pool =
-    let open Utils.Lwt_result.Infix in
-    let checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
-    let%lwt where =
-      Guard.create_where ?actor ?permission ~checks pool `Experiment
-      ||> CCOption.map (fun m -> m, Dynparam.empty)
+  let all pool =
+    let open Caqti_request.Infix in
+    let request =
+      find_request_sql ~distinct:true "" |> Caqti_type.unit ->* Repo_entity.t
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select:(find_request_sql ~distinct:true ~additional_joins:joins_tags)
-      ?where
-      Repo_entity.t
+    Database.collect pool request ()
+  ;;
+
+  let list_by_user ?query pool actor =
+    let open CCFun.Infix in
+    let dyn, sql, joins =
+      Guard.Persistence.with_user_permission actor "pool_experiments.uuid" `Experiment
+    in
+    let select ?count =
+      find_request_sql ?count ~distinct:true ~additional_joins:[ joins; joins_tags ]
+      %> Format.asprintf "%s %s" sql
+    in
+    Query.collect_and_count pool query ~select ~dyn Repo_entity.t
   ;;
 
   let find_request =
@@ -306,8 +310,7 @@ module Sql = struct
         survey_url = $19,
         email_session_reminder_lead_time = $20,
         text_message_session_reminder_lead_time = $21,
-        invitation_reset_at = $22,
-        matcher_notification_sent = $23
+        matcher_notification_sent = $22
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -564,46 +567,21 @@ module Sql = struct
         |sql}
         (if only_closed then Format.asprintf "AND (%s)" only_closed_condition else "")
     in
-    Dynparam.(where, dyn |> add Contact.Repo.Id.t contact_id), joins
+    where, Dynparam.(dyn |> add Contact.Repo.Id.t contact_id), joins
   ;;
 
   let query_participation_history_by_contact ?query pool contact =
-    let contact_id = Contact.id contact in
-    let where, additional_joins =
-      participation_history_where ~only_closed:false contact_id
+    let where, dyn, additional_joins =
+      Contact.id contact |> participation_history_where ~only_closed:false
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select:(participation_history_sql additional_joins)
-      ~where
-      Caqti_type.(t2 Repo_entity.t bool)
-  ;;
-
-  let count_invitations_request ?(by_count = false) () =
-    let base =
-      {sql|
-      SELECT COUNT(1)
-      FROM pool_invitations
-      WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
-    in
-    match by_count with
-    | false -> base
-    | true -> Format.asprintf "%s \n %s" base "AND send_count = ?"
-  ;;
-
-  let total_invitation_count_by_experiment pool experiment_id =
-    let open Caqti_request.Infix in
-    Database.find
-      pool
-      (count_invitations_request () |> Caqti_type.(string ->! int))
-      (Entity.Id.value experiment_id)
+    let select = participation_history_sql additional_joins in
+    Caqti_type.(t2 Repo_entity.t bool)
+    |> Query.collect_and_count pool query ~select ~where ~dyn
   ;;
 end
 
 let find = Sql.find
-let find_all = Sql.find_all
+let all = Sql.all
 let find_all_ids_of_contact_id = Sql.find_all_ids_of_contact_id
 let find_of_session = Sql.find_of_session
 let find_of_mailing = Sql.find_of_mailing

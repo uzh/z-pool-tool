@@ -2,7 +2,8 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Integration_utils
 open Message_template
-open Pool_queue.Status
+open Pool_queue
+module JobHistory = Message_template.History
 
 let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
@@ -42,16 +43,12 @@ let check_message_template ?label =
 
 let check_mapped_uuids expected =
   let open Alcotest in
-  let valid_id = Pool_common.Id.(Alcotest.testable pp equal) in
+  let valid_history = History.(Alcotest.testable pp_item equal_item) in
   Email.job_ctx
   %> function
-  | Some (Pool_queue.Create mapping_uuids) ->
-    check
-      (list valid_id)
-      "correct mapped ids"
-      (expected |> CCList.stable_sort Pool_common.Id.compare)
-      mapping_uuids
-  | Some (Pool_queue.Clone _) | None ->
+  | Some (Create mapping_uuids) ->
+    check (list valid_history) "correct mapped ids" (History.sort expected) mapping_uuids
+  | Some (Clone _) | None ->
     Alcotest.fail "Invalid mapping ids, received clone event or none"
 ;;
 
@@ -60,11 +57,8 @@ let account_suspension_notification _ () =
   let%lwt res =
     AccountSuspensionNotification.create tenant (Contact.user contact) ||> get_exn
   in
-  let expected =
-    Label.AccountSuspensionNotification, [ Contact.Id.to_common contact_id ]
-  in
-  let () = check_message_template ~label:(fst expected) res in
-  let () = check_mapped_uuids (snd expected) res in
+  let () = check_message_template ~label:Label.AccountSuspensionNotification res in
+  let () = check_mapped_uuids [ History.User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
 
@@ -77,15 +71,13 @@ let assignment_confirmation _ () =
     AssignmentConfirmation.prepare tenant contact experiment session
     ||> fun create -> create assignment
   in
-  let expected =
-    ( Label.AssignmentConfirmation
-    , [ Experiment.Id.to_common experiment_id
-      ; Session.Id.to_common session_id
-      ; Contact.Id.to_common contact_id
-      ] )
+  let () = check_message_template ~label:Label.AssignmentConfirmation res in
+  let () =
+    check_mapped_uuids
+      JobHistory.
+        [ experiment_item experiment; session_item session; contact_item contact ]
+      res
   in
-  let () = check_message_template ~label:(fst expected) res in
-  let () = check_mapped_uuids (snd expected) res in
   Lwt.return_unit
 ;;
 
@@ -107,16 +99,16 @@ let assignment_session_change _ () =
       ~old_session:session
       assignment
   in
-  let expected =
-    ( Label.AssignmentSessionChange
-    , [ Experiment.Id.to_common experiment_id
-      ; Session.Id.to_common session_id
-      ; Session.(Id.to_common new_session.id)
-      ; Contact.Id.to_common contact_id
-      ] )
+  let expected_uuids =
+    History.
+      [ Experiment, Experiment.Id.to_common experiment_id
+      ; Session, Session.Id.to_common session_id
+      ; (Session, Session.(Id.to_common new_session.id))
+      ; User, Contact.Id.to_common contact_id
+      ]
   in
-  let () = check_message_template ~label:(fst expected) res in
-  let () = check_mapped_uuids (snd expected) res in
+  let () = check_message_template ~label:Label.AssignmentSessionChange res in
+  let () = check_mapped_uuids expected_uuids res in
   Lwt.return_unit
 ;;
 
@@ -125,9 +117,8 @@ let contact_email_change_attempt _ () =
   let%lwt res =
     ContactEmailChangeAttempt.create tenant (Contact.user contact) ||> get_exn
   in
-  let expected = Label.ContactEmailChangeAttempt, [ Contact.Id.to_common contact_id ] in
-  let () = check_message_template ~label:(fst expected) res in
-  let () = check_mapped_uuids (snd expected) res in
+  let () = check_message_template ~label:Label.ContactEmailChangeAttempt res in
+  let () = check_mapped_uuids History.[ User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
 
@@ -136,9 +127,8 @@ let contact_registration_attempt _ () =
   let%lwt res =
     ContactRegistrationAttempt.create language tenant (Contact.user contact)
   in
-  let expected = Label.ContactRegistrationAttempt, [ Contact.Id.to_common contact_id ] in
-  let () = check_message_template ~label:(fst expected) res in
-  let () = check_mapped_uuids (snd expected) res in
+  let () = check_message_template ~label:Label.ContactRegistrationAttempt res in
+  let () = check_mapped_uuids History.[ User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
 
@@ -155,29 +145,33 @@ let email_verification _ () =
   in
   let expected = Label.EmailVerification, [ Contact.Id.to_common contact_id ] in
   let () = check_message_template ~label:(fst expected) res in
-  let () = check_mapped_uuids (snd expected) res in
+  let () = check_mapped_uuids History.[ User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
 
 let experiment_invitation _ () =
   let%lwt contact = find_contact () in
   let%lwt experiment = find_experiment () in
-  let%lwt res = ExperimentInvitation.create tenant experiment contact in
-  let expected =
-    ( Label.ExperimentInvitation
-    , [ Experiment.Id.to_common experiment_id; Contact.Id.to_common contact_id ] )
+  let invitation = Invitation.create contact in
+  let%lwt res = ExperimentInvitation.create tenant experiment invitation in
+  let () = check_message_template ~label:Label.ExperimentInvitation res in
+  let () =
+    check_mapped_uuids
+      History.
+        [ Experiment, Experiment.Id.to_common experiment_id
+        ; User, Contact.Id.to_common contact_id
+        ; Invitation, invitation.Invitation.id
+        ]
+      res
   in
-  let () = check_message_template ~label:(fst expected) res in
-  let () = check_mapped_uuids (snd expected) res in
   Lwt.return_unit
 ;;
 
 let password_change _ () =
   let%lwt contact = find_contact () in
   let%lwt res = PasswordChange.create language tenant (Contact.user contact) in
-  let expected = Label.PasswordChange, [ Contact.Id.to_common contact_id ] in
-  let () = check_message_template ~label:(fst expected) res in
-  let () = check_mapped_uuids (snd expected) res in
+  let () = check_message_template ~label:Label.PasswordChange res in
+  let () = check_mapped_uuids [ History.User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
 
@@ -187,9 +181,8 @@ let password_reset _ () =
     PasswordReset.create database_label language (Tenant tenant) (Contact.user contact)
     ||> get_exn
   in
-  let expected = Label.PasswordReset, [ Contact.Id.to_common contact_id ] in
-  let () = check_message_template ~label:(fst expected) res in
-  let () = check_mapped_uuids (snd expected) res in
+  let () = check_message_template ~label:Label.PasswordReset res in
+  let () = check_mapped_uuids [ History.User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
 
@@ -210,7 +203,7 @@ let phone_verification _ () =
   let expected =
     Text_message.create_job
       ~message_template:Label.(show PhoneVerification)
-      ~job_ctx:(Pool_queue.job_ctx_create [ Contact.Id.to_common contact_id ])
+      ~job_ctx:(job_ctx_create [ History.User, Contact.Id.to_common contact_id ])
       (res |> Text_message.job)
   in
   let () = check_text_message expected res in
@@ -237,15 +230,16 @@ let session_reminder _ () =
   in
   let expected_label = Label.SessionReminder in
   let expected_uuids =
-    [ Experiment.Id.to_common experiment_id
-    ; Session.Id.to_common session_id
-    ; Contact.Id.to_common contact_id
-    ]
+    History.
+      [ Experiment, Experiment.Id.to_common experiment_id
+      ; Session, Session.Id.to_common session_id
+      ; User, Contact.Id.to_common contact_id
+      ]
   in
   let expected =
     Text_message.create_job
       ~message_template:Label.(show expected_label)
-      ~job_ctx:(Pool_queue.job_ctx_create expected_uuids)
+      ~job_ctx:(job_ctx_create expected_uuids)
       (text_msg_res |> Text_message.job)
   in
   let () = check_message_template ~label:expected_label email_res in
@@ -260,20 +254,20 @@ module Resend = struct
 
   let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
 
-  let to_queue_job ?(status = Succeeded) =
-    Pool_queue.Instance.create ~max_tries:10 ~status database_label
+  let to_queue_job ?(status = Status.Succeeded) =
+    Instance.create ~max_tries:10 ~status database_label
   ;;
 
   let email_queue_job ?status () =
     Model.create_email_job ()
     |> Email.(job %> Service.Job.encode)
-    |> to_queue_job ?status Pool_queue.JobName.SendEmail
+    |> to_queue_job ?status JobName.SendEmail
   ;;
 
   let text_message_queue_job ?status () =
     Model.create_text_message_job cell_phone
     |> Text_message.(job %> Service.Job.encode)
-    |> to_queue_job ?status Pool_queue.JobName.SendTextMessage
+    |> to_queue_job ?status JobName.SendTextMessage
   ;;
 
   let test events expected =
@@ -282,7 +276,7 @@ module Resend = struct
   ;;
 
   let resend_pending () =
-    let email_job = email_queue_job ~status:Pending () in
+    let email_job = email_queue_job ~status:Status.Pending () in
     let events = Command.Resend.handle email_job in
     let expected = Error Pool_message.Error.JobPending in
     Alcotest.(
@@ -294,9 +288,7 @@ module Resend = struct
     let events = Command.Resend.handle email_job in
     let expected =
       Ok
-        [ Model.create_email_job
-            ~job_ctx:Pool_queue.(job_ctx_clone (email_job |> Instance.id))
-            ()
+        [ Model.create_email_job ~job_ctx:(job_ctx_clone (email_job |> Instance.id)) ()
           |> Email.sent
           |> Pool_event.email
         ]
@@ -307,7 +299,7 @@ module Resend = struct
     let expected =
       Ok
         [ Model.create_text_message_job
-            ~job_ctx:Pool_queue.(Clone (text_message_job |> Instance.id))
+            ~job_ctx:(Clone (text_message_job |> Instance.id))
             cell_phone
           |> Text_message.sent
           |> Pool_event.text_message
@@ -330,9 +322,7 @@ module Resend = struct
     let events = Command.Resend.handle ~contact email_job in
     let expected =
       Ok
-        [ Model.create_email_job
-            ~job_ctx:(Pool_queue.Clone (email_job |> Pool_queue.Instance.id))
-            ()
+        [ Model.create_email_job ~job_ctx:(Clone (email_job |> Instance.id)) ()
           |> Email.sent ~new_email_address
           |> Pool_event.email
         ]
@@ -343,7 +333,7 @@ module Resend = struct
     let expected =
       Ok
         [ Model.create_text_message_job
-            ~job_ctx:Pool_queue.(Clone (text_message_job |> Instance.id))
+            ~job_ctx:(Clone (text_message_job |> Instance.id))
             cell_phone
           |> Text_message.sent ~new_recipient:new_cellphone
           |> Pool_event.text_message
@@ -362,9 +352,7 @@ module Resend = struct
     let events = Command.Resend.handle ~experiment email_job in
     let expected =
       Ok
-        [ Model.create_email_job
-            ~job_ctx:(Pool_queue.Clone (email_job |> Pool_queue.Instance.id))
-            ()
+        [ Model.create_email_job ~job_ctx:(Clone (email_job |> Instance.id)) ()
           |> Email.sent ~new_smtp_auth_id
           |> Pool_event.email
         ]

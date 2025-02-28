@@ -46,6 +46,7 @@ type t =
   | FilterNrOfContacts
   | FilterNrOfSentInvitations
   | FilterNrOfUnsuitableAssignments
+  | FilterNuberMatchingUninvited
   | FollowUpSessionFor
   | Help
   | ImportConfirmationNote
@@ -86,6 +87,7 @@ type t =
   | ProfileCompletionText
   | Reminder
   | ResendReminders
+  | Reset
   | ResetPasswordLink
   | ResetPasswordTitle
   | RoleApplicableToAssign
@@ -114,6 +116,7 @@ type t =
   | TenantMaintenanceTitle
   | TextTemplates
   | TimeWindowDetailTitle of string
+  | TotalSentInvitations
   | UpcomingSessionsListEmpty
   | UpcomingSessionsTitle
   | UserProfileDetailsSubtitle
@@ -172,7 +175,7 @@ type nav_link =
   | Users
   | WaitingList
   | Versions
-[@@deriving eq]
+[@@deriving eq, show]
 
 type hint =
   | AdminOverwriteContactValues
@@ -256,6 +259,8 @@ type hint =
   | MessageTemplateContactRegistrationAttempt
   | MessageTemplateEmailVerification
   | MessageTemplateExperimentInvitation
+  | MessageTemplateInactiveContactWarning
+  | MessageTemplateInactiveContactDeactivation
   | MessageTemplateManualSessionMessage
   | MessageTemplateMatcherNotification
   | MessageTemplateMatchFilterUpdateNotification
@@ -317,6 +322,7 @@ type hint =
   | SessionRegistrationHint
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
+  | SettigsInactiveUsers
   | SettingsNoEmailSuffixes
   | SettingsPageScripts
   | SignUpCodeHint

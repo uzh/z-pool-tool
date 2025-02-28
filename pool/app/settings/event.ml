@@ -7,6 +7,7 @@ type event =
   | EmailSuffixesUpdated of EmailSuffixes.t
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
+  | InactiveUserServiceDisabled of InactiveUser.ServiceDisabled.t
   | LanguagesUpdated of Pool_common.Language.t list
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
   | UserImportFirstReminderAfterUpdated of UserImportReminder.FirstReminderAfter.t
@@ -28,6 +29,8 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t = function
     Repo.InactiveUserDisableAfter.update ?user_uuid pool disable_after
   | InactiveUserWarningUpdated warning_after ->
     Repo.InactiveUserWarning.update ?user_uuid pool warning_after
+  | InactiveUserServiceDisabled disabled ->
+    Repo.InactiveUserServiceDisabled.update ?user_uuid pool disabled
   | TriggerProfileUpdateAfterUpdated trigger_after ->
     Repo.TriggerProfileUpdateAfter.update ?user_uuid pool trigger_after
   | UserImportFirstReminderAfterUpdated first_reminder_after ->

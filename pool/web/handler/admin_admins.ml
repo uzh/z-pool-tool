@@ -22,11 +22,15 @@ let index req =
     ~query:(module Admin)
     ~create_layout:General.create_tenant_layout
     req
-  @@ fun (Pool_context.{ database_label; _ } as context) query ->
-  let%lwt admins = Admin.find_by ~query database_label in
+  @@ fun (Pool_context.{ database_label; user; _ } as context) query ->
+  let* actor =
+    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+  in
+  let%lwt admins = Admin.list_by_user ~query database_label actor in
   let open Page.Admin.Admins in
-  (if HttpUtils.Htmx.is_hx_request req then list else index) context admins
-  |> Lwt_result.return
+  Lwt_result.return
+  @@
+  if HttpUtils.Htmx.is_hx_request req then list context admins else index context admins
 ;;
 
 let admin_detail req is_edit =

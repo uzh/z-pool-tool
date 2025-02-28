@@ -9,6 +9,15 @@ let find_by_contact = Repo.find_by_contact
 let count = Repo.count
 
 let merge pool ?user_uuid ({ contact; merged_contact; _ } as merge) =
+  let formatted contact =
+    let open Contact in
+    Format.asprintf
+      "%s(%s)"
+      (email_address contact |> Pool_user.EmailAddress.value)
+      (id contact |> Id.value)
+  in
+  Logs.info (fun m ->
+    m "Merging contact %s into %s" (formatted merged_contact) (formatted contact));
   let%lwt invitations =
     Invitation.find_by_contact_to_merge pool ~contact ~merged_contact
   in

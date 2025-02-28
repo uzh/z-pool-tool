@@ -34,17 +34,27 @@ let default_lead_time_settings database_label =
     (Settings.find_default_text_msg_reminder_lead_time database_label)
 ;;
 
+let can_access_session_assistants pool actor experiment_id =
+  let id = experiment_id |> Guard.Uuid.target_of Experiment.Id.value in
+  let role = `Assistant, Some id in
+  Admin_experiments_users.has_permission_on_role pool actor role Guard.Permission.Read
+;;
+
 let list req =
   let experiment_id = experiment_id req in
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
   in
   HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Session) req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
   let flatten_sessions =
     CCList.fold_left (fun acc (parent, follow_ups) -> acc @ (parent :: follow_ups)) []
+  in
+  let* actor = Pool_context.Utils.find_authorizable database_label user in
+  let%lwt can_access_session_assistants =
+    can_access_session_assistants database_label actor experiment_id
   in
   Lwt_result.ok
   @@
@@ -53,8 +63,10 @@ let list req =
     let to_html time_windows =
       let open Page.Admin.TimeWindow in
       match HttpUtils.Htmx.is_hx_request req with
-      | true -> data_table context experiment time_windows |> Lwt.return
-      | false -> index context experiment time_windows
+      | true ->
+        data_table ~can_access_session_assistants context experiment time_windows
+        |> Lwt.return
+      | false -> index ~can_access_session_assistants context experiment time_windows
     in
     Time_window.query_by_experiment ~query database_label experiment_id >|> to_html
   | false ->
@@ -65,8 +77,16 @@ let list req =
     let to_html sessions =
       let open Page.Admin.Session in
       match HttpUtils.Htmx.is_hx_request req with
-      | true -> data_table context experiment sessions chronological |> Lwt.return
-      | false -> index context experiment sessions chronological
+      | true ->
+        data_table
+          context
+          ~can_access_session_assistants
+          experiment
+          sessions
+          chronological
+        |> Lwt.return
+      | false ->
+        index context ~can_access_session_assistants experiment sessions chronological
     in
     (match chronological with
      | true -> Session.query_by_experiment ~query database_label experiment_id >|> to_html
@@ -86,7 +106,7 @@ let new_helper req page =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find database_label id in
-       let%lwt locations = Pool_location.find_all database_label in
+       let%lwt locations = Pool_location.all database_label in
        let flash_fetcher = flip Sihl.Web.Flash.find req in
        let%lwt default_leadtime_settings = default_lead_time_settings database_label in
        let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
@@ -100,7 +120,7 @@ let new_helper req page =
              experiment
              default_leadtime_settings
              parent_session
-             (fst locations)
+             locations
              text_messages_enabled
              flash_fetcher
            |> Lwt_result.ok
@@ -113,7 +133,7 @@ let new_helper req page =
                  context
                  experiment
                  default_leadtime_settings
-                 (fst locations)
+                 locations
                  text_messages_enabled
                  flash_fetcher
              | true -> Page.Admin.TimeWindow.new_form context experiment flash_fetcher)
@@ -270,7 +290,7 @@ let session_page database_label req context session experiment =
   function
   | `Edit ->
     let%lwt current_tags = current_tags () in
-    let%lwt locations = Pool_location.find_all database_label in
+    let%lwt locations = Pool_location.all database_label in
     let%lwt default_leadtime_settings = default_lead_time_settings database_label in
     let%lwt available_tags =
       Tags.ParticipationTags.(
@@ -286,7 +306,7 @@ let session_page database_label req context session experiment =
       experiment
       default_leadtime_settings
       session
-      (fst locations)
+      locations
       (current_tags, available_tags, experiment_participation_tags)
       text_messages_enabled
       flash_fetcher
@@ -327,7 +347,6 @@ let session_page database_label req context session experiment =
       ~view_contact_name
       ~view_contact_info
       context
-      experiment
       (`Session session)
       assignments
     |> Lwt_result.return
@@ -370,7 +389,6 @@ let time_window_page database_label req context time_window experiment =
       ~view_contact_name
       ~view_contact_info
       context
-      experiment
       (`TimeWindow time_window)
       assignments
     |> Lwt_result.return
@@ -385,7 +403,7 @@ let show req =
   in
   let experiment_target_id = [ Guard.Uuid.target_of Experiment.Id.value experiment_id ] in
   HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Assignment) req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
   let* session =
@@ -426,10 +444,15 @@ let show req =
     let%lwt rerun_session_filter =
       Helpers.Guard.can_rerun_session_filter context experiment_id session_id
     in
+    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let%lwt can_access_session_assistants =
+      can_access_session_assistants database_label actor experiment_id
+    in
     (match session with
      | `Session session ->
        Page.Admin.Session.detail
          ~access_contact_profiles
+         ~can_access_session_assistants
          ~not_matching_filter_count
          ~rerun_session_filter
          ~send_direct_message
@@ -447,6 +470,7 @@ let show req =
      | `TimeWindow time_window ->
        Page.Admin.TimeWindow.detail
          ~access_contact_profiles
+         ~can_access_session_assistants
          ~send_direct_message
          ~view_contact_name
          ~view_contact_info
@@ -464,7 +488,6 @@ let show req =
         ~view_contact_name
         ~view_contact_info
         context
-        experiment
         session
         text_messages_enabled
         assignments)
@@ -1144,69 +1167,38 @@ let update_matches_filter req =
 ;;
 
 module Api = struct
-  let calendar_api ?actor req query =
-    let result { Pool_context.database_label; guardian; _ } =
-      let open Utils.Lwt_result.Infix in
-      let query_params = Sihl.Web.Request.query_list req in
-      let find_param field =
-        let open CCResult.Infix in
-        HttpUtils.find_in_urlencoded field query_params
-        >>= Pool_model.Time.parse_date_from_calendar
-        |> Lwt_result.lift
-      in
+  let handle_request query_sessions req =
+    let open Utils.Lwt_result.Infix in
+    let query_params = Sihl.Web.Request.query_list req in
+    let find_param field =
+      let open CCResult.Infix in
+      HttpUtils.find_in_urlencoded field query_params
+      >>= Pool_model.Time.parse_date_from_calendar
+      |> Lwt_result.lift
+    in
+    let result { Pool_context.database_label; user; guardian; _ } =
       let* start_time = find_param Field.Start in
       let* end_time = find_param Field.End in
-      let%lwt sessions =
-        query database_label ~start_time ~end_time
-        ||> CCList.map
-              (fun (Session.Calendar.{ id; experiment_id; location; links; _ } as cal) ->
-                 let open Session.Calendar in
-                 match actor with
-                 | None -> cal
-                 | Some actor ->
-                   let open Guard in
-                   let session = Uuid.target_of Session.Id.value id in
-                   let experiment = Uuid.target_of Experiment.Id.value experiment_id in
-                   let location = Uuid.target_of Pool_location.Id.value location.id in
-                   let check_guardian model target =
-                     let open ValidationSet in
-                     Persistence.PermissionOnTarget.validate_set
-                       guardian
-                       Error.authorization
-                       (one_of_tuple (Permission.Read, model, Some target))
-                       actor
-                     |> CCResult.is_ok
-                   in
-                   let show_experiment = check_guardian `Experiment experiment in
-                   let show_session = check_guardian `Session session in
-                   let show_location_session = check_guardian `Location location in
-                   let links =
-                     { links with show_session; show_experiment; show_location_session }
-                   in
-                   { cal with links })
-        ||> CCList.map Session.Calendar.yojson_of_t
+      let* actor =
+        Pool_context.Utils.find_authorizable ~admin_only:true database_label user
       in
-      `List sessions |> Lwt.return_ok
+      query_sessions ~start_time ~end_time database_label actor guardian
+      ||> CCList.map Session.Calendar.yojson_of_t
+      ||> (fun json -> `List json)
+      |> Lwt_result.ok
     in
     result |> HttpUtils.Json.handle_yojson_response ~src req
   ;;
 
-  let location req =
-    let location_id = HttpUtils.find_id Pool_location.Id.of_string Field.Location req in
-    let query = Session.find_for_calendar_by_location location_id in
-    calendar_api req query
+  let current_user req =
+    let query = Session.calendar_by_user in
+    handle_request query req
   ;;
 
-  let current_user req =
-    let { Pool_context.database_label; user; language; _ } = Pool_context.find_exn req in
-    let%lwt actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
-    in
-    match actor with
-    | Ok actor -> calendar_api ~actor req (Session.find_for_calendar_by_user actor)
-    | Error err ->
-      `Assoc [ "message", `String Pool_common.(Utils.error_to_string language err) ]
-      |> HttpUtils.Json.yojson_response ~status:(Opium.Status.of_code 400)
+  let location req =
+    let location_uuid = HttpUtils.find_id Pool_location.Id.of_string Field.Location req in
+    let query = Session.calendar_by_location ~location_uuid in
+    handle_request query req
   ;;
 
   module Access : sig
@@ -1219,7 +1211,6 @@ end
 module Access : sig
   include module type of Helpers.Access
 
-  val read_by_location : Rock.Middleware.t
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
   val close : Rock.Middleware.t
@@ -1242,22 +1233,9 @@ end = struct
     validation_set experiment_id session_id |> CCResult.return
   ;;
 
-  let combined_with_location_effects validation_set =
-    Guardian.validate_generic
-    @@ fun req ->
-    let* location_id = find_id Pool_location.Id.validate Field.Location req in
-    let* session_id = find_id Session.Id.validate Field.Session req in
-    validation_set location_id session_id |> CCResult.return
-  ;;
-
   let index = experiment_effects Session.Guard.Access.index
   let create = experiment_effects SessionCommand.Create.effects
   let read = combined_effects Session.Guard.Access.read
-
-  let read_by_location =
-    combined_with_location_effects Session.Guard.Access.read_by_location
-  ;;
-
   let update = combined_effects SessionCommand.Update.effects
   let delete = combined_effects SessionCommand.Delete.effects
   let reschedule = combined_effects SessionCommand.Reschedule.effects

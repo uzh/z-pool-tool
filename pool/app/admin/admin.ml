@@ -12,6 +12,8 @@ let find_all_id_with_role ?exclude pool role =
   ||> CCList.map CCFun.(Guard.Uuid.Actor.to_string %> Pool_user.Id.of_string)
 ;;
 
+let query_by_role = Repo.query_by_role
+
 let find_all_with_role ?exclude pool role =
   find_all_id_with_role ?exclude pool role >|> Repo.find_multiple pool
 ;;
@@ -48,5 +50,5 @@ module Repo = struct
   include Repo_entity
 
   let sql_select_columns = Repo.sql_select_columns
-  let joins = Repo.joins
+  let joins = Repo.user_join
 end

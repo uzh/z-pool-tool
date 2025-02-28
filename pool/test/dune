@@ -17,6 +17,7 @@
   changelog
   contact
   contact_counter
+  contact_job
   cqrs_command
   custom_field
   database
@@ -25,6 +26,7 @@
   handler
   http_utils
   invitation
+  layout
   matcher
   pool_database
   pool_event

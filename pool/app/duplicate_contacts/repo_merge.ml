@@ -7,11 +7,13 @@ module Dynparam = Database.Dynparam
 let id_select_fragment = Pool_common.Id.sql_select_fragment
 let id_value_fragment = Pool_common.Id.sql_value_fragment
 
-let update_queue =
+let update_queue_history =
   {sql|
-    UPDATE pool_queue_jobs_mapping
-    SET entity_uuid = UNHEX(REPLACE($1, '-', ''))
-    WHERE entity_uuid = UNHEX(REPLACE($2, '-', ''))
+    INSERT INTO pool_queue_job_user (queue_uuid, user_uuid)
+    SELECT queue_uuid, UNHEX(REPLACE($1, '-', ''))
+    FROM pool_queue_job_user
+    WHERE user_uuid = UNHEX(REPLACE($2, '-', ''))
+    ON DUPLICATE KEY UPDATE updated_at = NOW();
   |sql}
   |> Contact.Repo.Id.(t2 t t ->. unit)
 ;;
@@ -21,6 +23,15 @@ let update_changelog =
     UPDATE pool_change_log
     SET entity_uuid = UNHEX(REPLACE($1, '-', ''))
     WHERE entity_uuid = UNHEX(REPLACE($2, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.(t2 t t ->. unit)
+;;
+
+let update_changelog_user =
+  {sql|
+    UPDATE pool_change_log
+    SET user_uuid = UNHEX(REPLACE($1, '-', ''))
+    WHERE user_uuid = UNHEX(REPLACE($2, '-', ''))
   |sql}
   |> Contact.Repo.Id.(t2 t t ->. unit)
 ;;
@@ -40,7 +51,7 @@ let uuid_sql dyn items to_id =
     CCList.foldi
       (fun (dyn, sql) i item ->
          ( dyn |> Dynparam.add Caqti_type.string (to_id item)
-         , sql @ [ Format.asprintf "$%d" (i + 2) ] ))
+         , sql @ [ Format.asprintf "UNHEX(REPLACE($%d, '-', ''))" (i + 2) ] ))
       (dyn, [])
       items
   in
@@ -98,6 +109,14 @@ let update_assignments contact_id assignments =
   sql, dyn
 ;;
 
+let destroy_queue_history =
+  {sql|
+    DELETE FROM pool_queue_job_user
+    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.t ->. unit
+;;
+
 let destroy_tags =
   {sql|
     DELETE FROM pool_tagging
@@ -145,6 +164,14 @@ let destroy_possible_duplicates =
     DELETE FROM pool_contacts_possible_duplicates
     WHERE contact_a = UNHEX(REPLACE($1, '-', ''))
     OR contact_b = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.t ->. unit
+;;
+
+let destroy_user_import =
+  {sql|
+    DELETE FROM pool_user_imports
+    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
   |> Contact.Repo.Id.t ->. unit
 ;;
@@ -253,11 +280,15 @@ let merge
   in
   let override_queue connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
-    Connection.exec update_queue (id contact, id merged_contact)
+    Connection.exec update_queue_history (id contact, id merged_contact)
   in
   let override_changelog connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec update_changelog (id contact, id merged_contact)
+  in
+  let override_changelog_user connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec update_changelog_user (id contact, id merged_contact)
   in
   let override_tags connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
@@ -293,6 +324,10 @@ let merge
         (fun connection ->
           update_assignments (id contact) assignments |> exec_dyn_request connection)
   in
+  let destroy_queue_history connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_queue_history (id merged_contact)
+  in
   let destroy_tags connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec destroy_tags (id merged_contact)
@@ -317,6 +352,10 @@ let merge
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec destroy_possible_duplicates (id merged_contact)
   in
+  let destroy_user_import connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_user_import (id merged_contact)
+  in
   let insert_archived_email connection =
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let open Archived_email in
@@ -338,13 +377,15 @@ let merge
     |> CCList.filter_map CCFun.id
   in
   let destroy_requests =
-    [ destroy_tags
+    [ destroy_queue_history
+    ; destroy_tags
     ; destroy_mailing_invitations
     ; destroy_invitations
     ; destroy_waiting_lists
     ; destroy_assignments
     ; destroy_possible_duplicates
     ; insert_archived_email
+    ; destroy_user_import
     ; destroy_contact
     ; destroy_user
     ]
@@ -356,7 +397,13 @@ let merge
   let%lwt () =
     Database.transaction_iter
       pool
-      ([ update_contact; update_user; override_queue; override_changelog; override_tags ]
+      ([ update_contact
+       ; update_user
+       ; override_queue
+       ; override_changelog
+       ; override_changelog_user
+       ; override_tags
+       ]
        @ store_custom_answers
        @ actions
        @ destroy_requests)

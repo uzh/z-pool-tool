@@ -105,17 +105,10 @@ let index req =
     req
   @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
-  let find_actor =
+  let* actor =
     Pool_context.Utils.find_authorizable ~admin_only:true database_label user
   in
-  let* actor = find_actor in
-  let%lwt experiments, query =
-    Experiment.find_all
-      ~query
-      ~actor
-      ~permission:Experiment.Guard.Access.index_permission
-      database_label
-  in
+  let%lwt experiments, query = Experiment.list_by_user ~query database_label actor in
   let open Page.Admin.Experiments in
   (if HttpUtils.Htmx.is_hx_request req then list else index) context experiments query
   |> Lwt_result.return
@@ -242,8 +235,12 @@ let detail edit req =
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Email.SmtpAuth.find database_label id >|+ CCOption.return)
        in
-       let* statistics = Experiment.Statistics.create database_label experiment in
+       let* statistics = Statistics.ExperimentOverview.create database_label experiment in
+       let%lwt invitation_reset =
+         Experiment.InvitationReset.find_latest_by_experiment database_label id
+       in
        Page.Admin.Experiments.detail
+         ?invitation_reset
          experiment
          session_count
          message_templates
@@ -482,11 +479,12 @@ let message_history req =
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
   let%lwt messages =
-    Pool_queue.find_instances_by_entity
+    let open Pool_queue in
+    find_instances_by_entity
       queue_table
       ~query
       database_label
-      (Experiment.Id.to_common experiment_id)
+      (History.Experiment, Experiment.Id.to_common experiment_id)
   in
   let open Page.Admin in
   Lwt_result.ok

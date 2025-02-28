@@ -97,7 +97,7 @@ type delivery_report =
   ; to_ : string
   ; message_id : string
   ; dlr_mask : int
-  ; error_code : int
+  ; error_code : string
   ; error_message : string
   ; submit_date : Pool_model.Base.Ptime.t
   ; done_date : Pool_model.Base.Ptime.t

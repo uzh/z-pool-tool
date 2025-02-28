@@ -259,12 +259,51 @@ module Job = struct
   ;;
 end
 
+module History = struct
+  type model =
+    | Assignment
+    | Experiment
+    | Invitation
+    | Session
+    | User
+  [@@deriving enum, eq, ord, show, yojson]
+
+  let model_sql = function
+    | Assignment -> "pool_queue_job_assignment", "assignment_uuid"
+    | Experiment -> "pool_queue_job_experiment", "experiment_uuid"
+    | Invitation -> "pool_queue_job_invitation", "invitation_uuid"
+    | Session -> "pool_queue_job_session", "session_uuid"
+    | User -> "pool_queue_job_user", "user_uuid"
+  ;;
+
+  let all_models : model list =
+    let open CCList in
+    range min_model max_model
+    |> map model_of_enum
+    |> all_some
+    |> CCOption.get_exn_or
+         (Format.asprintf
+            "%s: Could not create list of all keys!"
+            (Pool_message.Field.show Field.Model))
+  ;;
+
+  type item =
+    (model * Pool_common.Id.t
+    [@equal
+      fun (m1, id1) (m2, id2) ->
+        equal_model m1 m2
+        && (Pool_common.Id.equal id1 id2 || Sihl.Configuration.is_test ())])
+  [@@deriving eq, ord, show, yojson]
+
+  let sort = CCList.stable_sort compare_item
+end
+
 type job_ctx =
-  | Create of Pool_common.Id.t list
+  | Create of History.item list
   | Clone of Id.t
 [@@deriving eq, show, yojson]
 
-let job_ctx_create ids = Create (ids |> CCList.stable_sort Pool_common.Id.compare)
+let job_ctx_create items = Create (History.sort items)
 let job_ctx_clone id = Clone id
 
 module AnyJob = struct
@@ -313,7 +352,7 @@ let schema =
     Field.
       [ bool
           ~meta:"If set to true, the queue is used even in development."
-          ~default:false
+          ~default:true
           "QUEUE_FORCE_ASYNC"
       ; bool
           ~meta:"If set to false, jobs can be dispatched but won't be handled."
@@ -321,7 +360,7 @@ let schema =
           "QUEUE_PROCESS"
       ; int
           ~meta:"Number of jobs which are pulled and handled at once."
-          ~default:50
+          ~default:10
           "QUEUE_BATCH_SIZE"
       ]
     config

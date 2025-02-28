@@ -14,6 +14,8 @@ module Label : sig
     | ContactRegistrationAttempt
     | EmailVerification
     | ExperimentInvitation
+    | InactiveContactWarning
+    | InactiveContactDeactivation
     | ManualSessionMessage
     | MatcherNotification
     | MatchFilterUpdateNotification
@@ -209,6 +211,16 @@ type email_layout =
 val layout_from_tenant : Pool_tenant.t -> email_layout
 val template_hint : Label.t -> Pool_common.I18n.hint
 
+module History : sig
+  val admin_item : Admin.t -> Pool_queue.History.item
+  val assignment_item : Assignment.t -> Pool_queue.History.item
+  val contact_item : Contact.t -> Pool_queue.History.item
+  val experiment_item : Experiment.t -> Pool_queue.History.item
+  val public_experiment_item : Experiment.Public.t -> Pool_queue.History.item
+  val session_item : Session.t -> Pool_queue.History.item
+  val invitation_item : Invitation.t -> Pool_queue.History.item
+end
+
 module AccountSuspensionNotification : sig
   val email_params : email_layout -> Pool_user.t -> (string * string) list
 
@@ -318,12 +330,36 @@ end
 
 module ExperimentInvitation : sig
   val email_params : email_layout -> Experiment.t -> Contact.t -> (string * string) list
-  val create : Pool_tenant.t -> Experiment.t -> Contact.t -> Email.dispatch Lwt.t
+  val create : Pool_tenant.t -> Experiment.t -> Invitation.t -> Email.dispatch Lwt.t
 
   val prepare
     :  Pool_tenant.t
     -> Experiment.t
-    -> (Contact.t -> (Email.dispatch, Pool_message.Error.t) result) Lwt.t
+    -> (Invitation.t -> (Email.dispatch, Pool_message.Error.t) result) Lwt.t
+end
+
+module InactiveContactWarning : sig
+  val email_params
+    :  email_layout
+    -> Contact.t
+    -> last_login:Ptime.t
+    -> (string * string) list
+
+  val prepare
+    :  Database.Label.t
+    -> ( Contact.t -> (Email.dispatch, Pool_message.Error.t) Lwt_result.t
+         , Pool_message.Error.t )
+         Lwt_result.t
+end
+
+module InactiveContactDeactivation : sig
+  val email_params : email_layout -> Contact.t -> (string * string) list
+
+  val prepare
+    :  Database.Label.t
+    -> ( Contact.t -> (Email.dispatch, Pool_message.Error.t) result
+         , Pool_message.Error.t )
+         Lwt_result.t
 end
 
 module ManualSessionMessage : sig

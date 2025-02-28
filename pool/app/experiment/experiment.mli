@@ -95,13 +95,6 @@ module OnlineExperiment : sig
     -> string
 end
 
-module InvitationResetAt : sig
-  include Pool_model.Base.PtimeSig
-
-  val of_ptime : Ptime.t -> t
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
-end
-
 module MatcherNotificationSent : sig
   type t
 
@@ -131,7 +124,6 @@ type t =
   ; email_session_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
-  ; invitation_reset_at : InvitationResetAt.t option
   ; matcher_notification_sent : MatcherNotificationSent.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -140,6 +132,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val compare : t -> t -> int
 val yojson_of_t : t -> Yojson.Safe.t
 val id : t -> Id.t
 val title : t -> Title.t
@@ -164,7 +157,6 @@ val text_message_session_reminder_lead_time
   :  t
   -> Pool_common.Reminder.TextMessageLeadTime.t option
 
-val invitation_reset_at : t -> InvitationResetAt.t option
 val created_at : t -> Pool_common.CreatedAt.t
 val updated_at : t -> Pool_common.UpdatedAt.t
 
@@ -178,7 +170,6 @@ val create
   -> ?email_session_reminder_lead_time:Pool_common.Reminder.EmailLeadTime.t
   -> ?experiment_type:Pool_common.ExperimentType.t
   -> ?filter:Filter.t
-  -> ?invitation_reset_at:Ptime.t
   -> ?organisational_unit:Organisational_unit.t
   -> ?smtp_auth_id:Email.SmtpAuth.Id.t
   -> ?text_message_session_reminder_lead_time:Pool_common.Reminder.TextMessageLeadTime.t
@@ -191,6 +182,19 @@ val create
   -> ExternalDataRequired.t
   -> ShowExternalDataIdLinks.t
   -> (t, Pool_message.Error.t) result
+
+module SendingInvitations : sig
+  type t =
+    | No
+    | Sending
+    | Scheduled
+
+  val show : t -> string
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val field : Pool_message.Field.t
+  val hint : Pool_common.I18n.hint
+end
 
 module Public : sig
   type t
@@ -224,6 +228,12 @@ end
 
 val to_public : t -> Public.t
 
+type assignment_counts =
+  { show_up_count : int
+  ; no_show_count : int
+  ; participation_count : int
+  }
+
 module DirectEnrollment : sig
   type t =
     { id : Id.t
@@ -243,6 +253,24 @@ module DirectEnrollment : sig
   val assignable : t -> bool
 end
 
+module InvitationReset : sig
+  val insert : Database.Label.t -> t -> unit Lwt.t
+
+  type t =
+    { created_at : Pool_common.CreatedAt.t
+    ; iteration : int
+    ; contacts_matching_filter : int
+    ; invitations_sent : int
+    }
+
+  val show : t -> string
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val find_by_experiment : Database.Label.t -> Id.t -> t list Lwt.t
+  val find_latest_by_experiment : Database.Label.t -> Id.t -> t option Lwt.t
+  val invitations_sent_since_last_reset : Database.Label.t -> Id.t -> int Lwt.t
+end
+
 type event =
   | Created of t
   | Updated of t * t
@@ -255,16 +283,15 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val created : t -> event
 val updated : t -> t -> event
-val resetinvitations : t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_message.Field.t list
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val all : Database.Label.t -> t list Lwt.t
 
-val find_all
+val list_by_user
   :  ?query:Query.t
-  -> ?actor:Guard.Actor.t
-  -> ?permission:Guard.Permission.t
   -> Database.Label.t
+  -> Guard.Actor.t
   -> (t list * Query.t) Lwt.t
 
 val find_all_ids_of_contact_id : Database.Label.t -> Contact.Id.t -> Id.t list Lwt.t
@@ -349,12 +376,21 @@ val query_participation_history_by_contact
   -> Contact.t
   -> ((t * bool) list * Query.t) Lwt.t
 
+val registration_possible : Database.Label.t -> Id.t -> bool Lwt.t
+
+val sending_invitations
+  :  Database.Label.t
+  -> Id.t
+  -> (SendingInvitations.t, Pool_message.Error.t) Lwt_result.t
+
+val assignment_counts : Database.Label.t -> Id.t -> assignment_counts Lwt.t
+
 val find_admins_to_notify_about_invitations
   :  Database.Label.t
   -> Id.t
   -> Admin.t list Lwt.t
 
-val invitation_count : Database.Label.t -> Id.t -> int Lwt.t
+val invited_contacts_count : Database.Label.t -> Id.t -> int Lwt.t
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
@@ -379,6 +415,13 @@ val is_sessionless : t -> bool
 module Repo : sig
   val sql_select_columns : string list
   val joins : string
+
+  val find_request_sql
+    :  ?distinct:bool
+    -> ?additional_joins:string list
+    -> ?count:bool
+    -> string
+    -> string
 
   module Public : sig
     val select_from_experiments_sql : ?distinct:bool -> string -> string
@@ -424,81 +467,6 @@ module Guard : sig
     val update : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
     val delete : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
   end
-end
-
-module Statistics : sig
-  module SentInvitations : sig
-    type sent_by_count = int * int
-
-    type statistics =
-      { total_sent : int
-      ; total_match_filter : int
-      ; sent_by_count : sent_by_count list
-      }
-
-    val create : Database.Label.t -> t -> (statistics, Pool_message.Error.t) Lwt_result.t
-  end
-
-  module RegistrationPossible : sig
-    include Pool_model.Base.BooleanSig
-
-    val field : Pool_message.Field.t
-    val hint : Pool_common.I18n.hint
-  end
-
-  module SendingInvitations : sig
-    type t =
-      | No
-      | Sending
-      | Scheduled
-
-    val show : t -> string
-    val field : Pool_message.Field.t
-    val hint : Pool_common.I18n.hint
-  end
-
-  module SessionCount : sig
-    include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
-  end
-
-  module ShowUpCount : sig
-    include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
-  end
-
-  module NoShowCount : sig
-    include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
-  end
-
-  module ParticipationCount : sig
-    include Pool_model.Base.IntegerSig
-
-    val field : Pool_message.Field.t
-  end
-
-  type statistics =
-    { registration_possible : RegistrationPossible.t
-    ; sending_invitations : SendingInvitations.t
-    ; session_count : SessionCount.t
-    ; invitations : SentInvitations.statistics
-    ; showup_count : ShowUpCount.t
-    ; noshow_count : NoShowCount.t
-    ; participation_count : ParticipationCount.t
-    }
-
-  val registration_possible : statistics -> RegistrationPossible.t
-  val sending_invitations : statistics -> SendingInvitations.t
-  val session_count : statistics -> SessionCount.t
-  val invitations : statistics -> SentInvitations.statistics
-  val showup_count : statistics -> ShowUpCount.t
-  val noshow_count : statistics -> NoShowCount.t
-  val participation_count : statistics -> ParticipationCount.t
-  val create : Database.Label.t -> t -> (statistics, Pool_message.Error.t) Lwt_result.t
 end
 
 val column_title : Query.Column.t

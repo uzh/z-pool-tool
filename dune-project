@@ -4,7 +4,7 @@
 
 (name pool)
 
-(version 0.8.3)
+(version 0.9.3)
 
 (authors "Department of Economics, University of Zurich")
 
@@ -53,7 +53,7 @@
    (>= 3.14))
   (mariadb
    (and
-    (>= 1.1.6)
+    (>= 1.2.0)
     (< 2.0.0)))
   (caqti-driver-mariadb
    (>= 2.0.1))
@@ -70,9 +70,10 @@
   (ppx_yojson_conv
    (>= 0.14.0))
   (ppx_variants_conv
-   (= v0.16.0))
+   (= v0.17.0))
   (tyxml-ppx
    (>= 4.6.0))
+  digestif
   canary
   (guardian
    (= 0.3.2))

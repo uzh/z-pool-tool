@@ -6,7 +6,7 @@ module TimeUnit = Pool_model.Base.TimeUnit
 
 let opt = Conformist.optional
 let src = Logs.Src.create "experiment_command.cqrs"
-let to_actor = CCFun.(Admin.id %> BaseGuard.Uuid.actor_of Admin.Id.value)
+let to_actor = Admin.Guard.to_actor
 let to_target { id; _ } = BaseGuard.Uuid.target_of Id.value id
 
 let to_role (admin, role, target_uuid) =
@@ -334,9 +334,9 @@ module ResetInvitations : sig
 end = struct
   type t = Experiment.t
 
-  let handle ?(tags = Logs.Tag.empty) (experiment : t) =
+  let handle ?(tags = Logs.Tag.empty) reset =
     Logs.info ~src (fun m -> m "Handle command ResetInvitations" ~tags);
-    Ok [ Experiment.ResetInvitations experiment |> Pool_event.experiment ]
+    Ok [ Experiment.ResetInvitations reset |> Pool_event.experiment ]
   ;;
 
   let effects id = Experiment.Guard.Access.update id

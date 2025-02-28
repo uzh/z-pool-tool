@@ -8,24 +8,79 @@ let experiment_id =
   HttpUtils.find_id Experiment.Id.of_string Pool_message.Field.Experiment
 ;;
 
+let session_id = HttpUtils.find_id Session.Id.of_string Pool_message.Field.Session
 let admin_id = HttpUtils.find_id Admin.Id.of_string Pool_message.Field.Admin
 
-let index role req =
+let has_permission_on_role database_label actor role permission =
+  let open Utils.Lwt_result.Infix in
+  let open Guard in
+  let role, target_uuid = role in
+  let check permission =
+    PermissionOnTarget.create
+      ?target_uuid
+      permission
+      (role |> Utils.find_assignable_target_role)
+    |> ValidationSet.one
+    |> CCFun.flip (Guard.Persistence.validate database_label) actor
+    ||> CCResult.is_ok
+  in
+  check permission
+;;
+
+let field_of_role =
+  let open Pool_message in
+  function
+  | `Assistants -> Field.Assistants
+  | `Experimenter -> Field.Experimenter
+;;
+
+let entity_path_and_guard experiment_id req role =
+  let open HttpUtils.Url.Admin in
+  let field = field_of_role role in
+  function
+  | `Experiment ->
+    let path = experiment_user_path experiment_id field in
+    let id = experiment_id |> Guard.Uuid.target_of Experiment.Id.value in
+    path, id
+  | `Session ->
+    let session_id = session_id req in
+    let path = session_user_path experiment_id session_id field in
+    let id = session_id |> Guard.Uuid.target_of Session.Id.value in
+    path, id
+;;
+
+let index entity role req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; language; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
     @@
     let id = experiment_id req in
-    let current_roles : Role.Role.t * Guard.Uuid.Target.t option =
-      let id = id |> Guard.Uuid.target_of Experiment.Id.value in
+    let form_path, guard_id = entity_path_and_guard id req role entity in
+    let current_roles, exclude =
       match role with
-      | `Assistants -> `Assistant, Some id
-      | `Experimenter -> `Experimenter, Some id
+      | `Assistants -> (`Assistant, Some guard_id), [ `Assistant, None ]
+      | `Experimenter -> (`Experimenter, Some guard_id), [ `Experimenter, None ]
+    in
+    let query =
+      let open Admin in
+      Query.from_request
+        ?filterable_by
+        ~searchable_by
+        ~sortable_by
+        ~default:default_query
+        req
     in
     let%lwt applicable_admins =
-      Admin.find_all_with_role database_label (`Admin, None) ~exclude:[ current_roles ]
+      Admin.(
+        query_by_role
+          ~query
+          database_label
+          (`Admin, None)
+          ~exclude:(current_roles :: exclude))
     in
-    let%lwt currently_assigned = Admin.find_all_with_role database_label current_roles in
+    let%lwt currently_assigned =
+      Admin.(query_by_role ~query database_label current_roles ~exclude)
+    in
     let%lwt hint =
       (match role with
        | `Assistants -> I18n.Key.AssistantRoleHint
@@ -38,24 +93,17 @@ let index role req =
       | None -> Lwt.return (false, false)
       | Some actor ->
         let open Guard in
-        let role, target_uuid = current_roles in
-        let check permission =
-          PermissionOnTarget.create
-            ?target_uuid
-            permission
-            (role |> Utils.find_assignable_target_role)
-          |> ValidationSet.one
-          |> CCFun.flip (Guard.Persistence.validate database_label) actor
-          ||> CCResult.is_ok
-        in
+        let check = has_permission_on_role database_label actor current_roles in
         Lwt.both (check Permission.Create) (check Permission.Delete)
     in
     Page.Admin.Experiments.users
       ~hint
       ~can_assign
       ~can_unassign
+      entity
       role
       experiment
+      form_path
       applicable_admins
       currently_assigned
       context
@@ -66,16 +114,80 @@ let index role req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let index_assistants = index `Assistants
-let index_experimenter = index `Experimenter
+let index_assistants = index `Experiment `Assistants
+let index_experimenter = index `Experiment `Experimenter
+let index_session_assistants = index `Session `Assistants
 
-let toggle_role action req =
+let query_admin entity role state req =
+  let result ({ Pool_context.database_label; user; _ } as context) =
+    let id = experiment_id req in
+    let form_path, guard_id = entity_path_and_guard id req role entity in
+    let current_roles : Role.Role.t * Guard.Uuid.Target.t option =
+      match role with
+      | `Assistants -> `Assistant, Some guard_id
+      | `Experimenter -> `Experimenter, Some guard_id
+    in
+    let%lwt admins =
+      let open Admin in
+      let query =
+        Query.from_request
+          ?filterable_by
+          ~searchable_by
+          ~sortable_by
+          ~default:default_query
+          req
+      in
+      match state with
+      | `Assigned -> query_by_role database_label ~query ?exclude:None current_roles
+      | `Available ->
+        query_by_role database_label ~query ~exclude:[ current_roles ] (`Admin, None)
+    in
+    let%lwt permission =
+      let open Guard in
+      let permission =
+        match state with
+        | `Assigned -> Permission.Delete
+        | `Available -> Permission.Create
+      in
+      match%lwt Pool_context.Utils.find_authorizable_opt database_label user with
+      | None -> Lwt.return false
+      | Some actor -> has_permission_on_role database_label actor current_roles permission
+    in
+    let open Page.Admin.Experiments.User in
+    (match state with
+     | `Assigned -> list_existing context form_path ~can_unassign:permission admins
+     | `Available -> list_available context form_path ~can_assign:permission admins)
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result |> HttpUtils.Htmx.handle_error_message ~src req
+;;
+
+module Assistant = struct
+  let assigned = query_admin `Experiment `Assistants `Assigned
+  let available = query_admin `Experiment `Assistants `Available
+end
+
+module Experimenter = struct
+  let assigned = query_admin `Experiment `Experimenter `Assigned
+  let available = query_admin `Experiment `Experimenter `Available
+end
+
+module SessionAssistant = struct
+  let assigned = query_admin `Session `Assistants `Assigned
+  let available = query_admin `Session `Assistants `Available
+end
+
+let toggle_role entity action req =
   let experiment_id = experiment_id req in
   let admin_id = admin_id req in
+  let base_path =
+    let open HttpUtils.Url.Admin in
+    match entity with
+    | `Experiment -> fun suffix -> experiment_path ~id:experiment_id ~suffix ()
+    | `Session -> fun suffix -> session_path experiment_id ~id:(session_id req) ~suffix
+  in
   let redirect_path =
-    let base_path =
-      Format.asprintf "/admin/experiments/%s/%s" (Experiment.Id.value experiment_id)
-    in
     (match action with
      | `AssignAssistant | `UnassignAssistant -> "assistants"
      | `AssignExperimenter | `UnassignExperimenter -> "experimenter")
@@ -95,15 +207,28 @@ let toggle_role action req =
       | `UnassignAssistant | `UnassignExperimenter -> RoleUnassigned
     in
     let* events =
-      let open Cqrs_command.Experiment_command in
-      let update = { admin; experiment } in
-      Lwt_result.lift
-      @@
-      match action with
-      | `AssignAssistant -> AssignAssistant.(handle ~tags update)
-      | `UnassignAssistant -> UnassignAssistant.(handle ~tags update)
-      | `AssignExperimenter -> AssignExperimenter.(handle ~tags update)
-      | `UnassignExperimenter -> UnassignExperimenter.(handle ~tags update)
+      match entity with
+      | `Experiment ->
+        let open Cqrs_command.Experiment_command in
+        let update = { admin; experiment } in
+        Lwt_result.lift
+        @@
+          (match action with
+          | `AssignAssistant -> AssignAssistant.(handle ~tags update)
+          | `UnassignAssistant -> UnassignAssistant.(handle ~tags update)
+          | `AssignExperimenter -> AssignExperimenter.(handle ~tags update)
+          | `UnassignExperimenter -> UnassignExperimenter.(handle ~tags update))
+      | `Session ->
+        let open Cqrs_command.Session_command in
+        let* session = Session.find database_label (session_id req) in
+        let update = { admin; session } in
+        Lwt_result.lift
+        @@
+          (match action with
+          | `AssignAssistant -> AssignAssistant.(handle ~tags update)
+          | `UnassignAssistant -> UnassignAssistant.(handle ~tags update)
+          | `AssignExperimenter | `UnassignExperimenter ->
+            failwith "Experimenter does not exist on session level")
     in
     let%lwt () = Pool_event.handle_events database_label user events in
     Http_utils.redirect_to_with_actions redirect_path [ Message.set ~success:[ message ] ]
@@ -112,10 +237,12 @@ let toggle_role action req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let assign_assistant = toggle_role `AssignAssistant
-let unassign_assistant = toggle_role `UnassignAssistant
-let assign_experimenter = toggle_role `AssignExperimenter
-let unassign_experimenter = toggle_role `UnassignExperimenter
+let assign_assistant = toggle_role `Experiment `AssignAssistant
+let unassign_assistant = toggle_role `Experiment `UnassignAssistant
+let assign_experimenter = toggle_role `Experiment `AssignExperimenter
+let unassign_experimenter = toggle_role `Experiment `UnassignExperimenter
+let assign_session_assistant = toggle_role `Session `AssignAssistant
+let unassign_session_assistant = toggle_role `Session `UnassignAssistant
 
 module Access : sig
   include module type of Helpers.Access

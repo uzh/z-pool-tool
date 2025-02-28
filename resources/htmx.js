@@ -1,6 +1,6 @@
 import { csrfToken } from "./admin/utils.js";
 import { initSearch } from "./search.js";
-import { initNotification, initModal } from '../node_modules/@econ/frontend-framework/dist/main'
+import { initNotification, initModal, initConfirmable } from '../node_modules/@econ/frontend-framework/dist/main'
 import { initRichTextEditor } from "./admin/richTextEditor.js";
 
 const configRequest = (e, form) => {
@@ -15,6 +15,7 @@ export const initHTMX = () => {
         initSearch(e.detail.elt)
         initRichTextEditor(e.detail.elt)
         initModal(e.detail.elt)
+        initConfirmable(e.detail.elt)
         initNotification()
 
         const modalClose = [...e.detail.elt.querySelectorAll(".modal-close")];

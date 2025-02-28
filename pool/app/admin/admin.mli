@@ -17,6 +17,7 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val sexp_of_t : t -> Sexplib0.Sexp.t
+val compare : t -> t -> int
 val user : t -> Pool_user.t
 val create : email_verified:Pool_user.EmailVerified.t option -> Pool_user.t -> t
 val id : t -> Id.t
@@ -69,7 +70,20 @@ val find_by_email
   -> Pool_user.EmailAddress.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_by : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+
+val list_by_user
+  :  ?query:Query.t
+  -> Database.Label.t
+  -> Guard.Actor.t
+  -> (t list * Query.t) Lwt.t
+
+val query_by_role
+  :  ?query:Query.t
+  -> ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
+  -> Database.Label.t
+  -> Role.Role.t * Guard.Uuid.Target.t option
+  -> (t list * Query.t) Lwt.t
 
 val find_all_with_role
   :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
@@ -105,6 +119,8 @@ val default_sort : Query.Sort.t
 val default_query : Query.t
 
 module Guard : sig
+  val to_actor : t -> Guard.Uuid.Actor.t
+
   module Actor : sig
     val to_authorizable
       :  ?ctx:(string * string) list

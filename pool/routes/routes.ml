@@ -38,20 +38,21 @@ let web_middlewares =
   ]
 ;;
 
+let tenant_middlewares =
+  web_middlewares
+  @ [ CustomMiddleware.Tenant.validate ()
+    ; CustomMiddleware.Context.context ()
+    ; CustomMiddleware.Logger.logger
+    ]
+;;
+
 module Public = struct
   let global_routes =
     choose
+      ~middlewares:web_middlewares
       [ get "/" Handler.Public.root_redirect
       ; get "/custom/assets/:id/:filename" Handler.Public.asset
       ; get "/error" Handler.Public.error
-      ]
-  ;;
-
-  let middlewares =
-    web_middlewares
-    @ [ CustomMiddleware.Tenant.validate ()
-      ; CustomMiddleware.Context.context ()
-      ; CustomMiddleware.Logger.logger
       ]
   ;;
 
@@ -87,7 +88,7 @@ module Public = struct
     in
     Handler.Public.(
       choose
-        ~middlewares
+        ~middlewares:tenant_middlewares
         [ choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
@@ -198,17 +199,9 @@ module Contact = struct
     ]
   ;;
 
-  let middlewares =
-    web_middlewares
-    @ [ CustomMiddleware.Tenant.validate ()
-      ; CustomMiddleware.Context.context ()
-      ; CustomMiddleware.Logger.logger
-      ]
-  ;;
-
   let routes =
     choose
-      ~middlewares
+      ~middlewares:tenant_middlewares
       [ choose
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
@@ -239,14 +232,7 @@ module Contact = struct
 end
 
 module Admin = struct
-  let middlewares =
-    web_middlewares
-    @ [ CustomMiddleware.Tenant.validate ()
-      ; CustomMiddleware.Context.context ()
-      ; CustomMiddleware.Logger.logger
-      ; CustomMiddleware.Admin.require_admin ()
-      ]
-  ;;
+  let middlewares = tenant_middlewares @ [ CustomMiddleware.Admin.require_admin () ]
 
   let routes =
     let open Field in
@@ -282,9 +268,7 @@ module Admin = struct
         ; choose ~scope:(add_key File) [ get "" ~middlewares:[ Access.read_file ] asset ]
         ]
       in
-      let sessions =
-        [ get "" ~middlewares:[ Session.Access.read_by_location ] Session.show ]
-      in
+      let sessions = [ get "" ~middlewares:[ Access.read_session ] session ] in
       let specific =
         [ get "" ~middlewares:[ Access.read ] show
         ; get "/statistics" ~middlewares:[ Access.read ] statistics
@@ -358,6 +342,8 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index_assistants ] index_assistants
+        ; get "assigned" ~middlewares:[ Access.index_assistants ] Assistant.assigned
+        ; get "available" ~middlewares:[ Access.index_assistants ] Assistant.available
         ; choose ~scope:(url_key Admin) specific
         ]
       in
@@ -372,6 +358,8 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index_experimenter ] index_experimenter
+        ; get "assigned" ~middlewares:[ Access.index_assistants ] Experimenter.assigned
+        ; get "available" ~middlewares:[ Access.index_assistants ] Experimenter.available
         ; choose ~scope:(url_key Admin) specific
         ]
       in
@@ -429,6 +417,31 @@ module Admin = struct
             in
             [ choose ~scope:(Assignment |> url_key) specific ]
           in
+          let assistants =
+            let open Experiments.Users in
+            let specific =
+              [ post
+                  "assign"
+                  ~middlewares:[ Access.assign_assistant ]
+                  assign_session_assistant
+              ; post
+                  "unassign"
+                  ~middlewares:[ Access.unassign_assistant ]
+                  unassign_session_assistant
+              ]
+            in
+            [ get "" ~middlewares:[ Access.index_assistants ] index_session_assistants
+            ; get
+                "assigned"
+                ~middlewares:[ Access.index_assistants ]
+                SessionAssistant.assigned
+            ; get
+                "available"
+                ~middlewares:[ Access.index_assistants ]
+                SessionAssistant.available
+            ; choose ~scope:(url_key Admin) specific
+            ]
+          in
           let participation_tags =
             let open Handler.Admin.Experiments.Tags in
             tag_routes_helper
@@ -471,6 +484,7 @@ module Admin = struct
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ; choose ~scope:(ParticipationTag |> human_url) participation_tags
           ; choose ~scope:"direct-message" direct_message
+          ; choose ~scope:"/assistants" assistants
           ]
         in
         [ get "" ~middlewares:[ Access.index ] list
@@ -886,6 +900,7 @@ module Admin = struct
       ; choose ~scope:"/tags" tags
       ; choose ~scope:"/text-messages" text_messages
       ; choose ~scope:Field.(human_url SignUpCode) signup_codes
+      ; get "/inactive-user-warnings" inactive_user_warning_subform
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
@@ -1056,8 +1071,13 @@ end
 module Api = struct
   open Api
 
-  let global_middlewares =
-    CustomMiddleware.[ Api.api_request (); Api.context (); Logger.logger ]
+  let api_middlewares =
+    CustomMiddleware.
+      [ CustomMiddleware.Api.validate_tenant ()
+      ; Api.api_request ()
+      ; Api.context ()
+      ; Logger.logger
+      ]
   ;;
 
   module V1 = struct
@@ -1078,21 +1098,13 @@ module Api = struct
       choose ~scope:Field.(human_url OrganisationalUnit) [ get "" index ]
     ;;
 
-    let routes =
-      choose
-        [ experiment
-        ; organisational_unit
-        ; get "/**" ~middlewares:global_middlewares not_found
-        ]
-    ;;
+    let routes = choose [ experiment; organisational_unit; get "/**" not_found ]
   end
 
   let routes =
     choose
-      ~middlewares:(CustomMiddleware.Api.validate_tenant () :: global_middlewares)
-      [ choose ~scope:"/v1" [ V1.routes ]
-      ; get "/**" ~middlewares:global_middlewares not_found
-      ]
+      ~middlewares:api_middlewares
+      [ choose ~scope:"/v1" [ V1.routes ]; get "/**" not_found ]
   ;;
 end
 
@@ -1107,7 +1119,11 @@ let router =
     ; get
         "/**"
         ~middlewares:
-          [ CustomMiddleware.Context.context (); CustomMiddleware.Logger.logger ]
+          (web_middlewares
+           @ [ CustomMiddleware.Context.not_found ()
+             ; CustomMiddleware.Context.context ()
+             ; CustomMiddleware.Logger.logger
+             ])
         Handler.Public.not_found
     ]
 ;;

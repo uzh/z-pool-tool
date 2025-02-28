@@ -1,6 +1,6 @@
 FROM node:lts AS node
 FROM hadolint/hadolint:latest-alpine AS hadolint
-FROM ocaml/opam:debian-12-ocaml-4.14
+FROM ocaml/opam:debian-11-ocaml-5.2
 
 USER root
 
@@ -31,11 +31,10 @@ RUN apt-get update -q && apt-get install -yqq --no-install-recommends \
   m4 \
   wget \
   #
-  # build dependencies
-  #
   # build dependencies (would also be installed by opam depext)
   gcc \
   libev-dev \
+  libffi-dev \
   libgmp-dev \
   libmariadb-dev \
   libssl-dev \
@@ -52,6 +51,9 @@ RUN ln -fs /usr/share/zoneinfo/Europe/Zurich /etc/localtime
 # WTF: https://github.com/mirage/ocaml-cohttp/issues/675
 RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' \
   && bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
+
+# link opam version
+RUN ln -fs /usr/bin/opam-2.2 /usr/bin/opam
 
 USER opam
 

@@ -18,7 +18,8 @@ module Repo = struct
 end
 
 let find = Repo.find
-let find_all = Repo.find_all
+let all = Repo.all
+let list_by_user = Repo.Sql.list_by_user
 let find_all_ids_of_contact_id = Repo.find_all_ids_of_contact_id
 let find_public = Repo_public.find
 let find_full_by_contact = Repo_public.find_full_by_contact
@@ -43,6 +44,10 @@ let query_participation_history_by_contact =
   Repo.Sql.query_participation_history_by_contact
 ;;
 
+let registration_possible = Repo_statistics.registration_possible
+let sending_invitations = Repo_statistics.sending_invitations
+let assignment_counts = Repo_statistics.assignment_counts
+
 let find_admins_to_notify_about_invitations database_label experiment_id =
   Admin.find_all_with_permissions_on_target
     database_label
@@ -62,38 +67,16 @@ let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
 ;;
 
 let is_sessionless ({ online_experiment; _ } : t) = CCOption.is_some online_experiment
+let invited_contacts_count = Repo_statistics.FilterStatistics.invited_contacts_count
 
-let invitation_count =
-  Repo_statistics.SentInvitations.total_invitation_count_by_experiment
-;;
+module InvitationReset = struct
+  include InvitationReset
 
-module Statistics = struct
-  include Statistics
-  module Repo = Repo_statistics
+  let insert = Repo_invitation_reset.insert
+  let find_by_experiment = Repo_invitation_reset.find_by_experiment
+  let find_latest_by_experiment = Repo_invitation_reset.find_latest_by_experiment
 
-  module SentInvitations = struct
-    include SentInvitations
-
-    let create = Repo.SentInvitations.by_experiment
-  end
-
-  let create pool ({ id; _ } as experiment) =
-    let open Utils.Lwt_result.Infix in
-    let%lwt registration_possible = Repo.registration_possible pool id in
-    let* sending_invitations = Repo.sending_invitations pool id in
-    let%lwt session_count = Repo.session_count pool id in
-    let* invitations = SentInvitations.create pool experiment in
-    let%lwt showup_count, noshow_count, participation_count =
-      Repo.assignment_counts pool id
-    in
-    Lwt_result.return
-      { registration_possible
-      ; sending_invitations
-      ; session_count
-      ; invitations
-      ; showup_count
-      ; noshow_count
-      ; participation_count
-      }
+  let invitations_sent_since_last_reset =
+    Repo_invitation_reset.invitations_sent_since_last_reset
   ;;
 end

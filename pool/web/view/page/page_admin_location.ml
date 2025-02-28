@@ -647,3 +647,44 @@ let detail
         ]
     ]
 ;;
+
+let assignment_list context location session =
+  let url =
+    HttpUtils.Url.Admin.location_session_path
+      location.Pool_location.id
+      session.Session.id
+      ()
+  in
+  Page_admin_assignments.data_table
+    ~table_context:`LocationSession
+    ~access_contact_profiles:false
+    ~view_contact_name:true
+    ~view_contact_info:false
+    ~send_direct_message:false
+    ~url
+    context
+    (`Session session)
+    false
+;;
+
+let session ({ Pool_context.language; _ } as context) location session assignments =
+  let assignments =
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments) ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ Page_admin_assignments.Partials.table_legend language
+          ; assignment_list context location session assignments
+          ]
+      ]
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1 [ txt (Session.Id.value session.Session.id) ]
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ Page_admin_session.session_details context session; assignments ]
+    ]
+;;

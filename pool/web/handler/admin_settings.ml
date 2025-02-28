@@ -24,6 +24,9 @@ let show req =
       Settings.find_inactive_user_disable_after database_label
     in
     let%lwt inactive_user_warning = Settings.find_inactive_user_warning database_label in
+    let%lwt inactive_user_service_disabled =
+      Settings.find_inactive_user_service_disabled database_label
+    in
     let%lwt trigger_profile_update_after =
       Settings.find_trigger_profile_update_after database_label
     in
@@ -48,6 +51,7 @@ let show req =
       contact_email
       inactive_user_disable_after
       inactive_user_warning
+      inactive_user_service_disabled
       trigger_profile_update_after
       default_reminder_lead_time
       default_text_msg_reminder_lead_time
@@ -77,60 +81,63 @@ let update_settings req =
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events () =
-      let command_handler =
+      let command_handler urlencoded =
         let open CCResult.Infix in
         function
         | `UpdateLanguages ->
-          fun m ->
-            CCList.filter_map
-              (fun (k, _) ->
-                 match CCList.mem k Pool_common.Language.all_codes with
-                 | true -> Some (k |> Pool_common.Language.create)
-                 | false -> None)
-              m
-            |> CCResult.flatten_l
-            >>= UpdateLanguages.handle ~tags
-            |> lift
-        | `UpdateEmailSuffixes -> UpdateEmailSuffixes.handle ~tags %> lift
+          CCList.filter_map
+            (fun (k, _) ->
+               match CCList.mem k Pool_common.Language.all_codes with
+               | true -> Some (k |> Pool_common.Language.create)
+               | false -> None)
+            urlencoded
+          |> CCResult.flatten_l
+          >>= UpdateLanguages.handle ~tags
+          |> lift
+        | `UpdateEmailSuffixes -> UpdateEmailSuffixes.handle ~tags urlencoded |> lift
         | `CreateEmailSuffix ->
-          fun m ->
-            let%lwt suffixes = Settings.find_email_suffixes database_label in
-            CreateEmailSuffix.(m |> decode >>= handle ~tags suffixes) |> lift
+          let%lwt suffixes = Settings.find_email_suffixes database_label in
+          CreateEmailSuffix.(urlencoded |> decode >>= handle ~tags suffixes) |> lift
         | `DeleteEmailSuffix ->
-          fun m ->
-            let%lwt suffixes = Settings.find_email_suffixes database_label in
-            DeleteEmailSuffix.(m |> decode >>= handle ~tags suffixes) |> lift
+          let%lwt suffixes = Settings.find_email_suffixes database_label in
+          DeleteEmailSuffix.(urlencoded |> decode >>= handle ~tags suffixes) |> lift
         | `UpdateDefaultLeadTime ->
-          fun m -> UpdateDefaultEmailLeadTime.(m |> decode >>= handle ~tags) |> lift
+          UpdateDefaultEmailLeadTime.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UpdateTextMsgDefaultLeadTime ->
-          fun m -> UpdateDefaultTextMessageLeadTime.(m |> decode >>= handle ~tags) |> lift
+          UpdateDefaultTextMessageLeadTime.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UpdateContactEmail ->
-          fun m -> UpdateContactEmail.(m |> decode >>= handle ~tags) |> lift
+          UpdateContactEmail.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UpdateInactiveUserDisableAfter ->
-          fun m -> InactiveUser.DisableAfter.(m |> decode >>= handle ~tags) |> lift
+          InactiveUser.DisableAfter.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UpdateInactiveUserWarning ->
-          fun m -> InactiveUser.Warning.(m |> decode >>= handle ~tags) |> lift
+          let open Pool_message in
+          let urlencoded_list field = Sihl.Web.Request.urlencoded_list field req in
+          let%lwt values = urlencoded_list Field.(show InactiveUserWarning) in
+          let%lwt units = urlencoded_list Field.(show (TimeUnitOf InactiveUserWarning)) in
+          InactiveUser.Warning.(handle ~tags ~values ~units ()) |> lift
+        | `UpdateUnactiveUserServiceDisabled ->
+          InactiveUser.DisableService.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UpdateTriggerProfileUpdateAfter ->
-          fun m -> UpdateTriggerProfileUpdateAfter.(m |> decode >>= handle ~tags) |> lift
+          UpdateTriggerProfileUpdateAfter.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UserImportFirstReminderAfter ->
-          fun m ->
-            UserImportReminder.UpdateFirstReminder.(m |> decode >>= handle ~tags) |> lift
+          UserImportReminder.UpdateFirstReminder.(urlencoded |> decode >>= handle ~tags)
+          |> lift
         | `UserImportSecondReminderAfter ->
-          fun m ->
-            UserImportReminder.UpdateSecondReminder.(m |> decode >>= handle ~tags) |> lift
+          UserImportReminder.UpdateSecondReminder.(urlencoded |> decode >>= handle ~tags)
+          |> lift
         | `UpdateHeadScripts ->
           let location = Settings.PageScript.Head in
-          fun m ->
-            UpdatePageScript.(m |> decode location >>= handle ~tags location) |> lift
+          UpdatePageScript.(urlencoded |> decode location >>= handle ~tags location)
+          |> lift
         | `UpdateBodyScripts ->
           let location = Settings.PageScript.Body in
-          fun m ->
-            UpdatePageScript.(m |> decode location >>= handle ~tags location) |> lift
+          UpdatePageScript.(urlencoded |> decode location >>= handle ~tags location)
+          |> lift
       in
       Sihl.Web.Router.param req "action"
       |> Settings.action_of_param
       |> lift
-      >>= flip command_handler urlencoded
+      >>= command_handler urlencoded
     in
     let handle = Pool_event.handle_events ~tags database_label user in
     let return_to_settings () =
@@ -141,6 +148,15 @@ let update_settings req =
     () |> events |>> handle |>> return_to_settings
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
+;;
+
+let inactive_user_warning_subform req =
+  let result { Pool_context.language; _ } =
+    Page.Admin.Settings.inactive_user_warning_input language None
+    |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
+    |> Lwt_result.return
+  in
+  HttpUtils.Htmx.extract_happy_path ~src req result
 ;;
 
 module Access : module type of Helpers.Access = struct
@@ -156,6 +172,7 @@ module Access : module type of Helpers.Access = struct
       | `UpdateTextMsgDefaultLeadTime -> Command.UpdateDefaultTextMessageLeadTime.effects
       | `UpdateInactiveUserDisableAfter -> Command.InactiveUser.DisableAfter.effects
       | `UpdateInactiveUserWarning -> Command.InactiveUser.Warning.effects
+      | `UpdateUnactiveUserServiceDisabled -> Command.InactiveUser.DisableService.effects
       | `UpdateContactEmail -> Command.UpdateContactEmail.effects
       | `UpdateEmailSuffixes -> Command.UpdateEmailSuffixes.effects
       | `UpdateLanguages -> Command.UpdateLanguages.effects

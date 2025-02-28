@@ -18,6 +18,7 @@ let suite =
               `Slow
               check_inactive_user_disable_after
           ; test_case "read inactive user warning after" `Slow check_inactive_user_warning
+          ; test_case "disable inactive user service" `Slow disable_inactive_user_service
           ; test_case "read languages" `Slow check_languages
           ; test_case "has terms and conditions" `Slow check_terms_and_conditions
           ; test_case "login after terms update" `Slow login_after_terms_update
@@ -39,6 +40,20 @@ let suite =
               "grant valid and invalid roles"
               `Slow
               Admin_role_assignment.grant_roles
+          ] )
+    ; ( "authorization index lists"
+      , Authorization_lists_test.
+          [ test_case "experiments" `Slow experiments
+          ; test_case "locations" `Slow locations
+          ; test_case "contacts" `Slow contacts
+          ; test_case "admins" `Slow admins
+          ; test_case "dashboard calendar" `Slow dashboard_calendar
+          ; test_case "location calendar" `Slow location_calendar
+          ] )
+    ; ( "authorization navigation"
+      , Authorization_navigation_test.
+          [ test_case "admin navigation" `Slow admin_navigation
+          ; test_case "operator navigation" `Slow operator_navigation
           ] )
     ; ("announcement", Announcement_test.[ test_case "find current" `Slow find_current ])
     ; ( "partial_update"
@@ -127,7 +142,8 @@ let suite =
           ] )
     ; ( "matcher"
       , Matcher_test.
-          [ test_case "send invitations" `Slow create_invitations
+          [ test_case "create invitations" `Slow create_invitations
+          ; test_case "send invitations" `Slow send_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
           ; test_case "matcher notifiaction" `Slow matcher_notification
           ; test_case
@@ -140,6 +156,13 @@ let suite =
           [ test_case "initialize tests" `Slow init
           ; test_case "update without filter" `Slow update_without_filter
           ; test_case "exclude contact" `Slow exclude_contact
+          ] )
+    ; ( "contact job"
+      , Contact_job_test.
+          [ test_case
+              "find contacts to remind about inactivity"
+              `Slow
+              find_contacts_to_remind
           ] )
     ; ( "contact"
       , Contact_test.
@@ -265,6 +288,9 @@ let suite =
               `Slow
               AvailableExperiments.mark_assignment_as_deleted
           ] )
+    ; ( "statistics"
+      , [ test_case "invitation statistics" `Slow Statistics_test.invitation_statistics ]
+      )
     ; ( "filtering"
       , let open Filter_invitation_tests in
         let open Filter_assignment_tests in
@@ -368,6 +394,7 @@ let suite =
           [ test_case "check similarity" `Slow check_similarity
           ; test_case "override a with b" `Slow override_a_with_b
           ; test_case "override b with a" `Slow override_b_with_a
+          ; test_case "override with participations" `Slow override_with_participations
           ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]

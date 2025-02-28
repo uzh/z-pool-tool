@@ -208,26 +208,70 @@ module InactiveUser = struct
   end
 
   module Warning : sig
-    include Common.CommandSig with type t = command
+    type t = (string * string list) list
 
-    val decode : (string * string list) list -> (t, Pool_message.Error.t) result
+    val handle
+      :  ?tags:Logs.Tag.set
+      -> values:string list
+      -> units:string list
+      -> unit
+      -> (Pool_event.t list, Pool_message.Error.t) result
+
+    val effects : validation_set
   end = struct
-    open InactiveUser.Warning
+    type t = (string * string list) list
 
-    type t = command
-
-    let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
-      let open CCResult in
-      Logs.info ~src (fun m -> m "Handle command Warning" ~tags);
-      let* inactive_user_warning = of_int time_value time_unit in
-      Ok
-        [ Settings.InactiveUserWarningUpdated inactive_user_warning |> Pool_event.settings
-        ]
+    let handle ?(tags = Logs.Tag.empty) ~values ~units () =
+      Logs.info ~src (fun m -> m "Handle command WarnAfter" ~tags);
+      let open CCList in
+      let open CCResult.Infix in
+      let* values =
+        map
+          (CCInt.of_string
+           %> CCOption.to_result Pool_message.(Error.Invalid Field.TimeSpan))
+          values
+        |> all_ok
+      in
+      let* timespans =
+        values
+        |> mapi (fun i value ->
+          nth_opt units i
+          |> CCOption.to_result Pool_message.(Error.Missing Field.TimeUnit)
+          >>= Pool_model.Base.TimeUnit.of_string
+          >>= Settings.InactiveUser.Warning.TimeSpan.of_int value)
+        |> all_ok
+      in
+      Ok [ Settings.InactiveUserWarningUpdated timespans |> Pool_event.settings ]
     ;;
 
-    let decode =
-      Conformist.decode_and_validate (update_duration_schema (integer_schema ()) name)
-      %> CCResult.map_err Pool_message.to_conformist_error
+    let effects = Settings.Guard.Access.update
+  end
+
+  module DisableService : sig
+    type t = Settings.InactiveUser.ServiceDisabled.t
+
+    val handle
+      :  ?tags:Logs.Tag.set
+      -> t
+      -> (Pool_event.t list, Pool_message.Error.t) result
+
+    val decode : (string * string list) list -> (t, Pool_message.Error.t) result
+    val effects : validation_set
+  end = struct
+    type t = Settings.InactiveUser.ServiceDisabled.t
+
+    let handle ?(tags = Logs.Tag.empty) disabled =
+      Logs.info ~src (fun m -> m "Handle command DisableService" ~tags);
+      Ok [ Settings.InactiveUserServiceDisabled disabled |> Pool_event.settings ]
+    ;;
+
+    let schema =
+      Conformist.(make Field.[ Settings.InactiveUser.ServiceDisabled.schema () ] CCFun.id)
+    ;;
+
+    let decode data =
+      Pool_conformist.decode_and_validate schema data
+      |> CCResult.map_err Pool_message.to_conformist_error
     ;;
 
     let effects = Settings.Guard.Access.update

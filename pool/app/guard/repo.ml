@@ -7,6 +7,110 @@ let create_tag = Database.Logger.Tags.create
 include
   Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target) (Database.Guard)
 
+let related_target_models = function
+  | `Assignment -> [ `Experiment; `Session; `Assignment; `Location ]
+  | `Contact -> [ `Contact; `ContactInfo; `Experiment; `Session; `Location ]
+  | `Filter -> [ `Experiment; `Filter ]
+  | `LocationFile -> [ `Location; `LocationFile ]
+  | `Mailing -> [ `Experiment; `Mailing ]
+  | `Session -> [ `Session; `Experiment; `Location ]
+  | `WaitingList -> [ `Experiment; `WaitingList ]
+  | target -> [ target ]
+;;
+
+let with_user_permission
+      ?(dyn = Dynparam.empty)
+      ?permissions
+      actor
+      uuid_column
+      target_model
+  =
+  let permissions =
+    let open Entity.Permission in
+    let format_conditon permissions =
+      permissions
+      |> CCList.map show
+      |> CCString.concat ", "
+      |> Format.asprintf "AND permission IN (%s)"
+    in
+    match permissions with
+    | None -> ""
+    | Some permissions ->
+      Manage :: permissions |> CCList.uniq ~eq:equal |> format_conditon
+  in
+  let models =
+    let open Role in
+    target_model
+    |> related_target_models
+    |> CCList.map CCFun.(Target.show %> Format.asprintf "'%s'")
+    |> CCString.concat ", "
+    |> Format.asprintf "(%s)"
+  in
+  let dyn =
+    let add =
+      let open Core in
+      Dynparam.add Caqti_type.string (actor.Actor.uuid |> Uuid.Actor.to_string)
+    in
+    dyn |> add |> add |> add
+  in
+  let joins =
+    Format.asprintf
+      {sql|
+        INNER JOIN user_permissions ON %s = user_permissions.target_uuid
+          OR user_permissions.target_uuid IS NULL
+      |sql}
+      uuid_column
+  in
+  let sql =
+    [%string
+      {sql|
+      WITH user_permissions AS (
+      -- GLOBAL ROLE PERMISSIONS
+        SELECT
+          permission,
+          target_model,
+          NULL as target_uuid
+        FROM guardian_actor_roles
+        INNER JOIN guardian_role_permissions
+          ON guardian_actor_roles.role = guardian_role_permissions.role
+          AND target_model IN %{models}
+        WHERE
+          actor_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND guardian_role_permissions.mark_as_deleted IS NULL
+          AND guardian_actor_roles.mark_as_deleted IS NULL
+          %{permissions}
+      UNION
+      -- ENTITY SPECIFIC ROLE PERMISSION
+        SELECT
+          permission,
+          target_model,
+          target_uuid AS target_uuid
+        FROM guardian_actor_role_targets
+        INNER JOIN guardian_role_permissions
+          ON guardian_role_permissions.role = guardian_actor_role_targets.role
+        WHERE
+          actor_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND guardian_actor_role_targets.mark_as_deleted IS NULL
+      		AND guardian_role_permissions.mark_as_deleted IS NULL
+          AND target_model IN %{models}
+          %{permissions}
+        UNION
+          -- USER SPECIFIC PERMISSION
+          SELECT
+            permission,
+            target_model,
+            target_uuid AS target_uuid
+          FROM guardian_actor_permissions
+          WHERE
+            actor_uuid = UNHEX(REPLACE(?, '-', ''))
+            AND guardian_actor_permissions.mark_as_deleted IS NULL
+            %{permissions}
+        )
+      |sql}]
+  in
+  dyn, sql, joins
+;;
+
 module ActorPermission = struct
   include ActorPermission
 
@@ -95,7 +199,7 @@ module RolePermission = struct
   ;;
 
   let find_by query pool =
-    let where = std_filter_sql, Dynparam.(empty) in
+    let where = std_filter_sql in
     Query.collect_and_count pool (Some query) ~where ~select Entity.RolePermission.t
   ;;
 
@@ -104,7 +208,7 @@ module RolePermission = struct
       ( Format.asprintf "role_permissions.role = ? AND %s" std_filter_sql
       , Dynparam.(empty |> add Caqti_type.string (Role.Role.show role)) )
     in
-    let where =
+    let where, dyn =
       match include_static_models with
       | false ->
         let open Role.Target in
@@ -124,7 +228,7 @@ module RolePermission = struct
         sql, dyn
       | true -> where
     in
-    Query.collect_and_count pool query ~where ~select Entity.RolePermission.t
+    Query.collect_and_count pool query ~where ~dyn ~select Entity.RolePermission.t
   ;;
 
   let insert pool = insert ~ctx:(Database.to_ctx pool)

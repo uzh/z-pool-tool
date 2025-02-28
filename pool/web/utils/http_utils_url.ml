@@ -77,11 +77,17 @@ module Admin = struct
   ;;
 
   let filter_path ?suffix ?id () =
-    "/admin/filter/" |> append_opt Filter.(map Id.value id) |> append_opt suffix
+    "/admin/filter" |> append_opt Filter.(map Id.value id) |> append_opt suffix
   ;;
 
   let location_path ?suffix ?id () =
-    "/admin/locations/" |> append_opt Pool_location.(map Id.value id) |> append_opt suffix
+    "/admin/locations" |> append_opt Pool_location.(map Id.value id) |> append_opt suffix
+  ;;
+
+  let location_session_path ?suffix id session_id () =
+    location_path ~id ()
+    |> append (Format.asprintf "sessions/%s" (Session.Id.value session_id))
+    |> append_opt suffix
   ;;
 
   let mailing_path experiment_id ?suffix ?id () =
@@ -103,6 +109,13 @@ module Admin = struct
       Field.(human_url MessageTemplate)
       (Message_template.Label.show label)
     |> append_opt (map Message_template.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let experiment_user_path id role ?admin_id ?suffix () =
+    experiment_path ~id ()
+    |> append (Field.show role)
+    |> append_opt (map Admin.Id.value admin_id)
     |> append_opt suffix
   ;;
 
@@ -128,6 +141,13 @@ module Admin = struct
   let session_path ?suffix ?id experiment_id =
     Format.asprintf "/admin/experiments/%s/sessions" Experiment.(Id.value experiment_id)
     |> append_opt Session.(map Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let session_user_path experiment_id id role ?admin_id ?suffix () =
+    session_path ~id experiment_id
+    |> append (Field.show role)
+    |> append_opt (map Admin.Id.value admin_id)
     |> append_opt suffix
   ;;
 

@@ -50,7 +50,7 @@ let matcher_job_instance_detail label = [ Field.Label, txt (Database.Label.value
 let text_message_dlr_detail dlr =
   let open Text_message in
   [ "Dlr status", dlr.dlr_mask |> DlrMask.of_int |> DlrMask.to_human
-  ; "Error code", dlr.error_code |> CCInt.to_string
+  ; "Error code", dlr.error_code
   ; "Error message", dlr.error_message
   ; "Submit date", dlr.submit_date |> Pool_model.Time.formatted_date_time
   ; "Done date", dlr.done_date |> Pool_model.Time.formatted_date_time

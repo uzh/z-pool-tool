@@ -138,6 +138,8 @@ let rec field_to_string =
   | ImportPending -> "import pending"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
+  | InactiveUserDisableService ->
+    "Disable service (Contacts are neither reminded nor deactivated)"
   | Inactive -> "inactive"
   | Input -> "input"
   | Institution -> "institution"
@@ -173,6 +175,7 @@ let rec field_to_string =
   | MainSession -> "main session"
   | MarkedAsDeleted -> "marked as deleted"
   | MatchingFilterCount -> "Number of contacts meeting criteria"
+  | MatchingFilterCountShort -> "No. matching"
   | MaxParticipants -> "maximum participants"
   | MaxTries -> "maximum tries"
   | Message -> "message"
