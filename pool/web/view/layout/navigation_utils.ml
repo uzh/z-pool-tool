@@ -110,6 +110,7 @@ let rec build_nav_links
     nav_link @ [ build_rec children ] |> li ~a:parent_attrs
 ;;
 
+(* TODO: This step seems unnecessary *)
 let create_nav
       { Pool_context.query_parameters; language; guardian; _ }
       items
@@ -124,7 +125,7 @@ let create_nav
   in
   let nav = [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ] in
   match layout with
-  | Vertical -> [ div ~a:[ a_class [ "grow"; "flexcolumn"; "gap" ] ] nav ]
+  | Vertical -> nav
   | Horizonal -> nav
 ;;
 
@@ -175,26 +176,42 @@ let create_desktop_nav fcn =
   |> div ~a:[ a_class [ "hidden-mobile"; "flexrow"; "flex-gap-lg"; "align-center" ] ]
 ;;
 
-let create_mobile_nav ?title ~toggle_id navigation =
-  let title = CCOption.value ~default:(txt "") title in
-  let label =
-    Icon.to_html
-    %> CCList.pure
-    %> div ~a:[ a_user_data "modal" toggle_id; a_class [ "icon-lg" ] ]
-  in
+let create_mobile_nav ~toggle_id navigation =
   let overlay navigation =
     div
-      ~a:[ a_id toggle_id; a_class [ "fullscreen-overlay"; "mobile-nav"; "bg-white" ] ]
-      [ div
-          ~a:[ a_class [ "flexcolumn"; "full-height" ] ]
-          [ header
-              ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
-              [ title; div ~a:[ a_class [ "push" ] ] [ label Icon.Close ] ]
-          ; div ~a:[ a_class [ "fade-in"; "inset"; "flexcolumn"; "grow" ] ] navigation
-          ]
-      ]
+      ~a:[ a_id toggle_id; a_class [ "mobile-nav"; "bg-white" ] ]
+      [ div ~a:[ a_class [ "mobile-nav-inner"; "fade-in" ] ] navigation ]
   in
-  navigation Vertical
-  |> fun items ->
-  div ~a:[ a_class [ "push"; "mobile-only" ] ] [ label Icon.MenuOutline; overlay items ]
+  navigation Vertical |> overlay
+;;
+
+let make_mobile_nav_open_toggle toggle_id =
+  let open Icon in
+  span
+    ~a:
+      [ a_class [ "icon-lg" ]
+      ; a_user_data "action" "open"
+      ; a_user_data "overlay-nav" toggle_id
+      ]
+    [ to_html MenuOutline ]
+;;
+
+let make_mobile_header navigation =
+  let toggle_id = "mobile-nav" in
+  let icons =
+    let open Icon in
+    [ make_mobile_nav_open_toggle toggle_id
+    ; span
+        ~a:
+          [ a_user_data "action" "close"
+          ; a_class [ "icon-lg"; "hidden" ]
+          ; a_aria "hidden" [ "true" ]
+          ]
+        [ to_html Close ]
+    ]
+    |> div ~a:[ a_id "mobile-nav-toggle" ]
+  in
+  div
+    ~a:[ a_class [ "push"; "mobile-only" ] ]
+    [ icons; create_mobile_nav ~toggle_id navigation ]
 ;;

@@ -112,8 +112,7 @@ module Tenant = struct
       [ charset; viewport ] @ stylesheets @ favicon @ head_script
     in
     let%lwt navbar_content =
-      let title = App.create_title query_parameters title_text in
-      Navigation.create_main ?active_navigation context title tenant_languages
+      Navigation.create_main ?active_navigation context tenant_languages
     in
     let%lwt footer = make_footer context title_text in
     html
@@ -142,12 +141,7 @@ module Root = struct
     let page_title = title (txt title_text) in
     let message = Message.create message language () in
     let%lwt navbar_content =
-      let title = App.create_title query_parameters title_text in
-      Navigation.create_root
-        ?active_navigation
-        Pool_context.{ context with language }
-        title
-        []
+      Navigation.create_root ?active_navigation Pool_context.{ context with language } []
     in
     html
       ~a:[ language_attribute language ]

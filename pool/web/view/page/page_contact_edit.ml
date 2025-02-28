@@ -19,14 +19,18 @@ let grouped_custom_fields_form language custom_fields to_html =
   let groups, ungrouped_fields = custom_fields in
   [ div
       ~a:[ a_class [ "stack-lg" ] ]
-      (div ~a:[ a_class [ "grid-col-2" ] ] (CCList.map to_html ungrouped_fields)
+      (div
+         ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ]
+         (CCList.map to_html ungrouped_fields)
        :: CCList.map
             (fun (Group.Public.{ fields; _ } as group) ->
                div
                  [ h2
                      ~a:[ a_class [ "heading-2"; "has-gap" ] ]
                      [ txt Group.(Public.name language group) ]
-                 ; div ~a:[ a_class [ "grid-col-2" ] ] (fields |> CCList.map to_html)
+                 ; div
+                     ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ]
+                     (fields |> CCList.map to_html)
                  ])
             groups)
   ]
@@ -72,7 +76,7 @@ let personal_details_form
   let static_fields =
     let fields =
       div
-        ~a:[ a_class [ "grid-col-2" ] ]
+        ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ]
         (csrf_element csrf ()
          :: CCList.map
               (fun (version, field, label, value, help) ->
@@ -245,7 +249,7 @@ let login_information
           ]
       ]
   in
-  div [ div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ email_form; password_form ] ]
+  div [ div ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ] [ email_form; password_form ] ]
   |> contact_profile_layout language Pool_common.I18n.LoginInformation
 ;;
 

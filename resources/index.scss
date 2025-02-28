@@ -1,12 +1,21 @@
 @use "sass:color";
 @use "sass:math";
-@use "@econ/frontend-framework/dist/main" with (
+// @use "@econ/frontend-framework/dist/main" with (
+//   $notification-position: 7rem 0 auto 0,
+//   $font-path: "../node_modules/@econ/frontend-framework/dist/font"
+// );
+// @use "@econ/frontend-framework/dist/sass/colors" as c;
+// @use "@econ/frontend-framework/dist/sass/variables" as vars;
+// @use "@econ/frontend-framework/dist/sass/breakpoints";
+
+@use "../frontend/main" with (
   $notification-position: 7rem 0 auto 0,
-  $font-path: "../node_modules/@econ/frontend-framework/dist/font"
+  $font-path: "../frontend/font"
 );
-@use "@econ/frontend-framework/dist/sass/colors" as c;
-@use "@econ/frontend-framework/dist/sass/variables" as vars;
-@use "@econ/frontend-framework/dist/sass/breakpoints";
+@use "../frontend/sass/colors" as c;
+@use "../frontend/sass/variables" as vars;
+@use "../frontend/sass/breakpoints";
+
 
 @use "./admin/calendar";
 
@@ -621,4 +630,12 @@ input[type="checkbox"][readonly] {
         padding-left: 0;
         padding-right: 0;
     }
+}
+
+
+.mobile-nav {
+    position: fixed;
+    top: 97px;
+    left: 0;
+    right: 0;
 }
