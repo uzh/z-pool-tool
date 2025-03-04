@@ -14,7 +14,7 @@ let inactive_user_warning_input language warning =
   let remove_btn =
     button
       ~a:
-        [ a_class [ "error" ]
+        [ a_class [ "error"; "small" ]
         ; a_button_type `Button
         ; a_onclick "this.parentElement.remove()"
         ]
@@ -58,7 +58,7 @@ let show
   let submit ?(control = Message.(Control.Update None)) () =
     div
       ~a:[ a_class [ "flexrow" ] ]
-      [ submit_element ~classnames:[ "push" ] language control () ]
+      [ submit_element ~classnames:[ "push"; "small" ] language control () ]
   in
   let form_attrs action =
     [ a_method `Post
@@ -67,10 +67,9 @@ let show
     ; a_user_data "detect-unsaved-changes" ""
     ]
   in
-  let make_columns title ?hint columns =
+  let make_columns ?hint columns =
     div
-      [ h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt title ]
-      ; hint |> CCOption.map_or ~default:(txt "") (fun hint -> p [ txt hint ])
+      [ hint |> CCOption.map_or ~default:(txt "") (fun hint -> p [ txt hint ])
       ; div ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ] columns
       ]
   in
@@ -223,7 +222,7 @@ let show
   in
   let inactive_user_html =
     let open Settings.InactiveUser in
-    let disable_servive_form =
+    let disable_service_form =
       div
         ~a:[ a_class [ "full-width" ] ]
         [ form
@@ -268,7 +267,7 @@ let show
               ~a:
                 Htmx.
                   [ a_button_type `Button
-                  ; a_class [ "success" ]
+                  ; a_class [ "success"; "small" ]
                   ; hx_get
                       (HttpUtils.Url.Admin.settings_path "inactive-user-warnings"
                        |> Sihl.Web.externalize_path)
@@ -298,7 +297,7 @@ let show
     in
     let hint = Pool_common.(I18n.SettigsInactiveUsers |> Utils.hint_to_string language) in
     ( "Inactive Users"
-    , [ disable_servive_form; disable_after_form; warn_after_form ]
+    , [ disable_service_form; disable_after_form; warn_after_form ]
     , Some hint )
   in
   let trigger_profile_update_after_html =
@@ -434,7 +433,9 @@ let show
     ; user_import_reminder
     ; page_scripts
     ]
-    |> CCList.map (fun (title, columns, hint) -> make_columns title ?hint columns)
+    |> CCList.map (fun (title, columns, hint) ->
+      let html = make_columns ?hint columns in
+      Component.Collapsible.create (txt title) html)
     |> div ~a:[ a_class [ "stack" ] ]
   in
   div
