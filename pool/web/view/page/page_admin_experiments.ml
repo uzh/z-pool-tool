@@ -173,21 +173,13 @@ let list Pool_context.{ language; guardian; _ } experiments query =
       ; buttons, None
       ]
     |> CCList.map (fun (html, label) ->
-      let attrs =
-        match label with
-        | None -> []
-        | Some label ->
-          [ a_user_data
-              "label"
-              (Pool_common.Utils.field_to_string_capitalized language label)
-          ]
-      in
+      let attrs = Component.Table.data_label_opt language label in
       td ~a:attrs [ html ])
     |> tr
   in
   DataTable.make
     ~target_id:"experiment-list"
-    ~classnames:[ "break-mobile"; "keep-head" ]
+    ~break_mobile:true
     ~th_class
     ~cols
     ~row

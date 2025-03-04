@@ -34,17 +34,27 @@ module Partials = struct
         then [ a_class [ "bg-red-lighter" ] ]
         else []
       in
-      [ txt (start_end_with_duration_human session)
-      ; span
-          ~a:[ a_class [ "word-wrap-break-all" ] ]
-          [ txt Experiment.(experiment.title |> Title.value) ]
-      ; txt Pool_location.(session.location.name |> Name.value)
-      ; Component.(Input.link_as_button ~icon:Icon.Eye (session_path session))
+      [ txt (start_end_with_duration_human session), Some Field.Start
+      ; ( span
+            ~a:[ a_class [ "word-wrap-break-all" ] ]
+            [ txt Experiment.(experiment.title |> Title.value) ]
+        , Some Field.Experiment )
+      ; txt Pool_location.(session.location.name |> Name.value), Some Field.Location
+      ; Component.(Input.link_as_button ~icon:Icon.Eye (session_path session)), None
       ]
-      |> CCList.map CCFun.(CCList.return %> td)
+      |> CCList.map (fun (html, label) ->
+        let attrs = Component.Table.data_label_opt language label in
+        td ~a:attrs [ html ])
       |> tr ~a:row_attribs
     in
-    Component.DataTable.make ~th_class ~target_id ~cols ~row data_table sessions
+    Component.DataTable.make
+      ~break_mobile:true
+      ~th_class
+      ~target_id
+      ~cols
+      ~row
+      data_table
+      sessions
   ;;
 
   let incomplete_sessions_list =

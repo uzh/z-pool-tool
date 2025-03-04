@@ -59,6 +59,7 @@ type col =
 val make
   :  ?align_last_end:bool
   -> ?align_top:bool
+  -> ?break_mobile:bool
   -> ?classnames:string list
   -> ?execute_onload:bool
   -> ?layout:[ `Striped | `Simple ]

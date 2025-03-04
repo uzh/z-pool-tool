@@ -35,6 +35,7 @@ let create_meta
   { url; query; language; filter; search; additional_url_params; push_url }
 ;;
 
+(* TODO: Consider adding a `buttons / `mobile type. Treated like `Custom but shown on mobile *)
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt
@@ -341,16 +342,19 @@ let make_sortable_head target_id sort col field =
      else [ make_name sort field ])
 ;;
 
-let make_head ?classname target_id sort column =
+let make_head ~break_mobile ?classname target_id sort column =
   let attrs =
-    let keep_mobile =
-      match column with
-      | `column _ -> []
-      | _ -> [ "hidden-mobile" ]
+    let hide_mobile =
+      if not break_mobile
+      then []
+      else (
+        match column with
+        | `column _ -> []
+        | _ -> [ "hidden-mobile" ])
     in
     match classname with
-    | None -> [ a_class keep_mobile ]
-    | Some classname -> [ a_class (classname :: keep_mobile) ]
+    | None -> [ a_class hide_mobile ]
+    | Some classname -> [ a_class (classname :: hide_mobile) ]
   in
   th
     ~a:attrs
@@ -362,12 +366,13 @@ let make_head ?classname target_id sort column =
     ]
 ;;
 
-let make_header ?th_class target_id cols sort =
+let make_header ~break_mobile ?th_class target_id cols sort =
   let classname i = CCOption.bind th_class (CCFun.flip CCList.nth_opt i) in
   thead
     [ tr
         (CCList.mapi
-           (fun i col -> make_head ?classname:(classname i) target_id sort col)
+           (fun i col ->
+              make_head ~break_mobile ?classname:(classname i) target_id sort col)
            cols)
     ]
 ;;
@@ -400,6 +405,7 @@ let make_filter_and_pagination ~target_id data_table =
 let make
       ?(align_last_end = true)
       ?align_top
+      ?(break_mobile = false)
       ?(classnames = [])
       ?(execute_onload = false)
       ?(layout = `Striped)
@@ -411,8 +417,11 @@ let make
       data_table
       items
   =
+  let classnames =
+    if break_mobile then [ "break-mobile"; "keep-head" ] @ classnames else classnames
+  in
   let filter_block, pagination = make_filter_and_pagination ~target_id data_table in
-  let thead = make_header ?th_class target_id cols data_table in
+  let thead = make_header ~break_mobile ?th_class target_id cols data_table in
   let rows = CCList.map row items in
   let empty_msg =
     if CCList.is_empty items

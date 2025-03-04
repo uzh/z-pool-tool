@@ -288,6 +288,8 @@ type t =
   | SentAt [@name "sent_at"] [@printer go "sent_at"]
   | Session [@name "session"] [@printer go "session"]
   | SessionCount [@name "session_count"] [@printer go "session_count"]
+  | SessionMinMaxOverbook [@name "session_min_max_overbook"]
+  [@printer go "session_min_max_overbook"]
   | Sessions [@name "sessions"] [@printer go "sessions"]
   | Setting [@name "setting"] [@printer go "setting"]
   | Settings [@name "settings"] [@printer go "settings"]

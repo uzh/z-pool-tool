@@ -545,7 +545,8 @@ let data_table
     ; `column column_no_assignments
     ; `column column_noshow_count
     ; `column column_participation_count
-    ; `custom (txt key_figures_head)
+    ; `custom
+        (txt (Pool_common.Utils.field_to_string language Field.SessionMinMaxOverbook))
     ; `custom create_session
     ]
   in
@@ -564,21 +565,25 @@ let data_table
         , participant_count |> ParticipantCount.value |> int_to_txt )
       | false -> txt "", txt ""
     in
-    [ session_row_title language chronological session
-    ; assignment_count |> AssignmentCount.value |> int_to_txt
-    ; no_show_count
-    ; participant_count
-    ; Partials.session_key_figures session |> txt
-    ; Partials.button_dropdown
-        context
-        experiment.Experiment.id
-        session
-        ~can_access_session_assistants
+    [ session_row_title language chronological session, Some Field.Start
+    ; assignment_count |> AssignmentCount.value |> int_to_txt, Some Field.AssignmentCount
+    ; no_show_count, Some Field.NoShowCount
+    ; participant_count, Some Field.ParticipantCount
+    ; Partials.session_key_figures session |> txt, Some Field.SessionMinMaxOverbook
+    ; ( Partials.button_dropdown
+          context
+          experiment.Experiment.id
+          session
+          ~can_access_session_assistants
+      , None )
     ]
-    |> CCList.map CCFun.(CCList.return %> td)
+    |> CCList.map (fun (html, label) ->
+      let attrs = Component.Table.data_label_opt language label in
+      td ~a:attrs [ html ])
     |> tr ~a:row_attrs
   in
   DataTable.make
+    ~break_mobile:true
     ~classnames:[ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
     ~target_id
     ~th_class
