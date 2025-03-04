@@ -25,7 +25,6 @@ ENV SIHL_ENV development
 # hadolint ignore=DL3008
 RUN apt-get update -q && apt-get install -yqq --no-install-recommends \
   # development dependencies
-  build-essential \
   inotify-tools \
   zsh \
   m4 \
