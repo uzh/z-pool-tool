@@ -311,9 +311,10 @@ table.width-auto {
     width: auto;
 }
 
+// Move to framework
 @include breakpoints.econ-mobile {
-    .table.break-mobile th {
-        display: none;
+    .table.break-mobile.keep-head th {
+        width: 100%;
     }
 }
 

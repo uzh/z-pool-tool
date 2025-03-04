@@ -162,19 +162,37 @@ let list Pool_context.{ language; guardian; _ } experiments query =
   in
   let th_class = [ "w-6"; "w-4"; "w-2" ] in
   let row (experiment : Experiment.t) =
-    let open Experiment in
+    let open Pool_message in
     let detail_btn = Partials.detail_button experiment in
     let buttons =
       div ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ] [ detail_btn ]
     in
-    [ txt (Title.value experiment.title)
-    ; txt (PublicTitle.value experiment.public_title)
-    ; buttons
-    ]
-    |> CCList.map (CCList.return %> td)
+    Experiment.
+      [ txt (Title.value experiment.title), Some Field.Title
+      ; txt (PublicTitle.value experiment.public_title), Some Field.PublicTitle
+      ; buttons, None
+      ]
+    |> CCList.map (fun (html, label) ->
+      let attrs =
+        match label with
+        | None -> []
+        | Some label ->
+          [ a_user_data
+              "label"
+              (Pool_common.Utils.field_to_string_capitalized language label)
+          ]
+      in
+      td ~a:attrs [ html ])
     |> tr
   in
-  DataTable.make ~target_id:"experiment-list" ~th_class ~cols ~row data_table experiments
+  DataTable.make
+    ~target_id:"experiment-list"
+    ~classnames:[ "break-mobile"; "keep-head" ]
+    ~th_class
+    ~cols
+    ~row
+    data_table
+    experiments
 ;;
 
 let index (Pool_context.{ language; _ } as context) experiments query =
