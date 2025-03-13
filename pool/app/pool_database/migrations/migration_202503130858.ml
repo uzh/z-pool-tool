@@ -3,7 +3,7 @@ let update_job_queue_mapping_fk_constraint
       ~constraint_name
       ~updated_constraint
   =
-  let _ =
+  let drop_constraint =
     Database.Migration.Step.create
       ~label:(Format.asprintf "drop job queue mapping fk_constraint of %s" table_name)
       [%string
@@ -22,7 +22,7 @@ let update_job_queue_mapping_fk_constraint
           ON DELETE CASCADE;
       |sql}]
   in
-  [ add_constraint ]
+  [ drop_constraint; add_constraint ]
 ;;
 
 let update_assignment_fk =
