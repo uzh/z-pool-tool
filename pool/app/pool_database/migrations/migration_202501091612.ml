@@ -234,6 +234,16 @@ let populate_pool_experiment_invitation_reset =
   |sql}
 ;;
 
+(* Due to the promoted contacts, FOREIGN KEY to the user table *)
+let add_pool_invitations_user_users_fk =
+  Database.Migration.Step.create
+    ~label:"add unique combination to pool_queue_jobs_mapping"
+    {sql|
+      ALTER TABLE pool_invitations
+        ADD CONSTRAINT FOREIGN KEY (contact_uuid) REFERENCES user_users(uuid);
+  |sql}
+;;
+
 let migration () =
   Database.Migration.(
     empty "202501091612"
@@ -250,5 +260,7 @@ let migration () =
     |> add_step create_pool_queue_job_invitations_table
     |> add_step populate_pool_queue_job_invitations_table
     |> add_step create_experiment_invitation_reset_table
-    |> add_step populate_pool_experiment_invitation_reset)
+    |> add_step populate_pool_experiment_invitation_reset
+    |> add_step add_pool_invitations_user_users_fk
+    )
 ;;
