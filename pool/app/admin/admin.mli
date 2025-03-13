@@ -117,6 +117,7 @@ val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val default_sort : Query.Sort.t
 val default_query : Query.t
+val query_from_request : Rock.Request.t -> Query.t
 
 module Guard : sig
   val to_actor : t -> Guard.Uuid.Actor.t
