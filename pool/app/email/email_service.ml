@@ -401,12 +401,31 @@ let dispatch
   let%lwt channel =
     Connection.open_channel ~id:"email_channel" Channel.no_confirm connection
   in
+  let dlx_name = "dead_letter_exchange" in
+  let%lwt (dlexchange : [ `Queue of string ] Exchange.t) =
+    Exchange.declare channel Exchange.direct_t ~durable:true dlx_name
+  in
+  Logs.warn ~src (fun m -> m ~tags "TESTING");
   let%lwt queue =
     Queue.declare
-      ~arguments:[ "x-overflow", Amqp.Types.VLongstr "reject-publish" ]
+      ~durable:true
+      ~arguments:
+        [ "x-queue-type", Amqp.Types.VLongstr "quorum"
+        ; Queue.dead_letter_exchange dlx_name
+        ; Queue.message_ttl 1200
+        ; Queue.max_length 3
+        ]
       channel
-      "email_jobs"
+      "email_jobs_dev"
   in
+  Logs.warn ~src (fun m -> m ~tags "TESTING");
+  let dlq_name = "dead_letter_queue" in
+  let%lwt dlq =
+    Queue.declare channel ~durable:true ~exclusive:false ~auto_delete:false dlq_name
+  in
+  Logs.warn ~src (fun m -> m ~tags "TESTING");
+  let%lwt () = Queue.bind channel dlq dlexchange (`Queue dlq_name) in
+  Logs.warn ~src (fun m -> m ~tags "TESTING");
   let%lwt resp =
     Queue.publish
       channel

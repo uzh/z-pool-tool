@@ -27,7 +27,7 @@ class EmailWorker:
 
 if __name__ == "__main__":
     # Example usage for different pools
-    pools = ["pool1", "pool2", "pool3", "pool4"]
+    pools = ["econ-uzh", "psych", "pool3", "pool4"]
     for pool in pools:
         worker = EmailWorker(f"email_queue_{pool}")
         worker.start_consuming()
