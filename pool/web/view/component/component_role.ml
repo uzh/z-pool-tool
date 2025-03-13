@@ -20,7 +20,6 @@ let create_target_path ?uuid =
   let build path =
     CCOption.map_or ~default:"" Guard.Uuid.Target.to_string
     %> Format.asprintf "/admin/%s/%s/" path
-    %> Sihl.Web.externalize_path
   in
   flip CCOption.bind (function
     | `Experiment -> Some (build "experiments" uuid)
@@ -68,10 +67,6 @@ let create_target_path ?uuid =
     | `WaitingList -> None)
 ;;
 
-let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
-  create_target_path ?uuid:target_uuid target_model
-;;
-
 let roles_section ?(top_element = []) language children =
   let open Pool_common in
   div
@@ -92,6 +87,9 @@ module List = struct
          , (_ : Role.Target.t option)
          , (title : string option) ) as role_element)
     =
+    let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
+      create_target_path ?uuid:target_uuid target_model
+    in
     let button_form target name submit_type confirm_text =
       form
         ~a:
