@@ -22,7 +22,7 @@ let terms ?notification terms Pool_context.{ language; query_parameters; csrf; _
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Utils.text_to_string language I18n.TermsAndConditionsTitle) ]
     ; div
         ~a:[ a_class [ "stack" ] ]

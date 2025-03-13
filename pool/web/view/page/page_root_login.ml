@@ -12,7 +12,7 @@ let login ?intended Pool_context.{ language; csrf; _ } =
     [ div
         ~a:[ a_class [ "stack" ] ]
         [ h1
-            ~a:[ a_class [ "heading-1" ] ]
+            ~a:[ a_class [ "heading-1"; "has-gap" ] ]
             [ txt Pool_common.(Utils.text_to_string language I18n.LoginTitle) ]
         ; form
             ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]

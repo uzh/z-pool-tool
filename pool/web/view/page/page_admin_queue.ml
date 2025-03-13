@@ -45,7 +45,7 @@ let list Pool_context.{ language; _ } queue_table url (queued_jobs, query) =
       | JobName.CheckMatchesFilter -> ""
     in
     let formatted_date_time date =
-      span ~a:[ a_class [ "nobr" ] ] [ txt (formatted_date_time date) ]
+      span ~a:[ a_class [ "nowrap" ] ] [ txt (formatted_date_time date) ]
     in
     let name =
       Instance.name

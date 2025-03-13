@@ -111,7 +111,7 @@ let new_form { Pool_context.language; csrf; _ } =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         Pool_common.
           [ Control.(Create (Some Field.Admin)) |> Utils.control_to_string language |> txt
           ]
@@ -150,7 +150,7 @@ let index (Pool_context.{ language; _ } as context) admins =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Admins) ]
     ; list context admins
     ]
@@ -158,7 +158,7 @@ let index (Pool_context.{ language; _ } as context) admins =
 
 let detail ({ Pool_context.language; _ } as context) admin target_id granted_roles =
   let user = Admin.user admin in
-  [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ]
+  [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt (Pool_user.fullname user) ]
   ; Input.link_as_button
       ~icon:Icon.Create
       ~control:(language, Control.(Edit None))
@@ -172,7 +172,7 @@ let edit context editable_admin target_id granted_roles top_element =
   let user = Admin.user editable_admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Pool_user.fullname user) ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt (Pool_user.fullname user) ]
     ; roles_list ~is_edit:true ~top_element context target_id granted_roles
     ]
 ;;

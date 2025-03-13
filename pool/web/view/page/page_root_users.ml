@@ -46,11 +46,11 @@ let list root_list (Pool_context.{ language; csrf; _ } as context) flash_fetcher
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Utils.nav_link_to_string language I18n.Users) ]
     ; root_list
     ; h2
-        ~a:[ a_class [ "heading-2" ] ]
+        ~a:[ a_class [ "heading-2"; "has-gap" ] ]
         [ Utils.control_to_string language Control.(Create (Some Field.Root)) |> txt ]
     ; form
         ~a:

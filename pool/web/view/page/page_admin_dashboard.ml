@@ -36,7 +36,7 @@ module Partials = struct
       in
       [ txt (start_end_with_duration_human session)
       ; span
-          ~a:[ a_class [ "word-break-all" ] ]
+          ~a:[ a_class [ "word-wrap-break-all" ] ]
           [ txt Experiment.(experiment.title |> Title.value) ]
       ; txt Pool_location.(session.location.name |> Name.value)
       ; Component.(Input.link_as_button ~icon:Icon.Eye (session_path session))
@@ -58,7 +58,9 @@ end
 
 let index statistics duplicate_contacts_count layout Pool_context.{ language; _ } =
   let heading_2 title =
-    h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Utils.text_to_string language title) ]
+    h2
+      ~a:[ a_class [ "heading-2"; "has-gap" ] ]
+      [ txt (Utils.text_to_string language title) ]
   in
   let information_section incomplete_sessions =
     let statistics_html =
@@ -76,7 +78,7 @@ let index statistics duplicate_contacts_count layout Pool_context.{ language; _ 
         ]
     in
     div
-      ~a:[ a_class [ "grid-col-3"; "stretch-only-child" ] ]
+      ~a:[ a_class [ "grid-col-3"; "stretch-only-child"; "grid-gap-lg" ] ]
       [ statistics_html; div ~a:[ a_class [ "span-2" ] ] [ incomplete_sessions_html ] ]
   in
   let upcoming_section children =
@@ -124,7 +126,7 @@ let index statistics duplicate_contacts_count layout Pool_context.{ language; _ 
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Utils.text_to_string language I18n.DashboardTitle) ]
     ; div ~a:[ a_class [ "stack-xl" ] ] html
     ]

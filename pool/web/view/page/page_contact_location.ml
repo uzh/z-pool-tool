@@ -28,7 +28,7 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Name.value location.name) ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt (Name.value location.name) ]
     ; div
         ~a:[ a_class [ "switcher" ] ]
         [ div

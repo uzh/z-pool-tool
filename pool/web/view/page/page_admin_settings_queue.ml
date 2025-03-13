@@ -138,7 +138,9 @@ let index queue_table (Pool_context.{ language; _ } as context) job =
       | `History -> I18n.QueueHistory
       | `Current -> I18n.Queue
     in
-    h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Utils.nav_link_to_string language i18n) ]
+    h1
+      ~a:[ a_class [ "heading-1"; "has-gap" ] ]
+      [ txt (Utils.nav_link_to_string language i18n) ]
   in
   let switch_table =
     (fun (path_table, i18n) ->
@@ -214,7 +216,7 @@ let detail Pool_context.({ language; _ } as context) ?text_message_dlr instance 
         ]
       [ div
           [ h1
-              ~a:[ a_class [ "heading-1" ] ]
+              ~a:[ a_class [ "heading-1"; "has-gap" ] ]
               [ Format.asprintf
                   "%s%s"
                   (instance |> Instance.name |> JobName.show)

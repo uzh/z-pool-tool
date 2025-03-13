@@ -203,7 +203,6 @@ let create_main
       ?(kind : [ `Tenant | `Root ] = `Tenant)
       ?active_navigation
       ({ Pool_context.database_label; user; _ } as context)
-      title
       tenant_languages
   =
   let%lwt actor = Pool_context.Utils.find_authorizable_opt database_label user in
@@ -217,9 +216,7 @@ let create_main
     |> Lwt.map (fun make_links -> make_links ?actor ?active_navigation)
   in
   let desktop = NavUtils.create_desktop_nav nav_links in
-  let mobile =
-    NavUtils.create_mobile_nav ~title ~toggle_id:"navigation-overlay" nav_links
-  in
+  let mobile = NavUtils.make_mobile_header nav_links in
   Lwt.return [ desktop; mobile ]
 ;;
 

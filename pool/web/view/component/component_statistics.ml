@@ -101,7 +101,7 @@ module Pool = struct
       Pool_common.I18n.
         [ create_table contact_counters
         ; div
-            ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
+            ~a:[ a_class [ "border"; "inset"; "bg-grey-lightest" ] ]
             [ h3
                 ~a:[ a_class [ "heading-3" ] ]
                 Pool_common.
@@ -269,11 +269,17 @@ module ExperimentOverview = struct
       ]
     in
     div
-      [ h3 [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentStatistics) ]
+      [ h3
+          ~a:[ a_class [ "has-gap" ] ]
+          [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentStatistics) ]
       ; experiment_statistics |> to_table
-      ; h4 [ txt Pool_common.(Utils.nav_link_to_string language I18n.Invitations) ]
+      ; h4
+          ~a:[ a_class [ "has-gap" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Invitations) ]
       ; invitations_statistics
-      ; h4 [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments) ]
+      ; h4
+          ~a:[ a_class [ "has-gap" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments) ]
       ; assignments_statistics |> to_table
       ]
   ;;

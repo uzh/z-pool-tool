@@ -14,7 +14,7 @@ let layout language children =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     (h1
-       ~a:[ a_class [ "heading-1" ] ]
+       ~a:[ a_class [ "heading-1"; "has-gap" ] ]
        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
      :: children)
 ;;

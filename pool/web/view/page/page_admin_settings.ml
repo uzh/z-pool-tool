@@ -69,7 +69,7 @@ let show
   in
   let make_columns title ?hint columns =
     div
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt title ]
+      [ h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt title ]
       ; hint |> CCOption.map_or ~default:(txt "") (fun hint -> p [ txt hint ])
       ; div ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ] columns
       ]
@@ -440,7 +440,7 @@ let show
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Settings) ]
     ; body_html
     ]

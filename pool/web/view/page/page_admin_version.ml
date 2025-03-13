@@ -44,7 +44,7 @@ let index (Pool_context.{ language; _ } as context) versions =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Utils.text_to_string language I18n.VersionsListTitle) ]
     ; changelog_hint language
     ; list context versions
@@ -56,7 +56,7 @@ let show { Pool_context.language; _ } { Pool_version.tag; text; _ } =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt
             (Format.asprintf
                "%s %s"

@@ -70,7 +70,7 @@ let index (Pool_context.{ language; _ } as context) location smtp_auth_list quer
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Smtp) ]
     ; list context location smtp_auth_list query
     ]
@@ -166,7 +166,7 @@ let show Pool_context.{ language; csrf; _ } location flash_fetcher smtp_auth =
   let smtp_password =
     div
       ~a:[ a_class [ "stack" ] ]
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Update or Delete Password" ]
+      [ h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt "Update or Delete Password" ]
       ; form
           ~a:(action_path "/password" |> form_attrs)
           [ csrf_element csrf ()
@@ -199,7 +199,7 @@ let show Pool_context.{ language; csrf; _ } location flash_fetcher smtp_auth =
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Email Server Settings (SMTP)" ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt "Email Server Settings (SMTP)" ]
     ; p
         [ Pool_common.(Utils.hint_to_string language I18n.SmtpSettingsIntro)
           |> HttpUtils.add_line_breaks
@@ -235,7 +235,9 @@ let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
         ; a_user_data "detect-unsaved-changes" ""
         ]
       ([ csrf_element csrf (); smtp_form_inputs language flash_fetcher None ]
-       @ [ h3 [ txt Pool_common.(Utils.text_to_string language I18n.Validation) ]
+       @ [ h3
+             ~a:[ a_class [ "has-gap" ] ]
+             [ txt Pool_common.(Utils.text_to_string language I18n.Validation) ]
          ; p [ txt Pool_common.(Utils.hint_to_string language I18n.SmtpValidation) ]
          ; input_element ~flash_fetcher ~required:true language `Email Field.EmailAddress
          ; submit ()
@@ -243,7 +245,7 @@ let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Configure Email Server (SMTP)" ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt "Configure Email Server (SMTP)" ]
     ; p
         [ Pool_common.(Utils.hint_to_string language I18n.SmtpSettingsIntro)
           |> HttpUtils.add_line_breaks

@@ -24,7 +24,7 @@ let toggle_status_form
   form
     ~a:([ a_method `Post; a_action (externalize action) ] @ confirmable)
     [ csrf_element csrf ()
-    ; submit_element ?has_icon ~classnames:[ "nobr" ] ~submit_type language control ()
+    ; submit_element ?has_icon ~classnames:[ "nowrap" ] ~submit_type language control ()
     ]
 ;;
 
@@ -128,7 +128,7 @@ let verify_form csrf language query_language contact =
 let status_form_table language forms =
   div
     [ h2
-        ~a:[ a_class [ "heading-2" ] ]
+        ~a:[ a_class [ "heading-2"; "has-gap" ] ]
         [ txt
             Pool_common.(
               Utils.field_to_string language Pool_message.Field.Status

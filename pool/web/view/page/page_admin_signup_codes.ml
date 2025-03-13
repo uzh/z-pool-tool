@@ -95,7 +95,7 @@ let index tenant_url (Pool_context.{ language; _ } as context) codes =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Utils.nav_link_to_string language I18n.SignupCodes) ]
     ; p [ txt (Utils.hint_to_string language I18n.SignUpCodeHint) ]
     ; generate_code language tenant_url

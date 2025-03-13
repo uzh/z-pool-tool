@@ -38,10 +38,7 @@ let create
   in
   let active_navigation = custom_field_path model in
   let html = make_body ?buttons ?hint language title content in
-  let overlay_title = Custom_field.Model.show model |> CCString.capitalize_ascii in
   let title = Pool_common.(I18n.CustomFields |> Utils.nav_link_to_string language) in
-  let subpage =
-    make_tabs ~actor ~active_navigation ~overlay_title context html nav_elements
-  in
+  let subpage = make_tabs ~actor ~active_navigation context html nav_elements in
   with_heading title subpage |> Lwt.return
 ;;

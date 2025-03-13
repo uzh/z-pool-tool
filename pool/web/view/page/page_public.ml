@@ -67,7 +67,7 @@ let index
     | true -> []
     | false ->
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ txt (text_to_string Pool_common.I18n.DontHaveAnAccount) ]
       ; div
           ~a:[ a_class [ "stack" ] ]
@@ -89,7 +89,7 @@ let index
     then []
     else
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ txt (text_to_string Pool_common.I18n.OurPartners) ]
       ; div
           ~a:[ a_class [ "grid-col-4"; "flex-gap" ] ]
@@ -105,8 +105,11 @@ let index
     [ div
         ~a:[ a_class [ "flexrow"; "flex-gap-lg"; "index-page" ] ]
         [ div
-            ~a:[ a_class [ "bg-grey-light"; "border"; "border-radius"; "inset-lg" ] ]
-            ((div [ welcome_text |> I18n.content_to_string |> Unsafe.data ] :: sign_up_cta)
+            ~a:[ a_class [ "bg-grey-lightest"; "border"; "border-radius"; "inset-lg" ] ]
+            ((div
+                ~a:[ a_class [ "rich-text" ] ]
+                [ welcome_text |> I18n.content_to_string |> Unsafe.data ]
+              :: sign_up_cta)
              @ partner_html)
         ; div
             ~a:[ a_class [ "flexcolumn"; "stack" ] ]
@@ -131,7 +134,9 @@ let login ?intended Pool_context.({ language; _ } as context) flash_fetcher =
   let txt_to_string = txt_to_string language in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] (txt_to_string Pool_common.I18n.LoginTitle)
+    [ h1
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
+        (txt_to_string Pool_common.I18n.LoginTitle)
     ; login_form ?intended ~flash_fetcher context
     ]
 ;;
@@ -140,7 +145,7 @@ let request_reset_password Pool_context.{ language; query_parameters; csrf; _ } 
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.ResetPasswordTitle) ]
     ; form
         ~a:
@@ -171,7 +176,7 @@ let reset_password
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.ResetPasswordTitle) ]
     ; form
         ~a:
@@ -214,7 +219,7 @@ let terms_and_conditions language terms terms_last_updated =
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt title ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt title ]
     ; p [ txt last_updated ]
     ; p [ Unsafe.data terms ]
     ]

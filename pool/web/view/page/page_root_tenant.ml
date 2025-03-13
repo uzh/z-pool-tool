@@ -159,14 +159,14 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tenants) ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         [ tenant_list
         ; div
             [ h2
-                ~a:[ a_class [ "heading-2" ] ]
+                ~a:[ a_class [ "heading-2"; "has-gap" ] ]
                 [ Pool_common.(
                     Utils.control_to_string language Control.(Create (Some Field.Tenant)))
                   |> txt
@@ -184,7 +184,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
   let create_operator_form =
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ txt
               Pool_common.(
                 Utils.control_to_string language Control.(Create (Some Field.Operator)))
@@ -233,7 +233,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ Pool_common.Utils.field_to_string language Field.Operators
           |> CCString.capitalize_ascii
           |> txt
@@ -319,7 +319,7 @@ let detail
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (tenant.Pool_tenant.title |> Pool_tenant.Title.value) ]
     ; p
         [ a

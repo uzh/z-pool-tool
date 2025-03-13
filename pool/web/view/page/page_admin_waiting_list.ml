@@ -247,7 +247,7 @@ let detail
     in
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
       ; p [ txt (I18n.AssignContactFromWaitingList |> Utils.hint_to_string language) ]
       ; content
