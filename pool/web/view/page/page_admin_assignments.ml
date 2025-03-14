@@ -597,11 +597,7 @@ let data_table
       ]
   in
   let session_change_toggle assignment =
-    let action =
-      action assignment "swap-session"
-      |> Sihl.Web.externalize_path
-      |> Sihl.Web.externalize_path
-    in
+    let action = action assignment "swap-session" |> Sihl.Web.externalize_path in
     link_as_button
       "#"
       ~attributes:

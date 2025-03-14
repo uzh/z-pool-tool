@@ -40,7 +40,11 @@ let list { Pool_context.language; _ } ?contact (possible_duplicates, query) =
     let attrs = if Ignored.value ignored then [ a_class [ "bg-red-lighter" ] ] else [] in
     let contact_link contact =
       a
-        ~a:[ a_href (Http_utils.Url.Admin.contact_path ~id:(Contact.id contact) ()) ]
+        ~a:
+          [ a_href
+              (Http_utils.Url.Admin.contact_path ~id:(Contact.id contact) ()
+               |> Sihl.Web.externalize_path)
+          ]
         [ txt (fullname contact) ]
     in
     let base =
