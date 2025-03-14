@@ -18,10 +18,6 @@ let contact_id =
 
 let duplicate_id = HttpUtils.find_id Duplicate_contacts.Id.of_string Field.Duplicate
 
-let get_flat_customfields pool user contact =
-  Contact.id contact |> Custom_field.find_all_by_contact_flat pool user
-;;
-
 let index req =
   let contact_id = contact_id req in
   let error_path =
@@ -54,7 +50,7 @@ let index req =
 ;;
 
 let show req =
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Lwt_result.map_error (fun err -> err, duplicate_path ())
     @@
     let open Duplicate_contacts in
@@ -62,7 +58,10 @@ let show req =
       Custom_field.find_by_model database_label Custom_field.Model.Contact
     in
     let get_fields contact =
-      get_flat_customfields database_label user contact ||> CCPair.make contact
+      contact
+      |> Contact.id
+      |> Custom_field.find_to_merge_contact database_label
+      ||> CCPair.make contact
     in
     let* duplicate = duplicate_id req |> find database_label in
     let%lwt contact_a = get_fields duplicate.contact_a in
@@ -111,7 +110,9 @@ let merge req =
     let%lwt fields =
       Custom_field.find_by_model database_label Custom_field.Model.Contact
     in
-    let get_fields contact = get_flat_customfields database_label user contact in
+    let get_fields contact =
+      contact |> Contact.id |> Custom_field.find_to_merge_contact database_label
+    in
     let%lwt fields_a = get_fields duplicate.contact_a in
     let%lwt fields_b = get_fields duplicate.contact_b in
     let* data =
