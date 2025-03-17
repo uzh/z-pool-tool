@@ -153,10 +153,6 @@ select[readonly] {
         color: c.$red;
         cursor: pointer;
     }
-
-    [data-new-predicate] button {
-        padding: vars.$space-xs vars.$space-sm;
-    }
 }
 
 .filter-bar-reset {
