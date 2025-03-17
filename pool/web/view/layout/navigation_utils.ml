@@ -132,7 +132,7 @@ let i18n_links languages query_parameters active_language layout =
   let nav_class =
     match layout with
     | Vertical -> []
-    | Horizonal -> [ "secondary-nav" ]
+    | Horizonal -> [ "secondary-nav"; "inset-lg"; "left" ]
   in
   let to_html language =
     let lang = Language.show language in
