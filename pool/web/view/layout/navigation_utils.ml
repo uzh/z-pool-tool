@@ -172,11 +172,16 @@ let create_desktop_nav fcn =
   |> div ~a:[ a_class [ "hidden-mobile"; "flexrow"; "flex-gap-lg"; "align-center" ] ]
 ;;
 
-let create_mobile_nav ~toggle_id navigation =
+let create_mobile_nav ~toggle_id ?title navigation =
   let overlay navigation =
+    let title =
+      title
+      |> CCOption.map_or ~default:(txt "") (fun title ->
+        h2 ~a:[ a_class [ "word-wrap-break" ] ] [ txt title ])
+    in
     div
       ~a:[ a_id toggle_id; a_class [ "mobile-nav"; "bg-white" ] ]
-      [ div ~a:[ a_class [ "mobile-nav-inner"; "fade-in" ] ] navigation ]
+      [ div ~a:[ a_class [ "mobile-nav-inner"; "fade-in" ] ] (title :: navigation) ]
   in
   navigation Vertical |> overlay
 ;;

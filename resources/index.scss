@@ -449,6 +449,10 @@ table.simple {
     z-index: 12;
 }
 
+.mobile-nav-inner h2 {
+    margin-bottom: vars.$space-lg;
+}
+
 .note+* {
     margin-top: vars.$space-base;
 }
