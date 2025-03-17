@@ -110,7 +110,6 @@ let rec build_nav_links
     nav_link @ [ build_rec children ] |> li ~a:parent_attrs
 ;;
 
-(* TODO: This step seems unnecessary *)
 let create_nav
       { Pool_context.query_parameters; language; guardian; _ }
       items
@@ -123,10 +122,7 @@ let create_nav
     filter_items ?validate ?actor ~guardian items
     |> CCList.map (build_nav_links ~layout ?active_navigation language query_parameters)
   in
-  let nav = [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ] in
-  match layout with
-  | Vertical -> nav
-  | Horizonal -> nav
+  [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ]
 ;;
 
 let i18n_links languages query_parameters active_language layout =
