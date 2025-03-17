@@ -17,6 +17,11 @@ let show req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/")
     @@
+    let open_tab =
+      Sihl.Web.Request.query "action" req
+      |> CCOption.map_or ~default:None (fun str ->
+        str |> Settings.action_of_param |> CCResult.to_opt)
+    in
     let languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt email_suffixes = Settings.find_email_suffixes database_label in
     let%lwt contact_email = Settings.find_contact_email database_label in
@@ -46,6 +51,7 @@ let show req =
     let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Settings.show
+      ?open_tab
       languages
       email_suffixes
       contact_email
@@ -75,7 +81,14 @@ let update_settings req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let redirect_path = "/admin/settings" in
+  let action =
+    Sihl.Web.Router.param req "action" |> Settings.action_of_param |> CCResult.get_exn
+  in
+  let redirect_path =
+    let open Uri in
+    let path = of_string "/admin/settings" in
+    add_query_param path ("action", [ Settings.stringify_action action ]) |> to_string
+  in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
@@ -134,10 +147,7 @@ let update_settings req =
           UpdatePageScript.(urlencoded |> decode location >>= handle ~tags location)
           |> lift
       in
-      Sihl.Web.Router.param req "action"
-      |> Settings.action_of_param
-      |> lift
-      >>= command_handler urlencoded
+      command_handler urlencoded action
     in
     let handle = Pool_event.handle_events ~tags database_label user in
     let return_to_settings () =

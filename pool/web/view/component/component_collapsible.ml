@@ -3,9 +3,12 @@ open Tyxml.Html
 let chevron_icon = Component_icon.(to_html ChevronForward)
 let info_icon = Component_icon.(to_html HelpOutline)
 
-let create title html =
+let create ?(active = false) title html =
   div
-    ~a:[ a_class [ "collapsible"; "note"; "standalone" ] ]
+    ~a:
+      [ a_class
+          ([ "collapsible"; "note"; "standalone" ] @ if active then [ "active" ] else [])
+      ]
     [ div
         ~a:
           [ a_class [ "collapsible-header" ]

@@ -35,6 +35,7 @@ let inactive_user_warning_input language warning =
 ;;
 
 let show
+      ?open_tab
       tenant_languages
       email_suffixes
       contact_email
@@ -69,6 +70,7 @@ let show
   in
   let make_columns ?hint columns =
     div
+      ~a:[ a_class [ "stack" ] ]
       [ hint |> CCOption.map_or ~default:(txt "") (fun hint -> p [ txt hint ])
       ; div ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ] columns
       ]
@@ -108,7 +110,7 @@ let show
     let hint =
       "You have to add Terms and Condidions before you can activate a new language."
     in
-    "Languages", [ form ], Some hint
+    "Languages", [ form ], Some hint, [ `UpdateLanguages ]
   in
   let email_suffixes_html =
     let control_to_string control =
@@ -202,7 +204,7 @@ let show
     in
     let title = "Email Suffixes" in
     let columns = [ suffix_rows email_suffixes; create_form ] in
-    title, columns, None
+    title, columns, None, [ `UpdateEmailSuffixes ]
   in
   let contact_email_html =
     let form =
@@ -218,7 +220,7 @@ let show
         ; submit ~control:Message.(Control.Add None) ()
         ]
     in
-    "Contact Email", [ form ], None
+    "Contact Email", [ form ], None, [ `UpdateContactEmail ]
   in
   let inactive_user_html =
     let open Settings.InactiveUser in
@@ -258,7 +260,7 @@ let show
           (fun warning ->
              warning |> CCOption.return |> inactive_user_warning_input language)
           inactive_user_warning
-        |> div ~a:[ a_class [ "stack" ]; a_id subforms_id ]
+        |> div ~a:[ a_class [ "stack"; "gap-sm" ]; a_id subforms_id ]
       in
       let buttons =
         div
@@ -284,21 +286,25 @@ let show
           ]
       in
       div
-        [ p
-            [ txt
-                (Pool_common.Utils.field_to_string_capitalized
-                   language
-                   Pool_message.Field.InactiveUserWarning)
-            ]
-        ; form
+        [ form
             ~a:(form_attrs `UpdateInactiveUserWarning)
-            [ csrf_element csrf (); subforms; buttons ]
+            [ csrf_element csrf ()
+            ; label
+                [ txt
+                    (Pool_common.Utils.field_to_string_capitalized
+                       language
+                       Pool_message.Field.InactiveUserWarning)
+                ]
+            ; subforms
+            ; buttons
+            ]
         ]
     in
     let hint = Pool_common.(I18n.SettigsInactiveUsers |> Utils.hint_to_string language) in
     ( "Inactive Users"
     , [ disable_service_form; disable_after_form; warn_after_form ]
-    , Some hint )
+    , Some hint
+    , [ `UpdateUnactiveUserServiceDisabled; `UpdateInactiveUserWarning ] )
   in
   let trigger_profile_update_after_html =
     let open Settings.TriggerProfileUpdateAfter in
@@ -319,7 +325,7 @@ let show
         ; submit ()
         ]
     in
-    title, [ form ], None
+    title, [ form ], None, [ `UpdateTriggerProfileUpdateAfter ]
   in
   let default_lead_time =
     let title = "Reminder lead time" in
@@ -365,7 +371,10 @@ let show
           ; input_el
           ]
     in
-    title, [ email_lead_time; text_message_lead_time ], None
+    ( title
+    , [ email_lead_time; text_message_lead_time ]
+    , None
+    , [ `UpdateDefaultLeadTime; `UpdateTextMsgDefaultLeadTime ] )
   in
   let user_import_reminder =
     let open Settings.UserImportReminder in
@@ -400,7 +409,10 @@ let show
       ]
     in
     let hint = Pool_common.(Utils.hint_to_string language I18n.SettingsPageScripts) in
-    title, columns, Some hint
+    ( title
+    , columns
+    , Some hint
+    , [ `UserImportFirstReminderAfter; `UserImportSecondReminderAfter ] )
   in
   let page_scripts =
     let open Settings.PageScript in
@@ -421,7 +433,7 @@ let show
       ; make_form Pool_message.Field.PageScriptsBody page_scripts.body `UpdateBodyScripts
       ]
     in
-    title, columns, None
+    title, columns, None, [ `UpdateHeadScripts; `UpdateBodyScripts ]
   in
   let body_html =
     [ languages_html
@@ -433,9 +445,14 @@ let show
     ; user_import_reminder
     ; page_scripts
     ]
-    |> CCList.map (fun (title, columns, hint) ->
+    |> CCList.map (fun (title, columns, hint, form_actions) ->
       let html = make_columns ?hint columns in
-      Component.Collapsible.create (txt title) html)
+      let active =
+        open_tab
+        |> CCOption.map_or ~default:false (fun active_tab ->
+          CCList.mem active_tab form_actions)
+      in
+      Component.Collapsible.create ~active (txt title) html)
     |> div ~a:[ a_class [ "stack" ] ]
   in
   div
