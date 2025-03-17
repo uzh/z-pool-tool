@@ -26,13 +26,7 @@ let find_of_contact ?(required = false) pool user id =
 
 let find_all_by_contact = find_of_contact ~required:false
 let find_all_required_by_contact = find_of_contact ~required:true
-
-let find_all_by_contact_flat pool user contact_id =
-  let open Utils.Lwt_result.Infix in
-  find_all_by_contact pool user contact_id
-  ||> fun (groups, ungrouped) ->
-  groups |> CCList.fold_left (fun acc group -> group.Group.Public.fields @ acc) ungrouped
-;;
+let find_to_merge_contact pool id = Repo_public.Sql.find_to_merge_contact pool id
 
 let find_unanswered_required_by_contact database_label user id =
   let open Pool_context in

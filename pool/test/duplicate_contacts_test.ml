@@ -239,12 +239,12 @@ module MergeData = struct
       |> Lwt_list.iteri_s (fun i field ->
         [ contact_a; contact_b ] |> Lwt_list.iter_s (save_answer field i))
     in
-    Lwt.return (current_user, duplicate, [ field_1; field_2; field_3 ])
+    Lwt.return (duplicate, [ field_1; field_2; field_3 ])
   ;;
 
-  let fields_by_contact current_user fields contact =
+  let fields_by_contact fields contact =
     let open Custom_field in
-    find_all_by_contact_flat pool current_user (Contact.id contact)
+    find_to_merge_contact pool (Contact.id contact)
     ||> CCList.filter (fun field ->
       fields |> CCList.exists (fun f -> Id.equal (Public.id field) (id f)))
   ;;
@@ -300,9 +300,9 @@ end
 let override_a_with_b _ () =
   let open Duplicate_contacts in
   let open MergeData in
-  let%lwt current_user, duplicate, fields = setup_merge_contacts () in
+  let%lwt duplicate, fields = setup_merge_contacts () in
   let { contact_a; contact_b; _ } = duplicate in
-  let fields_by_contact = fields_by_contact current_user fields in
+  let fields_by_contact = fields_by_contact fields in
   let%lwt fields_a = fields_by_contact contact_a in
   let%lwt fields_b = fields_by_contact contact_b in
   let urlencoded =
@@ -337,9 +337,9 @@ let override_a_with_b _ () =
 let override_b_with_a _ () =
   let open Duplicate_contacts in
   let open MergeData in
-  let%lwt current_user, duplicate, fields = setup_merge_contacts () in
+  let%lwt duplicate, fields = setup_merge_contacts () in
   let { contact_a; contact_b; _ } = duplicate in
-  let fields_by_contact = fields_by_contact current_user fields in
+  let fields_by_contact = fields_by_contact fields in
   let%lwt fields_a = fields_by_contact contact_a in
   let%lwt fields_b = fields_by_contact contact_b in
   let urlencoded =

@@ -506,11 +506,7 @@ val find_all_required_by_contact
   -> Contact.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
-val find_all_by_contact_flat
-  :  Database.Label.t
-  -> Pool_context.user
-  -> Contact.Id.t
-  -> Public.t list Lwt.t
+val find_to_merge_contact : Database.Label.t -> Contact.Id.t -> Public.t list Lwt.t
 
 val find_unanswered_required_by_contact
   :  Database.Label.t

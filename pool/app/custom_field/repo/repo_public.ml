@@ -115,6 +115,13 @@ module Sql = struct
     >|> to_grouped_public is_admin pool model
   ;;
 
+  let find_to_merge_contact pool id =
+    let open Caqti_request.Infix in
+    let open Utils.Lwt_result.Infix in
+    let request = select_sql |> Contact.Repo.Id.t ->* Repo_entity.Public.t in
+    Database.collect pool request id >|> to_ungrouped_entities pool true
+  ;;
+
   let find_unanswered_required_by_model_request is_admin =
     let open Caqti_request.Infix in
     let where =
