@@ -1,10 +1,9 @@
 @use "sass:color";
 @use "sass:math";
-@use "@econ/frontend-framework/dist/main" with (
-  $notification-position: 7rem 0 auto 0,
-  $font-path: "../node_modules/@econ/frontend-framework/dist/font",
-  $header-height: 124px,
-  $header-height-mobile: 96px,
+@use "@econ/frontend-framework/dist/main" with ($notification-position: 7rem 0 auto 0,
+    $font-path: "../node_modules/@econ/frontend-framework/dist/font",
+    $header-height: 124px,
+    $header-height-mobile: 96px,
 );
 @use "@econ/frontend-framework/dist/sass/colors" as c;
 @use "@econ/frontend-framework/dist/sass/variables" as vars;
@@ -13,6 +12,7 @@
 @use "./admin/calendar";
 
 $orange: rgb(226, 117, 0) !default;
+
 .color-orange,
 [class*="orange-on-"] {
     color: $orange;
@@ -38,13 +38,6 @@ h1,
     *+.heading-2 {
         margin-top: vars.$space-md;
     }
-}
-
-// TODO: Remove
-[class*="inset"].top {
-    padding-left: 0;
-    padding-bottom: 0;
-    padding-right: 0;
 }
 
 @include breakpoints.econ-mobile {
@@ -545,7 +538,7 @@ table.simple {
 $i: 1;
 $n: 12;
 
-@while $i < $n + 1 {
+@while $i < $n +1 {
     .w-#{$i} {
         width: math.percentage(calc(1 / $n) * $i);
     }
@@ -619,10 +612,11 @@ input[type="checkbox"][readonly] {
 
 // Statistics
 
-.stretch-table-cells .table tr { 
-    td, th {
+.stretch-table-cells .table tr {
+
+    td,
+    th {
         padding-left: 0;
         padding-right: 0;
     }
 }
-
