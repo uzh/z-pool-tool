@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.9.5](https://github.com/uzh/z-pool-tool/tree/0.9.4) - 2025-03-17
+
+### Fixed
+
+- merging of contacts with disabled custom fields
+
 ## [0.9.4](https://github.com/uzh/z-pool-tool/tree/0.9.4) - 2025-03-13
 
 ### Fixed
