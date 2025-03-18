@@ -71,6 +71,8 @@ module type SettingRepoSig = sig
   val t_of_yojson : Yojson.Safe.t -> t
 end
 
+let id_by_key = Sql.find_setting_id
+
 module SettingRepo (T : SettingRepoSig) = struct
   include T
 
@@ -122,6 +124,34 @@ module PageScripts = struct
     let clear () = clear tbl
   end
 
+  let create_changelog ?user_uuid pool location after =
+    let current_request =
+      let open Caqti_request.Infix in
+      [%string
+        {sql|
+          SELECT
+            %{Pool_model.Base.Id.sql_select_fragment ~field:"uuid"},
+            script
+          FROM
+            pool_tenant_page_scripts
+          WHERE location = ?
+        |sql}]
+      |> Caqti_type.(string ->! t2 Pool_common.Repo.Id.t (option string))
+    in
+    let%lwt current = Database.find_opt pool current_request (show_location location) in
+    match current with
+    | None -> Lwt.return ()
+    | Some (entity_uuid, before) ->
+      let default = CCOption.value ~default:"" in
+      Entity.PageScriptChangelog.insert
+        pool
+        ?user_uuid
+        ~entity_uuid
+        ~before:(default before)
+        ~after:(default after)
+        ()
+  ;;
+
   let update_request =
     let open Caqti_request.Infix in
     {sql|
@@ -149,7 +179,8 @@ module PageScripts = struct
     |> Caqti_type.(string ->. unit)
   ;;
 
-  let update pool (script, location) =
+  let update ?user_uuid pool (script, location) =
+    let%lwt () = create_changelog ?user_uuid pool location script in
     match script with
     | None -> Database.exec pool clear_request (show_location location)
     | Some script -> Database.exec pool update_request (show_location location, script)

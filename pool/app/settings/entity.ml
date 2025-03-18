@@ -35,19 +35,31 @@ module TermsAndConditions = struct
 end
 
 module Key = struct
+  let printer = Utils.ppx_printer
+
   type t =
-    | ContactEmail [@name "contact_email"]
-    | EmailSuffixes [@name "email_suffixes"]
+    | ContactEmail [@name "contact_email"] [@printer printer "contact_email"]
+    | EmailSuffixes [@name "email_suffixes"] [@printer printer "email_suffixes"]
     | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
+    [@printer printer "inactive_user_disable_after"]
     | InactiveUserWarning [@name "inactive_user_warning"]
+    [@printer printer "inactive_user_warning"]
     | InactiveUserServiceDisabled [@name "inactive_user_service_disabled"]
-    | Languages [@name "languages"]
+    [@printer printer "inactive_user_service_disabled"]
+    | Languages [@name "languages"] [@printer printer "languages"]
     | ReminderLeadTime [@name "default_reminder_lead_time"]
+    [@printer printer "default_reminder_lead_time"]
     | TextMsgReminderLeadTime [@name "default_text_msg_reminder_lead_time"]
+    [@printer printer "default_text_msg_reminder_lead_time"]
     | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
+    [@printer printer "trigger_profile_update_after"]
     | UserImportFirstReminderAfter [@name "user_import_first_reminder_after"]
+    [@printer printer "user_import_first_reminder_after"]
     | UserImportSecondReminderAfter [@name "user_import_second_reminder_after"]
-  [@@deriving eq, show, yojson]
+    [@printer printer "user_import_second_reminder_after"]
+  [@@deriving eq, show { with_path = false }, yojson]
+
+  let read = Utils.Json.read_variant t_of_yojson
 end
 
 module ContactEmail = struct
@@ -183,7 +195,10 @@ module UserImportReminder = struct
 end
 
 module PageScript = struct
+  include Changelog.DefaultSettings
   include Pool_model.Base.String
+
+  let model = Pool_message.Field.Setting
 
   type location =
     | Head [@name "head"] [@printer Utils.ppx_printer "head"]
@@ -198,6 +213,8 @@ module PageScript = struct
     ; body : t option
     }
 end
+
+module PageScriptChangelog = Changelog.T (PageScript)
 
 let action_of_param = function
   | "create_emailsuffix" -> Ok `CreateEmailSuffix

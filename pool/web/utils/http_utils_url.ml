@@ -21,6 +21,17 @@ let version_path ?suffix ?id () =
 
 module Admin = struct
   let settings_path = Format.asprintf "/admin/settings/%s"
+  let settings_action_path action = action |> Settings.stringify_action |> settings_path
+
+  let system_settings_changelog_path key =
+    settings_path "system"
+    |> append (Settings.Key.show key)
+    |> append Field.(human_url Changelog)
+  ;;
+
+  let system_settings_open_changelog_path key =
+    system_settings_changelog_path key |> append "open"
+  ;;
 
   let admin_path ?suffix ?id () =
     "/admin/admins" |> append_opt (map Admin.Id.value id) |> append_opt suffix

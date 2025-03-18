@@ -169,6 +169,36 @@ let inactive_user_warning_subform req =
   HttpUtils.Htmx.extract_happy_path ~src req result
 ;;
 
+let changelog req =
+  let result { Pool_context.database_label; _ } =
+    let key =
+      Http_utils.get_field_router_param req Pool_message.Field.Key |> Settings.Key.read
+    in
+    let url = Http_utils.Url.Admin.system_settings_changelog_path key in
+    let%lwt id = Settings.id_by_key database_label key in
+    Lwt_result.ok @@ Helpers.Changelog.htmx_handler ~url id req
+  in
+  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+;;
+
+let open_changelog_modal req =
+  let result ({ Pool_context.database_label; _ } as context) =
+    let key =
+      Http_utils.get_field_router_param req Pool_message.Field.Key |> Settings.Key.read
+    in
+    let%lwt id = Settings.id_by_key database_label key in
+    let%lwt changelogs =
+      let open Changelog in
+      let query = Query.from_request ~default:default_query req in
+      all_by_entity ~query database_label id
+    in
+    Page.Admin.Settings.changelog_modal context key changelogs
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+;;
+
 module Access : module type of Helpers.Access = struct
   include Helpers.Access
   module Command = Cqrs_command.Settings_command

@@ -9,6 +9,22 @@ module Smtp = Page_admin_settings_smtp
 module Tags = Page_admin_settings_tags
 module TextMessage = Page_admin_settings_text_messages
 
+let changelog_modal_id = "settings-changelog-modal"
+
+let changelog_modal context key changelog =
+  let open Component in
+  let url = HttpUtils.Url.Admin.system_settings_changelog_path key |> Uri.of_string in
+  let field_to_string lang =
+    Pool_common.Utils.field_to_string_capitalized lang Field.Changes
+  in
+  Changelog.list context url (Some changelog)
+  |> Modal.create
+       ~active:true
+       context.Pool_context.language
+       field_to_string
+       changelog_modal_id
+;;
+
 let inactive_user_warning_input language warning =
   let open Settings.InactiveUser in
   let remove_btn =
@@ -52,15 +68,31 @@ let show
       text_messages_enabled
       flash_fetcher
   =
-  let action_path action =
-    Sihl.Web.externalize_path
-      (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
-  in
   let submit ?(control = Message.(Control.Update None)) () =
     div
       ~a:[ a_class [ "flexrow" ] ]
       [ submit_element ~classnames:[ "push"; "small" ] language control () ]
   in
+  let open_changelog key =
+    let open Htmx in
+    div
+      ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+      [ button
+          ~a:
+            [ hx_get
+                (HttpUtils.Url.Admin.system_settings_open_changelog_path key
+                 |> Sihl.Web.externalize_path)
+            ; hx_swap "outerHTML"
+            ; hx_target ("#" ^ changelog_modal_id)
+            ; a_class [ "small" ]
+            ]
+          [ txt
+              Pool_common.(
+                Utils.field_to_string_capitalized language Message.Field.Changelog)
+          ]
+      ]
+  in
+  let action_path = HttpUtils.Url.Admin.settings_action_path in
   let form_attrs action =
     [ a_method `Post
     ; a_action (action_path action)
@@ -103,9 +135,13 @@ let show
       |> Component.Sortable.create_sortable
     in
     let form =
-      form
-        ~a:(form_attrs `UpdateLanguages)
-        ([ csrf_element csrf (); field_elements ] @ [ submit () ])
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateLanguages)
+            ([ csrf_element csrf (); field_elements ] @ [ submit () ])
+        ; open_changelog Settings.Key.Languages
+        ]
     in
     let hint =
       "You have to add Terms and Condidions before you can activate a new language."
@@ -183,7 +219,7 @@ let show
         ; div
             ~a:[ a_class [ "flexrow"; "gap" ] ]
             [ submit_element
-                ~classnames:[ "push" ]
+                ~classnames:[ "push"; "small" ]
                 language
                 Message.(Control.Update None)
                 ()
@@ -203,21 +239,30 @@ let show
           ]
     in
     let title = "Email Suffixes" in
-    let columns = [ suffix_rows email_suffixes; create_form ] in
-    title, columns, None, [ `UpdateEmailSuffixes ]
+    let columns =
+      [ suffix_rows email_suffixes
+      ; create_form
+      ; div ~a:[ a_class [ "full-width" ] ] [ open_changelog Settings.Key.EmailSuffixes ]
+      ]
+    in
+    title, columns, None, [ `CreateEmailSuffix; `UpdateEmailSuffixes; `DeleteEmailSuffix ]
   in
   let contact_email_html =
     let form =
-      form
-        ~a:(form_attrs `UpdateContactEmail)
-        [ csrf_element csrf ()
-        ; input_element
-            language
-            `Text
-            Pool_message.Field.ContactEmail
-            ~value:(contact_email |> Settings.ContactEmail.value)
-            ~required:true
-        ; submit ~control:Message.(Control.Add None) ()
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateContactEmail)
+            [ csrf_element csrf ()
+            ; input_element
+                language
+                `Text
+                Pool_message.Field.ContactEmail
+                ~value:(contact_email |> Settings.ContactEmail.value)
+                ~required:true
+            ; submit ~control:Message.(Control.Add None) ()
+            ]
+        ; open_changelog Settings.Key.ContactEmail
         ]
     in
     "Contact Email", [ form ], None, [ `UpdateContactEmail ]
@@ -226,7 +271,7 @@ let show
     let open Settings.InactiveUser in
     let disable_service_form =
       div
-        ~a:[ a_class [ "full-width" ] ]
+        ~a:[ a_class [ "full-width"; "stack" ] ]
         [ form
             ~a:(form_attrs `UpdateUnactiveUserServiceDisabled)
             [ csrf_element csrf ()
@@ -239,18 +284,25 @@ let show
                 ; submit ()
                 ]
             ]
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ open_changelog Settings.Key.InactiveUserServiceDisabled ]
         ]
     in
     let disable_after_form =
-      form
-        ~a:(form_attrs `UpdateInactiveUserDisableAfter)
-        [ csrf_element csrf ()
-        ; timespan_picker
-            ~required:true
-            language
-            Pool_message.Field.InactiveUserDisableAfter
-            ~value:(inactive_user_disable_after |> DisableAfter.value)
-        ; submit ()
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateInactiveUserDisableAfter)
+            [ csrf_element csrf ()
+            ; timespan_picker
+                ~required:true
+                language
+                Pool_message.Field.InactiveUserDisableAfter
+                ~value:(inactive_user_disable_after |> DisableAfter.value)
+            ; submit ()
+            ]
+        ; open_changelog Settings.Key.InactiveUserDisableAfter
         ]
     in
     let warn_after_form =
@@ -286,6 +338,7 @@ let show
           ]
       in
       div
+        ~a:[ a_class [ "stack" ] ]
         [ form
             ~a:(form_attrs `UpdateInactiveUserWarning)
             [ csrf_element csrf ()
@@ -298,13 +351,14 @@ let show
             ; subforms
             ; buttons
             ]
+        ; open_changelog Settings.Key.InactiveUserWarning
         ]
     in
     let hint = Pool_common.(I18n.SettigsInactiveUsers |> Utils.hint_to_string language) in
     ( "Inactive Users"
     , [ disable_service_form; disable_after_form; warn_after_form ]
     , Some hint
-    , [ `UpdateUnactiveUserServiceDisabled; `UpdateInactiveUserWarning ] )
+    , [ `UpdateUnactiveUserServiceDisabled; `UpdateInactiveUserDisableAfter ] )
   in
   let trigger_profile_update_after_html =
     let open Settings.TriggerProfileUpdateAfter in
@@ -314,37 +368,46 @@ let show
       |> CCString.capitalize_ascii
     in
     let form =
-      form
-        ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
-        [ csrf_element csrf ()
-        ; timespan_picker
-            ~required:true
-            language
-            Pool_message.Field.TriggerProfileUpdateAfter
-            ~value:(trigger_profile_update_after |> value)
-        ; submit ()
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
+            [ csrf_element csrf ()
+            ; timespan_picker
+                ~required:true
+                language
+                Pool_message.Field.TriggerProfileUpdateAfter
+                ~value:(trigger_profile_update_after |> value)
+            ; submit ()
+            ]
+        ; open_changelog Settings.Key.TriggerProfileUpdateAfter
         ]
     in
     title, [ form ], None, [ `UpdateTriggerProfileUpdateAfter ]
   in
   let default_lead_time =
     let title = "Reminder lead time" in
-    let lead_time_form action field value encode =
-      form
-        ~a:(form_attrs action)
-        [ csrf_element csrf ()
-        ; timespan_picker
-            ~value:(value |> encode)
-            ~required:true
-            ~flash_fetcher
-            language
-            field
-        ; submit ()
+    let lead_time_form action key field value encode =
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs action)
+            [ csrf_element csrf ()
+            ; timespan_picker
+                ~value:(value |> encode)
+                ~required:true
+                ~flash_fetcher
+                language
+                field
+            ; submit ()
+            ]
+        ; open_changelog key
         ]
     in
     let email_lead_time =
       lead_time_form
         `UpdateDefaultLeadTime
+        Settings.Key.ReminderLeadTime
         Pool_message.Field.EmailLeadTime
         default_reminder_lead_time
         Pool_common.Reminder.EmailLeadTime.value
@@ -353,6 +416,7 @@ let show
       let input_el =
         lead_time_form
           `UpdateTextMsgDefaultLeadTime
+          Settings.Key.TextMsgReminderLeadTime
           Pool_message.Field.TextMessageLeadTime
           default_text_msg_reminder_lead_time
           Pool_common.Reminder.TextMessageLeadTime.value
@@ -390,21 +454,29 @@ let show
     in
     let title = "User import" in
     let columns =
-      [ form
-          ~a:(form_attrs `UserImportFirstReminderAfter)
-          [ csrf_element csrf ()
-          ; timespan_picker
-              Pool_message.Field.FirstReminder
-              (user_import_first_reminder |> FirstReminderAfter.value)
-          ; submit ()
+      [ div
+          ~a:[ a_class [ "stack" ] ]
+          [ form
+              ~a:(form_attrs `UserImportFirstReminderAfter)
+              [ csrf_element csrf ()
+              ; timespan_picker
+                  Pool_message.Field.FirstReminder
+                  (user_import_first_reminder |> FirstReminderAfter.value)
+              ; submit ()
+              ]
+          ; open_changelog Settings.Key.UserImportFirstReminderAfter
           ]
-      ; form
-          ~a:(form_attrs `UserImportSecondReminderAfter)
-          [ csrf_element csrf ()
-          ; timespan_picker
-              Pool_message.Field.SecondReminder
-              (user_import_second_reminder |> SecondReminderAfter.value)
-          ; submit ()
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ form
+              ~a:(form_attrs `UserImportSecondReminderAfter)
+              [ csrf_element csrf ()
+              ; timespan_picker
+                  Pool_message.Field.SecondReminder
+                  (user_import_second_reminder |> SecondReminderAfter.value)
+              ; submit ()
+              ]
+          ; open_changelog Settings.Key.UserImportSecondReminderAfter
           ]
       ]
     in
@@ -460,6 +532,7 @@ let show
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Settings) ]
+    ; div ~a:[ a_id changelog_modal_id; a_class [ "modal"; "fullscreen-overlay" ] ] []
     ; body_html
     ]
 ;;

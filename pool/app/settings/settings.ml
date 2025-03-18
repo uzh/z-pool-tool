@@ -13,6 +13,7 @@ let find_default_reminder_lead_time = Repo.DefaultReminderLeadTime.find
 let find_default_text_msg_reminder_lead_time = Repo.DefaultTextMsgReminderLeadTime.find
 let find_user_import_first_reminder_after = Repo.UserImportFirstReminder.find
 let find_user_import_second_reminder_after = Repo.UserImportSecondReminder.find
+let id_by_key = Repo.id_by_key
 
 let default_language_of_list languages =
   languages

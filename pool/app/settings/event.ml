@@ -37,5 +37,5 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t = function
     Repo.UserImportFirstReminder.update ?user_uuid pool first_reminder_after
   | UserImportSecondReminderAfterUpdated second_reminder_after ->
     Repo.UserImportSecondReminder.update ?user_uuid pool second_reminder_after
-  | PageScriptUpdated script -> Repo.PageScripts.update pool script
+  | PageScriptUpdated script -> Repo.PageScripts.update ?user_uuid pool script
 ;;

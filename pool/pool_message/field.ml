@@ -46,6 +46,7 @@ type t =
   | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
   | CellPhone [@name "cell_phone"] [@printer go "cell_phone"]
   | Changes [@name "changes"] [@printer go "changes"]
+  | Changelog [@name "changelog"] [@printer go "changelog"]
   | Chronological [@name "chronological"] [@printer go "chronological"]
   | City [@name "city"] [@printer go "city"]
   | ClosedAt [@name "closed_at"] [@printer go "closed_at"]
