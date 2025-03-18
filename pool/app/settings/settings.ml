@@ -31,5 +31,6 @@ module PageScript = struct
   include PageScript
 
   let find = Repo.PageScripts.find
+  let find_id = Repo.PageScripts.find_id
   let clear_cache = Repo.PageScripts.Cache.clear
 end

@@ -186,6 +186,22 @@ module PageScripts = struct
     | Some script -> Database.exec pool update_request (show_location location, script)
   ;;
 
+  let find_id pool location =
+    let open Caqti_request.Infix in
+    let request =
+      [%string
+        {sql|
+          SELECT
+            %{Pool_model.Base.Id.sql_select_fragment ~field:"uuid"}
+          FROM
+            pool_tenant_page_scripts
+          WHERE location = ?
+        |sql}]
+      |> Caqti_type.(string ->! Pool_common.Repo.Id.t)
+    in
+    Database.find pool request (show_location location)
+  ;;
+
   let find_request =
     let open Caqti_request.Infix in
     {sql|

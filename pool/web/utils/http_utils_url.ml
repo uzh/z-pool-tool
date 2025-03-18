@@ -23,14 +23,19 @@ module Admin = struct
   let settings_path = Format.asprintf "/admin/settings/%s"
   let settings_action_path action = action |> Settings.stringify_action |> settings_path
 
-  let system_settings_changelog_path key =
+  let system_settings_changelog_path ?suffix key =
     settings_path "system"
     |> append (Settings.Key.show key)
     |> append Field.(human_url Changelog)
+    |> append_opt suffix
   ;;
 
-  let system_settings_open_changelog_path key =
-    system_settings_changelog_path key |> append "open"
+  let page_script_path location =
+    settings_path "page-script" |> append (Settings.PageScript.show_location location)
+  ;;
+
+  let page_script_changelog_path ?suffix location =
+    page_script_path location |> append Field.(human_url Changelog) |> append_opt suffix
   ;;
 
   let admin_path ?suffix ?id () =

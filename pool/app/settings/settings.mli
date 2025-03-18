@@ -108,7 +108,10 @@ module PageScript : sig
     -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 
   val find : Database.Label.t -> page_scripts Lwt.t
+  val find_id : Database.Label.t -> location -> Pool_common.Id.t Lwt.t
   val clear_cache : unit -> unit
+  val read_location : string -> location
+  val show_location : location -> string
 end
 
 val action_of_param

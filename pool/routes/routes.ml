@@ -898,6 +898,14 @@ module Admin = struct
         in
         [ choose ~scope:":key" specific ]
       in
+      let page_scripts =
+        let open PageScripts in
+        let specific =
+          let changelog = [ get "/open" open_changelog_modal; get "" changelog ] in
+          [ choose ~scope:Field.(human_url Changelog) changelog ]
+        in
+        [ choose ~scope:Field.(url_key Location) specific ]
+      in
       [ get "" ~middlewares:[ Access.index ] show
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/actor-permission" actor_permission
@@ -908,6 +916,7 @@ module Admin = struct
       ; choose ~scope:"/text-messages" text_messages
       ; choose ~scope:Field.(human_url SignUpCode) signup_codes
       ; choose ~scope:"/system" system
+      ; choose ~scope:"/page-script" page_scripts
       ; get "/inactive-user-warnings" inactive_user_warning_subform
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show

@@ -192,12 +192,45 @@ let open_changelog_modal req =
       let query = Query.from_request ~default:default_query req in
       all_by_entity ~query database_label id
     in
-    Page.Admin.Settings.changelog_modal context key changelogs
+    Page.Admin.Settings.settings_changelog_modal context key changelogs
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
   HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
 ;;
+
+module PageScripts = struct
+  let location req =
+    Http_utils.get_field_router_param req Pool_message.Field.Location
+    |> Settings.PageScript.read_location
+  ;;
+
+  let changelog req =
+    let result { Pool_context.database_label; _ } =
+      let location = location req in
+      let url = Http_utils.Url.Admin.page_script_changelog_path location in
+      let%lwt id = Settings.PageScript.find_id database_label location in
+      Lwt_result.ok @@ Helpers.Changelog.htmx_handler ~url id req
+    in
+    HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+  ;;
+
+  let open_changelog_modal req =
+    let result ({ Pool_context.database_label; _ } as context) =
+      let location = location req in
+      let%lwt id = Settings.PageScript.find_id database_label location in
+      let%lwt changelogs =
+        let open Changelog in
+        let query = Query.from_request ~default:default_query req in
+        all_by_entity ~query database_label id
+      in
+      Page.Admin.Settings.page_scripts_changelog_modal context location changelogs
+      |> HttpUtils.Htmx.html_to_plain_text_response
+      |> Lwt_result.return
+    in
+    HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+  ;;
+end
 
 module Access : module type of Helpers.Access = struct
   include Helpers.Access

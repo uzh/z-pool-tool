@@ -207,6 +207,7 @@ module PageScript = struct
 
   let schema field () = schema field ()
   let of_string m = m
+  let read_location = Utils.Json.read_variant location_of_yojson
 
   type page_scripts =
     { head : t option

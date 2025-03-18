@@ -10,19 +10,32 @@ module Tags = Page_admin_settings_tags
 module TextMessage = Page_admin_settings_text_messages
 
 let changelog_modal_id = "settings-changelog-modal"
+let field_to_string = Pool_common.Utils.field_to_string_capitalized
 
-let changelog_modal context key changelog =
+let create_modal context url make_title changelog =
   let open Component in
-  let url = HttpUtils.Url.Admin.system_settings_changelog_path key |> Uri.of_string in
-  let field_to_string lang =
-    Pool_common.Utils.field_to_string_capitalized lang Field.Changes
-  in
   Changelog.list context url (Some changelog)
-  |> Modal.create
-       ~active:true
-       context.Pool_context.language
-       field_to_string
-       changelog_modal_id
+  |> Modal.create ~active:true context.Pool_context.language make_title changelog_modal_id
+;;
+
+let settings_changelog_modal context key changelog =
+  let url = HttpUtils.Url.Admin.system_settings_changelog_path key |> Uri.of_string in
+  let make_title lang = field_to_string lang Field.Changes in
+  create_modal context url make_title changelog
+;;
+
+let page_scripts_changelog_modal context location changelog =
+  let url = HttpUtils.Url.Admin.page_script_changelog_path location |> Uri.of_string in
+  let make_title lang =
+    let open Pool_message in
+    let open Settings.PageScript in
+    field_to_string lang
+    @@
+    match location with
+    | Head -> Field.PageScriptsHead
+    | Body -> Field.PageScriptsBody
+  in
+  create_modal context url make_title changelog
 ;;
 
 let inactive_user_warning_input language warning =
@@ -73,15 +86,13 @@ let show
       ~a:[ a_class [ "flexrow" ] ]
       [ submit_element ~classnames:[ "push"; "small" ] language control () ]
   in
-  let open_changelog key =
+  let open_changelog url =
     let open Htmx in
     div
       ~a:[ a_class [ "flexrow"; "justify-end" ] ]
       [ button
           ~a:
-            [ hx_get
-                (HttpUtils.Url.Admin.system_settings_open_changelog_path key
-                 |> Sihl.Web.externalize_path)
+            [ hx_get (url |> Sihl.Web.externalize_path)
             ; hx_swap "outerHTML"
             ; hx_target ("#" ^ changelog_modal_id)
             ; a_class [ "small" ]
@@ -91,6 +102,14 @@ let show
                 Utils.field_to_string_capitalized language Message.Field.Changelog)
           ]
       ]
+  in
+  let open_system_settings_changelog key =
+    HttpUtils.Url.Admin.system_settings_changelog_path ~suffix:"open" key
+    |> open_changelog
+  in
+  let open_page_scripts_changelog location =
+    HttpUtils.Url.Admin.page_script_changelog_path ~suffix:"open" location
+    |> open_changelog
   in
   let action_path = HttpUtils.Url.Admin.settings_action_path in
   let form_attrs action =
@@ -140,7 +159,7 @@ let show
         [ form
             ~a:(form_attrs `UpdateLanguages)
             ([ csrf_element csrf (); field_elements ] @ [ submit () ])
-        ; open_changelog Settings.Key.Languages
+        ; open_system_settings_changelog Settings.Key.Languages
         ]
     in
     let hint =
@@ -242,7 +261,9 @@ let show
     let columns =
       [ suffix_rows email_suffixes
       ; create_form
-      ; div ~a:[ a_class [ "full-width" ] ] [ open_changelog Settings.Key.EmailSuffixes ]
+      ; div
+          ~a:[ a_class [ "full-width" ] ]
+          [ open_system_settings_changelog Settings.Key.EmailSuffixes ]
       ]
     in
     title, columns, None, [ `CreateEmailSuffix; `UpdateEmailSuffixes; `DeleteEmailSuffix ]
@@ -262,7 +283,7 @@ let show
                 ~required:true
             ; submit ~control:Message.(Control.Add None) ()
             ]
-        ; open_changelog Settings.Key.ContactEmail
+        ; open_system_settings_changelog Settings.Key.ContactEmail
         ]
     in
     "Contact Email", [ form ], None, [ `UpdateContactEmail ]
@@ -286,7 +307,7 @@ let show
             ]
         ; div
             ~a:[ a_class [ "flexrow" ] ]
-            [ open_changelog Settings.Key.InactiveUserServiceDisabled ]
+            [ open_system_settings_changelog Settings.Key.InactiveUserServiceDisabled ]
         ]
     in
     let disable_after_form =
@@ -302,7 +323,7 @@ let show
                 ~value:(inactive_user_disable_after |> DisableAfter.value)
             ; submit ()
             ]
-        ; open_changelog Settings.Key.InactiveUserDisableAfter
+        ; open_system_settings_changelog Settings.Key.InactiveUserDisableAfter
         ]
     in
     let warn_after_form =
@@ -351,7 +372,7 @@ let show
             ; subforms
             ; buttons
             ]
-        ; open_changelog Settings.Key.InactiveUserWarning
+        ; open_system_settings_changelog Settings.Key.InactiveUserWarning
         ]
     in
     let hint = Pool_common.(I18n.SettigsInactiveUsers |> Utils.hint_to_string language) in
@@ -380,7 +401,7 @@ let show
                 ~value:(trigger_profile_update_after |> value)
             ; submit ()
             ]
-        ; open_changelog Settings.Key.TriggerProfileUpdateAfter
+        ; open_system_settings_changelog Settings.Key.TriggerProfileUpdateAfter
         ]
     in
     title, [ form ], None, [ `UpdateTriggerProfileUpdateAfter ]
@@ -401,7 +422,7 @@ let show
                 field
             ; submit ()
             ]
-        ; open_changelog key
+        ; open_system_settings_changelog key
         ]
     in
     let email_lead_time =
@@ -464,7 +485,7 @@ let show
                   (user_import_first_reminder |> FirstReminderAfter.value)
               ; submit ()
               ]
-          ; open_changelog Settings.Key.UserImportFirstReminderAfter
+          ; open_system_settings_changelog Settings.Key.UserImportFirstReminderAfter
           ]
       ; div
           ~a:[ a_class [ "stack" ] ]
@@ -476,7 +497,7 @@ let show
                   (user_import_second_reminder |> SecondReminderAfter.value)
               ; submit ()
               ]
-          ; open_changelog Settings.Key.UserImportSecondReminderAfter
+          ; open_system_settings_changelog Settings.Key.UserImportSecondReminderAfter
           ]
       ]
     in
@@ -489,21 +510,28 @@ let show
   let page_scripts =
     let open Settings.PageScript in
     let title = "Page scripts" in
-    let make_form field script action =
-      form
-        ~a:(form_attrs action)
-        [ csrf_element csrf ()
-        ; Component.Input.textarea_element
-            ?value:(CCOption.map value script)
-            language
-            field
-        ; submit ()
+    let make_form location =
+      let field, script, action =
+        match location with
+        | Head -> Field.PageScriptsHead, page_scripts.head, `UpdateHeadScripts
+        | Body -> Field.PageScriptsBody, page_scripts.body, `UpdateBodyScripts
+      in
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs action)
+            [ csrf_element csrf ()
+            ; Component.Input.textarea_element
+                ?value:(CCOption.map value script)
+                language
+                field
+            ; submit ()
+            ]
+        ; open_page_scripts_changelog location
         ]
     in
     let columns =
-      [ make_form Pool_message.Field.PageScriptsHead page_scripts.head `UpdateHeadScripts
-      ; make_form Pool_message.Field.PageScriptsBody page_scripts.body `UpdateBodyScripts
-      ]
+      [ make_form Settings.PageScript.Head; make_form Settings.PageScript.Body ]
     in
     title, columns, None, [ `UpdateHeadScripts; `UpdateBodyScripts ]
   in
