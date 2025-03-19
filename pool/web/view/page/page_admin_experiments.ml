@@ -865,14 +865,17 @@ let detail
     let statistics = Component.Statistics.ExperimentOverview.make language statistics in
     let message_template =
       div
-        [ h3
-            ~a:[ a_class [ "heading-3" ] ]
-            [ txt (Utils.nav_link_to_string language I18n.MessageTemplates) ]
-        ; Page_admin_message_template.(
-            experiment_help
-              ~entity:(Experiment experiment_id)
-              language
-              (message_templates |> CCList.map fst))
+        [ div
+            ~a:[ a_class [ "rich-text" ] ]
+            [ h3
+                ~a:[ a_class [ "heading-3" ] ]
+                [ txt (Utils.nav_link_to_string language I18n.MessageTemplates) ]
+            ; Page_admin_message_template.(
+                experiment_help
+                  ~entity:(Experiment experiment_id)
+                  language
+                  (message_templates |> CCList.map fst))
+            ]
         ; div
             ~a:[ a_class [ "gap" ] ]
             [ message_templates_html
