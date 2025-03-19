@@ -110,7 +110,6 @@ let rec build_nav_links
     nav_link @ [ build_rec children ] |> li ~a:parent_attrs
 ;;
 
-(* TODO: This step seems unnecessary *)
 let create_nav
       { Pool_context.query_parameters; language; guardian; _ }
       items
