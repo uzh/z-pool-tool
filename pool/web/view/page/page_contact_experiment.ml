@@ -18,7 +18,10 @@ let experiment_public_description =
   Public.description
   %> CCOption.map_or
        ~default:(txt "")
-       (PublicDescription.value %> HttpUtils.add_line_breaks %> CCList.return %> p)
+       (PublicDescription.value
+        %> HttpUtils.add_line_breaks
+        %> CCList.return
+        %> div ~a:[ a_class [ "truncate-6" ] ])
 ;;
 
 let experiment_title =
