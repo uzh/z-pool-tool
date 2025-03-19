@@ -33,3 +33,7 @@ let searchable_by = Pool_user.searchable_by
 let sortable_by = Pool_user.sortable_by
 let default_sort = Pool_user.default_sort
 let default_query = Pool_user.default_query
+
+let query_from_request req =
+  Query.from_request ?filterable_by ~searchable_by ~sortable_by ~default:default_query req
+;;

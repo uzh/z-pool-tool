@@ -43,14 +43,14 @@ let inactive_user_warning_input language warning =
   let remove_btn =
     button
       ~a:
-        [ a_class [ "error"; "small" ]
+        [ a_class [ "error"; "small"; "is-icon" ]
         ; a_button_type `Button
         ; a_onclick "this.parentElement.remove()"
         ]
       [ Component.Icon.(TrashOutline |> to_html) ]
   in
   div
-    ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+    ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
     [ timespan_picker
         ~classnames:[ "grow" ]
         ~hide_label:true
@@ -173,6 +173,7 @@ let show
     in
     let create_form =
       div
+        ~a:[ a_class [ "stack" ] ]
         [ control_to_string Message.(Control.Add (Some Field.EmailSuffix))
         ; form
             ~a:(form_attrs `CreateEmailSuffix)
@@ -201,7 +202,7 @@ let show
                 "confirmable"
                 Pool_common.(Utils.confirmable_to_string language I18n.DeleteEmailSuffix)
             ]
-          [ submit_icon ~classnames:[ "error" ] Icon.TrashOutline
+          [ submit_icon ~classnames:[ "error"; "small" ] Icon.TrashOutline
           ; input
               ~a:
                 [ a_input_type `Hidden
@@ -248,9 +249,11 @@ let show
     let suffix_rows = function
       | [] ->
         div
+          ~a:[ a_class [ "stack" ] ]
           [ txt Pool_common.(Utils.hint_to_string language I18n.SettingsNoEmailSuffixes) ]
       | suffixes ->
         div
+          ~a:[ a_class [ "stack" ] ]
           [ control_to_string Message.(Control.Update (Some Field.EmailSuffix))
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap" ] ]

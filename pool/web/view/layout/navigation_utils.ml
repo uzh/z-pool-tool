@@ -123,10 +123,7 @@ let create_nav
     filter_items ?validate ?actor ~guardian items
     |> CCList.map (build_nav_links ~layout ?active_navigation language query_parameters)
   in
-  let nav = [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ] in
-  match layout with
-  | Vertical -> nav
-  | Horizonal -> nav
+  [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ]
 ;;
 
 let i18n_links languages query_parameters active_language layout =
@@ -136,7 +133,7 @@ let i18n_links languages query_parameters active_language layout =
   let nav_class =
     match layout with
     | Vertical -> []
-    | Horizonal -> [ "secondary-nav" ]
+    | Horizonal -> [ "secondary-nav"; "inset-lg"; "left" ]
   in
   let to_html language =
     let lang = Language.show language in
@@ -176,11 +173,16 @@ let create_desktop_nav fcn =
   |> div ~a:[ a_class [ "hidden-mobile"; "flexrow"; "flex-gap-lg"; "align-center" ] ]
 ;;
 
-let create_mobile_nav ~toggle_id navigation =
+let create_mobile_nav ~toggle_id ?title navigation =
   let overlay navigation =
+    let title =
+      title
+      |> CCOption.map_or ~default:(txt "") (fun title ->
+        h2 ~a:[ a_class [ "word-wrap-break" ] ] [ txt title ])
+    in
     div
       ~a:[ a_id toggle_id; a_class [ "mobile-nav"; "bg-white" ] ]
-      [ div ~a:[ a_class [ "mobile-nav-inner"; "fade-in" ] ] navigation ]
+      [ div ~a:[ a_class [ "mobile-nav-inner"; "fade-in" ] ] (title :: navigation) ]
   in
   navigation Vertical |> overlay
 ;;

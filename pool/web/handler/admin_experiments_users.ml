@@ -49,6 +49,12 @@ let entity_path_and_guard experiment_id req role =
     path, id
 ;;
 
+let query_admin_current_and_exclude_role role guard_id =
+  match role with
+  | `Assistants -> (`Assistant, Some guard_id), [ `Assistant, None ]
+  | `Experimenter -> (`Experimenter, Some guard_id), [ `Experimenter, None ]
+;;
+
 let index entity role req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; language; user; _ } as context) =
@@ -56,20 +62,8 @@ let index entity role req =
     @@
     let id = experiment_id req in
     let form_path, guard_id = entity_path_and_guard id req role entity in
-    let current_roles, exclude =
-      match role with
-      | `Assistants -> (`Assistant, Some guard_id), [ `Assistant, None ]
-      | `Experimenter -> (`Experimenter, Some guard_id), [ `Experimenter, None ]
-    in
-    let query =
-      let open Admin in
-      Query.from_request
-        ?filterable_by
-        ~searchable_by
-        ~sortable_by
-        ~default:default_query
-        req
-    in
+    let current_roles, exclude = query_admin_current_and_exclude_role role guard_id in
+    let query = Admin.query_from_request req in
     let%lwt applicable_admins =
       Admin.(
         query_by_role
@@ -122,25 +116,18 @@ let query_admin entity role state req =
   let result ({ Pool_context.database_label; user; _ } as context) =
     let id = experiment_id req in
     let form_path, guard_id = entity_path_and_guard id req role entity in
-    let current_roles : Role.Role.t * Guard.Uuid.Target.t option =
-      match role with
-      | `Assistants -> `Assistant, Some guard_id
-      | `Experimenter -> `Experimenter, Some guard_id
-    in
+    let current_roles, exclude = query_admin_current_and_exclude_role role guard_id in
     let%lwt admins =
       let open Admin in
-      let query =
-        Query.from_request
-          ?filterable_by
-          ~searchable_by
-          ~sortable_by
-          ~default:default_query
-          req
-      in
+      let query = Admin.query_from_request req in
       match state with
-      | `Assigned -> query_by_role database_label ~query ?exclude:None current_roles
+      | `Assigned -> query_by_role database_label ~query ~exclude current_roles
       | `Available ->
-        query_by_role database_label ~query ~exclude:[ current_roles ] (`Admin, None)
+        query_by_role
+          database_label
+          ~query
+          ~exclude:(current_roles :: exclude)
+          (`Admin, None)
     in
     let%lwt permission =
       let open Guard in

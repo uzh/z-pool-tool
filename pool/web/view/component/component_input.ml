@@ -519,7 +519,7 @@ let submit_element
 
 let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
   button
-    ~a:([ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ] @ attributes)
+    ~a:([ a_button_type `Submit; a_class (classnames @ [ "is-icon" ]) ] @ attributes)
     [ Icon.to_html icon_type ]
 ;;
 

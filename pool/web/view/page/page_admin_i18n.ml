@@ -13,7 +13,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
       textarea_element
         ~rich_text
         ~orientation
-        ~classnames:[ "grow" ]
+        ~classnames:[ "grow"; "flexcolumn-mobile" ]
         ~label_field
         ~identifier
         ~required:true
@@ -27,7 +27,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
     | `TextInput ->
       input_element
         ~orientation
-        ~classnames:[ "grow" ]
+        ~classnames:[ "grow"; "flexcolumn-mobile" ]
         ~label_field
         ~identifier
         ~required:true
@@ -53,12 +53,14 @@ let list translation_list Pool_context.{ language; csrf; _ } =
                   ~a:
                     [ a_action action
                     ; a_method `Post
-                    ; a_class [ "flexrow"; "flex-gap" ]
+                    ; a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ]
                     ; a_user_data "detect-unsaved-changes" ""
                     ]
                   [ csrf_element csrf ()
                   ; text_input
-                  ; submit_icon ~classnames:[ "primary" ] Component.Icon.Save
+                  ; submit_icon
+                      ~classnames:[ "primary"; "align-self-end" ]
+                      Component.Icon.Save
                   ])
              translations
          in

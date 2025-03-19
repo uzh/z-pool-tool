@@ -29,6 +29,7 @@ RUN apt-get update -q && apt-get install -yqq --no-install-recommends \
   zsh \
   m4 \
   wget \
+  python-is-python3 \
   #
   # build dependencies (would also be installed by opam depext)
   gcc \
