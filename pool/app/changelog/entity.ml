@@ -107,8 +107,4 @@ let default_sort =
   Sort.{ column = column_created_at; order = SortOrder.Descending }
 ;;
 
-let default_query =
-  let open Query in
-  let pagination = Pagination.create ~limit:2 () in
-  Query.create ~sort:default_sort ~pagination ()
-;;
+let default_query = Query.create ~sort:default_sort ()
