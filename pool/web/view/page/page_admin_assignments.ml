@@ -179,7 +179,7 @@ module Partials = struct
             |> to_list_item ~classnames:[ "border-top"; "inset-xs"; "top" ]
           in
           session_timestamps @ [ assignment_timestamps ]
-          |> ul ~a:[ a_class [ "no-style" ] ]
+          |> ul ~a:[ a_class [ "list-none" ] ]
         in
         div
           [ timestamps
@@ -696,7 +696,7 @@ let data_table
           assignment.contact
       | false ->
         span
-          ~a:[ a_class [ "nobr" ] ]
+          ~a:[ a_class [ "nowrap" ] ]
           [ txt Contact.(assignment.contact |> id |> Id.value) ]
     in
     let tr cells =
@@ -817,7 +817,7 @@ let edit
       | `TimeWindow _ -> txt ""
     in
     div
-      ~a:[ a_class [ "stack"; "inset"; "border"; " bg-grey-light" ] ]
+      ~a:[ a_class [ "stack"; "inset"; "border"; " bg-grey-lightest" ] ]
       [ h3
           [ txt
               Pool_common.(

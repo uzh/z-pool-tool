@@ -96,8 +96,8 @@ let form_title ?(level = `H1) language field m =
     |> txt
   in
   match level with
-  | `H1 -> h1 ~a:[ a_class [ "heading-1" ] ] [ text ]
-  | `H2 -> h1 ~a:[ a_class [ "heading-2" ] ] [ text ]
+  | `H1 -> h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ text ]
+  | `H2 -> h1 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ text ]
 ;;
 
 let terms_and_conditions_label language id =

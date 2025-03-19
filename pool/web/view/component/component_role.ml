@@ -71,7 +71,7 @@ let roles_section ?(top_element = []) language children =
   let open Pool_common in
   div
     [ h2
-        ~a:[ a_class [ "heading-2" ] ]
+        ~a:[ a_class [ "heading-2"; "has-gap" ] ]
         [ Utils.text_to_string language I18n.RolesGranted |> txt ]
     ; div ~a:[ a_class [ "stack" ] ] (top_element @ children)
     ]

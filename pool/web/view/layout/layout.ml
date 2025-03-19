@@ -24,8 +24,7 @@ module Tenant = struct
       |> Sihl.Web.externalize_path
     in
     let text_fragments =
-      [ txt title_text; txt App.version ]
-      |> App.combine_footer_fragments ~classnames:[ "footer-static" ]
+      [ txt title_text; txt App.version ] |> App.combine_footer_fragments
     in
     let footer_nav =
       let nav_to_string = Utils.nav_link_to_string language in
@@ -53,7 +52,6 @@ module Tenant = struct
             ; "flex-gap"
             ; "flexcolumn-mobile"
             ; "justify-center"
-            ; "bg-grey-light"
             ; "border-top"
             ; "push"
             ]
@@ -114,8 +112,7 @@ module Tenant = struct
       [ charset; viewport ] @ stylesheets @ favicon @ head_script
     in
     let%lwt navbar_content =
-      let title = App.create_title query_parameters title_text in
-      Navigation.create_main ?active_navigation context title tenant_languages
+      Navigation.create_main ?active_navigation context tenant_languages
     in
     let%lwt footer = make_footer context title_text in
     html
@@ -144,12 +141,7 @@ module Root = struct
     let page_title = title (txt title_text) in
     let message = Message.create message language () in
     let%lwt navbar_content =
-      let title = App.create_title query_parameters title_text in
-      Navigation.create_root
-        ?active_navigation
-        Pool_context.{ context with language }
-        title
-        []
+      Navigation.create_root ?active_navigation Pool_context.{ context with language } []
     in
     html
       ~a:[ language_attribute language ]

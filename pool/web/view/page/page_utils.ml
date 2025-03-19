@@ -9,7 +9,7 @@ let i18n_page ?(narrow = true) i18n =
 let note page_title info =
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt page_title ]; p [ txt info ] ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt page_title ]; p [ txt info ] ]
 ;;
 
 let error_page_not_found language () =
@@ -27,7 +27,7 @@ let error_page_terminatory ?(lang = Pool_common.Language.En) title info () =
 let error request_id =
   Layout.Error.create
   @@ div
-       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Internal Server Error" ]
+       [ h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt "Internal Server Error" ]
        ; div
            ~a:[ a_class [ "text-gray" ] ]
            [ txt "An error has been caught while handling the request." ]

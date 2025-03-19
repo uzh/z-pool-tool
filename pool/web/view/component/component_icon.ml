@@ -76,13 +76,15 @@ type t =
   | UploadOutline [@name "upload-outline"] [@printer prt "upload-outline"]
 [@@deriving eq, show]
 
-let to_html ?title ?(classnames = []) icon =
+let to_html ?title ?(attributes = []) ?(classnames = []) icon =
   let open CCFun in
-  i
-    ~a:
-      ([ a_class ([ Format.asprintf "icon-%s" (show icon) ] @ classnames) ]
-       @ CCOption.map_or ~default:[] (a_title %> CCList.return) title)
-    []
+  let attributes =
+    let title = CCOption.map_or ~default:[] (a_title %> CCList.return) title in
+    [ a_class ([ Format.asprintf "icon-%s" (show icon) ] @ classnames) ]
+    @ title
+    @ attributes
+  in
+  i ~a:attributes []
 ;;
 
 let bool_to_icon = function

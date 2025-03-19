@@ -2,24 +2,27 @@ open Tyxml.Html
 open Entity
 open Navigation_utils
 
-let make_tabs ~actor ?overlay_title ?active_navigation context html nav_elements =
+let make_tabs ~actor ?active_navigation ?overlay_title context html nav_elements =
+  let toggle_id = "tab-mobile-nav" in
+  let icon = make_mobile_nav_open_toggle toggle_id in
   let make_nav =
     create_nav ~actor ?active_navigation ~validate:true context nav_elements
-  in
-  let overlay_title =
-    overlay_title
-    |> CCOption.map (fun title ->
-      div ~a:[ a_class [ "app-title"; "flex-grow"; "word-break-all" ] ] [ txt title ])
   in
   let nav =
     div
       ~a:[ a_class [ "tab-nav-container" ] ]
       [ div
-          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
-          [ create_mobile_nav
-              ?title:overlay_title
-              ~toggle_id:"tab-navigation-overlay"
-              make_nav
+          ~a:
+            [ a_class
+                [ "mobile-only"
+                ; "flexrow"
+                ; "flex-gap"
+                ; "justify-between"
+                ; "align-center"
+                ]
+            ]
+          [ div ~a:[ a_class [ "push" ] ] [ icon ]
+          ; create_mobile_nav ?title:overlay_title ~toggle_id make_nav
           ]
       ; div ~a:[ a_class [ "flexrow"; "flex-gap"; "hidden-mobile" ] ] (make_nav Horizonal)
       ]
@@ -29,7 +32,7 @@ let make_tabs ~actor ?overlay_title ?active_navigation context html nav_elements
 
 let make_body ?buttons ?hint language title children =
   let title =
-    let base = h2 ~a:[ a_class [ "heading-2" ] ] [ txt title ] in
+    let base = h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt title ] in
     let title =
       let classnames =
         [ "flexrow"; "justify-between"; "flex-gap"; "flexcolumn-mobile" ]
@@ -56,5 +59,5 @@ let make_body ?buttons ?hint language title children =
 let with_heading title children =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    (h1 ~a:[ a_class [ "heading-1" ] ] [ txt title ] :: children)
+    (h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt title ] :: children)
 ;;

@@ -123,7 +123,7 @@ let read_hint =
 let index ?hint (Pool_context.{ language; _ } as context) rules query =
   let open Pool_common in
   [ h1
-      ~a:[ a_class [ "heading-1" ] ]
+      ~a:[ a_class [ "heading-1"; "has-gap" ] ]
       [ txt (Utils.nav_link_to_string language I18n.ActorPermissions) ]
   ]
   @ read_hint hint
@@ -134,7 +134,7 @@ let index ?hint (Pool_context.{ language; _ } as context) rules query =
 let create ?hint Pool_context.{ language; _ } children =
   let open Pool_common in
   [ h1
-      ~a:[ a_class [ "heading-1" ] ]
+      ~a:[ a_class [ "heading-1"; "has-gap" ] ]
       [ txt
           (Utils.control_to_string
              language

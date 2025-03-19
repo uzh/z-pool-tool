@@ -122,10 +122,7 @@ let create_nav
     filter_items ?validate ?actor ~guardian items
     |> CCList.map (build_nav_links ~layout ?active_navigation language query_parameters)
   in
-  let nav = [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ] in
-  match layout with
-  | Vertical -> [ div ~a:[ a_class [ "grow"; "flexcolumn"; "gap" ] ] nav ]
-  | Horizonal -> nav
+  [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ]
 ;;
 
 let i18n_links languages query_parameters active_language layout =
@@ -134,8 +131,8 @@ let i18n_links languages query_parameters active_language layout =
   let link_classes = [ "nav-link" ] in
   let nav_class =
     match layout with
-    | Vertical -> [ "language-nav"; "gap"; "flexrow"; "flex-gap"; "justify-center" ]
-    | Horizonal -> [ "main-nav" ]
+    | Vertical -> []
+    | Horizonal -> [ "secondary-nav"; "inset-lg"; "left" ]
   in
   let to_html language =
     let lang = Language.show language in
@@ -154,7 +151,7 @@ let i18n_links languages query_parameters active_language layout =
             [ txt lang ]
         ]
   in
-  [ languages |> CCList.map to_html |> ul ] |> nav ~a:[ a_class nav_class ]
+  [ languages |> CCList.map to_html |> ul ~a:[ a_class nav_class ] ] |> nav
 ;;
 
 let create_nav_with_language_switch
@@ -171,29 +168,51 @@ let create_nav_with_language_switch
 ;;
 
 let create_desktop_nav fcn =
-  fcn Horizonal |> div ~a:[ a_class [ "hidden-mobile"; "flexrow"; "flex-gap" ] ]
+  fcn Horizonal
+  |> div ~a:[ a_class [ "hidden-mobile"; "flexrow"; "flex-gap-lg"; "align-center" ] ]
 ;;
 
-let create_mobile_nav ?title ~toggle_id navigation =
-  let title = CCOption.value ~default:(txt "") title in
-  let label =
-    Icon.to_html
-    %> CCList.pure
-    %> div ~a:[ a_user_data "modal" toggle_id; a_class [ "icon-lg" ] ]
-  in
+let create_mobile_nav ~toggle_id ?title navigation =
   let overlay navigation =
+    let title =
+      title
+      |> CCOption.map_or ~default:(txt "") (fun title ->
+        h2 ~a:[ a_class [ "word-wrap-break" ] ] [ txt title ])
+    in
     div
-      ~a:[ a_id toggle_id; a_class [ "fullscreen-overlay"; "mobile-nav"; "bg-white" ] ]
-      [ div
-          ~a:[ a_class [ "flexcolumn"; "full-height" ] ]
-          [ header
-              ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
-              [ title; div ~a:[ a_class [ "push" ] ] [ label Icon.Close ] ]
-          ; div ~a:[ a_class [ "fade-in"; "inset"; "flexcolumn"; "grow" ] ] navigation
-          ]
-      ]
+      ~a:[ a_id toggle_id; a_class [ "mobile-nav"; "bg-white" ] ]
+      [ div ~a:[ a_class [ "mobile-nav-inner"; "fade-in" ] ] (title :: navigation) ]
   in
-  navigation Vertical
-  |> fun items ->
-  div ~a:[ a_class [ "push"; "mobile-only" ] ] [ label Icon.MenuOutline; overlay items ]
+  navigation Vertical |> overlay
+;;
+
+let make_mobile_nav_open_toggle toggle_id =
+  let open Icon in
+  span
+    ~a:
+      [ a_class [ "icon-lg" ]
+      ; a_user_data "action" "open"
+      ; a_user_data "overlay-nav" toggle_id
+      ]
+    [ to_html MenuOutline ]
+;;
+
+let make_mobile_header navigation =
+  let toggle_id = "mobile-nav" in
+  let icons =
+    let open Icon in
+    [ make_mobile_nav_open_toggle toggle_id
+    ; span
+        ~a:
+          [ a_user_data "action" "close"
+          ; a_class [ "icon-lg"; "hidden" ]
+          ; a_aria "hidden" [ "true" ]
+          ]
+        [ to_html Close ]
+    ]
+    |> div ~a:[ a_id "mobile-nav-toggle" ]
+  in
+  div
+    ~a:[ a_class [ "push"; "mobile-only" ] ]
+    [ icons; create_mobile_nav ~toggle_id navigation ]
 ;;

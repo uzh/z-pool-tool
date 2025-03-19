@@ -13,7 +13,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
       textarea_element
         ~rich_text
         ~orientation
-        ~classnames:[ "grow" ]
+        ~classnames:[ "grow"; "flexcolumn-mobile" ]
         ~label_field
         ~identifier
         ~required:true
@@ -27,7 +27,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
     | `TextInput ->
       input_element
         ~orientation
-        ~classnames:[ "grow" ]
+        ~classnames:[ "grow"; "flexcolumn-mobile" ]
         ~label_field
         ~identifier
         ~required:true
@@ -53,18 +53,20 @@ let list translation_list Pool_context.{ language; csrf; _ } =
                   ~a:
                     [ a_action action
                     ; a_method `Post
-                    ; a_class [ "flexrow"; "flex-gap" ]
+                    ; a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ]
                     ; a_user_data "detect-unsaved-changes" ""
                     ]
                   [ csrf_element csrf ()
                   ; text_input
-                  ; submit_icon ~classnames:[ "primary" ] Component.Icon.Save
+                  ; submit_icon
+                      ~classnames:[ "primary"; "align-self-end" ]
+                      Component.Icon.Save
                   ])
              translations
          in
          div
            [ h2
-               ~a:[ a_class [ "heading-2" ] ]
+               ~a:[ a_class [ "heading-2"; "has-gap" ] ]
                [ txt
                    (key
                     |> I18n.Key.show
@@ -79,7 +81,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
   div
     ~a:[ a_class [ "safety-margin"; "trim" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string Language.En I18n.I18n) ]
     ; div ~a:[ a_class [ "stack-lg" ] ] translations
     ]

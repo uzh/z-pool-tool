@@ -164,7 +164,7 @@ let sent_invitations
     [ div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ div
-            ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
+            ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-lighter"; "border" ] ]
             [ h3 [ txt (text_to_string I18n.InvitationsStatistics) ]
             ; p [ txt (text_to_string I18n.InvitationsStatisticsIntro) ]
             ; Component.Statistics.SentInvitations.create language statistics

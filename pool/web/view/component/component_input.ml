@@ -519,7 +519,7 @@ let submit_element
 
 let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
   button
-    ~a:([ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ] @ attributes)
+    ~a:([ a_button_type `Submit; a_class (classnames @ [ "is-icon" ]) ] @ attributes)
     [ Icon.to_html icon_type ]
 ;;
 
@@ -537,9 +537,10 @@ let link_as_button
       (submit_type_to_class style :: "btn" :: classnames)
       @ if is_text then [ "is-text" ] else []
     in
-    match icon with
-    | None -> base
-    | Some _ -> "has-icon" :: base
+    match icon, control with
+    | None, None | None, Some _ -> base
+    | Some _, None -> "is-icon" :: base
+    | Some _, Some _ -> "has-icon" :: base
   in
   let attrs =
     [ a_href (Sihl.Web.externalize_path href); a_class classnames ] @ attributes

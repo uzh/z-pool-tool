@@ -199,7 +199,7 @@ let assign_contact_experiment_modal
 
 let assign_contact_experiment_list { Pool_context.language; _ } contact_id experiments =
   let base_class = [ "data-item" ] in
-  let disabled = [ a_class ([ "bg-grey-light"; "not-allowed" ] @ base_class) ] in
+  let disabled = [ a_class ([ "bg-grey-lightest"; "not-allowed" ] @ base_class) ] in
   let htmx_attribs experiment_id =
     [ a_user_data "hx-trigger" "click"
     ; a_user_data
@@ -275,7 +275,12 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
             []
         ]
   in
-  div [ h3 [ txt Utils.(text_to_string language I18n.EnrollInExperiment) ]; form ]
+  div
+    [ h3
+        ~a:[ a_class [ "has-gap" ] ]
+        [ txt Utils.(text_to_string language I18n.EnrollInExperiment) ]
+    ; form
+    ]
 ;;
 
 let list Pool_context.{ language; _ } contacts query =
@@ -314,7 +319,7 @@ let index ({ Pool_context.language; _ } as context) contacts query =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
     ; div
         ~a:[ a_class [ "stack" ] ]
@@ -361,7 +366,7 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
           [ hx_get url
           ; hx_swap "outerHTML"
           ; hx_target ("#" ^ experiment_history_modal_id)
-          ; a_class [ "primary" ]
+          ; a_class [ "primary"; "is-icon" ]
           ]
       in
       button ~a:attributes [ Icon.(to_html InformationOutline) ]
@@ -532,7 +537,9 @@ let detail
             ; a_class [ "modal"; "fullscreen-overlay" ]
             ]
           []
-      ; h3 [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentHistory) ]
+      ; h3
+          ~a:[ a_class [ "has-gap" ] ]
+          [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentHistory) ]
       ; experiment_history context contact experiments query
       ]
   in
@@ -594,7 +601,7 @@ let edit
       in
       div
         [ h2
-            ~a:[ a_class [ "heading-2" ] ]
+            ~a:[ a_class [ "heading-2"; "has-gap" ] ]
             Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
         ; div
             ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
@@ -665,7 +672,7 @@ let message_history ({ Pool_context.language; _ } as context) queue_table contac
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt
             Pool_common.(
               Utils.text_to_string

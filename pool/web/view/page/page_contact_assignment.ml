@@ -13,7 +13,7 @@ let detail session follow_ups experiment Pool_context.{ language; csrf; _ } =
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Utils.text_to_string language I18n.SessionRegistrationTitle) ]
     ; div
         ~a:[ a_class [ "stack" ] ]

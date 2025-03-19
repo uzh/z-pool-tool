@@ -537,7 +537,7 @@ let data_table
       link_as_button
         ~style:`Success
         ~icon:Icon.Add
-        ~classnames:[ "small"; "nobr" ]
+        ~classnames:[ "small"; "nowrap" ]
         ~control:(language, Control.(Add (Some Field.Session)))
         (Format.asprintf "%s/create" session_index_path)
     in
@@ -1107,7 +1107,7 @@ let detail
         Some (Button.add label path))
     in
     div
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
+      [ h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt (Label.to_human label) ]
       ; Page_admin_message_template.(
           experiment_help ~entity:(Session session.id) language [ label ])
       ; div
@@ -1124,7 +1124,7 @@ let detail
   let tags_html =
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
       ; Component.Tag.tag_list language participation_tags
       ]
@@ -1250,7 +1250,7 @@ let detail
           ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "flexcolumn-mobile" ] ]
           [ div
               [ h2
-                  ~a:[ a_class [ "heading-2" ] ]
+                  ~a:[ a_class [ "heading-2"; "has-gap" ] ]
                   [ txt (Utils.nav_link_to_string language I18n.Assignments) ]
               ]
           ; div

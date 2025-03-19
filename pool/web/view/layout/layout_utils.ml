@@ -44,22 +44,19 @@ module App = struct
       Http_utils.url_with_field_params query_parameters "/index"
       |> Sihl.Web.externalize_path
     in
-    div ~a:[ a_class [ "app-title" ] ] [ a ~a:[ a_href path ] [ txt title ] ]
+    a ~a:[ a_href path; a_class [ "app-title" ] ] [ txt title ]
   ;;
 
   let navbar ?(children = []) query_parameters title =
     header
-      ~a:
-        [ a_class
-            [ "inset"
-            ; "flexrow"
-            ; "justify-between"
-            ; "align-center"
-            ; "bg-grey-light"
-            ; "border-bottom"
-            ]
-        ]
-      [ create_title query_parameters title; div children ]
+      ~a:[ a_class [ "app-header" ] ]
+      [ div
+          ~a:[ a_class [ "safety-margin"; "trim"; "flexcolumn"; "justify-between" ] ]
+          [ div
+              ~a:[ a_class [ "app-header-top" ] ]
+              [ create_title query_parameters title; div children ]
+          ]
+      ]
   ;;
 
   let version = Format.asprintf "Z-Pool-Tool %s" Version.to_string
@@ -85,8 +82,6 @@ module App = struct
 
   let root_footer =
     let html = [ txt app_name; txt version ] |> combine_footer_fragments in
-    footer
-      ~a:[ a_class [ "inset"; "justify-center"; "bg-grey-light"; "border-top"; "push" ] ]
-      [ html ]
+    footer ~a:[ a_class [ "inset"; "justify-center"; "border-top"; "push" ] ] [ html ]
   ;;
 end
