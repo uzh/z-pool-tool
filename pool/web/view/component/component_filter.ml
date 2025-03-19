@@ -343,7 +343,7 @@ let add_predicate_btn experiment identifier templates_disabled =
   div
     ~a:[ a_id id; a_user_data "new-predicate" "" ]
     [ Input.submit_icon
-        ~classnames:[ "success" ]
+        ~classnames:[ "success"; "small" ]
         ~attributes:
           (Utils.htmx_attribs
              ~action:(form_action experiment "add-predicate")

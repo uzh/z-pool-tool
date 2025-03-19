@@ -66,7 +66,8 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
     in
     let create_link text =
       let default = txt text in
-      CCOption.map_or ~default (fun uri -> a ~a:[ a_href uri ] [ default ])
+      CCOption.map_or ~default (fun uri ->
+        a ~a:[ a_href (Sihl.Web.externalize_path uri) ] [ default ])
     in
     let actor_link =
       create_target_path

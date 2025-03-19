@@ -366,7 +366,7 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
           [ hx_get url
           ; hx_swap "outerHTML"
           ; hx_target ("#" ^ experiment_history_modal_id)
-          ; a_class [ "primary" ]
+          ; a_class [ "primary"; "is-icon" ]
           ]
       in
       button ~a:attributes [ Icon.(to_html InformationOutline) ]

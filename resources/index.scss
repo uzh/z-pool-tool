@@ -41,13 +41,6 @@ h1,
     }
 }
 
-// TODO: Remove
-[class*="inset"].top {
-    padding-left: 0;
-    padding-bottom: 0;
-    padding-right: 0;
-}
-
 @include breakpoints.econ-mobile {
     .sm-inset-lg {
         padding: vars.$space-lg;
@@ -159,10 +152,6 @@ select[readonly] {
     [data-delete-predicate] {
         color: c.$red;
         cursor: pointer;
-    }
-
-    [data-new-predicate] button {
-        padding: vars.$space-xs vars.$space-sm;
     }
 }
 
@@ -312,16 +301,9 @@ table.width-auto {
     width: auto;
 }
 
-// Move to framework
 @include breakpoints.econ-mobile {
-    .table.break-mobile {
-        &.keep-head thead th {
-            width: 100%;
-        }
-
-        tbody th {
-            display: none;
-        }
+    .table.break-mobile th {
+        display: none;
     }
 }
 
@@ -461,6 +443,10 @@ table.simple {
 // Navigation
 .main-nav .dropdown {
     z-index: 12;
+}
+
+.mobile-nav-inner h2 {
+    margin-bottom: vars.$space-lg;
 }
 
 .note+* {

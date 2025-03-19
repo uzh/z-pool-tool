@@ -2,7 +2,7 @@ open Tyxml.Html
 open Entity
 open Navigation_utils
 
-let make_tabs ~actor ?active_navigation context html nav_elements =
+let make_tabs ~actor ?active_navigation ?overlay_title context html nav_elements =
   let toggle_id = "tab-mobile-nav" in
   let icon = make_mobile_nav_open_toggle toggle_id in
   let make_nav =
@@ -22,7 +22,7 @@ let make_tabs ~actor ?active_navigation context html nav_elements =
                 ]
             ]
           [ div ~a:[ a_class [ "push" ] ] [ icon ]
-          ; create_mobile_nav ~toggle_id make_nav
+          ; create_mobile_nav ?title:overlay_title ~toggle_id make_nav
           ]
       ; div ~a:[ a_class [ "flexrow"; "flex-gap"; "hidden-mobile" ] ] (make_nav Horizonal)
       ]
