@@ -539,7 +539,7 @@ table.simple {
 $i: 1;
 $n: 12;
 
-@while $i < $n +1 {
+@while $i < ($n +1) {
     .w-#{$i} {
         width: math.percentage(calc(1 / $n) * $i);
     }
@@ -610,6 +610,19 @@ input[type="checkbox"][readonly] {
     }
 }
 
+.change-row {
+    @include breakpoints.econ-mobile {
+        flex-direction: column;
+        padding-bottom: vars.$space-xs;
+        margin-bottom: vars.$space-xs;
+        border-bottom: 1px solid c.$grey-border;
+
+        .change-row,
+        .changelog-changes {
+            flex-direction: column;
+        }
+    }
+}
 
 // Statistics
 

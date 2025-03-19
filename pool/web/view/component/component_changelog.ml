@@ -17,7 +17,7 @@ let rec format_changes changes =
   let format_change (key, value) =
     let changes = format_changes value in
     div
-      ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+      ~a:[ a_class [ "flexrow"; "flex-gap"; "flex"; "change-row" ] ]
       [ div ~a:[ a_class [ "changelog-key" ] ] [ txt key; txt ": " ]; changes ]
   in
   let rec format_assoc_list acc = function
@@ -61,7 +61,7 @@ let list Pool_context.{ language; _ } url changelog =
     in
     let th_class = [ "w-3"; "w-7"; "w-2" ] in
     let row ({ user; changes; created_at; _ } : t) =
-      (* TODO: differ between admins and users, maybe create a route that redirects *)
+      let open Pool_message in
       let user_link =
         match user with
         | None -> txt ""
@@ -74,11 +74,24 @@ let list Pool_context.{ language; _ } url changelog =
               ]
             [ txt email ]
       in
-      [ td [ user_link ]
-      ; td ~a:[ a_class [ "changes-cell" ] ] [ changes |> format_changes ]
-      ; td [ txt (created_at |> CreatedAt.value |> Pool_model.Time.formatted_date_time) ]
+      [ user_link, Some Field.User
+      ; ( div ~a:[ a_class [ "changes-cell" ] ] [ changes |> format_changes ]
+        , Some Field.Changes )
+      ; ( txt (created_at |> CreatedAt.value |> Pool_model.Time.formatted_date_time)
+        , Some Field.CreatedAt )
       ]
+      |> CCList.map (fun (html, label) ->
+        let attrs = Component_table.data_label_opt language label in
+        td ~a:attrs [ html ])
       |> tr
     in
-    Data_table.make ~align_top:true ~target_id ~th_class ~cols ~row data_table changelogs
+    Data_table.make
+      ~align_top:true
+      ~break_mobile:true
+      ~target_id
+      ~th_class
+      ~cols
+      ~row
+      data_table
+      changelogs
 ;;
