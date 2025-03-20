@@ -70,21 +70,6 @@ module Make (C : Config) = struct
     ;;
   end
 
-  let create_queue channel pool =
-    let { QueueName.queue_name; dlx_name; dlq_name; _ } = QueueName.create pool in
-    Queue.declare
-      ~durable:true
-      ~arguments:
-        [ "x-queue-type", Amqp.Types.VLongstr "quorum"
-        ; Queue.dead_letter_exchange dlx_name
-        ; Queue.dead_letter_routing_key dlq_name
-        ; Queue.message_ttl (1000 * 60 * 60 * 12) (* 24 hours *)
-        ; Queue.max_length 3
-        ]
-      channel
-      queue_name
-  ;;
-
   let create_dead_letter channel pool =
     let { QueueName.dlx_name; dlq_name; _ } = QueueName.create pool in
     let%lwt dlx = Exchange.declare channel Exchange.direct_t ~durable:true dlx_name in
@@ -95,87 +80,24 @@ module Make (C : Config) = struct
     Lwt.return_unit
   ;;
 
-  let catch_create channel pool =
-    Lwt.catch
-      (fun () ->
-         let%lwt queue = create_queue channel pool in
-         let%lwt () = create_dead_letter channel pool in
-         Lwt.return_some queue)
-      (fun _ -> Lwt.return_none)
-  ;;
-
-  let shovel_payload src dest =
-    `Assoc
-      [ "src-uri", `String "amqp://"
-      ; "src-queue", `String src
-      ; "dest-uri", `String "amqp://"
-      ; "dest-queue", `String dest
-      ]
-    |> Yojson.Safe.to_string
-    |> fun str -> Amqp.Types.VLongstr str
-  ;;
-
-  let to_temp_queue channel pool =
-    let { QueueName.queue_name; temp_queue_name; shovel_to_temp_name; _ } =
-      QueueName.create pool
-    in
-    let%lwt temp_queue =
+  let create_queue channel pool =
+    let { QueueName.queue_name; dlx_name; dlq_name; _ } = QueueName.create pool in
+    let%lwt queue =
       Queue.declare
         ~durable:true
-        ~exclusive:false
-        ~auto_delete:false
+        ~arguments:
+          [ "x-queue-type", Amqp.Types.VLongstr "quorum"
+          ; Queue.dead_letter_exchange dlx_name
+          ; Queue.dead_letter_routing_key dlq_name
+          ; Queue.message_ttl (1000 * 60 * 60 * 24) (* 24 hours *)
+          ; Queue.max_length 3
+          ]
         channel
-        temp_queue_name
+        queue_name
     in
-    (* Move messages from the original queue to the temporary queue using a Shovel *)
-    let shovel_to_temp_payload = shovel_payload queue_name temp_queue_name in
-    let%lwt shovel_to_temp =
-      Queue.declare
-        ~durable:true
-        ~arguments:[ "x-shovel", shovel_to_temp_payload ]
-        channel
-        shovel_to_temp_name
-    in
-    (* Wait for the Shovel to move all messages *)
-    let%lwt () = Lwt_unix.sleep 5.0 in
-    Lwt.return [ temp_queue; shovel_to_temp ]
+    let%lwt () = create_dead_letter channel pool in
+    Lwt.return queue
   ;;
-
-  let to_orig_queue channel pool =
-    let { QueueName.queue_name; temp_queue_name; shovel_to_original_name; _ } =
-      QueueName.create pool
-    in
-    (* Move messages back from the temporary queue to the original queue using a Shovel *)
-    let shovel_to_original_config =
-      `Assoc
-        [ "src-uri", `String "amqp://"
-        ; "src-queue", `String temp_queue_name
-        ; "dest-uri", `String "amqp://"
-        ; "dest-queue", `String queue_name
-        ]
-    in
-    let shovel_to_original_payload =
-      Amqp.Types.VLongstr (Yojson.Safe.to_string shovel_to_original_config)
-    in
-    let%lwt shovel_to_original =
-      Queue.declare
-        ~durable:true
-        ~arguments:[ "x-shovel", shovel_to_original_payload ]
-        channel
-        shovel_to_original_name
-    in
-    (* Wait for the Shovel to move all messages back *)
-    let%lwt () = Lwt_unix.sleep 5.0 in
-    Lwt.return [ shovel_to_original ]
-  ;;
-
-  let cleanup_original channel pool =
-    Lwt_list.iter_s
-      (fun queue -> Queue.declare ~passive:true channel queue >|> Queue.delete channel)
-      (QueueName.to_remove_after_migration pool)
-  ;;
-
-  let delete_queue channel = Lwt_list.iter_s (Queue.delete channel)
 
   let connect () =
     Connection.connect ~id:"email_service" ~credentials:C.credentials C.host
@@ -185,21 +107,29 @@ module Make (C : Config) = struct
     Connection.open_channel ~id:"email_channel" Channel.with_confirm connection
   ;;
 
+  let queue_exists pool =
+    let { QueueName.queue_name; _ } = QueueName.create pool in
+    Lwt.catch
+      (fun () ->
+         let%lwt connection = connect () in
+         let%lwt channel = open_channel connection in
+         let%lwt _ = Queue.declare ~passive:true channel queue_name in
+         let%lwt () = Channel.close channel in
+         let%lwt () = Connection.close connection in
+         Lwt.return_true)
+      (fun _ -> Lwt.return_false)
+  ;;
+
   let init =
     Lwt_list.iter_s (fun pool ->
       let%lwt connection = connect () in
       let%lwt channel = open_channel connection in
       let%lwt queue =
-        match%lwt catch_create channel pool with
-        | Some queue -> Lwt.return queue
-        | None ->
-          let%lwt temp_queue = to_temp_queue channel pool in
-          let%lwt () = cleanup_original channel pool in
-          let%lwt queue = create_queue channel pool in
-          let%lwt () = create_dead_letter channel pool in
-          let%lwt shovel = to_orig_queue channel pool in
-          let%lwt () = delete_queue channel (temp_queue @ shovel) in
-          Lwt.return queue
+        match%lwt queue_exists pool with
+        | true ->
+          let { QueueName.queue_name; _ } = QueueName.create pool in
+          Queue.declare ~passive:true channel queue_name
+        | false -> create_queue channel pool
       in
       let () = InstanceCache.add pool (Instance.create connection channel queue) in
       Lwt.return_unit)
