@@ -11,6 +11,24 @@ val update_duration_schema
        , command )
        Pool_conformist.t
 
+module Key : sig
+  type t =
+    | ContactEmail
+    | EmailSuffixes
+    | InactiveUserDisableAfter
+    | InactiveUserWarning
+    | InactiveUserServiceDisabled
+    | Languages
+    | ReminderLeadTime
+    | TextMsgReminderLeadTime
+    | TriggerProfileUpdateAfter
+    | UserImportFirstReminderAfter
+    | UserImportSecondReminderAfter
+
+  val show : t -> string
+  val read : string -> t
+end
+
 module ContactEmail : sig
   include Pool_model.Base.StringSig
 end
@@ -90,7 +108,10 @@ module PageScript : sig
     -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 
   val find : Database.Label.t -> page_scripts Lwt.t
+  val find_id : Database.Label.t -> location -> Pool_common.Id.t Lwt.t
   val clear_cache : unit -> unit
+  val read_location : string -> location
+  val show_location : location -> string
 end
 
 val action_of_param
@@ -188,6 +209,7 @@ val find_user_import_second_reminder_after
   :  Database.Label.t
   -> UserImportReminder.SecondReminderAfter.t Lwt.t
 
+val id_by_key : Database.Label.t -> Key.t -> Pool_common.Id.t Lwt.t
 val default_email_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val default_text_message_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val trigger_profile_update_after_key_yojson : Yojson.Safe.t
