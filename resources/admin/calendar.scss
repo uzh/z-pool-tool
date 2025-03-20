@@ -1,4 +1,11 @@
 @use "@econ/frontend-framework/dist/sass/colors" as c;
+@use "@econ/frontend-framework/dist/sass/variables" as vars;
+@use "@econ/frontend-framework/dist/sass/breakpoints";
+
+
+:root {
+    --fc-today-bg-color: #fefad1;
+}
 
 .fc {
     [class*=grid-] {
@@ -101,4 +108,32 @@
     --fc-button-hover-border-color: #{c.$color-primary-dark};
     --fc-button-active-bg-color: #{c.$color-primary-light};
     --fc-button-active-border-color: #{c.$color-primary-dark};
+}
+
+@include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
+    .fc-header-toolbar {
+        flex-direction: column;
+
+        .fc-toolbar-title {
+            font-size: vars.$base-font-size;
+        }
+
+        .fc-button {
+            font-size: vars.$font-size-sm;
+        }
+
+        &>.fc-toolbar-chunk {
+            margin-top: vars.$space-md;
+        }
+
+        &>.fc-toolbar-chunk:nth-child(2) {
+            order: -1;
+        }
+    }
+
+    .fc-list-day-cushion {
+        display: flex;
+        gap: vars.$space-lg;
+    }
+
 }
