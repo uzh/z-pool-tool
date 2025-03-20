@@ -83,5 +83,5 @@ let role_assignment
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ main_hint; div ~a:[ a_class [ "switcher"; "flex-gap" ] ] [ existing; available ] ]
+    [ main_hint; div ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ] [ existing; available ] ]
 ;;

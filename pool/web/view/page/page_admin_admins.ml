@@ -55,7 +55,7 @@ let list
     in
     let buttons =
       div
-        ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+        ~a:[ a_class [ "flexrow"; "flex-gap-xs"; "justify-end" ] ]
         (detail_button :: additional_buttons)
     in
     [ txt (fullname_reversed admin); Status.email_with_icons admin; buttons ]
