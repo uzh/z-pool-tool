@@ -7,6 +7,7 @@ import { initSearch } from "./search"
 import {
     initConfirmable,
     initCollapsible,
+    initDetectDropdownPositions,
     initFileInput,
     initModal,
     initNotification,
@@ -19,6 +20,7 @@ initNavitation();
 initDatepicker();
 initConfirmable();
 initCollapsible();
+initDetectDropdownPositions();
 initFileInput();
 initModal();
 initNotification();
