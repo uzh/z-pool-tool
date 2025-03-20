@@ -97,6 +97,18 @@ Alternatively, these options simulate a similar production environment (without 
 QUEUE_FORCE_ASYNC=true EMAIL_BYPASS_INTERCEPT=true SMTP_SENDER=noreply@uast.uzh.ch make dev
 ```
 
+### RabbitMQ
+
+As RabbitMQ doesn't allow renaming or changing the features of a queue or an exchange, here are two usefull commands to reset the queue for development.
+
+```bash
+# delete all queues
+rabbitmqctl list_queues name | tail -n +2 | xargs -I {} rabbitmqctl delete_queue {}
+
+# delete all exchanges
+rabbitmqctl list_exchanges name | tail -n +2 | grep -v '^amq\.' | xargs -I {} rabbitmqadmin delete exchange -u user -p password name={}
+```
+
 ## 🧑‍💻 Maintenance
 
 Update/upgrade all package versions for ocaml and yarn packages.

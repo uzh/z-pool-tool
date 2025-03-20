@@ -1,6 +1,13 @@
 open CCFun
 module SmtpAuth = Entity.SmtpAuth
 
+module EmailQueueConfig = struct
+  let host = "rabbitmq"
+  let credentials = "user", "password"
+end
+
+module EmailQueue = Rabbitmq.Make (EmailQueueConfig)
+
 module Cache = struct
   open Hashtbl
 
@@ -319,8 +326,15 @@ let send ?smtp_auth_id database_label =
   intercept_send (Smtp.send ?smtp_auth_id database_label)
 ;;
 
-let start () = Lwt.return_unit
-let stop () = Lwt.return_unit
+let start () =
+  let%lwt () = EmailQueue.init (Database.Pool.all ~exclude:[] ()) in
+  Lwt.return_unit
+;;
+
+let stop () =
+  let%lwt () = EmailQueue.close () in
+  Lwt.return_unit
+;;
 
 let lifecycle =
   Sihl.Container.create_lifecycle
@@ -380,7 +394,7 @@ module Job = struct
 end
 
 let dispatch
-      ?id
+      ?(id = Pool_queue.Id.create ())
       ?new_email_address
       ?new_smtp_auth_id
       ?message_template
@@ -391,13 +405,16 @@ let dispatch
   let tags = Database.Logger.Tags.create database_label in
   Logs.debug ~src (fun m -> m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
   let job = job |> Job.update ?new_email_address ?new_smtp_auth_id in
-  Pool_queue.dispatch
-    ?id
-    ?message_template
-    ~job_ctx
-    database_label
-    (job |> Job.intercept_prepare_of_event)
-    Job.send
+  let prepared_job = job |> Job.intercept_prepare_of_event in
+  let job_str = Job.encode prepared_job in
+  let%lwt () =
+    EmailQueue.dispatch
+      database_label
+      ~message_id:(Pool_queue.Id.value id)
+      ~payload:job_str
+  in
+  (* Dispatch the job to the local queue as well *)
+  Pool_queue.dispatch ~id ?message_template ~job_ctx database_label prepared_job Job.send
 ;;
 
 let dispatch_all database_label jobs =

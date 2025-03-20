@@ -1,6 +1,7 @@
 (library
  (name email)
  (libraries
+  amqp-client-lwt
   database
   i18n
   pool.conformist

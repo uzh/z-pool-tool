@@ -260,6 +260,8 @@ module Service : sig
     -> (Pool_queue.Id.t * Job.t * string option * Pool_queue.job_ctx option) list
     -> unit Lwt.t
 
+  val start : unit -> unit Lwt.t
+  val stop : unit -> unit Lwt.t
   val lifecycle : Sihl.Container.lifecycle
   val register : unit -> Sihl.Container.Service.t
 
