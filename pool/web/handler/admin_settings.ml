@@ -17,6 +17,11 @@ let show req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/")
     @@
+    let open_tab =
+      Sihl.Web.Request.query "action" req
+      |> CCOption.map_or ~default:None (fun str ->
+        str |> Settings.action_of_param |> CCResult.to_opt)
+    in
     let languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt email_suffixes = Settings.find_email_suffixes database_label in
     let%lwt contact_email = Settings.find_contact_email database_label in
@@ -46,6 +51,7 @@ let show req =
     let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Settings.show
+      ?open_tab
       languages
       email_suffixes
       contact_email
@@ -75,7 +81,14 @@ let update_settings req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let redirect_path = "/admin/settings" in
+  let action =
+    Sihl.Web.Router.param req "action" |> Settings.action_of_param |> CCResult.get_exn
+  in
+  let redirect_path =
+    let open Uri in
+    let path = of_string "/admin/settings" in
+    add_query_param path ("action", [ Settings.stringify_action action ]) |> to_string
+  in
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
@@ -134,10 +147,7 @@ let update_settings req =
           UpdatePageScript.(urlencoded |> decode location >>= handle ~tags location)
           |> lift
       in
-      Sihl.Web.Router.param req "action"
-      |> Settings.action_of_param
-      |> lift
-      >>= command_handler urlencoded
+      command_handler urlencoded action
     in
     let handle = Pool_event.handle_events ~tags database_label user in
     let return_to_settings () =
@@ -158,6 +168,69 @@ let inactive_user_warning_subform req =
   in
   HttpUtils.Htmx.extract_happy_path ~src req result
 ;;
+
+let changelog req =
+  let result { Pool_context.database_label; _ } =
+    let key =
+      Http_utils.get_field_router_param req Pool_message.Field.Key |> Settings.Key.read
+    in
+    let url = Http_utils.Url.Admin.system_settings_changelog_path key in
+    let%lwt id = Settings.id_by_key database_label key in
+    Lwt_result.ok @@ Helpers.Changelog.htmx_handler ~url id req
+  in
+  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+;;
+
+let open_changelog_modal req =
+  let result ({ Pool_context.database_label; _ } as context) =
+    let key =
+      Http_utils.get_field_router_param req Pool_message.Field.Key |> Settings.Key.read
+    in
+    let%lwt id = Settings.id_by_key database_label key in
+    let%lwt changelogs =
+      let open Changelog in
+      let query = Query.from_request ~default:default_query req in
+      all_by_entity ~query database_label id
+    in
+    Page.Admin.Settings.settings_changelog_modal context key changelogs
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+;;
+
+module PageScripts = struct
+  let location req =
+    Http_utils.get_field_router_param req Pool_message.Field.Location
+    |> Settings.PageScript.read_location
+  ;;
+
+  let changelog req =
+    let result { Pool_context.database_label; _ } =
+      let location = location req in
+      let url = Http_utils.Url.Admin.page_script_changelog_path location in
+      let%lwt id = Settings.PageScript.find_id database_label location in
+      Lwt_result.ok @@ Helpers.Changelog.htmx_handler ~url id req
+    in
+    HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+  ;;
+
+  let open_changelog_modal req =
+    let result ({ Pool_context.database_label; _ } as context) =
+      let location = location req in
+      let%lwt id = Settings.PageScript.find_id database_label location in
+      let%lwt changelogs =
+        let open Changelog in
+        let query = Query.from_request ~default:default_query req in
+        all_by_entity ~query database_label id
+      in
+      Page.Admin.Settings.page_scripts_changelog_modal context location changelogs
+      |> HttpUtils.Htmx.html_to_plain_text_response
+      |> Lwt_result.return
+    in
+    HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+  ;;
+end
 
 module Access : module type of Helpers.Access = struct
   include Helpers.Access

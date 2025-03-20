@@ -29,6 +29,7 @@ type t =
   | CanceledAt
   | CellPhone
   | Changes
+  | Changelog
   | Chronological
   | City
   | ClosedAt

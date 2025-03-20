@@ -9,19 +9,48 @@ module Smtp = Page_admin_settings_smtp
 module Tags = Page_admin_settings_tags
 module TextMessage = Page_admin_settings_text_messages
 
+let changelog_modal_id = "settings-changelog-modal"
+let field_to_string = Pool_common.Utils.field_to_string_capitalized
+
+let create_modal context url make_title changelog =
+  let open Component in
+  Changelog.list context url (Some changelog)
+  |> Modal.create ~active:true context.Pool_context.language make_title changelog_modal_id
+;;
+
+let settings_changelog_modal context key changelog =
+  let url = HttpUtils.Url.Admin.system_settings_changelog_path key |> Uri.of_string in
+  let make_title lang = field_to_string lang Field.Changes in
+  create_modal context url make_title changelog
+;;
+
+let page_scripts_changelog_modal context location changelog =
+  let url = HttpUtils.Url.Admin.page_script_changelog_path location |> Uri.of_string in
+  let make_title lang =
+    let open Pool_message in
+    let open Settings.PageScript in
+    field_to_string lang
+    @@
+    match location with
+    | Head -> Field.PageScriptsHead
+    | Body -> Field.PageScriptsBody
+  in
+  create_modal context url make_title changelog
+;;
+
 let inactive_user_warning_input language warning =
   let open Settings.InactiveUser in
   let remove_btn =
     button
       ~a:
-        [ a_class [ "error" ]
+        [ a_class [ "error"; "small"; "is-icon" ]
         ; a_button_type `Button
         ; a_onclick "this.parentElement.remove()"
         ]
       [ Component.Icon.(TrashOutline |> to_html) ]
   in
   div
-    ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+    ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
     [ timespan_picker
         ~classnames:[ "grow" ]
         ~hide_label:true
@@ -35,6 +64,7 @@ let inactive_user_warning_input language warning =
 ;;
 
 let show
+      ?open_tab
       tenant_languages
       email_suffixes
       contact_email
@@ -51,15 +81,37 @@ let show
       text_messages_enabled
       flash_fetcher
   =
-  let action_path action =
-    Sihl.Web.externalize_path
-      (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
-  in
   let submit ?(control = Message.(Control.Update None)) () =
     div
       ~a:[ a_class [ "flexrow" ] ]
-      [ submit_element ~classnames:[ "push" ] language control () ]
+      [ submit_element ~classnames:[ "push"; "small" ] language control () ]
   in
+  let open_changelog url =
+    let open Htmx in
+    div
+      ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+      [ button
+          ~a:
+            [ hx_get (url |> Sihl.Web.externalize_path)
+            ; hx_swap "outerHTML"
+            ; hx_target ("#" ^ changelog_modal_id)
+            ; a_class [ "small" ]
+            ]
+          [ txt
+              Pool_common.(
+                Utils.field_to_string_capitalized language Message.Field.Changelog)
+          ]
+      ]
+  in
+  let open_system_settings_changelog key =
+    HttpUtils.Url.Admin.system_settings_changelog_path ~suffix:"open" key
+    |> open_changelog
+  in
+  let open_page_scripts_changelog location =
+    HttpUtils.Url.Admin.page_script_changelog_path ~suffix:"open" location
+    |> open_changelog
+  in
+  let action_path = HttpUtils.Url.Admin.settings_action_path in
   let form_attrs action =
     [ a_method `Post
     ; a_action (action_path action)
@@ -67,10 +119,10 @@ let show
     ; a_user_data "detect-unsaved-changes" ""
     ]
   in
-  let make_columns title ?hint columns =
+  let make_columns ?hint columns =
     div
-      [ h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt title ]
-      ; hint |> CCOption.map_or ~default:(txt "") (fun hint -> p [ txt hint ])
+      ~a:[ a_class [ "stack" ] ]
+      [ hint |> CCOption.map_or ~default:(txt "") (fun hint -> p [ txt hint ])
       ; div ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ] columns
       ]
   in
@@ -102,14 +154,18 @@ let show
       |> Component.Sortable.create_sortable
     in
     let form =
-      form
-        ~a:(form_attrs `UpdateLanguages)
-        ([ csrf_element csrf (); field_elements ] @ [ submit () ])
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateLanguages)
+            ([ csrf_element csrf (); field_elements ] @ [ submit () ])
+        ; open_system_settings_changelog Settings.Key.Languages
+        ]
     in
     let hint =
       "You have to add Terms and Condidions before you can activate a new language."
     in
-    "Languages", [ form ], Some hint
+    "Languages", [ form ], Some hint, [ `UpdateLanguages ]
   in
   let email_suffixes_html =
     let control_to_string control =
@@ -117,6 +173,7 @@ let show
     in
     let create_form =
       div
+        ~a:[ a_class [ "stack" ] ]
         [ control_to_string Message.(Control.Add (Some Field.EmailSuffix))
         ; form
             ~a:(form_attrs `CreateEmailSuffix)
@@ -145,7 +202,7 @@ let show
                 "confirmable"
                 Pool_common.(Utils.confirmable_to_string language I18n.DeleteEmailSuffix)
             ]
-          [ submit_icon ~classnames:[ "error" ] Icon.TrashOutline
+          [ submit_icon ~classnames:[ "error"; "small" ] Icon.TrashOutline
           ; input
               ~a:
                 [ a_input_type `Hidden
@@ -182,7 +239,7 @@ let show
         ; div
             ~a:[ a_class [ "flexrow"; "gap" ] ]
             [ submit_element
-                ~classnames:[ "push" ]
+                ~classnames:[ "push"; "small" ]
                 language
                 Message.(Control.Update None)
                 ()
@@ -192,9 +249,11 @@ let show
     let suffix_rows = function
       | [] ->
         div
+          ~a:[ a_class [ "stack" ] ]
           [ txt Pool_common.(Utils.hint_to_string language I18n.SettingsNoEmailSuffixes) ]
       | suffixes ->
         div
+          ~a:[ a_class [ "stack" ] ]
           [ control_to_string Message.(Control.Update (Some Field.EmailSuffix))
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
@@ -202,30 +261,41 @@ let show
           ]
     in
     let title = "Email Suffixes" in
-    let columns = [ suffix_rows email_suffixes; create_form ] in
-    title, columns, None
+    let columns =
+      [ suffix_rows email_suffixes
+      ; create_form
+      ; div
+          ~a:[ a_class [ "full-width" ] ]
+          [ open_system_settings_changelog Settings.Key.EmailSuffixes ]
+      ]
+    in
+    title, columns, None, [ `CreateEmailSuffix; `UpdateEmailSuffixes; `DeleteEmailSuffix ]
   in
   let contact_email_html =
     let form =
-      form
-        ~a:(form_attrs `UpdateContactEmail)
-        [ csrf_element csrf ()
-        ; input_element
-            language
-            `Text
-            Pool_message.Field.ContactEmail
-            ~value:(contact_email |> Settings.ContactEmail.value)
-            ~required:true
-        ; submit ~control:Message.(Control.Add None) ()
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateContactEmail)
+            [ csrf_element csrf ()
+            ; input_element
+                language
+                `Text
+                Pool_message.Field.ContactEmail
+                ~value:(contact_email |> Settings.ContactEmail.value)
+                ~required:true
+            ; submit ~control:Message.(Control.Add None) ()
+            ]
+        ; open_system_settings_changelog Settings.Key.ContactEmail
         ]
     in
-    "Contact Email", [ form ], None
+    "Contact Email", [ form ], None, [ `UpdateContactEmail ]
   in
   let inactive_user_html =
     let open Settings.InactiveUser in
-    let disable_servive_form =
+    let disable_service_form =
       div
-        ~a:[ a_class [ "full-width" ] ]
+        ~a:[ a_class [ "full-width"; "stack" ] ]
         [ form
             ~a:(form_attrs `UpdateUnactiveUserServiceDisabled)
             [ csrf_element csrf ()
@@ -238,18 +308,25 @@ let show
                 ; submit ()
                 ]
             ]
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ open_system_settings_changelog Settings.Key.InactiveUserServiceDisabled ]
         ]
     in
     let disable_after_form =
-      form
-        ~a:(form_attrs `UpdateInactiveUserDisableAfter)
-        [ csrf_element csrf ()
-        ; timespan_picker
-            ~required:true
-            language
-            Pool_message.Field.InactiveUserDisableAfter
-            ~value:(inactive_user_disable_after |> DisableAfter.value)
-        ; submit ()
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateInactiveUserDisableAfter)
+            [ csrf_element csrf ()
+            ; timespan_picker
+                ~required:true
+                language
+                Pool_message.Field.InactiveUserDisableAfter
+                ~value:(inactive_user_disable_after |> DisableAfter.value)
+            ; submit ()
+            ]
+        ; open_system_settings_changelog Settings.Key.InactiveUserDisableAfter
         ]
     in
     let warn_after_form =
@@ -259,7 +336,7 @@ let show
           (fun warning ->
              warning |> CCOption.return |> inactive_user_warning_input language)
           inactive_user_warning
-        |> div ~a:[ a_class [ "stack" ]; a_id subforms_id ]
+        |> div ~a:[ a_class [ "stack"; "gap-sm" ]; a_id subforms_id ]
       in
       let buttons =
         div
@@ -268,7 +345,7 @@ let show
               ~a:
                 Htmx.
                   [ a_button_type `Button
-                  ; a_class [ "success" ]
+                  ; a_class [ "success"; "small" ]
                   ; hx_get
                       (HttpUtils.Url.Admin.settings_path "inactive-user-warnings"
                        |> Sihl.Web.externalize_path)
@@ -285,21 +362,27 @@ let show
           ]
       in
       div
-        [ p
-            [ txt
-                (Pool_common.Utils.field_to_string_capitalized
-                   language
-                   Pool_message.Field.InactiveUserWarning)
-            ]
-        ; form
+        ~a:[ a_class [ "stack" ] ]
+        [ form
             ~a:(form_attrs `UpdateInactiveUserWarning)
-            [ csrf_element csrf (); subforms; buttons ]
+            [ csrf_element csrf ()
+            ; label
+                [ txt
+                    (Pool_common.Utils.field_to_string_capitalized
+                       language
+                       Pool_message.Field.InactiveUserWarning)
+                ]
+            ; subforms
+            ; buttons
+            ]
+        ; open_system_settings_changelog Settings.Key.InactiveUserWarning
         ]
     in
     let hint = Pool_common.(I18n.SettigsInactiveUsers |> Utils.hint_to_string language) in
     ( "Inactive Users"
-    , [ disable_servive_form; disable_after_form; warn_after_form ]
-    , Some hint )
+    , [ disable_service_form; disable_after_form; warn_after_form ]
+    , Some hint
+    , [ `UpdateUnactiveUserServiceDisabled; `UpdateInactiveUserDisableAfter ] )
   in
   let trigger_profile_update_after_html =
     let open Settings.TriggerProfileUpdateAfter in
@@ -309,37 +392,46 @@ let show
       |> CCString.capitalize_ascii
     in
     let form =
-      form
-        ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
-        [ csrf_element csrf ()
-        ; timespan_picker
-            ~required:true
-            language
-            Pool_message.Field.TriggerProfileUpdateAfter
-            ~value:(trigger_profile_update_after |> value)
-        ; submit ()
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
+            [ csrf_element csrf ()
+            ; timespan_picker
+                ~required:true
+                language
+                Pool_message.Field.TriggerProfileUpdateAfter
+                ~value:(trigger_profile_update_after |> value)
+            ; submit ()
+            ]
+        ; open_system_settings_changelog Settings.Key.TriggerProfileUpdateAfter
         ]
     in
-    title, [ form ], None
+    title, [ form ], None, [ `UpdateTriggerProfileUpdateAfter ]
   in
   let default_lead_time =
     let title = "Reminder lead time" in
-    let lead_time_form action field value encode =
-      form
-        ~a:(form_attrs action)
-        [ csrf_element csrf ()
-        ; timespan_picker
-            ~value:(value |> encode)
-            ~required:true
-            ~flash_fetcher
-            language
-            field
-        ; submit ()
+    let lead_time_form action key field value encode =
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs action)
+            [ csrf_element csrf ()
+            ; timespan_picker
+                ~value:(value |> encode)
+                ~required:true
+                ~flash_fetcher
+                language
+                field
+            ; submit ()
+            ]
+        ; open_system_settings_changelog key
         ]
     in
     let email_lead_time =
       lead_time_form
         `UpdateDefaultLeadTime
+        Settings.Key.ReminderLeadTime
         Pool_message.Field.EmailLeadTime
         default_reminder_lead_time
         Pool_common.Reminder.EmailLeadTime.value
@@ -348,6 +440,7 @@ let show
       let input_el =
         lead_time_form
           `UpdateTextMsgDefaultLeadTime
+          Settings.Key.TextMsgReminderLeadTime
           Pool_message.Field.TextMessageLeadTime
           default_text_msg_reminder_lead_time
           Pool_common.Reminder.TextMessageLeadTime.value
@@ -366,7 +459,10 @@ let show
           ; input_el
           ]
     in
-    title, [ email_lead_time; text_message_lead_time ], None
+    ( title
+    , [ email_lead_time; text_message_lead_time ]
+    , None
+    , [ `UpdateDefaultLeadTime; `UpdateTextMsgDefaultLeadTime ] )
   in
   let user_import_reminder =
     let open Settings.UserImportReminder in
@@ -382,47 +478,65 @@ let show
     in
     let title = "User import" in
     let columns =
-      [ form
-          ~a:(form_attrs `UserImportFirstReminderAfter)
-          [ csrf_element csrf ()
-          ; timespan_picker
-              Pool_message.Field.FirstReminder
-              (user_import_first_reminder |> FirstReminderAfter.value)
-          ; submit ()
+      [ div
+          ~a:[ a_class [ "stack" ] ]
+          [ form
+              ~a:(form_attrs `UserImportFirstReminderAfter)
+              [ csrf_element csrf ()
+              ; timespan_picker
+                  Pool_message.Field.FirstReminder
+                  (user_import_first_reminder |> FirstReminderAfter.value)
+              ; submit ()
+              ]
+          ; open_system_settings_changelog Settings.Key.UserImportFirstReminderAfter
           ]
-      ; form
-          ~a:(form_attrs `UserImportSecondReminderAfter)
-          [ csrf_element csrf ()
-          ; timespan_picker
-              Pool_message.Field.SecondReminder
-              (user_import_second_reminder |> SecondReminderAfter.value)
-          ; submit ()
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ form
+              ~a:(form_attrs `UserImportSecondReminderAfter)
+              [ csrf_element csrf ()
+              ; timespan_picker
+                  Pool_message.Field.SecondReminder
+                  (user_import_second_reminder |> SecondReminderAfter.value)
+              ; submit ()
+              ]
+          ; open_system_settings_changelog Settings.Key.UserImportSecondReminderAfter
           ]
       ]
     in
     let hint = Pool_common.(Utils.hint_to_string language I18n.SettingsPageScripts) in
-    title, columns, Some hint
+    ( title
+    , columns
+    , Some hint
+    , [ `UserImportFirstReminderAfter; `UserImportSecondReminderAfter ] )
   in
   let page_scripts =
     let open Settings.PageScript in
     let title = "Page scripts" in
-    let make_form field script action =
-      form
-        ~a:(form_attrs action)
-        [ csrf_element csrf ()
-        ; Component.Input.textarea_element
-            ?value:(CCOption.map value script)
-            language
-            field
-        ; submit ()
+    let make_form location =
+      let field, script, action =
+        match location with
+        | Head -> Field.PageScriptsHead, page_scripts.head, `UpdateHeadScripts
+        | Body -> Field.PageScriptsBody, page_scripts.body, `UpdateBodyScripts
+      in
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs action)
+            [ csrf_element csrf ()
+            ; Component.Input.textarea_element
+                ?value:(CCOption.map value script)
+                language
+                field
+            ; submit ()
+            ]
+        ; open_page_scripts_changelog location
         ]
     in
     let columns =
-      [ make_form Pool_message.Field.PageScriptsHead page_scripts.head `UpdateHeadScripts
-      ; make_form Pool_message.Field.PageScriptsBody page_scripts.body `UpdateBodyScripts
-      ]
+      [ make_form Settings.PageScript.Head; make_form Settings.PageScript.Body ]
     in
-    title, columns, None
+    title, columns, None, [ `UpdateHeadScripts; `UpdateBodyScripts ]
   in
   let body_html =
     [ languages_html
@@ -434,7 +548,14 @@ let show
     ; user_import_reminder
     ; page_scripts
     ]
-    |> CCList.map (fun (title, columns, hint) -> make_columns title ?hint columns)
+    |> CCList.map (fun (title, columns, hint, form_actions) ->
+      let html = make_columns ?hint columns in
+      let active =
+        open_tab
+        |> CCOption.map_or ~default:false (fun active_tab ->
+          CCList.mem active_tab form_actions)
+      in
+      Component.Collapsible.create ~active (txt title) html)
     |> div ~a:[ a_class [ "stack" ] ]
   in
   div
@@ -442,6 +563,7 @@ let show
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Settings) ]
+    ; div ~a:[ a_id changelog_modal_id; a_class [ "modal"; "fullscreen-overlay" ] ] []
     ; body_html
     ]
 ;;
