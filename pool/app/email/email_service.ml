@@ -1,6 +1,13 @@
 open CCFun
 module SmtpAuth = Entity.SmtpAuth
 
+module EmailQueueConfig = struct
+  let host = "rabbitmq"
+  let credentials = "user", "password"
+end
+
+module EmailQueue = Rabbitmq.Make (EmailQueueConfig)
+
 module Cache = struct
   open Hashtbl
 
@@ -319,8 +326,15 @@ let send ?smtp_auth_id database_label =
   intercept_send (Smtp.send ?smtp_auth_id database_label)
 ;;
 
-let start () = Lwt.return_unit
-let stop () = Lwt.return_unit
+let start () =
+  let%lwt () = EmailQueue.init (Database.Pool.all ~exclude:[] ()) in
+  Lwt.return_unit
+;;
+
+let stop () =
+  let%lwt () = EmailQueue.close () in
+  Lwt.return_unit
+;;
 
 let lifecycle =
   Sihl.Container.create_lifecycle
@@ -388,55 +402,16 @@ let dispatch
       database_label
       ({ Entity.Job.email; _ } as job)
   =
-  let open Lwt.Infix in
-  let open Amqp_client_lwt in
   let tags = Database.Logger.Tags.create database_label in
   Logs.debug ~src (fun m -> m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
   let job = job |> Job.update ?new_email_address ?new_smtp_auth_id in
   let prepared_job = job |> Job.intercept_prepare_of_event in
   let job_str = Job.encode prepared_job in
-  let%lwt connection =
-    Connection.connect ~id:"email_service" ~credentials:("user", "password") "rabbitmq"
-  in
-  let%lwt channel =
-    Connection.open_channel ~id:"email_channel" Channel.no_confirm connection
-  in
-  let dlx_name = "dead_letter_exchange" in
-  let%lwt (dlexchange : [ `Queue of string ] Exchange.t) =
-    Exchange.declare channel Exchange.direct_t ~durable:true dlx_name
-  in
-  Logs.warn ~src (fun m -> m ~tags "TESTING");
-  let%lwt queue =
-    Queue.declare
-      ~durable:true
-      ~arguments:
-        [ "x-queue-type", Amqp.Types.VLongstr "quorum"
-        ; Queue.dead_letter_exchange dlx_name
-        ; Queue.message_ttl 1200
-        ; Queue.max_length 3
-        ]
-      channel
-      "email_jobs_dev"
-  in
-  Logs.warn ~src (fun m -> m ~tags "TESTING");
-  let dlq_name = "dead_letter_queue" in
-  let%lwt dlq =
-    Queue.declare channel ~durable:true ~exclusive:false ~auto_delete:false dlq_name
-  in
-  Logs.warn ~src (fun m -> m ~tags "TESTING");
-  let%lwt () = Queue.bind channel dlq dlexchange (`Queue dlq_name) in
-  Logs.warn ~src (fun m -> m ~tags "TESTING");
-  let%lwt resp =
-    Queue.publish
-      channel
-      queue
-      (Message.make ~message_id:(Pool_queue.Id.value id) job_str)
-  in
   let%lwt () =
-    match resp with
-    | `Ok ->
-      Channel.close channel
-      >>= fun () -> Connection.close connection >>= fun () -> Lwt.return ()
+    EmailQueue.dispatch
+      database_label
+      ~message_id:(Pool_queue.Id.value id)
+      ~payload:job_str
   in
   (* Dispatch the job to the local queue as well *)
   Pool_queue.dispatch ~id ?message_template ~job_ctx database_label prepared_job Job.send

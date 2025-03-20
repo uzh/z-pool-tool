@@ -16,11 +16,13 @@ Example: test.mail admin@mail.com contact@mail.com
     (function
     | [ sender; recipient ] ->
       let%lwt () = Database.Pool.initialize () in
+      let%lwt () = Email.Service.start () in
       let message = "Hi! \n\n This is a test message." in
       let subject = "Test subject" in
       let email = Sihl_email.create ~sender ~recipient ~subject message in
       let job = Email.Service.Job.create email in
       let%lwt () = Email.Service.dispatch Database.Pool.Root.label job in
+      let%lwt () = Email.Service.stop () in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
 ;;
