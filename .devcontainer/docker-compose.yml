@@ -102,7 +102,6 @@ services:
 
   adminer:
     image: adminer:standalone
-    restart: always
     ports: [ 8080:8080 ]
     depends_on:
       - database-root
@@ -110,7 +109,6 @@ services:
 
   phpmyadmin:
     image: phpmyadmin
-    restart: always
     ports:
       - 8082:80
     environment:
