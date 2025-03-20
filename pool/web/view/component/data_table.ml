@@ -278,6 +278,7 @@ let searchbar
   let open Query in
   let search_field, search_label = Pool_message.Field.(Search, Search |> show) in
   let equal_field a b = Pool_message.Field.equal (Column.field a) (Column.field b) in
+  let field_id = Format.asprintf "%s_%s" search_label target_id in
   let url =
     Uri.with_query
       url
@@ -290,14 +291,14 @@ let searchbar
   div
     ~a:[ a_class [ "form-group"; "span-2"; "search-bar" ] ]
     [ label
-        ~a:[ a_label_for search_label ]
+        ~a:[ a_label_for field_id ]
         [ search_field |> Utils.field_to_string_capitalized language |> txt ]
     ; div
         ~a:[ a_class [ "flexcolumn"; "grow" ] ]
         [ input
             ~a:
               ([ a_name search_label
-               ; a_id search_label
+               ; a_id field_id
                ; a_input_type `Search
                ; a_value (query.search |> CCOption.map_or ~default:"" Search.query_string)
                ; a_user_data "hx-trigger" "input changed delay:300ms, search"
