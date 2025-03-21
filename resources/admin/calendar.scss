@@ -139,11 +139,12 @@
 
 @include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
     .fc-tooltip {
-        flex-direction: column-reverse;
-        align-items: center;
-
         .arrow {
-            transform: rotate(-90deg);
+            display: none;
         }
+    }
+
+    .fc .fc-list-event[aria-expanded="true"] td {
+        background-color: var(--fc-today-bg-color);
     }
 }
