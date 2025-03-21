@@ -236,7 +236,8 @@ let data_table
     |> tr ~a:row_attrs
   in
   DataTable.make
-    ~classnames:[ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
+    ~align_last_end:true
+    ~break_mobile:true
     ~target_id
     ~th_class
     ~cols

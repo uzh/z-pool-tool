@@ -465,26 +465,8 @@ table.simple {
     gap: vars.$space-xs;
 }
 
-// Session list
 @include breakpoints.econ-mobile {
-    .session-list.break-mobile {
-        td>.inset.left {
-            padding: 0;
-        }
-
-        td[data-label] {
-            flex-direction: row;
-            gap: vars.$space-sm;
-
-            &:before {
-                width: 50%;
-            }
-        }
-
-        .follow-up {
-            padding-left: vars.$space-base;
-        }
-
+    .table.break-mobile {
         .button-list {
             margin: 0;
 
