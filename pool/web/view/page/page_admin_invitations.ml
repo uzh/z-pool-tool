@@ -46,21 +46,28 @@ module Partials = struct
           ]
       in
       let open CCFun in
-      [ txt (Contact.lastname_firstname contact)
-      ; txt (Contact.email_address contact |> Pool_user.EmailAddress.value)
-      ; txt
-          (resent_at
-           |> CCOption.map_or
-                ~default:""
-                (ResentAt.value %> Pool_model.Time.formatted_date_time))
-      ; txt (send_count |> SendCount.value |> CCInt.to_string)
-      ; txt (created_at |> Pool_common.CreatedAt.value |> formatted_date)
-      ; resend_form
+      let open Pool_message in
+      [ txt (Contact.lastname_firstname contact), Some Field.Name
+      ; ( txt (Contact.email_address contact |> Pool_user.EmailAddress.value)
+        , Some Field.Email )
+      ; ( txt
+            (resent_at
+             |> CCOption.map_or
+                  ~default:""
+                  (ResentAt.value %> Pool_model.Time.formatted_date_time))
+        , Some Field.ResentAt )
+      ; txt (send_count |> SendCount.value |> CCInt.to_string), Some Field.Count
+      ; ( txt (created_at |> Pool_common.CreatedAt.value |> formatted_date)
+        , Some Field.CreatedAt )
+      ; resend_form, None
       ]
-      |> CCList.map (CCList.return %> td)
+      |> CCList.map (fun (html, field) ->
+        let attr = Component.Table.data_label_opt language field in
+        td ~a:attr [ html ])
       |> tr
     in
     DataTable.make
+      ~break_mobile:true
       ~th_class
       ~target_id:"experiment-list"
       ~cols
@@ -129,7 +136,7 @@ module Partials = struct
     in
     div
       [ h3
-          ~a:[ a_class [ "heading-3" ] ]
+          ~a:[ a_class [ "heading-3"; "has-gap" ] ]
           [ Control.(Filter (Some Field.Contacts))
             |> Utils.control_to_string language
             |> txt

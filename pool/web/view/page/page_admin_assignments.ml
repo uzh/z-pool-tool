@@ -854,7 +854,7 @@ let edit
       ]
   in
   [ div
-      ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+      ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ]
       [ div
           ~a:[ a_class [ "stack" ] ]
           [ Component.Notification.notification
@@ -895,8 +895,10 @@ let edit
               ]
           ]
       ; session_data
+      ; div
+          ~a:[ a_class [ "full-width" ] ]
+          [ Component.Changelog.list context changelog_url None ]
       ]
-  ; Component.Changelog.list context changelog_url None
   ]
   |> Layout.Experiment.(
        create
