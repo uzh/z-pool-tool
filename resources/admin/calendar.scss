@@ -110,7 +110,7 @@
     --fc-button-active-border-color: #{c.$color-primary-dark};
 }
 
-@include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
+@include breakpoints.econ-until(breakpoints.$desktop-breakpoint) {
     .fc-header-toolbar {
         flex-direction: column;
 
@@ -135,5 +135,15 @@
         display: flex;
         gap: vars.$space-lg;
     }
+}
 
+@include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
+    .fc-tooltip {
+        flex-direction: column-reverse;
+        align-items: center;
+
+        .arrow {
+            transform: rotate(-90deg);
+        }
+    }
 }
