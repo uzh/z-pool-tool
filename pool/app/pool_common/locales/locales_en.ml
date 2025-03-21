@@ -262,6 +262,7 @@ let rec field_to_string =
   | SendingInvitations -> "Sending invitations"
   | SentAt -> "sent at"
   | SessionCount -> "no. sessions"
+  | SessionMinMaxOverbook -> "Min / Max (Overbook)"
   | Session -> "session"
   | Sessions -> "sessions"
   | Setting -> "setting"

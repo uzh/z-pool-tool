@@ -10,6 +10,15 @@ let table_head elements =
   elements |> CCList.map CCFun.(CCList.pure %> th) |> tr |> CCList.pure |> thead
 ;;
 
+let data_label language field =
+  a_user_data "label" (Pool_common.Utils.field_to_string_capitalized language field)
+;;
+
+let data_label_opt language = function
+  | None -> []
+  | Some field -> [ data_label language field ]
+;;
+
 let layout_class = function
   | `Striped -> "striped"
   | `Simple -> "simple"

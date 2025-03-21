@@ -610,6 +610,19 @@ input[type="checkbox"][readonly] {
     }
 }
 
+.change-row {
+    @include breakpoints.econ-mobile {
+        flex-direction: column;
+        padding-bottom: vars.$space-xs;
+        margin-bottom: vars.$space-xs;
+        border-bottom: 1px solid c.$grey-border;
+
+        .change-row,
+        .changelog-changes {
+            flex-direction: column;
+        }
+    }
+}
 
 // Statistics
 

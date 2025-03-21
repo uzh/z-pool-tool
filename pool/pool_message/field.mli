@@ -251,6 +251,7 @@ type t =
   | SentAt
   | Session
   | SessionCount
+  | SessionMinMaxOverbook
   | Sessions
   | Setting
   | Settings

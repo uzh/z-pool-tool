@@ -35,6 +35,7 @@ let create_meta
   { url; query; language; filter; search; additional_url_params; push_url }
 ;;
 
+(* TODO: Consider adding a `buttons / `mobile type. Treated like `Custom but shown on mobile *)
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt
@@ -342,11 +343,19 @@ let make_sortable_head target_id sort col field =
      else [ make_name sort field ])
 ;;
 
-let make_head ?classname target_id sort column =
+let make_head ~break_mobile ?classname target_id sort column =
   let attrs =
+    let hide_mobile =
+      if not break_mobile
+      then []
+      else (
+        match column with
+        | `column _ -> []
+        | _ -> [ "hidden-mobile" ])
+    in
     match classname with
-    | None -> []
-    | Some classname -> [ a_class [ classname ] ]
+    | None -> [ a_class hide_mobile ]
+    | Some classname -> [ a_class (classname :: hide_mobile) ]
   in
   th
     ~a:attrs
@@ -358,19 +367,46 @@ let make_head ?classname target_id sort column =
     ]
 ;;
 
-let make_header ?th_class target_id cols sort =
+let make_header ~break_mobile ?th_class target_id cols sort =
   let classname i = CCOption.bind th_class (CCFun.flip CCList.nth_opt i) in
   thead
     [ tr
         (CCList.mapi
-           (fun i col -> make_head ?classname:(classname i) target_id sort col)
+           (fun i col ->
+              make_head ~break_mobile ?classname:(classname i) target_id sort col)
            cols)
     ]
+;;
+
+let make_filter_and_pagination ~target_id data_table =
+  let default = txt "" in
+  let search_bar = data_table.search |> CCOption.map (searchbar ~target_id data_table) in
+  let filter_bar = data_table.filter |> CCOption.map (filter data_table target_id) in
+  let filter_parts =
+    match search_bar, filter_bar with
+    | Some search, Some filter -> Some (search :: filter)
+    | Some search, None -> Some [ search ]
+    | None, Some filter -> Some filter
+    | None, None -> None
+  in
+  let filter =
+    filter_parts
+    |> CCOption.map_or ~default (fun parts ->
+      div
+        ~a:[ a_class [ "border"; "inset" ] ]
+        [ div ~a:[ a_class [ "grid-col-4" ] ] (parts @ [ resetbar data_table.language ]) ])
+  in
+  let pagination =
+    data_table.query.Query.pagination
+    |> CCOption.map_or ~default (pagination ~target_id data_table)
+  in
+  filter, pagination
 ;;
 
 let make
       ?(align_last_end = true)
       ?align_top
+      ?(break_mobile = false)
       ?(classnames = [])
       ?(execute_onload = false)
       ?(layout = `Striped)
@@ -382,28 +418,11 @@ let make
       data_table
       items
   =
-  let default = txt "" in
-  let search_bar = data_table.search |> CCOption.map (searchbar ~target_id data_table) in
-  let filter_bar = data_table.filter |> CCOption.map (filter data_table target_id) in
-  let filter_parts =
-    match search_bar, filter_bar with
-    | Some search, Some filter -> Some (search :: filter)
-    | Some search, None -> Some [ search ]
-    | None, Some filter -> Some filter
-    | None, None -> None
+  let classnames =
+    if break_mobile then [ "break-mobile"; "keep-head" ] @ classnames else classnames
   in
-  let filter_block =
-    filter_parts
-    |> CCOption.map_or ~default:(txt "") (fun parts ->
-      div
-        ~a:[ a_class [ "border"; "inset" ] ]
-        [ div ~a:[ a_class [ "grid-col-4" ] ] (parts @ [ resetbar data_table.language ]) ])
-  in
-  let pagination =
-    data_table.query.Query.pagination
-    |> CCOption.map_or ~default (pagination ~target_id data_table)
-  in
-  let thead = make_header ?th_class target_id cols data_table in
+  let filter_block, pagination = make_filter_and_pagination ~target_id data_table in
+  let thead = make_header ~break_mobile ?th_class target_id cols data_table in
   let rows = CCList.map row items in
   let empty_msg =
     if CCList.is_empty items

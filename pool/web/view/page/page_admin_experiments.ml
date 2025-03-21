@@ -162,19 +162,29 @@ let list Pool_context.{ language; guardian; _ } experiments query =
   in
   let th_class = [ "w-6"; "w-4"; "w-2" ] in
   let row (experiment : Experiment.t) =
-    let open Experiment in
+    let open Pool_message in
     let detail_btn = Partials.detail_button experiment in
     let buttons =
       div ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ] [ detail_btn ]
     in
-    [ txt (Title.value experiment.title)
-    ; txt (PublicTitle.value experiment.public_title)
-    ; buttons
-    ]
-    |> CCList.map (CCList.return %> td)
+    Experiment.
+      [ txt (Title.value experiment.title), Some Field.Title
+      ; txt (PublicTitle.value experiment.public_title), Some Field.PublicTitle
+      ; buttons, None
+      ]
+    |> CCList.map (fun (html, label) ->
+      let attrs = Component.Table.data_label_opt language label in
+      td ~a:attrs [ html ])
     |> tr
   in
-  DataTable.make ~target_id:"experiment-list" ~th_class ~cols ~row data_table experiments
+  DataTable.make
+    ~target_id:"experiment-list"
+    ~break_mobile:true
+    ~th_class
+    ~cols
+    ~row
+    data_table
+    experiments
 ;;
 
 let index (Pool_context.{ language; _ } as context) experiments query =
@@ -855,14 +865,17 @@ let detail
     let statistics = Component.Statistics.ExperimentOverview.make language statistics in
     let message_template =
       div
-        [ h3
-            ~a:[ a_class [ "heading-3" ] ]
-            [ txt (Utils.nav_link_to_string language I18n.MessageTemplates) ]
-        ; Page_admin_message_template.(
-            experiment_help
-              ~entity:(Experiment experiment_id)
-              language
-              (message_templates |> CCList.map fst))
+        [ div
+            ~a:[ a_class [ "rich-text" ] ]
+            [ h3
+                ~a:[ a_class [ "heading-3" ] ]
+                [ txt (Utils.nav_link_to_string language I18n.MessageTemplates) ]
+            ; Page_admin_message_template.(
+                experiment_help
+                  ~entity:(Experiment experiment_id)
+                  language
+                  (message_templates |> CCList.map fst))
+            ]
         ; div
             ~a:[ a_class [ "gap" ] ]
             [ message_templates_html
