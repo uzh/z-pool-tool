@@ -1,4 +1,3 @@
-open CCFun
 open Containers
 open Tyxml.Html
 open Component.Input
@@ -89,28 +88,28 @@ let list Pool_context.{ language; _ } location_list query =
     ; `column Pool_location.column_description
     ; `custom
         (span
-           Pool_common.
-             [ Utils.text_to_string language I18n.Address
-               |> CCString.capitalize_ascii
-               |> txt
-             ])
+           Pool_common.[ Utils.field_to_string_capitalized language Field.Address |> txt ])
     ; `custom create_filter
     ]
   in
   let th_class = [ "w-3"; "w-4"; "w-4"; "w-1" ] in
   let row (location : Pool_location.t) =
     let open Pool_location in
-    [ txt (Name.value location.name)
-    ; descriptions_all_languages location
-    ; Component.Partials.address_to_html language location.address
-    ; location_specific_path location.id
-      |> Component.Input.link_as_button ~icon:Component.Icon.Eye
+    let open Pool_message in
+    [ txt (Name.value location.name), Some Field.Name
+    ; descriptions_all_languages location, Some Field.Description
+    ; Component.Partials.address_to_html language location.address, Some Field.Address
+    ; ( location_specific_path location.id
+        |> Component.Input.link_as_button ~icon:Component.Icon.Eye
+      , None )
     ]
-    |> CCList.map (CCList.return %> td)
+    |> CCList.map (fun (html, field) ->
+      td ~a:(Component.Table.data_label_opt language field) [ html ])
     |> tr
   in
   Component.DataTable.make
     ~align_top:true
+    ~break_mobile:true
     ~target_id:"location-table"
     ~th_class
     ~cols
