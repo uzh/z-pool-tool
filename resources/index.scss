@@ -445,6 +445,10 @@ table.simple {
     z-index: 12;
 }
 
+.mobile-nav {
+    height: calc(100dvh - #{vars.$header-height-mobile + 1px});
+}
+
 .mobile-nav-inner h2 {
     margin-bottom: vars.$space-lg;
 }
