@@ -441,7 +441,7 @@ let experiment_help ~entity language labels =
             [ txt (Label.to_human label); Icon.(to_html OpenOutline) ]
         ]
     in
-    labels |> CCList.map list_item |> ul
+    labels |> CCList.map list_item |> ul ~a:[ a_class [ "inset"; "left"; "gap" ] ]
   in
   div
     [ help_text

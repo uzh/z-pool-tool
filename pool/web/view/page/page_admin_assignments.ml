@@ -688,16 +688,32 @@ let data_table
     if has_custom_fields then left @ [ "w-2" ] @ right else left @ right
   in
   let row (assignment : t) =
+    let labeled_cell column html =
+      let field_to_strig = Utils.field_to_string_capitalized language in
+      let label =
+        match column with
+        | `column col -> Query.Column.field col |> field_to_strig
+        | `field (field, _) -> field_to_strig field
+        | `custom _ | `empty -> ""
+      in
+      td ~a:[ a_user_data "label" label ] [ html ]
+    in
     let name_column =
       match view_contact_name with
       | true ->
-        Page_admin_contact.contact_lastname_firstname
-          access_contact_profiles
-          assignment.contact
+        td
+          ~a:[ Component.Table.data_label language Field.Name ]
+          [ Page_admin_contact.contact_lastname_firstname
+              access_contact_profiles
+              assignment.contact
+          ]
       | false ->
-        span
-          ~a:[ a_class [ "nowrap" ] ]
-          [ txt Contact.(assignment.contact |> id |> Id.value) ]
+        td
+          ~a:[ Component.Table.data_label language Field.Contact ]
+          [ span
+              ~a:[ a_class [ "nowrap" ] ]
+              [ txt Contact.(assignment.contact |> id |> Id.value) ]
+          ]
     in
     let tr cells =
       let open Assignment in
@@ -710,25 +726,31 @@ let data_table
       tr ~a:[ a_class classname; assignment_id ] cells
     in
     let custom_fields =
-      Partials.custom_field_cells
-        language
-        user
-        assignment.Assignment.custom_fields
-        custom_fields
+      td
+        [ Partials.custom_field_cells
+            language
+            user
+            assignment.Assignment.custom_fields
+            custom_fields
+        ]
     in
     let left =
       conditional_left_columns
-      |> CCList.filter_map (fun (check, _, to_html) ->
-        if check then Some (to_html assignment) else None)
+      |> CCList.filter_map (fun (check, (column : Query.Column.t), to_html) ->
+        if check then Some (to_html assignment |> labeled_cell (`column column)) else None)
     in
     let center =
-      let base = [ assignment_participated assignment; assignment_no_show assignment ] in
+      let base =
+        [ assignment_participated assignment |> labeled_cell (`column column_participated)
+        ; assignment_no_show assignment |> labeled_cell (`column column_no_show)
+        ]
+      in
       if has_custom_fields then custom_fields :: base else base
     in
     let right =
       conditional_right_columns
-      |> CCList.filter_map (fun (check, _, to_html) ->
-        if check then Some (to_html assignment) else None)
+      |> CCList.filter_map (fun (check, column, to_html) ->
+        if check then Some (to_html assignment |> labeled_cell column) else None)
     in
     let buttons =
       match table_context with
@@ -749,13 +771,11 @@ let data_table
       |> CCList.filter_map (fun (active, form) ->
         if not active then None else Some (form assignment))
       |> function
-      | [] -> txt ""
-      | buttons -> Component.ButtonGroup.dropdown buttons
+      | [] -> []
+      | buttons -> [ td [ Component.ButtonGroup.dropdown buttons ] ]
     in
     let base = (name_column :: left) @ center @ right in
-    (if is_print then base else base @ [ buttons ])
-    |> CCList.map (CCList.return %> td)
-    |> tr
+    (if is_print then base else base @ buttons) |> tr
   in
   let modals =
     CCList.filter_map
@@ -776,6 +796,7 @@ let data_table
     | modals -> Some (div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals)
   in
   Component.DataTable.make
+    ~break_mobile:true
     ~th_class
     ~target_id:"assignments-table"
     ~cols

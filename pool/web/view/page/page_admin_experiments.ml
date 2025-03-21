@@ -866,7 +866,6 @@ let detail
     let message_template =
       div
         [ div
-            ~a:[ a_class [ "rich-text" ] ]
             [ h3
                 ~a:[ a_class [ "heading-3" ] ]
                 [ txt (Utils.nav_link_to_string language I18n.MessageTemplates) ]

@@ -929,7 +929,7 @@ let session_details { Pool_context.language; _ } session =
     in
     rows @ time_stamps @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
   in
-  Table.vertical_table `Striped language ~align_top:true
+  Table.vertical_table `Striped language ~align_top:true ~break_mobile:true
   @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
 ;;
 
@@ -1058,7 +1058,7 @@ let detail
           ~classnames:[ "small" ]
           link
       in
-      let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] in
+      let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ] in
       let right =
         Control.
           [ ( CCOption.is_none session.follow_up_to
@@ -1088,7 +1088,17 @@ let detail
         |> CCList.filter_map (fun (t, style) -> session_link ?style t)
         |> fun btns -> wrap (resend_reminders_modal :: btns)
       in
-      div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ] [ left; right ]
+      div
+        ~a:
+          [ a_class
+              [ "flexrow"
+              ; "flex-gap"
+              ; "justify-between"
+              ; "flexcolumn-mobile"
+              ; "align-start"
+              ]
+          ]
+        [ left; right ]
     in
     div ~a:[ a_class [ "stack" ] ] [ table; links ]
   in
@@ -1206,7 +1216,7 @@ let detail
       if send_direct_message
       then
         div
-          ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+          ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "flexcolumn-mobile" ] ]
           [ header_btn
               Icon.MailOutline
               Control.(Send (Some Field.Message))
@@ -1252,14 +1262,22 @@ let detail
     div
       ~a:[ a_class [ "stack" ] ]
       [ div
-          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "flexcolumn-mobile" ] ]
+          ~a:
+            [ a_class
+                [ "flexrow"
+                ; "flex-gap"
+                ; "justify-between"
+                ; "flexcolumn-mobile"
+                ; "align-start"
+                ]
+            ]
           [ div
               [ h2
                   ~a:[ a_class [ "heading-2"; "has-gap" ] ]
                   [ txt (Utils.nav_link_to_string language I18n.Assignments) ]
               ]
           ; div
-              ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+              ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile"; "align-start" ] ]
               [ direct_messaging_buttons
               ; refresh_fiter_button
               ; header_btn
