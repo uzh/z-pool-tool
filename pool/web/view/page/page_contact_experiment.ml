@@ -241,8 +241,9 @@ let show
   in
   let session_list sessions =
     div
+      ~a:[ a_class [ "stack" ] ]
       ([ h2
-           ~a:[ a_class [ "heading-2"; "has-gap" ] ]
+           ~a:[ a_class [ "heading-2" ] ]
            [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
        ; p [ txt (hint_to_string I18n.ExperimentSessionsPublic) ]
        ]
@@ -311,7 +312,7 @@ let show
            [ txt (Utils.text_to_string language title) ]
          :: Page_contact_sessions.public_detail language sessions)
   in
-  let html =
+  let page_content =
     match upcoming_sessions, past_sessions, canceled_sessions with
     | [], [], [] ->
       Experiment.(
@@ -320,18 +321,19 @@ let show
            |> Public.direct_registration_disabled
            |> DirectRegistrationDisabled.value
          with
-         | false -> session_list grouped_sessions
-         | true -> div [ waiting_list_form () ]))
+         | false -> [ session_list grouped_sessions ]
+         | true -> [ waiting_list_form () ]))
     | upcoming_sessions, past_sessions, canceled_sessions ->
       let open Pool_common.I18n in
-      div
-        ~a:[ a_class [ "gap-lg"; "stack-lg" ] ]
-        [ sessions_html UpcomingSessionsTitle upcoming_sessions
-        ; sessions_html PastSessionsTitle past_sessions
-        ; sessions_html CanceledSessionsTitle canceled_sessions
-        ]
+      [ div
+          ~a:[ a_class [ "stack-lg" ] ]
+          [ sessions_html UpcomingSessionsTitle upcoming_sessions
+          ; sessions_html PastSessionsTitle past_sessions
+          ; sessions_html CanceledSessionsTitle canceled_sessions
+          ]
+      ]
   in
-  experiment_detail_page experiment html
+  page_content |> div ~a:[ a_class [ "gap-lg" ] ] |> experiment_detail_page experiment
 ;;
 
 let show_online_study
