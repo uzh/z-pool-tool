@@ -351,13 +351,13 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
   in
   let th_class = [ "w-7"; "w-5" ] in
   let row (experiment, pending) =
-    let open Experiment in
+    let open Pool_message in
     let detail_btn = Page_admin_experiments.Partials.detail_button experiment in
     let session_modal_btn =
       let url =
         Format.asprintf
           "/admin/experiments/%s/contact-history/%s"
-          (Id.value experiment.id)
+          Experiment.(Id.value experiment.id)
           Contact.(contact |> id |> Id.value)
         |> Sihl.Web.externalize_path
       in
@@ -377,21 +377,26 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
         [ session_modal_btn; detail_btn ]
     in
     let title =
-      let text = txt (Title.value experiment.title) in
+      let text = txt Experiment.(Title.value experiment.title) in
       match pending with
       | false -> text
       | true ->
         div
-          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
           [ span [ text ]
           ; span ~a:[ a_class [ "tag"; "primary"; "ghost"; "inline" ] ] [ txt "pending" ]
           ]
     in
-    [ title; txt (PublicTitle.value experiment.public_title); buttons ]
-    |> CCList.map (CCList.return %> td)
+    [ title, Some Field.Title
+    ; txt Experiment.(PublicTitle.value experiment.public_title), Some Field.PublicTitle
+    ; buttons, None
+    ]
+    |> CCList.map (fun (html, field) ->
+      td ~a:(Component.Table.data_label_opt language field) [ html ])
     |> tr
   in
   DataTable.make
+    ~break_mobile:true
     ~target_id:"experiment-history"
     ~th_class
     ~cols
@@ -525,7 +530,7 @@ let detail
       else txt ""
     in
     div
-      ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile"; "align-start" ] ]
       [ span ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ] [ duplicate; messages ]; edit ]
   in
   let past_experiments_html =
