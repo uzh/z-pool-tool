@@ -1,4 +1,3 @@
-open CCFun
 open Containers
 open Tyxml.Html
 module HttpUtils = Http_utils
@@ -78,15 +77,24 @@ let list Pool_context.{ language; _ } tags query =
       |> CCList.return
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
-    [ txt (Title.value tag.title)
-    ; txt (CCOption.map_or ~default:"" Tags.Description.value tag.description)
-    ; txt (Model.show tag.model |> CCString.capitalize_ascii)
-    ; buttons tag
+    [ txt (Title.value tag.title), Some Field.Title
+    ; ( txt (CCOption.map_or ~default:"" Tags.Description.value tag.description)
+      , Some Field.Description )
+    ; txt (Model.show tag.model |> CCString.capitalize_ascii), Some Field.Model
+    ; buttons tag, None
     ]
-    |> CCList.map (CCList.return %> td)
+    |> CCList.map (fun (html, field) ->
+      td ~a:(Component.Table.data_label_opt language field) [ html ])
     |> tr
   in
-  Component.DataTable.make ~th_class ~target_id:"tags-table" ~cols ~row data_table tags
+  Component.DataTable.make
+    ~break_mobile:true
+    ~th_class
+    ~target_id:"tags-table"
+    ~cols
+    ~row
+    data_table
+    tags
 ;;
 
 let index (Pool_context.{ language; _ } as context) tags query =

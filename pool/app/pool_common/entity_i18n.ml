@@ -5,8 +5,10 @@ type t =
   | AnnouncementsListTitle
   | AnnouncementsTenantSelect
   | ApiKeys
+  | Assigned
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
+  | Available
   | AvailableSpots
   | Canceled
   | CanceledSessionsTitle

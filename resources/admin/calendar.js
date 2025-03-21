@@ -29,7 +29,9 @@ const normalizeSession = (session) => {
     return session
 }
 
-const determineView = () => window.innerWidth >= viewBreakpoint ? "dayGridMonth" : "listWeek";
+const isDesktop = () => window.innerWidth >= viewBreakpoint;
+
+const determineView = () => isDesktop() ? "dayGridMonth" : "listWeek";
 
 const tooltipContent = ({ _instance, _def }, hideLocation) => {
     const { start, end } = _instance.range;
@@ -62,7 +64,6 @@ export const initCalendar = () => {
         try {
             const { calendar: url, hideLocation } = el.dataset
 
-
             new Calendar(el, {
                 plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
                 initialView: 'dayGridMonth',
@@ -86,7 +87,7 @@ export const initCalendar = () => {
                         appendTo: el,
                         content: tooltipContent(info.event, hideLocation),
                         allowHTML: true,
-                        placement: 'right',
+                        placement: isDesktop() ? 'right' : 'top',
                         delay: [200, 0],
                         interactive: true,
                         trigger: 'click',

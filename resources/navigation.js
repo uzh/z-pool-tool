@@ -27,11 +27,13 @@ class OverlayNavigation {
         }
         if (current) {
             document.body.setAttribute('data-noscroll', '');
+            document.body.classList.add("nav-open");
             this.openNavigation(current);
             hideToggle(this.toggleOpen);
             showToggle(this.toggleClose);
         } else {
             document.body.removeAttribute('data-noscroll', '');
+            document.body.classList.remove("nav-open");
             showToggle(this.toggleOpen);
             hideToggle(this.toggleClose);
         }

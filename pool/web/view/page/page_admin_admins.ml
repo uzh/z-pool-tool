@@ -58,11 +58,23 @@ let list
         ~a:[ a_class [ "flexrow"; "flex-gap-xs"; "justify-end" ] ]
         (detail_button :: additional_buttons)
     in
-    [ txt (fullname_reversed admin); Status.email_with_icons admin; buttons ]
-    |> CCList.map (CCList.return %> td)
+    [ txt (fullname_reversed admin), Some Field.Name
+    ; Status.email_with_icons admin, Some Field.Email
+    ; buttons, None
+    ]
+    |> CCList.map (fun (html, field) ->
+      let label = Component.Table.data_label_opt language field in
+      td ~a:label [ html ])
     |> tr
   in
-  Component.DataTable.make ~th_class ~target_id:table_id ~cols ~row data_table admins
+  Component.DataTable.make
+    ~break_mobile:true
+    ~th_class
+    ~target_id:table_id
+    ~cols
+    ~row
+    data_table
+    admins
 ;;
 
 let static_overview ?(disable_edit = false) language admins =

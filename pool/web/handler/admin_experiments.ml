@@ -491,7 +491,11 @@ let message_history req =
   @@
   if HttpUtils.Htmx.is_hx_request req
   then
-    Queue.list context queue_table (Experiments.message_history_url experiment) messages
+    Queue.list
+      context
+      queue_table
+      (HttpUtils.Url.Admin.experiment_message_history_url experiment_id |> Uri.of_string)
+      messages
     |> Lwt.return
   else Experiments.message_history context queue_table experiment messages
 ;;

@@ -11,6 +11,7 @@ let rec field_to_string =
   | Active -> "active"
   | ActiveContactsCount -> "active contacts count"
   | Actor -> "actor"
+  | Address -> "address"
   | Admin -> "admin"
   | AdminComment -> "admin comment"
   | AdminInput -> "admin input"

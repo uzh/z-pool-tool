@@ -3,6 +3,7 @@ type t =
   | Active
   | ActiveContactsCount
   | Actor
+  | Address
   | Admin
   | AdminComment
   | AdminHint

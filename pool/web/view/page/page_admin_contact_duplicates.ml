@@ -48,23 +48,33 @@ let list { Pool_context.language; _ } ?contact (possible_duplicates, query) =
         [ txt (fullname contact) ]
     in
     let base =
-      [ CCFloat.(score *. 100. |> round |> to_int) |> Format.asprintf "%i%%" |> txt
-      ; button id
+      [ ( CCFloat.(score *. 100. |> round |> to_int) |> Format.asprintf "%i%%" |> txt
+        , Some Field.Score )
+      ; button id, None
       ]
     in
     let columns =
+      let open Pool_message in
       match contact with
       | Some contact ->
         let duplicate =
           let open Contact in
           if Id.equal (id contact_a) (id contact) then contact_b else contact_a
         in
-        [ contact_link duplicate ]
-      | None -> [ contact_link contact_a; contact_link contact_b ]
+        [ contact_link duplicate, Some Field.Contact ]
+      | None ->
+        [ contact_link contact_a, Some Field.Contact
+        ; contact_link contact_b, Some Field.Contact
+        ]
     in
-    columns @ base |> CCList.map CCFun.(CCList.return %> td) |> tr ~a:attrs
+    columns @ base
+    |> CCList.map (fun (html, label) ->
+      let attrs = Component.Table.data_label_opt language label in
+      td ~a:attrs [ html ])
+    |> tr ~a:attrs
   in
   Component.DataTable.make
+    ~break_mobile:true
     ~target_id:"duplicate-list"
     ~cols
     ~row
