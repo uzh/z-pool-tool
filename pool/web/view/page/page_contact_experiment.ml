@@ -212,7 +212,7 @@ let index
         ~a:[ a_class [ "stack-lg" ] ]
         [ notification
         ; div
-            ~a:[ a_class [ "grid-col-2"; "grid-gap-lg"; "gap-lg" ] ]
+            ~a:[ a_class [ "grid-col-2"; "grid-gap-lg"; "grid-row-gap-xl"; "gap-lg" ] ]
             [ div ~a:[ a_class [ "stack-lg" ] ] [ session_html; waiting_list_html ]
             ; experiment_html
             ; online_studies_html

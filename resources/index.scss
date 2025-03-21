@@ -638,3 +638,25 @@ input[type="checkbox"][readonly] {
         padding-right: 0;
     }
 }
+
+// Grid
+
+@supports (display: grid) {
+    [class*="grid-"] {
+        &.grid-row-gap-sm {
+            row-gap: vars.$space-sm;
+        }
+
+        &.grid-row-gap-md {
+            row-gap: vars.$space-md;
+        }
+
+        &.grid-row-gap-lg {
+            row-gap: vars.$space-lg;
+        }
+
+        &.grid-row-gap-xl {
+            row-gap: vars.$space-xl;
+        }
+    }
+}
