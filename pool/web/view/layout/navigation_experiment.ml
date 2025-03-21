@@ -104,7 +104,13 @@ let create
   let html = make_body ?buttons ?hint language title content in
   let title = Experiment.(Title.value experiment.title) in
   let subpage =
-    make_tabs ~actor ?active_navigation context html (nav_elements experiment)
+    make_tabs
+      ~actor
+      ?active_navigation
+      ~overlay_title:title
+      context
+      html
+      (nav_elements experiment)
   in
   with_heading title subpage |> Lwt.return
 ;;
