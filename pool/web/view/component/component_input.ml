@@ -80,7 +80,7 @@ module Elements = struct
   ;;
 
   let apply_orientation attributes hints = function
-    | `Vertical -> input ~a:attributes ()
+    | `Vertical -> div ~a:[ a_class [ "flexcolumn" ] ] (input ~a:attributes () :: hints)
     | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] (input ~a:attributes () :: hints)
   ;;
 
