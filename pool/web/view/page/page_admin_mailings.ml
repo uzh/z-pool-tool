@@ -130,24 +130,35 @@ module List = struct
       ; `column Mailing.column_end
       ; `column Mailing.column_limit
       ; `column Mailing.column_invitation_count
-      ; `custom (new_btn ())
+      ; `mobile (new_btn ())
       ]
     in
     let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
     let row (mailing, count) =
       let open Mailing in
+      let open Pool_message in
       let attrs = if is_past mailing then [ a_class [ "bg-green-lighter" ] ] else [] in
       let buttons = buttons experiment_id mailing language csrf in
-      [ mailing.start_at |> StartAt.to_human |> txt
-      ; mailing.end_at |> EndAt.to_human |> txt
-      ; mailing.limit |> Limit.value |> CCInt.to_string |> txt
-      ; count |> InvitationCount.value |> CCInt.to_string |> txt
-      ; buttons
+      [ mailing.start_at |> StartAt.to_human |> txt, Some Field.Start
+      ; mailing.end_at |> EndAt.to_human |> txt, Some Field.End
+      ; mailing.limit |> Limit.value |> CCInt.to_string |> txt, Some Field.Limit
+      ; ( count |> InvitationCount.value |> CCInt.to_string |> txt
+        , Some Field.InvitationCount )
+      ; buttons, None
       ]
-      |> CCList.map CCFun.(CCList.return %> td)
+      |> CCList.map (fun (html, label) ->
+        let attrs = Component.Table.data_label_opt language label in
+        td ~a:attrs [ html ])
       |> tr ~a:attrs
     in
-    DataTable.make ~th_class ~target_id:"mailing-list" ~cols ~row data_table mailings
+    DataTable.make
+      ~break_mobile:true
+      ~th_class
+      ~target_id:"mailing-list"
+      ~cols
+      ~row
+      data_table
+      mailings
   ;;
 
   let overlapping Pool_context.{ language; _ } experiment_id mailings =

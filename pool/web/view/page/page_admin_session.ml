@@ -547,7 +547,7 @@ let data_table
     ; `column column_participation_count
     ; `custom
         (txt (Pool_common.Utils.field_to_string language Field.SessionMinMaxOverbook))
-    ; `custom create_session
+    ; `mobile create_session
     ]
   in
   let th_class = [ "w-3"; "w-2"; "w-2"; "w-2"; "w-2"; "w-1" ] in

@@ -156,7 +156,7 @@ let list Pool_context.{ language; guardian; _ } experiments query =
     in
     [ `column Experiment.column_title
     ; `column Experiment.column_public_title
-    ; (if can_create_experiment then `custom create_experiment else `empty)
+    ; (if can_create_experiment then `mobile create_experiment else `empty)
     ]
   in
   let th_class = [ "w-6"; "w-4"; "w-2" ] in

@@ -198,7 +198,7 @@ let data_table
     ; `column column_noshow_count
     ; `column column_participation_count
     ; `custom (txt "Max")
-    ; `custom create_session
+    ; `mobile create_session
     ]
   in
   let th_class = [ "w-4"; "w-2"; "w-2"; "w-2"; "w-1"; "w-1" ] in

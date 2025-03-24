@@ -65,7 +65,7 @@ let list Pool_context.{ language; _ } tags query =
     [ `column Tags.column_title
     ; `column Tags.column_description
     ; `column Tags.column_model
-    ; `custom create_tag
+    ; `mobile create_tag
     ]
   in
   let th_class = [ "w-4"; "w-4"; "w-2"; "w-2" ] in

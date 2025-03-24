@@ -228,15 +228,6 @@ abbr[title] {
     @extend textarea;
 }
 
-// Color
-.table.striped tr:nth-child(1n).bg-green-lighter {
-    background-color: c.$green-lighter;
-}
-
-.table.striped tr:nth-child(1n).bg-red-lighter {
-    background-color: c.$red-lighter;
-}
-
 .table tr.highlighted {
     position: relative;
 
@@ -303,7 +294,7 @@ table.width-auto {
 
 @include breakpoints.econ-mobile {
     .table.break-mobile th {
-        display: none;
+        width: 100%;
     }
 }
 
