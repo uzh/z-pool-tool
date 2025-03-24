@@ -85,7 +85,6 @@ export function initDatepicker(container = document) {
                     classlist.forEach(cls => altInput.classList.add(cls))
                 }
             })
-            f._input.onkeydown = () => false
             if (minInputEl) {
                 minInputEl.addEventListener("change", (e) => {
                     const value = new Date(e.currentTarget.value)
