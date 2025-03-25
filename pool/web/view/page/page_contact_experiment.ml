@@ -26,6 +26,16 @@ let experiment_title =
   Public.public_title %> PublicTitle.value %> txt
 ;;
 
+let not_matching_warning language =
+  Component.Notification.notification
+    language
+    `Error
+    [ txt
+        Pool_common.(
+          Utils.hint_to_string language I18n.ContactExperimentNotMatchingFilter)
+    ]
+;;
+
 let experiment_detail_page experiment html =
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
@@ -319,15 +329,7 @@ let show
   in
   let registration_active sessions =
     match matches_filter with
-    | false ->
-      Component.Notification.notification
-        ~classnames:[ "gap" ]
-        language
-        `Error
-        [ txt
-            Pool_common.(
-              Utils.hint_to_string language I18n.ContactExperimentNotMatchingFilter)
-        ]
+    | false -> div ~a:[ a_class [ "gap" ] ] [ not_matching_warning language ]
     | true -> session_list sessions
   in
   let html =
@@ -363,7 +365,6 @@ let show_online_study
         | `Upcoming of Time_window.t option
         ])
   =
-  let _ = matches_filter in
   let html =
     let open Pool_common in
     let open Assignment in
@@ -373,18 +374,21 @@ let show_online_study
         let open Control in
         if CCOption.is_some assignment then Resume field else Start field
       in
-      div
-        ~a:[ a_class [ "flexcolumn" ] ]
-        [ Component.Input.link_as_button
-            ~control:(language, control)
-            (HttpUtils.Url.Contact.experiment_path
-               ~id:(Experiment.Public.id experiment)
-               ~suffix:"start"
-               ())
-        ]
+      match matches_filter, assignment with
+      | false, None -> not_matching_warning language
+      | true, None | false, Some _ | true, Some _ ->
+        div
+          [ Component.Input.link_as_button
+              ~control:(language, control)
+              (HttpUtils.Url.Contact.experiment_path
+                 ~id:(Experiment.Public.id experiment)
+                 ~suffix:"start"
+                 ())
+          ]
     in
     let end_at_hint time_window =
       p
+        ~a:[ a_class [ "gap-lg" ] ]
         [ strong
             [ txt
                 (I18n.ExperimentOnlineParticipationDeadline
@@ -406,8 +410,10 @@ let show_online_study
     in
     let participated_hint assignment =
       let open Utils in
-      p
-        [ strong
+      Component.Notification.notification
+        language
+        `Success
+        [ p
             [ I18n.ExperimentOnlineParticiated
                 (CreatedAt.value assignment.Public.created_at)
               |> text_to_string language
@@ -415,7 +421,7 @@ let show_online_study
             ]
         ]
     in
-    div ~a:[ a_class [ "stack"; "flexcolumn" ] ]
+    div ~a:[ a_class [ "gap"; "stack"; "flexcolumn" ] ]
     @@
     match argument with
     | `Active (time_window, assignment) ->
