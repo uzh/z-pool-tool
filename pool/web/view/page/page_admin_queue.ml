@@ -53,21 +53,28 @@ let list Pool_context.{ language; _ } queue_table url (queued_jobs, query) =
       %> CCString.capitalize_ascii
       %> CCString.replace ~which:`All ~sub:"_" ~by:" "
     in
-    [ txt (instance |> name)
-    ; txt (instance |> Instance.status |> Status.show |> CCString.capitalize_ascii)
-    ; txt (instance |> Instance.message_template |> CCOption.value ~default:"")
-    ; txt recipient
-    ; instance
-      |> Instance.last_error_at
-      |> CCOption.map_or ~default:(txt "") formatted_date_time
-    ; instance |> Instance.run_at |> formatted_date_time
-    ; Http_utils.Url.Admin.Settings.queue_path ~id:(Instance.id instance) ()
-      |> Component.Input.link_as_button ~icon:Component.Icon.Eye
+    let open Pool_message in
+    [ txt (instance |> name), Some Field.Name
+    ; ( txt (instance |> Instance.status |> Status.show |> CCString.capitalize_ascii)
+      , Some Field.Status )
+    ; ( txt (instance |> Instance.message_template |> CCOption.value ~default:"")
+      , Some Field.MessageTemplate )
+    ; txt recipient, Some Field.Recipient
+    ; ( instance
+        |> Instance.last_error_at
+        |> CCOption.map_or ~default:(txt "") formatted_date_time
+      , Some Field.LastErrorAt )
+    ; instance |> Instance.run_at |> formatted_date_time, Some Field.NextRunAt
+    ; ( Http_utils.Url.Admin.Settings.queue_path ~id:(Instance.id instance) ()
+        |> Component.Input.link_as_button ~icon:Component.Icon.Eye
+      , None )
     ]
-    |> CCList.map CCFun.(CCList.return %> td)
+    |> CCList.map (fun (html, field) ->
+      td ~a:(Component.Table.data_label_opt language field) [ html ])
     |> tr
   in
   Component.DataTable.make
+    ~break_mobile:true
     ~target_id:"queue-ob-list"
     ~th_class
     ~cols

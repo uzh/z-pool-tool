@@ -18,6 +18,7 @@ type t =
   | ActiveContactsCount [@name "active_contacts_count"]
   [@printer go "active_contacts_count"]
   | Actor [@name "actor"] [@printer go "actor"]
+  | Address [@name "address"] [@printer go "address"]
   | Admin [@name "admin"] [@printer go "admin"]
   | AdminComment [@name "admin_comment"] [@printer go "admin_comment"]
   | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]

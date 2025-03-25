@@ -547,7 +547,7 @@ let data_table
     ; `column column_participation_count
     ; `custom
         (txt (Pool_common.Utils.field_to_string language Field.SessionMinMaxOverbook))
-    ; `custom create_session
+    ; `mobile create_session
     ]
   in
   let th_class = [ "w-3"; "w-2"; "w-2"; "w-2"; "w-2"; "w-1" ] in
@@ -929,7 +929,7 @@ let session_details { Pool_context.language; _ } session =
     in
     rows @ time_stamps @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
   in
-  Table.vertical_table `Striped language ~align_top:true
+  Table.vertical_table `Striped language ~align_top:true ~break_mobile:true
   @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
 ;;
 
@@ -1058,7 +1058,7 @@ let detail
           ~classnames:[ "small" ]
           link
       in
-      let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] in
+      let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ] in
       let right =
         Control.
           [ ( CCOption.is_none session.follow_up_to
@@ -1088,7 +1088,17 @@ let detail
         |> CCList.filter_map (fun (t, style) -> session_link ?style t)
         |> fun btns -> wrap (resend_reminders_modal :: btns)
       in
-      div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ] [ left; right ]
+      div
+        ~a:
+          [ a_class
+              [ "flexrow"
+              ; "flex-gap"
+              ; "justify-between"
+              ; "flexcolumn-mobile"
+              ; "align-start"
+              ]
+          ]
+        [ left; right ]
     in
     div ~a:[ a_class [ "stack" ] ] [ table; links ]
   in
@@ -1206,7 +1216,7 @@ let detail
       if send_direct_message
       then
         div
-          ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+          ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "flexcolumn-mobile" ] ]
           [ header_btn
               Icon.MailOutline
               Control.(Send (Some Field.Message))
@@ -1252,14 +1262,22 @@ let detail
     div
       ~a:[ a_class [ "stack" ] ]
       [ div
-          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "flexcolumn-mobile" ] ]
+          ~a:
+            [ a_class
+                [ "flexrow"
+                ; "flex-gap"
+                ; "justify-between"
+                ; "flexcolumn-mobile"
+                ; "align-start"
+                ]
+            ]
           [ div
               [ h2
                   ~a:[ a_class [ "heading-2"; "has-gap" ] ]
                   [ txt (Utils.nav_link_to_string language I18n.Assignments) ]
               ]
           ; div
-              ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+              ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile"; "align-start" ] ]
               [ direct_messaging_buttons
               ; refresh_fiter_button
               ; header_btn
@@ -1758,12 +1776,21 @@ let close
   =
   let open Pool_common in
   let control = Control.(Close (Some Field.Session)) in
+  let subtitle =
+    Format.asprintf
+      "%s (%s)"
+      (Utils.control_to_string language control)
+      (session.Session.start |> Session.Start.value |> Pool_model.Time.formatted_date_time)
+  in
   let session_path = session_path ~id:session.Session.id experiment.Experiment.id in
   let tags_html =
     let participation_tags_list =
       match participation_tags with
       | [] ->
-        Utils.hint_to_string language I18n.SessionCloseNoParticipationTagsSelected |> txt
+        p
+          [ Utils.hint_to_string language I18n.SessionCloseNoParticipationTagsSelected
+            |> txt
+          ]
       | tags ->
         let tags = Component.Tag.tag_list language tags in
         div
@@ -1779,6 +1806,17 @@ let close
           ~a:[ a_class [ "heading-4" ] ]
           [ txt (Utils.nav_link_to_string language I18n.Tags) ]
       ; participation_tags_list
+      ]
+  in
+  let legend_html =
+    div
+      [ h4
+          ~a:[ a_class [ "heading-4" ] ]
+          [ txt
+              (Utils.field_to_string language Field.Participants
+               |> CCString.capitalize_ascii)
+          ]
+      ; Page_admin_assignments.Partials.table_legend ~hide_deleted:true language
       ]
   in
   let disabled_verified =
@@ -1846,17 +1884,7 @@ let close
       ]
   in
   [ div
-      [ p
-          [ txt
-              (session |> HttpUtils.Session.session_title |> Utils.text_to_string language)
-          ]
-      ; tags_html
-      ; h4
-          ~a:[ a_class [ "heading-4" ] ]
-          [ txt
-              (Utils.field_to_string language Field.Participants
-               |> CCString.capitalize_ascii)
-          ]
+      [ div ~a:[ a_class [ "stack" ] ] [ tags_html; legend_html ]
       ; Page_admin_assignments.Partials.table_legend ~hide_deleted:true language
       ; p [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data ]
       ; table
@@ -1864,7 +1892,7 @@ let close
       ; script (Unsafe.data htmx_script)
       ]
   ]
-  |> Layout.Experiment.(create context (Control control) experiment)
+  |> Layout.Experiment.(create context (Text subtitle) experiment)
 ;;
 
 let cancel

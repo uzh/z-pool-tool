@@ -11,11 +11,13 @@ let to_string = function
   | AnnouncementsTenantSelect ->
     "Select on which tenants the announcement should be displayed."
   | ApiKeys -> "API Keys"
+  | Assigned -> "assigned"
   | AssignmentEditTagsWarning ->
     "Please note that editing the assignment does not assign or remove any tags from the \
      contact that may have been assigned by participating in this session. If this is \
      required, please get in touch with a person with the necessary permissions."
   | AssignmentListEmpty -> "There are no assignments for this session."
+  | Available -> "available"
   | AvailableSpots -> "Available spots"
   | Canceled -> "Canceled"
   | CanceledSessionsTitle -> "Your canceled sessions"

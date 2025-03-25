@@ -128,6 +128,8 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let experiment_message_history_url id = experiment_path ~suffix:"messages" ~id ()
+
   let experiment_user_path id role ?admin_id ?suffix () =
     experiment_path ~id ()
     |> append (Field.show role)

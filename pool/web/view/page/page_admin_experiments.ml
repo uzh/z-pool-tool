@@ -10,12 +10,7 @@ module Notification = Component.Notification
 module HttpUtils = Http_utils
 module User = Page_admin_experiment_users
 
-let build_experiment_path ?suffix experiment =
-  let base =
-    Format.asprintf "/admin/experiments/%s" Experiment.(Id.value experiment.id)
-  in
-  suffix |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
-;;
+let experiment_path = HttpUtils.Url.Admin.experiment_path
 
 module Partials = struct
   open Experiment
@@ -77,14 +72,18 @@ let notifications
        |> Notification.notification language `Warning)
 ;;
 
-let message_template_buttons sys_languages (experiment : Experiment.t) message_templates =
+let message_template_buttons
+      sys_languages
+      { Experiment.id; language; _ }
+      message_templates
+  =
   let open Message_template in
   let build_button label =
-    build_experiment_path ~suffix:Label.(prefixed_human_url label) experiment
+    experiment_path ~suffix:Label.(prefixed_human_url label) ~id ()
     |> Button.add ~is_text:true label
   in
   let exclude =
-    experiment.Experiment.language
+    language
     |> CCOption.map (fun experiment_language ->
       CCList.filter (Pool_common.Language.equal experiment_language %> not) sys_languages)
   in
@@ -108,12 +107,12 @@ let message_templates_html
       ?(can_update_experiment = false)
       language
       csrf
-      experiment
+      ({ Experiment.id; _ } as experiment)
       sys_languages
       message_templates
   =
   let open Message_template in
-  let experiment_path suffix = build_experiment_path ~suffix experiment in
+  let experiment_path suffix = experiment_path ~suffix ~id () in
   let buttons =
     if can_update_experiment
     then message_template_buttons sys_languages experiment message_templates
@@ -157,7 +156,7 @@ let list Pool_context.{ language; guardian; _ } experiments query =
     in
     [ `column Experiment.column_title
     ; `column Experiment.column_public_title
-    ; (if can_create_experiment then `custom create_experiment else `empty)
+    ; (if can_create_experiment then `mobile create_experiment else `empty)
     ]
   in
   let th_class = [ "w-6"; "w-4"; "w-2" ] in
@@ -566,6 +565,7 @@ let edit
       text_messages_enabled
       flash_fetcher
   =
+  let id = experiment.Experiment.id in
   let form =
     experiment_form
       ~experiment
@@ -590,13 +590,14 @@ let edit
             Field.(field |> human_url)
             Tags.(Id.value tag.Tags.id)
         in
-        build_experiment_path ~suffix experiment
+        experiment_path ~suffix ~id ()
       in
       let assign_action =
         let path =
-          build_experiment_path
+          experiment_path
             ~suffix:(Format.asprintf "%s/assign" Field.(field |> human_url))
-            experiment
+            ~id
+            ()
         in
         Http_utils.externalize_path_with_params query_parameters path
       in
@@ -641,7 +642,7 @@ let edit
 
 let detail
       ?invitation_reset
-      experiment
+      ({ Experiment.id; _ } as experiment)
       session_count
       message_templates
       sys_languages
@@ -698,8 +699,7 @@ let detail
             ~a:
               [ a_method `Post
               ; a_action
-                  (build_experiment_path ~suffix:"delete" experiment
-                   |> Sihl.Web.externalize_path)
+                  (experiment_path ~id ~suffix:"delete" () |> Sihl.Web.externalize_path)
               ; a_user_data
                   "confirmable"
                   (Utils.confirmable_to_string language I18n.DeleteExperiment)
@@ -733,7 +733,7 @@ let detail
           ~a:
             [ a_method `Post
             ; a_action
-                (build_experiment_path ~suffix:"reset-invitations" experiment
+                (experiment_path ~id ~suffix:"reset-invitations" ()
                  |> Sihl.Web.externalize_path)
             ; a_user_data
                 "confirmable"
@@ -794,11 +794,11 @@ let detail
           , div
               ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ]
               [ div
-                  [ txt
-                      (Format.asprintf
-                         "%s: %s"
-                         (field_to_string Field.SurveyUrl)
-                         (SurveyUrl.value survey_url))
+                  [ txt (field_to_string Field.SurveyUrl)
+                  ; txt " : "
+                  ; span
+                      ~a:[ a_class [ "word-wrap-break-all" ] ]
+                      [ txt (SurveyUrl.value survey_url) ]
                   ]
               ] )
       in
@@ -866,7 +866,6 @@ let detail
     let message_template =
       div
         [ div
-            ~a:[ a_class [ "rich-text" ] ]
             [ h3
                 ~a:[ a_class [ "heading-3" ] ]
                 [ txt (Utils.nav_link_to_string language I18n.MessageTemplates) ]
@@ -892,7 +891,7 @@ let detail
         ~a:[ a_class [ "stack-lg" ] ]
         [ notifications
         ; div
-            ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
+            ~a:[ a_class [ "grid-col-3"; "grid-gap-lg"; "align-start" ] ]
             [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
             ; div
                 ~a:
@@ -914,7 +913,7 @@ let detail
         ~icon:Icon.Create
         ~classnames:[ "small" ]
         ~control:(language, Edit (Some Field.Experiment))
-        (build_experiment_path ~suffix:"edit" experiment)
+        (experiment_path ~id ~suffix:"edit" ())
       |> CCOption.return
     else None
   in
@@ -929,7 +928,7 @@ let detail
 ;;
 
 let invitations
-      experiment
+      ({ Experiment.id; _ } as experiment)
       key_list
       template_list
       query_experiments
@@ -955,7 +954,7 @@ let invitations
           [ a
               ~a:
                 [ a_href
-                    (build_experiment_path ~suffix:"invitations/sent" experiment
+                    (experiment_path ~id ~suffix:"invitations/sent" ()
                      |> Sihl.Web.externalize_path)
                 ]
               [ txt (Utils.nav_link_to_string language I18n.SentInvitations) ]
@@ -1018,7 +1017,7 @@ let users
 let message_template_form
       ({ Pool_context.language; _ } as context)
       tenant
-      experiment
+      ({ Experiment.id; _ } as experiment)
       languages
       label
       form_context
@@ -1039,7 +1038,7 @@ let message_template_form
     | `Update _ -> Edit None
   in
   let action =
-    let path suffix = build_experiment_path ~suffix experiment in
+    let path suffix = experiment_path ~id ~suffix () in
     match form_context with
     | `Create t -> path (Label.prefixed_human_url t.label)
     | `Update t -> path (prefixed_template_url t)
@@ -1081,12 +1080,14 @@ let message_template_form
   |> Layout.Experiment.create context (control_to_title control) experiment
 ;;
 
-let message_history_url = build_experiment_path ~suffix:"messages" %> Uri.of_string
-
-let message_history context queue_table experiment messages =
+let message_history context queue_table ({ Experiment.id; _ } as experiment) messages =
   let open Pool_common in
   let html =
-    Page_admin_queue.list context queue_table (message_history_url experiment) messages
+    Page_admin_queue.list
+      context
+      queue_table
+      (HttpUtils.Url.Admin.experiment_message_history_url id |> Uri.of_string)
+      messages
   in
   Layout.Experiment.(
     create
