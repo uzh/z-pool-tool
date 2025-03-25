@@ -22,13 +22,13 @@ let create_target_path ?uuid =
     %> Format.asprintf "/admin/%s/%s/" path
   in
   flip CCOption.bind (function
-    | `Experiment -> Some (build "experiments" uuid)
-    | `Location -> Some (build "locations" uuid)
     | `Admin -> Some (build "admins" uuid)
     | `Contact -> Some (build "contacts" uuid)
     | `CustomField -> Some (build "custom-fields/contact/field" uuid)
     | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
+    | `Experiment -> Some (build "experiments" uuid)
     | `Filter -> Some (build "filter" uuid)
+    | `Location -> Some (build "locations" uuid)
     | `Tag -> Some (build "settings/tags" uuid)
     | `Announcement
     | `Assignment

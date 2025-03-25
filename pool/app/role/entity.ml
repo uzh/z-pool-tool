@@ -32,8 +32,7 @@ end
 
 module Role = struct
   type t =
-    [ `Admin
-    | `Assistant
+    [ `Assistant
     | `Experimenter
     | `LocationManager
     | `Operator
@@ -46,7 +45,6 @@ module Role = struct
   let of_string_res =
     Guardian.Utils.decompose_variant_string
     %> function
-    | "admin", [] -> Ok `Admin
     | "assistant", [] -> Ok `Assistant
     | "experimenter", [] -> Ok `Experimenter
     | "locationmanager", [] -> Ok `LocationManager
@@ -65,7 +63,7 @@ module Role = struct
     |> CCResult.map_err (CCFun.const Pool_message.(Error.Invalid Field.Target))
   ;;
 
-  let all = [ `Admin; `Assistant; `Experimenter; `LocationManager; `Operator; `Recruiter ]
+  let all = [ `Assistant; `Experimenter; `LocationManager; `Operator; `Recruiter ]
   let static = [ `Operator ]
   let customizable = CCList.sorted_diff ~cmp:compare all static
 

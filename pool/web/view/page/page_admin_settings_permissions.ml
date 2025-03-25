@@ -70,11 +70,14 @@ let edit_target_modal
               ; a_class [ "flexcolumn"; "stack" ]
               ]
           ((Input.csrf_element csrf () :: permissions)
-           @ [ Input.submit_element
-                 ~has_icon:Icon.Save
-                 language
-                 (Save (Some Field.Permission))
-                 ()
+           @ [ div
+                 ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+                 [ Input.submit_element
+                     ~has_icon:Icon.Save
+                     language
+                     (Save (Some Field.Permission))
+                     ()
+                 ]
              ])
       ]
   in

@@ -65,15 +65,10 @@ let index entity role req =
     let current_roles, exclude = query_admin_current_and_exclude_role role guard_id in
     let query = Admin.query_from_request req in
     let%lwt applicable_admins =
-      Admin.(
-        query_by_role
-          ~query
-          database_label
-          (`Admin, None)
-          ~exclude:(current_roles :: exclude))
+      Admin.(query_by_role ~query database_label None ~exclude:(current_roles :: exclude))
     in
     let%lwt currently_assigned =
-      Admin.(query_by_role ~query database_label current_roles ~exclude)
+      Admin.(query_by_role ~query database_label (Some current_roles) ~exclude)
     in
     let%lwt hint =
       (match role with
@@ -121,13 +116,9 @@ let query_admin entity role state req =
       let open Admin in
       let query = Admin.query_from_request req in
       match state with
-      | `Assigned -> query_by_role database_label ~query ~exclude current_roles
+      | `Assigned -> query_by_role database_label ~query ~exclude (Some current_roles)
       | `Available ->
-        query_by_role
-          database_label
-          ~query
-          ~exclude:(current_roles :: exclude)
-          (`Admin, None)
+        query_by_role database_label ~query ~exclude:(current_roles :: exclude) None
     in
     let%lwt permission =
       let open Guard in

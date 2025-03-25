@@ -10,7 +10,6 @@ module T (R : RecordSig) = struct
   let make_changes before after : Changes.t option =
     let open Changes in
     let rec compare ?(compare_list_at_index = false) json_before json_after =
-      let _ = compare_list_at_index in
       let eq = CCString.equal in
       let make_changes before after =
         match Yojson.Safe.equal before after with

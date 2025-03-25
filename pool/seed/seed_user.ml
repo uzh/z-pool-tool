@@ -137,7 +137,7 @@ let admins db_label =
       `Experimenter, Some (Guard.Uuid.target_of Experiment.Id.value id))
   in
   let data =
-    [ "The", "One", "admin@example.com", [ `Admin, None ] @ experimenter_roles
+    [ "The", "One", "admin@example.com", experimenter_roles
     ; "engineering", "admin", "it@econ.uzh.ch", [ `Operator, None ]
     ; "Scooby", "Doo", "assistant@econ.uzh.ch", [ `LocationManager, None ]
     ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", [ `Recruiter, None ]
@@ -171,11 +171,8 @@ let admins db_label =
            let%lwt () = Admin.Created create |> Admin.handle_event ~tags db_label in
            Admin.find db_label id |> Lwt.map CCResult.get_exn
          in
-         let%lwt (_ : Guard.Actor.t) =
-           let%lwt (_ : Guard.Target.t) =
-             admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
-           in
-           admin |> Admin.Guard.Actor.to_authorizable ~ctx ||> get_or_failwith
+         let%lwt (_ : Guard.Target.t) =
+           admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
          in
          let%lwt () =
            let open Guard in
