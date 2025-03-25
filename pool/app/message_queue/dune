@@ -1,17 +1,11 @@
 (library
- (name email)
+ (name message_queue)
  (libraries
   amqp-client-lwt
   database
-  i18n
-  message_queue
-  pool.conformist
   pool_common
-  pool_tenant
-  pool_token
   pool_user
   pool_queue
-  query
   sihl-email
   utils)
  (preprocess

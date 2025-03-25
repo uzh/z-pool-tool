@@ -73,6 +73,8 @@ let commands =
   ; DefaultData.insert
   ; Worker.run ~services:worker_services ()
   ; version
+  ; Queue.create_queues
+  ; Queue.migrate_queues
   ]
 ;;
 

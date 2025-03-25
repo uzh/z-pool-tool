@@ -1,4 +1,4 @@
-include ./Makefile
+include /workspace/Makefile
 
 SHELL = bash
 
