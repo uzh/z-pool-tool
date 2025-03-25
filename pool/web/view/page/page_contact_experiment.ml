@@ -243,7 +243,6 @@ let show
       contact
       Pool_context.{ language; query_parameters; csrf; _ }
   =
-  let _ = matches_filter in
   let open Pool_common in
   let hint_to_string = Utils.hint_to_string language in
   let form_control, submit_class =
