@@ -224,6 +224,7 @@ let index
 
 let show
       experiment
+      matches_filter
       grouped_sessions
       upcoming_sessions
       past_sessions
@@ -232,6 +233,7 @@ let show
       contact
       Pool_context.{ language; query_parameters; csrf; _ }
   =
+  let _ = matches_filter in
   let open Pool_common in
   let hint_to_string = Utils.hint_to_string language in
   let form_control, submit_class =
@@ -248,7 +250,11 @@ let show
        ]
        @
        if CCList.is_empty sessions
-       then [ p [ Utils.text_to_string language (I18n.EmtpyList Field.Sessions) |> txt ] ]
+       then
+         [ p
+             ~a:[ a_class [ "gap" ] ]
+             [ Utils.text_to_string language (I18n.EmtpyList Field.Sessions) |> txt ]
+         ]
        else [ div [ PageSession.public_overview sessions experiment language ] ])
   in
   let waiting_list_form () =
@@ -311,6 +317,19 @@ let show
            [ txt (Utils.text_to_string language title) ]
          :: Page_contact_sessions.public_detail language sessions)
   in
+  let registration_active sessions =
+    match matches_filter with
+    | false ->
+      Component.Notification.notification
+        ~classnames:[ "gap" ]
+        language
+        `Error
+        [ txt
+            Pool_common.(
+              Utils.hint_to_string language I18n.ContactExperimentNotMatchingFilter)
+        ]
+    | true -> session_list sessions
+  in
   let html =
     match upcoming_sessions, past_sessions, canceled_sessions with
     | [], [], [] ->
@@ -320,7 +339,7 @@ let show
            |> Public.direct_registration_disabled
            |> DirectRegistrationDisabled.value
          with
-         | false -> session_list grouped_sessions
+         | false -> registration_active grouped_sessions
          | true -> div [ waiting_list_form () ]))
     | upcoming_sessions, past_sessions, canceled_sessions ->
       let open Pool_common.I18n in
@@ -336,6 +355,7 @@ let show
 
 let show_online_study
       (experiment : Experiment.Public.t)
+      matches_filter
       { Pool_context.language; _ }
       (argument :
         [> `Active of Time_window.t * Assignment.Public.t option
@@ -343,6 +363,7 @@ let show_online_study
         | `Upcoming of Time_window.t option
         ])
   =
+  let _ = matches_filter in
   let html =
     let open Pool_common in
     let open Assignment in

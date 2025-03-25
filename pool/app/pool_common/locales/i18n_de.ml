@@ -295,6 +295,8 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
       "Bitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s   geschickt \
        haben. Der Code ist eine Stunde lang gültig."
       cell_phone
+  | ContactExperimentNotMatchingFilter ->
+    "Sie erfüllen die Bedingungen zur Teilnahme an diesem Experiment nicht mehr."
   | ContactInformationEmailHint ->
     "Um Ihre E-Mail-Adresse anzupassen, folgen Sie bitte folgendem Link."
   | ContactLanguage ->

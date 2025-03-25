@@ -140,6 +140,17 @@ let find_upcoming_to_register_request experiment_type () =
   |> Contact.Repo.Id.t ->* RepoEntity.t
 ;;
 
+let filter_of_public_request =
+  let open Caqti_request.Infix in
+  Filter.Repo.sql_select_columns
+  |> CCString.concat ","
+  |> Format.asprintf
+       {sql|
+          SELECT %s FROM pool_filter WHERE uuid = (SELECT filter_uuid FROM pool_experiments WHERE uuid = UNHEX(REPLACE($1, '-', '')))
+        |sql}
+  |> Repo_entity.Id.t ->? Filter.Repo.t
+;;
+
 let find_upcoming_to_register pool contact experiment_type =
   let open Utils.Lwt_result.Infix in
   Database.collect
@@ -256,4 +267,12 @@ let find_full_by_contact pool id contact =
   let open Utils.Lwt_result.Infix in
   Database.find_opt pool find_full_by_contact_request (Contact.id contact, id)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
+;;
+
+let contact_matches_filter database_label public contact =
+  let open Utils.Lwt_result.Infix in
+  Database.find_opt database_label filter_of_public_request (Entity.Public.id public)
+  >|> function
+  | None -> Lwt.return true
+  | Some { Filter.query; _ } -> Filter.contact_matches_filter database_label query contact
 ;;
