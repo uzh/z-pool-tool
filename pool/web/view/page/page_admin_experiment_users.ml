@@ -44,18 +44,14 @@ let list_existing
       admins
   =
   let query_url = form_url ~suffix:"assigned" () in
-  div
-    ~a:[ a_class [ "stack" ] ]
-    [ h3 [ txt (text_to_string context.Pool_context.language Pool_common.I18n.Assigned) ]
-    ; Page_admin_admins.list
-        ~buttons:(if can_unassign then [ assign_form context form_url `Unassign ] else [])
-        ~hide_create:true
-        ~table_id:"existing-admins"
-        ~url:query_url
-        ~push_url:false
-        context
-        admins
-    ]
+  Page_admin_admins.list
+    ~buttons:(if can_unassign then [ assign_form context form_url `Unassign ] else [])
+    ~hide_create:true
+    ~table_id:"existing-admins"
+    ~url:query_url
+    ~push_url:false
+    context
+    admins
 ;;
 
 let list_available
@@ -65,18 +61,14 @@ let list_available
       admins
   =
   let query_url = form_url ~suffix:"available" () in
-  div
-    ~a:[ a_class [ "stack" ] ]
-    [ h3 [ txt (text_to_string context.Pool_context.language Pool_common.I18n.Available) ]
-    ; Page_admin_admins.list
-        ~buttons:(if can_assign then [ assign_form context form_url `Assign ] else [])
-        ~hide_create:true
-        ~table_id:"available-admins"
-        ~url:query_url
-        ~push_url:false
-        context
-        admins
-    ]
+  Page_admin_admins.list
+    ~buttons:(if can_assign then [ assign_form context form_url `Assign ] else [])
+    ~hide_create:true
+    ~table_id:"available-admins"
+    ~url:query_url
+    ~push_url:false
+    context
+    admins
 ;;
 
 let role_assignment
@@ -89,8 +81,23 @@ let role_assignment
       ~current:existing
   =
   let open CCFun in
-  let existing = list_existing context form_path ~can_unassign existing in
-  let available = list_available context form_path ~can_assign available in
+  let existing =
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ h3
+          [ txt (text_to_string context.Pool_context.language Pool_common.I18n.Assigned) ]
+      ; list_existing context form_path ~can_unassign existing
+      ]
+  in
+  let available =
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ h3
+          [ txt (text_to_string context.Pool_context.language Pool_common.I18n.Available)
+          ]
+      ; list_available context form_path ~can_assign available
+      ]
+  in
   let main_hint =
     CCOption.map_or
       ~default:(txt "")
