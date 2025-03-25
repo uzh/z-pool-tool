@@ -126,6 +126,34 @@ let form
   let tenant_select =
     let open Pool_tenant in
     let name = Field.(array_key Tenant) in
+    let toggle_all =
+      let id = "toggle-all-tenants" in
+      let scripts =
+        Format.asprintf
+          {js|
+            const button = document.getElementById("%s");
+            const toggles = [...document.querySelectorAll(".toggle-tenants input[type=checkbox]")];
+            button.addEventListener("click", (e) => {
+              e.preventDefault();
+              const checked = toggles.find(el => !el.checked);
+              toggles.forEach(el => el.checked = checked);
+            });
+          |js}
+          id
+      in
+      div
+        ~a:[ a_class [ "gap" ] ]
+        [ span
+            ~a:[ a_id id; a_class [ "btn"; "small" ] ]
+            [ txt
+                (Pool_common.Utils.control_to_string
+                   language
+                   Pool_message.Control.ToggleAll
+                 |> CCString.capitalize_ascii)
+            ]
+        ; script Unsafe.(data scripts)
+        ]
+    in
     let checkboxes =
       available_tenants
       |> CCList.map (fun { id; title; _ } ->
@@ -147,11 +175,16 @@ let form
           ])
     in
     div
-      ~a:[ a_class [ "form-group" ] ]
-      [ p
-          [ txt Pool_common.(Utils.text_to_string language I18n.AnnouncementsTenantSelect)
+      [ div
+          ~a:[ a_class [ "form-group"; "toggle-tenants" ] ]
+          [ p
+              [ txt
+                  Pool_common.(
+                    Utils.text_to_string language I18n.AnnouncementsTenantSelect)
+              ]
+          ; div ~a:[ a_class [ "input-group" ] ] checkboxes
           ]
-      ; div ~a:[ a_class [ "input-group" ] ] checkboxes
+      ; toggle_all
       ]
   in
   let show_to_html =

@@ -67,6 +67,7 @@ let show_online_study
       req
       ({ Pool_context.database_label; _ } as context)
       experiment
+      matches_filter
       contact
   =
   let open Utils.Lwt_result.Infix in
@@ -102,7 +103,7 @@ let show_online_study
        | Some time_window -> `Active (time_window, None)
        | None -> `Upcoming upcoming_time_window)
   in
-  Page.Contact.Experiment.show_online_study experiment context argument
+  Page.Contact.Experiment.show_online_study experiment matches_filter context argument
   |> Lwt.return_ok
   >>= create_layout req context
   >|+ Sihl.Web.Response.of_html
@@ -118,8 +119,11 @@ let show req =
     let id = experiment_id req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let* experiment = Experiment.find_public database_label id contact in
+    let%lwt matches_filter =
+      Experiment.Public.contact_matches_filter database_label experiment contact
+    in
     match Experiment.Public.is_sessionless experiment with
-    | true -> show_online_study req context experiment contact
+    | true -> show_online_study req context experiment matches_filter contact
     | false ->
       let* grouped_sessions =
         Session.find_all_public_for_experiment database_label contact id
@@ -145,6 +149,7 @@ let show req =
       in
       Page.Contact.Experiment.show
         experiment
+        matches_filter
         grouped_sessions
         upcoming_sessions
         past_sessions

@@ -631,7 +631,6 @@ input[type="checkbox"][readonly] {
 }
 
 // Grid
-
 @supports (display: grid) {
     [class*="grid-"] {
         &.grid-row-gap-sm {
@@ -650,4 +649,13 @@ input[type="checkbox"][readonly] {
             row-gap: vars.$space-xl;
         }
     }
+}
+
+.truncate-6 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    -webkit-box-orient: vertical;
 }

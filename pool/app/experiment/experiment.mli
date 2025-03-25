@@ -224,6 +224,7 @@ module Public : sig
   val online_experiment : t -> OnlineExperiment.t option
   val is_sessionless : t -> bool
   val update_direct_registration_disabled : t -> DirectRegistrationDisabled.t -> t
+  val contact_matches_filter : Database.Label.t -> t -> Contact.t -> bool Lwt.t
 end
 
 val to_public : t -> Public.t

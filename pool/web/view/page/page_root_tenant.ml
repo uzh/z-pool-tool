@@ -26,7 +26,12 @@ let database_fields tenant language flash_fetcher =
       ~value
       ~flash_fetcher
       ~required:true)
-  |> div ~a:[ a_class [ "stack" ] ]
+  |> fun fields ->
+  div
+    ~a:[ a_class [ "full-width" ] ]
+    [ h3 [ Pool_common.Utils.field_to_string_capitalized language Field.Database |> txt ]
+    ; div ~a:[ a_class [ "grid-col-2"; "gap" ] ] fields
+    ]
 ;;
 
 let map_or = CCOption.map_or ~default:""
@@ -84,12 +89,18 @@ let tenant_form
       in
       div
         [ input_element_file ~accept language field ~allow_multiple ~required; download ])
+    |> fun inputs ->
+    div
+      ~a:[ a_class [ "full-width" ] ]
+      [ h3 Pool_common.[ Utils.text_to_string language I18n.Files |> txt ]
+      ; div ~a:[ a_class [ "grid-col-2"; "gap" ] ] inputs
+      ]
   in
   form
     ~a:
       [ a_method `Post
       ; a_action (Sihl.Web.externalize_path action)
-      ; a_class [ "stack" ]
+      ; a_class [ "grid-col-2" ]
       ; a_enctype "multipart/form-data"
       ; a_user_data "detect-unsaved-changes" ""
       ]
@@ -128,26 +139,38 @@ let tenant_form
     ; (if CCOption.is_some tenant
        then txt ""
        else database_fields tenant language flash_fetcher)
-    ; div ~a:[ a_class [ "stack" ] ] file_uploads
+    ; file_uploads
     ; div
-        ~a:[ a_class [ "flexrow" ] ]
+        ~a:[ a_class [ "flexrow"; "full-width" ] ]
         [ submit_element ~classnames:[ "push" ] language control () ]
     ]
 ;;
 
 let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
   let build_tenant_rows tenant_list =
-    let thead = [ Field.Tenant |> Table.field_to_txt language; txt "" ] in
+    let thead =
+      [ Field.Tenant |> Table.field_to_txt language
+      ; Field.Url |> Table.field_to_txt language
+      ; Field.Icon |> Table.field_to_txt language
+      ; Field.EmailLogo |> Table.field_to_txt language
+      ; Field.Styles |> Table.field_to_txt language
+      ; txt ""
+      ]
+    in
     let open Pool_tenant in
     let body =
       CCList.map
         (fun (tenant : t) ->
            [ txt (tenant.title |> Title.value)
+           ; txt (tenant.url |> Url.value)
+           ; tenant.icon |> CCOption.is_some |> Component.Icon.bool_to_icon
+           ; tenant.email_logo |> CCOption.is_some |> Component.Icon.bool_to_icon
+           ; tenant.styles |> CCOption.is_some |> Component.Icon.bool_to_icon
            ; a
                ~a:
                  [ a_href
-                     (Sihl.Web.externalize_path
-                        (Format.asprintf "/root/tenants/%s" (Id.value tenant.id)))
+                     (Http_utils.Url.Root.tenant_path ~id:tenant.id ()
+                      |> Sihl.Web.externalize_path)
                  ]
                [ txt Pool_common.(Utils.control_to_string language Control.More) ]
            ])
@@ -157,7 +180,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
   in
   let tenant_list = build_tenant_rows tenant_list in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tenants) ]
@@ -192,10 +215,8 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
       ; form
           ~a:
             [ a_action
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/root/tenants/%s/create-operator"
-                      (Pool_tenant.Id.value id)))
+                (HttpUtils.Url.Root.tenant_path ~id ~suffix:"create-operator" ()
+                 |> Sihl.Web.externalize_path)
             ; a_method `Post
             ; a_class [ "stack" ]
             ]
@@ -273,11 +294,12 @@ let detail
               ; form
                   ~a:
                     [ a_action
-                        (Sihl.Web.externalize_path
-                           (Format.asprintf
-                              "/root/tenants/%s/assets/%s/delete"
-                              (tenant.id |> Id.value)
-                              (File.id file |> Pool_common.Id.value)))
+                        (HttpUtils.Url.Root.tenant_assets_path
+                           tenant.id
+                           ~id:(File.id file)
+                           ~suffix:"delete"
+                           ()
+                         |> Sihl.Web.externalize_path)
                     ; a_method `Post
                     ; a_class [ "stack" ]
                     ]
@@ -293,6 +315,7 @@ let detail
   in
   let delete_file_forms =
     div
+      ~a:[ a_class [ "stack-lg" ] ]
       [ delete_img_form (tenant.logos |> Pool_tenant.Logos.value)
         |> tenant_detail_sub_form language Field.TenantLogos
       ; delete_img_form (tenant.partner_logo |> Pool_tenant.PartnerLogos.value)
@@ -303,8 +326,8 @@ let detail
     form
       ~a:
         [ a_action
-            (Sihl.Web.externalize_path
-               (Format.asprintf "/root/tenants/%s/update-database" (Id.value tenant.id)))
+            (HttpUtils.Url.Root.tenant_path ~id:tenant.id ~suffix:"update-database" ()
+             |> Sihl.Web.externalize_path)
         ; a_method `Post
         ; a_enctype "multipart/form-data"
         ; a_class [ "stack" ]
@@ -314,10 +337,9 @@ let detail
              ~a:[ a_class [ "flexrow" ] ]
              [ submit_element ~classnames:[ "push" ] language Control.(Update None) () ]
          ])
-    |> tenant_detail_sub_form language Field.Database
   in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (tenant.Pool_tenant.title |> Pool_tenant.Title.value) ]
@@ -325,19 +347,22 @@ let detail
         [ a
             ~a:
               [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf "/root/tenants/%s/operator" (tenant.id |> Id.value)))
+                  (HttpUtils.Url.Root.tenant_path ~id:tenant.id ~suffix:"operator" ()
+                   |> Sihl.Web.externalize_path)
               ]
             [ txt (control_to_string (Control.Manage Field.Operators)) ]
         ]
     ; div
-        ~a:[ a_class [ "stack-lg" ] ]
+        ~a:[ a_class [ "stack-lg"; "gap" ] ]
         [ tenant_form ~tenant context flash_fetcher
         ; delete_file_forms
         ; database_form
         ; p
             [ a
-                ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
+                ~a:
+                  [ a_href
+                      (Http_utils.Url.Root.tenant_path () |> Sihl.Web.externalize_path)
+                  ]
                 [ txt (control_to_string Control.Back) ]
             ]
         ]
