@@ -45,16 +45,6 @@ let map_or ~tags ~default fcn =
 let handle_event ~tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   let ctx = Database.to_ctx pool in
-  (*
-     let admin_authorizable ?(roles = []) admin =
-     let open Guard in
-     let actor = admin |> id |> Uuid.actor_of Id.value in
-     Lwt_list.iter_s
-     (fun (role, target_uuid) ->
-     ActorRole.create ?target_uuid actor role |> Persistence.ActorRole.upsert ~ctx)
-     roles
-     in
-  *)
   let admin_authorizable ?(roles = []) admin =
     let open Guard in
     let open Common.Utils in
