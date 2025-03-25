@@ -292,6 +292,8 @@ When inviting contacts, the filter will prefer the overriding value if both are 
       "Please enter the verification code we sent yout to %s. The code is valid for one \
        hour."
       cell_phone
+  | ContactExperimentNotMatchingFilter ->
+    "You no longer fulfill the conditions for participating in this experiment."
   | ContactInformationEmailHint ->
     "To change your e-mail address, please follow this link."
   | ContactLanguage ->
