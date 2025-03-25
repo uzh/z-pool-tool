@@ -199,6 +199,8 @@ module SmtpAuth : sig
 end
 
 module Service : sig
+  module Queue : Message_queue.Sig
+
   module Cache : sig
     val clear : unit -> unit
   end

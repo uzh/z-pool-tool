@@ -12,6 +12,7 @@ The project executable can be run via command line `make sihl` and shows the inf
 1. Seed root database `make sihl seed.root`
 1. Migrate tenant database with `make sihl migrate.tenant`
 1. Seed tenant database `make sihl seed.tenant`
+1. Create RabbitMQ queues with `make sihl queue.create` (use `queue.migrate` if queues are already existing - queues are immutable)
 1. Run development server `make dev`
 1. See `pool/database/seed/seed_user.ml` for default users or `make sihl admin.create ...` (see [Application Commands](#application-commands)) to generate one
 
@@ -47,6 +48,8 @@ The following list shows only the most frequently used commands, for a complete 
 - `make sihl admin.grant_role` - grant a role to an existing administrator
 - `make sihl admin.list_roles` - show a list of all possible role patterns
 - `make sihl seed.default message_templates` - inserts the default message templates to all databases (resets default templates)
+- `make sihl queue.create` - creates the needed queues on the rabbitmq host
+- `make sihl queue.migrate` - migrates the queues on the rabbitmq host (queues are immutable)
 - `make sihl server` - starts the tools webserver
 - `make sihl worker` - starts the tools worker for background jobs (e.g. send mails, create invitations)
 
@@ -97,9 +100,10 @@ Alternatively, these options simulate a similar production environment (without 
 QUEUE_FORCE_ASYNC=true EMAIL_BYPASS_INTERCEPT=true SMTP_SENDER=noreply@uast.uzh.ch make dev
 ```
 
-### RabbitMQ
+### RabbitMQ - Troubleshooting
 
-As RabbitMQ doesn't allow renaming or changing the features of a queue or an exchange, here are two usefull commands to reset the queue for development.
+As RabbitMQ doesn't allow renaming or changing the features of a queue or an exchange.
+Check the [useful commands](#application-commands), if they can't fix the issue, consider the following two reset commands.
 
 ```bash
 # delete all queues

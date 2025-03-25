@@ -6,7 +6,7 @@ module EmailQueueConfig = struct
   let credentials = "user", "password"
 end
 
-module EmailQueue = Rabbitmq.Make (EmailQueueConfig)
+module Queue = Message_queue.Make (EmailQueueConfig)
 
 module Cache = struct
   open Hashtbl
@@ -327,12 +327,12 @@ let send ?smtp_auth_id database_label =
 ;;
 
 let start () =
-  let%lwt () = EmailQueue.init (Database.Pool.all ~exclude:[] ()) in
+  let%lwt () = Queue.init (Database.Pool.all ~exclude:[] ()) in
   Lwt.return_unit
 ;;
 
 let stop () =
-  let%lwt () = EmailQueue.close () in
+  let%lwt () = Queue.close () in
   Lwt.return_unit
 ;;
 
@@ -408,10 +408,7 @@ let dispatch
   let prepared_job = job |> Job.intercept_prepare_of_event in
   let job_str = Job.encode prepared_job in
   let%lwt () =
-    EmailQueue.dispatch
-      database_label
-      ~message_id:(Pool_queue.Id.value id)
-      ~payload:job_str
+    Queue.dispatch database_label ~message_id:(Pool_queue.Id.value id) ~payload:job_str
   in
   (* Dispatch the job to the local queue as well *)
   Pool_queue.dispatch ~id ?message_template ~job_ctx database_label prepared_job Job.send

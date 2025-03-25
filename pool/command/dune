@@ -4,6 +4,7 @@
   cqrs_command
   duplicate_contacts
   guard
+  message_queue
   matcher
   pool_event
   pool_user
