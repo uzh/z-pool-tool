@@ -35,12 +35,12 @@ let create_meta
   { url; query; language; filter; search; additional_url_params; push_url }
 ;;
 
-(* TODO: Consider adding a `buttons / `mobile type. Treated like `Custom but shown on mobile *)
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt
   | `field of Pool_message.Field.t * Query.Column.t
   | `empty
+  | `mobile of [ | Html_types.flow5 ] Tyxml_html.elt
   ]
 
 let is_selected { query; _ } column =
@@ -350,7 +350,7 @@ let make_head ~break_mobile ?classname target_id sort column =
       then []
       else (
         match column with
-        | `column _ -> []
+        | `column _ | `mobile _ -> []
         | _ -> [ "hidden-mobile" ])
     in
     match classname with
@@ -363,7 +363,8 @@ let make_head ~break_mobile ?classname target_id sort column =
        | `custom el -> el
        | `empty -> txt ""
        | `field (field, col) -> make_sortable_head target_id sort col field
-       | `column col -> make_sortable_head target_id sort col (Query.Column.field col))
+       | `column col -> make_sortable_head target_id sort col (Query.Column.field col)
+       | `mobile el -> el)
     ]
 ;;
 

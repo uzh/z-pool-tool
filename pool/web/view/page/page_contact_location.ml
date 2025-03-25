@@ -9,7 +9,9 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
     | files ->
       let open Mapping in
       div
-        [ h2 [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
+        [ h2
+            ~a:[ a_class [ "has-gap" ] ]
+            [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
         ; CCList.map
             (fun (mapping : file) ->
                let label =
@@ -30,7 +32,7 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt (Name.value location.name) ]
     ; div
-        ~a:[ a_class [ "switcher" ] ]
+        ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ]
         [ div
             [ h2
                 [ Pool_common.(Utils.text_to_string language I18n.Address)

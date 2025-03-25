@@ -12,6 +12,10 @@ let experiment_user_path experiment role =
   HttpUtils.Url.Admin.experiment_user_path experiment.Experiment.id field
 ;;
 
+let text_to_string language i18n =
+  Pool_common.Utils.text_to_string language i18n |> CCString.capitalize_ascii
+;;
+
 let assign_form
       { Pool_context.csrf; language; _ }
       (url : ?admin_id:Admin.Id.t -> ?suffix:uri -> unit -> string)
@@ -37,30 +41,42 @@ let list_existing
       context
       (form_url : ?admin_id:Admin.Id.t -> ?suffix:string -> unit -> string)
       ~can_unassign
+      admins
   =
   let query_url = form_url ~suffix:"assigned" () in
-  Page_admin_admins.list
-    ~buttons:(if can_unassign then [ assign_form context form_url `Unassign ] else [])
-    ~hide_create:true
-    ~table_id:"existing-admins"
-    ~url:query_url
-    ~push_url:false
-    context
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ h3 [ txt (text_to_string context.Pool_context.language Pool_common.I18n.Assigned) ]
+    ; Page_admin_admins.list
+        ~buttons:(if can_unassign then [ assign_form context form_url `Unassign ] else [])
+        ~hide_create:true
+        ~table_id:"existing-admins"
+        ~url:query_url
+        ~push_url:false
+        context
+        admins
+    ]
 ;;
 
 let list_available
       context
       (form_url : ?admin_id:Admin.Id.t -> ?suffix:string -> unit -> string)
       ~can_assign
+      admins
   =
   let query_url = form_url ~suffix:"available" () in
-  Page_admin_admins.list
-    ~buttons:(if can_assign then [ assign_form context form_url `Assign ] else [])
-    ~hide_create:true
-    ~table_id:"available-admins"
-    ~url:query_url
-    ~push_url:false
-    context
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ h3 [ txt (text_to_string context.Pool_context.language Pool_common.I18n.Available) ]
+    ; Page_admin_admins.list
+        ~buttons:(if can_assign then [ assign_form context form_url `Assign ] else [])
+        ~hide_create:true
+        ~table_id:"available-admins"
+        ~url:query_url
+        ~push_url:false
+        context
+        admins
+    ]
 ;;
 
 let role_assignment

@@ -128,6 +128,8 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let experiment_message_history_url id = experiment_path ~suffix:"messages" ~id ()
+
   let experiment_user_path id role ?admin_id ?suffix () =
     experiment_path ~id ()
     |> append (Field.show role)
@@ -234,4 +236,17 @@ module Root = struct
   let with_root = Format.asprintf "/root%s"
   let announcement_path ?suffix ?id () = announcement_path ?suffix ?id () |> with_root
   let version_path ?suffix ?id () = version_path ?suffix ?id () |> with_root
+
+  let tenant_path ?suffix ?id () =
+    "/tenants"
+    |> with_root
+    |> append_opt (map Pool_tenant.Id.value id)
+    |> append_opt suffix
+  ;;
+
+  let tenant_assets_path tenant_id ?suffix ?id () =
+    tenant_path ~id:tenant_id ~suffix:"assets" ()
+    |> append_opt (map Pool_common.Id.value id)
+    |> append_opt suffix
+  ;;
 end

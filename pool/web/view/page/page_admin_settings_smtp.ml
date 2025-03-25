@@ -1,4 +1,3 @@
-open CCFun
 open Tyxml.Html
 open Component.Input
 open Pool_message
@@ -49,21 +48,32 @@ let list Pool_context.{ language; csrf; _ } location smtp_auth_list query =
   in
   let row (auth : SmtpAuth.t) =
     let open SmtpAuth in
-    [ auth.label |> Label.value |> txt
-    ; auth.server |> Server.value |> txt
-    ; auth.username |> CCOption.map_or ~default:"" Username.value |> txt
-    ; auth.mechanism |> Mechanism.show |> txt
-    ; auth.protocol |> Protocol.show |> txt
-    ; auth.default |> Default.value |> Utils.Bool.to_string |> txt
-    ; button_group
-        [ edit_link (Format.asprintf "%s/%s" (base_path location) (auth.id |> Id.value))
-        ; delete_button auth
-        ]
+    let open Pool_message in
+    [ auth.label |> Label.value |> txt, Some Field.Label
+    ; auth.server |> Server.value |> txt, Some Field.SmtpServer
+    ; ( auth.username |> CCOption.map_or ~default:"" Username.value |> txt
+      , Some Field.SmtpUsername )
+    ; auth.mechanism |> Mechanism.show |> txt, Some Field.SmtpMechanism
+    ; auth.protocol |> Protocol.show |> txt, Some Field.SmtpProtocol
+    ; ( auth.default |> Default.value |> Utils.Bool.to_string |> txt
+      , Some Field.DefaultSmtpServer )
+    ; ( button_group
+          [ edit_link (Format.asprintf "%s/%s" (base_path location) (auth.id |> Id.value))
+          ; delete_button auth
+          ]
+      , None )
     ]
-    |> CCList.map (CCList.return %> td)
+    |> CCList.map (fun (html, field) ->
+      td ~a:(Component.Table.data_label_opt language field) [ html ])
     |> tr
   in
-  Component.DataTable.make ~target_id:"smtp-table" ~cols ~row data_table smtp_auth_list
+  Component.DataTable.make
+    ~break_mobile:true
+    ~target_id:"smtp-table"
+    ~cols
+    ~row
+    data_table
+    smtp_auth_list
 ;;
 
 let index (Pool_context.{ language; _ } as context) location smtp_auth_list query =

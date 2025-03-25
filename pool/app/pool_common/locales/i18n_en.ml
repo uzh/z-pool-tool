@@ -11,11 +11,13 @@ let to_string = function
   | AnnouncementsTenantSelect ->
     "Select on which tenants the announcement should be displayed."
   | ApiKeys -> "API Keys"
+  | Assigned -> "assigned"
   | AssignmentEditTagsWarning ->
     "Please note that editing the assignment does not assign or remove any tags from the \
      contact that may have been assigned by participating in this session. If this is \
      required, please get in touch with a person with the necessary permissions."
   | AssignmentListEmpty -> "There are no assignments for this session."
+  | Available -> "available"
   | AvailableSpots -> "Available spots"
   | Canceled -> "Canceled"
   | CanceledSessionsTitle -> "Your canceled sessions"
@@ -292,6 +294,8 @@ When inviting contacts, the filter will prefer the overriding value if both are 
       "Please enter the verification code we sent yout to %s. The code is valid for one \
        hour."
       cell_phone
+  | ContactExperimentNotMatchingFilter ->
+    "You no longer fulfill the conditions for participating in this experiment."
   | ContactInformationEmailHint ->
     "To change your e-mail address, please follow this link."
   | ContactLanguage ->

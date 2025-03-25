@@ -49,7 +49,9 @@ let list Pool_context.{ language; _ } url changelog =
       [ a_id target_id; a_user_data "hx-trigger" "load" ]
       @ Data_table.hx_get ~url ~target_id ~push_url:false
     in
-    div [ h2 [ field_to_string Pool_message.Field.History ]; div ~a:trigger_onload [] ]
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ h2 [ field_to_string Pool_message.Field.History ]; div ~a:trigger_onload [] ]
   | Some (changelogs, query) ->
     let data_table = Data_table.create_meta ~push_url:false url query language in
     let cols =

@@ -18,12 +18,25 @@ let experiment_public_description =
   Public.description
   %> CCOption.map_or
        ~default:(txt "")
-       (PublicDescription.value %> HttpUtils.add_line_breaks %> CCList.return %> p)
+       (PublicDescription.value
+        %> HttpUtils.add_line_breaks
+        %> CCList.return
+        %> div ~a:[ a_class [ "truncate-6" ] ])
 ;;
 
 let experiment_title =
   let open Experiment in
   Public.public_title %> PublicTitle.value %> txt
+;;
+
+let not_matching_warning language =
+  Component.Notification.notification
+    language
+    `Error
+    [ txt
+        Pool_common.(
+          Utils.hint_to_string language I18n.ContactExperimentNotMatchingFilter)
+    ]
 ;;
 
 let experiment_detail_page experiment html =
@@ -212,7 +225,7 @@ let index
         ~a:[ a_class [ "stack-lg" ] ]
         [ notification
         ; div
-            ~a:[ a_class [ "grid-col-2"; "grid-gap-lg"; "gap-lg" ] ]
+            ~a:[ a_class [ "grid-col-2"; "grid-gap-lg"; "grid-row-gap-xl"; "gap-lg" ] ]
             [ div ~a:[ a_class [ "stack-lg" ] ] [ session_html; waiting_list_html ]
             ; experiment_html
             ; online_studies_html
@@ -224,6 +237,7 @@ let index
 
 let show
       experiment
+      matches_filter
       grouped_sessions
       upcoming_sessions
       past_sessions
@@ -241,14 +255,19 @@ let show
   in
   let session_list sessions =
     div
+      ~a:[ a_class [ "stack" ] ]
       ([ h2
-           ~a:[ a_class [ "heading-2"; "has-gap" ] ]
+           ~a:[ a_class [ "heading-2" ] ]
            [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
        ; p [ txt (hint_to_string I18n.ExperimentSessionsPublic) ]
        ]
        @
        if CCList.is_empty sessions
-       then [ p [ Utils.text_to_string language (I18n.EmtpyList Field.Sessions) |> txt ] ]
+       then
+         [ p
+             ~a:[ a_class [ "gap" ] ]
+             [ Utils.text_to_string language (I18n.EmtpyList Field.Sessions) |> txt ]
+         ]
        else [ div [ PageSession.public_overview sessions experiment language ] ])
   in
   let waiting_list_form () =
@@ -311,7 +330,12 @@ let show
            [ txt (Utils.text_to_string language title) ]
          :: Page_contact_sessions.public_detail language sessions)
   in
-  let html =
+  let registration_active sessions =
+    match matches_filter with
+    | false -> div ~a:[ a_class [ "gap" ] ] [ not_matching_warning language ]
+    | true -> session_list sessions
+  in
+  let page_content =
     match upcoming_sessions, past_sessions, canceled_sessions with
     | [], [], [] ->
       Experiment.(
@@ -320,22 +344,24 @@ let show
            |> Public.direct_registration_disabled
            |> DirectRegistrationDisabled.value
          with
-         | false -> session_list grouped_sessions
-         | true -> div [ waiting_list_form () ]))
+         | false -> [ registration_active grouped_sessions ]
+         | true -> [ waiting_list_form () ]))
     | upcoming_sessions, past_sessions, canceled_sessions ->
       let open Pool_common.I18n in
-      div
-        ~a:[ a_class [ "gap-lg"; "stack-lg" ] ]
-        [ sessions_html UpcomingSessionsTitle upcoming_sessions
-        ; sessions_html PastSessionsTitle past_sessions
-        ; sessions_html CanceledSessionsTitle canceled_sessions
-        ]
+      [ div
+          ~a:[ a_class [ "stack-lg" ] ]
+          [ sessions_html UpcomingSessionsTitle upcoming_sessions
+          ; sessions_html PastSessionsTitle past_sessions
+          ; sessions_html CanceledSessionsTitle canceled_sessions
+          ]
+      ]
   in
-  experiment_detail_page experiment html
+  page_content |> div ~a:[ a_class [ "gap-lg" ] ] |> experiment_detail_page experiment
 ;;
 
 let show_online_study
       (experiment : Experiment.Public.t)
+      matches_filter
       { Pool_context.language; _ }
       (argument :
         [> `Active of Time_window.t * Assignment.Public.t option
@@ -352,18 +378,21 @@ let show_online_study
         let open Control in
         if CCOption.is_some assignment then Resume field else Start field
       in
-      div
-        ~a:[ a_class [ "flexcolumn" ] ]
-        [ Component.Input.link_as_button
-            ~control:(language, control)
-            (HttpUtils.Url.Contact.experiment_path
-               ~id:(Experiment.Public.id experiment)
-               ~suffix:"start"
-               ())
-        ]
+      match matches_filter, assignment with
+      | false, None -> not_matching_warning language
+      | true, None | false, Some _ | true, Some _ ->
+        div
+          [ Component.Input.link_as_button
+              ~control:(language, control)
+              (HttpUtils.Url.Contact.experiment_path
+                 ~id:(Experiment.Public.id experiment)
+                 ~suffix:"start"
+                 ())
+          ]
     in
     let end_at_hint time_window =
       p
+        ~a:[ a_class [ "gap-lg" ] ]
         [ strong
             [ txt
                 (I18n.ExperimentOnlineParticipationDeadline
@@ -385,8 +414,10 @@ let show_online_study
     in
     let participated_hint assignment =
       let open Utils in
-      p
-        [ strong
+      Component.Notification.notification
+        language
+        `Success
+        [ p
             [ I18n.ExperimentOnlineParticiated
                 (CreatedAt.value assignment.Public.created_at)
               |> text_to_string language
@@ -394,7 +425,7 @@ let show_online_study
             ]
         ]
     in
-    div ~a:[ a_class [ "stack"; "flexcolumn" ] ]
+    div ~a:[ a_class [ "gap"; "stack"; "flexcolumn" ] ]
     @@
     match argument with
     | `Active (time_window, assignment) ->

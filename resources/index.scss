@@ -228,15 +228,6 @@ abbr[title] {
     @extend textarea;
 }
 
-// Color
-.table.striped tr:nth-child(1n).bg-green-lighter {
-    background-color: c.$green-lighter;
-}
-
-.table.striped tr:nth-child(1n).bg-red-lighter {
-    background-color: c.$red-lighter;
-}
-
 .table tr.highlighted {
     position: relative;
 
@@ -303,7 +294,7 @@ table.width-auto {
 
 @include breakpoints.econ-mobile {
     .table.break-mobile th {
-        display: none;
+        width: 100%;
     }
 }
 
@@ -445,9 +436,31 @@ table.simple {
     z-index: 12;
 }
 
+.mobile-nav {
+    height: calc(100dvh - #{vars.$header-height-mobile + 1px});
+}
+
 .mobile-nav-inner h2 {
     margin-bottom: vars.$space-lg;
 }
+
+.app-header {
+    z-index: 10;
+}
+
+body.nav-open {
+    padding-top: vars.$header-height;
+
+    @include breakpoints.econ-mobile {
+        padding-top: vars.$header-height-mobile;
+    }
+
+    .app-header {
+        top: 0;
+        position: fixed;
+    }
+}
+
 
 .note+* {
     margin-top: vars.$space-base;
@@ -465,26 +478,8 @@ table.simple {
     gap: vars.$space-xs;
 }
 
-// Session list
 @include breakpoints.econ-mobile {
-    .session-list.break-mobile {
-        td>.inset.left {
-            padding: 0;
-        }
-
-        td[data-label] {
-            flex-direction: row;
-            gap: vars.$space-sm;
-
-            &:before {
-                width: 50%;
-            }
-        }
-
-        .follow-up {
-            padding-left: vars.$space-base;
-        }
-
+    .table.break-mobile {
         .button-list {
             margin: 0;
 
@@ -633,4 +628,34 @@ input[type="checkbox"][readonly] {
         padding-left: 0;
         padding-right: 0;
     }
+}
+
+// Grid
+@supports (display: grid) {
+    [class*="grid-"] {
+        &.grid-row-gap-sm {
+            row-gap: vars.$space-sm;
+        }
+
+        &.grid-row-gap-md {
+            row-gap: vars.$space-md;
+        }
+
+        &.grid-row-gap-lg {
+            row-gap: vars.$space-lg;
+        }
+
+        &.grid-row-gap-xl {
+            row-gap: vars.$space-xl;
+        }
+    }
+}
+
+.truncate-6 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    -webkit-box-orient: vertical;
 }

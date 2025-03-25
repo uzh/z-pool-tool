@@ -10,12 +10,14 @@ let to_string = function
   | AnnouncementsTenantSelect ->
     "Wählen Sie, auf welchen Tenants die Ankündigung angezeigt werden soll."
   | ApiKeys -> "API Schlüssel"
+  | Assigned -> "Zugewiesen"
   | AssignmentEditTagsWarning ->
     "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags zugewiesen \
      oder entfernt werden, die durch die Teilnahme an dieser Session dem Kontakt \
      zugewiesen wurden. Wenn dies erforderlich ist, wenden Sie sich bitte an eine Person \
      mit den erforderlichen Berechtigungen."
   | AssignmentListEmpty -> "Es existieren keine Anmeldungen für diese Session."
+  | Available -> "Verfügbar"
   | AvailableSpots -> "Freie Plätze"
   | Canceled -> "Abgesagt"
   | CanceledSessionsTitle -> "Ihre abgesagten Sessions"
@@ -295,6 +297,8 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
       "Bitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s   geschickt \
        haben. Der Code ist eine Stunde lang gültig."
       cell_phone
+  | ContactExperimentNotMatchingFilter ->
+    "Sie erfüllen die Bedingungen zur Teilnahme an diesem Experiment nicht mehr."
   | ContactInformationEmailHint ->
     "Um Ihre E-Mail-Adresse anzupassen, folgen Sie bitte folgendem Link."
   | ContactLanguage ->

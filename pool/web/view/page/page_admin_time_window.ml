@@ -198,7 +198,7 @@ let data_table
     ; `column column_noshow_count
     ; `column column_participation_count
     ; `custom (txt "Max")
-    ; `custom create_session
+    ; `mobile create_session
     ]
   in
   let th_class = [ "w-4"; "w-2"; "w-2"; "w-2"; "w-1"; "w-1" ] in
@@ -236,7 +236,8 @@ let data_table
     |> tr ~a:row_attrs
   in
   DataTable.make
-    ~classnames:[ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
+    ~align_last_end:true
+    ~break_mobile:true
     ~target_id
     ~th_class
     ~cols

@@ -47,13 +47,14 @@ val create_meta
   -> Pool_common.Language.t
   -> data_table
 
-(** A column in the table. Use [`column] for actual database columns, and use [`custom] for arbitrary elements.
+(** A column in the table. Use [`column] for actual database columns, and use [`custom] for arbitrary elements. Use [`mobile] for custom elements that are not hidden on mobile devices.
 *)
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt
   | `field of Pool_message.Field.t * Query.Column.t
   | `empty
+  | `mobile of [ | Html_types.flow5 ] Tyxml_html.elt
   ]
 
 val make
