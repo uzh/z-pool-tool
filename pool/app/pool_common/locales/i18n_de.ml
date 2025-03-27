@@ -93,6 +93,7 @@ let to_string = function
     "Anzahl angemeldeter Kontakte, die nicht den Kriterien entsprechen:"
   | FilterNuberMatchingUninvited -> "Anzahl mögliche neue Einladungen:"
   | FollowUpSessionFor -> "Folgesession für:"
+  | HasGlobalRole role -> Format.asprintf "Hat globale Rolle %s" role
   | Help -> "Hilfe"
   | ImportConfirmationNote ->
     "Bitte geben Sie ein neues Paswort an. Ihre restlichen Angaben wurden automatisch \

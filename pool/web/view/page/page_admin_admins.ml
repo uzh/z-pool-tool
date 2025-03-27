@@ -6,32 +6,12 @@ module Status = UserStatus.Admin
 
 let admin_path = Http_utils.Url.Admin.admin_path
 
-let list
-      ?(buttons : (Admin.t -> [ | Html_types.flow5 ] elt) list option)
-      ?(table_id = "admin-list")
-      ?(hide_create = false)
-      ?(url = admin_path ())
-      ?push_url
-      Pool_context.{ language; guardian; _ }
-      (admins, query)
-  =
-  let open Guard in
-  let open Admin in
-  let can_add_admin =
-    PermissionOnTarget.(validate (create Permission.Create `Admin) guardian)
-  in
-  let url = Uri.of_string url in
-  let data_table =
-    Component.DataTable.create_meta
-      ~search:Contact.searchable_by
-      ?push_url
-      url
-      query
-      language
-  in
-  let cols =
+module List = struct
+  open Admin
+
+  let cols ~hide_create language =
     let create : [ | Html_types.flow5 ] elt =
-      Component.Input.link_as_button
+      Input.link_as_button
         ~style:`Success
         ~icon:Icon.Add
         ~control:(language, Control.Add (Some Field.Admin))
@@ -40,18 +20,13 @@ let list
     Pool_user.
       [ `column column_name
       ; `column column_email
-      ; (if can_add_admin && not hide_create then `custom create else `empty)
+      ; (if hide_create then `empty else `custom create)
       ]
-  in
-  let th_class = [ "w-5"; "w-5"; "w-2" ] in
-  let row admin =
+  ;;
+
+  let row ?(additional_buttons = []) language admin =
     let detail_button =
       admin_path ~id:(id admin) () |> Input.link_as_button ~icon:Icon.Eye
-    in
-    let additional_buttons =
-      match buttons with
-      | Some buttons -> CCList.map (fun f -> f admin) buttons
-      | None -> []
     in
     let buttons =
       div
@@ -63,11 +38,32 @@ let list
     ; buttons, None
     ]
     |> CCList.map (fun (html, field) ->
-      let label = Component.Table.data_label_opt language field in
+      let label = Table.data_label_opt language field in
       td ~a:label [ html ])
     |> tr
+  ;;
+end
+
+let list
+      ?(table_id = "admin-list")
+      ?(hide_create = false)
+      ?(url = admin_path ())
+      ?push_url
+      Pool_context.{ language; guardian; _ }
+      (admins, query)
+  =
+  let open Guard in
+  let can_add_admin =
+    PermissionOnTarget.(validate (create Permission.Create `Admin) guardian)
   in
-  Component.DataTable.make
+  let url = Uri.of_string url in
+  let data_table =
+    DataTable.create_meta ~search:Contact.searchable_by ?push_url url query language
+  in
+  let cols = List.cols ~hide_create:((not can_add_admin) || hide_create) language in
+  let th_class = [ "w-5"; "w-5"; "w-2" ] in
+  let row = List.row language in
+  DataTable.make
     ~break_mobile:true
     ~th_class
     ~target_id:table_id
@@ -80,13 +76,13 @@ let list
 let static_overview ?(disable_edit = false) language admins =
   let thead =
     let add_admin =
-      Component.Input.link_as_button
+      Input.link_as_button
         ~style:`Success
         ~icon:Icon.Add
         ~control:(language, Control.Add (Some Field.Admin))
         "/admin/admins/new"
     in
-    let to_txt = Component.Table.field_to_txt language in
+    let to_txt = Table.field_to_txt language in
     let base = Field.[ Email |> to_txt; Name |> to_txt ] in
     match disable_edit with
     | false -> base @ [ add_admin ]

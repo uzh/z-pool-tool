@@ -11,7 +11,6 @@ module Utils = struct
   include Utils
 
   let find_assignable_target_role : Role.Role.t -> Role.Target.t = function
-    | `Admin -> `RoleAdmin
     | `Assistant -> `RoleAssistant
     | `Experimenter -> `RoleExperimenter
     | `LocationManager -> `RoleLocationManager
@@ -21,7 +20,6 @@ module Utils = struct
 
   let find_assignable_role : Role.Target.t -> (Role.Role.t, Pool_message.Error.t) result
     = function
-    | `RoleAdmin -> Ok `Admin
     | `RoleAssistant -> Ok `Assistant
     | `RoleExperimenter -> Ok `Experimenter
     | `RoleLocationManager -> Ok `LocationManager

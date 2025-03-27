@@ -70,11 +70,14 @@ let edit_target_modal
               ; a_class [ "flexcolumn"; "stack" ]
               ]
           ((Input.csrf_element csrf () :: permissions)
-           @ [ Input.submit_element
-                 ~has_icon:Icon.Save
-                 language
-                 (Save (Some Field.Permission))
-                 ()
+           @ [ div
+                 ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+                 [ Input.submit_element
+                     ~has_icon:Icon.Save
+                     language
+                     (Save (Some Field.Permission))
+                     ()
+                 ]
              ])
       ]
   in
@@ -168,7 +171,9 @@ let index Pool_context.{ language; _ } roles =
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions) ]
-    ; p [ txt Pool_common.(Utils.hint_to_string language I18n.RolePermissionsRoleList) ]
+    ; div
+        ~a:[ a_class [ "border"; "inset"; "bg-grey-lightest" ] ]
+        [ Component.Role.explanation language ]
     ; table
     ]
 ;;

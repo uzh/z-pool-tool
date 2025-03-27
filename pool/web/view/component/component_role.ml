@@ -22,13 +22,13 @@ let create_target_path ?uuid =
     %> Format.asprintf "/admin/%s/%s/" path
   in
   flip CCOption.bind (function
-    | `Experiment -> Some (build "experiments" uuid)
-    | `Location -> Some (build "locations" uuid)
     | `Admin -> Some (build "admins" uuid)
     | `Contact -> Some (build "contacts" uuid)
     | `CustomField -> Some (build "custom-fields/contact/field" uuid)
     | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
+    | `Experiment -> Some (build "experiments" uuid)
     | `Filter -> Some (build "filter" uuid)
+    | `Location -> Some (build "locations" uuid)
     | `Tag -> Some (build "settings/tags" uuid)
     | `Announcement
     | `Assignment
@@ -354,3 +354,53 @@ module ActorPermissionSearch = struct
       ]
   ;;
 end
+
+let explanation language =
+  let open Pool_common in
+  let open Role in
+  let title_html title =
+    h3 ~a:[ a_class [ "has-gap" ] ] [ txt Role.(name title |> CCString.capitalize_ascii) ]
+  in
+  let assistant = function
+    | Language.En ->
+      "Assistants are present at the sessions and will close them once they were carried \
+       out."
+    | Language.De ->
+      "Assistenten sind bei den Sitzungen anwesend und schließen sie ab, sobald sie \
+       durchgeführt wurden."
+  in
+  let experimenter = function
+    | Language.En -> "Experimenter can create and update experiments."
+    | Language.De -> "Experimenter kann Experimente erstellen und aktualisieren."
+  in
+  let location_manager = function
+    | Language.En ->
+      "A location manager is responsible for a location. They have the permissions to \
+       update locations and access sessions at their location."
+    | Language.De ->
+      "Location Manager sind für einen Standort verantwortlich. Sie haben die \
+       Berechtigung, Standorte zu aktualisieren und auf Sessions an ihrem Standort \
+       zuzugreifen."
+  in
+  let recruiter = function
+    | Language.En ->
+      "Recruiters have all rights to coordinate experiments. They can access all \
+       sessions and contact data."
+    | Language.De ->
+      "Recruiter haben alle Rechte, die Experimente zu koordinieren. Sie können auf alle \
+       Sitzungen und Userdaten zugreifen."
+  in
+  let operator = function
+    | Language.En | Language.De -> "This role is not customizable."
+  in
+  let role_html = function
+    | `Assistant -> assistant
+    | `Experimenter -> experimenter
+    | `LocationManager -> location_manager
+    | `Operator -> operator
+    | `Recruiter -> recruiter
+  in
+  Role.customizable
+  |> CCList.map (fun role -> div [ title_html role; p [ txt (role_html role language) ] ])
+  |> div ~a:[ a_class [ "stack" ] ]
+;;
