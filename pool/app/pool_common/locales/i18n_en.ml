@@ -91,6 +91,7 @@ let to_string = function
     "Number of assigned contacts not meeting the criteria of this filter:"
   | FilterNuberMatchingUninvited -> "Possible new invitations:"
   | FollowUpSessionFor -> "Follow-up for:"
+  | HasGlobalRole role -> Format.asprintf "Has global %s role" role
   | Help -> "Help"
   | ImportConfirmationNote ->
     "Please enter a new password. The rest of your data has been automatically taken \

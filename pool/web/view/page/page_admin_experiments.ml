@@ -994,7 +994,7 @@ let users
   let open Layout.Experiment in
   let field =
     match role with
-    | `Assistants -> Field.Assistants
+    | `Assistant -> Field.Assistants
     | `Experimenter -> Field.Experimenter
   in
   let active_navigation =
@@ -1006,6 +1006,7 @@ let users
     ?hint
     ?can_assign
     ?can_unassign
+    ~role
     context
     form_path
     ~applicable:applicable_admins

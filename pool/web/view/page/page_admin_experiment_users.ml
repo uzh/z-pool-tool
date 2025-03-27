@@ -19,55 +19,101 @@ let text_to_string language i18n =
 let assign_form
       { Pool_context.csrf; language; _ }
       (url : ?admin_id:Admin.Id.t -> ?suffix:uri -> unit -> string)
+      ?(disabled = false)
+      role
       action
       admin
   =
+  let disabled_hint =
+    Pool_common.(
+      I18n.HasGlobalRole Role.Role.(name (role :> t)) |> Utils.text_to_string language)
+  in
   let suffix, control, style =
     match action with
     | `Assign -> "assign", Assign None, `Success
     | `Unassign -> "unassign", Unassign None, `Error
   in
+  let button_attrs = if disabled then [ a_disabled (); a_title disabled_hint ] else [] in
   form
     ~a:
       [ a_action (url ~admin_id:(Admin.id admin) ~suffix () |> Sihl.Web.externalize_path)
       ; a_method `Post
       ]
     [ csrf_element csrf ()
-    ; submit_element ~submit_type:style ~classnames:[ "small" ] language control ()
+    ; submit_element
+        ~attributes:button_attrs
+        ~submit_type:style
+        ~classnames:[ "small" ]
+        language
+        control
+        ()
     ]
 ;;
 
-let list_existing
-      context
-      (form_url : ?admin_id:Admin.Id.t -> ?suffix:string -> unit -> string)
-      ~can_unassign
-      admins
+let admin_list
+      ~can_submit
+      ?(table_id = "admin-list")
+      ~(url : ?admin_id:Admin.Id.t -> ?suffix:string -> unit -> string)
+      ~role
+      ?push_url
+      (Pool_context.{ language; _ } as context)
+      action
+      ((admins, query) : (Admin.t * bool) list_wrap * Query.t)
   =
-  let query_url = form_url ~suffix:"assigned" () in
-  Page_admin_admins.list
-    ~buttons:(if can_unassign then [ assign_form context form_url `Unassign ] else [])
-    ~hide_create:true
-    ~table_id:"existing-admins"
-    ~url:query_url
-    ~push_url:false
-    context
+  let data_table_url =
+    (fun suffix -> url ~suffix () |> Uri.of_string)
+    @@
+    match action with
+    | `Assign -> "available"
+    | `Unassign -> "assigned"
+  in
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Contact.searchable_by
+      ?push_url
+      data_table_url
+      query
+      language
+  in
+  let cols = Page_admin_admins.List.cols ~hide_create:true language in
+  let th_class = [ "w-5"; "w-5"; "w-2" ] in
+  let row (admin, disabled) =
+    let assign_form =
+      assign_form ~disabled:(disabled || not can_submit) context url role action admin
+    in
+    Page_admin_admins.List.row ~additional_buttons:[ assign_form ] language admin
+  in
+  Component.DataTable.make
+    ~break_mobile:true
+    ~th_class
+    ~target_id:table_id
+    ~cols
+    ~row
+    data_table
     admins
 ;;
 
-let list_available
-      context
-      (form_url : ?admin_id:Admin.Id.t -> ?suffix:string -> unit -> string)
-      ~can_assign
-      admins
-  =
-  let query_url = form_url ~suffix:"available" () in
-  Page_admin_admins.list
-    ~buttons:(if can_assign then [ assign_form context form_url `Assign ] else [])
-    ~hide_create:true
-    ~table_id:"available-admins"
-    ~url:query_url
+let list_existing context url ~can_unassign ~role admins =
+  admin_list
+    ~can_submit:can_unassign
+    ~table_id:"existing-admins"
+    ~url
+    ~role
     ~push_url:false
     context
+    `Unassign
+    admins
+;;
+
+let list_available context url ~can_assign ~role admins =
+  admin_list
+    ~can_submit:can_assign
+    ~table_id:"available-admins"
+    ~url
+    ~role
+    ~push_url:false
+    context
+    `Assign
     admins
 ;;
 
@@ -75,6 +121,7 @@ let role_assignment
       ?hint
       ?(can_assign = false)
       ?(can_unassign = false)
+      ~role
       context
       form_path
       ~applicable:available
@@ -86,7 +133,7 @@ let role_assignment
       ~a:[ a_class [ "stack" ] ]
       [ h3
           [ txt (text_to_string context.Pool_context.language Pool_common.I18n.Assigned) ]
-      ; list_existing context form_path ~can_unassign existing
+      ; list_existing context form_path ~role ~can_unassign existing
       ]
   in
   let available =
@@ -95,7 +142,7 @@ let role_assignment
       [ h3
           [ txt (text_to_string context.Pool_context.language Pool_common.I18n.Available)
           ]
-      ; list_available context form_path ~can_assign available
+      ; list_available context form_path ~role ~can_assign available
       ]
   in
   let main_hint =

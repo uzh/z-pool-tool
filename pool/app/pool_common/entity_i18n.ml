@@ -50,6 +50,7 @@ type t =
   | FilterNrOfUnsuitableAssignments
   | FilterNuberMatchingUninvited
   | FollowUpSessionFor
+  | HasGlobalRole of string
   | Help
   | ImportConfirmationNote
   | ImportConfirmationTitle

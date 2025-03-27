@@ -49,10 +49,34 @@ let entity_path_and_guard experiment_id req role =
     path, id
 ;;
 
+let target_has_role db admin target_role () =
+  let open Utils.Lwt_result.Infix in
+  let open Guard in
+  let actor = Uuid.actor_of Admin.Id.value (Admin.id admin) in
+  let actor_role = ActorRole.create actor target_role in
+  (* TODO: Improve performance *)
+  let%lwt actor_roles =
+    Persistence.ActorRole.find_by_actor db actor ||> CCList.map (fun (role, _, _) -> role)
+  in
+  actor_roles |> CCList.mem ~eq:ActorRole.equal actor_role |> Lwt.return
+;;
+
+let query_by_role database_label query global_role ?exclude role =
+  let open Utils.Lwt_result.Infix in
+  Admin.query_by_role ~query database_label role ?exclude
+  >|> fun (admins, query) ->
+  let%lwt admins =
+    Lwt_list.map_s
+      (fun a -> target_has_role database_label a global_role () ||> CCPair.make a)
+      admins
+  in
+  Lwt.return (admins, query)
+;;
+
 let query_admin_current_and_exclude_role role guard_id =
   match role with
-  | `Assistants -> (`Assistant, Some guard_id), [ `Assistant, None ]
-  | `Experimenter -> (`Experimenter, Some guard_id), [ `Experimenter, None ]
+  | `Assistants -> (`Assistant, Some guard_id), `Assistant
+  | `Experimenter -> (`Experimenter, Some guard_id), `Experimenter
 ;;
 
 let index entity role req =
@@ -62,13 +86,16 @@ let index entity role req =
     @@
     let id = experiment_id req in
     let form_path, guard_id = entity_path_and_guard id req role entity in
-    let current_roles, exclude = query_admin_current_and_exclude_role role guard_id in
+    let current_roles, global_role = query_admin_current_and_exclude_role role guard_id in
     let query = Admin.query_from_request req in
+    let query_by_role ?exclude role =
+      query_by_role database_label query global_role ?exclude role
+    in
     let%lwt applicable_admins =
-      Admin.(query_by_role ~query database_label None ~exclude:(current_roles :: exclude))
+      query_by_role None ~exclude:[ current_roles; global_role, None ]
     in
     let%lwt currently_assigned =
-      Admin.(query_by_role ~query database_label (Some current_roles) ~exclude)
+      query_by_role (Some [ current_roles; global_role, None ])
     in
     let%lwt hint =
       (match role with
@@ -90,7 +117,7 @@ let index entity role req =
       ~can_assign
       ~can_unassign
       entity
-      role
+      global_role
       experiment
       form_path
       applicable_admins
@@ -111,14 +138,15 @@ let query_admin entity role state req =
   let result ({ Pool_context.database_label; user; _ } as context) =
     let id = experiment_id req in
     let form_path, guard_id = entity_path_and_guard id req role entity in
-    let current_roles, exclude = query_admin_current_and_exclude_role role guard_id in
+    let current_roles, global_role = query_admin_current_and_exclude_role role guard_id in
     let%lwt admins =
-      let open Admin in
       let query = Admin.query_from_request req in
+      let query_by_role ?exclude role =
+        query_by_role database_label query global_role ?exclude role
+      in
       match state with
-      | `Assigned -> query_by_role database_label ~query ~exclude (Some current_roles)
-      | `Available ->
-        query_by_role database_label ~query ~exclude:(current_roles :: exclude) None
+      | `Assigned -> query_by_role (Some [ current_roles; global_role, None ])
+      | `Available -> query_by_role ~exclude:[ current_roles; global_role, None ] None
     in
     let%lwt permission =
       let open Guard in
@@ -133,8 +161,10 @@ let query_admin entity role state req =
     in
     let open Page.Admin.Experiments.User in
     (match state with
-     | `Assigned -> list_existing context form_path ~can_unassign:permission admins
-     | `Available -> list_available context form_path ~can_assign:permission admins)
+     | `Assigned ->
+       list_existing context form_path ~can_unassign:permission ~role:global_role admins
+     | `Available ->
+       list_available context form_path ~can_assign:permission ~role:global_role admins)
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
