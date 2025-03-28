@@ -291,6 +291,7 @@ let group_and_sort sessions =
 module Public = struct
   type t =
     { id : Id.t
+    ; experiment_id : Experiment.Id.t
     ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : PtimeSpan.t
@@ -301,12 +302,17 @@ module Public = struct
     ; overbook : ParticipantAmount.t
     ; assignment_count : AssignmentCount.t
     ; canceled_at : Ptime.t option
+    ; closed_at : Ptime.t option
     }
   [@@deriving eq, show]
 
   let get_session_end (session : t) =
     Ptime.add_span session.start session.duration
     |> CCOption.get_exn_or "Session end not in range"
+  ;;
+
+  let is_past session =
+    Ptime.is_later (get_session_end session) ~than:Ptime_clock.(now ()) |> not
   ;;
 
   let not_past session =
@@ -389,6 +395,7 @@ end
 
 let to_public
       ({ id
+       ; experiment
        ; follow_up_to
        ; start
        ; duration
@@ -399,12 +406,14 @@ let to_public
        ; overbook
        ; assignment_count
        ; canceled_at
+       ; closed_at
        ; _
        } :
         t)
   =
   Public.
     { id
+    ; experiment_id = experiment.Experiment.id
     ; follow_up_to
     ; start
     ; duration
@@ -415,6 +424,7 @@ let to_public
     ; overbook
     ; assignment_count
     ; canceled_at
+    ; closed_at
     }
 ;;
 

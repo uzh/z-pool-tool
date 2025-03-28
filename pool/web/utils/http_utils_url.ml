@@ -230,6 +230,12 @@ module Contact = struct
   let experiment_path ?suffix ?id () =
     "/experiments" |> append_opt (map Experiment.Id.value id) |> append_opt suffix
   ;;
+
+  let session_path ?suffix ?id () =
+    Format.asprintf "/%s" Field.(human_url Session)
+    |> append_opt (map Session.Id.value id)
+    |> append_opt suffix
+  ;;
 end
 
 module Root = struct

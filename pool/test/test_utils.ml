@@ -398,6 +398,7 @@ module Model = struct
   let create_public_session ?start () =
     let Session.
           { id
+          ; experiment
           ; follow_up_to
           ; start
           ; duration
@@ -408,6 +409,7 @@ module Model = struct
           ; overbook
           ; assignment_count
           ; canceled_at
+          ; closed_at
           ; _
           }
       =
@@ -415,6 +417,7 @@ module Model = struct
     in
     Session.Public.
       { id
+      ; experiment_id = experiment.Experiment.id
       ; follow_up_to
       ; start
       ; duration
@@ -425,11 +428,13 @@ module Model = struct
       ; overbook
       ; assignment_count
       ; canceled_at
+      ; closed_at
       }
   ;;
 
   let session_to_public_session
         { Session.id
+        ; experiment
         ; follow_up_to
         ; start
         ; duration
@@ -440,11 +445,13 @@ module Model = struct
         ; overbook
         ; assignment_count
         ; canceled_at
+        ; closed_at
         ; _
         }
     =
     Session.Public.
       { id
+      ; experiment_id = experiment.Experiment.id
       ; follow_up_to
       ; start
       ; duration
@@ -455,6 +462,7 @@ module Model = struct
       ; overbook
       ; assignment_count
       ; canceled_at
+      ; closed_at
       }
   ;;
 

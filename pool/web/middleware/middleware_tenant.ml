@@ -3,14 +3,16 @@ open Database
 
 let src = Logs.Src.create "middleware.tenant"
 
-let tenant_url_of_request =
-  let open CCFun in
-  (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same host cannot
-     be handled at the moment *)
-  Sihl.Web.Request.header "host"
-  %> CCOption.to_result Pool_message.(Error.NotFound Field.Host)
-  %> flip CCResult.( >>= ) Pool_tenant.Url.create
-;;
+(* let tenant_url_of_request =
+   let open CCFun in
+   (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same host cannot
+   be handled at the moment *)
+   Sihl.Web.Request.header "host"
+   %> CCOption.to_result Pool_message.(Error.NotFound Field.Host)
+   %> flip CCResult.( >>= ) Pool_tenant.Url.create
+   ;; *)
+
+let tenant_url_of_request _ = "localhost:3017" |> Pool_tenant.Url.create
 
 let tenant_of_request req =
   let should_cache ({ Pool_tenant.status; _ } : Pool_tenant.t) =

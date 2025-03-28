@@ -92,3 +92,67 @@ let public_detail language =
     ; Table.vertical_table `Striped language ~align_top:true (rows session)
     ])
 ;;
+
+let list Pool_context.{ language; _ } (sessions, query) =
+  let open Session in
+  let url = Http_utils.Url.Contact.session_path () |> Uri.of_string in
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Public.searchable_by
+      ?filter:Public.filterable_by
+      url
+      query
+      language
+  in
+  let th_class = [ "w-4"; "w-4"; "w-4" ] in
+  let cols =
+    let field = Pool_common.Utils.field_to_string language in
+    Session.
+      [ `column column_date
+      ; `custom (txt (field Pool_message.Field.Location))
+      ; `custom (txt (field Pool_message.Field.Status))
+      ; `empty
+      ]
+  in
+  let status { Public.canceled_at; closed_at; _ } =
+    let open Component.Tag in
+    let open Pool_common in
+    let open CCOption in
+    let create_chip style text = create_chip ~inline:true style text |> return in
+    [ is_some canceled_at, I18n.Canceled, `Error
+    ; is_some closed_at, I18n.Closed, `Success
+    ]
+    |> CCList.find_map (fun (check, text, style) ->
+      match check with
+      | true -> create_chip style (Utils.text_to_string language text)
+      | false -> None)
+  in
+  let row session =
+    [ txt (Public.start_end_with_duration_human session), Some Field.Start
+    ; ( txt (Pool_location.Name.value session.Public.location.Pool_location.name)
+      , Some Field.Location )
+    ; status session |> CCOption.value ~default:(txt ""), None
+    ; txt "btn", None
+    ]
+    |> CCList.map (fun (html, field) ->
+      let label = Component.Table.data_label_opt language field in
+      td ~a:label [ html ])
+    |> tr
+  in
+  Component.DataTable.make
+    ~break_mobile:true
+    ~th_class
+    ~target_id:"session-table"
+    ~cols
+    ~row
+    data_table
+    sessions
+;;
+
+let index context title sessions =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt (I18n.content_to_string title) ]
+    ; list context sessions
+    ]
+;;

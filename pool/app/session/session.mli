@@ -169,6 +169,7 @@ val show_event : event -> string
 module Public : sig
   type t =
     { id : Id.t
+    ; experiment_id : Experiment.Id.t
     ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : Duration.t
@@ -179,6 +180,7 @@ module Public : sig
     ; overbook : ParticipantAmount.t
     ; assignment_count : AssignmentCount.t
     ; canceled_at : Ptime.t option
+    ; closed_at : Ptime.t option
     }
 
   val equal : t -> t -> bool
@@ -189,6 +191,11 @@ module Public : sig
   val group_and_sort : t list -> (t * t list) list
   val get_session_end : t -> Ptime.t
   val start_end_with_duration_human : t -> string
+  val is_past : t -> bool
+  val searchable_by : Query.Column.t list
+  val sortable_by : Query.Column.t list
+  val filterable_by : Query.Filter.human option
+  val default_query : Query.t
 end
 
 val to_public : t -> Public.t
@@ -282,6 +289,17 @@ val find_upcoming_public_by_contact
   -> Contact.Id.t
   -> ((Experiment.Public.t * Public.t * Public.t list) list, Pool_message.Error.t) result
        Lwt.t
+
+val contact_dashboard_upcoming
+  :  Database.Label.t
+  -> Contact.Repo.Id.t
+  -> (Public.t list, Pool_message.Error.t) result Lwt.t
+
+val query_by_contact
+  :  ?query:Query.t
+  -> Database.Label.t
+  -> Contact.t
+  -> (Public.t list * Query.t) Lwt.t
 
 val find_by_assignment
   :  Database.Label.t

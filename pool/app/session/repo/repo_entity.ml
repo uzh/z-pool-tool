@@ -2,7 +2,7 @@ open Entity
 module RepoId = Pool_common.Repo.Id
 module Reminder = Pool_common.Reminder
 module RepoReminder = Pool_common.Repo.Reminder
-module Experiment = Experiment.Repo.Entity
+module ExperimentRepo = Experiment.Repo.Entity
 
 module Id = struct
   include RepoId
@@ -156,7 +156,7 @@ let t =
                                                                      .UpdatedAt
                                                                      .t
                                                                      (t2
-                                                                        Experiment.t
+                                                                        ExperimentRepo.t
                                                                         Pool_location.Repo
                                                                         .t)))))))))))))))))))))))
 ;;
@@ -323,6 +323,7 @@ end
 module Public = struct
   type t =
     { id : Entity.Id.t
+    ; experiment_id : Experiment.Id.t
     ; follow_up_to : Entity.Id.t option
     ; start : Entity.Start.t
     ; duration : PtimeSpan.t
@@ -333,11 +334,13 @@ module Public = struct
     ; overbook : Entity.ParticipantAmount.t
     ; assignment_count : Entity.AssignmentCount.t
     ; canceled_at : Ptime.t option
+    ; closed_at : Ptime.t option
     }
   [@@deriving eq, show]
 
   let of_entity (m : Entity.Public.t) : t =
     { id = m.Entity.Public.id
+    ; experiment_id = m.Entity.Public.experiment_id
     ; follow_up_to = m.Entity.Public.follow_up_to
     ; start = m.Entity.Public.start
     ; duration = m.Entity.Public.duration
@@ -348,12 +351,14 @@ module Public = struct
     ; overbook = m.Entity.Public.overbook
     ; assignment_count = m.Entity.Public.assignment_count
     ; canceled_at = m.Entity.Public.canceled_at
+    ; closed_at = m.Entity.Public.closed_at
     }
   ;;
 
   let to_entity (m : t) location : Entity.Public.t =
     Entity.Public.
       { id = m.id
+      ; experiment_id = m.experiment_id
       ; follow_up_to = m.follow_up_to
       ; start = m.start
       ; duration = m.duration
@@ -364,6 +369,7 @@ module Public = struct
       ; overbook = m.overbook
       ; assignment_count = m.assignment_count
       ; canceled_at = m.canceled_at
+      ; closed_at = m.closed_at
       }
   ;;
 
@@ -371,28 +377,33 @@ module Public = struct
     let encode (m : t) =
       Ok
         ( m.id
-        , ( m.follow_up_to
-          , ( m.start
-            , ( m.duration
-              , ( m.description
-                , ( m.location_id
-                  , ( m.max_participants
-                    , ( m.min_participants
-                      , (m.overbook, (m.assignment_count, m.canceled_at)) ) ) ) ) ) ) ) )
+        , ( m.experiment_id
+          , ( m.follow_up_to
+            , ( m.start
+              , ( m.duration
+                , ( m.description
+                  , ( m.location_id
+                    , ( m.max_participants
+                      , ( m.min_participants
+                        , (m.overbook, (m.assignment_count, (m.canceled_at, m.closed_at)))
+                        ) ) ) ) ) ) ) ) )
     in
     let decode
           ( id
-          , ( follow_up_to
-            , ( start
-              , ( duration
-                , ( description
-                  , ( location_id
-                    , ( max_participants
-                      , (min_participants, (overbook, (assignment_count, canceled_at))) )
-                    ) ) ) ) ) )
+          , ( experiment_id
+            , ( follow_up_to
+              , ( start
+                , ( duration
+                  , ( description
+                    , ( location_id
+                      , ( max_participants
+                        , ( min_participants
+                          , (overbook, (assignment_count, (canceled_at, closed_at))) ) )
+                      ) ) ) ) ) ) )
       =
       Ok
         { id
+        ; experiment_id
         ; follow_up_to
         ; start
         ; duration
@@ -403,6 +414,7 @@ module Public = struct
         ; overbook
         ; assignment_count
         ; canceled_at
+        ; closed_at
         }
     in
     Caqti_type.(
@@ -412,16 +424,22 @@ module Public = struct
         (t2
            RepoId.t
            (t2
-              (option RepoId.t)
+              ExperimentRepo.Id.t
               (t2
-                 Start.t
+                 (option RepoId.t)
                  (t2
-                    Duration.t
+                    Start.t
                     (t2
-                       (option string)
+                       Duration.t
                        (t2
-                          Pool_location.Repo.Id.t
-                          (t2 int (t2 int (t2 int (t2 int (option ptime))))))))))))
+                          (option string)
+                          (t2
+                             Pool_location.Repo.Id.t
+                             (t2
+                                int
+                                (t2
+                                   int
+                                   (t2 int (t2 int (t2 (option ptime) (option ptime))))))))))))))
   ;;
 end
 
@@ -484,9 +502,9 @@ module Calendar = struct
         (t2
            RepoId.t
            (t2
-              Experiment.Title.t
+              ExperimentRepo.Title.t
               (t2
-                 Experiment.Id.t
+                 ExperimentRepo.Id.t
                  (t2
                     (option Pool_user.Repo.EmailAddress.t)
                     (t2

@@ -1,6 +1,7 @@
 module Assignment = Page_contact_assignment
 module Experiment = Page_contact_experiment
 module Location = Page_contact_location
+module Session = Page_contact_sessions
 
 let sign_up = Page_contact_signup.signup
 let terms = Page_contact_terms.terms

@@ -15,6 +15,8 @@ let find_contact_is_assigned_by_experiment = Repo.find_contact_is_assigned_by_ex
 let find_public = Repo.find_public
 let find_public_by_assignment = Repo.find_public_by_assignment
 let find_upcoming_public_by_contact = Repo.find_upcoming_public_by_contact
+let contact_dashboard_upcoming = Repo.contact_dashboard_upcoming
+let query_by_contact = Repo.query_by_contact
 let find_by_assignment = Repo.find_by_assignment
 let find_experiment_id_and_title = Repo.find_experiment_id_and_title
 let find_sessions_to_remind = Repo.find_sessions_to_remind
@@ -45,6 +47,25 @@ let find_all_to_swap_by_experiment database_label experiment_id =
            | Some _ -> sessions @ list)
         []
 ;;
+
+module Public = struct
+  include Public
+
+  let searchable_by = []
+  let sortable_by = [ column_date ]
+
+  let filterable_by =
+    Some Query.Filter.Condition.Human.[ Checkbox column_canceled; Checkbox column_closed ]
+  ;;
+
+  let default_filter =
+    let open Query in
+    let open Filter in
+    Condition.[ Checkbox (column_canceled, true); Checkbox (column_closed, true) ]
+  ;;
+
+  let default_query = Query.create ~sort:default_sort ~filter:default_filter ()
+end
 
 module Repo = struct
   let sql_select_columns = Repo.sql_select_columns

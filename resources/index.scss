@@ -659,3 +659,18 @@ input[type="checkbox"][readonly] {
     line-clamp: 6;
     -webkit-box-orient: vertical;
 }
+
+.panel-list {
+    &>.panel+.panel {
+        border-top: 0;
+    }
+}
+
+.panel {
+    background-color: c.$grey-lightest;
+    border: 1px solid c.$grey-border;
+}
+
+a.panel {
+    color: inherit;
+}

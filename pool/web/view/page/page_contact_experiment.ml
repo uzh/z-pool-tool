@@ -50,6 +50,15 @@ let experiment_detail_page experiment html =
     ]
 ;;
 
+let make_panel ~query_parameters url content =
+  a
+    ~a:
+      [ a_href (HttpUtils.externalize_path_with_params query_parameters url)
+      ; a_class [ "panel"; "flexrow"; "flex-gap"; "inset-sm" ]
+      ]
+    [ div ~a:[ a_class [ "grow" ] ] content; Component.Icon.(to_html ChevronForward) ]
+;;
+
 let index
       experiment_list
       online_studies
@@ -108,31 +117,22 @@ let index
     |> CCList.filter_map CCFun.id
     |> div ~a:[ a_class [ "stack" ] ]
   in
-  let experiment_link id =
-    div
-      [ a
-          ~a:
-            [ a_href
-                (HttpUtils.Url.Contact.experiment_path ~id ()
-                 |> HttpUtils.externalize_path_with_params query_parameters)
-            ]
-          [ Control.More |> Pool_common.Utils.control_to_string language |> txt ]
-      ]
-  in
-  let experiment_title exp =
-    div
-      ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
+  let experiment_item experiment =
+    let open Experiment in
+    let html =
       [ div
-          ~a:[ a_class [ "grow" ] ]
-          [ h4 ~a:[ a_class [ "word-wrap-break" ] ] [ strong [ exp |> experiment_title ] ]
+          ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
+          [ h4
+              ~a:[ a_class [ "word-wrap-break" ] ]
+              [ txt (experiment |> Public.public_title |> PublicTitle.value) ]
+          ; experiment_public_description experiment
           ]
-      ; exp |> Experiment.Public.id |> experiment_link
       ]
-  in
-  let experiment_item exp =
-    div
-      ~a:[ a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ] ]
-      [ experiment_title exp; experiment_public_description exp ]
+    in
+    make_panel
+      ~query_parameters
+      (HttpUtils.Url.Contact.experiment_path ~id:(Public.id experiment) ())
+      html
   in
   let open Pool_common.I18n in
   let experiment_html =
@@ -158,54 +158,28 @@ let index
       |> list_html i18n.experiment_history [ "striped" ]
   in
   let session_html =
-    let upcoming_session_list ((exp : Experiment.Public.t), parent, follow_ups) =
+    let upcoming_session { Session.Public.experiment_id; start; location; _ } =
       let open Session in
-      let thead = Field.[ Some Start; Some Location ] in
-      let session_item session =
+      let html =
         [ div
-            ((if CCOption.is_some session.Public.canceled_at
-              then
-                [ strong [ txt Pool_common.(Utils.text_to_string language I18n.Canceled) ]
-                ; br ()
-                ]
-              else [])
-             @ [ txt (Session.Public.start_end_with_duration_human session) ])
-        ; session.Public.location |> Component.Location.preview
+            ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
+            [ p [ txt (Start.value start |> Pool_model.Time.formatted_date_time) ]
+            ; p [ txt (location.Pool_location.name |> Pool_location.Name.value) ]
+            ]
         ]
       in
-      let sessions = parent :: follow_ups in
-      let row_formatter i =
-        let open CCOption in
-        i
-        |> CCList.nth_opt sessions
-        >>= fun s -> s.Session.Public.canceled_at >|= CCFun.const [ "bg-red-lighter" ]
-      in
-      let session_table =
-        sessions
-        |> CCList.map session_item
-        |> Component.Table.responsive_horizontal_table
-             `Striped
-             language
-             ~align_last_end:true
-             ~align_top:true
-             ~row_formatter
-             thead
-      in
-      div
-        ~a:[ a_class [ "flexcolumn"; "stack" ] ]
-        [ div
-            ~a:[ a_class [ "stack-sm" ] ]
-            [ experiment_title exp; experiment_public_description exp ]
-        ; session_table
-        ]
+      make_panel
+        ~query_parameters
+        (HttpUtils.Url.Contact.experiment_path ~id:experiment_id ())
+        html
     in
     let open Pool_common.I18n in
     upcoming_sessions
-    |> CCList.map upcoming_session_list
+    |> CCList.map upcoming_session
     |> list_html
          i18n.upcoming_sessions
          ~empty_msg:UpcomingSessionsListEmpty
-         [ "stack-lg" ]
+         [ "panel-list" ]
   in
   let waiting_list_html =
     match waiting_list with

@@ -88,6 +88,7 @@ val sexp_of_t : t -> Sexplib.Sexp.t
 val is_from_root : t -> bool
 val user_is_admin : user -> bool
 val get_admin_user : user -> (Admin.t, Pool_message.Error.t) result
+val get_contact_user : user -> (Contact.t, Pool_message.Error.t) result
 val get_user_id : user -> Pool_common.Id.t option
 
 module Utils : sig
