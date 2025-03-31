@@ -27,6 +27,35 @@ let select_from_experiments_sql ?(distinct = false) where_fragment =
   Format.asprintf "%s %s" select_from where_fragment
 ;;
 
+let select_upcoming_sql ?(count = false) where_fragment =
+  let select =
+    if count
+    then "COUNT(DISTINCT pool_experiments.id)"
+    else CCString.concat "," sql_select_columns |> Format.asprintf "DISTINCT %s"
+  in
+  Format.asprintf
+    {sql|
+      SELECT %s
+      FROM pool_experiments
+      INNER JOIN pool_sessions
+        ON pool_sessions.experiment_uuid = pool_experiments.uuid
+      LEFT OUTER JOIN pool_invitations
+        ON pool_invitations.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_experiments.uuid = pool_invitations.experiment_uuid
+      LEFT OUTER JOIN pool_waiting_list
+        ON pool_waiting_list.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_experiments.uuid = pool_waiting_list.experiment_uuid
+      LEFT OUTER JOIN pool_assignments
+        ON pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_assignments.session_uuid = pool_sessions.uuid
+        AND pool_assignments.marked_as_deleted = 0
+        AND pool_sessions.canceled_at IS NULL
+      %s
+    |sql}
+    select
+    where_fragment
+;;
+
 let pool_sessions_inner_join =
   {sql|
     INNER JOIN pool_sessions
@@ -77,6 +106,42 @@ let condition_participated = assignments_base_condition ~require_participated:tr
 
 let condition_is_invited =
   {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
+;;
+
+let upcoming_where experiment_type =
+  let onsite_session_exists =
+    {sql|
+      (pool_sessions.start > NOW()
+        AND
+      pool_sessions.canceled_at IS NULL)
+    |sql}
+  in
+  let timewindow_exists =
+    {sql|
+      (DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW()
+        AND
+      pool_sessions.canceled_at IS NULL)
+    |sql}
+  in
+  let experiment_type, session_condition =
+    let type_condition =
+      Format.asprintf {sql| pool_experiments.assignment_without_session = %s |sql}
+    in
+    (* TODO: Make sure started online studies are still visible *)
+    match experiment_type with
+    | `Online -> type_condition "1", timewindow_exists
+    | `OnSite -> type_condition "0", onsite_session_exists
+  in
+  let not_on_waitinglist = "pool_waiting_list.uuid IS NULL" in
+  let inivitation_exists = "pool_invitations.contact_uuid IS NOT NULL" in
+  Format.asprintf
+    "%s AND %s AND %s AND (%s OR %s) AND %s"
+    experiment_type
+    not_on_waitinglist
+    condition_registration_not_disabled
+    condition_allow_uninvited_signup
+    inivitation_exists
+    session_condition
 ;;
 
 let find_upcoming_to_register_request experiment_type () =
@@ -165,6 +230,31 @@ let find_upcoming_to_register pool contact experiment_type =
             |> CCOption.map_or ~default:Lwt.return_true (fun { query; _ } ->
               contact_matches_filter pool query contact))
   ||> CCList.map Entity.to_public
+;;
+
+let find_upcoming pool query contact experiment_type =
+  let query =
+    match query with
+    | `Dashboard limit ->
+      let open Query in
+      let pagination = Pagination.create ~limit ~page:0 () in
+      create ~pagination ()
+    | `Query query -> query
+  in
+  (* Join with waiting list, invitation and assignments tables *)
+  let dyn =
+    let open Contact in
+    let id = id contact in
+    Dynparam.(empty |> add Repo.Id.t id |> add Repo.Id.t id |> add Repo.Id.t id)
+  in
+  let where = upcoming_where experiment_type in
+  Query.collect_and_count
+    pool
+    (Some query)
+    ~select:select_upcoming_sql
+    ~dyn
+    ~where
+    Repo_entity.Public.t
 ;;
 
 let find_pending_waitinglists_by_contact_request =

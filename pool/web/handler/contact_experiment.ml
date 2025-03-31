@@ -5,21 +5,22 @@ let src = Logs.Src.create "handler.contact.assignment"
 let create_layout = Contact_general.create_layout
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
+let experiment_path = HttpUtils.Url.Contact.experiment_path
 
-let index req =
+let dashboard req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
   let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+       let%lwt upcoming_sessions =
+         Session.contact_dashboard_upcoming ~limit:2 database_label (Contact.id contact)
+       in
        let%lwt experiment_list =
-         Experiment.find_upcoming_to_register database_label contact `OnSite
+         Experiment.find_upcoming database_label (`Dashboard 2) contact `OnSite
        in
        let%lwt online_studies =
-         Experiment.find_upcoming_to_register database_label contact `Online
-       in
-       let%lwt upcoming_sessions =
-         Session.contact_dashboard_upcoming database_label (Contact.id contact)
+         Experiment.find_upcoming database_label (`Dashboard 2) contact `Online
        in
        let%lwt past_experiments =
          Experiment.find_past_experiments_by_contact database_label contact
@@ -62,6 +63,46 @@ let index req =
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
+
+let index_handler page_context req =
+  HttpUtils.Htmx.handler
+    ~error_path:(experiment_path ())
+    ~create_layout
+    ~query:(module Experiment.Public)
+    req
+  @@ fun ({ Pool_context.database_label; user; language; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
+  let%lwt experiments =
+    let context =
+      match page_context with
+      | `UpcomingOnsite -> `OnSite
+      | `UpcomingOnline -> `Online
+    in
+    Experiment.find_upcoming database_label (`Query query) contact context
+  in
+  let page_title () =
+    let label =
+      match page_context with
+      | `UpcomingOnsite -> I18n.Key.DashboardExperimentRegistration
+      | `UpcomingOnline -> I18n.Key.DashboardOnlineStudies
+    in
+    I18n.find_by_key database_label label language
+  in
+  let open Page.Contact.Experiment in
+  let page_context = (page_context :> experiment_list) in
+  let%lwt page =
+    match HttpUtils.Htmx.is_hx_request req with
+    | true -> list |> Lwt.return
+    | false ->
+      let%lwt title = page_title () in
+      experiment_list title |> Lwt.return
+  in
+  page page_context context experiments |> Lwt.return_ok
+;;
+
+let available_onsite = index_handler `UpcomingOnsite
+let available_online = index_handler `UpcomingOnline
 
 let show_online_study
       req

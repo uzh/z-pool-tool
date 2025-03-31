@@ -172,7 +172,9 @@ module Contact = struct
         let specific =
           [ get "" Experiment.show; get "start" Experiment.OnlineSurvey.redirect ]
         in
-        [ get "" Experiment.index
+        [ get "" Experiment.dashboard
+        ; get "available-onsite" Experiment.available_onsite
+        ; get "available-online" Experiment.available_online
         ; choose ~scope:Field.(Experiment |> url_key) specific
         ; choose ~scope:(build_scope "waiting-list") waiting_list
         ; choose ~scope:(build_scope "sessions") sessions

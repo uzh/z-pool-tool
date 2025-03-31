@@ -13,6 +13,22 @@ type dashboard_i18n =
   ; waiting_list : I18n.t
   }
 
+type experiment_list =
+  [ `Participated
+  | `UpcomingOnsite
+  | `UpcomingOnline
+  ]
+
+let experiment_list_url context =
+  let suffix =
+    match context with
+    | `UpcomingOnsite -> "available-onsite"
+    | `UpcomingOnline -> "available-online"
+    | `Participated -> "participated"
+  in
+  HttpUtils.Url.Contact.experiment_path ~suffix ()
+;;
+
 let experiment_public_description =
   let open Experiment in
   Public.description
@@ -69,6 +85,16 @@ let index
       i18n
       Pool_context.{ language; query_parameters; _ }
   =
+  let total_link_from_query url to_html { Query.pagination; _ } =
+    let open Query in
+    let open CCOption in
+    let total = pagination >|= fun { Pagination.item_count; _ } -> item_count in
+    match total with
+    | None -> []
+    | Some total ->
+      let html = [ to_html total ] in
+      [ make_panel ~query_parameters url html ]
+  in
   let list_html ?empty_msg ?note title classnames list =
     div
       [ h2
@@ -136,18 +162,49 @@ let index
   in
   let open Pool_common.I18n in
   let experiment_html =
-    experiment_list
-    |> CCList.map experiment_item
-    |> list_html
-         i18n.experiment_registration
-         ~note:ExperimentSessionsPublic
-         ~empty_msg:ExperimentListEmpty
-         [ "striped" ]
+    let experiments, query = experiment_list in
+    let total =
+      let make_link total =
+        strong
+          [ txt
+              Pool_common.(
+                Utils.control_to_string language Control.(AllAvailableExperiments total))
+          ]
+      in
+      total_link_from_query (experiment_list_url `UpcomingOnsite) make_link query
+    in
+    let panel =
+      let sessions = CCList.map experiment_item experiments in
+      list_html
+        i18n.experiment_registration
+        ~note:ExperimentSessionsPublic
+        ~empty_msg:ExperimentListEmpty
+        [ "panel-list" ]
+        (sessions @ total)
+    in
+    div [ panel ]
   in
   let online_studies_html =
-    online_studies
-    |> CCList.map experiment_item
-    |> list_html i18n.online_studies ~empty_msg:ExperimentOnlineListEmpty [ "striped" ]
+    let experiments, query = online_studies in
+    let total =
+      let make_link total =
+        strong
+          [ txt
+              Pool_common.(
+                Utils.control_to_string language Control.(AllAvailableExperiments total))
+          ]
+      in
+      total_link_from_query (experiment_list_url `UpcomingOnline) make_link query
+    in
+    let panel =
+      let sessions = CCList.map experiment_item experiments in
+      list_html
+        i18n.online_studies
+        ~empty_msg:ExperimentOnlineListEmpty
+        [ "panel-list" ]
+        (sessions @ total)
+    in
+    div [ panel ]
   in
   let past_experiments_html =
     match past_experiments with
@@ -175,24 +232,14 @@ let index
       in
       make_panel experiment_id html
     in
-    let open Pool_common.I18n in
     let sessions, query = upcoming_sessions in
     let total =
-      let open Query in
-      let open CCOption in
-      let total = query.pagination >|= fun { Pagination.item_count; _ } -> item_count in
-      match total with
-      | None -> []
-      | Some total ->
-        let html =
-          [ strong
-              [ txt
-                  Pool_common.(
-                    Utils.control_to_string language Control.(AllSessions total))
-              ]
+      let make_link total =
+        strong
+          [ txt Pool_common.(Utils.control_to_string language Control.(AllSessions total))
           ]
-        in
-        [ make_panel ~query_parameters (HttpUtils.Url.Contact.session_path ()) html ]
+      in
+      total_link_from_query (HttpUtils.Url.Contact.session_path ()) make_link query
     in
     let panel =
       let sessions = CCList.map upcoming_session sessions in
@@ -440,5 +487,55 @@ let online_study_completition (experiment : Experiment.Public.t) (_ : Pool_conte
         ~a:[ a_class [ "heading-1"; "has-gap"; "word-wrap-break" ] ]
         [ experiment |> experiment_title ]
     ; p [ txt "Thanks for participating" ]
+    ]
+;;
+
+let list (list_context : experiment_list) Pool_context.{ language; _ } (experiments, query)
+  =
+  let page_language = language in
+  let open Experiment in
+  let suffix =
+    match list_context with
+    | `UpcomingOnsite -> "available-onsite"
+    | `UpcomingOnline -> "available-online"
+    | `Participated -> "participated"
+  in
+  let url = Http_utils.Url.Contact.experiment_path ~suffix () |> Uri.of_string in
+  let data_table =
+    let open Public in
+    Component.DataTable.create_meta
+      ~search:searchable_by
+      ?filter:filterable_by
+      url
+      query
+      page_language
+  in
+  let th_class = [ "w-12" ] in
+  let cols = [ `column column_public_title; `empty ] in
+  (* TODO: Make sure this shows "title" *)
+  let row experiment =
+    [ txt (Public.public_title experiment |> PublicTitle.value), Some Field.Title
+    ; txt "btn", None (* TODO: Button *)
+    ]
+    |> CCList.map (fun (html, field) ->
+      let label = Component.Table.data_label_opt page_language field in
+      td ~a:label [ html ])
+    |> tr
+  in
+  Component.DataTable.make
+    ~break_mobile:true
+    ~th_class
+    ~target_id:"session-table"
+    ~cols
+    ~row
+    data_table
+    experiments
+;;
+
+let experiment_list title page_context context experiments =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt (I18n.content_to_string title) ]
+    ; list page_context context experiments
     ]
 ;;

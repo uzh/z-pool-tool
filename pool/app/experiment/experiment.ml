@@ -24,6 +24,7 @@ let find_all_ids_of_contact_id = Repo.find_all_ids_of_contact_id
 let find_public = Repo_public.find
 let find_full_by_contact = Repo_public.find_full_by_contact
 let find_upcoming_to_register = Repo_public.find_upcoming_to_register
+let find_upcoming = Repo_public.find_upcoming
 
 let find_pending_waitinglists_by_contact =
   Repo_public.find_pending_waitinglists_by_contact
@@ -73,6 +74,13 @@ module Public = struct
   include Public
 
   let contact_matches_filter = Repo.Public.contact_matches_filter
+
+  (* Make this set by default on upcoming list *)
+  let filterable_by = None
+  let searchable_by = Entity.[ column_public_title ]
+  let sortable_by = Entity.[ column_public_title ]
+  let default_sort = Entity.default_sort
+  let default_query = Query.create ~sort:default_sort ()
 end
 
 module InvitationReset = struct

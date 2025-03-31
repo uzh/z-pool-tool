@@ -951,11 +951,11 @@ let find_upcoming_public_by_contact pool contact_id =
   ||> CCResult.flatten_l
 ;;
 
-let contact_dashboard_upcoming pool contact_id =
+let contact_dashboard_upcoming pool ~limit contact_id =
   let open Utils.Lwt_result.Infix in
   let query =
     let open Query in
-    let pagination = Pagination.create ~limit:2 ~page:0 () in
+    let pagination = Pagination.create ~limit ~page:0 () in
     create ~pagination ()
   in
   let dyn = Dynparam.(empty |> add Contact.Repo.Id.t contact_id) in

@@ -292,6 +292,7 @@ val find_upcoming_public_by_contact
 
 val contact_dashboard_upcoming
   :  Database.Label.t
+  -> limit:int
   -> Contact.Repo.Id.t
   -> (Public.t list * Query.t) Lwt.t
 

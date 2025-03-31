@@ -6,6 +6,7 @@ type t =
   | Add of Field.t option
   | AddToWaitingList
   | AllSessions of int
+  | AllAvailableExperiments of int
   | Apply
   | Ascending
   | Assign of Field.t option
