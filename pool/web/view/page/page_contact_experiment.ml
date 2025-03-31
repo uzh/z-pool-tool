@@ -160,6 +160,11 @@ let index
   let session_html =
     let upcoming_session { Session.Public.experiment_id; start; location; _ } =
       let open Session in
+      let make_panel experiment_id =
+        make_panel
+          ~query_parameters
+          (HttpUtils.Url.Contact.experiment_path ~id:experiment_id ())
+      in
       let html =
         [ div
             ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
@@ -168,18 +173,36 @@ let index
             ]
         ]
       in
-      make_panel
-        ~query_parameters
-        (HttpUtils.Url.Contact.experiment_path ~id:experiment_id ())
-        html
+      make_panel experiment_id html
     in
     let open Pool_common.I18n in
-    upcoming_sessions
-    |> CCList.map upcoming_session
-    |> list_html
-         i18n.upcoming_sessions
-         ~empty_msg:UpcomingSessionsListEmpty
-         [ "panel-list" ]
+    let sessions, query = upcoming_sessions in
+    let total =
+      let open Query in
+      let open CCOption in
+      let total = query.pagination >|= fun { Pagination.item_count; _ } -> item_count in
+      match total with
+      | None -> []
+      | Some total ->
+        let html =
+          [ strong
+              [ txt
+                  Pool_common.(
+                    Utils.control_to_string language Control.(AllSessions total))
+              ]
+          ]
+        in
+        [ make_panel ~query_parameters (HttpUtils.Url.Contact.session_path ()) html ]
+    in
+    let panel =
+      let sessions = CCList.map upcoming_session sessions in
+      list_html
+        i18n.upcoming_sessions
+        ~empty_msg:UpcomingSessionsListEmpty
+        [ "panel-list" ]
+        (sessions @ total)
+    in
+    div [ panel ]
   in
   let waiting_list_html =
     match waiting_list with

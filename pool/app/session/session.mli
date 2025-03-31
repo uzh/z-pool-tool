@@ -293,7 +293,7 @@ val find_upcoming_public_by_contact
 val contact_dashboard_upcoming
   :  Database.Label.t
   -> Contact.Repo.Id.t
-  -> (Public.t list, Pool_message.Error.t) result Lwt.t
+  -> (Public.t list * Query.t) Lwt.t
 
 val query_by_contact
   :  ?query:Query.t

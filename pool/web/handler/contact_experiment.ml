@@ -18,7 +18,7 @@ let index req =
        let%lwt online_studies =
          Experiment.find_upcoming_to_register database_label contact `Online
        in
-       let* upcoming_sessions =
+       let%lwt upcoming_sessions =
          Session.contact_dashboard_upcoming database_label (Contact.id contact)
        in
        let%lwt past_experiments =
