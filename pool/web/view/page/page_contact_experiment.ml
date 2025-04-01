@@ -80,7 +80,6 @@ let index
       online_studies
       upcoming_sessions
       waiting_list
-      past_experiments
       custom_fields_ansered
       i18n
       Pool_context.{ language; query_parameters; _ }
@@ -207,12 +206,19 @@ let index
     div [ panel ]
   in
   let past_experiments_html =
-    match past_experiments with
-    | [] -> txt ""
-    | past_experiments ->
-      past_experiments
-      |> CCList.map experiment_item
-      |> list_html i18n.experiment_history [ "striped" ]
+    let url =
+      HttpUtils.(
+        Url.Contact.experiment_path ~suffix:"history" ()
+        |> externalize_path_with_params query_parameters)
+    in
+    list_html
+      i18n.experiment_history
+      []
+      [ a
+          ~a:[ a_href url ]
+          [ txt Pool_common.(Utils.hint_to_string language I18n.ContactExperimentHistory)
+          ]
+      ]
   in
   let session_html =
     let upcoming_session { Session.Public.experiment_id; start; location; _ } =
@@ -541,3 +547,63 @@ let experiment_list title page_context context experiments =
     ; list page_context context experiments
     ]
 ;;
+
+module History = struct
+  let list Pool_context.{ language; _ } (experiments, query) =
+    let page_language = language in
+    let open Experiment in
+    let open Component in
+    let url =
+      Http_utils.Url.Contact.experiment_path ~suffix:"history" () |> Uri.of_string
+    in
+    let data_table =
+      let open Public in
+      DataTable.create_meta
+        ~search:searchable_by
+        ?filter:filterable_by
+        url
+        query
+        page_language
+    in
+    let th_class = [ "w-12" ] in
+    let cols = [ `column Public.column_public_title; `empty ] in
+    let row (experiment, pending) =
+      let status =
+        match pending with
+        | false -> txt ""
+        | true -> span ~a:[ a_class [ "tag"; "primary"; "inline" ] ] [ txt "pending" ]
+      in
+      [ ( span
+            ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+            [ span [ txt (public_title experiment |> PublicTitle.value) ]; status ]
+        , Some Field.Title )
+      ; ( Input.link_as_button
+            ~icon:Icon.Eye
+            (HttpUtils.Url.Contact.experiment_path ~id:(id experiment) ())
+        , None )
+      ]
+      |> CCList.map (fun (html, field) ->
+        let label = Table.data_label_opt page_language field in
+        td ~a:label [ html ])
+      |> tr
+    in
+    DataTable.make
+      ~break_mobile:true
+      ~th_class
+      ~target_id:"experiment-history-table"
+      ~cols
+      ~row
+      data_table
+      experiments
+  ;;
+
+  let show title context experiments =
+    div
+      ~a:[ a_class [ "trim"; "safety-margin" ] ]
+      [ h1
+          ~a:[ a_class [ "heading-1"; "has-gap" ] ]
+          [ txt (I18n.content_to_string title) ]
+      ; list context experiments
+      ]
+  ;;
+end

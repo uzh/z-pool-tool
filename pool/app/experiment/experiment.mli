@@ -342,11 +342,6 @@ val find_pending_waitinglists_by_contact
   -> Contact.t
   -> Public.t list Lwt.t
 
-val find_past_experiments_by_contact
-  :  Database.Label.t
-  -> Contact.t
-  -> Public.t list Lwt.t
-
 val session_count : Database.Label.t -> Id.t -> int Lwt.t
 
 val search

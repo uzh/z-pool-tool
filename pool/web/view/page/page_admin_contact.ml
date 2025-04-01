@@ -384,7 +384,7 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
         div
           ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
           [ span [ text ]
-          ; span ~a:[ a_class [ "tag"; "primary"; "ghost"; "inline" ] ] [ txt "pending" ]
+          ; span ~a:[ a_class [ "tag"; "primary"; "inline" ] ] [ txt "pending" ]
           ]
     in
     [ title, Some Field.Title

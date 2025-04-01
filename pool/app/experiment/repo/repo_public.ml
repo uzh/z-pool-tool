@@ -311,19 +311,6 @@ let find_pending_waitinglists_by_contact pool contact =
   Database.collect pool find_pending_waitinglists_by_contact_request (Contact.id contact)
 ;;
 
-let find_past_experiments_by_contact pool contact =
-  let open Caqti_request.Infix in
-  let where, Dynparam.Pack (pt, pv), joins =
-    Repo.Sql.participation_history_where ~only_closed:true (Contact.id contact)
-  in
-  let request =
-    Format.asprintf "%s WHERE %s" joins where
-    |> select_from_experiments_sql ~distinct:true
-    |> pt ->! RepoEntity.Public.t
-  in
-  Database.collect pool request pv
-;;
-
 let where_contact_can_access =
   let id_fragment = "pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))" in
   let waiting_list_join =

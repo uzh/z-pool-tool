@@ -30,7 +30,6 @@ let find_pending_waitinglists_by_contact =
   Repo_public.find_pending_waitinglists_by_contact
 ;;
 
-let find_past_experiments_by_contact = Repo_public.find_past_experiments_by_contact
 let find_of_session = Repo.find_of_session
 let find_of_mailing = Repo.find_of_mailing
 let session_count = Repo.session_count
@@ -81,7 +80,7 @@ module Public = struct
 
   (* Make this set by default on upcoming list *)
   let filterable_by = None
-  let searchable_by = Entity.[ column_public_title ]
+  let searchable_by = [ column_public_title ]
   let sortable_by = Entity.[ column_public_title ]
   let default_sort = Entity.default_sort
   let default_query = Query.create ~sort:default_sort ()

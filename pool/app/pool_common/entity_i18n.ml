@@ -193,6 +193,7 @@ type hint =
   | ContactEnrollmentRegistrationDisabled
   | ContactEnterCellPhoneToken of string
   | ContactExperimentNotMatchingFilter
+  | ContactExperimentHistory
   | ContactInformationEmailHint
   | ContactLanguage
   | ContactNoCellPhone
