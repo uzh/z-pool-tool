@@ -2,8 +2,8 @@ type t =
   | Accept of Field.t option
   | Add of Field.t option
   | AddToWaitingList
-  | AllSessions of int
-  | AllAvailableExperiments of int
+  | AllSessions
+  | AllAvailableExperiments
   | Apply
   | Ascending
   | Assign of Field.t option

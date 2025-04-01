@@ -705,8 +705,8 @@ let control_to_string =
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
-  | AllSessions i -> Format.asprintf "Alle %i Sessions" i
-  | AllAvailableExperiments i -> Format.asprintf "Alle verfügbaren Experimente (%d)" i
+  | AllSessions -> "Alle Sessions"
+  | AllAvailableExperiments -> "Alle verfügbaren Experimente"
   | Ascending -> "aufsteigend"
   | Apply -> "anwenden"
   | Assign field -> format_submit "zuweisen" field

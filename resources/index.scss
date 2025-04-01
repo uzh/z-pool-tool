@@ -24,6 +24,10 @@ h1,
     word-wrap: break-word;
 }
 
+.font-size-xl {
+    font-size: 1.5rem;
+}
+
 // Experimental
 .btn {
     white-space: nowrap
@@ -667,8 +671,13 @@ input[type="checkbox"][readonly] {
 }
 
 .panel {
-    background-color: c.$grey-lightest;
     border: 1px solid c.$grey-border;
+
+    .counter {
+        font-size: 1.5rem;
+        font-weight: bold;
+        width: 1rem;
+    }
 }
 
 a.panel {

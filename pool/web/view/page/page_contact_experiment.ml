@@ -66,11 +66,11 @@ let experiment_detail_page experiment html =
     ]
 ;;
 
-let make_panel ~query_parameters url content =
+let make_panel ?(classnames = []) ~query_parameters url content =
   a
     ~a:
       [ a_href (HttpUtils.externalize_path_with_params query_parameters url)
-      ; a_class [ "panel"; "flexrow"; "flex-gap"; "inset-sm" ]
+      ; a_class ([ "panel"; "flexrow"; "flex-gap"; "inset-sm" ] @ classnames)
       ]
     [ div ~a:[ a_class [ "grow" ] ] content; Component.Icon.(to_html ChevronForward) ]
 ;;
@@ -84,15 +84,24 @@ let index
       i18n
       Pool_context.{ language; query_parameters; _ }
   =
-  let total_link_from_query url to_html { Query.pagination; _ } =
+  let total_link_from_query url text { Query.pagination; _ } =
     let open Query in
     let open CCOption in
-    let total = pagination >|= fun { Pagination.item_count; _ } -> item_count in
-    match total with
-    | None -> []
-    | Some total ->
-      let html = [ to_html total ] in
-      [ make_panel ~query_parameters url html ]
+    let make_total total =
+      match total with
+      | None -> txt ""
+      | Some total -> span ~a:[ a_class [ "counter" ] ] [ txt (string_of_int total) ]
+    in
+    let total =
+      pagination >|= (fun { Pagination.item_count; _ } -> item_count) |> make_total
+    in
+    let html =
+      [ span
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+          [ total; txt Pool_common.(Utils.control_to_string language text) ]
+      ]
+    in
+    make_panel ~classnames:[ "bg-grey-lightest" ] ~query_parameters url html
   in
   let list_html ?empty_msg ?note title classnames list =
     div
@@ -163,14 +172,10 @@ let index
   let experiment_html =
     let experiments, query = experiment_list in
     let total =
-      let make_link total =
-        strong
-          [ txt
-              Pool_common.(
-                Utils.control_to_string language Control.(AllAvailableExperiments total))
-          ]
-      in
-      total_link_from_query (experiment_list_url `UpcomingOnsite) make_link query
+      total_link_from_query
+        (experiment_list_url `UpcomingOnsite)
+        Control.AllAvailableExperiments
+        query
     in
     let panel =
       let sessions = CCList.map experiment_item experiments in
@@ -179,21 +184,17 @@ let index
         ~note:ExperimentSessionsPublic
         ~empty_msg:ExperimentListEmpty
         [ "panel-list" ]
-        (sessions @ total)
+        (sessions @ [ total ])
     in
     div [ panel ]
   in
   let online_studies_html =
     let experiments, query = online_studies in
     let total =
-      let make_link total =
-        strong
-          [ txt
-              Pool_common.(
-                Utils.control_to_string language Control.(AllAvailableExperiments total))
-          ]
-      in
-      total_link_from_query (experiment_list_url `UpcomingOnline) make_link query
+      total_link_from_query
+        (experiment_list_url `UpcomingOnline)
+        Control.AllAvailableExperiments
+        query
     in
     let panel =
       let sessions = CCList.map experiment_item experiments in
@@ -201,7 +202,7 @@ let index
         i18n.online_studies
         ~empty_msg:ExperimentOnlineListEmpty
         [ "panel-list" ]
-        (sessions @ total)
+        (sessions @ [ total ])
     in
     div [ panel ]
   in
@@ -240,12 +241,10 @@ let index
     in
     let sessions, query = upcoming_sessions in
     let total =
-      let make_link total =
-        strong
-          [ txt Pool_common.(Utils.control_to_string language Control.(AllSessions total))
-          ]
-      in
-      total_link_from_query (HttpUtils.Url.Contact.session_path ()) make_link query
+      total_link_from_query
+        (HttpUtils.Url.Contact.session_path ())
+        Control.AllSessions
+        query
     in
     let panel =
       let sessions = CCList.map upcoming_session sessions in
@@ -253,7 +252,7 @@ let index
         i18n.upcoming_sessions
         ~empty_msg:UpcomingSessionsListEmpty
         [ "panel-list" ]
-        (sessions @ total)
+        (sessions @ [ total ])
     in
     div [ panel ]
   in
