@@ -132,7 +132,10 @@ let list Pool_context.{ language; _ } (sessions, query) =
     ; ( txt (Pool_location.Name.value session.Public.location.Pool_location.name)
       , Some Field.Location )
     ; status session |> CCOption.value ~default:(txt ""), None
-    ; txt "btn", None (* TODO: Button *)
+    ; ( Component.Input.link_as_button
+          ~icon:Icon.Eye
+          (Http_utils.Url.Contact.experiment_path ~id:session.Public.experiment_id ())
+      , None )
     ]
     |> CCList.map (fun (html, field) ->
       let label = Component.Table.data_label_opt language field in

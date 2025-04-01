@@ -39,17 +39,13 @@ let select_upcoming_sql ?(count = false) where_fragment =
       FROM pool_experiments
       INNER JOIN pool_sessions
         ON pool_sessions.experiment_uuid = pool_experiments.uuid
+        AND pool_sessions.canceled_at IS NULL
       LEFT OUTER JOIN pool_invitations
         ON pool_invitations.contact_uuid = UNHEX(REPLACE(?, '-', ''))
         AND pool_experiments.uuid = pool_invitations.experiment_uuid
       LEFT OUTER JOIN pool_waiting_list
         ON pool_waiting_list.contact_uuid = UNHEX(REPLACE(?, '-', ''))
         AND pool_experiments.uuid = pool_waiting_list.experiment_uuid
-      LEFT OUTER JOIN pool_assignments
-        ON pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
-        AND pool_assignments.session_uuid = pool_sessions.uuid
-        AND pool_assignments.marked_as_deleted = 0
-        AND pool_sessions.canceled_at IS NULL
       %s
     |sql}
     select
@@ -123,7 +119,7 @@ let upcoming_where experiment_type =
       pool_sessions.canceled_at IS NULL)
     |sql}
   in
-  let experiment_type, session_condition =
+  let experiment_type_condition, session_condition =
     let type_condition =
       Format.asprintf {sql| pool_experiments.assignment_without_session = %s |sql}
     in
@@ -132,15 +128,38 @@ let upcoming_where experiment_type =
     | `Online -> type_condition "1", timewindow_exists
     | `OnSite -> type_condition "0", onsite_session_exists
   in
-  let not_on_waitinglist = "pool_waiting_list.uuid IS NULL" in
   let inivitation_exists = "pool_invitations.contact_uuid IS NOT NULL" in
+  let not_assigned =
+    let subquery =
+      {sql|
+        SELECT
+          1
+        FROM
+          pool_assignments
+          INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
+        WHERE
+          pool_sessions.experiment_uuid = pool_experiments.uuid
+          AND pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND pool_assignments.marked_as_deleted = 0
+          AND pool_sessions.canceled_at IS NULL
+      |sql}
+    in
+    match experiment_type with
+    | `OnSite -> Format.asprintf "NOT EXISTS (%s)" subquery
+    | `Online ->
+      Format.asprintf
+        "NOT EXISTS (%s AND pool_assignments.participated IS NOT NULL)"
+        subquery
+  in
+  let not_on_waitinglist = "pool_waiting_list.uuid IS NULL" in
   Format.asprintf
-    "%s AND %s AND %s AND (%s OR %s) AND %s"
-    experiment_type
-    not_on_waitinglist
-    condition_registration_not_disabled
-    condition_allow_uninvited_signup
+    "%s AND (%s OR %s) AND %s AND %s AND %s AND %s"
+    experiment_type_condition
     inivitation_exists
+    condition_allow_uninvited_signup
+    not_assigned
+    condition_registration_not_disabled
+    not_on_waitinglist
     session_condition
 ;;
 

@@ -225,6 +225,7 @@ module Public : sig
   val is_sessionless : t -> bool
   val update_direct_registration_disabled : t -> DirectRegistrationDisabled.t -> t
   val contact_matches_filter : Database.Label.t -> t -> Contact.t -> bool Lwt.t
+  val column_public_title : Query.Column.t
   val filterable_by : Query.Filter.human option
   val searchable_by : Query.Column.t list
   val sortable_by : Query.Column.t list

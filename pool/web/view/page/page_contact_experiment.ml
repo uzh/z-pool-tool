@@ -511,11 +511,13 @@ let list (list_context : experiment_list) Pool_context.{ language; _ } (experime
       page_language
   in
   let th_class = [ "w-12" ] in
-  let cols = [ `column column_public_title; `empty ] in
-  (* TODO: Make sure this shows "title" *)
+  let cols = [ `column Public.column_public_title; `empty ] in
   let row experiment =
     [ txt (Public.public_title experiment |> PublicTitle.value), Some Field.Title
-    ; txt "btn", None (* TODO: Button *)
+    ; ( Component.Input.link_as_button
+          ~icon:Icon.Eye
+          (HttpUtils.Url.Contact.experiment_path ~id:(Public.id experiment) ())
+      , None )
     ]
     |> CCList.map (fun (html, field) ->
       let label = Component.Table.data_label_opt page_language field in

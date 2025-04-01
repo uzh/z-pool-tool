@@ -411,10 +411,12 @@ module AvailableExperiments = struct
       |> CCList.map invitation
       |> Pool_event.handle_events database_label current_user
     in
-    let find_experiment experiment experiment_type =
-      let public = experiment |> Experiment.to_public in
-      Experiment.find_upcoming_to_register database_label contact experiment_type
-      ||> CCList.find_opt (Experiment.Public.equal public)
+    let find_experiment experiment exp_type =
+      let open Experiment in
+      let public = experiment |> to_public in
+      find_upcoming database_label (`Query Public.default_query) contact exp_type
+      ||> fst
+      ||> CCList.find_opt (Public.equal public)
       ||> CCOption.is_some
     in
     let%lwt res =
@@ -445,7 +447,8 @@ module AvailableExperiments = struct
     let%lwt experiment_not_available =
       (* Expect the experiment not to be found after registration for a session *)
       let open Experiment in
-      find_upcoming_to_register database_label contact `OnSite
+      find_upcoming database_label (`Query Public.default_query) contact `OnSite
+      ||> fst
       ||> CCList.find_opt (fun public -> Id.equal (Public.id public) experiment.id)
       ||> CCOption.is_none
     in
@@ -458,7 +461,7 @@ module AvailableExperiments = struct
       ||> CCOption.is_some
     in
     let res = experiment_not_available && upcoming_session_found in
-    let () = Alcotest.(check bool "succeeds" true res) in
+    let () = Alcotest.(check bool "excluded after registration" true res) in
     Lwt.return_unit
   ;;
 
@@ -477,7 +480,8 @@ module AvailableExperiments = struct
       (* Expect the experiment not to be found after session cancellation as there is no
          upcoming uncanceled session *)
       let open Experiment in
-      find_upcoming_to_register database_label contact `OnSite
+      find_upcoming database_label (`Query Public.default_query) contact `OnSite
+      ||> fst
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
@@ -517,7 +521,8 @@ module AvailableExperiments = struct
     let%lwt experiment_available =
       (* Expect the experiment not to be found after marking the assignment as deleted *)
       let open Experiment in
-      find_upcoming_to_register database_label contact `OnSite
+      find_upcoming database_label (`Query Public.default_query) contact `OnSite
+      ||> fst
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in

@@ -73,6 +73,10 @@ let invited_contacts_count = Repo_statistics.FilterStatistics.invited_contacts_c
 module Public = struct
   include Public
 
+  let column_public_title =
+    (Pool_message.Field.Title, "pool_experiments.public_title") |> Query.Column.create
+  ;;
+
   let contact_matches_filter = Repo.Public.contact_matches_filter
 
   (* Make this set by default on upcoming list *)
