@@ -121,11 +121,9 @@ module Make (C : Config) = struct
         Queue.declare
           ~durable:true
           ~arguments:
-            [ "x-queue-type", Amqp.Types.VLongstr "quorum"
-            ; Queue.dead_letter_exchange dlx_name
+            [ Queue.dead_letter_exchange dlx_name
             ; Queue.dead_letter_routing_key dlq_name
             ; Queue.message_ttl (1000 * 60 * 60 * 24) (* 24 hours *)
-            ; Queue.max_length 3
             ]
           channel
           queue_name)
@@ -259,18 +257,19 @@ module Make (C : Config) = struct
 
   let dispatch pool ~message_id ~payload =
     let open Utils.Lwt_result.Infix in
-    Logs.warn (fun m ->
-      m "Dispatching email to RabbitMQ [%s]: %s" (Database.Label.value pool) message_id);
-    Logs.warn (fun m -> m "Payload: %s" payload);
-    Logs.warn (fun m ->
-      m
-        "Instance [%s]: %s"
-        (Database.Label.value pool)
-        (QueueCache.find_opt pool
-         |> CCOption.map (fun _ -> "found")
-         |> CCOption.value ~default:"not found"));
     let queue = Queue.find_exn pool in
-    let message = Message.make ~message_id payload in
+    let message =
+      Message.make
+        ~headers:
+          [ "id", Amqp.Types.VLongstr message_id
+          ; ( "task"
+            , Amqp.Types.VLongstr
+                (Format.asprintf "pool_worker.send_email_%s" (Database.Label.value pool))
+            )
+          ]
+        ~message_id
+        payload
+    in
     with_connection (fun channel ->
       Amqp_client_lwt.Queue.publish channel queue message
       >|> function
