@@ -115,8 +115,7 @@ type t =
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t
   ; participant_count : ParticipantCount.t
-  ; (* TODO [aerben] make type for canceled_at? *)
-    closed_at : Ptime.t option
+  ; closed_at : Ptime.t option
   ; canceled_at : Ptime.t option
   ; experiment : Experiment.t
   ; created_at : Pool_common.CreatedAt.t
@@ -192,6 +191,7 @@ module Public : sig
   val get_session_end : t -> Ptime.t
   val start_end_with_duration_human : t -> string
   val is_past : t -> bool
+  val column_past : Query.Column.t
   val searchable_by : Query.Column.t list
   val sortable_by : Query.Column.t list
   val filterable_by : Query.Filter.human option
@@ -289,12 +289,6 @@ val find_upcoming_public_by_contact
   -> Contact.Id.t
   -> ((Experiment.Public.t * Public.t * Public.t list) list, Pool_message.Error.t) result
        Lwt.t
-
-val contact_dashboard_upcoming
-  :  Database.Label.t
-  -> limit:int
-  -> Contact.Repo.Id.t
-  -> (Public.t list * Query.t) Lwt.t
 
 val query_by_contact
   :  ?query:Query.t

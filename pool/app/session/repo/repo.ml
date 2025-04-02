@@ -951,39 +951,6 @@ let find_upcoming_public_by_contact pool contact_id =
   ||> CCResult.flatten_l
 ;;
 
-let contact_dashboard_upcoming pool ~limit contact_id =
-  let open Utils.Lwt_result.Infix in
-  let query =
-    let open Query in
-    let pagination = Pagination.create ~limit ~page:0 () in
-    create ~pagination ()
-  in
-  let dyn = Dynparam.(empty |> add Contact.Repo.Id.t contact_id) in
-  let where =
-    {sql|
-        pool_sessions.closed_at IS NULL
-        AND pool_sessions.start > NOW()
-        ORDER BY pool_sessions.start ASC
-      |sql}
-  in
-  Query.collect_and_count
-    pool
-    (Some query)
-    ~select:Sql.find_public_request_sql
-    ~dyn
-    ~where
-    Repo_entity.Public.t
-  >|> fun (sessions, query) ->
-  (* TODO: Get rid of location_to_public_repo_entity *)
-  let%lwt sessions =
-    sessions
-    |> Lwt_list.map_s (location_to_public_repo_entity pool)
-    ||> CCResult.flatten_l
-    ||> CCResult.get_exn
-  in
-  Lwt.return (sessions, query)
-;;
-
 let query_by_contact ?query pool contact =
   let open Utils.Lwt_result.Infix in
   let dyn = Dynparam.(empty |> add Contact.Repo.Id.t (Contact.id contact)) in

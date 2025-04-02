@@ -311,10 +311,6 @@ module Public = struct
     |> CCOption.get_exn_or "Session end not in range"
   ;;
 
-  let is_past session =
-    Ptime.is_later (get_session_end session) ~than:Ptime_clock.(now ()) |> not
-  ;;
-
   let not_past session =
     if
       Ptime.is_later
@@ -323,6 +319,8 @@ module Public = struct
     then Ok ()
     else Error Pool_message.Error.SessionInPast
   ;;
+
+  let is_past session = not_past session |> CCResult.is_error
 
   let not_canceled (session : t) =
     match session.canceled_at with

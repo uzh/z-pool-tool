@@ -676,7 +676,7 @@ input[type="checkbox"][readonly] {
     .counter {
         font-size: 1.5rem;
         font-weight: bold;
-        width: 1rem;
+        padding: 0 vars.$space-sm;
     }
 }
 

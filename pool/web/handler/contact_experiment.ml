@@ -14,7 +14,17 @@ let dashboard req =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt upcoming_sessions =
-         Session.contact_dashboard_upcoming ~limit:2 database_label (Contact.id contact)
+         let open Session in
+         let query =
+           let open Query in
+           let filter =
+             let open Filter in
+             Condition.[ Checkbox (Public.column_past, true) ]
+           in
+           let pagination = Pagination.create ~limit:2 ~page:0 () in
+           create ~pagination ~filter ()
+         in
+         query_by_contact ~query database_label contact
        in
        let%lwt experiment_list =
          Experiment.find_upcoming database_label (`Dashboard 2) contact `OnSite

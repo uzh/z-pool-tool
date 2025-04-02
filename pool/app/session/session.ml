@@ -15,7 +15,6 @@ let find_contact_is_assigned_by_experiment = Repo.find_contact_is_assigned_by_ex
 let find_public = Repo.find_public
 let find_public_by_assignment = Repo.find_public_by_assignment
 let find_upcoming_public_by_contact = Repo.find_upcoming_public_by_contact
-let contact_dashboard_upcoming = Repo.contact_dashboard_upcoming
 let query_by_contact = Repo.query_by_contact
 let find_by_assignment = Repo.find_by_assignment
 let find_experiment_id_and_title = Repo.find_experiment_id_and_title
@@ -51,17 +50,28 @@ let find_all_to_swap_by_experiment database_label experiment_id =
 module Public = struct
   include Public
 
+  let column_past =
+    Query.Column.create
+      ( Pool_message.Field.HidePast
+      , {sql|
+          (pool_sessions.closed_at IS NULL 
+          AND 
+          DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW())
+        |sql}
+      )
+  ;;
+
   let searchable_by = []
   let sortable_by = [ column_date ]
 
   let filterable_by =
-    Some Query.Filter.Condition.Human.[ Checkbox column_canceled; Checkbox column_closed ]
+    Some Query.Filter.Condition.Human.[ Checkbox column_canceled; Checkbox column_past ]
   ;;
 
   let default_filter =
     let open Query in
     let open Filter in
-    Condition.[ Checkbox (column_canceled, true); Checkbox (column_closed, true) ]
+    Condition.[ Checkbox (column_canceled, true); Checkbox (column_past, true) ]
   ;;
 
   let default_query = Query.create ~sort:default_sort ~filter:default_filter ()

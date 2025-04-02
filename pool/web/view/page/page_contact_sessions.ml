@@ -114,14 +114,12 @@ let list Pool_context.{ language; _ } (sessions, query) =
       ; `empty
       ]
   in
-  let status { Public.canceled_at; closed_at; _ } =
+  let status session =
     let open Component.Tag in
     let open Pool_common in
     let open CCOption in
     let create_chip style text = create_chip ~inline:true style text |> return in
-    [ is_some canceled_at, I18n.Canceled, `Error
-    ; is_some closed_at, I18n.Closed, `Success
-    ]
+    [ is_some session.Public.canceled_at, I18n.Canceled, `Error ]
     |> CCList.find_map (fun (check, text, style) ->
       match check with
       | true -> create_chip style (Utils.text_to_string language text)
