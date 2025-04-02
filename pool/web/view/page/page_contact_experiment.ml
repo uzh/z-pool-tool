@@ -263,7 +263,7 @@ let index
       let open Pool_common.I18n in
       list
       |> CCList.map experiment_item
-      |> list_html i18n.waiting_list ~empty_msg:ContactWaitingListEmpty [ "striped" ]
+      |> list_html i18n.waiting_list ~empty_msg:ContactWaitingListEmpty [ "panel-list" ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -275,9 +275,10 @@ let index
         [ notification
         ; div
             ~a:[ a_class [ "grid-col-2"; "grid-gap-lg"; "grid-row-gap-xl"; "gap-lg" ] ]
-            [ div ~a:[ a_class [ "stack-lg" ] ] [ session_html; waiting_list_html ]
+            [ session_html
             ; experiment_html
             ; online_studies_html
+            ; waiting_list_html
             ; past_experiments_html
             ]
         ]
