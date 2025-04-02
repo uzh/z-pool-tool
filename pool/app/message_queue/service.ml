@@ -258,8 +258,15 @@ module Make (C : Config) = struct
   let dispatch pool ~message_id ~payload =
     let open Utils.Lwt_result.Infix in
     let queue = Queue.find_exn pool in
+    let json_payload =
+      `List [ `List [ `String payload ]; `Assoc []; `Assoc [] ] |> Yojson.Safe.to_string
+    in
     let message =
       Message.make
+        ~correlation_id:message_id
+        ~content_type:"application/json"
+        ~content_encoding:"utf-8"
+        ~delivery_mode:2
         ~headers:
           [ "id", Amqp.Types.VLongstr message_id
           ; ( "task"
@@ -268,7 +275,7 @@ module Make (C : Config) = struct
             )
           ]
         ~message_id
-        payload
+        json_payload
     in
     with_connection (fun channel ->
       Amqp_client_lwt.Queue.publish channel queue message
