@@ -53,7 +53,7 @@ def make_celery():
 
         @celery.task(bind=True, name=task_name)
         def send_email_task(self, data):
-            return send_email(self, data, database=name)
+            send_email(self, data, database=name)
 
     celery.conf.update(
         task_serializer="json",

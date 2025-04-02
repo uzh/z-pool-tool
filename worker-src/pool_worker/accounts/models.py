@@ -111,6 +111,11 @@ class SMTPAccount(Base):
     protocol = Column(String, nullable=False)
     default_account = Column(Boolean, default=False)
 
+    @property
+    def use_starttls(self) -> bool:
+        """Return True if the protocol is STARTTLS."""
+        return self.protocol.upper() == "STARTTLS"
+
     def __setattr__(self, key, value):
         """Prevent setting attributes to make the model read-only."""
         if hasattr(self, key):

@@ -30,9 +30,19 @@ class Account:
         Establish an SMTP connection and update the last used timestamp.
         """
         if not self.connection:
+            logging.info(f"Connecting to {self.smtp_account.server} as {self.smtp_account.username}...")
             self.connection = smtplib.SMTP(self.smtp_account.server, self.smtp_account.port)
             if self.smtp_account.use_starttls:
-                self.connection.starttls()
+                try:
+                    self.connection.starttls()
+                except smtplib.SMTPNotSupportedError:
+                    if os.getenv("ENVIRONMENT") == "development":
+                        logging.warning(
+                            f"STARTTLS is not supported by the server {self.smtp_account.server}. "
+                            f"Skipping STARTTLS for development environment."
+                        )
+                    else:
+                        raise ValueError("STARTTLS is not supported by the server.")
 
             if self.smtp_account.mechanism == "PLAIN":
                 if self.smtp_account.username or self.smtp_account.password:
@@ -176,6 +186,12 @@ def load_account_by_something(tenant_name: str, account_label: str, where_clause
         accounts_cache[tenant_name].append(account)
 
     return account
+
+
+def find_default(tenant_name: str) -> Account | None:
+    accounts = list(filter(lambda acc: acc.smtp_account.default_account, accounts_cache[tenant_name]))
+
+    return accounts[0] if accounts else None
 
 
 def load_account_by_label(tenant_name: str, account_label: str) -> Account | None:

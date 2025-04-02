@@ -1,12 +1,12 @@
-import logging
+import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from pool_worker.accounts import find_by_username
+from pool_worker.accounts import find_by_username, find_default
 
 
-def send_email(self, data, database):
-    logging.warning(f"JOB: {data}")
+def send_email(self, json_data, database):
+    data = json.loads(json_data).get("email")
     sender = data["sender"]
     recipient = data["recipient"]
     subject = data["subject"]
@@ -29,9 +29,14 @@ def send_email(self, data, database):
 
     account = find_by_username(database, sender)
     if not account:
+        account = find_default(database)
+        if account:
+            msg["From"] = account.smtp_account.username
+
+    if not account:
         raise ValueError(f"Account not found for sender: {sender}")
 
-    with account.connection as connection:
+    with account as connection:
         connection.sendmail(sender, recipients, msg.as_string())
 
     return f"Email sent to {recipient} with subject '{subject}'"
