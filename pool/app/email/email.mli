@@ -199,6 +199,8 @@ module SmtpAuth : sig
 end
 
 module Service : sig
+  module Queue : Message_queue.Sig
+
   module Cache : sig
     val clear : unit -> unit
   end
@@ -226,6 +228,7 @@ module Service : sig
   module Job : sig
     type t
 
+    val yojson_of_t : t -> Yojson.Safe.t
     val email : t -> Sihl_email.t
     val smtp_auth_id : t -> SmtpAuth.Id.t option
     val encode : t -> string
@@ -260,6 +263,8 @@ module Service : sig
     -> (Pool_queue.Id.t * Job.t * string option * Pool_queue.job_ctx option) list
     -> unit Lwt.t
 
+  val start : unit -> unit Lwt.t
+  val stop : unit -> unit Lwt.t
   val lifecycle : Sihl.Container.lifecycle
   val register : unit -> Sihl.Container.Service.t
 

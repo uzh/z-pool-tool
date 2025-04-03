@@ -4,6 +4,7 @@ module DefaultData = Command_default_data
 module Mail = Command_mail
 module Matcher = Command_matcher
 module Migrate = Command_migrate
+module Queue = Command_queue
 module Seed = Command_seed
 module SessionReminder = Command_session_reminder
 module SystemEvent = Command_system_events
