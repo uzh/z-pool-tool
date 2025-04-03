@@ -406,7 +406,7 @@ let dispatch
   Logs.debug ~src (fun m -> m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
   let job = job |> Job.update ?new_email_address ?new_smtp_auth_id in
   let prepared_job = job |> Job.intercept_prepare_of_event in
-  let job_str = Job.encode prepared_job in
+  let job_str = Job.yojson_of_t prepared_job in
   let%lwt () =
     Queue.dispatch database_label ~message_id:(Pool_queue.Id.value id) ~payload:job_str
   in

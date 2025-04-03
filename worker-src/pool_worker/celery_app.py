@@ -52,8 +52,8 @@ def make_celery():
         task_routes[task_name] = {"queue": queue_name}
 
         @celery.task(bind=True, name=task_name)
-        def send_email_task(self, data):
-            send_email(self, data, database=name)
+        def send_email_task(self, **kwargs):
+            send_email(self, database=name, **kwargs)
 
     celery.conf.update(
         task_serializer="json",

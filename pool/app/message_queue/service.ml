@@ -14,7 +14,12 @@ module type Sig = sig
 
   val init : Database.Label.t list -> unit Lwt.t
   val close : unit -> unit Lwt.t
-  val dispatch : Database.Label.t -> message_id:string -> payload:string -> unit Lwt.t
+
+  val dispatch
+    :  Database.Label.t
+    -> message_id:string
+    -> payload:Yojson.Safe.t
+    -> unit Lwt.t
 end
 
 module Make (C : Config) = struct
@@ -259,7 +264,8 @@ module Make (C : Config) = struct
     let open Utils.Lwt_result.Infix in
     let queue = Queue.find_exn pool in
     let json_payload =
-      `List [ `List [ `String payload ]; `Assoc []; `Assoc [] ] |> Yojson.Safe.to_string
+      (* Payload for celery messages has to be a tuple of 3: (args, kwargs, embed) *)
+      `List [ `List []; payload; `Assoc [] ] |> Yojson.Safe.to_string
     in
     let message =
       Message.make

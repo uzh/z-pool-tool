@@ -228,6 +228,7 @@ module Service : sig
   module Job : sig
     type t
 
+    val yojson_of_t : t -> Yojson.Safe.t
     val email : t -> Sihl_email.t
     val smtp_auth_id : t -> SmtpAuth.Id.t option
     val encode : t -> string

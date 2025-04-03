@@ -60,7 +60,10 @@ class Account:
         Close the SMTP connection.
         """
         if self.connection:
-            self.connection.quit()
+            try:
+                self.connection.quit()
+            except Exception:
+                pass
             self.connection = None
             self.last_used = None
 
@@ -194,40 +197,20 @@ def find_default(tenant_name: str) -> Account | None:
     return accounts[0] if accounts else None
 
 
-def load_account_by_label(tenant_name: str, account_label: str) -> Account | None:
-    load_account_by_something(tenant_name, account_label, SMTPAccount.label == account_label)
+def load_account_by_uuid(tenant_name: str, account_uuid: str) -> Account | None:
+    load_account_by_something(tenant_name, account_uuid, SMTPAccount.uuid == account_uuid)
 
 
-def load_account_by_username(tenant_name: str, account_username: str) -> Account | None:
-    load_account_by_something(tenant_name, account_username, SMTPAccount.label == account_username)
-
-
-def find(tenant_name: str, account_label: str) -> Account | None:
-    """
-    Find an account by tenant name and account label.
-    """
-    if tenant_name not in accounts_cache:
-        return load_account_by_label(tenant_name, account_label)
-
-    for account in accounts_cache[tenant_name]:
-        if account.smtp_account.label == account_label:
-            return account
-
-    return None
-
-
-def find_by_username(tenant_name: str, username: str) -> Account | None:
+def find(tenant_name: str, uuid: str) -> Account | None:
     """
     Find an account by tenant name and username.
     """
-    if tenant_name not in accounts_cache:
-        return load_account_by_username(tenant_name, username)
+    account = filter(lambda acc: acc.smtp_account.uuid == uuid, accounts_cache[tenant_name])
 
-    for account in accounts_cache[tenant_name]:
-        if account.smtp_account.username == username:
-            return account
-
-    return None
+    if account:
+        return account[0]
+    else:
+        return load_account_by_uuid(tenant_name, uuid)
 
 
 def populate_accounts_cache() -> List[str]:

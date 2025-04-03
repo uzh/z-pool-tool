@@ -1,12 +1,14 @@
-import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from pool_worker.accounts import find_by_username, find_default
+from pool_worker.accounts import find, find_default
 
 
-def send_email(self, json_data, database):
-    data = json.loads(json_data).get("email")
+def send_email(self, database, **kwargs):
+    data = kwargs.get("email")
+    if not data:
+        raise KeyError("'email' kwarg is required")
+
     sender = data["sender"]
     recipient = data["recipient"]
     subject = data["subject"]
@@ -14,6 +16,7 @@ def send_email(self, json_data, database):
     html_content = data["html"]
     cc = data.get("cc", [])
     bcc = data.get("bcc", [])
+    reply_to = data.get("reply_to", sender)
 
     msg = MIMEMultipart("alternative")
     msg["From"] = sender
@@ -27,14 +30,17 @@ def send_email(self, json_data, database):
 
     recipients = [recipient] + cc + bcc
 
-    account = find_by_username(database, sender)
-    if not account:
+    smtp_auth_id = kwargs.get("smtp_auth_id")
+    if smtp_auth_id:
+        account = find(database, smtp_auth_id)
+    else:
         account = find_default(database)
-        if account:
-            msg["From"] = account.smtp_account.username
 
     if not account:
         raise ValueError(f"Account not found for sender: {sender}")
+
+    msg["Reply-To"] = reply_to
+    msg["From"] = account.smtp_account.username
 
     with account as connection:
         connection.sendmail(sender, recipients, msg.as_string())
