@@ -314,6 +314,22 @@ let archive { Entity.Instance.id; database_label; _ } =
          Connection.rollback ()))
 ;;
 
+let cancel_undeliverable_email_jobs_request =
+  [%string
+    {sql|
+      UPDATE %{sql_table `Current}
+      SET status = 'cancelled'
+      WHERE status = 'pending'
+        AND name = 'send_email'
+        AND last_error LIKE '%failed, Unexpected response 550%'
+    |sql}]
+  |> Caqti_type.(unit ->. unit)
+;;
+
+let cancel_undeliverable_email_jobs label =
+  Database.exec label cancel_undeliverable_email_jobs_request ()
+;;
+
 let find_archivable_request =
   [%string
     {sql|
