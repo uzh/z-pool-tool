@@ -241,6 +241,7 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
 let start () =
   let tags = Database.Logger.Tags.create Database.Pool.Root.label in
   let archive_and_reset database_label =
+    let%lwt () = Repo.cancel_undeliverable_email_jobs database_label in
     let%lwt () = Repo.archive_all_processed database_label in
     Repo.reset_pending_jobs database_label
   in
