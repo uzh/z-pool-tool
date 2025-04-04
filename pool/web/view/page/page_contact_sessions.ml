@@ -104,11 +104,12 @@ let list Pool_context.{ language; _ } (sessions, query) =
       query
       language
   in
-  let th_class = [ "w-4"; "w-4"; "w-4" ] in
+  let th_class = [ "w-4"; "w-3"; "w-3"; "w-2" ] in
   let cols =
     let field = Pool_common.Utils.field_to_string language in
     Session.
       [ `column column_date
+      ; `column Public.column_experiment_title
       ; `custom (txt (field Pool_message.Field.Location))
       ; `custom (txt (field Pool_message.Field.Status))
       ; `empty
@@ -127,6 +128,8 @@ let list Pool_context.{ language; _ } (sessions, query) =
   in
   let row session =
     [ txt (Public.start_end_with_duration_human session), Some Field.Start
+    ; ( txt (Experiment.PublicTitle.value session.Public.experiment_title)
+      , Some Field.Experiment )
     ; ( txt (Pool_location.Name.value session.Public.location.Pool_location.name)
       , Some Field.Location )
     ; status session |> CCOption.value ~default:(txt ""), None

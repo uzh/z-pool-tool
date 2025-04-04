@@ -292,6 +292,7 @@ module Public = struct
   type t =
     { id : Id.t
     ; experiment_id : Experiment.Id.t
+    ; experiment_title : Experiment.PublicTitle.t
     ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : PtimeSpan.t
@@ -412,6 +413,7 @@ let to_public
   Public.
     { id
     ; experiment_id = experiment.Experiment.id
+    ; experiment_title = experiment.Experiment.public_title
     ; follow_up_to
     ; start
     ; duration

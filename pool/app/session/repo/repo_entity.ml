@@ -324,6 +324,7 @@ module Public = struct
   type t =
     { id : Entity.Id.t
     ; experiment_id : Experiment.Id.t
+    ; experiment_title : Experiment.PublicTitle.t
     ; follow_up_to : Entity.Id.t option
     ; start : Entity.Start.t
     ; duration : PtimeSpan.t
@@ -341,6 +342,7 @@ module Public = struct
   let of_entity (m : Entity.Public.t) : t =
     { id = m.Entity.Public.id
     ; experiment_id = m.Entity.Public.experiment_id
+    ; experiment_title = m.Entity.Public.experiment_title
     ; follow_up_to = m.Entity.Public.follow_up_to
     ; start = m.Entity.Public.start
     ; duration = m.Entity.Public.duration
@@ -359,6 +361,7 @@ module Public = struct
     Entity.Public.
       { id = m.id
       ; experiment_id = m.experiment_id
+      ; experiment_title = m.experiment_title
       ; follow_up_to = m.follow_up_to
       ; start = m.start
       ; duration = m.duration
@@ -378,32 +381,36 @@ module Public = struct
       Ok
         ( m.id
         , ( m.experiment_id
-          , ( m.follow_up_to
-            , ( m.start
-              , ( m.duration
-                , ( m.description
-                  , ( m.location_id
-                    , ( m.max_participants
-                      , ( m.min_participants
-                        , (m.overbook, (m.assignment_count, (m.canceled_at, m.closed_at)))
-                        ) ) ) ) ) ) ) ) )
+          , ( m.experiment_title
+            , ( m.follow_up_to
+              , ( m.start
+                , ( m.duration
+                  , ( m.description
+                    , ( m.location_id
+                      , ( m.max_participants
+                        , ( m.min_participants
+                          , ( m.overbook
+                            , (m.assignment_count, (m.canceled_at, m.closed_at)) ) ) ) )
+                    ) ) ) ) ) ) )
     in
     let decode
           ( id
           , ( experiment_id
-            , ( follow_up_to
-              , ( start
-                , ( duration
-                  , ( description
-                    , ( location_id
-                      , ( max_participants
-                        , ( min_participants
-                          , (overbook, (assignment_count, (canceled_at, closed_at))) ) )
-                      ) ) ) ) ) ) )
+            , ( experiment_title
+              , ( follow_up_to
+                , ( start
+                  , ( duration
+                    , ( description
+                      , ( location_id
+                        , ( max_participants
+                          , ( min_participants
+                            , (overbook, (assignment_count, (canceled_at, closed_at))) )
+                          ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
         ; experiment_id
+        ; experiment_title
         ; follow_up_to
         ; start
         ; duration
@@ -426,20 +433,22 @@ module Public = struct
            (t2
               ExperimentRepo.Id.t
               (t2
-                 (option RepoId.t)
+                 ExperimentRepo.PublicTitle.t
                  (t2
-                    Start.t
+                    (option RepoId.t)
                     (t2
-                       Duration.t
+                       Start.t
                        (t2
-                          (option string)
+                          Duration.t
                           (t2
-                             Pool_location.Repo.Id.t
+                             (option string)
                              (t2
-                                int
+                                Pool_location.Repo.Id.t
                                 (t2
                                    int
-                                   (t2 int (t2 int (t2 (option ptime) (option ptime))))))))))))))
+                                   (t2
+                                      int
+                                      (t2 int (t2 int (t2 (option ptime) (option ptime)))))))))))))))
   ;;
 end
 

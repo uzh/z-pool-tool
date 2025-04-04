@@ -169,6 +169,7 @@ module Public : sig
   type t =
     { id : Id.t
     ; experiment_id : Experiment.Id.t
+    ; experiment_title : Experiment.PublicTitle.t
     ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : Duration.t
@@ -191,6 +192,7 @@ module Public : sig
   val get_session_end : t -> Ptime.t
   val start_end_with_duration_human : t -> string
   val is_past : t -> bool
+  val column_experiment_title : Query.Column.t
   val column_past : Query.Column.t
   val searchable_by : Query.Column.t list
   val sortable_by : Query.Column.t list

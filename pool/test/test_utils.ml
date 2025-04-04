@@ -424,6 +424,7 @@ module Model = struct
     Session.Public.
       { id
       ; experiment_id = experiment.Experiment.id
+      ; experiment_title = experiment.Experiment.public_title
       ; follow_up_to
       ; start
       ; duration
@@ -458,6 +459,7 @@ module Model = struct
     Session.Public.
       { id
       ; experiment_id = experiment.Experiment.id
+      ; experiment_title = experiment.Experiment.public_title
       ; follow_up_to
       ; start
       ; duration

@@ -33,6 +33,7 @@ let sql_select_columns =
 let sql_public_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_sessions.uuid"
   ; Entity.Id.sql_select_fragment ~field:"pool_sessions.experiment_uuid"
+  ; "pool_experiments.public_title"
   ; Entity.Id.sql_select_fragment ~field:"pool_sessions.follow_up_to"
   ; "pool_sessions.start"
   ; "pool_sessions.duration"

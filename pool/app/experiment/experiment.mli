@@ -442,6 +442,7 @@ module Repo : sig
   module Entity : sig
     module Id : Pool_model.Base.CaqtiSig with type t = Id.t
     module Title : Pool_model.Base.CaqtiSig with type t = Title.t
+    module PublicTitle : Pool_model.Base.CaqtiSig with type t = PublicTitle.t
 
     val t : t Caqti_type.t
   end

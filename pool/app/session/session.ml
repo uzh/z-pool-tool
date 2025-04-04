@@ -61,7 +61,12 @@ module Public = struct
       )
   ;;
 
-  let searchable_by = [ Experiment.column_public_title ]
+  let column_experiment_title =
+    (Pool_message.Field.Experiment, "pool_experiments.public_title")
+    |> Query.Column.create
+  ;;
+
+  let searchable_by = [ column_experiment_title ]
   let sortable_by = [ column_date ]
 
   let filterable_by =
