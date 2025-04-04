@@ -17,10 +17,10 @@ module Data = struct
     open Ptime_clock
     open Test_utils
 
-    let in_an_hour = add_span (now ()) Model.hour |> exn_opt
-    let in_two_hours = add_span (now ()) Model.two_hours |> exn_opt
-    let an_hour_ago = sub_span (now ()) Model.hour |> exn_opt
-    let two_hours_ago = sub_span (now ()) Model.two_hours |> exn_opt
+    let in_an_hour = add_span (now ()) Time.hour |> exn_opt
+    let in_two_hours = add_span (now ()) Time.two_hours |> exn_opt
+    let an_hour_ago = sub_span (now ()) Time.hour |> exn_opt
+    let two_hours_ago = sub_span (now ()) Time.two_hours |> exn_opt
   end
 
   let start_at = StartAt.create Time.in_an_hour
@@ -77,7 +77,7 @@ let create () =
   let updates =
     let open Ptime in
     [ ( CCString.equal Field.(show Start)
-      , add_span (Data.start_at |> StartAt.value) Test_utils.Model.two_hours
+      , add_span (Data.start_at |> StartAt.value) Test_utils.Time.two_hours
         |> CCOption.get_exn_or "invalid time"
         |> to_rfc3339 )
     ]

@@ -936,19 +936,21 @@ let find_open pool session_id =
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title
 
-(* TODO: Remove *)
-let find_upcoming_public_by_contact pool contact_id =
+let has_upcoming_sessions pool contact_id =
+  let open Caqti_request.Infix in
   let open Utils.Lwt_result.Infix in
-  let open Entity.Public in
-  Sql.find_public_upcoming_by_contact pool contact_id
-  >|> Lwt_list.map_s (location_to_public_repo_entity pool)
-  ||> CCResult.flatten_l
-  >|+ group_and_sort_keep_followups
-  >>= fun lst ->
-  lst
-  |> Lwt_list.map_s (fun (parent, follow_ups) ->
-    Sql.find_public_experiment pool parent.id >|+ fun exp -> exp, parent, follow_ups)
-  ||> CCResult.flatten_l
+  let dyn = Dynparam.(empty |> add Contact.Repo.Id.t contact_id) in
+  let where =
+    {|
+      WHERE pool_sessions.closed_at IS NULL
+      AND pool_sessions.canceled_at IS NULL
+      AND pool_sessions.start > NOW()
+      LIMIT 1
+  |}
+  in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let request = Sql.find_public_request_sql where |> pt ->* RepoEntity.Public.t in
+  Database.collect pool request pv ||> CCList.is_empty ||> not
 ;;
 
 let query_by_contact ?query pool contact =

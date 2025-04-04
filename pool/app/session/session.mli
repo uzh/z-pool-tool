@@ -284,17 +284,13 @@ val find_public_by_assignment
   -> Pool_common.Id.t
   -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
-val find_upcoming_public_by_contact
-  :  Database.Label.t
-  -> Contact.Id.t
-  -> ((Experiment.Public.t * Public.t * Public.t list) list, Pool_message.Error.t) result
-       Lwt.t
-
 val query_by_contact
   :  ?query:Query.t
   -> Database.Label.t
   -> Contact.t
   -> (Public.t list * Query.t) Lwt.t
+
+val has_upcoming_sessions : Database.Label.t -> Contact.Id.t -> bool Lwt.t
 
 val find_by_assignment
   :  Database.Label.t

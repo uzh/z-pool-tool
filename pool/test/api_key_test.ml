@@ -64,7 +64,7 @@ let update () =
 let get_current _ () =
   let open Api_key in
   let testable_key = Alcotest.(option Test_utils.api_key) in
-  let hour = Ptime.Span.of_int_s 3600 in
+  let hour = Test_utils.Time.hour in
   let create_api_key token expires_at =
     let api_key = Model.create_api_key ~id:(Id.create ()) ~token ~expires_at () in
     let%lwt () = Created api_key |> handle_event database_label in

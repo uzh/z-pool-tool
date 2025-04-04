@@ -397,7 +397,7 @@ module AvailableExperiments = struct
       TimeWindowRepo.create
         ~id:time_window_id
         (an_hour_ago ())
-        (Session.Duration.create two_hours |> get_exn)
+        (Session.Duration.create Test_utils.Time.two_hours |> get_exn)
         online_experiment
         ()
     in
@@ -454,9 +454,9 @@ module AvailableExperiments = struct
     in
     let%lwt upcoming_session_found =
       (* Expect the session to be listed among the upcoming sessions *)
-      Session.find_upcoming_public_by_contact database_label (Contact.id contact)
-      ||> get_exn
-      ||> CCList.find_opt (fun (_, upcoming, _) ->
+      Session.query_by_contact database_label contact
+      ||> fst
+      ||> CCList.find_opt (fun upcoming ->
         Session.(Id.equal upcoming.Public.id session.id))
       ||> CCOption.is_some
     in
@@ -490,9 +490,9 @@ module AvailableExperiments = struct
     let%lwt upcoming_session_found =
       (* Expect the session to be listed among the upcoming sessions, but to be marked as
          canceled *)
-      Session.find_upcoming_public_by_contact database_label (Contact.id contact)
-      ||> get_exn
-      ||> CCList.find_opt (fun (_, upcoming, _) ->
+      Session.query_by_contact database_label contact
+      ||> fst
+      ||> CCList.find_opt (fun upcoming ->
         Session.(
           Id.equal upcoming.Public.id session.id
           && CCOption.is_some upcoming.Public.canceled_at))
@@ -528,9 +528,9 @@ module AvailableExperiments = struct
     in
     let%lwt upcoming_session_not_found =
       (* Expect the session not to be listed, as the assignments are marked as deleted *)
-      Session.find_upcoming_public_by_contact database_label (Contact.id contact)
-      ||> get_exn
-      ||> CCList.find_opt (fun (_, upcoming, _) ->
+      Session.query_by_contact database_label contact
+      ||> fst
+      ||> CCList.find_opt (fun upcoming ->
         Session.(Id.equal upcoming.Public.id session.id))
       ||> CCOption.is_none
     in
