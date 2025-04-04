@@ -222,22 +222,37 @@ let index
       ]
   in
   let session_html =
-    let upcoming_session { Session.Public.experiment_id; start; location; _ } =
+    let upcoming_session { Session.Public.experiment_id; start; location; canceled_at; _ }
+      =
       let open Session in
-      let make_panel experiment_id =
-        make_panel
-          ~query_parameters
-          (HttpUtils.Url.Contact.experiment_path ~id:experiment_id ())
+      let classnames, tags =
+        match canceled_at with
+        | None -> [], []
+        | Some _ ->
+          let tag =
+            Component.Tag.create_chip
+              ~inline:true
+              `Error
+              Pool_common.(Utils.text_to_string language I18n.Canceled)
+          in
+          [ "bg-red-lighter" ], [ tag ]
       in
       let html =
         [ div
             ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
-            [ p [ txt (Start.value start |> Pool_model.Time.formatted_date_time) ]
+            [ p
+                ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+                (span [ txt (Start.value start |> Pool_model.Time.formatted_date_time) ]
+                 :: tags)
             ; p [ txt (location.Pool_location.name |> Pool_location.Name.value) ]
             ]
         ]
       in
-      make_panel experiment_id html
+      make_panel
+        ~classnames
+        ~query_parameters
+        (HttpUtils.Url.Contact.experiment_path ~id:experiment_id ())
+        html
     in
     let sessions, query = upcoming_sessions in
     let total =
