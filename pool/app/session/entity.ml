@@ -291,6 +291,8 @@ let group_and_sort sessions =
 module Public = struct
   type t =
     { id : Id.t
+    ; experiment_id : Experiment.Id.t
+    ; experiment_title : Experiment.PublicTitle.t
     ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : PtimeSpan.t
@@ -301,6 +303,7 @@ module Public = struct
     ; overbook : ParticipantAmount.t
     ; assignment_count : AssignmentCount.t
     ; canceled_at : Ptime.t option
+    ; closed_at : Ptime.t option
     }
   [@@deriving eq, show]
 
@@ -317,6 +320,8 @@ module Public = struct
     then Ok ()
     else Error Pool_message.Error.SessionInPast
   ;;
+
+  let is_past session = not_past session |> CCResult.is_error
 
   let not_canceled (session : t) =
     match session.canceled_at with
@@ -389,6 +394,7 @@ end
 
 let to_public
       ({ id
+       ; experiment
        ; follow_up_to
        ; start
        ; duration
@@ -399,12 +405,15 @@ let to_public
        ; overbook
        ; assignment_count
        ; canceled_at
+       ; closed_at
        ; _
        } :
         t)
   =
   Public.
     { id
+    ; experiment_id = experiment.Experiment.id
+    ; experiment_title = experiment.Experiment.public_title
     ; follow_up_to
     ; start
     ; duration
@@ -415,6 +424,7 @@ let to_public
     ; overbook
     ; assignment_count
     ; canceled_at
+    ; closed_at
     }
 ;;
 

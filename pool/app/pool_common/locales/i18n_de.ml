@@ -299,6 +299,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
       cell_phone
   | ContactExperimentNotMatchingFilter ->
     "Sie erfüllen die Bedingungen zur Teilnahme an diesem Experiment nicht mehr."
+  | ContactExperimentHistory -> "Alle Experimente, an denen Sie teilgenommen haben."
   | ContactInformationEmailHint ->
     "Um Ihre E-Mail-Adresse anzupassen, folgen Sie bitte folgendem Link."
   | ContactLanguage ->

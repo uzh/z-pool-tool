@@ -13,6 +13,11 @@ let get_admin_user = function
   | Admin admin -> Ok admin
 ;;
 
+let get_contact_user = function
+  | Guest | Admin _ -> Error Pool_message.(Error.NotFound Field.Contact)
+  | Contact contact -> Ok contact
+;;
+
 let get_user_id = function
   | Guest -> None
   | Contact contact -> Some (Contact.id contact |> Contact.Id.to_common)

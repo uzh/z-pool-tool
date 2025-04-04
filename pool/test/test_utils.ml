@@ -99,6 +99,19 @@ let dummy_to_file (dummy : Seed.Assets.file) =
     }
 ;;
 
+module Time = struct
+  open Ptime
+  open Ptime_clock
+  open CCOption
+
+  let hour = Ptime.Span.of_int_s @@ (60 * 60)
+  let two_hours = Ptime.Span.of_int_s @@ (60 * 60 * 2)
+  let in_an_hour () = add_span (now ()) hour |> get_exn_or "Invalid timespan"
+  let in_two_hours () = add_span (now ()) two_hours |> get_exn_or "Invalid timespan"
+  let an_hour_ago () = sub_span (now ()) hour |> get_exn_or "Invalid timespan"
+  let two_hours_ago () = sub_span (now ()) two_hours |> get_exn_or "Invalid timespan"
+end
+
 module Model = struct
   let create_announcement
         ?id
@@ -337,15 +350,7 @@ module Model = struct
     |> Text_message.create_job ?message_template ?job_ctx
   ;;
 
-  let hour = Ptime.Span.of_int_s @@ (60 * 60)
-  let two_hours = Ptime.Span.of_int_s @@ (60 * 60 * 2)
-
-  let an_hour_ago () =
-    let hour = Ptime.Span.of_int_s @@ (60 * 60) in
-    Ptime.sub_span (Ptime_clock.now ()) hour
-    |> CCOption.get_exn_or "Invalid start"
-    |> Session.Start.create
-  ;;
+  let an_hour_ago () = Time.an_hour_ago () |> Session.Start.create
 
   let session_start_in timespan =
     timespan
@@ -354,13 +359,14 @@ module Model = struct
     |> Session.Start.create
   ;;
 
-  let in_an_hour () = Ptime.Span.of_int_s @@ (60 * 60) |> session_start_in
-  let in_two_hours () = Ptime.Span.of_int_s @@ (60 * 60 * 2) |> session_start_in
+  let in_an_hour () = Time.hour |> session_start_in
+  let in_two_hours () = Time.two_hours |> session_start_in
+  let two_hours_ago () = Time.two_hours_ago () |> Session.Start.create
 
   let create_session
         ?(id = Session.Id.create ())
         ?(location = create_location ())
-        ?(duration = Session.Duration.create hour |> get_or_failwith)
+        ?(duration = Session.Duration.create Time.hour |> get_or_failwith)
         ?follow_up_to
         ?start
         ?email_reminder_sent_at
@@ -383,7 +389,7 @@ module Model = struct
 
   let create_timewindow
         ?(id = Session.Id.create ())
-        ?(duration = Session.Duration.create hour |> get_or_failwith)
+        ?(duration = Session.Duration.create Time.hour |> get_or_failwith)
         ?start
         ?(experiment = create_experiment ())
         ()
@@ -398,6 +404,7 @@ module Model = struct
   let create_public_session ?start () =
     let Session.
           { id
+          ; experiment
           ; follow_up_to
           ; start
           ; duration
@@ -408,6 +415,7 @@ module Model = struct
           ; overbook
           ; assignment_count
           ; canceled_at
+          ; closed_at
           ; _
           }
       =
@@ -415,6 +423,8 @@ module Model = struct
     in
     Session.Public.
       { id
+      ; experiment_id = experiment.Experiment.id
+      ; experiment_title = experiment.Experiment.public_title
       ; follow_up_to
       ; start
       ; duration
@@ -425,11 +435,13 @@ module Model = struct
       ; overbook
       ; assignment_count
       ; canceled_at
+      ; closed_at
       }
   ;;
 
   let session_to_public_session
         { Session.id
+        ; experiment
         ; follow_up_to
         ; start
         ; duration
@@ -440,11 +452,14 @@ module Model = struct
         ; overbook
         ; assignment_count
         ; canceled_at
+        ; closed_at
         ; _
         }
     =
     Session.Public.
       { id
+      ; experiment_id = experiment.Experiment.id
+      ; experiment_title = experiment.Experiment.public_title
       ; follow_up_to
       ; start
       ; duration
@@ -455,6 +470,7 @@ module Model = struct
       ; overbook
       ; assignment_count
       ; canceled_at
+      ; closed_at
       }
   ;;
 

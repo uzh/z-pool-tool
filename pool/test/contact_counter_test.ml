@@ -134,7 +134,7 @@ let initialize_online_survey contact_id experiment_id time_window_id () =
     TimeWindowRepo.create
       ~id:time_window_id
       (Model.in_an_hour ())
-      (Session.Duration.create Model.hour |> get_exn)
+      (Session.Duration.create Time.hour |> get_exn)
       experiment
       ()
   in

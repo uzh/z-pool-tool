@@ -679,6 +679,8 @@ let control_to_string =
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
+  | AllSessions -> "All sessions"
+  | AllAvailableExperiments -> "All available experiments"
   | Ascending -> format_submit "ascending" None
   | Apply -> "apply"
   | Assign field -> format_submit "assign" field

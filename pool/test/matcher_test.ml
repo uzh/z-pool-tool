@@ -386,7 +386,7 @@ let create_invitations_for_online_experiment _ () =
   in
   (* No time window *)
   let%lwt () = run_test `Empty "no time window exists" in
-  let duration = Session.Duration.create Model.two_hours |> get_or_failwith in
+  let duration = Session.Duration.create Test_utils.Time.two_hours |> get_or_failwith in
   (* Future time window *)
   let%lwt upcoming =
     let start = Model.in_two_hours () in

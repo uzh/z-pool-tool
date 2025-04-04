@@ -24,12 +24,12 @@ let find_all_ids_of_contact_id = Repo.find_all_ids_of_contact_id
 let find_public = Repo_public.find
 let find_full_by_contact = Repo_public.find_full_by_contact
 let find_upcoming_to_register = Repo_public.find_upcoming_to_register
+let find_upcoming = Repo_public.find_upcoming
 
 let find_pending_waitinglists_by_contact =
   Repo_public.find_pending_waitinglists_by_contact
 ;;
 
-let find_past_experiments_by_contact = Repo_public.find_past_experiments_by_contact
 let find_of_session = Repo.find_of_session
 let find_of_mailing = Repo.find_of_mailing
 let session_count = Repo.session_count
@@ -72,7 +72,16 @@ let invited_contacts_count = Repo_statistics.FilterStatistics.invited_contacts_c
 module Public = struct
   include Public
 
+  let column_public_title =
+    (Pool_message.Field.Title, "pool_experiments.public_title") |> Query.Column.create
+  ;;
+
   let contact_matches_filter = Repo.Public.contact_matches_filter
+  let filterable_by = None
+  let searchable_by = [ column_public_title ]
+  let sortable_by = Entity.[ column_public_title ]
+  let default_sort = Entity.default_sort
+  let default_query = Query.create ~sort:default_sort ()
 end
 
 module InvitationReset = struct

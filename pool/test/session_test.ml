@@ -1489,8 +1489,7 @@ let send_session_reminders_with_default_leat_time _ () =
   let%lwt session1 = create_session 16 in
   let%lwt session2 =
     let email_reminder_sent_at =
-      let hour = Ptime.Span.of_int_s @@ (60 * 60) in
-      Ptime.sub_span (Ptime_clock.now ()) hour
+      Ptime.sub_span (Ptime_clock.now ()) Test_utils.Time.hour
       |> CCOption.get_exn_or "Invalid timespan"
       |> Pool_common.Reminder.SentAt.create
     in
@@ -1652,8 +1651,8 @@ module Duplication = struct
   let single_session () =
     let session = Model.create_session () in
     let data =
-      [ session, 0, add_timespan session Model.hour
-      ; session, 1, add_timespan session Model.hour
+      [ session, 0, add_timespan session Time.hour
+      ; session, 1, add_timespan session Time.hour
       ]
     in
     let events =
@@ -1677,7 +1676,7 @@ module Duplication = struct
       let session =
         Model.create_session
           ~follow_up_to:session.id
-          ~start:(add_timespan session Model.hour)
+          ~start:(add_timespan session Time.hour)
           ()
       in
       let create_amount i = i |> ParticipantAmount.create |> get_or_failwith in
@@ -1688,8 +1687,8 @@ module Duplication = struct
       }
     in
     let data =
-      [ session, 0, add_timespan session Model.hour
-      ; followup, 0, add_timespan followup Model.hour
+      [ session, 0, add_timespan session Time.hour
+      ; followup, 0, add_timespan followup Time.hour
       ]
     in
     let events =
@@ -1712,10 +1711,10 @@ module Duplication = struct
     let followup =
       Model.create_session
         ~follow_up_to:session.id
-        ~start:(add_timespan session Model.hour)
+        ~start:(add_timespan session Time.hour)
         ()
     in
-    let data = [ session, 0, add_timespan session Model.hour ] in
+    let data = [ session, 0, add_timespan session Time.hour ] in
     let events =
       data |> data_to_urlencded |> SessionC.Duplicate.handle session [ followup ]
     in
@@ -1727,12 +1726,12 @@ module Duplication = struct
     let followup =
       Model.create_session
         ~follow_up_to:session.id
-        ~start:(add_timespan session Model.hour)
+        ~start:(add_timespan session Time.hour)
         ()
     in
     let data =
-      [ session, 0, add_timespan session Model.hour
-      ; followup, 0, sub_timespan session Model.hour
+      [ session, 0, add_timespan session Time.hour
+      ; followup, 0, sub_timespan session Time.hour
       ]
     in
     let events =

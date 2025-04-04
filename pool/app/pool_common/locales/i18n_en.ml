@@ -296,6 +296,7 @@ When inviting contacts, the filter will prefer the overriding value if both are 
       cell_phone
   | ContactExperimentNotMatchingFilter ->
     "You no longer fulfill the conditions for participating in this experiment."
+  | ContactExperimentHistory -> "All experiments you have participated in."
   | ContactInformationEmailHint ->
     "To change your e-mail address, please follow this link."
   | ContactLanguage ->
