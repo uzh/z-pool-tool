@@ -77,8 +77,6 @@ module Public = struct
   ;;
 
   let contact_matches_filter = Repo.Public.contact_matches_filter
-
-  (* Make this set by default on upcoming list *)
   let filterable_by = None
   let searchable_by = [ column_public_title ]
   let sortable_by = Entity.[ column_public_title ]

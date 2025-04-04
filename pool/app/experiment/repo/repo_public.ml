@@ -123,7 +123,6 @@ let upcoming_where experiment_type =
     let type_condition =
       Format.asprintf {sql| pool_experiments.assignment_without_session = %s |sql}
     in
-    (* TODO: Make sure started online studies are still visible *)
     match experiment_type with
     | `Online -> type_condition "1", timewindow_exists
     | `OnSite -> type_condition "0", onsite_session_exists

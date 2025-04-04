@@ -61,7 +61,7 @@ module Public = struct
       )
   ;;
 
-  let searchable_by = []
+  let searchable_by = [ Experiment.column_public_title ]
   let sortable_by = [ column_date ]
 
   let filterable_by =
