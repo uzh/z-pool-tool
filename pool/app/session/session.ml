@@ -15,6 +15,7 @@ let find_contact_is_assigned_by_experiment = Repo.find_contact_is_assigned_by_ex
 let find_public = Repo.find_public
 let find_public_by_assignment = Repo.find_public_by_assignment
 let query_by_contact = Repo.query_by_contact
+let find_by_contact_and_experiment = Repo.find_by_contact_and_experiment
 let has_upcoming_sessions = Repo.has_upcoming_sessions
 let find_by_assignment = Repo.find_by_assignment
 let find_experiment_id_and_title = Repo.find_experiment_id_and_title

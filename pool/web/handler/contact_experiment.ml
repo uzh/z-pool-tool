@@ -202,20 +202,12 @@ let show req =
         >|+ Session.Public.group_and_sort
         >|+ CCList.filter (fst %> Session.Public.is_fully_booked %> not)
       in
-      let find_sessions fnc =
-        let open Assignment in
-        fnc database_label id contact
-        >|> Lwt_list.map_s (fun { Public.id; _ } ->
-          id |> Id.to_common |> Session.find_public_by_assignment database_label)
-        ||> CCResult.flatten_l
+      let find_sessions =
+        Session.find_by_contact_and_experiment database_label contact id
       in
-      let* upcoming_sessions =
-        find_sessions Assignment.Public.find_upcoming_by_experiment
-      in
-      let* past_sessions = find_sessions Assignment.Public.find_past_by_experiment in
-      let* canceled_sessions =
-        find_sessions Assignment.Public.find_canceled_by_experiment
-      in
+      let%lwt upcoming_sessions = find_sessions `Upcoming in
+      let%lwt past_sessions = find_sessions `Past in
+      let%lwt canceled_sessions = find_sessions `Canceled in
       let%lwt user_is_on_waiting_list =
         Waiting_list.user_is_enlisted database_label contact id
       in

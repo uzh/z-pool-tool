@@ -292,6 +292,13 @@ val query_by_contact
   -> Contact.t
   -> (Public.t list * Query.t) Lwt.t
 
+val find_by_contact_and_experiment
+  :  Database.Label.t
+  -> Contact.t
+  -> Experiment.Id.t
+  -> [< `Canceled | `Past | `Upcoming ]
+  -> Public.t list Lwt.t
+
 val has_upcoming_sessions : Database.Label.t -> Contact.Id.t -> bool Lwt.t
 
 val find_by_assignment

@@ -8,16 +8,7 @@ let find_closed = Repo.find_closed
 module Public = struct
   include Public
 
-  let find_upcoming_by_experiment =
-    Repo.find_public_by_experiment_and_contact_opt `Upcoming
-  ;;
-
-  let find_past_by_experiment = Repo.find_public_by_experiment_and_contact_opt `Past
-  let find_all_by_experiment = Repo.find_public_by_experiment_and_contact_opt `All
-
-  let find_canceled_by_experiment =
-    Repo.find_public_by_experiment_and_contact_opt `Canceled
-  ;;
+  let find_all_by_experiment = Repo.find_public_by_experiment_and_contact_opt
 end
 
 let assignment_to_experiment_exists database_label experiment_id contact =

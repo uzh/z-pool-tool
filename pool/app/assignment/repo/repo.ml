@@ -271,48 +271,32 @@ module Sql = struct
     Database.collect pool find_assigned_contacts_by_experiment_request experiment_id
   ;;
 
-  let find_public_by_experiment_and_contact_opt_request scope =
+  let find_public_by_experiment_and_contact_opt_request =
     let open Caqti_request.Infix in
-    let query joins =
+    let joins =
       {sql|
+          LEFT JOIN pool_sessions
+          ON
+            pool_assignments.session_uuid = pool_sessions.uuid
+          AND
+            pool_sessions.canceled_at IS NULL
+        |sql}
+    in
+    {sql|
           pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
         AND
           pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
         AND
           pool_assignments.marked_as_deleted = 0
       |sql}
-      |> select_public_sql ~joins
-      |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t ->* Public.t
-    in
-    let joins =
-      Format.asprintf
-        {sql|
-          LEFT JOIN pool_sessions
-          ON
-            pool_assignments.session_uuid = pool_sessions.uuid
-          AND
-            pool_sessions.canceled_at IS NULL
-          %s
-        |sql}
-    in
-    match scope with
-    | `Canceled ->
-      {sql|AND pool_assignments.canceled_at IS NOT NULL|sql} |> joins |> query
-    | `Upcoming ->
-      {sql|AND pool_sessions.closed_at IS NULL AND pool_assignments.canceled_at IS NULL|sql}
-      |> joins
-      |> query
-    | `Past ->
-      {sql|AND pool_sessions.closed_at IS NOT NULL AND pool_assignments.canceled_at IS NULL|sql}
-      |> joins
-      |> query
-    | `All -> "" |> joins |> query
+    |> select_public_sql ~joins
+    |> Caqti_type.t2 Experiment.Repo.Entity.Id.t Contact.Repo.Id.t ->* Public.t
   ;;
 
-  let find_public_by_experiment_and_contact_opt scope pool experiment_id contact =
+  let find_public_by_experiment_and_contact_opt pool experiment_id contact =
     Database.collect
       pool
-      (find_public_by_experiment_and_contact_opt_request scope)
+      find_public_by_experiment_and_contact_opt_request
       (experiment_id, Contact.id contact)
   ;;
 

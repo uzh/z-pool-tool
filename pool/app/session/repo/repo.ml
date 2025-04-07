@@ -974,6 +974,38 @@ let query_by_contact ?query pool contact =
   Lwt.return (sessions, query)
 ;;
 
+let find_by_contact_and_experiment pool contact experiment_id context =
+  let open Caqti_request.Infix in
+  let open Utils.Lwt_result.Infix in
+  let dyn =
+    Dynparam.(
+      empty
+      |> add Contact.Repo.Id.t (Contact.id contact)
+      |> add Experiment.Repo.Entity.Id.t experiment_id)
+  in
+  let where =
+    let not_canceled = {sql|pool_sessions.canceled_at IS NULL|sql} in
+    match context with
+    | `Canceled -> {sql|pool_sessions.canceled_at IS NOT NULL|sql}
+    | `Upcoming ->
+      Format.asprintf {sql|%s AND pool_sessions.closed_at IS NULL|sql} not_canceled
+    | `Past ->
+      Format.asprintf {sql|%s AND pool_sessions.closed_at IS NOT NULL|sql} not_canceled
+  in
+  let sql =
+    Format.asprintf
+      "WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', '')) AND %s"
+      where
+    |> Sql.find_public_request_sql
+  in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let request = sql |> pt ->* RepoEntity.Public.t in
+  Database.collect pool request pv
+  >|> Lwt_list.map_s (location_to_public_repo_entity pool)
+  ||> CCResult.flatten_l
+  ||> CCResult.get_exn
+;;
+
 let find_sessions_to_remind = Sql.find_sessions_to_remind
 let insert = Sql.insert
 let update = Sql.update
