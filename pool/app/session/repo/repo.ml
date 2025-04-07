@@ -964,7 +964,7 @@ let query_by_contact ?query pool contact =
     ~dyn
     RepoEntity.Public.t
   >|> fun (sessions, query) ->
-  (* TODO: Get rid of location_to_public_repo_entity *)
+  (* TODO #2390: Get rid of location_to_public_repo_entity *)
   let%lwt sessions =
     sessions
     |> Lwt_list.map_s (location_to_public_repo_entity pool)
