@@ -77,7 +77,7 @@ module Public = struct
   let default_filter =
     let open Query in
     let open Filter in
-    Condition.[ Checkbox (column_canceled, true); Checkbox (column_past, true) ]
+    Condition.[ Checkbox (column_past, true) ]
   ;;
 
   let default_query = Query.create ~sort:default_sort ~filter:default_filter ()
