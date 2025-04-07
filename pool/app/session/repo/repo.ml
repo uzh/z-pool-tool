@@ -988,9 +988,13 @@ let find_by_contact_and_experiment pool contact experiment_id context =
     match context with
     | `Canceled -> {sql|pool_sessions.canceled_at IS NOT NULL|sql}
     | `Upcoming ->
-      Format.asprintf {sql|%s AND pool_sessions.closed_at IS NULL|sql} not_canceled
+      Format.asprintf
+        {sql|%s AND (pool_sessions.closed_at IS NULL AND (pool_sessions.start + INTERVAL duration SECOND) > NOW())|sql}
+        not_canceled
     | `Past ->
-      Format.asprintf {sql|%s AND pool_sessions.closed_at IS NOT NULL|sql} not_canceled
+      Format.asprintf
+        {sql|%s AND (pool_sessions.closed_at IS NOT NULL OR (pool_sessions.start + INTERVAL duration SECOND) < NOW())|sql}
+        not_canceled
   in
   let sql =
     Format.asprintf
