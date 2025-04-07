@@ -386,32 +386,6 @@ module Sql = struct
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
-  let find_public_upcoming_by_contact_request ?limit () =
-    let open Caqti_request.Infix in
-    limit
-    |> CCOption.map (Format.asprintf "LIMIT %d")
-    |> CCOption.value ~default:""
-    |> Format.asprintf
-         {sql|
-      INNER JOIN pool_assignments
-        ON pool_assignments.session_uuid = pool_sessions.uuid
-        AND pool_assignments.canceled_at IS NULL
-        AND pool_assignments.marked_as_deleted = 0
-      WHERE
-        pool_sessions.closed_at IS NULL
-      AND
-        pool_sessions.start > NOW()
-      AND
-        pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
-      ORDER BY
-        pool_sessions.start ASC
-      %s
-    |sql}
-    |> find_public_sql
-    |> Contact.Repo.Id.t ->* RepoEntity.Public.t
-  ;;
-
-  (* TODO: DRY and rename find_public fnc *)
   let find_public_request_sql ?(count = false) where_fragment =
     let columns =
       if count then "COUNT(*)" else sql_public_select_columns |> CCString.concat ", "
@@ -435,10 +409,6 @@ module Sql = struct
         |sql}
       columns
       where_fragment
-  ;;
-
-  let find_public_upcoming_by_contact ?limit pool =
-    Database.collect pool (find_public_upcoming_by_contact_request ?limit ())
   ;;
 
   let find_by_assignment_request =
