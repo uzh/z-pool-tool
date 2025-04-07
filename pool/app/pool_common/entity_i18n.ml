@@ -292,6 +292,7 @@ type hint =
   | PauseAccountAdmin
   | PauseAccountContact
   | Permissions
+  | PermissionsExplanationLink
   | PromoteContact
   | RateDependencyWith
   | RateDependencyWithout

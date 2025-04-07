@@ -355,52 +355,101 @@ module ActorPermissionSearch = struct
   ;;
 end
 
-let explanation language =
+let actor_explanation language =
   let open Pool_common in
-  let open Role in
-  let title_html title =
-    h3 ~a:[ a_class [ "has-gap" ] ] [ txt Role.(name title |> CCString.capitalize_ascii) ]
-  in
-  let assistant = function
+  let to_html = function
     | Language.En ->
-      "Assistants are present at the sessions and will close them once they were carried \
-       out."
+      "Actors are users that perform actions in the system. They can be assigned roles \
+       to grant them permissions on targets."
     | Language.De ->
-      "Assistenten sind bei den Sitzungen anwesend und schließen sie ab, sobald sie \
-       durchgeführt wurden."
+      "Actors sind Benutzer die Aktionen im System ausführen. Ihnen können Rollen \
+       zugewiesen werden, um ihnen Berechtigungen auf Targets zu gewähren."
   in
-  let experimenter = function
-    | Language.En -> "Experimenter can create and update experiments."
-    | Language.De -> "Experimenter kann Experimente erstellen und aktualisieren."
-  in
-  let location_manager = function
+  language |> to_html |> txt |> CCList.return |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let targets_explanation language =
+  let open Pool_common in
+  let to_html = function
     | Language.En ->
-      "A location manager is responsible for a location. They have the permissions to \
-       update locations and access sessions at their location."
+      "Targets are resources or entities that are accessed. A target can either be all \
+       items (experiments) of a type or a specific item (experiment X)."
     | Language.De ->
-      "Location Manager sind für einen Standort verantwortlich. Sie haben die \
-       Berechtigung, Standorte zu aktualisieren und auf Sessions an ihrem Standort \
-       zuzugreifen."
+      "Ein Target ist eine Ressource oder Entität, auf die zugegriffen wird. Ein Target \
+       kann entweder alle Elemente (Experimente) eines Typs oder ein spezifisches \
+       Element (Experiment X) sein."
   in
-  let recruiter = function
-    | Language.En ->
-      "Recruiters have all rights to coordinate experiments. They can access all \
-       sessions and contact data."
-    | Language.De ->
-      "Recruiter haben alle Rechte, die Experimente zu koordinieren. Sie können auf alle \
-       Sitzungen und Userdaten zugreifen."
+  language |> to_html |> txt |> CCList.return |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let permissions_explanation language =
+  let open Pool_common in
+  let open Guard.Permission in
+  let title_html permission =
+    h4 ~a:[ a_class [ "has-gap" ] ] [ txt (show permission |> CCString.capitalize_ascii) ]
   in
-  let operator = function
-    | Language.En | Language.De -> "This role is not customizable."
+  let create = function
+    | Language.En -> "Add new resources"
+    | Language.De -> "Neue Ressourcen hinzufügen"
   in
-  let role_html = function
-    | `Assistant -> assistant
-    | `Experimenter -> experimenter
-    | `LocationManager -> location_manager
-    | `Operator -> operator
-    | `Recruiter -> recruiter
+  let read = function
+    | Language.En -> "View existing resources"
+    | Language.De -> "Vorhandene Ressourcen anzeigen"
   in
-  Role.customizable
-  |> CCList.map (fun role -> div [ title_html role; p [ txt (role_html role language) ] ])
+  let update = function
+    | Language.En -> "Modify existing resources"
+    | Language.De -> "Vorhandene Ressourcen modifizieren"
+  in
+  let delete = function
+    | Language.En -> "Delete resources"
+    | Language.De -> "Ressourcen löschen"
+  in
+  let manage = function
+    | Language.En -> "Includes all permissions"
+    | Language.De -> "Beinhaltet alle Berechtigungen"
+  in
+  let to_html = function
+    | Create -> create
+    | Read -> read
+    | Update -> update
+    | Delete -> delete
+    | Manage -> manage
+  in
+  all
+  |> CCList.map (fun role -> div [ title_html role; p [ txt (to_html role language) ] ])
   |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let explanation langauge =
+  let title str = h3 ~a:[ a_class [ "has-gap" ] ] [ txt str ] in
+  div
+    [ title "Actors"
+    ; actor_explanation langauge
+    ; title "Targets"
+    ; targets_explanation langauge
+    ; title "Permissions"
+    ; permissions_explanation langauge
+    ]
+;;
+
+let explanation_modal language =
+  let open Pool_common in
+  let title language =
+    Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions)
+  in
+  let content = explanation language in
+  let link = Pool_common.Utils.hint_to_string language I18n.PermissionsExplanationLink in
+  let modal =
+    Component_modal.create ~active:false language title "explanation-modal" content
+  in
+  let link =
+    a
+      ~a:
+        [ a_class [ "flexrow"; "flex-gap" ]
+        ; a_user_data "modal" "explanation-modal"
+        ; a_href "#"
+        ]
+      [ Component_icon.(to_html OpenOutline); txt link ]
+  in
+  div [ modal; link ]
 ;;

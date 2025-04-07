@@ -171,9 +171,6 @@ let index Pool_context.{ language; _ } roles =
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions) ]
-    ; div
-        ~a:[ a_class [ "border"; "inset"; "bg-grey-lightest" ] ]
-        [ Component.Role.explanation language ]
-    ; table
+    ; div ~a:[ a_class [ "stack" ] ] [ Component.Role.explanation_modal language; table ]
     ]
 ;;

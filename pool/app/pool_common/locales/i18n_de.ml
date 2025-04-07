@@ -599,6 +599,7 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
      eingeladen."
   | Permissions ->
     "Die Berechtigung <strong>manage</strong> beinhaltet alle anderen Berechtigungen."
+  | PermissionsExplanationLink -> "Öffne die Erklärungen der Berechtigungen"
   | PromoteContact ->
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, dieser wird \
      anschliessend nicht mehr für Experimente eingeladen und kann sich nicht mehr für \
