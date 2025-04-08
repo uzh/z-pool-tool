@@ -322,15 +322,13 @@ let create_followup () =
   let open CCResult.Infix in
   let open Session in
   let open Field in
+  let followup_start = Data.Validated.start2 in
   let input =
-    Data.update_input
-      [ Start, Model.in_an_hour () |> Session.Start.value |> Ptime.to_rfc3339 ]
+    Data.update_input [ Start, followup_start |> Start.value |> Ptime.to_rfc3339 ]
   in
   let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
-  let parent_session =
-    Model.create_session ~start:(Model.an_hour_ago ()) ~experiment ()
-  in
+  let parent_session = Model.create_session ~start:Data.Validated.start1 ~experiment () in
   let session_id = Session.Id.create () in
   let res =
     SessionC.Create.(
@@ -340,11 +338,12 @@ let create_followup () =
     let open Data.Validated in
     create
       ~id:session_id
+      ~follow_up_to:parent_session.id
       ~email_reminder_lead_time
       ~internal_description
       ~public_description
       ~text_message_reminder_lead_time
-      start2
+      followup_start
       duration
       location
       max_participants
