@@ -228,7 +228,12 @@ abbr[title] {
     @extend textarea;
 }
 
-.table tr.highlighted {
+// This z-index is required to make sure button dropdowns work despite the mouseover js event
+#chronological-session-list .has-dropdown {
+    z-index: 5;
+}
+
+#chronological-session-list tr.highlighted {
     position: relative;
 
     &:after {
@@ -240,6 +245,7 @@ abbr[title] {
         bottom: 0;
         background-color: c.$black;
         opacity: 0.05;
+        z-index: 0;
     }
 
     a,
