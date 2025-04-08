@@ -114,6 +114,7 @@ type t =
   | SessionFullyBooked
   | SessionHasAssignments
   | SessionHasFollowUps
+  | SessionIsFollowup
   | SessionInPast
   | SessionInvalid
   | SessionNotClosed

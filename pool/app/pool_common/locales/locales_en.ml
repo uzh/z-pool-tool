@@ -617,6 +617,7 @@ let rec error_to_string =
     "There are already assignments for this session. It cannot be deleted."
   | SessionHasFollowUps ->
     "There is already a follow-up session for this session. It cannot be deleted."
+  | SessionIsFollowup -> "The main session is a followup session."
   | SessionInvalid -> "Invalid session, please login."
   | SelectedOptionsCountMax i ->
     Format.asprintf
