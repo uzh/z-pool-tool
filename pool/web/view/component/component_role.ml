@@ -421,13 +421,18 @@ let permissions_explanation language =
 ;;
 
 let explanation langauge =
-  let title str = h3 ~a:[ a_class [ "has-gap" ] ] [ txt str ] in
+  let open Pool_message in
+  let title field =
+    h3
+      ~a:[ a_class [ "has-gap" ] ]
+      [ txt (Pool_common.Utils.field_to_string_capitalized langauge field) ]
+  in
   div
-    [ title "Actors"
+    [ title Field.Actor
     ; actor_explanation langauge
-    ; title "Targets"
+    ; title Field.Target
     ; targets_explanation langauge
-    ; title "Permissions"
+    ; title Field.Permission
     ; permissions_explanation langauge
     ]
 ;;

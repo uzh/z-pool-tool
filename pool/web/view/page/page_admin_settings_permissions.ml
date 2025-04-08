@@ -59,7 +59,7 @@ let edit_target_modal
             ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
             [ input ~a:([ a_input_type `Checkbox; a_id name; a_name name ] @ checked) ()
             ; label
-                ~a:[ a_class [ "flexrow"; "flex-gap" ]; a_label_for name ]
+                ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ]; a_label_for name ]
                 [ txt (CCString.capitalize_ascii name); hint ]
             ]
         ]
@@ -139,16 +139,20 @@ let list
             ]
         ~icon:Component.Icon.Create
     in
-    [ txt (Role.Target.to_human target)
-    ; permissions
-      |> CCList.map (Permission.show %> Component.Tag.create_chip ~inline:true `Primary)
-      |> div ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-    ; (if can_manage then edit_button () else txt "")
+    [ txt (Role.Target.to_human target), Some Field.Target
+    ; ( permissions
+        |> CCList.map (Permission.show %> Component.Tag.create_chip ~inline:true `Primary)
+        |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "flex-wrap" ] ]
+      , Some Field.Permission )
+    ; (if can_manage then edit_button () else txt ""), None
     ]
-    |> CCList.map (CCList.return %> td)
+    |> CCList.map (fun (html, field) ->
+      let label = Table.data_label_opt language field in
+      td ~a:label [ html ])
     |> tr
   in
   Component.DataTable.make
+    ~break_mobile:true
     ~target_id:"permissions-table"
     ~th_class
     ~cols

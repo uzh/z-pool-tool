@@ -32,7 +32,7 @@ let add_actor_permission_hint_en =
         UNHEX(REPLACE(UUID(), '-', '')),
         'actor_permission_hint',
         'EN',
-        '<p>Shows all separately defined specific actor permissions (can have duplicates). When deleting one, all duplicates are deleted as well.</p>'
+        '<p>Instead of assigning a role with a predefined set of authorizations to a user, user-specific permissions can be created. This list shows all user-specific actor permissions (can have duplicates). When deleting one of the duplicates, all other duplicates are deleted as well.</p>'
       )
     |sql}
 ;;
@@ -45,7 +45,7 @@ let add_actor_permission_hint_de =
         UNHEX(REPLACE(UUID(), '-', '')),
         'actor_permission_hint',
         'DE',
-        '<p>Zeigt alle separat definierten spezifischen Rechte für Administratoren (kann duplikate enthalten). Wenn eines gelöscht wird, werden alle duplikate mitgelöscht.</p>'
+        '<p>Anstatt einem Benutzer eine Rolle mit einem vordefinierten Satz von Berechtigungen zuzuweisen, können benutzerspezifische Berechtigungen erstellt werden. Diese Liste zeigt alle benutzerspezifischen Berechtigungen (kann duplikate enthalten). Wenn eines der Duplikate gelöscht wird, werden auch alle anderen Duplikate gelöscht.</p>'
       )
     |sql}
 ;;
