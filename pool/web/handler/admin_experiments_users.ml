@@ -54,7 +54,6 @@ let target_has_role db admin target_role () =
   let open Guard in
   let actor = Uuid.actor_of Admin.Id.value (Admin.id admin) in
   let actor_role = ActorRole.create actor target_role in
-  (* TODO: Improve performance *)
   let%lwt actor_roles =
     Persistence.ActorRole.find_by_actor db actor ||> CCList.map (fun (role, _, _) -> role)
   in
