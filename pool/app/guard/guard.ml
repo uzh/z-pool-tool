@@ -312,7 +312,11 @@ module RolePermission = struct
   open Pool_message
 
   let column_role = (Field.Role, "role_permissions.role") |> Query.Column.create
-  let column_model = (Field.Model, "role_permissions.target_model") |> Query.Column.create
+
+  let column_target =
+    (Field.Target, "role_permissions.target_model") |> Query.Column.create
+  ;;
+
   let column_action = (Field.Action, "role_permissions.permission") |> Query.Column.create
 
   let column_created_at =
@@ -320,7 +324,7 @@ module RolePermission = struct
   ;;
 
   let filterable_by = None
-  let searchable_by = [ column_role; column_model; column_action ]
+  let searchable_by = [ column_role; column_target; column_action ]
   let sortable_by = column_created_at :: searchable_by
 
   let default_sort =

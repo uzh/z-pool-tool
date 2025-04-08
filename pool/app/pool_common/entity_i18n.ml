@@ -291,7 +291,7 @@ type hint =
   | ParticipationTagsHint
   | PauseAccountAdmin
   | PauseAccountContact
-  | Permissions
+  | PermissionManage
   | PermissionsExplanationLink
   | PromoteContact
   | RateDependencyWith

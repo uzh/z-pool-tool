@@ -32,6 +32,18 @@ let edit_target_modal
   let html =
     let checkbox permission =
       let name = Guard.Permission.show permission in
+      let hint =
+        if Guard.Permission.(equal permission Manage)
+        then
+          Pool_common.(
+            span
+              ~a:[ a_class [ "font-italic" ] ]
+              [ Utils.hint_to_string language I18n.PermissionManage
+                |> Format.asprintf "(%s)"
+                |> Unsafe.data
+              ])
+        else txt ""
+      in
       let checked =
         (match flash_fetcher with
          | Some flash_fetcher ->
@@ -43,9 +55,12 @@ let edit_target_modal
       in
       div
         ~a:[ a_class [ "form-group" ] ]
-        [ div
+        [ span
+            ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
             [ input ~a:([ a_input_type `Checkbox; a_id name; a_name name ] @ checked) ()
-            ; label ~a:[ a_label_for name ] [ txt (CCString.capitalize_ascii name) ]
+            ; label
+                ~a:[ a_class [ "flexrow"; "flex-gap" ]; a_label_for name ]
+                [ txt (CCString.capitalize_ascii name); hint ]
             ]
         ]
     in
@@ -58,8 +73,7 @@ let edit_target_modal
     let permissions = all_permissions |> CCList.map checkbox in
     div
       ~a:[ a_class [ "stack" ] ]
-      [ p Pool_common.[ Utils.hint_to_string language I18n.Permissions |> Unsafe.data ]
-      ; error
+      [ error
       ; form
           ~a:
             Htmx.
@@ -100,7 +114,7 @@ let list
   let url = Uri.of_string (role_permission_path ~role ()) in
   let data_table = Component.DataTable.create_meta url query language in
   let cols =
-    [ `column RolePermission.column_model
+    [ `column RolePermission.column_target
     ; `custom
         (txt Pool_common.(Utils.field_to_string_capitalized language Field.Permission))
     ; `empty
@@ -125,7 +139,7 @@ let list
             ]
         ~icon:Component.Icon.Create
     in
-    [ txt (Role.Target.show target)
+    [ txt (Role.Target.to_human target)
     ; permissions
       |> CCList.map (Permission.show %> Component.Tag.create_chip ~inline:true `Primary)
       |> div ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
@@ -149,9 +163,16 @@ let show (Pool_context.{ language; _ } as context) role rules query =
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Role.Role.name role |> CCString.capitalize_ascii) ]
-    ; p [ txt Pool_common.(Utils.hint_to_string language I18n.RolePermissionsModelList) ]
-    ; list context role rules query
-    ; Component.Modal.create_placeholder edit_permission_modal_id
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ p
+            [ txt
+                Pool_common.(Utils.hint_to_string language I18n.RolePermissionsModelList)
+            ]
+        ; Component.Role.explanation_modal language
+        ; list context role rules query
+        ; Component.Modal.create_placeholder edit_permission_modal_id
+        ]
     ]
 ;;
 

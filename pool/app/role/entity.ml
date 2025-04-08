@@ -129,6 +129,7 @@ module Target = struct
   [@@deriving show, eq, enum, ord, yojson, sexp_of]
 
   let name t = show t |> Guardian.Utils.decompose_variant_string |> fst
+  let to_human t = show t |> CCString.take_drop 1 |> snd
   let to_admin m = `Admin m
 
   let of_string_res =

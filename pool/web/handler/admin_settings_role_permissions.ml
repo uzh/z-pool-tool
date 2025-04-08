@@ -21,7 +21,7 @@ let group_by_target query permissions =
       let default = Ascending in
       query.sort
       |> CCOption.map (fun { Sort.column; order } ->
-        if Column.equal column RolePermission.column_model then order else default)
+        if Column.equal column RolePermission.column_target then order else default)
       |> CCOption.value ~default
     in
     match sort with

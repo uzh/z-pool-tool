@@ -597,8 +597,7 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
   | PauseAccountContact ->
     "Solange Ihr Konto pausiert ist, werden Sie nicht zu weiteren Experimenten \
      eingeladen."
-  | Permissions ->
-    "Die Berechtigung <strong>manage</strong> beinhaltet alle anderen Berechtigungen."
+  | PermissionManage -> "Beinhaltet Create, Read, Update und Destroy"
   | PermissionsExplanationLink -> "Öffne die Erklärungen der Berechtigungen"
   | PromoteContact ->
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, dieser wird \
