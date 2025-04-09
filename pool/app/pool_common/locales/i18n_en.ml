@@ -414,8 +414,11 @@ By clicking on the template labels below you can open the default text message:
 |}
   | ExperimentSessions ->
     {|All existing session of this experiment.
-      Once someone has registered for the session, it can no longer be deleted.
+Once someone has registered for the session, it can no longer be deleted.
     |}
+  | ExperimentTimewindows ->
+    {|All existing timewindows of this experiment.
+Once someone started the survey, it can no longer be deleted.|}
   | ExperimentSessionsCancelDelete ->
     {|Canceling an assignment will inform the contact. The concat will be able to sign up for this experiment again.
   Marking an assignment as deleted will not inform the contact. The contact will not be able to sign up for this experiment again.|}

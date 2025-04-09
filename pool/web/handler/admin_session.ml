@@ -243,6 +243,9 @@ let create req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let* experiment = Experiment.find database_label id in
+    let field =
+      if Experiment.is_sessionless experiment then Field.TimeWindow else Field.Session
+    in
     let open Cqrs_command.Session_command in
     let* events =
       match Experiment.is_sessionless experiment with
@@ -267,7 +270,7 @@ let create req =
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Success.Created Field.Session ] ]
+      [ Message.set ~success:[ Success.Created field ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
@@ -538,10 +541,10 @@ let update_handler action req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
   let path = session_path experiment_id session_id in
-  let error_path, success_msg =
+  let error_path =
     match action with
-    | `Update -> "edit", Success.Updated Field.session
-    | `Reschedule -> "reschedule", Success.Rescheduled Field.session
+    | `Update -> "edit"
+    | `Reschedule -> "reschedule"
   in
   let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
@@ -566,6 +569,14 @@ let update_handler action req =
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
+    let field =
+      if Experiment.is_sessionless experiment then Field.TimeWindow else Field.Session
+    in
+    let success_msg =
+      match action with
+      | `Update -> Success.Updated field
+      | `Reschedule -> Success.Rescheduled field
+    in
     let open Cqrs_command.Session_command in
     let* events =
       match action with
