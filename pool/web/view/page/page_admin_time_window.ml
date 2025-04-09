@@ -66,8 +66,8 @@ let time_window_form csrf language ?time_window (experiment : Experiment.t) ~fla
       session_path ?id experiment.Experiment.id |> Sihl.Web.externalize_path
     in
     match time_window with
-    | None -> path (), Create (Some Field.Session)
-    | Some session -> path ~id:session.Time_window.id (), Update (Some Field.Session)
+    | None -> path (), Create (Some Field.TimeWindow)
+    | Some session -> path ~id:session.Time_window.id (), Update (Some Field.TimeWindow)
   in
   let is_past = function
     | None -> false
@@ -262,7 +262,7 @@ let index
   |> Layout.Experiment.(
        create
          ~active_navigation:"sessions"
-         ~hint:I18n.ExperimentSessions
+         ~hint:I18n.ExperimentTimewindows
          context
          (NavLink I18n.Sessions)
          experiment)
@@ -285,6 +285,7 @@ let detail
   let buttons =
     Page_admin_session.Partials.title_buttons
       language
+      Field.TimeWindow
       time_window.id
       time_window.experiment.Experiment.id
       can_access_session_assistants
