@@ -22,13 +22,13 @@ let create_target_path ?uuid =
     %> Format.asprintf "/admin/%s/%s/" path
   in
   flip CCOption.bind (function
-    | `Experiment -> Some (build "experiments" uuid)
-    | `Location -> Some (build "locations" uuid)
     | `Admin -> Some (build "admins" uuid)
     | `Contact -> Some (build "contacts" uuid)
     | `CustomField -> Some (build "custom-fields/contact/field" uuid)
     | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
+    | `Experiment -> Some (build "experiments" uuid)
     | `Filter -> Some (build "filter" uuid)
+    | `Location -> Some (build "locations" uuid)
     | `Tag -> Some (build "settings/tags" uuid)
     | `Announcement
     | `Assignment
@@ -354,3 +354,107 @@ module ActorPermissionSearch = struct
       ]
   ;;
 end
+
+let actor_explanation language =
+  let open Pool_common in
+  let to_html = function
+    | Language.En ->
+      "Actors are users that perform actions in the system. They can be assigned roles \
+       to grant them permissions on targets."
+    | Language.De ->
+      "Actors sind Benutzer die Aktionen im System ausführen. Ihnen können Rollen \
+       zugewiesen werden, um ihnen Berechtigungen auf Targets zu gewähren."
+  in
+  language |> to_html |> txt |> CCList.return |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let targets_explanation language =
+  let open Pool_common in
+  let to_html = function
+    | Language.En ->
+      "Targets are resources or entities that are accessed. A target can either be all \
+       items (experiments) of a type or a specific item (experiment X)."
+    | Language.De ->
+      "Ein Target ist eine Ressource oder Entität, auf die zugegriffen wird. Ein Target \
+       kann entweder alle Elemente (Experimente) eines Typs oder ein spezifisches \
+       Element (Experiment X) sein."
+  in
+  language |> to_html |> txt |> CCList.return |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let permissions_explanation language =
+  let open Pool_common in
+  let open Guard.Permission in
+  let title_html permission =
+    h4 ~a:[ a_class [ "has-gap" ] ] [ txt (show permission |> CCString.capitalize_ascii) ]
+  in
+  let create = function
+    | Language.En -> "Add new resources"
+    | Language.De -> "Neue Ressourcen hinzufügen"
+  in
+  let read = function
+    | Language.En -> "View existing resources"
+    | Language.De -> "Vorhandene Ressourcen anzeigen"
+  in
+  let update = function
+    | Language.En -> "Modify existing resources"
+    | Language.De -> "Vorhandene Ressourcen modifizieren"
+  in
+  let delete = function
+    | Language.En -> "Delete resources"
+    | Language.De -> "Ressourcen löschen"
+  in
+  let manage = function
+    | Language.En -> "Includes all permissions"
+    | Language.De -> "Beinhaltet alle Berechtigungen"
+  in
+  let to_html = function
+    | Create -> create
+    | Read -> read
+    | Update -> update
+    | Delete -> delete
+    | Manage -> manage
+  in
+  all
+  |> CCList.map (fun role -> div [ title_html role; p [ txt (to_html role language) ] ])
+  |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let explanation langauge =
+  let open Pool_message in
+  let title field =
+    h3
+      ~a:[ a_class [ "has-gap" ] ]
+      [ txt (Pool_common.Utils.field_to_string_capitalized langauge field) ]
+  in
+  div
+    [ title Field.Actor
+    ; actor_explanation langauge
+    ; title Field.Target
+    ; targets_explanation langauge
+    ; title Field.Permission
+    ; permissions_explanation langauge
+    ]
+;;
+
+let explanation_modal language =
+  let open Pool_common in
+  let title language =
+    Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions)
+  in
+  let content = explanation language in
+  let link = Pool_common.Utils.hint_to_string language I18n.PermissionsExplanationLink in
+  let modal =
+    Component_modal.create ~active:false language title "explanation-modal" content
+  in
+  let link =
+    a
+      ~a:
+        [ a_class [ "flexrow"; "flex-gap" ]
+        ; a_user_data "modal" "explanation-modal"
+        ; a_href "#"
+        ]
+      [ Component_icon.(to_html OpenOutline); txt link ]
+  in
+  div [ modal; link ]
+;;

@@ -50,6 +50,7 @@ type t =
   | FilterNrOfUnsuitableAssignments
   | FilterNuberMatchingUninvited
   | FollowUpSessionFor
+  | HasGlobalRole of string
   | Help
   | ImportConfirmationNote
   | ImportConfirmationTitle
@@ -292,7 +293,8 @@ type hint =
   | ParticipationTagsHint
   | PauseAccountAdmin
   | PauseAccountContact
-  | Permissions
+  | PermissionManage
+  | PermissionsExplanationLink
   | PromoteContact
   | RateDependencyWith
   | RateDependencyWithout

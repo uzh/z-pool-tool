@@ -82,7 +82,7 @@ val query_by_role
   :  ?query:Query.t
   -> ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
   -> Database.Label.t
-  -> Role.Role.t * Guard.Uuid.Target.t option
+  -> (Role.Role.t * Guard.Uuid.Target.t option) list option
   -> (t list * Query.t) Lwt.t
 
 val find_all_with_role

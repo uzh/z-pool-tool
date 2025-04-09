@@ -22,6 +22,7 @@ module Target : sig
 
   val actor_permission : t list
   val of_name : string -> (t, Pool_message.Error.t) Result.t
+  val to_human : t -> string
   val static : t list
   val customizable : t list
 end

@@ -107,7 +107,8 @@ let find_multiple pool ids =
     Database.collect pool request pv)
 ;;
 
-let query_by_role ?query ?exclude pool (role, target_uuid) =
+let query_by_role ?query ?exclude pool roles =
+  let roles = CCOption.value ~default:[] roles in
   let open Dynparam in
   let joins =
     {sql| 
@@ -119,13 +120,22 @@ let query_by_role ?query ?exclude pool (role, target_uuid) =
         AND guardian_actor_role_targets.mark_as_deleted IS NULL
     |sql}
   in
-  let where, dyn =
-    let dyn = empty |> add Caqti_type.string (Role.Role.show role) in
-    match target_uuid with
-    | None -> "guardian_actor_roles.role = ?", dyn
-    | Some target_uuid ->
-      ( {sql| guardian_actor_role_targets.role = ? AND guardian_actor_role_targets.target_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-      , dyn |> add Caqti_type.string (Guard.Uuid.Target.to_string target_uuid) )
+  let role_condition (acc, dyn) (role, target_uuid) =
+    let dyn = dyn |> add Caqti_type.string (Role.Role.show role) in
+    let sql, dyn =
+      match target_uuid with
+      | None -> "guardian_actor_roles.role = ?", dyn
+      | Some target_uuid ->
+        ( {sql| (guardian_actor_role_targets.role = ? AND guardian_actor_role_targets.target_uuid = UNHEX(REPLACE(?, '-', ''))) |sql}
+        , dyn |> add Caqti_type.string (Guard.Uuid.Target.to_string target_uuid) )
+    in
+    acc @ [ sql ], dyn
+  in
+  let where, dyn = CCList.fold_left role_condition ([], empty) roles in
+  let where =
+    match where with
+    | [] -> None
+    | where -> CCString.concat " OR " where |> Format.asprintf "(%s)" |> CCOption.return
   in
   let exclude, dyn =
     let not_exists =
@@ -153,7 +163,13 @@ let query_by_role ?query ?exclude pool (role, target_uuid) =
                 , dyn ))
            ([], dyn)
   in
-  let where = where :: exclude |> CCString.concat " AND " in
+  let where =
+    CCString.concat " AND "
+    @@
+    match where with
+    | None -> exclude
+    | Some where -> where :: exclude
+  in
   Query.collect_and_count
     pool
     query

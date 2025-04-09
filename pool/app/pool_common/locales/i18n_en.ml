@@ -91,6 +91,7 @@ let to_string = function
     "Number of assigned contacts not meeting the criteria of this filter:"
   | FilterNuberMatchingUninvited -> "Possible new invitations:"
   | FollowUpSessionFor -> "Follow-up for:"
+  | HasGlobalRole role -> Format.asprintf "Has global %s role" role
   | Help -> "Help"
   | ImportConfirmationNote ->
     "Please enter a new password. The rest of your data has been automatically taken \
@@ -573,8 +574,8 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | PauseAccountContact ->
     "As long as your account is paused, you will not be invited to any further \
      experiments."
-  | Permissions ->
-    "The permission <strong>manage</strong> includes all the other permissions."
+  | PermissionManage -> "Includes Create, Read, Update and Delete"
+  | PermissionsExplanationLink -> "Open the permissions explanation"
   | PromoteContact ->
     "Attention: one-time action. The contact is promoted to an admin, who is \
      subsequently no longer invited for experiments and can no longer register for such."

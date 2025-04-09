@@ -66,7 +66,7 @@ let new_form req =
     Page.Admin.Settings.ActorPermission.create
       ~hint
       context
-      [ Component.Role.ActorPermissionSearch.input_form ~flash_fetcher csrf language () ]
+      (Component.Role.ActorPermissionSearch.input_form ~flash_fetcher csrf language ())
     |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, Format.asprintf "%s/new" active_navigation
