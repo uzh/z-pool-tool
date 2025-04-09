@@ -60,11 +60,16 @@ module Partials = struct
 
   let assignment_participated { Assignment.participated; _ } =
     participated
-    |> CCOption.map_or ~default:(txt "") (Participated.value %> Icon.bool_to_icon)
+    |> CCOption.map_or
+         ~default:(txt "")
+         (Participated.value %> Icon.bool_to_icon ~colored:true ~outlined:true)
   ;;
 
   let assignment_no_show { Assignment.no_show; _ } =
-    no_show |> CCOption.map_or ~default:(txt "") (NoShow.value %> Icon.bool_to_icon)
+    no_show
+    |> CCOption.map_or
+         ~default:(txt "")
+         (NoShow.value %> Icon.bool_to_icon ~colored:true ~outlined:true)
   ;;
 
   let assignment_external_data_id { Assignment.external_data_id; _ } =
