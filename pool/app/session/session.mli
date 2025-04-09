@@ -115,8 +115,7 @@ type t =
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t
   ; participant_count : ParticipantCount.t
-  ; (* TODO [aerben] make type for canceled_at? *)
-    closed_at : Ptime.t option
+  ; closed_at : Ptime.t option
   ; canceled_at : Ptime.t option
   ; experiment : Experiment.t
   ; created_at : Pool_common.CreatedAt.t
@@ -169,6 +168,8 @@ val show_event : event -> string
 module Public : sig
   type t =
     { id : Id.t
+    ; experiment_id : Experiment.Id.t
+    ; experiment_title : Experiment.PublicTitle.t
     ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : Duration.t
@@ -179,6 +180,7 @@ module Public : sig
     ; overbook : ParticipantAmount.t
     ; assignment_count : AssignmentCount.t
     ; canceled_at : Ptime.t option
+    ; closed_at : Ptime.t option
     }
 
   val equal : t -> t -> bool
@@ -189,6 +191,13 @@ module Public : sig
   val group_and_sort : t list -> (t * t list) list
   val get_session_end : t -> Ptime.t
   val start_end_with_duration_human : t -> string
+  val is_past : t -> bool
+  val column_experiment_title : Query.Column.t
+  val column_past : Query.Column.t
+  val searchable_by : Query.Column.t list
+  val sortable_by : Query.Column.t list
+  val filterable_by : Query.Filter.human option
+  val default_query : Query.t
 end
 
 val to_public : t -> Public.t
@@ -277,11 +286,20 @@ val find_public_by_assignment
   -> Pool_common.Id.t
   -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
-val find_upcoming_public_by_contact
+val query_by_contact
+  :  ?query:Query.t
+  -> Database.Label.t
+  -> Contact.t
+  -> (Public.t list * Query.t) Lwt.t
+
+val find_by_contact_and_experiment
   :  Database.Label.t
-  -> Contact.Id.t
-  -> ((Experiment.Public.t * Public.t * Public.t list) list, Pool_message.Error.t) result
-       Lwt.t
+  -> Contact.t
+  -> Experiment.Id.t
+  -> [< `Canceled | `Past | `Upcoming ]
+  -> Public.t list Lwt.t
+
+val has_upcoming_sessions : Database.Label.t -> Contact.Id.t -> bool Lwt.t
 
 val find_by_assignment
   :  Database.Label.t

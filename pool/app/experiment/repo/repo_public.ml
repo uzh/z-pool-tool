@@ -27,6 +27,31 @@ let select_from_experiments_sql ?(distinct = false) where_fragment =
   Format.asprintf "%s %s" select_from where_fragment
 ;;
 
+let select_upcoming_sql ?(count = false) where_fragment =
+  let select =
+    if count
+    then "COUNT(DISTINCT pool_experiments.id)"
+    else CCString.concat "," sql_select_columns |> Format.asprintf "DISTINCT %s"
+  in
+  Format.asprintf
+    {sql|
+      SELECT %s
+      FROM pool_experiments
+      INNER JOIN pool_sessions
+        ON pool_sessions.experiment_uuid = pool_experiments.uuid
+        AND pool_sessions.canceled_at IS NULL
+      LEFT OUTER JOIN pool_invitations
+        ON pool_invitations.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_experiments.uuid = pool_invitations.experiment_uuid
+      LEFT OUTER JOIN pool_waiting_list
+        ON pool_waiting_list.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_experiments.uuid = pool_waiting_list.experiment_uuid
+      %s
+    |sql}
+    select
+    where_fragment
+;;
+
 let pool_sessions_inner_join =
   {sql|
     INNER JOIN pool_sessions
@@ -77,6 +102,64 @@ let condition_participated = assignments_base_condition ~require_participated:tr
 
 let condition_is_invited =
   {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
+;;
+
+let upcoming_where experiment_type =
+  let onsite_session_exists =
+    {sql|
+      (pool_sessions.start > NOW()
+        AND
+      pool_sessions.canceled_at IS NULL)
+    |sql}
+  in
+  let timewindow_exists =
+    {sql|
+      (DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW()
+        AND
+      pool_sessions.canceled_at IS NULL)
+    |sql}
+  in
+  let experiment_type_condition, session_condition =
+    let type_condition =
+      Format.asprintf {sql| pool_experiments.assignment_without_session = %s |sql}
+    in
+    match experiment_type with
+    | `Online -> type_condition "1", timewindow_exists
+    | `OnSite -> type_condition "0", onsite_session_exists
+  in
+  let inivitation_exists = "pool_invitations.contact_uuid IS NOT NULL" in
+  let not_assigned =
+    let subquery =
+      {sql|
+        SELECT
+          1
+        FROM
+          pool_assignments
+          INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
+        WHERE
+          pool_sessions.experiment_uuid = pool_experiments.uuid
+          AND pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND pool_assignments.marked_as_deleted = 0
+          AND pool_sessions.canceled_at IS NULL
+      |sql}
+    in
+    match experiment_type with
+    | `OnSite -> Format.asprintf "NOT EXISTS (%s)" subquery
+    | `Online ->
+      Format.asprintf
+        "NOT EXISTS (%s AND pool_assignments.participated IS NOT NULL)"
+        subquery
+  in
+  let not_on_waitinglist = "pool_waiting_list.uuid IS NULL" in
+  Format.asprintf
+    "%s AND (%s OR %s) AND %s AND %s AND %s AND %s"
+    experiment_type_condition
+    inivitation_exists
+    condition_allow_uninvited_signup
+    not_assigned
+    condition_registration_not_disabled
+    not_on_waitinglist
+    session_condition
 ;;
 
 let find_upcoming_to_register_request experiment_type () =
@@ -167,6 +250,31 @@ let find_upcoming_to_register pool contact experiment_type =
   ||> CCList.map Entity.to_public
 ;;
 
+let find_upcoming pool query contact experiment_type =
+  let query =
+    match query with
+    | `Dashboard limit ->
+      let open Query in
+      let pagination = Pagination.create ~limit ~page:0 () in
+      create ~pagination ()
+    | `Query query -> query
+  in
+  (* Join with waiting list, invitation and assignments tables *)
+  let dyn =
+    let open Contact in
+    let id = id contact in
+    Dynparam.(empty |> add Repo.Id.t id |> add Repo.Id.t id |> add Repo.Id.t id)
+  in
+  let where = upcoming_where experiment_type in
+  Query.collect_and_count
+    pool
+    (Some query)
+    ~select:select_upcoming_sql
+    ~dyn
+    ~where
+    Repo_entity.Public.t
+;;
+
 let find_pending_waitinglists_by_contact_request =
   let open Caqti_request.Infix in
   let join =
@@ -200,19 +308,6 @@ let find_pending_waitinglists_by_contact_request =
 
 let find_pending_waitinglists_by_contact pool contact =
   Database.collect pool find_pending_waitinglists_by_contact_request (Contact.id contact)
-;;
-
-let find_past_experiments_by_contact pool contact =
-  let open Caqti_request.Infix in
-  let where, Dynparam.Pack (pt, pv), joins =
-    Repo.Sql.participation_history_where ~only_closed:true (Contact.id contact)
-  in
-  let request =
-    Format.asprintf "%s WHERE %s" joins where
-    |> select_from_experiments_sql ~distinct:true
-    |> pt ->! RepoEntity.Public.t
-  in
-  Database.collect pool request pv
 ;;
 
 let where_contact_can_access =

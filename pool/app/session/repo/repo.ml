@@ -30,6 +30,24 @@ let sql_select_columns =
   @ Pool_location.Repo.sql_select_columns
 ;;
 
+let sql_public_select_columns =
+  [ Entity.Id.sql_select_fragment ~field:"pool_sessions.uuid"
+  ; Entity.Id.sql_select_fragment ~field:"pool_sessions.experiment_uuid"
+  ; "pool_experiments.public_title"
+  ; Entity.Id.sql_select_fragment ~field:"pool_sessions.follow_up_to"
+  ; "pool_sessions.start"
+  ; "pool_sessions.duration"
+  ; "pool_sessions.public_description"
+  ; Entity.Id.sql_select_fragment ~field:"pool_locations.uuid"
+  ; "pool_sessions.max_participants"
+  ; "pool_sessions.min_participants"
+  ; "pool_sessions.overbook"
+  ; {sql|(SELECT COUNT(pool_assignments.id) FROM pool_assignments WHERE session_uuid = pool_sessions.uuid AND marked_as_deleted = 0 AND pool_assignments.canceled_at IS NULL)|sql}
+  ; "pool_sessions.canceled_at"
+  ; "pool_sessions.closed_at"
+  ]
+;;
+
 let joins =
   Format.asprintf
     {sql|
@@ -113,47 +131,21 @@ module Sql = struct
   ;;
 
   let find_public_sql where =
-    let select =
+    let columns = CCString.concat "," sql_public_select_columns in
+    Format.asprintf
       {sql|
         SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_sessions.uuid), 21)
-          )),
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_sessions.follow_up_to), 1, 8), '-',
-            SUBSTR(HEX(pool_sessions.follow_up_to), 9, 4), '-',
-            SUBSTR(HEX(pool_sessions.follow_up_to), 13, 4), '-',
-            SUBSTR(HEX(pool_sessions.follow_up_to), 17, 4), '-',
-            SUBSTR(HEX(pool_sessions.follow_up_to), 21)
-          )),
-          pool_sessions.start,
-          pool_sessions.duration,
-          pool_sessions.public_description,
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 21)
-          )),
-          pool_sessions.max_participants,
-          pool_sessions.min_participants,
-          pool_sessions.overbook,
-          (SELECT COUNT(pool_assignments.id) FROM pool_assignments WHERE session_uuid = pool_sessions.uuid AND marked_as_deleted = 0 AND pool_assignments.canceled_at IS NULL),
-          pool_sessions.canceled_at
+          %s
         FROM pool_sessions
         INNER JOIN pool_experiments
           ON pool_experiments.uuid = pool_sessions.experiment_uuid
           AND pool_experiments.assignment_without_session = 0
         INNER JOIN pool_locations
           ON pool_locations.uuid = pool_sessions.location_uuid
+        %s
       |sql}
-    in
-    Format.asprintf "%s %s" select where
+      columns
+      where
   ;;
 
   let order_by_start = Format.asprintf "%s ORDER BY pool_sessions.start"
@@ -394,28 +386,29 @@ module Sql = struct
     ||> CCOption.to_result Pool_message.(Error.NotFound Field.Session)
   ;;
 
-  let find_public_upcoming_by_contact_request =
-    let open Caqti_request.Infix in
-    {sql|
-      INNER JOIN pool_assignments
-        ON pool_assignments.session_uuid = pool_sessions.uuid
-        AND pool_assignments.canceled_at IS NULL
-        AND pool_assignments.marked_as_deleted = 0
-      WHERE
-        pool_sessions.closed_at IS NULL
-      AND
-        pool_sessions.start > NOW()
-      AND
-        pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
-      ORDER BY
-        pool_sessions.start ASC
-    |sql}
-    |> find_public_sql
-    |> Contact.Repo.Id.t ->* RepoEntity.Public.t
-  ;;
-
-  let find_public_upcoming_by_contact pool =
-    Database.collect pool find_public_upcoming_by_contact_request
+  let find_public_request_sql ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else sql_public_select_columns |> CCString.concat ", "
+    in
+    Format.asprintf
+      {sql|
+        SELECT 
+        %s 
+        FROM pool_sessions 
+        INNER JOIN pool_experiments
+          ON pool_experiments.uuid = pool_sessions.experiment_uuid
+          AND pool_experiments.assignment_without_session = 0
+        INNER JOIN pool_locations
+          ON pool_locations.uuid = pool_sessions.location_uuid
+        INNER JOIN pool_assignments
+          ON pool_assignments.session_uuid = pool_sessions.uuid
+          AND pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND pool_assignments.canceled_at IS NULL
+          AND pool_assignments.marked_as_deleted = 0
+          %s
+        |sql}
+      columns
+      where_fragment
   ;;
 
   let find_by_assignment_request =
@@ -914,18 +907,77 @@ let find_open pool session_id =
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title
 
-let find_upcoming_public_by_contact pool contact_id =
+let has_upcoming_sessions pool contact_id =
+  let open Caqti_request.Infix in
   let open Utils.Lwt_result.Infix in
-  let open Entity.Public in
-  Sql.find_public_upcoming_by_contact pool contact_id
+  let dyn = Dynparam.(empty |> add Contact.Repo.Id.t contact_id) in
+  let where =
+    {|
+      WHERE pool_sessions.closed_at IS NULL
+      AND pool_sessions.canceled_at IS NULL
+      AND pool_sessions.start > NOW()
+      LIMIT 1
+  |}
+  in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let request = Sql.find_public_request_sql where |> pt ->* RepoEntity.Public.t in
+  Database.collect pool request pv ||> CCList.is_empty ||> not
+;;
+
+let query_by_contact ?query pool contact =
+  let open Utils.Lwt_result.Infix in
+  let dyn = Dynparam.(empty |> add Contact.Repo.Id.t (Contact.id contact)) in
+  Query.collect_and_count
+    pool
+    query
+    ~select:Sql.find_public_request_sql
+    ~dyn
+    RepoEntity.Public.t
+  >|> fun (sessions, query) ->
+  (* TODO #2390: Get rid of location_to_public_repo_entity *)
+  let%lwt sessions =
+    sessions
+    |> Lwt_list.map_s (location_to_public_repo_entity pool)
+    ||> CCResult.flatten_l
+    ||> CCResult.get_exn
+  in
+  Lwt.return (sessions, query)
+;;
+
+let find_by_contact_and_experiment pool contact experiment_id context =
+  let open Caqti_request.Infix in
+  let open Utils.Lwt_result.Infix in
+  let dyn =
+    Dynparam.(
+      empty
+      |> add Contact.Repo.Id.t (Contact.id contact)
+      |> add Experiment.Repo.Entity.Id.t experiment_id)
+  in
+  let where =
+    let not_canceled = {sql|pool_sessions.canceled_at IS NULL|sql} in
+    match context with
+    | `Canceled -> {sql|pool_sessions.canceled_at IS NOT NULL|sql}
+    | `Upcoming ->
+      Format.asprintf
+        {sql|%s AND (pool_sessions.closed_at IS NULL AND (pool_sessions.start + INTERVAL duration SECOND) > NOW())|sql}
+        not_canceled
+    | `Past ->
+      Format.asprintf
+        {sql|%s AND (pool_sessions.closed_at IS NOT NULL OR (pool_sessions.start + INTERVAL duration SECOND) < NOW())|sql}
+        not_canceled
+  in
+  let sql =
+    Format.asprintf
+      "WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', '')) AND %s"
+      where
+    |> Sql.find_public_request_sql
+  in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let request = sql |> pt ->* RepoEntity.Public.t in
+  Database.collect pool request pv
   >|> Lwt_list.map_s (location_to_public_repo_entity pool)
   ||> CCResult.flatten_l
-  >|+ group_and_sort_keep_followups
-  >>= fun lst ->
-  lst
-  |> Lwt_list.map_s (fun (parent, follow_ups) ->
-    Sql.find_public_experiment pool parent.id >|+ fun exp -> exp, parent, follow_ups)
-  ||> CCResult.flatten_l
+  ||> CCResult.get_exn
 ;;
 
 let find_sessions_to_remind = Sql.find_sessions_to_remind

@@ -241,6 +241,7 @@ let suite =
               "cancel assignment with follow ups"
               `Slow
               cancel_assignment_with_follow_ups
+          ; test_case "has upcoming sessions" `Slow has_upcoming_sessions
           ] )
     ; ( "session"
       , Session_test.

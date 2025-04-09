@@ -130,7 +130,6 @@ let canceled () =
 ;;
 
 let canceled_with_closed_session () =
-  let hour = Ptime.Span.of_int_s @@ (60 * 60) in
   let session = Model.create_session () in
   let closed_at = Ptime_clock.now () in
   let notification_email = Model.create_email_job () in
@@ -138,7 +137,7 @@ let canceled_with_closed_session () =
     Session.
       { session with
         start =
-          Ptime.sub_span (Ptime_clock.now ()) hour
+          Ptime.sub_span (Ptime_clock.now ()) Test_utils.Time.hour
           |> CCOption.get_exn_or "Invalid start"
           |> Start.create
       ; closed_at = Some closed_at
@@ -849,5 +848,44 @@ let cancel_assignment_with_follow_ups _ () =
     ||> CCList.is_empty
   in
   let () = Alcotest.(check bool "succeeds" true res) in
+  Lwt.return_unit
+;;
+
+let has_upcoming_sessions _ () =
+  let open Integration_utils in
+  let pool = Test_utils.Data.database_label in
+  let%lwt experiment = ExperimentRepo.create () in
+  let%lwt contact = ContactRepo.create ~with_terms_accepted:true () in
+  let session_id = Session.Id.of_string "c7128f4f-5689-4434-97af-bd19a151d648" in
+  let create_session ?id start = SessionRepo.create ?id ~start experiment () in
+  let%lwt upcoming_session =
+    create_session ~id:session_id (Test_utils.Model.in_an_hour ())
+  in
+  let%lwt past_session = create_session (Test_utils.Model.two_hours_ago ()) in
+  let run_test msg ~expected =
+    let%lwt has_upcoming = Session.has_upcoming_sessions pool (Contact.id contact) in
+    Alcotest.(check bool msg expected has_upcoming);
+    Lwt.return_unit
+  in
+  let open Assignment in
+  (* Contact is signed up for future session *)
+  let%lwt assignment = AssignmentRepo.create upcoming_session contact in
+  let%lwt () = run_test "Contact has upcoming session" ~expected:true in
+  (* Mark assignment as deleted *)
+  let%lwt () = MarkedAsDeleted assignment |> handle_event pool in
+  let%lwt () = run_test "Assignent is marked as deleted" ~expected:false in
+  (* Reassign contact *)
+  let%lwt (assignment : t) = AssignmentRepo.create upcoming_session contact in
+  let%lwt () = run_test "Contact was reassigned" ~expected:true in
+  (* Cancel assignment *)
+  let%lwt () = Canceled assignment |> handle_event pool in
+  let%lwt () = run_test "Assignment was canceled" ~expected:false in
+  (* Session was closed *)
+  let%lwt () = Session.(Closed upcoming_session |> handle_event pool) in
+  let%lwt () = run_test "Session was closed" ~expected:false in
+  (* Past session *)
+  let%lwt () = MarkedAsDeleted assignment |> handle_event pool in
+  let%lwt (_ : t) = AssignmentRepo.create past_session contact in
+  let%lwt () = run_test "Assigned to passt session" ~expected:false in
   Lwt.return_unit
 ;;

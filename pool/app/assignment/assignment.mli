@@ -125,25 +125,7 @@ module Public : sig
 
   val participated : t -> Participated.t option
 
-  val find_upcoming_by_experiment
-    :  Database.Label.t
-    -> Experiment.Id.t
-    -> Contact.t
-    -> t list Lwt.t
-
-  val find_past_by_experiment
-    :  Database.Label.t
-    -> Experiment.Id.t
-    -> Contact.t
-    -> t list Lwt.t
-
   val find_all_by_experiment
-    :  Database.Label.t
-    -> Experiment.Id.t
-    -> Contact.t
-    -> t list Lwt.t
-
-  val find_canceled_by_experiment
     :  Database.Label.t
     -> Experiment.Id.t
     -> Contact.t

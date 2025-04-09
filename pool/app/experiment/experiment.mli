@@ -225,6 +225,11 @@ module Public : sig
   val is_sessionless : t -> bool
   val update_direct_registration_disabled : t -> DirectRegistrationDisabled.t -> t
   val contact_matches_filter : Database.Label.t -> t -> Contact.t -> bool Lwt.t
+  val column_public_title : Query.Column.t
+  val filterable_by : Query.Filter.human option
+  val searchable_by : Query.Column.t list
+  val sortable_by : Query.Column.t list
+  val default_query : Query.t
 end
 
 val to_public : t -> Public.t
@@ -325,12 +330,14 @@ val find_upcoming_to_register
   -> [ `OnSite | `Online ]
   -> Public.t list Lwt.t
 
-val find_pending_waitinglists_by_contact
+val find_upcoming
   :  Database.Label.t
+  -> [< `Dashboard of int | `Query of Query.t ]
   -> Contact.t
-  -> Public.t list Lwt.t
+  -> [ `OnSite | `Online ]
+  -> (Public.t list * Query.t) Lwt.t
 
-val find_past_experiments_by_contact
+val find_pending_waitinglists_by_contact
   :  Database.Label.t
   -> Contact.t
   -> Public.t list Lwt.t
@@ -435,6 +442,7 @@ module Repo : sig
   module Entity : sig
     module Id : Pool_model.Base.CaqtiSig with type t = Id.t
     module Title : Pool_model.Base.CaqtiSig with type t = Title.t
+    module PublicTitle : Pool_model.Base.CaqtiSig with type t = PublicTitle.t
 
     val t : t Caqti_type.t
   end

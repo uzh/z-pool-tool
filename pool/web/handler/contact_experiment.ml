@@ -5,24 +5,32 @@ let src = Logs.Src.create "handler.contact.assignment"
 let create_layout = Contact_general.create_layout
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
+let experiment_path = HttpUtils.Url.Contact.experiment_path
 
-let index req =
+let dashboard req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
   let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+       let%lwt upcoming_sessions =
+         let open Session in
+         let query =
+           let open Query in
+           let filter =
+             let open Filter in
+             Condition.[ Checkbox (Public.column_past, true) ]
+           in
+           let pagination = Pagination.create ~limit:2 ~page:0 () in
+           create ~pagination ~filter ()
+         in
+         query_by_contact ~query database_label contact
+       in
        let%lwt experiment_list =
-         Experiment.find_upcoming_to_register database_label contact `OnSite
+         Experiment.find_upcoming database_label (`Dashboard 2) contact `OnSite
        in
        let%lwt online_studies =
-         Experiment.find_upcoming_to_register database_label contact `Online
-       in
-       let* upcoming_sessions =
-         Session.find_upcoming_public_by_contact database_label (Contact.id contact)
-       in
-       let%lwt past_experiments =
-         Experiment.find_past_experiments_by_contact database_label contact
+         Experiment.find_upcoming database_label (`Dashboard 2) contact `Online
        in
        let%lwt custom_fields_anwsered =
          Custom_field.all_answered database_label (Contact.id contact)
@@ -53,7 +61,6 @@ let index req =
          online_studies
          upcoming_sessions
          waiting_list
-         past_experiments
          custom_fields_anwsered
          i18n
          context
@@ -61,6 +68,71 @@ let index req =
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let index_handler page_context req =
+  HttpUtils.Htmx.handler
+    ~error_path:(experiment_path ())
+    ~create_layout
+    ~query:(module Experiment.Public)
+    req
+  @@ fun ({ Pool_context.database_label; user; language; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
+  let%lwt experiments =
+    let context =
+      match page_context with
+      | `UpcomingOnsite -> `OnSite
+      | `UpcomingOnline -> `Online
+    in
+    Experiment.find_upcoming database_label (`Query query) contact context
+  in
+  let page_title () =
+    let label =
+      match page_context with
+      | `UpcomingOnsite -> I18n.Key.DashboardExperimentRegistration
+      | `UpcomingOnline -> I18n.Key.DashboardOnlineStudies
+    in
+    I18n.find_by_key database_label label language
+  in
+  let open Page.Contact.Experiment in
+  let page_context = (page_context :> experiment_list) in
+  let%lwt page =
+    match HttpUtils.Htmx.is_hx_request req with
+    | true -> list |> Lwt.return
+    | false ->
+      let%lwt title = page_title () in
+      experiment_list title |> Lwt.return
+  in
+  page page_context context experiments |> Lwt.return_ok
+;;
+
+let available_onsite = index_handler `UpcomingOnsite
+let available_online = index_handler `UpcomingOnline
+
+let history req =
+  HttpUtils.Htmx.handler
+    ~error_path:(experiment_path ())
+    ~create_layout
+    ~query:(module Experiment)
+    req
+  @@ fun ({ Pool_context.database_label; user; language; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
+  let%lwt experiments =
+    Experiment.query_participation_history_by_contact ~query database_label contact
+  in
+  let open Page.Contact.Experiment.History in
+  let%lwt page =
+    match HttpUtils.Htmx.is_hx_request req with
+    | true -> list |> Lwt.return
+    | false ->
+      let%lwt title =
+        I18n.find_by_key database_label I18n.Key.DashboardExperimentHistory language
+      in
+      show title |> Lwt.return
+  in
+  page context experiments |> Lwt.return_ok
 ;;
 
 let show_online_study
@@ -130,20 +202,12 @@ let show req =
         >|+ Session.Public.group_and_sort
         >|+ CCList.filter (fst %> Session.Public.is_fully_booked %> not)
       in
-      let find_sessions fnc =
-        let open Assignment in
-        fnc database_label id contact
-        >|> Lwt_list.map_s (fun { Public.id; _ } ->
-          id |> Id.to_common |> Session.find_public_by_assignment database_label)
-        ||> CCResult.flatten_l
+      let find_sessions =
+        Session.find_by_contact_and_experiment database_label contact id
       in
-      let* upcoming_sessions =
-        find_sessions Assignment.Public.find_upcoming_by_experiment
-      in
-      let* past_sessions = find_sessions Assignment.Public.find_past_by_experiment in
-      let* canceled_sessions =
-        find_sessions Assignment.Public.find_canceled_by_experiment
-      in
+      let%lwt upcoming_sessions = find_sessions `Upcoming in
+      let%lwt past_sessions = find_sessions `Past in
+      let%lwt canceled_sessions = find_sessions `Canceled in
       let%lwt user_is_on_waiting_list =
         Waiting_list.user_is_enlisted database_label contact id
       in

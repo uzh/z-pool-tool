@@ -14,7 +14,9 @@ let find_multiple = Repo.find_multiple
 let find_contact_is_assigned_by_experiment = Repo.find_contact_is_assigned_by_experiment
 let find_public = Repo.find_public
 let find_public_by_assignment = Repo.find_public_by_assignment
-let find_upcoming_public_by_contact = Repo.find_upcoming_public_by_contact
+let query_by_contact = Repo.query_by_contact
+let find_by_contact_and_experiment = Repo.find_by_contact_and_experiment
+let has_upcoming_sessions = Repo.has_upcoming_sessions
 let find_by_assignment = Repo.find_by_assignment
 let find_experiment_id_and_title = Repo.find_experiment_id_and_title
 let find_sessions_to_remind = Repo.find_sessions_to_remind
@@ -45,6 +47,41 @@ let find_all_to_swap_by_experiment database_label experiment_id =
            | Some _ -> sessions @ list)
         []
 ;;
+
+module Public = struct
+  include Public
+
+  let column_past =
+    Query.Column.create
+      ( Pool_message.Field.HidePast
+      , {sql|
+          (pool_sessions.closed_at IS NULL 
+          AND 
+          DATE_ADD(pool_sessions.start, INTERVAL pool_sessions.duration SECOND) > NOW())
+        |sql}
+      )
+  ;;
+
+  let column_experiment_title =
+    (Pool_message.Field.Experiment, "pool_experiments.public_title")
+    |> Query.Column.create
+  ;;
+
+  let searchable_by = [ column_experiment_title ]
+  let sortable_by = [ column_date ]
+
+  let filterable_by =
+    Some Query.Filter.Condition.Human.[ Checkbox column_canceled; Checkbox column_past ]
+  ;;
+
+  let default_filter =
+    let open Query in
+    let open Filter in
+    Condition.[ Checkbox (column_past, true) ]
+  ;;
+
+  let default_query = Query.create ~sort:default_sort ~filter:default_filter ()
+end
 
 module Repo = struct
   let sql_select_columns = Repo.sql_select_columns

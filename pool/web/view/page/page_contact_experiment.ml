@@ -13,6 +13,22 @@ type dashboard_i18n =
   ; waiting_list : I18n.t
   }
 
+type experiment_list =
+  [ `Participated
+  | `UpcomingOnsite
+  | `UpcomingOnline
+  ]
+
+let experiment_list_url context =
+  let suffix =
+    match context with
+    | `UpcomingOnsite -> "available-onsite"
+    | `UpcomingOnline -> "available-online"
+    | `Participated -> "participated"
+  in
+  HttpUtils.Url.Contact.experiment_path ~suffix ()
+;;
+
 let experiment_public_description =
   let open Experiment in
   Public.description
@@ -50,16 +66,43 @@ let experiment_detail_page experiment html =
     ]
 ;;
 
+let make_panel ?(classnames = []) ~query_parameters url content =
+  a
+    ~a:
+      [ a_href (HttpUtils.externalize_path_with_params query_parameters url)
+      ; a_class ([ "panel"; "flexrow"; "flex-gap"; "inset-sm" ] @ classnames)
+      ]
+    [ div ~a:[ a_class [ "grow" ] ] content; Component.Icon.(to_html ChevronForward) ]
+;;
+
 let index
       experiment_list
       online_studies
       upcoming_sessions
       waiting_list
-      past_experiments
       custom_fields_ansered
       i18n
       Pool_context.{ language; query_parameters; _ }
   =
+  let total_link_from_query url text { Query.pagination; _ } =
+    let open Query in
+    let open CCOption in
+    let make_total total =
+      match total with
+      | None -> txt ""
+      | Some total -> span ~a:[ a_class [ "counter" ] ] [ txt (string_of_int total) ]
+    in
+    let total =
+      pagination >|= (fun { Pagination.item_count; _ } -> item_count) |> make_total
+    in
+    let html =
+      [ span
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+          [ total; txt Pool_common.(Utils.control_to_string language text) ]
+      ]
+    in
+    make_panel ~classnames:[ "bg-grey-lightest" ] ~query_parameters url html
+  in
   let list_html ?empty_msg ?note title classnames list =
     div
       [ h2
@@ -108,104 +151,125 @@ let index
     |> CCList.filter_map CCFun.id
     |> div ~a:[ a_class [ "stack" ] ]
   in
-  let experiment_link id =
-    div
-      [ a
-          ~a:
-            [ a_href
-                (HttpUtils.Url.Contact.experiment_path ~id ()
-                 |> HttpUtils.externalize_path_with_params query_parameters)
-            ]
-          [ Control.More |> Pool_common.Utils.control_to_string language |> txt ]
-      ]
-  in
-  let experiment_title exp =
-    div
-      ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
+  let experiment_item experiment =
+    let open Experiment in
+    let html =
       [ div
-          ~a:[ a_class [ "grow" ] ]
-          [ h4 ~a:[ a_class [ "word-wrap-break" ] ] [ strong [ exp |> experiment_title ] ]
+          ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
+          [ h4
+              ~a:[ a_class [ "word-wrap-break" ] ]
+              [ txt (experiment |> Public.public_title |> PublicTitle.value) ]
+          ; experiment_public_description experiment
           ]
-      ; exp |> Experiment.Public.id |> experiment_link
       ]
-  in
-  let experiment_item exp =
-    div
-      ~a:[ a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ] ]
-      [ experiment_title exp; experiment_public_description exp ]
+    in
+    make_panel
+      ~query_parameters
+      (HttpUtils.Url.Contact.experiment_path ~id:(Public.id experiment) ())
+      html
   in
   let open Pool_common.I18n in
   let experiment_html =
-    experiment_list
-    |> CCList.map experiment_item
-    |> list_html
-         i18n.experiment_registration
-         ~note:ExperimentSessionsPublic
-         ~empty_msg:ExperimentListEmpty
-         [ "striped" ]
+    let experiments, query = experiment_list in
+    let total =
+      total_link_from_query
+        (experiment_list_url `UpcomingOnsite)
+        Control.AllAvailableExperiments
+        query
+    in
+    let panel =
+      let sessions = CCList.map experiment_item experiments in
+      list_html
+        i18n.experiment_registration
+        ~note:ExperimentSessionsPublic
+        ~empty_msg:ExperimentListEmpty
+        [ "panel-list" ]
+        (sessions @ [ total ])
+    in
+    div [ panel ]
   in
   let online_studies_html =
-    online_studies
-    |> CCList.map experiment_item
-    |> list_html i18n.online_studies ~empty_msg:ExperimentOnlineListEmpty [ "striped" ]
+    let experiments, query = online_studies in
+    let total =
+      total_link_from_query
+        (experiment_list_url `UpcomingOnline)
+        Control.AllAvailableExperiments
+        query
+    in
+    let panel =
+      let sessions = CCList.map experiment_item experiments in
+      list_html
+        i18n.online_studies
+        ~empty_msg:ExperimentOnlineListEmpty
+        [ "panel-list" ]
+        (sessions @ [ total ])
+    in
+    div [ panel ]
   in
   let past_experiments_html =
-    match past_experiments with
-    | [] -> txt ""
-    | past_experiments ->
-      past_experiments
-      |> CCList.map experiment_item
-      |> list_html i18n.experiment_history [ "striped" ]
+    let url =
+      HttpUtils.(
+        Url.Contact.experiment_path ~suffix:"history" ()
+        |> externalize_path_with_params query_parameters)
+    in
+    list_html
+      i18n.experiment_history
+      []
+      [ a
+          ~a:[ a_href url ]
+          [ txt Pool_common.(Utils.hint_to_string language I18n.ContactExperimentHistory)
+          ]
+      ]
   in
   let session_html =
-    let upcoming_session_list ((exp : Experiment.Public.t), parent, follow_ups) =
+    let upcoming_session { Session.Public.experiment_id; start; location; canceled_at; _ }
+      =
       let open Session in
-      let thead = Field.[ Some Start; Some Location ] in
-      let session_item session =
+      let classnames, tags =
+        match canceled_at with
+        | None -> [], []
+        | Some _ ->
+          let tag =
+            Component.Tag.create_chip
+              ~inline:true
+              `Error
+              Pool_common.(Utils.text_to_string language I18n.Canceled)
+          in
+          [ "bg-red-lighter" ], [ tag ]
+      in
+      let html =
         [ div
-            ((if CCOption.is_some session.Public.canceled_at
-              then
-                [ strong [ txt Pool_common.(Utils.text_to_string language I18n.Canceled) ]
-                ; br ()
-                ]
-              else [])
-             @ [ txt (Session.Public.start_end_with_duration_human session) ])
-        ; session.Public.location |> Component.Location.preview
+            ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
+            [ p
+                ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+                (span [ txt (Start.value start |> Pool_model.Time.formatted_date_time) ]
+                 :: tags)
+            ; p [ txt (location.Pool_location.name |> Pool_location.Name.value) ]
+            ]
         ]
       in
-      let sessions = parent :: follow_ups in
-      let row_formatter i =
-        let open CCOption in
-        i
-        |> CCList.nth_opt sessions
-        >>= fun s -> s.Session.Public.canceled_at >|= CCFun.const [ "bg-red-lighter" ]
-      in
-      let session_table =
-        sessions
-        |> CCList.map session_item
-        |> Component.Table.responsive_horizontal_table
-             `Striped
-             language
-             ~align_last_end:true
-             ~align_top:true
-             ~row_formatter
-             thead
-      in
-      div
-        ~a:[ a_class [ "flexcolumn"; "stack" ] ]
-        [ div
-            ~a:[ a_class [ "stack-sm" ] ]
-            [ experiment_title exp; experiment_public_description exp ]
-        ; session_table
-        ]
+      make_panel
+        ~classnames
+        ~query_parameters
+        (HttpUtils.Url.Contact.experiment_path ~id:experiment_id ())
+        html
     in
-    let open Pool_common.I18n in
-    upcoming_sessions
-    |> CCList.map upcoming_session_list
-    |> list_html
-         i18n.upcoming_sessions
-         ~empty_msg:UpcomingSessionsListEmpty
-         [ "stack-lg" ]
+    let sessions, query = upcoming_sessions in
+    let total =
+      total_link_from_query
+        (HttpUtils.Url.Contact.session_path ())
+        Control.AllSessions
+        query
+    in
+    let panel =
+      let sessions = CCList.map upcoming_session sessions in
+      list_html
+        i18n.upcoming_sessions
+        ~empty_msg:UpcomingSessionsListEmpty
+        [ "panel-list" ]
+        (sessions @ [ total ])
+    in
+    div [ panel ]
   in
   let waiting_list_html =
     match waiting_list with
@@ -214,7 +278,7 @@ let index
       let open Pool_common.I18n in
       list
       |> CCList.map experiment_item
-      |> list_html i18n.waiting_list ~empty_msg:ContactWaitingListEmpty [ "striped" ]
+      |> list_html i18n.waiting_list ~empty_msg:ContactWaitingListEmpty [ "panel-list" ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -226,9 +290,10 @@ let index
         [ notification
         ; div
             ~a:[ a_class [ "grid-col-2"; "grid-gap-lg"; "grid-row-gap-xl"; "gap-lg" ] ]
-            [ div ~a:[ a_class [ "stack-lg" ] ] [ session_html; waiting_list_html ]
+            [ session_html
             ; experiment_html
             ; online_studies_html
+            ; waiting_list_html
             ; past_experiments_html
             ]
         ]
@@ -445,3 +510,115 @@ let online_study_completition (experiment : Experiment.Public.t) (_ : Pool_conte
     ; p [ txt "Thanks for participating" ]
     ]
 ;;
+
+let list (list_context : experiment_list) Pool_context.{ language; _ } (experiments, query)
+  =
+  let page_language = language in
+  let open Experiment in
+  let suffix =
+    match list_context with
+    | `UpcomingOnsite -> "available-onsite"
+    | `UpcomingOnline -> "available-online"
+    | `Participated -> "participated"
+  in
+  let url = Http_utils.Url.Contact.experiment_path ~suffix () |> Uri.of_string in
+  let data_table =
+    let open Public in
+    Component.DataTable.create_meta
+      ~search:searchable_by
+      ?filter:filterable_by
+      url
+      query
+      page_language
+  in
+  let th_class = [ "w-12" ] in
+  let cols = [ `column Public.column_public_title; `empty ] in
+  let row experiment =
+    [ txt (Public.public_title experiment |> PublicTitle.value), Some Field.Title
+    ; ( Component.Input.link_as_button
+          ~icon:Icon.Eye
+          (HttpUtils.Url.Contact.experiment_path ~id:(Public.id experiment) ())
+      , None )
+    ]
+    |> CCList.map (fun (html, field) ->
+      let label = Component.Table.data_label_opt page_language field in
+      td ~a:label [ html ])
+    |> tr
+  in
+  Component.DataTable.make
+    ~break_mobile:true
+    ~th_class
+    ~target_id:"session-table"
+    ~cols
+    ~row
+    data_table
+    experiments
+;;
+
+let experiment_list title page_context context experiments =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt (I18n.content_to_string title) ]
+    ; list page_context context experiments
+    ]
+;;
+
+module History = struct
+  let list Pool_context.{ language; _ } (experiments, query) =
+    let page_language = language in
+    let open Experiment in
+    let open Component in
+    let url =
+      Http_utils.Url.Contact.experiment_path ~suffix:"history" () |> Uri.of_string
+    in
+    let data_table =
+      let open Public in
+      DataTable.create_meta
+        ~search:searchable_by
+        ?filter:filterable_by
+        url
+        query
+        page_language
+    in
+    let th_class = [ "w-12" ] in
+    let cols = [ `column Public.column_public_title; `empty ] in
+    let row (experiment, pending) =
+      let status =
+        match pending with
+        | false -> txt ""
+        | true -> span ~a:[ a_class [ "tag"; "primary"; "inline" ] ] [ txt "pending" ]
+      in
+      [ ( span
+            ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+            [ span [ txt (public_title experiment |> PublicTitle.value) ]; status ]
+        , Some Field.Title )
+      ; ( Input.link_as_button
+            ~icon:Icon.Eye
+            (HttpUtils.Url.Contact.experiment_path ~id:(id experiment) ())
+        , None )
+      ]
+      |> CCList.map (fun (html, field) ->
+        let label = Table.data_label_opt page_language field in
+        td ~a:label [ html ])
+      |> tr
+    in
+    DataTable.make
+      ~break_mobile:true
+      ~th_class
+      ~target_id:"experiment-history-table"
+      ~cols
+      ~row
+      data_table
+      experiments
+  ;;
+
+  let show title context experiments =
+    div
+      ~a:[ a_class [ "trim"; "safety-margin" ] ]
+      [ h1
+          ~a:[ a_class [ "heading-1"; "has-gap" ] ]
+          [ txt (I18n.content_to_string title) ]
+      ; list context experiments
+      ]
+  ;;
+end

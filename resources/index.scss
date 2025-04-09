@@ -24,6 +24,10 @@ h1,
     word-wrap: break-word;
 }
 
+.font-size-xl {
+    font-size: 1.5rem;
+}
+
 // Experimental
 .btn {
     white-space: nowrap
@@ -658,4 +662,24 @@ input[type="checkbox"][readonly] {
     -webkit-line-clamp: 6;
     line-clamp: 6;
     -webkit-box-orient: vertical;
+}
+
+.panel-list {
+    &>.panel+.panel {
+        border-top: 0;
+    }
+}
+
+.panel {
+    border: 1px solid c.$grey-border;
+
+    .counter {
+        font-size: 1.5rem;
+        font-weight: bold;
+        padding: 0 vars.$space-sm;
+    }
+}
+
+a.panel {
+    color: inherit;
 }

@@ -172,12 +172,16 @@ module Contact = struct
         let specific =
           [ get "" Experiment.show; get "start" Experiment.OnlineSurvey.redirect ]
         in
-        [ get "" Experiment.index
+        [ get "" Experiment.dashboard
+        ; get "available-onsite" Experiment.available_onsite
+        ; get "available-online" Experiment.available_online
+        ; get "history" Experiment.history
         ; choose ~scope:Field.(Experiment |> url_key) specific
         ; choose ~scope:(build_scope "waiting-list") waiting_list
         ; choose ~scope:(build_scope "sessions") sessions
         ]
       in
+      let sessions = [ get "" Session.index ] in
       [ get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; get "/user/contact-information" UserProfile.contact_information
@@ -191,6 +195,7 @@ module Contact = struct
       ; post "/user/phone/reset" UserProfile.reset_phone_verification
       ; post "/user/phone/resend-token" UserProfile.resend_token
       ; choose ~scope:"/experiments" experiments
+      ; choose ~scope:Field.(human_url Session) sessions
       ]
     in
     [ choose ~middlewares:[ CustomMiddleware.Contact.completion_in_progress () ] locked

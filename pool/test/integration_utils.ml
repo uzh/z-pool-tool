@@ -32,13 +32,19 @@ end
 
 module AssignmentRepo = struct
   let create ?(current_user = default_current_user) ?id session contact =
+    let open Utils.Lwt_result.Infix in
     let assignment = Assignment.create ?id contact in
     let%lwt () =
       Assignment.(Created (assignment, session.Session.id))
       |> Pool_event.assignment
       |> Pool_event.handle_event Data.database_label current_user
     in
-    Lwt.return assignment
+    Assignment.find_by_contact_and_experiment
+      Data.database_label
+      session.Session.experiment.Experiment.id
+      contact
+    ||> CCList.find (fun ({ Session.id; _ }, _) -> Session.Id.equal id session.Session.id)
+    ||> snd
   ;;
 end
 
