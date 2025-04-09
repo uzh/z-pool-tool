@@ -856,8 +856,11 @@ let has_upcoming_sessions _ () =
   let pool = Test_utils.Data.database_label in
   let%lwt experiment = ExperimentRepo.create () in
   let%lwt contact = ContactRepo.create ~with_terms_accepted:true () in
-  let create_session start = SessionRepo.create ~start experiment () in
-  let%lwt upcoming_session = create_session (Test_utils.Model.in_an_hour ()) in
+  let session_id = Session.Id.of_string "c7128f4f-5689-4434-97af-bd19a151d648" in
+  let create_session ?id start = SessionRepo.create ?id ~start experiment () in
+  let%lwt upcoming_session =
+    create_session ~id:session_id (Test_utils.Model.in_an_hour ())
+  in
   let%lwt past_session = create_session (Test_utils.Model.two_hours_ago ()) in
   let run_test msg ~expected =
     let%lwt has_upcoming = Session.has_upcoming_sessions pool (Contact.id contact) in
@@ -874,9 +877,9 @@ let has_upcoming_sessions _ () =
   (* Reassign contact *)
   let%lwt (assignment : t) = AssignmentRepo.create upcoming_session contact in
   let%lwt () = run_test "Contact was reassigned" ~expected:true in
-  (* Cancel assignment Why does this fail? *)
-  (* let%lwt () = Canceled assignment |> handle_event pool in
-  let%lwt () = run_test "Assignment was canceled" ~expected:false in *)
+  (* Cancel assignment *)
+  let%lwt () = Canceled assignment |> handle_event pool in
+  let%lwt () = run_test "Assignment was canceled" ~expected:false in
   (* Session was closed *)
   let%lwt () = Session.(Closed upcoming_session |> handle_event pool) in
   let%lwt () = run_test "Session was closed" ~expected:false in
