@@ -1,6 +1,6 @@
 let add_default_page_scripts =
   Database.Migration.Step.create
-    ~label:"drop_falsy_unique_constraints_user"
+    ~label:"add default page scripts"
     [%string
       {sql|
         INSERT INTO pool_tenant_page_scripts (uuid, location) VALUES 
