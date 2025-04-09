@@ -195,12 +195,12 @@ module Partials = struct
         ]
   ;;
 
-  let title_buttons language session_id experiment_id can_access_session_assistants =
+  let title_buttons language field session_id experiment_id can_access_session_assistants =
     let edit_button =
       link_as_button
         ~icon:Icon.Create
         ~classnames:[ "small" ]
-        ~control:(language, Control.(Edit (Some Field.Session)))
+        ~control:(language, Control.(Edit (Some field)))
         (session_path ~id:session_id experiment_id ~suffix:"edit"
          |> Sihl.Web.externalize_path)
     in
@@ -1297,6 +1297,7 @@ let detail
   let buttons =
     Partials.title_buttons
       language
+      Field.Session
       session.id
       session.experiment.Experiment.id
       can_access_session_assistants

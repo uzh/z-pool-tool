@@ -235,6 +235,7 @@ type hint =
   | ExperimentMailingsRegistrationDisabled
   | ExperimentMessageTemplates
   | ExperimentSessions
+  | ExperimentTimewindows
   | ExperimentSessionsCancelDelete
   | ExperimentSessionsPublic
   | ExperimentSmtp of string

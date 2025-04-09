@@ -415,8 +415,11 @@ By clicking on the template labels below you can open the default text message:
 |}
   | ExperimentSessions ->
     {|All existing session of this experiment.
-      Once someone has registered for the session, it can no longer be deleted.
+Once someone has registered for the session, it can no longer be deleted.
     |}
+  | ExperimentTimewindows ->
+    {|All existing timewindows of this experiment.
+Once someone started the survey, it can no longer be deleted.|}
   | ExperimentSessionsCancelDelete ->
     {|Canceling an assignment will inform the contact. The concat will be able to sign up for this experiment again.
   Marking an assignment as deleted will not inform the contact. The contact will not be able to sign up for this experiment again.|}
@@ -673,8 +676,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
     "There are no email suffixes defined that are allowed. This means that all email \
      suffixes are allowed."
   | SettingsPageScripts ->
-    "Here you can insert JavaScript code that is rendered on every page in the head or \
-     body tag, e.g. a Matomo analytics code."
+    "Here you can insert HTML code that is rendered on every page in the head or body \
+     tag, e.g. a Matomo analytics code."
   | SignUpCodeHint ->
     Format.asprintf
       "URLs with codes can be sent to track the channels through which contacts register \
