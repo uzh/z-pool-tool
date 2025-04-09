@@ -570,7 +570,7 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | PauseAccountContact ->
     "As long as your account is paused, you will not be invited to any further \
      experiments."
-  | PermissionManage -> "Includes Create, Read, Update and Destroy"
+  | PermissionManage -> "Includes Create, Read, Update and Delete"
   | PermissionsExplanationLink -> "Open the permissions explanation"
   | PromoteContact ->
     "Attention: one-time action. The contact is promoted to an admin, who is \
