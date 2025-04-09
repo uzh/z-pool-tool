@@ -86,7 +86,7 @@ module Tenant = struct
       let open Settings.PageScript in
       let%lwt page_scripts = find database_label in
       let make_script =
-        CCOption.map_or ~default:[] (value %> Unsafe.data %> script %> CCList.return)
+        CCOption.map_or ~default:[] (value %> Unsafe.data %> CCList.return)
       in
       let head = make_script page_scripts.head in
       let body = make_script page_scripts.body in

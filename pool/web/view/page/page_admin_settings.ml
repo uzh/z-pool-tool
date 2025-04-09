@@ -504,15 +504,15 @@ let show
           ]
       ]
     in
-    let hint = Pool_common.(Utils.hint_to_string language I18n.SettingsPageScripts) in
     ( title
     , columns
-    , Some hint
+    , None
     , [ `UserImportFirstReminderAfter; `UserImportSecondReminderAfter ] )
   in
   let page_scripts =
     let open Settings.PageScript in
     let title = "Page scripts" in
+    let hint = Pool_common.(Utils.hint_to_string language I18n.SettingsPageScripts) in
     let make_form location =
       let field, script, action =
         match location with
@@ -536,7 +536,7 @@ let show
     let columns =
       [ make_form Settings.PageScript.Head; make_form Settings.PageScript.Body ]
     in
-    title, columns, None, [ `UpdateHeadScripts; `UpdateBodyScripts ]
+    title, columns, Some hint, [ `UpdateHeadScripts; `UpdateBodyScripts ]
   in
   let body_html =
     [ languages_html
