@@ -164,10 +164,13 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let validations =
-      [ ( starts_after_parent parent_session start
-        , Pool_message.Error.FollowUpIsEarlierThanMain )
+      let open Pool_message in
+      [ starts_after_parent parent_session start, Error.FollowUpIsEarlierThanMain
       ; ( max_participants < min_participants
-        , Pool_message.(Error.Smaller (Field.MaxParticipants, Field.MinParticipants)) )
+        , Error.Smaller (Field.MaxParticipants, Field.MinParticipants) )
+      ; CCOption.(
+          ( is_some (bind parent_session (fun { Session.follow_up_to; _ } -> follow_up_to))
+          , Error.SessionIsFollowup ))
       ]
     in
     let* () = run_validations validations in

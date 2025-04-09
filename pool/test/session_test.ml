@@ -318,6 +318,48 @@ let create_min_eq_max () =
   check_result (Ok [ Pool_event.Session (Session.Created session) ]) res
 ;;
 
+let create_followup () =
+  let open CCResult.Infix in
+  let open Session in
+  let open Field in
+  let followup_start = Data.Validated.start2 in
+  let input =
+    Data.update_input [ Start, followup_start |> Start.value |> Ptime.to_rfc3339 ]
+  in
+  let experiment = Model.create_experiment () in
+  let location = Location_test.create_location () in
+  let parent_session = Model.create_session ~start:Data.Validated.start1 ~experiment () in
+  let session_id = Session.Id.create () in
+  let res =
+    SessionC.Create.(
+      input |> decode >>= handle ~session_id ~parent_session experiment location)
+  in
+  let expected =
+    let open Data.Validated in
+    create
+      ~id:session_id
+      ~follow_up_to:parent_session.id
+      ~email_reminder_lead_time
+      ~internal_description
+      ~public_description
+      ~text_message_reminder_lead_time
+      followup_start
+      duration
+      location
+      max_participants
+      min_participants
+      overbook
+      experiment
+  in
+  let () = check_result (Ok [ Created expected |> Pool_event.session ]) res in
+  let parent_session = { parent_session with follow_up_to = Some (Id.create ()) } in
+  let res =
+    SessionC.Create.(
+      input |> decode >>= handle ~session_id ~parent_session experiment location)
+  in
+  check_result (Error Error.SessionIsFollowup) res
+;;
+
 let update_empty_data () =
   let open CCResult.Infix in
   let open Error in

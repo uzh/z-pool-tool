@@ -643,6 +643,7 @@ let rec error_to_string =
   | SessionHasFollowUps ->
     "Es existieren bereits Folgesessions für diese Session. Sie kann nicht gelöscht \
      werden."
+  | SessionIsFollowup -> "Die Hauptsession ist eine Folgesession."
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | SelectedOptionsCountMax i ->
     let verb, noun = if i == 1 then "darf", "Option" else "dürfen", "Optionen" in

@@ -517,7 +517,9 @@ let data_table
       "/admin/experiments/%s/sessions"
       (experiment.Experiment.id |> Experiment.Id.value)
   in
-  let target_id = "session-list" in
+  let target_id =
+    if chronological then "chronological-session-list" else "session-list"
+  in
   let data_table =
     let url = session_index_path |> Uri.of_string in
     let additional_url_params =
@@ -584,7 +586,7 @@ let data_table
   in
   DataTable.make
     ~break_mobile:true
-    ~classnames:[ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
+    ~classnames:[ "table"; "break-mobile"; "striped"; "align-last-end" ]
     ~target_id
     ~th_class
     ~cols
@@ -610,7 +612,7 @@ let index
           {js|
               const highlight = "highlighted";
               const initHover = () => {
-                  const table = document.getElementById("session-list");
+                  const table = document.getElementById("chronological-session-list");
                   const toggleClass = (e) => {
                       const { id, parentId } = e.currentTarget.dataset;
                       if (parentId) {

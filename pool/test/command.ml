@@ -257,6 +257,7 @@ let () =
               "create session min participants equal max participants succeeds"
               `Quick
               create_min_eq_max
+          ; test_case "create followup sessions" `Quick create_followup
           ; test_case "update session empty data fails" `Quick update_empty_data
           ; test_case "update session invalid data fails" `Quick update_invalid_data
           ; test_case

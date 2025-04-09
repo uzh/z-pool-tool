@@ -176,7 +176,6 @@ let data_table
       (time_windows, query)
   =
   let open Session in
-  let target_id = "session-list" in
   let time_windows_path ?id ?suffix () =
     session_path ?id ?suffix experiment.Experiment.id
   in
@@ -238,7 +237,7 @@ let data_table
   DataTable.make
     ~align_last_end:true
     ~break_mobile:true
-    ~target_id
+    ~target_id:"timewindow-list"
     ~th_class
     ~cols
     ~row

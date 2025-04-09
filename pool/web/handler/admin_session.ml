@@ -115,6 +115,11 @@ let new_helper req page =
          | `FollowUp ->
            let session_id = session_id req in
            let* parent_session = find database_label session_id in
+           let* () =
+             match parent_session.follow_up_to with
+             | Some _ -> Lwt_result.fail Error.SessionIsFollowup
+             | None -> Lwt_result.return ()
+           in
            Page.Admin.Session.follow_up
              context
              experiment
