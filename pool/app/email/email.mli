@@ -186,6 +186,7 @@ module SmtpAuth : sig
   val find_default_opt : Database.Label.t -> t option Lwt.t
   val find_all : Database.Label.t -> t list Lwt.t
   val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+  val defalut_is_set : Database.Label.t -> bool Lwt.t
   val column_label : Query.Column.t
   val column_smtp_server : Query.Column.t
   val column_smtp_username : Query.Column.t

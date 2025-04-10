@@ -30,20 +30,27 @@ let context_notification database_label user is_root =
            (Announcement.find_by_user database_label)
       ||> CCOption.map (fun a -> Root a)
   in
-  let tenant_announcements =
+  let%lwt tenant_announcements =
     let open Pool_common in
-    let default_smtp = Email.Service.Cache.find_default database_label in
-    match default_smtp with
-    | Some _ -> None
-    | None ->
-      Some
-        (Tenant
-           { hint = I18n.SmtpMissing
-           ; style = `Error
-           ; link = Some (Http_utils.Url.Admin.smtp_settings_path (), I18n.Smtp)
-           })
+    let%lwt smtp =
+      let hint =
+        { hint = I18n.SmtpMissing
+        ; style = `Error
+        ; link = Some (Http_utils.Url.Admin.smtp_settings_path (), I18n.Smtp)
+        }
+      in
+      Email.SmtpAuth.defalut_is_set database_label
+      >|> function
+      | true -> Lwt.return_none
+      | false -> Lwt.return_some (Tenant hint)
+    in
+    Lwt.return
+    @@
+    match user with
+    | Admin _ -> [ smtp ]
+    | Contact _ | Guest -> []
   in
-  [ root_announcement; tenant_announcements ] |> CCList.filter_map CCFun.id |> Lwt.return
+  root_announcement :: tenant_announcements |> CCList.filter_map CCFun.id |> Lwt.return
 ;;
 
 let context () =
