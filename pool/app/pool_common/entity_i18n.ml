@@ -331,7 +331,7 @@ type hint =
   | SessionReminderLeadTime
   | SettigsInactiveUsers
   | SettingsContactEmail
-  | SettingsNoEmailSuffixes
+  | SettingsEmailSuffixes
   | SettingsPageScripts
   | SignUpCodeHint
   | SignUpForWaitingList

@@ -167,6 +167,7 @@ let show
     let control_to_string control =
       h4 [ txt (Utils.control_to_string language control) ]
     in
+    let hint = Utils.hint_to_string language I18n.SettingsEmailSuffixes in
     let create_form =
       div
         ~a:[ a_class [ "stack" ] ]
@@ -246,7 +247,7 @@ let show
       | [] ->
         div
           ~a:[ a_class [ "stack" ] ]
-          [ txt (Utils.hint_to_string language I18n.SettingsNoEmailSuffixes) ]
+          [ txt (Utils.text_to_string language I18n.EmptyListGeneric) ]
       | suffixes ->
         div
           ~a:[ a_class [ "stack" ] ]
@@ -265,7 +266,10 @@ let show
           [ open_system_settings_changelog Settings.Key.EmailSuffixes ]
       ]
     in
-    title, columns, None, [ `CreateEmailSuffix; `UpdateEmailSuffixes; `DeleteEmailSuffix ]
+    ( title
+    , columns
+    , Some hint
+    , [ `CreateEmailSuffix; `UpdateEmailSuffixes; `DeleteEmailSuffix ] )
   in
   let contact_email_html =
     let hint = Utils.hint_to_string language I18n.SettingsContactEmail in
