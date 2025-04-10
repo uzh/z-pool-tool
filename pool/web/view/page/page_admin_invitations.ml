@@ -11,20 +11,28 @@ let form_action ?path id =
 ;;
 
 module Partials = struct
-  let list Pool_context.{ language; csrf; _ } experiment (invitations, query) =
+  let list
+        Pool_context.{ language; csrf; _ }
+        ~view_contact_name
+        ~view_contact_info
+        ?(access_contact_profiles = false)
+        experiment
+        (invitations, query)
+    =
     let open Invitation in
     let url = form_action ~path:"sent" experiment.Experiment.id |> Uri.of_string in
     let data_table =
       Component.DataTable.create_meta ~search:Invitation.searchable_by url query language
     in
     let cols =
-      [ `column Pool_user.column_name
-      ; `column Pool_user.column_email
-      ; `column column_resent_at
-      ; `column column_count
-      ; `column column_created_at
-      ; `empty
-      ]
+      let name = Component.Contacts.column_name ~view_contact_name language in
+      let email = if view_contact_info then [ `column Pool_user.column_email ] else [] in
+      (name :: email)
+      @ [ `column column_resent_at
+        ; `column column_count
+        ; `column column_created_at
+        ; `empty
+        ]
     in
     let th_class = [ "w-2"; "w-3"; "w-2"; "w-1"; "w-2"; "w-2" ] in
     let row ({ id; contact; resent_at; send_count; created_at; _ } : t) =
@@ -47,20 +55,29 @@ module Partials = struct
       in
       let open CCFun in
       let open Pool_message in
-      [ txt (Contact.lastname_firstname contact), Some Field.Name
-      ; ( txt (Contact.email_address contact |> Pool_user.EmailAddress.value)
-        , Some Field.Email )
-      ; ( txt
-            (resent_at
-             |> CCOption.map_or
-                  ~default:""
-                  (ResentAt.value %> Pool_model.Time.formatted_date_time))
-        , Some Field.ResentAt )
-      ; txt (send_count |> SendCount.value |> CCInt.to_string), Some Field.Count
-      ; ( txt (created_at |> Pool_common.CreatedAt.value |> formatted_date)
-        , Some Field.CreatedAt )
-      ; resend_form, None
-      ]
+      let name =
+        Component.Contacts.cell_name ~view_contact_name ~access_contact_profiles contact
+      in
+      let email =
+        if view_contact_info
+        then
+          [ ( txt (Contact.email_address contact |> Pool_user.EmailAddress.value)
+            , Some Field.Email )
+          ]
+        else []
+      in
+      (name :: email)
+      @ [ ( txt
+              (resent_at
+               |> CCOption.map_or
+                    ~default:""
+                    (ResentAt.value %> Pool_model.Time.formatted_date_time))
+          , Some Field.ResentAt )
+        ; txt (send_count |> SendCount.value |> CCInt.to_string), Some Field.Count
+        ; ( txt (created_at |> Pool_common.CreatedAt.value |> formatted_date)
+          , Some Field.CreatedAt )
+        ; resend_form, None
+        ]
       |> CCList.map (fun (html, field) ->
         let attr = Component.Table.data_label_opt language field in
         td ~a:attr [ html ])
@@ -160,6 +177,9 @@ end
 
 let sent_invitations
       (Pool_context.{ language; _ } as context)
+      ~access_contact_profiles
+      ~view_contact_name
+      ~view_contact_info
       experiment
       invitations
       statistics
@@ -177,7 +197,13 @@ let sent_invitations
             ; Component.Statistics.SentInvitations.create language statistics
             ]
         ]
-    ; Partials.list context experiment invitations
+    ; Partials.list
+        ~access_contact_profiles
+        ~view_contact_name
+        ~view_contact_info
+        context
+        experiment
+        invitations
     ]
   |> CCList.return
   |> Layout.Experiment.(
