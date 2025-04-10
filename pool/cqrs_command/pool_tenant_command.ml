@@ -22,6 +22,7 @@ type create =
   ; tenant_logos : Pool_common.Id.t list
   ; partner_logos : Pool_common.Id.t list option
   ; email_logo : Pool_tenant.EmailLogo.Write.t option
+  ; contact_email : Settings.ContactEmail.t
   }
 
 let system_event_from_job ?id job =
@@ -55,6 +56,7 @@ end = struct
         tenant_logos
         partner_logos
         email_logo
+        contact_email
     =
     { title
     ; description
@@ -66,6 +68,7 @@ end = struct
     ; tenant_logos
     ; partner_logos
     ; email_logo
+    ; contact_email
     }
   ;;
 
@@ -83,6 +86,7 @@ end = struct
           ; Pool_tenant.Logos.schema ()
           ; Conformist.optional @@ Pool_tenant.PartnerLogos.schema ()
           ; Conformist.optional @@ Pool_tenant.EmailLogo.Write.schema ()
+          ; Settings.ContactEmail.schema ()
           ]
         command)
   ;;
@@ -118,6 +122,8 @@ end = struct
       ; System_event.Job.TenantDatabaseReset (Database.label database)
         |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
+      ; Settings.ContactEmailCreated (command.contact_email, Database.label database)
+        |> Pool_event.settings (* TODO: Accesses wrong database *)
       ]
   ;;
 

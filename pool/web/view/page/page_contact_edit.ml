@@ -70,7 +70,7 @@ let personal_details_form
       [ Pool_common.(Utils.hint_to_string language I18n.AdminOverwriteContactValues)
         |> HttpUtils.add_line_breaks
       ]
-      |> Component.Notification.notification language `Warning
+      |> Component.Notification.create language `Warning
     | false -> txt ""
   in
   let static_fields =
@@ -124,7 +124,7 @@ let personal_details_form
   in
   div
     ~a:[ a_class [ "flexcolumn"; "stack-lg" ] ]
-    [ Notification.notification
+    [ Notification.create
         language
         `Default
         [ p [ txt Pool_common.(Utils.hint_to_string language I18n.PartialUpdate) ] ]
@@ -274,7 +274,7 @@ let contact_information
       HttpUtils.url_with_field_params query_parameters "/user/login-information"
     in
     [ txt Pool_common.(Utils.hint_to_string language I18n.ContactInformationEmailHint) ]
-    |> Notification.notification
+    |> Notification.create
          language
          ~link:(link, Pool_common.I18n.LoginInformation)
          `Warning
@@ -297,7 +297,7 @@ let contact_information
       | false -> txt ""
       | true ->
         [ I18n.ContactPhoneNumberVerificationWasReset |> hint_to_html ]
-        |> Component.Notification.notification language `Success
+        |> Component.Notification.create language `Success
     in
     div
       [ form_title (Add (Some Field.CellPhone))
@@ -335,7 +335,7 @@ let contact_information
               |> Utils.hint_to_string language
               |> txt
             ]
-            |> Component.Notification.notification language `Warning
+            |> Component.Notification.create language `Warning
           ; form
               ~a:(form_attrs "/user/phone/verify")
               [ csrf_element csrf ()

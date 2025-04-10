@@ -279,8 +279,7 @@ let form
       txt
         Pool_common.(
           Utils.hint_to_string language I18n.ExperimentMailingsRegistrationDisabled)
-      |> fun text ->
-      [ p [ text ] ] |> Component.Notification.notification language `Warning
+      |> fun text -> [ p [ text ] ] |> Component.Notification.create language `Warning
     | false -> txt ""
   in
   let distribution_select (distribution : Mailing.Distribution.t option) =
@@ -624,7 +623,7 @@ let overlaps
           Pool_common.(
             Utils.hint_to_string language I18n.MailingLimitExceedsMatchingContacts)
       ]
-      |> Component.Notification.notification language `Warning
+      |> Component.Notification.create language `Warning
     else txt ""
   in
   let average =

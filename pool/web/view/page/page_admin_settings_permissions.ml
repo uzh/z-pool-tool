@@ -68,7 +68,7 @@ let edit_target_modal
       error
       |> CCOption.map_or ~default:(txt "") (fun err ->
         [ txt (Pool_common.Utils.error_to_string language err) ]
-        |> Component.Notification.notification language `Error)
+        |> Component.Notification.create language `Error)
     in
     let permissions = all_permissions |> CCList.map checkbox in
     div

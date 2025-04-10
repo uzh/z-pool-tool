@@ -40,7 +40,7 @@ let list { Pool_context.language; _ } filter_list query =
 let index ({ Pool_context.language; _ } as context) filter_list query =
   let hint =
     [ Pool_common.(Utils.hint_to_string language I18n.FilterTemplates) |> txt ]
-    |> Component.Notification.notification language `Warning
+    |> Component.Notification.create language `Warning
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]

@@ -10,6 +10,49 @@ let database_label_of_request is_root req =
   if is_root then Ok Database.Pool.Root.label else tenant_database_label_of_request req
 ;;
 
+let context_notification database_label user is_root =
+  let open Utils.Lwt_result.Infix in
+  let open Pool_context in
+  let open Notitification in
+  let%lwt root_announcement =
+    match is_root with
+    | true -> Lwt.return_none
+    | false ->
+      let context =
+        match user with
+        | Admin admin -> Some (`Admin, Admin.(admin |> id |> Id.to_common))
+        | Contact contact -> Some (`Contact, Contact.(contact |> id |> Id.to_common))
+        | Guest -> None
+      in
+      context
+      |> CCOption.map_or
+           ~default:Lwt.return_none
+           (Announcement.find_by_user database_label)
+      ||> CCOption.map (fun a -> Root a)
+  in
+  let%lwt tenant_announcements =
+    let open Pool_common in
+    let%lwt smtp =
+      let hint =
+        { hint = I18n.SmtpMissing
+        ; style = `Error
+        ; link = Some (Http_utils.Url.Admin.smtp_settings_path (), I18n.Smtp)
+        }
+      in
+      Email.SmtpAuth.defalut_is_set database_label
+      >|> function
+      | true -> Lwt.return_none
+      | false -> Lwt.return_some (Tenant hint)
+    in
+    Lwt.return
+    @@
+    match user with
+    | Admin _ -> [ smtp ]
+    | Contact _ | Guest -> []
+  in
+  root_announcement :: tenant_announcements |> CCList.filter_map CCFun.id |> Lwt.return
+;;
+
 let context () =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
@@ -68,21 +111,7 @@ let context () =
           let%lwt language = request_language None in
           Lwt.return (language, [])
       in
-      let%lwt announcement =
-        match is_root with
-        | true -> Lwt.return_none
-        | false ->
-          let context =
-            match user with
-            | Admin admin -> Some (`Admin, Admin.(admin |> id |> Id.to_common))
-            | Contact contact -> Some (`Contact, Contact.(contact |> id |> Id.to_common))
-            | Guest -> None
-          in
-          context
-          |> CCOption.map_or
-               ~default:Lwt.return_none
-               (Announcement.find_by_user database_label)
-      in
+      let%lwt notifications = context_notification database_label user is_root in
       create
         ( url_parameters
         , language
@@ -91,7 +120,7 @@ let context () =
         , csrf
         , user
         , guardian
-        , announcement )
+        , notifications )
       |> Lwt.return_ok
     in
     match context with

@@ -107,7 +107,7 @@ let index statistics duplicate_contacts_count layout Pool_context.{ language; _ 
             |> txt
           ]
       ]
-      |> Component.Notification.notification
+      |> Component.Notification.create
            ~link:(Http_utils.Url.Admin.duplicate_path (), I18n.ManageDuplicates)
            language
            `Warning

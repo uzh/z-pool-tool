@@ -4,6 +4,20 @@ include Event
 module SmtpAuth = struct
   include Entity.SmtpAuth
   include Repo.Smtp
+
+  let defalut_is_set pool =
+    let open Utils.Lwt_result.Infix in
+    Email_service.Cache.find_default pool
+    |> function
+    | Some _ -> Lwt.return_true
+    | None ->
+      find_full_default pool
+      ||> (function
+       | Error _ -> false
+       | Ok smtp ->
+         let () = Email_service.Cache.add pool smtp in
+         true)
+  ;;
 end
 
 let find_unverified_by_user pool = Repo.find_by_user pool UnverifiedC

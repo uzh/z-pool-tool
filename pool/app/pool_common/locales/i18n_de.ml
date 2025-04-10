@@ -704,9 +704,13 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SessionReminderLeadTime ->
     "Die Vorlaufzeit bestimmt, wie lange vor dem Start der Session die Erinnerungen an \
      die Kontakte verschickt wird."
-  | SettingsNoEmailSuffixes ->
-    "Es sind keine Email-Endungen definiert, die zugelassen sind. Das bedeutet, dass \
-     alle Email-Endungen erlaubt sind."
+  | SettingsContactEmail ->
+    "Die Standard Absenderadresse für E-Mails. Diese Adresse kann für \
+     experiment-bezogene E-Mails überschrieben werden."
+  | SettingsEmailSuffixes ->
+    "Definieren Sie eine Liste von Domains. Benutzer mit E-Mail-Adressen, die auf eine \
+     dieser Domain enden, können sich anmelden. Wenn keine Domains definiert sind, sind \
+     alle E-Mail-Adressen zugelassen."
   | SettingsPageScripts ->
     "Hier können Sie HTML Code einfügen, der auf jeder Seite im Head, bzw. im Body Tag \
      gerendered wird, zum Beispiel ein Matomo Analytics Code."
@@ -720,6 +724,9 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen einen \
      Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
+  | SmtpMissing ->
+    "Es wurde kein SMTP Konfiguration hinterlegt, weshalb keine E-Mails verschickt \
+     werden können."
   | SmtpSettingsDefaultFlag ->
     "Achtung: Ist eine andere SMTP Konfiguration als Standard markiert, wird diese \
      Einstellung angepasst. Nur eine Konfiguration kann als Standard markiert sein."

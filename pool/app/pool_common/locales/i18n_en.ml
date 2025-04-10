@@ -673,9 +673,13 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SessionReminderLeadTime ->
     "The lead time determines how long before the start of the session the reminders are \
      sent to the contacts"
-  | SettingsNoEmailSuffixes ->
-    "There are no email suffixes defined that are allowed. This means that all email \
-     suffixes are allowed."
+  | SettingsContactEmail ->
+    "The default sender address for emails. This address can be overwritten for \
+     experiment-related emails."
+  | SettingsEmailSuffixes ->
+    "Define a list of domains. Users with email addresses ending in any of those domains \
+     will be allowed to sign up. If no domains are defined, all email addresses are \
+     allowed."
   | SettingsPageScripts ->
     "Here you can insert HTML code that is rendered on every page in the head or body \
      tag, e.g. a Matomo analytics code."
@@ -686,6 +690,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
        parameters with the key '%s'. You can use the form below to build a URL you can \
        send to new contacts."
       Pool_message.Field.(human_url SignUpCode)
+  | SmtpMissing ->
+    "No SMTP configuration has been stored, which is why no e-mails can be sent."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if there is a \
      free place."

@@ -69,7 +69,7 @@ let notifications
            ]
        ; list
        ]
-       |> Notification.notification language `Warning)
+       |> Notification.create language `Warning)
 ;;
 
 let message_template_buttons
@@ -297,7 +297,7 @@ let experiment_form
                |> Utils.hint_to_string context_language
                |> txt
                |> CCList.return
-               |> Component.Notification.notification context_language `Warning)
+               |> Component.Notification.create context_language `Warning)
     in
     div
       ~a:[ a_class [ "stack" ] ]
@@ -313,9 +313,15 @@ let experiment_form
   let smtp_selector =
     let open Email.SmtpAuth in
     let default =
-      CCList.find (fun { default; _ } -> Default.value default) smtp_auth_list
+      CCList.find_opt (fun { default; _ } -> Default.value default) smtp_auth_list
     in
-    let has_options = CCList.length smtp_auth_list > 1 in
+    let hint =
+      let open Pool_common in
+      match default with
+      | None -> I18n.SmtpMissing
+      | Some { label; _ } -> I18n.ExperimentSmtp (Label.value label)
+    in
+    let num_smtp = CCList.length smtp_auth_list in
     selector
       context_language
       Field.Smtp
@@ -326,11 +332,11 @@ let experiment_form
         >>= smtp_auth_id
         >>= fun smtp_id -> CCList.find_opt (id %> Id.equal smtp_id) smtp_auth_list)
       ~label_field:Field.Sender
-      ~hints:[ I18n.ExperimentSmtp (Label.value default.label) ]
+      ~hints:[ hint ]
       ~option_formatter:(fun { label; _ } -> Label.value label)
       ~flash_fetcher
-      ~add_empty:has_options
-      ~disabled:(not has_options)
+      ~add_empty:(num_smtp > 0)
+      ~disabled:(num_smtp < 1)
       ()
   in
   let scripts =

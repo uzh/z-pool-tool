@@ -330,7 +330,7 @@ let field_form
                ]
            ; div
                ~a:[ a_class [ "stack"; "gap" ] ]
-               (Component.Notification.notification
+               (Component.Notification.create
                   language
                   `Warning
                   [ txt

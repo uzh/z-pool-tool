@@ -12,7 +12,7 @@ let terms ?notification terms Pool_context.{ language; query_parameters; csrf; _
   let notifiaction =
     match notification with
     | Some notification ->
-      Component.Notification.notification
+      Component.Notification.create
         language
         `Warning
         [ p [ txt (Utils.text_to_string language notification) ] ]

@@ -248,7 +248,7 @@ let template_inputs
           [ Utils.hint_to_string language I18n.GtxKeyMissing
             |> txt
             |> CCList.return
-            |> Component.Notification.notification language `Warning
+            |> Component.Notification.create language `Warning
           ; text_area
           ])
   in

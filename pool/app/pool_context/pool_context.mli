@@ -19,6 +19,28 @@ module UserType : sig
   val user_in : t list -> user -> bool
 end
 
+module Notitification : sig
+  type tenant =
+    { hint : Pool_common.I18n.hint
+    ; style : [ `Error | `Success | `Warning ]
+    ; link : (string * Pool_common.I18n.nav_link) option
+    }
+
+  val equal_tenant : tenant -> tenant -> bool
+  val pp_tenant : Format.formatter -> tenant -> unit
+  val show_tenant : tenant -> string
+  val sexp_of_tenant : tenant -> Sexplib0.Sexp.t
+
+  type t =
+    | Root of Announcement.t
+    | Tenant of tenant
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val sexp_of_t : t -> Sexplib0.Sexp.t
+end
+
 type t =
   { query_parameters : (Pool_message.Field.t * string) list
   ; language : Pool_common.Language.t
@@ -27,7 +49,7 @@ type t =
   ; csrf : string
   ; user : user
   ; guardian : Guard.PermissionOnTarget.t list
-  ; announcement : Announcement.t option
+  ; notifications : Notitification.t list
   }
 
 val show : t -> string
@@ -47,7 +69,7 @@ val create
      * string
      * user
      * Guard.PermissionOnTarget.t list
-     * Announcement.t option
+     * Notitification.t list
   -> t
 
 module Tenant : sig

@@ -9,7 +9,7 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
       Utils.hint_to_string language hint
       |> txt
       |> CCList.return
-      |> Component.Notification.notification language style
+      |> Component.Notification.create language style
     in
     match tenant.Pool_tenant.text_messages_enabled with
     | false -> txt "", notification I18n.GtxKeyMissing `Warning
