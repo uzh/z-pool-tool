@@ -330,6 +330,7 @@ type hint =
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
   | SettigsInactiveUsers
+  | SettingsContactEmail
   | SettingsNoEmailSuffixes
   | SettingsPageScripts
   | SignUpCodeHint
