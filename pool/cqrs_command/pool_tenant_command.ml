@@ -123,7 +123,7 @@ end = struct
         |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
       ; Settings.ContactEmailCreated (command.contact_email, Database.label database)
-        |> Pool_event.settings (* TODO: Accesses wrong database *)
+        |> Pool_event.settings
       ]
   ;;
 
