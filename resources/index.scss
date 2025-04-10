@@ -567,20 +567,13 @@ $n: 12;
 }
 
 .announcement {
-    .close {
-        float: right;
-        margin-left: vars.$space-sm;
+    .notification-close {
+        margin-left: 0;
     }
 
     @include breakpoints.econ-mobile {
         display: flex;
-        flex-direction: column-reverse;
-
-        .close {
-            margin-left: 0;
-            margin-top: vars.$space-sm;
-            float: none;
-        }
+        flex-direction: row-reverse;
     }
 }
 

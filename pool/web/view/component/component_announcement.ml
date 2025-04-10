@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Pool_message
+open Pool_common
 open Announcement
 
 let make language csrf announcement =
@@ -10,9 +11,11 @@ let make language csrf announcement =
       Http_utils.Url.announcement_path ~id:announcement.id ~suffix:"hide" ()
       |> Sihl.Web.externalize_path
     in
-    let control = Control.Hide (Some Field.Announcement) in
+    let control =
+      Control.Hide (Some Field.Announcement) |> Utils.control_to_string language
+    in
     form
-      ~a:[ a_class [ "close" ] ]
+      ~a:[ a_class [ "notification-close" ] ]
       [ Component_input.csrf_element csrf ()
       ; span
           ~a:
@@ -21,10 +24,10 @@ let make language csrf announcement =
             ; a_user_data "hx-params" "_csrf"
             ; a_user_data "hx-trigger" "click"
             ; a_user_data "hx-swap" "outerHTML"
-            ; a_class [ "pointer"; "has-icon" ]
+            ; a_class [ "pointer" ]
             ]
-          [ Component_icon.(to_html CloseCircle)
-          ; txt (Pool_common.Utils.control_to_string language control)
+          [ Component_icon.(
+              to_html ~classnames:[ "notification-close" ] ~title:control Close)
           ]
       ]
   in
