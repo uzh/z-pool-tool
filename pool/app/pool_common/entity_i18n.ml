@@ -335,6 +335,7 @@ type hint =
   | SettingsPageScripts
   | SignUpCodeHint
   | SignUpForWaitingList
+  | SmtpMissing
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
   | SmtpValidation

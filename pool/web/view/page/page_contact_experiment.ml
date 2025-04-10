@@ -46,7 +46,7 @@ let experiment_title =
 ;;
 
 let not_matching_warning language =
-  Component.Notification.notification
+  Component.Notification.create
     language
     `Error
     [ txt
@@ -141,7 +141,7 @@ let index
           ]
         in
         Some
-          (Component.Notification.notification
+          (Component.Notification.create
              ~link:("/user/personal-details", Pool_common.I18n.PersonalDetails)
              language
              `Warning
@@ -352,7 +352,7 @@ let show
       let missing_phone =
         if CCOption.is_none contact.Contact.cell_phone
         then
-          [ Component.Notification.notification
+          [ Component.Notification.create
               ~link:
                 ( HttpUtils.url_with_field_params
                     query_parameters
@@ -479,7 +479,7 @@ let show_online_study
     in
     let participated_hint assignment =
       let open Utils in
-      Component.Notification.notification
+      Component.Notification.create
         language
         `Success
         [ p

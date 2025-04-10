@@ -7,15 +7,9 @@ let style_to_class = function
   | `Warning -> "warning"
 ;;
 
-let notification ?link ?(classnames = []) language style html =
+let create ?link ?(close = txt "") ?(classnames = []) language style html =
   let classnames =
-    [ "notification"
-    ; style_to_class style
-    ; "flexrow"
-    ; "wrap"
-    ; "flex-gap"
-    ; "justify-between"
-    ]
+    [ "notification"; "flexcolumn"; "flex-gap"; "align-stretch"; style_to_class style ]
     @ classnames
   in
   let link =
@@ -29,5 +23,9 @@ let notification ?link ?(classnames = []) language style html =
             [ txt Pool_common.(Utils.nav_link_to_string language label) ]
         ]
   in
-  div ~a:[ a_class classnames ] [ div html; link ]
+  div
+    ~a:[ a_class classnames ]
+    [ div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ] [ div html; close ]
+    ; link
+    ]
 ;;

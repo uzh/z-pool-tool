@@ -305,7 +305,7 @@ let session_form
                |> Utils.hint_to_string language
                |> txt
                |> CCList.return
-               |> Component.Notification.notification language `Warning)
+               |> Component.Notification.create language `Warning)
     in
     div
       ~a:[ a_class [ "stack" ] ]
@@ -819,7 +819,7 @@ let duplicate
     Pool_common.(Utils.hint_to_string language I18n.DuplicateSession)
     |> txt
     |> CCList.return
-    |> Component.Notification.notification language `Warning
+    |> Component.Notification.create language `Warning
   in
   let subform_wrapper = "session-duplication-subforms" in
   let session_path = session_path ~id:session.id experiment.Experiment.id in
@@ -980,7 +980,7 @@ let detail
         |> Utils.hint_to_string language
         |> txt
       ]
-      |> Notification.notification language `Warning
+      |> Notification.create language `Warning
   in
   let resend_reminders_modal =
     let open Pool_common in
@@ -1002,7 +1002,7 @@ let detail
           with
           | false -> txt ""
           | true ->
-            Notification.notification
+            Notification.create
               language
               `Warning
               [ Utils.hint_to_string language I18n.ResendRemindersWarning
@@ -1930,7 +1930,7 @@ let cancel
         |> HttpUtils.add_line_breaks
       ; follow_ups
       ]
-      |> Component.Notification.notification language `Error
+      |> Component.Notification.create language `Error
   in
   (match Session.is_cancellable session with
    | Error reason -> p [ reason |> Utils.error_to_string language |> txt ]

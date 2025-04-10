@@ -566,21 +566,16 @@ $n: 12;
     grid-column: 1;
 }
 
-.announcement {
-    .notification-close {
-        margin-left: 0;
-    }
+// .announcement {
+//     .notification-close {
+//         margin-left: 0;
+//     }
 
-    @include breakpoints.econ-mobile {
-        display: flex;
-        flex-direction: row-reverse;
-    }
-}
-
-.notification.error a,
-.notification.success a {
-    color: c.$white;
-}
+//     @include breakpoints.econ-mobile {
+//         display: flex;
+//         flex-direction: row-reverse;
+//     }
+// }
 
 input[type="checkbox"][readonly] {
     filter: grayscale(1);
@@ -681,4 +676,20 @@ input[type="checkbox"][readonly] {
 
 a.panel {
     color: inherit;
+}
+
+// Update framework
+.align-stretch {
+    align-items: stretch;
+}
+
+.notification-close {
+    i {
+        margin-right: 0;
+    }
+}
+
+.notification.error a {
+    color: inherit;
+    text-decoration: underline;
 }

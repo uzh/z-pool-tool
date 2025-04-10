@@ -6,7 +6,7 @@ open Announcement
 let make language csrf announcement =
   let id = "annoncement-id-banner" in
   let text = Text.find language announcement.text in
-  let hide_button =
+  let close =
     let url =
       Http_utils.Url.announcement_path ~id:announcement.id ~suffix:"hide" ()
       |> Sihl.Web.externalize_path
@@ -26,15 +26,11 @@ let make language csrf announcement =
             ; a_user_data "hx-swap" "outerHTML"
             ; a_class [ "pointer" ]
             ]
-          [ Component_icon.(
-              to_html ~classnames:[ "notification-close" ] ~title:control Close)
-          ]
+          [ Component_icon.(to_html ~title:control Close) ]
       ]
   in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin"; "gap" ]; a_id id ]
-    [ div
-        ~a:[ a_class [ "notification"; "error"; "announcement" ] ]
-        [ hide_button; div [ Unsafe.data text ] ]
-    ]
+  [ Unsafe.data text ]
+  |> Component_notification.create ~close language `Error
+  |> CCList.return
+  |> div ~a:[ a_class [ "trim"; "safety-margin"; "gap" ]; a_id id ]
 ;;

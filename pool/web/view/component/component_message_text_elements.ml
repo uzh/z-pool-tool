@@ -84,7 +84,7 @@ let build_help ?(hints = []) language help =
   in
   let hint =
     [ hint_to_html I18n.MessageTemplateTextTemplates ]
-    |> Component_notification.notification language `Warning
+    |> Component_notification.create language `Warning
   in
   div ~a:[ a_class [ "stack" ] ] [ hint; table ]
   |> Component_collapsible.create_note ~icon:None ~title language

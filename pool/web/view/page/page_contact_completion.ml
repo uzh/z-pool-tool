@@ -17,7 +17,7 @@ let form Pool_context.{ language; csrf; query_parameters; _ } flash_fetcher cust
             Pool_common.(
               Utils.text_to_string language I18n.DashboardProfileCompletionTitle)
         ]
-    ; Component.Notification.notification
+    ; Component.Notification.create
         language
         `Warning
         [ Pool_common.(Utils.text_to_string language I18n.ProfileCompletionText)
