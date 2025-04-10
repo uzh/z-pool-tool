@@ -201,6 +201,7 @@ end
 module Service : sig
   module Cache : sig
     val clear : unit -> unit
+    val find_default : Database.Label.t -> SmtpAuth.Write.t option
   end
 
   module Smtp : sig

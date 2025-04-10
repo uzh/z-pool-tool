@@ -124,7 +124,7 @@ let denied req =
        let context =
          let open Pool_context in
          let csrf = Sihl.Web.Csrf.find_exn req in
-         create ([], Pool_common.Language.En, database_label, None, csrf, Guest, [], None)
+         create ([], Pool_common.Language.En, database_label, None, csrf, Guest, [], [])
        in
        Layout.Root.create context html)
     ||> Sihl.Web.Response.of_html

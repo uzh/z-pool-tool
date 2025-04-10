@@ -7,7 +7,15 @@ let style_to_class = function
   | `Warning -> "warning"
 ;;
 
-let create ?link ?(close = txt "") ?(classnames = []) language style html =
+let create
+      ?(attributes = [])
+      ?link
+      ?(close = txt "")
+      ?(classnames = [])
+      language
+      style
+      html
+  =
   let classnames =
     [ "notification"; "flexcolumn"; "flex-gap"; "align-stretch"; style_to_class style ]
     @ classnames
@@ -24,7 +32,7 @@ let create ?link ?(close = txt "") ?(classnames = []) language style html =
         ]
   in
   div
-    ~a:[ a_class classnames ]
+    ~a:([ a_class classnames ] @ attributes)
     [ div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ] [ div html; close ]
     ; link
     ]
