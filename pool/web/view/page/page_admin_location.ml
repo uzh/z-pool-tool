@@ -134,7 +134,7 @@ let index (Pool_context.{ language; _ } as context) location_list query =
 ;;
 
 let file_form
-      (labels : Pool_location.Mapping.Label.t list)
+      (labels : Pool_location.File.Label.t list)
       (languages : Pool_common.Language.t list)
       (location : Pool_location.t)
       Pool_context.{ language; csrf; _ }
@@ -142,7 +142,7 @@ let file_form
   let open Pool_location in
   let action = location_specific_path ~suffix:"files" location.id in
   let label_select =
-    let open Mapping.Label in
+    let open File.Label in
     selector language Pool_message.Field.Label show labels None ()
   in
   let language_select =
@@ -463,7 +463,7 @@ module FileList = struct
     @ [ add_file_btn language location_id ]
   ;;
 
-  let row page_language csrf location_id (Mapping.{ id; label; language; _ } as file) =
+  let row page_language csrf location_id (File.{ id; label; language; _ } as file) =
     let delete_form =
       Tyxml.Html.form
         ~a:
@@ -472,7 +472,7 @@ module FileList = struct
               (Format.asprintf
                  "/admin/locations/%s/mapping/%s/delete"
                  (Id.value location_id)
-                 (Mapping.Id.value id)
+                 (File.Id.value id)
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
@@ -486,7 +486,7 @@ module FileList = struct
             ()
         ]
     in
-    [ label |> Mapping.Label.show |> txt
+    [ label |> File.Label.show |> txt
     ; language |> Pool_common.Language.show |> txt
     ; div
         ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
@@ -494,8 +494,7 @@ module FileList = struct
     ]
   ;;
 
-  (* TODO: add link and message, if list is empty *)
-  let create csrf language ({ id; files; _ } : Pool_location.t) =
+  let create csrf language ({ id; _ } : Pool_location.t) files =
     let form =
       match CCList.is_empty files with
       | true ->
@@ -515,7 +514,7 @@ module FileList = struct
     in
     div
       [ h2
-          ~a:[ a_class [ "heading-3" ] ]
+          ~a:[ a_class [ "has-gap" ] ]
           [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
       ; p
           Pool_common.
@@ -560,6 +559,7 @@ end
 
 let detail
       (location : Pool_location.t)
+      files
       statistics
       statistics_year_range
       Pool_context.({ csrf; language; _ } as context)
@@ -641,8 +641,8 @@ let detail
                     ]
                 ]
             ; public_page_link
-            ; FileList.create csrf language location
             ]
+        ; FileList.create csrf language location files
         ; Component.Calendar.(create (Location location.Pool_location.id))
         ; Component.Changelog.list context changelog_url None
         ]

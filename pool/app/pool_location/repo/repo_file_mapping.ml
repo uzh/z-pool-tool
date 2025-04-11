@@ -1,4 +1,4 @@
-open Entity_file_mapping
+open Entity_file
 
 module Id = struct
   include Id
@@ -39,7 +39,7 @@ module Write = struct
   ;;
 end
 
-let of_entity (location : Entity.t) (m : file) : Write.file =
+let of_entity (location : Entity.t) (m : t) : Write.file =
   Write.
     { id = m.id
     ; label = m.label

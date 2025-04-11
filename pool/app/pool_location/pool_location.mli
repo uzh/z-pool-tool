@@ -80,7 +80,7 @@ module Address : sig
   val virtual_ : t
 end
 
-module Mapping : sig
+module File : sig
   module Id : sig
     include Pool_model.Base.IdSig
 
@@ -101,16 +101,16 @@ module Mapping : sig
     val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
-  type file =
+  type t =
     { id : Id.t
     ; label : Label.t
     ; language : Pool_common.Language.t
     ; file : Pool_common.File.t
     }
 
-  val equal_file : file -> file -> bool
-  val pp_file : Format.formatter -> file -> unit
-  val show_file : file -> string
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
 
   type file_base =
     { label : Label.t
@@ -137,7 +137,7 @@ module Mapping : sig
     -> string
     -> Pool_common.Language.t
     -> Pool_common.File.t
-    -> (file, Pool_message.Error.t) result
+    -> (t, Pool_message.Error.t) result
 
   module Write : sig
     type file =
@@ -214,7 +214,6 @@ type t =
   ; address : Address.t
   ; link : Link.t option
   ; status : Status.t
-  ; files : Mapping.file list
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -233,11 +232,10 @@ val create
   -> Address.t
   -> string option
   -> Status.t
-  -> Mapping.file list
   -> (t, Pool_message.Error.t) result
 
-val contact_file_path : Id.t -> Mapping.file -> string
-val admin_file_path : Id.t -> Mapping.file -> string
+val contact_file_path : Id.t -> File.t -> string
+val admin_file_path : Id.t -> File.t -> string
 val to_string : Pool_common.Language.t -> t -> string
 
 type update =
@@ -254,14 +252,14 @@ val show_update : update -> string
 
 type event =
   | Created of t
-  | FileUploaded of Mapping.Write.file
+  | FileUploaded of File.Write.file
   | Updated of t * update
-  | FileDeleted of Mapping.Id.t
+  | FileDeleted of File.Id.t
 
 val created : t -> event
-val fileuploaded : Mapping.Write.file -> event
+val fileuploaded : File.Write.file -> event
 val updated : t -> update -> event
-val filedeleted : Mapping.Id.t -> event
+val filedeleted : File.Id.t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -277,9 +275,7 @@ module Repo : sig
   end
 
   val sql_select_columns : string list
-  val t : Repo_entity.t Caqti_type.t
-  val to_entity : Repo_entity.t -> Entity_file_mapping.file list -> t
-  val of_entity : t -> Repo_entity.t
+  val t : t Caqti_type.t
 end
 
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
@@ -294,7 +290,7 @@ val list_by_user
 val find_location_file
   :  Database.Label.t
   -> Pool_common.Repo.Id.t
-  -> (Mapping.file, Pool_message.Error.t) Lwt_result.t
+  -> (File.t, Pool_message.Error.t) Lwt_result.t
 
 val search
   :  ?conditions:string
@@ -307,6 +303,7 @@ val search
   -> (Id.t * Name.t) list Lwt.t
 
 val search_multiple_by_id : Database.Label.t -> Id.t list -> (Id.t * Name.t) list Lwt.t
+val files_by_location : Database.Label.t -> Id.t -> File.t list Lwt.t
 
 val find_targets_grantable_by_target
   :  ?exclude:Id.t list
@@ -372,7 +369,7 @@ module Guard : sig
   module FileTarget : sig
     val to_authorizable
       :  ?ctx:(string * string) list
-      -> Mapping.file
+      -> File.t
       -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
@@ -393,9 +390,9 @@ module Guard : sig
     module File : sig
       val index : Guard.ValidationSet.t
       val create : Guard.ValidationSet.t
-      val read : Mapping.Id.t -> Guard.ValidationSet.t
-      val update : Mapping.Id.t -> Guard.ValidationSet.t
-      val delete : Mapping.Id.t -> Guard.ValidationSet.t
+      val read : File.Id.t -> Guard.ValidationSet.t
+      val update : File.Id.t -> Guard.ValidationSet.t
+      val delete : File.Id.t -> Guard.ValidationSet.t
     end
   end
 end

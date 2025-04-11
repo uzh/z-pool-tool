@@ -62,7 +62,7 @@ let locations =
         |> Address.physical
       | None -> Address.Virtual
     in
-    create label description address link status [] |> Pool_common.Utils.get_or_failwith)
+    create label description address link status |> Pool_common.Utils.get_or_failwith)
 ;;
 
 let create pool =

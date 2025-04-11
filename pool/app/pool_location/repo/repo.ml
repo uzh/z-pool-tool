@@ -2,9 +2,6 @@ include Repo_entity
 module RepoFileMapping = Repo_file_mapping
 module Dynparam = Database.Dynparam
 
-let to_entity = to_entity
-let of_entity = of_entity
-
 let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_locations.uuid"
   ; "pool_locations.name"
@@ -269,26 +266,15 @@ module Sql = struct
   ;;
 end
 
-let files_to_location pool ({ id; _ } as location) =
-  let open Utils.Lwt_result.Infix in
-  RepoFileMapping.find_by_location pool id ||> to_entity location
-;;
-
-let find pool id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find pool id |>> files_to_location pool
-;;
+let find = Sql.find
 
 let all pool =
   let open Caqti_request.Infix in
   let request = Sql.find_request_sql "" |> Caqti_type.unit ->* Repo_entity.t in
-  let%lwt locations = Database.collect pool request () in
-  let%lwt locations = Lwt_list.map_s (files_to_location pool) locations in
-  Lwt.return locations
+  Database.collect pool request ()
 ;;
 
 let list_by_user ?query pool actor =
-  let open Utils.Lwt_result.Infix in
   let open CCFun.Infix in
   let dyn, sql, joins =
     Guard.Persistence.with_user_permission actor "pool_locations.uuid" `Location
@@ -297,16 +283,9 @@ let list_by_user ?query pool actor =
     Sql.find_request_sql ?count ~additional_joins:joins %> Format.asprintf "%s %s" sql
   in
   Query.collect_and_count pool query ~select ~dyn t
-  >|> fun (locations, query) ->
-  let%lwt locations = Lwt_list.map_s (files_to_location pool) locations in
-  Lwt.return (locations, query)
 ;;
 
-let insert pool location files =
-  let%lwt () = location |> of_entity |> Sql.insert pool in
-  files |> Lwt_list.iter_s (RepoFileMapping.insert pool)
-;;
-
+let insert = Sql.insert
 let update = Sql.update
 let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
