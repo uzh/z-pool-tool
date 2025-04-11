@@ -81,6 +81,7 @@ let show
       text_messages_enabled
       flash_fetcher
   =
+  let open Pool_common in
   let submit ?(control = Message.(Control.Update None)) () =
     div
       ~a:[ a_class [ "flexrow" ] ]
@@ -97,10 +98,7 @@ let show
             ; hx_target ("#" ^ changelog_modal_id)
             ; a_class [ "small" ]
             ]
-          [ txt
-              Pool_common.(
-                Utils.field_to_string_capitalized language Message.Field.Changelog)
-          ]
+          [ txt (Utils.field_to_string_capitalized language Message.Field.Changelog) ]
       ]
   in
   let open_system_settings_changelog key =
@@ -129,7 +127,7 @@ let show
   let languages_html =
     let all_languages =
       [ tenant_languages |> CCList.map (fun k -> k, true)
-      ; Pool_common.Language.all
+      ; Language.all
         |> CCList.filter_map (fun k ->
           match CCList.mem k tenant_languages with
           | true -> None
@@ -140,16 +138,14 @@ let show
     let field_elements =
       CCList.map
         (fun (language, selected) ->
-           let attrs =
-             [ a_input_type `Checkbox; a_name (Pool_common.Language.show language) ]
-           in
+           let attrs = [ a_input_type `Checkbox; a_name (Language.show language) ] in
            let selected =
              match selected with
              | false -> []
              | true -> [ a_checked () ]
            in
            let checkbox = input ~a:(attrs @ selected) () in
-           div [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
+           div [ checkbox; label [ txt (Language.show language) ] ])
         all_languages
       |> Component.Sortable.create_sortable
     in
@@ -169,7 +165,7 @@ let show
   in
   let email_suffixes_html =
     let control_to_string control =
-      h4 [ txt Pool_common.(Utils.control_to_string language control) ]
+      h4 [ txt (Utils.control_to_string language control) ]
     in
     let create_form =
       div
@@ -200,7 +196,7 @@ let show
             ; a_action (action_path `DeleteEmailSuffix)
             ; a_user_data
                 "confirmable"
-                Pool_common.(Utils.confirmable_to_string language I18n.DeleteEmailSuffix)
+                (Utils.confirmable_to_string language I18n.DeleteEmailSuffix)
             ]
           [ submit_icon ~classnames:[ "error"; "small" ] Icon.TrashOutline
           ; input
@@ -250,7 +246,7 @@ let show
       | [] ->
         div
           ~a:[ a_class [ "stack" ] ]
-          [ txt Pool_common.(Utils.hint_to_string language I18n.SettingsNoEmailSuffixes) ]
+          [ txt (Utils.hint_to_string language I18n.SettingsNoEmailSuffixes) ]
       | suffixes ->
         div
           ~a:[ a_class [ "stack" ] ]
@@ -272,6 +268,7 @@ let show
     title, columns, None, [ `CreateEmailSuffix; `UpdateEmailSuffixes; `DeleteEmailSuffix ]
   in
   let contact_email_html =
+    let hint = Utils.hint_to_string language I18n.SettingsContactEmail in
     let form =
       div
         ~a:[ a_class [ "stack" ] ]
@@ -289,7 +286,7 @@ let show
         ; open_system_settings_changelog Settings.Key.ContactEmail
         ]
     in
-    "Contact Email", [ form ], None, [ `UpdateContactEmail ]
+    "Contact Email", [ form ], Some hint, [ `UpdateContactEmail ]
   in
   let inactive_user_html =
     let open Settings.InactiveUser in
@@ -353,11 +350,7 @@ let show
                   ; hx_target ("#" ^ subforms_id)
                   ; hx_swap "beforeend"
                   ]
-              [ txt
-                  (Pool_common.Utils.control_to_string
-                     language
-                     Message.Control.(Add None))
-              ]
+              [ txt (Utils.control_to_string language Message.Control.(Add None)) ]
           ; submit ()
           ]
       in
@@ -368,7 +361,7 @@ let show
             [ csrf_element csrf ()
             ; label
                 [ txt
-                    (Pool_common.Utils.field_to_string_capitalized
+                    (Utils.field_to_string_capitalized
                        language
                        Pool_message.Field.InactiveUserWarning)
                 ]
@@ -378,7 +371,7 @@ let show
         ; open_system_settings_changelog Settings.Key.InactiveUserWarning
         ]
     in
-    let hint = Pool_common.(I18n.SettigsInactiveUsers |> Utils.hint_to_string language) in
+    let hint = I18n.SettigsInactiveUsers |> Utils.hint_to_string language in
     ( "Inactive Users"
     , [ disable_service_form; disable_after_form; warn_after_form ]
     , Some hint
@@ -387,8 +380,7 @@ let show
   let trigger_profile_update_after_html =
     let open Settings.TriggerProfileUpdateAfter in
     let title =
-      Pool_common.(
-        Utils.field_to_string language Pool_message.Field.TriggerProfileUpdateAfter)
+      Utils.field_to_string language Pool_message.Field.TriggerProfileUpdateAfter
       |> CCString.capitalize_ascii
     in
     let form =
@@ -434,7 +426,7 @@ let show
         Settings.Key.ReminderLeadTime
         Pool_message.Field.EmailLeadTime
         default_reminder_lead_time
-        Pool_common.Reminder.EmailLeadTime.value
+        Reminder.EmailLeadTime.value
     in
     let text_message_lead_time =
       let input_el =
@@ -443,19 +435,18 @@ let show
           Settings.Key.TextMsgReminderLeadTime
           Pool_message.Field.TextMessageLeadTime
           default_text_msg_reminder_lead_time
-          Pool_common.Reminder.TextMessageLeadTime.value
+          Reminder.TextMessageLeadTime.value
       in
       match text_messages_enabled with
       | true -> input_el
       | false ->
         div
           ~a:[ a_class [ "stack" ] ]
-          [ Pool_common.(
-              I18n.GtxKeyMissing
-              |> Utils.hint_to_string language
-              |> txt
-              |> CCList.return
-              |> Component.Notification.notification language `Warning)
+          [ I18n.GtxKeyMissing
+            |> Utils.hint_to_string language
+            |> txt
+            |> CCList.return
+            |> Component.Notification.notification language `Warning
           ; input_el
           ]
     in
@@ -512,7 +503,7 @@ let show
   let page_scripts =
     let open Settings.PageScript in
     let title = "Page scripts" in
-    let hint = Pool_common.(Utils.hint_to_string language I18n.SettingsPageScripts) in
+    let hint = Utils.hint_to_string language I18n.SettingsPageScripts in
     let make_form location =
       let field, script, action =
         match location with
@@ -562,7 +553,7 @@ let show
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Settings) ]
+        [ txt (Utils.nav_link_to_string language I18n.Settings) ]
     ; div ~a:[ a_id changelog_modal_id; a_class [ "modal"; "fullscreen-overlay" ] ] []
     ; body_html
     ]

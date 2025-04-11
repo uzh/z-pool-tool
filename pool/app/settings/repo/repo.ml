@@ -63,6 +63,27 @@ module Sql = struct
   ;;
 end
 
+let insert_contact_email pool email =
+  let open Caqti_request.Infix in
+  let open Entity.ContactEmail in
+  let caqti_type = make_caqti ~encode:yojson_of_t ~decode:t_of_yojson in
+  let request =
+    {sql|
+      INSERT INTO pool_system_settings (
+        uuid,
+        settings_key,
+        value
+      ) VALUES (
+        UNHEX(REPLACE(UUID(), '-', '')),
+        ?,
+        ?
+      )
+    |sql}
+    |> Caqti_type.(t2 string caqti_type ->. unit)
+  in
+  Database.exec pool request (key_to_string key, email)
+;;
+
 module type SettingRepoSig = sig
   type t
 

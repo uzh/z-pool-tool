@@ -704,6 +704,9 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SessionReminderLeadTime ->
     "Die Vorlaufzeit bestimmt, wie lange vor dem Start der Session die Erinnerungen an \
      die Kontakte verschickt wird."
+  | SettingsContactEmail ->
+    "Die Standard Absenderadresse für E-Mails. Diese Adresse kann für \
+     experiment-bezogene E-Mails überschrieben werden."
   | SettingsNoEmailSuffixes ->
     "Es sind keine Email-Endungen definiert, die zugelassen sind. Das bedeutet, dass \
      alle Email-Endungen erlaubt sind."
