@@ -48,6 +48,7 @@ module Data = struct
   let password = "AdminAdmin99!"
   let firstname = "DJ"
   let lastname = "Ötzi"
+  let contact_email = "contact@pool.ch"
 
   let urlencoded =
     [ Field.Title, [ title ]
@@ -66,6 +67,7 @@ module Data = struct
     ; Field.Password, [ password ]
     ; Field.Firstname, [ firstname ]
     ; Field.Lastname, [ lastname ]
+    ; Field.ContactEmail, [ contact_email ]
     ]
     |> CCList.map (CCPair.map_fst Field.show)
   ;;
@@ -331,6 +333,7 @@ let[@warning "-4"] create_tenant () =
       ; Pool_event.Database (Pool_database.Migrated database)
       ; Pool_event.SystemEvent System_event.(Created db_added_event)
       ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
+      ; Pool_event.Settings (Settings.ContactEmailCreated _)
       ] ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } = id, asset_id in
       ( id

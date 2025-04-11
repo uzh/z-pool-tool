@@ -93,12 +93,13 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) database (command : t) =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+    let tenant_db = Database.label database in
     let tenant =
       Pool_tenant.Write.create
         command.title
         command.description
         command.url
-        (database |> Database.label)
+        tenant_db
         command.gtx_sender
         command.styles
         command.icon
@@ -119,10 +120,9 @@ end = struct
       [ Pool_tenant.Created (tenant, database) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; Pool_database.Migrated database |> Pool_event.database
-      ; System_event.Job.TenantDatabaseReset (Database.label database)
-        |> system_event_from_job
+      ; System_event.Job.TenantDatabaseReset tenant_db |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
-      ; Settings.ContactEmailCreated (command.contact_email, Database.label database)
+      ; Settings.ContactEmailCreated (command.contact_email, tenant_db)
         |> Pool_event.settings
       ]
   ;;

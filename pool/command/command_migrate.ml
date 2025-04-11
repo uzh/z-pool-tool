@@ -86,6 +86,30 @@ Please take the necessary actions.|}
   | _ -> Lwt.return_unit
 ;;
 
+(* TODO: Should this be bound to the core_migration_state table? *)
+let seed_tenant_dev_values db_label () =
+  let seed_contact_email () =
+    let open Settings in
+    let exists_request =
+      let open Caqti_type in
+      let open Caqti_request.Infix in
+      {sql|
+        SELECT EXISTS(SELECT * FROM pool_system_settings WHERE settings_key = ?);
+      |sql}
+      |> string ->! bool
+    in
+    let%lwt exists =
+      Key.ContactEmail |> Key.to_json_string |> Database.find db_label exists_request
+    in
+    match exists with
+    | true -> Lwt.return_unit
+    | false ->
+      let contact_email = "pool@econ.uzh.ch" |> ContactEmail.of_string in
+      ContactEmailCreated (contact_email, db_label) |> handle_event db_label
+  in
+  seed_contact_email ()
+;;
+
 let migrate_tenants db_labels =
   let open Utils.Lwt_result.Infix in
   let run db_label =
@@ -102,6 +126,7 @@ let migrate_tenants db_labels =
       Lwt.catch
         (fun () ->
            Migration.execute db_label (Pool_database.Tenant.steps ())
+           |>> seed_tenant_dev_values db_label
            |>> (fun () -> set_status Status.Active)
            >|> function
            | Ok () -> Lwt.return ()

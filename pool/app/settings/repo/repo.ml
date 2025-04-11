@@ -8,8 +8,6 @@ let make_caqti ~encode ~decode =
   Caqti_type.(custom ~encode ~decode Caqti_type.string)
 ;;
 
-let key_to_string = Entity.Key.yojson_of_t %> Yojson.Safe.to_string
-
 module Sql = struct
   let select_from_settings_sql =
     {sql|
@@ -28,7 +26,7 @@ module Sql = struct
   ;;
 
   let find pool out_type key =
-    Database.find pool (find_request out_type) (key_to_string key)
+    Database.find pool (find_request out_type) (Key.to_json_string key)
   ;;
 
   let update_sql =
@@ -45,7 +43,7 @@ module Sql = struct
   let exec_update pool caqti_type key value =
     let open Caqti_request.Infix in
     let request = update_sql |> Caqti_type.(t2 caqti_type string ->. unit) in
-    Database.exec pool request (value, key_to_string key)
+    Database.exec pool request (value, Key.to_json_string key)
   ;;
 
   let find_setting_id pool key =
@@ -81,7 +79,7 @@ let insert_contact_email pool email =
     |sql}
     |> Caqti_type.(t2 string caqti_type ->. unit)
   in
-  Database.exec pool request (key_to_string key, email)
+  Database.exec pool request (Key.to_json_string key, email)
 ;;
 
 module type SettingRepoSig = sig
