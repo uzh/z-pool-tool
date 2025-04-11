@@ -232,7 +232,7 @@ let index
           let tag =
             Component.Tag.create_chip
               ~inline:true
-              `Error
+              ~style:`Error
               Pool_common.(Utils.text_to_string language I18n.Canceled)
           in
           [ "bg-red-lighter" ], [ tag ]

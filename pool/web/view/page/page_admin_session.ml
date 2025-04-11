@@ -1489,7 +1489,6 @@ let session_counters language { Assignment.total; num_no_shows; num_participatio
       ]
     [ div
         [ Component.Tag.create_chip
-            `Disabled
             (Format.asprintf "%s: %i" (field_to_string Field.Total) total)
         ]
     ; div

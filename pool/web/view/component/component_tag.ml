@@ -1,10 +1,21 @@
 open Tyxml.Html
 
-let create_chip ?(ghost = false) ?(inline = false) style text =
+let create_chip
+      ?(ghost = false)
+      ?(inline = false)
+      ?(style : [ `Error | `Primary | `Success ] option)
+      text
+  =
   let classnames =
+    let base = [ "tag" ] in
+    let base =
+      match style with
+      | None -> base
+      | Some style -> Component_input.submit_type_to_class style :: base
+    in
     CCList.fold_left
       (fun acc (condition, name) -> if condition then name :: acc else acc)
-      (Component_input.submit_type_to_class style :: [ "tag" ])
+      base
       [ ghost, "ghost"; inline, "inline" ]
   in
   span ~a:[ a_class classnames ] [ txt text ]
