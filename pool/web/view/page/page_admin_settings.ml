@@ -239,7 +239,7 @@ let show
     in
     let title = "Email Suffixes" in
     let columns = [ column ] in
-    title, columns, None, [ `CreateEmailSuffix; `UpdateEmailSuffixes; `DeleteEmailSuffix ]
+    title, columns, None, [ `CreateEmailSuffix; `UpdateEmailSuffixes ]
   in
   let contact_email_html =
     let form =

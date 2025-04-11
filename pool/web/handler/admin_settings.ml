@@ -111,9 +111,6 @@ let update_settings req =
         | `CreateEmailSuffix ->
           let%lwt suffixes = Settings.find_email_suffixes database_label in
           CreateEmailSuffix.(urlencoded |> decode >>= handle ~tags suffixes) |> lift
-        | `DeleteEmailSuffix ->
-          let%lwt suffixes = Settings.find_email_suffixes database_label in
-          DeleteEmailSuffix.(urlencoded |> decode >>= handle ~tags suffixes) |> lift
         | `UpdateDefaultLeadTime ->
           UpdateDefaultEmailLeadTime.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UpdateTextMsgDefaultLeadTime ->
@@ -249,7 +246,6 @@ module Access : module type of Helpers.Access = struct
   let update =
     let find_effects = function
       | `CreateEmailSuffix -> Command.CreateEmailSuffix.effects
-      | `DeleteEmailSuffix -> Command.DeleteEmailSuffix.effects
       | `UpdateDefaultLeadTime -> Command.UpdateDefaultEmailLeadTime.effects
       | `UpdateTextMsgDefaultLeadTime -> Command.UpdateDefaultTextMessageLeadTime.effects
       | `UpdateInactiveUserDisableAfter -> Command.InactiveUser.DisableAfter.effects
