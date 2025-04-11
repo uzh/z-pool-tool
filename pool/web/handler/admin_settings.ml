@@ -162,7 +162,16 @@ let update_settings req =
 
 let inactive_user_warning_subform req =
   let result { Pool_context.language; _ } =
-    Page.Admin.Settings.inactive_user_warning_input language None
+    Page.Admin.Settings.Partials.inactive_user_warning_input language None
+    |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
+    |> Lwt_result.return
+  in
+  HttpUtils.Htmx.extract_happy_path ~src req result
+;;
+
+let email_suffix_subform req =
+  let result { Pool_context.language; _ } =
+    Page.Admin.Settings.Partials.email_suffix_input language
     |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
     |> Lwt_result.return
   in
