@@ -12,7 +12,8 @@ let show req =
     @@
     let id = id req Field.Location Pool_location.Id.of_string in
     let* location = Pool_location.find database_label id in
-    Page.Contact.Location.show context location
+    let%lwt files = Pool_location.files_by_location database_label id in
+    Page.Contact.Location.show context location files
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in

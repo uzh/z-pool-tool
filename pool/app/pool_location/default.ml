@@ -20,5 +20,5 @@ let default_values =
         |> Address.physical
       | None -> Address.Virtual
     in
-    create label description address link status [] |> get_or_failwith)
+    create label description address link status |> get_or_failwith)
 ;;

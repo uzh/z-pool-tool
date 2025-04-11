@@ -82,15 +82,12 @@ let location =
   in
   let address = address in
   let link = "https://www.zne.uzh.ch/en/facilities.html" |> Link.create |> get_exn in
-  let status = Status.Active in
-  let files = [] in
   { id = Id.create ()
   ; name
   ; description
   ; address
   ; link = Some link
-  ; status
-  ; files
+  ; status = Status.Active
   ; created_at = Pool_common.CreatedAt.create_now ()
   ; updated_at = Pool_common.UpdatedAt.create_now ()
   }

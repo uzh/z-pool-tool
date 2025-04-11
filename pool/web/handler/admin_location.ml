@@ -162,7 +162,8 @@ let detail edit req =
       | false ->
         let%lwt statistics = Statistics.create database_label id in
         let%lwt statistics_year_range = Statistics.year_select database_label in
-        detail location statistics statistics_year_range context |> Lwt.return
+        let%lwt files = Pool_location.files_by_location database_label id in
+        detail location files statistics statistics_year_range context |> Lwt.return
       | true ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
         form ~location ~states context tenant_languages flash_fetcher |> Lwt.return)

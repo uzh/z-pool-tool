@@ -29,7 +29,6 @@ end
 (* TODO [aerben] these circumvent our smart constructors, good? *)
 let t =
   let encode m =
-    let location = Pool_location.Repo.of_entity m.location in
     Ok
       ( m.id
       , ( m.follow_up_to
@@ -51,8 +50,8 @@ let t =
                                       , ( m.closed_at
                                         , ( m.canceled_at
                                           , ( m.created_at
-                                            , (m.updated_at, (m.experiment, location)) )
-                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                            , (m.updated_at, (m.experiment, m.location))
+                                            ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
         ( id
@@ -78,7 +77,6 @@ let t =
                                               , (updated_at, (experiment, location)) ) )
                                           ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
-    let location = Pool_location.Repo.to_entity location [] in
     Ok
       { id
       ; follow_up_to
@@ -321,60 +319,7 @@ module Write = struct
 end
 
 module Public = struct
-  type t =
-    { id : Entity.Id.t
-    ; experiment_id : Experiment.Id.t
-    ; experiment_title : Experiment.PublicTitle.t
-    ; follow_up_to : Entity.Id.t option
-    ; start : Entity.Start.t
-    ; duration : PtimeSpan.t
-    ; description : Entity.PublicDescription.t option
-    ; location_id : Pool_location.Id.t
-    ; max_participants : Entity.ParticipantAmount.t
-    ; min_participants : Entity.ParticipantAmount.t
-    ; overbook : Entity.ParticipantAmount.t
-    ; assignment_count : Entity.AssignmentCount.t
-    ; canceled_at : Ptime.t option
-    ; closed_at : Ptime.t option
-    }
-  [@@deriving eq, show]
-
-  let of_entity (m : Entity.Public.t) : t =
-    { id = m.Entity.Public.id
-    ; experiment_id = m.Entity.Public.experiment_id
-    ; experiment_title = m.Entity.Public.experiment_title
-    ; follow_up_to = m.Entity.Public.follow_up_to
-    ; start = m.Entity.Public.start
-    ; duration = m.Entity.Public.duration
-    ; description = m.Entity.Public.description
-    ; location_id = m.Entity.Public.location.Pool_location.id
-    ; max_participants = m.Entity.Public.max_participants
-    ; min_participants = m.Entity.Public.min_participants
-    ; overbook = m.Entity.Public.overbook
-    ; assignment_count = m.Entity.Public.assignment_count
-    ; canceled_at = m.Entity.Public.canceled_at
-    ; closed_at = m.Entity.Public.closed_at
-    }
-  ;;
-
-  let to_entity (m : t) location : Entity.Public.t =
-    Entity.Public.
-      { id = m.id
-      ; experiment_id = m.experiment_id
-      ; experiment_title = m.experiment_title
-      ; follow_up_to = m.follow_up_to
-      ; start = m.start
-      ; duration = m.duration
-      ; description = m.description
-      ; location
-      ; max_participants = m.max_participants
-      ; min_participants = m.min_participants
-      ; overbook = m.overbook
-      ; assignment_count = m.assignment_count
-      ; canceled_at = m.canceled_at
-      ; closed_at = m.closed_at
-      }
-  ;;
+  open Entity.Public
 
   let t =
     let encode (m : t) =
@@ -386,12 +331,12 @@ module Public = struct
               , ( m.start
                 , ( m.duration
                   , ( m.description
-                    , ( m.location_id
-                      , ( m.max_participants
-                        , ( m.min_participants
-                          , ( m.overbook
-                            , (m.assignment_count, (m.canceled_at, m.closed_at)) ) ) ) )
-                    ) ) ) ) ) ) )
+                    , ( m.max_participants
+                      , ( m.min_participants
+                        , ( m.overbook
+                          , ( m.assignment_count
+                            , (m.canceled_at, (m.closed_at, m.location)) ) ) ) ) ) ) ) )
+            ) ) )
     in
     let decode
           ( id
@@ -401,10 +346,10 @@ module Public = struct
                 , ( start
                   , ( duration
                     , ( description
-                      , ( location_id
-                        , ( max_participants
-                          , ( min_participants
-                            , (overbook, (assignment_count, (canceled_at, closed_at))) )
+                      , ( max_participants
+                        , ( min_participants
+                          , ( overbook
+                            , (assignment_count, (canceled_at, (closed_at, location))) )
                           ) ) ) ) ) ) ) ) )
       =
       Ok
@@ -415,7 +360,7 @@ module Public = struct
         ; start
         ; duration
         ; description
-        ; location_id
+        ; location
         ; max_participants
         ; min_participants
         ; overbook
@@ -443,12 +388,16 @@ module Public = struct
                           (t2
                              (option string)
                              (t2
-                                Pool_location.Repo.Id.t
+                                int
                                 (t2
                                    int
                                    (t2
                                       int
-                                      (t2 int (t2 int (t2 (option ptime) (option ptime)))))))))))))))
+                                      (t2
+                                         int
+                                         (t2
+                                            (option ptime)
+                                            (t2 (option ptime) Pool_location.Repo.t))))))))))))))
   ;;
 end
 

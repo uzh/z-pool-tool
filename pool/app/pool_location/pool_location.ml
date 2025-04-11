@@ -11,6 +11,7 @@ let list_by_user = Repo.list_by_user
 let find_location_file = Repo_file_mapping.find
 let search = Repo.search
 let search_multiple_by_id = Repo.search_multiple_by_id
+let files_by_location = Repo_file_mapping.find_by_location
 let find_targets_grantable_by_target = Repo.find_targets_grantable_by_target
 
 module Statistics = struct

@@ -7,7 +7,6 @@ let find_all_for_experiment = Repo.find_all_for_experiment
 let find_upcoming_for_experiment = Repo.Sql.find_upcoming_for_experiment
 let find_all_to_assign_from_waitinglist = Repo.find_all_to_assign_from_waitinglist
 let find_all_public_for_experiment = Repo.find_all_public_for_experiment
-let find_all_public_by_location = Repo.find_all_public_by_location
 let find_all_ids_of_contact_id = Repo.find_all_ids_of_contact_id
 let find = Repo.find
 let find_multiple = Repo.find_multiple

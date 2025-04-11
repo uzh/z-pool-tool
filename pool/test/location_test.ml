@@ -9,7 +9,6 @@ module Data = struct
     let link = None
     let address = Pool_location.Address.Virtual
     let status = Pool_location.Status.Active
-    let files = []
 
     let create =
       let open Pool_location in
@@ -31,7 +30,6 @@ let create_location () =
     ; link
     ; address
     ; status
-    ; files
     ; created_at = Pool_common.CreatedAt.create_now ()
     ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
