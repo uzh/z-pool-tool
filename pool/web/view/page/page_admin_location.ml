@@ -514,7 +514,7 @@ module FileList = struct
     in
     div
       [ h2
-          ~a:[ a_class [ "heading-3" ] ]
+          ~a:[ a_class [ "has-gap" ] ]
           [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
       ; p
           Pool_common.
@@ -641,8 +641,8 @@ let detail
                     ]
                 ]
             ; public_page_link
-            ; FileList.create csrf language location files
             ]
+        ; FileList.create csrf language location files
         ; Component.Calendar.(create (Location location.Pool_location.id))
         ; Component.Changelog.list context changelog_url None
         ]
