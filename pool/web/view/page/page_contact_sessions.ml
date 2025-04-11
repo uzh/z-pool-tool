@@ -119,7 +119,7 @@ let list Pool_context.{ language; _ } (sessions, query) =
     let open Component.Tag in
     let open Pool_common in
     let open CCOption in
-    let create_chip style text = create_chip ~inline:true style text |> return in
+    let create_chip style text = create_chip ~inline:true ~style text |> return in
     [ is_some session.Public.canceled_at, I18n.Canceled, `Error ]
     |> CCList.find_map (fun (check, text, style) ->
       match check with
