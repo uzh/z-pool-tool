@@ -1483,12 +1483,13 @@ let session_counters language { Assignment.total; num_no_shows; num_participatio
   in
   div
     ~a:
-      [ a_class [ "flexrow"; "flex-gap"; "inset-sm" ]
+      [ a_class [ "flexrow"; "flex-gap"; "align-center"; "inset-sm" ]
       ; a_id session_counter_id
       ; a_user_data "hx-swap-oob" "true"
       ]
     [ div
         [ Component.Tag.create_chip
+            ~classnames:[ "font-bold" ]
             (Format.asprintf "%s: %i" (field_to_string Field.Total) total)
         ]
     ; div

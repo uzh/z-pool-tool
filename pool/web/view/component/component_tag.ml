@@ -1,13 +1,14 @@
 open Tyxml.Html
 
 let create_chip
+      ?(classnames = [])
       ?(ghost = false)
       ?(inline = false)
       ?(style : [ `Error | `Primary | `Success ] option)
       text
   =
   let classnames =
-    let base = [ "tag" ] in
+    let base = "tag" :: classnames in
     let base =
       match style with
       | None -> base
