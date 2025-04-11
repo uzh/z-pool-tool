@@ -779,7 +779,6 @@ let confirmable_to_string confirmable =
      "den Kontakt", "löschen", Some "Diese Aktion kann nicht rückgängig gemacht werden."
    | DeleteCustomField -> "das Feld", "löschen", None
    | DeleteCustomFieldOption -> "das Option", "löschen", None
-   | DeleteEmailSuffix -> "das Suffix", "löschen", None
    | DeleteExperiment -> "das Experiment", "löschen", None
    | DeleteExperimentFilter -> "den Filter", "löschen", None
    | DeleteFile -> "die Datei", "löschen", None

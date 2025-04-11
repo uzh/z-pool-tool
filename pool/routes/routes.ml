@@ -923,6 +923,7 @@ module Admin = struct
       ; choose ~scope:"/system" system
       ; choose ~scope:"/page-script" page_scripts
       ; get "/inactive-user-warnings" inactive_user_warning_subform
+      ; get "/email-suffix" email_suffix_subform
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]

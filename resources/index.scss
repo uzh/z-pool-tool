@@ -28,6 +28,10 @@ h1,
     font-size: 1.5rem;
 }
 
+.visible-only-child:not(:only-child) {
+    display: none;
+}
+
 // Experimental
 .btn {
     white-space: nowrap

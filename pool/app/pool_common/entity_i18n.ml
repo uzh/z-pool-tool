@@ -360,7 +360,6 @@ type confirmable =
   | DeleteContact
   | DeleteCustomField
   | DeleteCustomFieldOption
-  | DeleteEmailSuffix
   | DeleteExperiment
   | DeleteExperimentFilter
   | DeleteFile
