@@ -443,20 +443,6 @@ module Sql = struct
     Database.collect pool find_all_public_for_experiment_request (Experiment.Id.value id)
   ;;
 
-  let find_all_public_by_location_request =
-    let open Caqti_request.Infix in
-    {sql|
-      WHERE pool_locations.uuid = UNHEX(REPLACE(?, '-', ''))
-      ORDER BY start
-    |sql}
-    |> find_public_sql
-    |> Caqti_type.string ->* RepoEntity.Public.t
-  ;;
-
-  let find_all_public_by_location pool id =
-    Database.collect pool find_all_public_by_location_request (Pool_location.Id.value id)
-  ;;
-
   let find_experiment_id_and_title_request =
     let open Caqti_request.Infix in
     {sql|
@@ -848,7 +834,6 @@ end
 let find = Sql.find
 let find_multiple = Sql.find_multiple
 let find_contact_is_assigned_by_experiment = Sql.find_contact_is_assigned_by_experiment
-let find_all_public_by_location = Sql.find_all_public_by_location
 let find_public = Sql.find_public
 let find_all_for_experiment = Sql.find_all_for_experiment
 let find_all_to_assign_from_waitinglist = Sql.find_all_to_assign_from_waitinglist

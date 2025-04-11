@@ -260,12 +260,6 @@ val find_public
   -> Id.t
   -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
-(* TODO: This funciton is unused *)
-val find_all_public_by_location
-  :  Database.Label.t
-  -> Pool_location.Id.t
-  -> Public.t list Lwt.t
-
 val find_all_for_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
 val find_upcoming_for_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
 
