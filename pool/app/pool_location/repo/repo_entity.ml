@@ -138,28 +138,3 @@ let t =
                         Status.t
                         (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))))))
 ;;
-
-(* TODO: Get rid of update module *)
-module Update = struct
-  type t =
-    { id : Pool_common.Id.t
-    ; name : Name.t
-    ; description : Description.t
-    ; address : Address.t
-    ; link : Link.t
-    }
-
-  let t =
-    let encode (m : Entity.t) =
-      Ok Entity.(m.id, (m.name, (m.description, (m.address, m.link))))
-    in
-    let decode _ = failwith "Write model only" in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (t2
-           Pool_common.Repo.Id.t
-           (t2 Name.t (t2 (option Description.t) (t2 Address.t (option Link.t))))))
-  ;;
-end
