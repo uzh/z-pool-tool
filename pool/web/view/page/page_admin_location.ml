@@ -494,8 +494,7 @@ module FileList = struct
     ]
   ;;
 
-  (* TODO: add link and message, if list is empty *)
-  let create csrf language ({ id; files; _ } : Pool_location.t) =
+  let create csrf language ({ id; _ } : Pool_location.t) files =
     let form =
       match CCList.is_empty files with
       | true ->
@@ -641,7 +640,7 @@ let detail
                     ]
                 ]
             ; public_page_link
-            ; FileList.create csrf language location
+            ; FileList.create csrf language location [] (* TODO: get location files *)
             ]
         ; Component.Calendar.(create (Location location.Pool_location.id))
         ; Component.Changelog.list context changelog_url None

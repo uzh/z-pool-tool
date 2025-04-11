@@ -38,7 +38,6 @@ let sql_public_select_columns =
   ; "pool_sessions.start"
   ; "pool_sessions.duration"
   ; "pool_sessions.public_description"
-  ; Entity.Id.sql_select_fragment ~field:"pool_locations.uuid"
   ; "pool_sessions.max_participants"
   ; "pool_sessions.min_participants"
   ; "pool_sessions.overbook"
@@ -46,6 +45,7 @@ let sql_public_select_columns =
   ; "pool_sessions.canceled_at"
   ; "pool_sessions.closed_at"
   ]
+  @ Pool_location.Repo.sql_select_columns
 ;;
 
 let joins =
@@ -845,49 +845,22 @@ module Sql = struct
   ;;
 end
 
-(* TODO: solve as join *)
-let location_to_public_repo_entity pool session =
-  let open Utils.Lwt_result.Infix in
-  Pool_location.find pool session.RepoEntity.Public.location_id
-  >|+ RepoEntity.Public.to_entity session
-;;
-
 let find = Sql.find
 let find_multiple = Sql.find_multiple
 let find_contact_is_assigned_by_experiment = Sql.find_contact_is_assigned_by_experiment
-
-(* TODO [aerben] these queries are very inefficient, how to circumvent? *)
-let find_all_public_by_location pool location_id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_all_public_by_location pool location_id
-  >|> Lwt_list.map_s (location_to_public_repo_entity pool)
-  ||> CCResult.flatten_l
-;;
-
-let find_public pool id =
-  let open Utils.Lwt_result.Infix in
-  id |> Sql.find_public pool >>= location_to_public_repo_entity pool
-;;
-
+let find_all_public_by_location = Sql.find_all_public_by_location
+let find_public = Sql.find_public
 let find_all_for_experiment = Sql.find_all_for_experiment
 let find_all_to_assign_from_waitinglist = Sql.find_all_to_assign_from_waitinglist
 
 let find_all_public_for_experiment pool contact experiment_id =
   let open Utils.Lwt_result.Infix in
   Experiment.find_public pool experiment_id contact
-  >>= fun experiment ->
-  experiment
-  |> Experiment.Public.id
-  |> Sql.find_all_public_for_experiment pool
-  >|> Lwt_list.map_s (location_to_public_repo_entity pool)
-  ||> CCResult.flatten_l
+  |>> fun experiment ->
+  experiment |> Experiment.Public.id |> Sql.find_all_public_for_experiment pool
 ;;
 
-let find_public_by_assignment pool assignment_id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_public_by_assignment pool assignment_id >>= location_to_public_repo_entity pool
-;;
-
+let find_public_by_assignment = Sql.find_public_by_assignment
 let find_by_assignment = Sql.find_by_assignment
 let find_follow_ups = Sql.find_follow_ups
 
@@ -925,7 +898,6 @@ let has_upcoming_sessions pool contact_id =
 ;;
 
 let query_by_contact ?query pool contact =
-  let open Utils.Lwt_result.Infix in
   let dyn = Dynparam.(empty |> add Contact.Repo.Id.t (Contact.id contact)) in
   Query.collect_and_count
     pool
@@ -933,20 +905,10 @@ let query_by_contact ?query pool contact =
     ~select:Sql.find_public_request_sql
     ~dyn
     RepoEntity.Public.t
-  >|> fun (sessions, query) ->
-  (* TODO #2390: Get rid of location_to_public_repo_entity *)
-  let%lwt sessions =
-    sessions
-    |> Lwt_list.map_s (location_to_public_repo_entity pool)
-    ||> CCResult.flatten_l
-    ||> CCResult.get_exn
-  in
-  Lwt.return (sessions, query)
 ;;
 
 let find_by_contact_and_experiment pool contact experiment_id context =
   let open Caqti_request.Infix in
-  let open Utils.Lwt_result.Infix in
   let dyn =
     Dynparam.(
       empty
@@ -975,9 +937,6 @@ let find_by_contact_and_experiment pool contact experiment_id context =
   let (Dynparam.Pack (pt, pv)) = dyn in
   let request = sql |> pt ->* RepoEntity.Public.t in
   Database.collect pool request pv
-  >|> Lwt_list.map_s (location_to_public_repo_entity pool)
-  ||> CCResult.flatten_l
-  ||> CCResult.get_exn
 ;;
 
 let find_sessions_to_remind = Sql.find_sessions_to_remind

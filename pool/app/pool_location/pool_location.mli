@@ -214,7 +214,6 @@ type t =
   ; address : Address.t
   ; link : Link.t option
   ; status : Status.t
-  ; files : Mapping.file list
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -233,7 +232,6 @@ val create
   -> Address.t
   -> string option
   -> Status.t
-  -> Mapping.file list
   -> (t, Pool_message.Error.t) result
 
 val contact_file_path : Id.t -> Mapping.file -> string
@@ -277,9 +275,7 @@ module Repo : sig
   end
 
   val sql_select_columns : string list
-  val t : Repo_entity.t Caqti_type.t
-  val to_entity : Repo_entity.t -> Entity_file_mapping.file list -> t
-  val of_entity : t -> Repo_entity.t
+  val t : t Caqti_type.t
 end
 
 val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t

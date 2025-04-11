@@ -1,4 +1,5 @@
 open CCFun.Infix
+open Entity
 
 module Id = struct
   include Pool_common.Repo.Id
@@ -105,17 +106,6 @@ end
 
 module Status = Pool_common.Repo.Model.SelectorType (Entity.Status)
 
-type t =
-  { id : Pool_common.Id.t
-  ; name : Name.t
-  ; description : Description.t option
-  ; address : Address.t
-  ; link : Link.t option
-  ; status : Status.t
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
-  }
-
 let t =
   let encode m =
     Ok
@@ -149,31 +139,7 @@ let t =
                         (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))))))
 ;;
 
-let to_entity (m : t) files : Entity.t =
-  { Entity.id = m.id
-  ; name = m.name
-  ; description = m.description
-  ; address = m.address
-  ; link = m.link
-  ; status = m.status
-  ; files
-  ; created_at = m.created_at
-  ; updated_at = m.updated_at
-  }
-;;
-
-let of_entity (m : Entity.t) : t =
-  { id = m.Entity.id
-  ; name = m.Entity.name
-  ; description = m.Entity.description
-  ; address = m.Entity.address
-  ; link = m.Entity.link
-  ; status = m.Entity.status
-  ; created_at = m.Entity.created_at
-  ; updated_at = m.Entity.updated_at
-  }
-;;
-
+(* TODO: Get rid of update module *)
 module Update = struct
   type t =
     { id : Pool_common.Id.t

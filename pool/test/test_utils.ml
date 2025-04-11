@@ -209,7 +209,6 @@ module Model = struct
       ; link = None
       ; address = Pool_location.Address.Virtual
       ; status = Pool_location.Status.Active
-      ; files = []
       ; created_at = Pool_common.CreatedAt.create_now ()
       ; updated_at = Pool_common.UpdatedAt.create_now ()
       }

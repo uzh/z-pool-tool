@@ -60,7 +60,6 @@ end = struct
       ; address
       ; link
       ; status = Status.Active
-      ; files = []
       ; created_at = Pool_common.CreatedAt.create_now ()
       ; updated_at = Pool_common.UpdatedAt.create_now ()
       }

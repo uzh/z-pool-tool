@@ -19,16 +19,8 @@ let session ~experiment =
   let pid = Pool_location.Id.create () in
   let pool_address = Pool_location.Address.virtual_ in
   let pool_status = Pool_location.Status.Active in
-  let mapping_file = [] in
   let* pool_location =
-    Pool_location.create
-      ~id:pid
-      "a-pool-location"
-      None
-      pool_address
-      None
-      pool_status
-      mapping_file
+    Pool_location.create ~id:pid "a-pool-location" None pool_address None pool_status
   in
   let* max_participants = ParticipantAmount.create 2112 in
   let* min_participants = ParticipantAmount.create 1984 in

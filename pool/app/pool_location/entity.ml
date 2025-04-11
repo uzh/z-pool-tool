@@ -102,7 +102,6 @@ type t =
   ; address : Address.t
   ; link : Link.t option [@yojson.option]
   ; status : Status.t
-  ; files : Files.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -126,7 +125,7 @@ let equal m k =
   && Status.equal m.status k.status
 ;;
 
-let create ?(id = Id.create ()) name description address link status files =
+let create ?(id = Id.create ()) name description address link status =
   let open CCResult in
   let* name = Name.create name in
   let* link = link |> CCResult.opt_map Link.create in
@@ -137,7 +136,6 @@ let create ?(id = Id.create ()) name description address link status files =
     ; address
     ; link
     ; status
-    ; files
     ; created_at = Pool_common.CreatedAt.create_now ()
     ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
