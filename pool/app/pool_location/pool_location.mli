@@ -303,6 +303,7 @@ val search
   -> (Id.t * Name.t) list Lwt.t
 
 val search_multiple_by_id : Database.Label.t -> Id.t list -> (Id.t * Name.t) list Lwt.t
+val files_by_location : Database.Label.t -> Id.t -> Mapping.file list Lwt.t
 
 val find_targets_grantable_by_target
   :  ?exclude:Id.t list

@@ -559,6 +559,7 @@ end
 
 let detail
       (location : Pool_location.t)
+      files
       statistics
       statistics_year_range
       Pool_context.({ csrf; language; _ } as context)
@@ -640,7 +641,7 @@ let detail
                     ]
                 ]
             ; public_page_link
-            ; FileList.create csrf language location [] (* TODO: get location files *)
+            ; FileList.create csrf language location files
             ]
         ; Component.Calendar.(create (Location location.Pool_location.id))
         ; Component.Changelog.list context changelog_url None
