@@ -13,6 +13,15 @@ let search = Repo.search
 let search_multiple_by_id = Repo.search_multiple_by_id
 let files_by_location = Repo_file_mapping.find_by_location
 let find_targets_grantable_by_target = Repo.find_targets_grantable_by_target
+let file_path file = Format.asprintf "files/%s" (File.Id.value file.File.id)
+
+let contact_file_path id file =
+  Format.asprintf "/location/%s/%s" (Id.value id) (file_path file)
+;;
+
+let admin_file_path id file =
+  Format.asprintf "/admin/locations/%s/%s" (Id.value id) (file_path file)
+;;
 
 module Statistics = struct
   include Entity_statistics

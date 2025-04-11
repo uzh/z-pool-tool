@@ -7,21 +7,21 @@ let show { Pool_context.language; _ } (location : Pool_location.t) files =
     match files with
     | [] -> txt ""
     | files ->
-      let open Mapping in
+      let open File in
       div
         [ h2
             ~a:[ a_class [ "has-gap" ] ]
             [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
         ; CCList.map
-            (fun (mapping : file) ->
+            (fun (file : t) ->
                let label =
                  Format.asprintf
                    "%s (%s)"
-                   (mapping.label |> Label.show |> CCString.capitalize_ascii)
-                   (mapping.language |> Pool_common.Language.show)
+                   (file.label |> Label.show |> CCString.capitalize_ascii)
+                   (file.language |> Pool_common.Language.show)
                in
                let path =
-                 contact_file_path location.id mapping |> Sihl.Web.externalize_path
+                 contact_file_path location.id file |> Sihl.Web.externalize_path
                in
                [ a ~a:[ a_href path ] [ txt label ] ])
             files

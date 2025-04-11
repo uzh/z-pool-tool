@@ -11,9 +11,9 @@ type update =
 
 type event =
   | Created of t
-  | FileUploaded of Mapping.Write.file
+  | FileUploaded of File.Write.file
   | Updated of t * update
-  | FileDeleted of Mapping.Id.t
+  | FileDeleted of File.Id.t
 [@@deriving eq, show, variants]
 
 let handle_event ?user_uuid pool : event -> unit Lwt.t =
@@ -30,7 +30,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | FileUploaded file ->
-    let open Entity.Mapping.Write in
+    let open Entity.File.Write in
     let%lwt () =
       file
       |> (fun { label; language; asset_id; location_id; _ } ->
