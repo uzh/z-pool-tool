@@ -494,8 +494,7 @@ module FileList = struct
     ]
   ;;
 
-  (* TODO: add link and message, if list is empty *)
-  let create csrf language ({ id; files; _ } : Pool_location.t) =
+  let create csrf language ({ id; _ } : Pool_location.t) files =
     let form =
       match CCList.is_empty files with
       | true ->
@@ -515,7 +514,7 @@ module FileList = struct
     in
     div
       [ h2
-          ~a:[ a_class [ "heading-3" ] ]
+          ~a:[ a_class [ "has-gap" ] ]
           [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
       ; p
           Pool_common.
@@ -560,6 +559,7 @@ end
 
 let detail
       (location : Pool_location.t)
+      files
       statistics
       statistics_year_range
       Pool_context.({ csrf; language; _ } as context)
@@ -641,8 +641,8 @@ let detail
                     ]
                 ]
             ; public_page_link
-            ; FileList.create csrf language location
             ]
+        ; FileList.create csrf language location files
         ; Component.Calendar.(create (Location location.Pool_location.id))
         ; Component.Changelog.list context changelog_url None
         ]
