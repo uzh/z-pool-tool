@@ -1511,7 +1511,7 @@ let send_session_reminders_with_default_leat_time _ () =
   let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
   (* NOTE: disable text messages for test *)
   let%lwt () =
-    let open Gtx_sender in
+    let open Gtx_config in
     [ Removed; CacheCleared ] |> Lwt_list.iter_s (handle_event database_label)
   in
   let s_to_lead encode s = s |> Ptime.Span.of_int_s |> encode |> get_exn in
@@ -1554,7 +1554,7 @@ let send_session_reminders_with_default_leat_time _ () =
     CCList.is_empty text_message_reminders |> Alcotest.(check bool) "succeeds" true
   in
   let%lwt () =
-    let open Gtx_sender in
+    let open Gtx_config in
     let api_key = ApiKey.of_string "api-key" in
     let sender = Sender.of_string "sender" in
     let config = create api_key sender in

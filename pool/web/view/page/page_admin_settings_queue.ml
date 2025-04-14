@@ -40,7 +40,7 @@ let text_message_job_instance_detail instance =
   Service.Job.decode (Pool_queue.Instance.input instance)
   |> CCResult.map_or ~default:[] (fun { recipient; sender; text } ->
     [ Field.Recipient, txt (Pool_user.CellPhone.value recipient)
-    ; Field.Sender, txt (Gtx_sender.Sender.value sender)
+    ; Field.Sender, txt (Gtx_config.Sender.value sender)
     ; Field.SmsText, Content.value text |> HttpUtils.add_line_breaks
     ])
 ;;

@@ -13,7 +13,7 @@ type t =
   | Experiment of Experiment.event
   | Filter of Filter.event
   | Guard of Guard.event
-  | GtxSender of Gtx_sender.event
+  | GtxConfig of Gtx_config.event
   | I18n of I18n.event
   | Invitation of Invitation.event
   | Mailing of Mailing.event
@@ -50,7 +50,7 @@ val email_verification : Email.verification_event -> t
 val experiment : Experiment.event -> t
 val filter : Filter.event -> t
 val guard : Guard.event -> t
-val gtx_sender : Gtx_sender.event -> t
+val gtx_config : Gtx_config.event -> t
 val i18n : I18n.event -> t
 val invitation : Invitation.event -> t
 val mailing : Mailing.event -> t

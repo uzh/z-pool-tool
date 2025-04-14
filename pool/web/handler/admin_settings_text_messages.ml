@@ -14,7 +14,7 @@ let index req =
     Utils.Lwt_result.map_error (fun err -> err, "/admin")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let%lwt gtx_config = Gtx_sender.find_opt database_label in
+    let%lwt gtx_config = Gtx_config.find_opt database_label in
     Page.Admin.Settings.TextMessage.index context ~flash_fetcher gtx_config
     |> create_layout ~active_navigation req context
     >|+ Sihl.Web.Response.of_html
@@ -29,7 +29,7 @@ let update req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let%lwt gtx_config = Gtx_sender.find_opt database_label in
+    let%lwt gtx_config = Gtx_config.find_opt database_label in
     let open Command in
     let* validated_config = validated_gtx_api_key ~tags urlencoded in
     let events =

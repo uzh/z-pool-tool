@@ -367,7 +367,7 @@ let delete_smtp_auth =
 
 let update_gtx_settings _ () =
   let testable_gtx =
-    let open Gtx_sender in
+    let open Gtx_config in
     let equal (key1, sender1) (key2, sender2) =
       ApiKey.equal key1 key2 && Sender.equal sender1 sender2
     in

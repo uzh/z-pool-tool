@@ -8,7 +8,7 @@ open CCFun.Infix
 let src = Logs.Src.create "settings.cqrs"
 
 let validated_gtx_api_key ~tags urlencoded =
-  let open Gtx_sender in
+  let open Gtx_config in
   let open Utils.Lwt_result.Infix in
   let schema =
     Conformist.(
@@ -370,16 +370,16 @@ end = struct
 end
 
 module CreateGtxApiKey : sig
-  include Common.CommandSig with type t = Gtx_sender.ApiKey.t * Gtx_sender.Sender.t
+  include Common.CommandSig with type t = Gtx_config.ApiKey.t * Gtx_config.Sender.t
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> ?id:Gtx_sender.Id.t
+    -> ?id:Gtx_config.Id.t
     -> ?system_event_id:System_event.Id.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
-  open Gtx_sender
+  open Gtx_config
 
   type t = ApiKey.t * Sender.t
 
@@ -393,7 +393,7 @@ end = struct
     let config = create ~id api_key sender in
     let open Pool_event in
     Ok
-      [ Created config |> gtx_sender
+      [ Created config |> gtx_config
       ; System_event.(create ?id:system_event_id Job.GtxConfigCacheCleared |> created)
         |> system_event
       ]
@@ -403,25 +403,25 @@ end = struct
 end
 
 module UpdateGtxApiKey : sig
-  include Common.CommandSig with type t = Gtx_sender.ApiKey.t * Gtx_sender.Sender.t
+  include Common.CommandSig with type t = Gtx_config.ApiKey.t * Gtx_config.Sender.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> ?system_event_id:System_event.Id.t
-    -> Gtx_sender.t
+    -> Gtx_config.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
-  open Gtx_sender
+  open Gtx_config
 
   type t = ApiKey.t * Sender.t
 
-  let handle ?(tags = Logs.Tag.empty) ?system_event_id gtx_config (api_key, sender) =
+  let handle ?(tags = Logs.Tag.empty) ?system_event_id config (api_key, sender) =
     Logs.info ~src (fun m -> m "Handle command UpdateGtxApiKey" ~tags);
-    let updated = { gtx_config with api_key; sender } in
+    let updated = { config with api_key; sender } in
     let open Pool_event in
     Ok
-      [ Updated (gtx_config, updated) |> gtx_sender
+      [ Updated (config, updated) |> gtx_config
       ; System_event.(create ?id:system_event_id Job.GtxConfigCacheCleared |> created)
         |> system_event
       ]
@@ -440,11 +440,11 @@ module RemoveGtxApiKey : sig
   val effects : validation_set
 end = struct
   let handle ?(tags = Logs.Tag.empty) ?system_event_id () =
-    let open Gtx_sender in
+    let open Gtx_config in
     Logs.info ~src (fun m -> m "Handle command RemoveGtxApiKey" ~tags);
     let open Pool_event in
     Ok
-      [ Removed |> gtx_sender
+      [ Removed |> gtx_config
       ; System_event.(create ?id:system_event_id Job.GtxConfigCacheCleared |> created)
         |> system_event
       ]

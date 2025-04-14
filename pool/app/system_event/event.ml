@@ -20,7 +20,7 @@ let handle_system_event identifier system_event =
     let () = Guard.Persistence.Cache.clear () in
     success_log ()
   | GtxConfigCacheCleared ->
-    let () = Gtx_sender.clear_cache () in
+    let () = Gtx_config.clear_cache () in
     success_log ()
   | I18nPageUpdated ->
     let () = I18n.I18nCache.clear () in

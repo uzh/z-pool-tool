@@ -126,7 +126,7 @@ module Tenant = struct
   (* TODO: Maybe this function does not have to fall back to a db request, if not found in Cache (get rid of Lwt.t) *)
   let text_messages_enabled =
     find_key_exn (fun c ->
-      Gtx_sender.text_messages_enabled c.tenant.Pool_tenant.database_label)
+      Gtx_config.text_messages_enabled c.tenant.Pool_tenant.database_label)
   ;;
 end
 

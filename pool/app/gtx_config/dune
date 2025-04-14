@@ -1,5 +1,5 @@
 (library
- (name gtx_sender)
+ (name gtx_config)
  (libraries guard pool_common utils)
  (preprocess
   (pps

@@ -713,7 +713,7 @@ module ManualSessionMessage = struct
 
   let prepare_text_message (tenant : Pool_tenant.t) session =
     let experiment = session.Session.experiment in
-    let%lwt gtx_config = Gtx_sender.find_exn tenant.Pool_tenant.database_label in
+    let%lwt gtx_config = Gtx_config.find_exn tenant.Pool_tenant.database_label in
     let open Text_message in
     let fnc language assignment message cell_phone =
       let params =
@@ -724,7 +724,7 @@ module ManualSessionMessage = struct
       let entity_uuids =
         session_message_uuids experiment session assignment.Assignment.contact
       in
-      render_and_create cell_phone gtx_config.Gtx_sender.sender (content, params)
+      render_and_create cell_phone gtx_config.Gtx_config.sender (content, params)
       |> create_text_message_job ~entity_uuids ~message_template:label
     in
     Lwt.return fnc
@@ -893,14 +893,14 @@ module PhoneVerification = struct
         token
     =
     let open Text_message in
-    let%lwt gtx_config = Gtx_sender.find_exn tenant.Pool_tenant.database_label in
+    let%lwt gtx_config = Gtx_config.find_exn tenant.Pool_tenant.database_label in
     let%lwt { sms_text; _ } =
       find_by_label_and_language_to_send pool label message_language
     in
     let message =
       render_and_create
         cell_phone
-        gtx_config.Gtx_sender.sender
+        gtx_config.Gtx_config.sender
         (sms_text, message_params token)
     in
     let entity_uuids = user_message_uuids (Contact.user contact) in
@@ -1003,7 +1003,7 @@ module SessionCancellation = struct
     let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionCancellation
     in
-    let%lwt gtx_config = Gtx_sender.find_exn pool in
+    let%lwt gtx_config = Gtx_config.find_exn pool in
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) cell_phone =
       let open CCResult in
@@ -1015,7 +1015,7 @@ module SessionCancellation = struct
       let message =
         Text_message.render_and_create
           cell_phone
-          gtx_config.Gtx_sender.sender
+          gtx_config.Gtx_config.sender
           (template.sms_text, params)
       in
       let entity_uuids = session_message_uuids experiment session contact in
@@ -1110,7 +1110,7 @@ module SessionReminder = struct
         sys_langs
         Label.SessionReminder
     in
-    let%lwt gtx_config = Gtx_sender.find_exn pool in
+    let%lwt gtx_config = Gtx_config.find_exn pool in
     let layout = layout_from_tenant tenant in
     let fnc ({ Assignment.contact; _ } as assignment) cell_phone =
       let open CCResult in
@@ -1120,7 +1120,7 @@ module SessionReminder = struct
       let message =
         Text_message.render_and_create
           cell_phone
-          gtx_config.Gtx_sender.sender
+          gtx_config.Gtx_config.sender
           (template.sms_text, params)
       in
       let entity_uuids =

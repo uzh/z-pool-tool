@@ -46,7 +46,7 @@ end
 
 let get_api_key_and_url database_label =
   let%lwt api_key =
-    let open Gtx_sender in
+    let open Gtx_config in
     find_exn database_label ||> fun { api_key; _ } -> api_key
   in
   let%lwt tenant_url =
@@ -68,7 +68,7 @@ let dlr_url (tenant_url, instance_id) =
 
 let request_body ?dlr { recipient; text; sender } =
   let dlr_url = dlr |> CCOption.map_or ~default:[] dlr_url in
-  [ "from", [ Gtx_sender.Sender.value sender ]
+  [ "from", [ Gtx_config.Sender.value sender ]
   ; "to", [ CellPhone.value recipient ]
   ; "text", [ text ]
   ]
@@ -91,7 +91,7 @@ Text:
 %s
 -----------------------
     |}
-    (Gtx_sender.Sender.value sender)
+    (Gtx_config.Sender.value sender)
     (CellPhone.value recipient)
     text
 ;;
@@ -148,7 +148,7 @@ let send_message ?dlr api_key msg =
   let body = request_body ?dlr msg |> Cohttp_lwt.Body.of_form in
   let%lwt resp, body =
     api_key
-    |> Gtx_sender.ApiKey.value
+    |> Gtx_config.ApiKey.value
     |> Config.gateway_url
     |> Uri.of_string
     |> Client.post ~body

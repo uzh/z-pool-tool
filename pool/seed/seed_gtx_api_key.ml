@@ -1,4 +1,4 @@
-open Gtx_sender
+open Gtx_config
 
 let create pool =
   let api_key =

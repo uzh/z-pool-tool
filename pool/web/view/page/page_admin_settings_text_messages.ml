@@ -4,10 +4,10 @@ open Component.Input
 let index
       { Pool_context.csrf; language; _ }
       ~flash_fetcher
-      (gtx_config : Gtx_sender.t option)
+      (gtx_config : Gtx_config.t option)
   =
   let open Pool_common in
-  let open Gtx_sender in
+  let open Gtx_config in
   let action = "/admin/settings/text-messages" |> Sihl.Web.externalize_path in
   let delete_form, hint =
     let notification hint style =

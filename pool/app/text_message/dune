@@ -2,7 +2,7 @@
  (name text_message)
  (libraries
   email
-  gtx_sender
+  gtx_config
   pool_common
   pool_tenant
   pool_user
