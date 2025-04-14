@@ -22,10 +22,9 @@ module Sender = struct
   let schema () = schema ~validation field ()
 end
 
-(* Improve naming *)
 type t =
   { id : Id.t
-  ; api_key : ApiKey.t
+  ; api_key : ApiKey.t [@opaque] [@to_yojson fun _ -> `Null]
   ; sender : Sender.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t

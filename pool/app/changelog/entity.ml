@@ -63,6 +63,7 @@ module type RecordSig = sig
 
   val model : Pool_message.Field.t
   val changelog_compare_at_index_keys : string list option
+  val hide_list : string list
   val yojson_of_t : t -> Yojson.Safe.t
 end
 
@@ -92,6 +93,7 @@ end
 
 module DefaultSettings = struct
   let changelog_compare_at_index_keys = None
+  let hide_list = []
 end
 
 let column_created_at =

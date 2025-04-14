@@ -1,6 +1,6 @@
 (library
  (name gtx_config)
- (libraries guard pool_common utils)
+ (libraries changelog guard pool_common utils)
  (preprocess
   (pps
    lwt_ppx
