@@ -109,7 +109,7 @@ let new_helper req page =
        let%lwt locations = Pool_location.all database_label in
        let flash_fetcher = flip Sihl.Web.Flash.find req in
        let%lwt default_leadtime_settings = default_lead_time_settings database_label in
-       let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+       let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
        let html =
          match page with
          | `FollowUp ->
@@ -308,7 +308,7 @@ let session_page database_label req context session experiment =
       Tags.ParticipationTags.(
         find_all database_label (Experiment (Experiment.Id.to_common experiment_id)))
     in
-    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     Page.Admin.Session.edit
       context
       experiment
@@ -424,7 +424,7 @@ let show req =
   let view_contact_name = can_read_contact_name context experiment_target_id in
   let view_contact_info = can_read_contact_info context experiment_target_id in
   let access_contact_profiles = can_access_contact_profile context experiment_id in
-  let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+  let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
   let%lwt assignments =
     Assignment.find_for_session_detail_screen ~query database_label session_id
   in
@@ -1129,7 +1129,7 @@ module DirectMessage = struct
       let tenant = Pool_context.Tenant.get_tenant_exn req in
       let open Message_template.ManualSessionMessage in
       let%lwt make_email_job = prepare tenant session in
-      let make_sms_job = prepare_text_message tenant session in
+      let%lwt make_sms_job = prepare_text_message tenant session in
       let* events =
         let open CCResult.Infix in
         let open Cqrs_command.Session_command.SendDirectMessage in

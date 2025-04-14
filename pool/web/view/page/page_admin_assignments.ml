@@ -213,7 +213,7 @@ module Partials = struct
         languages
         swap_session_template
         flash_fetcher
-        text_messages_disabled
+        text_messages_enabled
     =
     let id = "swap-session-notification-form" in
     let language_select_attriutes =
@@ -241,7 +241,7 @@ module Partials = struct
           ?language_select_attriutes
           ~hide_text_message_input:true
           context
-          text_messages_disabled
+          text_messages_enabled
           (`Create swap_session_template)
           Message_template.Label.AssignmentSessionChange
           ~languages
@@ -261,7 +261,7 @@ module Partials = struct
         swap_session_template
         languages
         flash_fetcher
-        text_messages_disabled
+        text_messages_enabled
     =
     let action =
       assignment_specific_path
@@ -323,7 +323,7 @@ module Partials = struct
                       languages
                       swap_session_template
                       flash_fetcher
-                      text_messages_disabled
+                      text_messages_enabled
                   ]
               ; submit_element language (Control.Save None) ~submit_type:`Primary ()
               ; csrf_element csrf ()

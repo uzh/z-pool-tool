@@ -7,20 +7,21 @@ module Conformist = Pool_conformist
 
 let src = Logs.Src.create "handler.root.tenant_update"
 
-let validated_gtx_api_key ~tags title urlencoded =
-  let open Utils.Lwt_result.Infix in
-  let schema =
-    Conformist.(
-      make
-        Field.[ Pool_tenant.GtxApiKey.schema (); Pool_user.CellPhone.schema () ]
-        CCPair.make)
-  in
-  Conformist.decode_and_validate schema urlencoded
-  |> Lwt_result.lift
-  >|- Pool_message.to_conformist_error
-  >>= fun (api_key, phone_nr) ->
-  Text_message.Service.test_api_key ~tags api_key phone_nr title
-;;
+(* TODO: REmove *)
+(* let validated_gtx_api_key ~tags title urlencoded =
+   let open Utils.Lwt_result.Infix in
+   let schema =
+   Conformist.(
+   make
+   Field.[ Pool_tenant.GtxApiKey.schema (); Pool_user.CellPhone.schema () ]
+   CCPair.make)
+   in
+   Conformist.decode_and_validate schema urlencoded
+   |> Lwt_result.lift
+   >|- Pool_message.to_conformist_error
+   >>= fun (api_key, phone_nr) ->
+   Text_message.Service.test_api_key ~tags api_key phone_nr title
+   ;; *)
 
 let update req command success_message =
   let open Utils.Lwt_result.Infix in

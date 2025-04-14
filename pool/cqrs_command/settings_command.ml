@@ -7,6 +7,22 @@ open CCFun.Infix
 
 let src = Logs.Src.create "settings.cqrs"
 
+let validated_gtx_api_key ~tags urlencoded =
+  let open Gtx_sender in
+  let open Utils.Lwt_result.Infix in
+  let schema =
+    Conformist.(
+      make
+        Field.[ ApiKey.schema (); Sender.schema (); Pool_user.CellPhone.schema () ]
+        (fun key sender number -> key, number, sender))
+  in
+  Conformist.decode_and_validate schema urlencoded
+  |> Lwt_result.lift
+  >|- Pool_message.to_conformist_error
+  >>= fun (api_key, phone_nr, sender) ->
+  Text_message.Service.test_api_key ~tags api_key phone_nr sender
+;;
+
 module UpdateLanguages : sig
   include Common.CommandSig with type t = Pool_common.Language.t list
 
@@ -353,49 +369,61 @@ end = struct
   let effects = Settings.Guard.Access.update
 end
 
-module UpdateGtxApiKey : sig
-  include
-    Common.CommandSig with type t = Pool_tenant.GtxApiKey.t * Pool_tenant.GtxSender.t
+module CreateGtxApiKey : sig
+  include Common.CommandSig with type t = Gtx_sender.ApiKey.t * Gtx_sender.Sender.t
 
-  val validated_gtx_api_key
-    :  tags:Logs.Tag.set
-    -> Conformist.input
-    -> (t, Pool_message.Error.t) Lwt_result.t
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?id:Gtx_sender.Id.t
+    -> ?system_event_id:System_event.Id.t
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+end = struct
+  open Gtx_sender
+
+  type t = ApiKey.t * Sender.t
+
+  let handle
+        ?(tags = Logs.Tag.empty)
+        ?(id = Id.create ())
+        ?system_event_id
+        (api_key, sender)
+    =
+    Logs.info ~src (fun m -> m "Handle command CreateGtxApiKey" ~tags);
+    let config = create ~id api_key sender in
+    let open Pool_event in
+    Ok
+      [ Created config |> gtx_sender
+      ; System_event.(create ?id:system_event_id Job.GtxConfigCacheCleared |> created)
+        |> system_event
+      ]
+  ;;
+
+  let effects = Guard.Access.create
+end
+
+module UpdateGtxApiKey : sig
+  include Common.CommandSig with type t = Gtx_sender.ApiKey.t * Gtx_sender.Sender.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> ?system_event_id:System_event.Id.t
-    -> Pool_tenant.Write.t
+    -> Gtx_sender.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
-  type t = Pool_tenant.GtxApiKey.t * Pool_tenant.GtxSender.t
+  open Gtx_sender
 
-  let validated_gtx_api_key ~tags urlencoded =
-    let open Utils.Lwt_result.Infix in
-    let schema =
-      Conformist.(
-        make
-          Field.
-            [ Pool_tenant.GtxApiKey.schema ()
-            ; Pool_user.CellPhone.schema ()
-            ; Pool_tenant.GtxSender.schema ()
-            ]
-          (fun key number sender -> key, number, sender))
-    in
-    Conformist.decode_and_validate schema urlencoded
-    |> Lwt_result.lift
-    >|- Pool_message.to_conformist_error
-    >>= fun (api_key, phone_nr, sender) ->
-    Text_message.Service.test_api_key ~tags api_key phone_nr sender
-  ;;
+  type t = ApiKey.t * Sender.t
 
-  let handle ?(tags = Logs.Tag.empty) ?system_event_id tenant gtx_info =
+  let handle ?(tags = Logs.Tag.empty) ?system_event_id gtx_config (api_key, sender) =
     Logs.info ~src (fun m -> m "Handle command UpdateGtxApiKey" ~tags);
+    let updated = { gtx_config with api_key; sender } in
+    let open Pool_event in
     Ok
-      [ Pool_tenant.GtxApiKeyUpdated (tenant, gtx_info) |> Pool_event.pool_tenant
-      ; System_event.(Job.TenantCacheCleared |> create ?id:system_event_id |> created)
-        |> Pool_event.system_event
+      [ Updated (gtx_config, updated) |> gtx_sender
+      ; System_event.(create ?id:system_event_id Job.GtxConfigCacheCleared |> created)
+        |> system_event
       ]
   ;;
 

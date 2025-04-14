@@ -15,6 +15,7 @@ type t =
   | Experiment of Experiment.event
   | Filter of Filter.event
   | Guard of Guard.event
+  | GtxSender of Gtx_sender.event
   | I18n of I18n.event
   | Invitation of Invitation.event
   | Mailing of Mailing.event
@@ -50,6 +51,7 @@ let email_verification events = EmailVerification events
 let experiment events = Experiment events
 let filter events = Filter events
 let guard events = Guard events
+let gtx_sender events = GtxSender events
 let i18n events = I18n events
 let invitation events = Invitation events
 let mailing events = Mailing events
@@ -119,6 +121,9 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   | Guard event ->
     info "guard" Guard.pp_event event;
     Guard.handle_event pool event
+  | GtxSender event ->
+    info "gtx sender" Gtx_sender.pp_event event;
+    Gtx_sender.handle_event pool event
   | I18n event ->
     info "i18n" I18n.pp_event event;
     I18n.handle_event pool event

@@ -124,7 +124,9 @@ module Tenant = struct
   let get_tenant_exn = find_key_exn (fun c -> c.tenant)
 
   let text_messages_enabled =
-    find_key_exn (fun c -> c.tenant.Pool_tenant.text_messages_enabled)
+    let open Utils.Lwt_result.Infix in
+    find_key_exn (fun c ->
+      Gtx_sender.find_opt c.tenant.Pool_tenant.database_label ||> CCOption.is_some)
   ;;
 end
 

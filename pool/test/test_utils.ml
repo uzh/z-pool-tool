@@ -341,7 +341,7 @@ module Model = struct
     |> Email.create_dispatch ?job_ctx ?message_template
   ;;
 
-  let create_text_message ?(sender = Pool_tenant.GtxSender.of_string "UAST") cell_phone =
+  let create_text_message ?(sender = Gtx_sender.Sender.of_string "UAST") cell_phone =
     Text_message.render_and_create cell_phone sender ("Hello world", [])
   ;;
 

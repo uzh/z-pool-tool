@@ -321,7 +321,8 @@ let[@warning "-4"] create_tenant () =
       , (partner_logo_id, partner_logo_asset_id)
       , database_label
       , db_added_event
-      , guardian_cache_cleared_event )
+      , guardian_cache_cleared_event
+      , contact_email )
     =
     (* Read Ids and timestamps to create an equal event list *)
     root_events
@@ -333,7 +334,7 @@ let[@warning "-4"] create_tenant () =
       ; Pool_event.Database (Pool_database.Migrated database)
       ; Pool_event.SystemEvent System_event.(Created db_added_event)
       ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
-      ; Pool_event.Settings (Settings.ContactEmailCreated _)
+      ; Pool_event.Settings (Settings.ContactEmailCreated (contact_email, _))
       ] ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } = id, asset_id in
       ( id
@@ -343,7 +344,8 @@ let[@warning "-4"] create_tenant () =
       , partner_logo |> read_ids
       , Database.label database
       , db_added_event.System_event.id
-      , guardian_cache_cleared.System_event.id )
+      , guardian_cache_cleared.System_event.id
+      , contact_email )
     | _ -> failwith "Tenant create events don't match in test."
   in
   let expected_root_events, expected_database_label =
@@ -399,6 +401,8 @@ let[@warning "-4"] create_tenant () =
       ; System_event.(
           Job.GuardianCacheCleared |> create ~id:guardian_cache_cleared_event |> created)
         |> Pool_event.system_event
+      ; Settings.ContactEmailCreated (contact_email, database_label)
+        |> Pool_event.settings
       ]
     in
     Ok expected_root_events, database_label

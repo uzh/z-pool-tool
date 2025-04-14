@@ -1,6 +1,13 @@
 (library
  (name text_message)
- (libraries email pool_common pool_tenant pool_user pool_queue utils)
+ (libraries
+  email
+  gtx_sender
+  pool_common
+  pool_tenant
+  pool_user
+  pool_queue
+  utils)
  (preprocess
   (pps
    lwt_ppx

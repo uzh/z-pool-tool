@@ -1,0 +1,13 @@
+(library
+ (name gtx_sender)
+ (libraries guard pool_common utils)
+ (preprocess
+  (pps
+   lwt_ppx
+   ppx_deriving.eq
+   ppx_deriving.make
+   ppx_deriving.show
+   ppx_sexp_conv
+   ppx_yojson_conv)))
+
+(include_subdirs unqualified)

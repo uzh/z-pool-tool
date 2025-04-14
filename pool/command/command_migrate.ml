@@ -88,11 +88,11 @@ Please take the necessary actions.|}
 
 (* TODO: Should this be bound to the core_migration_state table? *)
 let seed_tenant_dev_values db_label () =
+  let open Caqti_type in
+  let open Caqti_request.Infix in
   let seed_contact_email () =
     let open Settings in
     let exists_request =
-      let open Caqti_type in
-      let open Caqti_request.Infix in
       {sql|
         SELECT EXISTS(SELECT * FROM pool_system_settings WHERE settings_key = ?);
       |sql}
@@ -107,7 +107,24 @@ let seed_tenant_dev_values db_label () =
       let contact_email = "pool@econ.uzh.ch" |> ContactEmail.of_string in
       ContactEmailCreated (contact_email, db_label) |> handle_event db_label
   in
-  seed_contact_email ()
+  let seed_gtx_api_key () =
+    let open Gtx_sender in
+    let exists_request =
+      {sql| 
+        SELECT EXISTS(SELECT * FROM pool_gtx_api_keys); 
+      |sql}
+      |> unit ->! bool
+    in
+    let%lwt exists = Database.find db_label exists_request () in
+    match exists with
+    | true -> Lwt.return_unit
+    | false ->
+      let api_key = "12341234" |> ApiKey.of_string in
+      let sender = "Pool" |> Sender.of_string in
+      let config = create api_key sender in
+      Created config |> handle_event db_label
+  in
+  [ seed_contact_email; seed_gtx_api_key ] |> Lwt_list.iter_s (fun fnc -> fnc ())
 ;;
 
 let migrate_tenants db_labels =

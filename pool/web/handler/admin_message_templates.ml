@@ -220,7 +220,7 @@ let reset_to_default_htmx req =
       |> CCOption.to_result (Error.NotFound Field.MessageTemplate)
       |> Lwt_result.lift
     in
-    let text_messages_disabled = Pool_context.Tenant.text_messages_enabled req in
+    let%lwt text_messages_disabled = Pool_context.Tenant.text_messages_enabled req in
     let form_context =
       if CCOption.is_some current_template then `Update template else `Create template
     in

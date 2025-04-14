@@ -423,7 +423,8 @@ let swap_session_get_helper action req =
       ||> CCList.head_opt
       ||> CCOption.to_result (Error.NotFound Field.Template)
     in
-    let text_messages_disabled = Pool_context.Tenant.text_messages_enabled req in
+    (* TODO: Check that this is still correct?? *)
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let response html =
@@ -451,7 +452,7 @@ let swap_session_get_helper action req =
         swap_session_template
         tenant_languages
         flash_fetcher
-        text_messages_disabled
+        text_messages_enabled
       |> response
     | `ToggleLanguage ->
       Page.Admin.Assignment.Partials.swap_session_notification_form_fields
@@ -462,7 +463,7 @@ let swap_session_get_helper action req =
         tenant_languages
         swap_session_template
         flash_fetcher
-        text_messages_disabled
+        text_messages_enabled
       |> response
   in
   result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req

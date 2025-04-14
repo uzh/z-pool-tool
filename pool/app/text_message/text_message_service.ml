@@ -45,9 +45,17 @@ module Config = struct
 end
 
 let get_api_key_and_url database_label =
-  let open Utils.Lwt_result.Infix in
-  Pool_tenant.find_gtx_api_key_and_url_by_label database_label
-  ||> Pool_common.Utils.get_or_failwith
+  let%lwt api_key =
+    let open Gtx_sender in
+    find_exn database_label ||> fun { api_key; _ } -> api_key
+  in
+  let%lwt tenant_url =
+    let open Pool_tenant in
+    find_by_label database_label
+    ||> Pool_common.Utils.get_or_failwith
+    ||> fun { url; _ } -> url
+  in
+  Lwt.return (api_key, tenant_url)
 ;;
 
 let dlr_url (tenant_url, instance_id) =
@@ -60,7 +68,7 @@ let dlr_url (tenant_url, instance_id) =
 
 let request_body ?dlr { recipient; text; sender } =
   let dlr_url = dlr |> CCOption.map_or ~default:[] dlr_url in
-  [ "from", [ Pool_tenant.GtxSender.value sender ]
+  [ "from", [ Gtx_sender.Sender.value sender ]
   ; "to", [ CellPhone.value recipient ]
   ; "text", [ text ]
   ]
@@ -83,7 +91,7 @@ Text:
 %s
 -----------------------
     |}
-    (Pool_tenant.GtxSender.value sender)
+    (Gtx_sender.Sender.value sender)
     (CellPhone.value recipient)
     text
 ;;
@@ -140,7 +148,7 @@ let send_message ?dlr api_key msg =
   let body = request_body ?dlr msg |> Cohttp_lwt.Body.of_form in
   let%lwt resp, body =
     api_key
-    |> Pool_tenant.GtxApiKey.value
+    |> Gtx_sender.ApiKey.value
     |> Config.gateway_url
     |> Uri.of_string
     |> Client.post ~body

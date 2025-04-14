@@ -367,19 +367,17 @@ let delete_smtp_auth =
 
 let update_gtx_settings _ () =
   let testable_gtx =
-    let open Pool_tenant in
+    let open Gtx_sender in
     let equal (key1, sender1) (key2, sender2) =
-      GtxApiKey.equal key1 key2 && GtxSender.equal sender1 sender2
+      ApiKey.equal key1 key2 && Sender.equal sender1 sender2
     in
     let pp fmt (key, sender) =
-      Format.fprintf fmt "(%s, %s)" (GtxApiKey.show key) (GtxSender.show sender)
+      Format.fprintf fmt "(%s, %s)" (ApiKey.show key) (Sender.show sender)
     in
     Alcotest.testable pp equal
   in
   let tags = Database.Logger.Tags.create Test_utils.Data.database_label in
-  let validate =
-    Cqrs_command.Settings_command.UpdateGtxApiKey.validated_gtx_api_key ~tags
-  in
+  let validate = Cqrs_command.Settings_command.validated_gtx_api_key ~tags in
   let phone = "+41791234567" in
   let stringify = CCList.map (fun (field, value) -> Field.show field, value) in
   let urlencoded = [ Field.GtxApiKey, [ "api-key" ]; Field.TestPhoneNumber, [ phone ] ] in
