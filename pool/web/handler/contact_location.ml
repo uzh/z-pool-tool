@@ -31,7 +31,7 @@ let asset req =
     let tags = Pool_context.Logger.Tags.req req in
     let* file =
       find_location_file database_label id
-      >>= fun { Mapping.file; _ } ->
+      >>= fun { File.file; _ } ->
       file.Pool_common.File.id
       |> Pool_common.Id.value
       |> HttpUtils.File.get_storage_file ~tags database_label

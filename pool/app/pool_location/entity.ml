@@ -1,5 +1,5 @@
 include Changelog.DefaultSettings
-module Mapping = Entity_file_mapping
+module File = Entity_file
 module Conformist = Pool_conformist
 module Message = Pool_message
 module Field = Pool_message.Field
@@ -85,10 +85,10 @@ module Status = struct
 end
 
 module Files = struct
-  type t = Mapping.file list [@@deriving show]
+  type t = File.t list [@@deriving show]
 
   let yojson_of_t files : Yojson.Safe.t =
-    let open Mapping in
+    let open File in
     `List (CCList.map (fun t -> `String (Id.value t.id)) files)
   ;;
 
@@ -139,16 +139,6 @@ let create ?(id = Id.create ()) name description address link status =
     ; created_at = Pool_common.CreatedAt.create_now ()
     ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
-;;
-
-let file_path file = Format.asprintf "files/%s" Mapping.(Id.value file.Mapping.id)
-
-let contact_file_path id file =
-  Format.asprintf "/location/%s/%s" (Id.value id) (file_path file)
-;;
-
-let admin_file_path id file =
-  Format.asprintf "/admin/locations/%s/%s" (Id.value id) (file_path file)
 ;;
 
 module Human = struct
