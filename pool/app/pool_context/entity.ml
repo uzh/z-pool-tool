@@ -123,10 +123,10 @@ module Tenant = struct
   let get_tenant_languages_exn = find_key_exn (fun c -> c.tenant_languages)
   let get_tenant_exn = find_key_exn (fun c -> c.tenant)
 
+  (* TODO: Maybe this function does not have to fall back to a db request, if not found in Cache (get rid of Lwt.t) *)
   let text_messages_enabled =
-    let open Utils.Lwt_result.Infix in
     find_key_exn (fun c ->
-      Gtx_sender.find_opt c.tenant.Pool_tenant.database_label ||> CCOption.is_some)
+      Gtx_sender.text_messages_enabled c.tenant.Pool_tenant.database_label)
   ;;
 end
 

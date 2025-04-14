@@ -47,25 +47,6 @@ module Url = struct
   ;;
 end
 
-module GtxApiKey = struct
-  include GtxApiKey
-
-  let t =
-    let open Utils.Crypto.String in
-    Common.Repo.make_caqti_type
-      Caqti_type.string
-      (decrypt_from_string
-       %> CCResult.map_err (fun _ -> Pool_message.(Error.Decode Field.GtxApiKey)))
-      encrypt_to_string
-  ;;
-end
-
-module GtxSender = struct
-  include GtxSender
-
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
-end
-
 module Styles = struct
   include Styles
 
@@ -114,7 +95,6 @@ let t =
         ; m.description
         ; m.url
         ; m.default_language
-        ; m.gtx_sender
         ; m.created_at
         ; m.updated_at
         ; m.status
@@ -122,7 +102,6 @@ let t =
         ; m.styles
         ; m.email_logo
         ; m.icon
-        ; m.text_messages_enabled
         ]
   in
   let decode
@@ -131,13 +110,10 @@ let t =
           , ( description
             , ( url
               , ( default_language
-                , ( gtx_sender
-                  , ( created_at
-                    , ( updated_at
-                      , ( status
-                        , ( database_label
-                          , (styles, (icon, (email_logo, (text_messages_enabled, ())))) )
-                        ) ) ) ) ) ) ) ) )
+                , ( created_at
+                  , ( updated_at
+                    , (status, (database_label, (styles, (icon, (email_logo, ()))))) ) )
+                ) ) ) ) )
     =
     Ok
       { id
@@ -150,8 +126,6 @@ let t =
       ; status
       ; email_logo
       ; default_language
-      ; gtx_sender
-      ; text_messages_enabled
       ; created_at
       ; updated_at
       }
@@ -165,7 +139,6 @@ let t =
       ; option Description.t
       ; Url.t
       ; Pool_common.Repo.Language.t
-      ; GtxSender.t
       ; Pool_common.Repo.CreatedAt.t
       ; Pool_common.Repo.UpdatedAt.t
       ; Database.Repo.Status.t
@@ -173,7 +146,6 @@ let t =
       ; option Styles.t
       ; option Icon.t
       ; option EmailLogo.t
-      ; bool
       ]
 ;;
 
@@ -191,14 +163,12 @@ module Write = struct
           ; m.description
           ; m.url
           ; m.default_language
-          ; m.gtx_sender
           ; m.created_at
           ; m.updated_at
           ; m.database_label
           ; m.styles
           ; m.icon
           ; m.email_logo
-          ; m.gtx_api_key
           ]
     in
     let decode
@@ -207,12 +177,9 @@ module Write = struct
             , ( description
               , ( url
                 , ( default_language
-                  , ( gtx_sender
-                    , ( created_at
-                      , ( updated_at
-                        , ( database_label
-                          , (styles, (icon, (email_logo, (gtx_api_key, ())))) ) ) ) ) ) )
-              ) ) )
+                  , ( created_at
+                    , (updated_at, (database_label, (styles, (icon, (email_logo, ())))))
+                    ) ) ) ) ) )
       =
       Ok
         { id
@@ -220,8 +187,6 @@ module Write = struct
         ; description
         ; url
         ; database_label
-        ; gtx_api_key
-        ; gtx_sender
         ; styles
         ; icon
         ; email_logo
@@ -239,14 +204,12 @@ module Write = struct
         ; option Description.t
         ; Url.t
         ; Pool_common.Repo.Language.t
-        ; GtxSender.t
         ; Pool_common.Repo.CreatedAt.t
         ; Pool_common.Repo.UpdatedAt.t
         ; Database.Repo.Label.t
         ; option Styles.Write.t
         ; option Icon.Write.t
         ; option EmailLogo.Write.t
-        ; option GtxApiKey.t
         ]
   ;;
 end

@@ -90,7 +90,7 @@ let seed_default_system_settings =
         (UNHEX(REPLACE(UUID(), '-', '')), '[\"default_reminder_lead_time\"]', '28800'),
         (UNHEX(REPLACE(UUID(), '-', '')), '[\"default_text_msg_reminder_lead_time\"]', '14400'),
         (UNHEX(REPLACE(UUID(), '-', '')), '[\"languages\"]', '[[\"EN\"],[\"DE\"]]'),
-        (UNHEX(REPLACE(UUID(), '-', '')), '[\"email_suffixes\"]', '[\"econ.uzh.ch\",\"uzh.ch\"]'),
+        (UNHEX(REPLACE(UUID(), '-', '')), '[\"email_suffixes\"]', '[]'),
         (UNHEX(REPLACE(UUID(), '-', '')), '[\"inactive_user_disable_after\"]', '5'),
         (UNHEX(REPLACE(UUID(), '-', '')), '[\"inactive_user_warning\"]', '7'),
         (UNHEX(REPLACE(UUID(), '-', '')), '[\"trigger_profile_update_after\"]', '365'),

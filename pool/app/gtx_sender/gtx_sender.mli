@@ -26,8 +26,10 @@ val yojson_of_t : t -> Yojson.Safe.t
 val create : ?id:Id.t -> ApiKey.t -> Sender.t -> t
 
 type event =
+  | CacheCleared
   | Created of t
   | Updated of t * t
+  | Removed
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -35,4 +37,5 @@ val show_event : event -> string
 val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val find_exn : Database.Label.t -> t Lwt.t
 val find_opt : Database.Label.t -> t option Lwt.t
+val text_messages_enabled : Database.Label.t -> bool Lwt.t
 val clear_cache : unit -> unit

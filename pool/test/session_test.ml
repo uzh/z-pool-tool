@@ -1510,7 +1510,10 @@ let send_session_reminders_with_default_leat_time _ () =
   let database_label = Test_utils.Data.database_label in
   let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
   (* NOTE: disable text messages for test *)
-  let tenant = { tenant with Pool_tenant.text_messages_enabled = false } in
+  let%lwt () =
+    let open Gtx_sender in
+    [ Removed; CacheCleared ] |> Lwt_list.iter_s (handle_event database_label)
+  in
   let s_to_lead encode s = s |> Ptime.Span.of_int_s |> encode |> get_exn in
   let%lwt () =
     Pool_common.Reminder.
@@ -1551,10 +1554,11 @@ let send_session_reminders_with_default_leat_time _ () =
     CCList.is_empty text_message_reminders |> Alcotest.(check bool) "succeeds" true
   in
   let%lwt () =
-    let open Pool_tenant in
-    let%lwt write = Pool_tenant.find_full tenant.id ||> get_exn in
-    GtxApiKeyUpdated (write, (GtxApiKey.of_string "api-key", GtxSender.of_string "sender"))
-    |> handle_event tenant.database_label
+    let open Gtx_sender in
+    let api_key = ApiKey.of_string "api-key" in
+    let sender = Sender.of_string "sender" in
+    let config = create api_key sender in
+    Created config |> handle_event database_label
   in
   let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
   let%lwt email_reminders, text_message_reminders =

@@ -240,8 +240,8 @@ module Partials = struct
       [ Page_admin_message_template.template_inputs
           ?language_select_attriutes
           ~hide_text_message_input:true
+          ~text_messages_enabled
           context
-          text_messages_enabled
           (`Create swap_session_template)
           Message_template.Label.AssignmentSessionChange
           ~languages
@@ -470,8 +470,8 @@ module Partials = struct
         ; text_messages_hint
         ; Page_admin_message_template.template_inputs
             ~hide_text_message_input:(not text_message_enabled)
+            ~text_messages_enabled:true
             context
-            true
             (`Create message_template)
             Message_template.Label.AssignmentSessionChange
             ~languages

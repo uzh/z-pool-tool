@@ -872,6 +872,7 @@ let message_template_form ?template_id label req =
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let* form_context, available_languages =
       match template_id with
       | None ->
@@ -897,6 +898,7 @@ let message_template_form ?template_id label req =
         Lwt_result.return (`Update template, None)
     in
     Page.Admin.Session.message_template_form
+      ~text_messages_enabled
       context
       tenant
       experiment

@@ -144,15 +144,6 @@ let tenant_form
         ~flash_fetcher
         ~required:true
     ; language_select
-    ; input_element
-        language
-        `Text
-        Field.GtxSender
-        ~additional_attributes:[ a_maxlength 11 ]
-        ~hints:Pool_common.I18n.[ GtxSender ]
-        ~value:(value (fun t -> t.gtx_sender |> GtxSender.value))
-        ~flash_fetcher
-        ~required:true
     ; contact_email
     ; database_fields
     ; file_uploads

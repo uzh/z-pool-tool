@@ -42,8 +42,14 @@ let edit req =
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* template = Message_template.find database_label id in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.MessageTemplate.edit context template tenant flash_fetcher
+    Page.Admin.MessageTemplate.edit
+      ~text_messages_enabled
+      context
+      template
+      tenant
+      flash_fetcher
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -220,15 +226,15 @@ let reset_to_default_htmx req =
       |> CCOption.to_result (Error.NotFound Field.MessageTemplate)
       |> Lwt_result.lift
     in
-    let%lwt text_messages_disabled = Pool_context.Tenant.text_messages_enabled req in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let form_context =
       if CCOption.is_some current_template then `Update template else `Create template
     in
     Page.Admin.MessageTemplate.template_inputs
       ~entity
       ?languages
+      ~text_messages_enabled
       context
-      text_messages_disabled
       form_context
       template.label
     |> HttpUtils.Htmx.html_to_plain_text_response

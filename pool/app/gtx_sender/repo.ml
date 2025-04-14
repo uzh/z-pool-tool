@@ -98,6 +98,14 @@ let update_request =
   |> RepoEntity.write ->. Caqti_type.unit
 ;;
 
+let destroy_request =
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM pool_gtx_api_keys
+  |sql}
+  |> Caqti_type.(unit ->. unit)
+;;
+
 let find_opt pool =
   let open Utils.Lwt_result.Infix in
   Cache.find pool
@@ -119,3 +127,4 @@ let find_exn pool =
 
 let insert pool = Database.exec pool insert_request
 let update pool = Database.exec pool update_request
+let destroy pool = Database.exec pool destroy_request
