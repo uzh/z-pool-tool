@@ -87,7 +87,11 @@ let to_html ?title ?(attributes = []) ?(classnames = []) icon =
   i ~a:attributes []
 ;;
 
-let bool_to_icon = function
-  | false -> to_html Close
-  | true -> to_html Checkmark
+let bool_to_icon ?(colored = false) ?(outlined = false) ?(classnames = []) = function
+  | false ->
+    let icon = if outlined then CloseCircle else Close in
+    to_html ~classnames:(classnames @ if colored then [ "color-red" ] else []) icon
+  | true ->
+    let icon = if outlined then CheckmarkCircle else Checkmark in
+    to_html ~classnames:(classnames @ if colored then [ "color-green" ] else []) icon
 ;;
