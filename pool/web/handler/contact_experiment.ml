@@ -173,7 +173,7 @@ let show_online_study
        | Some time_window -> `Active (time_window, None)
        | None -> `Upcoming upcoming_time_window)
   in
-  Page.Contact.Experiment.show_online_study experiment matches_filter context argument
+  Page.Contact.Experiment.Detail.online_study experiment matches_filter context argument
   |> Lwt.return_ok
 ;;
 
@@ -197,7 +197,7 @@ let show_onsite_study
   let%lwt user_is_on_waiting_list =
     Waiting_list.user_is_enlisted database_label contact id
   in
-  Page.Contact.Experiment.show
+  Page.Contact.Experiment.Detail.onsite_study
     experiment
     matches_filter
     grouped_sessions
