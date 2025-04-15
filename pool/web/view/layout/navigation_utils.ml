@@ -27,6 +27,7 @@ let filter_items ?validate ?actor ?(guardian = []) items =
                 let self =
                   Persistence.PermissionOnTarget.validate_set
                     ~any_id:true
+                      (* THIS MAKES EXPERIMENT OVERVIEW VISIBLE, BUT NOT ACCESSIBLE *)
                     guardian
                     Pool_message.Error.authorization
                     validation_set
