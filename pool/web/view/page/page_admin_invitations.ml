@@ -49,9 +49,7 @@ module Partials = struct
                  |> Sihl.Web.externalize_path)
             ; a_class [ "flexrow"; "justify-end" ]
             ]
-          [ csrf_element csrf ()
-          ; submit_element language Control.(Resend (Some Field.Invitation)) ()
-          ]
+          [ csrf_element csrf (); submit_element language Control.(Resend None) () ]
       in
       let open CCFun in
       let open Pool_message in
@@ -191,7 +189,7 @@ let sent_invitations
     [ div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ div
-            ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-lighter"; "border" ] ]
+            ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-lightest"; "border" ] ]
             [ h3 [ txt (text_to_string I18n.InvitationsStatistics) ]
             ; p [ txt (text_to_string I18n.InvitationsStatisticsIntro) ]
             ; Component.Statistics.SentInvitations.create language statistics
