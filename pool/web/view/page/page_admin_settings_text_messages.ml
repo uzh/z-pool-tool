@@ -14,7 +14,7 @@ let index
       Utils.hint_to_string language hint
       |> txt
       |> CCList.return
-      |> Component.Notification.notification language style
+      |> Component.Notification.create language style
     in
     match gtx_config with
     | None -> txt "", notification I18n.GtxKeyMissing `Warning

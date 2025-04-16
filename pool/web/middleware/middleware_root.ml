@@ -16,7 +16,7 @@ let from_root_only () =
           , csrf
           , Guest
           , []
-          , None )
+          , [] )
       in
       Page.Utils.error_page_not_found Pool_common.Language.En ()
       |> Layout.Root.create context

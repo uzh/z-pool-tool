@@ -295,7 +295,7 @@ module Partials = struct
       | available_sessions ->
         div
           ~a:[ a_class [ "stack" ] ]
-          [ Component.Notification.notification
+          [ Component.Notification.create
               language
               `Warning
               [ Pool_common.(Utils.hint_to_string language I18n.SwapSessions)
@@ -387,7 +387,7 @@ module Partials = struct
              [ p [ txt (Utils.hint_to_string language I18n.ContactsWithoutCellPhone) ]
              ; list
              ]
-             |> Component.Notification.notification language `Error
+             |> Component.Notification.create language `Error
            in
            let input =
              checkbox_element
@@ -850,7 +850,7 @@ let edit
       ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ]
       [ div
           ~a:[ a_class [ "stack" ] ]
-          [ Component.Notification.notification
+          [ Component.Notification.create
               language
               `Warning
               [ txt

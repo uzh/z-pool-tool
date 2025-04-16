@@ -71,7 +71,6 @@ let sql_select_columns =
   ]
 ;;
 
-(* TODO: Do I need ID? *)
 let find_opt_request =
   sql_select_columns
   |> CCString.concat ", "

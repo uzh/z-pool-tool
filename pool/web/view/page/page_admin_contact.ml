@@ -131,7 +131,7 @@ let assign_contact_experiment_modal
       if show then Some (p [ Utils.hint_to_string language i18n |> txt ]) else None)
     |> function
     | [] -> txt ""
-    | msg -> Component.Notification.notification language `Error msg
+    | msg -> Component.Notification.create language `Error msg
   in
   let session_select =
     let label = Session.start_end_with_duration_human in

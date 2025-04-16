@@ -689,6 +689,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
        parameters with the key '%s'. You can use the form below to build a URL you can \
        send to new contacts."
       Pool_message.Field.(human_url SignUpCode)
+  | SmtpMissing ->
+    "No SMTP configuration has been stored, which is why no e-mails can be sent."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if there is a \
      free place."

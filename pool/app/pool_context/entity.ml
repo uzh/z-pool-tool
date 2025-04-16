@@ -8,6 +8,20 @@ type user =
   | Guest
 [@@deriving eq, show, sexp_of, variants]
 
+module Notitification = struct
+  type tenant =
+    { hint : Pool_common.I18n.hint
+    ; style : [ `Error | `Success | `Warning ]
+    ; link : (string * Pool_common.I18n.nav_link) option
+    }
+  [@@deriving eq, show, sexp_of]
+
+  type t =
+    | Root of Announcement.t
+    | Tenant of tenant
+  [@@deriving eq, show, sexp_of]
+end
+
 module UserType = struct
   type t =
     | Admin
@@ -29,7 +43,7 @@ type t =
   ; csrf : string
   ; user : user
   ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
-  ; announcement : Announcement.t option
+  ; notifications : Notitification.t list
   }
 [@@deriving show, sexp_of]
 
@@ -41,7 +55,7 @@ let create
       , csrf
       , user
       , guardian
-      , announcement )
+      , notifications )
   =
   { query_parameters
   ; language
@@ -50,7 +64,7 @@ let create
   ; csrf
   ; user
   ; guardian
-  ; announcement
+  ; notifications
   }
 ;;
 

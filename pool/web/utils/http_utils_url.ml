@@ -30,6 +30,12 @@ module Admin = struct
     |> append_opt suffix
   ;;
 
+  let smtp_settings_path ?suffix ?id () =
+    settings_path "smtp"
+    |> append_opt (map Email.SmtpAuth.Id.value id)
+    |> append_opt suffix
+  ;;
+
   let page_script_path location =
     settings_path "page-script" |> append (Settings.PageScript.show_location location)
   ;;

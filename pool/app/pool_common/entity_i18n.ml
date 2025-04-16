@@ -1,3 +1,13 @@
+open Sexplib.Conv
+
+module Ptime = struct
+  include Pool_model.Base.Ptime
+
+  module Span = struct
+    include Pool_model.Base.PtimeSpan
+  end
+end
+
 type t =
   | Activity
   | Address
@@ -178,7 +188,7 @@ type nav_link =
   | Users
   | WaitingList
   | Versions
-[@@deriving eq, show]
+[@@deriving eq, show, sexp_of]
 
 type hint =
   | AdminOverwriteContactValues
@@ -335,6 +345,7 @@ type hint =
   | SettingsPageScripts
   | SignUpCodeHint
   | SignUpForWaitingList
+  | SmtpMissing
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
   | SmtpValidation
@@ -351,7 +362,7 @@ type hint =
   | UserImportInterval
   | VerifyContact
   | WaitingListPhoneMissingContact
-[@@deriving variants]
+[@@deriving eq, show, variants, sexp_of]
 
 type confirmable =
   | CancelAssignment

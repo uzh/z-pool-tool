@@ -416,7 +416,7 @@ let show
             |> Utils.hint_to_string language
             |> txt
             |> CCList.return
-            |> Component.Notification.notification language `Warning
+            |> Component.Notification.create language `Warning
           ; input_el
           ]
     in
