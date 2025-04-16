@@ -70,6 +70,7 @@ val lastname_firstname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
 val cell_phone : t -> Pool_user.CellPhone.t option
 val is_inactive : t -> bool
+val is_paused : t -> bool
 val num_participations : t -> NumberOfParticipations.t
 val num_invitations : t -> NumberOfInvitations.t
 val num_assignments : t -> NumberOfAssignments.t

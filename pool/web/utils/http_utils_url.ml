@@ -242,6 +242,8 @@ module Contact = struct
     |> append_opt (map Session.Id.value id)
     |> append_opt suffix
   ;;
+
+  let profile_path suffix = "/user" |> append suffix
 end
 
 module Root = struct

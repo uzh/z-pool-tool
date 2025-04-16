@@ -196,6 +196,7 @@ let to_write (m : t) : Write.t =
 ;;
 
 let is_inactive { user; _ } = Pool_user.Status.(equal user.Pool_user.status Inactive)
+let is_paused { paused; _ } = Pool_user.Paused.value paused
 let sexp_of_t t = t |> id |> Id.sexp_of_t
 
 let update_num_invitations ~step ({ num_invitations; _ } as m) =
