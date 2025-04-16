@@ -3,7 +3,7 @@ open Tyxml.Html
 open Entity
 module CommonUtils = Pool_common.Utils
 
-let filter_items ?validate ?actor ?(guardian = []) items =
+let filter_items ?(any_id = true) ?validate ?actor ?(guardian = []) items =
   let open Guard in
   match validate, actor with
   | (None | Some false), _ -> items
@@ -26,8 +26,7 @@ let filter_items ?validate ?actor ?(guardian = []) items =
              (try
                 let self =
                   Persistence.PermissionOnTarget.validate_set
-                    ~any_id:true
-                      (* THIS MAKES EXPERIMENT OVERVIEW VISIBLE, BUT NOT ACCESSIBLE *)
+                    ~any_id
                     guardian
                     Pool_message.Error.authorization
                     validation_set
@@ -115,13 +114,14 @@ let rec build_nav_links
 let create_nav
       { Pool_context.query_parameters; language; guardian; _ }
       items
+      ?any_id
       ?validate
       ?actor
       ?active_navigation
       layout
   =
   let nav_links =
-    filter_items ?validate ?actor ~guardian items
+    filter_items ?any_id ?validate ?actor ~guardian items
     |> CCList.map (build_nav_links ~layout ?active_navigation language query_parameters)
   in
   [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ]
