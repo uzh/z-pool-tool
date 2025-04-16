@@ -672,18 +672,6 @@ a.panel {
     color: inherit;
 }
 
-// Update framework
-.align-stretch {
+.notification.align-stretch {
     align-items: stretch;
-}
-
-.notification-close {
-    i {
-        margin-right: 0;
-    }
-}
-
-.notification.error a {
-    color: inherit;
-    text-decoration: underline;
 }

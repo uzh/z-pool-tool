@@ -288,35 +288,35 @@
     lodash-es "^4.17.15"
 
 "@econ/frontend-framework@^4.0.0":
-  version "4.0.7"
-  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-4.0.7.tgz#ac9a5becfa535eb989df7f76e8fc90ace84488bb"
-  integrity sha1-rJpb7PpTXrmJ33926PyQrOhEiLs=
+  version "4.0.10"
+  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-4.0.10.tgz#d202b1986dac70b2a47913c27106f9a4f8640ad3"
+  integrity sha1-0gKxmG2scLKkeRPCcQb5pPhkCtM=
   dependencies:
     flatpickr "^4.6.13"
 
 "@fullcalendar/core@^6.1.8":
-  version "6.1.15"
-  resolved "https://registry.yarnpkg.com/@fullcalendar/core/-/core-6.1.15.tgz#6c3f5259fc4589870228853072131219bb533f6e"
-  integrity sha512-BuX7o6ALpLb84cMw1FCB9/cSgF4JbVO894cjJZ6kP74jzbUZNjtwffwRdA+Id8rrLjT30d/7TrkW90k4zbXB5Q==
+  version "6.1.17"
+  resolved "https://registry.yarnpkg.com/@fullcalendar/core/-/core-6.1.17.tgz#faaffa100f020636a9b4c900462bdc6d652b58ef"
+  integrity sha512-0W7lnIrv18ruJ5zeWBeNZXO8qCWlzxDdp9COFEsZnyNjiEhUVnrW/dPbjRKYpL0edGG0/Lhs0ghp1z/5ekt8ZA==
   dependencies:
     preact "~10.12.1"
 
-"@fullcalendar/daygrid@^6.1.8", "@fullcalendar/daygrid@~6.1.15":
-  version "6.1.15"
-  resolved "https://registry.yarnpkg.com/@fullcalendar/daygrid/-/daygrid-6.1.15.tgz#91208b0955ba805ddad285a53ee6f53855146963"
-  integrity sha512-j8tL0HhfiVsdtOCLfzK2J0RtSkiad3BYYemwQKq512cx6btz6ZZ2RNc/hVnIxluuWFyvx5sXZwoeTJsFSFTEFA==
+"@fullcalendar/daygrid@^6.1.8", "@fullcalendar/daygrid@~6.1.17":
+  version "6.1.17"
+  resolved "https://registry.yarnpkg.com/@fullcalendar/daygrid/-/daygrid-6.1.17.tgz#3ff9d8d99da872631b661bf9ca5a47ed849421cf"
+  integrity sha512-K7m+pd7oVJ9fW4h7CLDdDGJbc9szJ1xDU1DZ2ag+7oOo1aCNLv44CehzkkknM6r8EYlOOhgaelxQpKAI4glj7A==
 
 "@fullcalendar/list@^6.1.8":
-  version "6.1.15"
-  resolved "https://registry.yarnpkg.com/@fullcalendar/list/-/list-6.1.15.tgz#d9b7ff0a50d7efa0d31234ed6caea06db6090c29"
-  integrity sha512-U1bce04tYDwkFnuVImJSy2XalYIIQr6YusOWRPM/5ivHcJh67Gm8CIMSWpi3KdRSNKFkqBxLPkfZGBMaOcJYug==
+  version "6.1.17"
+  resolved "https://registry.yarnpkg.com/@fullcalendar/list/-/list-6.1.17.tgz#0111df515e662f2372bc50e56b90c3a5c2dc8ce0"
+  integrity sha512-fkyK49F9IxwlGUBVhJGsFpd/LTi/vRVERLIAe1HmBaGkjwpxnynm8TMLb9mZip97wvDk3CmZWduMe6PxscAlow==
 
 "@fullcalendar/timegrid@^6.1.8":
-  version "6.1.15"
-  resolved "https://registry.yarnpkg.com/@fullcalendar/timegrid/-/timegrid-6.1.15.tgz#c4630b7c03c813065154c6e3981f8d51d9d692e5"
-  integrity sha512-61ORr3A148RtxQ2FNG7JKvacyA/TEVZ7z6I+3E9Oeu3dqTf6M928bFcpehRTIK6zIA6Yifs7BeWHgOE9dFnpbw==
+  version "6.1.17"
+  resolved "https://registry.yarnpkg.com/@fullcalendar/timegrid/-/timegrid-6.1.17.tgz#c88f19a1417ca314545d28a2fe23b33330e086dd"
+  integrity sha512-K4PlA3L3lclLOs3IX8cvddeiJI9ZVMD7RA9IqaWwbvac771971foc9tFze9YY+Pqesf6S+vhS2dWtEVlERaGlQ==
   dependencies:
-    "@fullcalendar/daygrid" "~6.1.15"
+    "@fullcalendar/daygrid" "~6.1.17"
 
 "@lezer/common@^1.0.0":
   version "1.2.3"
