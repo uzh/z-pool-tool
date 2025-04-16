@@ -283,7 +283,8 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "Activate this option if participation in the experiment is not tied to a session, \
      e.g. in an online survey."
   | ContactAccountPaused ->
-    "Your account is paused. You will not be invited to any further experiments."
+    "Your account is paused. You will not be invited to any further experiments. You can \
+     reactivate your account in your user profile"
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
