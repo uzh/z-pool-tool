@@ -1965,6 +1965,7 @@ let cancel
 ;;
 
 let message_template_form
+      ~text_messages_enabled
       ({ Pool_context.language; _ } as context)
       tenant
       experiment
@@ -2030,9 +2031,9 @@ let message_template_form
         context
         ~entity:(Session session.Session.id)
         ~text_elements
+        ~text_messages_enabled
         ?languages
         form_context
-        tenant.Pool_tenant.text_messages_enabled
         action
         flash_fetcher
     ; changelog

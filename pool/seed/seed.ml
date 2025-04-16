@@ -27,6 +27,7 @@ module Tenant = struct
            ; Seed_filter.filter
            ; Seed_organisational_units.create
            ; Seed_guard.create
+           ; Seed_gtx_api_key.create
            ]
            @
            if is_test

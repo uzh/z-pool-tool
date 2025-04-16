@@ -5,6 +5,7 @@
   announcement
   api_key
   contact
+  gtx_config
   logger
   pool_common
   pool_tenant

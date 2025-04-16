@@ -7,7 +7,6 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; gtx_sender : GtxSender.t
   ; status : Database.Status.t option
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
@@ -26,8 +25,6 @@ type event =
   | DatabaseEdited of Write.t * Database.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
-  | GtxApiKeyUpdated of Write.t * (GtxApiKey.t * GtxSender.t)
-  | GtxApiKeyRemoved of Write.t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -67,7 +64,6 @@ let handle_event pool : event -> unit Lwt.t =
     ; icon = update_t.icon <+> tenant.icon
     ; email_logo = update_t.email_logo <+> tenant.email_logo
     ; default_language = update_t.default_language
-    ; gtx_sender = update_t.gtx_sender
     ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
     |> Repo.update Database.Pool.Root.label
@@ -78,11 +74,4 @@ let handle_event pool : event -> unit Lwt.t =
     status_updated database_label Database.Status.Maintenance
   | DeactivateMaintenance { Entity.Write.database_label; _ } ->
     StatusUpdated (database_label, Database.Status.Active) |> handle_event pool
-  | GtxApiKeyUpdated (tenant, (gtx_api_key, gtx_sender)) ->
-    let open Entity.Write in
-    { tenant with gtx_api_key = Some gtx_api_key; gtx_sender }
-    |> Repo.update Database.Pool.Root.label
-  | GtxApiKeyRemoved tenant ->
-    let open Entity.Write in
-    { tenant with gtx_api_key = None } |> Repo.update Database.Pool.Root.label
 ;;

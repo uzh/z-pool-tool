@@ -8,6 +8,7 @@ module Id : module type of Pool_common.Id
 module Job : sig
   type t =
     | GuardianCacheCleared
+    | GtxConfigCacheCleared
     | I18nPageUpdated
     | PageScriptsUpdated
     | SmtpAccountUpdated

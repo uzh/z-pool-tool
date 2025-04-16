@@ -673,6 +673,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SessionReminderLeadTime ->
     "The lead time determines how long before the start of the session the reminders are \
      sent to the contacts"
+  | SettingsContactEmail ->
+    "The default sender address for emails. This address can be overwritten for \
+     experiment-related emails."
   | SettingsNoEmailSuffixes ->
     "There are no email suffixes defined that are allowed. This means that all email \
      suffixes are allowed."

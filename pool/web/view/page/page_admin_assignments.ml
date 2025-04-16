@@ -211,6 +211,7 @@ module Partials = struct
   end
 
   let swap_session_notification_form_fields
+        ~text_messages_enabled
         context
         (experiment : Experiment.t)
         session_id
@@ -218,7 +219,6 @@ module Partials = struct
         languages
         swap_session_template
         flash_fetcher
-        text_messages_disabled
     =
     let id = "swap-session-notification-form" in
     let language_select_attriutes =
@@ -245,8 +245,8 @@ module Partials = struct
       [ Page_admin_message_template.template_inputs
           ?language_select_attriutes
           ~hide_text_message_input:true
+          ~text_messages_enabled
           context
-          text_messages_disabled
           (`Create swap_session_template)
           Message_template.Label.AssignmentSessionChange
           ~languages
@@ -257,6 +257,7 @@ module Partials = struct
   ;;
 
   let swap_session_form
+        ~text_messages_enabled
         ({ Pool_context.language; csrf; _ } as context)
         experiment
         session
@@ -266,7 +267,6 @@ module Partials = struct
         swap_session_template
         languages
         flash_fetcher
-        text_messages_disabled
     =
     let action =
       assignment_specific_path
@@ -321,6 +321,7 @@ module Partials = struct
               ; div
                   ~a:[ a_id notifier_id; a_class [ "hidden"; "stack" ] ]
                   [ swap_session_notification_form_fields
+                      ~text_messages_enabled
                       context
                       experiment
                       session.Session.id
@@ -328,7 +329,6 @@ module Partials = struct
                       languages
                       swap_session_template
                       flash_fetcher
-                      text_messages_disabled
                   ]
               ; submit_element language (Control.Save None) ~submit_type:`Primary ()
               ; csrf_element csrf ()
@@ -475,8 +475,8 @@ module Partials = struct
         ; text_messages_hint
         ; Page_admin_message_template.template_inputs
             ~hide_text_message_input:(not text_message_enabled)
+            ~text_messages_enabled:true
             context
-            true
             (`Create message_template)
             Message_template.Label.AssignmentSessionChange
             ~languages

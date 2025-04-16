@@ -122,6 +122,7 @@ let rec field_to_string =
   | FirstReminder -> "first reminder"
   | FollowUpSession -> "follow-up session"
   | GtxApiKey -> "GTX Api Key"
+  | GtxConfig -> "GTX configuration"
   | GtxSender -> "GTX sender"
   | HideCanceled -> "Hide canceled"
   | HideClosed -> "Hide closed"

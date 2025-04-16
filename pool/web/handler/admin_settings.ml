@@ -48,7 +48,7 @@ let show req =
       Settings.find_user_import_second_reminder_after database_label
     in
     let%lwt page_scripts = Settings.PageScript.find database_label in
-    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Settings.show
       ?open_tab

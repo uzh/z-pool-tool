@@ -124,7 +124,8 @@ module Tenant = struct
   let get_tenant_exn = find_key_exn (fun c -> c.tenant)
 
   let text_messages_enabled =
-    find_key_exn (fun c -> c.tenant.Pool_tenant.text_messages_enabled)
+    find_key_exn (fun c ->
+      Gtx_config.text_messages_enabled c.tenant.Pool_tenant.database_label)
   ;;
 end
 

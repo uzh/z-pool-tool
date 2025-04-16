@@ -522,7 +522,8 @@ module Sql = struct
     |> Caqti_type.(string) ->* RepoEntity.t
   ;;
 
-  let find_sessions_to_remind { Pool_tenant.database_label; text_messages_enabled; _ } =
+  let find_sessions_to_remind { Pool_tenant.database_label; _ } =
+    let%lwt text_messages_enabled = Gtx_config.text_messages_enabled database_label in
     let email_default_lead_time =
       Settings.default_email_session_reminder_lead_time_key_yojson
     in

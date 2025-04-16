@@ -1,8 +1,13 @@
 open Tyxml.Html
 open Component.Input
 
-let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
+let index
+      { Pool_context.csrf; language; _ }
+      ~flash_fetcher
+      (gtx_config : Gtx_config.t option)
+  =
   let open Pool_common in
+  let open Gtx_config in
   let action = "/admin/settings/text-messages" |> Sihl.Web.externalize_path in
   let delete_form, hint =
     let notification hint style =
@@ -11,9 +16,9 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
       |> CCList.return
       |> Component.Notification.notification language style
     in
-    match tenant.Pool_tenant.text_messages_enabled with
-    | false -> txt "", notification I18n.GtxKeyMissing `Warning
-    | true ->
+    match gtx_config with
+    | None -> txt "", notification I18n.GtxKeyMissing `Warning
+    | Some _ ->
       ( form
           ~a:
             [ a_action (Sihl.Web.externalize_path (Format.asprintf "%s/delete" action))
@@ -35,7 +40,9 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt (Utils.field_to_string language Field.GtxApiKey) ]
+    [ h1
+        ~a:[ a_class [ "has-gap" ] ]
+        [ txt (Utils.field_to_string language Field.GtxApiKey) ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         [ hint
@@ -58,7 +65,8 @@ let index { Pool_context.csrf; language; _ } ~flash_fetcher tenant =
                 language
                 `Text
                 Field.GtxSender
-                ~value:Pool_tenant.(tenant.gtx_sender |> GtxSender.value)
+                ?value:
+                  (CCOption.map (fun { sender; _ } -> Sender.value sender) gtx_config)
                 ~flash_fetcher
                 ~required:true
                 ~hints:[ I18n.GtxSender ]

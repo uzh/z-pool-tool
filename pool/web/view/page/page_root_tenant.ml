@@ -96,6 +96,23 @@ let tenant_form
       ; div ~a:[ a_class [ "grid-col-2"; "gap" ] ] inputs
       ]
   in
+  let contact_email =
+    if CCOption.is_some tenant
+    then txt ""
+    else
+      input_element
+        language
+        `Text
+        Field.ContactEmail
+        ~required:true
+        ~flash_fetcher
+        ~hints:[ Pool_common.I18n.SettingsContactEmail ]
+  in
+  let database_fields =
+    if CCOption.is_some tenant
+    then txt ""
+    else database_fields tenant language flash_fetcher
+  in
   form
     ~a:
       [ a_method `Post
@@ -127,18 +144,8 @@ let tenant_form
         ~flash_fetcher
         ~required:true
     ; language_select
-    ; input_element
-        language
-        `Text
-        Field.GtxSender
-        ~additional_attributes:[ a_maxlength 11 ]
-        ~hints:Pool_common.I18n.[ GtxSender ]
-        ~value:(value (fun t -> t.gtx_sender |> GtxSender.value))
-        ~flash_fetcher
-        ~required:true
-    ; (if CCOption.is_some tenant
-       then txt ""
-       else database_fields tenant language flash_fetcher)
+    ; contact_email
+    ; database_fields
     ; file_uploads
     ; div
         ~a:[ a_class [ "flexrow"; "full-width" ] ]

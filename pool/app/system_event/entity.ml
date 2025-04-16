@@ -13,6 +13,8 @@ module Job = struct
   type t =
     | GuardianCacheCleared [@name "guardiancachecleared"]
     [@printer Utils.ppx_printer "guardiancachecleared"]
+    | GtxConfigCacheCleared [@name "gtxcachecleared"]
+    [@printer Utils.ppx_printer "gtxcachecleared"]
     | I18nPageUpdated [@name "i18npageupdated"]
     [@printer Utils.ppx_printer "i18npageupdated"]
     | PageScriptsUpdated [@name "pagescriptsupdated"]

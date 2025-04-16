@@ -38,6 +38,7 @@ let form form_context req =
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let* form_context, available_languages, label =
       let experiment_id = experiment_id |> Experiment.Id.to_common in
       match form_context with
@@ -60,6 +61,7 @@ let form form_context req =
         Lwt_result.return (`Update template, None, template.label)
     in
     Page.Admin.Experiments.message_template_form
+      ~text_messages_enabled
       context
       tenant
       experiment

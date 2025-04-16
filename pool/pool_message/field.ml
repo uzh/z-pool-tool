@@ -135,6 +135,7 @@ type t =
   | FirstReminder [@name "first_reminder"] [@printer go "first_reminder"]
   | FollowUpSession [@name "follow_up_session"] [@printer go "follow_up_session"]
   | GtxApiKey [@name "gtx_api_key"] [@printer go "gtx_api_key"]
+  | GtxConfig [@name "gtx_config"] [@printer go "gtx_config"]
   | GtxSender [@name "gtx_sender"] [@printer go "gtx_sender"]
   | HideCanceled [@name "hide_canceled"] [@printer go "hide_canceled"]
   | HideClosed [@name "hide_closed"] [@printer go "hide_closed"]

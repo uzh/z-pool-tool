@@ -60,6 +60,7 @@ module Key = struct
   [@@deriving eq, show { with_path = false }, yojson]
 
   let read = Utils.Json.read_variant t_of_yojson
+  let to_json_string key = key |> yojson_of_t |> Yojson.Safe.to_string
 end
 
 module ContactEmail = struct
