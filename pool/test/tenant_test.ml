@@ -48,6 +48,7 @@ module Data = struct
   let password = "AdminAdmin99!"
   let firstname = "DJ"
   let lastname = "Ötzi"
+  let contact_email = "contact@pool.ch"
 
   let urlencoded =
     [ Field.Title, [ title ]
@@ -66,6 +67,7 @@ module Data = struct
     ; Field.Password, [ password ]
     ; Field.Firstname, [ firstname ]
     ; Field.Lastname, [ lastname ]
+    ; Field.ContactEmail, [ contact_email ]
     ]
     |> CCList.map (CCPair.map_fst Field.show)
   ;;
@@ -142,16 +144,12 @@ module Data = struct
     let* description = description |> Description.create >|= CCOption.return in
     let* url = url |> Url.create in
     let* database_label = Database.Label.create database_label in
-    let gtx_api_key = gtx_api_key |> GtxApiKey.of_string |> CCOption.return in
-    let* gtx_sender = gtx_sender |> GtxSender.create in
     Ok
       { Write.id = Id.create ()
       ; title
       ; description
       ; url
       ; database_label
-      ; gtx_api_key
-      ; gtx_sender
       ; styles = styles |> CCOption.return
       ; icon = icon |> CCOption.return
       ; email_logo = None
@@ -207,7 +205,6 @@ module Data = struct
       ; title
       ; description
       ; url
-      ; gtx_sender = gtx_sender |> GtxSender.create |> get_exn
       ; database_label
       ; styles = styles |> CCResult.get_exn |> CCOption.return
       ; icon = icon |> CCOption.return
@@ -216,7 +213,6 @@ module Data = struct
       ; email_logo = None
       ; status = Database.Status.Active
       ; default_language = Common.Language.En
-      ; text_messages_enabled = false
       ; created_at = Common.CreatedAt.create_now ()
       ; updated_at = Common.UpdatedAt.create_now ()
       }
@@ -319,7 +315,8 @@ let[@warning "-4"] create_tenant () =
       , (partner_logo_id, partner_logo_asset_id)
       , database_label
       , db_added_event
-      , guardian_cache_cleared_event )
+      , guardian_cache_cleared_event
+      , contact_email )
     =
     (* Read Ids and timestamps to create an equal event list *)
     root_events
@@ -331,6 +328,7 @@ let[@warning "-4"] create_tenant () =
       ; Pool_event.Database (Pool_database.Migrated database)
       ; Pool_event.SystemEvent System_event.(Created db_added_event)
       ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
+      ; Pool_event.Settings (Settings.ContactEmailCreated (contact_email, _))
       ] ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } = id, asset_id in
       ( id
@@ -340,7 +338,8 @@ let[@warning "-4"] create_tenant () =
       , partner_logo |> read_ids
       , Database.label database
       , db_added_event.System_event.id
-      , guardian_cache_cleared.System_event.id )
+      , guardian_cache_cleared.System_event.id
+      , contact_email )
     | _ -> failwith "Tenant create events don't match in test."
   in
   let expected_root_events, expected_database_label =
@@ -355,15 +354,12 @@ let[@warning "-4"] create_tenant () =
       in
       let* url = url |> Pool_tenant.Url.create in
       let* default_language = default_language |> Common.Language.create in
-      let* gtx_sender = gtx_sender |> Pool_tenant.GtxSender.create in
       Ok
         { Pool_tenant.Write.id = tenant_id
         ; title
         ; description
         ; url
         ; database_label
-        ; gtx_api_key = None
-        ; gtx_sender
         ; styles = styles |> CCOption.return
         ; icon = icon |> CCOption.return
         ; email_logo = None
@@ -396,6 +392,8 @@ let[@warning "-4"] create_tenant () =
       ; System_event.(
           Job.GuardianCacheCleared |> create ~id:guardian_cache_cleared_event |> created)
         |> Pool_event.system_event
+      ; Settings.ContactEmailCreated (contact_email, database_label)
+        |> Pool_event.settings
       ]
     in
     Ok expected_root_events, database_label
@@ -431,13 +429,11 @@ let[@warning "-4"] update_tenant_details () =
       let* title = title |> Title.create in
       let* description = description |> Description.create >|= CCOption.return in
       let* url = url |> Pool_tenant.Url.create in
-      let* gtx_sender = gtx_sender |> Pool_tenant.GtxSender.create in
       let* default_language = default_language |> Common.Language.create in
       let update : update =
         { title
         ; description
         ; url
-        ; gtx_sender
         ; default_language
         ; styles = Some styles
         ; icon = Some icon

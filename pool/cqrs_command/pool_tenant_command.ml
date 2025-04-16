@@ -16,7 +16,6 @@ type create =
   ; description : Pool_tenant.Description.t option
   ; url : Pool_tenant.Url.t
   ; styles : Pool_tenant.Styles.Write.t option
-  ; gtx_sender : Pool_tenant.GtxSender.t
   ; icon : Pool_tenant.Icon.Write.t option
   ; default_language : Pool_common.Language.t
   ; tenant_logos : Pool_common.Id.t list
@@ -49,7 +48,6 @@ end = struct
         title
         description
         url
-        gtx_sender
         styles
         icon
         default_language
@@ -61,7 +59,6 @@ end = struct
     { title
     ; description
     ; url
-    ; gtx_sender
     ; styles
     ; icon
     ; default_language
@@ -79,7 +76,6 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Pool_tenant.GtxSender.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Pool_common.Language.schema ()
@@ -93,13 +89,13 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) database (command : t) =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+    let tenant_db = Database.label database in
     let tenant =
       Pool_tenant.Write.create
         command.title
         command.description
         command.url
-        (database |> Database.label)
-        command.gtx_sender
+        tenant_db
         command.styles
         command.icon
         command.email_logo
@@ -119,11 +115,10 @@ end = struct
       [ Pool_tenant.Created (tenant, database) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; Pool_database.Migrated database |> Pool_event.database
-      ; System_event.Job.TenantDatabaseReset (Database.label database)
-        |> system_event_from_job
+      ; System_event.Job.TenantDatabaseReset tenant_db |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
-      ; Settings.ContactEmailCreated (command.contact_email, Database.label database)
-        |> Pool_event.settings (* TODO: Accesses wrong database *)
+      ; Settings.ContactEmailCreated (command.contact_email, tenant_db)
+        |> Pool_event.settings
       ]
   ;;
 
@@ -139,7 +134,6 @@ type edit_details =
   { title : Pool_tenant.Title.t
   ; description : Pool_tenant.Description.t option
   ; url : Pool_tenant.Url.t
-  ; gtx_sender : Pool_tenant.GtxSender.t
   ; status : Database.Status.t option
   ; default_language : Pool_common.Language.t
   ; styles : Pool_tenant.Styles.Write.t option
@@ -168,7 +162,6 @@ end = struct
         title
         description
         url
-        gtx_sender
         status
         default_language
         styles
@@ -180,7 +173,6 @@ end = struct
     { title
     ; description
     ; url
-    ; gtx_sender
     ; status
     ; default_language
     ; styles
@@ -198,7 +190,6 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Pool_tenant.GtxSender.schema ()
           ; Conformist.optional @@ Database.Status.schema ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
@@ -222,7 +213,6 @@ end = struct
         { title = command.title
         ; description = command.description
         ; url = command.url
-        ; gtx_sender = command.gtx_sender
         ; status = command.status
         ; styles = command.styles
         ; icon = command.icon

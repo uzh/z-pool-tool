@@ -130,7 +130,7 @@ let new_form req =
     in
     let%lwt default_sender = Email.Service.default_sender_of_pool database_label in
     let%lwt organisational_units = Organisational_unit.all database_label () in
-    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
     Page.Admin.Experiments.create
       context
@@ -280,7 +280,7 @@ let detail edit req =
        in
        let%lwt experiment_tags = find_tags Tags.Model.Experiment in
        let%lwt participation_tags = find_tags Tags.Model.Contact in
-       let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+       let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
        Page.Admin.Experiments.edit
          ~allowed_to_assign
          ~session_count

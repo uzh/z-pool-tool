@@ -26,8 +26,9 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t = function
     Repo.DefaultTextMsgReminderLeadTime.update ?user_uuid pool lead_time
   | ContactEmailUpdated contact_email ->
     Repo.TenantContactEmail.update ?user_uuid pool contact_email
+  (* Using the database label passed through the event, as this event has the root context *)
   | ContactEmailCreated (contact_email, tenant_db) ->
-    Repo.insert_contact_email tenant_db contact_email
+    Repo.TenantContactEmail.update tenant_db contact_email
   | InactiveUserDisableAfterUpdated disable_after ->
     Repo.InactiveUserDisableAfter.update ?user_uuid pool disable_after
   | InactiveUserWarningUpdated warning_after ->

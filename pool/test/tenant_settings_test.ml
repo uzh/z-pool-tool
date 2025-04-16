@@ -20,9 +20,9 @@ module Testable = struct
   let terms_and_conditions = Settings.TermsAndConditions.(Alcotest.testable pp equal)
 end
 
-let check_events expected generated =
+let check_events ?(message = "succeeds") expected generated =
   Alcotest.(
-    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected generated)
+    check (result (list Test_utils.event) Test_utils.error) message expected generated)
 ;;
 
 let handle_result ?(current_user = current_user) result =
@@ -32,18 +32,19 @@ let handle_result ?(current_user = current_user) result =
 let check_contact_email _ () =
   let open CCResult.Infix in
   let open Command.UpdateContactEmail in
+  let%lwt current_user = Integration_utils.create_admin_user () in
   let field = Field.ContactEmail in
   let handle email = [ Field.show field, [ email ] ] |> decode >>= handle in
   let invalid_email = "email.example.com" in
   let result = handle invalid_email in
   let expected = Error Error.(Conformist [ field, Invalid field ]) in
-  let () = check_events expected result in
+  let () = check_events ~message:"invalid contact email" expected result in
   let valid_email = "pool@econ.uzh.ch" in
   let result = handle valid_email in
   let expected_email = ContactEmail.of_string valid_email in
   let expected = Ok [ ContactEmailUpdated expected_email |> Pool_event.settings ] in
-  let () = check_events expected result in
-  let%lwt () = handle_result result in
+  let () = check_events ~message:"valid contact email" expected result in
+  let%lwt () = handle_result ~current_user result in
   let%lwt contact_email = Settings.find_contact_email database_label in
   let () =
     Alcotest.(
@@ -367,19 +368,17 @@ let delete_smtp_auth =
 
 let update_gtx_settings _ () =
   let testable_gtx =
-    let open Pool_tenant in
+    let open Gtx_config in
     let equal (key1, sender1) (key2, sender2) =
-      GtxApiKey.equal key1 key2 && GtxSender.equal sender1 sender2
+      ApiKey.equal key1 key2 && Sender.equal sender1 sender2
     in
     let pp fmt (key, sender) =
-      Format.fprintf fmt "(%s, %s)" (GtxApiKey.show key) (GtxSender.show sender)
+      Format.fprintf fmt "(%s, %s)" (ApiKey.show key) (Sender.show sender)
     in
     Alcotest.testable pp equal
   in
   let tags = Database.Logger.Tags.create Test_utils.Data.database_label in
-  let validate =
-    Cqrs_command.Settings_command.UpdateGtxApiKey.validated_gtx_api_key ~tags
-  in
+  let validate = Cqrs_command.Settings_command.validated_gtx_api_key ~tags in
   let phone = "+41791234567" in
   let stringify = CCList.map (fun (field, value) -> Field.show field, value) in
   let urlencoded = [ Field.GtxApiKey, [ "api-key" ]; Field.TestPhoneNumber, [ phone ] ] in

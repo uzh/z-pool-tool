@@ -25,7 +25,7 @@ module Label = struct
   include Core
 end
 
-type file =
+type t =
   { id : Id.t
   ; label : Label.t
   ; language : Pool_common.Language.t

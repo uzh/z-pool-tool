@@ -12,6 +12,46 @@ module TextMessage = Page_admin_settings_text_messages
 let changelog_modal_id = "settings-changelog-modal"
 let field_to_string = Pool_common.Utils.field_to_string_capitalized
 
+module Partials = struct
+  let with_htmx_delete_button html =
+    let remove_btn =
+      button
+        ~a:
+          [ a_class [ "error"; "small"; "is-icon" ]
+          ; a_button_type `Button
+          ; a_onclick "this.parentElement.remove()"
+          ]
+        [ Component.Icon.(TrashOutline |> to_html) ]
+    in
+    div ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ] [ html; remove_btn ]
+  ;;
+
+  let inactive_user_warning_input language warning =
+    let open Settings.InactiveUser in
+    timespan_picker
+      ~classnames:[ "grow" ]
+      ~hide_label:true
+      ~enabled_time_units:[ Pool_model.Base.TimeUnit.Days ]
+      ~required:true
+      language
+      Pool_message.Field.InactiveUserWarning
+      ?value:(CCOption.map Warning.TimeSpan.value warning)
+    |> with_htmx_delete_button
+  ;;
+
+  let email_suffix_input ?value language =
+    input_element
+      ~classnames:[ "grow" ]
+      ?value
+      ~hide_label:true
+      ~required:true
+      language
+      `Text
+      Pool_message.Field.EmailSuffix
+    |> with_htmx_delete_button
+  ;;
+end
+
 let create_modal context url make_title changelog =
   let open Component in
   Changelog.list context url (Some changelog)
@@ -36,31 +76,6 @@ let page_scripts_changelog_modal context location changelog =
     | Body -> Field.PageScriptsBody
   in
   create_modal context url make_title changelog
-;;
-
-let inactive_user_warning_input language warning =
-  let open Settings.InactiveUser in
-  let remove_btn =
-    button
-      ~a:
-        [ a_class [ "error"; "small"; "is-icon" ]
-        ; a_button_type `Button
-        ; a_onclick "this.parentElement.remove()"
-        ]
-      [ Component.Icon.(TrashOutline |> to_html) ]
-  in
-  div
-    ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
-    [ timespan_picker
-        ~classnames:[ "grow" ]
-        ~hide_label:true
-        ~enabled_time_units:[ Pool_model.Base.TimeUnit.Days ]
-        ~required:true
-        language
-        Pool_message.Field.InactiveUserWarning
-        ?value:(CCOption.map Warning.TimeSpan.value warning)
-    ; remove_btn
-    ]
 ;;
 
 let show
@@ -164,55 +179,41 @@ let show
     "Languages", [ form ], Some hint, [ `UpdateLanguages ]
   in
   let email_suffixes_html =
-    let control_to_string control =
-      h4 [ txt (Utils.control_to_string language control) ]
-    in
-    let hint = Utils.hint_to_string language I18n.SettingsEmailSuffixes in
-    let create_form =
-      div
-        ~a:[ a_class [ "stack" ] ]
-        [ control_to_string Message.(Control.Add (Some Field.EmailSuffix))
-        ; form
-            ~a:(form_attrs `CreateEmailSuffix)
-            [ csrf_element csrf ()
-            ; div
-                ~a:[ a_class [ "stack" ] ]
-                [ input_element
-                    ~hide_label:true
-                    language
-                    `Text
-                    Pool_message.Field.EmailSuffix
-                    ~required:true
-                ; submit ~control:Message.(Control.Add None) ()
-                ]
+    let subforms_id = "email-suffixes" in
+    let add_suffix =
+      button
+        ~a:
+          Htmx.
+            [ a_button_type `Button
+            ; a_class [ "success"; "small" ]
+            ; hx_get
+                (HttpUtils.Url.Admin.settings_path "email-suffix"
+                 |> Sihl.Web.externalize_path)
+            ; hx_trigger "click"
+            ; hx_target ("#" ^ subforms_id)
+            ; hx_swap "beforeend"
             ]
-        ]
+        [ txt (Pool_common.Utils.control_to_string language Message.Control.(Add None)) ]
     in
-    let delete_forms suffixes =
-      suffixes
+    let submit =
+      submit_element ~classnames:[ "small" ] language Message.(Control.Update None) ()
+    in
+    let suffix_rows =
+      email_suffixes
       |> CCList.map (fun suffix ->
-        form
-          ~a:
-            [ a_method `Post
-            ; a_action (action_path `DeleteEmailSuffix)
-            ; a_user_data
-                "confirmable"
-                (Utils.confirmable_to_string language I18n.DeleteEmailSuffix)
-            ]
-          [ submit_icon ~classnames:[ "error"; "small" ] Icon.TrashOutline
-          ; input
-              ~a:
-                [ a_input_type `Hidden
-                ; a_name "email_suffix"
-                ; a_value (Settings.EmailSuffix.value suffix)
-                ; a_readonly ()
-                ]
-              ()
-          ; csrf_element csrf ()
-          ])
-      |> div ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
+        Partials.email_suffix_input ~value:(Settings.EmailSuffix.value suffix) language)
     in
-    let update_forms suffixes =
+    let empty_message =
+      p
+        ~a:[ a_class [ "visible-only-child" ] ]
+        [ txt Pool_common.(Utils.hint_to_string language I18n.SettingsEmailSuffixes) ]
+    in
+    let button_row =
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end"; "gap" ] ]
+        [ add_suffix; submit ]
+    in
+    let suffix_form =
       form
         ~a:
           [ a_method `Post
@@ -222,54 +223,19 @@ let show
           ]
         [ csrf_element csrf ()
         ; div
-            ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
-            (suffixes
-             |> CCList.map (fun suffix ->
-               input
-                 ~a:
-                   [ a_value (Settings.EmailSuffix.value suffix)
-                   ; a_input_type `Text
-                   ; a_name (Pool_message.Field.show Field.EmailSuffix)
-                   ; a_required ()
-                   ]
-                 ()))
-        ; div
-            ~a:[ a_class [ "flexrow"; "gap" ] ]
-            [ submit_element
-                ~classnames:[ "push"; "small" ]
-                language
-                Message.(Control.Update None)
-                ()
-            ]
+            ~a:[ a_class [ "stack-sm"; "flexcolumn" ]; a_id subforms_id ]
+            (empty_message :: suffix_rows)
+        ; button_row
         ]
     in
-    let suffix_rows = function
-      | [] ->
-        div
-          ~a:[ a_class [ "stack" ] ]
-          [ txt (Utils.text_to_string language I18n.EmptyListGeneric) ]
-      | suffixes ->
-        div
-          ~a:[ a_class [ "stack" ] ]
-          [ control_to_string Message.(Control.Update (Some Field.EmailSuffix))
-          ; div
-              ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-              [ update_forms suffixes; delete_forms suffixes ]
-          ]
+    let column =
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ suffix_form; open_system_settings_changelog Settings.Key.EmailSuffixes ]
     in
     let title = "Email Suffixes" in
-    let columns =
-      [ suffix_rows email_suffixes
-      ; create_form
-      ; div
-          ~a:[ a_class [ "full-width" ] ]
-          [ open_system_settings_changelog Settings.Key.EmailSuffixes ]
-      ]
-    in
-    ( title
-    , columns
-    , Some hint
-    , [ `CreateEmailSuffix; `UpdateEmailSuffixes; `DeleteEmailSuffix ] )
+    let columns = [ column ] in
+    title, columns, None, [ `CreateEmailSuffix; `UpdateEmailSuffixes ]
   in
   let contact_email_html =
     let hint = Utils.hint_to_string language I18n.SettingsContactEmail in
@@ -335,7 +301,7 @@ let show
       let subforms =
         CCList.map
           (fun warning ->
-             warning |> CCOption.return |> inactive_user_warning_input language)
+             warning |> CCOption.return |> Partials.inactive_user_warning_input language)
           inactive_user_warning
         |> div ~a:[ a_class [ "stack"; "gap-sm" ]; a_id subforms_id ]
       in

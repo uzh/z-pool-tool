@@ -74,7 +74,12 @@ let column_created_at =
 
 let filterable_by = None
 let sortable_by = searchable_by @ [ column_count; column_resent_at; column_created_at ]
-let default_query = Query.create ~sort:Contact.default_sort ()
+
+let default_query =
+  let open Query in
+  let sort = Sort.{ column = column_created_at; order = SortOrder.Ascending } in
+  create ~sort ()
+;;
 
 module Statistics = struct
   type sent_by_count = int * int [@@deriving eq, show]

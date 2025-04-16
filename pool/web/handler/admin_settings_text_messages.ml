@@ -10,12 +10,12 @@ let src = Logs.Src.create "handler.admin.setting_text_messages"
 let active_navigation = base_path
 
 let index req =
-  let result context =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let tenant = Pool_context.Tenant.get_tenant_exn req in
-    Page.Admin.Settings.TextMessage.index context ~flash_fetcher tenant
+    let%lwt gtx_config = Gtx_config.find_opt database_label in
+    Page.Admin.Settings.TextMessage.index context ~flash_fetcher gtx_config
     |> create_layout ~active_navigation req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -27,15 +27,18 @@ let update req =
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, base_path)
     @@
-    let open Pool_tenant in
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let* tenant =
-      Pool_context.Tenant.get_tenant_exn req |> fun { id; _ } -> find_full id
+    let%lwt gtx_config = Gtx_config.find_opt database_label in
+    let open Command in
+    let* validated_config = validated_gtx_api_key ~tags urlencoded in
+    let events =
+      Lwt_result.lift
+      @@
+      match gtx_config with
+      | None -> CreateGtxApiKey.handle ~tags validated_config
+      | Some config -> UpdateGtxApiKey.handle ~tags config validated_config
     in
-    let open Command.UpdateGtxApiKey in
-    let* gtx_api_key = validated_gtx_api_key ~tags urlencoded in
-    let events = handle ~tags tenant gtx_api_key |> Lwt_result.lift in
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
@@ -54,12 +57,8 @@ let delete req =
   let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, base_path)
     @@
-    let open Pool_tenant in
     let tags = Pool_context.Logger.Tags.req req in
-    let* tenant =
-      Pool_context.Tenant.get_tenant_exn req |> fun { id; _ } -> find_full id
-    in
-    Command.RemoveGtxApiKey.handle ~tags tenant
+    Command.RemoveGtxApiKey.handle ~tags ()
     |> Lwt_result.lift
     |>> fun events ->
     let%lwt () = Pool_event.handle_events ~tags database_label user events in

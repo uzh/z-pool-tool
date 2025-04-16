@@ -136,7 +136,6 @@ let history req =
 ;;
 
 let show_online_study
-      req
       ({ Pool_context.database_label; _ } as context)
       experiment
       matches_filter
@@ -145,7 +144,6 @@ let show_online_study
   let open Utils.Lwt_result.Infix in
   let experiment_id = Experiment.Public.id experiment in
   let%lwt assignment =
-    let open Utils.Lwt_result.Infix in
     Assignment.Public.find_all_by_experiment database_label experiment_id contact
     ||> CCList.head_opt
   in
@@ -175,14 +173,44 @@ let show_online_study
        | Some time_window -> `Active (time_window, None)
        | None -> `Upcoming upcoming_time_window)
   in
-  Page.Contact.Experiment.show_online_study experiment matches_filter context argument
+  Page.Contact.Experiment.Detail.online_study experiment matches_filter context argument
   |> Lwt.return_ok
-  >>= create_layout req context
-  >|+ Sihl.Web.Response.of_html
+;;
+
+let show_onsite_study
+      id
+      ({ Pool_context.database_label; _ } as context)
+      experiment
+      matches_filter
+      contact
+  =
+  let open Utils.Lwt_result.Infix in
+  let* grouped_sessions =
+    Session.find_all_public_for_experiment database_label contact id
+    >|+ Session.Public.group_and_sort
+    >|+ CCList.filter CCFun.(fst %> Session.Public.is_fully_booked %> not)
+  in
+  let find_sessions = Session.find_by_contact_and_experiment database_label contact id in
+  let%lwt upcoming_sessions = find_sessions `Upcoming in
+  let%lwt past_sessions = find_sessions `Past in
+  let%lwt canceled_sessions = find_sessions `Canceled in
+  let%lwt user_is_on_waiting_list =
+    Waiting_list.user_is_enlisted database_label contact id
+  in
+  Page.Contact.Experiment.Detail.onsite_study
+    experiment
+    matches_filter
+    grouped_sessions
+    upcoming_sessions
+    past_sessions
+    canceled_sessions
+    user_is_on_waiting_list
+    contact
+    context
+  |> Lwt.return_ok
 ;;
 
 let show req =
-  let open CCFun in
   let open Utils.Lwt_result.Infix in
   let error_path = "/experiments" in
   let result ({ Pool_context.database_label; _ } as context) =
@@ -194,36 +222,14 @@ let show req =
     let%lwt matches_filter =
       Experiment.Public.contact_matches_filter database_label experiment contact
     in
-    match Experiment.Public.is_sessionless experiment with
-    | true -> show_online_study req context experiment matches_filter contact
-    | false ->
-      let* grouped_sessions =
-        Session.find_all_public_for_experiment database_label contact id
-        >|+ Session.Public.group_and_sort
-        >|+ CCList.filter (fst %> Session.Public.is_fully_booked %> not)
-      in
-      let find_sessions =
-        Session.find_by_contact_and_experiment database_label contact id
-      in
-      let%lwt upcoming_sessions = find_sessions `Upcoming in
-      let%lwt past_sessions = find_sessions `Past in
-      let%lwt canceled_sessions = find_sessions `Canceled in
-      let%lwt user_is_on_waiting_list =
-        Waiting_list.user_is_enlisted database_label contact id
-      in
-      Page.Contact.Experiment.show
-        experiment
-        matches_filter
-        grouped_sessions
-        upcoming_sessions
-        past_sessions
-        canceled_sessions
-        user_is_on_waiting_list
-        contact
-        context
-      |> Lwt.return_ok
-      >>= create_layout req context
-      >|+ Sihl.Web.Response.of_html
+    (match Experiment.Public.is_sessionless experiment with
+     | true -> show_online_study context
+     | false -> show_onsite_study id context)
+      experiment
+      matches_filter
+      contact
+    >>= create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;

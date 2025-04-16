@@ -27,6 +27,7 @@ module Key : sig
 
   val show : t -> string
   val read : string -> t
+  val to_json_string : t -> string
 end
 
 module ContactEmail : sig
@@ -117,7 +118,6 @@ end
 val action_of_param
   :  string
   -> ( [> `CreateEmailSuffix
-       | `DeleteEmailSuffix
        | `UpdateDefaultLeadTime
        | `UpdateTextMsgDefaultLeadTime
        | `UpdateInactiveUserDisableAfter
@@ -137,7 +137,6 @@ val action_of_param
 
 val stringify_action
   :  [< `CreateEmailSuffix
-     | `DeleteEmailSuffix
      | `UpdateDefaultLeadTime
      | `UpdateTextMsgDefaultLeadTime
      | `UpdateInactiveUserDisableAfter

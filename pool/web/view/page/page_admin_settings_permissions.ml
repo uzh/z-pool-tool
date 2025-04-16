@@ -141,7 +141,8 @@ let list
     in
     [ txt (Role.Target.to_human target), Some Field.Target
     ; ( permissions
-        |> CCList.map (Permission.show %> Component.Tag.create_chip ~inline:true `Primary)
+        |> CCList.map
+             (Permission.show %> Component.Tag.create_chip ~inline:true ~style:`Primary)
         |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "flex-wrap" ] ]
       , Some Field.Permission )
     ; (if can_manage then edit_button () else txt ""), None

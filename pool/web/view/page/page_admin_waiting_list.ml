@@ -61,7 +61,7 @@ let list
       |> Component.ButtonGroup.dropdown
       |> CCList.pure
     in
-    [ Page_admin_contact.contact_lastname_firstname access_contact_profiles contact
+    [ Component.Contacts.contact_lastname_firstname access_contact_profiles contact
     ; txt (Contact.email_address contact |> EmailAddress.value)
     ; txt (contact.Contact.cell_phone |> CCOption.map_or ~default:"" CellPhone.value)
     ; txt

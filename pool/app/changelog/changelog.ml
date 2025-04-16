@@ -64,23 +64,27 @@ module T (R : RecordSig) = struct
         in
         keys
         |> CCList.filter_map (fun key ->
-          let assoc list =
-            CCList.assoc_opt ~eq key list |> CCOption.value ~default:`Null
-          in
-          let value_before = assoc l1 in
-          let value_after = assoc l2 in
-          let compare_list_at_index = CCList.mem ~eq key compare_at_index_keys in
-          compare ~compare_list_at_index value_before value_after
-          |> CCOption.map (fun value -> key, value))
+          if CCList.mem ~eq key R.hide_list
+          then None
+          else (
+            let assoc list =
+              CCList.assoc_opt ~eq key list |> CCOption.value ~default:`Null
+            in
+            let value_before = assoc l1 in
+            let value_after = assoc l2 in
+            let compare_list_at_index = CCList.mem ~eq key compare_at_index_keys in
+            compare ~compare_list_at_index value_before value_after
+            |> CCOption.map (fun value -> key, value)))
         |> (function
          | [] -> None
          | assoc -> Some (Assoc assoc))
-        (* Catching equal variants *)
+      (* Catching equal variants *)
       | `Tuple [ `String key1; val1 ], `Tuple [ `String key2; val2 ]
       | `List [ `String key1; val1 ], `List [ `String key2; val2 ] ->
         if eq key1 key2
         then compare val1 val2
-        else Some (Change (json_before, json_after)) (* Catching equal assoc lists *)
+        else Some (Change (json_before, json_after))
+      (* Catching equal assoc lists *)
       | `List l1, `List l2 ->
         (match list_to_assoc l1, list_to_assoc l2 with
          | Some assoc_before, Some assoc_after -> compare assoc_before assoc_after

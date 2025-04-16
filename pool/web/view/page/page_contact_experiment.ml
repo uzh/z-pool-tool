@@ -75,6 +75,216 @@ let make_panel ?(classnames = []) ~query_parameters url content =
     [ div ~a:[ a_class [ "grow" ] ] content; Component.Icon.(to_html ChevronForward) ]
 ;;
 
+module Detail = struct
+  open Pool_common
+
+  let waiting_list_html
+        Pool_context.{ language; query_parameters; csrf; _ }
+        experiment
+        contact
+        user_is_enlisted
+    =
+    let form_control, submit_class =
+      match user_is_enlisted with
+      | true -> Control.RemoveFromWaitingList, "error"
+      | false -> Control.AddToWaitingList, "primary"
+    in
+    let hint_to_string = Utils.hint_to_string language in
+    let form_action =
+      HttpUtils.Url.Contact.experiment_path
+        ~id:(Experiment.Public.id experiment)
+        ~suffix:"waiting-list"
+        ()
+      |> (fun url -> if user_is_enlisted then Format.asprintf "%s/remove" url else url)
+      |> HttpUtils.externalize_path_with_params query_parameters
+    in
+    let text_blocks =
+      let base =
+        (if user_is_enlisted then I18n.ContactOnWaitingList else I18n.SignUpForWaitingList)
+        |> fun msg -> p [ txt (hint_to_string msg) ]
+      in
+      let missing_phone =
+        if CCOption.is_none contact.Contact.cell_phone
+        then
+          [ Component.Notification.create
+              ~link:
+                ( HttpUtils.url_with_field_params
+                    query_parameters
+                    "/user/contact-information"
+                , I18n.PersonalDetails )
+              language
+              `Warning
+              [ txt (hint_to_string I18n.WaitingListPhoneMissingContact) ]
+          ]
+        else []
+      in
+      div (missing_phone @ [ base ])
+    in
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ h2
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
+          [ txt (Utils.text_to_string language I18n.ExperimentWaitingListTitle) ]
+      ; text_blocks
+      ; form
+          ~a:[ a_method `Post; a_action form_action ]
+          [ csrf_element csrf ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  language
+                  form_control
+                  ~classnames:[ submit_class; "push" ]
+                  ()
+              ]
+          ]
+      ]
+  ;;
+
+  let session_list { Pool_context.language; _ } experiment sessions =
+    div
+      ~a:[ a_class [ "stack" ] ]
+      ([ h2
+           ~a:[ a_class [ "heading-2" ] ]
+           [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
+       ; p [ txt (Utils.hint_to_string language I18n.ExperimentSessionsPublic) ]
+       ]
+       @
+       if CCList.is_empty sessions
+       then
+         [ p
+             ~a:[ a_class [ "gap" ] ]
+             [ Utils.text_to_string language (I18n.EmtpyList Field.Sessions) |> txt ]
+         ]
+       else [ div [ PageSession.public_overview sessions experiment language ] ])
+  ;;
+
+  let onsite_study
+        experiment
+        matches_filter
+        grouped_sessions
+        upcoming_sessions
+        past_sessions
+        canceled_sessions
+        user_is_enlisted
+        contact
+        (Pool_context.{ language; _ } as context)
+    =
+    let sessions_html title = function
+      | [] -> txt ""
+      | sessions ->
+        div
+          (h2
+             ~a:[ a_class [ "heading-2"; "has-gap" ] ]
+             [ txt (Utils.text_to_string language title) ]
+           :: Page_contact_sessions.public_detail language sessions)
+    in
+    let registration_active sessions =
+      match matches_filter with
+      | false -> div ~a:[ a_class [ "gap" ] ] [ not_matching_warning language ]
+      | true -> session_list context experiment sessions
+    in
+    let page_content =
+      match upcoming_sessions, past_sessions, canceled_sessions with
+      | [], [], [] ->
+        Experiment.(
+          (match
+             experiment
+             |> Public.direct_registration_disabled
+             |> DirectRegistrationDisabled.value
+           with
+           | false -> [ registration_active grouped_sessions ]
+           | true -> [ waiting_list_html context experiment contact user_is_enlisted ]))
+      | upcoming_sessions, past_sessions, canceled_sessions ->
+        let open Pool_common.I18n in
+        [ div
+            ~a:[ a_class [ "stack-lg" ] ]
+            [ sessions_html UpcomingSessionsTitle upcoming_sessions
+            ; sessions_html PastSessionsTitle past_sessions
+            ; sessions_html CanceledSessionsTitle canceled_sessions
+            ]
+        ]
+    in
+    page_content |> div ~a:[ a_class [ "gap-lg" ] ] |> experiment_detail_page experiment
+  ;;
+
+  let online_study
+        (experiment : Experiment.Public.t)
+        matches_filter
+        { Pool_context.language; _ }
+        (argument :
+          [> `Active of Time_window.t * Assignment.Public.t option
+          | `Participated of Assignment.Public.t
+          | `Upcoming of Time_window.t option
+          ])
+    =
+    let html =
+      let open Assignment in
+      let start_button assignment =
+        let field = Some Field.Survey in
+        let control =
+          let open Control in
+          if CCOption.is_some assignment then Resume field else Start field
+        in
+        match matches_filter, assignment with
+        | false, None -> not_matching_warning language
+        | true, None | false, Some _ | true, Some _ ->
+          div
+            [ Component.Input.link_as_button
+                ~control:(language, control)
+                (HttpUtils.Url.Contact.experiment_path
+                   ~id:(Experiment.Public.id experiment)
+                   ~suffix:"start"
+                   ())
+            ]
+      in
+      let end_at_hint time_window =
+        p
+          ~a:[ a_class [ "gap-lg" ] ]
+          [ strong
+              [ txt
+                  (I18n.ExperimentOnlineParticipationDeadline
+                     (Time_window.ends_at time_window)
+                   |> Utils.text_to_string language)
+              ]
+          ]
+      in
+      let upcoming_hint time_window =
+        let open Time_window in
+        let hint =
+          match time_window with
+          | None -> I18n.ExperimentOnlineParticipationNoUpcoming
+          | Some (time_window : t) ->
+            I18n.ExperimentOnlineParticipationUpcoming
+              (time_window.start |> Session.Start.value)
+        in
+        p [ strong [ txt (Utils.text_to_string language hint) ] ]
+      in
+      let participated_hint assignment =
+        let open Utils in
+        Component.Notification.create
+          language
+          `Success
+          [ p
+              [ I18n.ExperimentOnlineParticiated
+                  (CreatedAt.value assignment.Public.created_at)
+                |> text_to_string language
+                |> txt
+              ]
+          ]
+      in
+      div ~a:[ a_class [ "gap"; "stack"; "flexcolumn" ] ]
+      @@
+      match argument with
+      | `Active (time_window, assignment) ->
+        [ start_button assignment; end_at_hint time_window ]
+      | `Participated assignment -> [ participated_hint assignment ]
+      | `Upcoming time_window -> [ upcoming_hint time_window ]
+    in
+    experiment_detail_page experiment html
+  ;;
+end
+
 let index
       experiment_list
       online_studies
@@ -232,7 +442,7 @@ let index
           let tag =
             Component.Tag.create_chip
               ~inline:true
-              `Error
+              ~style:`Error
               Pool_common.(Utils.text_to_string language I18n.Canceled)
           in
           [ "bg-red-lighter" ], [ tag ]
@@ -298,207 +508,6 @@ let index
             ]
         ]
     ]
-;;
-
-let show
-      experiment
-      matches_filter
-      grouped_sessions
-      upcoming_sessions
-      past_sessions
-      canceled_sessions
-      user_is_enlisted
-      contact
-      Pool_context.{ language; query_parameters; csrf; _ }
-  =
-  let open Pool_common in
-  let hint_to_string = Utils.hint_to_string language in
-  let form_control, submit_class =
-    match user_is_enlisted with
-    | true -> Control.RemoveFromWaitingList, "error"
-    | false -> Control.AddToWaitingList, "primary"
-  in
-  let session_list sessions =
-    div
-      ~a:[ a_class [ "stack" ] ]
-      ([ h2
-           ~a:[ a_class [ "heading-2" ] ]
-           [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
-       ; p [ txt (hint_to_string I18n.ExperimentSessionsPublic) ]
-       ]
-       @
-       if CCList.is_empty sessions
-       then
-         [ p
-             ~a:[ a_class [ "gap" ] ]
-             [ Utils.text_to_string language (I18n.EmtpyList Field.Sessions) |> txt ]
-         ]
-       else [ div [ PageSession.public_overview sessions experiment language ] ])
-  in
-  let waiting_list_form () =
-    let form_action =
-      HttpUtils.Url.Contact.experiment_path
-        ~id:(Experiment.Public.id experiment)
-        ~suffix:"waiting-list"
-        ()
-      |> (fun url -> if user_is_enlisted then Format.asprintf "%s/remove" url else url)
-      |> HttpUtils.externalize_path_with_params query_parameters
-    in
-    let text_blocks =
-      let base =
-        (if user_is_enlisted then I18n.ContactOnWaitingList else I18n.SignUpForWaitingList)
-        |> fun msg -> p [ txt (hint_to_string msg) ]
-      in
-      let missing_phone =
-        if CCOption.is_none contact.Contact.cell_phone
-        then
-          [ Component.Notification.create
-              ~link:
-                ( HttpUtils.url_with_field_params
-                    query_parameters
-                    "/user/contact-information"
-                , I18n.PersonalDetails )
-              language
-              `Warning
-              [ txt (hint_to_string I18n.WaitingListPhoneMissingContact) ]
-          ]
-        else []
-      in
-      div (missing_phone @ [ base ])
-    in
-    div
-      ~a:[ a_class [ "stack" ] ]
-      [ h2
-          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
-          [ txt (Utils.text_to_string language I18n.ExperimentWaitingListTitle) ]
-      ; text_blocks
-      ; form
-          ~a:[ a_method `Post; a_action form_action ]
-          [ csrf_element csrf ()
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  language
-                  form_control
-                  ~classnames:[ submit_class; "push" ]
-                  ()
-              ]
-          ]
-      ]
-  in
-  let sessions_html title = function
-    | [] -> txt ""
-    | sessions ->
-      div
-        (h2
-           ~a:[ a_class [ "heading-2"; "has-gap" ] ]
-           [ txt (Utils.text_to_string language title) ]
-         :: Page_contact_sessions.public_detail language sessions)
-  in
-  let registration_active sessions =
-    match matches_filter with
-    | false -> div ~a:[ a_class [ "gap" ] ] [ not_matching_warning language ]
-    | true -> session_list sessions
-  in
-  let page_content =
-    match upcoming_sessions, past_sessions, canceled_sessions with
-    | [], [], [] ->
-      Experiment.(
-        (match
-           experiment
-           |> Public.direct_registration_disabled
-           |> DirectRegistrationDisabled.value
-         with
-         | false -> [ registration_active grouped_sessions ]
-         | true -> [ waiting_list_form () ]))
-    | upcoming_sessions, past_sessions, canceled_sessions ->
-      let open Pool_common.I18n in
-      [ div
-          ~a:[ a_class [ "stack-lg" ] ]
-          [ sessions_html UpcomingSessionsTitle upcoming_sessions
-          ; sessions_html PastSessionsTitle past_sessions
-          ; sessions_html CanceledSessionsTitle canceled_sessions
-          ]
-      ]
-  in
-  page_content |> div ~a:[ a_class [ "gap-lg" ] ] |> experiment_detail_page experiment
-;;
-
-let show_online_study
-      (experiment : Experiment.Public.t)
-      matches_filter
-      { Pool_context.language; _ }
-      (argument :
-        [> `Active of Time_window.t * Assignment.Public.t option
-        | `Participated of Assignment.Public.t
-        | `Upcoming of Time_window.t option
-        ])
-  =
-  let html =
-    let open Pool_common in
-    let open Assignment in
-    let start_button assignment =
-      let field = Some Field.Survey in
-      let control =
-        let open Control in
-        if CCOption.is_some assignment then Resume field else Start field
-      in
-      match matches_filter, assignment with
-      | false, None -> not_matching_warning language
-      | true, None | false, Some _ | true, Some _ ->
-        div
-          [ Component.Input.link_as_button
-              ~control:(language, control)
-              (HttpUtils.Url.Contact.experiment_path
-                 ~id:(Experiment.Public.id experiment)
-                 ~suffix:"start"
-                 ())
-          ]
-    in
-    let end_at_hint time_window =
-      p
-        ~a:[ a_class [ "gap-lg" ] ]
-        [ strong
-            [ txt
-                (I18n.ExperimentOnlineParticipationDeadline
-                   (Time_window.ends_at time_window)
-                 |> Utils.text_to_string language)
-            ]
-        ]
-    in
-    let upcoming_hint time_window =
-      let open Time_window in
-      let hint =
-        match time_window with
-        | None -> I18n.ExperimentOnlineParticipationNoUpcoming
-        | Some (time_window : t) ->
-          I18n.ExperimentOnlineParticipationUpcoming
-            (time_window.start |> Session.Start.value)
-      in
-      p [ strong [ txt (Utils.text_to_string language hint) ] ]
-    in
-    let participated_hint assignment =
-      let open Utils in
-      Component.Notification.create
-        language
-        `Success
-        [ p
-            [ I18n.ExperimentOnlineParticiated
-                (CreatedAt.value assignment.Public.created_at)
-              |> text_to_string language
-              |> txt
-            ]
-        ]
-    in
-    div ~a:[ a_class [ "gap"; "stack"; "flexcolumn" ] ]
-    @@
-    match argument with
-    | `Active (time_window, assignment) ->
-      [ start_button assignment; end_at_hint time_window ]
-    | `Participated assignment -> [ participated_hint assignment ]
-    | `Upcoming time_window -> [ upcoming_hint time_window ]
-  in
-  experiment_detail_page experiment html
 ;;
 
 let online_study_completition (experiment : Experiment.Public.t) (_ : Pool_context.t) =

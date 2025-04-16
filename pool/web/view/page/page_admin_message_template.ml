@@ -112,7 +112,7 @@ let template_inputs
       ?flash_fetcher
       ?fixed_language
       ?selected_language
-      text_messages_enabled
+      ~text_messages_enabled
       form_context
       template_label
   =
@@ -282,8 +282,8 @@ let template_form
       ?languages
       ?text_elements
       ?fixed_language
+      ~text_messages_enabled
       form_context
-      text_messages_disabled
       action
       flash_fetcher
   =
@@ -321,7 +321,7 @@ let template_form
            ?languages
            ?fixed_language
            ~flash_fetcher
-           text_messages_disabled
+           ~text_messages_enabled
            form_context
            label
        ]
@@ -337,6 +337,7 @@ let template_form
 
 let edit
       ({ Pool_context.language; _ } as context)
+      ~text_messages_enabled
       template
       (tenant : Pool_tenant.t)
       flash_fetcher
@@ -359,7 +360,7 @@ let edit
             context
             ~text_elements
             (`Update template)
-            tenant.Pool_tenant.text_messages_enabled
+            ~text_messages_enabled
             action
             flash_fetcher
         ; Component.Changelog.list context changelog_url None

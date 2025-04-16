@@ -1,4 +1,5 @@
 module Record = struct
+  include Changelog.DefaultSettings
   open Entity
 
   let changelog_compare_at_index_keys = Some [ "and"; "or" ]

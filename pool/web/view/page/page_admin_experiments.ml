@@ -1022,6 +1022,7 @@ let users
 ;;
 
 let message_template_form
+      ~text_messages_enabled
       ({ Pool_context.language; _ } as context)
       tenant
       ({ Experiment.id; _ } as experiment)
@@ -1076,9 +1077,9 @@ let message_template_form
         ~entity:(Experiment experiment.Experiment.id)
         ?languages
         ~text_elements
+        ~text_messages_enabled
         ?fixed_language:experiment.Experiment.language
         form_context
-        tenant.Pool_tenant.text_messages_enabled
         action
         flash_fetcher
     ; changelog

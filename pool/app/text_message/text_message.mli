@@ -7,16 +7,16 @@ end
 
 type t =
   { recipient : Pool_user.CellPhone.t
-  ; sender : Pool_tenant.GtxSender.t
+  ; sender : Gtx_config.Sender.t
   ; text : Content.t
   }
 
-val create : Pool_user.CellPhone.t -> Pool_tenant.GtxSender.t -> Content.t -> t
+val create : Pool_user.CellPhone.t -> Gtx_config.Sender.t -> Content.t -> t
 val update : ?new_recipient:Pool_user.CellPhone.t -> t -> t
 
 val render_and_create
   :  Pool_user.CellPhone.t
-  -> Pool_tenant.GtxSender.t
+  -> Gtx_config.Sender.t
   -> string * (string * string) list
   -> t
 
@@ -25,12 +25,10 @@ module Service : sig
 
   val test_api_key
     :  tags:Logs.Tag.set
-    -> Pool_tenant.GtxApiKey.t
+    -> Gtx_config.ApiKey.t
     -> Pool_user.CellPhone.t
-    -> Pool_tenant.GtxSender.t
-    -> ( Pool_tenant.GtxApiKey.t * Pool_tenant.GtxSender.t
-         , Pool_message.Error.t )
-         Lwt_result.t
+    -> Gtx_config.Sender.t
+    -> (Gtx_config.ApiKey.t * Gtx_config.Sender.t, Pool_message.Error.t) Lwt_result.t
 
   module Job : sig
     val encode : t -> string

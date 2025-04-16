@@ -48,7 +48,7 @@ let show req =
       Settings.find_user_import_second_reminder_after database_label
     in
     let%lwt page_scripts = Settings.PageScript.find database_label in
-    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Settings.show
       ?open_tab
@@ -111,9 +111,6 @@ let update_settings req =
         | `CreateEmailSuffix ->
           let%lwt suffixes = Settings.find_email_suffixes database_label in
           CreateEmailSuffix.(urlencoded |> decode >>= handle ~tags suffixes) |> lift
-        | `DeleteEmailSuffix ->
-          let%lwt suffixes = Settings.find_email_suffixes database_label in
-          DeleteEmailSuffix.(urlencoded |> decode >>= handle ~tags suffixes) |> lift
         | `UpdateDefaultLeadTime ->
           UpdateDefaultEmailLeadTime.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UpdateTextMsgDefaultLeadTime ->
@@ -162,7 +159,16 @@ let update_settings req =
 
 let inactive_user_warning_subform req =
   let result { Pool_context.language; _ } =
-    Page.Admin.Settings.inactive_user_warning_input language None
+    Page.Admin.Settings.Partials.inactive_user_warning_input language None
+    |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
+    |> Lwt_result.return
+  in
+  HttpUtils.Htmx.extract_happy_path ~src req result
+;;
+
+let email_suffix_subform req =
+  let result { Pool_context.language; _ } =
+    Page.Admin.Settings.Partials.email_suffix_input language
     |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
     |> Lwt_result.return
   in
@@ -240,7 +246,6 @@ module Access : module type of Helpers.Access = struct
   let update =
     let find_effects = function
       | `CreateEmailSuffix -> Command.CreateEmailSuffix.effects
-      | `DeleteEmailSuffix -> Command.DeleteEmailSuffix.effects
       | `UpdateDefaultLeadTime -> Command.UpdateDefaultEmailLeadTime.effects
       | `UpdateTextMsgDefaultLeadTime -> Command.UpdateDefaultTextMessageLeadTime.effects
       | `UpdateInactiveUserDisableAfter -> Command.InactiveUser.DisableAfter.effects
