@@ -4,6 +4,35 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.11.0](https://github.com/uzh/z-pool-tool/tree/0.11.0) - 2025-04-16
+
+### Added
+
+- descriptions for role permissions
+- display warning if no email (SMTP) config is specified
+
+### Fixed
+
+- usage of multiple search bars on same page
+- dropdowns outside of page
+- flatpicker behaviour
+- cancel undeliverable emails on worker startup
+- usage of time windows
+- hide links if insufficent permission
+
+### Changed
+
+- adjust UI on University regulations
+- responsive design, optimizations for mobile
+- page scripts are now html (not JS anymore)
+- default sorting of invitations (new: created at)
+- move api keys from root database to each tenant
+- default welcome text
+
+### Removed
+
+- unused 'Admin' role
+
 ## [0.9.5](https://github.com/uzh/z-pool-tool/tree/0.9.4) - 2025-03-17
 
 ### Fixed
