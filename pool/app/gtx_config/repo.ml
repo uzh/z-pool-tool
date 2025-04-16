@@ -1,6 +1,7 @@
 open Entity
 open Database.Caqti_encoders
 open Caqti_request.Infix
+open CCFun.Infix
 
 module RepoEntity = struct
   module ApiKey = struct
@@ -10,11 +11,20 @@ module RepoEntity = struct
       let open Utils.Crypto.String in
       Pool_common.Repo.make_caqti_type
         Caqti_type.string
-        (fun s ->
-           s
-           |> decrypt_from_string
-           |> CCResult.map_err (fun _ -> Pool_message.(Error.Decode Field.ApiKey)))
+        (decrypt_from_string
+         %> CCResult.map_err (fun _ -> Pool_message.(Error.Decode Field.ApiKey)))
         encrypt_to_string
+    ;;
+  end
+
+  module Sender = struct
+    include Sender
+
+    let t =
+      Pool_common.Repo.make_caqti_type
+        Caqti_type.string
+        (of_string %> CCResult.return)
+        value
     ;;
   end
 
@@ -27,20 +37,19 @@ module RepoEntity = struct
     custom
       ~encode
       ~decode
-      Caqti_type.
-        [ Pool_common.Repo.Id.t
-        ; ApiKey.t
-        ; string
-        ; Pool_common.Repo.CreatedAt.t
-        ; Pool_common.Repo.UpdatedAt.t
-        ]
+      [ Pool_common.Repo.Id.t
+      ; ApiKey.t
+      ; Sender.t
+      ; Pool_common.Repo.CreatedAt.t
+      ; Pool_common.Repo.UpdatedAt.t
+      ]
   ;;
 
   let write =
     let decode _ = Pool_common.Utils.failwith Pool_message.Error.WriteOnlyModel in
     let encode m : ('a Data.t, string) result = Ok Data.[ m.id; m.api_key; m.sender ] in
     let open Schema in
-    custom ~encode ~decode Caqti_type.[ Pool_common.Repo.Id.t; ApiKey.t; string ]
+    custom ~encode ~decode [ Pool_common.Repo.Id.t; ApiKey.t; Sender.t ]
   ;;
 end
 
@@ -62,7 +71,6 @@ let sql_select_columns =
   ]
 ;;
 
-(* TODO: Do I need ID? *)
 let find_opt_request =
   sql_select_columns
   |> CCString.concat ", "

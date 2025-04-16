@@ -140,7 +140,9 @@ module NavElements = struct
     |> Lwt.return
   ;;
 
-  let admin context = AdminTenantItems.all |> NavUtils.create_nav ~validate:true context
+  let admin context =
+    AdminTenantItems.all |> NavUtils.create_nav ~any_id:true ~validate:true context
+  ;;
 
   let root context =
     let open I18n in
@@ -178,7 +180,7 @@ module NavElements = struct
     ; Profile.nav ~prefix:"/root" ()
     ; NavElement.logout ~prefix:"/root" ()
     ]
-    |> NavUtils.create_nav ~validate:true context
+    |> NavUtils.create_nav ~any_id:true ~validate:true context
   ;;
 
   let find_tenant_nav_links ({ Pool_context.user; _ } as context) languages =

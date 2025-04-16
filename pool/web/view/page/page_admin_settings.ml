@@ -206,7 +206,7 @@ let show
     let empty_message =
       p
         ~a:[ a_class [ "visible-only-child" ] ]
-        [ txt Pool_common.(Utils.hint_to_string language I18n.SettingsEmailSuffixes) ]
+        [ txt Pool_common.(Utils.hint_to_string language I18n.SettingsNoEmailSuffixes) ]
     in
     let button_row =
       div

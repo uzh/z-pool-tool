@@ -45,17 +45,11 @@ module Config = struct
 end
 
 let get_api_key_and_url database_label =
-  let%lwt api_key =
-    let open Gtx_config in
-    find_exn database_label ||> fun { api_key; _ } -> api_key
+  let%lwt { Gtx_config.api_key; _ } = Gtx_config.find_exn database_label in
+  let%lwt { Pool_tenant.url; _ } =
+    Pool_tenant.find_by_label database_label ||> Pool_common.Utils.get_or_failwith
   in
-  let%lwt tenant_url =
-    let open Pool_tenant in
-    find_by_label database_label
-    ||> Pool_common.Utils.get_or_failwith
-    ||> fun { url; _ } -> url
-  in
-  Lwt.return (api_key, tenant_url)
+  Lwt.return (api_key, url)
 ;;
 
 let dlr_url (tenant_url, instance_id) =

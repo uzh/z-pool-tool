@@ -707,10 +707,9 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SettingsContactEmail ->
     "Die Standard Absenderadresse für E-Mails. Diese Adresse kann für \
      experiment-bezogene E-Mails überschrieben werden."
-  | SettingsEmailSuffixes ->
-    "Definieren Sie eine Liste von Domains. Benutzer mit E-Mail-Adressen, die auf eine \
-     dieser Domain enden, können sich anmelden. Wenn keine Domains definiert sind, sind \
-     alle E-Mail-Adressen zugelassen."
+  | SettingsNoEmailSuffixes ->
+    "Es sind keine Email-Endungen definiert, die zugelassen sind. Das bedeutet, dass \
+     alle Email-Endungen erlaubt sind."
   | SettingsPageScripts ->
     "Hier können Sie HTML Code einfügen, der auf jeder Seite im Head, bzw. im Body Tag \
      gerendered wird, zum Beispiel ein Matomo Analytics Code."
