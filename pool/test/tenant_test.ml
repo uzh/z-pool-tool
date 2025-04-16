@@ -328,7 +328,7 @@ let[@warning "-4"] create_tenant () =
       ; Pool_event.Database (Pool_database.Migrated database)
       ; Pool_event.SystemEvent System_event.(Created db_added_event)
       ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
-      ; Pool_event.Settings (Settings.ContactEmailUpdated contact_email)
+      ; Pool_event.Settings (Settings.ContactEmailCreated (contact_email, _))
       ] ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } = id, asset_id in
       ( id
@@ -392,7 +392,8 @@ let[@warning "-4"] create_tenant () =
       ; System_event.(
           Job.GuardianCacheCleared |> create ~id:guardian_cache_cleared_event |> created)
         |> Pool_event.system_event
-      ; Settings.ContactEmailUpdated contact_email |> Pool_event.settings
+      ; Settings.ContactEmailCreated (contact_email, database_label)
+        |> Pool_event.settings
       ]
     in
     Ok expected_root_events, database_label
