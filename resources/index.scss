@@ -570,16 +570,6 @@ $n: 12;
     grid-column: 1;
 }
 
-// .announcement {
-//     .notification-close {
-//         margin-left: 0;
-//     }
-
-//     @include breakpoints.econ-mobile {
-//         display: flex;
-//         flex-direction: row-reverse;
-//     }
-// }
 
 input[type="checkbox"][readonly] {
     filter: grayscale(1);
