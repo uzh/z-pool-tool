@@ -117,8 +117,7 @@ end = struct
       ; Pool_database.Migrated database |> Pool_event.database
       ; System_event.Job.TenantDatabaseReset tenant_db |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
-      ; Settings.ContactEmailCreated (command.contact_email, tenant_db)
-        |> Pool_event.settings
+      ; Settings.ContactEmailUpdated command.contact_email |> Pool_event.settings
       ]
   ;;
 
