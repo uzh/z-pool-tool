@@ -32,7 +32,7 @@ let context_notification database_label user is_root =
   in
   let%lwt tenant_announcements =
     let open Pool_common in
-    let%lwt smtp =
+    let smtp () =
       let hint =
         { hint = I18n.SmtpMissing
         ; style = `Error
@@ -44,11 +44,29 @@ let context_notification database_label user is_root =
       | true -> Lwt.return_none
       | false -> Lwt.return_some (Tenant hint)
     in
-    Lwt.return
+    let contact_paused () =
+      Lwt.return
+      @@
+      match user with
+      | Contact contact when Contact.is_paused contact ->
+        let hint =
+          { hint = I18n.ContactAccountPaused
+          ; style = `Warning
+          ; link =
+              Some
+                ( Http_utils.Url.Contact.profile_path "personal-details"
+                , I18n.PersonalDetails )
+          }
+        in
+        Some (Tenant hint)
+      | Contact _ | Admin _ | Guest -> None
+    in
+    Lwt_list.map_s (fun f -> f ())
     @@
     match user with
     | Admin _ -> [ smtp ]
-    | Contact _ | Guest -> []
+    | Contact _ -> [ contact_paused ]
+    | Guest -> []
   in
   root_announcement :: tenant_announcements |> CCList.filter_map CCFun.id |> Lwt.return
 ;;

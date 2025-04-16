@@ -199,6 +199,7 @@ type hint =
   | AssignmentsMarkedAsClosed
   | AssignmentsNotMatchingFilerSession of int
   | AssignmentWithoutSession
+  | ContactAccountPaused
   | ContactCurrentCellPhone of string
   | ContactEnrollmentDoesNotMatchFilter
   | ContactEnrollmentRegistrationDisabled

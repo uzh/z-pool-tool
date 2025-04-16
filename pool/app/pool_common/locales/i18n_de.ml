@@ -285,6 +285,10 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | AssignmentWithoutSession ->
     "Aktivieren Sie diese Option, falls die Teilnahme am Experiment nicht an eine \
      Session gebunden ist, z.B. bei einer Onlineumfrage."
+  | ContactAccountPaused ->
+    "Ihr Benutzerkonto ist pausiert. Sie werden im Moment zu keinen weiteren \
+     Experimenten eingeladen. Sie können Ihr Konto in Ihrem Benutzerprofil wieder \
+     aktivieren."
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
