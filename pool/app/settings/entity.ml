@@ -220,7 +220,6 @@ module PageScriptChangelog = Changelog.T (PageScript)
 
 let action_of_param = function
   | "create_emailsuffix" -> Ok `CreateEmailSuffix
-  | "delete_emailsuffix" -> Ok `DeleteEmailSuffix
   | "update_default_lead_time" -> Ok `UpdateDefaultLeadTime
   | "update_text_msg_default_lead_time" -> Ok `UpdateTextMsgDefaultLeadTime
   | "update_inactive_user_disable_after" -> Ok `UpdateInactiveUserDisableAfter
@@ -239,7 +238,6 @@ let action_of_param = function
 
 let stringify_action = function
   | `CreateEmailSuffix -> "create_emailsuffix"
-  | `DeleteEmailSuffix -> "delete_emailsuffix"
   | `UpdateDefaultLeadTime -> "update_default_lead_time"
   | `UpdateTextMsgDefaultLeadTime -> "update_text_msg_default_lead_time"
   | `UpdateInactiveUserDisableAfter -> "update_inactive_user_disable_after"

@@ -749,7 +749,6 @@ let confirmable_to_string confirmable =
    | DeleteContact -> "contact", "delete", Some "This action cannot be undone."
    | DeleteCustomField -> "field", "delete", None
    | DeleteCustomFieldOption -> "option", "delete", None
-   | DeleteEmailSuffix -> "email suffix", "delete", None
    | DeleteExperiment -> "experiment", "delete", None
    | DeleteExperimentFilter -> "filter", "delete", None
    | DeleteFile -> " file", "delete", None

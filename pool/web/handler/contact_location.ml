@@ -12,7 +12,8 @@ let show req =
     @@
     let id = id req Field.Location Pool_location.Id.of_string in
     let* location = Pool_location.find database_label id in
-    Page.Contact.Location.show context location
+    let%lwt files = Pool_location.files_by_location database_label id in
+    Page.Contact.Location.show context location files
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -30,7 +31,7 @@ let asset req =
     let tags = Pool_context.Logger.Tags.req req in
     let* file =
       find_location_file database_label id
-      >>= fun { Mapping.file; _ } ->
+      >>= fun { File.file; _ } ->
       file.Pool_common.File.id
       |> Pool_common.Id.value
       |> HttpUtils.File.get_storage_file ~tags database_label

@@ -118,7 +118,6 @@ end
 val action_of_param
   :  string
   -> ( [> `CreateEmailSuffix
-       | `DeleteEmailSuffix
        | `UpdateDefaultLeadTime
        | `UpdateTextMsgDefaultLeadTime
        | `UpdateInactiveUserDisableAfter
@@ -138,7 +137,6 @@ val action_of_param
 
 val stringify_action
   :  [< `CreateEmailSuffix
-     | `DeleteEmailSuffix
      | `UpdateDefaultLeadTime
      | `UpdateTextMsgDefaultLeadTime
      | `UpdateInactiveUserDisableAfter

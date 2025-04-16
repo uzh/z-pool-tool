@@ -11,9 +11,9 @@ type update =
 
 type event =
   | Created of t
-  | FileUploaded of Mapping.Write.file
+  | FileUploaded of File.Write.file
   | Updated of t * update
-  | FileDeleted of Mapping.Id.t
+  | FileDeleted of File.Id.t
 [@@deriving eq, show, variants]
 
 let handle_event ?user_uuid pool : event -> unit Lwt.t =
@@ -24,17 +24,13 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     insert pool ?user_uuid ~entity_uuid:before.id ~before ~after ()
   in
   function
-  | Created ({ files; _ } as location) ->
-    let%lwt () =
-      files
-      |> CCList.map (Repo.RepoFileMapping.of_entity location)
-      |> Repo.insert pool location
-    in
+  | Created location ->
+    let%lwt () = Repo.insert pool location in
     Entity_guard.Target.to_authorizable ~ctx location
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | FileUploaded file ->
-    let open Entity.Mapping.Write in
+    let open Entity.File.Write in
     let%lwt () =
       file
       |> (fun { label; language; asset_id; location_id; _ } ->

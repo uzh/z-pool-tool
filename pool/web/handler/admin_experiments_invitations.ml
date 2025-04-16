@@ -69,15 +69,36 @@ let sent_invitations req =
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label id in
+  let experiment_guard = [ Guard.Uuid.target_of Experiment.Id.value id ] in
   let%lwt invitations =
     Invitation.find_by_experiment ~query database_label experiment.Experiment.id
   in
+  let open Helpers_guard in
+  let view_contact_name = can_read_contact_name context experiment_guard in
+  let view_contact_info = can_read_contact_info context experiment_guard in
+  let access_contact_profiles = can_access_contact_profile context id in
   let open Page.Admin.Invitations in
   match HttpUtils.Htmx.is_hx_request req with
-  | true -> Partials.list context experiment invitations |> Lwt_result.return
+  | true ->
+    Partials.list
+      ~view_contact_name
+      ~view_contact_info
+      ~access_contact_profiles
+      context
+      experiment
+      invitations
+    |> Lwt_result.return
   | false ->
     let* statistics = Statistics.ExperimentInvitations.create database_label experiment in
-    sent_invitations context experiment invitations statistics |> Lwt_result.ok
+    sent_invitations
+      ~access_contact_profiles
+      ~view_contact_name
+      ~view_contact_info
+      context
+      experiment
+      invitations
+      statistics
+    |> Lwt_result.ok
 ;;
 
 let create req =

@@ -93,38 +93,6 @@ end = struct
   let effects = Settings.Guard.Access.update
 end
 
-module DeleteEmailSuffix : sig
-  include Common.CommandSig with type t = Settings.EmailSuffix.t
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Settings.EmailSuffix.t list
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
-  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
-end = struct
-  type t = Settings.EmailSuffix.t
-
-  let command email_suffix = email_suffix
-  let schema = Conformist.(make Field.[ Settings.EmailSuffix.schema () ] command)
-
-  let handle ?(tags = Logs.Tag.empty) suffixes email_suffix =
-    Logs.info ~src (fun m -> m "Handle command DeleteEmailSuffix" ~tags);
-    let suffixes =
-      CCList.filter (fun s -> not (Settings.EmailSuffix.equal s email_suffix)) suffixes
-    in
-    Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
-  ;;
-
-  let decode =
-    Conformist.decode_and_validate schema
-    %> CCResult.map_err Pool_message.to_conformist_error
-  ;;
-
-  let effects = Settings.Guard.Access.update
-end
-
 module UpdateContactEmail : sig
   include Common.CommandSig with type t = Settings.ContactEmail.t
 

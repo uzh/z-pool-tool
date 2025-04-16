@@ -60,11 +60,16 @@ module Partials = struct
 
   let assignment_participated { Assignment.participated; _ } =
     participated
-    |> CCOption.map_or ~default:(txt "") (Participated.value %> Icon.bool_to_icon)
+    |> CCOption.map_or
+         ~default:(txt "")
+         (Participated.value %> Icon.bool_to_icon ~colored:true ~outlined:true)
   ;;
 
   let assignment_no_show { Assignment.no_show; _ } =
-    no_show |> CCOption.map_or ~default:(txt "") (NoShow.value %> Icon.bool_to_icon)
+    no_show
+    |> CCOption.map_or
+         ~default:(txt "")
+         (NoShow.value %> Icon.bool_to_icon ~colored:true ~outlined:true)
   ;;
 
   let assignment_external_data_id { Assignment.external_data_id; _ } =
@@ -658,11 +663,7 @@ let data_table
   in
   let has_custom_fields = CCList.is_empty custom_fields |> not in
   let cols =
-    let name_column =
-      match view_contact_name with
-      | true -> `column Pool_user.column_name
-      | false -> `custom (txt (Utils.field_to_string_capitalized language Field.Id))
-    in
+    let name_column = Component.Contacts.column_name ~view_contact_name language in
     let left =
       conditional_left_columns
       |> CCList.filter_map (fun (check, column, _) ->
@@ -698,22 +699,14 @@ let data_table
       in
       td ~a:[ a_user_data "label" label ] [ html ]
     in
-    let name_column =
-      match view_contact_name with
-      | true ->
-        td
-          ~a:[ Component.Table.data_label language Field.Name ]
-          [ Page_admin_contact.contact_lastname_firstname
-              access_contact_profiles
-              assignment.contact
-          ]
-      | false ->
-        td
-          ~a:[ Component.Table.data_label language Field.Contact ]
-          [ span
-              ~a:[ a_class [ "nowrap" ] ]
-              [ txt Contact.(assignment.contact |> id |> Id.value) ]
-          ]
+    let name_cell =
+      Component.Contacts.cell_name
+        ~view_contact_name
+        ~access_contact_profiles
+        assignment.contact
+      |> fun (html, field) ->
+      let attrs = Component.Table.data_label_opt language field in
+      td ~a:attrs [ html ]
     in
     let tr cells =
       let open Assignment in
@@ -774,7 +767,7 @@ let data_table
       | [] -> []
       | buttons -> [ td [ Component.ButtonGroup.dropdown buttons ] ]
     in
-    let base = (name_column :: left) @ center @ right in
+    let base = (name_cell :: left) @ center @ right in
     (if is_print then base else base @ buttons) |> tr
   in
   let modals =

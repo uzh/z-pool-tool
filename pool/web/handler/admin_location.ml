@@ -91,7 +91,7 @@ let new_file req =
     Utils.Lwt_result.map_error (fun err ->
       err, id |> Id.value |> Format.asprintf "/admin/locations/%s/files/create")
     @@ let* location = find database_label id in
-       let labels = Mapping.Label.all in
+       let labels = File.Label.all in
        let languages = Pool_common.Language.all in
        Page.Admin.Location.file_form labels languages location context
        |> create_layout req context
@@ -162,7 +162,8 @@ let detail edit req =
       | false ->
         let%lwt statistics = Statistics.create database_label id in
         let%lwt statistics_year_range = Statistics.year_select database_label in
-        detail location statistics statistics_year_range context |> Lwt.return
+        let%lwt files = Pool_location.files_by_location database_label id in
+        detail location files statistics statistics_year_range context |> Lwt.return
       | true ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
         form ~location ~states context tenant_languages flash_fetcher |> Lwt.return)
@@ -243,7 +244,7 @@ let update req =
 let delete req =
   let result { Pool_context.database_label; user; _ } =
     let location_id = id req Field.Location Pool_location.Id.of_string in
-    let mapping_id = id req Field.FileMapping Pool_location.Mapping.Id.of_string in
+    let file_id = id req Field.FileMapping Pool_location.File.Id.of_string in
     let path =
       location_id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
     in
@@ -251,9 +252,7 @@ let delete req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* events =
-      mapping_id
-      |> Cqrs_command.Location_command.DeleteFile.handle ~tags
-      |> Lwt_result.lift
+      file_id |> Cqrs_command.Location_command.DeleteFile.handle ~tags |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
@@ -299,7 +298,7 @@ end = struct
   module LocationCommand = Cqrs_command.Location_command
   module Guardian = Middleware.Guardian
 
-  let file_effects = Guardian.id_effects Pool_location.Mapping.Id.validate Field.File
+  let file_effects = Guardian.id_effects Pool_location.File.Id.validate Field.File
   let location_effects = Guardian.id_effects Pool_location.Id.validate Field.Location
 
   let combined_file_effects validation_set =
@@ -307,7 +306,7 @@ end = struct
     Guardian.validate_generic
     @@ fun req ->
     let* location_id = id req Field.Location Pool_location.Id.validate in
-    let* file_id = id req Field.File Pool_location.Mapping.Id.validate in
+    let* file_id = id req Field.File Pool_location.File.Id.validate in
     validation_set location_id file_id |> CCResult.return
   ;;
 

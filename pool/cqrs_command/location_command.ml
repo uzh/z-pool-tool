@@ -60,7 +60,6 @@ end = struct
       ; address
       ; link
       ; status = Status.Active
-      ; files = []
       ; created_at = Pool_common.CreatedAt.create_now ()
       ; updated_at = Pool_common.UpdatedAt.create_now ()
       }
@@ -162,7 +161,7 @@ end = struct
 end
 
 module AddFile : sig
-  include Common.CommandSig with type t = Mapping.file_base
+  include Common.CommandSig with type t = File.file_base
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -173,7 +172,7 @@ module AddFile : sig
   val decode : Conformist.input -> (t, Pool_message.Error.t) result
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
-  open Mapping
+  open File
 
   type t = file_base
 
@@ -197,7 +196,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command AddFile" ~tags);
     let open CCResult in
     let file =
-      Mapping.Write.create
+      File.Write.create
         label
         language
         (Id.to_common asset_id)
@@ -218,12 +217,12 @@ end = struct
 end
 
 module DeleteFile : sig
-  include Common.CommandSig with type t = Mapping.Id.t
+  include Common.CommandSig with type t = File.Id.t
 
   val decode : Conformist.input -> (t, Pool_message.Error.t) result
-  val effects : Id.t -> Mapping.Id.t -> BaseGuard.ValidationSet.t
+  val effects : Id.t -> File.Id.t -> BaseGuard.ValidationSet.t
 end = struct
-  open Mapping
+  open File
 
   type t = Id.t
 
