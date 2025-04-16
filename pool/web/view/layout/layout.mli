@@ -21,7 +21,8 @@ module Navigation : sig
 
   module NavUtils : sig
     val filter_items
-      :  ?validate:bool
+      :  ?any_id:bool
+      -> ?validate:bool
       -> ?actor:Guard.Actor.t
       -> ?guardian:Guard.PermissionOnTarget.t list
       -> NavElement.t list

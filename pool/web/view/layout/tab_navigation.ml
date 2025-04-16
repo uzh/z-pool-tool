@@ -6,7 +6,7 @@ let make_tabs ~actor ?active_navigation ?overlay_title context html nav_elements
   let toggle_id = "tab-mobile-nav" in
   let icon = make_mobile_nav_open_toggle toggle_id in
   let make_nav =
-    create_nav ~actor ?active_navigation ~validate:true context nav_elements
+    create_nav ~any_id:false ~actor ?active_navigation ~validate:true context nav_elements
   in
   let nav =
     div
