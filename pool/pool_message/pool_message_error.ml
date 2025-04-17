@@ -63,6 +63,7 @@ type t =
   | InvalidPasswordHashingCount
   | InvalidRequest
   | InvalidWithInfo of Field.t * string
+  | InternalServerError
   | IsMarkedAsDeleted of Field.t
   | JobCannotBeRetriggered
   | JobPending
