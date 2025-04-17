@@ -59,6 +59,7 @@ module Collection : sig
   val set_warning : Warning.t list -> t -> t
   val set_error : Error.t list -> t -> t
   val set_info : Info.t list -> t -> t
+  val add_error : Error.t list -> t -> t
   val of_string : string -> t option
   val to_string : t -> string
 end

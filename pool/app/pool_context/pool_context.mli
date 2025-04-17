@@ -113,6 +113,12 @@ val get_admin_user : user -> (Admin.t, Pool_message.Error.t) result
 val get_contact_user : user -> (Contact.t, Pool_message.Error.t) result
 val get_user_id : user -> Pool_common.Id.t option
 
+val set_message
+  :  Rock.Request.t
+  -> t
+  -> Pool_message.Collection.t option
+  -> Rock.Request.t
+
 module Utils : sig
   val find_authorizable_opt
     :  ?admin_only:bool
