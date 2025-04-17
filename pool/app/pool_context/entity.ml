@@ -44,6 +44,8 @@ type t =
   ; user : user
   ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
   ; notifications : Notitification.t list
+    (* TODO: Maybe rename, as the values are not in the flash store *)
+  ; flash_fetcher : (string -> string option) option
   }
 [@@deriving show, sexp_of]
 
@@ -65,6 +67,7 @@ let create
   ; user
   ; guardian
   ; notifications
+  ; flash_fetcher = None
   }
 ;;
 

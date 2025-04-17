@@ -8,6 +8,7 @@ module Invitations = Admin_experiments_invitations
 module Mailings = Admin_experiments_mailing
 module Message = HttpUtils.Message
 module MessageTemplates = Admin_experiments_message_templates
+module Response = Http_response
 module Users = Admin_experiments_users
 module WaitingList = Admin_experiments_waiting_list
 
@@ -117,11 +118,10 @@ let index req =
 let new_form req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/experiments" in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; flash_fetcher; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let%lwt default_email_reminder_lead_time =
       Settings.find_default_reminder_lead_time database_label
     in
@@ -133,6 +133,7 @@ let new_form req =
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
     Page.Admin.Experiments.create
+      ?flash_fetcher
       context
       tenant
       organisational_units
@@ -141,7 +142,6 @@ let new_form req =
       smtp_auth_list
       default_sender
       text_messages_enabled
-      flash_fetcher
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -156,8 +156,7 @@ let create req =
     ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, "/admin/experiments/create", [ HttpUtils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* organisational_unit =
@@ -203,18 +202,15 @@ let create req =
     in
     events >|+ flip ( @ ) role_events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  result |> Response.handle ~src req
 ;;
 
 let detail edit req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.database_label; user; flash_fetcher; _ } as context) =
     let id = experiment_id req in
-    let* experiment =
-      Experiment.find database_label id
-      |> Utils.Lwt_result.map_error Http_response.notfound
-    in
-    Utils.Lwt_result.map_error (Http_response.badrequest index)
+    let* experiment = Experiment.find database_label id |> Response.not_found_on_error in
+    Response.bad_request_on_error index
     @@
     let* actor = Pool_context.Utils.find_authorizable database_label user in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -255,7 +251,6 @@ let detail edit req =
          context
        |> Lwt_result.ok
      | true ->
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
        let%lwt default_email_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
        in
@@ -285,6 +280,7 @@ let detail edit req =
        let%lwt participation_tags = find_tags Tags.Model.Contact in
        let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
        Page.Admin.Experiments.edit
+         ?flash_fetcher
          ~allowed_to_assign
          ~session_count
          experiment
@@ -298,12 +294,11 @@ let detail edit req =
          (experiment_tags, current_tags)
          (participation_tags, current_participation_tags)
          text_messages_enabled
-         flash_fetcher
        |> Lwt_result.ok)
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> Http_response.handle ~src req
+  result |> Response.handle ~src req
 ;;
 
 let show = detail false
@@ -322,6 +317,7 @@ let update req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =
     let id = experiment_id req in
+    let* experiment = Experiment.find database_label id |> Response.not_found_on_error in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
@@ -330,13 +326,9 @@ let update req =
     let detail_path =
       Format.asprintf "/admin/experiments/%s" (id |> Experiment.Id.value)
     in
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/edit" detail_path
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+    Response.bad_request_on_error ~urlencoded edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* experiment = Experiment.find database_label id in
     let* organisational_unit =
       organisational_unit_from_urlencoded urlencoded database_label
     in
@@ -358,7 +350,7 @@ let update req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  result |> Response.handle ~src req
 ;;
 
 let delete req =

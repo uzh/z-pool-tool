@@ -543,6 +543,7 @@ let rec error_to_string =
   | InvalidRequest | InvalidHtmxRequest -> "Invalid request."
   | InvalidWithInfo (field, info) ->
     Format.asprintf "Invalid %s provided (%s)!" (field_to_string field) info
+  | InternalServerError -> "Internal server error"
   | IsMarkedAsDeleted field ->
     field_message
       ""
