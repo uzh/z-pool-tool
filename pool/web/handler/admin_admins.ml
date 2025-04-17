@@ -6,6 +6,7 @@ module Message = HttpUtils.Message
 let src = Logs.Src.create "handler.admin.admins"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
+let admin_id req = HttpUtils.find_id Admin.Id.of_string Field.Admin req
 
 let find_authorizable_target database_label req =
   let open Utils.Lwt_result.Infix in
@@ -71,7 +72,14 @@ let admin_detail req is_edit =
        |> CCList.return
        |> Page.Admin.Admins.edit context admin target_id roles
        |> Lwt.return
-     | false -> Page.Admin.Admins.detail context admin target_id roles |> Lwt.return)
+     | false ->
+       let%lwt failed_login_attempt =
+         Pool_user.FailedLoginAttempt.Repo.find_current
+           database_label
+           (Admin.email_address admin)
+       in
+       Page.Admin.Admins.detail context admin target_id roles failed_login_attempt
+       |> Lwt.return)
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -142,7 +150,7 @@ let search_role_entities req =
 
 let grant_role req =
   let open Utils.Lwt_result.Infix in
-  let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+  let admin_id = admin_id req in
   let to_guardian_id admin = admin |> Admin.id |> Guard.Uuid.actor_of Admin.Id.value in
   let redirect_path = Format.asprintf "/admin/admins/%s/edit" (Admin.Id.value admin_id) in
   let result { Pool_context.database_label; user; _ } =
@@ -172,6 +180,29 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
     Helpers.Guard.revoke_role ~redirect_path ~user ~target_id database_label req
   in
   result |> extract_happy_path req
+;;
+
+let unblock req =
+  let tags = Pool_context.Logger.Tags.req req in
+  let admin_id = admin_id req in
+  let redirect_path = HttpUtils.Url.Admin.admin_path ~id:admin_id () in
+  let result { Pool_context.database_label; user; _ } =
+    Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let events =
+      let open Admin in
+      let open Cqrs_command.User_command.Unblock in
+      find database_label admin_id >|+ user >== handle ~tags
+    in
+    let handle events =
+      let%lwt () = (Pool_event.handle_events ~tags database_label user) events in
+      HttpUtils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_message.Success.UserUnblocked ] ]
+    in
+    events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let search = Helpers.Search.htmx_search_helper ~query_field:Field.(SearchOf Admin) `Admin

@@ -479,7 +479,7 @@ let experiment_history_modal
 let detail
       ?admin_comment
       ~can_manage_duplicates
-      (Pool_context.{ csrf; language; user; _ } as context)
+      (Pool_context.{ language; user; _ } as context)
       contact
       tags
       external_data_ids
@@ -493,51 +493,13 @@ let detail
       Pool_common.[ Utils.nav_link_to_string language nav |> txt ]
   in
   let failed_login_attempt =
-    let open Pool_user.FailedLoginAttempt in
-    match failed_login_attempt with
-    | None -> txt ""
-    | Some { blocked_until; _ } ->
-      let unblock =
-        let open Component.Input in
-        form
-          ~a:
-            [ a_method `Post
-            ; a_action
-                (Http_utils.Url.Admin.contact_path
-                   ~suffix:"unblock"
-                   ~id:(Contact.id contact)
-                   ()
-                 |> Sihl.Web.externalize_path)
-            ]
-          [ csrf_element csrf ()
-          ; submit_element
-              ~classnames:[ "small" ]
-              ~is_text:true
-              ~has_icon:Component.Icon.Close
-              ~submit_type:`Error
-              language
-              Pool_message.Control.Unblock
-              ()
-          ]
-      in
-      blocked_until
-      |> CCOption.map_or ~default:(txt "") (fun blocked_until ->
-        [ div
-            ~a:
-              [ a_class
-                  [ "flexrow"; "justify-between"; "align-center"; "flexcolumn-mobile" ]
-              ]
-            [ span
-                [ txt
-                    Pool_common.(
-                      Utils.text_to_string
-                        language
-                        I18n.(ContactLoginBlockedUntil (BlockedUntil.value blocked_until)))
-                ]
-            ; unblock
-            ]
-        ]
-        |> Component.Notification.create language `Error)
+    let unblock_url =
+      Http_utils.Url.Admin.contact_path ~suffix:"unblock" ~id:(Contact.id contact) ()
+    in
+    Component.User.account_suspension_notification
+      context
+      unblock_url
+      failed_login_attempt
   in
   let buttons =
     let open Pool_common in

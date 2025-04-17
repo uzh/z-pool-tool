@@ -630,6 +630,7 @@ module Admin = struct
         ; post "/search-role" ~middlewares:[ Access.grant_role ] search_role_entities
         ; post "/grant-role" ~middlewares:[ Access.grant_role ] grant_role
         ; post "/revoke-role" ~middlewares:[ Access.revoke_role ] revoke_role
+        ; post "/unblock" ~middlewares:[ Access.update ] unblock
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
