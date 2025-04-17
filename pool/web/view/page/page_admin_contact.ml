@@ -497,8 +497,8 @@ let detail
       Http_utils.Url.Admin.contact_path ~suffix:"unblock" ~id:(Contact.id contact) ()
     in
     Component.User.account_suspension_notification
+      ~unblock_url
       context
-      unblock_url
       failed_login_attempt
   in
   let buttons =

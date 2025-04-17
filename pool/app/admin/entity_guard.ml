@@ -37,8 +37,16 @@ module Access = struct
   open ValidationSet
   open Permission
 
+  let admin permission uuid =
+    PermissionOnTarget.create
+      ~target_uuid:(uuid |> Uuid.target_of Entity.Id.value)
+      permission
+      `Admin
+  ;;
+
   let index = one_of_tuple (Read, `Admin, None)
   let create = one_of_tuple (Create, `Admin, None)
   let read id = one_of_tuple (Read, `Admin, Some (target_of id))
   let update id = one_of_tuple (Update, `Admin, Some (target_of id))
+  let can_update_target = admin Update
 end
