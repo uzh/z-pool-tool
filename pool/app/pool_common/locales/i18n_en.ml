@@ -22,10 +22,6 @@ let to_string = function
   | Canceled -> "Canceled"
   | CanceledSessionsTitle -> "Your canceled sessions"
   | Closed -> "Closed"
-  | ContactLoginBlockedUntil blocked_until ->
-    Format.asprintf
-      "Due to too many failed login attempts, this account is blocked until %s."
-      (Pool_model.Time.formatted_date_time blocked_until)
   | ContactWaitingListEmpty -> "You are currently not on any waiting list."
   | CustomFieldsSettings ->
     "In the following list, you can determine in which table the custom data should be \
@@ -201,6 +197,10 @@ let to_string = function
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
   | UpcomingSessionsTitle -> "Your upcoming sessions"
+  | UserLoginBlockedUntil blocked_until ->
+    Format.asprintf
+      "Due to too many failed login attempts, this account is blocked until %s."
+      (Pool_model.Time.formatted_date_time blocked_until)
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"
   | UserProfilePausedNote ->

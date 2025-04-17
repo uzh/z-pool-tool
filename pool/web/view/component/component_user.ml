@@ -33,7 +33,7 @@ let account_suspension_notification { Pool_context.csrf; language; _ } unblock_u
                   Pool_common.(
                     Utils.text_to_string
                       language
-                      I18n.(ContactLoginBlockedUntil (BlockedUntil.value blocked_until)))
+                      I18n.(UserLoginBlockedUntil (BlockedUntil.value blocked_until)))
               ]
           ; unblock
           ]

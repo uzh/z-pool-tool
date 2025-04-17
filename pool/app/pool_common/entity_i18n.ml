@@ -23,7 +23,6 @@ type t =
   | Canceled
   | CanceledSessionsTitle
   | Closed
-  | ContactLoginBlockedUntil of Ptime.t
   | ContactWaitingListEmpty
   | CustomFieldsSettings
   | CustomFieldsSettingsCloseScreen
@@ -133,6 +132,7 @@ type t =
   | TotalSentInvitations
   | UpcomingSessionsListEmpty
   | UpcomingSessionsTitle
+  | UserLoginBlockedUntil of Ptime.t
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
