@@ -13,6 +13,7 @@ let date = Pool_model.Base.Ptime.(Alcotest.testable pp_date equal_date)
 let error = Pool_message.Error.(Alcotest.testable pp equal)
 let event = Pool_event.(Alcotest.testable pp equal)
 let experiment = Experiment.(Alcotest.testable pp equal)
+let failed_login_attempt = Pool_user.FailedLoginAttempt.(Alcotest.testable pp equal)
 let filter = Filter.(Alcotest.testable pp equal)
 let language = Pool_common.Language.(Alcotest.testable pp equal)
 let location = Pool_location.(Alcotest.testable pp equal)
@@ -106,6 +107,7 @@ module Time = struct
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)
   let two_hours = Ptime.Span.of_int_s @@ (60 * 60 * 2)
+  let day = Ptime.Span.of_int_s @@ (60 * 60 * 24)
   let in_an_hour () = add_span (now ()) hour |> get_exn_or "Invalid timespan"
   let in_two_hours () = add_span (now ()) two_hours |> get_exn_or "Invalid timespan"
   let an_hour_ago () = sub_span (now ()) hour |> get_exn_or "Invalid timespan"

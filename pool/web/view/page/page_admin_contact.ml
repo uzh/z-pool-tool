@@ -104,7 +104,7 @@ let personal_detail ?admin_comment ?custom_fields ?tags current_user language co
   |> fun html ->
   div
     [ h3
-        ~a:[ a_class [ "heading-3" ] ]
+        ~a:[ a_class [ "heading-3"; "has-gap" ] ]
         [ Pool_common.(Utils.nav_link_to_string language I18n.PersonalDetails |> txt) ]
     ; html
     ]
@@ -485,11 +485,21 @@ let detail
       external_data_ids
       custom_fields
       past_experiments
+      failed_login_attempt
   =
   let subtitle nav =
     h3
       ~a:[ a_class [ "heading-3" ] ]
       Pool_common.[ Utils.nav_link_to_string language nav |> txt ]
+  in
+  let failed_login_attempt =
+    let unblock_url =
+      Http_utils.Url.Admin.contact_path ~suffix:"unblock" ~id:(Contact.id contact) ()
+    in
+    Component.User.account_suspension_notification
+      ~unblock_url
+      context
+      failed_login_attempt
   in
   let buttons =
     let open Pool_common in
@@ -550,6 +560,7 @@ let detail
         ~a:
           [ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between"; "align-center" ] ]
         [ div [ heading_with_icons contact ]; buttons ]
+    ; failed_login_attempt
     ; personal_detail ?admin_comment ~custom_fields ~tags user language contact
     ; div
         [ subtitle Pool_common.I18n.ExternalDataIds

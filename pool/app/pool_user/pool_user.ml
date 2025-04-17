@@ -1,5 +1,6 @@
 open Utils.Lwt_result.Infix
 include Entity
+include Event
 include Repo
 include Pool_user_service
 
@@ -19,15 +20,7 @@ module Password = struct
     Lwt.return_ok ()
   ;;
 
-  let update label user_id ~old_password ~new_password ~new_password_confirmation =
-    let* hashed_password = Repo_password.find label user_id in
-    let* new_password' =
-      update hashed_password ~old_password ~new_password ~new_password_confirmation
-      |> Lwt_result.lift
-    in
-    let%lwt () = Repo_password.update label (user_id, new_password') in
-    Lwt.return_ok ()
-  ;;
+  let update = Event.update_password
 
   module Reset = struct
     let create_token label email =
@@ -67,27 +60,6 @@ let login label email password =
     find_by_email_exn label email |> Lwt_result.ok
   | Some _ -> Lwt.return_error (Error.Invalid Field.Password)
   | None -> Lwt.return_error (Error.NotFound Field.User)
-;;
-
-type event =
-  | PasswordUpdated of
-      Id.t * Password.Plain.t * Password.Plain.t * Password.Confirmation.t [@opaque]
-[@@deriving eq, show]
-
-let handle_event ?tags pool : event -> unit Lwt.t =
-  let open Utils.Lwt_result.Infix in
-  function
-  | PasswordUpdated (user_id, old_password, new_password, confirmation) ->
-    let%lwt (_ : (unit, Pool_message.Error.t) result) =
-      Password.update
-        pool
-        user_id
-        ~old_password
-        ~new_password
-        ~new_password_confirmation:confirmation
-      >|- Pool_common.Utils.with_log_error ~src:log_src ?tags
-    in
-    Lwt.return_unit
 ;;
 
 module Web = Pool_user_web

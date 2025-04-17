@@ -25,3 +25,4 @@ module Tag = Component_tag
 module Tooltip = Component_tooltip
 module UserStatus = Component_user_status
 module Utils = Component_utils
+module User = Component_user

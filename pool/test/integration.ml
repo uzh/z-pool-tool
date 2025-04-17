@@ -388,6 +388,7 @@ let suite =
           ; test_case "find contacts to notify" `Slow Repo.find_contacts_to_notify
           ; test_case "find contacts to remind" `Slow Repo.find_contacts_to_remind
           ] )
+    ; ("user", User_test.[ test_case "failed login attempts" `Slow failed_login_attempts ])
     ; ( "time window"
       , Time_window_test.[ test_case "confirm as contact" `Slow find_overlapping ] )
     ; ( "duplicate contacts"

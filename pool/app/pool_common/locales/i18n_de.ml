@@ -199,6 +199,11 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | UpcomingSessionsListEmpty ->
     "Sie sind aktuell an keine kommenden Sessions angemeldet."
   | UpcomingSessionsTitle -> "Ihre nächsten Sessions"
+  | UserLoginBlockedUntil blocked_until ->
+    Format.asprintf
+      "Aufgrund zu vieler fehlgeschlagenen Anmeldeversuche ist dieses Konto bis am %s \
+       gesperrt."
+      (Pool_model.Time.formatted_date_time blocked_until)
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
   | UserProfileLoginSubtitle -> "Anmeldeinformationen"
   | UserProfilePausedNote ->

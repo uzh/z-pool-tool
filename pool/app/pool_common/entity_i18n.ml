@@ -132,6 +132,7 @@ type t =
   | TotalSentInvitations
   | UpcomingSessionsListEmpty
   | UpcomingSessionsTitle
+  | UserLoginBlockedUntil of Ptime.t
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
   | UserProfilePausedNote

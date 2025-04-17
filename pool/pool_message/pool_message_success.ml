@@ -41,6 +41,7 @@ type t =
   | TagRemoved
   | TenantUpdateDatabase
   | TenantUpdateDetails
+  | UserUnblocked
   | Updated of Field.t
   | Validated of Field.t
   | VerificationMessageResent

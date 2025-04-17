@@ -96,6 +96,11 @@ let detail req =
       Experiment.query_participation_history_by_contact ~query database_label contact
     in
     let%lwt can_manage_duplicates = Helpers.Guard.can_manage_duplicate_contacts context in
+    let%lwt failed_login_attempt =
+      Pool_user.FailedLoginAttempt.Repo.find_current
+        database_label
+        (Contact.email_address contact)
+    in
     Page.Admin.Contact.detail
       ?admin_comment
       ~can_manage_duplicates
@@ -105,6 +110,7 @@ let detail req =
       external_data_ids
       custom_fields
       past_experiments
+      failed_login_attempt
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -434,6 +440,29 @@ let message_history req =
    then Queue.list context queue_table (Contact.message_history_url contact) messages
    else Contact.message_history context queue_table contact messages)
   |> Lwt_result.return
+;;
+
+let unblock req =
+  let tags = Pool_context.Logger.Tags.req req in
+  let contact_id = contact_id req in
+  let redirect_path = contact_path ~id:contact_id () in
+  let result { Pool_context.database_label; user; _ } =
+    Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let events =
+      let open Contact in
+      let open Cqrs_command.User_command.Unblock in
+      find database_label contact_id >|+ user >== handle ~tags
+    in
+    let handle events =
+      let%lwt () = (Pool_event.handle_events ~tags database_label user) events in
+      HttpUtils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_message.Success.UserUnblocked ] ]
+    in
+    events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Duplicates = Admin_contact_duplicates
