@@ -118,12 +118,7 @@ let with_log_http_result_error ~src ~tags res =
     err)
 ;;
 
-let handle
-      ?(src = src)
-      ?enable_cache
-      req
-      (result : Pool_context.t -> (Rock.Response.t, http_error) result Lwt.t)
-  =
+let handle ?(src = src) ?enable_cache req result =
   let open CCResult in
   let context = Pool_context.find req in
   let tags = Pool_context.Logger.Tags.req req in
