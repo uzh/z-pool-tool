@@ -683,6 +683,7 @@ module Admin = struct
         ; get "/changelog" ~middlewares:[ Access.changelog ] changelog
         ; get "/past-experiments" ~middlewares:[ Access.read ] past_experiments_htmx
         ; get "/messages" ~middlewares:[ Access.message_history ] message_history
+        ; post "/unblock" ~middlewares:[ Access.update ] unblock
         ; choose
             ~middlewares:[ Access.update ]
             ~scope:(Experiments |> human_url)

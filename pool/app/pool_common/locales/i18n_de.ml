@@ -22,6 +22,11 @@ let to_string = function
   | Canceled -> "Abgesagt"
   | CanceledSessionsTitle -> "Ihre abgesagten Sessions"
   | Closed -> "Geschlossen"
+  | ContactLoginBlockedUntil blocked_until ->
+    Format.asprintf
+      "Aufgrund zu vieler fehlgeschlagenen Anmeldeversuche ist dieses Konto bis am %s \
+       gesperrt."
+      (Pool_model.Time.formatted_date_time blocked_until)
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
   | CustomFieldsSettings ->
     "In der folgenden Liste können Sie bestimmen, in welcher Tabelle zusätzlich zu den \

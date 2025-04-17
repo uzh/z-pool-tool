@@ -23,6 +23,7 @@ type t =
   | Canceled
   | CanceledSessionsTitle
   | Closed
+  | ContactLoginBlockedUntil of Ptime.t
   | ContactWaitingListEmpty
   | CustomFieldsSettings
   | CustomFieldsSettingsCloseScreen

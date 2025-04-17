@@ -419,6 +419,7 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
   | TagRemoved -> "Der Tag wurde entfernt."
   | TenantUpdateDatabase -> "Datenbank Informationen wurden erfolgreich upgedated."
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
+  | UserUnblocked -> "Der Benutzer wurde erfolgreich entsperrt."
   | Updated field ->
     field_message "" (field_to_string field) "wurde erfolgreich upgedated."
   | Validated field ->
@@ -773,6 +774,7 @@ let control_to_string =
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field
+  | Unblock -> format_submit "entsperren" None
   | Unverify -> "Als unverifiziert markieren"
   | Update field -> format_submit "aktualisieren" field
   | UpdateAssignmentsMatchFilter -> format_submit "Filter erneut ausführen" None

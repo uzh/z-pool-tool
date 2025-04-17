@@ -33,7 +33,9 @@ let create
   in
   div
     ~a:([ a_class classnames ] @ attributes)
-    [ div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ] [ div html; close ]
+    [ div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
+        [ div ~a:[ a_class [ "grow" ] ] html; close ]
     ; link
     ]
 ;;

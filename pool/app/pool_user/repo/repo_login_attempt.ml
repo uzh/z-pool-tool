@@ -3,6 +3,14 @@ open Login_attempt_entity
 
 let make_caqti_type = Pool_common.Repo.make_caqti_type
 
+let sql_select_columns =
+  [ Entity.Id.sql_select_fragment ~field:"pool_failed_login_attempts.uuid"
+  ; "pool_failed_login_attempts.email"
+  ; "pool_failed_login_attempts.counter"
+  ; "pool_failed_login_attempts.blocked_until"
+  ]
+;;
+
 module RepoEntity = struct
   module Id = struct
     include Id
@@ -64,6 +72,14 @@ let find_opt_request =
 
 let find_opt pool = Database.find_opt pool find_opt_request
 
+let find_current_request =
+  {sql| email = ? AND blocked_until > NOW() |sql}
+  |> select_sql
+  |> Repo_entity.EmailAddress.t ->! RepoEntity.t
+;;
+
+let find_current pool = Database.find_opt pool find_current_request
+
 let insert_request =
   {sql|
     INSERT INTO pool_failed_login_attempts (
@@ -95,3 +111,4 @@ let delete_request =
 ;;
 
 let delete pool = email %> Database.exec pool delete_request
+let delete_by_email pool = Database.exec pool delete_request
