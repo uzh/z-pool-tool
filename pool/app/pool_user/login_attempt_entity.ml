@@ -18,6 +18,8 @@ module BlockedUntil = struct
     then Error Pool_message.Error.TimeInPast
     else Ok m
   ;;
+
+  let of_ptime m = m
 end
 
 type t =
@@ -26,7 +28,7 @@ type t =
   ; counter : Counter.t
   ; blocked_until : BlockedUntil.t option
   }
-[@@deriving fields]
+[@@deriving show, eq, fields]
 
 let create ?(id = Id.create ()) email counter blocked_until =
   { id; email; counter; blocked_until }
