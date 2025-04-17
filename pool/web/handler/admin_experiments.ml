@@ -209,12 +209,15 @@ let create req =
 let detail edit req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
+    let id = experiment_id req in
+    let* experiment =
+      Experiment.find database_label id
+      |> Utils.Lwt_result.map_error Http_response.notfound
+    in
+    Utils.Lwt_result.map_error (Http_response.badrequest index)
     @@
     let* actor = Pool_context.Utils.find_authorizable database_label user in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let id = experiment_id req in
-    let* experiment = Experiment.find database_label id in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt message_templates = experiment_message_templates database_label experiment in
     let%lwt current_tags =
@@ -300,7 +303,7 @@ let detail edit req =
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  result |> Http_response.handle ~src req
 ;;
 
 let show = detail false

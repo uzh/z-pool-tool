@@ -1,0 +1,5 @@
+(library
+ (name http_response)
+ (libraries logger page pool_common pool_context pool_tenant)
+ (preprocess
+  (pps lwt_ppx ppx_variants_conv)))
