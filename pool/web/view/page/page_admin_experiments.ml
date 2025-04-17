@@ -199,6 +199,7 @@ let index (Pool_context.{ language; _ } as context) experiments query =
 ;;
 
 let experiment_form
+      ?flash_fetcher
       ?experiment
       ?session_count
       Pool_context.{ language; csrf; _ }
@@ -209,7 +210,6 @@ let experiment_form
       default_email_reminder_lead_time
       default_text_msg_reminder_lead_time
       text_messages_enabled
-      flash_fetcher
   =
   let open Pool_common in
   let context_language = language in
@@ -231,7 +231,7 @@ let experiment_form
       ?disabled
       ?read_only
       ~value:(experiment |> CCOption.map_or ~default fnc)
-      ~flash_fetcher
+      ?flash_fetcher
   in
   let value = flip (CCOption.map_or ~default:"") experiment in
   let experiment_type_select =
@@ -243,7 +243,7 @@ let experiment_form
       all
       (CCOption.bind experiment experiment_type)
       ~add_empty:true
-      ~flash_fetcher
+      ?flash_fetcher
       ()
   in
   let time_window_subform =
@@ -267,7 +267,7 @@ let experiment_form
               ~hints:[ I18n.SurveyUrl ]
               ~required:true
               ?value:(CCOption.bind experiment survey_url_value)
-              ~flash_fetcher
+              ?flash_fetcher
               context_language
               `Text
               Field.SurveyUrl
@@ -307,7 +307,7 @@ let experiment_form
           field
           ~hints:[ I18n.DefaultReminderLeadTime (default_value |> value) ]
           ?value:CCOption.(bind experiment get_value)
-          ~flash_fetcher
+          ?flash_fetcher
       ]
   in
   let smtp_selector =
@@ -334,7 +334,7 @@ let experiment_form
       ~label_field:Field.Sender
       ~hints:[ hint ]
       ~option_formatter:(fun { label; _ } -> Label.value label)
-      ~flash_fetcher
+      ?flash_fetcher
       ~add_empty:(num_smtp > 0)
       ~disabled:(num_smtp < 1)
       ()
@@ -383,14 +383,14 @@ let experiment_form
                 Field.Title
                 ~value:(value title_value)
                 ~required:true
-                ~flash_fetcher
+                ?flash_fetcher
             ; input_element
                 context_language
                 `Text
                 Field.PublicTitle
                 ~value:(value public_title_value)
                 ~required:(CCOption.is_some experiment)
-                ~flash_fetcher
+                ?flash_fetcher
             ; textarea_element
                 context_language
                 Field.InternalDescription
@@ -398,7 +398,7 @@ let experiment_form
                   (CCOption.bind
                      experiment
                      (internal_description %> CCOption.map InternalDescription.value))
-                ~flash_fetcher
+                ?flash_fetcher
             ; textarea_element
                 context_language
                 Field.PublicDescription
@@ -406,7 +406,7 @@ let experiment_form
                   (CCOption.bind
                      experiment
                      (public_description %> CCOption.map PublicDescription.value))
-                ~flash_fetcher
+                ?flash_fetcher
             ; language_select
             ; experiment_type_select
             ; input_element
@@ -417,7 +417,7 @@ let experiment_form
                   (CCOption.bind
                      experiment
                      (cost_center %> CCOption.map CostCenter.value))
-                ~flash_fetcher
+                ?flash_fetcher
             ; organisational_units_selector
                 context_language
                 organisational_units
@@ -528,6 +528,7 @@ let experiment_form
 ;;
 
 let create
+      ?flash_fetcher
       (Pool_context.{ language; _ } as context)
       tenant
       organisational_units
@@ -536,13 +537,13 @@ let create
       smtp_auth_list
       default_sender
       text_messages_enabled
-      flash_fetcher
   =
   let open Pool_common in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
     [ h1 [ txt (Utils.control_to_string language (Create (Some Field.Experiment))) ]
     ; experiment_form
+        ?flash_fetcher
         context
         tenant
         organisational_units
@@ -551,12 +552,12 @@ let create
         default_email_reminder_lead_time
         default_text_msg_reminder_lead_time
         text_messages_enabled
-        flash_fetcher
     ]
 ;;
 
 let edit
       ?(allowed_to_assign = false)
+      ?flash_fetcher
       ~session_count
       experiment
       ({ Pool_context.language; csrf; query_parameters; _ } as context)
@@ -569,11 +570,11 @@ let edit
       (available_tags, current_tags)
       (available_participation_tags, current_participation_tags)
       text_messages_enabled
-      flash_fetcher
   =
   let id = experiment.Experiment.id in
   let form =
     experiment_form
+      ?flash_fetcher
       ~experiment
       ~session_count
       context
@@ -584,7 +585,6 @@ let edit
       default_email_reminder_lead_time
       default_text_msg_reminder_lead_time
       text_messages_enabled
-      flash_fetcher
   in
   let tags_html (available, current) field =
     if allowed_to_assign
