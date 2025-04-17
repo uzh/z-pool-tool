@@ -1,5 +1,4 @@
 open Tyxml.Html
-(* TODO: Add EmailBouncing *)
 
 let account_suspension_notification { Pool_context.csrf; language; _ } unblock_url =
   let open Pool_user.FailedLoginAttempt in
