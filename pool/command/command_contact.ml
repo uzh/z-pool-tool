@@ -54,7 +54,7 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
              token
              firstname
              lastname
-             user_id
+             (Contact.Id.to_user user_id)
          in
          decoded
          |> Contact_command.SignUp.handle

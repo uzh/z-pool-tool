@@ -161,8 +161,6 @@ let request_reset_password_post req =
       let verification_message () =
         let make_message token =
           let open Pool_user in
-          (* TODO: Pass user id instad of contact id *)
-          let id = id user |> Pool_user.Id.value |> Contact.Id.of_string in
           Message_template.SignUpVerification.create
             database_label
             message_language
@@ -171,7 +169,7 @@ let request_reset_password_post req =
             token
             (firstname user)
             (lastname user)
-            id
+            (id user)
         in
         let open Email in
         user
