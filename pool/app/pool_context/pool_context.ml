@@ -24,7 +24,6 @@ let get_user_id = function
   | Admin admin -> Some (Admin.id admin |> Admin.Id.to_common)
 ;;
 
-(* TODO: Maybe merge *)
 let set_message context message = { context with message }
 
 let set_flash_fetcher context flash_fetcher =
