@@ -75,7 +75,13 @@ val find_unverified_by_address
   -> (unverified t, Pool_message.Error.t) Lwt_result.t
 
 val delete_unverified_by_user : Database.Label.t -> Pool_user.Id.t -> unit Lwt.t
+val token_data : Pool_user.EmailAddress.t -> (string * string) list
 val create_token : Database.Label.t -> Pool_user.EmailAddress.t -> Token.t Lwt.t
+
+val find_active_token
+  :  Database.Label.t
+  -> Pool_user.EmailAddress.t
+  -> Token.t option Lwt.t
 
 module SmtpAuth : sig
   module Id : module type of Pool_common.Id

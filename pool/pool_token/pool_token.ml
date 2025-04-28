@@ -106,6 +106,8 @@ let is_valid ?secret:_ label token =
        Lwt.return (Ptime.is_later token.expires_at ~than:(Ptime_clock.now ())))
 ;;
 
+let find_active_by_data = Repo.Sql.find_active_by_data
+
 let start () =
   (* Make sure that configuration is valid *)
   Sihl.Configuration.require schema;

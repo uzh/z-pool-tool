@@ -66,26 +66,26 @@ let label =
   CCOption.(map Database.of_ctx_exn %> get_exn_or "Database: Invalid context")
 ;;
 
+let sql_select_columns =
+  [ Pool_common.Id.sql_select_fragment ~field:"token_tokens.uuid"
+  ; "token_tokens.token_value"
+  ; "token_tokens.token_data"
+  ; "token_tokens.status"
+  ; "token_tokens.expires_at"
+  ; "token_tokens.created_at"
+  ]
+;;
+
 module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
-    {sql|
-        SELECT
-          LOWER(CONCAT(
-           SUBSTR(HEX(uuid), 1, 8), '-',
-           SUBSTR(HEX(uuid), 9, 4), '-',
-           SUBSTR(HEX(uuid), 13, 4), '-',
-           SUBSTR(HEX(uuid), 17, 4), '-',
-           SUBSTR(HEX(uuid), 21)
-           )),
-          token_value,
-          token_data,
-          status,
-          expires_at,
-          created_at
-        FROM token_tokens
-        WHERE token_tokens.token_value = ?
-      |sql}
+    sql_select_columns
+    |> CCString.concat ", "
+    |> Format.asprintf
+         {sql| SELECT %s
+            FROM token_tokens
+            WHERE token_tokens.token_value = ?
+          |sql}
     |> Caqti_type.string ->! Model.t
   ;;
 
@@ -93,20 +93,10 @@ module Sql = struct
 
   let find_request_opt =
     let open Caqti_request.Infix in
-    {sql|
-        SELECT
-          LOWER(CONCAT(
-           SUBSTR(HEX(uuid), 1, 8), '-',
-           SUBSTR(HEX(uuid), 9, 4), '-',
-           SUBSTR(HEX(uuid), 13, 4), '-',
-           SUBSTR(HEX(uuid), 17, 4), '-',
-           SUBSTR(HEX(uuid), 21)
-           )),
-          token_value,
-          token_data,
-          status,
-          expires_at,
-          created_at
+    sql_select_columns
+    |> CCString.concat ", "
+    |> Format.asprintf
+         {sql| SELECT %s
         FROM token_tokens
         WHERE token_tokens.token_value = ?
       |sql}
@@ -117,20 +107,10 @@ module Sql = struct
 
   let find_by_id_request =
     let open Caqti_request.Infix in
-    {sql|
-        SELECT
-          LOWER(CONCAT(
-           SUBSTR(HEX(uuid), 1, 8), '-',
-           SUBSTR(HEX(uuid), 9, 4), '-',
-           SUBSTR(HEX(uuid), 13, 4), '-',
-           SUBSTR(HEX(uuid), 17, 4), '-',
-           SUBSTR(HEX(uuid), 21)
-           )),
-          token_value,
-          token_data,
-          status,
-          expires_at,
-          created_at
+    sql_select_columns
+    |> CCString.concat ", "
+    |> Format.asprintf
+         {sql| SELECT %s
         FROM token_tokens
         WHERE token_tokens.uuid = UNHEX(REPLACE(?, '-', ''))
       |sql}
@@ -138,6 +118,32 @@ module Sql = struct
   ;;
 
   let find_by_id label = Database.find label find_by_id_request
+
+  let find_by_data_request =
+    let open Caqti_request.Infix in
+    sql_select_columns
+    |> CCString.concat ", "
+    |> Format.asprintf
+         {sql| SELECT %s
+        FROM token_tokens
+        WHERE 
+          token_tokens.token_data = $1
+          AND token_tokens.status = $2
+          AND token_tokens.expires_at > NOW()
+        ORDER BY token_tokens.created_at DESC
+        LIMIT 1
+      |sql}
+    |> Caqti_type.(t2 string string) ->? Model.t
+  ;;
+
+  let find_active_by_data label data =
+    let open Utils.Lwt_result.Infix in
+    Database.find_opt
+      label
+      find_by_data_request
+      Model.(Data.to_string data, Status.(to_string Active))
+    ||> CCOption.map (fun { Model.value; _ } -> value)
+  ;;
 
   let insert_request =
     let open Caqti_request.Infix in

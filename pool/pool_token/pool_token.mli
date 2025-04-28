@@ -65,5 +65,10 @@ val is_expired : ?secret:string -> Database.Label.t -> string -> bool Lwt.t
     `SIHL_SECRET`. *)
 val is_valid : ?secret:string -> Database.Label.t -> string -> bool Lwt.t
 
+val find_active_by_data
+  :  Database.Label.t
+  -> (string * string) list
+  -> string option Lwt.t
+
 val lifecycle : Sihl.Container.lifecycle
 val register : unit -> Sihl.Container.Service.t
