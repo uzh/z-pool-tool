@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.11.1](https://github.com/uzh/z-pool-tool/tree/0.11.1) - 2025-04-28
+
+### Added
+
+- functionality to unblock users that were temporarily blocked due to too many failed login attempts
+
+### Fixed
+
+- experiment descriptions are no longer truncated on the detail page
+
 ## [0.11.0](https://github.com/uzh/z-pool-tool/tree/0.11.0) - 2025-04-16
 
 ### Added
