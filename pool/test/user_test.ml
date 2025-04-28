@@ -54,11 +54,15 @@ let failed_login_attempts _ () =
   let%lwt result = Repo.find_current pool email in
   check testable "not blocked" None result;
   let failed_attempt =
+    let open CCOption.Infix in
     let open Ptime in
     let get_exn = CCOption.get_exn_or "Invalid time" in
-    let tomorrow = add_span (Ptime_clock.now ()) Time.day |> get_exn |> to_date in
     let blocked_until =
-      of_date_time (tomorrow, ((0, 0, 0), 0)) |> get_exn |> BlockedUntil.of_ptime
+      add_span (Ptime_clock.now ()) Time.day
+      >|= to_date
+      >>= of_date
+      |> get_exn
+      |> BlockedUntil.of_ptime
     in
     create email Counter.init (Some blocked_until)
   in
