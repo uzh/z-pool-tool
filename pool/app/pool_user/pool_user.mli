@@ -287,6 +287,7 @@ module FailedLoginAttempt : sig
     val pp : Format.formatter -> t -> unit
     val value : t -> Ptime.t
     val create : Ptime.t -> (t, Pool_message.Error.t) result
+    val of_ptime : Ptime.t -> t
   end
 
   type t =
@@ -296,16 +297,21 @@ module FailedLoginAttempt : sig
     ; blocked_until : BlockedUntil.t option
     }
 
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
   val create : ?id:Id.t -> EmailAddress.t -> Counter.t -> BlockedUntil.t option -> t
 
   module Repo : sig
     val find_opt : Database.Label.t -> EmailAddress.t -> t option Lwt.t
+    val find_current : Database.Label.t -> EmailAddress.t -> t option Lwt.t
     val insert : Database.Label.t -> t -> unit Lwt.t
     val delete : Database.Label.t -> t -> unit Lwt.t
   end
 end
 
 type event =
+  | Unblocked of t
   | PasswordUpdated of
       Id.t * Password.Plain.t * Password.Plain.t * Password.Confirmation.t
 

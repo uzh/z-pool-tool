@@ -153,6 +153,7 @@ module Guard : sig
     val create : Guard.ValidationSet.t
     val read : Id.t -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
+    val can_update_target : Id.t -> Guard.PermissionOnTarget.t
   end
 end
 

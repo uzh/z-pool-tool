@@ -630,6 +630,7 @@ module Admin = struct
         ; post "/search-role" ~middlewares:[ Access.grant_role ] search_role_entities
         ; post "/grant-role" ~middlewares:[ Access.grant_role ] grant_role
         ; post "/revoke-role" ~middlewares:[ Access.revoke_role ] revoke_role
+        ; post "/unblock" ~middlewares:[ Access.update ] unblock
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
@@ -683,6 +684,7 @@ module Admin = struct
         ; get "/changelog" ~middlewares:[ Access.changelog ] changelog
         ; get "/past-experiments" ~middlewares:[ Access.read ] past_experiments_htmx
         ; get "/messages" ~middlewares:[ Access.message_history ] message_history
+        ; post "/unblock" ~middlewares:[ Access.update ] unblock
         ; choose
             ~middlewares:[ Access.update ]
             ~scope:(Experiments |> human_url)

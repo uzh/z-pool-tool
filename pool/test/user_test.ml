@@ -42,3 +42,49 @@ let validate_email_adress () =
        check_result expected result)
     invalid_addresses
 ;;
+
+let failed_login_attempts _ () =
+  let open Alcotest in
+  let open Test_utils in
+  let open Pool_user.FailedLoginAttempt in
+  let testable = option failed_login_attempt in
+  let pool = Data.database_label in
+  let%lwt contact = Integration_utils.ContactRepo.create () in
+  let email = Contact.email_address contact in
+  let%lwt result = Repo.find_current pool email in
+  check testable "not blocked" None result;
+  let failed_attempt =
+    let open CCOption.Infix in
+    let open Ptime in
+    let get_exn = CCOption.get_exn_or "Invalid time" in
+    let blocked_until =
+      add_span (Ptime_clock.now ()) Time.day
+      >|= to_date
+      >>= of_date
+      |> get_exn
+      |> BlockedUntil.of_ptime
+    in
+    create email Counter.init (Some blocked_until)
+  in
+  let%lwt () = Repo.insert pool failed_attempt in
+  let%lwt result = Repo.find_current pool email in
+  check testable "contact was blocked" (Some failed_attempt) result;
+  let%lwt () =
+    let open Pool_user in
+    Unblocked (Contact.user contact) |> handle_event pool
+  in
+  let%lwt result = Repo.find_current pool email in
+  check testable "contact was unblocked" None result;
+  let past_attempt =
+    let blocked_until =
+      Ptime.sub_span (Ptime_clock.now ()) Time.day
+      |> CCOption.get_exn_or "Invalid time"
+      |> BlockedUntil.of_ptime
+    in
+    create email Counter.init (Some blocked_until)
+  in
+  let%lwt () = Repo.insert pool past_attempt in
+  let%lwt result = Repo.find_current pool email in
+  check testable "attempt is past" None result;
+  Lwt.return_unit
+;;

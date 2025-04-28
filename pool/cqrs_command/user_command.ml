@@ -175,3 +175,16 @@ end = struct
     |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 end
+
+module Unblock : sig
+  type t = Pool_user.t
+
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
+end = struct
+  type t = Pool_user.t
+
+  let handle ?(tags = Logs.Tag.empty) user =
+    Logs.info ~src (fun m -> m "Handle command Unblocked" ~tags);
+    Ok [ Pool_user.Unblocked user |> Pool_event.user ]
+  ;;
+end

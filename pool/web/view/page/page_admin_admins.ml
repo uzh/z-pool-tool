@@ -164,9 +164,33 @@ let index (Pool_context.{ language; _ } as context) admins =
     ]
 ;;
 
-let detail ({ Pool_context.language; _ } as context) admin target_id granted_roles =
+let detail
+      ({ Pool_context.language; guardian; _ } as context)
+      admin
+      target_id
+      granted_roles
+      failed_login_attempt
+  =
   let user = Admin.user admin in
+  let failed_login_attempt =
+    let can_unblock =
+      Guard.PermissionOnTarget.validate
+        Admin.(Guard.Access.can_update_target (id admin))
+        guardian
+    in
+    let unblock_url =
+      if can_unblock
+      then
+        Some (Http_utils.Url.Admin.admin_path ~suffix:"unblock" ~id:(Admin.id admin) ())
+      else None
+    in
+    Component.User.account_suspension_notification
+      ?unblock_url
+      context
+      failed_login_attempt
+  in
   [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt (Pool_user.fullname user) ]
+  ; failed_login_attempt
   ; Input.link_as_button
       ~icon:Icon.Create
       ~control:(language, Control.(Edit None))

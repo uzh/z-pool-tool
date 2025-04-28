@@ -411,6 +411,7 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | TagRemoved -> "The tag is removed."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
+  | UserUnblocked -> "User was successfully unblocked."
   | Updated field -> field_message "" (field_to_string field) "was successfully updated."
   | Validated field ->
     field_message "" (field_to_string field) "was successfully validated."
@@ -747,6 +748,7 @@ let control_to_string =
   | Stop field -> format_submit "stop" field
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field
+  | Unblock -> format_submit "unblock" None
   | Unverify -> "Mark as unverified"
   | Update field -> format_submit "update" field
   | UpdateAssignmentsMatchFilter -> format_submit "rerun filter" None
