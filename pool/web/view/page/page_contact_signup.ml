@@ -20,7 +20,7 @@ let signup
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
-    [ h1 [ txt_to_string I18n.SignUpTitle ]
+    [ h1 ~a:[ a_class [ "has-gap" ] ] [ txt_to_string I18n.SignUpTitle ]
     ; form
         ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
         ([ csrf_element csrf ()
