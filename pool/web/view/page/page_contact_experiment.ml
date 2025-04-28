@@ -34,10 +34,7 @@ let experiment_public_description =
   Public.description
   %> CCOption.map_or
        ~default:(txt "")
-       (PublicDescription.value
-        %> HttpUtils.add_line_breaks
-        %> CCList.return
-        %> div ~a:[ a_class [ "truncate-6" ] ])
+       (PublicDescription.value %> HttpUtils.add_line_breaks)
 ;;
 
 let experiment_title =
@@ -369,7 +366,9 @@ let index
           [ h4
               ~a:[ a_class [ "word-wrap-break" ] ]
               [ txt (experiment |> Public.public_title |> PublicTitle.value) ]
-          ; experiment_public_description experiment
+          ; div
+              ~a:[ a_class [ "truncate-6"; "hide-empty" ] ]
+              [ experiment_public_description experiment ]
           ]
       ]
     in
