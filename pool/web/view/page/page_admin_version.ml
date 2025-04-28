@@ -64,6 +64,6 @@ let show { Pool_context.language; _ } { Pool_version.tag; text; _ } =
                (Tag.value tag))
         ]
     ; changelog_hint language
-    ; div [ Unsafe.data (Text.value text) ]
+    ; div ~a:[ a_class [ "gap"; "rich-text" ] ] [ Unsafe.data (Text.value text) ]
     ]
 ;;
