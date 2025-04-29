@@ -116,9 +116,8 @@ let index req =
 
 let new_form req =
   let open Utils.Lwt_result.Infix in
-  let error_path = "/admin/experiments" in
   let result ({ Pool_context.database_label; flash_fetcher; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    Response.render_error_on_error
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let%lwt default_email_reminder_lead_time =
@@ -144,7 +143,7 @@ let new_form req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  result |> Response.handle ~src req
 ;;
 
 let create req =
