@@ -1,13 +1,13 @@
 module HttpUtils = Http_utils
+module Response = Http_response
 
 let src = Logs.Src.create "handler.contact.session"
 let create_layout = Contact_general.create_layout
 let session_path = HttpUtils.Url.Contact.session_path
 
 let index req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:(session_path ())
-    ~error_path:(session_path ())
     ~create_layout
     ~query:(module Session.Public)
     req

@@ -3,6 +3,7 @@ open Pool_message
 module Command = Cqrs_command.Smtp_command
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 module SmtpAuth = Email.SmtpAuth
 
 let src = Logs.Src.create "handler.admin.settings_schedule"
@@ -31,9 +32,8 @@ let email_of_urlencoded urlencoded =
 let index req =
   let location = `Tenant in
   let active_navigation = active_navigation location in
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path:active_navigation
     ~query:(module SmtpAuth)
     ~create_layout:General.create_tenant_layout
     req

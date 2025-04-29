@@ -1,5 +1,6 @@
 open Utils.Lwt_result.Infix
 open Pool_message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.api_keys"
 let api_key_path = Http_utils.Url.Admin.api_key_path
@@ -28,9 +29,8 @@ let find_granted_roles database_label api_key =
 ;;
 
 let index req =
-  Http_utils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:(api_key_path ())
-    ~error_path:"root"
     ~query:(module Api_key)
     ~create_layout
     req

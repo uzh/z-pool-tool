@@ -2,6 +2,7 @@ open CCFun
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.session"
 let create_layout req = General.create_tenant_layout req
@@ -42,10 +43,7 @@ let can_access_session_assistants pool actor experiment_id =
 
 let list req =
   let experiment_id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
-  in
-  HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Session) req
+  Response.Htmx.index_handler ~create_layout ~query:(module Session) req
   @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in
@@ -406,11 +404,8 @@ let show req =
   let open Helpers.Guard in
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
-  in
   let experiment_target_id = [ Guard.Uuid.target_of Experiment.Id.value experiment_id ] in
-  HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Assignment) req
+  Response.Htmx.index_handler ~create_layout ~query:(module Assignment) req
   @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label experiment_id in

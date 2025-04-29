@@ -3,6 +3,7 @@ open Utils.Lwt_result.Infix
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.settings_role_permission"
 let active_navigation = "/admin/settings/role-permission"
@@ -109,9 +110,8 @@ let index req =
 ;;
 
 let show req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path:"/"
     ~query:(module Guard.RolePermission)
     ~create_layout:General.create_tenant_layout
     req

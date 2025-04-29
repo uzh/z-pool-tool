@@ -2,6 +2,7 @@ open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_message.Field
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.location"
 let create_layout req = General.create_tenant_layout req
@@ -22,9 +23,8 @@ let descriptions_from_urlencoded req urlencoded =
 ;;
 
 let index req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:"/admin/locations"
-    ~error_path:"/admin/locations"
     ~query:(module Pool_location)
     ~create_layout
     req
@@ -265,8 +265,7 @@ let delete req =
 
 let session req =
   let location_id = id req Field.Location Pool_location.Id.of_string in
-  let error_path = HttpUtils.Url.Admin.location_path ~id:location_id () in
-  HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Assignment) req
+  Response.Htmx.index_handler ~create_layout ~query:(module Assignment) req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let* location = Pool_location.find database_label location_id in
   let session_id = id req Field.Session Session.Id.of_string in

@@ -1,6 +1,7 @@
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.experiments_mailing"
 let create_layout req = General.create_tenant_layout req
@@ -26,10 +27,7 @@ let matching_filter_count database_label experiment =
 
 let index req =
   let id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s/mailings" (Experiment.Id.value id)
-  in
-  HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Mailing) req
+  Response.Htmx.index_handler ~create_layout ~query:(module Mailing) req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label id in

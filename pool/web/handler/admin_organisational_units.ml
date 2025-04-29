@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_message.Field
+module Response = Http_response
 module View = Page.Admin.OrganisationalUnit
 
 let field = Field.OrganisationalUnit
@@ -20,10 +21,8 @@ let database_label_of_req req =
 
 let index req =
   let active_navigation = base_path in
-  let error_path = "/admin/dashboard" in
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path
     ~create_layout
     ~query:(module Organisational_unit)
     req

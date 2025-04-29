@@ -1,11 +1,12 @@
+module Response = Http_response
+
 let path = Http_utils.Url.Admin.Settings.signup_codes_path
 let src = Logs.Src.create "handler.admin.signup_codes"
 let create_layout req = General.create_tenant_layout req
 
 let index req =
-  Http_utils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:path
-    ~error_path:path
     ~create_layout
     ~query:(module Signup_code)
     req

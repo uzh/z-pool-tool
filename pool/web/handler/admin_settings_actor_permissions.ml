@@ -3,14 +3,14 @@ open Utils.Lwt_result.Infix
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.settings_actor_permissions"
 let active_navigation = "/admin/settings/actor-permission"
 
 let show req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path:"/"
     ~query:(module Guard.ActorPermission)
     ~create_layout:General.create_tenant_layout
     req

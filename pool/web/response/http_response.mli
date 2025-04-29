@@ -61,3 +61,30 @@ module Api : sig
         -> ('a list * Query.t, Pool_message.Error.t) Lwt_result.t)
     -> Rock.Response.t Lwt.t
 end
+
+module Htmx : sig
+  val html_to_plain_text_response
+    :  ?status:Opium.Status.t
+    -> 'a Tyxml_html.elt
+    -> Rock.Response.t
+
+  val html_list_to_plain_text_response
+    :  ?status:Opium.Status.t
+    -> 'a Tyxml_html.elt list
+    -> Rock.Response.t
+
+  val index_handler
+    :  ?active_navigation:string
+    -> query:(module Http_utils.Queryable.Queryable)
+    -> create_layout:
+         (Rock.Request.t
+          -> ?active_navigation:string
+          -> Pool_context.t
+          -> ([> Html_types.div ] as 'a) Tyxml_html.elt
+          -> (Html_types.html Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
+    -> Rock.Request.t
+    -> (Pool_context.t
+        -> Query.t
+        -> ('a Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
+    -> Rock.Response.t Lwt.t
+end

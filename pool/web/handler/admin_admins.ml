@@ -2,6 +2,7 @@ open Utils.Lwt_result.Infix
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.admins"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
@@ -17,9 +18,8 @@ let find_authorizable_target database_label req =
 ;;
 
 let index req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:"/admin/admins"
-    ~error_path:"/admin/dashboard"
     ~query:(module Admin)
     ~create_layout:General.create_tenant_layout
     req
