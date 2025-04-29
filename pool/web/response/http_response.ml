@@ -1,5 +1,6 @@
 open Utils.Lwt_result.Infix
 open Pool_message
+module Api = Http_response_api
 
 let show_error = Pool_common.Utils.error_to_string
 let default_language = Pool_common.Language.En

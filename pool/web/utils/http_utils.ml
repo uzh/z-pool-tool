@@ -4,6 +4,7 @@ module Api = Http_utils_api
 module File = Http_utils_file
 module Filter = Http_utils_filter
 module Message = Http_utils_message
+module Queryable = Http_utils_queryable
 module Session = Http_utils_session
 module StringMap = CCMap.Make (CCString)
 module Url = Http_utils_url
@@ -392,7 +393,7 @@ module Htmx = struct
   let handler
     :  ?active_navigation:string
     -> error_path:string
-    -> query:(module Http_utils_queryable.Queryable)
+    -> query:(module Queryable.Queryable)
     -> create_layout:
          (Rock.Request.t
           -> ?active_navigation:CCString.t
