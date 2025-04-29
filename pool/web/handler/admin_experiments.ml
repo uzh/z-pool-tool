@@ -117,7 +117,7 @@ let index req =
 let new_form req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; flash_fetcher; _ } as context) =
-    Response.render_error_on_error
+    Response.bad_request_render_error context
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let%lwt default_email_reminder_lead_time =
