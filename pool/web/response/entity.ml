@@ -8,19 +8,19 @@ type http_error =
   | AccessDenied
   | BadRequest of (Rock.Request.t -> Rock.Response.t Lwt.t) * url_encoded option * Error.t
   | NotFound of Error.t
-  | RenderError of Error.t
 
 let error_message = function
   | AccessDenied -> Error.AccessDenied
   | BadRequest (_, _, err) -> err
   | NotFound err -> err
-  | RenderError err -> err
 ;;
 
 let access_denied = AccessDenied
 let bad_request ?urlencoded f err = BadRequest (f, urlencoded, err)
-let bad_request_on_error ?urlencoded run req = map_error (bad_request ?urlencoded run) req
+
+let bad_request_on_error ?urlencoded fallback req =
+  map_error (bad_request ?urlencoded fallback) req
+;;
+
 let not_found err = NotFound err
 let not_found_on_error req = map_error not_found req
-let render_error err = RenderError err
-let render_error_on_error req = map_error render_error req

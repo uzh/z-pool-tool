@@ -8,21 +8,6 @@ module Page = Http_response_page
 let src = Logs.Src.create "web.handler.response"
 let set_response_code status response = Rock.Response.{ response with status }
 
-let make_layout req context page =
-  let open Layout in
-  let is_root = Http_utils.is_req_from_root_host req in
-  try
-    if is_root
-    then Root.create context page
-    else (
-      let tenant_context =
-        Pool_context.Tenant.find req |> Pool_common.Utils.get_or_failwith
-      in
-      Tenant.create context tenant_context page)
-  with
-  | _ -> Error.create page |> Lwt.return
-;;
-
 let urlencoded_to_flash urlencoded =
   let open CCList in
   let values =
@@ -52,7 +37,7 @@ let set_flash_fetcher urlencoded context =
 let handle_error context req =
   let html_response status page =
     page
-    |> make_layout req context
+    |> Page.make_layout req context
     ||> Sihl.Web.Response.of_html
     ||> set_response_code status
   in
@@ -66,15 +51,18 @@ let handle_error context req =
     |> handler
     ||> set_response_code `Bad_request
   | NotFound err -> Page.not_found_note context err |> html_response `Not_found
-  | RenderError err ->
-    Page.bad_request_error_note ~language:context.Pool_context.language err
-    |> make_layout req context
-    ||> Sihl.Web.Response.of_html ~status:`Bad_request
 ;;
 
 let with_log_http_result_error ~src ~tags =
   let open CCFun in
   tap (CCResult.map_err (error_message %> Pool_common.Utils.with_log_error ~src ~tags))
+;;
+
+let bad_request_render_error context run =
+  run
+  >|- fun err ->
+  let fallback req = Page.generic_error_response req context err in
+  bad_request fallback err
 ;;
 
 let handle ?(src = src) ?enable_cache req result =
