@@ -3,7 +3,7 @@ open Utils.Lwt_result.Infix
 open Pool_message
 module Api = Http_response_api
 module Htmx = Http_response_htmx
-module Note = Http_response_notes
+module Page = Http_response_page
 
 let src = Logs.Src.create "web.handler.response"
 let set_response_code status response = Rock.Response.{ response with status }
@@ -57,7 +57,7 @@ let handle_error context req =
     ||> set_response_code status
   in
   function
-  | AccessDenied -> Note.access_denied_note context |> html_response `Unauthorized
+  | AccessDenied -> Page.access_denied_note context |> html_response `Unauthorized
   | BadRequest (handler, urlencoded, err) ->
     context
     |> set_context_error [ err ]
@@ -65,9 +65,9 @@ let handle_error context req =
     |> Pool_context.set req
     |> handler
     ||> set_response_code `Bad_request
-  | NotFound err -> Note.not_found_note context err |> html_response `Not_found
+  | NotFound err -> Page.not_found_note context err |> html_response `Not_found
   | RenderError err ->
-    Note.bad_request_error_note ~language:context.Pool_context.language err
+    Page.bad_request_error_note ~language:context.Pool_context.language err
     |> make_layout req context
     ||> Sihl.Web.Response.of_html ~status:`Bad_request
 ;;
@@ -91,5 +91,5 @@ let handle ?(src = src) ?enable_cache req result =
     |> get_lazy (handle_error context req)
   | Error err ->
     Logs.warn ~src (fun m -> m ~tags "Context not found: %s" (Error.show err));
-    Note.internal_server_error_response err |> Lwt.return
+    Page.internal_server_error_response err |> Lwt.return
 ;;
