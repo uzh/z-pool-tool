@@ -90,7 +90,7 @@ let sign_up_create req =
              token
              firstname
              lastname
-             user_id
+             (Contact.Id.to_user user_id)
          in
          decoded
          |> Command.SignUp.handle

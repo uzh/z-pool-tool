@@ -153,7 +153,44 @@ let request_reset_password_post req =
       ||> decode
       |>> Pool_user.find_active_by_email_opt database_label
     in
-    let* () =
+    let make_message message_language user =
+      let email_address = Pool_user.email user in
+      let reset_message () =
+        PasswordReset.create database_label message_language (Tenant tenant) user
+      in
+      let verification_message () =
+        let make_message token =
+          let open Pool_user in
+          Message_template.SignUpVerification.create
+            database_label
+            message_language
+            tenant
+            email_address
+            token
+            (firstname user)
+            (lastname user)
+            (id user)
+        in
+        let open Email in
+        user
+        |> Pool_user.email
+        |> find_active_token database_label
+        >|> function
+        | None -> Lwt_result.fail Pool_message.(Error.NotFound Field.Token)
+        | Some token -> make_message token |> Lwt_result.ok
+      in
+      let make_message = function
+        | None -> verification_message ()
+        | Some (_ : Pool_user.EmailVerified.t) -> reset_message ()
+      in
+      let open Pool_context in
+      let%lwt user = context_user_of_user database_label user in
+      match user with
+      | Guest -> Lwt_result.fail Pool_message.(Error.NotFound Field.User)
+      | Admin { Admin.email_verified; _ } -> make_message email_verified
+      | Contact { Contact.email_verified; _ } -> make_message email_verified
+    in
+    let handle () =
       match user with
       | None -> Lwt_result.return ()
       | Some user ->
@@ -170,14 +207,21 @@ let request_reset_password_post req =
                ||> fun Contact.{ language; _ } ->
                CCOption.value ~default:context.Pool_context.language language)
         in
-        PasswordReset.create database_label message_language (Tenant tenant) user
+        make_message message_language user
         >== handle ~tags
         |>> Pool_event.handle_events ~tags database_label context.Pool_context.user
     in
-    redirect_to_with_actions
-      redirect_path
-      [ Message.set ~success:[ Pool_message.Success.PasswordResetSuccessMessage ] ]
-    >|> Lwt_result.return
+    let redirect () =
+      redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_message.Success.PasswordResetSuccessMessage ] ]
+      >|> Lwt_result.return
+    in
+    handle ()
+    ||> CCResult.get_lazy (fun err ->
+      let (_ : Pool_message.Error.t) = Pool_common.Utils.with_log_error err in
+      ())
+    >|> redirect
   in
   result |> extract_happy_path_with_actions ~src req
 ;;

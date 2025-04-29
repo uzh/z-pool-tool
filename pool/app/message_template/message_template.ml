@@ -1216,7 +1216,7 @@ module SignUpVerification = struct
     in
     let layout = layout_from_tenant tenant in
     let entity_uuids =
-      [ Queue.History.User, user_id |> Contact.Id.to_common |> Id.of_common ]
+      [ Queue.History.User, user_id |> Pool_user.Id.to_common |> Id.of_common ]
     in
     let email =
       prepare_email
