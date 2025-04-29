@@ -1,4 +1,5 @@
 open Pool_message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.version"
 let version_path = Http_utils.Url.Admin.version_path
@@ -10,9 +11,8 @@ let version_id req =
 ;;
 
 let index req =
-  Http_utils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path:"dashboard"
     ~query:(module Pool_version)
     ~create_layout
     req

@@ -1,31 +1,11 @@
+include Entity
 open Utils.Lwt_result.Infix
 open Pool_message
 module Api = Http_response_api
+module Htmx = Http_response_htmx
+module Note = Http_response_notes
 
-let show_error = Pool_common.Utils.error_to_string
-let default_language = Pool_common.Language.En
 let src = Logs.Src.create "web.handler.response"
-
-let access_denied_note { Pool_context.language; _ } =
-  Page.Utils.note
-    (show_error language Error.AccessDenied)
-    (show_error language Error.AccessDeniedMessage)
-;;
-
-let not_found_note { Pool_context.language; _ } error =
-  Page.Utils.note
-    (show_error language error)
-    (PageNotFoundMessage |> Pool_common.Utils.to_string language)
-;;
-
-let internal_server_error_note error =
-  Page.Utils.note
-    (show_error default_language Error.InternalServerError)
-    (show_error default_language error)
-  |> Layout.Error.create
-  |> Sihl.Web.Response.of_html ~status:`Internal_server_error
-;;
-
 let set_response_code status response = Rock.Response.{ response with status }
 
 let make_layout req context page =
@@ -41,28 +21,6 @@ let make_layout req context page =
       Tenant.create context tenant_context page)
   with
   | _ -> Error.create page |> Lwt.return
-;;
-
-type url_encoded = (string * string list) list
-
-type http_error =
-  | AccessDenied
-  | BadRequest of (Rock.Request.t -> Rock.Response.t Lwt.t) * url_encoded option * Error.t
-  | NotFound of Error.t
-
-let access_denied = AccessDenied
-let bad_request ?urlencoded f err = BadRequest (f, urlencoded, err)
-let not_found err = NotFound err
-let not_found_on_error res = Utils.Lwt_result.map_error not_found res
-
-let bad_request_on_error ?urlencoded handler res =
-  Utils.Lwt_result.map_error (bad_request ?urlencoded handler) res
-;;
-
-let error_message = function
-  | AccessDenied -> Error.AccessDenied
-  | BadRequest (_, _, err) -> err
-  | NotFound err -> err
 ;;
 
 let urlencoded_to_flash urlencoded =
@@ -99,7 +57,7 @@ let handle_error context req =
     ||> set_response_code status
   in
   function
-  | AccessDenied -> access_denied_note context |> html_response `Unauthorized
+  | AccessDenied -> Note.access_denied_note context |> html_response `Unauthorized
   | BadRequest (handler, urlencoded, err) ->
     context
     |> set_context_error [ err ]
@@ -107,7 +65,7 @@ let handle_error context req =
     |> Pool_context.set req
     |> handler
     ||> set_response_code `Bad_request
-  | NotFound err -> not_found_note context err |> html_response `Not_found
+  | NotFound err -> Note.not_found_note context err |> html_response `Not_found
 ;;
 
 let with_log_http_result_error ~src ~tags =
@@ -129,5 +87,5 @@ let handle ?(src = src) ?enable_cache req result =
     |> get_lazy (handle_error context req)
   | Error err ->
     Logs.warn ~src (fun m -> m ~tags "Context not found: %s" (Error.show err));
-    internal_server_error_note err |> Lwt.return
+    Note.internal_server_error_note err |> Lwt.return
 ;;

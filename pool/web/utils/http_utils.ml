@@ -376,6 +376,7 @@ module Htmx = struct
     |> Lwt.return
   ;;
 
+  (* TODO: REMOVE *)
   let html_to_plain_text_response ?(status = 200) html =
     html
     |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
@@ -388,44 +389,6 @@ module Htmx = struct
          (fun acc cur -> Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
          ""
     |> Sihl.Web.Response.of_plain_text ~status:(status |> Opium.Status.of_code) ~headers
-  ;;
-
-  let handler
-    :  ?active_navigation:string
-    -> error_path:string
-    -> query:(module Queryable.Queryable)
-    -> create_layout:
-         (Rock.Request.t
-          -> ?active_navigation:CCString.t
-          -> Pool_context.t
-          -> 'page Tyxml_html.elt
-          -> ([> Html_types.html ] Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
-    -> Rock.Request.t
-    -> (Pool_context.t
-        -> Query.t
-        -> ('page Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
-    -> Rock.Response.t Lwt.t
-    =
-    fun ?active_navigation ~error_path ~query:(module Q) ~create_layout req run ->
-    let open Utils.Lwt_result.Infix in
-    extract_happy_path ~src req
-    @@ fun context ->
-    let query =
-      Query.from_request
-        ?filterable_by:Q.filterable_by
-        ~searchable_by:Q.searchable_by
-        ~sortable_by:Q.sortable_by
-        ~default:Q.default_query
-        req
-    in
-    let* page = run context query >|- fun err -> err, error_path in
-    if is_hx_request req
-    then Ok (html_to_plain_text_response page) |> Lwt_result.lift
-    else
-      let* view =
-        create_layout ?active_navigation req context page >|- fun err -> err, error_path
-      in
-      Ok (Sihl.Web.Response.of_html view) |> Lwt_result.lift
   ;;
 
   let notification_id = "hx-notification"

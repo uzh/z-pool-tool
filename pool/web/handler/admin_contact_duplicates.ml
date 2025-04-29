@@ -1,9 +1,10 @@
+open Utils.Lwt_result.Infix
+module Field = Pool_message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_message.Field
 module Page = Page.Admin.Contact.Duplicates
+module Response = Http_response
 module Url = HttpUtils.Url
-open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "handler.admin.contacts"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
@@ -20,16 +21,7 @@ let duplicate_id = HttpUtils.find_id Duplicate_contacts.Id.of_string Field.Dupli
 
 let index req =
   let contact_id = contact_id req in
-  let error_path =
-    match contact_id with
-    | Some contact_id -> Url.Admin.contact_path ~id:contact_id ()
-    | None -> Url.Admin.duplicate_path ()
-  in
-  Http_utils.Htmx.handler
-    ~error_path
-    ~query:(module Duplicate_contacts)
-    ~create_layout
-    req
+  Response.Htmx.index_handler ~query:(module Duplicate_contacts) ~create_layout req
   @@ fun (Pool_context.{ database_label; _ } as context) query ->
   let open Contact in
   let* contact =

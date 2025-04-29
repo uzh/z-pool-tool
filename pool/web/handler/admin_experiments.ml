@@ -98,9 +98,8 @@ let experiment_message_templates database_label experiment =
 ;;
 
 let index req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:"/admin/experiments"
-    ~error_path:"/admin/experiments"
     ~create_layout
     ~query:(module Experiment)
     req
@@ -462,11 +461,7 @@ end
 let message_history req =
   let queue_table = `History in
   let experiment_id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
-  in
-  HttpUtils.Htmx.handler
-    ~error_path
+  Response.Htmx.index_handler
     ~query:(module Pool_queue)
     ~create_layout:General.create_tenant_layout
     req

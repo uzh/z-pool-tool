@@ -1,5 +1,6 @@
 open Pool_message
 module HttpUtils = Http_utils
+module Response = Http_response
 
 let src = Logs.Src.create "handler.contact.assignment"
 let create_layout = Contact_general.create_layout
@@ -71,11 +72,7 @@ let dashboard req =
 ;;
 
 let index_handler page_context req =
-  HttpUtils.Htmx.handler
-    ~error_path:(experiment_path ())
-    ~create_layout
-    ~query:(module Experiment.Public)
-    req
+  Response.Htmx.index_handler ~create_layout ~query:(module Experiment.Public) req
   @@ fun ({ Pool_context.database_label; user; language; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
@@ -111,11 +108,7 @@ let available_onsite = index_handler `UpcomingOnsite
 let available_online = index_handler `UpcomingOnline
 
 let history req =
-  HttpUtils.Htmx.handler
-    ~error_path:(experiment_path ())
-    ~create_layout
-    ~query:(module Experiment)
-    req
+  Response.Htmx.index_handler ~create_layout ~query:(module Experiment) req
   @@ fun ({ Pool_context.database_label; user; language; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in

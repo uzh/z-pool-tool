@@ -2,6 +2,7 @@ open CCFun
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 open HttpUtils.Filter
 
 let src = Logs.Src.create "handler.admin.filter"
@@ -40,9 +41,8 @@ let find_identifier urlencoded =
 let get_id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encode
 
 let index req =
-  Http_utils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:"/admin/filter"
-    ~error_path:(Format.asprintf "/admin/filter")
     ~query:(module Filter)
     ~create_layout
     req

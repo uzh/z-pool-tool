@@ -1,6 +1,7 @@
 open Pool_message
 module HttpUtils = Http_utils
 module HttpMessage = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.experiments_invitations"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
@@ -62,10 +63,7 @@ let index req =
 
 let sent_invitations req =
   let id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
-  in
-  HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Invitation) req
+  Response.Htmx.index_handler ~create_layout ~query:(module Invitation) req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label id in

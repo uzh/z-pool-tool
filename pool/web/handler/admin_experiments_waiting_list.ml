@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_message.Field
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.experiments_waiting_list"
 let create_layout req = General.create_tenant_layout req
@@ -10,11 +11,7 @@ let waiting_list_path = HttpUtils.Url.Admin.waiting_list_path
 
 let index req =
   let id = experiment_id req in
-  HttpUtils.Htmx.handler
-    ~error_path:(Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id))
-    ~create_layout
-    ~query:(module Waiting_list)
-    req
+  Response.Htmx.index_handler ~create_layout ~query:(module Waiting_list) req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label id in

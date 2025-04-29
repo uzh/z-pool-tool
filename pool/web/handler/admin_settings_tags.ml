@@ -2,18 +2,17 @@ open Utils.Lwt_result.Infix
 module Field = Pool_message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let field = Field.Tag
 let base_path = "/admin/settings/tags"
-let error_path = "/admin/settings/tags"
 let src = Logs.Src.create "handler.admin.settings_tags"
 let active_navigation = base_path
 let id req = Sihl.Web.Router.param req @@ Field.show field |> Tags.Id.of_string
 
 let index req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path
     ~query:(module Tags)
     ~create_layout:General.create_tenant_layout
     req

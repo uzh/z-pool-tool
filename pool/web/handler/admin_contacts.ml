@@ -2,6 +2,7 @@ open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_message.Field
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.contacts"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
@@ -11,9 +12,8 @@ let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let contact_path = HttpUtils.Url.Admin.contact_path
 
 let index req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:(contact_path ())
-    ~error_path:"/admin/dashboard"
     ~query:(module Contact)
     ~create_layout:General.create_tenant_layout
     req
@@ -419,9 +419,7 @@ let enroll_contact_post req =
 let message_history req =
   let queue_table = `History in
   let contact_id = contact_id req in
-  let error_path = contact_path ~id:contact_id () in
-  HttpUtils.Htmx.handler
-    ~error_path
+  Response.Htmx.index_handler
     ~query:(module Pool_queue)
     ~create_layout:General.create_tenant_layout
     req

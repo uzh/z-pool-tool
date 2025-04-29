@@ -1,5 +1,6 @@
 open Utils.Lwt_result.Infix
 open Pool_message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.root.version"
 let active_navigation = Http_utils.Url.Root.version_path ()
@@ -14,9 +15,8 @@ let index req =
   let create_layout (_ : Rock.Request.t) ?active_navigation context children =
     General.create_root_layout ?active_navigation context children |> Lwt_result.ok
   in
-  Http_utils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path:"root"
     ~query:(module Pool_version)
     ~create_layout
     req
