@@ -34,3 +34,30 @@ val handle
   -> Rock.Request.t
   -> (Pool_context.t -> (Rock.Response.t, http_error) Lwt_result.t)
   -> Rock.Response.t Lwt.t
+
+module Api : sig
+  val respond_error
+    :  ?status:Opium.Status.t
+    -> ?language:Pool_common.Language.t
+    -> Pool_message.Error.t
+    -> Rock.Response.t
+
+  val not_found : Rock.Request.t -> Rock.Response.t Lwt.t
+
+  val respond
+    :  ?src:Logs.src
+    -> Rock.Request.t
+    -> (Pool_context.Api.t -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
+    -> Rock.Response.t Lwt.t
+
+  val index_handler
+    :  query:(module Http_utils.Queryable.Queryable)
+    -> ?src:Logs.src
+    -> yojson_of_t:('a -> Yojson.Safe.t)
+    -> Rock.Request.t
+    -> (Pool_context.Api.t
+        -> Guard.Actor.t
+        -> Query.t
+        -> ('a list * Query.t, Pool_message.Error.t) Lwt_result.t)
+    -> Rock.Response.t Lwt.t
+end

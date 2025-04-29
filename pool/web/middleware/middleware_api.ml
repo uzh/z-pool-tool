@@ -1,5 +1,8 @@
 let src = Logs.Src.create "middleware.api_tenant"
-let respond_error status error = Http_utils.Api.respond_error ~status error |> Lwt.return
+
+let respond_error status error =
+  Http_response.Api.respond_error ~status error |> Lwt.return
+;;
 
 let validate_tenant () =
   let open Pool_message in

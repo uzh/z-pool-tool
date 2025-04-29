@@ -97,7 +97,9 @@ let validate_admin_entity_base validate =
        | false ->
          let open Http_utils in
          (match Api.is_api_request req with
-          | true -> Api.respond_error ~status:`Forbidden Error.AccessDenied |> Lwt.return
+          | true ->
+            Http_response.Api.respond_error ~status:`Forbidden Error.AccessDenied
+            |> Lwt.return
           | false ->
             Http_utils.redirect_to
             @@
