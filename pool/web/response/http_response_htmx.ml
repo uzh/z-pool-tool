@@ -46,7 +46,7 @@ let index_handler
     let%lwt page =
       run context query
       ||> CCResult.get_lazy (fun error ->
-        Note.htmx_onpage_error context.Pool_context.language error)
+        Note.htmx_onpage_error_note context.Pool_context.language error)
     in
     match Http_utils.Htmx.is_hx_request req with
     | true -> Http_utils.Htmx.html_to_plain_text_response page |> Lwt_result.return
@@ -58,5 +58,5 @@ let index_handler
   |> Lwt_result.lift
   >>= result
   ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id
-  ||> CCResult.get_lazy Http_response_notes.internal_server_error_note
+  ||> CCResult.get_lazy Http_response_notes.internal_server_error_response
 ;;

@@ -19,6 +19,7 @@ type t =
   | AtLeastOneLanguageRequired of Field.t
   | AtLeastOneSelected of Field.t * Field.t
   | Authorization of string
+  | BadRequest
   | CannotBeDeleted of Field.t
   | CannotBeUpdated of Field.t
   | CaqtiError of string

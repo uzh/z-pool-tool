@@ -475,6 +475,7 @@ let rec error_to_string =
       (field |> field_to_string |> CCString.trim)
       "has alredy been published."
   | Authorization message -> field_message "Unable to authorize: " message ""
+  | BadRequest -> "Bad request"
   | CannotBeDeleted field ->
     Format.asprintf "%s cannot be deleted." (field_to_string field)
   | CannotBeUpdated field ->

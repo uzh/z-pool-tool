@@ -457,6 +457,7 @@ module Htmx = struct
   ;;
 end
 
+(* TODO: This module should probably be made obsolete, the API response module can be used instead *)
 module Json = struct
   let yojson_response ?status json =
     let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ] in

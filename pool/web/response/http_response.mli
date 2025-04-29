@@ -7,8 +7,14 @@ type http_error =
       * url_encoded option
       * Pool_message.Error.t
   | NotFound of Pool_message.Error.t
+  | RenderError of Pool_message.Error.t
 
 val access_denied : http_error
+val not_found : Pool_message.Error.t -> http_error
+
+val not_found_on_error
+  :  ('a, Pool_message.Error.t) Lwt_result.t
+  -> ('a, http_error) Lwt_result.t
 
 val bad_request
   :  ?urlencoded:url_encoded
@@ -16,16 +22,16 @@ val bad_request
   -> Pool_message.Error.t
   -> http_error
 
-val not_found : Pool_message.Error.t -> http_error
-
-val not_found_on_error
-  :  ('a, Pool_message.Error.t) Lwt_result.t
-  -> ('a, http_error) Lwt_result.t
-
 val bad_request_on_error
   :  ?urlencoded:url_encoded
   -> (Rock.Request.t -> Rock.Response.t Lwt.t)
   -> ('a, Pool_message.Error.t) Lwt_result.t
+  -> ('a, http_error) Lwt_result.t
+
+val render_error : Pool_message.Error.t -> http_error
+
+val render_error_on_error
+  :  ('a, Pool_message.Error.t) Lwt_result.t
   -> ('a, http_error) Lwt_result.t
 
 val handle

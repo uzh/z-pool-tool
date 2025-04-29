@@ -66,6 +66,10 @@ let handle_error context req =
     |> handler
     ||> set_response_code `Bad_request
   | NotFound err -> Note.not_found_note context err |> html_response `Not_found
+  | RenderError err ->
+    Note.bad_request_error_note ~language:context.Pool_context.language err
+    |> make_layout req context
+    ||> Sihl.Web.Response.of_html ~status:`Bad_request
 ;;
 
 let with_log_http_result_error ~src ~tags =
@@ -87,5 +91,5 @@ let handle ?(src = src) ?enable_cache req result =
     |> get_lazy (handle_error context req)
   | Error err ->
     Logs.warn ~src (fun m -> m ~tags "Context not found: %s" (Error.show err));
-    Note.internal_server_error_note err |> Lwt.return
+    Note.internal_server_error_response err |> Lwt.return
 ;;
