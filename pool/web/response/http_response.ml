@@ -109,13 +109,9 @@ let handle_error context req =
   | NotFound err -> not_found_note context err |> html_response `Not_found
 ;;
 
-let with_log_http_result_error ~src ~tags res =
-  res
-  |> CCResult.map_err (fun err ->
-    let (_ : Error.t) =
-      err |> error_message |> Pool_common.Utils.with_log_error ~src ~tags
-    in
-    err)
+let with_log_http_result_error ~src ~tags =
+  let open CCFun in
+  tap (CCResult.map_err (error_message %> Pool_common.Utils.with_log_error ~src ~tags))
 ;;
 
 let handle ?(src = src) ?enable_cache req result =
