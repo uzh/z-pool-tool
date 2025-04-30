@@ -1,6 +1,8 @@
 open Pool_message
+open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Url = Page.Admin.CustomFields.Url
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.custom_field_groups"
 let create_layout req = General.create_tenant_layout req
@@ -13,28 +15,24 @@ let get_group_id req =
 let get_model = Admin_custom_fields.get_model
 
 let form ?id req model =
-  let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, Url.index_path model)
-    @@ let* custom_field_group =
-         id
-         |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           let* group = Custom_field.find_group database_label id in
-           let%lwt fields = Custom_field.find_by_group database_label id in
-           (group, fields) |> CCOption.pure |> Lwt_result.return)
-       in
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
-       let%lwt sys_languages = Settings.find_languages database_label in
-       Page.Admin.CustomFieldGroups.detail
-         ?custom_field_group
-         model
-         context
-         sys_languages
-         flash_fetcher
-       |> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+    let* custom_field_group =
+      id
+      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+        let* group =
+          Custom_field.find_group database_label id |> Response.not_found_on_error
+        in
+        let%lwt fields = Custom_field.find_by_group database_label id in
+        (group, fields) |> CCOption.pure |> Lwt_result.return)
+    in
+    Response.bad_request_render_error context
+    @@
+    let%lwt sys_languages = Settings.find_languages database_label in
+    Page.Admin.CustomFieldGroups.detail ?custom_field_group model context sys_languages
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_form req = get_model form req
@@ -45,16 +43,9 @@ let edit req =
 ;;
 
 let write ?id req model =
-  let open Utils.Lwt_result.Infix in
+  let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
-  in
-  let redirect_path = Url.index_path model in
-  let error_path =
-    id
-    |> function
-    | None -> Url.Group.new_path model
-    | Some id -> Url.Group.edit_path (model, id)
   in
   let field_names =
     let open Pool_common in
@@ -63,21 +54,23 @@ let write ?id req model =
     go Field.Name encode_lang
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
-    @@
-    let tags = Pool_context.Logger.Tags.req req in
+    let%lwt sys_languages = Settings.find_languages database_label in
     let events =
-      let%lwt sys_languages = Settings.find_languages database_label in
       match id with
       | None ->
-        Cqrs_command.Custom_field_group_command.(
-          Create.handle ~tags sys_languages field_names model |> Lwt_result.lift)
+        Response.bad_request_on_error
+          ~urlencoded
+          new_form
+          Cqrs_command.Custom_field_group_command.(
+            Create.handle ~tags sys_languages field_names model |> Lwt_result.lift)
       | Some id ->
-        let* custom_field_group = id |> Custom_field.find_group database_label in
-        Cqrs_command.Custom_field_group_command.(
-          Update.handle ~tags sys_languages custom_field_group field_names model
-          |> Lwt_result.lift)
+        let* custom_field_group =
+          id |> Custom_field.find_group database_label |> Response.not_found_on_error
+        in
+        Response.bad_request_on_error ~urlencoded edit
+        @@ Cqrs_command.Custom_field_group_command.(
+             Update.handle ~tags sys_languages custom_field_group field_names model
+             |> Lwt_result.lift)
     in
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
@@ -88,12 +81,12 @@ let write ?id req model =
         else Created Field.CustomFieldGroup
       in
       Http_utils.redirect_to_with_actions
-        redirect_path
+        (Url.index_path model)
         [ HttpUtils.Message.set ~success:[ success ] ]
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let create req = get_model write req
@@ -106,26 +99,25 @@ let update req =
 let delete req =
   let handler req model =
     let tags = Pool_context.Logger.Tags.req req in
-    let id = req |> get_group_id in
+    let id = get_group_id req in
     let result { Pool_context.database_label; user; _ } =
-      let redirect_path = Url.Group.edit_path (model, id) in
-      Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+      let* group =
+        Custom_field.find_group database_label id |> Response.not_found_on_error
+      in
+      Response.bad_request_on_error edit
       @@
       let open Utils.Lwt_result.Infix in
       let* events =
-        let open CCFun.Infix in
-        id
-        |> Custom_field.find_group database_label
-        >>= Cqrs_command.Custom_field_group_command.Destroy.handle ~tags
-            %> Lwt_result.lift
+        Cqrs_command.Custom_field_group_command.Destroy.handle ~tags group
+        |> Lwt_result.lift
       in
       let%lwt () = Pool_event.handle_events database_label user events in
       Http_utils.redirect_to_with_actions
-        redirect_path
+        (Url.Group.edit_path (model, id))
         [ HttpUtils.Message.set ~success:[ Success.Deleted Field.CustomFieldGroup ] ]
       |> Lwt_result.ok
     in
-    result |> HttpUtils.extract_happy_path ~src req
+    Response.handle ~src req result
   in
   get_model handler req
 ;;
@@ -133,9 +125,8 @@ let delete req =
 let sort req =
   let handler req model =
     let open Utils.Lwt_result.Infix in
-    let redirect_path = Url.index_path model in
     let result { Pool_context.database_label; user; _ } =
-      Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
+      Response.bad_request_on_error Admin_custom_fields.index
       @@
       let tags = Pool_context.Logger.Tags.req req in
       let%lwt ids =
@@ -160,12 +151,12 @@ let sort req =
       let handle events =
         let%lwt () = Pool_event.handle_events ~tags database_label user events in
         Http_utils.redirect_to_with_actions
-          redirect_path
+          (Url.index_path model)
           [ HttpUtils.Message.set ~success:[ Success.Updated Field.CustomFieldGroup ] ]
       in
       events |>> handle
     in
-    result |> HttpUtils.extract_happy_path_with_actions ~src req
+    Response.handle ~src req result
   in
   get_model handler req
 ;;
@@ -190,7 +181,7 @@ let changelog req =
     Lwt_result.ok
     @@ Helpers.Changelog.htmx_handler ~url (Custom_field.Group.Id.to_common group_id) req
   in
-  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+  Response.Htmx.handle ~src req result
 ;;
 
 module Access : sig

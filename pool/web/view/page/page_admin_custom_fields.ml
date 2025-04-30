@@ -63,9 +63,9 @@ let model_subtitle language model =
 
 let input_by_lang
       ?(required = false)
+      ?flash_fetcher
       language
       tenant_languages
-      flash_fetcher
       elm
       field
       value_fnc
@@ -84,7 +84,8 @@ let input_by_lang
        let id = Format.asprintf "%s-%s" (Field.show field) (Language.show lang) in
        let value =
          let open CCOption in
-         flash_fetcher (Format.asprintf "%s[%s]" (Field.show field) (Language.show lang))
+         bind flash_fetcher (fun f ->
+           f (Format.asprintf "%s[%s]" (Field.show field) (Language.show lang)))
          <+> (elm >|= value_fnc lang)
          |> value ~default:""
        in
@@ -112,11 +113,11 @@ let input_by_lang
 
 let field_form
       ?(custom_field : Custom_field.t option)
+      ?flash_fetcher
       current_model
       Pool_context.{ language; csrf; _ }
       groups
       tenant_languages
-      flash_fetcher
   =
   let open CCFun in
   let open Custom_field in
@@ -139,11 +140,11 @@ let field_form
       language
       ~additional_attributes:(if disabled then [ a_disabled () ] else [])
       ?append_html
+      ?flash_fetcher
       ?orientation
       ?hints
       field
       ~value:(custom_field |> CCOption.map_or ~default fnc)
-      ~flash_fetcher
   in
   let warning hint =
     div
@@ -156,7 +157,7 @@ let field_form
   let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
   let field_type_opt = CCOption.map field_type custom_field in
   let input_by_lang ?required =
-    input_by_lang ?required language tenant_languages flash_fetcher custom_field
+    input_by_lang ?required ?flash_fetcher language tenant_languages custom_field
   in
   let name_inputs =
     input_by_lang ~required:true Field.Name (fun lang f ->
@@ -363,7 +364,7 @@ let field_form
         ~option_formatter:FieldType.to_string
         ~add_empty:true
         ~required:true
-        ~flash_fetcher
+        ?flash_fetcher
         ()
   in
   let field_type_hints =
@@ -415,7 +416,7 @@ let field_form
                   CCList.find_opt Group.(fun (g : t) -> Id.equal g.id id) groups)
                 ~option_formatter:(name language)
                 ~add_empty:true
-                ~flash_fetcher
+                ?flash_fetcher
                 ())
           ; div
               [ h4
@@ -459,7 +460,7 @@ let field_form
               Field.AdminHint
               ~orientation:`Horizontal
               ~value:(value (admin_hint %> CCOption.map_or ~default:"" AdminHint.value))
-              ~flash_fetcher
+              ?flash_fetcher
           ; div
               ~a:[ a_class [ "grid-col-2" ] ]
               [ input_element
@@ -478,7 +479,7 @@ let field_form
                            duplicate_weighting field
                            >|= DuplicateWeighting.value
                            |> map_or ~default:"" CCInt.to_string))
-                  ~flash_fetcher
+                  ?flash_fetcher
               ]
           ; checkbox_element
               Field.Override
@@ -630,10 +631,9 @@ let field_buttons language csrf current_model field =
 let detail
       ?custom_field
       current_model
-      (Pool_context.{ language; csrf; _ } as context)
+      (Pool_context.{ language; csrf; flash_fetcher; _ } as context)
       groups
       sys_languages
-      flash_fetcher
   =
   let changelog_html =
     match custom_field with
@@ -655,7 +655,13 @@ let detail
         [ model_subtitle language current_model; button_form ]
     ; div
         ~a:[ a_class [ "stack-lg"; "gap-lg" ] ]
-        (field_form ?custom_field current_model context groups sys_languages flash_fetcher
+        (field_form
+           ?custom_field
+           current_model
+           ?flash_fetcher
+           context
+           groups
+           sys_languages
          @ [ changelog_html ])
     ]
 ;;
@@ -719,7 +725,7 @@ let index
             ]
         ; form
             ~a:
-              [ a_class [ "stack" ]
+              [ a_class [ "stack"; "gap" ]
               ; a_method `Post
               ; a_action
                   (Sihl.Web.externalize_path (Url.index_path current_model)
@@ -756,7 +762,7 @@ let index
     in
     div
       (h3
-         ~a:[ a_class [ "heading-3" ] ]
+         ~a:[ a_class [ "heading-3"; "has-gap" ] ]
          [ txt (Utils.text_to_string language I18n.SortUngroupedFields) ]
        :: sort_form)
   in
