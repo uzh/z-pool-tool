@@ -582,7 +582,7 @@ module Admin = struct
           ; get "/edit" ~middlewares:[ Access.update ] edit
           ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; get "/changelog" ~middlewares:[ Access.read ] changelog
-          ; post "/reset-invitations" ~middlewares:[ Access.update ] Invitations.reset
+          ; post "/reset-invitations" ~middlewares:[ Access.update ] reset_invitations
           ; post
               "/filter-statistics"
               ~middlewares:[ Access.read ]

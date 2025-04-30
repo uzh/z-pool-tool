@@ -401,6 +401,32 @@ let delete req =
   result |> Response.handle ~src req
 ;;
 
+let reset_invitations req =
+  let open Utils.Lwt_result.Infix in
+  let tags = Pool_context.Logger.Tags.req req in
+  let experiment_id = experiment_id req in
+  let redirect_path = HttpUtils.Url.Admin.experiment_path ~id:experiment_id () in
+  let result { Pool_context.database_label; user; _ } =
+    let* experiment =
+      Experiment.find database_label experiment_id |> Response.not_found_on_error
+    in
+    Response.bad_request_on_error show
+    @@
+    let events =
+      let open Cqrs_command.Experiment_command.ResetInvitations in
+      handle ~tags experiment |> Lwt.return
+    in
+    let handle events =
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Success.ResetInvitations ] ]
+    in
+    events |>> handle
+  in
+  Response.handle ~src req result
+;;
+
 let search = Helpers.Search.htmx_search_helper `Experiment
 
 module Filter = struct
@@ -434,12 +460,8 @@ module Filter = struct
         HttpUtils.find_id Experiment.Id.of_string Field.Experiment req
       in
       let redirect_path =
-        Format.asprintf
-          "/admin/experiments/%s/invitations"
-          (Experiment.Id.value experiment_id)
+        HttpUtils.Url.Admin.experiment_path ~id:experiment_id ~suffix:"invitations" ()
       in
-      Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-      @@
       let tags = Pool_context.Logger.Tags.req req in
       let* experiment = Experiment.find database_label experiment_id in
       let events =
@@ -454,7 +476,7 @@ module Filter = struct
       in
       events |>> handle
     in
-    result |> HttpUtils.extract_happy_path ~src req
+    Response.Htmx.handle ~src req result
   ;;
 end
 
