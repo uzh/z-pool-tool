@@ -44,13 +44,11 @@ let form ?id req custom_field =
        in
        let* custom_field = req |> get_field_id |> Custom_field.find database_label in
        let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.CustomFieldOptions.detail
          ?custom_field_option
          custom_field
          context
          sys_languages
-         flash_fetcher
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
