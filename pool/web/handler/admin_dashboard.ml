@@ -1,3 +1,5 @@
+module Response = Http_response
+
 let src = Logs.Src.create "handler.admin.dashboard"
 let create_layout req = General.create_tenant_layout req
 
@@ -18,9 +20,11 @@ let sessions_query_from_req req =
 let index req =
   let result ({ Pool_context.database_label; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    Utils.Lwt_result.map_error (fun err -> err, "/error")
+    let* actor =
+      Pool_context.Utils.find_authorizable database_label user >|- Response.not_found
+    in
+    Response.bad_request_render_error context
     @@
-    let* actor = Pool_context.Utils.find_authorizable database_label user in
     let%lwt clean_layout =
       let open Guard in
       let open CCList in
@@ -59,7 +63,7 @@ let index req =
     |> create_layout req ~active_navigation:"/admin/dashboard" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let htmx_session_helper table req =
@@ -84,7 +88,7 @@ let htmx_session_helper table req =
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
-  result |> Http_utils.Htmx.handle_error_message req
+  Response.Htmx.handle ~src req result
 ;;
 
 let incomplete_sessions = htmx_session_helper `incomplete
@@ -97,7 +101,7 @@ let statistics req =
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
-  result |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 module Access : sig

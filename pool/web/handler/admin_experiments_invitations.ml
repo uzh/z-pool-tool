@@ -11,54 +11,54 @@ let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let index req =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
-  let error_path = Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id) in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* experiment = id |> Experiment.find database_label in
-       let common_exp_id = Experiment.(experiment |> id |> Id.to_common) in
-       let%lwt key_list = Filter.all_keys database_label in
-       let%lwt template_list = Filter.find_all_templates database_label () in
-       let%lwt query_experiments, query_tags =
-         match experiment |> Experiment.filter with
-         | None -> Lwt.return ([], [])
-         | Some filter ->
-           Lwt.both
-             (filter
-              |> Filter.all_query_experiments
-              |> Experiment.search_multiple_by_id database_label)
-             (filter |> Filter.all_query_tags |> Tags.find_multiple database_label)
-       in
-       let* filtered_contacts =
-         if Sihl.Configuration.is_production ()
-         then Lwt_result.return None
-         else
-           Filter.(
-             find_filtered_contacts
-               ~limit:50
-               database_label
-               (Matcher common_exp_id)
-               (experiment |> Experiment.filter))
-           >|+ CCOption.pure
-       in
-       let* statistics =
-         let query =
-           experiment.Experiment.filter |> CCOption.map (fun f -> f.Filter.query)
-         in
-         Statistics.ExperimentFilter.create database_label experiment query
-       in
-       Page.Admin.Experiments.invitations
-         experiment
-         key_list
-         template_list
-         query_experiments
-         query_tags
-         statistics
-         filtered_contacts
-         context
-       >|> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+    let* experiment = id |> Experiment.find database_label >|- Response.not_found in
+    Response.bad_request_render_error context
+    @@
+    let common_exp_id = Experiment.(experiment |> id |> Id.to_common) in
+    let%lwt key_list = Filter.all_keys database_label in
+    let%lwt template_list = Filter.find_all_templates database_label () in
+    let%lwt query_experiments, query_tags =
+      match experiment |> Experiment.filter with
+      | None -> Lwt.return ([], [])
+      | Some filter ->
+        Lwt.both
+          (filter
+           |> Filter.all_query_experiments
+           |> Experiment.search_multiple_by_id database_label)
+          (filter |> Filter.all_query_tags |> Tags.find_multiple database_label)
+    in
+    let* filtered_contacts =
+      if Sihl.Configuration.is_production ()
+      then Lwt_result.return None
+      else
+        Filter.(
+          find_filtered_contacts
+            ~limit:50
+            database_label
+            (Matcher common_exp_id)
+            (experiment |> Experiment.filter))
+        >|+ CCOption.pure
+    in
+    let* statistics =
+      let query =
+        experiment.Experiment.filter |> CCOption.map (fun f -> f.Filter.query)
+      in
+      Statistics.ExperimentFilter.create database_label experiment query
+    in
+    Page.Admin.Experiments.invitations
+      experiment
+      key_list
+      template_list
+      query_experiments
+      query_tags
+      statistics
+      filtered_contacts
+      context
+    >|> create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
-  result |> extract_happy_path req
+  Response.handle ~src ~enable_cache:false req result
 ;;
 
 let sent_invitations req =
@@ -106,7 +106,8 @@ let create req =
     Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    let* experiment = Experiment.find database_label id |> Response.not_found_on_error in
+    Response.bad_request_on_error index
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* contact_ids =
@@ -118,7 +119,6 @@ let create req =
       else Ok list
     in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* experiment = Experiment.find database_label id in
     let* contacts =
       let find_missing contacts =
         let retrieved_ids = CCList.map Contact.id contacts in
@@ -164,7 +164,7 @@ let create req =
     in
     events |> Lwt_result.lift |>> handle
   in
-  result |> extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 let resend req =
@@ -174,16 +174,16 @@ let resend req =
     experiment_id req, HttpUtils.find_id Pool_common.Id.of_string Field.Invitation req
   in
   let redirect_path =
-    Format.asprintf
-      "/admin/experiments/%s/invitations"
-      (Experiment.Id.value experiment_id)
+    HttpUtils.Url.Admin.experiment_path ~id:experiment_id ~suffix:"invitations" ()
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    let* invitation = Invitation.find database_label id |> Response.not_found_on_error in
+    let* experiment =
+      Experiment.find database_label experiment_id |> Response.not_found_on_error
+    in
+    Response.bad_request_on_error index
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* invitation = Invitation.find database_label id in
-    let* experiment = Experiment.find database_label experiment_id in
     let%lwt create_email =
       Message_template.ExperimentInvitation.prepare tenant experiment
     in
@@ -199,33 +199,7 @@ let resend req =
     in
     events |>> handle
   in
-  result |> extract_happy_path req
-;;
-
-let reset req =
-  let open Utils.Lwt_result.Infix in
-  let tags = Pool_context.Logger.Tags.req req in
-  let experiment_id = experiment_id req in
-  let redirect_path =
-    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
-  in
-  let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-    @@
-    let* experiment = Experiment.find database_label experiment_id in
-    let events =
-      let open Cqrs_command.Experiment_command.ResetInvitations in
-      handle ~tags experiment |> Lwt.return
-    in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
-      Http_utils.redirect_to_with_actions
-        redirect_path
-        [ HttpMessage.set ~success:[ Success.ResetInvitations ] ]
-    in
-    events |>> handle
-  in
-  result |> extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 module Access : sig
