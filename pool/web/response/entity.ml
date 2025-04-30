@@ -1,5 +1,6 @@
 open Pool_message
 
+let default_language = Pool_common.Language.En
 let map_error = Utils.Lwt_result.map_error
 
 type url_encoded = (string * string list) list
@@ -18,9 +19,9 @@ let error_message = function
 let access_denied = AccessDenied
 let bad_request ?urlencoded f err = BadRequest (f, urlencoded, err)
 
-let bad_request_on_error ?urlencoded fallback req =
-  map_error (bad_request ?urlencoded fallback) req
+let bad_request_on_error ?urlencoded fallback fnc =
+  map_error (bad_request ?urlencoded fallback) fnc
 ;;
 
 let not_found err = NotFound err
-let not_found_on_error req = map_error not_found req
+let not_found_on_error fnc = map_error not_found fnc

@@ -90,7 +90,9 @@ let index ({ Pool_context.language; _ } as context) ?contact possible_duplicates
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt title ]; list context ?contact possible_duplicates ]
+    [ h1 ~a:[ a_class [ "has-gap" ] ] [ txt title ]
+    ; list context ?contact possible_duplicates
+    ]
 ;;
 
 let show
@@ -135,7 +137,7 @@ let show
       in
       div
         ~a:[ a_class [ "flexrow"; "justify-between"; "align-center"; "flex-gap" ] ]
-        [ div [ h1 [ txt title ] ]; ignore_btn ])
+        [ h1 [ txt title ]; ignore_btn ])
     else
       h1
         ~a:[ a_class [ "has-icon" ] ]
@@ -257,12 +259,13 @@ let show
         th [ txt (field_to_string field) ] :: cells |> tr ~a:attr)
     in
     head @ rows @ field_rows @ informative_cells
-    |> table ~a:[ a_class [ "table"; "striped" ] ]
+    |> table ~a:[ a_class [ "gap"; "table"; "striped" ] ]
   in
   let body =
     if is_merge
     then
       div
+        ~a:[ a_class [ "gap" ] ]
         [ p
             [ Pool_common.(
                 Utils.hint_to_string language I18n.MergeContacts

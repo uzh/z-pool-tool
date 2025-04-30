@@ -57,7 +57,7 @@ let list { Pool_context.language; csrf; _ } (api_keys, query) =
             ]
           [ Input.csrf_element csrf ()
           ; button
-              ~a:[ a_button_type `Submit; a_class [ "btn"; "error" ] ]
+              ~a:[ a_button_type `Submit; a_class [ "btn"; "error"; "is-icon" ] ]
               [ Icon.(CloseCircle |> to_html) ]
           ]
     in
@@ -86,7 +86,7 @@ let index (Pool_context.{ language; _ } as context) api_keys =
     ]
 ;;
 
-let form { Pool_context.csrf; language; _ } ?flash_fetcher ~control ?api_key () =
+let form { Pool_context.csrf; language; flash_fetcher; _ } ~control ?api_key () =
   let open Api_key in
   let open CCOption.Infix in
   let action =
@@ -134,18 +134,17 @@ let form { Pool_context.csrf; language; _ } ?flash_fetcher ~control ?api_key () 
       ]
 ;;
 
-let create ({ Pool_context.language; _ } as context) ?flash_fetcher ?api_key () =
+let create ({ Pool_context.language; _ } as context) ?api_key () =
   let control = Control.Create (Some Field.ApiKey) in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 [ txt (Pool_common.Utils.control_to_string language control) ]
-    ; form context ?flash_fetcher ~control ?api_key ()
+    ; form context ~control ?api_key ()
     ]
 ;;
 
 let edit
       ({ Pool_context.language; csrf; _ } as context)
-      ?flash_fetcher
       api_key
       target_id
       available_roles
@@ -165,7 +164,7 @@ let edit
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ h1 [ txt (Pool_common.Utils.control_to_string language control) ]
-    ; form context ?flash_fetcher ~control ~api_key ()
+    ; form context ~control ~api_key ()
     ; Partials.roles_list
         ~is_edit:true
         ~top_element:[ roles_form ]

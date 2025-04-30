@@ -355,12 +355,13 @@ let delete req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =
     let experiment_id = experiment_id req in
+    let* experiment =
+      Experiment.find database_label experiment_id |> Response.not_found_on_error
+    in
     let experiments_path = "/admin/experiments" in
-    Utils.Lwt_result.map_error (fun err ->
-      err, Format.asprintf "%s/%s" experiments_path (Experiment.Id.value experiment_id))
+    Response.bad_request_on_error show
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* experiment = Experiment.find database_label experiment_id in
     let%lwt session_count = Experiment.session_count database_label experiment_id in
     let%lwt mailings = Mailing.find_by_experiment database_label experiment_id in
     let%lwt assistants =
@@ -397,7 +398,7 @@ let delete req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  result |> Response.handle ~src req
 ;;
 
 let search = Helpers.Search.htmx_search_helper `Experiment

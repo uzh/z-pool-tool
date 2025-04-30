@@ -43,9 +43,12 @@ let index req =
 
 let show req =
   let result ({ Pool_context.database_label; _ } as context) =
-    Lwt_result.map_error (fun err -> err, duplicate_path ())
-    @@
     let open Duplicate_contacts in
+    let* duplicate =
+      duplicate_id req |> find database_label |> Response.not_found_on_error
+    in
+    Response.bad_request_render_error context
+    @@
     let%lwt fields =
       Custom_field.find_by_model database_label Custom_field.Model.Contact
     in
@@ -55,24 +58,26 @@ let show req =
       |> Custom_field.find_to_merge_contact database_label
       ||> CCPair.make contact
     in
-    let* duplicate = duplicate_id req |> find database_label in
     let%lwt contact_a = get_fields duplicate.contact_a in
     let%lwt contact_b = get_fields duplicate.contact_b in
     Page.show context fields contact_a contact_b duplicate
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 let ignore req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let id = duplicate_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, duplicate_path ~id ())
+    let* duplicate =
+      duplicate_id req
+      |> Duplicate_contacts.find database_label
+      |> Response.not_found_on_error
+    in
+    Response.bad_request_on_error show
     @@
-    let* duplicate = Duplicate_contacts.find database_label id in
     let* () =
       let open Cqrs_command.Duplicate_contacts_command.Ignore in
       handle ~tags duplicate
@@ -84,21 +89,24 @@ let ignore req =
       [ Http_utils.Message.set ~success:Pool_message.[ Success.Updated Field.Duplicate ] ]
     |> Lwt_result.ok
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let merge req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let id = duplicate_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, duplicate_path ~id ())
-    @@
-    let open Duplicate_contacts in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
     in
-    let* duplicate = Duplicate_contacts.find database_label id in
+    let* duplicate =
+      duplicate_id req
+      |> Duplicate_contacts.find database_label
+      |> Response.not_found_on_error
+    in
+    Response.bad_request_on_error ~urlencoded show
+    @@
+    let open Duplicate_contacts in
     let%lwt fields =
       Custom_field.find_by_model database_label Custom_field.Model.Contact
     in
@@ -119,7 +127,7 @@ let merge req =
     in
     data |> merge ?user_uuid:(Pool_event.user_uuid user) database_label |>> redirect
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 module Access : sig

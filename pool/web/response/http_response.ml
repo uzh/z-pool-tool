@@ -8,6 +8,8 @@ module Page = Http_response_page
 let src = Logs.Src.create "web.handler.response"
 let set_response_code status response = Rock.Response.{ response with status }
 
+(** TODO: Should values like password be filtered here or simply ignored in the UI? See admin create form
+*)
 let urlencoded_to_flash urlencoded =
   let open CCList in
   let values =

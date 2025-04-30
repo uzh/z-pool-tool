@@ -115,7 +115,7 @@ let roles_list ?is_edit ?top_element ({ Pool_context.language; _ } as context) t
   %> roles_section ?top_element language
 ;;
 
-let new_form { Pool_context.language; csrf; _ } =
+let new_form { Pool_context.language; csrf; flash_fetcher; _ } =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
@@ -134,7 +134,7 @@ let new_form { Pool_context.language; csrf; _ } =
              ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
              (CCList.map
                 (fun (field, input) ->
-                   Input.input_element ~required:true language input field)
+                   Input.input_element ?flash_fetcher ~required:true language input field)
                 Field.
                   [ Email, `Email
                   ; Password, `Password

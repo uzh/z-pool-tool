@@ -1,8 +1,8 @@
 open Pool_message
 open Utils.Lwt_result.Infix
+open Entity
 
 let show_error = Pool_common.Utils.error_to_string
-let default_language = Pool_common.Language.En
 
 let make_layout req context page =
   let open Layout in

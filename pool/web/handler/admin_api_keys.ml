@@ -44,7 +44,7 @@ let index req =
 let show req =
   let open Api_key in
   let result ({ Pool_context.database_label; _ } as context) =
-    Lwt_result.map_error (fun err -> err, api_key_path ())
+    Response.bad_request_render_error context
     @@
     let* api_key = api_key_id req |> find database_label in
     let target_id = api_key.id |> Guard.Uuid.target_of Id.value in
@@ -53,27 +53,24 @@ let show req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> extract_happy_path req
+  result |> Response.handle ~src req
 ;;
 
 let new_form req =
   let result context =
-    Lwt_result.map_error (fun err -> err, api_key_path ())
-    @@
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.ApiKey.create context ~flash_fetcher ()
+    Page.Admin.ApiKey.create context ()
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
+    |> Response.bad_request_render_error context
   in
-  result |> extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 let edit req =
   let open Api_key in
   let result ({ Pool_context.database_label; user; _ } as context) =
-    Lwt_result.map_error (fun err -> err, api_key_path ())
+    Response.bad_request_render_error context
     @@
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* api_key = api_key_id req |> find database_label in
     let%lwt actor =
       Pool_context.Utils.find_authorizable_opt ~admin_only:true database_label user
@@ -87,17 +84,11 @@ let edit req =
       ||> CCList.map fst
     in
     let%lwt granted_roles = find_granted_roles database_label api_key in
-    Page.Admin.ApiKey.edit
-      context
-      ~flash_fetcher
-      api_key
-      target_id
-      available_roles
-      granted_roles
+    Page.Admin.ApiKey.edit context api_key target_id available_roles granted_roles
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 let create req =
@@ -106,8 +97,7 @@ let create req =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, api_key_path ~suffix:"new" (), [ Http_utils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let id = Api_key.Id.create () in
     let events =
@@ -123,7 +113,7 @@ let create req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
@@ -131,14 +121,11 @@ let update req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
-  let id = api_key_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , api_key_path ~id ~suffix:"edit" ()
-      , [ Http_utils.urlencoded_to_flash urlencoded ] ))
+    let id = api_key_id req in
+    let* api_key = Api_key.find database_label id |> Response.not_found_on_error in
+    Response.bad_request_on_error ~urlencoded edit
     @@
-    let* api_key = Api_key.find database_label id in
     let events =
       let open CCResult in
       let open Cqrs_command.Api_key_command.Update in
@@ -152,16 +139,16 @@ let update req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let disable req =
   let tags = Pool_context.Logger.Tags.req req in
-  let id = api_key_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, api_key_path ())
+    let id = api_key_id req in
+    let* api_key = Api_key.find database_label id |> Response.not_found_on_error in
+    Response.bad_request_on_error index
     @@
-    let* api_key = Api_key.find database_label id in
     let events =
       let open Cqrs_command.Api_key_command.Disable in
       handle ~tags:Logs.Tag.empty api_key |> Lwt_result.lift
@@ -174,7 +161,7 @@ let disable req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let handle_toggle_role req =
@@ -184,7 +171,7 @@ let handle_toggle_role req =
     let target_id = Guard.Uuid.target_of Id.value api_key.id in
     Helpers.Guard.handle_toggle_role target_id req |> Lwt_result.ok
   in
-  result |> Http_utils.Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 let search_role_entities req =
@@ -193,22 +180,22 @@ let search_role_entities req =
     let* target = find_authorizable_target database_label api_key in
     Helpers.Guard.search_role_entities target req |> Lwt_result.ok
   in
-  result |> Http_utils.Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 let grant_role req =
   let open Api_key in
   let open Utils.Lwt_result.Infix in
-  let key_id = api_key_id req in
-  let redirect_path = Http_utils.Url.Admin.api_key_path ~suffix:"edit" ~id:key_id () in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    let key_id = api_key_id req in
+    let* api_key = find database_label key_id |> Response.not_found_on_error in
+    Response.bad_request_on_error edit
     @@
-    let* api_key = find database_label key_id in
+    let redirect_path = api_key_path ~suffix:"edit" ~id:key_id () in
     let target_id = Guard.Uuid.actor_of Id.value api_key.id in
     Helpers.Guard.grant_role ~redirect_path ~user ~target_id database_label req
   in
-  result |> extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 let revoke_role ({ Rock.Request.target; _ } as req) =
@@ -218,13 +205,13 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
     CCString.replace ~which:`Right ~sub:"/revoke-role" ~by:"/edit" target
   in
   let result { Pool_context.database_label; user; _ } =
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    let* api_key = api_key_id req |> find database_label |> Response.not_found_on_error in
+    Response.bad_request_on_error edit
     @@
-    let* api_key = api_key_id req |> find database_label in
     let target_id = Guard.Uuid.actor_of Id.value api_key.id in
     Helpers.Guard.revoke_role ~redirect_path ~user ~target_id database_label req
   in
-  result |> extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 module Access : sig
