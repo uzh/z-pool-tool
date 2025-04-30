@@ -591,7 +591,7 @@ module Admin = struct
           ; get
               (Format.asprintf "/contact-history/%s" (add_key Field.Contact))
               ~middlewares:[ Contacts.Access.read ]
-              Contacts.experiment_history
+              Contacts.experiment_history_htmx
           ; choose ~scope:"/assistants" assistants
           ; choose ~scope:"/experimenter" experimenter
           ; choose ~scope:"/invitations" invitations
