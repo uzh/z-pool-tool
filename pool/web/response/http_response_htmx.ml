@@ -1,8 +1,39 @@
 open Utils.Lwt_result.Infix
+open Entity
 module Page = Http_response_page
 
 let src = Logs.Src.create "web.handler.response.htmx"
 let headers = Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
+let notification_id = "hx-notification"
+
+let notification lang ((fnc : Pool_common.Language.t -> string), classname) =
+  let open Tyxml_html in
+  div
+    ~a:
+      [ a_class [ "notification-fixed"; "fade-out" ]
+      ; a_user_data "hx-swap-oob" "true"
+      ; a_id notification_id
+      ]
+    [ div ~a:[ a_class [ "notification"; classname ] ] [ txt (fnc lang) ] ]
+;;
+
+let error_notification lang err =
+  let open Tyxml.Html in
+  let html = [ p [ txt Pool_common.(Utils.error_to_string lang err) ] ] in
+  Component.Notification.create lang `Error html
+  |> CCList.return
+  |> div
+       ~a:
+         [ a_class [ "notification-fixed"; "fade-out" ]
+         ; a_user_data "hx-swap-oob" "true"
+         ; a_id notification_id
+         ]
+;;
+
+let inline_error lang err =
+  let open Tyxml_html in
+  div ~a:[ a_class [ "color-red" ] ] [ txt Pool_common.(Utils.error_to_string lang err) ]
+;;
 
 let html_to_plain_text_response ?(status = `OK) html =
   html
@@ -59,4 +90,30 @@ let index_handler
   >>= result
   ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id
   ||> CCResult.get_lazy Page.internal_server_error_response
+;;
+
+(** By default, htmx only handles 200 status codes
+
+    - It would be possible to handle them manually https://htmx.org/events/#htmx:responseError
+*)
+let handle ?(src = src) ?(error_as_notification = false) req result =
+  let context = Pool_context.find req in
+  let tags = Pool_context.Logger.Tags.req req in
+  let log_error = Pool_common.Utils.with_log_error ~src ~tags in
+  match context with
+  | Ok ({ Pool_context.language; _ } as context) ->
+    result context
+    ||> CCResult.get_lazy (fun error ->
+      let error = log_error error in
+      let html =
+        if error_as_notification
+        then error_notification language error
+        else inline_error language error
+      in
+      html_to_plain_text_response html)
+  | Error error ->
+    log_error error
+    |> inline_error default_language
+    |> html_to_plain_text_response
+    |> Lwt.return
 ;;

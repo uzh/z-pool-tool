@@ -9,11 +9,6 @@ type http_error =
   | NotFound of Pool_message.Error.t
 
 val access_denied : http_error
-val not_found : Pool_message.Error.t -> http_error
-
-val not_found_on_error
-  :  ('a, Pool_message.Error.t) Lwt_result.t
-  -> ('a, http_error) Lwt_result.t
 
 val bad_request
   :  ?urlencoded:url_encoded
@@ -36,6 +31,12 @@ val bad_request_on_error
 val bad_request_render_error
   :  Pool_context.t
   -> ('a, Pool_message.Error.t) Lwt_result.t
+  -> ('a, http_error) Lwt_result.t
+
+val not_found : Pool_message.Error.t -> http_error
+
+val not_found_on_error
+  :  ('a, Pool_message.Error.t) Lwt_result.t
   -> ('a, http_error) Lwt_result.t
 
 val handle
@@ -96,5 +97,12 @@ module Htmx : sig
     -> (Pool_context.t
         -> Query.t
         -> ('a Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
+    -> Rock.Response.t Lwt.t
+
+  val handle
+    :  ?src:Logs.src
+    -> ?error_as_notification:bool
+    -> Rock.Request.t
+    -> (Pool_context.t -> (Rock.Response.t, Pool_message.Error.t) Lwt_result.t)
     -> Rock.Response.t Lwt.t
 end

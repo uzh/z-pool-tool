@@ -166,6 +166,7 @@ let revoke_role ~redirect_path ~user ~target_id database_label req =
   role >>= events |>> handle
 ;;
 
+(* TODO: Make sure handle_error_message is not called twice, see admin_api_key.ml *)
 let handle_toggle_role target_id req =
   let result (_ : Pool_context.t) =
     Sihl.Web.Request.to_urlencoded req

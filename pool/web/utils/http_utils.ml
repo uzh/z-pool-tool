@@ -432,8 +432,12 @@ module Htmx = struct
       res
       |> CCResult.get_lazy (fun error_msg ->
         let err = error_msg |> Pool_common.Utils.with_log_error in
-        (fun fnc -> html_to_plain_text_response (fnc language err))
-        @@ if error_as_notification then error_notification else inline_error)
+        let html =
+          if error_as_notification
+          then error_notification language err
+          else inline_error language err
+        in
+        html_to_plain_text_response html)
       |> Lwt.return
     | Error err -> context_error ~src ~tags err
   ;;
