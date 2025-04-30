@@ -4,6 +4,7 @@ module Command = Cqrs_command.Contact_command
 module HttpUtils = Http_utils
 module Conformist = Pool_conformist
 module User = Pool_user
+module Response = Http_response
 
 let src = Logs.Src.create "handler.contact.user_profile"
 let create_layout = Contact_general.create_layout
@@ -430,12 +431,10 @@ let toggle_paused req =
   let redirect_path = "/user/personal-details" in
   let tags = tags req in
   let result context =
-    let* contact =
-      Pool_context.find_contact context
-      |> Lwt_result.lift
-      >|- fun err -> err, redirect_path
-    in
+    Response.bad_request_on_error personal_details
+    @@
+    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     Helpers.ContactUpdate.toggle_paused context redirect_path contact tags
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;

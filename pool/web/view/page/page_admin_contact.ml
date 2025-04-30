@@ -26,7 +26,7 @@ let enroll_contact_path ?suffix contact_id =
 
 let heading_with_icons contact =
   h1
-    ~a:[ a_class [ "heading-1" ] ]
+    ~a:[ a_class [ "has-gap" ] ]
     [ Status.identity_with_icons Pool_common.Language.En ~context:`All true contact ]
 ;;
 
