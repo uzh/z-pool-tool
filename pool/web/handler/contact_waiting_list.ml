@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.contact.waiting_list"
 let create_layout = Contact_general.create_layout
@@ -14,11 +15,17 @@ let handle req action =
     Format.asprintf "/experiments/%s" (Experiment.Id.value experiment_id)
   in
   let result ({ Pool_context.database_label; user; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    let* contact =
+      Pool_context.find_contact context
+      |> Lwt_result.lift
+      >|- CCFun.const Response.access_denied
+    in
+    let* experiment =
+      Experiment.find_public database_label experiment_id contact >|- Response.not_found
+    in
+    Response.bad_request_on_error Contact_experiment.show
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-    let* experiment = Experiment.find_public database_label experiment_id contact in
     let events =
       let open Cqrs_command.Waiting_list_command in
       match action with
@@ -54,7 +61,7 @@ let handle req action =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let create req = handle req `Create

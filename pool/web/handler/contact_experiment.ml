@@ -1,3 +1,4 @@
+open Utils.Lwt_result.Infix
 open Pool_message
 module HttpUtils = Http_utils
 module Response = Http_response
@@ -8,67 +9,70 @@ let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
 let experiment_path = HttpUtils.Url.Contact.experiment_path
 
+let context_user context =
+  Pool_context.find_contact context
+  |> Lwt_result.lift
+  >|- CCFun.const Response.access_denied
+;;
+
 let dashboard req =
-  let open Utils.Lwt_result.Infix in
-  let error_path = "/" in
   let result ({ Pool_context.database_label; language; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let%lwt upcoming_sessions =
-         let open Session in
-         let query =
-           let open Query in
-           let filter =
-             let open Filter in
-             Condition.[ Checkbox (Public.column_past, true) ]
-           in
-           let pagination = Pagination.create ~limit:2 ~page:0 () in
-           create ~pagination ~filter ()
-         in
-         query_by_contact ~query database_label contact
-       in
-       let%lwt experiment_list =
-         Experiment.find_upcoming database_label (`Dashboard 2) contact `OnSite
-       in
-       let%lwt online_studies =
-         Experiment.find_upcoming database_label (`Dashboard 2) contact `Online
-       in
-       let%lwt custom_fields_anwsered =
-         Custom_field.all_answered database_label (Contact.id contact)
-       in
-       let%lwt waiting_list =
-         Experiment.find_pending_waitinglists_by_contact database_label contact
-       in
-       let%lwt i18n =
-         let find key = I18n.find_by_key database_label key language in
-         let%lwt upcoming_sessions = find I18n.Key.DashboardUpcomingSessions in
-         let%lwt online_studies = find I18n.Key.DashboardOnlineStudies in
-         let%lwt experiment_registration =
-           find I18n.Key.DashboardExperimentRegistration
-         in
-         let%lwt experiment_history = find I18n.Key.DashboardExperimentHistory in
-         let%lwt waiting_list = find I18n.Key.DashboardWaitinglist in
-         Lwt.return
-           Page.Contact.Experiment.
-             { upcoming_sessions
-             ; online_studies
-             ; experiment_registration
-             ; experiment_history
-             ; waiting_list
-             }
-       in
-       Page.Contact.Experiment.index
-         experiment_list
-         online_studies
-         upcoming_sessions
-         waiting_list
-         custom_fields_anwsered
-         i18n
-         context
-       |> create_layout ~active_navigation:"/experiments" req context
-       >|+ Sihl.Web.Response.of_html
+    let* contact = context_user context in
+    Response.bad_request_render_error context
+    @@
+    let%lwt upcoming_sessions =
+      let open Session in
+      let query =
+        let open Query in
+        let filter =
+          let open Filter in
+          Condition.[ Checkbox (Public.column_past, true) ]
+        in
+        let pagination = Pagination.create ~limit:2 ~page:0 () in
+        create ~pagination ~filter ()
+      in
+      query_by_contact ~query database_label contact
+    in
+    let%lwt experiment_list =
+      Experiment.find_upcoming database_label (`Dashboard 2) contact `OnSite
+    in
+    let%lwt online_studies =
+      Experiment.find_upcoming database_label (`Dashboard 2) contact `Online
+    in
+    let%lwt custom_fields_anwsered =
+      Custom_field.all_answered database_label (Contact.id contact)
+    in
+    let%lwt waiting_list =
+      Experiment.find_pending_waitinglists_by_contact database_label contact
+    in
+    let%lwt i18n =
+      let find key = I18n.find_by_key database_label key language in
+      let%lwt upcoming_sessions = find I18n.Key.DashboardUpcomingSessions in
+      let%lwt online_studies = find I18n.Key.DashboardOnlineStudies in
+      let%lwt experiment_registration = find I18n.Key.DashboardExperimentRegistration in
+      let%lwt experiment_history = find I18n.Key.DashboardExperimentHistory in
+      let%lwt waiting_list = find I18n.Key.DashboardWaitinglist in
+      Lwt.return
+        Page.Contact.Experiment.
+          { upcoming_sessions
+          ; online_studies
+          ; experiment_registration
+          ; experiment_history
+          ; waiting_list
+          }
+    in
+    Page.Contact.Experiment.index
+      experiment_list
+      online_studies
+      upcoming_sessions
+      waiting_list
+      custom_fields_anwsered
+      i18n
+      context
+    |> create_layout ~active_navigation:"/experiments" req context
+    >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let index_handler page_context req =
@@ -205,13 +209,14 @@ let show_onsite_study
 
 let show req =
   let open Utils.Lwt_result.Infix in
-  let error_path = "/experiments" in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@
     let id = experiment_id req in
-    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-    let* experiment = Experiment.find_public database_label id contact in
+    let* contact = context_user context in
+    let* experiment =
+      Experiment.find_public database_label id contact >|- Response.not_found
+    in
+    Response.bad_request_render_error context
+    @@
     let%lwt matches_filter =
       Experiment.Public.contact_matches_filter database_label experiment contact
     in
@@ -224,7 +229,7 @@ let show req =
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 module OnlineSurvey = struct
@@ -232,16 +237,21 @@ module OnlineSurvey = struct
 
   let redirect req =
     let open Utils.Lwt_result.Infix in
-    let error_path = "/experiments" in
     let result ({ Pool_context.database_label; user; _ } as context) =
-      Utils.Lwt_result.map_error (fun err -> err, error_path)
+      let experiment_id = experiment_id req in
+      let* contact =
+        Pool_context.find_contact context
+        |> Lwt_result.lift
+        >|- CCFun.const Response.access_denied
+      in
+      let* experiment =
+        Experiment.find_public database_label experiment_id contact >|- Response.not_found
+      in
+      Response.bad_request_render_error context
       @@
       let open Experiment in
       let tags = Pool_context.Logger.Tags.req req in
-      let experiment_id = experiment_id req in
       let tenant = Pool_context.Tenant.get_tenant_exn req in
-      let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-      let* experiment = Experiment.find_public database_label experiment_id contact in
       let%lwt assignment =
         let open Utils.Lwt_result.Infix in
         Assignment.Public.find_all_by_experiment database_label experiment_id contact
@@ -286,22 +296,24 @@ module OnlineSurvey = struct
       in
       events |> handle
     in
-    result |> HttpUtils.extract_happy_path ~src req
+    Response.handle ~src req result
   ;;
 
   let submit req =
     let open Utils.Lwt_result.Infix in
-    let error_path = "/" in
     let result ({ Pool_context.database_label; user; _ } as context) =
-      Utils.Lwt_result.map_error (fun err -> err, error_path)
-      @@
-      let tags = Pool_context.Logger.Tags.req req in
       let assignment_id = assignment_id req in
       let experiment_id = experiment_id req in
-      let* assignment = Assignment.find database_label assignment_id in
+      let* assignment =
+        Assignment.find database_label assignment_id >|- Response.not_found
+      in
       let* experiment =
         Experiment.find_public database_label experiment_id assignment.Assignment.contact
+        >|- Response.not_found
       in
+      Response.bad_request_render_error context
+      @@
+      let tags = Pool_context.Logger.Tags.req req in
       let query = Sihl.Web.Request.query_list req in
       let* events =
         let open Command.Submit in
@@ -317,6 +329,6 @@ module OnlineSurvey = struct
       in
       events |> handle >|> return
     in
-    result |> HttpUtils.extract_happy_path ~src req
+    Response.handle ~src req result
   ;;
 end

@@ -14,46 +14,45 @@ let contact_info_path = "/user/contact-information"
 let show usage req =
   let result ({ Pool_context.database_label; language; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    Utils.Lwt_result.map_error (fun err -> err, "/login")
-    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let create_layout active_navigation html =
-         html
-         |> create_layout ~active_navigation req context
-         >|+ Sihl.Web.Response.of_html
-       in
-       match usage with
-       | `ContactInformation ->
-         let was_reset =
-           let open CCOption in
-           Sihl.Web.Request.query_list req
-           |> CCList.assoc_opt ~eq:CCString.equal "reset"
-           >>= CCList.head_opt
-           |> CCOption.is_some
-         in
-         let%lwt verification =
-           Contact.find_cell_phone_verification_by_contact database_label contact
-         in
-         Page.Contact.contact_information contact context verification was_reset
-         |> create_layout contact_info_path
-       | `LoginInformation ->
-         let%lwt password_policy =
-           I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
-         in
-         Page.Contact.login_information contact context password_policy
-         |> create_layout "/user/login-information"
-       | `PersonalDetails ->
-         let* tenant_languages =
-           Pool_context.Tenant.find req
-           |> Lwt_result.lift
-           >|+ fun c -> c.Pool_context.Tenant.tenant_languages
-         in
-         let%lwt custom_fields =
-           Custom_field.find_all_by_contact database_label user (Contact.id contact)
-         in
-         Page.Contact.personal_details contact custom_fields tenant_languages context
-         |> create_layout "/user/personal-details"
+    Response.bad_request_render_error context
+    @@
+    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+    let create_layout active_navigation html =
+      html |> create_layout ~active_navigation req context >|+ Sihl.Web.Response.of_html
+    in
+    match usage with
+    | `ContactInformation ->
+      let was_reset =
+        let open CCOption in
+        Sihl.Web.Request.query_list req
+        |> CCList.assoc_opt ~eq:CCString.equal "reset"
+        >>= CCList.head_opt
+        |> CCOption.is_some
+      in
+      let%lwt verification =
+        Contact.find_cell_phone_verification_by_contact database_label contact
+      in
+      Page.Contact.contact_information contact context verification was_reset
+      |> create_layout contact_info_path
+    | `LoginInformation ->
+      let%lwt password_policy =
+        I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
+      in
+      Page.Contact.login_information contact context password_policy
+      |> create_layout "/user/login-information"
+    | `PersonalDetails ->
+      let* tenant_languages =
+        Pool_context.Tenant.find req
+        |> Lwt_result.lift
+        >|+ fun c -> c.Pool_context.Tenant.tenant_languages
+      in
+      let%lwt custom_fields =
+        Custom_field.find_all_by_contact database_label user (Contact.id contact)
+      in
+      Page.Contact.personal_details contact custom_fields tenant_languages context
+      |> create_layout "/user/personal-details"
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let personal_details = show `PersonalDetails
@@ -68,8 +67,7 @@ let update_email req =
     =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
-    Utils.Lwt_result.map_error (fun msg ->
-      HttpUtils.(msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
+    Response.bad_request_on_error ~urlencoded login_information
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
@@ -154,7 +152,7 @@ let update_email req =
            [ Message.set ~success:[ Success.EmailUpdateConfirmationMessage ] ])
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update_password req =
@@ -164,8 +162,7 @@ let update_password req =
     =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
-    Utils.Lwt_result.map_error (fun msg ->
-      HttpUtils.(msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
+    Response.bad_request_on_error ~urlencoded login_information
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let%lwt notification =
@@ -185,7 +182,7 @@ let update_password req =
            [ Message.set ~success:[ Success.PasswordChanged ] ])
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update_cell_phone req =
@@ -195,8 +192,7 @@ let update_cell_phone req =
     =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
-    Utils.Lwt_result.map_error (fun msg ->
-      HttpUtils.(msg, contact_info_path, [ urlencoded_to_flash urlencoded ]))
+    Response.bad_request_on_error ~urlencoded contact_information
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* cell_phone =
          let find field =
@@ -240,7 +236,7 @@ let update_cell_phone req =
            [ Message.set ~success:[ Success.CellPhoneTokenSent ] ])
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  Response.handle ~src req result
 ;;
 
 let verify_cell_phone req =
@@ -248,8 +244,7 @@ let verify_cell_phone req =
   let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
-    Utils.Lwt_result.map_error (fun msg ->
-      HttpUtils.(msg, contact_info_path, [ urlencoded_to_flash urlencoded ]))
+    Response.bad_request_on_error ~urlencoded contact_information
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* token =
          let open CCResult.Infix in
@@ -273,14 +268,14 @@ let verify_cell_phone req =
            [ Message.set ~success:[ Success.CellPhoneVerified ] ])
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  Response.handle ~src req result
 ;;
 
 let reset_phone_verification req =
   let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
-    Utils.Lwt_result.map_error (fun msg -> msg, contact_info_path, [])
+    Response.bad_request_on_error contact_information
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* events =
          Command.ResetCellPhoneVerification.handle ~tags contact |> Lwt_result.lift
@@ -293,7 +288,7 @@ let reset_phone_verification req =
               (Format.asprintf "%s?reset=true" contact_info_path)))
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  Response.handle ~src req result
 ;;
 
 let resend_token req =
@@ -301,7 +296,7 @@ let resend_token req =
         ({ Pool_context.database_label; language; query_parameters; user; _ } as context)
     =
     let open Utils.Lwt_result.Infix in
-    Utils.Lwt_result.map_error (fun msg -> msg, contact_info_path, [])
+    Response.bad_request_on_error contact_information
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
@@ -327,15 +322,14 @@ let resend_token req =
            [ Message.set ~success:[ Success.VerificationMessageResent ] ])
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  Response.handle ~src req result
 ;;
 
 let completion req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/login")
+    Response.bad_request_render_error context
     @@
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let%lwt custom_fields =
       Custom_field.find_unanswered_required_by_contact
@@ -343,11 +337,11 @@ let completion req =
         user
         (Contact.id contact)
     in
-    Page.Contact.completion context flash_fetcher custom_fields
+    Page.Contact.completion context custom_fields
     |> create_layout req ~active_navigation:"/user" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let completion_post req =
@@ -357,14 +351,8 @@ let completion_post req =
     ||> HttpUtils.format_request_boolean_values []
     ||> HttpUtils.remove_empty_values
   in
-  let result
-        ({ Pool_context.database_label; query_parameters; language; user; _ } as context)
-    =
-    Utils.Lwt_result.map_error (fun err ->
-      HttpUtils.(
-        ( err
-        , url_with_field_params query_parameters "/user/completion"
-        , [ urlencoded_to_flash urlencoded ] )))
+  let result ({ Pool_context.database_label; language; user; _ } as context) =
+    Response.bad_request_on_error ~urlencoded completion
     @@
     let tags = tags req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
@@ -411,19 +399,18 @@ let completion_post req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let pause_account req =
   let open Utils.Lwt_result.Infix in
-  let redirect_path = "/user/personal-details" in
   let result context =
     Page.Contact.pause_account context ()
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, redirect_path
+    |> Response.bad_request_on_error personal_details
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let toggle_paused req =
