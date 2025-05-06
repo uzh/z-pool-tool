@@ -287,6 +287,7 @@ let template_form
       action
       flash_fetcher
   =
+  (* TODO: Remove flash fetcher argument *)
   let open Message_template in
   let externalize = Http_utils.externalize_path_with_params query_parameters in
   let submit, template =

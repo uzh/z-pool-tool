@@ -124,7 +124,7 @@ let show
     HttpUtils.Url.Admin.page_script_changelog_path ~suffix:"open" location
     |> open_changelog
   in
-  let action_path = HttpUtils.Url.Admin.settings_action_path in
+  let action_path = HttpUtils.Url.Admin.settings_path_with_action in
   let form_attrs action =
     [ a_method `Post
     ; a_action (action_path action)

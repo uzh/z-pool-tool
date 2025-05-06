@@ -45,7 +45,6 @@ let generate_code langauge tenant_url =
 
         const btn = document.getElementById(buttonId);
         btn.addEventListener("click", (e) => {
-          console.log("CLICK");
           e.preventDefault();
 
           if(inputEl.value) {
@@ -61,7 +60,7 @@ let generate_code langauge tenant_url =
   in
   div
     [ div
-        ~a:[ a_class [ "grid-col-2" ] ]
+        ~a:[ a_class [ "grid-col-2"; "gap" ] ]
         [ div
             ~a:[ a_class [ "form-group" ] ]
             [ div
