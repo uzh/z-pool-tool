@@ -26,12 +26,11 @@ let index req =
 let show req =
   let open Utils.Lwt_result.Infix in
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, version_path ())
-    @@
-    let* version = req |> version_id |> Pool_version.find in
+    let* version = req |> version_id |> Pool_version.find >|- Response.not_found in
     Page.Admin.Version.show context version
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
+    |> Response.bad_request_render_error context
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;

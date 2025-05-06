@@ -2,6 +2,7 @@ open Pool_message
 module Command = Cqrs_command.Contact_command
 module UserCommand = Cqrs_command.User_command
 module HttpUtils = Http_utils
+module Response = Http_response
 
 let src = Logs.Src.create "handler.contact.signup"
 let create_layout = Contact_general.create_layout
@@ -9,7 +10,7 @@ let create_layout = Contact_general.create_layout
 let sign_up req =
   let result ({ Pool_context.database_label; language; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    Utils.Lwt_result.map_error (fun err -> err, "/index")
+    Response.bad_request_render_error context
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let%lwt custom_fields = Custom_field.all_prompted_on_registration database_label in
@@ -20,7 +21,7 @@ let sign_up req =
     |> create_layout req ~active_navigation:"/signup" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let sign_up_create req =
@@ -35,8 +36,7 @@ let sign_up_create req =
   let result { Pool_context.database_label; query_parameters; language; user; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
-    Utils.Lwt_result.map_error (fun msg ->
-      msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded sign_up
     @@ let* () = Helpers.terms_and_conditions_accepted urlencoded in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
@@ -152,13 +152,19 @@ let sign_up_create req =
            [ Message.set ~success:[ Success.EmailConfirmationMessage ] ])
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let email_verification req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
+    (* TODO: Is this endpoint only used for unverified users? Or also to update user email?
+
+       * We probably need a redirect response to redirect if the user is logged in
+    *)
+    Response.bad_request_on_error sign_up
+    @@
     let%lwt redirect_path =
       let user =
         Pool_context.find_contact context
@@ -171,60 +177,59 @@ let email_verification req =
         let open Pool_context in
         context_user_of_user database_label user ||> dashboard_path
     in
-    (let* token =
-       Sihl.Web.Request.query Field.(show Token) req
-       |> CCOption.map Email.Token.create
-       |> CCOption.to_result (Error.NotFound Field.Token)
-       |> Lwt_result.lift
-     in
-     let* email =
-       Pool_token.read database_label (Email.Token.value token) ~k:Field.(Email |> show)
-       ||> CCOption.to_result Error.TokenInvalidFormat
-       >== Pool_user.EmailAddress.create
-       >>= Email.find_unverified_by_address database_label
-       |> Lwt_result.map_error (fun _ -> Error.Invalid Field.Token)
-     in
-     let* events =
-       let open UserCommand in
-       let signup_code =
-         let open Signup_code in
-         let open CCOption.Infix in
-         Pool_context.Utils.find_query_param query_parameters url_key
-         >>= CCFun.(Code.create %> CCResult.to_opt)
-       in
-       let%lwt admin =
-         Admin.find database_label (email |> Email.user_id |> Admin.Id.of_user)
-       in
-       let%lwt contact =
-         Contact.find database_label (Email.user_id email |> Contact.Id.of_user)
-       in
-       let verify_email ?signup_code user =
-         VerifyEmail.(handle ~tags ?signup_code user email) |> Lwt_result.lift
-       in
-       let update_email user = UpdateEmail.(handle ~tags user email) |> Lwt_result.lift in
-       match email |> Email.user_is_confirmed, contact, admin with
-       | false, Ok contact, _ -> verify_email ?signup_code (Contact contact)
-       | true, Ok contact, _ -> update_email (Contact contact)
-       | false, Error _, Ok admin -> verify_email (Admin admin)
-       | true, _, Ok admin -> update_email (Admin admin)
-       | true, Error _, Error _ | false, Error _, Error _ ->
-         Logs.err (fun m ->
-           m
-             ~tags
-             "Impossible email update tried: %s with context: %s"
-             ([%show: Email.t] email)
-             ([%show: Pool_context.t] context));
-         Lwt.return_ok []
-     in
-     let%lwt () = Pool_event.handle_events ~tags database_label user events in
-     HttpUtils.(
-       redirect_to_with_actions
-         (url_with_field_params query_parameters redirect_path)
-         [ Message.set ~success:[ Success.EmailVerified ] ])
-     |> Lwt_result.ok)
-    >|- fun msg -> msg, redirect_path
+    let* token =
+      Sihl.Web.Request.query Field.(show Token) req
+      |> CCOption.map Email.Token.create
+      |> CCOption.to_result (Error.NotFound Field.Token)
+      |> Lwt_result.lift
+    in
+    let* email =
+      Pool_token.read database_label (Email.Token.value token) ~k:Field.(Email |> show)
+      ||> CCOption.to_result Error.TokenInvalidFormat
+      >== Pool_user.EmailAddress.create
+      >>= Email.find_unverified_by_address database_label
+      |> Lwt_result.map_error (fun _ -> Error.Invalid Field.Token)
+    in
+    let* events =
+      let open UserCommand in
+      let signup_code =
+        let open Signup_code in
+        let open CCOption.Infix in
+        Pool_context.Utils.find_query_param query_parameters url_key
+        >>= CCFun.(Code.create %> CCResult.to_opt)
+      in
+      let%lwt admin =
+        Admin.find database_label (email |> Email.user_id |> Admin.Id.of_user)
+      in
+      let%lwt contact =
+        Contact.find database_label (Email.user_id email |> Contact.Id.of_user)
+      in
+      let verify_email ?signup_code user =
+        VerifyEmail.(handle ~tags ?signup_code user email) |> Lwt_result.lift
+      in
+      let update_email user = UpdateEmail.(handle ~tags user email) |> Lwt_result.lift in
+      match email |> Email.user_is_confirmed, contact, admin with
+      | false, Ok contact, _ -> verify_email ?signup_code (Contact contact)
+      | true, Ok contact, _ -> update_email (Contact contact)
+      | false, Error _, Ok admin -> verify_email (Admin admin)
+      | true, _, Ok admin -> update_email (Admin admin)
+      | true, Error _, Error _ | false, Error _, Error _ ->
+        Logs.err (fun m ->
+          m
+            ~tags
+            "Impossible email update tried: %s with context: %s"
+            ([%show: Email.t] email)
+            ([%show: Pool_context.t] context));
+        Lwt.return_ok []
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    HttpUtils.(
+      redirect_to_with_actions
+        (url_with_field_params query_parameters redirect_path)
+        [ Message.set ~success:[ Success.EmailVerified ] ])
+    |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let terms req =
