@@ -13,29 +13,30 @@ homepage: "https://github.com/uzh/z-pool-tool"
 doc: "https://uzh.github.io/z-pool-tool-documentation/"
 bug-reports: "https://github.com/uzh/z-pool-tool"
 depends: [
-  "dune" {>= "3.7"}
-  "ocaml" {>= "4.14.0"}
-  "conformist" {>= "0.8.1"}
-  "sihl" {>= "4.0.0" & < "5.0.0"}
-  "sihl-email" {>= "4.0.0" & < "5.0.0"}
-  "sihl-storage" {>= "4.0.0" & < "5.0.0"}
-  "lwt" {>= "5.6.1"}
-  "logs" {>= "0.7.0"}
-  "containers" {>= "3.14"}
-  "containers-data" {>= "3.14"}
-  "mariadb" {>= "1.2.0" & < "2.0.0"}
+  "amqp-client-lwt"
+  "canary"
+  "caqti" {>= "2.0.1"}
   "caqti-driver-mariadb" {>= "2.0.1"}
   "caqti-lwt" {>= "2.0.1"}
-  "caqti" {>= "2.0.1"}
+  "conformist" {>= "0.8.1"}
+  "containers" {>= "3.14"}
+  "containers-data" {>= "3.14"}
+  "digestif"
+  "dune" {>= "3.7"}
+  "guardian" {= "0.3.2"}
+  "logs" {>= "0.7.0"}
+  "lwt" {>= "5.6.1"}
+  "mariadb" {>= "1.2.0" & < "2.0.0"}
+  "ocaml" {>= "4.14.0"}
   "ocamlformat" {>= "0.18.0"}
   "ppx_deriving" {>= "5.2.1"}
   "ppx_string" {>= "0.16.0"}
-  "ppx_yojson_conv" {>= "0.14.0"}
   "ppx_variants_conv" {= "v0.17.0"}
+  "ppx_yojson_conv" {>= "0.14.0"}
+  "sihl" {>= "4.0.0" & < "5.0.0"}
+  "sihl-email" {>= "4.0.0" & < "5.0.0"}
+  "sihl-storage" {>= "4.0.0" & < "5.0.0"}
   "tyxml-ppx" {>= "4.6.0"}
-  "digestif"
-  "canary"
-  "guardian" {= "0.3.2"}
   "alcotest-lwt" {with-test}
   "odoc" {with-doc}
 ]

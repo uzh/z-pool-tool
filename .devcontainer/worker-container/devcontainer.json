@@ -1,0 +1,60 @@
+{
+  "name": "Z-Pool Worker",
+  "dockerComposeFile": [
+    "./../docker-compose.yml"
+  ],
+  "service": "worker",
+  "workspaceFolder": "/workspace/worker-src",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh",
+            "overrideName": true
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "files.insertFinalNewline": true,
+        "files.trimTrailingWhitespace": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll": "explicit"
+        },
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "[toml]": {
+          "editor.defaultFormatter": "tamasfe.even-better-toml"
+        },
+        "[html][jinja][jinja-html][django-html]": {
+          "editor.formatOnSave": true,
+          "editor.defaultFormatter": "monosans.djlint",
+          "editor.linkedEditing": true,
+          "djlint.enableLinting": true,
+          "djlint.djlintPath": "/workspace/worker-src/.venv/bin/djlint"
+        },
+        "python.terminal.activateEnvironment": true,
+        "python.terminal.activateEnvInCurrentTerminal": true,
+        "python.terminal.shellIntegration.enabled": true
+      },
+      "extensions": [
+        "charliermarsh.ruff",
+        "eamodio.gitlens",
+        "EditorConfig.EditorConfig",
+        "esbenp.prettier-vscode",
+        "exiasr.hadolint",
+        "monosans.djlint",
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "samuelcolvin.jinjahtml",
+        "tamasfe.even-better-toml",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  },
+  "postCreateCommand": "sh ../.devcontainer/worker-container/postCreate.sh"
+}

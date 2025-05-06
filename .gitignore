@@ -44,3 +44,14 @@ node_modules
 
 # Assets
 resources/font
+
+## Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+*.whl
+*.coverage
+*.cover
