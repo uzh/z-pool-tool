@@ -1,6 +1,7 @@
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.message_templates"
 let create_layout req = General.create_tenant_layout req
@@ -24,24 +25,24 @@ let database_label_of_req req =
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
+    Response.bad_request_render_error context
     @@
     let%lwt template_list = Message_template.all_default database_label () in
     Page.Admin.MessageTemplate.index context template_list
     |> create_layout ~active_navigation:"/admin/message-template" req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let edit req =
   let open Utils.Lwt_result.Infix in
   let id = template_id req in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
+    let* template = Message_template.find database_label id >|- Response.not_found in
+    Response.bad_request_render_error context
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* template = Message_template.find database_label id in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.MessageTemplate.edit
@@ -53,7 +54,7 @@ let edit req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 type redirect =
@@ -65,6 +66,7 @@ type action =
   | Create of Pool_common.Id.t * Message_template.Label.t * redirect
   | Update of Message_template.Id.t * redirect
 
+(* TODO: createn helper function instead of reusing the same handler *)
 let write action req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =

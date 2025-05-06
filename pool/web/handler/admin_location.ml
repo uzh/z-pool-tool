@@ -7,6 +7,7 @@ module Response = Http_response
 let src = Logs.Src.create "handler.admin.location"
 let create_layout req = General.create_tenant_layout req
 let id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encode
+let location_path = HttpUtils.Url.Admin.location_path
 
 let descriptions_from_urlencoded req urlencoded =
   let open Pool_location in
@@ -24,7 +25,7 @@ let descriptions_from_urlencoded req urlencoded =
 
 let index req =
   Response.Htmx.index_handler
-    ~active_navigation:"/admin/locations"
+    ~active_navigation:(location_path ())
     ~query:(module Pool_location)
     ~create_layout
     req
@@ -40,15 +41,14 @@ let index req =
 
 let new_form req =
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/locations")
+    Response.bad_request_render_error context
     @@
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    Page.Admin.Location.form context tenant_languages flash_fetcher
+    Page.Admin.Location.form context tenant_languages
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let create req =
@@ -58,8 +58,7 @@ let create req =
     ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, "/admin/locations/create", [ HttpUtils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* description = descriptions_from_urlencoded req urlencoded |> Lwt_result.lift in
@@ -76,20 +75,19 @@ let create req =
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
-        "/admin/locations"
+        (location_path ())
         [ Message.set ~success:[ Pool_message.(Success.Created Field.Location) ] ]
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let new_file req =
   let open Pool_location in
   let id = id req Field.Location Id.of_string in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err ->
-      err, id |> Id.value |> Format.asprintf "/admin/locations/%s/files/create")
+    Response.bad_request_render_error context
     @@ let* location = find database_label id in
        let labels = File.Label.all in
        let languages = Pool_common.Language.all in
@@ -97,16 +95,15 @@ let new_file req =
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let add_file req =
   let id =
     HttpUtils.get_field_router_param req Field.Location |> Pool_location.Id.of_string
   in
-  let path = id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s" in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, Format.asprintf "%s/files/create" path)
+    Response.bad_request_on_error new_file
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* location = Pool_location.find database_label id in
@@ -137,21 +134,20 @@ let add_file req =
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
-        path
+        (location_path ~id ())
         [ Message.set ~success:[ Pool_message.(Success.Created Field.FileMapping) ] ]
     in
     events >|> finalize |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let asset = Contact_location.asset
 
 let detail edit req =
   let open Pool_location in
-  let error_path = "/admin/locations" in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    Response.bad_request_render_error context
     @@
     let id = id req Field.Location Id.of_string in
     let* location = find database_label id in
@@ -164,14 +160,12 @@ let detail edit req =
         let%lwt statistics_year_range = Statistics.year_select database_label in
         let%lwt files = Pool_location.files_by_location database_label id in
         detail location files statistics statistics_year_range context |> Lwt.return
-      | true ->
-        let flash_fetcher key = Sihl.Web.Flash.find key req in
-        form ~location ~states context tenant_languages flash_fetcher |> Lwt.return)
+      | true -> form ~location ~states context tenant_languages |> Lwt.return)
     |> Lwt_result.ok
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let changelog req =
@@ -202,7 +196,7 @@ let statistics req =
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
-  result |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 let update req =
@@ -213,42 +207,32 @@ let update req =
       ||> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
       ||> HttpUtils.remove_empty_values
     in
-    let detail_path =
-      id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
+    let* location = Pool_location.find database_label id >|- Response.not_found in
+    Response.bad_request_on_error ~urlencoded edit
+    @@
+    let* description = descriptions_from_urlencoded req urlencoded |> Lwt_result.lift in
+    let tags = Pool_context.Logger.Tags.req req in
+    let events =
+      let open CCResult.Infix in
+      let open Cqrs_command.Location_command.Update in
+      urlencoded |> decode description >>= handle ~tags location |> Lwt_result.lift
     in
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/edit" detail_path
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* location = Pool_location.find database_label id in
-       let* description =
-         descriptions_from_urlencoded req urlencoded |> Lwt_result.lift
-       in
-       let tags = Pool_context.Logger.Tags.req req in
-       let events =
-         let open CCResult.Infix in
-         let open Cqrs_command.Location_command.Update in
-         urlencoded |> decode description >>= handle ~tags location |> Lwt_result.lift
-       in
-       let handle events =
-         let%lwt () = Pool_event.handle_events ~tags database_label user events in
-         Http_utils.redirect_to_with_actions
-           detail_path
-           [ Message.set ~success:[ Pool_message.(Success.Updated Field.Location) ] ]
-       in
-       events |>> handle
+    let handle events =
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      Http_utils.redirect_to_with_actions
+        (location_path ~id ())
+        [ Message.set ~success:[ Pool_message.(Success.Updated Field.Location) ] ]
+    in
+    events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let delete req =
   let result { Pool_context.database_label; user; _ } =
     let location_id = id req Field.Location Pool_location.Id.of_string in
     let file_id = id req Field.FileMapping Pool_location.File.Id.of_string in
-    let path =
-      location_id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
-    in
-    Utils.Lwt_result.map_error (fun err -> err, path)
+    Response.bad_request_on_error edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* events =
@@ -256,11 +240,11 @@ let delete req =
     in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
-      path
+      (location_path ~id:location_id ())
       [ Message.set ~success:[ Pool_message.(Success.Deleted Field.File) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let session req =

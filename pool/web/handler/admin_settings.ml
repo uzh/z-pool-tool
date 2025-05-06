@@ -3,6 +3,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Queue = Admin_settings_queue
 module ActorPermission = Admin_settings_actor_permissions
+module Response = Http_response
 module RolePermission = Admin_settings_role_permissions
 module Schedule = Admin_settings_schedule
 module Smtp = Admin_settings_smtp
@@ -15,8 +16,9 @@ let create_layout req = General.create_tenant_layout req
 let show req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/")
+    Response.bad_request_render_error context
     @@
+    (* TODO: Fix open tag without redirect *)
     let open_tab =
       Sihl.Web.Request.query "action" req
       |> CCOption.map_or ~default:None (fun str ->
@@ -70,7 +72,7 @@ let show req =
     |> create_layout req ~active_navigation:"/admin/settings" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let update_settings req =
@@ -81,18 +83,13 @@ let update_settings req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let action =
-    Sihl.Web.Router.param req "action" |> Settings.action_of_param |> CCResult.get_exn
-  in
-  let redirect_path =
-    let open Uri in
-    let path = of_string "/admin/settings" in
-    add_query_param path ("action", [ Settings.stringify_action action ]) |> to_string
-  in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded show
     @@
+    let* action =
+      Sihl.Web.Router.param req "action" |> Settings.action_of_param |> Lwt_result.lift
+    in
+    let redirect_path = HttpUtils.Url.Admin.settings_path_with_action_param action in
     let events () =
       let command_handler urlencoded =
         let open CCResult.Infix in
@@ -154,7 +151,7 @@ let update_settings req =
     in
     () |> events |>> handle |>> return_to_settings
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let inactive_user_warning_subform req =
@@ -163,7 +160,7 @@ let inactive_user_warning_subform req =
     |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
     |> Lwt_result.return
   in
-  HttpUtils.Htmx.extract_happy_path ~src req result
+  Response.Htmx.handle ~src req result
 ;;
 
 let email_suffix_subform req =
@@ -172,7 +169,7 @@ let email_suffix_subform req =
     |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
     |> Lwt_result.return
   in
-  HttpUtils.Htmx.extract_happy_path ~src req result
+  Response.Htmx.handle ~src req result
 ;;
 
 let changelog req =
@@ -184,7 +181,7 @@ let changelog req =
     let%lwt id = Settings.id_by_key database_label key in
     Lwt_result.ok @@ Helpers.Changelog.htmx_handler ~url id req
   in
-  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+  Response.Htmx.handle ~error_as_notification:true req result
 ;;
 
 let open_changelog_modal req =
@@ -199,10 +196,10 @@ let open_changelog_modal req =
       all_by_entity ~query database_label id
     in
     Page.Admin.Settings.settings_changelog_modal context key changelogs
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
-  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+  Response.Htmx.handle ~error_as_notification:true req result
 ;;
 
 module PageScripts = struct
@@ -218,7 +215,7 @@ module PageScripts = struct
       let%lwt id = Settings.PageScript.find_id database_label location in
       Lwt_result.ok @@ Helpers.Changelog.htmx_handler ~url id req
     in
-    HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+    Response.Htmx.handle ~error_as_notification:true req result
   ;;
 
   let open_changelog_modal req =
@@ -234,7 +231,7 @@ module PageScripts = struct
       |> HttpUtils.Htmx.html_to_plain_text_response
       |> Lwt_result.return
     in
-    HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+    Response.Htmx.handle ~error_as_notification:true req result
   ;;
 end
 

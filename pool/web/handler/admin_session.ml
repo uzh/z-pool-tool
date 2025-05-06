@@ -9,13 +9,7 @@ let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
 let template_id = HttpUtils.find_id Message_template.Id.of_string Field.MessageTemplate
-
-let session_path experiment_id session_id =
-  Format.asprintf
-    "/admin/experiments/%s/sessions/%s"
-    (experiment_id |> Experiment.Id.value)
-    (session_id |> Session.Id.value)
-;;
+let session_path = HttpUtils.Url.Admin.session_path
 
 let location urlencoded database_label =
   let open Utils.Lwt_result.Infix in
@@ -98,11 +92,8 @@ let new_helper req page =
   let open Utils.Lwt_result.Infix in
   let open Session in
   let id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s/sessions" (id |> Experiment.Id.value)
-  in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    Response.bad_request_render_error context
     @@ let* experiment = Experiment.find database_label id in
        let%lwt locations = Pool_location.all database_label in
        let flash_fetcher = flip Sihl.Web.Flash.find req in
@@ -125,7 +116,6 @@ let new_helper req page =
              parent_session
              locations
              text_messages_enabled
-             flash_fetcher
            |> Lwt_result.ok
          | `New ->
            Lwt_result.ok
@@ -138,12 +128,11 @@ let new_helper req page =
                  default_leadtime_settings
                  locations
                  text_messages_enabled
-                 flash_fetcher
              | true -> Page.Admin.TimeWindow.new_form context experiment flash_fetcher)
        in
        html >>= create_layout req context >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_form req = new_helper req `New
@@ -167,12 +156,8 @@ let duplication_session_data req database_label =
 
 let duplicate req =
   let open Utils.Lwt_result.Infix in
-  let experiment_id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s/sessions" (experiment_id |> Experiment.Id.value)
-  in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    Response.bad_request_render_error context
     @@ let* experiment, session, followups, parent_session =
          duplication_session_data req database_label
        in
@@ -180,7 +165,7 @@ let duplicate req =
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let duplicate_form_htmx req =
@@ -200,15 +185,12 @@ let duplicate_form_htmx req =
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 let duplicate_post_htmx req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
-  let sessions_path =
-    Format.asprintf "/admin/experiments/%s/sessions" (Experiment.Id.value experiment_id)
-  in
   let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded =
@@ -224,26 +206,22 @@ let duplicate_post_htmx req =
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     HttpUtils.Htmx.htmx_redirect
       ~actions:[ Message.set ~success:[ Success.Created Field.Sessions ] ]
-      sessions_path
+      (session_path experiment_id)
       ()
     |> Lwt_result.ok
   in
-  result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  Response.Htmx.handle ~error_as_notification:true ~src req result
 ;;
 
 let create req =
   let id = experiment_id req in
-  let path = Format.asprintf "/admin/experiments/%s/sessions" (Experiment.Id.value id) in
   let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/%s" path "create"
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let* experiment = Experiment.find database_label id in
     let field =
@@ -272,11 +250,11 @@ let create req =
     in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
-      path
+      (session_path id)
       [ Message.set ~success:[ Success.Created field ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let session_page database_label req context session experiment =
@@ -287,7 +265,6 @@ let session_page database_label req context session experiment =
   let experiment_target_id = [ Guard.Uuid.target_of Experiment.Id.value experiment_id ] in
   let view_contact_name = can_read_contact_name context experiment_target_id in
   let view_contact_info = can_read_contact_info context experiment_target_id in
-  let flash_fetcher = flip Sihl.Web.Flash.find req in
   let current_tags () =
     let open Tags.ParticipationTags in
     find_all database_label (Session (Session.Id.to_common session_id))
@@ -315,7 +292,6 @@ let session_page database_label req context session experiment =
       locations
       (current_tags, available_tags, experiment_participation_tags)
       text_messages_enabled
-      flash_fetcher
     >|> create_layout
   | `Close ->
     let%lwt assignments, custom_fields =
@@ -338,12 +314,10 @@ let session_page database_label req context session experiment =
     >|> create_layout
   | `Reschedule ->
     let* experiment = Experiment.find database_label experiment_id in
-    Page.Admin.Session.reschedule_session context experiment session flash_fetcher
-    >|> create_layout
+    Page.Admin.Session.reschedule_session context experiment session >|> create_layout
   | `Cancel ->
     let%lwt follow_ups = Session.find_follow_ups database_label session_id in
-    Page.Admin.Session.cancel context experiment session follow_ups flash_fetcher
-    >|> create_layout
+    Page.Admin.Session.cancel context experiment session follow_ups >|> create_layout
   | `Print ->
     let%lwt assignments =
       Assignment.(
@@ -500,15 +474,8 @@ let show req =
 let detail page req =
   let open Utils.Lwt_result.Infix in
   let session_id = session_id req in
-  let error_path =
-    (try experiment_id req |> CCOption.return with
-     | _ -> None)
-    |> CCOption.map_or
-         ~default:"/admin/dashboard"
-         (Experiment.Id.value %> Format.asprintf "/admin/experiments/%s/sessions")
-  in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    Response.bad_request_render_error context
     @@
     let* experiment =
       Experiment.find_of_session database_label (session_id |> Session.Id.to_common)
@@ -528,7 +495,7 @@ let detail page req =
        time_window_page database_label req context time_window experiment page)
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let edit = detail `Edit
@@ -540,24 +507,21 @@ let print = detail `Print
 let update_handler action req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let path = session_path experiment_id session_id in
-  let error_path =
+  let path = session_path experiment_id ~id:session_id in
+  let error_handler =
     match action with
-    | `Update -> "edit"
-    | `Reschedule -> "reschedule"
+    | `Update -> edit
+    | `Reschedule -> reschedule_form
   in
   let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
+    let* session = Session.find database_label session_id >|- Response.not_found in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/%s" path error_path
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+    Response.bad_request_on_error ~urlencoded error_handler
     @@
     let sessions_data () =
-      let* session = Session.find database_label session_id in
       let%lwt follow_ups = Session.find_follow_ups database_label session.Session.id in
       let* parent =
         match session.Session.follow_up_to with
@@ -635,7 +599,7 @@ let update_handler action req =
     Http_utils.redirect_to_with_actions path [ Message.set ~success:[ success_msg ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update = update_handler `Update
@@ -645,20 +609,18 @@ let cancel req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let success_path = session_path experiment_id session_id in
-  let error_path = CCFormat.asprintf "%s/cancel" success_path in
+  let success_path = session_path experiment_id ~id:session_id in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values Field.[ show Email; show SMS ]
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    let* session = Session.find database_label session_id >|- Response.not_found in
+    Response.bad_request_on_error ~urlencoded cancel_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* experiment = Experiment.find database_label experiment_id in
-    let* session = Session.find database_label session_id in
     let%lwt follow_ups = Session.find_follow_ups database_label session.Session.id in
     let%lwt assignments =
       session :: follow_ups
@@ -719,21 +681,18 @@ let cancel req =
       [ Message.set ~success:[ Success.Canceled Field.Session ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let delete req =
   let experiment_id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s/sessions" (Experiment.Id.value experiment_id)
-  in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@
     let open Utils.Lwt_result.Infix in
-    let tags = Pool_context.Logger.Tags.req req in
     let session_id = session_id req in
-    let* session = Session.find database_label session_id in
+    let* session = Session.find database_label session_id >|- Response.not_found in
+    Response.bad_request_on_error list
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
     let%lwt follow_ups = Session.find_follow_ups database_label session_id in
     let%lwt templates =
       let open Message_template in
@@ -748,31 +707,27 @@ let delete req =
     in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
-      error_path
+      (session_path experiment_id)
       [ Message.set ~success:[ Success.Deleted Field.Session ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 (* TODO [aerben] make possible to create multiple follow ups? *)
 let create_follow_up req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let path = session_path experiment_id session_id in
   let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
+    let* session = Session.find database_label session_id >|- Response.not_found in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/follow-up" path
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+    Response.bad_request_on_error ~urlencoded follow_up
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* location = location urlencoded database_label in
-    let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
     let* events =
       let open CCResult.Infix in
@@ -784,26 +739,24 @@ let create_follow_up req =
     in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
-      (Format.asprintf
-         "/admin/experiments/%s/sessions"
-         (Experiment.Id.value experiment_id))
+      (session_path experiment_id)
       [ Message.set ~success:[ Success.Created Field.Session ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let close_post req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let path = session_path experiment_id session_id in
+  let path = session_path experiment_id ~id:session_id in
   let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
-    Lwt_result.map_error (fun err -> err, Format.asprintf "%s/close" path)
+    let* session = Session.find database_label session_id >|- Response.not_found in
+    Response.bad_request_on_error close
     @@
     let open Cqrs_command.Session_command in
     let* experiment = Experiment.find database_label experiment_id in
-    let* session = Session.find database_label session_id in
     let%lwt assignments =
       Assignment.find_uncanceled_by_session database_label session.Session.id
     in
@@ -848,7 +801,7 @@ let close_post req =
       [ Message.set ~success:[ Success.Closed Field.Session ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let message_template_form ?template_id label req =
@@ -856,11 +809,7 @@ let message_template_form ?template_id label req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , experiment_id
-        |> Experiment.Id.value
-        |> Format.asprintf "/admin/experiments/%s/edit" ))
+    Response.bad_request_render_error context
     @@
     let open Message_template in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
@@ -905,7 +854,7 @@ let message_template_form ?template_id label req =
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_session_reminder req =
@@ -984,39 +933,36 @@ let message_template_changelog req =
   Helpers.Changelog.htmx_handler ~url (Id.to_common id) req
 ;;
 
+(* TODO: Where to find the trigger of this handler? *)
 let delete_message_template req =
+  let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =
+    Response.bad_request_on_error show
+    @@
     let experiment_id = experiment_id req in
     let session_id = session_id req in
     let template_id = template_id req in
-    let redirect = session_path experiment_id session_id in
-    Helpers.MessageTemplates.delete database_label user template_id redirect
+    let redirect = session_path experiment_id ~id:session_id in
+    Helpers.MessageTemplates.delete database_label user template_id redirect >|- fst
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let resend_reminders req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let path =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (Experiment.Id.value experiment_id)
-      (Session.Id.value session_id)
-  in
+  let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
-    let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/%s" path "create"
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+    let* experiment =
+      Experiment.find database_label experiment_id >|- Response.not_found
+    in
+    let* session = Session.find database_label session_id >|- Response.not_found in
+    Response.bad_request_on_error ~urlencoded show
     @@
-    let* experiment = Experiment.find database_label experiment_id in
-    let* session = Session.find database_label session_id in
     let%lwt assignments =
       Assignment.find_uncanceled_by_session database_label session.Session.id
     in
@@ -1035,11 +981,11 @@ let resend_reminders req =
     in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
     Http_utils.redirect_to_with_actions
-      path
+      (session_path ~id:session_id experiment_id)
       [ Message.set ~success:[ Success.RemindersResent ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let changelog req =
@@ -1104,14 +1050,14 @@ module DirectMessage = struct
       |> HttpUtils.Htmx.html_to_plain_text_response
       |> Lwt_result.return
     in
-    result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+    Response.Htmx.handle ~error_as_notification:true ~src req result
   ;;
 
   let send req =
     let tags = Pool_context.Logger.Tags.req req in
     let experiment_id = experiment_id req in
     let session_id = session_id req in
-    let session_path = session_path experiment_id session_id in
+    let session_path = session_path experiment_id ~id:session_id in
     let result { Pool_context.database_label; user; _ } =
       Lwt_result.map_error (fun err -> err, session_path)
       @@

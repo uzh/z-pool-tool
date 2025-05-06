@@ -2,8 +2,7 @@ open Tyxml.Html
 open Component.Input
 
 let index
-      { Pool_context.csrf; language; _ }
-      ~flash_fetcher
+      { Pool_context.csrf; language; flash_fetcher; _ }
       (gtx_config : Gtx_config.t option)
   =
   let open Pool_common in
@@ -53,12 +52,12 @@ let index
               ; a_class [ "stack" ]
               ]
             [ csrf_element csrf ()
-            ; input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
+            ; input_element language `Text Field.GtxApiKey ?flash_fetcher ~required:true
             ; input_element
                 language
                 `Text
                 Field.TestPhoneNumber
-                ~flash_fetcher
+                ?flash_fetcher
                 ~required:true
                 ~hints:[ I18n.TestPhoneNumber ]
             ; input_element
@@ -67,7 +66,7 @@ let index
                 Field.GtxSender
                 ?value:
                   (CCOption.map (fun { sender; _ } -> Sender.value sender) gtx_config)
-                ~flash_fetcher
+                ?flash_fetcher
                 ~required:true
                 ~hints:[ I18n.GtxSender ]
             ; submit_element

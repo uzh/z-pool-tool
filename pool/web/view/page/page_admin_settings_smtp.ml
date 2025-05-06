@@ -86,7 +86,7 @@ let index (Pool_context.{ language; _ } as context) location smtp_auth_list quer
     ]
 ;;
 
-let smtp_form_inputs language flash_fetcher (smtp_auth : SmtpAuth.t option) =
+let smtp_form_inputs ?flash_fetcher language (smtp_auth : SmtpAuth.t option) =
   let open SmtpAuth in
   let input_element_root
         ?(break = false)
@@ -99,7 +99,7 @@ let smtp_form_inputs language flash_fetcher (smtp_auth : SmtpAuth.t option) =
       ~classnames:(if break then [ "break-grid" ] else [])
       ~required
       ~value:(smtp_auth |> CCOption.map_or ~default:"" decode_fcn)
-      ~flash_fetcher
+      ?flash_fetcher
       language
       field_type
       field
@@ -145,7 +145,7 @@ let smtp_form_inputs language flash_fetcher (smtp_auth : SmtpAuth.t option) =
     ]
 ;;
 
-let show Pool_context.{ language; csrf; _ } location flash_fetcher smtp_auth =
+let show Pool_context.{ language; csrf; flash_fetcher; _ } location smtp_auth =
   let open SmtpAuth in
   let action_path sub =
     Sihl.Web.externalize_path
@@ -168,7 +168,7 @@ let show Pool_context.{ language; csrf; _ } location flash_fetcher smtp_auth =
       [ form
           ~a:(action_path "" |> form_attrs)
           [ csrf_element csrf ()
-          ; smtp_form_inputs language flash_fetcher (Some smtp_auth)
+          ; smtp_form_inputs ?flash_fetcher language (Some smtp_auth)
           ; submit ()
           ]
       ]
@@ -202,7 +202,7 @@ let show Pool_context.{ language; csrf; _ } location flash_fetcher smtp_auth =
       ; form
           ~a:(action_path "/validate" |> form_attrs)
           [ csrf_element csrf ()
-          ; input_element ~required:true ~flash_fetcher language `Email Field.EmailAddress
+          ; input_element ~required:true ?flash_fetcher language `Email Field.EmailAddress
           ; submit ~control:Control.Validate ()
           ]
       ]
@@ -221,7 +221,7 @@ let show Pool_context.{ language; csrf; _ } location flash_fetcher smtp_auth =
 ;;
 
 (* TODO: Add option to force default *)
-let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
+let smtp_create_form Pool_context.{ language; csrf; flash_fetcher; _ } location =
   let action_path =
     location |> base_path |> Format.asprintf "%s/create" |> Sihl.Web.externalize_path
   in
@@ -244,12 +244,12 @@ let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
         ; a_class [ "stack" ]
         ; a_user_data "detect-unsaved-changes" ""
         ]
-      ([ csrf_element csrf (); smtp_form_inputs language flash_fetcher None ]
+      ([ csrf_element csrf (); smtp_form_inputs ?flash_fetcher language None ]
        @ [ h3
              ~a:[ a_class [ "has-gap" ] ]
              [ txt Pool_common.(Utils.text_to_string language I18n.Validation) ]
          ; p [ txt Pool_common.(Utils.hint_to_string language I18n.SmtpValidation) ]
-         ; input_element ~flash_fetcher ~required:true language `Email Field.EmailAddress
+         ; input_element ?flash_fetcher ~required:true language `Email Field.EmailAddress
          ; submit ()
          ])
   in
