@@ -29,7 +29,7 @@ let index req =
 
 let form case req =
   let result context =
-    Lwt_result.map_error (fun err -> err, active_navigation)
+    Response.bad_request_render_error context
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* version =
@@ -42,7 +42,7 @@ let form case req =
     ||> Sihl.Web.Response.of_html
     ||> CCResult.return
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_form = form `New
@@ -54,8 +54,7 @@ let create req =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, version_path ~suffix:"new" (), [ Http_utils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let events =
       let open CCResult in
@@ -70,7 +69,7 @@ let create req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
@@ -80,10 +79,7 @@ let update req =
   in
   let id = version_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , version_path ~id ~suffix:"edit" ()
-      , [ Http_utils.urlencoded_to_flash urlencoded ] ))
+    Response.bad_request_on_error ~urlencoded edit
     @@
     let* version = Pool_version.find id in
     let events =
@@ -99,14 +95,14 @@ let update req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let publish req =
   let tags = Pool_context.Logger.Tags.req req in
   let id = version_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, version_path ~id ~suffix:"edit" ())
+    Response.bad_request_on_error edit
     @@
     let* version = Pool_version.find id in
     let%lwt tenant_ids =
@@ -124,7 +120,7 @@ let publish req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 module Access : sig

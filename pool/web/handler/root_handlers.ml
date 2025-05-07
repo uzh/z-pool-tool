@@ -4,6 +4,7 @@ module Profile = Root_user_profile
 module Settings = Root_settings
 module Status = Root_status
 module Tenant = Root_tenant
+module Tenant_update = Root_tenant_update
 module Users = Root_users
 module Version = Root_version
 

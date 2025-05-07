@@ -1003,12 +1003,15 @@ module Root = struct
         [ get "" ~middlewares:[ Access.read ] tenant_detail
         ; get ~middlewares:[ Access.read_operator ] "operator" manage_operators
         ; post "/create-operator" ~middlewares:[ Access.create_operator ] create_operator
-        ; post "/update-detail" ~middlewares:[ Access.update ] Update.update_detail
-        ; post "/update-database" ~middlewares:[ Access.update ] Update.update_database
+        ; post "/update-detail" ~middlewares:[ Access.update ] Tenant_update.update_detail
+        ; post
+            "/update-database"
+            ~middlewares:[ Access.update ]
+            Tenant_update.update_database
         ; post
             (Format.asprintf "/assets/%s/delete" (AssetId |> url_key))
             ~middlewares:[ Access.update ]
-            Tenant.Update.delete_asset
+            Tenant_update.delete_asset
         ]
       in
       [ get "" ~middlewares:[ Access.index ] Tenant.tenants

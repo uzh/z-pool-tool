@@ -1,10 +1,12 @@
 open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.settings_schedule"
 let active_navigation = "/admin/settings/schedules"
 
+(* TODO: Use Api Utils *)
 let yojson_response ?status json =
   let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ] in
   json |> Sihl.Web.Response.of_json ?status ~headers |> Lwt.return
