@@ -4,6 +4,7 @@ module File = HttpUtils.File
 module Common = Pool_common
 module Database = Database
 module Conformist = Pool_conformist
+module Response = Http_response
 
 let src = Logs.Src.create "handler.root.tenant_update"
 
@@ -21,8 +22,7 @@ let update req command success_message =
   let id = HttpUtils.get_field_router_param req tenant |> Pool_tenant.Id.of_string in
   let redirect_path = Http_utils.Url.Root.pool_path ~id () in
   let result { Pool_context.user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded Root_tenant.tenant_detail
     @@
     let events tenant_model =
       let open Utils.Lwt_result.Infix in
@@ -78,7 +78,7 @@ let update req command success_message =
     in
     id |> Pool_tenant.find_full >>= events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update_detail req = update req `EditDetail Pool_message.Success.TenantUpdateDetails
@@ -88,16 +88,15 @@ let update_database req =
 ;;
 
 let delete_asset req =
-  let open Sihl.Web in
   let open Pool_message in
-  let go m fcn = m |> Router.param req |> fcn in
+  let go m fcn = m |> Sihl.Web.Router.param req |> fcn in
   let asset_id = go Field.(AssetId |> show) Common.Id.of_string in
   let tenant_id = go Field.(Tenant |> show) Pool_tenant.Id.of_string in
   let redirect_path =
     Format.asprintf "root/tenants/%s" (Pool_tenant.Id.value tenant_id)
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    Response.bad_request_on_error Root_tenant.tenant_detail
     @@
     let open Utils.Lwt_result.Infix in
     let event tenant =
@@ -118,5 +117,5 @@ let delete_asset req =
     |>> destroy_file
     |>> return_to_tenant
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;

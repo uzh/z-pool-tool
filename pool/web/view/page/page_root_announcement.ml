@@ -72,9 +72,8 @@ let index (Pool_context.{ language; _ } as context) announcements =
 ;;
 
 let form
-      { Pool_context.csrf; language; _ }
+      { Pool_context.csrf; language; flash_fetcher; _ }
       ?announcement
-      ?(flash_fetcher : (string -> string option) option)
       available_tenants
       system_languages
   =
