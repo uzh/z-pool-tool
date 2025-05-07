@@ -37,6 +37,7 @@ depends: [
   "canary"
   "guardian" {= "0.3.2"}
   "alcotest-lwt" {with-test}
+  "ppx_inline_test" {with-test}
   "odoc" {with-doc}
 ]
 build: [

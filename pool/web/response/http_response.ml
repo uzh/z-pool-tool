@@ -7,15 +7,52 @@ module Page = Http_response_page
 
 let src = Logs.Src.create "web.handler.response"
 let set_response_code status response = Rock.Response.{ response with status }
+let urlencoded_remove_list = [ "password"; "csrf"; "database_url" ]
 
-(** TODO: Should values like password be filtered here or simply ignored in the UI? See admin create form
-*)
-let urlencoded_to_flash urlencoded =
+let flash_fetch_values urlencoded =
   let open CCList in
-  let values =
-    urlencoded |> map (fun (m, k) -> m, k |> head_opt |> CCOption.get_or ~default:"")
+  let open CCOption in
+  let apply_filter key =
+    let rec compare lst =
+      match lst with
+      | [] -> Some key
+      | sub :: tl -> if CCString.mem ~sub key then None else compare tl
+    in
+    compare urlencoded_remove_list
   in
-  fun key -> assoc_opt ~eq:CCString.equal key values
+  urlencoded
+  |> filter_map (fun (k, v) ->
+    apply_filter k >|= fun k -> k, v |> head_opt |> get_or ~default:"")
+;;
+
+let%test "filter url encoded values" =
+  let urlencoded =
+    [ "password", [ "Password1!" ]
+    ; "new_password", [ "Password1!" ]
+    ; "_csrf", [ "123456" ]
+    ; "empty_list", []
+    ; "multiple_values", [ "value1"; "value2" ]
+    ; "foo", [ "bar" ]
+    ]
+  in
+  let processed = flash_fetch_values urlencoded in
+  let open CCList in
+  let expect_none =
+    [ "password"; "new_password"; "_csrf" ] |> filter (fun key -> mem_assq key processed)
+  in
+  let expect_some =
+    [ "empty_list", ""; "multiple_values", "value1"; "foo", "bar" ]
+    |> filter_map (fun (key, value) ->
+      match assoc_opt ~eq:CCString.equal key processed with
+      | None -> None
+      | Some v -> if CCString.equal v value then None else Some key)
+  in
+  expect_none @ expect_some |> is_empty
+;;
+
+let urlencoded_to_flash_fetcher urlencoded =
+  let values = flash_fetch_values urlencoded in
+  fun key -> CCList.assoc_opt ~eq:CCString.equal key values
 ;;
 
 let set_context_error error ({ Pool_context.message; _ } as context) =
@@ -32,7 +69,7 @@ let set_flash_fetcher urlencoded context =
   let open CCFun.Infix in
   CCOption.map_or
     ~default:context
-    (urlencoded_to_flash %> Pool_context.set_flash_fetcher context)
+    (urlencoded_to_flash_fetcher %> Pool_context.set_flash_fetcher context)
     urlencoded
 ;;
 
