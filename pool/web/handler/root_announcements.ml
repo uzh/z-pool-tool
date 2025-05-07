@@ -55,14 +55,16 @@ let index req =
 
 let form case req =
   let result context =
-    Response.bad_request_render_error context
-    @@
     let sys_languages = Pool_common.Language.all in
     let%lwt tenants = Pool_tenant.find_all () in
     let* announcement =
       match case with
       | `New -> Lwt_result.return None
-      | `Edit -> announcement_id req |> Announcement.find_admin >|+ CCOption.return
+      | `Edit ->
+        announcement_id req
+        |> Announcement.find_admin
+        >|- Response.not_found
+        >|+ CCOption.return
     in
     Page.Root.Announcement.form context tenants sys_languages ?announcement
     |> create_layout context
@@ -111,9 +113,9 @@ let update req =
   in
   let id = announcement_id req in
   let result { Pool_context.database_label; user; _ } =
+    let* announcement = Announcement.find id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded edit
     @@
-    let* announcement = Announcement.find id in
     let events =
       let open CCResult in
       let open Cqrs_command.Announcement_command.Update in
