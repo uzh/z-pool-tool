@@ -33,6 +33,12 @@ val bad_request_render_error
   -> ('a, Pool_message.Error.t) Lwt_result.t
   -> ('a, http_error) Lwt_result.t
 
+(** [generic_not_found] renders a note that says page not found without the resource. *)
+val generic_not_found : http_error
+
+(** [empty_not_found] returns an empty Rock.Response.t with status 404 *)
+val empty_not_found : Rock.Response.t
+
 val not_found : Pool_message.Error.t -> http_error
 
 val not_found_on_error

@@ -1,6 +1,7 @@
 open CCFun.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.public.login"
 let to_ctx = Database.to_ctx
@@ -21,16 +22,15 @@ let increase_sign_in_count ~tags database_label user =
 
 let login_get req =
   let open Utils.Lwt_result.Infix in
-  let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, "/index")
+    Response.bad_request_render_error context
     @@
     let open Sihl.Web in
-    Page.Public.login ?intended:(HttpUtils.find_intended_opt req) context flash_fetcher
+    Page.Public.login ?intended:(HttpUtils.find_intended_opt req) context
     |> create_layout req ~active_navigation:"/login" context
     >|+ Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let login_post req =
@@ -44,10 +44,7 @@ let login_post req =
   in
   let result { Pool_context.database_label; query_parameters; _ } =
     let open Utils.Lwt_result.Infix in
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , "/login" |> HttpUtils.intended_of_request req
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+    Response.bad_request_on_error login_get
     @@ let* user = Helpers.Login.login req urlencoded database_label in
        let login user ?(set_completion_cookie = false) path actions =
          let* pool_user = to_user user |> Lwt_result.lift in
@@ -117,12 +114,12 @@ let login_post req =
                  "/user/completion"
                  [ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]))
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let request_reset_password_get req =
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, "/index")
+    Response.bad_request_render_error context
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
@@ -130,7 +127,7 @@ let request_reset_password_get req =
     |> create_layout req ~active_navigation:"/request-reset-password" context
     >|+ Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let request_reset_password_post req =
@@ -141,8 +138,7 @@ let request_reset_password_post req =
     let redirect_path =
       url_with_field_params query_parameters "/request-reset-password"
     in
-    Lwt_result.map_error (fun err ->
-      err, redirect_path, [ (fun res -> Message.set ~error:[ err ] res) ])
+    Response.bad_request_on_error request_reset_password_get
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let open Utils.Lwt_result.Infix in
@@ -223,14 +219,13 @@ let request_reset_password_post req =
       ())
     >|> redirect
   in
-  result |> extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let reset_password_get req =
   let result ({ Pool_context.database_label; language; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    let error_path = "/request-reset-password/" in
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    Response.bad_request_render_error context
     @@
     let token = Sihl.Web.Request.query Pool_message.Field.(Token |> show) req in
     let%lwt password_policy =
@@ -239,7 +234,7 @@ let reset_password_get req =
     match token with
     | None ->
       HttpUtils.redirect_to_with_actions
-        error_path
+        "/request-reset-password/"
         [ Message.set ~error:[ Pool_message.(Error.NotFound Field.Token) ] ]
       |> Lwt_result.ok
     | Some token ->
@@ -247,7 +242,7 @@ let reset_password_get req =
       |> create_layout req ~active_navigation:"/reset-password" context
       >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let reset_password_post req =
@@ -255,18 +250,18 @@ let reset_password_post req =
   let result { Pool_context.database_label; query_parameters; user; _ } =
     let open Utils.Lwt_result.Infix in
     let open Pool_message in
-    let redirect = "/reset-password/" in
+    Response.bad_request_on_error reset_password_get
+    @@
     let tags = Pool_context.Logger.Tags.req req in
     let* params =
       Field.[ Token; Password; PasswordConfirmation ]
       |> CCList.map Field.show
       |> HttpUtils.urlencoded_to_params urlencoded
-      |> CCOption.to_result (Error.PasswordResetInvalidData, redirect)
+      |> CCOption.to_result Error.PasswordResetInvalidData
       |> Lwt_result.lift
     in
     let go field = field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params in
     let token = go Field.Token in
-    let redirect_with_param = add_field_query_params redirect [ Field.Token, token ] in
     let password = Field.Password |> go |> Pool_user.Password.Plain.create in
     let password_confirmed =
       let open Pool_user.Password.Confirmation in
@@ -275,7 +270,6 @@ let reset_password_post req =
     let* user_uuid =
       Pool_token.read database_label token ~k:"user_id"
       ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
-      >|- (fun err -> err, redirect)
       >|+ Pool_user.Id.of_string
     in
     let%lwt reset =
@@ -284,11 +278,9 @@ let reset_password_post req =
         ~token
         password
         password_confirmed
-      >|- CCFun.const (Error.PasswordResetInvalidData, redirect_with_param)
+      >|- CCFun.const Error.PasswordResetInvalidData
     in
     let* import_events =
-      Lwt_result.map_error (fun err -> err, redirect)
-      @@
       let%lwt import = User_import.find_pending_by_user_id_opt database_label user_uuid in
       import
       |> function
@@ -312,7 +304,7 @@ let reset_password_post req =
       |> Lwt_result.ok
     | Error err -> err |> Lwt_result.fail
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let logout req =

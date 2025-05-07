@@ -943,7 +943,6 @@ let message_template_changelog req =
 
 (* TODO: Where to find the trigger of this handler? *)
 let delete_message_template req =
-  let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =
     Response.bad_request_on_error show
     @@
@@ -951,7 +950,7 @@ let delete_message_template req =
     let session_id = session_id req in
     let template_id = template_id req in
     let redirect = session_path experiment_id ~id:session_id in
-    Helpers.MessageTemplates.delete database_label user template_id redirect >|- fst
+    Helpers.MessageTemplates.delete database_label user template_id redirect
   in
   Response.handle ~src req result
 ;;

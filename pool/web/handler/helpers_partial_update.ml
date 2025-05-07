@@ -1,5 +1,6 @@
 open Pool_message
 module HttpUtils = Http_utils
+module Response = Http_response
 
 let src = Logs.Src.create "handler.helper.partial_update"
 
@@ -53,6 +54,7 @@ let parse_urlencoded ~is_admin req database_label language urlencoded contact_id
   (field, version, value, field_id) |> Lwt_result.return
 ;;
 
+(* TODO: Is a redirect error still required? *)
 let update ?contact req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
