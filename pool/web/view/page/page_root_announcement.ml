@@ -206,7 +206,9 @@ let form
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt (Pool_common.Utils.control_to_string language title) ]
+    [ h1
+        ~a:[ a_class [ "has-gap" ] ]
+        [ txt (Pool_common.Utils.control_to_string language title) ]
     ; form
         ~a:
           [ a_method `Post
@@ -226,7 +228,9 @@ let form
                   (announcement >>= fun { end_at; _ } -> end_at >|= EndAt.value)
               ; div
                   ~a:[ a_class [ "full-width" ] ]
-                  [ h2 [ txt (field_to_string language Field.Text) ]
+                  [ h2
+                      ~a:[ a_class [ "has-gap" ] ]
+                      [ txt (field_to_string language Field.Text) ]
                   ; div ~a:[ a_class [ "stack" ] ] text_inputs
                   ]
               ; tenant_select

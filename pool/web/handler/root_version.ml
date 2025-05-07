@@ -29,13 +29,12 @@ let index req =
 
 let form case req =
   let result context =
-    Response.bad_request_render_error context
-    @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* version =
       match case with
       | `New -> Lwt_result.return None
-      | `Edit -> version_id req |> Pool_version.find >|+ CCOption.return
+      | `Edit ->
+        version_id req |> Pool_version.find >|- Response.not_found >|+ CCOption.return
     in
     Page.Root.Version.form context ~flash_fetcher ?version ()
     |> create_layout context
@@ -79,13 +78,13 @@ let update req =
   in
   let id = version_id req in
   let result { Pool_context.database_label; user; _ } =
+    let* version = Pool_version.find id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded edit
     @@
-    let* version = Pool_version.find id in
     let events =
       let open CCResult in
       let open Cqrs_command.Pool_version_command.Update in
-      urlencoded |> decode >>= handle ~tags:Logs.Tag.empty version |> Lwt_result.lift
+      urlencoded |> decode >>= handle ~tags version |> Lwt_result.lift
     in
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
@@ -110,7 +109,7 @@ let publish req =
     in
     let events =
       let open Cqrs_command.Pool_version_command.Publish in
-      handle ~tags:Logs.Tag.empty tenant_ids version |> Lwt_result.lift
+      handle ~tags tenant_ids version |> Lwt_result.lift
     in
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in

@@ -40,15 +40,17 @@ let index req =
 
 let show action req =
   let result ({ Pool_context.database_label; _ } as context) =
+    let* ou =
+      req |> id |> Organisational_unit.find database_label >|- Response.not_found
+    in
     Response.bad_request_render_error context
-    @@ let* html =
-         match action with
-         | `New -> View.create context |> Lwt_result.return
-         | `Edit ->
-           let* ou = req |> id |> Organisational_unit.find database_label in
-           View.detail context ou |> Lwt_result.return
-       in
-       html |> create_layout req context >|+ Sihl.Web.Response.of_html
+    @@
+    let html =
+      match action with
+      | `New -> View.create context
+      | `Edit -> View.detail context ou
+    in
+    html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
   Response.handle ~src req result
 ;;
