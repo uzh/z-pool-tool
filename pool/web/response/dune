@@ -1,5 +1,6 @@
 (library
  (name http_response)
+ (inline_tests)
  (libraries
   http_utils
   logger
@@ -9,4 +10,4 @@
   pool_tenant
   utils)
  (preprocess
-  (pps lwt_ppx ppx_variants_conv)))
+  (pps lwt_ppx ppx_inline_test ppx_variants_conv)))
