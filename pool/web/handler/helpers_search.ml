@@ -5,6 +5,7 @@ module HttpUtils = Http_utils
 
 let src = Logs.Src.create "handler.helper.search"
 
+(* TODO: Use functor? *)
 let htmx_search_helper
       ?(query_field = Field.Search)
       ?(exclude_field = Field.Exclude)
@@ -74,5 +75,5 @@ let htmx_search_helper
       in
       execute_search search_experiment query_results
   in
-  result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  Http_response.Htmx.handle ~error_as_notification:true ~src req result
 ;;

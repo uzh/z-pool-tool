@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.experiments_mailing"
 let create_layout req = General.create_tenant_layout req
@@ -130,12 +131,16 @@ let edit_template req =
 
 let delete req =
   let result { Pool_context.database_label; user; _ } =
+    (* Response.bad_request_on_error Admin_experiments.show *)
+    (* TODO: Circular dependency *)
+    Lwt_result.map_error (fun e -> Pool_common.Utils.failwith e)
+    @@
     let experiment_id = experiment_id req in
     let template_id = template_id req in
     let redirect = experiment_path experiment_id in
     Helpers.MessageTemplates.delete database_label user template_id redirect
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let changelog req =

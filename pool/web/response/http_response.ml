@@ -67,6 +67,13 @@ let bad_request_render_error context run =
   bad_request fallback err
 ;;
 
+let generic_not_found = NotFound Pool_message.(Error.NotFound Field.Page)
+
+let empty_not_found =
+  Rock.Response.make ~status:`Not_found ~body:Rock.Body.empty ()
+  |> Http_utils.set_no_cache_headers
+;;
+
 let handle ?(src = src) ?enable_cache req result =
   let open CCResult in
   let context = Pool_context.find req in

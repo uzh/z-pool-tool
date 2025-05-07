@@ -4,6 +4,7 @@ module Login = Public_login
 module Import = Public_import
 module Common = Pool_common
 module Database = Database
+module Response = Http_response
 
 let src = Logs.Src.create "handler.public"
 let create_layout req = General.create_tenant_layout req
@@ -22,11 +23,9 @@ let index req =
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
   else (
-    let result ({ Pool_context.database_label; language; query_parameters; _ } as context)
-      =
+    let result ({ Pool_context.database_label; language; _ } as context) =
       let open Utils.Lwt_result.Infix in
-      let error_path = Http_utils.url_with_field_params query_parameters "/error" in
-      Utils.Lwt_result.map_error (fun err -> err, error_path)
+      Response.bad_request_render_error context
       @@ let* tenant = Pool_tenant.find_by_label database_label in
          let%lwt welcome_text =
            I18n.find_by_key database_label I18n.Key.WelcomeText language
@@ -38,7 +37,7 @@ let index req =
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
     in
-    result |> Http_utils.extract_happy_path ~src req)
+    Response.handle ~src req result)
 ;;
 
 let index_css req =
@@ -68,9 +67,11 @@ let index_css req =
   in
   match result with
   | Ok res -> Lwt.return res
-  | Error _ ->
-    Lwt.return
-      (Sihl.Web.Response.set_content_type "text/css" (Sihl.Web.Response.of_plain_text ""))
+  | Error error ->
+    let (_ : Error.t) =
+      Common.Utils.with_log_error ~src:(Logs.Src.create "handler.public.style") error
+    in
+    Lwt.return Response.empty_not_found
 ;;
 
 let email_confirmation_note req =
@@ -78,6 +79,7 @@ let email_confirmation_note req =
   General.note ~title:EmailConfirmationTitle ~body:EmailConfirmationNote req
 ;;
 
+(* TODO: Can this be removed? *)
 let not_found req =
   let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
@@ -104,6 +106,7 @@ let not_found req =
   |> Lwt.map @@ Opium.Response.set_status `Not_found
 ;;
 
+(* TODO: Can this be removed? *)
 let denied req =
   let open Utils.Lwt_result.Infix in
   let open Common in
@@ -134,8 +137,6 @@ let asset req =
   let open Utils.Lwt_result.Infix in
   let open Sihl.Contract.Storage in
   let%lwt response =
-    Utils.Lwt_result.map_error (fun err -> err, "/not-found")
-    @@
     let tags = Pool_context.Logger.Tags.req req in
     let asset_id = Sihl.Web.Router.param req Field.(Id |> show) in
     let* file = Http_utils.File.get_storage_file ~tags root_label asset_id in
@@ -149,13 +150,11 @@ let asset req =
   response
   |> function
   | Ok response -> Lwt.return response
-  | Error (err, path) ->
-    Logs.warn ~src:(Logs.Src.create "handler.public.asset") (fun m ->
-      m
-        ~tags:(Pool_context.Logger.Tags.req req)
-        "A user experienced an error: %s"
-        (Error.show err));
-    Http_utils.redirect_to path
+  | Error error ->
+    let (_ : Error.t) =
+      Common.Utils.with_log_error ~src:(Logs.Src.create "handler.public.asset") error
+    in
+    Lwt.return Response.empty_not_found
 ;;
 
 let error req =
@@ -171,23 +170,23 @@ let error req =
 ;;
 
 let credits req =
-  let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
-    let error_path = Http_utils.url_with_field_params query_parameters "/error" in
+  let result ({ Pool_context.language; database_label; _ } as context) =
+    Response.bad_request_render_error context
+    @@
     let open Utils.Lwt_result.Infix in
     let%lwt html =
       I18n.find_by_key database_label I18n.Key.CreditsText language
       ||> Page.Utils.i18n_page
     in
-    html
-    |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, error_path
+    html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let privacy_policy req =
   let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
+    Response.bad_request_render_error context
+    @@
     let redirect_path = Http_utils.url_with_field_params query_parameters "/" in
     let open Utils.Lwt_result.Infix in
     let%lwt policy =
@@ -200,14 +199,14 @@ let privacy_policy req =
       |> Page.Utils.i18n_page
       |> create_layout req context
       >|+ Sihl.Web.Response.of_html
-      >|- fun err -> err, redirect_path
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let terms_and_conditions req =
-  let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
-    let redirect_path = Http_utils.url_with_field_params query_parameters "/" in
+  let result ({ Pool_context.language; database_label; _ } as context) =
+    Response.bad_request_render_error context
+    @@
     let open Utils.Lwt_result.Infix in
     let%lwt terms =
       I18n.find_by_key database_label I18n.Key.TermsAndConditions language
@@ -216,9 +215,8 @@ let terms_and_conditions req =
     Page.Public.terms_and_conditions language terms terms_last_updated
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, redirect_path
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let hide_announcement req =
@@ -238,5 +236,5 @@ let hide_announcement req =
     in
     Tyxml.Html.txt "" |> Htmx.html_to_plain_text_response |> Lwt_result.return
   in
-  result |> Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src req result
 ;;
