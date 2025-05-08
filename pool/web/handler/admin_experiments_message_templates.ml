@@ -19,12 +19,6 @@ let experiment_path experiment_id =
   Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
 ;;
 
-let form_redirects experiment_id error_path =
-  let open Admin_message_templates in
-  let base = experiment_path experiment_id in
-  { success = base; error = Format.asprintf "%s/%s" base error_path }
-;;
-
 type form_context =
   | New of Message_template.Label.t
   | Edit of Message_template.Id.t
@@ -33,12 +27,14 @@ let form form_context req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
+    let* experiment =
+      Experiment.find database_label experiment_id >|- Response.not_found
+    in
+    Response.bad_request_render_error context
     @@
     let open Message_template in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* experiment = Experiment.find database_label experiment_id in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let* form_context, available_languages, label =
       let experiment_id = experiment_id |> Experiment.Id.to_common in
@@ -73,15 +69,13 @@ let form form_context req =
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_post label req =
   let open Admin_message_templates in
   let experiment_id = experiment_id req in
-  let redirect =
-    form_redirects experiment_id (Message_template.Label.prefixed_human_url label)
-  in
+  let redirect = { success = experiment_path experiment_id; error = form (New label) } in
   (write (Create (experiment_id |> Experiment.Id.to_common, label, redirect))) req
 ;;
 
@@ -105,28 +99,17 @@ let new_message_template_post req =
   | Error err -> redirect_back req err
 ;;
 
-let update_template req =
-  let open Utils.Lwt_result.Infix in
-  let open Admin_message_templates in
-  let open Message_template in
-  let experiment_id = experiment_id req in
-  let template_id = template_id req in
-  let%lwt template =
-    req |> database_label_of_req |> Lwt_result.lift >>= CCFun.flip find template_id
-  in
-  match template with
-  | Ok template ->
-    let redirect = form_redirects experiment_id (prefixed_template_url template) in
-    (write (Update (template_id, redirect))) req
-  | Error err ->
-    HttpUtils.redirect_to_with_actions
-      (experiment_path experiment_id)
-      [ HttpUtils.Message.set ~error:[ err ] ]
-;;
-
 let edit_template req =
   let template_id = template_id req in
   form (Edit template_id) req
+;;
+
+let update_template req =
+  let open Admin_message_templates in
+  let experiment_id = experiment_id req in
+  let template_id = template_id req in
+  let redirect = { success = experiment_path experiment_id; error = edit_template } in
+  (write (Update (template_id, redirect))) req
 ;;
 
 let delete req =

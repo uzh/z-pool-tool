@@ -7,7 +7,6 @@ module Response = Http_response
 module Url = HttpUtils.Url
 
 let src = Logs.Src.create "handler.admin.contacts"
-let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 let duplicate_path = HttpUtils.Url.Admin.duplicate_path
 

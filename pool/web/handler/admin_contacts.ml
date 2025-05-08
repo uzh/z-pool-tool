@@ -5,7 +5,6 @@ module Field = Pool_message.Field
 module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.contacts"
-let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment

@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Url = Page.Admin.CustomFields.Url
 module Field = Pool_message.Field
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.custom_field_options"
 let create_layout req = General.create_tenant_layout req
@@ -16,7 +17,15 @@ let get_field_id req =
   |> Custom_field.Id.of_string
 ;;
 
-let get_custom_field fnc req =
+let custom_field_option_opt ?id database_label =
+  let open Utils.Lwt_result.Infix in
+  match id with
+  | None -> Lwt_result.return None
+  | Some id ->
+    Custom_field.find_option database_label id >|+ CCOption.pure >|- Response.not_found
+;;
+
+(* let get_custom_field fnc req =
   let%lwt custom_field =
     let open Utils.Lwt_result.Infix in
     Pool_context.find req
@@ -30,50 +39,41 @@ let get_custom_field fnc req =
     Http_utils.redirect_to_with_actions
       Url.fallback_path
       [ HttpUtils.Message.set ~error:[ err ] ]
-;;
+;; *)
 
-let form ?id req custom_field =
+let form ?id req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err ->
-      err, Url.Field.edit_path Custom_field.(model custom_field, id custom_field))
-    @@ let* custom_field_option =
-         id
-         |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Custom_field.find_option database_label id >|+ CCOption.pure)
-       in
-       let* custom_field = req |> get_field_id |> Custom_field.find database_label in
-       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-       Page.Admin.CustomFieldOptions.detail
-         ?custom_field_option
-         custom_field
-         context
-         sys_languages
-       |> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+    let* custom_field =
+      req |> get_field_id |> Custom_field.find database_label >|- Response.not_found
+    in
+    let* custom_field_option = custom_field_option_opt ?id database_label in
+    Response.bad_request_render_error context
+    @@
+    let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+    Page.Admin.CustomFieldOptions.detail
+      ?custom_field_option
+      custom_field
+      context
+      sys_languages
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
-let new_form req = get_custom_field form req
+let new_form req = form req
 
 let edit req =
   let id = req |> get_option_id in
-  get_custom_field (form ~id) req
+  form ~id req
 ;;
 
-let write ?id req custom_field =
+let write ?id req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
-  in
-  let url_data = Custom_field.(model custom_field, id custom_field) in
-  let redirect_path = Url.Field.edit_path url_data in
-  let error_path =
-    match id with
-    | None -> Url.Option.new_path url_data
-    | Some id -> Url.Option.edit_path url_data id
   in
   let field_names =
     let open Pool_common in
@@ -82,12 +82,17 @@ let write ?id req custom_field =
     go Pool_message.Field.Name encode_lang
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    let* custom_field =
+      req |> get_field_id |> Custom_field.find database_label >|- Response.not_found
+    in
+    let* custom_field_option = custom_field_option_opt ?id database_label in
+    let url_data = Custom_field.(model custom_field, id custom_field) in
+    let redirect_path = Url.Field.edit_path url_data in
+    Response.bad_request_on_error ~urlencoded (form ?id)
     @@
     let events =
       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-      match id with
+      match custom_field_option with
       | None ->
         Cqrs_command.Custom_field_option_command.Create.handle
           ~tags
@@ -95,8 +100,7 @@ let write ?id req custom_field =
           custom_field
           field_names
         |> Lwt_result.lift
-      | Some id ->
-        let* custom_field_option = Custom_field.find_option database_label id in
+      | Some custom_field_option ->
         Cqrs_command.Custom_field_option_command.Update.handle
           ~tags
           sys_languages
@@ -118,53 +122,58 @@ let write ?id req custom_field =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
-let create req = get_custom_field write req
+let create req = write req
 
 let update req =
   let id = req |> get_option_id in
-  get_custom_field (write ~id) req
+  write ~id req
 ;;
 
 let toggle_action action req =
   let open Utils.Lwt_result.Infix in
-  let handler req custom_field =
-    let id = req |> get_option_id in
-    let result { Pool_context.database_label; user; _ } =
-      let redirect_path =
-        Url.Field.edit_path Custom_field.(model custom_field, id custom_field)
-      in
-      Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-      @@
-      let tags = Pool_context.Logger.Tags.req req in
-      let* option = id |> Custom_field.find_option database_label in
-      let events =
-        let open Cqrs_command.Custom_field_option_command in
-        Lwt_result.lift
-        @@
-        match action with
-        | `Delete -> Destroy.handle ~tags option
-        | `Publish -> Publish.handle ~tags option
-      in
-      let success =
-        let open Pool_message.Success in
-        match action with
-        | `Delete -> Deleted Field.CustomFieldOption
-        | `Publish -> Published Field.CustomFieldOption
-      in
-      let handle events =
-        let%lwt () = Pool_event.handle_events ~tags database_label user events in
-        Http_utils.redirect_to_with_actions
-          redirect_path
-          [ Message.set ~success:[ success ] ]
-      in
-      events |>> handle
+  let result ({ Pool_context.database_label; user; _ } as context) =
+    let* custom_field =
+      req |> get_field_id |> Custom_field.find database_label >|- Response.not_found
     in
-    result |> HttpUtils.extract_happy_path ~src req
+    let* option =
+      req
+      |> get_option_id
+      |> Custom_field.find_option database_label
+      >|- Response.not_found
+    in
+    let redirect_path =
+      Url.Field.edit_path Custom_field.(model custom_field, id custom_field)
+    in
+    (* TODO: Rerender form *)
+    Response.bad_request_render_error context
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let events =
+      let open Cqrs_command.Custom_field_option_command in
+      Lwt_result.lift
+      @@
+      match action with
+      | `Delete -> Destroy.handle ~tags option
+      | `Publish -> Publish.handle ~tags option
+    in
+    let success =
+      let open Pool_message.Success in
+      match action with
+      | `Delete -> Deleted Field.CustomFieldOption
+      | `Publish -> Published Field.CustomFieldOption
+    in
+    let handle events =
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ success ] ]
+    in
+    events |>> handle
   in
-  get_custom_field handler req
+  Response.handle ~src req result
 ;;
 
 let delete = toggle_action `Delete

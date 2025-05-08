@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.experiments_users"
 let create_layout req = General.create_tenant_layout req
@@ -81,9 +82,10 @@ let query_admin_current_and_exclude_role role guard_id =
 let index entity role req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; language; user; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
-    @@
     let id = experiment_id req in
+    let* experiment = Experiment.find database_label id >|- Response.not_found in
+    Response.bad_request_render_error context
+    @@
     let form_path, guard_id = entity_path_and_guard id req role entity in
     let current_roles, global_role = query_admin_current_and_exclude_role role guard_id in
     let query = Admin.query_from_request req in
@@ -102,7 +104,6 @@ let index entity role req =
        | `Experimenter -> I18n.Key.ExperimenterRoleHint)
       |> CCFun.flip (I18n.find_by_key database_label) language
     in
-    let* experiment = Experiment.find database_label id in
     let%lwt can_assign, can_unassign =
       match%lwt Pool_context.Utils.find_authorizable_opt database_label user with
       | None -> Lwt.return (false, false)
@@ -126,7 +127,7 @@ let index entity role req =
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let index_assistants = index `Experiment `Assistants
@@ -200,13 +201,23 @@ let toggle_role entity action req =
      | `AssignExperimenter | `UnassignExperimenter -> "experimenter")
     |> base_path
   in
+  let fallback_handler =
+    match action with
+    | `AssignAssistant | `UnassignAssistant ->
+      (match entity with
+       | `Experiment -> index_assistants
+       | `Session -> index_session_assistants)
+    | `AssignExperimenter | `UnassignExperimenter -> index_experimenter
+  in
   let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    let* experiment =
+      Experiment.find database_label experiment_id >|- Response.not_found
+    in
+    let* admin = Admin.find database_label admin_id >|- Response.not_found in
+    Response.bad_request_on_error fallback_handler
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* experiment = Experiment.find database_label experiment_id in
-    let* admin = Admin.find database_label admin_id in
     let message =
       let open Pool_message.Success in
       match action with
@@ -241,7 +252,7 @@ let toggle_role entity action req =
     Http_utils.redirect_to_with_actions redirect_path [ Message.set ~success:[ message ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let assign_assistant = toggle_role `Experiment `AssignAssistant

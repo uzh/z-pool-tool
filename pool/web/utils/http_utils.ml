@@ -131,55 +131,6 @@ let set_no_cache_headers ?(enable_cache = false) res =
     |> CCList.fold_left (CCFun.flip Opium.Response.add_header) res
 ;;
 
-let extract_happy_path_generic ?(src = src) ?enable_cache req result msgf =
-  let context = Pool_context.find req in
-  let tags = Pool_context.Logger.Tags.req req in
-  match context with
-  | Ok ({ Pool_context.query_parameters; _ } as context) ->
-    let%lwt res = result context in
-    res
-    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) -> err)
-    |> CCResult.map (set_no_cache_headers ?enable_cache)
-    |> CCResult.map Lwt.return
-    |> CCResult.get_lazy (fun (error_msg, error_path) ->
-      redirect_to_with_actions
-        (url_with_field_params query_parameters error_path)
-        [ msgf error_msg ])
-  | Error err ->
-    Logs.warn ~src (fun m ->
-      m ~tags "Context not found: %s" (Pool_message.Error.show err));
-    redirect_to "/error"
-;;
-
-let extract_happy_path ?(src = src) ?enable_cache req result =
-  extract_happy_path_generic ~src ?enable_cache req result (fun err ->
-    let err =
-      Pool_common.Utils.with_log_error ~src ~tags:(Pool_context.Logger.Tags.req req) err
-    in
-    Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
-;;
-
-let extract_happy_path_with_actions ?(src = src) ?enable_cache req result =
-  let context = Pool_context.find req in
-  let tags = Pool_context.Logger.Tags.req req in
-  match context with
-  | Ok ({ Pool_context.query_parameters; _ } as context) ->
-    let%lwt res = result context in
-    res
-    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _, _) -> err)
-    |> CCResult.map (set_no_cache_headers ?enable_cache)
-    |> CCResult.map Lwt.return
-    |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
-      redirect_to_with_actions
-        (url_with_field_params query_parameters error_path)
-        (CCList.append
-           [ Message.set ~warning:[] ~success:[] ~info:[] ~error:[ error_key ] ]
-           error_actions))
-  | Error err ->
-    Logs.err ~src (fun m -> m ~tags "Context not found: %s" (Pool_message.Error.show err));
-    redirect_to "/error"
-;;
-
 let urlencoded_to_params urlencoded keys =
   keys
   |> (CCList.map

@@ -10,8 +10,6 @@ let api_key_id req =
   Http_utils.get_field_router_param req Field.ApiKey |> Api_key.Id.of_string
 ;;
 
-let extract_happy_path = Http_utils.extract_happy_path ~src
-
 let find_authorizable_target database_label api_key =
   let open Utils.Lwt_result.Infix in
   api_key.Api_key.id

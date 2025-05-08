@@ -34,16 +34,16 @@ let%test "filter url encoded values" =
     ; "multiple_values", [ "value1"; "value2" ]
     ; "foo", [ "bar" ]
     ]
+    |> flash_fetch_values
   in
-  let processed = flash_fetch_values urlencoded in
   let open CCList in
   let expect_none =
-    [ "password"; "new_password"; "_csrf" ] |> filter (fun key -> mem_assq key processed)
+    [ "password"; "new_password"; "_csrf" ] |> filter (fun key -> mem_assq key urlencoded)
   in
   let expect_some =
     [ "empty_list", ""; "multiple_values", "value1"; "foo", "bar" ]
     |> filter_map (fun (key, value) ->
-      match assoc_opt ~eq:CCString.equal key processed with
+      match assoc_opt ~eq:CCString.equal key urlencoded with
       | None -> None
       | Some v -> if CCString.equal v value then None else Some key)
   in

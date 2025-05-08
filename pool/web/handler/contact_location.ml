@@ -9,16 +9,16 @@ let id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encod
 let show req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/")
-    @@
     let id = id req Field.Location Pool_location.Id.of_string in
-    let* location = Pool_location.find database_label id in
+    let* location = Pool_location.find database_label id >|- Response.not_found in
+    Response.bad_request_render_error context
+    @@
     let%lwt files = Pool_location.files_by_location database_label id in
     Page.Contact.Location.show context location files
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let asset req =

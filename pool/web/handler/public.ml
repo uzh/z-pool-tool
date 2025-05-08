@@ -79,34 +79,13 @@ let email_confirmation_note req =
   General.note ~title:EmailConfirmationTitle ~body:EmailConfirmationNote req
 ;;
 
-(* TODO: Can this be removed? *)
+(* TODO: Does that work as expected? *)
 let not_found req =
-  let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
-    let open Utils.Lwt_result.Infix in
-    let html = Page.Utils.error_page_not_found language () in
-    match Http_utils.is_req_from_root_host req with
-    | true ->
-      General.create_root_layout context html
-      ||> Sihl.Web.Response.of_html
-      |> Lwt_result.ok
-    | false ->
-      Utils.Lwt_result.map_error (fun err ->
-        err, Http_utils.url_with_field_params query_parameters "/error")
-      @@ let* tenant = Pool_tenant.find_by_label database_label in
-         let%lwt tenant_languages = Settings.find_languages database_label in
-         let req =
-           Pool_context.Tenant.set
-             req
-             (Pool_context.Tenant.create tenant tenant_languages)
-         in
-         html |> create_layout req context >|+ Sihl.Web.Response.of_html
-  in
-  result
-  |> Http_utils.extract_happy_path ~src req
-  |> Lwt.map @@ Opium.Response.set_status `Not_found
+  let error (_ : Pool_context.t) = Response.generic_not_found |> Lwt_result.fail in
+  Response.handle ~src req error
 ;;
 
-(* TODO: Can this be removed? *)
+(* TODO: Simplify? *)
 let denied req =
   let open Utils.Lwt_result.Infix in
   let open Common in
