@@ -98,6 +98,7 @@ let form { Pool_context.csrf; language; flash_fetcher; _ } ~control ?api_key () 
     match api_key with
     | None ->
       Input.date_time_picker_element
+        ?flash_fetcher
         ~disable_past:true
         ~required:true
         language
@@ -123,6 +124,7 @@ let form { Pool_context.csrf; language; flash_fetcher; _ } ~control ?api_key () 
           [ input_element
               ?flash_fetcher
               ?value:(api_key >|= fun { name; _ } -> Name.value name)
+              ~required:true
               language
               `Text
               Field.Name
@@ -138,7 +140,9 @@ let create ({ Pool_context.language; _ } as context) ?api_key () =
   let control = Control.Create (Some Field.ApiKey) in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt (Pool_common.Utils.control_to_string language control) ]
+    [ h1
+        ~a:[ a_class [ "has-gap" ] ]
+        [ txt (Pool_common.Utils.control_to_string language control) ]
     ; form context ~control ?api_key ()
     ]
 ;;
@@ -176,7 +180,7 @@ let edit
 
 let show
       ({ Pool_context.language; _ } as context)
-      { Api_key.name; token; expires_at; created_at; updated_at; _ }
+      { Api_key.id; name; token; expires_at; created_at; updated_at; _ }
       target_id
       granted_roles
   =
@@ -193,8 +197,16 @@ let show
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
-    [ h1 [ txt (Name.value name) ]
-    ; details
-    ; Partials.roles_list ~is_edit:false context target_id granted_roles
+    [ div
+        ~a:[ a_class [ "flexrow wrap"; "flex-gap"; "justify-between"; "align-center" ] ]
+        [ h1 [ txt (Name.value name) ]
+        ; Component.Input.link_as_button
+            ~control:(language, Control.Edit None)
+            ~classnames:[ "small" ]
+            (api_key_path ~id ~suffix:"edit" ())
+        ]
+    ; div
+        ~a:[ a_class [ "gap-lg" ] ]
+        [ details; Partials.roles_list ~is_edit:false context target_id granted_roles ]
     ]
 ;;

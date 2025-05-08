@@ -432,7 +432,6 @@ let swap_session_get_helper action req =
     in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let response html =
       html |> HttpUtils.Htmx.html_to_plain_text_response |> Lwt_result.return
     in
@@ -458,7 +457,6 @@ let swap_session_get_helper action req =
         sessions
         swap_session_template
         tenant_languages
-        flash_fetcher
       |> response
     | `ToggleLanguage ->
       Page.Admin.Assignment.Partials.swap_session_notification_form_fields
@@ -469,7 +467,6 @@ let swap_session_get_helper action req =
         assignment_id
         tenant_languages
         swap_session_template
-        flash_fetcher
       |> response
   in
   Response.Htmx.handle ~error_as_notification:true ~src req result

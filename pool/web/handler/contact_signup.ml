@@ -12,12 +12,11 @@ let sign_up req =
     let open Utils.Lwt_result.Infix in
     Response.bad_request_render_error context
     @@
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let%lwt custom_fields = Custom_field.all_prompted_on_registration database_label in
     let%lwt terms =
       I18n.find_by_key database_label I18n.Key.TermsAndConditions language
     in
-    Page.Contact.sign_up terms custom_fields context flash_fetcher
+    Page.Contact.sign_up terms custom_fields context
     |> create_layout req ~active_navigation:"/signup" context
     >|+ Sihl.Web.Response.of_html
   in

@@ -24,7 +24,7 @@ let database_fields tenant language flash_fetcher =
       field
       ~hints:[ help ]
       ~value
-      ~flash_fetcher
+      ?flash_fetcher
       ~required:true)
   |> fun fields ->
   div
@@ -38,8 +38,7 @@ let map_or = CCOption.map_or ~default:""
 
 let tenant_form
       ?(tenant : Pool_tenant.t option)
-      Pool_context.{ language; csrf; _ }
-      flash_fetcher
+      Pool_context.{ language; csrf; flash_fetcher; _ }
   =
   let open Pool_tenant in
   let action, control =
@@ -105,7 +104,7 @@ let tenant_form
         `Text
         Field.ContactEmail
         ~required:true
-        ~flash_fetcher
+        ?flash_fetcher
         ~hints:[ Pool_common.I18n.SettingsContactEmail ]
   in
   let database_fields =
@@ -128,20 +127,20 @@ let tenant_form
         Field.Title
         ~value:(value (fun t -> t.title |> Title.value))
         ~required:true
-        ~flash_fetcher
+        ?flash_fetcher
     ; input_element
         language
         `Text
         Field.Description
         ~value:(value (fun t -> t.description |> map_or Description.value))
-        ~flash_fetcher
+        ?flash_fetcher
     ; input_element
         language
         `Text
         Field.Url
         ~hints:Pool_common.I18n.[ TenantUrl ]
         ~value:(value (fun t -> t.url |> Url.value))
-        ~flash_fetcher
+        ?flash_fetcher
         ~required:true
     ; language_select
     ; contact_email
@@ -153,7 +152,7 @@ let tenant_form
     ]
 ;;
 
-let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
+let list tenant_list (Pool_context.{ language; _ } as context) =
   let build_tenant_rows tenant_list =
     let thead =
       [ Field.Tenant |> Table.field_to_txt language
@@ -201,7 +200,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
                     Utils.control_to_string language Control.(Create (Some Field.Tenant)))
                   |> txt
                 ]
-            ; tenant_form context flash_fetcher
+            ; tenant_form context
             ]
         ]
     ]
@@ -284,8 +283,7 @@ let tenant_detail_sub_form language field form_html =
 
 let detail
       (tenant : Pool_tenant.t)
-      (Pool_context.{ language; csrf; _ } as context)
-      flash_fetcher
+      (Pool_context.{ language; csrf; flash_fetcher; _ } as context)
   =
   let open Pool_tenant in
   let control_to_string = Pool_common.Utils.control_to_string language in
@@ -361,7 +359,7 @@ let detail
         ]
     ; div
         ~a:[ a_class [ "stack-lg"; "gap" ] ]
-        [ tenant_form ~tenant context flash_fetcher
+        [ tenant_form ~tenant context
         ; delete_file_forms
         ; database_form
         ; p

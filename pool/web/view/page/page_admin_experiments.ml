@@ -1029,7 +1029,6 @@ let message_template_form
       languages
       label
       form_context
-      flash_fetcher
   =
   let open Message_template in
   let open Pool_common in
@@ -1081,7 +1080,6 @@ let message_template_form
         ?fixed_language:experiment.Experiment.language
         form_context
         action
-        flash_fetcher
     ; changelog
     ]
   |> CCList.return

@@ -29,14 +29,13 @@ let index req =
 
 let form case req =
   let result context =
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* version =
       match case with
       | `New -> Lwt_result.return None
       | `Edit ->
         version_id req |> Pool_version.find >|- Response.not_found >|+ CCOption.return
     in
-    Page.Root.Version.form context ~flash_fetcher ?version ()
+    Page.Root.Version.form context ?version ()
     |> create_layout context
     ||> Sihl.Web.Response.of_html
     ||> CCResult.return

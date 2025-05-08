@@ -58,7 +58,7 @@ let index (Pool_context.{ language; _ } as context) versions =
     ]
 ;;
 
-let form { Pool_context.csrf; language; _ } ?version ?flash_fetcher () =
+let form { Pool_context.csrf; language; flash_fetcher; _ } ?version () =
   let open Pool_version in
   let open CCOption.Infix in
   let field = Some Field.Version in
