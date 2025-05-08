@@ -5,7 +5,6 @@ module Message = HttpUtils.Message
 module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.admins"
-let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 let admin_id req = HttpUtils.find_id Admin.Id.of_string Field.Admin req
 let admin_path = HttpUtils.Url.Admin.admin_path

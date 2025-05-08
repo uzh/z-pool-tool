@@ -232,10 +232,11 @@ let email_verification req =
   Response.handle ~src req result
 ;;
 
+(* TODO: Check, if this calls terms_accept *)
 let terms req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; language; query_parameters; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/login")
+    Response.bad_request_render_error context
     @@
     let%lwt terms =
       I18n.find_by_key database_label I18n.Key.TermsAndConditions language
@@ -248,12 +249,12 @@ let terms req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let terms_accept req =
   let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
-    Utils.Lwt_result.map_error (fun msg -> msg, "/login")
+    Response.bad_request_on_error terms
     @@
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
@@ -265,5 +266,5 @@ let terms_accept req =
     HttpUtils.(redirect_to (url_with_field_params query_parameters "/experiments"))
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;

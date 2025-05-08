@@ -15,6 +15,7 @@ module WaitingList = Admin_experiments_waiting_list
 let src = Logs.Src.create "handler.admin.experiments"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
+let experiment_path = Http_utils.Url.Admin.experiment_path
 
 let find_entity_in_urlencoded urlencoded field fnc =
   let open Utils.Lwt_result.Infix in
@@ -512,7 +513,18 @@ let message_history req =
   else Experiments.message_history context queue_table experiment messages
 ;;
 
-module Tags = Admin_experiments_tags
+module Tags = struct
+  let handle action req =
+    let experiment_id = experiment_id req in
+    let redirect = experiment_path ~id:experiment_id () in
+    Admin_experiments_tags.handle_tag action redirect edit req
+  ;;
+
+  let assign_tag = handle `Assign
+  let remove_tag = handle `Remove
+  let assign_experiment_participation_tag = handle `AssignExperimentParticipationTag
+  let remove_experiment_participation_tag = handle `RemoveExperimentParticipationTag
+end
 
 module Access : sig
   include module type of Helpers.Access

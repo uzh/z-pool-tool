@@ -4,7 +4,6 @@ module HttpMessage = HttpUtils.Message
 module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.experiments_invitations"
-let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 

@@ -448,7 +448,7 @@ module Admin = struct
             ]
           in
           let participation_tags =
-            let open Handler.Admin.Experiments.Tags in
+            let open Handler.Admin.Session.Tags in
             tag_routes_helper
               (assign_session_participation_tag, Access.update)
               (remove_session_participation_tag, Access.update)

@@ -59,14 +59,13 @@ let edit req =
 
 type redirect =
   { success : string
-  ; error : string
+  ; error : Rock.Request.t -> Rock.Response.t Lwt.t
   }
 
 type action =
   | Create of Pool_common.Id.t * Message_template.Label.t * redirect
   | Update of Message_template.Id.t * redirect
 
-(* TODO: createn helper function instead of reusing the same handler *)
 let write action req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
@@ -78,8 +77,8 @@ let write action req =
     | Update (_, redirect) -> redirect, Success.Updated Field.MessageTemplate
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, redirect.error, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    (* TODO: Cannot always be edit *)
+    Response.bad_request_on_error ~urlencoded redirect.error
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let events =
@@ -107,7 +106,7 @@ let write action req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
@@ -115,7 +114,7 @@ let update req =
   let redirect_path =
     id |> Message_template.Id.value |> Format.asprintf "/admin/message-template/%s/edit"
   in
-  let redirect = { success = redirect_path; error = redirect_path } in
+  let redirect = { success = redirect_path; error = edit } in
   write (Update (id, redirect)) req
 ;;
 

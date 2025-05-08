@@ -103,10 +103,7 @@ let create_post location req =
     ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/new" redirect_path
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let validate_label ({ Command.label; _ } as m : Command.create) =
       SmtpAuth.find_by_label database_label label
@@ -137,7 +134,7 @@ let create_post location req =
     |>> handle
     |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let create = create_post `Tenant
@@ -189,19 +186,23 @@ let update = update_base `Tenant `UpdateDetails Success.SmtpDetailsUpdated
 let delete_base location req =
   let tags = Pool_context.Logger.Tags.req req in
   let path = active_navigation location in
-  HttpUtils.extract_happy_path ~src req
-  @@ fun Pool_context.{ database_label; user; _ } ->
-  let smtp_id =
-    Sihl.Web.Router.param req (Field.show Field.Smtp) |> SmtpAuth.Id.of_string
+  let result { Pool_context.database_label; user; _ } =
+    let* smtp =
+      Sihl.Web.Router.param req (Field.show Field.Smtp)
+      |> SmtpAuth.Id.of_string
+      |> SmtpAuth.find database_label
+      >|- Response.not_found
+    in
+    Response.bad_request_on_error index
+    @@ (Cqrs_command.Smtp_command.Delete.handle ~tags smtp.SmtpAuth.id
+        |> Lwt_result.lift
+        |>> Pool_event.handle_events ~tags database_label user
+        |>> fun () ->
+        Http_utils.redirect_to_with_actions
+          path
+          [ Message.set ~success:[ Success.Deleted Field.Smtp ] ])
   in
-  Cqrs_command.Smtp_command.Delete.handle ~tags smtp_id
-  |> Lwt_result.lift
-  |>> (fun events ->
-  let%lwt () = Pool_event.handle_events ~tags database_label user events in
-  Http_utils.redirect_to_with_actions
-    path
-    [ Message.set ~success:[ Success.Deleted Field.Smtp ] ])
-  |> Utils.Lwt_result.map_error (fun err -> err, path)
+  Response.handle ~src req result
 ;;
 
 let delete = delete_base `Tenant

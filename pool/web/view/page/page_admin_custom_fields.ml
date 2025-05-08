@@ -5,6 +5,7 @@ module Icon = Component.Icon
 module Table = Component.Table
 module Partials = Component.Partials
 
+(* TODO [timhub]: Move to Http_utils_url module *)
 module Url = struct
   open Custom_field
 
