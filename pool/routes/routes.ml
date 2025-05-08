@@ -661,8 +661,8 @@ module Admin = struct
         let tags =
           let open Settings.Tags in
           tag_routes_helper
-            (Tags.assign_tag, Access.assign_tag_to_contact)
-            (Tags.remove_tag, Access.remove_tag_from_contact)
+            (ContactsTags.assign_tag, Access.assign_tag_to_contact)
+            (ContactsTags.remove_tag, Access.remove_tag_from_contact)
         in
         let experiment =
           [ get "" htmx_experiments_get

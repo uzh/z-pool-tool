@@ -15,12 +15,11 @@ let handle_tag action req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result { Pool_context.database_label; user; _ } =
     let* contact =
       Contact.find database_label contact_id |> Response.not_found_on_error
     in
-    (* TODO: This should render the edit page => dependency cycle *)
-    Response.bad_request_render_error context
+    Response.bad_request_on_error ~urlencoded Admin_contacts.edit
     @@ let* message, events =
          match action with
          | `Assign ->
