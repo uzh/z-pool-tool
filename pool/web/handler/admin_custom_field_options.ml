@@ -25,22 +25,6 @@ let custom_field_option_opt ?id database_label =
     Custom_field.find_option database_label id >|+ CCOption.pure >|- Response.not_found
 ;;
 
-(* let get_custom_field fnc req =
-  let%lwt custom_field =
-    let open Utils.Lwt_result.Infix in
-    Pool_context.find req
-    |> Lwt_result.lift
-    >>= fun { Pool_context.database_label; _ } ->
-    Custom_field.find database_label (req |> get_field_id)
-  in
-  match custom_field with
-  | Ok field -> field |> fnc req
-  | Error err ->
-    Http_utils.redirect_to_with_actions
-      Url.fallback_path
-      [ HttpUtils.Message.set ~error:[ err ] ]
-;; *)
-
 let form ?id req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
@@ -134,7 +118,7 @@ let update req =
 
 let toggle_action action req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result { Pool_context.database_label; user; _ } =
     let* custom_field =
       req |> get_field_id |> Custom_field.find database_label >|- Response.not_found
     in
@@ -147,8 +131,7 @@ let toggle_action action req =
     let redirect_path =
       Url.Field.edit_path Custom_field.(model custom_field, id custom_field)
     in
-    (* TODO: Rerender form *)
-    Response.bad_request_render_error context
+    Response.bad_request_on_error edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let events =

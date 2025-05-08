@@ -231,7 +231,6 @@ let email_verification req =
   Response.handle ~src req result
 ;;
 
-(* TODO: Check, if this calls terms_accept *)
 let terms req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; language; query_parameters; _ } as context) =
