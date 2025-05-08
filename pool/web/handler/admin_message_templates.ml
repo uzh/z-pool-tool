@@ -71,7 +71,6 @@ let write action req =
     | Update (_, redirect) -> redirect, Success.Updated Field.MessageTemplate
   in
   let result { Pool_context.database_label; user; _ } =
-    (* TODO: Cannot always be edit *)
     Response.bad_request_on_error ~urlencoded redirect.error
     @@
     let tags = Pool_context.Logger.Tags.req req in
