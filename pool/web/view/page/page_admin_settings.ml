@@ -92,9 +92,8 @@ let show
       user_import_first_reminder
       user_import_second_reminder
       page_scripts
-      Pool_context.{ language; csrf; _ }
+      Pool_context.{ language; csrf; flash_fetcher; _ }
       text_messages_enabled
-      flash_fetcher
   =
   let open Pool_common in
   let submit ?(control = Message.(Control.Update None)) () =
@@ -382,7 +381,7 @@ let show
             ; timespan_picker
                 ~value:(value |> encode)
                 ~required:true
-                ~flash_fetcher
+                ?flash_fetcher
                 language
                 field
             ; submit ()

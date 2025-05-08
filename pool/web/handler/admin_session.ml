@@ -100,7 +100,6 @@ let new_helper req page =
     Response.bad_request_render_error context
     @@ let* experiment = Experiment.find database_label id in
        let%lwt locations = Pool_location.all database_label in
-       let flash_fetcher = flip Sihl.Web.Flash.find req in
        let%lwt default_leadtime_settings = default_lead_time_settings database_label in
        let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
        let html =
@@ -132,7 +131,7 @@ let new_helper req page =
                  default_leadtime_settings
                  locations
                  text_messages_enabled
-             | true -> Page.Admin.TimeWindow.new_form context experiment flash_fetcher)
+             | true -> Page.Admin.TimeWindow.new_form context experiment)
        in
        html >>= create_layout req context >|+ Sihl.Web.Response.of_html
   in
@@ -339,7 +338,6 @@ let time_window_page database_label req context time_window experiment =
   let experiment_target_id = [ Guard.Uuid.target_of Experiment.Id.value experiment_id ] in
   let view_contact_name = can_read_contact_name context experiment_target_id in
   let view_contact_info = can_read_contact_info context experiment_target_id in
-  let flash_fetcher = flip Sihl.Web.Flash.find req in
   let current_tags () =
     let open Tags.ParticipationTags in
     find_all database_label (Session (Session.Id.to_common time_window_id))
@@ -357,8 +355,7 @@ let time_window_page database_label req context time_window experiment =
         find_all database_label (Experiment (Experiment.Id.to_common experiment_id)))
     in
     let tags = current_tags, available_tags, experiment_participation_tags in
-    Page.Admin.TimeWindow.edit context experiment time_window tags flash_fetcher
-    >|> create_layout
+    Page.Admin.TimeWindow.edit context experiment time_window tags >|> create_layout
   | `Print ->
     let%lwt assignments =
       Assignment.(
@@ -806,12 +803,13 @@ let message_template_form ?template_id label req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
   let result ({ Pool_context.database_label; _ } as context) =
+    let* experiment =
+      Experiment.find database_label experiment_id >|- Response.not_found
+    in
     Response.bad_request_render_error context
     @@
     let open Message_template in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let* form_context, available_languages =
@@ -847,7 +845,6 @@ let message_template_form ?template_id label req =
       available_languages
       label
       form_context
-      flash_fetcher
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in

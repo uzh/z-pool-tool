@@ -154,7 +154,6 @@ let update req =
     let tags = Pool_context.Logger.Tags.req req in
     let* role = role_from_request req |> Lwt_result.lift in
     let* target = target_from_request req |> Lwt_result.lift in
-    let flash_fetcher value = Sihl.Web.Flash.find value req in
     let%lwt current_permissions =
       Persistence.RolePermission.permissions_by_role_and_target database_label role target
     in
@@ -177,7 +176,6 @@ let update req =
       | Error error ->
         Page.Admin.Settings.RolePermission.edit_target_modal
           ~error
-          ~flash_fetcher
           context
           role
           target

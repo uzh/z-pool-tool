@@ -99,9 +99,7 @@ let merge req =
       Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
     in
     let* duplicate =
-      duplicate_id req
-      |> Duplicate_contacts.find database_label
-      |> Response.not_found_on_error
+      duplicate_id req |> Duplicate_contacts.find database_label >|- Response.not_found
     in
     Response.bad_request_on_error ~urlencoded show
     @@

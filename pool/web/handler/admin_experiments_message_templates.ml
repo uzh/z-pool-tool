@@ -33,7 +33,6 @@ let form form_context req =
     Response.bad_request_render_error context
     @@
     let open Message_template in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let* form_context, available_languages, label =
@@ -65,7 +64,6 @@ let form form_context req =
       available_languages
       label
       form_context
-      flash_fetcher
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in

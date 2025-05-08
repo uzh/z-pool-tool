@@ -44,13 +44,7 @@ let edit req =
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.MessageTemplate.edit
-      ~text_messages_enabled
-      context
-      template
-      tenant
-      flash_fetcher
+    Page.Admin.MessageTemplate.edit ~text_messages_enabled context template tenant
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in

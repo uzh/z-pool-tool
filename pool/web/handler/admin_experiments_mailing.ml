@@ -78,7 +78,6 @@ let new_form req =
       ~matching_filter_count
       context
       experiment
-      (CCFun.flip Sihl.Web.Flash.find req)
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -136,12 +135,7 @@ let detail edit req =
           Page.Admin.Mailing.detail context experiment (mailing, count) |> Lwt_result.ok
         | true ->
           let* matching_filter_count = matching_filter_count database_label experiment in
-          Page.Admin.Mailing.form
-            ~matching_filter_count
-            ~mailing
-            context
-            experiment
-            (CCFun.flip Sihl.Web.Flash.find req)
+          Page.Admin.Mailing.form ~matching_filter_count ~mailing context experiment
           |> Lwt_result.ok)
        >>= create_layout req context
        >|+ Sihl.Web.Response.of_html

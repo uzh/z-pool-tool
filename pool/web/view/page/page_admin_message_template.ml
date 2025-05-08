@@ -195,6 +195,12 @@ let template_inputs
   in
   let plain_text_element =
     let id = Field.(show PlainText) in
+    let value =
+      let open CCOption in
+      flash_fetcher
+      >>= (fun fetcher -> fetcher id)
+      |> value ~default:(template.plain_text |> PlainText.value)
+    in
     div
       ~a:[ a_class [ "form-group" ] ]
       [ div
@@ -223,7 +229,7 @@ let template_inputs
             ; a_required ()
             ; a_user_data "plain-text-for" Field.(show EmailText)
             ]
-          (txt (template.plain_text |> PlainText.value))
+          (txt value)
       ; span
           ~a:[ a_class [ "help" ] ]
           [ Utils.hint_to_string language I18n.EmailPlainText |> HttpUtils.add_line_breaks
@@ -276,7 +282,7 @@ let template_inputs
 ;;
 
 let template_form
-      ({ Pool_context.language; query_parameters; csrf; _ } as context)
+      ({ Pool_context.language; query_parameters; csrf; flash_fetcher; _ } as context)
       ?entity
       ?(hide_text_message_input = false)
       ?languages
@@ -285,9 +291,7 @@ let template_form
       ~text_messages_enabled
       form_context
       action
-      flash_fetcher
   =
-  (* TODO: Remove flash fetcher argument *)
   let open Message_template in
   let externalize = Http_utils.externalize_path_with_params query_parameters in
   let submit, template =
@@ -318,10 +322,10 @@ let template_form
        ; template_inputs
            context
            ?entity
+           ?flash_fetcher
            ~hide_text_message_input
            ?languages
            ?fixed_language
-           ~flash_fetcher
            ~text_messages_enabled
            form_context
            label
@@ -341,7 +345,6 @@ let edit
       ~text_messages_enabled
       template
       (tenant : Pool_tenant.t)
-      flash_fetcher
   =
   let open Message_template in
   let action = template.id |> Id.value |> Format.asprintf "/admin/message-template/%s/" in
@@ -363,7 +366,6 @@ let edit
             (`Update template)
             ~text_messages_enabled
             action
-            flash_fetcher
         ; Component.Changelog.list context changelog_url None
         ]
     ]

@@ -212,13 +212,12 @@ module Partials = struct
 
   let swap_session_notification_form_fields
         ~text_messages_enabled
-        context
+        ({ Pool_context.flash_fetcher; _ } as context)
         (experiment : Experiment.t)
         session_id
         assignment_id
         languages
         swap_session_template
-        flash_fetcher
     =
     let id = "swap-session-notification-form" in
     let language_select_attriutes =
@@ -244,6 +243,7 @@ module Partials = struct
       ~a:[ a_id id ]
       [ Page_admin_message_template.template_inputs
           ?language_select_attriutes
+          ?flash_fetcher
           ~hide_text_message_input:true
           ~text_messages_enabled
           context
@@ -252,7 +252,6 @@ module Partials = struct
           ~languages
           ?fixed_language:experiment.Experiment.language
           ~selected_language:swap_session_template.Message_template.language
-          ~flash_fetcher
       ]
   ;;
 
@@ -266,7 +265,6 @@ module Partials = struct
         available_sessions
         swap_session_template
         languages
-        flash_fetcher
     =
     let action =
       assignment_specific_path
@@ -328,7 +326,6 @@ module Partials = struct
                       assignment.id
                       languages
                       swap_session_template
-                      flash_fetcher
                   ]
               ; submit_element language (Control.Save None) ~submit_type:`Primary ()
               ; csrf_element csrf ()

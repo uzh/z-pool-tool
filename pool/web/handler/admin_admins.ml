@@ -154,9 +154,9 @@ let grant_role req =
   let to_guardian_id admin = admin |> Admin.id |> Guard.Uuid.actor_of Admin.Id.value in
   let redirect_path = admin_path ~id:admin_id ~suffix:"edit" () in
   let result { Pool_context.database_label; user; _ } =
+    let* admin = Admin.find database_label admin_id >|- Response.not_found in
     Response.bad_request_on_error edit
     @@
-    let* admin = Admin.find database_label admin_id in
     let target_id = to_guardian_id admin in
     Helpers.Guard.grant_role ~redirect_path ~user ~target_id database_label req
   in
@@ -172,7 +172,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
     let* admin =
       HttpUtils.find_id Admin.Id.of_string Field.Admin req
       |> Admin.find database_label
-      |> Response.not_found_on_error
+      >|- Response.not_found
     in
     Response.bad_request_on_error edit
     @@

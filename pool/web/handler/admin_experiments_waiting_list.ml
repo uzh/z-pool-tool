@@ -53,13 +53,11 @@ let detail req =
         , true )
       | None | Some _ -> sessions, false
     in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.WaitingList.detail
       waiting_list
       grouped_sessions
       experiment_id
       context
-      flash_fetcher
       chronological
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html

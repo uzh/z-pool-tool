@@ -11,9 +11,8 @@ let role_permission_path = HttpUtils.Url.Admin.role_permission_path
 let edit_permission_modal_id = "edit-permission-modal"
 
 let edit_target_modal
-      { Pool_context.language; csrf; _ }
+      { Pool_context.language; csrf; flash_fetcher; _ }
       ?error
-      ?flash_fetcher
       role
       target
       current_permissions

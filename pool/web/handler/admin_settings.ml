@@ -51,7 +51,6 @@ let show req =
     in
     let%lwt page_scripts = Settings.PageScript.find database_label in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Settings.show
       ?open_tab
       languages
@@ -68,7 +67,6 @@ let show req =
       page_scripts
       context
       text_messages_enabled
-      flash_fetcher
     |> create_layout req ~active_navigation:"/admin/settings" context
     >|+ Sihl.Web.Response.of_html
   in

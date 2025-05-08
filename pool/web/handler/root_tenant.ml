@@ -13,8 +13,7 @@ let active_navigation = pool_path ()
 let tenants req =
   let context = Pool_context.find_exn req in
   let%lwt tenant_list = Pool_tenant.find_all () in
-  let flash_fetcher key = Sihl.Web.Flash.find key req in
-  Page.Root.Tenant.list tenant_list context flash_fetcher
+  Page.Root.Tenant.list tenant_list context
   |> General.create_root_layout ~active_navigation context
   ||> Sihl.Web.Response.of_html
 ;;
@@ -128,8 +127,7 @@ let tenant_detail req =
       HttpUtils.get_field_router_param req Field.tenant |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Root.Tenant.detail tenant context flash_fetcher
+    Page.Root.Tenant.detail tenant context
     |> General.create_root_layout context
     ||> Sihl.Web.Response.of_html
     |> Lwt_result.ok
