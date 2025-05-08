@@ -457,7 +457,6 @@ let changelog req =
 ;;
 
 module Duplicates = Admin_contact_duplicates
-module Tags = Admin_contacts_tags
 
 module Access : sig
   include module type of Helpers.Access
