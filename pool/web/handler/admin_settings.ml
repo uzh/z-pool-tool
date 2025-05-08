@@ -13,16 +13,16 @@ module TextMessages = Admin_settings_text_messages
 let src = Logs.Src.create "handler.admin.settings"
 let create_layout req = General.create_tenant_layout req
 
-let show req =
+let settings_page ?open_tab req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Response.bad_request_render_error context
     @@
-    (* TODO: Fix open tag without redirect *)
     let open_tab =
-      Sihl.Web.Request.query "action" req
-      |> CCOption.map_or ~default:None (fun str ->
-        str |> Settings.action_of_param |> CCResult.to_opt)
+      let open CCOption in
+      open_tab
+      <+> (Sihl.Web.Request.query "action" req
+           >>= CCFun.(Settings.action_of_param %> of_result))
     in
     let languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt email_suffixes = Settings.find_email_suffixes database_label in
@@ -73,6 +73,8 @@ let show req =
   Response.handle ~src req result
 ;;
 
+let show req = settings_page req
+
 let update_settings req =
   let open Utils.Lwt_result.Infix in
   let open Cqrs_command.Settings_command in
@@ -82,11 +84,14 @@ let update_settings req =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
-    Response.bad_request_on_error ~urlencoded show
-    @@
     let* action =
-      Sihl.Web.Router.param req "action" |> Settings.action_of_param |> Lwt_result.lift
+      Sihl.Web.Router.param req "action"
+      |> Settings.action_of_param
+      |> Lwt_result.lift
+      |> Response.bad_request_on_error ~urlencoded show
     in
+    Response.bad_request_on_error ~urlencoded (settings_page ~open_tab:action)
+    @@
     let redirect_path = HttpUtils.Url.Admin.settings_path_with_action_param action in
     let events () =
       let command_handler urlencoded =
