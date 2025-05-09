@@ -308,22 +308,6 @@ module Htmx = struct
   ;;
 
   let notification_id = "hx-notification"
-
-  let notification lang ((fnc : Pool_common.Language.t -> string), classname) =
-    let open Tyxml_html in
-    div
-      ~a:
-        [ a_class [ "notification-fixed"; "fade-out" ]
-        ; a_user_data "hx-swap-oob" "true"
-        ; a_id notification_id
-        ]
-      [ div ~a:[ a_class [ "notification"; classname ] ] [ txt (fnc lang) ] ]
-  ;;
-
-  let error_notification lang err =
-    let fnc lang = Pool_common.(Utils.error_to_string lang err) in
-    notification lang (fnc, "error")
-  ;;
 end
 
 (* TODO: This module should probably be made obsolete, the API response module can be used instead *)

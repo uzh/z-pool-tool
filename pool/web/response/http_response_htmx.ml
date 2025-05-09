@@ -4,7 +4,6 @@ module Page = Http_response_page
 
 let src = Logs.Src.create "web.handler.response.htmx"
 let headers = Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
-let notification_id = "hx-notification"
 
 let notification lang ((fnc : Pool_common.Language.t -> string), classname) =
   let open Tyxml_html in
@@ -12,7 +11,7 @@ let notification lang ((fnc : Pool_common.Language.t -> string), classname) =
     ~a:
       [ a_class [ "notification-fixed"; "fade-out" ]
       ; a_user_data "hx-swap-oob" "true"
-      ; a_id notification_id
+      ; a_id Http_utils.Htmx.notification_id
       ]
     [ div ~a:[ a_class [ "notification"; classname ] ] [ txt (fnc lang) ] ]
 ;;
@@ -26,7 +25,7 @@ let error_notification lang err =
        ~a:
          [ a_class [ "notification-fixed"; "fade-out" ]
          ; a_user_data "hx-swap-oob" "true"
-         ; a_id notification_id
+         ; a_id Http_utils.Htmx.notification_id
          ]
 ;;
 
