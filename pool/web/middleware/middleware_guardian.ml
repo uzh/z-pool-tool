@@ -88,7 +88,7 @@ let validate_admin_entity_base validate =
       let (_ : Error.t) = Utils.with_log_error ~level:Logs.Info err in
       let open Http_utils.Htmx in
       let htmx_response () =
-        error_notification Language.En Error.AccessDenied
+        Http_response.Htmx.inline_error Language.En Error.AccessDenied
         |> Http_response.Htmx.of_html
         |> Lwt.return
       in
