@@ -111,10 +111,8 @@ let update_template req =
 ;;
 
 let delete req =
-  let result { Pool_context.database_label; user; _ } =
-    (* Response.bad_request_on_error Admin_experiments.show *)
-    (* TODO: Circular dependency *)
-    Lwt_result.map_error (fun e -> Pool_common.Utils.failwith e)
+  let result ({ Pool_context.database_label; user; _ } as context) =
+    Response.bad_request_render_error context
     @@
     let experiment_id = experiment_id req in
     let template_id = template_id req in
