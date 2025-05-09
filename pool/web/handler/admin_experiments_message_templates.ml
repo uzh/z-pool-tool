@@ -141,7 +141,7 @@ let changelog req =
     in
     Helpers.Changelog.htmx_handler ~url (Id.to_common id) req |> Lwt_result.ok
   in
-  HttpUtils.Htmx.handle_error_message req result
+  Response.Htmx.handle req result
 ;;
 
 module Access : sig

@@ -165,10 +165,10 @@ let preview_default req =
       default_templates_from_request req database_label query_params
     in
     Page.Admin.MessageTemplate.preview_template_modal language (label, message_templates)
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result |> Response.Htmx.handle ~src req
 ;;
 
 let reset_to_default_htmx req =
@@ -231,10 +231,10 @@ let reset_to_default_htmx req =
       context
       form_context
       template.label
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result |> Response.Htmx.handle ~src req
 ;;
 
 let changelog req =

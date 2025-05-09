@@ -180,7 +180,7 @@ let changelog req =
     Lwt_result.ok
     @@ Helpers.Changelog.htmx_handler ~url (SelectOption.Id.to_common option_id) req
   in
-  HttpUtils.Htmx.handle_error_message ~error_as_notification:true req result
+  Response.Htmx.handle ~error_as_notification:true req result
 ;;
 
 module Access : sig

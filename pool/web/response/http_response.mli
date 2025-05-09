@@ -80,15 +80,16 @@ module Api : sig
 end
 
 module Htmx : sig
-  val html_to_plain_text_response
-    :  ?status:Opium.Status.t
-    -> 'a Tyxml_html.elt
-    -> Rock.Response.t
+  val of_html : ?status:Opium.Status.t -> 'a Tyxml_html.elt -> Rock.Response.t
+  val of_html_list : ?status:Opium.Status.t -> 'a Tyxml_html.elt list -> Rock.Response.t
 
-  val html_list_to_plain_text_response
-    :  ?status:Opium.Status.t
-    -> 'a Tyxml_html.elt list
-    -> Rock.Response.t
+  val redirect
+    :  ?skip_externalize:bool
+    -> ?query_parameters:(Pool_message.Field.t * string) list
+    -> ?status:Opium.Status.t
+    -> ?actions:(Rock.Response.t -> Rock.Response.t) list
+    -> string
+    -> Rock.Response.t Lwt.t
 
   val index_handler
     :  ?active_navigation:string

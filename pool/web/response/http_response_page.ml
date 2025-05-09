@@ -35,13 +35,6 @@ let bad_request_error_note ?(language = default_language) error =
   Page.Utils.note (show_error language Error.BadRequest) (show_error language error)
 ;;
 
-let htmx_onpage_error_note language error =
-  let open Pool_message in
-  Page.Utils.note
-    (show_error language Error.InternalServerError)
-    (show_error language error)
-;;
-
 let internal_server_error_response error =
   Page.Utils.note
     (show_error default_language Error.InternalServerError)

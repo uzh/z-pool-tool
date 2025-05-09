@@ -176,7 +176,7 @@ let duplicate_form_htmx req =
       >|+ ( + ) 1
     in
     Page.Admin.Session.duplicate_form ?parent_session language session followups counter
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~src req result
@@ -197,10 +197,9 @@ let duplicate_post_htmx req =
       urlencoded |> handle ~tags ?parent_session session followups |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
-    HttpUtils.Htmx.htmx_redirect
+    Response.Htmx.redirect
       ~actions:[ Message.set ~success:[ Success.Created Field.Sessions ] ]
       (session_path experiment_id)
-      ()
     |> Lwt_result.ok
   in
   Response.Htmx.handle ~error_as_notification:true ~src req result
@@ -1005,7 +1004,7 @@ module DirectMessage = struct
         message_template
         system_languages
         assignments
-      |> HttpUtils.Htmx.html_to_plain_text_response
+      |> Response.Htmx.of_html
       |> Lwt_result.return
     in
     Response.Htmx.handle ~error_as_notification:true ~src req result
@@ -1053,16 +1052,8 @@ let update_matches_filter req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let path =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (Experiment.Id.value experiment_id)
-      (Session.Id.value session_id)
-  in
   let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
-    Utils.Lwt_result.map_error (fun err -> err, path)
-    @@
     let* session = Session.find database_label session_id in
     let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
     let* events =
@@ -1073,13 +1064,12 @@ let update_matches_filter req =
       >== Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
     in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
-    Http_utils.Htmx.htmx_redirect
+    Response.Htmx.redirect
       ~actions:[ Message.set ~success:[ Success.Updated Field.Assignments ] ]
-      path
-      ()
+      (session_path ~id:session_id experiment_id)
     |> Lwt_result.ok
   in
-  result |> HttpUtils.Htmx.extract_happy_path ~src req
+  result |> Response.Htmx.handle ~src req
 ;;
 
 module Tags = struct

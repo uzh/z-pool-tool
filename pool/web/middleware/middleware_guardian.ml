@@ -89,7 +89,7 @@ let validate_admin_entity_base validate =
       let open Http_utils.Htmx in
       let htmx_response () =
         error_notification Language.En Error.AccessDenied
-        |> html_to_plain_text_response
+        |> Http_response.Htmx.of_html
         |> Lwt.return
       in
       (match is_hx_request req with

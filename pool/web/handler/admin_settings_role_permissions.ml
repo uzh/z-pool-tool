@@ -140,7 +140,7 @@ let edit_htmx req =
         target
     in
     Page.Admin.Settings.RolePermission.edit_target_modal context role target permissions
-    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt.return_ok
   in
   Response.Htmx.handle ~error_as_notification:true ~src req result
@@ -168,10 +168,9 @@ let update req =
       function
       | Ok events ->
         let%lwt () = Pool_event.handle_events ~tags database_label user events in
-        HttpUtils.Htmx.htmx_redirect
+        Response.Htmx.redirect
           ~actions:[ Message.set ~success:[ Success.Updated Field.Permission ] ]
           (Url.Admin.role_permission_path ~role ())
-          ()
         |> Lwt_result.ok
       | Error error ->
         Page.Admin.Settings.RolePermission.edit_target_modal
@@ -180,7 +179,7 @@ let update req =
           role
           target
           current_permissions
-        |> Http_utils.Htmx.html_to_plain_text_response
+        |> Response.Htmx.of_html
         |> Lwt_result.return
     in
     events >|> handle

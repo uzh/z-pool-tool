@@ -213,7 +213,7 @@ let hide_announcement req =
       |> Lwt_result.lift
       |>> Pool_event.handle_events Database.Pool.Root.label user
     in
-    Tyxml.Html.txt "" |> Htmx.html_to_plain_text_response |> Lwt_result.return
+    Tyxml.Html.txt "" |> Response.Htmx.of_html |> Lwt_result.return
   in
   Response.Htmx.handle ~src req result
 ;;

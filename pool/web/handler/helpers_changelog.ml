@@ -1,3 +1,5 @@
+module Response = Http_response
+
 let src = Logs.Src.create "helpers.changelog"
 
 let htmx_handler
@@ -8,7 +10,7 @@ let htmx_handler
   -> Rock.Response.t Lwt.t
   =
   fun ?to_human ~url entity_id req ->
-  Http_utils.Htmx.handle_error_message ~src ~error_as_notification:true req
+  Response.Htmx.handle ~src ~error_as_notification:true req
   @@ fun ({ Pool_context.database_label; _ } as context) ->
   let open Utils.Lwt_result.Infix in
   let query =
@@ -31,6 +33,6 @@ let htmx_handler
   in
   let url = url |> Uri.of_string in
   Component.Changelog.list context url (Some changelogs)
-  |> Http_utils.Htmx.html_to_plain_text_response
+  |> Response.Htmx.of_html
   |> Lwt_result.return
 ;;

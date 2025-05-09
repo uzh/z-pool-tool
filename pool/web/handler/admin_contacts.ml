@@ -47,7 +47,7 @@ let experiment_history_htmx req =
       Assignment.find_by_contact_and_experiment database_label experiment_id contact
     in
     Page.Admin.Contact.experiment_history_modal context experiment assignments
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~error_as_notification:true ~src req result
@@ -62,7 +62,7 @@ let past_experiments_htmx req =
       Experiment.query_participation_history_by_contact ~query database_label contact
     in
     Page.Admin.Contact.experiment_history context contact experiments query
-    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt.return_ok
   in
   Response.Htmx.handle ~src req result
@@ -200,7 +200,7 @@ let delete_answer req =
         is_admin
         custom_field
         ())
-    |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~src req result
@@ -311,7 +311,7 @@ let htmx_experiments_get req =
         Experiment.find_to_enroll_directly ~actor database_label contact ~query)
     in
     Page.Admin.Contact.assign_contact_experiment_list context contact_id experiments
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~src ~error_as_notification:true req result
@@ -338,7 +338,7 @@ let htmx_experiment_modal req =
       experiment
       sessions
       matches_filter
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~error_as_notification:true ~src req result

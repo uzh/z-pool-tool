@@ -165,10 +165,10 @@ let query_admin entity role state req =
        list_existing context form_path ~can_unassign:permission ~role:global_role admins
      | `Available ->
        list_available context form_path ~can_assign:permission ~role:global_role admins)
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result |> Response.Htmx.handle ~src req
 ;;
 
 module Assistant = struct
