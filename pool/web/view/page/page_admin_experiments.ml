@@ -125,7 +125,7 @@ let message_templates_html
   let delete_path = build_path "delete", csrf in
   Page_admin_message_template.table
     ~buttons
-    ~can_update_experiment
+    ~can_update:can_update_experiment
     ~delete_path
     language
     (CCList.flat_map (fun (_, templates) -> templates) message_templates)

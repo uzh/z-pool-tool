@@ -434,6 +434,7 @@ module Guard : sig
     val update : ?model:Role.Target.t -> Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
     val delete : ?model:Role.Target.t -> Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
     val close : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
+    val update_permission_on_target : Id.t -> Guard.PermissionOnTarget.t
   end
 end
 

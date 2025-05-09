@@ -40,6 +40,12 @@ let can_access_session_assistants pool actor experiment_id =
   Admin_experiments_users.has_permission_on_role pool actor role Guard.Permission.Read
 ;;
 
+let can_update_session { Pool_context.guardian; _ } session_id =
+  Guard.PermissionOnTarget.validate
+    (Session.Guard.Access.update_permission_on_target session_id)
+    guardian
+;;
+
 let list req =
   let experiment_id = experiment_id req in
   let error_path =
@@ -424,6 +430,7 @@ let show req =
   let view_contact_name = can_read_contact_name context experiment_target_id in
   let view_contact_info = can_read_contact_info context experiment_target_id in
   let access_contact_profiles = can_access_contact_profile context experiment_id in
+  let can_update_session = can_update_session context session_id in
   let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
   let%lwt assignments =
     Assignment.find_for_session_detail_screen ~query database_label session_id
@@ -461,6 +468,7 @@ let show req =
        Page.Admin.Session.detail
          ~access_contact_profiles
          ~can_access_session_assistants
+         ~can_update_session
          ~not_matching_filter_count
          ~rerun_session_filter
          ~send_direct_message
