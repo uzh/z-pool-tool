@@ -96,7 +96,7 @@ let handle_toggle_target req =
       ~empty:(equal Create permission)
       Language.En
       model
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
   in
   Response.Htmx.handle ~src req result
 ;;

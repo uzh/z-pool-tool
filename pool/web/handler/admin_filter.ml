@@ -138,7 +138,7 @@ let write action req =
       let open Success in
       let field = Field.Filter in
       let redirect path msg =
-        HttpUtils.Htmx.htmx_redirect path ~actions:[ Message.set ~success:[ msg ] ] ()
+        Response.Htmx.redirect path ~actions:[ Message.set ~success:[ msg ] ]
       in
       match action with
       | Template None -> redirect "/admin/filter" (Created field)
@@ -199,7 +199,7 @@ let handle_toggle_predicate_type action req =
         (Some query)
         ~identifier
         ())
-    |> Response.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~src ~error_as_notification:true req result
@@ -215,7 +215,7 @@ let handle_toggle_key _ req =
       >>= Filter.key_of_string database_label
     in
     Component.Filter.predicate_value_form language [] [] ~key ()
-    |> Response.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt.return_ok
   in
   Response.Htmx.handle ~src req result
@@ -255,9 +255,7 @@ let handle_add_predicate action req =
         (increment_identifier identifier)
         templates_disabled
     in
-    [ filter_form; add_button ]
-    |> Response.Htmx.html_list_to_plain_text_response
-    |> Lwt_result.return
+    [ filter_form; add_button ] |> Response.Htmx.of_html_list |> Lwt_result.return
   in
   Response.Htmx.handle ~src req result
 ;;
@@ -280,7 +278,7 @@ let filter_statistics req =
       Statistics.ExperimentFilter.create database_label experiment query
     in
     Component.Statistics.ExperimentFilter.create language statistics
-    |> Response.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~src req result

@@ -193,7 +193,7 @@ let statistics req =
     let%lwt statistics = Statistics.create ~year database_label id in
     let%lwt statistics_year_range = Statistics.year_select database_label in
     Page.Admin.Location.make_statistics ~year statistics_year_range language id statistics
-    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt.return_ok
   in
   Response.Htmx.handle ~src req result

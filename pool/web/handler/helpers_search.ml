@@ -29,7 +29,7 @@ let htmx_search_helper
        | None -> Lwt.return []
        | Some query -> search_fnc query actor)
       ||> to_html language
-      ||> HttpUtils.Htmx.multi_html_to_plain_text_response %> CCResult.return
+      ||> Http_response.Htmx.of_html_list %> CCResult.return
     in
     let open Guard.Persistence in
     match entity with

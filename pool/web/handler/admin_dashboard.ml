@@ -84,9 +84,7 @@ let htmx_session_helper table req =
       | `incomplete -> incomplete_sessions_list
       | `upcoming -> upcoming_sessions_list
     in
-    html language sessions
-    |> Http_utils.Htmx.html_to_plain_text_response
-    |> Lwt_result.return
+    html language sessions |> Response.Htmx.of_html |> Lwt_result.return
   in
   Response.Htmx.handle ~src req result
 ;;
@@ -98,7 +96,7 @@ let statistics req =
   let result { Pool_context.database_label; language; _ } =
     let%lwt statistics = statistics_from_request req database_label in
     Component.Statistics.Pool.create language statistics
-    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt.return_ok
   in
   Response.Htmx.handle ~src req result

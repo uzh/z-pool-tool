@@ -188,7 +188,7 @@ module Close = struct
             updated
         ; session_counters language counters
         ]
-      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Response.Htmx.of_html_list
       |> Lwt_result.return
     in
     Response.Htmx.handle ~error_as_notification:true ~src req result
@@ -218,7 +218,7 @@ module Close = struct
             updated
         ; session_counters language counters
         ]
-      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Response.Htmx.of_html_list
       |> Lwt_result.return
     in
     Response.Htmx.handle ~error_as_notification:true ~src req result
@@ -269,7 +269,7 @@ module Close = struct
             disabled_verified
         ; session_counters language counters
         ]
-      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Response.Htmx.of_html_list
       |> Lwt_result.return
     in
     Response.Htmx.handle ~error_as_notification:true ~src req result
@@ -432,9 +432,7 @@ let swap_session_get_helper action req =
     in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let response html =
-      html |> HttpUtils.Htmx.html_to_plain_text_response |> Lwt_result.return
-    in
+    let response html = html |> Response.Htmx.of_html |> Lwt_result.return in
     match action with
     | `OpenModal ->
       let* current_session = Session.find database_label session_id in

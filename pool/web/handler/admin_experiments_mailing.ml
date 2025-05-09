@@ -214,10 +214,10 @@ let search_info req =
     in
     let%lwt mailings = Mailing.find_overlaps database_label mailing in
     Page.Admin.Mailing.overlaps ~average_send ~show_limit_warning context id mailings
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt.return_ok
   in
-  result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  result |> Response.Htmx.handle ~error_as_notification:true ~src req
 ;;
 
 let add_condition req =
@@ -242,10 +242,10 @@ let add_condition req =
     in
     distribution
     >|= Page.Admin.Mailing.distribution_form_field language
-    >|= HttpUtils.Htmx.html_to_plain_text_response
+    >|= Response.Htmx.of_html
     |> Lwt.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  result |> Response.Htmx.handle ~error_as_notification:true ~src req
 ;;
 
 let disabler command success_handler req =

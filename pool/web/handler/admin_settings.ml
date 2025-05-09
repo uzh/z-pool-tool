@@ -160,7 +160,7 @@ let update_settings req =
 let inactive_user_warning_subform req =
   let result { Pool_context.language; _ } =
     Page.Admin.Settings.Partials.inactive_user_warning_input language None
-    |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~src req result
@@ -169,7 +169,7 @@ let inactive_user_warning_subform req =
 let email_suffix_subform req =
   let result { Pool_context.language; _ } =
     Page.Admin.Settings.Partials.email_suffix_input language
-    |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~src req result
@@ -199,7 +199,7 @@ let open_changelog_modal req =
       all_by_entity ~query database_label id
     in
     Page.Admin.Settings.settings_changelog_modal context key changelogs
-    |> Response.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
   Response.Htmx.handle ~error_as_notification:true req result
@@ -231,7 +231,7 @@ module PageScripts = struct
         all_by_entity ~query database_label id
       in
       Page.Admin.Settings.page_scripts_changelog_modal context location changelogs
-      |> HttpUtils.Htmx.html_to_plain_text_response
+      |> Response.Htmx.of_html
       |> Lwt_result.return
     in
     Response.Htmx.handle ~error_as_notification:true req result
