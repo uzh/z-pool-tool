@@ -938,6 +938,7 @@ let session_details { Pool_context.language; _ } session =
 let detail
       ?access_contact_profiles
       ?(can_access_session_assistants = false)
+      ?(can_update_session = false)
       ~not_matching_filter_count
       ?(rerun_session_filter = false)
       ?(send_direct_message = false)
@@ -1131,6 +1132,7 @@ let detail
           ~a:[ a_class [ "gap" ] ]
           [ Page_admin_message_template.table
               ?buttons
+              ~can_update:can_update_session
               ~delete_path
               language
               list
