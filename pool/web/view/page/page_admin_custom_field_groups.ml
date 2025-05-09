@@ -7,9 +7,8 @@ module Url = Page_admin_custom_fields.Url
 let form
       ?custom_field_group
       current_model
-      Pool_context.{ language; csrf; _ }
+      Pool_context.{ language; csrf; flash_fetcher; _ }
       tenant_languages
-      flash_fetcher
   =
   let open Custom_field in
   let action =
@@ -20,9 +19,9 @@ let form
   let input_by_lang ?required =
     Page_admin_custom_fields.input_by_lang
       ?required
+      ?flash_fetcher
       language
       tenant_languages
-      flash_fetcher
       custom_field_group
   in
   let name_inputs =
@@ -137,7 +136,6 @@ let detail
       current_model
       (Pool_context.{ language; _ } as context)
       sys_langauges
-      flash_fetcher
   =
   let changelog_html =
     match custom_field_group with
@@ -161,8 +159,6 @@ let detail
         ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ form ?custom_field_group current_model context sys_langauges flash_fetcher
-        ; changelog_html
-        ]
+        [ form ?custom_field_group current_model context sys_langauges; changelog_html ]
     ]
 ;;

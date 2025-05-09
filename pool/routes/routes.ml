@@ -448,7 +448,7 @@ module Admin = struct
             ]
           in
           let participation_tags =
-            let open Handler.Admin.Experiments.Tags in
+            let open Handler.Admin.Session.Tags in
             tag_routes_helper
               (assign_session_participation_tag, Access.update)
               (remove_session_participation_tag, Access.update)
@@ -582,7 +582,7 @@ module Admin = struct
           ; get "/edit" ~middlewares:[ Access.update ] edit
           ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; get "/changelog" ~middlewares:[ Access.read ] changelog
-          ; post "/reset-invitations" ~middlewares:[ Access.update ] Invitations.reset
+          ; post "/reset-invitations" ~middlewares:[ Access.update ] reset_invitations
           ; post
               "/filter-statistics"
               ~middlewares:[ Access.read ]
@@ -591,7 +591,7 @@ module Admin = struct
           ; get
               (Format.asprintf "/contact-history/%s" (add_key Field.Contact))
               ~middlewares:[ Contacts.Access.read ]
-              Contacts.experiment_history
+              Contacts.experiment_history_htmx
           ; choose ~scope:"/assistants" assistants
           ; choose ~scope:"/experimenter" experimenter
           ; choose ~scope:"/invitations" invitations
@@ -661,8 +661,8 @@ module Admin = struct
         let tags =
           let open Settings.Tags in
           tag_routes_helper
-            (Tags.assign_tag, Access.assign_tag_to_contact)
-            (Tags.remove_tag, Access.remove_tag_from_contact)
+            (ContactsTags.assign_tag, Access.assign_tag_to_contact)
+            (ContactsTags.remove_tag, Access.remove_tag_from_contact)
         in
         let experiment =
           [ get "" htmx_experiments_get
@@ -1003,12 +1003,15 @@ module Root = struct
         [ get "" ~middlewares:[ Access.read ] tenant_detail
         ; get ~middlewares:[ Access.read_operator ] "operator" manage_operators
         ; post "/create-operator" ~middlewares:[ Access.create_operator ] create_operator
-        ; post "/update-detail" ~middlewares:[ Access.update ] Update.update_detail
-        ; post "/update-database" ~middlewares:[ Access.update ] Update.update_database
+        ; post "/update-detail" ~middlewares:[ Access.update ] Tenant_update.update_detail
+        ; post
+            "/update-database"
+            ~middlewares:[ Access.update ]
+            Tenant_update.update_database
         ; post
             (Format.asprintf "/assets/%s/delete" (AssetId |> url_key))
             ~middlewares:[ Access.update ]
-            Tenant.Update.delete_asset
+            Tenant_update.delete_asset
         ]
       in
       [ get "" ~middlewares:[ Access.index ] Tenant.tenants

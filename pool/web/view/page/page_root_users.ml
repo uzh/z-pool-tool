@@ -40,7 +40,7 @@ let table Pool_context.{ language; _ } (admins, query) =
   Component.DataTable.make ~target_id:"admin-list" ~cols ~row data_table admins
 ;;
 
-let list root_list (Pool_context.{ language; csrf; _ } as context) flash_fetcher =
+let list root_list (Pool_context.{ language; csrf; flash_fetcher; _ } as context) =
   let open Pool_message in
   let root_list = table context root_list in
   div
@@ -59,10 +59,10 @@ let list root_list (Pool_context.{ language; csrf; _ } as context) flash_fetcher
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element ~flash_fetcher language `Text Field.Email
+        ; input_element ?flash_fetcher language `Text Field.Email
         ; input_element language `Password Field.Password
-        ; input_element ~flash_fetcher language `Text Field.Firstname
-        ; input_element ~flash_fetcher language `Text Field.Lastname
+        ; input_element ?flash_fetcher language `Text Field.Firstname
+        ; input_element ?flash_fetcher language `Text Field.Lastname
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element ~classnames:[ "push" ] language Control.(Create None) () ]

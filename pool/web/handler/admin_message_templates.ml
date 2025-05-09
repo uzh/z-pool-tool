@@ -1,6 +1,7 @@
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.message_templates"
 let create_layout req = General.create_tenant_layout req
@@ -24,41 +25,35 @@ let database_label_of_req req =
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
+    Response.bad_request_render_error context
     @@
     let%lwt template_list = Message_template.all_default database_label () in
     Page.Admin.MessageTemplate.index context template_list
     |> create_layout ~active_navigation:"/admin/message-template" req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let edit req =
   let open Utils.Lwt_result.Infix in
   let id = template_id req in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
+    let* template = Message_template.find database_label id >|- Response.not_found in
+    Response.bad_request_render_error context
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* template = Message_template.find database_label id in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.MessageTemplate.edit
-      ~text_messages_enabled
-      context
-      template
-      tenant
-      flash_fetcher
+    Page.Admin.MessageTemplate.edit ~text_messages_enabled context template tenant
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 type redirect =
   { success : string
-  ; error : string
+  ; error : Rock.Request.t -> Rock.Response.t Lwt.t
   }
 
 type action =
@@ -76,8 +71,7 @@ let write action req =
     | Update (_, redirect) -> redirect, Success.Updated Field.MessageTemplate
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, redirect.error, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded redirect.error
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let events =
@@ -105,7 +99,7 @@ let write action req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
@@ -113,7 +107,7 @@ let update req =
   let redirect_path =
     id |> Message_template.Id.value |> Format.asprintf "/admin/message-template/%s/edit"
   in
-  let redirect = { success = redirect_path; error = redirect_path } in
+  let redirect = { success = redirect_path; error = edit } in
   write (Update (id, redirect)) req
 ;;
 
@@ -171,10 +165,10 @@ let preview_default req =
       default_templates_from_request req database_label query_params
     in
     Page.Admin.MessageTemplate.preview_template_modal language (label, message_templates)
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result |> Response.Htmx.handle ~src req
 ;;
 
 let reset_to_default_htmx req =
@@ -237,10 +231,10 @@ let reset_to_default_htmx req =
       context
       form_context
       template.label
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result |> Response.Htmx.handle ~src req
 ;;
 
 let changelog req =

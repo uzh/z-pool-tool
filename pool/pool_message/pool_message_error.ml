@@ -19,6 +19,7 @@ type t =
   | AtLeastOneLanguageRequired of Field.t
   | AtLeastOneSelected of Field.t * Field.t
   | Authorization of string
+  | BadRequest
   | CannotBeDeleted of Field.t
   | CannotBeUpdated of Field.t
   | CaqtiError of string
@@ -63,6 +64,7 @@ type t =
   | InvalidPasswordHashingCount
   | InvalidRequest
   | InvalidWithInfo of Field.t * string
+  | InternalServerError
   | IsMarkedAsDeleted of Field.t
   | JobCannotBeRetriggered
   | JobPending

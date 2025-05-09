@@ -32,6 +32,7 @@ module Collection = struct
   let set_warning txts message = { message with warning = txts }
   let set_error txts message = { message with error = txts }
   let set_info txts message = { message with info = txts }
+  let add_error texts message = set_error (message.error @ texts) message
 
   let of_string str =
     let json =

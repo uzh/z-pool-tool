@@ -12,6 +12,7 @@
   guard
   htmx
   http_utils
+  http_response
   layout
   mailing
   matcher

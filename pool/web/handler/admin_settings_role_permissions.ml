@@ -3,6 +3,7 @@ open Utils.Lwt_result.Infix
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.settings_role_permission"
 let active_navigation = "/admin/settings/role-permission"
@@ -86,15 +87,16 @@ let rule_from_request req role =
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
-    Lwt_result.map_error (fun err -> err, error_path)
-    @@
     let* actor_id =
       user
       |> Pool_context.get_admin_user
       |> Lwt_result.lift
       >|+ Admin.id
       >|+ Admin.Id.to_common
+      >|- CCFun.const Response.access_denied
     in
+    Response.bad_request_render_error context
+    @@
     let* roles =
       Guard.Persistence.Role.find_by_actor_and_permission
         database_label
@@ -105,13 +107,12 @@ let index req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 let show req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path:"/"
     ~query:(module Guard.RolePermission)
     ~create_layout:General.create_tenant_layout
     req
@@ -139,10 +140,10 @@ let edit_htmx req =
         target
     in
     Page.Admin.Settings.RolePermission.edit_target_modal context role target permissions
-    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt.return_ok
   in
-  result |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  Response.Htmx.handle ~error_as_notification:true ~src req result
 ;;
 
 let update req =
@@ -153,7 +154,6 @@ let update req =
     let tags = Pool_context.Logger.Tags.req req in
     let* role = role_from_request req |> Lwt_result.lift in
     let* target = target_from_request req |> Lwt_result.lift in
-    let flash_fetcher value = Sihl.Web.Flash.find value req in
     let%lwt current_permissions =
       Persistence.RolePermission.permissions_by_role_and_target database_label role target
     in
@@ -168,51 +168,23 @@ let update req =
       function
       | Ok events ->
         let%lwt () = Pool_event.handle_events ~tags database_label user events in
-        HttpUtils.Htmx.htmx_redirect
+        Response.Htmx.redirect
           ~actions:[ Message.set ~success:[ Success.Updated Field.Permission ] ]
           (Url.Admin.role_permission_path ~role ())
-          ()
         |> Lwt_result.ok
       | Error error ->
         Page.Admin.Settings.RolePermission.edit_target_modal
           ~error
-          ~flash_fetcher
           context
           role
           target
           current_permissions
-        |> Http_utils.Htmx.html_to_plain_text_response
+        |> Response.Htmx.of_html
         |> Lwt_result.return
     in
     events >|> handle
   in
-  result |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
-;;
-
-let delete req =
-  let result { Pool_context.database_label; user; _ } =
-    Lwt_result.map_error (fun err -> err, error_path)
-    @@
-    let tags = Pool_context.Logger.Tags.req req in
-    let* role = role_from_request req |> Lwt_result.lift in
-    let redirect actions =
-      let path = HttpUtils.Url.Admin.role_permission_path ~role () in
-      Http_utils.redirect_to_with_actions path actions
-    in
-    let* rule = rule_from_request req role in
-    let%lwt events =
-      Cqrs_command.Guardian_command.DeleteRolePermission.handle ~tags rule
-      |> Lwt_result.lift
-    in
-    let handle = function
-      | Ok events ->
-        let%lwt () = Pool_event.handle_events ~tags database_label user events in
-        redirect [ Message.set ~success:[ Success.Deleted Field.Rule ] ]
-      | Error _ -> redirect [ Message.set ~error:[ Error.NotFound Field.Rule ] ]
-    in
-    events |> handle |> Lwt_result.ok
-  in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.Htmx.handle ~error_as_notification:true ~src req result
 ;;
 
 module Access : module type of Helpers.Access = struct

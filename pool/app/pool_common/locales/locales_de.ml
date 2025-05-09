@@ -484,6 +484,7 @@ let rec error_to_string =
       "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: %s"
       (CCString.concat ", " names)
   | Authorization message -> field_message "Autorisierung nicht möglich: " message ""
+  | BadRequest -> "Fehlerhafte Anfrage"
   | CannotBeDeleted field ->
     Format.asprintf "%s kann nicht gelöscht werden." (field_to_string field)
   | CannotBeUpdated field ->
@@ -562,6 +563,7 @@ let rec error_to_string =
   | InvalidRequest | InvalidHtmxRequest -> "Ungültige Anfrage."
   | InvalidWithInfo (field, info) ->
     Format.asprintf "%s ist ungültig (%s)!" (field_to_string field) info
+  | InternalServerError -> "Interner Serverfehler"
   | IsMarkedAsDeleted field ->
     field_message
       ""

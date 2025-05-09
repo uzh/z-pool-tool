@@ -1,7 +1,6 @@
 let htmx_handler queue_table req =
-  Http_utils.Htmx.handler
+  Http_response.Htmx.index_handler
     ~active_navigation:(Http_utils.Url.Admin.Settings.queue_list_path `Current)
-    ~error_path:"/admin"
     ~create_layout:General.create_tenant_layout
     ~query:(module Pool_queue)
     req

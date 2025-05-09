@@ -29,10 +29,14 @@ let show { Pool_context.csrf; language; _ } contact_fields =
   in
   let build_form setting_url title hint getter =
     div
-      [ h2 [ txt (Utils.text_to_string language title) ]
+      [ h2 ~a:[ a_class [ "has-gap" ] ] [ txt (Utils.text_to_string language title) ]
       ; p [ txt Utils.(text_to_string language hint) ]
       ; form
-          ~a:[ a_method `Post; a_action (action setting_url); a_class [ "flexcolumn" ] ]
+          ~a:
+            [ a_method `Post
+            ; a_action (action setting_url)
+            ; a_class [ "flexcolumn"; "gap" ]
+            ]
           [ Input.csrf_element csrf ()
           ; table getter
           ; div

@@ -1,0 +1,13 @@
+(library
+ (name http_response)
+ (inline_tests)
+ (libraries
+  http_utils
+  logger
+  page
+  pool_common
+  pool_context
+  pool_tenant
+  utils)
+ (preprocess
+  (pps lwt_ppx ppx_inline_test ppx_variants_conv)))
