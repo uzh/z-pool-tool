@@ -256,6 +256,8 @@ type t =
   | Profile [@name "profile"] [@printer go "profile"]
   | PromptOnRegistration [@name "prompt_on_registration"]
   [@printer go "prompt_on_registration"]
+  | PrimaryUser [@name "primary_user"] [@printer go "primary_user"]
+  | PrimaryUsers [@name "primary_users"] [@printer go "primary_users"]
   | PublicDescription [@name "public_description"] [@printer go "public_description"]
   | PublicTitle [@name "public_title"] [@printer go "public_title"]
   | PublishedAt [@name "published_at"] [@printer go "published_at"]

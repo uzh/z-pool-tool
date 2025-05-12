@@ -219,7 +219,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
           ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ txt
               Pool_common.(
-                Utils.control_to_string language Control.(Create (Some Field.Operator)))
+                Utils.control_to_string language Control.(Create (Some Field.PrimaryUser)))
           ]
       ; form
           ~a:
@@ -250,7 +250,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
                  ; submit_element
                      ~classnames:[ "push" ]
                      language
-                     Control.(Create (Some Field.operator))
+                     Control.(Create (Some Field.PrimaryUser))
                      ()
                  ]
              ])
@@ -260,7 +260,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
-        [ Pool_common.Utils.field_to_string language Field.Operators
+        [ Pool_common.Utils.field_to_string language Field.PrimaryUsers
           |> CCString.capitalize_ascii
           |> txt
         ]
@@ -355,7 +355,7 @@ let detail
                   (HttpUtils.Url.Root.pool_path ~id:tenant.id ~suffix:"operator" ()
                    |> Sihl.Web.externalize_path)
               ]
-            [ txt (control_to_string (Control.Manage Field.Operators)) ]
+            [ txt (control_to_string (Control.Manage Field.PrimaryUsers)) ]
         ]
     ; div
         ~a:[ a_class [ "stack-lg"; "gap" ] ]

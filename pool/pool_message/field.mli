@@ -220,6 +220,8 @@ type t =
   | Predicate
   | Profile
   | PromptOnRegistration
+  | PrimaryUser
+  | PrimaryUsers
   | PublicDescription
   | PublicTitle
   | PublishedAt

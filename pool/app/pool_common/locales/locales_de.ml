@@ -236,6 +236,7 @@ let rec field_to_string =
   | Profile -> "Profil"
   | PublicDescription -> "Öffentliche Beschreibung"
   | PromptOnRegistration -> "Eingabeaufforderung bei der Registrierung"
+  | PrimaryUser | PrimaryUsers -> "Primärbenutzer"
   | PublicTitle -> "Öffentlicher Titel"
   | PublishedAt -> "Veröffentlicht"
   | Query -> "Query"
