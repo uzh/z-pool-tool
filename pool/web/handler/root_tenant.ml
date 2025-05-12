@@ -7,8 +7,8 @@ module Update = Root_tenant_update
 module Database = Database
 
 let src = Logs.Src.create "handler.root.tenant"
-let tenants_path = "/root/pools"
-let active_navigation = tenants_path
+let pool_path = Http_utils.Url.Root.pool_path
+let active_navigation = pool_path ()
 
 let tenants req =
   let context = Pool_context.find_exn req in
@@ -31,7 +31,7 @@ let create req =
   in
   let result { Pool_context.user; _ } =
     Utils.Lwt_result.map_error (fun err ->
-      err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+      err, pool_path (), [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events () =
       let open Cqrs_command.Pool_tenant_command in
@@ -59,7 +59,7 @@ let create req =
     let handle = Pool_event.handle_events Database.Pool.Root.label user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
-        tenants_path
+        (pool_path ())
         [ Message.set ~success:[ Success.Created Field.Tenant ] ]
     in
     () |> events |>> handle |>> return_to_overview
@@ -70,7 +70,7 @@ let create req =
 let manage_operators req =
   let open Sihl.Web in
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, tenants_path)
+    Utils.Lwt_result.map_error (fun err -> err, pool_path ())
     @@
     let id =
       HttpUtils.get_field_router_param req Field.tenant |> Pool_tenant.Id.of_string
@@ -91,7 +91,7 @@ let create_operator req =
   let tenant_id =
     HttpUtils.get_field_router_param req Field.Tenant |> Pool_tenant.Id.of_string
   in
-  let redirect_path = Format.asprintf "/root/pools/%s" (Pool_tenant.Id.value tenant_id) in
+  let redirect_path = pool_path ~id:tenant_id () in
   let result { Pool_context.user; _ } =
     Lwt_result.map_error (fun err -> err, Format.asprintf "%s/operator" redirect_path)
     @@
@@ -124,7 +124,7 @@ let create_operator req =
 
 let tenant_detail req =
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, tenants_path)
+    Utils.Lwt_result.map_error (fun err -> err, pool_path ())
     @@
     let id =
       HttpUtils.get_field_router_param req Field.tenant |> Pool_tenant.Id.of_string

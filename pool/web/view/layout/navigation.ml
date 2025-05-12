@@ -147,7 +147,8 @@ module NavElements = struct
   let root context =
     let open I18n in
     let tenants =
-      single "/root/pools" Pools (Set Pool_tenant.Guard.Access.index) |> NavElement.create
+      single (Http_utils.Url.Root.pool_path ()) Pools (Set Pool_tenant.Guard.Access.index)
+      |> NavElement.create
     in
     let users =
       single "/root/users" Users (Set Admin.Guard.Access.index) |> NavElement.create

@@ -5,6 +5,8 @@ module Table = Component.Table
 module File = Pool_common.File
 module Id = Pool_tenant.Id
 
+let pool_path = Http_utils.Url.Root.pool_path
+
 let database_fields tenant language flash_fetcher =
   let open Pool_common.I18n in
   let fields =
@@ -45,9 +47,9 @@ let tenant_form
   let action, control =
     match tenant with
     | Some tenant ->
-      ( Format.asprintf "/root/pools/%s/update-detail" (Id.value tenant.id)
+      ( pool_path ~id:tenant.id ~suffix:"update-detail" ()
       , Control.(Update (Some Field.Tenant)) )
-    | None -> "/root/pools/create", Control.(Create (Some Field.Tenant))
+    | None -> pool_path ~suffix:"create" (), Control.(Create (Some Field.Tenant))
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") tenant in
   let language_select =
@@ -176,7 +178,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
            ; a
                ~a:
                  [ a_href
-                     (Http_utils.Url.Root.tenant_path ~id:tenant.id ()
+                     (Http_utils.Url.Root.pool_path ~id:tenant.id ()
                       |> Sihl.Web.externalize_path)
                  ]
                [ txt Pool_common.(Utils.control_to_string language Control.More) ]
@@ -222,7 +224,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
       ; form
           ~a:
             [ a_action
-                (HttpUtils.Url.Root.tenant_path ~id ~suffix:"create-operator" ()
+                (HttpUtils.Url.Root.pool_path ~id ~suffix:"create-operator" ()
                  |> Sihl.Web.externalize_path)
             ; a_method `Post
             ; a_class [ "stack" ]
@@ -240,11 +242,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
                  ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
                  [ div
                      [ a
-                         ~a:
-                           [ a_href
-                               (Sihl.Web.externalize_path
-                                  (Format.asprintf "/root/pools/%s" (Id.value id)))
-                           ]
+                         ~a:[ a_href (Sihl.Web.externalize_path (pool_path ~id ())) ]
                          [ Pool_common.Utils.control_to_string language Control.Back
                            |> txt
                          ]
@@ -301,7 +299,7 @@ let detail
               ; form
                   ~a:
                     [ a_action
-                        (HttpUtils.Url.Root.tenant_assets_path
+                        (HttpUtils.Url.Root.pool_assets_path
                            tenant.id
                            ~id:(File.id file)
                            ~suffix:"delete"
@@ -333,7 +331,7 @@ let detail
     form
       ~a:
         [ a_action
-            (HttpUtils.Url.Root.tenant_path ~id:tenant.id ~suffix:"update-database" ()
+            (HttpUtils.Url.Root.pool_path ~id:tenant.id ~suffix:"update-database" ()
              |> Sihl.Web.externalize_path)
         ; a_method `Post
         ; a_enctype "multipart/form-data"
@@ -354,7 +352,7 @@ let detail
         [ a
             ~a:
               [ a_href
-                  (HttpUtils.Url.Root.tenant_path ~id:tenant.id ~suffix:"operator" ()
+                  (HttpUtils.Url.Root.pool_path ~id:tenant.id ~suffix:"operator" ()
                    |> Sihl.Web.externalize_path)
               ]
             [ txt (control_to_string (Control.Manage Field.Operators)) ]
@@ -367,8 +365,7 @@ let detail
         ; p
             [ a
                 ~a:
-                  [ a_href
-                      (Http_utils.Url.Root.tenant_path () |> Sihl.Web.externalize_path)
+                  [ a_href (Http_utils.Url.Root.pool_path () |> Sihl.Web.externalize_path)
                   ]
                 [ txt (control_to_string Control.Back) ]
             ]
