@@ -6,7 +6,7 @@ module Database = Database
 module RootCommand = Cqrs_command.Root_command
 
 let src = Logs.Src.create "handler.root.users"
-let tenants_path = "/root/tenants"
+let tenants_path = "/root/pools"
 let active_navigation = "/root/users"
 
 let index req =

@@ -19,7 +19,7 @@ let update req command success_message =
   let urlencoded = multipart_encoded |> HttpUtils.multipart_to_urlencoded file_fields in
   let tags = Pool_context.Logger.Tags.req req in
   let id = HttpUtils.get_field_router_param req tenant |> Pool_tenant.Id.of_string in
-  let redirect_path = Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id) in
+  let redirect_path = Format.asprintf "/root/pools/%s" (Pool_tenant.Id.value id) in
   let result { Pool_context.user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])

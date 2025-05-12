@@ -231,6 +231,7 @@ let rec field_to_string =
       (CCString.capitalize_ascii role)
   | Placeholder -> "Platzhalter"
   | PlainText -> "Klartext"
+  | Pool -> "Pool"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
   | PublicDescription -> "Öffentliche Beschreibung"

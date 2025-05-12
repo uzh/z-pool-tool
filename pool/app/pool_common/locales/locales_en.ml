@@ -226,6 +226,7 @@ let rec field_to_string =
   | Permission -> "permission"
   | PermissionOn (role, target) -> Format.asprintf "permission %s of %s" target role
   | PlainText -> "plaintext"
+  | Pool -> "pool"
   | Placeholder -> "placeholder"
   | Predicate -> "predicate"
   | PromptOnRegistration -> "promt during registration"

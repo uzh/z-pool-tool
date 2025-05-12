@@ -216,6 +216,7 @@ type t =
   | PermissionOn of string * string
   | Placeholder
   | PlainText
+  | Pool
   | Predicate
   | Profile
   | PromptOnRegistration

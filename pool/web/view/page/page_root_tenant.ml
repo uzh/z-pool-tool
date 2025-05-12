@@ -45,9 +45,9 @@ let tenant_form
   let action, control =
     match tenant with
     | Some tenant ->
-      ( Format.asprintf "/root/tenants/%s/update-detail" (Id.value tenant.id)
+      ( Format.asprintf "/root/pools/%s/update-detail" (Id.value tenant.id)
       , Control.(Update (Some Field.Tenant)) )
-    | None -> "/root/tenants/create", Control.(Create (Some Field.Tenant))
+    | None -> "/root/pools/create", Control.(Create (Some Field.Tenant))
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") tenant in
   let language_select =
@@ -156,7 +156,7 @@ let tenant_form
 let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
   let build_tenant_rows tenant_list =
     let thead =
-      [ Field.Tenant |> Table.field_to_txt language
+      [ Field.Pool |> Table.field_to_txt language
       ; Field.Url |> Table.field_to_txt language
       ; Field.Icon |> Table.field_to_txt language
       ; Field.EmailLogo |> Table.field_to_txt language
@@ -190,7 +190,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tenants) ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Pools) ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         [ tenant_list
@@ -198,7 +198,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
             [ h2
                 ~a:[ a_class [ "heading-2"; "has-gap" ] ]
                 [ Pool_common.(
-                    Utils.control_to_string language Control.(Create (Some Field.Tenant)))
+                    Utils.control_to_string language Control.(Create (Some Field.Pool)))
                   |> txt
                 ]
             ; tenant_form context flash_fetcher
@@ -243,7 +243,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
                          ~a:
                            [ a_href
                                (Sihl.Web.externalize_path
-                                  (Format.asprintf "/root/tenants/%s" (Id.value id)))
+                                  (Format.asprintf "/root/pools/%s" (Id.value id)))
                            ]
                          [ Pool_common.Utils.control_to_string language Control.Back
                            |> txt

@@ -7,7 +7,7 @@ module Update = Root_tenant_update
 module Database = Database
 
 let src = Logs.Src.create "handler.root.tenant"
-let tenants_path = "/root/tenants"
+let tenants_path = "/root/pools"
 let active_navigation = tenants_path
 
 let tenants req =
@@ -91,9 +91,7 @@ let create_operator req =
   let tenant_id =
     HttpUtils.get_field_router_param req Field.Tenant |> Pool_tenant.Id.of_string
   in
-  let redirect_path =
-    Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value tenant_id)
-  in
+  let redirect_path = Format.asprintf "/root/pools/%s" (Pool_tenant.Id.value tenant_id) in
   let result { Pool_context.user; _ } =
     Lwt_result.map_error (fun err -> err, Format.asprintf "%s/operator" redirect_path)
     @@

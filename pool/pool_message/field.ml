@@ -251,6 +251,7 @@ type t =
   | PermissionOn of string * string [@name "permission_on"] [@printer go "permission_on"]
   | Placeholder [@name "placeholder"] [@printer go "placeholder"]
   | PlainText [@name "plain_text"] [@printer go "plain_text"]
+  | Pool [@name "pool"] [@printer go "pool"]
   | Predicate [@name "predicate"] [@printer go "predicate"]
   | Profile [@name "profile"] [@printer go "profile"]
   | PromptOnRegistration [@name "prompt_on_registration"]

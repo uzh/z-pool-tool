@@ -997,7 +997,7 @@ module Root = struct
   let locked_routes =
     let open Field in
     let open Handler.Root in
-    let tenants =
+    let pools =
       let open Tenant in
       let specific =
         [ get "" ~middlewares:[ Access.read ] tenant_detail
@@ -1070,7 +1070,7 @@ module Root = struct
         ; choose ~scope:Field.(show Version) versions
         ; choose ~scope:"/settings" settings
         ; choose ~scope:"/user" profile
-        ; choose ~scope:"/tenants" tenants
+        ; choose ~scope:"/pools" pools
         ; choose ~scope:"/users" users
         ]
     ]
