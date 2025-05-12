@@ -62,9 +62,7 @@ let time_window_form csrf language ?time_window (experiment : Experiment.t) ~fla
   let open Time_window in
   let value = CCFun.flip (CCOption.map_or ~default:"") time_window in
   let action, submit =
-    let path ?id () =
-      session_path ?id experiment.Experiment.id |> Sihl.Web.externalize_path
-    in
+    let path ?id () = session_path ?id experiment.Experiment.id in
     match time_window with
     | None -> path (), Create (Some Field.TimeWindow)
     | Some session -> path ~id:session.Time_window.id (), Update (Some Field.TimeWindow)
