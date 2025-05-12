@@ -21,7 +21,10 @@ let version_path ?suffix ?id () =
 
 module Admin = struct
   let settings_path = Format.asprintf "/admin/settings/%s"
-  let settings_action_path action = action |> Settings.stringify_action |> settings_path
+
+  let settings_action_path action =
+    action |> Settings.stringify_action |> settings_path |> Sihl.Web.externalize_path
+  ;;
 
   let system_settings_changelog_path ?suffix key =
     settings_path "system"
