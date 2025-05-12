@@ -26,7 +26,7 @@ let template_label_url label suffix =
 
 let table
       ?(buttons = txt "")
-      ?(can_update_experiment = false)
+      ?(can_update = false)
       ?delete_path
       language
       templates
@@ -74,7 +74,7 @@ let table
                    ()
                ]
            in
-           (if can_update_experiment then [ buttons; delete ] else [])
+           (if can_update then [ buttons; delete ] else [])
            |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
        in
        [ txt (to_human_label template)
