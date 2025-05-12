@@ -25,6 +25,13 @@ module Access = struct
       (permission, model, CCOption.map (Uuid.target_of Entity.Id.value) session_id)
   ;;
 
+  let permission_on_target permission session_id =
+    PermissionOnTarget.create
+      ~target_uuid:(session_id |> Uuid.target_of Entity.Id.value)
+      permission
+      `Session
+  ;;
+
   let index ?(model = `Session) id =
     And
       [ Or [ session ~model index_permission; Experiment.Guard.Access.read ~model id ]
@@ -90,4 +97,6 @@ module Access = struct
       ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
+
+  let update_permission_on_target = permission_on_target Update
 end

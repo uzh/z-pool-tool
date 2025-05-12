@@ -171,11 +171,11 @@ let update_password req =
          Message_template.PasswordChange.create language tenant contact.Contact.user
        in
        let* events =
-         let open CCResult.Infix in
+         let open Pool_user in
          let open Cqrs_command.User_command.UpdatePassword in
-         decode urlencoded
-         >>= handle ~tags ~notification Contact.(contact |> id |> Id.to_user)
-         |> Lwt_result.lift
+         let* decoded = decode urlencoded |> Lwt_result.lift in
+         login database_label (Contact.email_address contact) decoded.current_password
+         >== fun { id; _ } -> handle ~tags ~notification id decoded
        in
        let%lwt () = Pool_event.handle_events ~tags database_label user events in
        HttpUtils.(
