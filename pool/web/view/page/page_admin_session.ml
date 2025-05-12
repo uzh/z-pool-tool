@@ -201,8 +201,7 @@ module Partials = struct
         ~icon:Icon.Create
         ~classnames:[ "small" ]
         ~control:(language, Control.(Edit (Some field)))
-        (session_path ~id:session_id experiment_id ~suffix:"edit"
-         |> Sihl.Web.externalize_path)
+        (session_path ~id:session_id experiment_id ~suffix:"edit")
     in
     let assistants_button =
       assistants_button
@@ -1859,12 +1858,12 @@ let close
       }
 
       const handleSwap = (e) => {
-          initHtmxListener(e.target); 
+          initHtmxListener(e.target);
       }
 
       initHtmxListener();
       const form = document.getElementById(formId);
-      form.parentElement.addEventListener('htmx:afterSwap', handleSwap);  
+      form.parentElement.addEventListener('htmx:afterSwap', handleSwap);
     |js}
   in
   let submit_session_close =
