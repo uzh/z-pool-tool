@@ -1,4 +1,5 @@
 open Pool_message
+open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Response = Http_response
@@ -9,7 +10,6 @@ let root_entrypoint_path = Http_utils.Url.Root.pool_path ()
 let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
 
 let login_get req =
-  let open Utils.Lwt_result.Infix in
   let result context =
     Pool_user.Web.user_from_session Database.Pool.Root.label req
     >|> function
@@ -26,19 +26,54 @@ let login_get req =
   Response.handle ~src req result
 ;;
 
+let render_token_confirmation auth user context req =
+  let open Sihl.Web in
+  Page.Root.Login.token_confirmation
+    ~authentication_id:auth.Authentication.id
+    ?intended:(HttpUtils.find_intended_opt req)
+    ~email:(Pool_user.email user)
+    context
+  |> General.create_root_layout ~active_navigation:"/root/login" context
+  ||> Response.of_html
+;;
+
 let login_post req =
+  let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.database_label; _ } =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Response.bad_request_on_error ~urlencoded login_get
     @@
-    let open Utils.Lwt_result.Infix in
-    let* user = Helpers.Login.login req urlencoded database_label in
-    HttpUtils.redirect_to_with_actions
-      root_entrypoint_path
-      [ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
-    |> Lwt_result.ok
+    let handle_events = Pool_event.handle_events database_label user in
+    let* user, auth, events =
+      Helpers_login.create_2fa_login ~tags req context urlencoded
+    in
+    let success () = render_token_confirmation auth user context req in
+    events |> handle_events >|> success |> Lwt_result.ok
   in
   Response.handle ~src req result
+;;
+
+let confirmation_post req =
+  let open Response in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result ({ Pool_context.database_label; user; _ } as context) =
+    let handle_events = Pool_event.handle_events database_label user in
+    let* user, auth, token =
+      Helpers_login.decode_2fa_confirmation database_label req ~tags
+      |> bad_request_on_error login_get
+    in
+    let* user, events =
+      Helpers_login.confirm_2fa_login ~tags user auth token req
+      |> bad_request_on_error (render_token_confirmation auth user context)
+    in
+    let success () =
+      HttpUtils.redirect_to_with_actions
+        root_entrypoint_path
+        [ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
+    in
+    events |> handle_events >|> success |> Lwt_result.ok
+  in
+  handle ~src req result
 ;;
 
 let request_reset_password_get req =

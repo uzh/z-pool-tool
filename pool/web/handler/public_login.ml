@@ -1,4 +1,5 @@
 open CCFun.Infix
+open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Response = Http_response
@@ -33,86 +34,104 @@ let login_get req =
   Response.handle ~src req result
 ;;
 
+let render_token_confirmation auth user context req =
+  Page.Public.login_token_confirmation
+    ~authentication_id:auth.Authentication.id
+    ?intended:(HttpUtils.find_intended_opt req)
+    ~email:(Pool_user.email user)
+    context
+  |> create_layout req ~active_navigation:"/login" context
+  >|+ Sihl.Web.Response.of_html
+;;
+
 let login_post req =
+  let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let to_user =
-    let open Pool_context in
-    function
-    | Admin { Admin.user; _ } -> Ok user
-    | Contact { Contact.user; _ } -> Ok user
-    | Guest -> Error Pool_message.(Error.NotFound Field.User)
-  in
-  let result { Pool_context.database_label; query_parameters; _ } =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    Response.bad_request_on_error login_get
-    @@ let* user = Helpers.Login.login req urlencoded database_label in
-       let login user ?(set_completion_cookie = false) path actions =
-         let* pool_user = to_user user |> Lwt_result.lift in
-         let tags = Pool_context.Logger.Tags.req req in
-         let* () = increase_sign_in_count ~tags database_label user in
-         HttpUtils.(
-           redirect_to_with_actions
-             (url_with_field_params query_parameters path)
-             ([ Sihl.Web.Session.set
-                  [ "user_id", pool_user.Pool_user.id |> Pool_user.Id.value ]
-              ]
-              @ actions))
-         ||> (fun res ->
-         if set_completion_cookie
-         then
-           Sihl.Web.Session.set_value
-             ~key:Contact.profile_completion_cookie
-             "true"
-             req
-             res
-         else res)
-         |> Lwt_result.ok
-       in
-       let redirect path =
-         HttpUtils.(redirect_to (url_with_field_params query_parameters path))
-         |> Lwt_result.ok
-       in
-       let success user () =
-         let path =
-           match HttpUtils.find_intended_opt req with
-           | Some intended -> intended
-           | None -> user |> Pool_context.dashboard_path
-         in
-         login user path []
-       in
-       let find_contact user =
-         user.Pool_user.id |> Contact.(Id.of_user %> find database_label)
-       in
-       let find_admin user =
+    Response.bad_request_on_error ~urlencoded login_get
+    @@
+    let handle_events = Pool_event.handle_events database_label user in
+    let* user, auth, events =
+      Helpers_login.create_2fa_login ~tags req context urlencoded
+    in
+    let success () = render_token_confirmation auth user context req in
+    events |> handle_events >|> success
+  in
+  Response.handle ~src req result
+;;
+
+let login_cofirmation req =
+  let open Response in
+  let open HttpUtils in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result ({ Pool_context.database_label; query_parameters; _ } as context) =
+    let open Utils.Lwt_result.Infix in
+    let* user, auth, token =
+      Helpers_login.decode_2fa_confirmation database_label req ~tags
+      |> bad_request_on_error login_get
+    in
+    bad_request_on_error (fun req ->
+      render_token_confirmation auth user context req
+      ||> Pool_common.Utils.get_or_failwith)
+    @@
+    let* user, events = Helpers_login.confirm_2fa_login ~tags user auth token req in
+    let success_and_redirect
+          ?(set_completion_cookie = false)
+          ?redirect
+          ?(actions = [])
+          context_user
+      =
+      let redirect =
+        let open CCOption in
+        redirect
+        <+> find_intended_opt req
+        |> value ~default:(Pool_context.dashboard_path context_user)
+        |> url_with_field_params query_parameters
+      in
+      let tags = Pool_context.Logger.Tags.req req in
+      let%lwt () = Pool_event.handle_events database_label context_user events in
+      let* () = increase_sign_in_count ~tags database_label context_user in
+      redirect_to_with_actions
+        redirect
+        ([ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
+         @ actions)
+      ||> (fun res ->
+      if set_completion_cookie
+      then
+        Sihl.Web.Session.set_value ~key:Contact.profile_completion_cookie "true" req res
+      else res)
+      |> Lwt_result.ok
+    in
+    match user |> Pool_user.is_confirmed with
+    | false ->
+      redirect_to (url_with_field_params query_parameters "/email-confirmation")
+      |> Lwt_result.ok
+    | true ->
+      user
+      |> Admin.user_is_admin database_label
+      >|> (function
+       | true ->
          user.Pool_user.id
          |> Admin.(Id.of_user %> find database_label)
          >|+ Pool_context.admin
-       in
-       match user |> Pool_user.is_confirmed with
+         >>= success_and_redirect
        | false ->
-         redirect
-           (Http_utils.url_with_field_params query_parameters "/email-confirmation")
-       | true ->
-         user
-         |> Admin.user_is_admin database_label
-         >|> (function
-          | true ->
-            let* admin = find_admin user in
-            success admin ()
+         let* contact =
+           user.Pool_user.id |> Contact.(Id.of_user %> find database_label)
+         in
+         let%lwt required_answers_given =
+           Custom_field.all_required_answered database_label (Contact.id contact)
+         in
+         let contact = contact |> Pool_context.contact in
+         (match required_answers_given with
+          | true -> success_and_redirect contact
           | false ->
-            let* contact = user |> find_contact in
-            let%lwt required_answers_given =
-              Custom_field.all_required_answered database_label (Contact.id contact)
-            in
-            let contact = contact |> Pool_context.contact in
-            (match required_answers_given with
-             | true -> success contact ()
-             | false ->
-               login
-                 contact
-                 ~set_completion_cookie:true
-                 "/user/completion"
-                 [ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]))
+            success_and_redirect
+              ~set_completion_cookie:true
+              ~redirect:"/user/completion"
+              ~actions:[ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]
+              contact))
   in
   Response.handle ~src req result
 ;;

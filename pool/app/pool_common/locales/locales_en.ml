@@ -38,6 +38,7 @@ let rec field_to_string =
   | CallbackUrl -> "callback url"
   | CellPhone -> "cell phone"
   | Changes -> "changes"
+  | Channel -> "channel"
   | Changelog -> "changelog"
   | Chronological -> "chronological"
   | City -> "city"

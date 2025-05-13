@@ -6,6 +6,7 @@ type t =
   | ApiKey of Api_key.event
   | Assignment of Assignment.event
   | AssignmentJob of Assignment_job.event
+  | Authentication of Authentication.event
   | Contact of Contact.event
   | CustomField of Custom_field.event
   | Database of Pool_database.event
@@ -42,6 +43,7 @@ let announcement events = Announcement events
 let api_key events = ApiKey events
 let assignment events = Assignment events
 let assignmentjob events = AssignmentJob events
+let authentication events = Authentication events
 let contact events = Contact events
 let custom_field events = CustomField events
 let database events = Database events
@@ -94,6 +96,9 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     let src = Logs.Src.create "assignment.events" in
     Logs.info ~src (fun m -> m "Handle event %s" (Assignment_job.show_event event) ~tags);
     Assignment_job.handle_event pool event
+  | Authentication event ->
+    info "authentication" Authentication.pp_event event;
+    Authentication.handle_event pool event
   | Contact event ->
     info "contact" Contact.pp_event event;
     Contact.handle_event pool event

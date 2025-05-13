@@ -499,6 +499,11 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | LocationsIndex ->
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss eine \
      Location haben."
+  | LoginTokenSent email ->
+    Format.asprintf
+      "Ein Verifikationstoken wurde an die E-Mail-Adresse %s gesendet. Bitte überprüfen \
+       Sie Ihren Posteingang."
+      email
   | MailingLimit -> "Max. generierte Einladungen pro Mailing."
   | MailingLimitExceedsMatchingContacts ->
     "Die angegebene Limite ist grösser als die Anzahl Kontakt, die die Kriterien dieses \
@@ -537,6 +542,10 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
   | MessageTemplateInactiveContactDeactivation ->
     "Diese Nachricht wird an Kontakte gesendet, deren Konto aufgrund Inaktivität \
      deaktiviert wurde."
+  | MessageTemplateLogin2FAToken ->
+    "Diese Nachricht enthält das Token für die 2-Faktor-Authentifizierung, das an alle \
+     Benutzer gesendet wird, nachdem sie sich mit ihrer E-Mail und ihrem Passwort \
+     angemeldet haben."
   | MessageTemplateManualSessionMessage ->
     "Diese Vorlage dient als Vorlage für manuell versendete Nachrichten im Rahmen einer \
      Session."
