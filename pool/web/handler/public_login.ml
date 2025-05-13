@@ -103,6 +103,27 @@ let login_cofirmation req =
       else res)
       |> Lwt_result.ok
     in
+    let handle_admin_login user =
+      user.Pool_user.id
+      |> Admin.(Id.of_user %> find database_label)
+      >|+ Pool_context.admin
+      >>= success_and_redirect
+    in
+    let handle_contact_login user =
+      let* contact = user.Pool_user.id |> Contact.(Id.of_user %> find database_label) in
+      let%lwt required_answers_given =
+        Custom_field.all_required_answered database_label (Contact.id contact)
+      in
+      let contact = contact |> Pool_context.contact in
+      match required_answers_given with
+      | true -> success_and_redirect contact
+      | false ->
+        success_and_redirect
+          ~set_completion_cookie:true
+          ~redirect:"/user/completion"
+          ~actions:[ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]
+          contact
+    in
     match user |> Pool_user.is_confirmed with
     | false ->
       redirect_to (url_with_field_params query_parameters "/email-confirmation")
@@ -111,27 +132,8 @@ let login_cofirmation req =
       user
       |> Admin.user_is_admin database_label
       >|> (function
-       | true ->
-         user.Pool_user.id
-         |> Admin.(Id.of_user %> find database_label)
-         >|+ Pool_context.admin
-         >>= success_and_redirect
-       | false ->
-         let* contact =
-           user.Pool_user.id |> Contact.(Id.of_user %> find database_label)
-         in
-         let%lwt required_answers_given =
-           Custom_field.all_required_answered database_label (Contact.id contact)
-         in
-         let contact = contact |> Pool_context.contact in
-         (match required_answers_given with
-          | true -> success_and_redirect contact
-          | false ->
-            success_and_redirect
-              ~set_completion_cookie:true
-              ~redirect:"/user/completion"
-              ~actions:[ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]
-              contact))
+       | true -> handle_admin_login user
+       | false -> handle_contact_login user)
   in
   Response.handle ~src req result
 ;;
