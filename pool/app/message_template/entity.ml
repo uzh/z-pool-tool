@@ -32,6 +32,7 @@ module Label = struct
     [@printer print "inactive_contact_warning"]
     | InactiveContactDeactivation [@name "inactive_contact_deactivation"]
     [@printer print "inactive_contact_deactivation"]
+    | Login2FAToken [@name "login_2fa_token"] [@printer print "login_2fa_token"]
     | ManualSessionMessage [@name "manual_session_message"]
     [@printer print "manual_session_message"]
     | MatcherNotification [@name "matcher_notification"]
@@ -168,6 +169,7 @@ let template_hint label =
   | ManualSessionMessage -> MessageTemplateManualSessionMessage
   | MatcherNotification -> MessageTemplateMatcherNotification
   | MatchFilterUpdateNotification -> MessageTemplateMatchFilterUpdateNotification
+  | Login2FAToken -> MessageTemplateLogin2FAToken
   | PasswordChange -> MessageTemplatePasswordChange
   | PasswordReset -> MessageTemplatePasswordReset
   | PhoneVerification -> MessageTemplatePhoneVerification

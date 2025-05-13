@@ -266,6 +266,7 @@ type hint =
   | I18nText of string
   | LocationFiles
   | LocationsIndex
+  | LoginTokenSent of string
   | MailingLimit
   | MailingLimitExceedsMatchingContacts
   | MergeContacts
@@ -279,6 +280,7 @@ type hint =
   | MessageTemplateExperimentInvitation
   | MessageTemplateInactiveContactWarning
   | MessageTemplateInactiveContactDeactivation
+  | MessageTemplateLogin2FAToken
   | MessageTemplateManualSessionMessage
   | MessageTemplateMatcherNotification
   | MessageTemplateMatchFilterUpdateNotification

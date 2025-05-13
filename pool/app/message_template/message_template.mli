@@ -16,6 +16,7 @@ module Label : sig
     | ExperimentInvitation
     | InactiveContactWarning
     | InactiveContactDeactivation
+    | Login2FAToken
     | ManualSessionMessage
     | MatcherNotification
     | MatchFilterUpdateNotification
@@ -360,6 +361,20 @@ module InactiveContactDeactivation : sig
     -> ( Contact.t -> (Email.dispatch, Pool_message.Error.t) result
          , Pool_message.Error.t )
          Lwt_result.t
+end
+
+module Login2FAToken : sig
+  val email_params
+    :  email_layout
+    -> Pool_user.t
+    -> Authentication.Token.t
+    -> (string * string) list
+
+  val prepare
+    :  Database.Label.t
+    -> Pool_common.Language.t
+    -> layout
+    -> (Pool_user.t -> Authentication.t -> Email.dispatch) Lwt.t
 end
 
 module ManualSessionMessage : sig

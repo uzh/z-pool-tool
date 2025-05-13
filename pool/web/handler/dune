@@ -2,6 +2,7 @@
  (name handler)
  (libraries
   announcement
+  authentication
   assignment
   assignment_job
   contact

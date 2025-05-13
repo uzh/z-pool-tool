@@ -481,6 +481,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
      participating in a session at this location can access access these files."
   | LocationsIndex ->
     "Locations, where experiments are conducted. Every session has to have a location."
+  | LoginTokenSent email ->
+    Format.asprintf
+      "A verification token was sent to the email address %s. Please check your inbox."
+      email
   | MailingLimit -> "Max. generated Invitations during the mailing."
   | MailingLimitExceedsMatchingContacts ->
     "The given limit is larger than the number of contacts meeting the criteria of this \
@@ -498,6 +502,9 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MessageTemplateInactiveContactDeactivation ->
     "This message is sent to contacts whose account has been deactivated due to \
      inactivity."
+  | MessageTemplateLogin2FAToken ->
+    "This message contains the 2-factor authentication token sent to all users after \
+     logging in with their email and password"
   | MessageTemplateAssignmentCancellation ->
     "This message is used to notify contacts about the cancellation of an assignment."
   | MessageTemplateAssignmentConfirmation ->

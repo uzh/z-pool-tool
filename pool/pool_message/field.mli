@@ -29,8 +29,9 @@ type t =
   | CallbackUrl
   | CanceledAt
   | CellPhone
-  | Changes
   | Changelog
+  | Changes
+  | Channel
   | Chronological
   | City
   | ClosedAt

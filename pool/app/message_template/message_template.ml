@@ -682,6 +682,33 @@ module InactiveContactDeactivation = struct
   ;;
 end
 
+module Login2FAToken = struct
+  let label = Label.Login2FAToken
+
+  let email_params layout user token =
+    global_params layout user @ [ "token", Authentication.Token.value token ]
+  ;;
+
+  let prepare pool language layout =
+    let%lwt template = find_by_label_and_language_to_send pool label language in
+    let%lwt sender = default_sender_of_pool pool in
+    let layout = create_layout layout in
+    let fnc user auth =
+      let email =
+        prepare_email
+          language
+          template
+          sender
+          (Pool_user.email user)
+          layout
+          (email_params layout user auth.Authentication.token)
+      in
+      create_email_job label [] email
+    in
+    Lwt.return fnc
+  ;;
+end
+
 module ManualSessionMessage = struct
   let label = Label.ManualSessionMessage
   let base_params layout contact = contact.Contact.user |> global_params layout
