@@ -574,6 +574,7 @@ let rec error_to_string =
       "wurde als gelöscht markiert."
   | JobCannotBeRetriggered -> "Dieser Auftrag kann nicht neu ausgelöst werden."
   | JobPending -> "Der Auftrag ist noch pendent."
+  | LoginInvalidEmailPassword -> "Ungültige E-Mail-Adresse oder Passwort."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MaintenancePending -> "Es sind Wartungsarbeiten im Gange."
   | MaxLength max -> Format.asprintf "Darf nicht länger als %i Zeichen sein." max

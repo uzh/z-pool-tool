@@ -65,6 +65,7 @@ let block_until counter =
 
 let login_params urlencoded =
   let open Utils.Lwt_result.Infix in
+  let urlencoded = Http_utils.remove_empty_values urlencoded in
   let* params =
     Field.[ Email; Password ]
     |> CCList.map Field.show
@@ -142,10 +143,18 @@ let validate_login req ~tags database_label ~email ~password =
   email |> Pool_user.FailedLoginAttempt.Repo.find_opt database_label >|> handle_login
 ;;
 
-let create_2fa_login req ~tags { Pool_context.database_label; language; _ } urlencoded =
+let create_2fa_login
+      ?id
+      ?token
+      ?tags
+      req
+      { Pool_context.database_label; language; _ }
+      urlencoded
+  =
+  let tags = CCOption.value tags ~default:(Pool_context.Logger.Tags.req req) in
   let* email, password = login_params urlencoded in
   let* user = validate_login req ~tags database_label ~email ~password in
-  let auth = Authentication.(create ~user ~channel:Channel.Email) in
+  let auth = Authentication.(create ?id ?token ~user ~channel:Channel.Email) () in
   let%lwt email_job =
     let open Message_template in
     let email_layout =

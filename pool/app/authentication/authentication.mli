@@ -6,6 +6,9 @@ end
 
 module Channel : sig
   type t = Email
+
+  val equal : t -> t -> bool
+  val show : t -> string
 end
 
 module Token : sig
@@ -26,7 +29,15 @@ type t =
 
 val equal : t -> t -> bool
 val show : t -> string
-val create : user:Pool_user.t -> channel:Channel.t -> t
+val pp : Format.formatter -> t -> unit
+
+val create
+  :  ?id:Id.t
+  -> ?token:Token.t
+  -> user:Pool_user.t
+  -> channel:Channel.t
+  -> unit
+  -> t
 
 type event =
   | Created of t

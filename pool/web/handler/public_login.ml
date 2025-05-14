@@ -44,6 +44,7 @@ let render_token_confirmation auth user context req =
   >|+ Sihl.Web.Response.of_html
 ;;
 
+(* TODO: Reloading this confirmation page sometimes renders root layout *)
 let login_post req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in

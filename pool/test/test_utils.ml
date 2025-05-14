@@ -6,6 +6,7 @@ end
 let admin = Admin.(Alcotest.testable pp equal)
 let annoncement = Announcement.(Alcotest.testable pp equal)
 let api_key = Api_key.(Alcotest.testable pp equal)
+let authentification = Authentication.(Alcotest.testable pp equal)
 let calendar_session = Session.Calendar.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let database_label = Database.Label.(Alcotest.testable pp equal)
@@ -134,8 +135,10 @@ module Model = struct
       (ShowToContacts.create show_to_contacts)
   ;;
 
+  let password_str = "Somepassword1!"
+
   let password =
-    Pool_user.Password.Plain.(create "Somepassword1!" |> validate |> get_or_failwith)
+    Pool_user.Password.Plain.(create password_str |> validate |> get_or_failwith)
   ;;
 
   let create_api_key ?id ?token ?(expires_at = Api_key.ExpiresAt.create_now ()) () =
