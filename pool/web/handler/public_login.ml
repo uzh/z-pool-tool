@@ -33,6 +33,7 @@ let login_get req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+(* TODO: Reloading this confirmation page sometimes renders root layout *)
 let login_post req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -65,13 +66,13 @@ let login_post req =
 let login_cofirmation req =
   let open HttpUtils in
   let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; query_parameters; _ } as context) =
+  let result { Pool_context.database_label; query_parameters; _ } =
     let open Utils.Lwt_result.Infix in
     (* TODO: Refactor as soon Http Response handling MR is merged *)
     Utils.Lwt_result.map_error (fun err ->
       err, "/login" |> HttpUtils.intended_of_request req, [])
     @@
-    let* user, events = Helpers_login.confirm_2fa_login ~tags req context in
+    let* user, events = Helpers_login.confirm_2fa_login ~tags req database_label in
     let success_and_redirect
           ?(set_completion_cookie = false)
           ?redirect

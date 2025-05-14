@@ -52,11 +52,11 @@ let login_post req =
 
 let confirmation_post req =
   let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err -> err, root_login_path)
     @@
     let handle_events = Pool_event.handle_events database_label user in
-    let* user, events = Helpers_login.confirm_2fa_login ~tags req context in
+    let* user, events = Helpers_login.confirm_2fa_login ~tags req database_label in
     let success () =
       HttpUtils.redirect_to_with_actions
         root_entrypoint_path
