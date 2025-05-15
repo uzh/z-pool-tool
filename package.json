@@ -30,7 +30,6 @@
     "@fullcalendar/list": "^6.1.8",
     "@fullcalendar/timegrid": "^6.1.8",
     "ckeditor5": "^44.3.0",
-    "crypto": "^1.0.1",
     "flatpickr": "^4.6.13",
     "htmx.org": "^1.6.0",
     "tippy.js": "^6.3.7"

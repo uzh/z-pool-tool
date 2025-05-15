@@ -1847,7 +1847,7 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     inherits "^2.0.4"
     safe-buffer "^5.2.1"
 
-ckeditor5@44.3.0, ckeditor5@^44.0.0:
+ckeditor5@44.3.0, ckeditor5@^44.3.0:
   version "44.3.0"
   resolved "https://registry.yarnpkg.com/ckeditor5/-/ckeditor5-44.3.0.tgz#671fa487cc0e77768f474a3ec47663496584a69b"
   integrity sha512-g2arr/fejYAiOkdMeYvz1ficRPJ42OvO+pYROhre08YjIbAtJBr8wO9DPk9nCV3msnyYE+B02bs+TppazhYNtw==
@@ -1999,11 +1999,6 @@ crypto-browserify@^3.12.0:
     public-encrypt "^4.0.3"
     randombytes "^2.1.0"
     randomfill "^1.0.4"
-
-crypto@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/crypto/-/crypto-1.0.1.tgz#2af1b7cad8175d24c8a1b0778255794a21803037"
-  integrity sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig==
 
 css-select@^5.1.0:
   version "5.1.0"
