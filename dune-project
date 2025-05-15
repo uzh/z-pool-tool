@@ -66,9 +66,9 @@
   (ppx_deriving
    (>= 5.2.1))
   (ppx_string
-   (>= 0.16.0))
+   (= v0.17.0))
   (ppx_yojson_conv
-   (>= 0.14.0))
+   (= v0.17.0))
   (ppx_variants_conv
    (= v0.17.0))
   (tyxml-ppx
