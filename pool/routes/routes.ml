@@ -108,6 +108,7 @@ module Public = struct
               ]
             [ get "/login" Login.login_get
             ; post "/login" Login.login_post
+            ; post "login-confirmation" Login.login_cofirmation
             ; get "/request-reset-password" Login.request_reset_password_get
             ; post "/request-reset-password" Login.request_reset_password_post
             ; get "/reset-password" Login.reset_password_get
@@ -984,6 +985,7 @@ module Root = struct
     let open Handler.Root in
     [ get "/login" Login.login_get
     ; post "/login" Login.login_post
+    ; post "/login-confirmation" Login.confirmation_post
     ; get "/request-reset-password" Login.request_reset_password_get
     ; post "/request-reset-password" Login.request_reset_password_post
     ; get "/reset-password" Login.reset_password_get

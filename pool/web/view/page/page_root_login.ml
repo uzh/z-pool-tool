@@ -39,6 +39,15 @@ let login ?intended Pool_context.{ language; csrf; _ } =
     ]
 ;;
 
+let token_confirmation ?authentication_id ?intended ~email context =
+  Page_login.login_token_confirmation
+    context
+    ?authentication_id
+    ?intended
+    ~email
+    "/root/login-confirmation"
+;;
+
 let request_reset_password Pool_context.{ language; csrf; _ } =
   let input_element = input_element language in
   div
