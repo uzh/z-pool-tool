@@ -24,12 +24,12 @@
     "vm-browserify": "^1.1.2"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-build-classic": "^36.0.0",
     "@econ/frontend-framework": "^4.0.0",
     "@fullcalendar/core": "^6.1.8",
     "@fullcalendar/daygrid": "^6.1.8",
     "@fullcalendar/list": "^6.1.8",
     "@fullcalendar/timegrid": "^6.1.8",
+    "ckeditor5": "^44.3.0",
     "crypto": "^1.0.1",
     "flatpickr": "^4.6.13",
     "htmx.org": "^1.6.0",
