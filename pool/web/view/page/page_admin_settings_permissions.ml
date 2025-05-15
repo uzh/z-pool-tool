@@ -132,7 +132,8 @@ let list
                    ~suffix:"edit"
                    ~target
                    role
-                   ())
+                   ()
+                 |> Sihl.Web.externalize_path)
             ; hx_swap "outerHTML"
             ; hx_target (Format.asprintf "#%s" edit_permission_modal_id)
             ]
