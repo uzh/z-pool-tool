@@ -1,6 +1,7 @@
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 module Url = HttpUtils.Url.Admin
 
 let src = Logs.Src.create "handler.admin.experiments_assignments"
@@ -8,6 +9,7 @@ let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
 let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
+let map_not_found = Response.not_found_on_error
 
 let ids_from_request req =
   let open Field in
@@ -22,12 +24,14 @@ let cancel req =
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Url.session_path ~id:session_id experiment_id in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    let* experiment =
+      Experiment.find database_label experiment_id >|- Response.not_found
+    in
+    let* session = Session.find database_label session_id >|- Response.not_found in
+    Response.bad_request_on_error Admin_session.show
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* experiment = Experiment.find database_label experiment_id in
-    let* session = Session.find database_label session_id in
     let%lwt assignments = Assignment.find_with_follow_ups database_label assignment_id in
     let* cancellation_notification =
       let* assignment =
@@ -66,7 +70,7 @@ let cancel req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let mark_as_deleted req =
@@ -74,7 +78,7 @@ let mark_as_deleted req =
   let experiment_id, _, assignment_id = ids_from_request req in
   let redirect_path = HttpUtils.find_referer req |> CCOption.value ~default:"/" in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    Response.bad_request_on_error Admin_session.show
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt assignments = Assignment.find_with_follow_ups database_label assignment_id in
@@ -105,7 +109,7 @@ let mark_as_deleted req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 module Close = struct
@@ -184,10 +188,10 @@ module Close = struct
             updated
         ; session_counters language counters
         ]
-      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Response.Htmx.of_html_list
       |> Lwt_result.return
     in
-    result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+    Response.Htmx.handle ~error_as_notification:true ~src req result
   ;;
 
   let verify_contact req =
@@ -214,10 +218,10 @@ module Close = struct
             updated
         ; session_counters language counters
         ]
-      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Response.Htmx.of_html_list
       |> Lwt_result.return
     in
-    result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+    Response.Htmx.handle ~error_as_notification:true ~src req result
   ;;
 
   let toggle req =
@@ -265,10 +269,10 @@ module Close = struct
             disabled_verified
         ; session_counters language counters
         ]
-      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> Response.Htmx.of_html_list
       |> Lwt_result.return
     in
-    result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+    Response.Htmx.handle ~error_as_notification:true ~src req result
   ;;
 end
 
@@ -284,23 +288,24 @@ let session_of_experiment database_label session_id experiment =
 let edit req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
-  let redirect_path = Url.session_path ~id:session_id experiment_id in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    let* experiment = Experiment.find database_label experiment_id |> map_not_found in
+    let* session =
+      session_of_experiment database_label session_id experiment |> map_not_found
+    in
+    let* assignment = Assignment.find database_label assignment_id |> map_not_found in
+    Response.bad_request_render_error context
     @@
     let view_contact_name =
       Helpers.Guard.can_read_contact_name
         context
         [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
     in
-    let* experiment = Experiment.find database_label experiment_id in
-    let* session = session_of_experiment database_label session_id experiment in
-    let* assignment = Assignment.find database_label assignment_id in
     Page.Admin.Assignment.edit context view_contact_name experiment session assignment
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
@@ -315,7 +320,12 @@ let update req =
       assignment_id
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    let* assignment = find database_label assignment_id |> map_not_found in
+    let* experiment = Experiment.find database_label experiment_id |> map_not_found in
+    let* session =
+      session_of_experiment database_label session_id experiment |> map_not_found
+    in
+    Response.bad_request_on_error edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let boolean_fields = boolean_fields |> CCList.map Field.show in
@@ -324,9 +334,6 @@ let update req =
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
-    let* assignment = find database_label assignment_id in
-    let* experiment = Experiment.find database_label experiment_id in
-    let* session = session_of_experiment database_label session_id experiment in
     let* participated_in_other_sessions =
       Assignment.contact_participation_in_other_assignments
         database_label
@@ -350,7 +357,7 @@ let update req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let remind req =
@@ -359,7 +366,10 @@ let remind req =
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Page.Admin.Session.session_path ~id:session_id experiment_id in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    let* assignment = find database_label assignment_id |> map_not_found in
+    let* experiment = Experiment.find database_label experiment_id |> map_not_found in
+    let* session = Session.find database_label session_id |> map_not_found in
+    Response.bad_request_on_error edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded =
@@ -367,9 +377,6 @@ let remind req =
     in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let* assignment = find database_label assignment_id in
-    let* experiment = Experiment.find database_label experiment_id in
-    let* session = Session.find database_label session_id in
     let%lwt create_messages =
       Reminder.prepare_messages database_label tenant tenant_languages experiment session
     in
@@ -389,7 +396,7 @@ let remind req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let swap_session_get_helper action req =
@@ -425,10 +432,7 @@ let swap_session_get_helper action req =
     in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let response html =
-      html |> HttpUtils.Htmx.html_to_plain_text_response |> Lwt_result.return
-    in
+    let response html = html |> Response.Htmx.of_html |> Lwt_result.return in
     match action with
     | `OpenModal ->
       let* current_session = Session.find database_label session_id in
@@ -451,7 +455,6 @@ let swap_session_get_helper action req =
         sessions
         swap_session_template
         tenant_languages
-        flash_fetcher
       |> response
     | `ToggleLanguage ->
       Page.Admin.Assignment.Partials.swap_session_notification_form_fields
@@ -462,10 +465,9 @@ let swap_session_get_helper action req =
         assignment_id
         tenant_languages
         swap_session_template
-        flash_fetcher
       |> response
   in
-  result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  Response.Htmx.handle ~error_as_notification:true ~src req result
 ;;
 
 let swap_session_get = swap_session_get_helper `OpenModal
@@ -483,14 +485,13 @@ let swap_session_post req =
     ||> HttpUtils.format_request_boolean_values Field.[ show NotifyContact ]
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    let* assignment = find database_label assignment_id |> map_not_found in
+    let* experiment = Experiment.find database_label experiment_id |> map_not_found in
+    let* current_session = Session.find database_label session_id |> map_not_found in
+    Response.bad_request_on_error edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* decoded = SwapSession.decode urlencoded |> Lwt_result.lift in
-    let* assignment = find database_label assignment_id in
-    let* experiment = Experiment.find database_label experiment_id in
-    let* current_session = Session.find database_label session_id in
     let* new_session = Session.find database_label decoded.session in
     let%lwt notification_email =
       match decoded.notify_contact |> Pool_common.NotifyContact.value with
@@ -527,7 +528,7 @@ let swap_session_post req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let changelog req =

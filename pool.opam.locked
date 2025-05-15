@@ -85,6 +85,8 @@ depends: [
   "integers" {= "0.7.0"}
   "ipaddr" {= "5.6.0"}
   "ipaddr-sexp" {= "5.6.0"}
+  "jane-street-headers" {= "v0.17.0" & with-test}
+  "jst-config" {= "v0.17.0" & with-test}
   "jwto" {= "0.4.0"}
   "kdf" {= "1.0.0"}
   "ke" {= "0.6"}
@@ -134,6 +136,7 @@ depends: [
   "parsexp" {= "v0.17.0"}
   "pecu" {= "0.7"}
   "pp" {= "2.0.0"}
+  "ppx_assert" {= "v0.17.0" & with-test}
   "ppx_base" {= "v0.17.0"}
   "ppx_cold" {= "v0.17.0"}
   "ppx_compare" {= "v0.17.0"}
@@ -144,7 +147,10 @@ depends: [
   "ppx_fields_conv" {= "v0.17.0"}
   "ppx_globalize" {= "v0.17.0"}
   "ppx_hash" {= "v0.17.0"}
+  "ppx_here" {= "v0.17.0" & with-test}
+  "ppx_inline_test" {= "v0.17.0" & with-test}
   "ppx_js_style" {= "v0.17.0"}
+  "ppx_optcomp" {= "v0.17.0" & with-test}
   "ppx_sexp_conv" {= "v0.17.0"}
   "ppx_string" {= "v0.17.0"}
   "ppx_variants_conv" {= "v0.17.0"}
@@ -173,6 +179,7 @@ depends: [
   "stdlib-shims" {= "0.3.0"}
   "stdune" {= "3.18.2"}
   "stringext" {= "1.6.0"}
+  "time_now" {= "v0.17.0" & with-test}
   "tls" {= "2.0.1"}
   "tls-lwt" {= "2.0.1"}
   "topkg" {= "1.0.8"}

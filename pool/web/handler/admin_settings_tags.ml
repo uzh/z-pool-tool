@@ -2,18 +2,17 @@ open Utils.Lwt_result.Infix
 module Field = Pool_message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let field = Field.Tag
 let base_path = "/admin/settings/tags"
-let error_path = "/admin/settings/tags"
 let src = Logs.Src.create "handler.admin.settings_tags"
 let active_navigation = base_path
 let id req = Sihl.Web.Router.param req @@ Field.show field |> Tags.Id.of_string
 
 let index req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path
     ~query:(module Tags)
     ~create_layout:General.create_tenant_layout
     req
@@ -26,26 +25,24 @@ let index req =
 
 let new_form req =
   let result context =
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.Settings.Tags.new_form ~flash_fetcher context
+    Page.Admin.Settings.Tags.new_form context
     |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, Format.asprintf "%s/create" base_path
+    |> Response.bad_request_render_error context
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let edit req =
   let result ({ Pool_context.database_label; _ } as context) =
     let id = HttpUtils.find_id Tags.Id.of_string Field.Tag req in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Tags.find database_label id
-    >|+ Page.Admin.Settings.Tags.edit ~flash_fetcher context
-    >>= General.create_tenant_layout req ~active_navigation context
+    let* tag = Tags.find database_label id >|- Response.not_found in
+    Page.Admin.Settings.Tags.edit context tag
+    |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, Format.asprintf "%s/edit" base_path
+    |> Response.bad_request_render_error context
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let write action req =
@@ -53,15 +50,14 @@ let write action req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let redirect, success =
+  let error_handler, success =
     let open Pool_message.Success in
     match action with
-    | `Create -> Format.asprintf "%s/create" base_path, Created field
-    | `Update id -> Format.asprintf "%s/%s" base_path (Tags.Id.value id), Updated field
+    | `Create -> new_form, Created field
+    | `Update _ -> edit, Updated field
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, redirect, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded error_handler
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let events =
@@ -91,7 +87,7 @@ let write action req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let create = write `Create

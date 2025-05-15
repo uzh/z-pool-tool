@@ -55,7 +55,10 @@ module Partials = struct
   ;;
 end
 
-let time_window_form csrf language ?time_window (experiment : Experiment.t) ~flash_fetcher
+let time_window_form
+      { Pool_context.csrf; language; flash_fetcher; _ }
+      ?time_window
+      (experiment : Experiment.t)
   =
   let open CCFun in
   let open Session in
@@ -75,7 +78,7 @@ let time_window_form csrf language ?time_window (experiment : Experiment.t) ~fla
     date_time_picker_element
       language
       ~required:true
-      ~flash_fetcher
+      ?flash_fetcher
       ?value
       ?min_value
       ~disable_past:(CCOption.is_none time_window)
@@ -118,7 +121,7 @@ let time_window_form csrf language ?time_window (experiment : Experiment.t) ~fla
               (value (fun s ->
                  s.internal_description
                  |> CCOption.map_or ~default:"" InternalDescription.value))
-            ~flash_fetcher
+            ?flash_fetcher
         ; textarea_element
             language
             Field.PublicDescription
@@ -126,7 +129,7 @@ let time_window_form csrf language ?time_window (experiment : Experiment.t) ~fla
               (value (fun s ->
                  s.public_description
                  |> CCOption.map_or ~default:"" PublicDescription.value))
-            ~flash_fetcher
+            ?flash_fetcher
         ; input_element
             language
             `Number
@@ -135,7 +138,7 @@ let time_window_form csrf language ?time_window (experiment : Experiment.t) ~fla
               CCOption.(
                 bind time_window (fun s ->
                   map (ParticipantAmount.value %> CCInt.to_string) s.max_participants))
-            ~flash_fetcher
+            ?flash_fetcher
         ]
     ; div
         ~a:[ a_class [ "flexrow" ] ]
@@ -143,24 +146,18 @@ let time_window_form csrf language ?time_window (experiment : Experiment.t) ~fla
     ]
 ;;
 
-let new_form ({ Pool_context.language; csrf; _ } as context) experiment flash_fetcher =
-  time_window_form csrf language experiment ~flash_fetcher
+let new_form context experiment =
+  time_window_form context experiment
   |> CCList.return
   |> Layout.Experiment.(
        create context (Control (Create (Some Field.TimeWindow))) experiment)
 ;;
 
-let edit
-      ({ Pool_context.language; csrf; _ } as context)
-      experiment
-      time_window
-      tags
-      flash_fetcher
-  =
+let edit context experiment time_window tags =
   let tags_html =
     Page_admin_session.tags_subform context experiment (`TimeWindow time_window) tags
   in
-  let form = time_window_form csrf language experiment ~time_window ~flash_fetcher in
+  let form = time_window_form context experiment ~time_window in
   div ~a:[ a_class [ "stack-lg" ] ] [ form; tags_html ]
   |> CCList.return
   |> Layout.Experiment.(

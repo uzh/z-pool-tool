@@ -11,9 +11,8 @@ let handle req =
   | false -> Response.of_plain_text ~status:`Forbidden "" |> Lwt.return
   | true ->
     Http_utils.(
-      Htmx.htmx_redirect
+      Http_response.Htmx.redirect
         (retain_url_params req "/login" |> Uri.to_string)
         ~status:`Forbidden
         ~actions:[ Message.set ~error:[ Pool_message.Error.SessionInvalid ] ])
-      ()
 ;;

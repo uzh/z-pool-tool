@@ -21,12 +21,12 @@ let create_root_layout ?active_navigation context =
 let note ~title ~body req =
   let result ({ Pool_context.language; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    Utils.Lwt_result.map_error (fun err -> err, "/")
+    Http_response.bad_request_render_error context
     @@
     let txt_to_string m = Pool_common.Utils.text_to_string language m in
     Page.Utils.note (txt_to_string title) (txt_to_string body)
     |> create_tenant_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Http_response.handle ~src req result
 ;;

@@ -3,14 +3,14 @@ open Utils.Lwt_result.Infix
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.settings_actor_permissions"
 let active_navigation = "/admin/settings/actor-permission"
 
 let show req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path:"/"
     ~query:(module Guard.ActorPermission)
     ~create_layout:General.create_tenant_layout
     req
@@ -30,6 +30,8 @@ let show req =
 let delete req =
   let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
+    Response.bad_request_on_error show
+    @@
     let permission =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.find_in_urlencoded Field.Permission
@@ -54,24 +56,26 @@ let delete req =
     in
     permission >== events >|> handle |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_form req =
-  let result ({ Pool_context.csrf; database_label; language; _ } as context) =
-    let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
+  let result
+        ({ Pool_context.csrf; database_label; language; flash_fetcher; _ } as context)
+    =
+    Response.bad_request_render_error context
+    @@
     let%lwt hint =
       I18n.(find_by_key database_label Key.ActorPermissionCreateHint) language
     in
     Page.Admin.Settings.ActorPermission.create
       ~hint
       context
-      (Component.Role.ActorPermissionSearch.input_form ~flash_fetcher csrf language ())
+      (Component.Role.ActorPermissionSearch.input_form ?flash_fetcher csrf language ())
     |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, Format.asprintf "%s/new" active_navigation
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let handle_toggle_target req =
@@ -92,19 +96,19 @@ let handle_toggle_target req =
       ~empty:(equal Create permission)
       Language.En
       model
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 let create req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, active_navigation)
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let find = CCFun.flip HttpUtils.find_in_urlencoded urlencoded in
     let* actors =
       HttpUtils.htmx_urlencoded_list Field.(ValueOf Admin |> array_key) req
@@ -169,7 +173,7 @@ let create req =
          active_navigation
          [ Message.set ~success:[ Success.Created Field.Role ] ])
   in
-  result |> HttpUtils.extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 module Access : module type of Helpers.Access = struct

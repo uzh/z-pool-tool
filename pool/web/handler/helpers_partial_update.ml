@@ -1,5 +1,6 @@
 open Pool_message
 module HttpUtils = Http_utils
+module Response = Http_response
 
 let src = Logs.Src.create "handler.helper.partial_update"
 
@@ -53,6 +54,7 @@ let parse_urlencoded ~is_admin req database_label language urlencoded contact_id
   (field, version, value, field_id) |> Lwt_result.return
 ;;
 
+(* TODO: Is a redirect error still required? *)
 let update ?contact req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
@@ -64,16 +66,10 @@ let update ?contact req =
     =
     let is_admin = Pool_context.user_is_admin user in
     let path_with_params = HttpUtils.url_with_field_params query_parameters in
-    let with_redirect path res =
-      res |> CCResult.map_err (fun err -> err, path_with_params path)
-    in
     let* contact =
       match contact with
       | Some contact -> Lwt_result.return contact
-      | None ->
-        Pool_context.find_contact context
-        |> with_redirect ("/login" |> HttpUtils.intended_of_request req)
-        |> Lwt_result.lift
+      | None -> Pool_context.find_contact context |> Lwt_result.lift
     in
     let back_path =
       if is_admin
@@ -81,7 +77,7 @@ let update ?contact req =
       else "/user/personal-details"
     in
     let* Pool_context.Tenant.{ tenant_languages; _ } =
-      Pool_context.Tenant.find req |> with_redirect back_path |> Lwt_result.lift
+      Pool_context.Tenant.find req |> Lwt_result.lift
     in
     let* field, version, value, field_id =
       parse_urlencoded
@@ -91,22 +87,18 @@ let update ?contact req =
         language
         urlencoded
         Contact.(contact |> id)
-      ||> with_redirect back_path
     in
     let contact_id = Contact.id contact in
     let* custom_field =
       field_id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
         Custom_field.find_by_contact ~is_admin database_label contact_id id
-        ||> with_redirect back_path
         >|+ CCOption.pure)
     in
     let%lwt response =
       let open CCResult in
       let tags = Pool_context.Logger.Tags.req req in
-      let html_response html =
-        html |> HttpUtils.Htmx.html_to_plain_text_response |> Lwt.return
-      in
+      let html_response html = html |> Response.Htmx.of_html |> Lwt.return in
       let%lwt partial_update =
         Custom_field.validate_partial_update
           ~is_admin
@@ -133,7 +125,7 @@ let update ?contact req =
           let open Custom_field.PartialUpdate in
           (match partial_update with
            | Language _ when not is_admin ->
-             HttpUtils.Htmx.htmx_redirect (Sihl.Web.externalize_path back_path) ()
+             Response.Htmx.redirect (Sihl.Web.externalize_path back_path)
            | Language _ | Firstname _ | Lastname _ | Custom _ ->
              Htmx.partial_update_to_htmx
                language
@@ -186,11 +178,10 @@ let update ?contact req =
              (match field with
               | Error error ->
                 HttpUtils.(
-                  Htmx.htmx_redirect
+                  Response.Htmx.redirect
                     back_path
                     ~query_parameters
-                    ~actions:[ Message.set ~error:[ error ] ]
-                    ())
+                    ~actions:[ Message.set ~error:[ error ] ])
               | Ok field ->
                 Htmx.custom_field_to_htmx
                   language
@@ -214,5 +205,5 @@ let update ?contact req =
     in
     response |> Lwt_result.return
   in
-  HttpUtils.Htmx.extract_happy_path ~src req result
+  Response.Htmx.handle ~src req result
 ;;

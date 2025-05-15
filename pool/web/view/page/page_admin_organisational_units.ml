@@ -14,7 +14,7 @@ let ou_path ?suffix ?id () =
   CCOption.map_or ~default (Format.asprintf "%s/%s" default) suffix
 ;;
 
-let form { Pool_context.language; csrf; _ } organisational_unit =
+let form { Pool_context.language; csrf; flash_fetcher; _ } organisational_unit =
   let open Organisational_unit in
   let open Pool_common in
   let action, control =
@@ -24,13 +24,12 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "haeding-1" ] ]
-        [ Utils.control_to_string language control |> txt ]
+    [ h1 ~a:[ a_class [ "has-gap" ] ] [ Utils.control_to_string language control |> txt ]
     ; form
         ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]
         [ Input.csrf_element csrf ()
         ; Input.input_element
+            ?flash_fetcher
             ?value:
               (organisational_unit |> CCOption.map (fun { name; _ } -> Name.value name))
             language

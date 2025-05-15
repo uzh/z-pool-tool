@@ -23,8 +23,5 @@ let toggle_paused
       [ Message.set ~success:[ Pool_message.Success.PausedToggled (Paused.value paused) ]
       ]
   in
-  events
-  |>> handle
-  |>> redirect
-  |> Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+  events |>> handle |>> redirect
 ;;

@@ -20,10 +20,17 @@ let version_path ?suffix ?id () =
 ;;
 
 module Admin = struct
-  let settings_path = Format.asprintf "/admin/settings/%s"
+  let settings_base_path = "/admin/settings"
+  let settings_path = Format.asprintf "%s/%s" settings_base_path
 
-  let settings_action_path action =
-    action |> Settings.stringify_action |> settings_path |> Sihl.Web.externalize_path
+  let settings_path_with_action action =
+    action |> Settings.stringify_action |> settings_path
+  ;;
+
+  let settings_path_with_action_param action =
+    let open Uri in
+    let path = of_string settings_base_path in
+    add_query_param path ("action", [ Settings.stringify_action action ]) |> to_string
   ;;
 
   let system_settings_changelog_path ?suffix key =
@@ -151,6 +158,8 @@ module Admin = struct
     |> append_opt (map Organisational_unit.Id.value id)
     |> append_opt suffix
   ;;
+
+  let i18n_path ?suffix () = "/admin/i18n" |> append_opt suffix
 
   let role_permission_path ?suffix ?role () =
     settings_path "role-permission"

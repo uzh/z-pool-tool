@@ -7,9 +7,8 @@ module Url = Page_admin_custom_fields.Url
 let option_form
       ?(custom_field_option : Custom_field.SelectOption.t option)
       custom_field
-      Pool_context.{ language; csrf; _ }
+      Pool_context.{ language; csrf; flash_fetcher; _ }
       tenant_languages
-      flash_fetcher
   =
   let open Custom_field in
   let action =
@@ -21,9 +20,9 @@ let option_form
   let name_inputs =
     Page_admin_custom_fields.input_by_lang
       ~required:true
+      ?flash_fetcher
       language
       tenant_languages
-      flash_fetcher
       custom_field_option
       Field.Name
       (fun lang o ->
@@ -106,7 +105,6 @@ let detail
       custom_field
       (Pool_context.{ language; csrf; _ } as context)
       sys_languages
-      flash_fetcher
   =
   let changelog_html =
     let open Custom_field in
@@ -132,12 +130,7 @@ let detail
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         [ buttons_form
-        ; option_form
-            ?custom_field_option
-            custom_field
-            context
-            sys_languages
-            flash_fetcher
+        ; option_form ?custom_field_option custom_field context sys_languages
         ; changelog_html
         ]
     ]

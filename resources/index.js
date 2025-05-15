@@ -15,6 +15,7 @@ import {
     initDetectFormChanges,
 } from '../node_modules/@econ/frontend-framework/dist/main'
 import { initFormSubmitInterferer } from "./formSubmitInterferer.js"
+import { initRichTextEditor } from "./admin/richTextEditor.js"
 
 initNavitation();
 initDatepicker();
@@ -28,4 +29,5 @@ initSortable();
 initDetectFormChanges();
 initFormSubmitInterferer();
 initHTMX();
+initRichTextEditor();
 initSearch();

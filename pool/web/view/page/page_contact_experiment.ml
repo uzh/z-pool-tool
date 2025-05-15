@@ -115,7 +115,7 @@ module Detail = struct
           ]
         else []
       in
-      div (missing_phone @ [ base ])
+      div ~a:[ a_class [ "stack" ] ] (missing_phone @ [ base ])
     in
     div
       ~a:[ a_class [ "stack" ] ]

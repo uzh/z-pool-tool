@@ -3,6 +3,7 @@ module Field = Pool_message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Command = Cqrs_command.Settings_command
+module Response = Http_response
 
 let create_layout req = General.create_tenant_layout req
 let base_path = "/admin/settings/text-messages"
@@ -11,24 +12,23 @@ let active_navigation = base_path
 
 let index req =
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin")
+    Response.bad_request_render_error context
     @@
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let%lwt gtx_config = Gtx_config.find_opt database_label in
-    Page.Admin.Settings.TextMessage.index context ~flash_fetcher gtx_config
+    Page.Admin.Settings.TextMessage.index context gtx_config
     |> create_layout ~active_navigation req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, base_path)
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    Response.bad_request_on_error ~urlencoded index
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let%lwt gtx_config = Gtx_config.find_opt database_label in
     let open Command in
     let* validated_config = validated_gtx_api_key ~tags urlencoded in
@@ -49,13 +49,13 @@ let update req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let delete req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, base_path)
+    Response.bad_request_on_error index
     @@
     let tags = Pool_context.Logger.Tags.req req in
     Command.RemoveGtxApiKey.handle ~tags ()
@@ -67,7 +67,7 @@ let delete req =
       [ HttpUtils.Message.set ~success:[ Pool_message.(Success.Deleted Field.GtxApiKey) ]
       ]
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let delivery_report req =

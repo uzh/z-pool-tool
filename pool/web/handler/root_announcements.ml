@@ -1,5 +1,6 @@
 open Utils.Lwt_result.Infix
 open Pool_message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.root.announcements"
 let active_navigation = "/root/announcements"
@@ -40,9 +41,8 @@ let index req =
   let create_layout (_ : Rock.Request.t) ?active_navigation context children =
     General.create_root_layout ?active_navigation context children |> Lwt_result.ok
   in
-  Http_utils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:(announcement_path ())
-    ~error_path:"root"
     ~query:(module Announcement)
     ~create_layout
     req
@@ -55,22 +55,23 @@ let index req =
 
 let form case req =
   let result context =
-    Lwt_result.map_error (fun err -> err, announcement_path ())
-    @@
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let sys_languages = Pool_common.Language.all in
     let%lwt tenants = Pool_tenant.find_all () in
     let* announcement =
       match case with
       | `New -> Lwt_result.return None
-      | `Edit -> announcement_id req |> Announcement.find_admin >|+ CCOption.return
+      | `Edit ->
+        announcement_id req
+        |> Announcement.find_admin
+        >|- Response.not_found
+        >|+ CCOption.return
     in
-    Page.Root.Announcement.form context tenants sys_languages ~flash_fetcher ?announcement
+    Page.Root.Announcement.form context tenants sys_languages ?announcement
     |> create_layout context
     ||> Sihl.Web.Response.of_html
     ||> CCResult.return
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_form = form `New
@@ -82,10 +83,7 @@ let create req =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , announcement_path ~suffix:"new" ()
-      , [ Http_utils.urlencoded_to_flash urlencoded ] ))
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let events =
       let open CCResult in
@@ -105,7 +103,7 @@ let create req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
@@ -115,12 +113,9 @@ let update req =
   in
   let id = announcement_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , announcement_path ~id ~suffix:"edit" ()
-      , [ Http_utils.urlencoded_to_flash urlencoded ] ))
+    let* announcement = Announcement.find id >|- Response.not_found in
+    Response.bad_request_on_error ~urlencoded edit
     @@
-    let* announcement = Announcement.find id in
     let events =
       let open CCResult in
       let open Cqrs_command.Announcement_command.Update in
@@ -139,7 +134,7 @@ let update req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 module Access : sig

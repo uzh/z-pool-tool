@@ -4,6 +4,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Database = Database
 module RootCommand = Cqrs_command.Root_command
+module Response = Http_response
 
 let src = Logs.Src.create "handler.root.users"
 let pool_path = HttpUtils.Url.Root.pool_path
@@ -12,8 +13,7 @@ let active_navigation = "/root/users"
 let index req =
   let context = Pool_context.find_exn req in
   let%lwt root_list = Admin.all ~query:Admin.default_query Database.Pool.Root.label in
-  let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
-  Page.Root.Users.list root_list context flash_fetcher
+  Page.Root.Users.list root_list context
   |> General.create_root_layout ~active_navigation context
   ||> Sihl.Web.Response.of_html
 ;;
@@ -21,6 +21,8 @@ let index req =
 let create req =
   let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    Response.bad_request_on_error ~urlencoded index
+    @@
     let tags = Pool_context.Logger.Tags.req req in
     let create_user () =
       HttpUtils.find_in_urlencoded
@@ -41,18 +43,16 @@ let create req =
         (pool_path ())
         [ Message.set ~success:[ Success.Created Field.Root ] ]
     in
-    create_user ()
-    >== events
-    >|- (fun err -> err, active_navigation, [ HttpUtils.urlencoded_to_flash urlencoded ])
-    |>> handle
-    |>> return_to_overview
+    create_user () >== events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let toggle_status req =
   let result { Pool_context.database_label; user; _ } =
     let open CCFun in
+    Response.bad_request_on_error index
+    @@
     let tags = Pool_context.Logger.Tags.req req in
     let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     let events = RootCommand.ToggleStatus.handle ~tags %> Lwt_result.lift in
@@ -62,14 +62,9 @@ let toggle_status req =
         (pool_path ())
         [ Message.set ~success:[ Success.Updated Field.Root ] ]
     in
-    id
-    |> Admin.find Database.Pool.Root.label
-    >>= events
-    >|- (fun err -> err, active_navigation)
-    |>> handle
-    |>> return_to_overview
+    id |> Admin.find Database.Pool.Root.label >>= events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 module Access : sig

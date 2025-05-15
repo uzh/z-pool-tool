@@ -9,8 +9,7 @@ let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 let login_form
       ?(hide_signup = false)
       ?intended
-      ?flash_fetcher
-      Pool_context.{ language; query_parameters; csrf; _ }
+      Pool_context.{ language; query_parameters; csrf; flash_fetcher; _ }
   =
   let open Pool_common in
   let query_parameters =
@@ -130,14 +129,14 @@ let index
     ]
 ;;
 
-let login ?intended Pool_context.({ language; _ } as context) flash_fetcher =
+let login ?intended Pool_context.({ language; _ } as context) =
   let txt_to_string = txt_to_string language in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         (txt_to_string Pool_common.I18n.LoginTitle)
-    ; login_form ?intended ~flash_fetcher context
+    ; login_form ?intended context
     ]
 ;;
 

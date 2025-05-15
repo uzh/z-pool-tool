@@ -1,5 +1,6 @@
 module ApiUtils = Http_utils.Api
 module Field = Pool_message.Field
+module Response = Http_response.Api
 open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "handler.api.v1.experiment"
@@ -9,7 +10,7 @@ let index req =
   let result { Pool_context.Api.database_label; _ } actor query =
     list_by_user ~query database_label actor |> Lwt_result.ok
   in
-  result |> ApiUtils.index_handler ~query:(module Experiment) ~yojson_of_t ~src req
+  result |> Response.index_handler ~query:(module Experiment) ~yojson_of_t ~src req
 ;;
 
 let show req =
@@ -20,7 +21,7 @@ let show req =
     >>= find database_label
     >|+ yojson_of_t
   in
-  result |> ApiUtils.respond ~src req
+  result |> Response.respond ~src req
 ;;
 
 module Access = struct

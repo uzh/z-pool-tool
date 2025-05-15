@@ -88,8 +88,8 @@ let validate_admin_entity_base validate =
       let (_ : Error.t) = Utils.with_log_error ~level:Logs.Info err in
       let open Http_utils.Htmx in
       let htmx_response () =
-        error_notification Language.En Error.AccessDenied
-        |> html_to_plain_text_response
+        Http_response.Htmx.inline_error Language.En Error.AccessDenied
+        |> Http_response.Htmx.of_html
         |> Lwt.return
       in
       (match is_hx_request req with
@@ -97,7 +97,9 @@ let validate_admin_entity_base validate =
        | false ->
          let open Http_utils in
          (match Api.is_api_request req with
-          | true -> Api.respond_error ~status:`Forbidden Error.AccessDenied |> Lwt.return
+          | true ->
+            Http_response.Api.respond_error ~status:`Forbidden Error.AccessDenied
+            |> Lwt.return
           | false ->
             Http_utils.redirect_to
             @@
