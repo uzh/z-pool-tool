@@ -216,9 +216,12 @@ type t =
   | PermissionOn of string * string
   | Placeholder
   | PlainText
+  | Pool
   | Predicate
   | Profile
   | PromptOnRegistration
+  | PrimaryUser
+  | PrimaryUsers
   | PublicDescription
   | PublicTitle
   | PublishedAt

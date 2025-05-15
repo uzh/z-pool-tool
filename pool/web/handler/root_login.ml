@@ -4,7 +4,7 @@ module Message = HttpUtils.Message
 
 let src = Logs.Src.create "handler.root.login"
 let root_login_path = "/root/login"
-let root_entrypoint_path = "/root/tenants"
+let root_entrypoint_path = Http_utils.Url.Root.pool_path ()
 let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
 
 let login_get req =

@@ -254,15 +254,12 @@ module Root = struct
   let announcement_path ?suffix ?id () = announcement_path ?suffix ?id () |> with_root
   let version_path ?suffix ?id () = version_path ?suffix ?id () |> with_root
 
-  let tenant_path ?suffix ?id () =
-    "/tenants"
-    |> with_root
-    |> append_opt (map Pool_tenant.Id.value id)
-    |> append_opt suffix
+  let pool_path ?suffix ?id () =
+    "/pools" |> with_root |> append_opt (map Pool_tenant.Id.value id) |> append_opt suffix
   ;;
 
-  let tenant_assets_path tenant_id ?suffix ?id () =
-    tenant_path ~id:tenant_id ~suffix:"assets" ()
+  let pool_assets_path pool_id ?suffix ?id () =
+    pool_path ~id:pool_id ~suffix:"assets" ()
     |> append_opt (map Pool_common.Id.value id)
     |> append_opt suffix
   ;;

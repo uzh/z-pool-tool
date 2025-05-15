@@ -231,10 +231,12 @@ let rec field_to_string =
       (CCString.capitalize_ascii role)
   | Placeholder -> "Platzhalter"
   | PlainText -> "Klartext"
+  | Pool -> "Pool"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
   | PublicDescription -> "Öffentliche Beschreibung"
   | PromptOnRegistration -> "Eingabeaufforderung bei der Registrierung"
+  | PrimaryUser | PrimaryUsers -> "Primärbenutzer"
   | PublicTitle -> "Öffentlicher Titel"
   | PublishedAt -> "Veröffentlicht"
   | Query -> "Query"

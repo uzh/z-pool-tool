@@ -170,6 +170,7 @@ type nav_link =
   | Overview
   | ParticipationTags
   | PersonalDetails
+  | Pools
   | PrivacyPolicy
   | Profile
   | Queue
@@ -183,7 +184,6 @@ type nav_link =
   | SignupCodes
   | SystemSettings
   | Tags
-  | Tenants
   | TextMessages
   | TimeWindows
   | Users

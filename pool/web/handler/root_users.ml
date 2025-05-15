@@ -6,7 +6,7 @@ module Database = Database
 module RootCommand = Cqrs_command.Root_command
 
 let src = Logs.Src.create "handler.root.users"
-let tenants_path = "/root/tenants"
+let pool_path = HttpUtils.Url.Root.pool_path
 let active_navigation = "/root/users"
 
 let index req =
@@ -38,7 +38,7 @@ let create req =
     let handle = Pool_event.handle_events ~tags Database.Pool.Root.label user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
-        tenants_path
+        (pool_path ())
         [ Message.set ~success:[ Success.Created Field.Root ] ]
     in
     create_user ()
@@ -59,7 +59,7 @@ let toggle_status req =
     let handle = Pool_event.handle_events ~tags database_label user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
-        tenants_path
+        (pool_path ())
         [ Message.set ~success:[ Success.Updated Field.Root ] ]
     in
     id
