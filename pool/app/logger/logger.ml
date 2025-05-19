@@ -40,6 +40,19 @@ let init_out_channels () =
   init_log_file error_channel (logs_dir ^ "/error.log")
 ;;
 
+let close_log_files () =
+  let close_channel = function
+    | Some (out, _) ->
+      close_out out;
+      None
+    | None -> None
+  in
+  app_channel := close_channel !app_channel;
+  error_channel := close_channel !error_channel
+;;
+
+let () = at_exit close_log_files
+
 (* Adapted from Logs_fmt.pp_header *)
 let pp_header ~pp_h ppf (l, h) =
   let open Logs_fmt in
@@ -131,7 +144,7 @@ let reporter =
 ;;
 
 let create_logs_dir () =
-  if not (Sys.file_exists (logs_dir ())) then Sys.mkdir (logs_dir ()) 0x640
+  if not (Sys.file_exists (logs_dir ())) then Sys.mkdir (logs_dir ()) 0o755
 ;;
 
 let log_exception ?prefix ~src ~tags =
