@@ -30,6 +30,8 @@ let init_log_file channel log_file =
   match !channel with
   | Some _ -> ()
   | None ->
+    let log_dir = Filename.dirname log_file in
+    if not (Sys.file_exists log_dir) then Sys.mkdir log_dir 0o755;
     let out = open_out_gen [ Open_creat; Open_append; Open_text ] 0o666 log_file in
     channel := Some (out, formatter_of_out_channel out)
 ;;

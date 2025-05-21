@@ -184,8 +184,7 @@ let detail
       (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
       sessions
       experiment_id
-      (Pool_context.{ language; csrf; user; _ } as context)
-      flash_fetcher
+      (Pool_context.{ language; csrf; user; flash_fetcher; _ } as context)
       chronological
   =
   let waiting_list_detail =
@@ -200,6 +199,7 @@ let detail
             ]
           [ csrf_element csrf ()
           ; textarea_element
+              ?flash_fetcher
               language
               Field.AdminComment
               ~value:
@@ -207,7 +207,6 @@ let detail
                    ~default:""
                    Waiting_list.AdminComment.value
                    admin_comment)
-              ~flash_fetcher
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element

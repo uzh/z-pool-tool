@@ -50,6 +50,7 @@ type t =
   ; user : user
   ; guardian : Guard.PermissionOnTarget.t list
   ; notifications : Notitification.t list
+  ; flash_fetcher : (string -> string option) option
   }
 
 val show : t -> string
@@ -112,6 +113,8 @@ val user_is_admin : user -> bool
 val get_admin_user : user -> (Admin.t, Pool_message.Error.t) result
 val get_contact_user : user -> (Contact.t, Pool_message.Error.t) result
 val get_user_id : user -> Pool_common.Id.t option
+val set_message : t -> Pool_message.Collection.t option -> t
+val set_flash_fetcher : t -> (string -> string option) -> t
 
 module Utils : sig
   val find_authorizable_opt

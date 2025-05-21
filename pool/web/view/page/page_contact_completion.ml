@@ -2,10 +2,11 @@ open Tyxml.Html
 module Input = Component.Input
 module Message = Pool_message
 
-let form Pool_context.{ language; csrf; query_parameters; _ } flash_fetcher custom_fields =
+let form Pool_context.{ language; csrf; query_parameters; flash_fetcher; _ } custom_fields
+  =
   let custom_fields_form =
     let to_html field =
-      Input.custom_field_to_static_input ~flash_fetcher language field
+      Input.custom_field_to_static_input ?flash_fetcher language field
     in
     Page_contact_edit.grouped_custom_fields_form language custom_fields to_html
   in

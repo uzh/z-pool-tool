@@ -4,6 +4,7 @@
   admin
   contact
   database
+  http_response
   http_utils
   layout
   page

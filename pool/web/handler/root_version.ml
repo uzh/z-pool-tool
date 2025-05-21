@@ -1,5 +1,6 @@
 open Utils.Lwt_result.Infix
 open Pool_message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.root.version"
 let active_navigation = Http_utils.Url.Root.version_path ()
@@ -14,9 +15,8 @@ let index req =
   let create_layout (_ : Rock.Request.t) ?active_navigation context children =
     General.create_root_layout ?active_navigation context children |> Lwt_result.ok
   in
-  Http_utils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path:"root"
     ~query:(module Pool_version)
     ~create_layout
     req
@@ -29,20 +29,18 @@ let index req =
 
 let form case req =
   let result context =
-    Lwt_result.map_error (fun err -> err, active_navigation)
-    @@
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* version =
       match case with
       | `New -> Lwt_result.return None
-      | `Edit -> version_id req |> Pool_version.find >|+ CCOption.return
+      | `Edit ->
+        version_id req |> Pool_version.find >|- Response.not_found >|+ CCOption.return
     in
-    Page.Root.Version.form context ~flash_fetcher ?version ()
+    Page.Root.Version.form context ?version ()
     |> create_layout context
     ||> Sihl.Web.Response.of_html
     ||> CCResult.return
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_form = form `New
@@ -54,8 +52,7 @@ let create req =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, version_path ~suffix:"new" (), [ Http_utils.urlencoded_to_flash urlencoded ])
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let events =
       let open CCResult in
@@ -70,7 +67,7 @@ let create req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
@@ -80,16 +77,13 @@ let update req =
   in
   let id = version_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , version_path ~id ~suffix:"edit" ()
-      , [ Http_utils.urlencoded_to_flash urlencoded ] ))
+    let* version = Pool_version.find id >|- Response.not_found in
+    Response.bad_request_on_error ~urlencoded edit
     @@
-    let* version = Pool_version.find id in
     let events =
       let open CCResult in
       let open Cqrs_command.Pool_version_command.Update in
-      urlencoded |> decode >>= handle ~tags:Logs.Tag.empty version |> Lwt_result.lift
+      urlencoded |> decode >>= handle ~tags version |> Lwt_result.lift
     in
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
@@ -99,14 +93,14 @@ let update req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let publish req =
   let tags = Pool_context.Logger.Tags.req req in
   let id = version_id req in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, version_path ~id ~suffix:"edit" ())
+    Response.bad_request_on_error edit
     @@
     let* version = Pool_version.find id in
     let%lwt tenant_ids =
@@ -114,7 +108,7 @@ let publish req =
     in
     let events =
       let open Cqrs_command.Pool_version_command.Publish in
-      handle ~tags:Logs.Tag.empty tenant_ids version |> Lwt_result.lift
+      handle ~tags tenant_ids version |> Lwt_result.lift
     in
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
@@ -124,7 +118,7 @@ let publish req =
     in
     events |>> handle
   in
-  result |> Http_utils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 module Access : sig

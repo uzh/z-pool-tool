@@ -4,6 +4,7 @@ module Api = Http_utils_api
 module File = Http_utils_file
 module Filter = Http_utils_filter
 module Message = Http_utils_message
+module Queryable = Http_utils_queryable
 module Session = Http_utils_session
 module StringMap = CCMap.Make (CCString)
 module Url = Http_utils_url
@@ -128,55 +129,6 @@ let set_no_cache_headers ?(enable_cache = false) res =
     ; "Expires", "0"
     ]
     |> CCList.fold_left (CCFun.flip Opium.Response.add_header) res
-;;
-
-let extract_happy_path_generic ?(src = src) ?enable_cache req result msgf =
-  let context = Pool_context.find req in
-  let tags = Pool_context.Logger.Tags.req req in
-  match context with
-  | Ok ({ Pool_context.query_parameters; _ } as context) ->
-    let%lwt res = result context in
-    res
-    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) -> err)
-    |> CCResult.map (set_no_cache_headers ?enable_cache)
-    |> CCResult.map Lwt.return
-    |> CCResult.get_lazy (fun (error_msg, error_path) ->
-      redirect_to_with_actions
-        (url_with_field_params query_parameters error_path)
-        [ msgf error_msg ])
-  | Error err ->
-    Logs.warn ~src (fun m ->
-      m ~tags "Context not found: %s" (Pool_message.Error.show err));
-    redirect_to "/error"
-;;
-
-let extract_happy_path ?(src = src) ?enable_cache req result =
-  extract_happy_path_generic ~src ?enable_cache req result (fun err ->
-    let err =
-      Pool_common.Utils.with_log_error ~src ~tags:(Pool_context.Logger.Tags.req req) err
-    in
-    Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
-;;
-
-let extract_happy_path_with_actions ?(src = src) ?enable_cache req result =
-  let context = Pool_context.find req in
-  let tags = Pool_context.Logger.Tags.req req in
-  match context with
-  | Ok ({ Pool_context.query_parameters; _ } as context) ->
-    let%lwt res = result context in
-    res
-    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _, _) -> err)
-    |> CCResult.map (set_no_cache_headers ?enable_cache)
-    |> CCResult.map Lwt.return
-    |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
-      redirect_to_with_actions
-        (url_with_field_params query_parameters error_path)
-        (CCList.append
-           [ Message.set ~warning:[] ~success:[] ~info:[] ~error:[ error_key ] ]
-           error_actions))
-  | Error err ->
-    Logs.err ~src (fun m -> m ~tags "Context not found: %s" (Pool_message.Error.show err));
-    redirect_to "/error"
 ;;
 
 let urlencoded_to_params urlencoded keys =
@@ -355,144 +307,10 @@ module Htmx = struct
     | _ -> false
   ;;
 
-  let headers = Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
-
-  let htmx_redirect
-        ?(skip_externalize = false)
-        ?(query_parameters = [])
-        ?status
-        ?(actions = [])
-        path
-        ()
-    =
-    let externalize_path path =
-      if skip_externalize then path else Sihl.Web.externalize_path path
-    in
-    Sihl.Web.Response.of_plain_text "" ?status
-    |> Sihl.Web.Response.add_header
-         ("HX-Redirect", url_with_field_params query_parameters path |> externalize_path)
-    |> CCList.fold_left ( % ) id actions
-    |> Lwt.return
-  ;;
-
-  let html_to_plain_text_response ?(status = 200) html =
-    html
-    |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
-    |> Sihl.Web.Response.of_plain_text ~status:(status |> Opium.Status.of_code) ~headers
-  ;;
-
-  let multi_html_to_plain_text_response ?(status = 200) html_els =
-    html_els
-    |> CCList.fold_left
-         (fun acc cur -> Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
-         ""
-    |> Sihl.Web.Response.of_plain_text ~status:(status |> Opium.Status.of_code) ~headers
-  ;;
-
-  let handler
-    :  ?active_navigation:string
-    -> error_path:string
-    -> query:(module Http_utils_queryable.Queryable)
-    -> create_layout:
-         (Rock.Request.t
-          -> ?active_navigation:CCString.t
-          -> Pool_context.t
-          -> 'page Tyxml_html.elt
-          -> ([> Html_types.html ] Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
-    -> Rock.Request.t
-    -> (Pool_context.t
-        -> Query.t
-        -> ('page Tyxml_html.elt, Pool_message.Error.t) Lwt_result.t)
-    -> Rock.Response.t Lwt.t
-    =
-    fun ?active_navigation ~error_path ~query:(module Q) ~create_layout req run ->
-    let open Utils.Lwt_result.Infix in
-    extract_happy_path ~src req
-    @@ fun context ->
-    let query =
-      Query.from_request
-        ?filterable_by:Q.filterable_by
-        ~searchable_by:Q.searchable_by
-        ~sortable_by:Q.sortable_by
-        ~default:Q.default_query
-        req
-    in
-    let* page = run context query >|- fun err -> err, error_path in
-    if is_hx_request req
-    then Ok (html_to_plain_text_response page) |> Lwt_result.lift
-    else
-      let* view =
-        create_layout ?active_navigation req context page >|- fun err -> err, error_path
-      in
-      Ok (Sihl.Web.Response.of_html view) |> Lwt_result.lift
-  ;;
-
   let notification_id = "hx-notification"
-
-  let notification lang ((fnc : Pool_common.Language.t -> string), classname) =
-    let open Tyxml_html in
-    div
-      ~a:
-        [ a_class [ "notification-fixed"; "fade-out" ]
-        ; a_user_data "hx-swap-oob" "true"
-        ; a_id notification_id
-        ]
-      [ div ~a:[ a_class [ "notification"; classname ] ] [ txt (fnc lang) ] ]
-  ;;
-
-  let error_notification lang err =
-    let fnc lang = Pool_common.(Utils.error_to_string lang err) in
-    notification lang (fnc, "error")
-  ;;
-
-  let inline_error lang err =
-    let open Tyxml_html in
-    div
-      ~a:[ a_class [ "color-red" ] ]
-      [ txt Pool_common.(Utils.error_to_string lang err) ]
-  ;;
-
-  let context_error ~src ~tags err =
-    Logs.err ~src (fun m ->
-      m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));
-    Logs.err ~src (fun m -> m ~tags "Context not found: %s" (Pool_message.Error.show err));
-    htmx_redirect "/error" ()
-  ;;
-
-  let handle_error_message ?(src = src) ?(error_as_notification = false) req result =
-    let context = Pool_context.find req in
-    let tags = Pool_context.Logger.Tags.req req in
-    match context with
-    | Ok ({ Pool_context.language; _ } as context) ->
-      let%lwt res = result context in
-      res
-      |> CCResult.get_lazy (fun error_msg ->
-        let err = error_msg |> Pool_common.Utils.with_log_error in
-        (fun fnc -> html_to_plain_text_response (fnc language err))
-        @@ if error_as_notification then error_notification else inline_error)
-      |> Lwt.return
-    | Error err -> context_error ~src ~tags err
-  ;;
-
-  let extract_happy_path ?(src = src) req result =
-    let context = Pool_context.find req in
-    let tags = Pool_context.Logger.Tags.req req in
-    match context with
-    | Ok ({ Pool_context.query_parameters; _ } as context) ->
-      let%lwt res = result context in
-      res
-      |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) -> err)
-      |> CCResult.map Lwt.return
-      |> CCResult.get_lazy (fun (error_msg, error_path) ->
-        htmx_redirect
-          error_path
-          ~query_parameters
-          ~actions:[ Message.set ~error:[ error_msg ] ]
-          ())
-    | Error err -> context_error ~src ~tags err
-  ;;
 end
 
+(* TODO: This module should probably be made obsolete, the API response module can be used instead *)
 module Json = struct
   let yojson_response ?status json =
     let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ] in

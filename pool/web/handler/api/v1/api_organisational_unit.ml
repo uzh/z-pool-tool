@@ -1,5 +1,5 @@
+module Response = Http_response.Api
 open Utils.Lwt_result.Infix
-module ApiUtils = Http_utils.Api
 
 let src = Logs.Src.create "handler.api.v1.organisational_unit"
 
@@ -10,7 +10,7 @@ let index req =
     ||> (fun json -> `List json)
     |> Lwt_result.ok
   in
-  result |> ApiUtils.respond ~src req
+  result |> Response.respond ~src req
 ;;
 
 module Access = struct

@@ -90,11 +90,13 @@ let index ({ Pool_context.language; _ } as context) ?contact possible_duplicates
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt title ]; list context ?contact possible_duplicates ]
+    [ h1 ~a:[ a_class [ "has-gap" ] ] [ txt title ]
+    ; list context ?contact possible_duplicates
+    ]
 ;;
 
 let show
-      { Pool_context.language; user; csrf; _ }
+      { Pool_context.language; user; csrf; flash_fetcher; _ }
       fields
       (contact_a, fields_a)
       (contact_b, fields_b)
@@ -103,6 +105,7 @@ let show
   let open Duplicate_contacts in
   let map_or = CCOption.map_or in
   let is_merge = Ignored.value duplicate.ignored |> not in
+  let flash_value name = CCOption.bind flash_fetcher (fun fetcher -> fetcher name) in
   let title =
     Pool_common.(
       Utils.control_to_string language Pool_message.(Control.Manage Field.Duplicate))
@@ -112,7 +115,13 @@ let show
   let field_to_string = Pool_common.Utils.field_to_string_capitalized language in
   let make_radio ~name contact =
     let value = Contact.(id contact |> Id.value) in
-    input ~a:[ a_name name; a_value value; a_input_type `Radio; a_required () ] ()
+    let checked =
+      flash_value name |> CCOption.map_or ~default:false (CCString.equal value)
+    in
+    let checked = if checked then [ a_checked () ] else [] in
+    input
+      ~a:([ a_name name; a_value value; a_input_type `Radio; a_required () ] @ checked)
+      ()
   in
   let path ?suffix () =
     Http_utils.Url.Admin.duplicate_path ~id:duplicate.id ?suffix ()
@@ -135,7 +144,7 @@ let show
       in
       div
         ~a:[ a_class [ "flexrow"; "justify-between"; "align-center"; "flex-gap" ] ]
-        [ div [ h1 [ txt title ] ]; ignore_btn ])
+        [ h1 [ txt title ]; ignore_btn ])
     else
       h1
         ~a:[ a_class [ "has-icon" ] ]
@@ -257,12 +266,13 @@ let show
         th [ txt (field_to_string field) ] :: cells |> tr ~a:attr)
     in
     head @ rows @ field_rows @ informative_cells
-    |> table ~a:[ a_class [ "table"; "striped" ] ]
+    |> table ~a:[ a_class [ "gap"; "table"; "striped" ] ]
   in
   let body =
     if is_merge
     then
       div
+        ~a:[ a_class [ "gap" ] ]
         [ p
             [ Pool_common.(
                 Utils.hint_to_string language I18n.MergeContacts

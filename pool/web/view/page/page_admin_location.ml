@@ -190,9 +190,8 @@ let file_form
 let form
       ?(location : Pool_location.t option)
       ?(states : Pool_location.Status.t list = [])
-      Pool_context.{ language; csrf; _ }
+      Pool_context.{ language; csrf; flash_fetcher; _ }
       tenant_languages
-      flash_fetcher
   =
   let open Pool_location in
   let default = "" in
@@ -255,7 +254,10 @@ let form
         >>= fun { description; _ } ->
         description >>= Description.find_opt description_language
       in
-      let value = flash_fetcher name <+> current |> CCOption.get_or ~default:"" in
+      let value =
+        CCOption.bind flash_fetcher (fun flash_fetcher -> flash_fetcher name <+> current)
+        |> CCOption.get_or ~default:""
+      in
       div
         ~a:[ a_class [ "form_group" ] ]
         [ label
@@ -296,14 +298,14 @@ let form
                  `Text
                  Pool_message.Field.Name
                  ~value:(value (fun m -> m.name) Name.value)
-                 ~flash_fetcher
+                 ?flash_fetcher
                  ~required:true
              ; input_element
                  language
                  `Text
                  Pool_message.Field.Link
                  ~value:(value_opt (fun m -> m.link) Link.value)
-                 ~flash_fetcher
+                 ?flash_fetcher
              ; description_html
              ; status_select_opt
              ]
@@ -331,7 +333,7 @@ let form
                            language
                            `Text
                            Pool_message.Field.Institution
-                           ~flash_fetcher
+                           ?flash_fetcher
                            ~value:
                              (address_value
                                 Address.Mail.(
@@ -344,7 +346,7 @@ let form
                                language
                                `Text
                                Pool_message.Field.Room
-                               ~flash_fetcher
+                               ?flash_fetcher
                                ~value:
                                  (address_value
                                     Address.Mail.(
@@ -354,7 +356,7 @@ let form
                                language
                                `Text
                                Pool_message.Field.Building
-                               ~flash_fetcher
+                               ?flash_fetcher
                                ~value:
                                  (address_value
                                     Address.Mail.(
@@ -367,7 +369,7 @@ let form
                            `Text
                            Pool_message.Field.Street
                            ~required:true
-                           ~flash_fetcher
+                           ?flash_fetcher
                            ~value:
                              Address.Mail.(
                                address_value (fun { street; _ } -> Street.value street))
@@ -378,7 +380,7 @@ let form
                                `Text
                                Pool_message.Field.Zip
                                ~required:true
-                               ~flash_fetcher
+                               ?flash_fetcher
                                ~value:
                                  Address.Mail.(
                                    address_value (fun { zip; _ } -> Zip.value zip))
@@ -387,7 +389,7 @@ let form
                                `Text
                                Pool_message.Field.City
                                ~required:true
-                               ~flash_fetcher
+                               ?flash_fetcher
                                ~value:
                                  Address.Mail.(
                                    address_value (fun { city; _ } -> City.value city))

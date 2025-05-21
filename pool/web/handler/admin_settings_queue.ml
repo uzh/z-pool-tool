@@ -3,6 +3,7 @@ module Field = Pool_message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Command = Cqrs_command.Queue_command
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.settings_queue"
 let base_path = "/admin/settings/queue"
@@ -12,12 +13,12 @@ let show_archive = Helpers.QueueJobs.htmx_handler `History
 
 let detail req =
   let result ({ Pool_context.database_label; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/admin/settings/queue")
-    @@
     let open Pool_queue in
     let open JobName in
     let id = job_id req in
-    let* instance = find database_label id in
+    let* instance = find database_label id >|- Response.not_found in
+    Response.bad_request_render_error context
+    @@
     let%lwt text_message_dlr =
       match Instance.name instance with
       | SendTextMessage -> Text_message.find_report_by_queue_id database_label id
@@ -27,7 +28,7 @@ let detail req =
     |> General.create_tenant_layout req ~active_navigation:base_path context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let resend req =
@@ -36,10 +37,10 @@ let resend req =
   let id = job_id req in
   let path = Format.asprintf "%s/%s" base_path (Id.value id) in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, path)
+    let* job = find database_label id >|- Response.not_found in
+    Response.bad_request_on_error show
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* job = find database_label id in
     let find_related = find_related database_label job in
     let%lwt job_contact =
       find_related History.User
@@ -63,7 +64,7 @@ let resend req =
       [ Message.set ~success:[ Pool_message.(Success.Resent Field.Message) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 module Access : sig

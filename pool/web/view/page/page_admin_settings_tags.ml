@@ -169,7 +169,7 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
     ]
 ;;
 
-let edit ?flash_fetcher ({ Pool_context.language; _ } as context) tag =
+let edit ({ Pool_context.language; flash_fetcher; _ } as context) tag =
   let changelog_url =
     HttpUtils.Url.Admin.Settings.tags_path ~id:tag.Tags.id ~suffix:"changelog" ()
     |> Uri.of_string

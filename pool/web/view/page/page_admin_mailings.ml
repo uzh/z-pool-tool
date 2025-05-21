@@ -255,9 +255,8 @@ let form
       ?(has_no_upcoming_session = true)
       ?(fully_booked = false)
       ~matching_filter_count
-      ({ Pool_context.language; csrf; _ } as context)
+      ({ Pool_context.language; csrf; flash_fetcher; _ } as context)
       (experiment : Experiment.t)
-      flash_fetcher
   =
   let functions =
     {js|
@@ -409,7 +408,7 @@ let form
       ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
       ; checkbox_element
           ~value:random_is_checked
-          ~flash_fetcher
+          ?flash_fetcher
           language
           Field.RandomOrder
       ; div
@@ -552,7 +551,7 @@ let form
                      [ date_time_picker_element
                          language
                          Field.Start
-                         ~flash_fetcher
+                         ?flash_fetcher
                          ~required:true
                          ~disable_past:true
                          ?value:
@@ -560,12 +559,12 @@ let form
                               (fun (m : Mailing.t) ->
                                  m.Mailing.start_at |> Mailing.StartAt.value)
                               mailing)
-                     ; checkbox_element ~flash_fetcher language Field.StartNow
+                     ; checkbox_element ?flash_fetcher language Field.StartNow
                      ]
                  ; date_time_picker_element
                      language
                      Field.End
-                     ~flash_fetcher
+                     ?flash_fetcher
                      ~disable_past:true
                      ~required:true
                      ?value:
@@ -576,7 +575,7 @@ let form
                      language
                      `Number
                      Field.Limit
-                     ~flash_fetcher
+                     ?flash_fetcher
                      ~required:true
                      ~hints:[ I18n.MailingLimit ]
                      ~value:
@@ -601,12 +600,6 @@ let form
     |> CCList.return
   in
   Layout.Experiment.(create context (Control submit) experiment html)
-;;
-
-let create context experiment_id flash_fetcher = form context experiment_id flash_fetcher
-
-let edit context experiment_id mailing flash_fetcher =
-  form ~mailing context experiment_id flash_fetcher
 ;;
 
 let overlaps

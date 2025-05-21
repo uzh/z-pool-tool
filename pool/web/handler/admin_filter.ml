@@ -2,6 +2,7 @@ open CCFun
 open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 open HttpUtils.Filter
 
 let src = Logs.Src.create "handler.admin.filter"
@@ -40,9 +41,8 @@ let find_identifier urlencoded =
 let get_id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encode
 
 let index req =
-  Http_utils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation:"/admin/filter"
-    ~error_path:(Format.asprintf "/admin/filter")
     ~query:(module Filter)
     ~create_layout
     req
@@ -56,31 +56,33 @@ let index req =
 let form is_edit req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, Format.asprintf "/admin/filter")
-    @@ let* filter =
-         if is_edit
-         then
-           get_id req Field.Filter Pool_common.Id.of_string
-           |> Filter.find_template database_label
-           >|+ CCOption.pure
-         else Lwt.return_none |> Lwt_result.ok
-       in
-       let%lwt query_experiments, query_tags =
-         match filter with
-         | None -> Lwt.return ([], [])
-         | Some filter ->
-           Lwt.both
-             (filter
-              |> Filter.all_query_experiments
-              |> Experiment.search_multiple_by_id database_label)
-             (filter |> Filter.all_query_tags |> Tags.find_multiple database_label)
-       in
-       let%lwt key_list = Filter.all_keys database_label in
-       Page.Admin.Filter.edit context filter key_list query_experiments query_tags
-       |> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+    let* filter =
+      if is_edit
+      then
+        get_id req Field.Filter Pool_common.Id.of_string
+        |> Filter.find_template database_label
+        >|+ CCOption.pure
+        >|- Response.not_found
+      else Lwt.return_none |> Lwt_result.ok
+    in
+    Response.bad_request_render_error context
+    @@
+    let%lwt query_experiments, query_tags =
+      match filter with
+      | None -> Lwt.return ([], [])
+      | Some filter ->
+        Lwt.both
+          (filter
+           |> Filter.all_query_experiments
+           |> Experiment.search_multiple_by_id database_label)
+          (filter |> Filter.all_query_tags |> Tags.find_multiple database_label)
+    in
+    let%lwt key_list = Filter.all_keys database_label in
+    Page.Admin.Filter.edit context filter key_list query_experiments query_tags
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let edit = form true
@@ -136,7 +138,7 @@ let write action req =
       let open Success in
       let field = Field.Filter in
       let redirect path msg =
-        HttpUtils.Htmx.htmx_redirect path ~actions:[ Message.set ~success:[ msg ] ] ()
+        Response.Htmx.redirect path ~actions:[ Message.set ~success:[ msg ] ]
       in
       match action with
       | Template None -> redirect "/admin/filter" (Created field)
@@ -156,7 +158,7 @@ let write action req =
     in
     events |>> handle |>> success
   in
-  result |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+  Response.Htmx.handle ~src ~error_as_notification:true req result
 ;;
 
 let handle_toggle_predicate_type action req =
@@ -197,10 +199,10 @@ let handle_toggle_predicate_type action req =
         (Some query)
         ~identifier
         ())
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src ~error_as_notification:true req result
 ;;
 
 let handle_toggle_key _ req =
@@ -213,10 +215,10 @@ let handle_toggle_key _ req =
       >>= Filter.key_of_string database_label
     in
     Component.Filter.predicate_value_form language [] [] ~key ()
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt.return_ok
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 let handle_add_predicate action req =
@@ -253,11 +255,9 @@ let handle_add_predicate action req =
         (increment_identifier identifier)
         templates_disabled
     in
-    [ filter_form; add_button ]
-    |> HttpUtils.Htmx.multi_html_to_plain_text_response
-    |> Lwt_result.return
+    [ filter_form; add_button ] |> Response.Htmx.of_html_list |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 let filter_statistics req =
@@ -278,10 +278,10 @@ let filter_statistics req =
       Statistics.ExperimentFilter.create database_label experiment query
     in
     Component.Statistics.ExperimentFilter.create language statistics
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 module Create = struct

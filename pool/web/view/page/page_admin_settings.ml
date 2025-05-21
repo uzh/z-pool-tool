@@ -92,9 +92,8 @@ let show
       user_import_first_reminder
       user_import_second_reminder
       page_scripts
-      Pool_context.{ language; csrf; _ }
+      Pool_context.{ language; csrf; flash_fetcher; _ }
       text_messages_enabled
-      flash_fetcher
   =
   let open Pool_common in
   let submit ?(control = Message.(Control.Update None)) () =
@@ -124,7 +123,7 @@ let show
     HttpUtils.Url.Admin.page_script_changelog_path ~suffix:"open" location
     |> open_changelog
   in
-  let action_path = HttpUtils.Url.Admin.settings_action_path in
+  let action_path = HttpUtils.Url.Admin.settings_path_with_action in
   let form_attrs action =
     [ a_method `Post
     ; a_action (action_path action)
@@ -382,7 +381,7 @@ let show
             ; timespan_picker
                 ~value:(value |> encode)
                 ~required:true
-                ~flash_fetcher
+                ?flash_fetcher
                 language
                 field
             ; submit ()

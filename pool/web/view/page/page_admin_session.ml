@@ -238,9 +238,9 @@ let session_form
       ?(session : Session.t option)
       ?(follow_up_to : Session.t option)
       ?(duplicate : (Session.t * Session.t list) option)
+      ?flash_fetcher
       locations
       text_messages_enabled
-      ~flash_fetcher
   =
   let open CCFun in
   let open Session in
@@ -314,7 +314,7 @@ let session_form
           field
           ~hints:[ I18n.DefaultReminderLeadTime (default_value |> encode) ]
           ?value:(CCOption.bind default_value_session get_value |> CCOption.map encode)
-          ~flash_fetcher
+          ?flash_fetcher
       ]
   in
   form
@@ -342,7 +342,7 @@ let session_form
                (follow_up_to
                 |> CCOption.map Session.(fun ({ start; _ } : t) -> Start.value start))
              ~required:true
-             ~flash_fetcher
+             ?flash_fetcher
              ?value
              ~warn_past:true
              ~read_only:has_assignments)
@@ -354,7 +354,7 @@ let session_form
               (CCOption.map
                  (fun (s : t) -> s.duration |> Duration.value)
                  default_value_session)
-            ~flash_fetcher
+            ?flash_fetcher
             ~read_only:has_assignments
         ; reschedule_hint ()
         ; textarea_element
@@ -364,7 +364,7 @@ let session_form
               (value (fun s ->
                  s.internal_description
                  |> CCOption.map_or ~default:"" InternalDescription.value))
-            ~flash_fetcher
+            ?flash_fetcher
         ; textarea_element
             language
             Field.PublicDescription
@@ -372,7 +372,7 @@ let session_form
               (value (fun s ->
                  s.public_description
                  |> CCOption.map_or ~default:"" PublicDescription.value))
-            ~flash_fetcher
+            ?flash_fetcher
         ; location_select
             language
             locations
@@ -384,21 +384,21 @@ let session_form
             Field.MaxParticipants
             ~required:true
             ~value:(amount (fun s -> s.max_participants))
-            ~flash_fetcher
+            ?flash_fetcher
         ; input_element
             language
             `Number
             Field.MinParticipants
             ~required:true
             ~value:(amount (fun s -> s.min_participants))
-            ~flash_fetcher
+            ?flash_fetcher
         ; input_element
             language
             `Number
             Field.Overbook
             ~required:true
             ~value:(amount (fun s -> s.overbook))
-            ~flash_fetcher
+            ?flash_fetcher
         ]
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
@@ -449,10 +449,9 @@ let session_base_information language session =
 ;;
 
 let reschedule_session
-      ({ Pool_context.language; csrf; _ } as context)
+      ({ Pool_context.language; csrf; flash_fetcher; _ } as context)
       experiment
       (session : Session.t)
-      flash_fetcher
   =
   let open Session in
   let open Pool_common in
@@ -479,7 +478,7 @@ let reschedule_session
               language
               Field.Start
               ~required:true
-              ~flash_fetcher
+              ?flash_fetcher
               ~value:(session.start |> Start.value)
               ~disable_past:true
           ; timespan_picker
@@ -487,7 +486,7 @@ let reschedule_session
               ~required:true
               Field.Duration
               ~value:(session.duration |> Duration.value)
-              ~flash_fetcher
+              ?flash_fetcher
           ]
       ; div
           ~a:[ a_class [ "flexrow" ] ]
@@ -672,21 +671,20 @@ let index
 ;;
 
 let new_form
-      ({ Pool_context.language; csrf; _ } as context)
+      ({ Pool_context.language; csrf; flash_fetcher; _ } as context)
       experiment
       default_leadtime_settings
       locations
       text_messages_enabled
-      flash_fetcher
   =
   session_form
+    ?flash_fetcher
     csrf
     language
     experiment
     default_leadtime_settings
     locations
     text_messages_enabled
-    ~flash_fetcher
   |> CCList.return
   |> Layout.Experiment.(
        create context (Control Control.(Create (Some Field.Session))) experiment)
@@ -1405,14 +1403,13 @@ let tags_subform
 ;;
 
 let edit
-      ({ Pool_context.language; csrf; _ } as context)
+      ({ Pool_context.language; csrf; flash_fetcher; _ } as context)
       experiment
       default_leadtime_settings
       (session : Session.t)
       locations
       tags
       text_messages_enabled
-      flash_fetcher
   =
   let form =
     div
@@ -1423,6 +1420,7 @@ let edit
                |> Pool_common.Utils.text_to_string language)
           ]
       ; session_form
+          ?flash_fetcher
           csrf
           language
           experiment
@@ -1430,7 +1428,6 @@ let edit
           ~session
           locations
           text_messages_enabled
-          ~flash_fetcher
       ]
   in
   let tags_html = tags_subform context experiment (`Session session) tags in
@@ -1441,14 +1438,13 @@ let edit
 ;;
 
 let follow_up
-      ({ Pool_context.language; csrf; _ } as context)
+      ({ Pool_context.language; csrf; flash_fetcher; _ } as context)
       ?duplicate
       experiment
       default_leadtime_settings
       (parent_session : Session.t)
       locations
       text_messages_enabled
-      flash_fetcher
   =
   let open Pool_common in
   div
@@ -1463,6 +1459,7 @@ let follow_up
                    (I18n.FollowUpSessionFor |> text_to_string language))
         ]
     ; session_form
+        ?flash_fetcher
         csrf
         language
         experiment
@@ -1471,7 +1468,6 @@ let follow_up
         ~follow_up_to:parent_session
         locations
         text_messages_enabled
-        ~flash_fetcher
     ]
   |> CCList.return
   |> Layout.Experiment.(
@@ -1897,11 +1893,10 @@ let close
 ;;
 
 let cancel
-      ({ Pool_context.language; csrf; _ } as context)
+      ({ Pool_context.language; csrf; flash_fetcher; _ } as context)
       experiment
       (session : Session.t)
       follow_ups
-      flash_fetcher
   =
   let open Pool_common in
   let action =
@@ -1945,7 +1940,7 @@ let cancel
            [ csrf_element csrf ()
            ; textarea_element
                ~hints:[ I18n.SessionCancelMessage ]
-               ~flash_fetcher
+               ?flash_fetcher
                ~required:true
                language
                Field.Reason
@@ -1974,7 +1969,6 @@ let message_template_form
       languages
       label
       form_context
-      flash_fetcher
   =
   let open Message_template in
   let open Pool_common in
@@ -2036,7 +2030,6 @@ let message_template_form
         ?languages
         form_context
         action
-        flash_fetcher
     ; changelog
     ]
   |> CCList.return

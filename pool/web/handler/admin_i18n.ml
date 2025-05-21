@@ -1,8 +1,10 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.i18n"
 let create_layout req = General.create_tenant_layout req
+let i18n_path = HttpUtils.Url.Admin.i18n_path
 
 module I18nMap = CCMap.Make (struct
     type t = I18n.Key.t
@@ -12,9 +14,8 @@ module I18nMap = CCMap.Make (struct
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let error_path = "/" in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    Response.bad_request_render_error context
     @@
     let sort translations =
       let update m t =
@@ -33,10 +34,10 @@ let index req =
     in
     let%lwt translation_list = I18n.find_all database_label () >|> sort in
     Page.Admin.I18n.list translation_list context
-    |> create_layout req ~active_navigation:"/admin/i18n" context
+    |> create_layout req ~active_navigation:(i18n_path ()) context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
@@ -45,9 +46,8 @@ let update req =
     HttpUtils.get_field_router_param req Pool_message.Field.i18n
     |> Pool_common.Id.of_string
   in
-  let redirect_path = Format.asprintf "/admin/i18n" in
   let result { Pool_context.database_label; user; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    Response.bad_request_on_error index
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let property () = I18n.find_with_default_content database_label id in
@@ -60,12 +60,12 @@ let update req =
     let handle events =
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
-        redirect_path
+        (i18n_path ())
         [ Message.set ~success:[ Pool_message.(Success.Updated Field.I18n) ] ]
     in
     () |> property ||> events |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 module Access : module type of Helpers.Access = struct

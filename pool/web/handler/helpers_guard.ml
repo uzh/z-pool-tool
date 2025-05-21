@@ -166,6 +166,7 @@ let revoke_role ~redirect_path ~user ~target_id database_label req =
   role >>= events |>> handle
 ;;
 
+(* TODO: Make sure handle_error_message is not called twice, see admin_api_key.ml *)
 let handle_toggle_role target_id req =
   let result (_ : Pool_context.t) =
     Sihl.Web.Request.to_urlencoded req
@@ -178,9 +179,9 @@ let handle_toggle_role target_id req =
       ~path:"/admin/admins"
       target_id
       ()
-    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Http_response.Htmx.of_html
   in
-  result |> Http_utils.Htmx.handle_error_message ~src req
+  result |> Http_response.Htmx.handle ~src req
 ;;
 
 let search_role_entities target req =
@@ -209,7 +210,7 @@ let search_role_entities target req =
        | None -> Lwt.return []
        | Some query -> search_fnc query actor)
       ||> to_html language
-      ||> Http_utils.Htmx.multi_html_to_plain_text_response %> CCResult.return
+      ||> Http_response.Htmx.of_html_list %> CCResult.return
     in
     let open Guard.Persistence in
     match search_role with
@@ -239,5 +240,5 @@ let search_role_entities target req =
       execute_search search_location Component.Search.Location.query_results
     | _ -> Lwt_result.fail (Error.Invalid Field.Role)
   in
-  result |> Http_utils.Htmx.handle_error_message ~src req
+  result |> Http_response.Htmx.handle ~src req
 ;;
