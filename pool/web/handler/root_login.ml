@@ -26,15 +26,24 @@ let login_get req =
   Response.handle ~src req result
 ;;
 
-let render_token_confirmation auth user context req =
-  let open Sihl.Web in
-  Page.Root.Login.token_confirmation
-    ~authentication_id:auth.Authentication.id
-    ?intended:(HttpUtils.find_intended_opt req)
-    ~email:(Pool_user.email user)
-    context
-  |> General.create_root_layout ~active_navigation:"/root/login" context
-  ||> Response.of_html
+let login_token_confirmation req =
+  let tags = Pool_context.Logger.Tags.req req in
+  let open Response in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let* user, auth, (_ : Authentication.Token.t) =
+      Helpers_login.decode_2fa_confirmation database_label req ~tags
+      |> bad_request_on_error login_get
+    in
+    Page.Root.Login.token_confirmation
+      ~authentication_id:auth.Authentication.id
+      ?intended:(HttpUtils.find_intended_opt req)
+      ~email:(Pool_user.email user)
+      context
+    |> General.create_root_layout ~active_navigation:"/root/login" context
+    ||> Sihl.Web.Response.of_html
+    |> Lwt_result.ok
+  in
+  Response.handle ~src req result
 ;;
 
 let login_post req =
@@ -47,7 +56,15 @@ let login_post req =
     let* user, auth, events =
       Helpers_login.create_2fa_login ~tags req context urlencoded
     in
-    let success () = render_token_confirmation auth user context req in
+    let success () =
+      Page.Root.Login.token_confirmation
+        ~authentication_id:auth.Authentication.id
+        ?intended:(HttpUtils.find_intended_opt req)
+        ~email:(Pool_user.email user)
+        context
+      |> General.create_root_layout ~active_navigation:"/root/login" context
+      ||> Sihl.Web.Response.of_html
+    in
     events |> handle_events >|> success |> Lwt_result.ok
   in
   Response.handle ~src req result
@@ -56,7 +73,7 @@ let login_post req =
 let confirmation_post req =
   let open Response in
   let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result { Pool_context.database_label; user; _ } =
     let handle_events = Pool_event.handle_events database_label user in
     let* user, auth, token =
       Helpers_login.decode_2fa_confirmation database_label req ~tags
@@ -64,7 +81,7 @@ let confirmation_post req =
     in
     let* user, events =
       Helpers_login.confirm_2fa_login ~tags user auth token req
-      |> bad_request_on_error (render_token_confirmation auth user context)
+      |> bad_request_on_error login_token_confirmation
     in
     let success () =
       HttpUtils.redirect_to_with_actions
