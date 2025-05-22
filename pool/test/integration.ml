@@ -27,6 +27,13 @@ let suite =
           ; test_case "update gtx settings" `Slow update_gtx_settings
           ] )
     ; "dev/test", [ test_case "intercept email" `Slow Common_test.validate_email ]
+    ; ( "authentication"
+      , Authentication_test.
+          [ test_case "too many login attempts" `Slow login_too_many_attempts_test
+          ; test_case "failed login test" `Slow failed_login_test
+          ; test_case "successful create 2fa test" `Slow successful_create_2fa_test
+          ; test_case "confirm 2fa test" `Slow confirm_2fa_test
+          ] )
     ; ( "authorization"
       , Authorization_test.
           [ test_case "permit valid operation" `Slow recruiter_can_update_contact_language

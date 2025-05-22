@@ -1,6 +1,7 @@
 (library
  (name message_template)
  (libraries
+  authentication
   assignment
   contact
   email

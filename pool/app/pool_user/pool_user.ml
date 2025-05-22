@@ -58,8 +58,8 @@ let login label email password =
   match%lwt Repo_password.find_by_email_opt label email with
   | Some hash when Password.validate hash password ->
     find_by_email_exn label email |> Lwt_result.ok
-  | Some _ -> Lwt.return_error (Error.Invalid Field.Password)
-  | None -> Lwt.return_error (Error.NotFound Field.User)
+  | Some _ -> Lwt.return_error Error.LoginInvalidEmailPassword
+  | None -> Lwt.return_error Error.LoginInvalidEmailPassword
 ;;
 
 module Web = Pool_user_web

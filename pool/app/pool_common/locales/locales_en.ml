@@ -38,6 +38,7 @@ let rec field_to_string =
   | CallbackUrl -> "callback url"
   | CellPhone -> "cell phone"
   | Changes -> "changes"
+  | Channel -> "channel"
   | Changelog -> "changelog"
   | Chronological -> "chronological"
   | City -> "city"
@@ -552,6 +553,7 @@ let rec error_to_string =
       "has been marked as deleted."
   | JobCannotBeRetriggered -> "This job cannot be retriggered."
   | JobPending -> "The job is still pending."
+  | LoginInvalidEmailPassword -> "Invalid email or password."
   | LoginProvideDetails -> "Please provide email and password"
   | MaintenancePending -> "Maintenance work is in progress"
   | MaxLength max -> Format.asprintf "Must not be longer than %i characters." max
@@ -600,8 +602,8 @@ let rec error_to_string =
       "The password must contain one of the following characters: %s"
       (chars |> CCList.map CCString.of_char |> CCString.concat " ")
   | PasswordResetFailMessage ->
-    "You will receive an email with a link to reset your password if an  account with \
-     the provided email is existing."
+    "You will receive an email with a link to reset your password if an account with the \
+     provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
   | PermissionDeniedCreateRule -> "Permission denied to create the rule"
   | PermissionDeniedGrantRole -> "Permission denied to grant the role"

@@ -6,6 +6,12 @@ module HttpUtils = Http_utils
 let externalize_with_params = HttpUtils.externalize_path_with_params
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
+let query_params_with_intended query_parameters intended =
+  intended
+  |> CCOption.map_or ~default:query_parameters (fun intended ->
+    [ Pool_message.Field.Location, intended ] @ query_parameters)
+;;
+
 let login_form
       ?(hide_signup = false)
       ?intended
@@ -46,6 +52,14 @@ let login_form
             ]
         ]
     ]
+;;
+
+let login_token_confirmation ?intended ?authentication_id context =
+  Page_login.login_token_confirmation
+    ?authentication_id
+    ?intended
+    context
+    "/login-confirmation"
 ;;
 
 let index

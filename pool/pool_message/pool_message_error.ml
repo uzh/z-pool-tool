@@ -68,6 +68,7 @@ type t =
   | IsMarkedAsDeleted of Field.t
   | JobCannotBeRetriggered
   | JobPending
+  | LoginInvalidEmailPassword
   | LoginProvideDetails
   | MaintenancePending
   | MaxLength of int

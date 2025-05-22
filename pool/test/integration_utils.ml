@@ -56,6 +56,7 @@ module ContactRepo = struct
         ?lastname
         ?language
         ?(with_terms_accepted = false)
+        ?(password = Model.password)
         ()
     =
     let open Utils.Lwt_result.Infix in
@@ -68,7 +69,7 @@ module ContactRepo = struct
       [ Created
           { user_id = id contact
           ; email = email_address contact
-          ; password = Model.password
+          ; password
           ; firstname = firstname contact
           ; lastname = lastname contact
           ; terms_accepted_at = None

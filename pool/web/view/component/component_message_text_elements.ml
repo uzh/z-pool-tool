@@ -18,6 +18,7 @@ let message_template_hints =
   | EmailVerification
   | InactiveContactWarning
   | InactiveContactDeactivation
+  | Login2FAToken
   | ManualSessionMessage
   | MatcherNotification
   | MatchFilterUpdateNotification
@@ -171,6 +172,9 @@ let message_template_help
     let now = Ptime_clock.now () in
     let last_login = sub_span now half_year |> CCOption.get_exn_or "Invalid ptime span" in
     InactiveContactWarning.email_params layout (create_contact ()) ~last_login
+  | Login2FAToken ->
+    let token = Authentication.Token.generate () in
+    Login2FAToken.email_params layout (create_user ()) token
   | ManualSessionMessage ->
     ManualSessionMessage.email_params
       language
