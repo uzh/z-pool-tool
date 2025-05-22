@@ -21,7 +21,7 @@ let show req =
     >>= find database_label
     >|+ yojson_of_t
   in
-  result |> Response.respond ~src req
+  result |> Response.handle ~src req
 ;;
 
 module Access = struct

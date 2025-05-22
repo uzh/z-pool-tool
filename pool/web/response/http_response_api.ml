@@ -1,5 +1,7 @@
 open Utils.Lwt_result.Infix
 
+(* The API responds with access denied (403) if a specific resource is not found (middleware), and with 400 for any other error.
+   As soon the API handles other requests then GET, the error handling should be adapted to the web *)
 let src = Logs.Src.create "web.handler.response.api"
 let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ]
 let response_with_headers = Sihl.Web.Response.of_json ~headers
@@ -14,9 +16,8 @@ let not_found (_ : Rock.Request.t) =
   |> Lwt.return
 ;;
 
-let respond ?(src = src) req result =
+let respond ?(src = src) req result context =
   let tags = Pool_context.Logger.Tags.req req in
-  let context = Pool_context.Api.find req in
   match context with
   | Ok context ->
     result context
@@ -25,6 +26,12 @@ let respond ?(src = src) req result =
      | Ok result -> response_with_headers result
      | Error error -> respond_error error)
   | Error error -> respond_error ~status:`Internal_server_error error |> Lwt.return
+;;
+
+let handle ?(src = src) req result = Pool_context.Api.find req |> respond ~src req result
+
+let handle_in_tenant_context ?(src = src) req result =
+  Pool_context.find req |> respond ~src req result
 ;;
 
 let index_handler
@@ -59,5 +66,5 @@ let index_handler
       let meta = make_meta query in
       `Assoc [ "data", items; "meta", meta ]
     in
-    respond ?src req run
+    handle ?src req run
 ;;
