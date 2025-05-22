@@ -52,10 +52,10 @@ let data_to_urlencoded data =
 let mock_post_request ?context_tenant form =
   let url_encode_form data =
     data
-    |> List.map (fun (k, v) ->
+    |> CCList.map (fun (k, v) ->
       let v = CCList.head_opt v |> CCOption.get_or ~default:"" in
       Printf.sprintf "%s=%s" (Uri.pct_encode k) (Uri.pct_encode v))
-    |> String.concat "&"
+    |> CCString.concat "&"
   in
   let headers = [ "Content-Type", "application/x-www-form-urlencoded" ] in
   let body = form |> url_encode_form |> Rock.Body.of_string in
