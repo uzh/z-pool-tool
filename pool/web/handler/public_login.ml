@@ -34,7 +34,8 @@ let login_get req =
   Response.handle ~src req result
 ;;
 
-let render_token_confirmation auth user context req =
+let render_token_confirmation auth user req =
+  let context = Pool_context.find_exn req in
   Page.Public.login_token_confirmation
     ~authentication_id:auth.Authentication.id
     ?intended:(HttpUtils.find_intended_opt req)
@@ -44,7 +45,6 @@ let render_token_confirmation auth user context req =
   >|+ Sihl.Web.Response.of_html
 ;;
 
-(* TODO: Reloading this confirmation page sometimes renders root layout *)
 let login_post req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -56,7 +56,7 @@ let login_post req =
     let* user, auth, events =
       Helpers_login.create_2fa_login ~tags req context urlencoded
     in
-    let success () = render_token_confirmation auth user context req in
+    let success () = render_token_confirmation auth user req in
     events |> handle_events >|> success
   in
   Response.handle ~src req result
@@ -66,15 +66,14 @@ let login_cofirmation req =
   let open Response in
   let open HttpUtils in
   let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; query_parameters; _ } as context) =
+  let result { Pool_context.database_label; query_parameters; _ } =
     let open Utils.Lwt_result.Infix in
     let* user, auth, token =
       Helpers_login.decode_2fa_confirmation database_label req ~tags
       |> bad_request_on_error login_get
     in
     bad_request_on_error (fun req ->
-      render_token_confirmation auth user context req
-      ||> Pool_common.Utils.get_or_failwith)
+      render_token_confirmation auth user req ||> Pool_common.Utils.get_or_failwith)
     @@
     let* user, events = Helpers_login.confirm_2fa_login ~tags user auth token req in
     let success_and_redirect
