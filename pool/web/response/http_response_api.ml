@@ -1,5 +1,7 @@
 open Utils.Lwt_result.Infix
 
+(* The API responds with access denied (403) if a specific resource is not found (middleware), and with 400 for any other error.
+   As soon the API handles other requests then GET, the error handling should be adapted to the web *)
 let src = Logs.Src.create "web.handler.response.api"
 let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ]
 let response_with_headers = Sihl.Web.Response.of_json ~headers
