@@ -14,9 +14,8 @@ let not_found (_ : Rock.Request.t) =
   |> Lwt.return
 ;;
 
-let respond ?(src = src) req result =
+let respond ?(src = src) req result context =
   let tags = Pool_context.Logger.Tags.req req in
-  let context = Pool_context.Api.find req in
   match context with
   | Ok context ->
     result context
@@ -25,6 +24,12 @@ let respond ?(src = src) req result =
      | Ok result -> response_with_headers result
      | Error error -> respond_error error)
   | Error error -> respond_error ~status:`Internal_server_error error |> Lwt.return
+;;
+
+let handle ?(src = src) req result = Pool_context.Api.find req |> respond ~src req result
+
+let handle_in_tenant_context ?(src = src) req result =
+  Pool_context.find req |> respond ~src req result
 ;;
 
 let index_handler
@@ -59,5 +64,5 @@ let index_handler
       let meta = make_meta query in
       `Assoc [ "data", items; "meta", meta ]
     in
-    respond ?src req run
+    handle ?src req run
 ;;

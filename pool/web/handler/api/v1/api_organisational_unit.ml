@@ -10,7 +10,7 @@ let index req =
     ||> (fun json -> `List json)
     |> Lwt_result.ok
   in
-  result |> Response.respond ~src req
+  result |> Response.handle ~src req
 ;;
 
 module Access = struct

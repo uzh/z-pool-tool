@@ -1112,7 +1112,7 @@ module Api = struct
       ||> (fun json -> `List json)
       |> Lwt_result.ok
     in
-    result |> HttpUtils.Json.handle_yojson_response ~src req
+    Response.Api.handle_in_tenant_context ~src req result
   ;;
 
   let current_user req =

@@ -61,10 +61,16 @@ module Api : sig
 
   val not_found : Rock.Request.t -> Rock.Response.t Lwt.t
 
-  val respond
+  val handle
     :  ?src:Logs.src
     -> Rock.Request.t
     -> (Pool_context.Api.t -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
+    -> Rock.Response.t Lwt.t
+
+  val handle_in_tenant_context
+    :  ?src:Logs.src
+    -> Rock.Request.t
+    -> (Pool_context.t -> (Yojson.Safe.t, Pool_message.Error.t) Lwt_result.t)
     -> Rock.Response.t Lwt.t
 
   val index_handler
