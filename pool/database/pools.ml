@@ -185,18 +185,31 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | None -> Error Pool_message.(Error.NotFound Field.Database)
     ;;
 
-    let disconnect ?error =
+    let disconnect' ?error ?note =
       Cache.find_opt
       %> function
       | Some pool ->
         let%lwt () = drain_opt pool in
+        let default =
+          CCOption.value ~default:"Unknown error" note |> Format.asprintf " (%s)"
+        in
+        let message =
+          CCOption.map_or
+            ~default
+            (Format.asprintf " with error: %a" Caqti_error.pp)
+            error
+        in
+        Logs.err ~src (fun m ->
+          m "Disconnecting pool '%s'%s" (database_label pool) message);
         Cache.replace { pool with connection = CCOption.map_or ~default:Close fail error }
         |> Lwt.return
       | None -> Lwt.return_unit
     ;;
 
+    let disconnect ?error = disconnect' ?error ?note:None
+
     let reset ?required database =
-      let%lwt () = disconnect (label database) in
+      let%lwt () = disconnect' ~note:"DB reset" (label database) in
       create ?required database |> Cache.replace |> Lwt.return
     ;;
 
@@ -204,12 +217,13 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       let open Caqti_error in
       match%lwt input with
       | Ok resp -> Lwt.return resp
-      | Error `Unsupported -> raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
-      | Error (#load_or_connect as err) ->
-        let%lwt () = disconnect ~error:err label in
+      | Error `Unsupported ->
+        let%lwt () = disconnect' ~note:"Unsupported" label in
+        raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
+      | Error (#t as err) ->
+        let%lwt () = disconnect' ~error:err label in
         let () = Cache.log_pools () in
         raise (Exn err)
-      | Error (#t as err) -> raise (Exn err)
     ;;
 
     let rec fetch ?(retries = 2) label =
