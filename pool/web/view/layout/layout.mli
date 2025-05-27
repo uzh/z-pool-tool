@@ -31,7 +31,18 @@ module Navigation : sig
 
   module NavElements : sig
     module Profile : sig
-      val nav : ?contact:bool -> ?prefix:string -> unit -> NavElement.t
+      val dropdown_items
+        :  Database.Label.t
+        -> ?contact:bool
+        -> unit
+        -> (string * Pool_common.I18n.nav_link) list Lwt.t
+
+      val nav
+        :  Database.Label.t
+        -> ?contact:bool
+        -> ?prefix:string
+        -> unit
+        -> NavElement.t Lwt.t
     end
 
     module AdminTenantItems : sig
@@ -39,7 +50,7 @@ module Navigation : sig
       val settings : NavElement.t
       val user : NavElement.t
       val experiments : NavElement.t
-      val all : NavElement.t list
+      val all : Database.Label.t -> NavElement.t list Lwt.t
     end
   end
 end

@@ -13,8 +13,32 @@ let filter_links actor links =
 ;;
 
 let run_test msg actor ~expected =
-  let%lwt result = filter_links actor NavLinks.all in
+  let open Utils.Lwt_result.Infix in
+  let%lwt result = NavLinks.all pool >|> filter_links actor in
   check (Alcotest.list testable) msg expected result |> Lwt.return
+;;
+
+let user_profile_navigation _ () =
+  let open Pool_common.I18n in
+  let open Gtx_config in
+  let handle_events = Lwt_list.iter_s (handle_event pool) in
+  let testable = Alcotest.(list (pair string (testable pp_nav_link equal_nav_link))) in
+  let%lwt api_config = Gtx_config.find_exn pool in
+  let nav_items =
+    [ "/user/login-information", LoginInformation
+    ; "/user/personal-details", PersonalDetails
+    ]
+  in
+  (* Without GTX API key *)
+  let%lwt () = [ Removed; CacheCleared ] |> handle_events in
+  let%lwt nav = NavElements.Profile.dropdown_items pool ~contact:true () in
+  Alcotest.check testable "without api key" nav_items nav;
+  (* With GTX API key *)
+  let%lwt () = [ Created api_config; CacheCleared ] |> handle_events in
+  let%lwt nav = NavElements.Profile.dropdown_items pool ~contact:true () in
+  let expected = nav_items @ [ "/user/contact-information", ContactInformation ] in
+  Alcotest.check testable "with api key" expected nav;
+  handle_event pool CacheCleared
 ;;
 
 let admin_navigation _ () =
@@ -26,14 +50,9 @@ let admin_navigation _ () =
     let children = item.children |> List.filter compare in
     { item with children }
   in
-  let profile_nav = NavElements.Profile.nav ~contact:false ~prefix:"/admin" () in
+  let%lwt profile_nav = NavElements.Profile.nav pool ~contact:false ~prefix:"/admin" () in
   (* Without any roles *)
-  let expected =
-    [ dashboard
-    ; NavElements.Profile.nav ~contact:false ~prefix:"/admin" ()
-    ; NavElement.logout ()
-    ]
-  in
+  let expected = [ dashboard; profile_nav; NavElement.logout () ] in
   let%lwt () = run_test "Without any roles" actor ~expected in
   (* As experimenter *)
   let%lwt experiment = ExperimentRepo.create () in
@@ -104,6 +123,7 @@ let operator_navigation _ () =
   let open Integration_utils in
   let%lwt actor = create_admin_actor () in
   let%lwt () = assign_role actor `Operator None in
-  let%lwt () = run_test "As operator" actor ~expected:NavLinks.all in
+  let%lwt expected = NavLinks.all pool in
+  let%lwt () = run_test "As operator" actor ~expected in
   Lwt.return_unit
 ;;
