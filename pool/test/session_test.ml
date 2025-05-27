@@ -1788,7 +1788,7 @@ module Duplication = struct
 end
 
 module DirectMessaging = struct
-  open Cqrs_command.Session_command.SendDirectMessage
+  open Cqrs_command.Session_command
   open Message_template
 
   let language = Pool_common.Language.En
@@ -1816,11 +1816,21 @@ module DirectMessaging = struct
     Model.create_text_message_job cell_phone
   ;;
 
-  let decode_and_handle assignments channel data =
+  let decode_and_handle_email assignments data =
     let open CCResult in
+    let open SendDirectEmailMessage in
     data
     |> Http_utils.format_request_boolean_values [ Field.(show FallbackToEmail) ]
-    |> decode channel
+    |> decode
+    >>= handle make_email_job assignments
+  ;;
+
+  let decode_and_handle_text_message assignments data =
+    let open CCResult in
+    let open SendDirectTextMessage in
+    data
+    |> Http_utils.format_request_boolean_values [ Field.(show FallbackToEmail) ]
+    |> decode
     >>= handle make_email_job make_text_message_job assignments
   ;;
 
@@ -1840,10 +1850,9 @@ module DirectMessaging = struct
       ; Model.create_assignment ~contact:contact_with_cellphone ()
       ]
     in
-    let channel = Pool_common.MessageChannel.Email in
     let res =
       UrlEncoded.[ language; email_subject; email_text; plain_text ]
-      |> decode_and_handle assignments channel
+      |> decode_and_handle_email assignments
     in
     let expected =
       Ok
@@ -1863,10 +1872,9 @@ module DirectMessaging = struct
       ; Model.create_assignment ~contact:contact_with_cellphone ()
       ]
     in
-    let channel = Pool_common.MessageChannel.TextMessage in
     let res =
       UrlEncoded.[ language; email_subject; sms_text; fallback_to_email ]
-      |> decode_and_handle assignments channel
+      |> decode_and_handle_text_message assignments
     in
     let expected =
       let text_msg =
@@ -1888,10 +1896,9 @@ module DirectMessaging = struct
       ; Model.create_assignment ~contact:contact_with_cellphone ()
       ]
     in
-    let channel = Pool_common.MessageChannel.TextMessage in
     let res =
       UrlEncoded.[ language; email_subject; sms_text ]
-      |> decode_and_handle assignments channel
+      |> decode_and_handle_text_message assignments
     in
     let expected =
       Ok
